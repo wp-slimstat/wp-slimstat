@@ -13,7 +13,7 @@ to filter hits based on the IP addresses, browser names and so on,  with just a 
 
 == Description ==
 
-It’s back, by popular demand! Yes, you asked for it and here it is: WP SlimStat 2.
+It's back, by popular demand! Yes, you asked for it and here it is: WP SlimStat 2.
 Completely rewritten from the ground up, lightweight, optimized, much more powerful
 and flexible. Please note: this is still an alpha version. It CAN be used in a production
 environment, but some of the features (like filtering and 'more' links) are not active yet.
@@ -37,7 +37,7 @@ So please don't submit a bug report for these.
 * Tracks screen resolution and other browser-related parameters
 * Uses WP timezone settings and date formatting
 
-This plugin uses the following third-party technologies: 
+## hird-party technologies: 
 * GeoLite Country Database provided by [MaxMind](http://www.maxmind.com/app/geolitecountry?rId=piecesandbits)
 * [Browser Capabilities PHP Project](http://code.google.com/p/phpbrowscap/)
 
