@@ -35,7 +35,7 @@ So please don't submit a bug report for these.
 * Tracks screen resolution and other browser-related parameters
 * Uses WP timezone settings and date formatting
 
-## Third-party technologies: 
+## Third party technologies: 
 * GeoLite Country Database provided by [MaxMind](http://www.maxmind.com/app/geolitecountry?rId=piecesandbits)
 * [Browser Capabilities PHP Project](http://code.google.com/p/phpbrowscap/)
 
