@@ -48,6 +48,12 @@ So please don't submit a bug report for these.
 5. You'll also have a new menu entry under Tools, called "SlimStat". Here you can customize all the options. 
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
 
+== Screenshots ==
+
+1. Dashboard
+2. Pathstats
+3. Options
+
 == Changelog ==
 
 = 2.0 =
