@@ -1,6 +1,7 @@
 === Wp SlimStat ===
 
-Contributors: camu, cyberangel
+Author: camu
+Contributors: cyberangel
 Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews
 Requires at least: 2.9
