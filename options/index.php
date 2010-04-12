@@ -36,13 +36,14 @@ if (isset($_POST['options'])){
 	if (!slimstat_update_option('slimstat_can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Who can manage the options','wp-slimstat-view').', ';
 	
 	// If autopurge = 0, we can unschedule our cron job. If autopurge > 0 and the hook was not scheduled, we schedule it
-	if (isset($_POST['options']['auto_purge']) && $_POST['options']['auto_purge'] == 0){
-		wp_clear_scheduled_hook('wp_slimstat_purge');
+	if (isset($_POST['options']['auto_purge'])){
+		if ($_POST['options']['auto_purge'] == 0){
+			wp_clear_scheduled_hook('wp_slimstat_purge');
+		}
+		else if (wp_next_scheduled( 'my_schedule_hook' ) == 0){
+			wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
+		}
 	}
-	else if (wp_next_scheduled( 'my_schedule_hook' ) == 0){
-		wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
-	}
-	
 	// Display an alert in the admin interface if something went wrong
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	if (empty($faulty_fields)) {
@@ -113,7 +114,8 @@ function slimstat_update_option( $_option, $_value, $_type ){
 			}
 			if ($_GET['ds']=='confirm'){
 				$wp_slimstat_object = new wp_slimstat();
-				$wpdb->query("TRUNCATE TABLE `$wp_slimstat_object->table_stats`");				
+				$wpdb->query("TRUNCATE TABLE `$wp_slimstat_object->table_stats`");
+				$wpdb->query("TRUNCATE TABLE `$wp_slimstat_object->table_visits`");
 				_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-view');
 			}
 			echo '</p></div>';
