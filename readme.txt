@@ -48,6 +48,16 @@ So please don't submit a bug report for these.
 5. You'll also have a new menu entry under Tools, called "SlimStat". Here you can customize all the options. 
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
 
+## Updating from 0.9.2
+
+Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2 to 2.0.
+I mean, you can still click on 'Update plugin' in the alert message you see inside your Plugins' admin panel,
+but once the update process is complete, WP SlimStat 2 won't be able to track anything. There's an easy fix,
+though: go under Tools > SlimStat > Maintenance. If you still have an 'old' db structure, you'll see an
+alert message "Old table detected" and a button to RESET it. Click on this button (YOU WILL LOSE ALL YOUR
+DATA COLLECTED BY WP-SlimStat 0.9.2!) and then deactivate/reactivate WP SlimStat. Now, if you go back
+to Maintenance, that alert message should be gone.
+
 == Screenshots ==
 
 1. Reports
