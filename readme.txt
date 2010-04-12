@@ -50,8 +50,7 @@ So please don't submit a bug report for these.
 
 == Screenshots ==
 
-1. Dashboard
-2. Pathstats
+1. Reports
 3. Options
 
 == Changelog ==
