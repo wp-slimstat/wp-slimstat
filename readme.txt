@@ -1,7 +1,5 @@
-=== Wp SlimStat ===
+=== WP SlimStat ===
 
-Author: camu
-Contributors: cyberangel
 Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews
 Requires at least: 2.9
@@ -69,4 +67,4 @@ and re-activate it from the admin interface.
 Wp-SlimStat is fully localizable. Everything can be translate in your language
 and character encoding. As for every other Wordpress plugin, I used the Portable
 Object (.po) standard to do this. If you want to provide a localized file in your
-language, use the template files (.pot) you'll find inside the `lang` folder. 
+language, use the template files (.pot) you'll find inside the `lang` folder.
