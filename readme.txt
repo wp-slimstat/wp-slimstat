@@ -35,7 +35,7 @@ So please don't submit a bug report for these.
 * Tracks screen resolution and other browser-related parameters
 * Uses WP timezone settings and date formatting
 
-## hird-party technologies: 
+## Third-party technologies: 
 * GeoLite Country Database provided by [MaxMind](http://www.maxmind.com/app/geolitecountry?rId=piecesandbits)
 * [Browser Capabilities PHP Project](http://code.google.com/p/phpbrowscap/)
 
@@ -68,3 +68,16 @@ Wp-SlimStat is fully localizable. Everything can be translate in your language
 and character encoding. As for every other Wordpress plugin, I used the Portable
 Object (.po) standard to do this. If you want to provide a localized file in your
 language, use the template files (.pot) you'll find inside the `lang` folder.
+
+== Extras ==
+
+After you download and install WP SlimStat, you'll see not one, not two, but three new plugins in your administration panel.
+Don't worry, you just need to activate the first one in order to track your visitors. Here is a bried description of the 
+other two.
+
+WP SlimStat Dashboard Widgets - This plugin adds some reports directly to your dashboard. Useful for who wants
+the most relevant metrics handy.
+
+WP SlimStat Custom Reports - Yes, you can! Create and view your personalized analytics for WP SlimStat. This
+plugin demonstrates how to extract your own reports. Please do not hesitate to contact me if you need help with
+this feature.
