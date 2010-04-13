@@ -18,7 +18,4 @@ msgstr ""
 
 #: wp-slimstat.php:567
 msgid "Analytics"
-msgstr "Statistiche"
-
-#~ msgid "Options"
-#~ msgstr "Opzioni"
+msgstr ""
