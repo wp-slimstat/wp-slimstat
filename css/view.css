@@ -68,11 +68,17 @@
  margin:0;
  padding:5px 5px 5px 6px;
 }
+.postbox p.header{
+ background-color:#eee;
+}
 .postbox p.last{
  border:0;
 }
-.postbox p.header{
- background-color:#eee;
+.postbox p.nodata{
+ border:0;
+ color:#999;
+ padding-top:70px;
+ text-align:center;
 }
 .postbox p img{
  float:left;
