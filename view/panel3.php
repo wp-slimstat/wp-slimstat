@@ -25,11 +25,11 @@ $wp_slimstat_view = new wp_slimstat_panel();
 <div class="metabox-holder">
 	<div class="postbox">
 		<h3><?php _e( 'Summary for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
-		<p><span class="left"><?php _e( 'Unique Referers', 'wp-slimstat-view' ); ?></span> <span><?php echo $percentage_java ?></span></p>
-		<p><span class="left"><?php _e( 'Direct Visits', 'wp-slimstat-view' ); ?></span> <span><?php echo $percentage_flash ?></span></p>
-		<p><span class="left"><?php _e( 'Search Engines', 'wp-slimstat-view' ); ?></span> <span><?php echo $percentage_mediaplayer ?></span></p>
-		<p><span class="left"><?php _e( 'Referred', 'wp-slimstat-view' ); ?></span> <span><?php echo $percentage_acrobat ?></span></p>
-		<p class="last"><span class="left"><?php _e( 'Internal', 'wp-slimstat-view' ); ?></span> <span><?php echo $percentage_quicktime ?></span></p>
+		<p><span class="left"><?php _e( 'Unique Referers', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
+		<p><span class="left"><?php _e( 'Direct Visits', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
+		<p><span class="left"><?php _e( 'Search Engines', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
+		<p><span class="left"><?php _e( 'Referred', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
+		<p class="last"><span class="left"><?php _e( 'Internal', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
 	</div>
 </div>
 
@@ -39,14 +39,18 @@ $wp_slimstat_view = new wp_slimstat_panel();
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('searchterms');
-				$count_results = count($results);
-				for($i=0;$i<$count_results;$i++){
-					// TODO: source clickable to enable filter
-					$show_title_tooltip = ($results[$i]['len'] > 30)?' title="'.$results[$i]['long_string'].'"':'';
-					$last_element = ($i == $count_results-1)?' class="last"':'';
+				$count_results = count($results); // 0 if $results is null
+				if ($count_results == 0) {
+					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+				} else {
+					for($i=0;$i<$count_results;$i++){
+						// TODO: source clickable to enable filter
+						$show_title_tooltip = ($results[$i]['len'] > 30)?' title="'.$results[$i]['long_string'].'"':'';
+						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 30)?'...':'');
 					
-					echo "<p$show_title_tooltip$last_element><span class='left'>";
-					echo $results[$i]['short_string'].(($results[$i]['len'] > 30)?'...':'')."</span> <span>{$results[$i]['count']}</span></p>";
+						echo "<p$show_title_tooltip$last_element><span class='left'>$element_text</span> <span>{$results[$i]['count']}</span></p>";
+					}
 				}
 			?>
 		</div>
@@ -60,15 +64,18 @@ $wp_slimstat_view = new wp_slimstat_panel();
 			<?php
 				$results = $wp_slimstat_view->get_top('country', '', 30, true);
 				$total_count = $wp_slimstat_view->get_total_count();
-				$count_results = count($results);
-				
-				for($i=0;$i<$count_results;$i++){
-					$last_element = ($i == $count_results-1)?' class="last"':'';
-					$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
-					$country = __('c-'.$results[$i]['short_string'],'countries-languages');
+				$count_results = count($results); // 0 if $results is null
+				if ($count_results == 0) {
+					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+				} else {
+					for($i=0;$i<$count_results;$i++){
+						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
+						$country = __('c-'.$results[$i]['short_string'],'countries-languages');
 					
-					// TODO: source clickable to enable filter				
-					echo "<p$last_element><span class='left'>$country</span> <span class='narrowcolumn'>$percentage%</span></p>";
+						// TODO: source clickable to enable filter				
+						echo "<p$last_element><span class='left'>$country</span> <span class='narrowcolumn'>$percentage%</span></p>";
+					}
 				}
 			?>
 		</div>
@@ -81,19 +88,24 @@ $wp_slimstat_view = new wp_slimstat_panel();
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('domain', 'referer', 30, true);
+				$count_results = count($results); // 0 if $results is null
 				$count_pageviews_with_referer = $wp_slimstat_view->get_referer_count();
-			
-				$count_results = count($results);
-				for($i=0;$i<$count_results;$i++){
-					if (strpos(get_bloginfo('url'), $results[$i]['long_string'])) continue;
+				if ($count_results == 0) {
+					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+				} else {
+					for($i=0;$i<$count_results;$i++){
+						if (strpos(get_bloginfo('url'), $results[$i]['long_string'])) continue;
 				
-					$last_element = ($i == $count_results-1)?' class="last"':'';
-					$percentage = ($count_pageviews_with_referer > 0)?intval(100*$results[$i]['count']/$count_pageviews_with_referer):0;
+						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$percentage = ($count_pageviews_with_referer > 0)?intval(100*$results[$i]['count']/$count_pageviews_with_referer):0;
+						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
+						$element_url = 'http://'.$results[$i]['long_string'].$results[$i]['referer'];
 				
-					// TODO: source clickable to enable filter
-					echo '<p'.$last_element.'><span class="left"><a target="_blank" title="'.sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
-					echo '" href="http://'.$results[$i]['long_string'].$results[$i]['referer'].'"><img src="'.WP_PLUGIN_URL.'/wp-slimstat/images/url.gif" /></a> ';
-					echo $results[$i]['short_string'].'</span> <span>'.$percentage.'%</span> <span>'.$results[$i]['count'].'</span></p>';
+						// TODO: source clickable to enable filter
+						echo "<p$last_element><span class='left'><a target='_blank' title='$element_title'";
+						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
+						echo $results[$i]['short_string']."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+					}
 				}
 			?>
 		</div>
@@ -106,16 +118,18 @@ $wp_slimstat_view = new wp_slimstat_panel();
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top_search_engines();
-				$count_results = count($results);
-				
-				
-				for($i=0;$i<$count_results;$i++){
-					$last_element = ($i == $count_results-1)?' class="last"':'';
-					$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
-					$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
+				$count_results = count($results); // 0 if $results is null
+				if ($count_results == 0) {
+					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+				} else {		
+					for($i=0;$i<$count_results;$i++){
+						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
+						$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
 					
-					// TODO: source clickable to enable filter				
-					echo "<p$last_element><span class='left'>$search_engine_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
+						// TODO: source clickable to enable filter				
+						echo "<p$last_element><span class='left'>$search_engine_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
+					}
 				}
 			?>
 		</div>
@@ -128,15 +142,18 @@ $wp_slimstat_view = new wp_slimstat_panel();
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_other_referers();
-				$count_results = count($results);
-				
-				for($i=0;$i<$count_results;$i++){
-					$last_element = ($i == $count_results-1)?' class="last"':'';
-					$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
-					$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
+				$count_results = count($results); // 0 if $results is null
+				if ($count_results == 0) {
+					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+				} else {
+					for($i=0;$i<$count_results;$i++){
+						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
+						$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
 					
-					// TODO: source clickable to enable filter				
-					echo "<p$last_element><span class='left'>$search_engine_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
+						// TODO: source clickable to enable filter				
+						echo "<p$last_element><span class='left'>$search_engine_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
+					}
 				}
 			?>
 		</div>
@@ -149,22 +166,23 @@ $wp_slimstat_view = new wp_slimstat_panel();
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_recent_keywords_pages();
-				$count_results = count($results);
-				
-				
-				for($i=0;$i<$count_results;$i++){
-					$last_element = ($i == $count_results-1)?' class="last"':'';
-	
-					$element_title = __('Open referer in a new window','wp-slimstat-view');
-					$trimmed_searchterms = $results[$i]['short_searchterms'].(($results[$i]['len_searchterms'] > 40)?'...':'');
-					$show_searchterms_tooltip = ($results[$i]['len_searchterms'] > 40)?" title='{$results[$i]['searchterms']}'":'';
-					$trimmed_resource = $results[$i]['short_resource'].(($results[$i]['len_resource'] > 40)?'...':'');
-					$show_resource_tooltip = ($results[$i]['len_resource'] > 40)?" title='{$results[$i]['resource']}'":'';
+				$count_results = count($results); // 0 if $results is null
+				if ($count_results == 0) {
+					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+				} else {		
+					for($i=0;$i<$count_results;$i++){
+						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$element_title = __('Open referer in a new window','wp-slimstat-view');
+						$trimmed_searchterms = $results[$i]['short_searchterms'].(($results[$i]['len_searchterms'] > 40)?'...':'');
+						$show_searchterms_tooltip = ($results[$i]['len_searchterms'] > 40)?" title='{$results[$i]['searchterms']}'":'';
+						$trimmed_resource = $results[$i]['short_resource'].(($results[$i]['len_resource'] > 40)?'...':'');
+						$show_resource_tooltip = ($results[$i]['len_resource'] > 40)?" title='{$results[$i]['resource']}'":'';
 					
-					// TODO: source clickable to enable filter				
-					echo "<p$last_element><span class='left'$show_searchterms_tooltip><a target='_blank' title='$element_title'";
-					echo " href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-					echo $trimmed_searchterms."</span> <span$show_resource_tooltip>$trimmed_resource</span></p>";
+						// TODO: source clickable to enable filter				
+						echo "<p$last_element><span class='left'$show_searchterms_tooltip><a target='_blank' title='$element_title'";
+						echo " href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
+						echo $trimmed_searchterms."</span> <span$show_resource_tooltip>$trimmed_resource</span></p>";
+					}
 				}
 			?>
 		</div>
@@ -187,31 +205,34 @@ class wp_slimstat_panel extends wp_slimstat_view {
 				GROUP BY YEAR(FROM_UNIXTIME(`dt`)), DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m'), DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d')
 				ORDER BY d,m ASC";
 		
-		$array_result = $wpdb->get_results($sql, ARRAY_A);
+		$array_results = $wpdb->get_results($sql, ARRAY_A);
 	
 		$array_current_month = $array_previous_month = array();
 		$current_non_zero_count = $previous_non_zero_count = 0;
-	
-		// Let's reorganize the result
-		foreach($array_result as $a_result) {
+		$current_month_xml = $previous_month_xml = '';
 		
-			if ($a_result['m'] == $this->current_date['m']) {
-				$array_current_month[intval($a_result['d'])] = $a_result['count_sources'];
-				if ($a_result['count_sources'] > 0) $current_non_zero_count++;
-			}
-			else {
-				$array_previous_month[intval($a_result['d'])] = $a_result['count_sources'];			
-				if ($a_result['count_sources'] > 0) $previous_non_zero_count++;
-			}
-		}
+		// Let's reorganize the result
+		if (is_array($array_results)){
+			foreach($array_results as $a_result) {
 
-		// Let's generate the XML for the flash chart
-		for($i=1;$i<32;$i++) { // a month can have 31 days at maximum
-			$categories_xml .= "<category name='$i'/>";
-			if ($i <= $this->current_date['d']) {
-				$current_month_xml .= "<set value='".intval($array_current_month[$i])."' link='/'/>";
+				if ($a_result['m'] == $this->current_date['m']) {
+					$array_current_month[intval($a_result['d'])] = $a_result['count_sources'];
+					if ($a_result['count_sources'] > 0) $current_non_zero_count++;
+				}
+				else {
+					$array_previous_month[intval($a_result['d'])] = $a_result['count_sources'];			
+					if ($a_result['count_sources'] > 0) $previous_non_zero_count++;
+				}
 			}
-			$previous_month_xml .= "<set value='".intval($array_previous_month[$i])."' alpha='80' link='/'/>";
+
+			// Let's generate the XML for the flash chart
+			for($i=1;$i<32;$i++) { // a month can have 31 days at maximum
+				$categories_xml .= "<category name='$i'/>";
+				if ($i <= $this->current_date['d']) {
+					$current_month_xml .= "<set value='".intval($array_current_month[$i])."' link='/'/>";
+				}
+				$previous_month_xml .= "<set value='".intval($array_previous_month[$i])."' alpha='80' link='/'/>";
+			}
 		}
 	
 		$xml = "<graph canvasBorderThickness='0' canvasBorderColor='ffffff' decimalPrecision='0' divLineAlpha='20' formatNumberScale='0' lineThickness='2' showNames='1' showShadow='0' showValues='0' yAxisName='".__('Sources','wp-slimstat-view')."'>";
@@ -240,9 +261,7 @@ class wp_slimstat_panel extends wp_slimstat_view {
 				ORDER BY count DESC
 				LIMIT 0,20";
 	
-		$array_result = $wpdb->get_results($sql, ARRAY_A);
-	
-		return $array_result;	
+		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	
 	public function get_other_referers(){
@@ -256,9 +275,7 @@ class wp_slimstat_panel extends wp_slimstat_view {
 				ORDER BY count DESC
 				LIMIT 0,20";
 	
-		$array_result = $wpdb->get_results($sql, ARRAY_A);
-	
-		return $array_result;	
+		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	
 	public function get_recent_keywords_pages(){

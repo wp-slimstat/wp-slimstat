@@ -73,9 +73,7 @@ class wp_slimstat_view extends wp_slimstat {
 				ORDER BY `dt` DESC
 				LIMIT 20";
 		
-		$array_result = $wpdb->get_results($sql, ARRAY_A);
-	
-		return $array_result;	
+		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
 	public function get_top($_field = 'id', $_field2 = '', $_limit_lenght = 30, $_only_current_month = false){
@@ -90,9 +88,7 @@ class wp_slimstat_view extends wp_slimstat {
 				ORDER BY count DESC
 				LIMIT 20";
 	
-		$array_result = $wpdb->get_results($sql, ARRAY_A);
-	
-		return $array_result;	
+		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	
 	public function get_total_count(){
@@ -101,9 +97,7 @@ class wp_slimstat_view extends wp_slimstat {
 		$sql = "SELECT COUNT(*) count
 				FROM `$this->table_stats`";
 	
-		$result = $wpdb->get_var($sql);
-	
-		return intval($result);	
+		return intval($wpdb->get_var($sql));
 	}
 	
 	public function get_referer_count(){
@@ -113,9 +107,7 @@ class wp_slimstat_view extends wp_slimstat {
 				FROM `$this->table_stats`
 				WHERE `referer` <> ''";
 	
-		$result = $wpdb->get_var($sql);
-	
-		return intval($result);	
+		return intval($wpdb->get_var($sql));
 	}
 
 }
