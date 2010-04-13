@@ -98,13 +98,13 @@ class wp_slimstat_dashboard {
 				$visit_id = $results[$i]['visit_id'];
 			}
 			$last_element = ($i != $count_results-1)?' style="border-bottom:1px dashed #ddd;font-size:.85em;height:1.6em;margin:0;padding:5px 5px 5px 6px"':' style="font-size:.85em;height:1.6em;margin:0;padding:5px 5px 5px 6px"';
-			$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['referer']);
+			$element_title = sprintf(__('Open %s in a new window','wp-slimstat-dashboard'), $results[$i]['referer']);
 			echo "<p$last_element title='{$results[$i]['domain']}{$results[$i]['referer']}'>";
 			if (!empty($results[$i]['domain'])){
 				echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> {$results[$i]['domain']} &raquo;";
 			}
 			else{
-				echo __('Direct visit to','wp-slimstat-view');
+				echo __('Direct visit to','wp-slimstat-dashboard');
 			}
 			echo ' '.substr($results[$i]['resource'],0,40).'</p>';
 		}
