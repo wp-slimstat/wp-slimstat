@@ -27,4 +27,4 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 </table>
 
 <h3><?php _e("Don't want to donate? You can still help",'wp-slimstat-options') ?></h3>
-<p><?php _e("If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!",'wp-slimstat-options') ?></p>
+<p><?php _e("If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!",'wp-slimstat-options') ?></p>
