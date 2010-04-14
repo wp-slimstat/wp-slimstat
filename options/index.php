@@ -14,7 +14,8 @@ $array_panels = array(
 	__('General','wp-slimstat-options'), 
 	__('Filters','wp-slimstat-options'), 
 	__('Permissions','wp-slimstat-options'), 
-	__('Maintenance','wp-slimstat-options')
+	__('Maintenance','wp-slimstat-options'),
+	__('Thank you','wp-slimstat-options')
 );
 
 // What panel to display

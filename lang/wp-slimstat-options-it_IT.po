@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-13 14:14-0500\n"
-"PO-Revision-Date: 2010-04-13 14:17-0500\n"
+"POT-Creation-Date: 2010-04-14 12:09-0500\n"
+"PO-Revision-Date: 2010-04-14 12:14-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -32,80 +32,84 @@ msgstr "Permessi"
 msgid "Maintenance"
 msgstr "Manutenzione"
 
-#: index.php:28
+#: index.php:18
+msgid "Thank you"
+msgstr "Grazie"
+
+#: index.php:29
 #: panel1.php:20
 msgid "Activate tracking"
 msgstr "Attiva tracking"
 
-#: index.php:29
+#: index.php:30
 #: panel1.php:27
 msgid "Ignore interval"
 msgstr "Latenza"
 
-#: index.php:30
+#: index.php:31
 #: panel1.php:34
 msgid "Ignore bots"
 msgstr "Ignora bot"
 
-#: index.php:31
+#: index.php:32
 msgid "Auto purge"
 msgstr "Pulizia DB"
 
-#: index.php:32
+#: index.php:33
 msgid "Ignore IPs"
 msgstr "Ignora IP"
 
-#: index.php:33
+#: index.php:34
 msgid "Ignore resources"
 msgstr "Ignora pagine"
 
-#: index.php:34
+#: index.php:35
 msgid "Ignore browsers"
 msgstr "Ignora browser"
 
-#: index.php:35
+#: index.php:36
 #: panel3.php:15
 msgid "Who can view the reports"
 msgstr "Chi pu&ograve; vedere le statistiche"
 
-#: index.php:36
+#: index.php:37
 #: panel3.php:24
 msgid "Who can manage these options"
 msgstr "Chi pu&ograve; modificare queste opzioni"
 
-#: index.php:50
+#: index.php:51
 msgid "Your settings have been successfully updated."
 msgstr "Le impostazioni sono state salvate con successo."
 
-#: index.php:53
+#: index.php:54
 msgid "There was an error updating the following fields:"
 msgstr "Si &egrave; verificato un errore nell'aggiornamento dei seguenti parametri:"
 
-#: index.php:111
+#: index.php:112
 msgid "Are you sure you want to remove all the information about your hits and visits?"
 msgstr "Sei sicuro di voler cancellare definitivamente tutti i dati sugli accessi?"
 
-#: index.php:112
+#: index.php:113
 #: panel1.php:22
 #: panel1.php:36
 msgid "Yes"
 msgstr "Si"
 
-#: index.php:113
+#: index.php:114
 #: panel1.php:23
 #: panel1.php:37
 msgid "No"
 msgstr "No"
 
-#: index.php:119
+#: index.php:120
 msgid "Your WP SlimStat table has been successfully emptied."
 msgstr "La tabella di WP SlimStat &egrave; stata svuotata con successo."
 
-#: index.php:127
+#: index.php:128
 msgid "Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat."
 msgstr "La tabella di WP SlimStat &egrave; stata resettata con successo. Adesso vai all'elenco dei tuoi Plugin e disattiva/riattiva WP SlimStat."
 
-#: index.php:136
+#: index.php:137
 msgid "Save Changes"
 msgstr "Salva le modifiche"
 
@@ -193,134 +197,14 @@ msgstr "RESETTA STATISTICHE"
 msgid "It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process."
 msgstr "Pare che la struttura del tuo database non sia aggiornata all'ultima versione. Per favore, clicca sul pulsante qui a fianco per resettare le tabelle (tutti i dati andranno persi, mi spiace), quindi disattiva/riattiva WP SlimStat per completare l'aggiornamento."
 
-#~ msgid "Who can manage the options"
-#~ msgstr "Chi pu&ograve; modificare queste opzioni"
+#: panel5.php:21
+msgid "How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better. Any money received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family."
+msgstr "Quanto &egrave; importante monitorare i visitatori del tuo sito? WP SlimStat &egrave; e sar&agrave; sempre gratuito, ma se vuoi puoi supportare l'autore, se ritieni che questo plugin abbia reso il tuo sito migliore. Il denaro ricevuto sar&agrave; reinvestito nello sviluppo di WP SlimStat (hosting, programmi, ecc) e per comprare un po' di cibo per la mia famiglia affamata."
 
-#~ msgid "Dashboard"
-#~ msgstr "Bacheca"
+#: panel5.php:27
+msgid "Don't want to donate? You can still help"
+msgstr "Non ti va di donare soldi? "
 
-#~ msgid "Visitors"
-#~ msgstr "Visitatori"
-
-#~ msgid "Traffic Sources"
-#~ msgstr "Sorgenti di traffico"
-
-#~ msgid "Content"
-#~ msgstr "Contenuto"
-
-#~ msgid "Custom Reports"
-#~ msgstr "Rapporti personali"
-
-#~ msgid "Pageviews by day - Click on a day to filter reports"
-#~ msgstr "Pagine al giorno - Clicca su un giorno per filtrare i rapporti"
-
-#~ msgid "About WP-SlimStat"
-#~ msgstr "Informazioni su WP-SlimStat"
-
-#~ msgid "Data Size"
-#~ msgstr "Dimensione DB"
-
-#~ msgid "Tracking Active"
-#~ msgstr "Tracciamento attivo"
-
-#~ msgid "Summary for"
-#~ msgstr "Panoramica del"
-
-#~ msgid "Pageviews"
-#~ msgstr "Accessi"
-
-#~ msgid "Avg Pageviews/day"
-#~ msgstr "Media accessi/giorno"
-
-#~ msgid "On"
-#~ msgstr "Il"
-
-#~ msgid "Last Month"
-#~ msgstr "Mese scorso"
-
-#~ msgid "User agents"
-#~ msgstr "User agents"
-
-#~ msgid "Popular pages of all time"
-#~ msgstr "Pagine in assoluto pi&ugrave; popolari"
-
-#~ msgid "Open %s in a new window"
-#~ msgstr "Apri %s in una nuova finestra"
-
-#~ msgid "Recent Keywords"
-#~ msgstr "Parole chiave recenti"
-
-#~ msgid "Recent Countries"
-#~ msgstr "Paesi recenti"
-
-#~ msgid "Traffic Sources Overview"
-#~ msgstr "Panoramica sorgenti di traffico"
-
-#~ msgid "Visitors / Day"
-#~ msgstr "Visitatori al giorno"
-
-#~ msgid "Visitors Overview"
-#~ msgstr "Panoramica visitatori"
-
-#~ msgid "New"
-#~ msgstr "Nuovi"
-
-#~ msgid "Returning"
-#~ msgstr "Di ritorno"
-
-#~ msgid "Bounce rate"
-#~ msgstr "Tasso di rimbalzo"
-
-#~ msgid "Bots"
-#~ msgstr "Bot"
-
-#~ msgid "Pages per visit"
-#~ msgstr "Pagine per visita"
-
-#~ msgid "Length of visit"
-#~ msgstr "Tempo medio sul sito"
-
-#~ msgid "Plugins"
-#~ msgstr "Plugin"
-
-#~ msgid "Screen Resolutions"
-#~ msgstr "Risoluzioni schermo"
-
-#~ msgid "Operating Systems"
-#~ msgstr "Sistemi operativi"
-
-#~ msgid "Languages"
-#~ msgstr "Lingue"
-
-#~ msgid "Countries"
-#~ msgstr "Paesi"
-
-#~ msgid "Pathstats"
-#~ msgstr "Pathstats"
-
-#~ msgid "Direct Traffic"
-#~ msgstr "Traffico diretto"
-
-#~ msgid "Keywords"
-#~ msgstr "Parole chiave"
-
-#~ msgid "Referring Sites"
-#~ msgstr "Sorgenti di traffico"
-
-#~ msgid "Calendar for"
-#~ msgstr "Calendario del"
-
-#~ msgid "Recent Content"
-#~ msgstr "Contenuti recenti"
-
-#~ msgid "Top bouncing pages"
-#~ msgstr "Pagine di rimbalzo"
-
-#~ msgid "Average time on page"
-#~ msgstr "Tempo medio"
-
-#~ msgid "Popular pages for"
-#~ msgstr "Pagine popolari del"
-
-#~ msgid "Box Name"
-#~ msgstr "Nome Box"
+#: panel5.php:28
+msgid "If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
+msgstr "Se non ritieni di donare una cifra in denaro, puoi sempre scrivere un post sul tuo blog che parli di WP SlimStat, ed aggiungere un link alla pagina sul mio blog. I tuoi utenti non sanno che stai usando WP SlimStat, quindi farai un favore sia a loro che a me, se deciderai di parlarne. Volendo, puoi anche donare un po' del tuo tempo: mandami un messaggio sul forum se trovi un errore, la localizzazione dell'interfaccia, o semplicemente un'idea per rendere il plugin sempre migliore. Qualsiasi cosa tu decida di fare, grazie per usare WP SlimStat!"
