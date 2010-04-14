@@ -33,7 +33,7 @@ if (isset($_POST['options'])){
 	if (!slimstat_update_option('slimstat_ignore_resources', $_POST['options']['ignore_resources'], 'list')) $faulty_fields .= __('Ignore resources','wp-slimstat-view').', ';
 	if (!slimstat_update_option('slimstat_ignore_browsers', $_POST['options']['ignore_browsers'], 'list')) $faulty_fields .= __('Ignore browsers','wp-slimstat-view').', ';
 	if (!slimstat_update_option('slimstat_can_view', $_POST['options']['can_view'], 'list')) $faulty_fields .= __('Who can view the reports','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Who can manage the options','wp-slimstat-view').', ';
+	if (!slimstat_update_option('slimstat_can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Who can manage these options','wp-slimstat-view').', ';
 	
 	// If autopurge = 0, we can unschedule our cron job. If autopurge > 0 and the hook was not scheduled, we schedule it
 	if (isset($_POST['options']['auto_purge'])){
@@ -131,7 +131,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 	
 	<form action="options-general.php?page=wp-slimstat/options/index.php<?php if(!empty($_GET['slimpanel'])) echo '&slimpanel='.$_GET['slimpanel']; ?>" method="post">
 	
-	<?php if (file_exists(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php"); ?>
+	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php"); ?>
 	
 	<?php if (empty($hide_submit)) { ?><p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p><?php } ?>
 
