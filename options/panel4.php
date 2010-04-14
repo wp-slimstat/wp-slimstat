@@ -5,8 +5,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
-$hide_submit = true;
-
 ?>
 
 <table class="form-table">

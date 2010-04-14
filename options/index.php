@@ -9,13 +9,13 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 // Load localization files
 load_plugin_textdomain('wp-slimstat-options', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
-// Define the panels
+// Define the panels (true or false if you want the FORM wrapper around your panel)
 $array_panels = array(
-	__('General','wp-slimstat-options'), 
-	__('Filters','wp-slimstat-options'), 
-	__('Permissions','wp-slimstat-options'), 
-	__('Maintenance','wp-slimstat-options'),
-	__('Thank you','wp-slimstat-options')
+	array(__('General','wp-slimstat-options'), true), 
+	array(__('Filters','wp-slimstat-options'), true), 
+	array(__('Permissions','wp-slimstat-options'), true), 
+	array(__('Maintenance','wp-slimstat-options'), false),
+	array(__('Thank you','wp-slimstat-options'), false)
 );
 
 // What panel to display
@@ -97,10 +97,10 @@ function slimstat_update_option( $_option, $_value, $_type ){
 	<div id="analytics-icon"></div>
 	<h2 class="medium">
 		<?php
-		foreach($array_panels as $a_panel_id => $a_panel_name){
+		foreach($array_panels as $a_panel_id => $a_panel_details){
 			echo '<a class="menu-tabs';
 			if ($current_panel != $a_panel_id+1) echo ' menu-tab-inactive';
-			echo '" href="options-general.php?page=wp-slimstat/options/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_name.'</a>';
+			echo '" href="options-general.php?page=wp-slimstat/options/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_details[0].'</a>';
 		}
 		?>
 	</h2>
@@ -130,11 +130,11 @@ function slimstat_update_option( $_option, $_value, $_type ){
 		}
 	?>
 	
-	<form action="options-general.php?page=wp-slimstat/options/index.php<?php if(!empty($_GET['slimpanel'])) echo '&slimpanel='.$_GET['slimpanel']; ?>" method="post">
+	<?php if ($array_panels[$current_panel][1]) { ?><form action="options-general.php?page=wp-slimstat/options/index.php<?php if(!empty($_GET['slimpanel'])) echo '&slimpanel='.$_GET['slimpanel']; ?>" method="post"><?php } ?>
 	
 	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php"); ?>
 	
-	<?php if (empty($hide_submit)) { ?><p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p><?php } ?>
+	<?php if ($array_panels[$current_panel][1]) { ?><p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p><?php } ?>
 
-</form>
+<?php if ($array_panels[$current_panel][1]) { ?></form><?php } ?>
 </div>
