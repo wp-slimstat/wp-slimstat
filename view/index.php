@@ -19,28 +19,6 @@ $array_panels = array(
 	__('Custom Reports','wp-slimstat-view')
 );
 
-// What panel to display
-$current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']); 
-
-?>
-
-<div class="wrap">
-	<div id="analytics-icon"></div>
-	<h2 class="medium">
-		<?php
-		foreach($array_panels as $a_panel_id => $a_panel_name){
-			echo '<a class="menu-tabs';
-			if ($current_panel != $a_panel_id+1) echo ' menu-tab-inactive';
-			echo '" href="index.php?page=wp-slimstat/view/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_name.'</a>';
-		}
-		?>
-	</h2>
-	
-	<?php if (file_exists(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
-</div>
-
-<?php
-
 // Let's extend the main class with the methods we use in this panel
 class wp_slimstat_view extends wp_slimstat {
 
@@ -112,4 +90,22 @@ class wp_slimstat_view extends wp_slimstat {
 
 }
 
+// What panel to display
+$current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']); 
+
 ?>
+
+<div class="wrap">
+	<div id="analytics-icon"></div>
+	<h2 class="medium">
+		<?php
+		foreach($array_panels as $a_panel_id => $a_panel_name){
+			echo '<a class="menu-tabs';
+			if ($current_panel != $a_panel_id+1) echo ' menu-tab-inactive';
+			echo '" href="index.php?page=wp-slimstat/view/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_name.'</a>';
+		}
+		?>
+	</h2>
+	
+	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
+</div>
