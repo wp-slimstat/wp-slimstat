@@ -115,13 +115,17 @@ $wp_slimstat_view = new wp_slimstat_panel();
 <div class="metabox-holder wide">
 	<div class="postbox">
 		<h3><?php _e( 'Traffic Sources by day - Click on a day to filter reports', 'wp-slimstat-view' ); ?></h3>
-		<?php $current = $wp_slimstat_view->get_traffic_sources_by_day(); ?>
+		<?php $current = $wp_slimstat_view->get_traffic_sources_by_day();  
+		if ($current->current_non_zero_count+$current->previous_non_zero_count == 0){ ?>
+			<p class="nodata"><?php _e('No data to display','wp-slimstat-view') ?></p>
+		<?php } else { ?>
 		<OBJECT classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="780" height="170" id="line" >
          <param name="movie" value="<?php echo WP_PLUGIN_URL ?>/wp-slimstat/view/swf/fcf.swf" />
          <param name="FlashVars" value="&dataXML=<?php echo $current->xml ?>&chartWidth=780&chartHeight=170">
          <param name="quality" value="high" />
          <embed src="<?php echo WP_PLUGIN_URL ?>/wp-slimstat/view/swf/fcf.swf" flashVars="&dataXML=<?php echo $current->xml ?>&chartWidth=780&chartHeight=170" quality="high" width="780" height="170" name="line" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
       </object>
+	  <?php } ?>
 	</div>
 </div>
 
