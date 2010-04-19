@@ -14,6 +14,12 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
+// In order to activate this plugin, WP SlimStat needs to be installed and active
+$plugins = get_option('active_plugins');
+if (!in_array('wp-slimstat/wp-slimstat.php', $plugins)){
+	return;
+}
+
 class wp_slimstat_custom_reports {
 
 	// Function: __construct
@@ -23,7 +29,7 @@ class wp_slimstat_custom_reports {
 	public function __construct(){
 		global $table_prefix;
 		
-		$this->version = '1.0';
+		$this->version = '2.0';
 		
 		$this->table_stats = $table_prefix . 'slim_stats';
 		$this->table_browsers = $table_prefix . 'slim_browsers';
