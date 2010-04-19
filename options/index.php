@@ -62,11 +62,13 @@ function slimstat_update_option( $_option, $_value, $_type ){
 
 	switch($_type){
 		case 'list':
+			// Avoid XSS attacks
+			$clean_value = preg_replace('/[^a-zA-Z0-9\,\.\/]/', '', $_value);
 			if (strlen($_value)==0){
 				update_option($_option, array());
 			}
 			else {
-				$array_values = explode(',',str_replace(' ','', $_value));
+				$array_values = explode(',',$clean_value);
 				update_option($_option, $array_values);
 			}
 			
