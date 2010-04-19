@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-13 14:14-0500\n"
-"PO-Revision-Date: 2010-04-13 14:17-0500\n"
+"POT-Creation-Date: 2010-04-19 13:45-0500\n"
+"PO-Revision-Date: 2010-04-19 13:47-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -32,80 +32,90 @@ msgstr ""
 msgid "Maintenance"
 msgstr ""
 
-#: index.php:28
+#: index.php:18
+msgid "Thank you"
+msgstr ""
+
+#: index.php:29
 #: panel1.php:20
 msgid "Activate tracking"
 msgstr ""
 
-#: index.php:29
+#: index.php:30
 #: panel1.php:27
 msgid "Ignore interval"
 msgstr ""
 
-#: index.php:30
+#: index.php:31
 #: panel1.php:34
 msgid "Ignore bots"
 msgstr ""
 
-#: index.php:31
+#: index.php:32
 msgid "Auto purge"
 msgstr ""
 
-#: index.php:32
+#: index.php:33
 msgid "Ignore IPs"
 msgstr ""
 
-#: index.php:33
+#: index.php:34
 msgid "Ignore resources"
 msgstr ""
 
-#: index.php:34
+#: index.php:35
 msgid "Ignore browsers"
 msgstr ""
 
-#: index.php:35
+#: index.php:36
 #: panel3.php:15
 msgid "Who can view the reports"
 msgstr ""
 
-#: index.php:36
+#: index.php:37
 #: panel3.php:24
 msgid "Who can manage these options"
 msgstr ""
 
-#: index.php:50
+#: index.php:53
+#: index.php:58
+#: index.php:63
+msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
+msgstr ""
+
+#: index.php:80
 msgid "Your settings have been successfully updated."
 msgstr ""
 
-#: index.php:53
+#: index.php:87
 msgid "There was an error updating the following fields:"
 msgstr ""
 
-#: index.php:111
+#: index.php:147
 msgid "Are you sure you want to remove all the information about your hits and visits?"
 msgstr ""
 
-#: index.php:112
+#: index.php:148
 #: panel1.php:22
 #: panel1.php:36
 msgid "Yes"
 msgstr ""
 
-#: index.php:113
+#: index.php:149
 #: panel1.php:23
 #: panel1.php:37
 msgid "No"
 msgstr ""
 
-#: index.php:119
+#: index.php:154
 msgid "Your WP SlimStat table has been successfully emptied."
 msgstr ""
 
-#: index.php:127
+#: index.php:162
 msgid "Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat."
 msgstr ""
 
-#: index.php:136
+#: index.php:171
 msgid "Save Changes"
 msgstr ""
 
@@ -169,38 +179,87 @@ msgstr ""
 msgid "Enter a list of users who are allowed to update these options. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all</strong> users (but subscribers) will have access to the options panel."
 msgstr ""
 
-#: panel4.php:15
-msgid "Empty database"
+#: panel4.php:10
+msgid "Please note that these commands cannot be undone!"
 msgstr ""
 
-#: panel4.php:17
-msgid "DELETE STATS"
+#: panel4.php:15
+msgid "Clean database"
 msgstr ""
 
 #: panel4.php:18
-msgid "Please note that this command <strong>cannot be undone</strong>!"
+msgid "Are you sure you want to PERMANENTLY delete these rows from your database?"
+msgstr ""
+
+#: panel4.php:21
+msgid "Country"
+msgstr ""
+
+#: panel4.php:22
+msgid "Domain"
+msgstr ""
+
+#: panel4.php:23
+msgid "IP"
+msgstr ""
+
+#: panel4.php:24
+msgid "Language"
+msgstr ""
+
+#: panel4.php:25
+msgid "Permalink"
 msgstr ""
 
 #: panel4.php:26
-msgid "Old table detected"
-msgstr ""
-
-#: panel4.php:28
-msgid "RESET STATS"
+msgid "Search Terms"
 msgstr ""
 
 #: panel4.php:29
+msgid "Is equal to"
+msgstr ""
+
+#: panel4.php:30
+msgid "Contains"
+msgstr ""
+
+#: panel4.php:31
+msgid "Does not contain"
+msgstr ""
+
+#: panel4.php:34
+msgid "DELETE"
+msgstr ""
+
+#: panel4.php:38
+msgid "Empty database"
+msgstr ""
+
+#: panel4.php:40
+msgid "DELETE STATS"
+msgstr ""
+
+#: panel4.php:48
+msgid "Old table detected"
+msgstr ""
+
+#: panel4.php:50
+msgid "RESET STATS"
+msgstr ""
+
+#: panel4.php:51
 msgid "It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process."
 msgstr ""
 
-#: panel5.php:21
+#: panel5.php:23
 msgid "How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better. Any money received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family."
 msgstr ""
 
-#: panel5.php:27
+#: panel5.php:29
 msgid "Don't want to donate? You can still help"
 msgstr ""
 
-#: panel5.php:28
+#: panel5.php:30
 msgid "If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
 msgstr ""
+
