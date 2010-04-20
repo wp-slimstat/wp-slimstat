@@ -1,4 +1,4 @@
-function detectPlugin(substrs) {
+function slimstat_detectPlugin(substrs) {
 	if (navigator.plugins) {
 		for (var i = 0; i < navigator.plugins.length; i++) {
 			var plugin = navigator.plugins[i];
@@ -20,7 +20,7 @@ function detectPlugin(substrs) {
 	return false;
 }
 
-function detectObject(progIds, fns) {
+function slimstat_detectObject(progIds, fns) {
 	for (var i = 0; i < progIds.length; i++) {
 		try {
 			var obj = new ActiveXObject(progIds[i]);
@@ -38,13 +38,13 @@ function detectObject(progIds, fns) {
  	return false;
 }
 
-function setCookie(cookie_name, value){
+function slimstat_setCookie(cookie_name, value){
 	var expiration_date = new Date();
 	expiration_date.setMinutes(expiration_date.getMinutes()+30);
 	document.cookie=cookie_name+"="+escape(value)+";expires="+expiration_date.toUTCString()+";path=/";
 }
 
-function getCookie(cookie_name){
+function slimstat_getCookie(cookie_name){
 	var results = document.cookie.match ( '(^|;) ?' + cookie_name + '=([^;]*)(;|$)' );
 
 	if ( results ) return ( unescape ( results[2] ) );
@@ -52,7 +52,7 @@ function getCookie(cookie_name){
 	return null;
 }
 
-var plugins = {
+var slimstat_plugins = {
 	java: {
 		substrs: [ "Java" ],
 		progIds: [ "JavaWebStart.isInstalled" ]
@@ -92,7 +92,7 @@ var plugins = {
 	}
 };
 
-var uniwin = {
+var slimstat_uniwin = {
 	width: window.innerWidth || document.documentElement.clientWidth
 		|| document.body.offsetWidth,
 	height: window.innerHeight || document.documentElement.clientHeight
@@ -100,23 +100,23 @@ var uniwin = {
 };
 
 // Set a cookie to track this visit
-var slimstat_tracking_code = getCookie('slimstat_tracking_code');
+var slimstat_tracking_code = slimstat_getCookie('slimstat_tracking_code');
 if (slimstat_tracking_code == null || slimstat_tracking_code.length != 32) {
-	setCookie('slimstat_tracking_code', slimstat_session_id);
+	slimstat_setCookie('slimstat_tracking_code', slimstat_session_id);
 }
 
-info = "?sw="+screen.width;
-info += "&sh="+screen.height;
-info += "&cd="+screen.colorDepth;
-info += "&aa="+(screen.fontSmoothingEnabled?'1':'0');
-info += "&id="+slimstat_tid;
-info += "&sid="+slimstat_session_id;
-info += "&pl=";
+slimstat_info = "?sw="+screen.width;
+slimstat_info += "&sh="+screen.height;
+slimstat_info += "&cd="+screen.colorDepth;
+slimstat_info += "&aa="+(screen.fontSmoothingEnabled?'1':'0');
+slimstat_info += "&id="+slimstat_tid;
+slimstat_info += "&sid="+slimstat_session_id;
+slimstat_info += "&pl=";
 
-for (var alias in plugins) {
-	var plugin = plugins[alias];
-		if (detectPlugin(plugin.substrs) || detectObject(plugin.progIds, plugin.fns)) {
-        info += alias +"|";
+for (var slimstat_alias in slimstat_plugins) {
+	var slimstat_plugin = slimstat_plugins[slimstat_alias];
+		if (slimstat_detectPlugin(slimstat_plugin.substrs) || slimstat_detectObject(slimstat_plugin.progIds, slimstat_plugin.fns)) {
+        slimstat_info += slimstat_alias +"|";
 	}
 }
 if (typeof XMLHttpRequest == "undefined") {
@@ -131,14 +131,14 @@ if (typeof XMLHttpRequest == "undefined") {
 		throw new Error("This browser does not support XMLHttpRequest.");
 	};
 }
-var request = false;
+var slimstat_request = false;
 try {
-	request = new XMLHttpRequest();
+	slimstat_request = new XMLHttpRequest();
 } catch (failed) {
-	request = false;
+	slimstat_request = false;
 }
-if (request) {
-	slimstat_url = slimstat_path+'/wp-slimstat/wp-slimstat-js.php'+info;
-	request.open('GET', slimstat_url, true);
-	request.send(null);
+if (slimstat_request) {
+	slimstat_url = slimstat_path+'/wp-slimstat/wp-slimstat-js.php'+slimstat_info;
+	slimstat_request.open('GET', slimstat_url, true);
+	slimstat_request.send(null);
 }
