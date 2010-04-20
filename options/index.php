@@ -26,15 +26,15 @@ if (isset($_POST['options'])){
 
 	$faulty_fields = '';
 	
-	if (!slimstat_update_option('slimstat_is_tracking', $_POST['options']['is_tracking'], 'yesno')) $faulty_fields = __('Activate tracking','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_ignore_interval', $_POST['options']['ignore_interval'], 'integer')) $faulty_fields .= __('Ignore interval','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_ignore_bots', $_POST['options']['ignore_bots'], 'yesno')) $faulty_fields .= __('Ignore bots','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_auto_purge', $_POST['options']['auto_purge'], 'integer')) $faulty_fields .= __('Auto purge','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_ignore_ip', $_POST['options']['ignore_ip'], 'list')) $faulty_fields .= __('Ignore IPs','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_ignore_resources', $_POST['options']['ignore_resources'], 'list')) $faulty_fields .= __('Ignore resources','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_ignore_browsers', $_POST['options']['ignore_browsers'], 'list')) $faulty_fields .= __('Ignore browsers','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_can_view', $_POST['options']['can_view'], 'list')) $faulty_fields .= __('Who can view the reports','wp-slimstat-view').', ';
-	if (!slimstat_update_option('slimstat_can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Who can manage these options','wp-slimstat-view').', ';
+	if (!slimstat_update_option('slimstat_is_tracking', $_POST['options']['is_tracking'], 'yesno')) $faulty_fields = __('Activate tracking','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_ignore_interval', $_POST['options']['ignore_interval'], 'integer')) $faulty_fields .= __('Ignore interval','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_ignore_bots', $_POST['options']['ignore_bots'], 'yesno')) $faulty_fields .= __('Ignore bots','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_auto_purge', $_POST['options']['auto_purge'], 'integer')) $faulty_fields .= __('Auto purge','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_ignore_ip', $_POST['options']['ignore_ip'], 'list')) $faulty_fields .= __('Ignore IPs','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_ignore_resources', $_POST['options']['ignore_resources'], 'list')) $faulty_fields .= __('Ignore resources','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_ignore_browsers', $_POST['options']['ignore_browsers'], 'list')) $faulty_fields .= __('Ignore browsers','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_can_view', $_POST['options']['can_view'], 'list')) $faulty_fields .= __('Who can view the reports','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Who can manage these options','wp-slimstat-options').', ';
 	
 	// If the case, delete rows
 	if (isset($_POST['options']['conditional_delete_field']) &&
@@ -50,17 +50,17 @@ if (isset($_POST['options'])){
 		if ($_POST['options']['conditional_delete_operator'] == 'equal'){
 			$rows_affected =  $wpdb->query("DELETE FROM `{$table_prefix}slim_stats` 
 							WHERE `{$_POST['options']['conditional_delete_field']}` = '$escaped_value'");
-			$message_to_show = __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-view').' '.intval($rows_affected);
+			$message_to_show = __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
 		}
 		if ($_POST['options']['conditional_delete_operator'] == 'like'){
 			$rows_affected = $wpdb->query("DELETE FROM `{$table_prefix}slim_stats` 
 							WHERE `{$_POST['options']['conditional_delete_field']}` LIKE '%$escaped_value%'");
-			$message_to_show = __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-view').' '.intval($rows_affected);
+			$message_to_show = __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
 		}
 		if ($_POST['options']['conditional_delete_operator'] == 'not like'){
 			$rows_affected = $wpdb->query("DELETE FROM `{$table_prefix}slim_stats` 
 							WHERE `{$_POST['options']['conditional_delete_field']}` NOT LIKE '%$escaped_value%'");
-			$message_to_show = __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-view').' '.intval($rows_affected);
+			$message_to_show = __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
 		}
 	}
 	
@@ -77,14 +77,14 @@ if (isset($_POST['options'])){
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	if (empty($faulty_fields)){
 		if (empty($message_to_show)){
-			_e('Your settings have been successfully updated.','wp-slimstat-view');
+			_e('Your settings have been successfully updated.','wp-slimstat-options');
 		}
 		else{
 			echo $message_to_show;
 		}
 	}
 	else{
-		_e('There was an error updating the following fields:','wp-slimstat-view');
+		_e('There was an error updating the following fields:','wp-slimstat-options');
 		echo ' <strong>'.substr($faulty_fields,0,-2).'</strong>';
 	}
 	echo "</p></div>\n";
@@ -144,14 +144,14 @@ function slimstat_update_option( $_option, $_value, $_type ){
 		if (isset($_GET['ds'])){
 			echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 			if ($_GET['ds']=='yes'){
-				_e('Are you sure you want to remove all the information about your hits and visits?','wp-slimstat-view');
-				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=confirm">'.__('Yes','wp-slimstat-view').'</a>';
-				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php">'.__('No','wp-slimstat-view').'</a>';
+				_e('Are you sure you want to remove all the information about your hits and visits?','wp-slimstat-options');
+				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=confirm">'.__('Yes','wp-slimstat-options').'</a>';
+				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php">'.__('No','wp-slimstat-options').'</a>';
 			}
 			if ($_GET['ds']=='confirm'){
 				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_stats`");
 				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_visits`");
-				_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-view');
+				_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-options');
 			}
 			echo '</p></div>';
 		}
@@ -159,7 +159,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 			$wp_slimstat_object = new wp_slimstat();
 			$wpdb->query("DROP TABLE IF EXISTS `$wp_slimstat_object->table_stats`");
 			echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-			_e('Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat.','wp-slimstat-view');		
+			_e('Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat.','wp-slimstat-options');		
 			echo '</p></div>';
 		}
 	?>

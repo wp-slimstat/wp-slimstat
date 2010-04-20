@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2010-04-20 14:09-0500\n"
-"PO-Revision-Date: 2010-04-20 14:09-0500\n"
+"PO-Revision-Date: 2010-04-20 15:35-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -137,7 +137,7 @@ msgstr "Pulizia DB"
 
 #: panel1.php:44
 msgid "days"
-msgstr "gironi"
+msgstr "giorni"
 
 #: panel1.php:45
 msgid "Next purge is scheduled on"

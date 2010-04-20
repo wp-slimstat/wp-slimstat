@@ -37,7 +37,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	<tr valign="top">
 		<th scope="row"><?php _e('Empty database','wp-slimstat-options') ?></th>
 		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=4"><?php _e('DELETE STATS','wp-slimstat-view'); ?></a>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=4"><?php _e('DELETE STATS','wp-slimstat-options'); ?></a>
 		</td>
 	</tr>
 <?php 
@@ -47,7 +47,7 @@ if (empty($check_column)): ?>
 	<tr valign="top">
 		<th scope="row"><?php _e('Old table detected','wp-slimstat-options') ?></th>
 		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=4"><?php _e('RESET STATS','wp-slimstat-view'); ?></a>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=4"><?php _e('RESET STATS','wp-slimstat-options'); ?></a>
 			&mdash; <?php _e('It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process.','wp-slimstat-options') ?>
 		</td>
 	</tr>
