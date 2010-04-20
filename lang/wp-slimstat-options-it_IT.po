@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-19 13:45-0500\n"
-"PO-Revision-Date: 2010-04-19 13:48-0500\n"
+"POT-Creation-Date: 2010-04-20 14:09-0500\n"
+"PO-Revision-Date: 2010-04-20 14:09-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -192,8 +192,8 @@ msgid "Are you sure you want to PERMANENTLY delete these rows from your database
 msgstr "Sei sicuro di voler cancellare PERMANENTEMENTE questi dati?"
 
 #: panel4.php:21
-msgid "Country"
-msgstr "Paese"
+msgid "Country Code"
+msgstr "Codice Paese"
 
 #: panel4.php:22
 msgid "Domain"
@@ -204,8 +204,8 @@ msgid "IP"
 msgstr "IP"
 
 #: panel4.php:24
-msgid "Language"
-msgstr "Lingua"
+msgid "Language Code"
+msgstr "Codice Lingua"
 
 #: panel4.php:25
 msgid "Permalink"

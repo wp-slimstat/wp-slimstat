@@ -18,10 +18,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 				onsubmit="return(confirm('<?php _e('Are you sure you want to PERMANENTLY delete these rows from your database?','wp-slimstat-options'); ?>'))">
 			Delete rows where 
 			<select name="options[conditional_delete_field]">
-				<option value="country"><?php _e('Country','wp-slimstat-options') ?></option>
+				<option value="country"><?php _e('Country Code','wp-slimstat-options') ?></option>
 				<option value="domain"><?php _e('Domain','wp-slimstat-options') ?></option>
 				<option value="ip"><?php _e('IP','wp-slimstat-options') ?></option>
-				<option value="language"><?php _e('Language','wp-slimstat-options') ?></option>
+				<option value="language"><?php _e('Language Code','wp-slimstat-options') ?></option>
 				<option value="resource"><?php _e('Permalink','wp-slimstat-options') ?></option>
 				<option value="searchterms"><?php _e('Search Terms','wp-slimstat-options') ?></option>
 			</select> 
