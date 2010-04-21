@@ -535,8 +535,16 @@ class wp_slimstat {
 		if (($autopurge_interval = intval(get_option('slimstat_auto_purge', 0))) <= 0) return;
 	
 		$autopurge_interval = strtotime("-$autopurge_interval day");
-	
+		
+		// Delete old entries
 		$delete_sql = "DELETE FROM `$this->table_stats` WHERE `dt` <= '$autopurge_interval'";
+		$wpdb->query($delete_sql);
+		
+		// Delete unreferred visits (while keeping the info about browsers and screenres)
+		$delete_sql = "DELETE tv
+						FROM `$this->table_visits` tv LEFT JOIN `$this->table_stats` ts
+						ON tv.visit_id = ts.visit_id
+						WHERE ts.id IS NULL";
 		$wpdb->query($delete_sql);
 	}
 	// end wp_slimstat_purge
@@ -590,12 +598,14 @@ class wp_slimstat {
 	// Input: none
 	// Output: HTML code
 	public function wp_slimstat_javascript() {
-		$my_secret_key = get_option('slimstat_secret', '123');
+		if ($this->tid > 0){
+			$my_secret_key = get_option('slimstat_secret', '123');
 
-		echo '<script type="text/javascript">slimstat_tid=\''.intval($this->tid).'\';';
-		echo 'slimstat_path=\''.WP_PLUGIN_URL.'\';';
-		echo 'slimstat_session_id=\''.md5(intval($this->tid).$my_secret_key).'\';</script>';
-		echo '<script type="text/javascript" src="'. plugins_url('/wp-slimstat/wp-slimstat.js').'"></script>'."\n";
+			echo '<script type="text/javascript">slimstat_tid=\''.intval($this->tid).'\';';
+			echo 'slimstat_path=\''.WP_PLUGIN_URL.'\';';
+			echo 'slimstat_session_id=\''.md5(intval($this->tid).$my_secret_key).'\';</script>';
+			echo '<script type="text/javascript" src="'. plugins_url('/wp-slimstat/wp-slimstat.js').'"></script>'."\n";
+		}
 	}
 	// end wp_slimstat_javascript
 
