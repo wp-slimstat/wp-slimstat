@@ -616,7 +616,7 @@ class wp_slimstat {
 $wp_slimstat = new wp_slimstat();
 
 // Define when we want to run the tracking: on init
-add_action( 'wp_footer', array( &$wp_slimstat, 'slimtrack' ), 5 );
+add_action( 'init', array( &$wp_slimstat, 'slimtrack' ), 5 );
 
 // Initialization routine should be executed on activation
 register_activation_hook( __FILE__, array( &$wp_slimstat, 'activate' ) );
