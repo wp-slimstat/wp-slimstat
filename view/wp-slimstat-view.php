@@ -41,6 +41,16 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 	
+	public function count_direct_visits(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(DISTINCT `id`) count
+				FROM `$this->table_stats`
+				WHERE `domain` = ''";
+		
+		return intval($wpdb->get_var($sql));
+	}
+	
 	public function count_new_visitors(){
 		global $wpdb;
 		
@@ -55,6 +65,16 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 	
+	public function count_pages_referred(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(DISTINCT `resource`) count
+				FROM `$this->table_stats`
+				WHERE `domain` <> ''";
+		
+		return intval($wpdb->get_var($sql));
+	}
+	
 	public function count_plugin($_plugin_name = ''){
 		global $wpdb;
 
@@ -62,6 +82,36 @@ class wp_slimstat_view {
 				FROM `$this->table_stats`
 				WHERE (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})
 					AND `plugins` LIKE '%$_plugin_name%'";
+		
+		return intval($wpdb->get_var($sql));
+	}
+	
+	public function count_referred_from_internal(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(DISTINCT `resource`) count
+				FROM `$this->table_stats`
+				WHERE `domain` = '{$_SERVER['SERVER_NAME']}'";
+		
+		return intval($wpdb->get_var($sql));
+	}
+	
+	public function count_search_engines(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(DISTINCT `id`) count
+				FROM `$this->table_stats`
+				WHERE `searchterms` <> '' AND `domain` <> '{$_SERVER['SERVER_NAME']}' AND `domain` <> ''";
+		
+		return intval($wpdb->get_var($sql));
+	}
+	
+	public function count_unique_referers(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(DISTINCT `domain`) count
+				FROM `$this->table_stats`
+				WHERE `domain` <> '{$_SERVER['SERVER_NAME']}' AND `domain` <> ''";
 		
 		return intval($wpdb->get_var($sql));
 	}

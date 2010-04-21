@@ -28,12 +28,19 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
+		<?php
+			$unique_referers = $wp_slimstat_view->count_unique_referers();
+			$direct_visits = $wp_slimstat_view->count_direct_visits();
+			$search_engines = $wp_slimstat_view->count_search_engines();
+			$pages_referred = $wp_slimstat_view->count_pages_referred();
+			$referred_from_internal = $wp_slimstat_view->count_referred_from_internal();
+		?>
 		<h3><?php _e( 'Summary for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
-		<p><span class="left"><?php _e( 'Unique Referers', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
-		<p><span class="left"><?php _e( 'Direct Visits', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
-		<p><span class="left"><?php _e( 'Search Engines', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
-		<p><span class="left"><?php _e( 'Referred', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
-		<p class="last"><span class="left"><?php _e( 'Internal', 'wp-slimstat-view' ); ?></span> <span>TBD</span></p>
+		<p><span class="left"><?php _e( 'Unique Referers', 'wp-slimstat-view' ); ?></span> <span><?php echo $unique_referers ?></span></p>
+		<p><span class="left"><?php _e( 'Direct Visits', 'wp-slimstat-view' ); ?></span> <span><?php echo $direct_visits ?></span></p>
+		<p><span class="left"><?php _e( 'Search Engines', 'wp-slimstat-view' ); ?></span> <span><?php echo $search_engines ?></span></p>
+		<p><span class="left"><?php _e( 'Unique Pages Referred', 'wp-slimstat-view' ); ?></span> <span><?php echo $pages_referred ?></span></p>
+		<p class="last"><span class="left"><?php _e( 'Unique Internal', 'wp-slimstat-view' ); ?></span> <span><?php echo $referred_from_internal ?></span></p>
 	</div>
 </div>
 
