@@ -158,16 +158,18 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder medium">
 	<div class="postbox">
-		<h3><?php _e( 'Recent Exit Pages', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
+		<h3><?php _e( 'Top Exit Pages', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
-				$results = $wp_slimstat_view->get_recent_exit_pages();
+				$results = $wp_slimstat_view->get_top_exit_pages();
 				$count_results = count($results); // 0 if $results is null
+				$count_exit_pages = $wp_slimstat_view->count_exit_pages();
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$percentage = ($count_exit_pages > 0)?sprintf("%01.1f", (100*$results[$i]['count']/$count_exit_pages)):0;
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
 						$element_url = 'http://'.$_SERVER['SERVER_NAME'].$results[$i]['resource'];
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 50)?'...':'');
@@ -175,7 +177,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 						// TODO: source clickable to enable filter
 						echo "<p$last_element><span class='left'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-						echo $element_text."</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
 					}
 				}
 			?>

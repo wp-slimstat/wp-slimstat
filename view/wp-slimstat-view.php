@@ -51,16 +51,17 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 	
-	
-	// USED?
 	public function count_exit_pages(){
 		global $wpdb;
 
-		$sql = "SELECT COUNT(*) FROM (
-					SELECT `resource`, `dt`
+		$sql = "SELECT COUNT(*) count
+				FROM (
+					SELECT `resource`, `visit_id`, `dt`
 					FROM `$this->table_stats`
+					WHERE `visit_id` > 0
 					GROUP BY `visit_id`
-					HAVING `dt`=MAX(`dt`)";
+					HAVING `dt` = MAX(`dt`)
+				) AS ts";
 	
 		return intval($wpdb->get_var($sql));
 	}
@@ -392,19 +393,6 @@ class wp_slimstat_view {
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	
-	public function get_recent_exit_pages(){
-		global $wpdb;
-
-		$sql = "SELECT SUBSTRING(`resource`, 1, 50) short_string, `resource`, LENGTH(`resource`) len, `visit_id`, `dt`
-				FROM `$this->table_stats`
-				GROUP BY `visit_id`
-				HAVING `dt` = MAX(`dt`)
-				ORDER BY `visit_id` DESC
-				LIMIT 0,20";
-	
-		return $wpdb->get_results($sql, ARRAY_A);
-	}
-	
 	public function get_recent_feeds(){
 		global $wpdb;
 	
@@ -481,10 +469,28 @@ class wp_slimstat_view {
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	
+	public function get_top_exit_pages(){
+		global $wpdb;
+
+		$sql = "SELECT SUBSTRING(ts.`resource`, 1, 50) short_string, ts.`resource`, LENGTH(ts.`resource`) len, COUNT(*) count
+				FROM (
+					SELECT `resource`, `visit_id`, `dt`
+					FROM `$this->table_stats`
+					WHERE `visit_id` > 0
+					GROUP BY `visit_id`
+					HAVING `dt` = MAX(`dt`)
+				) AS ts
+				GROUP BY ts.`resource`
+				ORDER BY count DESC, ts.`resource` ASC
+				LIMIT 0,20";
+	
+		return $wpdb->get_results($sql, ARRAY_A);
+	}
+	
 	public function get_top_only_visits($_field = 'id', $_field2 = '', $_limit_lenght = 30){
 		global $wpdb;
 
-		$sql = "SELECT  SUBSTRING(`$_field`, 1, $_limit_lenght) short_string,`$_field` long_string, LENGTH(`$_field`) len, COUNT(*) count
+		$sql = "SELECT SUBSTRING(`$_field`, 1, $_limit_lenght) short_string,`$_field` long_string, LENGTH(`$_field`) len, COUNT(*) count
 				".(!empty($_field2)?", `$_field2` $_field2 ":'')."
 				FROM `$this->table_stats`
 				WHERE `$_field` <> ''
