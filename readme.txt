@@ -4,7 +4,7 @@ Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews
 Requires at least: 2.9
 Tested up to: 3.0
-Stable tag: 2.0-beta1
+Stable tag: 2.0.1
 
 A smart web analytics tool. Track visits, pageviews, pathstats, and much more. Configurable
 to filter hits based on the IP addresses, browser names and so on,  with just a few clicks.

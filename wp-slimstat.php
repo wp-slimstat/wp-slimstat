@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress. Loosely based on <a href="http://slimstat.net/">Stephen Wettone's SlimStat</a>.
-Version: 2.0-beta1
+Version: 2.0.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
