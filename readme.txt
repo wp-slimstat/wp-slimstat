@@ -64,7 +64,7 @@ to Maintenance, that alert message should be gone.
 
 == Changelog ==
 
-= 2.0-beta1 =
+= 2.0.1 (beta) =
 * End of alpha phase
 * More reports added
 * You can now purge the database using filters (i.e. delete rows whose IP is...)
@@ -72,7 +72,7 @@ to Maintenance, that alert message should be gone.
 * Improved localizations
 * Updated version of browscap.ini
 
-= 2.0-alpha =
+= 2.0 (alpha) =
 * First release after four years. Too many things have changed to list them here ;)
 
 == Updating IP-to-Country ==
