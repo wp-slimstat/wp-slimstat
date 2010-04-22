@@ -51,6 +51,20 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 	
+	
+	// USED?
+	public function count_exit_pages(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) FROM (
+					SELECT `resource`, `dt`
+					FROM `$this->table_stats`
+					GROUP BY `visit_id`
+					HAVING `dt`=MAX(`dt`)";
+	
+		return intval($wpdb->get_var($sql));
+	}
+	
 	public function count_new_visitors(){
 		global $wpdb;
 		
@@ -96,6 +110,16 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 	
+	public function count_referers(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) count
+				FROM `$this->table_stats`
+				WHERE `referer` <> ''";
+	
+		return intval($wpdb->get_var($sql));
+	}
+	
 	public function count_search_engines(){
 		global $wpdb;
 
@@ -103,6 +127,15 @@ class wp_slimstat_view {
 				FROM `$this->table_stats`
 				WHERE `searchterms` <> '' AND `domain` <> '{$_SERVER['SERVER_NAME']}' AND `domain` <> ''";
 		
+		return intval($wpdb->get_var($sql));
+	}
+	
+	public function count_total_pageviews(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) count
+				FROM `$this->table_stats`";
+	
 		return intval($wpdb->get_var($sql));
 	}
 	
@@ -116,6 +149,68 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 	
+	public function get_average_pageviews_by_day(){
+		global $wpdb;
+	
+		$sql = "SELECT YEAR(FROM_UNIXTIME(`dt`)) y, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m') m, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d') d, AVG(ts1.count) avg_pageviews
+				FROM (
+					SELECT count(`ip`) count, `visit_id`, `dt`
+					FROM `$this->table_stats`
+					WHERE `visit_id` > 0
+					GROUP BY `visit_id`
+				) AS ts1
+				WHERE ((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
+					OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))
+					AND `visit_id` > 0
+				GROUP BY YEAR(FROM_UNIXTIME(`dt`)), DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m'), DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d')
+				ORDER BY d,m ASC";
+		
+		$array_results = $wpdb->get_results($sql, ARRAY_A);
+	
+		$array_current_month = $array_previous_month = array();
+		$current_non_zero_count = $previous_non_zero_count = 0;
+		$current_month_xml = $previous_month_xml = '';
+	
+		// Let's reorganize the result
+		if (is_array($array_results)){
+			foreach($array_results as $a_result) {
+		
+				if ($a_result['m'] == $this->current_date['m']) {
+					$array_current_month[intval($a_result['d'])] = $a_result['avg_pageviews'];
+					if ($a_result['avg_pageviews'] > 0) $current_non_zero_count++;
+				}
+				else {
+					$array_previous_month[intval($a_result['d'])] = $a_result['avg_pageviews'];			
+					if ($a_result['avg_pageviews'] > 0) $previous_non_zero_count++;
+				}
+			}
+
+			// Let's generate the XML for the flash chart
+			for($i=1;$i<32;$i++) { // a month can have 31 days at maximum
+				$categories_xml .= "<category name='$i'/>";
+				if ($i <= $this->current_date['d']) {
+					sprintf("<set value='%01.2f' link='/'/>", $array_current_month[$i]);
+					$current_month_xml .= sprintf("<set value='%01.2f' link='/'/>", $array_current_month[$i]);
+				}
+				$previous_month_xml .= sprintf("<set value='%01.2f' alpha='80' link='/'/>", $array_previous_month[$i]);
+			}
+		}
+	
+		$xml = "<graph canvasBorderThickness='0' yaxisminvalue='1' canvasBorderColor='ffffff' decimalPrecision='2' divLineAlpha='20' formatNumberScale='0' lineThickness='2' showNames='1' showShadow='0' showValues='0' yAxisName='".__('Avg Pageviews','wp-slimstat-view')."'>";
+		$xml .= "<categories>$categories_xml</categories>";
+		$xml .= "<dataset seriesname='".__('Avg Pageviews','wp-slimstat-view')." {$this->previous_month['m']}/{$this->previous_month['y']}' color='0099ff' showValue='1'>$previous_month_xml</dataset>";
+		$xml .= "<dataset seriesname='".__('Avg Pageviews','wp-slimstat-view')." {$this->current_date['m']}/{$this->current_date['y']}' color='0022cc' showValue='1' anchorSides='10'>$current_month_xml</dataset>";
+		$xml .= "</graph>";
+	
+		$result->xml = $xml;
+		$result->avg_current_month = $array_current_month;
+		$result->avg_previous_month = $array_previous_month;
+		$result->current_non_zero_count = $current_non_zero_count;
+		$result->previous_non_zero_count = $previous_non_zero_count;
+	
+		return $result;
+	}
+	
 	public function get_browsers(){
 		global $wpdb;
 
@@ -123,8 +218,8 @@ class wp_slimstat_view {
 				FROM `$this->table_stats` ts INNER JOIN `$this->table_browsers` tb ON ts.`browser_id` = tb.`browser_id`
 				WHERE tb.`browser` <> ''
 				GROUP BY `browser`, `version`
-				ORDER BY count DESC
-				LIMIT 20";
+				ORDER BY count DESC, `browser` ASC
+				LIMIT 0,20";
 	
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
@@ -185,7 +280,7 @@ class wp_slimstat_view {
 				WHERE `searchterms` = '' AND `domain` <> '{$_SERVER['SERVER_NAME']}' AND `domain` <> ''
 					AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})
 				GROUP BY `domain`
-				ORDER BY count DESC
+				ORDER BY count DESC, `domain` ASC
 				LIMIT 0,20";
 	
 		return $wpdb->get_results($sql, ARRAY_A);
@@ -265,7 +360,20 @@ class wp_slimstat_view {
 				WHERE `$_field` <> ''
 				GROUP BY long_string
 				ORDER BY `dt` DESC
-				LIMIT 20";
+				LIMIT 0,20";
+		
+		return $wpdb->get_results($sql, ARRAY_A);
+	}
+	
+	public function get_recent_404_pages(){
+		global $wpdb;
+	
+		$sql = "SELECT SUBSTRING(`resource`, 6, 30) short_string, `resource`, LENGTH(`resource`) len
+				FROM `$this->table_stats`
+				WHERE `resource` LIKE '[404]%'
+				GROUP BY `resource`
+				ORDER BY `dt` DESC
+				LIMIT 0,20";
 		
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
@@ -273,11 +381,39 @@ class wp_slimstat_view {
 	public function get_recent_browsers(){
 		global $wpdb;
 	
-		$sql = "SELECT DISTINCT SUBSTRING(tb.`browser`, 1, 25) as browser, tb.`version`, tb.`css_version`
+		$sql = "SELECT DISTINCT SUBSTRING(tb.`browser`, 1, 23) as browser, tb.`version`, tb.`css_version`
 				FROM `$this->table_stats` ts, `$this->table_browsers` tb 
 				WHERE ts.`browser_id` = tb.`browser_id`
 					AND tb.`platform` <> '' AND tb.`platform` <> '0'
 					AND tb.`css_version` <> '' AND tb.`css_version` <> '0'
+				ORDER BY `dt` DESC
+				LIMIT 0,20";
+		
+		return $wpdb->get_results($sql, ARRAY_A);
+	}
+	
+	public function get_recent_exit_pages(){
+		global $wpdb;
+
+		$sql = "SELECT SUBSTRING(`resource`, 1, 50) short_string, `resource`, LENGTH(`resource`) len, `visit_id`, `dt`
+				FROM `$this->table_stats`
+				GROUP BY `visit_id`
+				HAVING `dt` = MAX(`dt`)
+				ORDER BY `visit_id` DESC
+				LIMIT 0,20";
+	
+		return $wpdb->get_results($sql, ARRAY_A);
+	}
+	
+	public function get_recent_feeds(){
+		global $wpdb;
+	
+		$sql = "SELECT DISTINCT SUBSTRING(`resource`, 1, 23) short_string, `resource`, LENGTH(`resource`) len
+				FROM `$this->table_stats`
+				WHERE `resource` LIKE '%/feed'
+					OR `resource` LIKE '%?feed=%'
+					OR `resource` LIKE '%&feed=%'
+				GROUP BY `resource`
 				ORDER BY `dt` DESC
 				LIMIT 0,20";
 		
@@ -298,16 +434,6 @@ class wp_slimstat_view {
 		
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
-	
-	public function get_referer_count(){
-		global $wpdb;
-
-		$sql = "SELECT COUNT(*) count
-				FROM `$this->table_stats`
-				WHERE `referer` <> ''";
-	
-		return intval($wpdb->get_var($sql));
-	}
 
 	public function get_top($_field = 'id', $_field2 = '', $_limit_lenght = 30, $_only_current_month = false){
 		global $wpdb;
@@ -318,8 +444,24 @@ class wp_slimstat_view {
 				WHERE `$_field` <> ''
 				".($_only_current_month?" AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})":'')."
 				GROUP BY long_string
-				ORDER BY count DESC
-				LIMIT 20";
+				ORDER BY count DESC, `$_field` ASC
+				LIMIT 0,20";
+	
+		return $wpdb->get_results($sql, ARRAY_A);
+	}
+	
+	public function get_top_bouncing_pages(){
+		global $wpdb;
+
+		$sql = "SELECT SUBSTRING(ts1.`resource`, 1, 23) short_string, ts1.`resource`, LENGTH(`resource`) len, COUNT(*) count
+				FROM (SELECT `resource`
+						FROM `$this->table_stats`
+						GROUP BY `visit_id`
+						HAVING COUNT(`visit_id`) = 1
+				) AS ts1
+				GROUP BY ts1.`resource`
+				ORDER BY count DESC, `resource` ASC
+				LIMIT 0,20";
 	
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
@@ -333,7 +475,7 @@ class wp_slimstat_view {
 					AND ts.`browser_id` = tb.`browser_id`
 					AND tb.`platform` <> '' AND tb.`platform` <> 'unknown' AND tb.`version` <> '' AND tb.`version` <> '0'
 				GROUP BY tb.`browser`, tb.`version`, tb.`platform`
-				ORDER BY count DESC
+				ORDER BY count DESC, `browser` ASC
 				LIMIT 0,20";
 		
 		return $wpdb->get_results($sql, ARRAY_A);
@@ -349,7 +491,7 @@ class wp_slimstat_view {
 					AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})
 					AND `visit_id` > 0
 				GROUP BY long_string
-				ORDER BY count DESC
+				ORDER BY count DESC, `$_field` ASC
 				LIMIT 0,20";
 	
 		return $wpdb->get_results($sql, ARRAY_A);
@@ -363,7 +505,7 @@ class wp_slimstat_view {
 				WHERE ts.`browser_id` = tb.`browser_id`
 					AND tb.`platform` <> '' AND tb.`platform` <> 'unknown'
 				GROUP BY tb.`platform`
-				ORDER BY count DESC
+				ORDER BY count DESC, `platform` ASC
 				LIMIT 0,20";
 		
 		return $wpdb->get_results($sql, ARRAY_A);
@@ -379,7 +521,7 @@ class wp_slimstat_view {
 					AND ts.`screenres_id` = tsr.`screenres_id`
 				GROUP BY tsr.`resolution`
 				".(($_group_by_colordepth)?", tsr.`colordepth`, tsr.`antialias`":'')."
-				ORDER BY count DESC
+				ORDER BY count DESC, `resolution` ASC
 				LIMIT 0,20";
 		
 		return $wpdb->get_results($sql, ARRAY_A);
@@ -393,19 +535,10 @@ class wp_slimstat_view {
 				WHERE `searchterms` <> '' AND `domain` <> '{$_SERVER['SERVER_NAME']}'
 					AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})
 				GROUP BY `domain`
-				ORDER BY count DESC
+				ORDER BY count DESC, `domain` ASC
 				LIMIT 0,20";
 	
 		return $wpdb->get_results($sql, ARRAY_A);
-	}
-	
-	public function get_total_count(){
-		global $wpdb;
-
-		$sql = "SELECT COUNT(*) count
-				FROM `$this->table_stats`";
-	
-		return intval($wpdb->get_var($sql));
 	}
 	
 	public function get_traffic_sources_by_day(){

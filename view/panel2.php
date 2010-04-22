@@ -56,7 +56,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 				} else {
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
-						$total_count = $wp_slimstat_view->get_total_count();
+						$total_count = $wp_slimstat_view->count_total_pageviews();
 						$percentage = ($total_count > 0)?sprintf("%01.1f", (100*$results[$i]['count']/$total_count)):0;
 						$language = __('l-'.$results[$i]['short_string'], 'countries-languages');
 					
@@ -95,7 +95,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder medium">
 	<div class="postbox">
-		<h3><?php _e( 'IP Addresses and Domains', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'IP Addresses and Domains', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('ip');
@@ -119,7 +119,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'Recent Browsers', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Recent Browsers', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<p>Browser <span class="narrowcolumn">CSS</span> <span class="narrowcolumn">Ver</span> </p>
 			<?php
@@ -166,7 +166,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder medium">
 	<div class="postbox">
-		<h3><?php _e( 'Browsers and Operating Systems', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Browsers and Operating Systems', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top_browsers_by_operating_system();
@@ -191,7 +191,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'Screen Resolutions', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Screen Resolutions', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top_screenres(false);
@@ -257,7 +257,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 	
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'Top Countries', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Top Countries', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('country');
@@ -281,7 +281,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder medium">
 	<div class="postbox">
-		<h3><?php _e( 'Details about Recent Visits', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Details about Recent Visits', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_details_recent_visits();

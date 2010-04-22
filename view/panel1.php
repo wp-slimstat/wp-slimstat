@@ -30,7 +30,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 <div class="metabox-holder">
 	<div class="postbox">
 		<h3><?php _e( 'About WP-SlimStat', 'wp-slimstat-view' ); ?></h3>
-		<p><span class="left"><?php _e( 'Total Hits', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->get_total_count(); ?></span></p>
+		<p><span class="left"><?php _e( 'Total Hits', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->count_total_pageviews(); ?></span></p>
 		<p><span class="left"><?php _e( 'Data Size', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->get_data_size() ?></span></p>
 		<p><span class="left"><?php _e( 'Tracking Active', 'wp-slimstat-view' ); ?></span> <span><?php _e(get_option('slimstat_is_tracking', 'no'), 'countries-languages') ?></span></p>
 		<p><span class="left"><?php _e( 'Auto purge', 'wp-slimstat-view' ); ?></span> <span><?php echo (($auto_purge = get_option('slimstat_auto_purge', '0')) > 0)?$auto_purge.' days':'No'; ?></span></p>
@@ -57,7 +57,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'User agents', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'User agents', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_browsers();
@@ -82,7 +82,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 <div class="metabox-holder medium">
 	<div class="postbox">
 		<h3><?php
-			_e( 'Popular pages of all time', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+			_e( 'Popular pages of all time', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('resource', '', 65);
@@ -98,8 +98,11 @@ $wp_slimstat_view = new wp_slimstat_view();
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 65)?'...':'');
 					
 						// TODO: source clickable to enable filter
-						echo "<p$last_element$show_title_tooltip><span class='left'><a target='_blank' title='$element_title'";
-						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>";
+						echo "<p$last_element$show_title_tooltip><span class='left'>";
+						if (strpos($element_url, '[404]') == 0){
+							echo "<a target='_blank' title='$element_title'";
+							echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>";
+						}
 						echo $element_text."</span> <span>{$results[$i]['count']}</span></p>";
 					}
 				}
@@ -110,7 +113,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'Recent Keywords', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Recent Keywords', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_recent('searchterms');
@@ -121,9 +124,9 @@ $wp_slimstat_view = new wp_slimstat_view();
 					for($i=0;$i<$count_results;$i++){
 						$results[$i]['short_string'] = str_replace('\\', '', htmlspecialchars($results[$i]['short_string']));
 						$results[$i]['long_string'] = str_replace('\\', '', htmlspecialchars($results[$i]['long_string']));
-						$show_title_tooltip = ($results[$i]['len'] > 30)?' title="'.$results[$i]['long_string'].'"':'';
+						$show_title_tooltip = ($results[$i]['len'] > 23)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
-						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 30)?'...':'');
+						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 23)?'...':'');
 					
 						// TODO: source clickable to enable filter
 						echo "<p$last_element$show_title_tooltip>$element_text</p>";
@@ -136,7 +139,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'Recent Countries', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Recent Countries', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_recent('country');
@@ -159,12 +162,12 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder medium">
 	<div class="postbox">
-		<h3><?php _e( 'Traffic Sources Overview', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Traffic Sources Overview', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('domain', 'referer');
 				$count_results = count($results); // 0 if $results is null
-				$count_pageviews_with_referer = $wp_slimstat_view->get_referer_count();
+				$count_pageviews_with_referer = $wp_slimstat_view->count_referers();
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
@@ -179,7 +182,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 						// TODO: source clickable to enable filter
 						echo "<p$last_element><span class='left'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-						echo $results[$i]['short_string']."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
 					}
 				}
 			?>

@@ -46,7 +46,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'Top Keywords', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Top Keywords', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('searchterms');
@@ -74,7 +74,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_top('country', '', 30, true);
-				$total_count = $wp_slimstat_view->get_total_count();
+				$total_count = $wp_slimstat_view->count_total_pageviews();
 				$count_results = count($results); // 0 if $results is null
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
@@ -95,12 +95,12 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder medium">
 	<div class="postbox">
-		<h3><?php _e( 'Traffic Sources for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Traffic Sources for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
-				$results = $wp_slimstat_view->get_top('domain', 'referer', 30, true);
+				$results = $wp_slimstat_view->get_top('domain', 'referer', 65, true);
 				$count_results = count($results); // 0 if $results is null
-				$count_pageviews_with_referer = $wp_slimstat_view->get_referer_count();
+				$count_pageviews_with_referer = $wp_slimstat_view->count_referers();
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
@@ -149,7 +149,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder">
 	<div class="postbox">
-		<h3><?php _e( 'Sites for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y'];?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Sites for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y'];?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_other_referers();
@@ -173,7 +173,7 @@ $wp_slimstat_view = new wp_slimstat_view();
 
 <div class="metabox-holder medium">
 	<div class="postbox">
-		<h3><?php _e( 'Recent Keywords &raquo; Pages', 'wp-slimstat-view' ); ?> <span class="right">More</span></h3>
+		<h3><?php _e( 'Recent Keywords &raquo; Pages', 'wp-slimstat-view' ); ?> <span class="right"><?php _e('More','wp-slimstat-view') ?></span></h3>
 		<div>
 			<?php
 				$results = $wp_slimstat_view->get_recent_keywords_pages();

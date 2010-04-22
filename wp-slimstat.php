@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress. Loosely based on <a href="http://slimstat.net/">Stephen Wettone's SlimStat</a>.
-Version: 2.0
+Version: 2.0-beta1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -175,11 +175,11 @@ class wp_slimstat {
 	// Description: This is the function which tracks visits
 	// Input: search string (optional)
 	// Output: search string (optional)
-	public function slimtrack( $_search_clause = '' ) {
+	public function slimtrack( $_argument = '' ) {
 		global $wpdb, $cookiehash;
 
 		// Is tracking enabled?
-		if (get_option('slimstat_is_tracking', 'yes') == 'no') return $_search_clause;
+		if (get_option('slimstat_is_tracking', 'yes') == 'no') return $_argument;
 		
 		// We do not want to track admin pages
 		if ( is_admin() ||
@@ -187,14 +187,14 @@ class wp_slimstat {
 				strstr($_SERVER['PHP_SELF'], 'wp-cron.php') ||
 				strstr($_SERVER['PHP_SELF'], 'xmlrpc.php') ||
 				strstr($_SERVER['PHP_SELF'], 'wp-login.php') ||
-				strstr($_SERVER['PHP_SELF'], 'wp-comments-post.php') ) return $_search_clause;
+				strstr($_SERVER['PHP_SELF'], 'wp-comments-post.php') ) return $_argument;
 
 		// Set $isIgnored to TRUE if this IP is blacklisted
 		$array_ip_to_ignore = get_option('slimstat_ignore_ip', array());
 
 		// Let's get the user's IP address
 		$long_user_ip = $this->_get_ip2long_remote_ip();
-		if ($long_user_ip === false) return $_search_clause;
+		if ($long_user_ip === false) return $_argument;
 
 		foreach($array_ip_to_ignore as $a_ip_range){
 			list ($ip_to_ignore, $mask) = split ("/", $a_ip_range);
@@ -202,7 +202,7 @@ class wp_slimstat {
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') ); 
 			$long_masked_user_ip = $long_user_ip & $long_mask;		
 			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
-			if ($long_masked_user_ip == $long_masked_ip_to_ignore) return $_search_clause;
+			if ($long_masked_user_ip == $long_masked_ip_to_ignore) return $_argument;
 		}
 
 		date_default_timezone_set('UTC');
@@ -220,7 +220,7 @@ class wp_slimstat {
 		}
 
 		// We want to record both hits and searches (through site search form)
-		if ( empty( $_REQUEST['q'] ) && empty( $_REQUEST['s'] ) && empty( $_search_clause ) ) {
+		if ( empty( $_REQUEST['q'] ) && empty( $_REQUEST['s'] ) ) {
 			$stat['searchterms'] = $this->_get_search_terms( $referer );
 			if ( isset( $_SERVER['REQUEST_URI'] ) ) {
 				$stat['resource'] = $wpdb->escape( $_SERVER['REQUEST_URI'] );
@@ -244,7 +244,7 @@ class wp_slimstat {
 		$array_resources_to_ignore = get_option('slimstat_ignore_resources', array());
 		foreach( $array_resources_to_ignore as $a_resource ) {
 			// TODO: use regolar expressions to filter resources
-			if ( strpos($a_resource, $stat['resource']) === 0 ) return $_search_clause;
+			if ( strpos($a_resource, $stat['resource']) === 0 ) return $_argument;
 		}
 		
 		// Loads the class to determine the user agent
@@ -269,12 +269,12 @@ class wp_slimstat {
 		$array_browsers_to_ignore = get_option('slimstat_ignore_browsers', array());
 		foreach( $array_browsers_to_ignore as $a_browser ) {
 			// TODO: use regolar expressions to filter browsers
-			if ( strpos($a_browser, $browser['browser'].'/'.$browser['version']) === 0 ) return $_search_clause;
+			if ( strpos($a_browser, $browser['browser'].'/'.$browser['version']) === 0 ) return $_argument;
 		}
 		
 		// If platform = unknown and css_version = 0, it's a bot
 		$ignore_bots = get_option('slimstat_ignore_bots', 'no');
-		if ( ($ignore_bots == 'yes') && ($browser['css_version'] == '0') && ($browser['platform'] == 'unknown') ) return $_search_clause;
+		if ( ($ignore_bots == 'yes') && ($browser['css_version'] == '0') && ($browser['platform'] == 'unknown') ) return $_argument;
 		
 		$stat['dt'] = gmdate('U');
 
@@ -328,7 +328,7 @@ class wp_slimstat {
 			$this->tid = $wpdb->get_var($select_sql);
 		}
 
-		return $_search_clause;
+		return $_argument;
 	}
 	// end slimtrack
 
@@ -616,7 +616,7 @@ class wp_slimstat {
 $wp_slimstat = new wp_slimstat();
 
 // Define when we want to run the tracking: on init
-add_action( 'init', array( &$wp_slimstat, 'slimtrack' ), 5 );
+add_action( 'wp', array( &$wp_slimstat, 'slimtrack' ), 5 );
 
 // Initialization routine should be executed on activation
 register_activation_hook( __FILE__, array( &$wp_slimstat, 'activate' ) );

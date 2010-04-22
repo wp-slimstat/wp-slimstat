@@ -13,9 +13,8 @@ to filter hits based on the IP addresses, browser names and so on,  with just a 
 
 It's back, by popular demand! Yes, you asked for it and here it is: WP SlimStat 2.
 Completely rewritten from the ground up, lightweight, optimized, much more powerful
-and flexible. Please note: this is still an alpha version. It CAN be used in a production
+and flexible. Please note: this is a beta version. It CAN be used in a production
 environment, but some of the features (like filtering and 'more' links) are not active yet.
-So please don't submit a bug report for these.
 
 ## Features:
 * Tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
@@ -65,7 +64,15 @@ to Maintenance, that alert message should be gone.
 
 == Changelog ==
 
-= 2.0 =
+= 2.0-beta1 =
+* End of alpha phase
+* More reports added
+* You can now purge the database using filters (i.e. delete rows whose IP is...)
+* Code optimizations
+* Improved localizations
+* Updated version of browscap.ini
+
+= 2.0-alpha =
 * First release after four years. Too many things have changed to list them here ;)
 
 == Updating IP-to-Country ==
