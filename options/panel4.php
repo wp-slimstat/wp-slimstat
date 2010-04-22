@@ -32,6 +32,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			</select>
 			<input type="text" name="options[conditional_delete_value]" id="delete_value" value="" size="20">
 			<input type="submit" value="<?php _e('DELETE','wp-slimstat-options') ?>" class="button-primary" name="Submit">
+			</form>
 		</td>
 	</tr>
 	<tr valign="top">
