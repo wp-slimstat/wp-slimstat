@@ -46,7 +46,7 @@
  min-width:50px;
  text-align:right;
 }
-.postbox p.slimstat-row span.left{
+.postbox p.slimstat-row span.element-title{
  float:left;
  text-align:left;
 }

@@ -4,10 +4,9 @@ Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews
 Requires at least: 2.9
 Tested up to: 3.0
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 
-A smart web analytics tool. Track visits, pageviews, pathstats, and much more. Configurable
-to filter hits based on the IP addresses, browser names and so on,  with just a few clicks.
+A smart web analytics tool. Track visits, pageviews, pathstats, and much more.
 
 == Description ==
 
@@ -28,11 +27,11 @@ environment, but some of the features (like filtering and 'more' links) are not 
 * The browser recognition database is automatically updated every 2 weeks
 * 10,000 hits use just 1.4 megabytes of DB space
 * Tracks internal searches
-* Filters IP addresses to ignore
-* Filters browsers, referrers and URLs to ignore
+* Filters hits based on IP addresses and networks, browsers, referrers and permalinks
 * Can restrict view/admin to specific users
 * Tracks screen resolution and other browser-related parameters
 * Uses WP timezone settings and date formatting
+* Content drill-down
 
 ## Third party technologies: 
 * GeoLite Country Database provided by [MaxMind](http://www.maxmind.com/app/geolitecountry?rId=piecesandbits)
@@ -41,19 +40,19 @@ environment, but some of the features (like filtering and 'more' links) are not 
 == Installation ==
 
 1. Upload the entire folder and all the subfolders to your Wordpress plugins' folder
-2. Activate the plugin in your admin panel
-3. Make sure your template calls the function `wp_footer()` somewhere (possibly just before the `</body>` tag)
-4. You'll see a new menu entry under the Dashboard, called "Analytics". If you don't want to configure WP SlimStat, you're done.
-5. You'll also have a new menu entry under Tools, called "SlimStat". Here you can customize all the options. 
+2. Activate it
+3. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
+4. You'll have a new menu entry under the Dashboard, "Analytics". If you don't want to configure WP SlimStat, you're done.
+5. To customize all its options, go to Settings > Slimstat. 
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
 
 ## Updating from 0.9.2
 
-Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2 to 2.0.
-I mean, you can still click on 'Update plugin' in the alert message you see inside your Plugins' admin panel,
+Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2 to 2.0.x
+I mean, you can still click on the link 'Update plugin' in the alert message you see inside your Plugins' admin panel,
 but once the update process is complete, WP SlimStat 2 won't be able to track anything. There's an easy fix,
-though: go under Tools > SlimStat > Maintenance. If you still have an 'old' db structure, you'll see an
-alert message "Old table detected" and a button to RESET it. Click on this button (YOU WILL LOSE ALL YOUR
+though: go to Settings > SlimStat > Maintenance. If you still have an 'old' db structure, you'll see a
+message "Old table detected" and a button to RESET it. Click on this button (YOU WILL LOSE ALL YOUR
 DATA COLLECTED BY WP-SlimStat 0.9.2!) and then deactivate/reactivate WP SlimStat. Now, if you go back
 to Maintenance, that alert message should be gone.
 
@@ -64,7 +63,13 @@ to Maintenance, that alert message should be gone.
 
 == Changelog ==
 
-= 2.0.1 (beta) =
+= 2.0.2 (beta2) =
+* Added full compatibility with right-to-left text orientation (i.e. Arabic and Hebrew)
+* Added filters for content drilldown
+* Added hourly graphs (click on a day on the graph to switch to this view)
+* Fixed a bug that prevented WP timezone to be correctly applied to all the metrics
+
+= 2.0.1 (beta1) =
 * End of alpha phase
 * More reports added
 * You can now purge the database using filters (i.e. delete rows whose IP is...)
@@ -74,15 +79,6 @@ to Maintenance, that alert message should be gone.
 
 = 2.0 (alpha) =
 * First release after four years. Too many things have changed to list them here ;)
-
-== Updating IP-to-Country ==
-
-Wp-SlimStat uses a local "IP to country" conversion table. The information is stored in your database.
-This is definitely faster than downloading an XML file from remote server for every single hit. But it
-also means that you need at least 2.6 megabyte of db space to host the table, and you will have to 
-update it manually, once in a while. Please check WP SlimStat homepage to see if a new version of this
-table is available. In this case just replace `geoip.csv` inside the plugin's folder and then deactivate
-and re-activate it from the admin interface.
 
 == Localization ==
 

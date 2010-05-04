@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress. Loosely based on <a href="http://slimstat.net/">Stephen Wettone's SlimStat</a>.
-Version: 2.0.1
+Version: 2.0.2
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -22,8 +22,6 @@ class wp_slimstat {
 	// Output: none
 	public function __construct() {
 		global $table_prefix;
-
-		$this->version = '2.0';
 
 		// We use a bunch of tables to store data
 		$this->table_stats = $table_prefix . 'slim_stats';
@@ -152,7 +150,10 @@ class wp_slimstat {
 
 		// Automatically purge stats db after x days (0 = no purge)
 		add_option('slimstat_auto_purge', '120', '', 'no');
-
+		
+		// Activate or deactivate the conversion of ip addresses into hostnames
+		add_option('slimstat_convert_ip_addresses', 'yes', '', 'no');
+		
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
@@ -204,8 +205,7 @@ class wp_slimstat {
 			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
 			if ($long_masked_user_ip == $long_masked_ip_to_ignore) return $_argument;
 		}
-
-		date_default_timezone_set('UTC');
+		
 		$stat = array();
 
 		if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
@@ -276,7 +276,7 @@ class wp_slimstat {
 		$ignore_bots = get_option('slimstat_ignore_bots', 'no');
 		if ( ($ignore_bots == 'yes') && ($browser['css_version'] == '0') && ($browser['platform'] == 'unknown') ) return $_argument;
 		
-		$stat['dt'] = gmdate('U');
+		$stat['dt'] = date_i18n('U');
 
 		// Now we insert the new browser in the lookup table, if it doesn't exist		
 		$insert_new_browser_sql = "INSERT INTO `$this->table_browsers` ( `" . implode( "`, `", array_keys( $browser ) ) . "` )

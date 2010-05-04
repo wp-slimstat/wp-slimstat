@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Custom Reports
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: This is not a real plugin, it just demonstrates how to add your custom reports to WP SlimStat.
-Version: 2.0.1
+Version: 2.0.2
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -28,8 +28,6 @@ class wp_slimstat_custom_reports {
 	// Output: none
 	public function __construct(){
 		global $table_prefix;
-		
-		$this->version = '2.0';
 		
 		$this->table_stats = $table_prefix . 'slim_stats';
 		$this->table_browsers = $table_prefix . 'slim_browsers';
@@ -69,14 +67,12 @@ class wp_slimstat_custom_reports {
 		echo '<h3>'.__( 'Title of your custom report', 'wp-slimstat-view' ).'</h3>';
 		
 		// You need this div here below only if your content is 'taller' than 180px
-		echo '<div>';
+		echo '<div class="container">';
 		foreach($results as $a_result){
-			echo "<p><span class='left'>{$a_result['resource']}</span> <span>{$a_result['count']}</span></p>";
+			echo "<p><span class='element-title'>{$a_result['resource']}</span> <span>{$a_result['count']}</span></p>";
 		}
 		// Don't forget to close your inner div, if you used it :)
-		echo '</div>';
-		
-		echo '</div></div>';
+		echo '</div></div></div>';
 
 	}
 	// end show_top_pages
