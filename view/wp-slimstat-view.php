@@ -231,10 +231,7 @@ class wp_slimstat_view {
 		global $wpdb;
 
 		$sql = "SELECT COUNT(*) count
-				FROM `$this->table_stats` t1
-				".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
-				WHERE 1=1
-				".$this->filters_date_sql_where.$this->filters_sql_where;
+				FROM `$this->table_stats`";
 
 		return intval($wpdb->get_var($sql));
 	}
