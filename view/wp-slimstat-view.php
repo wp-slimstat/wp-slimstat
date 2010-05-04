@@ -46,10 +46,11 @@ class wp_slimstat_view {
 		$this->previous_month['m'] = date_i18n('m', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-01") );
 		$this->previous_month['y'] = date_i18n('Y', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-01") );
 
+		$this->filters_sql_from = array('browsers' => '', 'screenres' => '');
+		$this->filters_sql_where = $this->filters_date_sql_where = '';
 		if (!empty($filters_parsed)){
 			$this->filters_query = $filters_query;
-			$this->filters_sql_from = array();
-			$this->filters_sql_where = '';
+			
 			foreach($filters_parsed as $a_filter_label => $a_filter_details){
 				// Skip filters on date
 				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year')){
@@ -103,8 +104,8 @@ class wp_slimstat_view {
 						break;
 				}
 			}
-			if (empty($this->filters_date_sql_where)) $this->filters_date_sql_where = "AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})";
 		}
+		if (empty($this->filters_date_sql_where)) $this->filters_date_sql_where = " AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})";
 	}
 
 	// Functions are declared in alphabetical order
