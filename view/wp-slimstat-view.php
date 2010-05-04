@@ -284,7 +284,7 @@ class wp_slimstat_view {
 					GROUP BY m, d
 					ORDER BY m ASC, d asc";
 		}
-		return $this->_extract_data_for_graph($sql, 1, __('Avg Pageviews','wp-slimstat-view'), __('Longest visit','wp-slimstat-view'), 2);
+		return $this->_extract_data_for_graph($sql, 4, __('Avg Pageviews','wp-slimstat-view'), __('Longest visit','wp-slimstat-view'), 2);
 	}
 
 	public function get_browsers(){
@@ -630,7 +630,7 @@ class wp_slimstat_view {
 					ORDER BY m ASC,d ASC";
 		}
 
-		return $this->_extract_data_for_graph($sql, 1, __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 0);
+		return $this->_extract_data_for_graph($sql, 3, __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 0);
 	}
 
 	public function get_visits_by_day(){
