@@ -43,8 +43,8 @@ your feedback if you find any bugs or unusual behaviors.
 1. Upload the entire folder and all the subfolders to your Wordpress plugins' folder
 2. Activate it
 3. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-4. You'll see a new menu entry under the Dashboard, called "Analytics".
-5. To customize all its options, go to Settings > Slimstat. 
+4. You'll see a new menu entry under the Dashboard, called "Analytics"
+5. To customize all its options, go to Settings > Slimstat
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
 
 ## Updating from 0.9.2
