@@ -13,7 +13,8 @@ A smart web analytics tool. Track visits, pageviews, pathstats, and much more.
 It's back, by popular demand! Yes, you asked for it and here it is: WP SlimStat 2.
 Completely rewritten from the ground up, lightweight, optimized, much more powerful
 and flexible. Please note: this is a beta version. It CAN be used in a production
-environment, but some of the features (like filtering and 'more' links) are not active yet.
+environment, but some features are still being developed or improved. Please send me
+your feedback if you find any bugs or unusual behaviors.
 
 ## Features:
 * Tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
@@ -42,13 +43,13 @@ environment, but some of the features (like filtering and 'more' links) are not 
 1. Upload the entire folder and all the subfolders to your Wordpress plugins' folder
 2. Activate it
 3. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-4. You'll have a new menu entry under the Dashboard, "Analytics". If you don't want to configure WP SlimStat, you're done.
+4. You'll see a new menu entry under the Dashboard, called "Analytics".
 5. To customize all its options, go to Settings > Slimstat. 
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
 
 ## Updating from 0.9.2
 
-Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2 to 2.0.x
+Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2 to 2.0.x.
 I mean, you can still click on the link 'Update plugin' in the alert message you see inside your Plugins' admin panel,
 but once the update process is complete, WP SlimStat 2 won't be able to track anything. There's an easy fix,
 though: go to Settings > SlimStat > Maintenance. If you still have an 'old' db structure, you'll see a
