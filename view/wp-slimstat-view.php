@@ -24,14 +24,12 @@ class wp_slimstat_view {
 		}
 		if (!empty($_GET['month'])){
 			$this->current_date['m'] = sprintf('%02d', $_GET['month']);
-			$this->month_filter_active = true;
 		}
 		else {
 			$this->current_date['m'] = date_i18n('m');
 		}
 		if (!empty($_GET['year'])){
 			$this->current_date['y'] = sprintf('%04d', $_GET['year']);
-			$this->year_filter_active = true;
 		}
 		else {
 			$this->current_date['y'] = date_i18n('Y');
@@ -47,7 +45,7 @@ class wp_slimstat_view {
 		$this->previous_month['y'] = date_i18n('Y', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-01") );
 
 		$this->filters_sql_from = array('browsers' => '', 'screenres' => '');
-		$this->filters_sql_where = $this->filters_date_sql_where = '';
+		$this->filters_sql_where = '';
 		if (!empty($filters_parsed)){
 			$this->filters_query = $filters_query;
 			
@@ -71,21 +69,6 @@ class wp_slimstat_view {
 							$this->filters_sql_where .= " AND `$a_filter_label` = '{$a_filter_details[0]}'";
 					}
 				}
-				else{
-					switch($a_filter_label){
-						case 'day':
-							$this->filters_date_sql_where .= " AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) = {$a_filter_details[0]}";
-							break;
-						case 'month':
-							$this->filters_date_sql_where .= " AND MONTH(FROM_UNIXTIME(`dt`)) = {$a_filter_details[0]}";
-							break;
-						case 'year':
-							$this->filters_date_sql_where .= " AND YEAR(FROM_UNIXTIME(`dt`)) = {$a_filter_details[0]}";
-							break;
-						default:
-							break;
-					}
-				}
 
 				// Some columns are in separate tables, so we need to join these tables
 				switch($a_filter_label){
@@ -105,7 +88,8 @@ class wp_slimstat_view {
 				}
 			}
 		}
-		if (empty($this->filters_date_sql_where)) $this->filters_date_sql_where = " AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})";
+		$this->filters_date_sql_where = " AND (YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']})";
+		if ($this->day_filter_active) $this->filters_date_sql_where .= " AND (DAYOFMONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['d']})";
 	}
 
 	// Functions are declared in alphabetical order
