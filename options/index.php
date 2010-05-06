@@ -21,6 +21,9 @@ $array_panels = array(
 // What panel to display
 $current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 
+// Text direction
+if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
+
 // Update the options
 if (isset($_POST['options'])){
 
@@ -130,7 +133,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 ?>
 
 <div class="wrap">
-	<div id="analytics-icon"></div>
+	<div id="analytics-icon" class="<?php echo $wp_locale->text_direction ?>"></div>
 	<h2 class="medium">
 		<?php
 		foreach($array_panels as $a_panel_id => $a_panel_details){

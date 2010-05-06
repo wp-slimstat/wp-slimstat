@@ -73,13 +73,12 @@ require_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
 $current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']); 
 
 // Text direction
-$text_direction = get_bloginfo('text_direction');
-if ($text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
+if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
 
 ?>
 
 <div class="wrap">
-	<div id="analytics-icon" class="<?php echo $text_direction ?>"></div>
+	<div id="analytics-icon" class="<?php echo $wp_locale->text_direction ?>"></div>
 	<h2 class="medium">
 		<?php		
 		foreach($array_panels as $a_panel_id => $a_panel_name){
@@ -99,7 +98,7 @@ if ($text_direction != 'ltr') $array_panels = array_reverse($array_panels, true)
 				echo "<input type='hidden' name='{$a_filter_label}-op' value='{$a_filter_details[1]}'>";
 			}
 		?>
-		<p><span class="<?php echo $text_direction ?>"><?php _e('Filter pageviews where','wp-slimstat-view') ?>
+		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter pageviews where','wp-slimstat-view') ?>
 			<select name="filter">
 				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
 				<option value="version"><?php _e('Browser version','wp-slimstat-view') ?></option>
@@ -122,7 +121,7 @@ if ($text_direction != 'ltr') $array_panels = array_reverse($array_panels, true)
 				<option value="ends with"><?php _e('Ends with','wp-slimstat-view') ?></option>
 			</select>
 			<input type="text" name="f_value" value="" size="15">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-			<span class="<?php echo $text_direction ?>"><?php _e('Filter by date','wp-slimstat-view') ?> <select name="day" style="width:8em">
+			<span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter by date','wp-slimstat-view') ?> <select name="day" style="width:8em">
 				<option value=""><?php _e('Day','wp-slimstat-view') ?></option>
 				<option>01</option><option>02</option><option>03</option><option>04</option><option>05</option>
 				<option>06</option><option>07</option><option>08</option><option>09</option><option>10</option>

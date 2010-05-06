@@ -5,7 +5,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 ?>
-<div class="metabox-holder <?php echo $text_direction ?> wide">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?> wide">
 	<div class="postbox">
 		<h3><?php 
 			if (!$wp_slimstat_view->day_filter_active){
@@ -29,7 +29,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<h3><?php _e( 'About WP-SlimStat', 'wp-slimstat-view' ); ?></h3>
 		<div class="container noscroll">
@@ -43,7 +43,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<h3><?php 
 			_e( 'Summary for', 'wp-slimstat-view' ); 
@@ -71,7 +71,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'User agents', 'wp-slimstat-view' ); ?></h3>
@@ -94,7 +94,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder medium <?php echo $text_direction ?>">
+<div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Popular pages of all time', 'wp-slimstat-view' ); ?></h3>
@@ -124,7 +124,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Recent Keywords', 'wp-slimstat-view' ); ?></h3>
@@ -149,7 +149,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Recent Countries', 'wp-slimstat-view' ); ?></h3>
@@ -171,7 +171,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder medium <?php echo $text_direction ?>">
+<div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><span><?php _e( 'Traffic Sources Overview', 'wp-slimstat-view' ); ?></span></h3>

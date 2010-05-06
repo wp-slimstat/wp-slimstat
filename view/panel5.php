@@ -7,7 +7,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 if (!has_action('wp_slimstat_custom_report')){ ?>
 
-<div class="metabox-holder medium <?php echo $text_direction ?>">
+<div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<h3><?php _e( 'Pluggable custom reports', 'wp-slimstat-view' ); ?></h3>
 		<div class="container noscroll">

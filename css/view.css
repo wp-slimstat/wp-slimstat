@@ -140,7 +140,26 @@
  min-width:100px;
  text-align:center;
 }
+
 /* Options Panel */
 .form-table th{
  width:150px;
+}
+.form-table td{
+ padding:3px 10px;
+}
+.form-table td.narrowcolumn{
+ width:80px;
+}
+.form-table td.shortrow{
+ padding:0 10px 20px;
+}
+.form-table input{
+ margin:0 8px 0 0;
+}
+.form-table.rtl input{
+ margin:0 0 0 8px;
+}
+.form-table a.button-secondary{
+ line-height:30px;
 }

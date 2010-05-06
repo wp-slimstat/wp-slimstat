@@ -5,7 +5,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 ?>
-<div class="metabox-holder wide <?php echo $text_direction ?>">
+<div class="metabox-holder wide <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<h3><?php 
 			if (!$wp_slimstat_view->day_filter_active){
@@ -29,7 +29,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Recent Contents', "wp-slimstat-view" ); ?></h3>
@@ -56,7 +56,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 	
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Top bouncing pages', 'wp-slimstat-view' ); ?></h3>
@@ -84,7 +84,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Recent Feeds', 'wp-slimstat-view' ); ?></h3>
@@ -109,7 +109,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder medium <?php echo $text_direction ?>">
+<div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Popular pages for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
@@ -138,7 +138,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder <?php echo $text_direction ?>">
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Recent 404 pages', 'wp-slimstat-view' ); ?></h3>
@@ -163,7 +163,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</div>
 </div>
 
-<div class="metabox-holder medium <?php echo $text_direction ?>">
+<div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Top Exit Pages', 'wp-slimstat-view' ); ?></h3>

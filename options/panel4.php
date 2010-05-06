@@ -9,7 +9,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <h3><?php _e('Please note that these commands cannot be undone!','wp-slimstat-options') ?></h3>
 
-<table class="form-table">
+<table class="form-table <?php echo $wp_locale->text_direction ?>" border="1">
 <tbody>
 	<tr valign="top">
 		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
