@@ -22,7 +22,7 @@ $wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_a
 		<td class="narrowcolumn">
 			<input type="radio" name="options[is_tracking]" id="is_tracking" value="yes"<?php echo ($wp_slimstat_options['is_tracking'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
 		</td>
-		<td>
+		<td class="widecolumn">
 			<input type="radio" name="options[is_tracking]" value="no" <?php echo ($wp_slimstat_options['is_tracking'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
 		</td>
 	</tr>
@@ -41,10 +41,10 @@ $wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_a
 	
 	<tr valign="top">
 		<th scope="row" rowspan="2"><label for="ignore_bots"><?php _e('Ignore bots','wp-slimstat-options') ?></label></th>
-		<td>
+		<td class="narrowcolumn">
 			<input type="radio" name="options[ignore_bots]" id="ignore_bots" value="yes"<?php echo ($wp_slimstat_options['ignore_bots'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
 		</td>
-		<td>
+		<td class="widecolumn">
 			<input type="radio" name="options[ignore_bots]" value="no" <?php echo ($wp_slimstat_options['ignore_bots'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>			
 		</td>
 	</tr>
@@ -69,10 +69,10 @@ $wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_a
 	
 	<tr valign="top">
 		<th scope="row" rowspan="2"><label for="convert_ip_addresses"><?php _e('Convert IP addresses','wp-slimstat-options') ?></label></th>
-		<td>
+		<td class="narrowcolumn">
 			<input type="radio" name="options[convert_ip_addresses]" id="convert_ip_addresses" value="yes"<?php echo ($wp_slimstat_options['convert_ip_addresses'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
 		</td>
-		<td>
+		<td class="widecolumn">
 			<input type="radio" name="options[convert_ip_addresses]" value="no" <?php echo ($wp_slimstat_options['convert_ip_addresses'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
 		</td>
 	</tr>
