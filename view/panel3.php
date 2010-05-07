@@ -54,7 +54,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
 					for($i=0;$i<$count_results;$i++){
-						// TODO: source clickable to enable filter
 						$show_title_tooltip = ($results[$i]['len'] > 30)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 30)?'...':'');
@@ -83,8 +82,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
 						$country = __('c-'.$results[$i]['short_string'],'countries-languages');
-					
-						// TODO: source clickable to enable filter				
+			
 						echo "<p$last_element><span class='element-title'>$country</span> <span class='narrowcolumn'>$percentage%</span></p>";
 					}
 				}
@@ -112,8 +110,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$percentage = ($count_pageviews_with_referer > 0)?intval(100*$results[$i]['count']/$count_pageviews_with_referer):0;
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
 						$element_url = 'http://'.$results[$i]['long_string'].$results[$i]['referer'];
-				
-						// TODO: source clickable to enable filter
+
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
 						echo $results[$i]['short_string']."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
@@ -137,10 +134,9 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 				} else {		
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
-						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
+						$percentage = ($search_engines > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$search_engines)):0;
 						$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
-					
-						// TODO: source clickable to enable filter				
+				
 						echo "<p$last_element><span class='element-title'>$search_engine_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
 					}
 				}
@@ -162,7 +158,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 				} else {
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
-						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
+						$percentage = ($count_pageviews_with_referer > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$count_pageviews_with_referer)):0;
 						$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
 					
 						// TODO: source clickable to enable filter				

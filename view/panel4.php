@@ -46,8 +46,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$show_title_tooltip = ($results[$i]['len'] > 30)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 30)?'...':'');
-					
-						// TODO: source clickable to enable filter
+
 						echo "<p$last_element$show_title_tooltip>$element_text</p>";
 					}
 				}
@@ -72,8 +71,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
 						$element_url = 'http://'.$_SERVER['SERVER_NAME'].$results[$i]['resource'];
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 23)?'...':'');
-				
-						// TODO: source clickable to enable filter
+
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
 						echo $element_text."</span> <span>{$results[$i]['count']}</span></p>";
@@ -99,8 +97,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$show_title_tooltip = ($results[$i]['len'] > 23)?' title="'.$results[$i]['resource'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 23)?'...':'');
-					
-						// TODO: source clickable to enable filter
+
 						echo "<p$last_element$show_title_tooltip>$element_text</p>";
 					}
 				}
@@ -126,8 +123,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
 						$element_url = 'http://'.get_bloginfo('url').$results[$i]['long_string'];
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 65)?'...':'');
-					
-						// TODO: source clickable to enable filter
+
 						echo "<p$last_element$show_title_tooltip><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>";
 						echo $element_text."</span> <span>{$results[$i]['count']}</span></p>";
@@ -153,8 +149,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$show_title_tooltip = ($results[$i]['len'] > 23)?' title="'.$results[$i]['resource'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 24)?'...':'');
-					
-						// TODO: source clickable to enable filter
+
 						echo "<p$last_element$show_title_tooltip>$element_text</p>";
 					}
 				}
@@ -181,11 +176,34 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
 						$element_url = 'http://'.$_SERVER['SERVER_NAME'].$results[$i]['resource'];
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 50)?'...':'');
-				
-						// TODO: source clickable to enable filter
+
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
 						echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+					}
+				}
+			?>
+		</div>
+	</div>
+</div>
+
+<div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
+	<div class="postbox">
+		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
+		<h3><?php _e( 'Recent Internal Searches', 'wp-slimstat-view' ); ?></h3>
+		<div class="container">
+			<?php
+				$results = $wp_slimstat_view->get_recent_internal_searches();
+				$count_results = count($results); // 0 if $results is null
+				if ($count_results == 0) {
+					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+				} else {
+					for($i=0;$i<$count_results;$i++){
+						$show_title_tooltip = ($results[$i]['len'] > 30)?' title="'.$results[$i]['searchterms'].'"':'';
+						$last_element = ($i == $count_results-1)?' class="last"':'';
+						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 30)?'...':'');
+
+						echo "<p$last_element$show_title_tooltip>$element_text</p>";
 					}
 				}
 			?>

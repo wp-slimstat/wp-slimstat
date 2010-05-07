@@ -435,6 +435,21 @@ class wp_slimstat_view {
 
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
+	
+	public function get_recent_internal_searches(){
+		global $wpdb;
+
+		$sql = "SELECT SUBSTRING(`searchterms`, 1, 30) short_string, `searchterms`, LENGTH(`searchterms`) len
+				FROM `$this->table_stats` t1
+				".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
+				WHERE `resource` = '__l_s__'
+				".$this->filters_date_sql_where.$this->filters_sql_where."
+				GROUP BY `searchterms`
+				ORDER BY `dt` DESC
+				LIMIT 0,20";
+
+		return $wpdb->get_results($sql, ARRAY_A);
+	}
 
 	public function get_recent_keywords_pages(){
 		global $wpdb;
