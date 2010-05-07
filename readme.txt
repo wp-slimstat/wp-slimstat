@@ -10,7 +10,7 @@ A smart web analytics tool. Track visits, pageviews, pathstats, and much more.
 
 == Description ==
 
-It's back, by popular demand! Yes, you asked for it and here it is: WP SlimStat 2.
+It's back, by popular demand! The first, the only, the inimitable: WP SlimStat 2.
 Completely rewritten from the ground up, lightweight, optimized, much more powerful
 and flexible. Please note: this is a beta version. It CAN be used in a production
 environment, but some features are still being developed or improved. Please send me
