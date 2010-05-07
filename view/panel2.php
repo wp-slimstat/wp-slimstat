@@ -159,7 +159,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 				} else {
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
-						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
+						$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_visitors)):0;
 						$platform = __($results[$i]['platform'],'countries-languages');				
 						echo "<p$last_element><span class='element-title'>$platform</span> <span>{$results[$i]['count']}</span> <span>$percentage%</span></p>";
 					}
@@ -177,12 +177,13 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			<?php
 				$results = $wp_slimstat_view->get_top_browsers_by_operating_system();
 				$count_results = count($results); // 0 if $results is null
+				
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
-						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
+						$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_visitors)):0;
 						$platform = __($results[$i]['platform'],'countries-languages');			
 						echo "<p$last_element><span class='element-title'>{$results[$i]['browser']} {$results[$i]['version']} / $platform</span> <span>{$results[$i]['count']}</span> <span>$percentage%</span></p>";
 					}

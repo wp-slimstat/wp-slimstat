@@ -169,7 +169,7 @@ class wp_slimstat_view {
 		$sql = "SELECT COUNT(*) count
 				FROM `$this->table_stats` t1
 				".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
-				WHERE `plugins` LIKE '%$_plugin_name%' AND `visit_id` > 0`
+				WHERE `plugins` LIKE '%$_plugin_name%' AND `visit_id` > 0
 				".$this->filters_date_sql_where.$this->filters_sql_where;
 
 		return intval($wpdb->get_var($sql));
