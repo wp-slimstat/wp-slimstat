@@ -10,6 +10,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
 load_plugin_textdomain('countries-languages', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
+// If a local translation for countries and languages does not exist, use English
+if (!isset($l10n['countries-languages'])){
+	load_textdomain('countries-languages', WP_PLUGIN_DIR .'/wp-slimstat/lang/countries-languages-en_US.mo');
+}
+
 // Define the panels
 $array_panels = array(
 	__('Dashboard','wp-slimstat-view'), 
