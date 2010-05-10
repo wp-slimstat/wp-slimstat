@@ -242,6 +242,11 @@ $wp_slimstat_dashboard = new wp_slimstat_dashboard();
 load_plugin_textdomain('wp-slimstat-dashboard', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
 load_plugin_textdomain('countries-languages', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
+// If a local translation for countries and languages does not exist, use English
+if (!isset($l10n['countries-languages'])){
+	load_textdomain('countries-languages', WP_PLUGIN_DIR .'/wp-slimstat/lang/countries-languages-en_US.mo');
+}
+
 // Add our custom stylesheets
 add_action('admin_print_styles-index.php', array( &$wp_slimstat_dashboard, 'slimstat_stylesheet'));
 
