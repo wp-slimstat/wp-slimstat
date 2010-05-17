@@ -213,6 +213,7 @@ class wp_slimstat {
 
 		foreach($array_ip_to_ignore as $a_ip_range){
 			list ($ip_to_ignore, $mask) = split ("/", $a_ip_range);
+			if (empty($mask)) $mask = 32;
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') ); 
 			$long_masked_user_ip = $long_user_ip & $long_mask;
