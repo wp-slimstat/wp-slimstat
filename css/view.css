@@ -1,0 +1,146 @@
+/* View Panel */
+#analytics-icon{
+ background:transparent url(../images/wp-slimstat.png) no-repeat scroll 0 0;
+ float:left;
+ height:36px;
+ margin:14px 6px 0 0;
+ width:36px;
+}
+#analytics-icon.rtl{
+ float:right;
+}
+.wrap form p{
+ margin:6px;
+}
+.wrap form p span{
+ float:left;
+}
+.wrap form p span.rtl{
+ float:right;
+}
+.wrap h2.medium{
+ border-bottom:1px solid #CCCCCC;
+ font-size:14px;
+ padding-bottom:0;
+}
+.wrap .menu-tabs{
+ -moz-border-radius:5px 5px 0 0;
+ background-color:transparent;
+ border-color:#CCCCCC;
+ border-style:solid;
+ border-width:1px 1px 0;
+ color:#464646;
+ font-weight:bold;
+ margin-right:6px;
+ padding:6px 20px 9px;
+ text-decoration:none;
+}
+.wrap .menu-tabs.menu-tab-inactive{
+ border-style:dashed;
+ font-weight:400;
+ padding:6px 10px 9px;
+}
+.metabox-holder{
+ float:left;
+ margin:0 6px;
+ width:253px;
+}
+.metabox-holder.rtl{
+ float:right;
+}
+.metabox-holder.medium{
+ margin:0 1px;
+ width:515px;
+}
+.metabox-holder.wide{
+ width:770px;
+}
+.metabox-holder h3{
+ cursor:default; 
+}
+.postbox{
+ height:197px;
+}
+.postbox div.more{
+ background:url("../images/gray-grad.png") repeat-x scroll left top #DFDFDF;
+ float:right;
+ font-size:0.85em;
+ height:20px;
+ padding:6px 6px 0;
+}
+.rtl .postbox div.more{
+ float:left;
+}
+.postbox div.container{
+ overflow-x:hidden;
+ overflow-y:auto;
+ height:171px;
+ width:255px;
+}
+.postbox div.container.noscroll{
+ overflow-y:hidden;
+}
+.medium .postbox div.container{
+ width:512px;
+}
+.wide .postbox div.container{
+ width:793px;
+}
+.postbox p{
+ border-bottom:1px dashed #ddd;
+ font-size:.85em;
+ height:1.6em;
+ margin:0;
+ padding:5px 5px 5px 6px;
+ display:block;
+}
+.postbox p.header{
+ background-color:#eee;
+}
+.postbox p.last{
+ border:0;
+}
+.postbox p.nodata{
+ border:0;
+ color:#999;
+ padding-top:70px;
+ text-align:center;
+}
+.postbox p img{
+ float:left;
+ padding:2px 6px 0 0;
+}
+.rtl .postbox p img{
+ float:right;
+ padding:2px 0 0 6px;
+}
+.postbox p span{
+ float:right;
+ min-width:50px;
+ text-align:right;
+ 
+}
+.rtl .postbox p span{
+ float:left;
+ text-align:left;
+}
+.postbox p span.element-title{
+ float:left;
+ text-align:left;
+}
+.rtl .postbox p span.element-title{
+ float:right;
+ text-align:right;
+}
+.postbox p span.narrowcolumn{
+ min-width:30px;
+ text-align:center;
+}
+.postbox p span.widecolumn{
+ min-width:100px;
+ text-align:center;
+}
+/* Options Panel */
+.form-table th{
+ width:150px;
+}
