@@ -119,7 +119,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($total_count > 0)?sprintf("%01.1f", (100*$results[$i]['count']/$total_count)):0;
 						$long2ip = long2ip($results[$i]['short_string']);
-						$host_by_ip = ($convert_ip_addresses == 'yes')?gethostbyaddr( $host_by_ip )." ($host_by_ip)":$long2ip;
+						$host_by_ip = ($convert_ip_addresses == 'yes')?gethostbyaddr( $long2ip )." ($long2ip)":$long2ip;
 						if (!isset($filters_parsed['ip'][0])) $host_by_ip = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=2$filters_query&ip=$long2ip'>$host_by_ip</a>";
 						
 						echo "<p$last_element><span class='element-title'>$host_by_ip</span> <span>{$results[$i]['count']}</span> <span>$percentage%</span></p>";
