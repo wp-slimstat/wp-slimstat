@@ -31,7 +31,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			$pages_referred = $wp_slimstat_view->count_pages_referred();
 			$referred_from_internal = $wp_slimstat_view->count_referred_from_internal();
 		?>
-		<h3><?php _e( 'Summary for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
+		<h3><?php 
+			_e( 'Summary for', 'wp-slimstat-view' ); 
+			echo ' ';
+			if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+			echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
 		<div class="container noscroll">
 			<p><span class="element-title"><?php _e( 'Unique Referers', 'wp-slimstat-view' ); ?></span> <span><?php echo $unique_referers ?></span></p>
 			<p><span class="element-title"><?php _e( 'Direct Visits', 'wp-slimstat-view' ); ?></span> <span><?php echo $direct_visits ?></span></p>
@@ -48,17 +52,18 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 		<h3><?php _e( 'Top Keywords', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php
-				$results = $wp_slimstat_view->get_top('searchterms');
+				$results = $wp_slimstat_view->get_top('searchterms', '', 26);
 				$count_results = count($results); // 0 if $results is null
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
 					for($i=0;$i<$count_results;$i++){
-						$show_title_tooltip = ($results[$i]['len'] > 30)?' title="'.$results[$i]['long_string'].'"':'';
+						$show_title_tooltip = ($results[$i]['len'] > 26)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
-						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 30)?'...':'');
+						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 26)?'...':'');
+						if (!isset($filters_parsed['searchterms'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&searchterms={$results[$i]['long_string']}'>$element_text</a>";
 					
-						echo "<p$show_title_tooltip$last_element><span class='element-title'>$element_text</span> <span>{$results[$i]['count']}</span></p>";
+						echo "<p$show_title_tooltip$last_element><span class='element-title'>$element_text</span> <span class='narrowcolumn' style='text-align:right'>{$results[$i]['count']}</span></p>";
 					}
 				}
 			?>
@@ -69,11 +74,15 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 <div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
-		<h3><?php _e( 'Countries for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
+		<h3><?php 
+			_e( 'Countries for', 'wp-slimstat-view' );
+			echo ' ';
+			if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+			echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
 		<div class="container">
 			<?php
 				$results = $wp_slimstat_view->get_top('country', '', 30, true);
-				$total_count = $wp_slimstat_view->count_total_pageviews();
+				$total_count = $wp_slimstat_view->count_total_pageviews(true);
 				$count_results = count($results); // 0 if $results is null
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
@@ -82,6 +91,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($total_count > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_count)):0;
 						$country = __('c-'.$results[$i]['short_string'],'countries-languages');
+						if (!isset($filters_parsed['country'][0])) $country = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&country={$results[$i]['short_string']}'>$country</a>";
 			
 						echo "<p$last_element><span class='element-title'>$country</span> <span class='narrowcolumn'>$percentage%</span></p>";
 					}
@@ -94,7 +104,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 <div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
-		<h3><?php _e( 'Traffic Sources for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
+		<h3><?php 
+			_e( 'Traffic Sources for', 'wp-slimstat-view' );
+			echo ' ';
+			if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+			echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
 		<div class="container">
 			<?php
 				$results = $wp_slimstat_view->get_top('domain', 'referer', 65, true);
@@ -110,10 +124,12 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$percentage = ($count_pageviews_with_referer > 0)?intval(100*$results[$i]['count']/$count_pageviews_with_referer):0;
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
 						$element_url = 'http://'.$results[$i]['long_string'].$results[$i]['referer'];
+						$element_text = $results[$i]['short_string'];
+						if (!isset($filters_parsed['domain'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&domain={$results[$i]['short_string']}'>$element_text</a>";
 
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-						echo $results[$i]['short_string']."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
 					}
 				}
 			?>
@@ -124,7 +140,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 <div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
-		<h3><?php _e( 'Search Engines for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
+		<h3><?php _e( 'Search Engines', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php
 				$results = $wp_slimstat_view->get_top_search_engines();
@@ -136,6 +152,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($search_engines > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$search_engines)):0;
 						$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
+						if (!isset($filters_parsed['domain'][0])) $search_engine_domain = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&domain={$results[$i]['domain']}'>$search_engine_domain</a>";
 				
 						echo "<p$last_element><span class='element-title'>$search_engine_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
 					}
@@ -148,7 +165,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 <div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
-		<h3><?php _e( 'Sites for', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y'];?></h3>
+		<h3><?php 
+			_e( 'Sites for', 'wp-slimstat-view' );
+			echo ' ';
+			if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+			echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y'];?></h3>
 		<div class="container">
 			<?php
 				$results = $wp_slimstat_view->get_other_referers();
@@ -159,10 +180,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($count_pageviews_with_referer > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$count_pageviews_with_referer)):0;
-						$search_engine_domain = str_replace('www.','', $results[$i]['domain']);
-					
-						// TODO: source clickable to enable filter				
-						echo "<p$last_element><span class='element-title'>$search_engine_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
+						$site_domain = str_replace('www.','', $results[$i]['domain']);
+						if (!isset($filters_parsed['domain'][0])) $site_domain = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&domain={$results[$i]['domain']}'>$site_domain</a>";
+				
+						echo "<p$last_element><span class='element-title'>$site_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
 					}
 				}
 			?>
@@ -185,11 +206,13 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_title = __('Open referer in a new window','wp-slimstat-view');
 						$trimmed_searchterms = $results[$i]['short_searchterms'].(($results[$i]['len_searchterms'] > 40)?'...':'');
+						$trimmed_searchterms = str_replace('\\', '', htmlspecialchars($trimmed_searchterms));
+						if (!isset($filters_parsed['searchterms'][0])) $trimmed_searchterms = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&searchterms={$results[$i]['short_searchterms']}'>$trimmed_searchterms</a>";
 						$show_searchterms_tooltip = ($results[$i]['len_searchterms'] > 40)?" title='{$results[$i]['searchterms']}'":'';
 						$trimmed_resource = $results[$i]['short_resource'].(($results[$i]['len_resource'] > 40)?'...':'');
+						if (!isset($filters_parsed['resource'][0])) $trimmed_resource = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&resource={$results[$i]['short_resource']}'>$trimmed_resource</a>";
 						$show_resource_tooltip = ($results[$i]['len_resource'] > 40)?" title='{$results[$i]['resource']}'":'';
-					
-						// TODO: source clickable to enable filter				
+				
 						echo "<p$last_element><span class='element-title'$show_searchterms_tooltip><a target='_blank' title='$element_title'";
 						echo " href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
 						echo $trimmed_searchterms."</span> <span$show_resource_tooltip>$trimmed_resource</span></p>";

@@ -23,97 +23,97 @@ msgstr ""
 #: wp-slimstat-dashboard.php:192
 #: wp-slimstat-dashboard.php:218
 msgid "No data to display"
-msgstr "Nessun dato da visualizzare"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:86
 msgid "c-"
-msgstr "c-"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:93
 #: wp-slimstat-dashboard.php:198
 #, php-format
 msgid "Open %s in a new window"
-msgstr "Apri %s in una nuova finestra"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:99
 msgid "Direct visit to"
-msgstr "Visita diretta a"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:112
 msgid "Total Hits"
-msgstr "Totale accessi"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:113
 msgid "Data Size"
-msgstr "Dimensione dati"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:114
 msgid "Tracking Active"
-msgstr "Tracciamento attivo"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:115
 msgid "Auto purge"
-msgstr "Pulizia DB"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:130
 msgid "Pageviews"
-msgstr "Accessi"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:131
 msgid "Unique IPs"
-msgstr "IP Unici"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:132
 msgid "Avg Pageviews"
-msgstr "Media accessi"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:133
 #: wp-slimstat-dashboard.php:134
 msgid "On"
-msgstr "Il"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:135
 msgid "Last Month"
-msgstr "Mese scorso"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:222
 msgid "Open referer in a new window"
-msgstr "Apri il riferimento in una nuova finestra"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:259
 msgid "Top 5 pages"
-msgstr "Prime 5 pagine"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:260
 msgid "Pathstats"
-msgstr "Dettagli accessi"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:261
 msgid "About"
-msgstr "Informazioni"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:262
 msgid "Summary of pageviews"
-msgstr "Sommario degli accessi"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:263
 msgid "User Agents"
-msgstr "Browser"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:264
 msgid "Recent Keywords"
-msgstr "Parole chiave recenti"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:265
 msgid "Traffic Sources"
-msgstr "Sorgenti di traffico"
+msgstr ""
 
 #: wp-slimstat-dashboard.php:266
 msgid "Recent Keywords &raquo; Pages"
-msgstr "Parole chiave &raquo; Pagine"
+msgstr ""
 
 #~ msgid "Analytics"
-#~ msgstr "Statistiche"
+#~ msgstr ""
 
 #~ msgid "Options"
-#~ msgstr "Opzioni"
+#~ msgstr ""

@@ -55,6 +55,9 @@
 .metabox-holder.wide{
  width:770px;
 }
+.metabox-holder.tall{
+ width:1005px;
+}
 .metabox-holder h3{
  cursor:default; 
 }
@@ -84,7 +87,17 @@
  width:512px;
 }
 .wide .postbox div.container{
- width:793px;
+ width:767px;
+}
+.tall .postbox{
+ height:455px;
+}
+.tall .postbox div.container{
+ height:430px;
+ width:1000px;
+}
+.postbox a.activate-filter{
+ text-decoration:none;
 }
 .postbox p{
  border-bottom:1px dashed #ddd;
@@ -118,7 +131,6 @@
  float:right;
  min-width:50px;
  text-align:right;
- 
 }
 .rtl .postbox p span{
  float:left;
@@ -139,6 +151,9 @@
 .postbox p span.widecolumn{
  min-width:100px;
  text-align:center;
+}
+.tall .postbox span{
+ margin:0 15px;
 }
 
 /* Options Panel */

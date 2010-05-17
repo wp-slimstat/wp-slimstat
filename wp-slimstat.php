@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress. Loosely based on <a href="http://slimstat.net/">Stephen Wettone's SlimStat</a>.
-Version: 2.0.2
+Version: 2.0.3
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -29,6 +29,7 @@ class wp_slimstat {
 		$this->table_browsers = $table_prefix . 'slim_browsers';
 		$this->table_screenres = $table_prefix . 'slim_screenres';
 		$this->table_visits = $table_prefix . 'slim_visits';
+		$this->table_outbound = $table_prefix . 'slim_outbound';
 
 		// We also use some tables from Wordpress default set
 		$this->table_options = $table_prefix . 'options';
@@ -55,15 +56,12 @@ class wp_slimstat {
 				`referer` VARCHAR(255) DEFAULT '',
 				`searchterms` VARCHAR(255) DEFAULT '',
 				`resource` VARCHAR(255) DEFAULT '',
-				`browser_id` SMALLINT UNSIGNED DEFAULT 0,
-				`screenres_id` SMALLINT UNSIGNED DEFAULT 0,
+				`browser_id` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+				`screenres_id` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
 				`plugins` VARCHAR(255) DEFAULT '',
-				`visit_id` INT UNSIGNED DEFAULT 0,
+				`visit_id` INT UNSIGNED NOT NULL DEFAULT 0,
 				`dt` INT(10) UNSIGNED DEFAULT 0,
-				UNIQUE KEY `id` (`id`),
-				FOREIGN KEY (`browser_id`) REFERENCES `$this->table_browsers` ON DELETE RESTRICT,
-				FOREIGN KEY (`screenres_id`) REFERENCES `$this->table_screenres` ON DELETE RESTRICT,
-				FOREIGN KEY (`visit_id`) REFERENCES `$this->table_visits` ON DELETE RESTRICT
+				PRIMARY KEY `id` (`id`)
 			)";
 
 		// We store in the database the information about Countries. So you don't
@@ -73,7 +71,7 @@ class wp_slimstat {
 				`ip_from` INT UNSIGNED DEFAULT 0,
 				`ip_to` INT UNSIGNED DEFAULT 0,
 				`country_code` CHAR(2) DEFAULT '',
-				INDEX `ip_from_idx` (`ip_from`)
+				KEY `ip_from_idx` (`ip_from`, `ip_to`)
 			)";
 
 		// A lookup table for browsers can help save some space
@@ -84,7 +82,7 @@ class wp_slimstat {
 				`version` VARCHAR(15) DEFAULT '',
 				`platform` VARCHAR(15) DEFAULT '',
 				`css_version` VARCHAR(5) DEFAULT '',
-				UNIQUE KEY `browser_id` (`browser_id`)
+				PRIMARY KEY (`browser_id`)
 			)";
 
 		// A lookup table for screen resolutions can help save some space, too
@@ -94,7 +92,7 @@ class wp_slimstat {
 				`resolution` VARCHAR(12) DEFAULT '',
 				`colordepth` VARCHAR(5) DEFAULT '',
 				`antialias` BOOL DEFAULT FALSE,
-				UNIQUE KEY `screenres_id` (`screenres_id`)
+				PRIMARY KEY (`screenres_id`)
 			)";
 
 		// This table will keep track of visits (user sessions of at most 30 minutes)
@@ -102,7 +100,19 @@ class wp_slimstat {
 			"CREATE TABLE IF NOT EXISTS `$this->table_visits` (
 				`visit_id` INT UNSIGNED NOT NULL auto_increment,
 				`tracking_code` VARCHAR(255) DEFAULT '',
-				UNIQUE KEY `visit_id` (`visit_id`)
+				PRIMARY KEY (`visit_id`)
+			)";
+
+		// This table will track outbound links (clicks on links to external sites)
+		$outbound_table_sql = 
+			"CREATE TABLE IF NOT EXISTS `$this->table_outbound` (
+				`outbound_id` INT UNSIGNED NOT NULL auto_increment,
+				`outbound_domain` VARCHAR(255) DEFAULT '',
+				`outbound_resource` VARCHAR(255) DEFAULT '',
+				`type` TINYINT UNSIGNED DEFAULT 0,
+				`id` INT UNSIGNED NOT NULL DEFAULT 0,
+				`dt` INT(10) UNSIGNED DEFAULT 0,
+				PRIMARY KEY (`outbound_id`)
 			)";
 
 		// Ok, let's create the table structure
@@ -110,6 +120,7 @@ class wp_slimstat {
 				$this->_create_table($browsers_table_sql, $this->table_browsers) &&
 				$this->_create_table($screen_res_table_sql, $this->table_screenres) &&
 				$this->_create_table($visits_table_sql, $this->table_visits) &&
+				$this->_create_table($outbound_table_sql, $this->table_outbound) &&
 				$this->_create_table($stats_table_sql, $this->table_stats) ) {
 			if (!$this->_import_countries()) {
 				// TODO: display an alert in the admin interface with instructions for manually uploading the file;
@@ -150,16 +161,19 @@ class wp_slimstat {
 
 		// Automatically purge stats db after x days (0 = no purge)
 		add_option('slimstat_auto_purge', '120', '', 'no');
-		
+
 		// Activate or deactivate the conversion of ip addresses into hostnames
 		add_option('slimstat_convert_ip_addresses', 'yes', '', 'no');
-		
+
+		// Track screen resolutions, outbound links and other stuff using a javascript component
+		add_option('slimstat_enable_javascript', 'yes', '', 'no');
+
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
 	}
 	// end activate
-	
+
 	// Function: deactivate
 	// Description: Performs some clean-up maintenance (disable cron job).
 	// Input: none
@@ -181,7 +195,7 @@ class wp_slimstat {
 
 		// Is tracking enabled?
 		if (get_option('slimstat_is_tracking', 'yes') == 'no') return $_argument;
-		
+
 		// We do not want to track admin pages
 		if ( is_admin() ||
 				strstr($_SERVER['PHP_SELF'], 'wp-content/') ||
@@ -201,11 +215,11 @@ class wp_slimstat {
 			list ($ip_to_ignore, $mask) = split ("/", $a_ip_range);
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') ); 
-			$long_masked_user_ip = $long_user_ip & $long_mask;		
+			$long_masked_user_ip = $long_user_ip & $long_mask;
 			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
 			if ($long_masked_user_ip == $long_masked_ip_to_ignore) return $_argument;
 		}
-		
+
 		$stat = array();
 
 		if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
@@ -234,19 +248,19 @@ class wp_slimstat {
 		} // end if ( empty( $_REQUEST['q'] ) && empty( $_REQUEST['s'] ) )
 		else {
 			$stat['searchterms'] = $wpdb->escape( $_REQUEST['s'] .' '. $_REQUEST['q'] );
-			
+
 			// Mark the resource to remember that this is a 'local search'
-			$stat['resource'] = '__l_s__';
+			$stat['resource'] = '';
 		} // end else 
 		if (is_404()) $stat['resource'] = '[404]'.$stat['resource'];
-	
+
 		// Is this resource blacklisted?
 		$array_resources_to_ignore = get_option('slimstat_ignore_resources', array());
 		foreach( $array_resources_to_ignore as $a_resource ) {
 			// TODO: use regolar expressions to filter resources
 			if ( strpos($a_resource, $stat['resource']) === 0 ) return $_argument;
 		}
-		
+
 		// Loads the class to determine the user agent
 		require 'browscap.php';
 
@@ -256,7 +270,7 @@ class wp_slimstat {
 		$stat['ip'] = sprintf( "%u", $long_user_ip );
 		$stat['language']	= $this->_get_language();
 		$stat['country']	= $this->_get_country( $stat['ip'] );
-		
+
 		$browser_details = $browscap->getBrowser( $_SERVER['HTTP_USER_AGENT'], true );
 
 		// This information goes into a separate lookup table
@@ -264,21 +278,21 @@ class wp_slimstat {
 		$browser['version'] = $browser_details['Version'];
 		$browser['platform'] = strtolower($browser_details['Platform']);
 		$browser['css_version'] = $browser_details['CssVersion'];
-	
+
 		// Is this browser blacklisted?
 		$array_browsers_to_ignore = get_option('slimstat_ignore_browsers', array());
 		foreach( $array_browsers_to_ignore as $a_browser ) {
 			// TODO: use regolar expressions to filter browsers
 			if ( strpos($a_browser, $browser['browser'].'/'.$browser['version']) === 0 ) return $_argument;
 		}
-		
+
 		// If platform = unknown and css_version = 0, it's a bot
 		$ignore_bots = get_option('slimstat_ignore_bots', 'no');
 		if ( ($ignore_bots == 'yes') && ($browser['css_version'] == '0') && ($browser['platform'] == 'unknown') ) return $_argument;
-		
+
 		$stat['dt'] = date_i18n('U');
 
-		// Now we insert the new browser in the lookup table, if it doesn't exist		
+		// Now we insert the new browser in the lookup table, if it doesn't exist
 		$insert_new_browser_sql = "INSERT INTO `$this->table_browsers` ( `" . implode( "`, `", array_keys( $browser ) ) . "` )
 			SELECT '" . implode( "', '", array_values( $browser ) ) . "'
 			FROM DUAL
@@ -293,7 +307,7 @@ class wp_slimstat {
 		$insert_new_browser_sql .= $select_sql . ")";
 		$wpdb->query($insert_new_browser_sql);
 		$stat['browser_id'] = $wpdb->insert_id; 
-	
+
 		if ( empty($stat['browser_id']) ) { // This can happen if the browser already exists in the table
 			$stat['browser_id'] = $wpdb->get_var($select_sql);
 		}
@@ -302,12 +316,12 @@ class wp_slimstat {
 		// If the same user visited the same page in the last x seconds (default 30), we can ignore it
 		// This should save some space in the database
 		$ignore_interval = intval(get_option('slimstat_ignore_interval', '30'));
-	
+
 		$insert_new_hit_sql = "INSERT INTO `$this->table_stats` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
 			SELECT '" . implode( "', '", array_values( $stat ) ) . "'
 			FROM DUAL
 			WHERE NOT EXISTS ( ";
-	
+
 		$select_sql = "SELECT `id` 
 				FROM `$this->table_stats`
 				WHERE ";
@@ -338,9 +352,9 @@ class wp_slimstat {
 	// Output: boolean to detect if table was created
 	private function _create_table($_sql = '', $_tablename = '') {
 	    global $wpdb;
-	
+
 		$wpdb->query( $_sql );
-	
+
 		// Let's make sure this table was actually created
 		foreach ( $wpdb->get_col("SHOW TABLES", 0) as $a_table ) {
 			if ( $a_table == $_tablename ) {
@@ -357,9 +371,9 @@ class wp_slimstat {
 	// Output: boolean to detect if table was filled
 	private function _import_countries() {
 		global $wpdb;
-	
+
 		$country_file = "geoip.csv";
-	
+
 		// To avoid problems with SAFE_MODE, we will not use is_file
 		// or file_exists, but a loop to scan current directory
 		$is_country_file = false;
@@ -380,10 +394,10 @@ class wp_slimstat {
 
 		// Allow plenty of time for this to happen
 		@set_time_limit( 600 ); 
-		
+
 		// Since the file can be too big, we are not using file_get_contents to not exceed the server's memory limit
 		if (!$handle = fopen( WP_PLUGIN_DIR."/wp-slimstat/".$country_file, "r" )) return false;
-	
+
 		$insert_sql = "INSERT INTO `$this->table_countries` ( `ip_from`, `ip_to`, `country_code` ) VALUES ";
 		$row_counter = 0;
 
@@ -406,7 +420,7 @@ class wp_slimstat {
 			$wpdb->query($insert_sql);
 		}
 		fclose( $handle );
-		return true;	
+		return true;
 	}
 	// end _import_countries
 
@@ -416,14 +430,14 @@ class wp_slimstat {
 	// Output: country name
 	private function _get_country( $_ip = '') {
 		global $wpdb;
-	
+
 		$sql = "SELECT `country_code` 
 					FROM `$this->table_countries`
 					WHERE `ip_from` <= $_ip AND `ip_to` >= $_ip";
 
 		$country_code = $wpdb->get_var( $sql, 0 , 0 );
 		if ( !empty( $country_code ) ) return $country_code;
-	
+
 		return 'xx';
 	}
 	// end _get_country
@@ -433,15 +447,22 @@ class wp_slimstat {
 	// Input: none
 	// Output: IP address converted as long integer
 	private function _get_ip2long_remote_ip() {
-		if (long2ip($long_ip = ip2long($_SERVER["HTTP_CLIENT_IP"])) == $_SERVER["HTTP_CLIENT_IP"]) return $long_ip;
-		foreach (explode(",",$_SERVER["HTTP_X_FORWARDED_FOR"]) as $a_ip) {
-			if (long2ip($long_ip = ip2long($a_ip)) == $a_ip) return $long_ip;
+		if (isset($_SERVER["HTTP_CLIENT_IP"]) && 
+			long2ip($long_ip = ip2long($_SERVER["HTTP_CLIENT_IP"])) == $_SERVER["HTTP_CLIENT_IP"]) return $long_ip;
+		if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
+			foreach (explode(",",$_SERVER["HTTP_X_FORWARDED_FOR"]) as $a_ip) {
+				if (long2ip($long_ip = ip2long($a_ip)) == $a_ip) return $long_ip;
+			}
 		}
-		if (long2ip($long_ip = ip2long($_SERVER["HTTP_X_FORWARDED"])) == $_SERVER["HTTP_X_FORWARDED"]) return $long_ip;
-		if (long2ip($long_ip = ip2long($_SERVER["HTTP_FORWARDED_FOR"])) == $_SERVER["HTTP_FORWARDED_FOR"]) return $long_ip;
-		if (long2ip($long_ip = ip2long($_SERVER["HTTP_FORWARDED"])) == $_SERVER["HTTP_FORWARDED"]) return $long_ip;
-		if (long2ip($long_ip = ip2long($_SERVER["REMOTE_ADDR"])) == $_SERVER["REMOTE_ADDR"]) return $long_ip;
-	
+		if (isset($_SERVER["HTTP_X_FORWARDED"]) &&
+			long2ip($long_ip = ip2long($_SERVER["HTTP_X_FORWARDED"])) == $_SERVER["HTTP_X_FORWARDED"]) return $long_ip;
+		if (isset($_SERVER["HTTP_FORWARDED_FOR"]) &&
+			long2ip($long_ip = ip2long($_SERVER["HTTP_FORWARDED_FOR"])) == $_SERVER["HTTP_FORWARDED_FOR"]) return $long_ip;
+		if (isset($_SERVER["HTTP_FORWARDED"]) &&
+			long2ip($long_ip = ip2long($_SERVER["HTTP_FORWARDED"])) == $_SERVER["HTTP_FORWARDED"]) return $long_ip;
+		if (isset($_SERVER["REMOTE_ADDR"]) &&
+			long2ip($long_ip = ip2long($_SERVER["REMOTE_ADDR"])) == $_SERVER["REMOTE_ADDR"]) return $long_ip;
+		
 		return false;
 	}
 	// end _get_ip2long_remote_ip
@@ -453,12 +474,12 @@ class wp_slimstat {
 	private function _get_language() {
 		global $wpdb;
 		$array_languages = array(); 
-	
+
 		if( isset( $_SERVER["HTTP_ACCEPT_LANGUAGE"] ) ) {
-	
+
 			// Capture up to the first delimiter (, found in Safari)
 			preg_match( "/([^,;]*)/", $_SERVER["HTTP_ACCEPT_LANGUAGE"], $array_languages );
-		
+
 			// Fix some codes, the correct syntax is with minus (-) not underscore (_)
 			return $wpdb->escape( str_replace( "_", "-", strtolower( $array_languages[0] ) ) );
 		}
@@ -472,18 +493,18 @@ class wp_slimstat {
 	// Output: a string of search terms, sanitized
 	private function _get_search_terms( $_url = '' ) { 
 		global $wpdb;
-	
+
 		$q = array();
 		$search_terms = '';
 		$array_url = $_url;
-	
+
 		if( !is_array( $_url ) ) {
 			$array_url = @parse_url( $_url );
 			if (!$array_url) return '';
 		}
-	
+
 		if( !isset( $array_url['host'] ) || !isset( $array_url['query'] ) ) return '';
-		
+
 		// Host regexp, query portion containing search terms
 		$array_sniffs = array( 
 			array( '/google\./i', 'q' ),
@@ -510,7 +531,7 @@ class wp_slimstat {
 			array( '/.*/', 'query' ),
 			array( '/.*/', 'q' )
 		);
-		
+
 		foreach ( $array_sniffs as $a_sniff ) {
 			if( preg_match( $a_sniff[0], $array_url['host'] ) ) {
 				parse_str( $array_url['query'], $q );
@@ -531,15 +552,15 @@ class wp_slimstat {
 	// Output: none
 	public function wp_slimstat_purge() {
 		global $wpdb;
-	
+
 		if (($autopurge_interval = intval(get_option('slimstat_auto_purge', 0))) <= 0) return;
-	
+
 		$autopurge_interval = strtotime("-$autopurge_interval day");
-		
+
 		// Delete old entries
 		$delete_sql = "DELETE FROM `$this->table_stats` WHERE `dt` <= '$autopurge_interval'";
 		$wpdb->query($delete_sql);
-		
+
 		// Delete unreferred visits (while keeping the info about browsers and screenres)
 		$delete_sql = "DELETE tv
 						FROM `$this->table_visits` tv LEFT JOIN `$this->table_stats` ts
@@ -566,13 +587,13 @@ class wp_slimstat {
 	// Output: none
 	public function wp_slimstat_add_view_menu( $_s ) {
 		global $current_user;
-	
+
 		// Load localization files
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
-	
+
 		$array_allowed_users = get_option('slimstat_can_view');
 		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users) || current_user_can('manage_options')) {
-			add_submenu_page( 'index.php', __('Analytics','wp-slimstat'), __('Analytics','wp-slimstat'), 1, WP_PLUGIN_DIR.'/wp-slimstat/view/index.php' );
+			add_submenu_page( 'index.php', 'SlimStat', 'SlimStat', 1, WP_PLUGIN_DIR.'/wp-slimstat/view/index.php' );
 		}
 		return $_s;
 	}
@@ -584,7 +605,7 @@ class wp_slimstat {
 	// Output: none
 	public function wp_slimstat_add_config_menu( $_s ) {
 		global $current_user;
-	
+
 		$array_allowed_users = get_option('slimstat_can_admin');
 		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users)) {
 			add_options_page( 'SlimStat', 'SlimStat', 'manage_options', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php' );
@@ -626,12 +647,14 @@ register_deactivation_hook( __FILE__, array( &$wp_slimstat, 'deactivate' ) );
 add_action( 'admin_menu', array( &$wp_slimstat, 'wp_slimstat_add_view_menu' ) );
 add_action( 'admin_menu', array( &$wp_slimstat, 'wp_slimstat_add_config_menu' ) );
 
-// Add some custom styles and jQuery libraries
+// Add some custom styles
 add_action('admin_print_styles-wp-slimstat/view/index.php', array( &$wp_slimstat, 'wp_slimstat_stylesheet') );
 add_action('admin_print_styles-wp-slimstat/options/index.php', array( &$wp_slimstat, 'wp_slimstat_stylesheet') );
 
-// TODO: get_option to see if user wants to track this information
-add_action('wp_footer', array( &$wp_slimstat,'wp_slimstat_javascript'), 10);
+// Track screen resolutions, outbound links and other stuff using a javascript component
+if (get_option('slimstat_enable_javascript', 'no') == 'yes'){
+	add_action('wp_footer', array( &$wp_slimstat,'wp_slimstat_javascript'), 10);
+}
 
 // Create a hook to use with the daily cron job
 add_action('wp_slimstat_purge', array( &$wp_slimstat,'wp_slimstat_purge') );

@@ -21,6 +21,7 @@ $array_panels = array(
 	__('Visitors','wp-slimstat-view'), 
 	__('Traffic Sources','wp-slimstat-view'), 
 	__('Content','wp-slimstat-view'), 
+	__('Raw Data','wp-slimstat-view'), 
 	__('Custom Reports','wp-slimstat-view')
 );
 

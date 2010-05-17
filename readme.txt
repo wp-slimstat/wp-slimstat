@@ -4,7 +4,7 @@ Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews
 Requires at least: 2.9
 Tested up to: 3.0
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 
 A smart web analytics tool. Track visits, pageviews, pathstats, and much more.
 
@@ -16,40 +16,34 @@ and flexible. Please note: this is a beta version. It CAN be used in a productio
 environment, but some features are still being developed or improved. Please send me
 your feedback if you find any bugs or unusual behaviors.
 
-## Features:
+## Main Features:
 * Tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
-* Loosely based on Wettone's [SlimStat 2](http://slimstat.net/)
-* Reuses some of the features introduced by [Wp-SlimStat-Ex](http://082net.com/2006/756/wp-slimstat-ex-plugin-en/)
-* You can develop your own reports and add them to WP SlimStat
-* Reorganized interface, easier to use and understand
+* Tracks outbound links and downloads
+* Tracks internal searches
+* Tracks screen resolutions and other browser-related parameters
+* Extendable API to let you develop your own reports
 * Fully localizable in your language (please contribute!)
 * The best country, browser and platform detection ever seen (thanks to [Browscap](http://code.google.com/p/phpbrowscap/) and [MaxMind](http://www.maxmind.com/) )
-* Real-time graphs to help you visualize your visitors' trends (thanks to [FusionCharts](http://www.fusioncharts.com/free/) free edition)
+* Real-time charts to help you visualize your visitors' trends (thanks to [FusionCharts](http://www.fusioncharts.com/free/) free edition)
 * The browser recognition database is automatically updated every 2 weeks
 * 10,000 hits use just 1.4 megabytes of DB space
-* Tracks internal searches
-* Filters hits based on IP addresses and networks, browsers, referrers and permalinks
+* Ignore hits based on IP addresses and networks, browsers, referrers and permalinks
 * Can restrict view/admin to specific users
-* Tracks screen resolution and other browser-related parameters
 * Uses WP timezone settings and date formatting
-* Content drill-down
-
-## Third party technologies: 
-* GeoLite Country Database provided by [MaxMind](http://www.maxmind.com/app/geolitecountry?rId=piecesandbits)
-* [Browser Capabilities PHP Project](http://code.google.com/p/phpbrowscap/)
+* Has filters for content drill-down
 
 == Installation ==
 
 1. Upload the entire folder and all the subfolders to your Wordpress plugins' folder
 2. Activate it
 3. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-4. You'll see a new menu entry under the Dashboard, called "Analytics"
+4. You'll see a new entry under the Dashboard menu
 5. To customize all its options, go to Settings > Slimstat
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
 
 ## Updating from 0.9.2
 
-Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2 to 2.0.x.
+Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2.
 I mean, you can still click on the link 'Update plugin' in the alert message you see inside your Plugins' admin panel,
 but once the update process is complete, WP SlimStat 2 won't be able to track anything. There's an easy fix,
 though: go to Settings > SlimStat > Maintenance. If you still have an 'old' db structure, you'll see a
@@ -64,22 +58,28 @@ to Maintenance, that alert message should be gone.
 
 == Changelog ==
 
+= 2.0.3 (beta3) =
+* Added 'internal searches' metrics
+* Added a new option to track outbound links and downloads
+* Added a new option to update the ip-to-countries conversion table
+* Added a new view to access the 'raw' information recorded by WP SlimStat
+* Metrics are now clickable to enable the corresponding filter
+* Countries and languages: if a localization is not available, use English names instead of country codes
+* Geolocalization: updated the information in the CSV file included
+* Fixed some bugs in the CSS to support right-to-left text orientation
+* Fixed a bug that prevented filtering users who can view/config WP SlimStat reports
+* Fixed a bug with InnoDB db type
+* Fixed a bug that made IE display an alert message about 'installing potentially dangerous software'
+* Fixed a bug in calculating some of the percentages shown in the metrics
+* Fixed a bug in generating the URL's associated to the external links listed in some metrics
+* Fixed a bug in creating WP SlimStat tables: it looks like MyISAM 5.0 does not like foreign keys
+* Code and SQL optimizations
+
 = 2.0.2 (beta2) =
 * Added full compatibility with right-to-left text orientation (i.e. Arabic and Hebrew)
 * Added filters for content drilldown
 * Added hourly graphs (click on a day on the graph to switch to this view)
 * Fixed a bug that prevented WP timezone to be correctly applied to all the metrics
-
-= 2.0.1 (beta1) =
-* End of alpha phase
-* More reports added
-* You can now purge the database using filters (i.e. delete rows whose IP is...)
-* Code optimizations
-* Improved localizations
-* Updated version of browscap.ini
-
-= 2.0 (alpha) =
-* First release after four years. Too many things have changed to list them here ;)
 
 == Localization ==
 

@@ -62,13 +62,47 @@ $stat = array();
 // This secret key is used to make sure the script only works when called from a legitimate referer (the blog itself!)
 if (($secret_key = slimstat_get_option('slimstat_secret')) === false) exit;
 $site_url = slimstat_get_option('siteurl');
-$is_coming_from_same_domain = (!empty($_SERVER['HTTP_REFERER']) && (strpos($_SERVER['HTTP_REFERER'], $site_url) === 0) );
+
+// This request is not coming from the same domain
+if (empty($_SERVER['HTTP_REFERER']) || (strpos($_SERVER['HTTP_REFERER'], $site_url) === false) ) exit;
 
 // Is the ID valid?
-if (empty($_GET['id']) || ($_GET['sid'] != md5($_GET['id'].$secret_key)) || !$is_coming_from_same_domain ) exit;
+if ( empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($_GET['id'].$secret_key)))) exit;
+else {
+	// Prepare the information to be store into the database
+	$stat['id'] = isset( $_GET['id'] )?intval( $_GET['id'] ):0;
+}
 
-// Prepare the information to be store into the database
-$stat['id'] = intval(mysql_real_escape_string( $_GET['id'] ));
+// This script can be called either to track outbound links (and downloads) or 'returning' visitors
+if (!empty($_GET['obr'])){
+	$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string( strip_tags($_GET['obd']) ):'';
+	if ( strlen( $_GET['obr'] ) > 0 && substr( $_GET['obr'], 0, 1 ) != '/' ) $stat['outbound_resource'] = '/'.$_GET['obr'];
+	$stat['outbound_resource'] = mysql_real_escape_string( strip_tags($stat['outbound_resource']) );
+	$stat['type'] = isset($_GET['ty'])?intval($_GET['ty']):1; // type=1 stands for download
+	
+	$timezone = slimstat_get_option('timezone_string');
+	if (!empty($timezone)) date_default_timezone_set($timezone);
+	$lt = localtime();
+	if (!empty($timezone)) date_default_timezone_set('UTC');
+	$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
+	
+	$insert_new_outbound_sql = "INSERT INTO `{$table_prefix}slim_outbound` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
+			SELECT '" . implode( "', '", array_values( $stat ) ) . "'
+			FROM DUAL
+			WHERE NOT EXISTS ( 
+				SELECT `outbound_id` 
+				FROM `{$table_prefix}slim_outbound`
+				WHERE ";
+	foreach ($stat as $a_key => $a_value) {
+		$insert_new_outbound_sql .= "`$a_key` = '$a_value'" . (($a_key != 'dt')?" AND ":" LIMIT 1 ");
+	}
+	$insert_new_outbound_sql .= ")";
+	
+	@mysql_query($insert_new_outbound_sql);
+	if (empty($_GET['go']) || $_GET['go'] == 'y') header('Location: '.$stat['outbound_domain'].$stat['outbound_resource']);
+	exit;
+}
+
 $stat['plugins'] = (!empty($_GET['pl']))?mysql_real_escape_string(substr(str_replace('|', ', ', $_GET['pl']), 0, -2)):'';
 $screenres['resolution'] = (!empty($_GET['sw']) && !empty($_GET['sh']))?mysql_real_escape_string( $_GET['sw'].'x'.$_GET['sh'] ):'';
 $screenres['colordepth'] = (!empty($_GET['cd']))?mysql_real_escape_string( $_GET['cd'] ):'';
@@ -123,7 +157,7 @@ $update_sql = "UPDATE `{$table_prefix}slim_stats`
 mysql_query($update_sql);
 mysql_close($db_handle);
 
-function slimstat_get_option($_option_name) {
+function slimstat_get_option($_option_name = '') {
 	global $table_prefix;
 	
 	$resource = @mysql_query("SELECT `option_value` FROM `{$table_prefix}options` WHERE `option_name` = '{$_option_name}'");
@@ -133,8 +167,7 @@ function slimstat_get_option($_option_name) {
 	else
 		return false;
 }
-
-function slimstat_get_var($_sql_query) {	
+function slimstat_get_var($_sql_query = '') {	
 	$resource = @mysql_query($_sql_query);
 	$result = @mysql_fetch_row($resource);
 	if (!empty($result[0]))

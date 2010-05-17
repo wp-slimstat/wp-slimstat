@@ -8,6 +8,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 // Load the options
 $wp_slimstat_options = array();
 $wp_slimstat_options['is_tracking'] = get_option('slimstat_is_tracking', 'yes');
+$wp_slimstat_options['enable_javascript'] = get_option('slimstat_enable_javascript', 'yes');
 $wp_slimstat_options['ignore_interval'] = intval(get_option('slimstat_ignore_interval', '30'));
 $wp_slimstat_options['ignore_bots'] = get_option('slimstat_ignore_bots', 'no');
 $wp_slimstat_options['auto_purge'] = intval(get_option('slimstat_auto_purge', '0'));
@@ -26,9 +27,27 @@ $wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_a
 			<input type="radio" name="options[is_tracking]" value="no" <?php echo ($wp_slimstat_options['is_tracking'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
 		</td>
 	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">&nbsp;</td>
+	</tr>
 	
 	<tr valign="top">
-		<th scope="row" rowspan="2"><label for="ignore_interval"><?php _e('Ignore interval','wp-slimstat-options') ?></label></th>
+		<th scope="row" rowspan="2"><label for="enable_javascript"><?php _e('Enable JS Tracking','wp-slimstat-options') ?></label></th>
+		<td class="narrowcolumn">
+			<input type="radio" name="options[enable_javascript]" id="ignore_bots" value="yes"<?php echo ($wp_slimstat_options['enable_javascript'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
+		</td>
+		<td class="widecolumn">
+			<input type="radio" name="options[enable_javascript]" value="no" <?php echo ($wp_slimstat_options['enable_javascript'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>			
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">
+			<span class="description"><?php _e('Adds a javascript code to your pages to track visits, screen resolutions, outbound links, downloads and more','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row" rowspan="2"><label for="ignore_interval"><?php _e('Latency','wp-slimstat-options') ?></label></th>
 		<td colspan="2">
 			<input type="text" name="options[ignore_interval]" id="ignore_interval" value="<?php echo $wp_slimstat_options['ignore_interval']; ?>" size="4"> <?php _e('seconds','wp-slimstat-options') ?>
 		</td>

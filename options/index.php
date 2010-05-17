@@ -30,6 +30,7 @@ if (isset($_POST['options'])){
 	$faulty_fields = '';
 	
 	if (!slimstat_update_option('slimstat_is_tracking', $_POST['options']['is_tracking'], 'yesno')) $faulty_fields = __('Activate tracking','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_enable_javascript', $_POST['options']['enable_javascript'], 'yesno')) $faulty_fields = __('Enable JS Tracking','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_ignore_interval', $_POST['options']['ignore_interval'], 'integer')) $faulty_fields .= __('Ignore interval','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_ignore_bots', $_POST['options']['ignore_bots'], 'yesno')) $faulty_fields .= __('Ignore bots','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_auto_purge', $_POST['options']['auto_purge'], 'integer')) $faulty_fields .= __('Auto purge','wp-slimstat-options').', ';
@@ -46,11 +47,10 @@ if (isset($_POST['options'])){
 		isset($_POST['options']['conditional_delete_value']) &&
 		($_POST['options']['conditional_delete_field'] == 'country' ||
 			$_POST['options']['conditional_delete_field'] == 'domain' ||
-			$_POST['options']['conditional_delete_field'] == 'ip' ||
 			$_POST['options']['conditional_delete_field'] == 'language' ||
 			$_POST['options']['conditional_delete_field'] == 'resource' ||
 			$_POST['options']['conditional_delete_field'] == 'searchterms')){
-		$escaped_value = $wpdb->escape($_POST['options']['conditional_delete_value']);
+			$escaped_value = $wpdb->escape($_POST['options']['conditional_delete_value']);
 		if ($_POST['options']['conditional_delete_operator'] == 'equal'){
 			$rows_affected =  $wpdb->query("DELETE FROM `{$table_prefix}slim_stats` 
 							WHERE `{$_POST['options']['conditional_delete_field']}` = '$escaped_value'");
@@ -145,7 +145,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 	</h2>
 
 	<?php
-		if (isset($_GET['ds'])){
+		if (isset($_GET['ds']) || isset($_GET['di2c'])){
 			echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 			if ($_GET['ds']=='yes'){
 				_e('Are you sure you want to remove all the information about your hits and visits?','wp-slimstat-options');
@@ -156,6 +156,15 @@ function slimstat_update_option( $_option, $_value, $_type ){
 				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_stats`");
 				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_visits`");
 				_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-options');
+			}
+			if ($_GET['di2c']=='yes'){
+				_e('Are you sure you want to drop the ip-to-countries table?','wp-slimstat-options');
+				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=confirm">'.__('Yes','wp-slimstat-options').'</a>';
+				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php">'.__('No','wp-slimstat-options').'</a>';
+			}
+			if ($_GET['di2c']=='confirm'){
+				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_countries`");
+				_e('Your IP-to-countries table has been successfully emptied. Now go to your Plugins panel and deactivate/reactivate WP SlimStat to load the new data.','wp-slimstat-options');
 			}
 			echo '</p></div>';
 		}
@@ -168,11 +177,11 @@ function slimstat_update_option( $_option, $_value, $_type ){
 		}
 	?>
 	
-	<?php if ($array_panels[$current_panel][1]) { ?><form action="options-general.php?page=wp-slimstat/options/index.php<?php if(!empty($_GET['slimpanel'])) echo '&slimpanel='.$_GET['slimpanel']; ?>" method="post"><?php } ?>
+	<?php if ($array_panels[$current_panel-1][1]) { ?><form action="options-general.php?page=wp-slimstat/options/index.php<?php if(!empty($_GET['slimpanel'])) echo '&slimpanel='.$_GET['slimpanel']; ?>" method="post"><?php } ?>
 	
 	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php"); ?>
 	
-	<?php if ($array_panels[$current_panel][1]) { ?><p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p><?php } ?>
+	<?php if ($array_panels[$current_panel-1][1]) { ?><p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p><?php } ?>
 
-<?php if ($array_panels[$current_panel][1]) { ?></form><?php } ?>
+<?php if ($array_panels[$current_panel-1][1]) { ?></form><?php } ?>
 </div>

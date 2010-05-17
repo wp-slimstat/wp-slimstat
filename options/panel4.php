@@ -9,7 +9,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <h3><?php _e('Please note that these commands cannot be undone!','wp-slimstat-options') ?></h3>
 
-<table class="form-table <?php echo $wp_locale->text_direction ?>" border="1">
+<table class="form-table <?php echo $wp_locale->text_direction ?>">
 <tbody>
 	<tr valign="top">
 		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
@@ -20,7 +20,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			<select name="options[conditional_delete_field]">
 				<option value="country"><?php _e('Country Code','wp-slimstat-options') ?></option>
 				<option value="domain"><?php _e('Domain','wp-slimstat-options') ?></option>
-				<option value="ip"><?php _e('IP','wp-slimstat-options') ?></option>
 				<option value="language"><?php _e('Language Code','wp-slimstat-options') ?></option>
 				<option value="resource"><?php _e('Permalink','wp-slimstat-options') ?></option>
 				<option value="searchterms"><?php _e('Search Terms','wp-slimstat-options') ?></option>
@@ -35,12 +34,30 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			</form>
 		</td>
 	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">&nbsp;</td>
+	</tr>
+	
 	<tr valign="top">
 		<th scope="row"><?php _e('Empty database','wp-slimstat-options') ?></th>
 		<td>
 			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=4"><?php _e('DELETE STATS','wp-slimstat-options'); ?></a>
 		</td>
 	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">&nbsp;</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row"><?php _e('Reset Ip-to-Countries','wp-slimstat-options') ?></th>
+		<td>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=4"><?php _e('EMPTY IP-TO-COUNTRIES','wp-slimstat-options'); ?></a>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">&nbsp;</td>
+	</tr>
+	
 <?php 
 if (!isset($wp_slimstat_object)) $wp_slimstat_object = new wp_slimstat();
 $check_column = $wpdb->get_var("SHOW COLUMNS FROM `$wp_slimstat_object->table_stats` LIKE 'browser_id'");
