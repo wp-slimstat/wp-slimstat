@@ -9,6 +9,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 $wp_slimstat_options = array();
 $wp_slimstat_options['is_tracking'] = get_option('slimstat_is_tracking', 'yes');
 $wp_slimstat_options['enable_javascript'] = get_option('slimstat_enable_javascript', 'yes');
+$wp_slimstat_options['browscap_autoupdate'] = get_option('slimstat_browscap_autoupdate', 'no');
 $wp_slimstat_options['ignore_interval'] = intval(get_option('slimstat_ignore_interval', '30'));
 $wp_slimstat_options['ignore_bots'] = get_option('slimstat_ignore_bots', 'no');
 $wp_slimstat_options['auto_purge'] = intval(get_option('slimstat_auto_purge', '0'));
@@ -43,6 +44,21 @@ $wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_a
 	<tr>
 		<td colspan="2" class="shortrow">
 			<span class="description"><?php _e('Adds a javascript code to your pages to track visits, screen resolutions, outbound links, downloads and more','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row" rowspan="2"><label for="browscap_autoupdate"><?php _e('Autoupdate Browsers DB','wp-slimstat-options') ?></label></th>
+		<td class="narrowcolumn">
+			<input type="radio" name="options[browscap_autoupdate]" id="ignore_bots" value="yes"<?php echo ($wp_slimstat_options['browscap_autoupdate'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
+		</td>
+		<td class="widecolumn">
+			<input type="radio" name="options[browscap_autoupdate]" value="no" <?php echo ($wp_slimstat_options['browscap_autoupdate'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>			
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">
+			<span class="description"><?php _e("Enables Browscap's autoupdate feature. Please make sure your <code>cache</code> subfolder is writable.",'wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 	

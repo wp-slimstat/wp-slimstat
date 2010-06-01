@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Custom Reports
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: This is not a real plugin, it just demonstrates how to add your custom reports to WP SlimStat.
-Version: 2.0.3
+Version: 2.0.4
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */

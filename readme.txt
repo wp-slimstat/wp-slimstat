@@ -58,6 +58,11 @@ to Maintenance, that alert message should be gone.
 
 == Changelog ==
 
+= 2.0.4 (release candidate 1) =
+* Moving into Release Candidate phase
+* Added an option to disable Browscap's autoupdate feature (to update browsers' definitions)
+* Fixed some bugs with SQL queries
+
 = 2.0.3 (beta3) =
 * Added 'internal searches' metrics
 * Added a new option to track outbound links and downloads

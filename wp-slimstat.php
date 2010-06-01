@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress. Loosely based on <a href="http://slimstat.net/">Stephen Wettone's SlimStat</a>.
-Version: 2.0.3
+Version: 2.0.4
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -267,6 +267,10 @@ class wp_slimstat {
 
 		// Creates a new Browscap object (loads or creates the cache)
 		$browscap = new browscap(WP_PLUGIN_DIR.'/wp-slimstat/cache');
+		
+		// Do autoupdate?
+		$do_autoUpdate = get_option('slimstat_browscap_autoupdate', 'no');
+		$browscap->doAutoUpdate = ($do_autoupdate == 'yes');
 
 		$stat['ip'] = sprintf( "%u", $long_user_ip );
 		$stat['language']	= $this->_get_language();

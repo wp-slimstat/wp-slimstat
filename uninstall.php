@@ -23,6 +23,7 @@ delete_option('slimstat_is_tracking');
 delete_option('slimstat_auto_purge');
 delete_option('slimstat_convert_ip_addresses');
 delete_option('slimstat_enable_javascript');
+delete_option('slimstat_browscap_autoupdate');
 
 // Remove scheduled autopurge events
 wp_clear_scheduled_hook('wp_slimstat_purge');

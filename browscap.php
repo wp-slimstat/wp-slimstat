@@ -440,8 +440,7 @@ class browscap
 		}
 
 		// Get updated .ini file
-		$browscap = $this->_getRemoteData($url);
-		
+		$browscap = $this->_getRemoteData($url);	
 		
 		$browscap = explode("\n", $browscap);
 		
