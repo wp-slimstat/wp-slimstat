@@ -679,7 +679,7 @@ class wp_slimstat_view {
 					".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
 					WHERE (DATE_FORMAT(FROM_UNIXTIME(t1.`dt`), '%Y-%m-%d') = '{$this->current_date_string}'
 						OR DATE_FORMAT(FROM_UNIXTIME(t1.`dt`), '%Y-%m-%d') = '{$this->yesterday_string}')
-						AND `domain` <> '' AND `domain` <> '{$_SERVER['SERVER_NAME']}')
+						AND `domain` <> '' AND `domain` <> '{$_SERVER['SERVER_NAME']}'
 						".$this->filters_sql_where."
 					GROUP BY h, d
 					ORDER BY d ASC, h asc";
