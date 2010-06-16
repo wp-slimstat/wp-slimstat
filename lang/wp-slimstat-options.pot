@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-14 15:45-0500\n"
-"PO-Revision-Date: 2010-05-14 15:48-0500\n"
+"POT-Creation-Date: 2010-06-16 12:44-0500\n"
+"PO-Revision-Date: 2010-06-16 12:44-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -37,148 +37,159 @@ msgid "Thank you"
 msgstr ""
 
 #: index.php:32
-#: panel1.php:22
+#: panel1.php:23
 msgid "Activate tracking"
 msgstr ""
 
 #: index.php:33
-#: panel1.php:35
+#: panel1.php:36
 msgid "Enable JS Tracking"
 msgstr ""
 
 #: index.php:34
-msgid "Ignore interval"
+#: panel1.php:51
+msgid "Autoupdate Browsers DB"
 msgstr ""
 
 #: index.php:35
-#: panel1.php:62
-msgid "Ignore bots"
+msgid "Ignore interval"
 msgstr ""
 
 #: index.php:36
-msgid "Auto purge"
+#: panel1.php:78
+msgid "Ignore bots"
 msgstr ""
 
 #: index.php:37
-#: panel1.php:90
-msgid "Convert IP addresses"
+msgid "Auto purge"
 msgstr ""
 
 #: index.php:38
-msgid "Ignore IPs"
+#: panel1.php:106
+msgid "Convert IP addresses"
 msgstr ""
 
 #: index.php:39
-msgid "Ignore resources"
+msgid "Ignore IPs"
 msgstr ""
 
 #: index.php:40
-msgid "Ignore browsers"
+msgid "Ignore resources"
 msgstr ""
 
 #: index.php:41
+msgid "Ignore browsers"
+msgstr ""
+
+#: index.php:42
 #: panel3.php:15
 msgid "Who can view the reports"
 msgstr ""
 
-#: index.php:42
+#: index.php:43
 #: panel3.php:24
 msgid "Who can manage these options"
 msgstr ""
 
-#: index.php:57
-#: index.php:62
-#: index.php:67
+#: index.php:58
+#: index.php:63
+#: index.php:68
 msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
 msgstr ""
 
-#: index.php:84
+#: index.php:85
 msgid "Your settings have been successfully updated."
 msgstr ""
 
-#: index.php:91
+#: index.php:92
 msgid "There was an error updating the following fields:"
 msgstr ""
 
-#: index.php:151
-msgid "Are you sure you want to remove all the information about your hits and visits?"
-msgstr ""
-
 #: index.php:152
-#: index.php:162
-#: panel1.php:24
-#: panel1.php:37
-#: panel1.php:64
-#: panel1.php:92
-msgid "Yes"
+msgid "Are you sure you want to remove all the information about your hits and visits?"
 msgstr ""
 
 #: index.php:153
 #: index.php:163
-#: panel1.php:27
-#: panel1.php:40
-#: panel1.php:67
-#: panel1.php:95
+#: panel1.php:25
+#: panel1.php:38
+#: panel1.php:53
+#: panel1.php:80
+#: panel1.php:108
+msgid "Yes"
+msgstr ""
+
+#: index.php:154
+#: index.php:164
+#: panel1.php:28
+#: panel1.php:41
+#: panel1.php:56
+#: panel1.php:83
+#: panel1.php:111
 msgid "No"
 msgstr ""
 
-#: index.php:158
+#: index.php:159
 msgid "Your WP SlimStat table has been successfully emptied."
 msgstr ""
 
-#: index.php:161
+#: index.php:162
 msgid "Are you sure you want to drop the ip-to-countries table?"
 msgstr ""
 
-#: index.php:167
+#: index.php:168
 msgid "Your IP-to-countries table has been successfully emptied. Now go to your Plugins panel and deactivate/reactivate WP SlimStat to load the new data."
 msgstr ""
 
-#: index.php:175
+#: index.php:176
 msgid "Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat."
 msgstr ""
 
-#: index.php:184
+#: index.php:185
 msgid "Save Changes"
 msgstr ""
 
-#: panel1.php:45
+#: panel1.php:46
 msgid "Adds a javascript code to your pages to track visits, screen resolutions, outbound links, downloads and more"
 msgstr ""
 
-#: panel1.php:50
+#: panel1.php:61
+msgid "Enables Browscap's autoupdate feature. Please make sure your <code>cache</code> subfolder is writable."
+msgstr ""
+
+#: panel1.php:66
 msgid "Latency"
 msgstr ""
 
-#: panel1.php:52
+#: panel1.php:68
 msgid "seconds"
 msgstr ""
 
-#: panel1.php:57
+#: panel1.php:73
 msgid "Ignores pageviews identical to an existing one recorded less than <strong>X</strong> seconds ago. Zero disables this feature."
 msgstr ""
 
-#: panel1.php:72
+#: panel1.php:88
 msgid "Ignores requests from user agents whose operating system and CSS version are unknown"
 msgstr ""
 
-#: panel1.php:77
+#: panel1.php:93
 msgid "Autopurge"
 msgstr ""
 
-#: panel1.php:79
+#: panel1.php:95
 msgid "days"
 msgstr ""
 
-#: panel1.php:80
+#: panel1.php:96
 msgid "Next purge is scheduled on"
 msgstr ""
 
-#: panel1.php:85
+#: panel1.php:101
 msgid "Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature."
 msgstr ""
 
-#: panel1.php:100
+#: panel1.php:116
 msgid "Shows hostnames instead of IP addresses. It slows down the rendering of your metrics."
 msgstr ""
 
@@ -305,15 +316,3 @@ msgstr ""
 #: panel5.php:30
 msgid "If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
 msgstr ""
-
-#~ msgid "IP"
-#~ msgstr ""
-
-#~ msgid "Equal"
-#~ msgstr ""
-
-#~ msgid "Like"
-#~ msgstr ""
-
-#~ msgid "Not Like"
-#~ msgstr ""

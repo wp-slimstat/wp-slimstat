@@ -13,40 +13,45 @@ class wp_slimstat_view {
 		$this->table_screenres = $table_prefix . 'slim_screenres';
 		$this->table_visits = $table_prefix . 'slim_visits';
 		$this->table_outbound = $table_prefix . 'slim_outbound';
-
+		
 		// Date filter
-		$this->current_date = array();
-		if (!empty($_GET['day'])){
-			$this->current_date['d'] = sprintf('%02d', $_GET['day']);
-			$this->day_filter_active = true;
+		$this->current_date = array();		
+		if (!empty($filters_parsed['day'][0])){
+			$this->current_date['d'] = sprintf('%02d', $filters_parsed['day'][0]);
+			if (empty($filters_parsed['interval'])) 
+				$this->day_filter_active = true;
+			else
+				$this->day_interval = $filters_parsed['interval'][0];
 			$this->custom_data_filter = true;
 		}
 		else {
 			$this->current_date['d'] = date_i18n('d');
 		}
-		if (!empty($_GET['month'])){
-			$this->current_date['m'] = sprintf('%02d', $_GET['month']);
+		if (!empty($filters_parsed['month'][0])){
+			$this->current_date['m'] = sprintf('%02d', $filters_parsed['month'][0]);
 			$this->custom_data_filter = true;
 		}
 		else {
 			$this->current_date['m'] = date_i18n('m');
 		}
-		if (!empty($_GET['year'])){
-			$this->current_date['y'] = sprintf('%04d', $_GET['year']);
+		if (!empty($filters_parsed['year'][0])){
+			$this->current_date['y'] = sprintf('%04d', $filters_parsed['year'][0]);
 			$this->custom_data_filter = true;
 		}
 		else {
 			$this->current_date['y'] = date_i18n('Y');
 		}
 		$this->current_date['h'] = date_i18n('H');
+		$this->current_date_string = "{$this->current_date['y']}-{$this->current_date['m']}-{$this->current_date['d']}";
 
 		$this->yesterday['d'] = date_i18n('d', strtotime("{$this->current_date['y']}-{$this->current_date['m']}-".($this->current_date['d'] - 1)) ); 
 		$this->yesterday['m'] = date_i18n('m', strtotime("{$this->current_date['y']}-{$this->current_date['m']}-".($this->current_date['d'] - 1)) ); 
 		$this->yesterday['y'] = date_i18n('Y', strtotime("{$this->current_date['y']}-{$this->current_date['m']}-".($this->current_date['d'] - 1)) ); 
-
-		$this->previous_month['m'] = $this->current_date['m'] - 1;
-		$this->previous_month['m'] = date_i18n('m', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-01") );
-		$this->previous_month['y'] = date_i18n('Y', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-01") );
+	
+		$this->previous_month['d'] = date_i18n('d', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-{$this->current_date['d']}") );
+		$this->previous_month['m'] = date_i18n('m', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-{$this->current_date['d']}") );
+		$this->previous_month['y'] = date_i18n('Y', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-{$this->current_date['d']}") );
+		$this->previous_month_string = "{$this->previous_month['y']}-{$this->previous_month['m']}-{$this->previous_month['d']}";
 
 		$this->filters_sql_from = array('browsers' => '', 'screenres' => '');
 		$this->filters_sql_where = '';
@@ -55,7 +60,7 @@ class wp_slimstat_view {
 			
 			foreach($filters_parsed as $a_filter_label => $a_filter_details){
 				// Skip filters on date
-				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year')){
+				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year') && ($a_filter_label != 'interval')){
 					
 					// Filters on the IP address require a special treatment
 					if ($a_filter_label == 'ip'){
@@ -102,8 +107,15 @@ class wp_slimstat_view {
 				}
 			}
 		}
-		$this->filters_date_sql_where = " AND (YEAR(FROM_UNIXTIME(t1.`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(t1.`dt`)) = {$this->current_date['m']})";
-		if ($this->day_filter_active) $this->filters_date_sql_where .= " AND (DAYOFMONTH(FROM_UNIXTIME(t1.`dt`)) = {$this->current_date['d']})";
+		if (empty($this->day_interval)){
+			$this->filters_date_sql_where = " AND (YEAR(FROM_UNIXTIME(t1.`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(t1.`dt`)) = {$this->current_date['m']})";
+			if ($this->day_filter_active) $this->filters_date_sql_where .= " AND (DAYOFMONTH(FROM_UNIXTIME(t1.`dt`)) = {$this->current_date['d']})";
+		}
+		else{
+			$this->filters_date_sql_where = " AND (YEAR(FROM_UNIXTIME(t1.`dt`)) BETWEEN {$this->current_date['y']} AND YEAR(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+				AND MONTH(FROM_UNIXTIME(t1.`dt`)) BETWEEN {$this->current_date['m']} AND MONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+				AND (DAYOFMONTH(FROM_UNIXTIME(t1.`dt`)) BETWEEN {$this->current_date['d']} AND DAYOFMONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))))";
+		}
 	}
 
 	// Functions are declared in alphabetical order
@@ -251,7 +263,7 @@ class wp_slimstat_view {
 	}
 
 	public function get_average_pageviews_by_day(){
-		if ($this->day_filter_active){
+		if ($this->day_filter_active){			
 			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(`dt`), '%H') h, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d') d, AVG(ts1.count) data1, MAX(ts1.count) data2
 					FROM (
 						SELECT count(`ip`) count, `visit_id`, `dt`
@@ -264,11 +276,20 @@ class wp_slimstat_view {
 					WHERE ((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']} AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['d']}) 
 						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->yesterday['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->yesterday['m']} AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) = {$this->yesterday['d']}))
 						AND `visit_id` > 0
-
 					GROUP BY h, d
 					ORDER BY d ASC, h asc";
 		}
 		else{
+			$time_constraints = "((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
+						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))";
+			if (!empty($this->day_interval))
+				$time_constraints = "((YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['y']} AND YEAR(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['m']} AND MONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['d']} AND DAYOFMONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY )))
+				OR (YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['y']} AND YEAR(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['m']} AND MONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['d']} AND DAYOFMONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))))";
+				
 			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m') m, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d') d, AVG(ts1.count) data1, MAX(ts1.count) data2
 					FROM (
 						SELECT count(`ip`) count, `visit_id`, `dt`
@@ -278,8 +299,7 @@ class wp_slimstat_view {
 						".$this->filters_sql_where."
 						GROUP BY `visit_id`
 					) AS ts1
-					WHERE ((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
-						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))
+					WHERE $time_constraints
 						AND `visit_id` > 0
 					GROUP BY m, d
 					ORDER BY m ASC, d asc";
@@ -377,12 +397,20 @@ class wp_slimstat_view {
 					ORDER BY d ASC, h asc";
 		}
 		else{
+			$time_constraints = "((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
+						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))";
+			if (!empty($this->day_interval))
+				$time_constraints = "((YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['y']} AND YEAR(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['m']} AND MONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['d']} AND DAYOFMONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY )))
+				OR (YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['y']} AND YEAR(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['m']} AND MONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['d']} AND DAYOFMONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY )))) ";
+
 			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m') m, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d') d, COUNT(`ip`) data1, COUNT(DISTINCT(`ip`)) data2
 					FROM `$this->table_stats` t1
 					".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
-					WHERE ((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
-						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))
-						".$this->filters_sql_where."
+					WHERE ".$time_constraints.$this->filters_sql_where."
 					GROUP BY m, d
 					ORDER BY m ASC,d ASC";
 		}
@@ -661,13 +689,21 @@ class wp_slimstat_view {
 					ORDER BY d ASC, h asc";
 		}
 		else{
+			$time_constraints = " AND ((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
+						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))";
+			if (!empty($this->day_interval))
+				$time_constraints = " AND ((YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['y']} AND YEAR(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['m']} AND MONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['d']} AND DAYOFMONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY )))
+				OR (YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['y']} AND YEAR(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['m']} AND MONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['d']} AND DAYOFMONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY )))) ";
+	
 			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m') m, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d') d, COUNT(`ip`) data1, COUNT(DISTINCT(`ip`)) data2
 					FROM `$this->table_stats` t1
 					".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
-					WHERE (((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
-						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))
-						AND `domain` <> '' AND `domain` <> '{$_SERVER['SERVER_NAME']}')
-						".$this->filters_sql_where."
+					WHERE `domain` <> '' AND `domain` <> '{$_SERVER['SERVER_NAME']}'
+						".$time_constraints.$this->filters_sql_where."
 					GROUP BY m, d
 					ORDER BY m ASC,d ASC";
 		}
@@ -687,13 +723,21 @@ class wp_slimstat_view {
 					ORDER BY d ASC, h asc";
 		}
 		else{
+			$time_constraints = " AND ((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
+						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))";
+			if (!empty($this->day_interval))
+				$time_constraints = " AND ((YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['y']} AND YEAR(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['m']} AND MONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->current_date['d']} AND DAYOFMONTH(DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY )))
+				OR (YEAR(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['y']} AND YEAR(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND MONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['m']} AND MONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))
+					AND DAYOFMONTH(FROM_UNIXTIME(`dt`)) BETWEEN {$this->previous_month['d']} AND DAYOFMONTH(DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY )))) ";
+
 			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m') m, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d') d, COUNT(`ip`) data1, COUNT(DISTINCT(`ip`)) data2
 					FROM `$this->table_stats` t1
 					".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
-					WHERE (((YEAR(FROM_UNIXTIME(`dt`)) = {$this->current_date['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->current_date['m']}) 
-						OR (YEAR(FROM_UNIXTIME(`dt`)) = {$this->previous_month['y']} AND MONTH(FROM_UNIXTIME(`dt`)) = {$this->previous_month['m']}))
-						AND `visit_id` > 0)
-						".$this->filters_sql_where."
+					WHERE `visit_id` > 0
+						".$time_constraints.$this->filters_sql_where."
 					GROUP BY YEAR(FROM_UNIXTIME(`dt`)), DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m'), DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d')
 					ORDER BY m ASC, d ASC";
 		}

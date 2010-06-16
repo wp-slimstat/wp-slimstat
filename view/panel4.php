@@ -118,8 +118,13 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 		<h3><?php 
 			_e( 'Popular pages for', 'wp-slimstat-view' ); 
 			echo ' ';
-			if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
-			echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
+			if (empty($wp_slimstat_view->day_interval)){
+				if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+				echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; 
+			}
+			else{
+				_e('this period', 'wp-slimstat-view');
+			} ?></h3>
 		<div class="container">
 			<?php
 				$results = $wp_slimstat_view->get_top('resource', '', 62, true);
@@ -201,8 +206,13 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 		<h3><?php 
 			_e( 'Top Exit Pages for', 'wp-slimstat-view' );
 			echo ' ';
-			if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
-			echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?></h3>
+			if (empty($wp_slimstat_view->day_interval)){
+				if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+				echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; 
+			}
+			else{
+				_e('this period', 'wp-slimstat-view');
+			} ?></h3>
 		<div class="container">
 			<?php
 				$results = $wp_slimstat_view->get_top_exit_pages();

@@ -2,8 +2,8 @@
 /*
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
-Description: A simple but powerful web analytics plugin for Wordpress. Loosely based on <a href="http://slimstat.net/">Stephen Wettone's SlimStat</a>.
-Version: 2.0.4
+Description: A simple but powerful web analytics plugin for Wordpress.
+Version: 2.0.5
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */

@@ -4,7 +4,7 @@ Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews
 Requires at least: 2.9
 Tested up to: 3.0
-Stable tag: 2.0.3
+Stable tag: 2.0.5
 
 A smart web analytics tool. Track visits, pageviews, pathstats, and much more.
 
@@ -30,7 +30,7 @@ your feedback if you find any bugs or unusual behaviors.
 * Ignore hits based on IP addresses and networks, browsers, referrers and permalinks
 * Can restrict view/admin to specific users
 * Uses WP timezone settings and date formatting
-* Has filters for content drill-down
+* Has a lot of filters for content drill-down
 
 == Installation ==
 
@@ -58,6 +58,11 @@ to Maintenance, that alert message should be gone.
 
 == Changelog ==
 
+= 2.0.5 (release candidate 2) =
+* Added an option to filter metrics by date intervals (given date plus x days)
+* Fixed a bug in calculating the date range in some metrics
+* Geolocalization: updated the information in the CSV file included (June 2010)
+
 = 2.0.4 (release candidate 1) =
 * Moving into Release Candidate phase
 * Added an option to disable Browscap's autoupdate feature (to update browsers' definitions)
@@ -79,12 +84,6 @@ to Maintenance, that alert message should be gone.
 * Fixed a bug in generating the URL's associated to the external links listed in some metrics
 * Fixed a bug in creating WP SlimStat tables: it looks like MyISAM 5.0 does not like foreign keys
 * Code and SQL optimizations
-
-= 2.0.2 (beta2) =
-* Added full compatibility with right-to-left text orientation (i.e. Arabic and Hebrew)
-* Added filters for content drilldown
-* Added hourly graphs (click on a day on the graph to switch to this view)
-* Fixed a bug that prevented WP timezone to be correctly applied to all the metrics
 
 == Localization ==
 

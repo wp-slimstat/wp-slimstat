@@ -30,6 +30,7 @@ $filters_to_parse = array(
 	'day' => 'integer',
 	'month' => 'integer', 
 	'year' => 'integer',
+	'interval' => 'integer',
 	'browser' => 'string',
 	'version' => 'string',
 	'css_version' => 'string',
@@ -151,6 +152,7 @@ if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_pa
 						echo "<option>$i</option>";
 				?>
 			</select>
+			+ <input type="text" name="interval" value="" size="3"> <?php _e('days', 'wp-slimstat-view') ?> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 			<input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary"></span>
 		</p>
 	</form>

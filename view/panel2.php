@@ -34,9 +34,13 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 		<h3><?php 
 			_e( 'Summary for', 'wp-slimstat-view' ); 
 			echo ' ';
-			if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
-			echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; ?>
-		</h3>
+			if (empty($wp_slimstat_view->day_interval)){
+				if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+				echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; 
+			}
+			else{
+				_e('this period', 'wp-slimstat-view');
+			} ?></h3>
 		<?php
 			$total_visitors = array_sum($current->current_data1);
 			$one_time_visitors = $wp_slimstat_view->count_new_visitors();
