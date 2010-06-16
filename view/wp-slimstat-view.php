@@ -318,7 +318,6 @@ class wp_slimstat_view {
 				GROUP BY `browser`, `version`
 				ORDER BY count DESC, `browser` ASC
 				LIMIT 0,20";
-		echo $sql;
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
