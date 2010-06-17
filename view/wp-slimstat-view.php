@@ -276,18 +276,18 @@ class wp_slimstat_view {
 						".$this->filters_sql_where."
 						GROUP BY `visit_id`
 					) AS ts1
-					WHERE (DATE_FORMAT(FROM_UNIXTIME(t1.`dt`), '%Y-%m-%d') = '{$this->current_date_string}'
-						OR DATE_FORMAT(FROM_UNIXTIME(t1.`dt`), '%Y-%m-%d') = '{$this->yesterday_string}')
+					WHERE (DATE_FORMAT(FROM_UNIXTIME(`dt`), '%Y-%m-%d') = '{$this->current_date_string}'
+						OR DATE_FORMAT(FROM_UNIXTIME(`dt`), '%Y-%m-%d') = '{$this->yesterday_string}')
 						AND `visit_id` > 0
 					GROUP BY h, d
 					ORDER BY d ASC, h asc";
 		}
 		else{
-			$time_constraints = "(DATE_FORMAT(FROM_UNIXTIME(t1.`dt`), '%Y-%m') = '{$this->current_date['y']}-{$this->current_date['m']}'
-				OR DATE_FORMAT(FROM_UNIXTIME(t1.`dt`), '%Y-%m') = '{$this->previous_month['y']}-{$this->previous_month['m']}')";
+			$time_constraints = " AND (DATE_FORMAT(FROM_UNIXTIME(`dt`), '%Y-%m') = '{$this->current_date['y']}-{$this->current_date['m']}'
+				OR DATE_FORMAT(FROM_UNIXTIME(`dt`), '%Y-%m') = '{$this->previous_month['y']}-{$this->previous_month['m']}')";
 				
 			if (!empty($this->day_interval))
-				$time_constraints = "(DATE_FORMAT(FROM_UNIXTIME(`dt`), '%Y-%m-%d') BETWEEN '{$this->current_date_string}' AND DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY )
+				$time_constraints = " AND (DATE_FORMAT(FROM_UNIXTIME(`dt`), '%Y-%m-%d') BETWEEN '{$this->current_date_string}' AND DATE_ADD('{$this->current_date_string}', INTERVAL {$this->day_interval} DAY )
 				OR DATE_FORMAT(FROM_UNIXTIME(`dt`), '%Y-%m-%d') BETWEEN '{$this->previous_month_string}' AND DATE_ADD('{$this->previous_month_string}', INTERVAL {$this->day_interval} DAY ))";
 				
 			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(`dt`), '%m') m, DATE_FORMAT(FROM_UNIXTIME(`dt`), '%d') d, AVG(ts1.count) data1, MAX(ts1.count) data2
@@ -299,8 +299,6 @@ class wp_slimstat_view {
 						".$time_constraints.$this->filters_sql_where."
 						GROUP BY `visit_id`
 					) AS ts1
-					WHERE $time_constraints
-						AND `visit_id` > 0
 					GROUP BY m, d
 					ORDER BY m ASC, d asc";
 		}
