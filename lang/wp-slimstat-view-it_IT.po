@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-16 12:40-0500\n"
-"PO-Revision-Date: 2010-06-16 12:48-0500\n"
+"POT-Creation-Date: 2010-06-17 09:45-0500\n"
+"PO-Revision-Date: 2010-06-17 09:46-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -177,13 +177,13 @@ msgstr "Accessi orari"
 #: panel2.php:243
 #: panel2.php:288
 #: panel2.php:314
-#: panel3.php:13
-#: panel3.php:63
-#: panel3.php:98
-#: panel3.php:133
-#: panel3.php:164
-#: panel3.php:198
-#: panel3.php:223
+#: panel3.php:20
+#: panel3.php:70
+#: panel3.php:105
+#: panel3.php:140
+#: panel3.php:171
+#: panel3.php:205
+#: panel3.php:230
 #: panel4.php:20
 #: panel4.php:41
 #: panel4.php:68
@@ -220,30 +220,30 @@ msgstr "Pulizia DB"
 
 #: panel1.php:49
 #: panel2.php:35
-#: panel3.php:35
+#: panel3.php:42
 msgid "Summary for"
 msgstr "Panoramica del"
 
 #: panel1.php:56
 #: panel2.php:42
-#: panel3.php:42
-#: panel3.php:90
-#: panel3.php:125
-#: panel3.php:191
+#: panel3.php:49
+#: panel3.php:97
+#: panel3.php:132
+#: panel3.php:198
 #: panel4.php:126
 #: panel4.php:214
 msgid "this period"
 msgstr "periodo"
 
 #: panel1.php:66
-#: wp-slimstat-view.php:417
-#: wp-slimstat-view.php:710
+#: wp-slimstat-view.php:413
+#: wp-slimstat-view.php:702
 msgid "Pageviews"
 msgstr "Accessi"
 
 #: panel1.php:67
-#: wp-slimstat-view.php:417
-#: wp-slimstat-view.php:710
+#: wp-slimstat-view.php:413
+#: wp-slimstat-view.php:702
 msgid "Unique IPs"
 msgstr "IP unici"
 
@@ -273,12 +273,12 @@ msgstr "Mese scorso"
 #: panel2.php:213
 #: panel2.php:281
 #: panel2.php:306
-#: panel3.php:56
-#: panel3.php:81
-#: panel3.php:116
-#: panel3.php:157
-#: panel3.php:182
-#: panel3.php:216
+#: panel3.php:63
+#: panel3.php:88
+#: panel3.php:123
+#: panel3.php:164
+#: panel3.php:189
+#: panel3.php:223
 #: panel4.php:34
 #: panel4.php:61
 #: panel4.php:93
@@ -302,7 +302,7 @@ msgstr "Pagine in assoluto pi&ugrave; popolari"
 #: panel1.php:116
 #: panel1.php:199
 #: panel2.php:326
-#: panel3.php:140
+#: panel3.php:147
 #: panel4.php:76
 #: panel4.php:138
 #: panel4.php:227
@@ -322,7 +322,7 @@ msgstr "Paesi recenti"
 #: panel1.php:172
 #: panel2.php:293
 #: panel2.php:319
-#: panel3.php:103
+#: panel3.php:110
 #: panel4.php:257
 #: panel5.php:78
 msgid "c-"
@@ -338,7 +338,7 @@ msgstr "Visitatori (umani) al giorno - Clicca su un giorno per vedere il dettagl
 
 #: panel2.php:15
 msgid "Unique (human) visitors by hour"
-msgstr "Visitatori (umani) al giorno - Clicca su un giorno per vedere il dettaglio orario"
+msgstr "Visitatori (umani) per ogni ora"
 
 #: panel2.php:51
 msgid "Human visitors"
@@ -444,52 +444,56 @@ msgstr "Dettagli sulle visite recenti"
 msgid "Direct visit to"
 msgstr "Visita diretta a"
 
-#: panel3.php:10
-msgid "Traffic Sources by day - Click on a day to filter reports"
-msgstr "Sorgenti di traffico al giorno - Clicca su un giorno per filtrare i rapporti"
+#: panel3.php:12
+msgid "Traffic Sources by day - Click on a day for hourly metrics"
+msgstr "Sorgenti di traffico al giorno - Clicca su un giorno per vedere il dettaglio orario"
 
-#: panel3.php:45
+#: panel3.php:15
+msgid "Traffic Sources by hour"
+msgstr "Sorgenti di traffico orarie"
+
+#: panel3.php:52
 msgid "Unique Referers"
 msgstr "Sorgenti uniche"
 
-#: panel3.php:46
+#: panel3.php:53
 msgid "Direct Visits"
 msgstr "Visite dirette"
 
-#: panel3.php:47
-#: panel3.php:158
+#: panel3.php:54
+#: panel3.php:165
 msgid "Search Engines"
 msgstr "Motori di ricerca"
 
-#: panel3.php:48
+#: panel3.php:55
 msgid "Unique Pages Referred"
 msgstr "Pagine uniche riferite"
 
-#: panel3.php:49
+#: panel3.php:56
 msgid "Unique Internal"
 msgstr "Ricerche interne"
 
-#: panel3.php:57
+#: panel3.php:64
 msgid "Top Keywords"
 msgstr "Parole chiave principali"
 
-#: panel3.php:83
+#: panel3.php:90
 msgid "Countries for"
 msgstr "Paesi del"
 
-#: panel3.php:118
+#: panel3.php:125
 msgid "Traffic Sources for"
 msgstr "Sorgenti di traffico del"
 
-#: panel3.php:184
+#: panel3.php:191
 msgid "Sites for"
 msgstr "Siti del"
 
-#: panel3.php:217
+#: panel3.php:224
 msgid "Recent Keywords &raquo; Pages"
 msgstr "Parole chiave &raquo; Pagine"
 
-#: panel3.php:227
+#: panel3.php:234
 msgid "Open referer in a new window"
 msgstr "Apri il riferimento in una nuova finestra"
 
@@ -590,46 +594,10 @@ msgstr "Rapporti personalizzati"
 msgid "Yes, you can! Create and view your personalized analytics for WP SlimStat. In order to do this, just write a new plugin that fetches the desired information from the database and then hook it to the action <code>wp_slimstat_custom_report</code>. A demo plugin comes with the package. It shows how to write custom reports in 5 minutes. You can find it inside the plugin&apos;s folder: <code>wp-slimstat-custom-report-demo.php</code>. For more information, visit my <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">support forum</a>."
 msgstr "Si, si pu&ograve;! Creare e vedere le proprie statistiche personalizzate per WP SlimStat. Per far questo, ti basta scrivere un nuovo plugin che preleva le informazioni desiderate dal database, per poi agganciarlo al codice <code>wp_slimstat_custom_report</code>. Un esempio &egrave; incluso con la distribuzione. Mostra come scrivere rapporti personalizzati in 5 minuti. Lo trovi nella cartella del plugin: <code>wp-slimstat-custom-report-demo.php</code>. Per ulteriori informazioni, visita il mio <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">forum di supporto</a>."
 
-#: wp-slimstat-view.php:744
+#: wp-slimstat-view.php:732
 msgid "Visits"
 msgstr "Visite"
 
-#: wp-slimstat-view.php:744
+#: wp-slimstat-view.php:732
 msgid "Unique Visits"
 msgstr "Visite uniche"
-
-#~ msgid "Quicktime"
-#~ msgstr "Quicktime"
-
-#~ msgid "Search Engines for"
-#~ msgstr "Motori di ricerca del"
-
-#~ msgid "Average time on site"
-#~ msgstr "Tempo medio sul sito"
-
-#~ msgid "Sources"
-#~ msgstr "Sorgenti di traffico"
-
-#~ msgid "Visitors / Day"
-#~ msgstr "Visitatori al giorno"
-
-#~ msgid "Visitors Overview"
-#~ msgstr "Panoramica visitatori"
-
-#~ msgid "New"
-#~ msgstr "Nuovi"
-
-#~ msgid "Returning"
-#~ msgstr "Di ritorno"
-
-#~ msgid "Pathstats"
-#~ msgstr "Pathstats"
-
-#~ msgid "Direct Traffic"
-#~ msgstr "Traffico diretto"
-
-#~ msgid "Calendar for"
-#~ msgstr "Calendario del"
-
-#~ msgid "Box Name"
-#~ msgstr "Nome Box"

@@ -1,6 +1,6 @@
 <?php
 
-// Let's extend the main class with the methods we use in this panel
+// Let's define the main class with all the methods that we need
 class wp_slimstat_view {
 
 	function __construct(){
@@ -18,7 +18,7 @@ class wp_slimstat_view {
 		$this->current_date = array();		
 		if (!empty($filters_parsed['day'][0])){
 			$this->current_date['d'] = sprintf('%02d', $filters_parsed['day'][0]);
-			if (empty($filters_parsed['interval'])) 
+			if (empty($filters_parsed['interval'][0]))
 				$this->day_filter_active = true;
 			else
 				$this->day_interval = $filters_parsed['interval'][0];
@@ -296,7 +296,7 @@ class wp_slimstat_view {
 						FROM `$this->table_stats` t1
 						".$this->filters_sql_from['browsers'].$this->filters_sql_from['screenres']."
 						WHERE `visit_id` > 0
-						".$this->filters_sql_where."
+						".$time_constraints.$this->filters_sql_where."
 						GROUP BY `visit_id`
 					) AS ts1
 					WHERE $time_constraints
@@ -782,7 +782,7 @@ class wp_slimstat_view {
 			}
 			else{
 				// Days are clickable, so we need to carry the information about current filters
-				$encoded_filters_query = urlencode($this->filters_query);
+				$encoded_filters_query = urlencode(str_replace('interval=','xinterval=', $this->filters_query));
 
 				for($i=1;$i<=31;$i++) { 
 					$categories_xml .= "<category name='$i'/>";

@@ -5,7 +5,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 ?>
-<div class="metabox-holder <?php echo $wp_locale->text_direction ?> wide">
+<div class="metabox-holder wide <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
 		<h3><?php 
 			if (!$wp_slimstat_view->day_filter_active){

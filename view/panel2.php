@@ -7,12 +7,12 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 ?>
 <div class="metabox-holder wide <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<h3><?php 
+		<h3><?php
 			if (!$wp_slimstat_view->day_filter_active){
 				_e( 'Unique (human) visitors by day - Click on a day for hourly metrics', 'wp-slimstat-view' ); 
 			}
 			else{
-				_e( 'Unique (human) visitors by hour', 'wp-slimstat-view' ); 
+				_e( 'Unique (human) visitors by hour', 'wp-slimstat-view' );
 			}
 			?></h3>
 		<?php $current = $wp_slimstat_view->get_visits_by_day(); 

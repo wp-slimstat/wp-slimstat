@@ -7,7 +7,14 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 ?>
 <div class="metabox-holder wide <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<h3><?php _e( 'Traffic Sources by day - Click on a day to filter reports', 'wp-slimstat-view' ); ?></h3>
+		<h3><?php
+			if (!$wp_slimstat_view->day_filter_active){
+				_e( 'Traffic Sources by day - Click on a day for hourly metrics', 'wp-slimstat-view' ); 
+			}
+			else{
+				_e( 'Traffic Sources by hour', 'wp-slimstat-view' );
+			}
+			?></h3>
 		<?php $current = $wp_slimstat_view->get_traffic_sources_by_day();  
 		if ($current->current_non_zero_count+$current->previous_non_zero_count == 0){ ?>
 			<p class="nodata"><?php _e('No data to display','wp-slimstat-view') ?></p>
