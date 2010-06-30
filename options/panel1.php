@@ -13,7 +13,7 @@ $wp_slimstat_options['browscap_autoupdate'] = get_option('slimstat_browscap_auto
 $wp_slimstat_options['ignore_interval'] = intval(get_option('slimstat_ignore_interval', '30'));
 $wp_slimstat_options['ignore_bots'] = get_option('slimstat_ignore_bots', 'no');
 $wp_slimstat_options['auto_purge'] = intval(get_option('slimstat_auto_purge', '0'));
-$wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_addresses', 'no');
+
 
 ?>
 
@@ -99,21 +99,6 @@ $wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_a
 	<tr>
 		<td colspan="2" class="shortrow">
 			<span class="description"><?php _e('Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature.','wp-slimstat-options') ?></span>
-		</td>
-	</tr>
-	
-	<tr valign="top">
-		<th scope="row" rowspan="2"><label for="convert_ip_addresses"><?php _e('Convert IP addresses','wp-slimstat-options') ?></label></th>
-		<td class="narrowcolumn">
-			<input type="radio" name="options[convert_ip_addresses]" id="convert_ip_addresses" value="yes"<?php echo ($wp_slimstat_options['convert_ip_addresses'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
-		</td>
-		<td class="widecolumn">
-			<input type="radio" name="options[convert_ip_addresses]" value="no" <?php echo ($wp_slimstat_options['convert_ip_addresses'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2" class="shortrow">
-			<span class="description"><?php _e('Shows hostnames instead of IP addresses. It slows down the rendering of your metrics.','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 </tbody>

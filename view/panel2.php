@@ -48,12 +48,12 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			$metrics_per_visit = $wp_slimstat_view->get_max_and_average_pages_per_visit();
 		?>
 		<div class="container noscroll">
-			<p><span class="element-title"><?php _e( 'Human visitors', 'wp-slimstat-view' ); ?></span> <span><?php echo $total_visitors ?></span></p>
-			<p><span class="element-title"><?php _e( 'One time visitors', 'wp-slimstat-view' ); ?></span> <span><?php echo $one_time_visitors = $wp_slimstat_view->count_new_visitors() ?></span></p>
+			<p><span class="element-title"><?php _e( 'Human visitors', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($total_visitors) ?></span></p>
+			<p><span class="element-title"><?php _e( 'One time visitors', 'wp-slimstat-view' ); ?></span> <span><?php $one_time_visitors = $wp_slimstat_view->count_new_visitors(); echo number_format($one_time_visitors); ?></span></p>
 			<p><span class="element-title"><?php _e( 'Bounce rate', 'wp-slimstat-view' ); ?></span> <span><?php echo $bounce_rate ?>%</span></p>
-			<p><span class="element-title"><?php _e( 'Bots', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->count_bots() ?></span></p>
+			<p><span class="element-title"><?php _e( 'Bots', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_bots()) ?></span></p>
 			<p><span class="element-title"><?php _e( 'Pages per visit', 'wp-slimstat-view' ); ?></span> <span><?php echo $metrics_per_visit->avg ?></span></p>
-			<p class="last"><span class="element-title"><?php _e( 'Longest visit', 'wp-slimstat-view' ); ?></span> <span><?php echo $metrics_per_visit->max ?> hits</span></p>
+			<p class="last"><span class="element-title"><?php _e( 'Longest visit', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($metrics_per_visit->max) ?> hits</span></p>
 		</div>
 	</div>
 </div>
@@ -123,10 +123,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($total_count > 0)?sprintf("%01.1f", (100*$results[$i]['count']/$total_count)):0;
 						$long2ip = long2ip($results[$i]['short_string']);
-						$host_by_ip = ($convert_ip_addresses == 'yes')?gethostbyaddr( $long2ip )." ($long2ip)":$long2ip;
+						$host_by_ip = "<a href='http://www.ip2location.com/$long2ip' target='_blank' title='WHOIS: $long2ip'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/whois.gif' /></a>";
+						$host_by_ip .= ($convert_ip_addresses == 'yes')?gethostbyaddr( $long2ip )." ($long2ip)":$long2ip;
 						if (!isset($filters_parsed['ip'][0])) $host_by_ip = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=2$filters_query&ip=$long2ip'>$host_by_ip</a>";
 						
-						echo "<p$last_element><span class='element-title'>$host_by_ip</span> <span>{$results[$i]['count']}</span> <span>$percentage%</span></p>";
+						echo "<p$last_element><span class='element-title'>$host_by_ip</span> <span>".number_format($results[$i]['count'])."</span> <span>$percentage%</span></p>";
 					}
 				}
 			?>
@@ -175,7 +176,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$platform = __($results[$i]['platform'],'countries-languages');
 						if (!isset($filters_parsed['platform'][0])) $platform = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=2$filters_query&platform={$results[$i]['platform']}'>$platform</a>";
 						
-						echo "<p$last_element><span class='element-title'>$platform</span> <span>{$results[$i]['count']}</span> <span>$percentage%</span></p>";
+						echo "<p$last_element><span class='element-title'>$platform</span> <span>".number_format($results[$i]['count'])."</span> <span>$percentage%</span></p>";
 					}
 				}
 			?>
@@ -199,7 +200,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_visitors)):0;
 						$platform = __($results[$i]['platform'],'countries-languages');			
-						echo "<p$last_element><span class='element-title'>{$results[$i]['browser']} {$results[$i]['version']} / $platform</span> <span>{$results[$i]['count']}</span> <span>$percentage%</span></p>";
+						echo "<p$last_element><span class='element-title'>{$results[$i]['browser']} {$results[$i]['version']} / $platform</span> <span>".number_format($results[$i]['count'])."</span> <span>$percentage%</span></p>";
 					}
 				}
 			?>
@@ -224,7 +225,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$total_visitors)):0;
 						if (!isset($filters_parsed['resolution'][0])) $results[$i]['resolution'] = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=2$filters_query&resolution={$results[$i]['resolution']}'>{$results[$i]['resolution']}</a>";
 								
-						echo "<p$last_element><span class='element-title'>{$results[$i]['resolution']}</span> <span>{$results[$i]['count']}</span> <span>$percentage%</span></p>";
+						echo "<p$last_element><span class='element-title'>{$results[$i]['resolution']}</span> <span>".number_format($results[$i]['count'])."</span> <span>$percentage%</span></p>";
 					}
 				}
 			?>
@@ -316,6 +317,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 					for($i=0;$i<$count_results;$i++){
 						if ($visit_id != $results[$i]['visit_id']){
 							$ip_address = long2ip($results[$i]['ip']);
+							$ip_address = "<a href='http://www.ip2location.com/$ip_address' target='_blank' title='WHOIS: $ip_address'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/whois.gif' /></a> $ip_address";
 							$country = __('c-'.$results[$i]['country'],'countries-languages');
 							$time_of_pageview = $results[$i]['date_f'].'@'.$results[$i]['time_f'];
 						

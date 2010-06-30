@@ -55,14 +55,24 @@ if (!empty($_GET['starting'])) $starting_point = intval($_GET['starting']);
 
 <div class="metabox-holder tall <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<h3><?php 
+		<div class="more"><?php 
 			$results = $wp_slimstat_view->get_raw_data($orderby_column, $direction_orderby, $starting_point);
 			$count_results = count($results); // 0 if $results is null
+			$ending_point = min($count_raw_data, $starting_point+50);
+			if ($starting_point > 0){
+				$new_starting = ($starting_point > 50)?$starting_point-50:0;
+				echo "<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&starting=$new_starting'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
+			}
+			if ($ending_point < $count_raw_data){
+				$new_starting = $starting_point + 50;
+				echo "<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&starting=$new_starting'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
+			} ?></div>
+		<h3><?php
 			if ($count_results == 0) {
 				_e('No records found', 'wp-slimstat-view');
 			}
 			else {
-				$ending_point = min($count_raw_data, $starting_point+50);
+				
 				echo sprintf(__('Records: %d - %d. Order by: %s %s', 'wp-slimstat-view'), $starting_point, $ending_point, $orderby_column, $direction_orderby); 
 			}
 		?></h3>
@@ -78,7 +88,8 @@ if (!empty($_GET['starting'])) $starting_point = intval($_GET['starting']);
 						$country = __('c-'.$results[$i]['country'],'countries-languages');
 						$platform = __($results[$i]['platform'],'countries-languages');
 						$searchterms = str_replace('\\', '', htmlspecialchars($results[$i]['searchterms']));
-						echo "<p class='header'><span class='element-title'>{$results[$i]['ip']}</span> <span>$language</span> <span>$country</span> <span>{$results[$i]['domain']}</span> <span>$searchterms</span> <span>{$results[$i]['resource']}</span></p>";
+						$ip_address = "<a href='http://www.ip2location.com/{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/whois.gif' /></a> {$results[$i]['ip']}";
+						echo "<p class='header'><span class='element-title'>$ip_address</span> <span>$language</span> <span>$country</span> <span>{$results[$i]['domain']}</span> <span>$searchterms</span> <span>{$results[$i]['resource']}</span></p>";
 						echo "<p$last_element><span class='element-title'>{$results[$i]['browser']}</span> <span>{$results[$i]['datetime']}</span> <span>$platform</span> <span>{$results[$i]['plugins']}</span> <span>{$results[$i]['resolution']}</span></p>";
 					}
 				}

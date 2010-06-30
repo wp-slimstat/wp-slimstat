@@ -7,35 +7,38 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 // Load the options
 $wp_slimstat_options = array();
-$wp_slimstat_options['ignore_ip'] = get_option('slimstat_ignore_ip', array());
-$wp_slimstat_options['ignore_resources'] = get_option('slimstat_ignore_resources', array());
-$wp_slimstat_options['ignore_browsers'] = get_option('slimstat_ignore_browsers', array());
+$wp_slimstat_options['convert_ip_addresses'] = get_option('slimstat_convert_ip_addresses', 'no');
+$wp_slimstat_options['rows_to_show'] = get_option('slimstat_rows_to_show', '20');
 
 ?>
 
-<h3><label for="ignore_ip"><?php _e('IP addresses to ignore','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_ip]" id="ignore_ip"><?php
-	$list_to_show = '';
-	foreach($wp_slimstat_options['ignore_ip'] as $a_ip_range)
-		$list_to_show .= $a_ip_range.', ';
-	echo substr($list_to_show, 0, -2);
-?></textarea></p>
-
-<h3><label for="ignore_resources"><?php _e('Pages and posts to ignore','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>starts</strong> with any of them.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_resources]" id="ignore_resources"><?php
-	$list_to_show = '';
-	foreach($wp_slimstat_options['ignore_resources'] as $a_resource)
-		$list_to_show .= $a_resource.', ';
-	echo substr($list_to_show, 0, -2);
-?></textarea></p>
-
-<h3><label for="ignore_browsers"><?php _e('Browsers to ignore','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of browsers you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_browsers]" id="ignore_browsers"><?php
-	$list_to_show = '';
-	foreach($wp_slimstat_options['ignore_browsers'] as $a_browser)
-		$list_to_show .= $a_browser.', ';
-	echo substr($list_to_show, 0, -2);
-?></textarea></p>
+<table class="form-table <?php echo $wp_locale->text_direction ?>">
+<tbody>
+	<tr valign="top">
+		<th scope="row" rowspan="2"><label for="convert_ip_addresses"><?php _e('Convert IP addresses','wp-slimstat-options') ?></label></th>
+		<td class="narrowcolumn">
+			<input type="radio" name="options[convert_ip_addresses]" id="convert_ip_addresses" value="yes"<?php echo ($wp_slimstat_options['convert_ip_addresses'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
+		</td>
+		<td class="widecolumn">
+			<input type="radio" name="options[convert_ip_addresses]" value="no" <?php echo ($wp_slimstat_options['convert_ip_addresses'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">
+			<span class="description"><?php _e('Shows hostnames instead of IP addresses. It slows down the rendering of your metrics.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row" rowspan="2"><label for="rows_to_show"><?php _e('Limit results to','wp-slimstat-options') ?></label></th>
+		<td colspan="2">
+			<input type="text" name="options[rows_to_show]" id="rows_to_show" value="<?php echo $wp_slimstat_options['rows_to_show']; ?>" size="4"> <?php _e('rows','wp-slimstat-options') ?>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">
+			<span class="description"><?php _e('Defines the number of results to return for each module. Please use a <strong>positive</strong> value.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+</tbody>
+</table>

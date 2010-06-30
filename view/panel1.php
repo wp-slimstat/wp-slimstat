@@ -33,7 +33,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	<div class="postbox">
 		<h3><?php _e( 'About WP-SlimStat', 'wp-slimstat-view' ); ?></h3>
 		<div class="container noscroll">
-			<p><span class='element-title'><?php _e( 'Total Hits', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->count_total_pageviews(false); ?></span></p>
+			<p><span class='element-title'><?php _e( 'Total Hits', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_total_pageviews(false)); ?></span></p>
 			<p><span class='element-title'><?php _e( 'Data Size', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->get_data_size() ?></span></p>
 			<p><span class='element-title'><?php _e( 'Tracking Active', 'wp-slimstat-view' ); ?></span> <span><?php _e(get_option('slimstat_is_tracking', 'no'), 'countries-languages') ?></span></p>
 			<p><span class='element-title'><?php _e( 'Auto purge', 'wp-slimstat-view' ); ?></span> <span><?php echo (($auto_purge = get_option('slimstat_auto_purge', '0')) > 0)?$auto_purge.' days':'No'; ?></span></p>
@@ -63,13 +63,13 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			}
 			$current_pageviews = intval(array_sum($current->current_data1));
 		?>
-			<p><span class='element-title'><?php _e( 'Pageviews', 'wp-slimstat-view' ); ?></span> <span><?php echo $current_pageviews; ?></span></p>
-			<p><span class='element-title'><?php _e( 'Unique IPs', 'wp-slimstat-view' ); ?></span> <span><?php echo array_sum($current->current_data2); ?></span></p>
-			<p><span class='element-title'><?php _e( 'Avg Pageviews', 'wp-slimstat-view' ); ?></span> <span><?php echo ($current->current_non_zero_count > 0)?intval($current_pageviews/$current->current_non_zero_count):0; ?></span></p>
+			<p><span class='element-title'><?php _e( 'Pageviews', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($current_pageviews); ?></span></p>
+			<p><span class='element-title'><?php _e( 'Unique IPs', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_unique_ips()); ?></span></p>
+			<p><span class='element-title'><?php _e( 'Avg Pageviews', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format(($current->current_non_zero_count > 0)?intval($current_pageviews/$current->current_non_zero_count):0); ?></span></p>
 			<?php if (!$wp_slimstat_view->day_filter_active){ ?>
-			<p><span class='element-title'><?php _e( 'On', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['d'].'/'.$wp_slimstat_view->current_date['m'] ?></span> <span><?php echo intval($today_pageviews); ?></span></p>
-			<p><span class='element-title'><?php _e( 'On', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->yesterday['d'].'/'.$wp_slimstat_view->yesterday['m'] ?></span> <span><?php echo intval($yesterday_pageviews); ?></span></p>
-			<p class="last"><span class='element-title'><?php _e( 'Last Month', 'wp-slimstat-view' ); ?></span> <span><?php echo intval(array_sum($current->previous_data1)); ?></span></p>
+			<p><span class='element-title'><?php _e( 'On', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['d'].'/'.$wp_slimstat_view->current_date['m'] ?></span> <span><?php echo number_format(intval($today_pageviews)); ?></span></p>
+			<p><span class='element-title'><?php _e( 'On', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->yesterday['d'].'/'.$wp_slimstat_view->yesterday['m'] ?></span> <span><?php echo number_format(intval($yesterday_pageviews)); ?></span></p>
+			<p class="last"><span class='element-title'><?php _e( 'Last Month', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format(intval(array_sum($current->previous_data1))); ?></span></p>
 			<?php } ?>
 		</div>
 	</div>
@@ -121,7 +121,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 							echo "<a target='_blank' title='$element_title'";
 							echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>";
 						}
-						echo $element_text."</span> <span>{$results[$i]['count']}</span></p>";
+						echo $element_text."</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>
@@ -203,7 +203,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-						echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>

@@ -20,7 +20,7 @@
 }
 .wrap h2.medium{
  border-bottom:1px solid #CCCCCC;
- font-size:14px;
+ font-size:12px;
  padding-bottom:0;
 }
 .wrap .menu-tabs{
@@ -32,13 +32,15 @@
  color:#464646;
  font-weight:bold;
  margin-right:6px;
- padding:6px 20px 9px;
+ padding:6px 12px 10px;
  text-decoration:none;
 }
 .wrap .menu-tabs.menu-tab-inactive{
  border-style:dashed;
  font-weight:400;
- padding:6px 10px 9px;
+ padding:6px 10px;
+ position:relative;
+ top:5px;
 }
 .metabox-holder{
  float:left;
@@ -154,6 +156,11 @@
 }
 .tall .postbox span{
  margin:0 15px;
+}
+.fusion-credits{
+ clear:both;
+ text-align:right;
+ width:1000px;
 }
 
 /* Options Panel */

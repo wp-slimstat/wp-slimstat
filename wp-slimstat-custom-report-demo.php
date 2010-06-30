@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Custom Reports
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: This is not a real plugin, it just demonstrates how to add your custom reports to WP SlimStat.
-Version: 2.0.5
+Version: 2.0.6
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -20,27 +20,30 @@ if (!in_array('wp-slimstat/wp-slimstat.php', $plugins)){
 	return;
 }
 
-class wp_slimstat_custom_reports {
+// You can reuse any of the functions defined by the parent class
+include_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
+
+class wp_slimstat_custom_reports extends wp_slimstat_view{
 
 	// Function: __construct
 	// Description: Constructor -- Sets things up.
 	// Input: none
 	// Output: none
 	public function __construct(){
-		global $table_prefix;
-		
-		$this->table_stats = $table_prefix . 'slim_stats';
-		$this->table_browsers = $table_prefix . 'slim_browsers';
-		$this->table_screenres = $table_prefix . 'slim_screenres';
-		$this->table_visits = $table_prefix . 'slim_visits';
+		parent::__construct();
 	}
 	// end __construct
 
-	// Function: _get_top_pages
+	// Function: _get_top_custom_pages
 	// Description: Fetches popular pages from the DB
 	// Input: none
 	// Output: array of results
-	private function _get_top_pages(){
+	// Notes: $this->table_stats is initialized inside the parent class
+	//        $this->limit_results is set to the value defined by the user in the Options panel
+	//        You can include WP SlimStat filters by using the corresponding variables. Please
+	//        refer to the source code of wp-slimstat-view.php for more information, or visit our
+	//        support forum for help.
+	private function _get_top_custom_pages(){
 		global $wpdb;
 
 		$sql = "SELECT `resource`, COUNT(*) count
@@ -48,18 +51,18 @@ class wp_slimstat_custom_reports {
 				WHERE `resource` <> ''
 				GROUP BY `resource`
 				ORDER BY count DESC
-				LIMIT 0,20";
+				LIMIT 0,$this->limit_results";
 	
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	// end _get_top_pages
 
-	// Function: show_top_pages
+	// Function: show_top_custom_pages
 	// Description: Formats the results obtained through _get_top_pages
 	// Input: none
 	// Output: HTML code
-	public function show_top_pages() {
-		$results = $this->_get_top_pages();
+	public function show_top_custom_pages() {
+		$results = $this->_get_top_custom_pages();
 		
 		// Boxes come in three sizes: wide, medium, normal (default).
 		// Just add the corresponding class (wide, medium) to the wrapper DIV (see here below)
@@ -87,6 +90,6 @@ load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_URL .'/wp-slimstat/lang', '
 
 // Use the hook 'wp_dashboard_setup' to attach your reports to the panel
 // Of course you can attach as many reports as you want :-)
-add_action('wp_slimstat_custom_report', array( &$wp_slimstat_custom,'show_top_pages'));
+add_action('wp_slimstat_custom_report', array( &$wp_slimstat_custom,'show_top_custom_pages'));
 
 ?>

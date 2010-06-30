@@ -49,11 +49,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 				_e('this period', 'wp-slimstat-view');
 			} ?></h3>
 		<div class="container noscroll">
-			<p><span class="element-title"><?php _e( 'Unique Referers', 'wp-slimstat-view' ); ?></span> <span><?php echo $unique_referers ?></span></p>
-			<p><span class="element-title"><?php _e( 'Direct Visits', 'wp-slimstat-view' ); ?></span> <span><?php echo $direct_visits ?></span></p>
-			<p><span class="element-title"><?php _e( 'Search Engines', 'wp-slimstat-view' ); ?></span> <span><?php echo $search_engines ?></span></p>
-			<p><span class="element-title"><?php _e( 'Unique Pages Referred', 'wp-slimstat-view' ); ?></span> <span><?php echo $pages_referred ?></span></p>
-			<p class="last"><span class="element-title"><?php _e( 'Unique Internal', 'wp-slimstat-view' ); ?></span> <span><?php echo $referred_from_internal ?></span></p>
+			<p><span class="element-title"><?php _e( 'Unique Referers', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($unique_referers) ?></span></p>
+			<p><span class="element-title"><?php _e( 'Direct Visits', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($direct_visits) ?></span></p>
+			<p><span class="element-title"><?php _e( 'Search Engines', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($search_engines) ?></span></p>
+			<p><span class="element-title"><?php _e( 'Unique Pages Referred', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($pages_referred) ?></span></p>
+			<p class="last"><span class="element-title"><?php _e( 'Unique Internal', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($referred_from_internal) ?></span></p>
 		</div>
 	</div>
 </div>
@@ -70,12 +70,14 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
 					for($i=0;$i<$count_results;$i++){
+						$results[$i]['short_string'] = str_replace('\\', '', htmlspecialchars($results[$i]['short_string']));
+						$results[$i]['long_string'] = str_replace('\\', '', htmlspecialchars($results[$i]['long_string']));
 						$show_title_tooltip = ($results[$i]['len'] > 26)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 26)?'...':'');
 						if (!isset($filters_parsed['searchterms'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&searchterms={$results[$i]['long_string']}'>$element_text</a>";
 					
-						echo "<p$show_title_tooltip$last_element><span class='element-title'>$element_text</span> <span class='narrowcolumn' style='text-align:right'>{$results[$i]['count']}</span></p>";
+						echo "<p$show_title_tooltip$last_element><span class='element-title'>$element_text</span> <span class='narrowcolumn' style='text-align:right'>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>
@@ -151,7 +153,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-						echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>
@@ -210,7 +212,8 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$site_domain = str_replace('www.','', $results[$i]['domain']);
 						if (!isset($filters_parsed['domain'][0])) $site_domain = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&domain={$results[$i]['domain']}'>$site_domain</a>";
 				
-						echo "<p$last_element><span class='element-title'>$site_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
+						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
+						echo " href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>$site_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
 					}
 				}
 			?>

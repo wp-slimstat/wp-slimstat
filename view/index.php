@@ -22,6 +22,7 @@ $array_panels = array(
 	__('Traffic Sources','wp-slimstat-view'), 
 	__('Content','wp-slimstat-view'), 
 	__('Raw Data','wp-slimstat-view'), 
+	__('World Map','wp-slimstat-view'), 
 	__('Custom Reports','wp-slimstat-view')
 );
 
@@ -49,12 +50,12 @@ $filters_parsed = array();
 		
 foreach ($filters_to_parse as $a_filter_label => $a_filter_type){
 	if (!empty($_GET['filter']) && !empty($_GET['f_value']) && !empty($_GET['f_operator']) && $_GET['filter']==$a_filter_label){
-		$f_value = ($a_filter_type == 'integer')?intval($_GET['f_value']):$wpdb->escape(strip_tags(str_replace('\\', '', $_GET['f_value'])));
+		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET['f_value'])):$wpdb->escape(strip_tags(str_replace('\\', '', $_GET['f_value'])));
 		$f_operator = $wpdb->escape(strip_tags(str_replace('\\', '', $_GET['f_operator'])));
 		$filters_parsed[$a_filter_label] = array($f_value, $f_operator);
 	}
 	else if(!empty($_GET[$a_filter_label])){
-		$f_value = ($a_filter_type == 'integer')?intval($_GET[$a_filter_label]):$wpdb->escape(strip_tags(str_replace('\\', '', $_GET[$a_filter_label])));
+		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET[$a_filter_label])):$wpdb->escape(strip_tags(str_replace('\\', '', $_GET[$a_filter_label])));
 		$f_operator = !empty($_GET[$a_filter_label.'-op'])?$wpdb->escape(strip_tags(str_replace('\\', '', $_GET[$a_filter_label.'-op']))):'equals';
 		$filters_parsed[$a_filter_label] = array($f_value, $f_operator);
 	}

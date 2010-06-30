@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.0.5
+Version: 2.0.6
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -22,6 +22,9 @@ class wp_slimstat {
 	// Output: none
 	public function __construct() {
 		global $table_prefix;
+
+		// Current version
+		$this->version = '2.0.6';
 
 		// We use a bunch of tables to store data
 		$this->table_stats = $table_prefix . 'slim_stats';
@@ -124,25 +127,43 @@ class wp_slimstat {
 				$this->_create_table($stats_table_sql, $this->table_stats) ) {
 			if (!$this->_import_countries()) {
 				// TODO: display an alert in the admin interface with instructions for manually uploading the file;
+				// Currently it looks like there's no way to do this in Wordpress :-(
 			}
 		}
 		else {
 			// TODO: display an alert in the admin interface with instructions for manually uploading the file;
+			// Currently it looks like there's no way to do this in Wordpress :-(
 		}
-
-		// Default options
 
 		// We need a secret key to make sure the js-php interaction is secure
 		add_option('slimstat_secret', md5(time()), '', 'no');
 
-		// List of IPs to ignore
-		add_option('slimstat_ignore_ip', array(), '', 'no');
+		// Activate or deactivate tracking, but still be able to view reports
+		add_option('slimstat_is_tracking', 'yes', '', 'no');
+
+		// Track screen resolutions, outbound links and other stuff using a javascript component
+		add_option('slimstat_enable_javascript', 'yes', '', 'no');
+
+		// Enable Browscap's autoupdate feature
+		add_option('slimstat_browscap_autoupdate', 'yes', '', 'no');
+
+		// Ignore requests that have the same information and are less than x seconds far from each other
+		add_option('slimstat_ignore_interval', '30', '', 'no');
 
 		// Don't ignore bots and spiders by default
 		add_option('slimstat_ignore_bots', 'no', '', 'no');
 
-		// Ignore requests that have the same information and are less than x seconds far from each other
-		add_option('slimstat_ignore_interval', '30', '', 'no');
+		// Automatically purge stats db after x days (0 = no purge)
+		add_option('slimstat_auto_purge', '120', '', 'no');
+
+		// Activate or deactivate the conversion of ip addresses into hostnames
+		add_option('slimstat_convert_ip_addresses', 'yes', '', 'no');
+
+		// Activate or deactivate the conversion of ip addresses into hostnames
+		add_option('slimstat_rows_to_show', '20', '', 'no');
+
+		// List of IPs to ignore
+		add_option('slimstat_ignore_ip', array(), '', 'no');
 
 		// List of local resources to ignore
 		add_option('slimstat_ignore_resources', array(), '', 'no');
@@ -156,21 +177,15 @@ class wp_slimstat {
 		// List of users who can administer this plugin's options: if empty, all users are allowed
 		add_option('slimstat_can_admin', array(), '', 'no');
 
-		// Activate or deactivate tracking, but still be able to view reports
-		add_option('slimstat_is_tracking', 'yes', '', 'no');
-
-		// Automatically purge stats db after x days (0 = no purge)
-		add_option('slimstat_auto_purge', '120', '', 'no');
-
-		// Activate or deactivate the conversion of ip addresses into hostnames
-		add_option('slimstat_convert_ip_addresses', 'yes', '', 'no');
-
-		// Track screen resolutions, outbound links and other stuff using a javascript component
-		add_option('slimstat_enable_javascript', 'yes', '', 'no');
-
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
+			
+		// Please do not remove this function, it helps me keep track of WP SlimStat's userbase.
+		// Your privacy is 100% guaranteed, I promise :-)
+		$opts = array( 'http'=>array( 'method'=>'GET', 'header'=>"Accept-language: en\r\nUser-Agent: wp-slimstat\r\n" ) );
+		$context = stream_context_create($opts);
+		$devnull = file_get_contents('http://www.duechiacchiere.it/wp-slimstat-count.php?h='.urlencode(get_bloginfo('url')).'&v='.$this->version.'&c='.$this->_count_records(), false, $context);
 	}
 	// end activate
 
@@ -377,6 +392,10 @@ class wp_slimstat {
 	private function _import_countries() {
 		global $wpdb;
 
+		// If there is already a (not empty) country table, skip import
+		$country_rows = $wpdb->get_var("SELECT COUNT(*) FROM `$this->table_countries`", 0);
+		if ( $country_rows !== false && $country_rows > 0 ) return false;
+
 		$country_file = "geoip.csv";
 
 		// To avoid problems with SAFE_MODE, we will not use is_file
@@ -391,11 +410,7 @@ class wp_slimstat {
 		}
 		closedir($handle);
 
-		if (!$is_country_file) return false;
-
-		// If there is already a (not empty) country table, skip import
-		$country_rows = $wpdb->get_var("SELECT COUNT(*) FROM `$this->table_countries`", 0);
-		if ( $country_rows !== false && $country_rows > 0 ) return false;
+		if (!$is_country_file) return false;	
 
 		// Allow plenty of time for this to happen
 		@set_time_limit( 600 ); 
@@ -550,6 +565,17 @@ class wp_slimstat {
 		return $search_terms;
 	}
 	// end _get_search_terms
+
+	// Function: _count_records
+	// Description: Counts how many visits are currently recorded in the database
+	// Input: none
+	// Output: integer
+	private function _count_records() {
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) FROM `$this->table_stats`";
+		return intval($wpdb->get_var($sql));
+	}
 
 	// Function: wp_slimstat_purge
 	// Description: Removes old entries from the database

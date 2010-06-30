@@ -1,22 +1,20 @@
 === WP SlimStat ===
 
 Donate link: http://www.duechiacchiere.it/wp-slimstat
-Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews
+Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9
 Tested up to: 3.0
-Stable tag: 2.0.5
+Stable tag: 2.0.6
 
-A smart web analytics tool. Track visits, pageviews, pathstats, and much more.
+A smart web analytics tool. Tracks visits, pageviews, pathstats, and much more.
 
 == Description ==
 
 It's back, by popular demand! The first, the only, the inimitable: WP SlimStat 2.
 Completely rewritten from the ground up, lightweight, optimized, much more powerful
-and flexible. Please note: this is a beta version. It CAN be used in a production
-environment, but some features are still being developed or improved. Please send me
-your feedback if you find any bugs or unusual behaviors.
+and flexible. Please contact me if you find any bugs or unusual behaviors.
 
-## Main Features:
+## Main Features
 * Tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
 * Tracks outbound links and downloads
 * Tracks internal searches
@@ -26,11 +24,19 @@ your feedback if you find any bugs or unusual behaviors.
 * The best country, browser and platform detection ever seen (thanks to [Browscap](http://code.google.com/p/phpbrowscap/) and [MaxMind](http://www.maxmind.com/) )
 * Real-time charts to help you visualize your visitors' trends (thanks to [FusionCharts](http://www.fusioncharts.com/free/) free edition)
 * The browser recognition database is automatically updated every 2 weeks
+* Shows detailed information about each visitor: Country, city, area, organization, etc (thanks to [IP2Location](http://www.ip2location.com) )
 * 10,000 hits use just 1.4 megabytes of DB space
 * Ignore hits based on IP addresses and networks, browsers, referrers and permalinks
 * Can restrict view/admin to specific users
 * Uses WP timezone settings and date formatting
 * Has a lot of filters for content drill-down
+* Includes a detailed World Map
+
+## Requirements
+* Wordpress 2.9 or higher
+* PHP 5.x or higher
+* MySQL 5.x or higher
+* At least 10 MB of free web space
 
 == Installation ==
 
@@ -57,6 +63,20 @@ to Maintenance, that alert message should be gone.
 3. Options
 
 == Changelog ==
+
+= 2.0.6 =
+* First 'stable' version, finally!
+* Added a World map to graphically represent hits and visits. You can use filters for content drill-down (thanks Michael)
+* Added number_format to improve readability (thanks Digo)
+* Added a new icon near to each IP address, to see all the details about that address (thanks Digo)
+* Added an option to set the number of results listed within each module
+* Added an internal feature that allows me to keep track of all the sites using WP SlimStat out there
+* Fixed a bug in calculating the percentage of hits for each exit page ( Content -> Exit pages )
+* Fixed a bug in calculating unique IPs ( Dashboard -> Summary for... )
+* Fixed a bug in the 'Internal Searches' module
+* Custom reports now shares the same class used by the main View panels
+* Improved the overall security and stability of WP SlimStat
+* Introduced some SQL code optimizations for faster queries
 
 = 2.0.5 (release candidate 2) =
 * Added an option to filter metrics by date intervals (given date plus x days)

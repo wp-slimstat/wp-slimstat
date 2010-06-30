@@ -142,7 +142,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 						echo "<p$last_element$show_title_tooltip><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>";
-						echo $element_text."</span> <span>{$results[$i]['count']}</span></p>";
+						echo $element_text."</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>
@@ -231,7 +231,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-						echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>
@@ -254,8 +254,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 					for($i=0;$i<$count_results;$i++){
 						if ($outbound_id != $results[$i]['outbound_id']){
 							$ip_address = long2ip($results[$i]['ip']);
+							$ip_address = "<a href='http://www.ip2location.com/$ip_address' target='_blank' title='WHOIS: $ip_address'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/whois.gif' /></a> $ip_address";
 							$country = __('c-'.$results[$i]['country'],'countries-languages');
 							$time_of_pageview = $results[$i]['date_f'].'@'.$results[$i]['time_f'];
+							$results[$i]['searchterms'] = str_replace('\\', '', htmlspecialchars($results[$i]['searchterms']));
 						
 							echo "<p class='header'>$ip_address <span>$country</span> <span style='margin-right:10px'>{$time_of_pageview}</span> <span style='margin-right:5px'><strong>{$results[$i]['searchterms']}</strong></span></p>";
 							$outbound_id = $results[$i]['outbound_id'];
