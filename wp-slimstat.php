@@ -180,7 +180,7 @@ class wp_slimstat {
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
-			
+
 		// Please do not remove this function, it helps me keep track of WP SlimStat's userbase.
 		// Your privacy is 100% guaranteed, I promise :-)
 		$opts = array( 'http'=>array( 'method'=>'GET', 'header'=>"Accept-language: en\r\nUser-Agent: wp-slimstat\r\n" ) );
