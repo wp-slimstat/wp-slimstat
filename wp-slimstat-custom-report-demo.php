@@ -21,7 +21,7 @@ if (!in_array('wp-slimstat/wp-slimstat.php', $plugins)){
 }
 
 // You can reuse any of the functions defined by the parent class
-include_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
+if (!class_exists('wp_slimstat_view')) include_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
 
 class wp_slimstat_custom_reports extends wp_slimstat_view{
 

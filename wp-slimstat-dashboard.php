@@ -21,7 +21,7 @@ if (!in_array('wp-slimstat/wp-slimstat.php', $plugins)){
 }
 
 // Import the class where all the reports are defined
-require(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
+if (!class_exists('wp_slimstat_view')) include_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
 
 class wp_slimstat_dashboard extends wp_slimstat_view{
 
@@ -63,7 +63,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 			for($i=0;$i<$count_results;$i++){
 				$show_title_tooltip = ($results[$i]['len'] > 90)?' title="'.$results[$i]['long_string'].'"':'';
 				$last_element = ($i == $count_results-1)?' class="slimstat-row last"':' class="slimstat-row"';
-				echo '<p'.$show_title_tooltip.$last_element.'><a target="_blank" href="'.get_bloginfo('url').$results[$i]['long_string'].'"><img src="'.WP_PLUGIN_URL.'/wp-slimstat/images/url.gif" /></a> '.$results[$i]['short_string'].(($results[$i]['len'] > 90)?'...':'').' <span style="float:right">'.$results[$i]['count'].'</span></p>';
+				echo '<p'.$show_title_tooltip.$last_element.'><a target="_blank" href="'.get_bloginfo('url').$results[$i]['long_string'].'"><img src="'.WP_PLUGIN_URL.'/wp-slimstat/images/url.gif" /></a> '.$results[$i]['short_string'].(($results[$i]['len'] > 90)?'...':'').' <span style="float:right">'.number_format($results[$i]['count']).'</span></p>';
 			}
 		}
 	}
@@ -109,7 +109,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	// Input: none
 	// Output: HTML code
 	public function show_about_wp_slimstat(){ ?>
-		<p class="slimstat-row"><span class='element-title'><?php _e( 'Total Hits', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo $this->count_total_pageviews(); ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e( 'Total Hits', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo number_format($this->count_total_pageviews()); ?></span></p>
 		<p class="slimstat-row"><span class='element-title'><?php _e( 'Data Size', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo $this->get_data_size() ?></span></p>
 		<p class="slimstat-row"><span class='element-title'><?php _e( 'Tracking Active', 'wp-slimstat-dashboard' ); ?></span> <span><?php _e(get_option('slimstat_is_tracking', 'no'), 'countries-languages') ?></span></p>
 		<p class="slimstat-row"><span class='element-title'><?php _e( 'Auto purge', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo (($auto_purge = get_option('slimstat_auto_purge', '0')) > 0)?$auto_purge.' days':'No'; ?></span></p>
@@ -127,12 +127,12 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 		$today_pageviews = intval($current->current_data1[intval($this->current_date['d'])]);
 		$yesterday_pageviews = (intval($this->current_date['d'])==1)?$current->previous_data1[intval($this->yesterday['d'])]:$current->current_data1[intval($this->yesterday['d'])];
 		?>
-		<p class="slimstat-row"><span class='element-title'><?php _e( 'Pageviews', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo ($current_pageviews = intval(array_sum($current->current_data1))); ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e( 'Unique IPs', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo array_sum($current->current_data2); ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e( 'Avg Pageviews', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo ($current->current_non_zero_count > 0)?intval($current_pageviews/$current->current_non_zero_count):0; ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e( 'On', 'wp-slimstat-dashboard' ); echo ' '.$this->current_date['d'].'/'.$this->current_date['m'] ?></span> <span><?php echo intval($today_pageviews); ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e( 'On', 'wp-slimstat-dashboard' ); echo ' '.$this->yesterday['d'].'/'.$this->yesterday['m'] ?></span> <span><?php echo intval($yesterday_pageviews); ?></span></p>
-		<p class="slimstat-row last"><span class='element-title'><?php _e( 'Last Month', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo intval(array_sum($current->previous_data1)); ?></span></p><?php
+		<p class="slimstat-row"><span class='element-title'><?php _e( 'Pageviews', 'wp-slimstat-dashboard' ); ?></span> <span><?php $current_pageviews = intval(array_sum($current->current_data1)); echo number_format($current_pageviews); ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e( 'Unique IPs', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo number_format($this->count_unique_ips()); ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e( 'Avg Pageviews', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo number_format(($current->current_non_zero_count > 0)?intval($current_pageviews/$current->current_non_zero_count):0); ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e( 'On', 'wp-slimstat-dashboard' ); echo ' '.$this->current_date['d'].'/'.$this->current_date['m'] ?></span> <span><?php echo number_format(intval($today_pageviews)); ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e( 'On', 'wp-slimstat-dashboard' ); echo ' '.$this->yesterday['d'].'/'.$this->yesterday['m'] ?></span> <span><?php echo number_format(intval($yesterday_pageviews)); ?></span></p>
+		<p class="slimstat-row last"><span class='element-title'><?php _e( 'Last Month', 'wp-slimstat-dashboard' ); ?></span> <span><?php echo number_format(intval(array_sum($current->previous_data1))); ?></span></p><?php
 	}
 	// end show_summary_for
 	
@@ -201,7 +201,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 				
 				echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 				echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
-				echo $element_text."</span> <span>$percentage%</span> <span>{$results[$i]['count']}</span></p>";
+				echo $element_text."</span> <span>$percentage%</span> <span>".number_format($results[$i]['count'])."</span></p>";
 			}
 		}
 	}
