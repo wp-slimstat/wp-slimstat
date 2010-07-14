@@ -3,7 +3,7 @@
  background:transparent url(../images/wp-slimstat.png) no-repeat scroll 0 0;
  float:left;
  height:36px;
- margin:14px 6px 0 0;
+ margin:16px 2px 0 4px;
  width:36px;
 }
 #analytics-icon.rtl{
@@ -176,11 +176,16 @@
 .form-table td.narrowcolumn{
  width:10%;
 }
+.form-table td.shortrow{
+ padding:0 10px 20px;
+ white-space:normal;
+}
+
 .form-table td.widecolumn{
  width:68%;
 }
-.form-table td.shortrow{
- padding:0 10px 20px;
+.form-table td.wrap{
+ font-size:14px;
  white-space:normal;
 }
 .form-table input{

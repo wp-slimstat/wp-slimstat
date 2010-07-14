@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-21 15:35-0500\n"
-"PO-Revision-Date: 2010-06-21 15:36-0500\n"
+"POT-Creation-Date: 2010-07-14 09:25-0500\n"
+"PO-Revision-Date: 2010-07-14 09:26-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -40,33 +40,38 @@ msgstr "Manutenzione"
 msgid "Thank you"
 msgstr "Grazie"
 
-#: index.php:33
+#: index.php:32
 #: panel1.php:23
 msgid "Activate tracking"
 msgstr "Attiva tracking"
 
-#: index.php:34
+#: index.php:33
 #: panel1.php:36
 msgid "Enable JS Tracking"
 msgstr "Attiva tracciamento JS"
 
-#: index.php:35
+#: index.php:34
 #: panel1.php:51
 msgid "Autoupdate Browsers DB"
 msgstr "Autoaggiorna DB dei browser"
 
-#: index.php:36
+#: index.php:35
 msgid "Ignore interval"
 msgstr "Latenza"
 
-#: index.php:37
+#: index.php:36
 #: panel1.php:78
 msgid "Ignore bots"
 msgstr "Ignora bot"
 
-#: index.php:38
+#: index.php:37
 msgid "Auto purge"
 msgstr "Pulizia DB"
+
+#: index.php:38
+#: panel1.php:106
+msgid "Use separate menu"
+msgstr "Menu indipendente"
 
 #: index.php:39
 #: panel2.php:18
@@ -124,6 +129,7 @@ msgstr "Sei sicuro di voler cancellare definitivamente tutti i dati sugli access
 #: panel1.php:38
 #: panel1.php:53
 #: panel1.php:80
+#: panel1.php:108
 #: panel2.php:20
 msgid "Yes"
 msgstr "Si"
@@ -134,6 +140,7 @@ msgstr "Si"
 #: panel1.php:41
 #: panel1.php:56
 #: panel1.php:83
+#: panel1.php:111
 #: panel2.php:23
 msgid "No"
 msgstr "No"
@@ -197,6 +204,10 @@ msgstr "La prossima pulizia verr&agrave; effettuata il"
 #: panel1.php:101
 msgid "Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature."
 msgstr "Cancella automaticamente le visite pi&ugrave; vecchie di <strong>X</strong> giorni fa (usa il sistema interno di cron job di Wordpress). Zero disattiva la funzione."
+
+#: panel1.php:116
+msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat or not."
+msgstr "Decidi se avere un menu separato per WP SlimStat nel pannello di amministrazione di Wordpress."
 
 #: panel2.php:28
 msgid "Shows hostnames instead of IP addresses. It slows down the rendering of your metrics."

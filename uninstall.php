@@ -18,6 +18,7 @@ delete_option('slimstat_browscap_autoupdate');
 delete_option('slimstat_ignore_interval');
 delete_option('slimstat_ignore_bots');
 delete_option('slimstat_auto_purge');
+delete_option('slimstat_use_separate_menu');
 delete_option('slimstat_convert_ip_addresses');
 delete_option('slimstat_rows_to_show');
 delete_option('slimstat_ignore_ip');

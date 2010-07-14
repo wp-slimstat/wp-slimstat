@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.0.6
+Version: 2.0.7
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -24,7 +24,7 @@ class wp_slimstat {
 		global $table_prefix;
 
 		// Current version
-		$this->version = '2.0.6';
+		$this->version = '2.0.7';
 
 		// We use a bunch of tables to store data
 		$this->table_stats = $table_prefix . 'slim_stats';
@@ -155,6 +155,9 @@ class wp_slimstat {
 
 		// Automatically purge stats db after x days (0 = no purge)
 		add_option('slimstat_auto_purge', '120', '', 'no');
+		
+		// Use a separate menu for the admin interface
+		add_option('slimstat_use_separate_menu', 'no', '', 'no');
 
 		// Activate or deactivate the conversion of ip addresses into hostnames
 		add_option('slimstat_convert_ip_addresses', 'yes', '', 'no');
@@ -180,7 +183,7 @@ class wp_slimstat {
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
-
+			
 		// Please do not remove this function, it helps me keep track of WP SlimStat's userbase.
 		// Your privacy is 100% guaranteed, I promise :-)
 		$opts = array( 'http'=>array( 'method'=>'GET', 'header'=>"Accept-language: en\r\nUser-Agent: wp-slimstat\r\n" ) );
@@ -285,7 +288,7 @@ class wp_slimstat {
 		
 		// Do autoupdate?
 		$do_autoUpdate = get_option('slimstat_browscap_autoupdate', 'no');
-		$browscap->doAutoUpdate = ($do_autoupdate == 'yes');
+		$browscap->doAutoUpdate = ($do_autoUpdate == 'yes');
 
 		$stat['ip'] = sprintf( "%u", $long_user_ip );
 		$stat['language']	= $this->_get_language();
@@ -622,9 +625,17 @@ class wp_slimstat {
 		// Load localization files
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
-		$array_allowed_users = get_option('slimstat_can_view');
+		$array_allowed_users = get_option('slimstat_can_view', array());
+		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
 		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users) || current_user_can('manage_options')) {
-			add_submenu_page( 'index.php', 'SlimStat', 'SlimStat', 1, WP_PLUGIN_DIR.'/wp-slimstat/view/index.php' );
+			if ($use_separate_menu == 'yes'){
+				add_menu_page( 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', '', WP_PLUGIN_URL.'/wp-slimstat/images/wp-slimstat-menu.png' );
+			}
+			else{
+				add_submenu_page( 'index.php', 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/view/index.php' );
+			}
+			
+
 		}
 		return $_s;
 	}
@@ -637,9 +648,20 @@ class wp_slimstat {
 	public function wp_slimstat_add_config_menu( $_s ) {
 		global $current_user;
 
-		$array_allowed_users = get_option('slimstat_can_admin');
-		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users)) {
-			add_options_page( 'SlimStat', 'SlimStat', 'manage_options', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php' );
+		$array_allowed_users = get_option('slimstat_can_admin', array());
+		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
+		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users)){
+			if ($use_separate_menu == 'yes'){
+				add_submenu_page( WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', 'Options', 'Options', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php' );
+			}
+			else{
+				if (current_user_can('manage_options')){
+					add_options_page( 'SlimStat', 'SlimStat', 'manage_options', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php' );
+				}
+				else{
+					add_menu_page( 'SlimStat Config', 'SlimStat Config', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php' );
+				}
+			}
 		}
 		return $_s;
 	}

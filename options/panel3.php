@@ -7,25 +7,35 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 // Load the options
 $wp_slimstat_options = array();
-$wp_slimstat_options['can_view'] = get_option('slimstat_can_view', array());
-$wp_slimstat_options['can_admin'] = get_option('slimstat_can_admin', array());
+$wp_slimstat_options['ignore_ip'] = get_option('slimstat_ignore_ip', array());
+$wp_slimstat_options['ignore_resources'] = get_option('slimstat_ignore_resources', array());
+$wp_slimstat_options['ignore_browsers'] = get_option('slimstat_ignore_browsers', array());
 
 ?>
 
-<h3><label for="can_view"><?php _e('Who can view the reports','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of users who are allowed to view WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all</strong> users (but subscribers) will have access to the reports.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[can_view]" id="can_view"><?php
+<h3><label for="ignore_ip"><?php _e('IP addresses to ignore','wp-slimstat-options') ?></label></h3>
+<p><?php _e("Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly.",'wp-slimstat-options') ?></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_ip]" id="ignore_ip"><?php
 	$list_to_show = '';
-	foreach($wp_slimstat_options['can_view'] as $a_user)
-		$list_to_show .= $a_user.', ';
+	foreach($wp_slimstat_options['ignore_ip'] as $a_ip_range)
+		$list_to_show .= $a_ip_range.', ';
 	echo substr($list_to_show, 0, -2);
 ?></textarea></p>
 
-<h3><label for="can_admin"><?php _e('Who can manage these options','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of users who are allowed to update these options. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all</strong> users (but subscribers) will have access to the options panel.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[can_admin]" id="can_admin"><?php
+<h3><label for="ignore_resources"><?php _e('Pages and posts to ignore','wp-slimstat-options') ?></label></h3>
+<p><?php _e("Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>starts</strong> with any of them.",'wp-slimstat-options') ?></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_resources]" id="ignore_resources"><?php
 	$list_to_show = '';
-	foreach($wp_slimstat_options['can_admin'] as $a_user)
-		$list_to_show .= $a_user.', ';
+	foreach($wp_slimstat_options['ignore_resources'] as $a_resource)
+		$list_to_show .= $a_resource.', ';
+	echo substr($list_to_show, 0, -2);
+?></textarea></p>
+
+<h3><label for="ignore_browsers"><?php _e('Browsers to ignore','wp-slimstat-options') ?></label></h3>
+<p><?php _e("Enter a list of browsers you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these.",'wp-slimstat-options') ?></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_browsers]" id="ignore_browsers"><?php
+	$list_to_show = '';
+	foreach($wp_slimstat_options['ignore_browsers'] as $a_browser)
+		$list_to_show .= $a_browser.', ';
 	echo substr($list_to_show, 0, -2);
 ?></textarea></p>

@@ -13,7 +13,7 @@ $wp_slimstat_options['browscap_autoupdate'] = get_option('slimstat_browscap_auto
 $wp_slimstat_options['ignore_interval'] = intval(get_option('slimstat_ignore_interval', '30'));
 $wp_slimstat_options['ignore_bots'] = get_option('slimstat_ignore_bots', 'no');
 $wp_slimstat_options['auto_purge'] = intval(get_option('slimstat_auto_purge', '0'));
-
+$wp_slimstat_options['use_separate_menu'] = get_option('slimstat_use_separate_menu', 'no');
 
 ?>
 
@@ -99,6 +99,21 @@ $wp_slimstat_options['auto_purge'] = intval(get_option('slimstat_auto_purge', '0
 	<tr>
 		<td colspan="2" class="shortrow">
 			<span class="description"><?php _e('Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row" rowspan="2"><label for="use_separate_menu"><?php _e('Use separate menu','wp-slimstat-options') ?></label></th>
+		<td class="narrowcolumn">
+			<input type="radio" name="options[use_separate_menu]" id="use_separate_menu" value="yes"<?php echo ($wp_slimstat_options['use_separate_menu'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
+		</td>
+		<td class="widecolumn">
+			<input type="radio" name="options[use_separate_menu]" value="no" <?php echo ($wp_slimstat_options['use_separate_menu'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>			
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">
+			<span class="description"><?php _e('Lets you decide if you want to have a separate admin menu for WP SlimStat or not.','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 </tbody>

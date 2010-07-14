@@ -50,13 +50,13 @@ $filters_parsed = array();
 		
 foreach ($filters_to_parse as $a_filter_label => $a_filter_type){
 	if (!empty($_GET['filter']) && !empty($_GET['f_value']) && !empty($_GET['f_operator']) && $_GET['filter']==$a_filter_label){
-		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET['f_value'])):$wpdb->escape(strip_tags(str_replace('\\', '', $_GET['f_value'])));
-		$f_operator = $wpdb->escape(strip_tags(str_replace('\\', '', $_GET['f_operator'])));
+		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET['f_value'])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_value'])));
+		$f_operator = $wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_operator'])));
 		$filters_parsed[$a_filter_label] = array($f_value, $f_operator);
 	}
 	else if(!empty($_GET[$a_filter_label])){
-		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET[$a_filter_label])):$wpdb->escape(strip_tags(str_replace('\\', '', $_GET[$a_filter_label])));
-		$f_operator = !empty($_GET[$a_filter_label.'-op'])?$wpdb->escape(strip_tags(str_replace('\\', '', $_GET[$a_filter_label.'-op']))):'equals';
+		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET[$a_filter_label])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label])));
+		$f_operator = !empty($_GET[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label.'-op']))):'equals';
 		$filters_parsed[$a_filter_label] = array($f_value, $f_operator);
 	}
 }
@@ -129,7 +129,7 @@ if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_pa
 				<option value="ends with"><?php _e('Ends with','wp-slimstat-view') ?></option>
 			</select>
 			<input type="text" name="f_value" value="" size="15">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-			<span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter by date','wp-slimstat-view') ?> <select name="day" style="width:8em">
+			<span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter by date','wp-slimstat-view') ?> <select name="day" style="width:6em">
 				<option value=""><?php _e('Day','wp-slimstat-view') ?></option>
 				<option>01</option><option>02</option><option>03</option><option>04</option><option>05</option>
 				<option>06</option><option>07</option><option>08</option><option>09</option><option>10</option>
@@ -139,13 +139,13 @@ if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_pa
 				<option>26</option><option>27</option><option>28</option><option>29</option><option>30</option>
 				<option>31</option>
 			</select> 
-			<select name="month" style="width:8em">
+			<select name="month" style="width:6em">
 				<option value=""><?php _e('Month','wp-slimstat-view') ?></option>
 				<option>01</option><option>02</option><option>03</option><option>04</option><option>05</option>
 				<option>06</option><option>07</option><option>08</option><option>09</option><option>10</option>
 				<option>11</option><option>12</option>
 			</select>
-			<select name="year" style="width:8em">
+			<select name="year" style="width:6em">
 				<option value=""><?php _e('Year','wp-slimstat-view') ?></option>
 				<?php
 					$current_year = date_i18n('Y'); 

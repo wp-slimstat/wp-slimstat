@@ -7,24 +7,68 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 ?>
 
-<table class="form-table">
+<h3><?php _e('Please note that these commands cannot be undone!','wp-slimstat-options') ?></h3>
+
+<table class="form-table <?php echo $wp_locale->text_direction ?>">
 <tbody>
 	<tr valign="top">
-		<th scope="row"><form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-<input type="hidden" name="cmd" value="_s-xclick">
-<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----">
-<input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
-<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
-</form>
-
-
-</th>
+		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
 		<td>
-			<?php _e('How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better. Any money received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family.','wp-slimstat-options') ?>
+			<form action="options-general.php?page=wp-slimstat/options/index.php&slimpanel=4" method="post"
+				onsubmit="return(confirm('<?php _e('Are you sure you want to PERMANENTLY delete these rows from your database?','wp-slimstat-options'); ?>'))">
+			<?php _e('Delete rows where','wp-slimstat-options') ?>
+			<select name="options[conditional_delete_field]">
+				<option value="country"><?php _e('Country Code','wp-slimstat-options') ?></option>
+				<option value="domain"><?php _e('Domain','wp-slimstat-options') ?></option>
+				<option value="language"><?php _e('Language Code','wp-slimstat-options') ?></option>
+				<option value="resource"><?php _e('Permalink','wp-slimstat-options') ?></option>
+				<option value="searchterms"><?php _e('Search Terms','wp-slimstat-options') ?></option>
+			</select> 
+			<select name="options[conditional_delete_operator]" style="width:12em">
+				<option value="equal"><?php _e('Is equal to','wp-slimstat-options') ?></option>
+				<option value="like"><?php _e('Contains','wp-slimstat-options') ?></option>
+				<option value="not like"><?php _e('Does not contain','wp-slimstat-options') ?></option>
+			</select>
+			<input type="text" name="options[conditional_delete_value]" id="delete_value" value="" size="20">
+			<input type="submit" value="<?php _e('DELETE','wp-slimstat-options') ?>" class="button-primary" name="Submit">
+			</form>
 		</td>
 	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">&nbsp;</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row"><?php _e('Empty database','wp-slimstat-options') ?></th>
+		<td>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=4"><?php _e('DELETE STATS','wp-slimstat-options'); ?></a>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">&nbsp;</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row"><?php _e('Reset Ip-to-Countries','wp-slimstat-options') ?></th>
+		<td>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=4"><?php _e('EMPTY IP-TO-COUNTRIES','wp-slimstat-options'); ?></a>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">&nbsp;</td>
+	</tr>
+	
+<?php 
+if (!isset($wp_slimstat_object)) $wp_slimstat_object = new wp_slimstat();
+$check_column = $wpdb->get_var("SHOW COLUMNS FROM `$wp_slimstat_object->table_stats` LIKE 'browser_id'");
+if (empty($check_column)): ?>
+	<tr valign="top">
+		<th scope="row"><?php _e('Old table detected','wp-slimstat-options') ?></th>
+		<td>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=4"><?php _e('RESET STATS','wp-slimstat-options'); ?></a>
+			&mdash; <?php _e('It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process.','wp-slimstat-options') ?>
+		</td>
+	</tr>
+<?php endif; ?>
 </tbody>
 </table>
-
-<h3><?php _e("Don't want to donate? You can still help",'wp-slimstat-options') ?></h3>
-<p><?php _e("If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!",'wp-slimstat-options') ?></p>

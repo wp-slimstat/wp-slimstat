@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-21 15:35-0500\n"
-"PO-Revision-Date: 2010-06-21 15:36-0500\n"
+"POT-Creation-Date: 2010-07-14 09:25-0500\n"
+"PO-Revision-Date: 2010-07-14 09:26-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -40,32 +40,37 @@ msgstr ""
 msgid "Thank you"
 msgstr ""
 
-#: index.php:33
+#: index.php:32
 #: panel1.php:23
 msgid "Activate tracking"
 msgstr ""
 
-#: index.php:34
+#: index.php:33
 #: panel1.php:36
 msgid "Enable JS Tracking"
 msgstr ""
 
-#: index.php:35
+#: index.php:34
 #: panel1.php:51
 msgid "Autoupdate Browsers DB"
 msgstr ""
 
-#: index.php:36
+#: index.php:35
 msgid "Ignore interval"
 msgstr ""
 
-#: index.php:37
+#: index.php:36
 #: panel1.php:78
 msgid "Ignore bots"
 msgstr ""
 
-#: index.php:38
+#: index.php:37
 msgid "Auto purge"
+msgstr ""
+
+#: index.php:38
+#: panel1.php:106
+msgid "Use separate menu"
 msgstr ""
 
 #: index.php:39
@@ -124,6 +129,7 @@ msgstr ""
 #: panel1.php:38
 #: panel1.php:53
 #: panel1.php:80
+#: panel1.php:108
 #: panel2.php:20
 msgid "Yes"
 msgstr ""
@@ -134,6 +140,7 @@ msgstr ""
 #: panel1.php:41
 #: panel1.php:56
 #: panel1.php:83
+#: panel1.php:111
 #: panel2.php:23
 msgid "No"
 msgstr ""
@@ -196,6 +203,10 @@ msgstr ""
 
 #: panel1.php:101
 msgid "Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature."
+msgstr ""
+
+#: panel1.php:116
+msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat or not."
 msgstr ""
 
 #: panel2.php:28
@@ -333,15 +344,3 @@ msgstr ""
 #: panel6.php:30
 msgid "If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
 msgstr ""
-
-#~ msgid "IP"
-#~ msgstr ""
-
-#~ msgid "Equal"
-#~ msgstr ""
-
-#~ msgid "Like"
-#~ msgstr ""
-
-#~ msgid "Not Like"
-#~ msgstr ""

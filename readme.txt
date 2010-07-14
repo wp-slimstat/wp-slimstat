@@ -2,9 +2,9 @@
 
 Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
-Requires at least: 2.9
+Requires at least: 2.9.2
 Tested up to: 3.0
-Stable tag: 2.0.6
+Stable tag: 2.0.7
 
 A smart web analytics tool. Tracks visits, pageviews, pathstats, and much more.
 
@@ -12,7 +12,13 @@ A smart web analytics tool. Tracks visits, pageviews, pathstats, and much more.
 
 It's back, by popular demand! The first, the only, the inimitable: WP SlimStat 2.
 Completely rewritten from the ground up, lightweight, optimized, much more powerful
-and flexible. Please contact me if you find any bugs or unusual behaviors.
+and flexible.
+
+## Requirements
+* Wordpress 2.9 or higher
+* PHP 5.x or higher
+* MySQL 5.x or higher
+* At least 10 MB of free web space
 
 ## Main Features
 * Tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
@@ -31,12 +37,6 @@ and flexible. Please contact me if you find any bugs or unusual behaviors.
 * Uses WP timezone settings and date formatting
 * Has a lot of filters for content drill-down
 * Includes a detailed World Map
-
-## Requirements
-* Wordpress 2.9 or higher
-* PHP 5.x or higher
-* MySQL 5.x or higher
-* At least 10 MB of free web space
 
 == Installation ==
 
@@ -60,9 +60,18 @@ to Maintenance, that alert message should be gone.
 == Screenshots ==
 
 1. Reports
-3. Options
+2. Options
 
 == Changelog ==
+
+= 2.0.7 =
+* Added an option to let you choose if you want WP SlimStat to add a separate admin menu, or keep it integrate with Wordpress' menus
+* Now you can display a lot of metrics on your website. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.0)
+* Fixed a conflict between WP SlimStat and WP SlimStat Dashboard Widgets
+* Fixed a bug that prevented the autoupdate of Browscap to run periodically
+* Fixed a possible XSS vulnerability when parsing filters
+* Some graphic fine-tuning to adapt the layout to the new admin interface and colors
+* Geolocalization: updated the information in the CSV file included (July 2010)
 
 = 2.0.6 =
 * First 'stable' version, finally!
@@ -123,4 +132,8 @@ the most relevant metrics handy.
 
 WP SlimStat Custom Reports - Yes, you can! Create and view your personalized analytics for WP SlimStat. This
 plugin demonstrates how to extract your own reports. Please do not hesitate to contact me if you need help with
-this feature.
+this feature, or to share your custom reports with us!
+
+# List of donors
+* [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
+* [La casetta delle pesche](http://www.lacasettadellepesche.it/)

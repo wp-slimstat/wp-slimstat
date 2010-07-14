@@ -121,6 +121,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 							echo "<a target='_blank' title='$element_title'";
 							echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>";
 						}
+						if (!isset($filters_parsed['resource'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&resource={$results[$i]['short_string']}'>$element_text</a>";
 						echo $element_text."</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}

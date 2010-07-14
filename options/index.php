@@ -29,13 +29,13 @@ if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_pa
 if (isset($_POST['options'])){
 
 	$faulty_fields = '';
-	
 	if (!slimstat_update_option('slimstat_is_tracking', $_POST['options']['is_tracking'], 'yesno')) $faulty_fields = __('Activate tracking','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_enable_javascript', $_POST['options']['enable_javascript'], 'yesno')) $faulty_fields = __('Enable JS Tracking','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_browscap_autoupdate', $_POST['options']['browscap_autoupdate'], 'yesno')) $faulty_fields = __('Autoupdate Browsers DB','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_ignore_interval', $_POST['options']['ignore_interval'], 'integer')) $faulty_fields .= __('Ignore interval','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_ignore_bots', $_POST['options']['ignore_bots'], 'yesno')) $faulty_fields .= __('Ignore bots','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_auto_purge', $_POST['options']['auto_purge'], 'integer')) $faulty_fields .= __('Auto purge','wp-slimstat-options').', ';
+	if (!slimstat_update_option('slimstat_use_separate_menu', $_POST['options']['use_separate_menu'], 'yesno')) $faulty_fields .= __('Use separate menu','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_convert_ip_addresses', $_POST['options']['convert_ip_addresses'], 'yesno')) $faulty_fields .= __('Convert IP addresses','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_rows_to_show', $_POST['options']['rows_to_show'], 'integer')) $faulty_fields .= __('Limit results to','wp-slimstat-options').', ';
 	if (!slimstat_update_option('slimstat_ignore_ip', $_POST['options']['ignore_ip'], 'list')) $faulty_fields .= __('Ignore IPs','wp-slimstat-options').', ';
@@ -142,7 +142,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 		foreach($array_panels as $a_panel_id => $a_panel_details){
 			echo '<a class="menu-tabs';
 			if ($current_panel != $a_panel_id+1) echo ' menu-tab-inactive';
-			echo '" href="options-general.php?page=wp-slimstat/options/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_details[0].'</a>';
+			echo '" href="admin.php?page=wp-slimstat/options/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_details[0].'</a>';
 		}
 		?>
 	</h2>
@@ -180,7 +180,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 		}
 	?>
 	
-	<?php if ($array_panels[$current_panel-1][1]) { ?><form action="options-general.php?page=wp-slimstat/options/index.php<?php if(!empty($_GET['slimpanel'])) echo '&slimpanel='.$_GET['slimpanel']; ?>" method="post"><?php } ?>
+	<?php if ($array_panels[$current_panel-1][1]) { ?><form action="admin.php?page=wp-slimstat/options/index.php<?php if(!empty($_GET['slimpanel'])) echo '&slimpanel='.$_GET['slimpanel']; ?>" method="post"><?php } ?>
 	
 	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/options/panel$current_panel.php"); ?>
 	
