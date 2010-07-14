@@ -69,7 +69,7 @@ to Maintenance, that alert message should be gone.
 * Now you can display a lot of metrics on your website. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.0)
 * Fixed a conflict between WP SlimStat and WP SlimStat Dashboard Widgets
 * Fixed a bug that prevented the autoupdate of Browscap to run periodically
-* Fixed a possible XSS vulnerability when parsing filters
+* Fixed a possible XSS vulnerability when parsing filters (thanks Nadav)
 * Some graphic fine-tuning to adapt the layout to the new admin interface and colors
 * Geolocalization: updated the information in the CSV file included (July 2010)
 
