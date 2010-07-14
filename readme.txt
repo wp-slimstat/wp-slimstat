@@ -134,6 +134,6 @@ WP SlimStat Custom Reports - Yes, you can! Create and view your personalized ana
 plugin demonstrates how to extract your own reports. Please do not hesitate to contact me if you need help with
 this feature, or to share your custom reports with us!
 
-# List of donors
+= List of donors =
 * [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
 * [La casetta delle pesche](http://www.lacasettadellepesche.it/)
