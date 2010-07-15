@@ -83,11 +83,11 @@ function slimstat_track_link(event){
 	slimstat_info += "&id="+slimstat_tid;
 	slimstat_info += "&sid="+slimstat_session_id;
 	slimstat_info += "&go=n"; // Avoid server-side redirect
+	slimstat_url = slimstat_path+'/wp-slimstat/wp-slimstat-js.php'+slimstat_info;
 	
 	// This is necessary to give the browser some time to elaborate the request
 	setTimeout('document.location = "' + document_location + '"', 500);
 	
-	slimstat_url = slimstat_path+'/wp-slimstat/wp-slimstat-js.php'+slimstat_info;
 	slimstat_track_event(slimstat_url);
 	if (event.preventDefault) event.preventDefault();
 	else event.returnValue = false;
@@ -114,11 +114,11 @@ function slimstat_track_download(event){
 	slimstat_info += "&id="+slimstat_tid;
 	slimstat_info += "&sid="+slimstat_session_id;
 	slimstat_info += "&go=n"; // Avoid server-side redirect
+	slimstat_url = slimstat_path+'/wp-slimstat/wp-slimstat-js.php'+slimstat_info;
 	
 	// This is necessary to give the browser some time to elaborate the request
 	setTimeout('document.location = "' + document_location + '"', 500);
 	
-	slimstat_url = slimstat_path+'/wp-slimstat/wp-slimstat-js.php'+slimstat_info;
 	slimstat_track_event(slimstat_url);
 	if (event.preventDefault) event.preventDefault();
 	else event.returnValue = false;
