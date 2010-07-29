@@ -20,7 +20,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 </th>
 		<td class='wrap'>
-			<?php _e('How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better. Any money received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family.','wp-slimstat-options') ?>
+			<?php _e('How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better, especially if you are making money out of it. Any donation received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family.','wp-slimstat-options') ?>
 		</td>
 	</tr>
 </tbody>
@@ -28,3 +28,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <h3><?php _e("Don't want to donate? You can still help",'wp-slimstat-options') ?></h3>
 <p><?php _e("If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!",'wp-slimstat-options') ?></p>
+
+<h3><?php _e("Vote and show your appreciation",'wp-slimstat-options') ?></h3>
+<p><?php _e('Tell other people if WP SlimStat works for you and how good it is. <a href="http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&amp;topic_id=14104">Rate it</a> on its Plugin Directory page.','wp-slimstat-options') ?></p>

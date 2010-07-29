@@ -4,21 +4,19 @@ Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
 Tested up to: 3.0
-Stable tag: 2.0.7
-
-A smart web analytics tool. Tracks visits, pageviews, pathstats, and much more.
+Stable tag: 2.0.8
 
 == Description ==
-
-It's back, by popular demand! The first, the only, the inimitable: WP SlimStat 2.
-Completely rewritten from the ground up, lightweight, optimized, much more powerful
-and flexible.
+A simple but powerful web analytics plugin for Wordpress. It doesn't require any subscription
+to external statistic services: all metrics are kept on your local server, private and accessible
+to your eyes only. Features the famous one-click install-and-go.
 
 ## Requirements
 * Wordpress 2.9 or higher
 * PHP 5.x or higher
 * MySQL 5.x or higher
-* At least 10 MB of free web space
+* At least 5 MB of free web space
+* At least 5 MB of free DB space
 
 ## Main Features
 * Tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
@@ -47,22 +45,22 @@ and flexible.
 5. To customize all its options, go to Settings > Slimstat
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
 
-## Updating from 0.9.2
-
-Unfortunately, due the completely different db structure, it's not possible to update from 0.9.2.
-I mean, you can still click on the link 'Update plugin' in the alert message you see inside your Plugins' admin panel,
-but once the update process is complete, WP SlimStat 2 won't be able to track anything. There's an easy fix,
-though: go to Settings > SlimStat > Maintenance. If you still have an 'old' db structure, you'll see a
-message "Old table detected" and a button to RESET it. Click on this button (YOU WILL LOSE ALL YOUR
-DATA COLLECTED BY WP-SlimStat 0.9.2!) and then deactivate/reactivate WP SlimStat. Now, if you go back
-to Maintenance, that alert message should be gone.
-
 == Screenshots ==
 
 1. Reports
 2. Options
 
 == Changelog ==
+
+= 2.0.8 =
+* WP SlimStat speaks German! Thank you [Digo](http://www.showhypnose.org/blog/)!
+* Added a new option to some metrics to access more detailed information about hits and visits
+* Added more options to show statistics and metrics on your website. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.0#post_displaymetrics) for further details
+* Now it detects if you are using HTTPS in your admin pages (thanks Tuxicoman)
+* In order to avoid conflicts with Lightbox and friends, you can now "mark" specific links to ignore. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.msg2#post_avoidconflicts) for further details
+* Fixed a bug in calculating some percentages
+* Reorganized the 'Raw Data' section
+* Changed the extension of WP SlimStat Custom Reports from .php to .txt, so that it won't appear in your Plugins page anymore
 
 = 2.0.7 =
 * Added an option to let you choose if you want WP SlimStat to add a separate admin menu, or keep it integrate with Wordpress' menus
@@ -87,33 +85,6 @@ to Maintenance, that alert message should be gone.
 * Improved the overall security and stability of WP SlimStat
 * Introduced some SQL code optimizations for faster queries
 
-= 2.0.5 (release candidate 2) =
-* Added an option to filter metrics by date intervals (given date plus x days)
-* Fixed a bug in calculating the date range in some metrics
-* Geolocalization: updated the information in the CSV file included (June 2010)
-
-= 2.0.4 (release candidate 1) =
-* Moving into Release Candidate phase
-* Added an option to disable Browscap's autoupdate feature (to update browsers' definitions)
-* Fixed some bugs with SQL queries
-
-= 2.0.3 (beta3) =
-* Added 'internal searches' metrics
-* Added a new option to track outbound links and downloads
-* Added a new option to update the ip-to-countries conversion table
-* Added a new view to access the 'raw' information recorded by WP SlimStat
-* Metrics are now clickable to enable the corresponding filter
-* Countries and languages: if a localization is not available, use English names instead of country codes
-* Geolocalization: updated the information in the CSV file included
-* Fixed some bugs in the CSS to support right-to-left text orientation
-* Fixed a bug that prevented filtering users who can view/config WP SlimStat reports
-* Fixed a bug with InnoDB db type
-* Fixed a bug that made IE display an alert message about 'installing potentially dangerous software'
-* Fixed a bug in calculating some of the percentages shown in the metrics
-* Fixed a bug in generating the URL's associated to the external links listed in some metrics
-* Fixed a bug in creating WP SlimStat tables: it looks like MyISAM 5.0 does not like foreign keys
-* Code and SQL optimizations
-
 == Localization ==
 
 Wp-SlimStat is fully localizable. Everything can be translate in your language
@@ -123,17 +94,14 @@ language, use the template files (.pot) you'll find inside the `lang` folder.
 
 == Extras ==
 
-After you download and install WP SlimStat, you'll see not one, not two, but three new plugins in your administration panel.
-Don't worry, you just need to activate the first one in order to track your visitors. Here is a bried description of the 
-other two.
-
-WP SlimStat Dashboard Widgets - This plugin adds some reports directly to your dashboard. Useful for who wants
-the most relevant metrics handy.
-
-WP SlimStat Custom Reports - Yes, you can! Create and view your personalized analytics for WP SlimStat. This
-plugin demonstrates how to extract your own reports. Please do not hesitate to contact me if you need help with
-this feature, or to share your custom reports with us!
-
 = List of donors =
 * [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
 * [La casetta delle pesche](http://www.lacasettadellepesche.it/)
+
+= Contributors =
+* [Digo](http://www.showhypnose.org/blog/) - German localization
+
+= Dashboard Widgets and Custom Reports = 
+After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
+Don't worry, you just need to activate the first one in order to track your visitors. WP SlimStat Dashboard Widgets
+adds some reports directly to your dashboard. Useful for who wants the most relevant metrics handy.

@@ -7,8 +7,8 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 }
 
 // Load localization files
-load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
-load_plugin_textdomain('countries-languages', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
+load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
+load_plugin_textdomain('countries-languages', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
 // If a local translation for countries and languages does not exist, use English
 if (!isset($l10n['countries-languages'])){
@@ -26,45 +26,25 @@ $array_panels = array(
 	__('Custom Reports','wp-slimstat-view')
 );
 
-// Detect filters
-$filters_to_parse = array(
-	'day' => 'integer',
-	'month' => 'integer', 
-	'year' => 'integer',
-	'interval' => 'integer',
-	'browser' => 'string',
-	'version' => 'string',
-	'css_version' => 'string',
-	'country' => 'string',
-	'domain' => 'string',
-	'ip' => 'string',
-	'language' => 'string',
-	'platform' => 'string',
-	'resource' => 'string',
-	'referer' => 'string',
-	'resolution' => 'string',
-	'searchterms' => 'string'
-);
+// What panel to display
+$current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']); 
 
-$filters_parsed = array();
-		
-foreach ($filters_to_parse as $a_filter_label => $a_filter_type){
-	if (!empty($_GET['filter']) && !empty($_GET['f_value']) && !empty($_GET['f_operator']) && $_GET['filter']==$a_filter_label){
-		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET['f_value'])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_value'])));
-		$f_operator = $wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_operator'])));
-		$filters_parsed[$a_filter_label] = array($f_value, $f_operator);
-	}
-	else if(!empty($_GET[$a_filter_label])){
-		$f_value = ($a_filter_type == 'integer')?abs(intval($_GET[$a_filter_label])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label])));
-		$f_operator = !empty($_GET[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label.'-op']))):'equals';
-		$filters_parsed[$a_filter_label] = array($f_value, $f_operator);
-	}
-}
-		
+// Text direction
+if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
+
+// It seems like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
+$slimstat_plugin_url = (FORCE_SSL_ADMIN || $_SERVER['HTTPS']=='on')?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+
+// Import class definition
+require_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
+
+// Instantiate a new copy of the class
+$wp_slimstat_view = new wp_slimstat_view();
+
 $filters_list = $filters_query = '';
-if (!empty($filters_parsed)){
+if (!empty($wp_slimstat_view->filters_parsed)){
 	$filters_list = __('Current filters:','wp-slimstat-view').' ';
-	foreach($filters_parsed as $a_filter_label => $a_filter_details){
+	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
 		$filters_list .= "<code>{$a_filter_label} {$a_filter_details[1]} {$a_filter_value_no_slashes}</code>, ";
 		$filters_query .= "&amp;{$a_filter_label}={$a_filter_value_no_slashes}&amp;{$a_filter_label}-op={$a_filter_details[1]}";
@@ -73,15 +53,6 @@ if (!empty($filters_parsed)){
 
 // Reset MySQL timezone settings, our dates and times are recorded using WP settings
 $wpdb->query("SET @@session.time_zone = '+00:00'");
-
-// Import class definition
-require_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
-
-// What panel to display
-$current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']); 
-
-// Text direction
-if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
 
 ?>
 
@@ -101,7 +72,7 @@ if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_pa
 		<input type="hidden" name="page" value="wp-slimstat/view/index.php">
 		<input type="hidden" name="slimpanel" value="<?php echo intval($_GET['slimpanel']) ?>">
 		<?php // Keep other filters persistent
-			foreach($filters_parsed as $a_filter_label => $a_filter_details){
+			foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 				echo "<input type='hidden' name='{$a_filter_label}' value='{$a_filter_details[0]}'>";
 				echo "<input type='hidden' name='{$a_filter_label}-op' value='{$a_filter_details[1]}'>";
 			}
@@ -158,12 +129,7 @@ if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_pa
 		</p>
 	</form>
 	
-	<p style="clear:both;padding:6px 6px 0"><?php if (!empty($filters_list)) echo substr($filters_list, 0, -2).' [<a href="index.php?page=wp-slimstat/view/index.php&slimpanel='.($current_panel).'">'.__('reset','wp-slimstat-view').'</a>]'; ?></p>
+	<p style="clear:both;padding:6px 6px 0"><?php if (!empty($filters_list)) echo substr($filters_list, 0, -2)." [<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel&ftu={$_GET['ftu']}&orderby={$_GET['orderby']}&direction={$_GET['direction']}'>".__('reset','wp-slimstat-view').'</a>]'; ?></p>
 	
-	<?php 
-		// Instantiate a new copy of the class
-		$wp_slimstat_view = new wp_slimstat_view();
-		
-		if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); 
-	?>
+	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
 </div>

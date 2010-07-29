@@ -85,8 +85,12 @@ function slimstat_track_link(event){
 	slimstat_info += "&go=n"; // Avoid server-side redirect
 	slimstat_url = slimstat_path+'/wp-slimstat/wp-slimstat-js.php'+slimstat_info;
 	
-	// This is necessary to give the browser some time to elaborate the request
-	setTimeout('document.location = "' + document_location + '"', 500);
+	// You can choose to disable this for some links (to avoid conflicts with Lightbox and friends)
+	if (element.className.indexOf('noslimstat') == -1){
+		
+		// This is necessary to give the browser some time to elaborate the request
+		setTimeout('document.location = "' + document_location + '"', 500);
+	}
 	
 	slimstat_track_event(slimstat_url);
 	if (event.preventDefault) event.preventDefault();
@@ -123,6 +127,9 @@ function slimstat_track_download(event){
 	if (event.preventDefault) event.preventDefault();
 	else event.returnValue = false;
 }
+
+// Hide the link to WP SlimStat
+document.getElementById('statsbywpslimstat').style.display = 'none';
 
 // Here we write out the VBScript block for MSIE Windows
 var detectableWithVB = false;
@@ -163,7 +170,7 @@ for (i=0;i<links_for_this_page.length;i++) {
 	} 
 }
 
-// List of plugins we can detect
+// List of plugins WP SlimStat can detect
 var slimstat_plugins = {
 	java: { substrs: [ "Java" ], progIds: [ "JavaWebStart.isInstalled" ] },
 	acrobat: { substrs: [ "Adobe", "Acrobat" ], progIds: [ "AcroPDF.PDF", "PDF.PDFCtrl.5" ] },

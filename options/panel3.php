@@ -14,7 +14,7 @@ $wp_slimstat_options['ignore_browsers'] = get_option('slimstat_ignore_browsers',
 ?>
 
 <h3><label for="ignore_ip"><?php _e('IP addresses to ignore','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly.",'wp-slimstat-options') ?></p>
+<p><?php _e("Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly.",'wp-slimstat-options') ?></p>
 <p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_ip]" id="ignore_ip"><?php
 	$list_to_show = '';
 	foreach($wp_slimstat_options['ignore_ip'] as $a_ip_range)

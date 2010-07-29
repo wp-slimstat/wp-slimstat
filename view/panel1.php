@@ -20,10 +20,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			<p class="nodata"><?php _e('No data to display','wp-slimstat-view') ?></p>
 		<?php } else { ?>
 		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="765" height="170" id="line" >
-         <param name="movie" value="<?php echo WP_PLUGIN_URL ?>/wp-slimstat/view/swf/fcf.swf" />
+         <param name="movie" value="<?php echo $slimstat_plugin_url ?>/wp-slimstat/view/swf/fcf.swf" />
          <param name="FlashVars" value="&dataXML=<?php echo $current->xml ?>&chartWidth=765&chartHeight=170">
          <param name="quality" value="high" />
-         <embed src="<?php echo WP_PLUGIN_URL ?>/wp-slimstat/view/swf/fcf.swf" flashVars="&dataXML=<?php echo $current->xml ?>&chartWidth=765&chartHeight=170" quality="high" width="765" height="170" name="line" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+         <embed src="<?php echo $slimstat_plugin_url ?>/wp-slimstat/view/swf/fcf.swf" flashVars="&dataXML=<?php echo $current->xml ?>&chartWidth=765&chartHeight=170" quality="high" width="765" height="170" name="line" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
 		</object>
 		<?php } ?>
 	</div>
@@ -77,7 +77,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'User agents', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php
@@ -101,7 +100,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><?php _e( 'Popular pages of all time', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php
@@ -119,9 +117,9 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						echo "<p$last_element$show_title_tooltip><span class='element-title'>";
 						if (strpos($element_url, '[404]') == 0){
 							echo "<a target='_blank' title='$element_title'";
-							echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a>";
+							echo " href='$element_url'><img src='$slimstat_plugin_url/wp-slimstat/images/url.gif' /></a>";
 						}
-						if (!isset($filters_parsed['resource'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&resource={$results[$i]['short_string']}'>$element_text</a>";
+						if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&resource={$results[$i]['short_string']}'>$element_text</a>";
 						echo $element_text."</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
@@ -132,7 +130,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
+		<div class="more"><a href="index.php?page=wp-slimstat/view/index.php&slimpanel=5&ftu=get_recent_searchterms&cmo=1<?php echo $filters_query; ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 		<h3><?php _e( 'Recent Keywords', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php
@@ -147,7 +145,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$show_title_tooltip = ($results[$i]['len'] > 35)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 35)?'...':'');
-						if (!isset($filters_parsed['searchterms'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&searchterms={$results[$i]['short_string']}'>$element_text</a>";
+						if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&searchterms={$results[$i]['short_string']}'>$element_text</a>";
 						
 						echo "<p$last_element$show_title_tooltip>$element_text</p>";
 					}
@@ -159,7 +157,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
+		<div class="more"><a href="index.php?page=wp-slimstat/view/index.php&slimpanel=5&ftu=get_recent_countries&cmo=1<?php echo $filters_query; ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 		<h3><?php _e( 'Recent Countries', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php
@@ -171,7 +169,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 					for($i=0;$i<$count_results;$i++){
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$country = __('c-'.$results[$i]['short_string'],'countries-languages');
-						if (!isset($filters_parsed['searchterms'][0])) $country = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&searchterms={$results[$i]['short_string']}'>$country</a>";	
+						if (!isset($wp_slimstat_view->filters_parsed['country'][0])) $country = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&country={$results[$i]['short_string']}'>$country</a>";	
 						
 						echo "<p$last_element>$country</p>";
 					}
@@ -183,7 +181,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <div class="metabox-holder medium <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
-		<div class="more"><?php _e('More','wp-slimstat-view') ?></div>
 		<h3><span><?php _e( 'Traffic Sources Overview', 'wp-slimstat-view' ); ?></span></h3>
 		<div class="container">
 			<?php
@@ -200,10 +197,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
 						$element_url = 'http://'.$results[$i]['long_string'].$results[$i]['referer'];
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 65)?'...':'');
-						if (!isset($filters_parsed['domain'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&domain={$results[$i]['short_string']}'>$element_text</a>";
+						if (!isset($wp_slimstat_view->filters_parsed['domain'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&domain={$results[$i]['short_string']}'>$element_text</a>";
 						
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
-						echo " href='$element_url'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> ";
+						echo " href='$element_url'><img src='$slimstat_plugin_url /wp-slimstat/images/url.gif' /></a> ";
 						echo $element_text."</span> <span>$percentage%</span> <span>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}

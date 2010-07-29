@@ -3,8 +3,8 @@
 // Let's define the main class with all the methods that we need
 class wp_slimstat_view {
 
-	function __construct(){
-		global $table_prefix, $filters_query, $filters_parsed;
+	public function __construct($user_filters = ''){
+		global $wpdb, $table_prefix;
 
 		// We use WP SlimStat tables to retrieve metrics
 		$this->table_stats = $table_prefix . 'slim_stats';
@@ -13,32 +13,75 @@ class wp_slimstat_view {
 		$this->table_screenres = $table_prefix . 'slim_screenres';
 		$this->table_visits = $table_prefix . 'slim_visits';
 		$this->table_outbound = $table_prefix . 'slim_outbound';
-		
+
+		// Start from...
+		$this->starting_from = 0;
+
 		// Limit results to...
 		$this->limit_results = get_option('slimstat_rows_to_show', '20');
+
+		// Calculate filters
+		$this->filters_to_parse = array(
+			'day' => 'integer',
+			'month' => 'integer', 
+			'year' => 'integer',
+			'interval' => 'integer',
+			'browser' => 'string',
+			'version' => 'string',
+			'css_version' => 'string',
+			'country' => 'string',
+			'domain' => 'string',
+			'ip' => 'string',
+			'language' => 'string',
+			'platform' => 'string',
+			'resource' => 'string',
+			'referer' => 'string',
+			'resolution' => 'string',
+			'searchterms' => 'string'
+		);
+
+		$this->filters_parsed = array();
 		
+		foreach ($this->filters_to_parse as $a_filter_label => $a_filter_type){
+			if(!empty($user_filters) && !empty($user_filters[$a_filter_label])){
+				$f_value = ($a_filter_type == 'integer')?abs(intval($user_filters[$a_filter_label])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $user_filters[$a_filter_label])));
+				$f_operator = !empty($user_filters[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $user_filters[$a_filter_label.'-op']))):'equals';
+				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
+			}
+			else if (!empty($_GET['filter']) && !empty($_GET['f_value']) && !empty($_GET['f_operator']) && $_GET['filter']==$a_filter_label){
+				$f_value = ($a_filter_type == 'integer')?abs(intval($_GET['f_value'])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_value'])));
+				$f_operator = $wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_operator'])));
+				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
+			}
+			else if(!empty($_GET[$a_filter_label])){
+				$f_value = ($a_filter_type == 'integer')?abs(intval($_GET[$a_filter_label])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label])));
+				$f_operator = !empty($_GET[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label.'-op']))):'equals';
+				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
+			}
+		}
+	
 		// Date filter
 		$this->current_date = array();		
-		if (!empty($filters_parsed['day'][0])){
-			$this->current_date['d'] = sprintf('%02d', $filters_parsed['day'][0]);
-			if (empty($filters_parsed['interval'][0]))
+		if (!empty($this->filters_parsed['day'][0])){
+			$this->current_date['d'] = sprintf('%02d', $this->filters_parsed['day'][0]);
+			if (empty($this->filters_parsed['interval'][0]))
 				$this->day_filter_active = true;
 			else
-				$this->day_interval = $filters_parsed['interval'][0];
+				$this->day_interval = $this->filters_parsed['interval'][0];
 			$this->custom_data_filter = true;
 		}
 		else {
 			$this->current_date['d'] = date_i18n('d');
 		}
-		if (!empty($filters_parsed['month'][0])){
-			$this->current_date['m'] = sprintf('%02d', $filters_parsed['month'][0]);
+		if (!empty($this->filters_parsed['month'][0])){
+			$this->current_date['m'] = sprintf('%02d', $this->filters_parsed['month'][0]);
 			$this->custom_data_filter = true;
 		}
 		else {
 			$this->current_date['m'] = date_i18n('m');
 		}
-		if (!empty($filters_parsed['year'][0])){
-			$this->current_date['y'] = sprintf('%04d', $filters_parsed['year'][0]);
+		if (!empty($this->filters_parsed['year'][0])){
+			$this->current_date['y'] = sprintf('%04d', $this->filters_parsed['year'][0]);
 			$this->custom_data_filter = true;
 		}
 		else {
@@ -59,10 +102,10 @@ class wp_slimstat_view {
 
 		$this->filters_sql_from = array('browsers' => '', 'screenres' => '');
 		$this->filters_sql_where = '';
-		if (!empty($filters_parsed)){
+		if (!empty($this->filters_parsed)){
 			$this->filters_query = $filters_query;
 			
-			foreach($filters_parsed as $a_filter_label => $a_filter_details){
+			foreach($this->filters_parsed as $a_filter_label => $a_filter_details){
 				// Skip filters on date
 				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year') && ($a_filter_label != 'interval')){
 					
@@ -135,6 +178,15 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 
+	public function count_details_recent_visits(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(`ip`) count
+				FROM `$this->table_stats` t1, `$this->table_browsers` tb {$this->filters_sql_from['screenres']}
+				WHERE t1.`browser_id` = tb.`browser_id` AND t1.`visit_id` > 0 $this->filters_date_sql_where $this->filters_sql_where";
+		return intval($wpdb->get_var($sql));
+	}
+
 	public function count_direct_visits(){
 		global $wpdb;
 
@@ -197,6 +249,49 @@ class wp_slimstat_view {
 					LEFT JOIN `$this->table_browsers` tb ON t1.`browser_id` = tb.`browser_id`
 					LEFT JOIN `$this->table_screenres` tss ON t1.`screenres_id` = tss.`screenres_id`
 				WHERE 1=1 $this->filters_sql_where ".($this->custom_data_filter?$this->filters_date_sql_where:'');
+		return intval($wpdb->get_var($sql));
+	}
+	
+	public function count_recent($_field = 'id'){
+		global $wpdb;
+
+		$sql = "SELECT COUNT( DISTINCT `$_field`)
+				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+				WHERE t1.`$_field` <> '' AND  t1.`$_field` <> '__l_s__' $this->filters_sql_where $this->filters_date_sql_where";
+		return intval($wpdb->get_var($sql));
+	}
+	
+	public function count_recent_404_pages(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(`resource`)
+				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+				WHERE `resource` LIKE '[404]%' $this->filters_date_sql_where $this->filters_sql_where";
+		return  intval($wpdb->get_var($sql));
+	}
+	
+	public function count_recent_bouncing_pages(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) FROM (
+					SELECT `resource`, LENGTH(`resource`) len
+					FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+					WHERE `visit_id` <> 0 AND `resource` <> '__l_s__' AND `resource` <> '' $this->filters_sql_where $this->filters_date_sql_where
+					GROUP BY `visit_id`
+					HAVING COUNT(`visit_id`) = 1
+				) as ts1";
+		return intval($wpdb->get_var($sql));
+	}
+
+	public function count_recent_browsers(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(DISTINCT tb.`browser`, tb.`version`, tb.`css_version`)
+				FROM `$this->table_stats` t1, `$this->table_browsers` tb {$this->filters_sql_from['screenres']}
+				WHERE t1.`browser_id` = tb.`browser_id`
+					AND tb.`platform` <> '' AND tb.`platform` <> '0'
+					AND tb.`css_version` <> '' AND tb.`css_version` <> '0'
+					$this->filters_sql_where $this->filters_date_sql_where";
 		return intval($wpdb->get_var($sql));
 	}
 
@@ -324,11 +419,13 @@ class wp_slimstat_view {
 	public function get_details_recent_visits(){
 		global $wpdb;
 
-		$sql = "SELECT t1.`ip`, t1.`country`, t1.`domain`, t1.`referer`, t1.`resource`, tb.`browser`, t1.`visit_id`, DATE_FORMAT( FROM_UNIXTIME( `dt` ) , '%H:%i' ) time_f, DATE_FORMAT( FROM_UNIXTIME( `dt` ) , '%d/%m/%Y' ) date_f
+		$sql = "SELECT INET_NTOA(`ip`) ip, `language`, `country`, `domain`, CONCAT(`domain`, SUBSTRING(`referer`,1,35)) domain_short, 
+					`referer`, `resource`, `browser`, `visit_id`, `searchterms`, `platform`,
+					DATE_FORMAT( FROM_UNIXTIME( `dt` ) , '%d/%m/%Y %H:%i' ) customdatetime
 				FROM `$this->table_stats` t1, `$this->table_browsers` tb {$this->filters_sql_from['screenres']}
 				WHERE t1.`browser_id` = tb.`browser_id` AND t1.`visit_id` > 0 $this->filters_date_sql_where $this->filters_sql_where
 				ORDER BY `visit_id` DESC, `dt` ASC
-				LIMIT 0,$this->limit_results";
+				LIMIT $this->starting_from,$this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
@@ -386,69 +483,75 @@ class wp_slimstat_view {
 		return $this->_extract_data_for_graph($sql, 1, __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 0);
 	}
 
-	public function get_raw_data($_field = 'dt', $_direction = 'DESC', $_starting_point = 0){
+	public function get_raw_data($_field = 'dt', $_direction = 'DESC'){
 		global $wpdb;
 
-		$sql = "SELECT INET_NTOA(`ip`) ip, `language`, `country`, `domain`,
-					SUBSTRING(`searchterms`,1,60) searchterms, SUBSTRING(`resource`,1,80) resource, CONCAT(`browser`, ' ', `version`) browser, `platform`, `plugins`,
-					`resolution`, `colordepth`, DATE_FORMAT( FROM_UNIXTIME( `dt` ) , '%d/%m/%Y %H:%i' ) datetime
+		$sql = "SELECT INET_NTOA(`ip`) ip, `language`, `country`, CONCAT(`domain`, SUBSTRING(`referer`,1,25)) domain_short, CONCAT(`domain`, `referer`) domain,
+					SUBSTRING(`searchterms`,1,60) searchterms, SUBSTRING(`resource`,1,80) resource, `browser`, `version`, `platform`, `plugins`,
+					`resolution`, `colordepth`, DATE_FORMAT( FROM_UNIXTIME( `dt` ) , '%d/%m/%Y %H:%i' ) customdatetime
 				FROM `$this->table_stats` t1
 					LEFT JOIN `$this->table_browsers` tb ON t1.`browser_id` = tb.`browser_id`
 					LEFT JOIN `$this->table_screenres` tss ON t1.`screenres_id` = tss.`screenres_id`
 				WHERE 1=1 $this->filters_sql_where ".($this->custom_data_filter?$this->filters_date_sql_where:'')."
 				ORDER BY `$_field` $_direction
-				LIMIT $_starting_point,50";
+				LIMIT $this->starting_from,50";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
 	public function get_recent($_field = 'id', $_field2 = '', $_limit_lenght = 30){
 		global $wpdb;
 
-		$sql = "SELECT SUBSTRING(t1.`$_field`, 1, $_limit_lenght) short_string, t1.`$_field` long_string, LENGTH(t1.`$_field`) len
-				".(!empty($_field2)?", t1.`$_field2` $_field2 ":'')."
+		$sql = "SELECT SUBSTRING(t1.`$_field`, 1, $_limit_lenght) short_string, t1.`$_field` long_string, LENGTH(t1.`$_field`) len,
+				`searchterms`, `resource`, `country`, DATE_FORMAT( FROM_UNIXTIME( MAX(t1.`dt`) ), '%d/%m/%Y %H:%i' ) customdatetime ".(!empty($_field2)?", t1.`$_field2` $_field2 ":'')."
 				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
 				WHERE t1.`$_field` <> '' AND  t1.`$_field` <> '__l_s__' $this->filters_sql_where $this->filters_date_sql_where
 				GROUP BY short_string, long_string, len".(!empty($_field2)?", $_field2 ":'')."
 				ORDER BY MAX(t1.`dt`) DESC
-				LIMIT 0,$this->limit_results";
+				LIMIT $this->starting_from,$this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
 	public function get_recent_404_pages(){
 		global $wpdb;
 
-		$sql = "SELECT SUBSTRING(`resource`, 6, 30) short_string, `resource`, LENGTH(`resource`) len
+		$sql = "SELECT SUBSTRING(`resource`, 6, 30) short_string, `resource`, LENGTH(`resource`) len, INET_NTOA(`ip`) ip, `country`, `language`,
+					CONCAT(`domain`, SUBSTRING(`referer`,1,25)) domain_short, CONCAT(`domain`, `referer`) domain,
+					DATE_FORMAT( FROM_UNIXTIME( t1.`dt` ), '%d/%m/%Y %H:%i' ) customdatetime
 				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
 				WHERE `resource` LIKE '[404]%' $this->filters_date_sql_where $this->filters_sql_where
 				ORDER BY `dt` DESC
-				LIMIT 0,$this->limit_results";
+				LIMIT $this->starting_from,$this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	
 	public function get_recent_bouncing_pages(){
 		global $wpdb;
 
-		$sql = "SELECT SUBSTRING(`resource`, 1, 30) short_string, `resource`, LENGTH(`resource`) len
+		$sql = "SELECT SUBSTRING(`resource`, 1, 30) short_string, `resource`, LENGTH(`resource`) len,
+					CONCAT(`domain`, SUBSTRING(`referer`,1,25)) domain_short, CONCAT(`domain`, `referer`) domain,
+					DATE_FORMAT( FROM_UNIXTIME( MAX(t1.`dt`) ), '%d/%m/%Y %H:%i' ) customdatetime
 				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
 				WHERE `visit_id` <> 0 AND `resource` <> '__l_s__' AND `resource` <> '' $this->filters_sql_where $this->filters_date_sql_where
 				GROUP BY `visit_id`
 				HAVING COUNT(`visit_id`) = 1
 				ORDER BY MAX(`dt`) DESC, `resource` ASC
-				LIMIT 0,$this->limit_results";
+				LIMIT $this->starting_from,$this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
 	public function get_recent_browsers(){
 		global $wpdb;
 
-		$sql = "SELECT DISTINCT SUBSTRING(tb.`browser`, 1, 23) as browser, tb.`version`, tb.`css_version`
+		$sql = "SELECT SUBSTRING(tb.`browser`, 1, 23) as browser, tb.`version`, tb.`css_version`, t1.`resource`, t1.`country`,
+					DATE_FORMAT( FROM_UNIXTIME( MAX(t1.`dt`) ), '%d/%m/%Y %H:%i' ) customdatetime
 				FROM `$this->table_stats` t1, `$this->table_browsers` tb {$this->filters_sql_from['screenres']}
 				WHERE t1.`browser_id` = tb.`browser_id`
 					AND tb.`platform` <> '' AND tb.`platform` <> '0'
 					AND tb.`css_version` <> '' AND tb.`css_version` <> '0'
 					$this->filters_sql_where $this->filters_date_sql_where
-				ORDER BY `dt` DESC
-				LIMIT 0,$this->limit_results";
+				GROUP BY tb.`browser`, tb.`version`, tb.`css_version`
+				ORDER BY MAX(`dt`) DESC
+				LIMIT $this->starting_from,$this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 	
@@ -466,7 +569,7 @@ class wp_slimstat_view {
 	public function get_recent_feeds(){
 		global $wpdb;
 
-		$sql = "SELECT DISTINCT SUBSTRING(`resource`, 1, 30) short_string, `resource`, LENGTH(`resource`) len
+		$sql = "SELECT SUBSTRING(`resource`, 1, 30) short_string, `resource`, LENGTH(`resource`) len
 				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
 				WHERE (`resource` LIKE '%/feed' OR `resource` LIKE '%?feed=%' OR `resource` LIKE '%&feed=%')
 					$this->filters_sql_where $this->filters_date_sql_where

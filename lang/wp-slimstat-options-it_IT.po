@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-07-14 09:25-0500\n"
-"PO-Revision-Date: 2010-07-14 09:26-0500\n"
+"POT-Creation-Date: 2010-07-27 11:01-0500\n"
+"PO-Revision-Date: 2010-07-27 11:02-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -226,8 +226,8 @@ msgid "IP addresses to ignore"
 msgstr "Indirizzi IP da ignorare"
 
 #: panel3.php:17
-msgid "Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
-msgstr "Inserisci una lista di reti che non vuoi tracciare, separate da virgola. Ogni rete <strong>deve</strong> essere definita usando la <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>notazione CIDR</a> (ad esempio <em>192.168.1.1/24</em>). Se il formato non &egrave; corretto, WP SlimStat potrebbe non funzionare correttamente."
+msgid "Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
+msgstr "Inserisci una lista di reti che non vuoi tracciare, separate da virgola. Ogni rete <strong>deve</strong> essere definita usando la <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>notazione CIDR</a> (ad esempio <em>192.168.1.1/24</em>). Se il formato non &egrave; corretto, WP SlimStat potrebbe non funzionare correttamente."
 
 #: panel3.php:25
 msgid "Pages and posts to ignore"
@@ -334,8 +334,8 @@ msgid "It looks like you need to update the structure of one of the tables used 
 msgstr "Pare che la struttura del tuo database non sia aggiornata all'ultima versione. Per favore, clicca sul pulsante qui a fianco per resettare le tabelle (tutti i dati andranno persi, mi spiace), quindi disattiva/riattiva WP SlimStat per completare l'aggiornamento."
 
 #: panel6.php:23
-msgid "How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better. Any money received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family."
-msgstr "Quanto &egrave; importante monitorare i visitatori del tuo sito? WP SlimStat &egrave; e sar&agrave; sempre gratuito, ma se vuoi puoi supportare l'autore, se ritieni che questo plugin abbia reso il tuo sito migliore. Il denaro ricevuto sar&agrave; reinvestito nello sviluppo di WP SlimStat (hosting, programmi, ecc) e per comprare un po' di cibo per la mia famiglia affamata."
+msgid "How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better, especially if you are making money out of it. Any donation received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family."
+msgstr "Quanto &egrave; importante monitorare i visitatori del tuo sito? WP SlimStat &egrave; e sar&agrave; sempre gratuito, ma se vuoi puoi supportare l'autore con un piccolo contributo. Specialmente se stai usando questo plugin su un sito commerciale e se ritieni che questo plugin abbia contribuito a rendere il tuo lavoro migliore. Il denaro ricevuto sar&agrave; reinvestito nello sviluppo di WP SlimStat (hosting, programmi, ecc) e per comprare un po' di cibo per la mia famiglia affamata."
 
 #: panel6.php:29
 msgid "Don't want to donate? You can still help"
@@ -345,14 +345,11 @@ msgstr "Non ti va di donare soldi? "
 msgid "If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
 msgstr "Se non ritieni di donare una cifra in denaro, puoi sempre scrivere un post sul tuo blog che parli di WP SlimStat, ed aggiungere un link alla pagina sul mio blog. I tuoi utenti non sanno che stai usando WP SlimStat, quindi farai un favore sia a loro che a me, se deciderai di parlarne. Volendo, puoi anche donare un po' del tuo tempo: mandami un messaggio sul forum se trovi un errore, la localizzazione dell'interfaccia, o semplicemente un'idea per rendere il plugin sempre migliore. Qualsiasi cosa tu decida di fare, grazie per usare WP SlimStat!"
 
-#~ msgid "IP"
-#~ msgstr "IP"
+#: panel6.php:32
+msgid "Vote and show your appreciation"
+msgstr "Vota e condividi"
 
-#~ msgid "Equal"
-#~ msgstr "&Egrave; uguale a"
+#: panel6.php:33
+msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&amp;topic_id=14104\">Rate it</a> on its Plugin Directory page."
+msgstr "Fai sapere agli altri se WP SlimStat funziona bene e quanto ti piace. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&amp;topic_id=14104\">Votalo</a> sulla pagina apposita di Wordpress."
 
-#~ msgid "Like"
-#~ msgstr "Contiene"
-
-#~ msgid "Not Like"
-#~ msgstr "Non contiene"

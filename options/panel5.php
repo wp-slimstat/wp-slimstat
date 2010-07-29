@@ -14,7 +14,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	<tr valign="top">
 		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
 		<td>
-			<form action="options-general.php?page=wp-slimstat/options/index.php&slimpanel=4" method="post"
+			<form action="options-general.php?page=wp-slimstat/options/index.php&slimpanel=5" method="post"
 				onsubmit="return(confirm('<?php _e('Are you sure you want to PERMANENTLY delete these rows from your database?','wp-slimstat-options'); ?>'))">
 			<?php _e('Delete rows where','wp-slimstat-options') ?>
 			<select name="options[conditional_delete_field]">
@@ -41,7 +41,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	<tr valign="top">
 		<th scope="row"><?php _e('Empty database','wp-slimstat-options') ?></th>
 		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=4"><?php _e('DELETE STATS','wp-slimstat-options'); ?></a>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=5"><?php _e('DELETE STATS','wp-slimstat-options'); ?></a>
 		</td>
 	</tr>
 	<tr>
@@ -51,7 +51,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	<tr valign="top">
 		<th scope="row"><?php _e('Reset Ip-to-Countries','wp-slimstat-options') ?></th>
 		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=4"><?php _e('EMPTY IP-TO-COUNTRIES','wp-slimstat-options'); ?></a>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=5"><?php _e('EMPTY IP-TO-COUNTRIES','wp-slimstat-options'); ?></a>
 		</td>
 	</tr>
 	<tr>
@@ -65,7 +65,7 @@ if (empty($check_column)): ?>
 	<tr valign="top">
 		<th scope="row"><?php _e('Old table detected','wp-slimstat-options') ?></th>
 		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=4"><?php _e('RESET STATS','wp-slimstat-options'); ?></a>
+			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=5"><?php _e('RESET STATS','wp-slimstat-options'); ?></a>
 			&mdash; <?php _e('It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process.','wp-slimstat-options') ?>
 		</td>
 	</tr>

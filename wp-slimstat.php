@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.0.7
+Version: 2.0.8
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -24,7 +24,7 @@ class wp_slimstat {
 		global $table_prefix;
 
 		// Current version
-		$this->version = '2.0.7';
+		$this->version = '2.0.8';
 
 		// We use a bunch of tables to store data
 		$this->table_stats = $table_prefix . 'slim_stats';
@@ -271,14 +271,16 @@ class wp_slimstat {
 			// Mark the resource to remember that this is a 'local search'
 			$stat['resource'] = '';
 		} // end else 
-		if (is_404()) $stat['resource'] = '[404]'.$stat['resource'];
-
+		
 		// Is this resource blacklisted?
 		$array_resources_to_ignore = get_option('slimstat_ignore_resources', array());
 		foreach( $array_resources_to_ignore as $a_resource ) {
 			// TODO: use regolar expressions to filter resources
-			if ( strpos($a_resource, $stat['resource']) === 0 ) return $_argument;
+			if ( !empty($stat['resource']) && strpos($a_resource, $stat['resource']) === 0 ) return $_argument;
 		}
+
+		// Mark 404 pages
+		if (is_404()) $stat['resource'] = '[404]'.$stat['resource'];
 
 		// Loads the class to determine the user agent
 		require 'browscap.php';
@@ -671,10 +673,11 @@ class wp_slimstat {
 	// Description: Adds a javascript code to track users' screen resolution and other browser-based information
 	// Input: none
 	// Output: HTML code
-	public function wp_slimstat_javascript() {
+	public function wp_slimstat_javascript() {	
 		if ($this->tid > 0){
 			$my_secret_key = get_option('slimstat_secret', '123');
-
+			
+			echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress">Stats by WP SlimStat</a></p>';
 			echo '<script type="text/javascript">slimstat_tid=\''.intval($this->tid).'\';';
 			echo 'slimstat_path=\''.WP_PLUGIN_URL.'\';';
 			echo 'slimstat_session_id=\''.md5(intval($this->tid).$my_secret_key).'\';</script>';
