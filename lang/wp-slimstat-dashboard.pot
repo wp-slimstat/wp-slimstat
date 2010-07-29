@@ -1,0 +1,119 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 0.9.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-05-14 15:37-0500\n"
+"PO-Revision-Date: 2010-05-14 15:37-0500\n"
+"Last-Translator: Camu <info@duechiacchiere.it>\n"
+"Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Italian\n"
+"X-Poedit-Country: ITALY\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:61
+#: wp-slimstat-dashboard.php:81
+#: wp-slimstat-dashboard.php:149
+#: wp-slimstat-dashboard.php:169
+#: wp-slimstat-dashboard.php:192
+#: wp-slimstat-dashboard.php:218
+msgid "No data to display"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:86
+msgid "c-"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:93
+#: wp-slimstat-dashboard.php:198
+#, php-format
+msgid "Open %s in a new window"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:99
+msgid "Direct visit to"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:112
+msgid "Total Hits"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:113
+msgid "Data Size"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:114
+msgid "Tracking Active"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:115
+msgid "Auto purge"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:130
+msgid "Pageviews"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:131
+msgid "Unique IPs"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:132
+msgid "Avg Pageviews"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:134
+msgid "On"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:135
+msgid "Last Month"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:222
+msgid "Open referer in a new window"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:259
+msgid "Top 5 pages"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:260
+msgid "Pathstats"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:261
+msgid "About"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:262
+msgid "Summary of pageviews"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:263
+msgid "User Agents"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:264
+msgid "Recent Keywords"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:265
+msgid "Traffic Sources"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:266
+msgid "Recent Keywords &raquo; Pages"
+msgstr ""
+
+#~ msgid "Analytics"
+#~ msgstr ""
+
+#~ msgid "Options"
+#~ msgstr ""
