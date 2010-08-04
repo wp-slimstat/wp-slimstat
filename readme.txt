@@ -92,16 +92,15 @@ and character encoding. As for every other Wordpress plugin, I used the Portable
 Object (.po) standard to do this. If you want to provide a localized file in your
 language, use the template files (.pot) you'll find inside the `lang` folder.
 
-== Extras ==
-
-= List of donors =
+== List of donors ==
 * [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
 * [La casetta delle pesche](http://www.lacasettadellepesche.it/)
+* [Herman Peet](http://www.hermanpeet.nl/)
 
-= Contributors =
+== Contributors ==
 * [Digo](http://www.showhypnose.org/blog/) - German localization
 
-= Dashboard Widgets and Custom Reports = 
+= Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
 Don't worry, you just need to activate the first one in order to track your visitors. WP SlimStat Dashboard Widgets
 adds some reports directly to your dashboard. Useful for who wants the most relevant metrics handy.
