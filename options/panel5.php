@@ -8,9 +8,34 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 ?>
 
 <h3><?php _e('Please note that these commands cannot be undone!','wp-slimstat-options') ?></h3>
+<?php
+if (!isset($wp_slimstat_object)) $wp_slimstat_object = new wp_slimstat();
+$details_wp_slim_stat = $wpdb->get_results("SHOW TABLE STATUS LIKE '$wp_slimstat_object->table_stats'", ARRAY_A);
+?>
 
 <table class="form-table <?php echo $wp_locale->text_direction ?>">
 <tbody>
+<?php
+if (count($details_wp_slim_stat) == 1) {
+	$overhead_suffix = 'bytes';
+	if ($details_wp_slim_stat[0]['Data_free'] > 1024){
+		$details_wp_slim_stat[0]['Data_free'] = intval($details_wp_slim_stat[0]['Data_free']/1024);
+		$overhead_suffix = 'KB';
+	}
+	if ($details_wp_slim_stat[0]['Data_free'] > 1024){
+		$details_wp_slim_stat[0]['Data_free'] = intval($details_wp_slim_stat[0]['Data_free']/1024);
+		$overhead_suffix = 'MB';
+	}
+	echo '<tr><th scope="row">'.__('Current Status','wp-slimstat-options').'</th>';
+	echo '<td>'.__('Engine','wp-slimstat-options').": {$details_wp_slim_stat[0]['Engine']}<br/>";
+	echo __('Records','wp-slimstat-options').": {$details_wp_slim_stat[0]['Rows']}<br/>";
+	echo __('Average Record Length','wp-slimstat-options').": {$details_wp_slim_stat[0]['Avg_row_length']} bytes<br/>";
+	echo __('Created on','wp-slimstat-options').": {$details_wp_slim_stat[0]['Create_time']}<br/>";
+	echo __('Approximate Overhead','wp-slimstat-options').": {$details_wp_slim_stat[0]['Data_free']} $overhead_suffix ";
+	if ($details_wp_slim_stat[0]['Data_free'] > 0) echo "[<a href='?page=wp-slimstat/options/index.php&ot=yes&slimpanel=5'>optimize</a>]";
+	echo '</td></tr><tr><td colspan="2" class="shortrow">&nbsp;</td></tr>';
+}
+?>
 	<tr valign="top">
 		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
 		<td>
@@ -20,6 +45,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			<select name="options[conditional_delete_field]">
 				<option value="country"><?php _e('Country Code','wp-slimstat-options') ?></option>
 				<option value="domain"><?php _e('Domain','wp-slimstat-options') ?></option>
+				<option value="INET_NTOA(ip)"><?php _e('IP Address','wp-slimstat-options') ?></option>
 				<option value="language"><?php _e('Language Code','wp-slimstat-options') ?></option>
 				<option value="resource"><?php _e('Permalink','wp-slimstat-options') ?></option>
 				<option value="searchterms"><?php _e('Search Terms','wp-slimstat-options') ?></option>
@@ -27,7 +53,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			<select name="options[conditional_delete_operator]" style="width:12em">
 				<option value="equal"><?php _e('Is equal to','wp-slimstat-options') ?></option>
 				<option value="like"><?php _e('Contains','wp-slimstat-options') ?></option>
-				<option value="not like"><?php _e('Does not contain','wp-slimstat-options') ?></option>
+				<option value="not-like"><?php _e('Does not contain','wp-slimstat-options') ?></option>
+				<option value="starts-with"><?php _e('Starts with','wp-slimstat-options') ?></option>
+				<option value="ends-with"><?php _e('Ends with','wp-slimstat-options') ?></option>
+				<option value="does-not-start-with"><?php _e('Does not start with','wp-slimstat-options') ?></option>
+				<option value="does-not-end-with"><?php _e('Does not end with','wp-slimstat-options') ?></option>
 			</select>
 			<input type="text" name="options[conditional_delete_value]" id="delete_value" value="" size="20">
 			<input type="submit" value="<?php _e('DELETE','wp-slimstat-options') ?>" class="button-primary" name="Submit">
@@ -59,7 +89,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	</tr>
 	
 <?php 
-if (!isset($wp_slimstat_object)) $wp_slimstat_object = new wp_slimstat();
 $check_column = $wpdb->get_var("SHOW COLUMNS FROM `$wp_slimstat_object->table_stats` LIKE 'browser_id'");
 if (empty($check_column)): ?>
 	<tr valign="top">

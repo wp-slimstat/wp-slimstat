@@ -58,8 +58,8 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 		<div class="container noscroll">
 		<?php
 			if (!$wp_slimstat_view->day_filter_active){
-				$today_pageviews = intval($current->current_data1[intval($wp_slimstat_view->current_date['d'])]);
-				$yesterday_pageviews = (intval($wp_slimstat_view->current_date['d'])==1)?$current->previous_data1[intval($wp_slimstat_view->yesterday['d'])]:$current->current_data1[intval($wp_slimstat_view->yesterday['d'])];
+				$today_pageviews = !empty($current->current_data1[intval($wp_slimstat_view->current_date['d'])])?intval($current->current_data1[intval($wp_slimstat_view->current_date['d'])]):0;
+				$yesterday_pageviews = (intval($wp_slimstat_view->current_date['d'])==1)?(!empty($current->previous_data1[intval($wp_slimstat_view->yesterday['d'])])?$current->previous_data1[intval($wp_slimstat_view->yesterday['d'])]:0):(!empty($current->current_data1[intval($wp_slimstat_view->yesterday['d'])])?$current->current_data1[intval($wp_slimstat_view->yesterday['d'])]:0);
 			}
 			$current_pageviews = intval(array_sum($current->current_data1));
 		?>

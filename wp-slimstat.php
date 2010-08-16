@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.0.8
+Version: 2.0.9
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -24,7 +24,7 @@ class wp_slimstat {
 		global $table_prefix;
 
 		// Current version
-		$this->version = '2.0.8';
+		$this->version = '2.0.9';
 
 		// We use a bunch of tables to store data
 		$this->table_stats = $table_prefix . 'slim_stats';
@@ -143,6 +143,9 @@ class wp_slimstat {
 
 		// Track screen resolutions, outbound links and other stuff using a javascript component
 		add_option('slimstat_enable_javascript', 'yes', '', 'no');
+		
+		// Custom path to get to wp-slimstat-js.php
+		add_option('slimstat_custom_js_path', WP_PLUGIN_URL, '', 'no');
 
 		// Enable Browscap's autoupdate feature
 		add_option('slimstat_browscap_autoupdate', 'yes', '', 'no');
@@ -173,12 +176,18 @@ class wp_slimstat {
 
 		// List of browsers to ignore
 		add_option('slimstat_ignore_browsers', array(), '', 'no');
+		
+		// List of users to ignore
+		add_option('slimstat_ignore_users', array(), '', 'no');
 
 		// List of users who can view the stats: if empty, all users are allowed
 		add_option('slimstat_can_view', array(), '', 'no');
 
 		// List of users who can administer this plugin's options: if empty, all users are allowed
 		add_option('slimstat_can_admin', array(), '', 'no');
+
+		// List of users who can administer this plugin's options: if empty, all users are allowed
+		add_option('slimstat_enable_footer_link', 'yes', '', 'no');
 
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
@@ -214,13 +223,20 @@ class wp_slimstat {
 		// Is tracking enabled?
 		if (get_option('slimstat_is_tracking', 'yes') == 'no') return $_argument;
 
+		// Should we ignore this user?
+		if ( is_user_logged_in() ){ 
+			global $current_user;
+			$array_users_to_ignore = get_option('slimstat_ignore_users', array());	
+			if (in_array($current_user->user_login, $array_users_to_ignore)) return $_argument;
+		}
+
 		// We do not want to track admin pages
 		if ( is_admin() ||
-				strstr($_SERVER['PHP_SELF'], 'wp-content/') ||
-				strstr($_SERVER['PHP_SELF'], 'wp-cron.php') ||
-				strstr($_SERVER['PHP_SELF'], 'xmlrpc.php') ||
-				strstr($_SERVER['PHP_SELF'], 'wp-login.php') ||
-				strstr($_SERVER['PHP_SELF'], 'wp-comments-post.php') ) return $_argument;
+				strpos($_SERVER['PHP_SELF'], 'wp-content/') !== FALSE ||
+				strpos($_SERVER['PHP_SELF'], 'wp-cron.php') !== FALSE ||
+				strpos($_SERVER['PHP_SELF'], 'xmlrpc.php') !== FALSE ||
+				strpos($_SERVER['PHP_SELF'], 'wp-login.php') !== FALSE ||
+				strpos($_SERVER['PHP_SELF'], 'wp-comments-post.php') !== FALSE ) return $_argument;
 
 		// Set $isIgnored to TRUE if this IP is blacklisted
 		$array_ip_to_ignore = get_option('slimstat_ignore_ip', array());
@@ -290,7 +306,14 @@ class wp_slimstat {
 		
 		// Do autoupdate?
 		$do_autoUpdate = get_option('slimstat_browscap_autoupdate', 'no');
-		$browscap->doAutoUpdate = ($do_autoUpdate == 'yes');
+		if (($do_autoUpdate == 'yes') && 
+			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 664) ||
+			(intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 664))){
+			$browscap->doAutoUpdate = false;
+		}
+		else{
+			$browscap->doAutoUpdate = ($do_autoUpdate == 'yes');
+		}
 
 		$stat['ip'] = sprintf( "%u", $long_user_ip );
 		$stat['language']	= $this->_get_language();
@@ -675,13 +698,17 @@ class wp_slimstat {
 	// Output: HTML code
 	public function wp_slimstat_javascript() {	
 		if ($this->tid > 0){
+			$intval_tid = intval($this->tid);
 			$my_secret_key = get_option('slimstat_secret', '123');
+			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', WP_PLUGIN_URL.'/wp-slimstat');
+			$enable_footer_link = get_option('slimstat_enable_footer_link', 'yes');
 			
-			echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress">Stats by WP SlimStat</a></p>';
-			echo '<script type="text/javascript">slimstat_tid=\''.intval($this->tid).'\';';
-			echo 'slimstat_path=\''.WP_PLUGIN_URL.'\';';
-			echo 'slimstat_session_id=\''.md5(intval($this->tid).$my_secret_key).'\';</script>';
-			echo '<script type="text/javascript" src="'. plugins_url('/wp-slimstat/wp-slimstat.js').'"></script>'."\n";
+			if ($enable_footer_link == 'yes') 
+				echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.WP_PLUGIN_URL.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height"15" alt="WP SlimStat"/></a></p>';
+			echo "<script type='text/javascript'>slimstat_tid='$intval_tid';";
+			echo "slimstat_path='$custom_slimstat_js_path';";
+			echo 'slimstat_session_id=\''.md5($intval_tid.$my_secret_key).'\';</script>';
+			echo '<script type="text/javascript" src="'.WP_PLUGIN_URL.'/wp-slimstat/wp-slimstat.js"></script>'."\n";
 		}
 	}
 	// end wp_slimstat_javascript

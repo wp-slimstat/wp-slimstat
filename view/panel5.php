@@ -17,7 +17,7 @@ $wp_slimstat_view->starting_from = 0;
 if (!empty($_GET['starting'])) $wp_slimstat_view->starting_from = intval($_GET['starting']);
 
 // Restrict results to current month only ( cmo = current month only )
-if ($_GET['cmo'] == 1) $wp_slimstat_view->custom_data_filter = true;
+if (!empty($_GET['cmo']) && $_GET['cmo'] == 1) $wp_slimstat_view->custom_data_filter = true;
 
 // Show details based on a different function
 $allowed_functions = array(
@@ -33,6 +33,7 @@ if (!empty($_GET['ftu']) && in_array($_GET['ftu'], $allowed_functions)) $functio
 
 // Retrieve results
 $wp_slimstat_view->limit_results = 50;
+if (empty($function_to_use)) $function_to_use = '';
 switch ($function_to_use){
 	case 'get_details_recent_visits':
 		$results = $wp_slimstat_view->get_details_recent_visits();
@@ -71,10 +72,10 @@ switch ($function_to_use){
 		break;
 	default:
 		$results = $wp_slimstat_view->get_raw_data($orderby_column, $direction_orderby);
-		$count_raw_data = $wp_slimstat_view->count_raw_data($not_empty_column);
+		$count_raw_data = $wp_slimstat_view->count_raw_data();
 		$add_to_box_title = '';
 }
-
+if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 ?>
 
 <form action="index.php" method="get">
@@ -111,12 +112,11 @@ switch ($function_to_use){
 			<option value="desc"><?php _e('Descending','wp-slimstat-view') ?></option>
 		</select>
 		<?php endif; // empty($function_to_use)
-		_e('Starting from record #', 'wp-slimstat-view'); ?>
+		_e('Starting from record #', 'wp-slimstat-view'); if (empty($count_raw_data)) $count_raw_data = 0; ?>
 		<input type="text" name="starting" value="" size="15"> / <?php echo $count_raw_data ?>&nbsp;</span>
 		<input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary"></span>
 	</p>
 </form>
-
 
 <div class="metabox-holder tall <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
@@ -136,7 +136,7 @@ switch ($function_to_use){
 				_e('No records found', 'wp-slimstat-view');
 			}
 			else {
-				echo $add_to_box_title.' - '.sprintf(__('Records: %d - %d. Order by: %s %s', 'wp-slimstat-view'), $wp_slimstat_view->starting_from, $ending_point, $orderby_column, $direction_orderby); 
+				echo $add_to_box_title.'  '.sprintf(__('Records: %d - %d. Order by: %s %s', 'wp-slimstat-view'), $wp_slimstat_view->starting_from, $ending_point, $orderby_column, $direction_orderby); 
 			}
 		?></h3>
 		<div class="container">
@@ -226,6 +226,7 @@ switch ($function_to_use){
 								if (empty($searchterms)) $searchterms = __('N/A', 'wp-slimstat-view');
 								if (!isset($wp_slimstat_view->filters_parsed['country'][0])) $country = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&country=".htmlspecialchars($results[$i]['short_string'])."'>$country</a>";	
 								$resource_short = $results[$i]['resource'];
+								$title_resource = '';
 								if (strlen($results[$i]['resource']) > 50){
 									$title_resource = " title='{$results[$i]['resource']}'";
 									$resource_short = substr($results[$i]['resource'], 0, 50);

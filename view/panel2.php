@@ -42,9 +42,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 				_e('this period', 'wp-slimstat-view');
 			} ?></h3>
 		<?php
-			$total_visitors = array_sum($current->current_data1);
+			$total_visitors = $wp_slimstat_view->count_all_visitors();
 			$one_time_visitors = $wp_slimstat_view->count_new_visitors();
 			$bounce_rate = ($total_visitors > 0)?sprintf("%01.2f", (100*$one_time_visitors/$total_visitors)):0;
+			if (intval($bounce_rate) > 99) $bounce_rate = '100';
 			$metrics_per_visit = $wp_slimstat_view->get_max_and_average_pages_per_visit();
 		?>
 		<div class="container noscroll">
@@ -314,7 +315,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 							$ip_address = "<a href='http://www.ip2location.com/{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$slimstat_plugin_url/wp-slimstat/images/whois.gif' /></a> {$results[$i]['ip']}";
 							$country = __('c-'.$results[$i]['country'],'countries-languages');
 						
-							echo "<p class='header'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>{$results[$i]['datetime']}</span></p>";
+							echo "<p class='header'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>{$results[$i]['customdatetime']}</span></p>";
 							$visit_id = $results[$i]['visit_id'];
 						}
 						$last_element = ($i == $count_results-1)?' class="last"':'';

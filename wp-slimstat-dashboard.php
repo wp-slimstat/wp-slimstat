@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: Adds some widgets to monitor your WP SlimStat reports directly from your dashboard.
-Version: 2.0.8
+Version: 2.0.9
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -36,6 +36,9 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 		
 		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
 		$wpdb->query("SET @@session.time_zone = '+00:00'");
+		
+		// It seems like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
+		$this->slimstat_plugin_url = (FORCE_SSL_ADMIN || $_SERVER['HTTPS']=='on')?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 	}
 	// end __construct
 	
@@ -75,6 +78,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	// Output: HTML code
 	public function show_pathstats() {
 		$results = $this->get_details_recent_visits();
+		
 		$count_results = count($results);
 		$visit_id = 0;
 		if ($count_results == 0) {
@@ -82,18 +86,17 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 		} else {
 			for($i=0;$i<$count_results;$i++){
 				if ($visit_id != $results[$i]['visit_id']){
-					$ip_address = long2ip($results[$i]['ip']);
+					$ip_address = "<a href='http://www.ip2location.com/{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$this->slimstat_plugin_url/wp-slimstat/images/whois.gif' /></a> {$results[$i]['ip']}";
 					$country = __('c-'.$results[$i]['country'],'countries-languages');
-					$time_of_pageview = $results[$i]['date_f'].'@'.$results[$i]['time_f'];
 					
-					echo "<p class='slimstat-row header'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>{$time_of_pageview}</span></p>";
+					echo "<p class='slimstat-row header'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>{$results[$i]['datetime']}</span></p>";
 					$visit_id = $results[$i]['visit_id'];
 				}
 				$last_element = ($i == $count_results-1)?' class="slimstat-row last"':' class="slimstat-row"';
 				$element_title = sprintf(__('Open %s in a new window','wp-slimstat-dashboard'), $results[$i]['referer']);
 				echo "<p$last_element title='{$results[$i]['domain']}{$results[$i]['referer']}'>";
 				if (!empty($results[$i]['domain'])){
-					echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".WP_PLUGIN_URL."/wp-slimstat/images/url.gif' /></a> {$results[$i]['domain']} &raquo;";
+					echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$this->slimstat_plugin_url/wp-slimstat/images/url.gif' /></a> {$results[$i]['domain']} &raquo;";
 				}
 				else{
 					echo __('Direct visit to','wp-slimstat-dashboard');

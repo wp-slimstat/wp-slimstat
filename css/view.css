@@ -174,15 +174,11 @@
  white-space:nowrap;
 }
 .form-table td.narrowcolumn{
- width:10%;
+ width:100px;
 }
 .form-table td.shortrow{
  padding:0 10px 20px;
  white-space:normal;
-}
-
-.form-table td.widecolumn{
- width:68%;
 }
 .form-table td.wrap{
  font-size:14px;
@@ -193,4 +189,7 @@
 }
 .form-table.rtl input{
  margin:0 0 0 8px;
+}
+.form-table input.longtext{
+ width:400px;
 }

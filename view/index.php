@@ -33,7 +33,7 @@ $current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
 
 // It seems like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
-$slimstat_plugin_url = (FORCE_SSL_ADMIN || $_SERVER['HTTPS']=='on')?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+$slimstat_plugin_url = (FORCE_SSL_ADMIN || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 // Import class definition
 require_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
@@ -68,7 +68,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 		?>
 	</h2>
 	
-	<form action="index.php" method="get">
+	<form action="index.php" method="get" name="setslimstatfilters">
 		<input type="hidden" name="page" value="wp-slimstat/view/index.php">
 		<input type="hidden" name="slimpanel" value="<?php echo intval($_GET['slimpanel']) ?>">
 		<?php // Keep other filters persistent
@@ -78,7 +78,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 			}
 		?>
 		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter pageviews where','wp-slimstat-view') ?>
-			<select name="filter">
+			<select name="filter" onchange="if(this.value=='author'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
 				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
 				<option value="version"><?php _e('Browser version','wp-slimstat-view') ?></option>
 				<option value="css_version"><?php _e('CSS version','wp-slimstat-view') ?></option>
@@ -91,6 +91,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 				<option value="resource"><?php _e('Permalink','wp-slimstat-view') ?></option>
 				<option value="referer"><?php _e('Referer','wp-slimstat-view') ?></option>
 				<option value="resolution"><?php _e('Screen Resolution','wp-slimstat-view') ?></option>
+				<option value="author"><?php _e('Post Author','wp-slimstat-view') ?></option>
 			</select> 
 			<select name="f_operator" style="width:12em">
 				<option value="equals"><?php _e('Is equal to','wp-slimstat-view') ?></option>
@@ -129,7 +130,12 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 		</p>
 	</form>
 	
-	<p style="clear:both;padding:6px 6px 0"><?php if (!empty($filters_list)) echo substr($filters_list, 0, -2)." [<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel&ftu={$_GET['ftu']}&orderby={$_GET['orderby']}&direction={$_GET['direction']}'>".__('reset','wp-slimstat-view').'</a>]'; ?></p>
+	<p style="clear:both;padding:6px 6px 0"><?php 
+		$get_filter_to_use = !empty($_GET['ftu'])?"&ftu={$_GET['ftu']}":'';
+		$get_orderby = !empty($_GET['orderby'])?"&ftu={$_GET['orderby']}":'';
+		$get_direction = !empty($_GET['direction'])?"&ftu={$_GET['direction']}":'';
+		
+		if (!empty($filters_list)) echo substr($filters_list, 0, -2)." [<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction'>".__('reset','wp-slimstat-view').'</a>]'; ?></p>
 	
 	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
 </div>

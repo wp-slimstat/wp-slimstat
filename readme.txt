@@ -3,13 +3,13 @@
 Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
-Tested up to: 3.0
-Stable tag: 2.0.8
+Tested up to: 3.0.1
+Stable tag: 2.0.9
 
 == Description ==
-A simple but powerful web analytics plugin for Wordpress. It doesn't require any subscription
+A simple but powerful real-time web analytics plugin for Wordpress. It doesn't require any subscription
 to external statistic services: all metrics are kept on your local server, private and accessible
-to your eyes only. Features the famous one-click install-and-go.
+to your eyes only. Features the famous one-click install-and-go. Results are shown in real-time!
 
 ## Requirements
 * Wordpress 2.9 or higher
@@ -52,11 +52,25 @@ to your eyes only. Features the famous one-click install-and-go.
 
 == Changelog ==
 
+= 2.0.9 =
+* A new member has joined the WP SlimStat Family: [WP SlimStat ShortCodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/)
+* Improved the Options > Maintenance panel: now you can delete rows based on the IP address, and use some new filters (thank you Herman)
+* Now you can filter metrics [based on authors](http://lab.duechiacchiere.it/index.php?topic=33.0) (thank you Matt)
+* A new option under Options > General allows you to move [tt]wp-slimstat-js.php[/tt] out of its original folder, for security reasons (thank you Steven). You will have to edit this file accordingly, though, before moving it
+* Added a new option to filter hits based on users being logged in (Options > Filters)
+* Added a new option to optimize your database, if needed (Options > Maintenance)
+* Fixed a bug that prevented links with target=_blank to open in a new window (thank you Julius and [Wordpress Deutschland](http://forum.wordpress-deutschland.org/konfiguration/71929-ext-links-oeffnen-sich-im-gleichen-fenster-trotz-_blank-2.html))
+* Fixed a typo that prevented one of the icons to show up correctly
+* Fixed a problem with BrowsCap that occurred when the cache folder was not writeable (thank you Julius)
+* Fixed some warning errors that came out with PHP in 'strict' mode (error reporting = E_ALL and WP_DEBUG = true, thank you Olivier Sermann)
+* Bounce rate percentages are now even more accurate
+* Geolocalization: updated the information in the CSV file included (August 2010). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
+
 = 2.0.8 =
 * WP SlimStat speaks German! Thank you [Digo](http://www.showhypnose.org/blog/)!
 * Added a new option to some metrics to access more detailed information about hits and visits
 * Added more options to show statistics and metrics on your website. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.0#post_displaymetrics) for further details
-* Now it detects if you are using HTTPS in your admin pages (thanks Tuxicoman)
+* Now it detects if you are using HTTPS in your admin pages (thank you Tuxicoman)
 * In order to avoid conflicts with Lightbox and friends, you can now "mark" specific links to ignore. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.msg2#post_avoidconflicts) for further details
 * Fixed a bug in calculating some percentages
 * Reorganized the 'Raw Data' section
@@ -67,15 +81,15 @@ to your eyes only. Features the famous one-click install-and-go.
 * Now you can display a lot of metrics on your website. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.0)
 * Fixed a conflict between WP SlimStat and WP SlimStat Dashboard Widgets
 * Fixed a bug that prevented the autoupdate of Browscap to run periodically
-* Fixed a possible XSS vulnerability when parsing filters (thanks Nadav)
+* Fixed a possible XSS vulnerability when parsing filters (thank you Nadav)
 * Some graphic fine-tuning to adapt the layout to the new admin interface and colors
 * Geolocalization: updated the information in the CSV file included (July 2010)
 
 = 2.0.6 =
 * First 'stable' version, finally!
-* Added a World map to graphically represent hits and visits. You can use filters for content drill-down (thanks Michael)
-* Added number_format to improve readability (thanks Digo)
-* Added a new icon near to each IP address, to see all the details about that address (thanks Digo)
+* Added a World map to graphically represent hits and visits. You can use filters for content drill-down (thank you Michael)
+* Added number_format to improve readability (thank you Digo)
+* Added a new icon near to each IP address, to see all the details about that address (thank you Digo)
 * Added an option to set the number of results listed within each module
 * Added an internal feature that allows me to keep track of all the sites using WP SlimStat out there
 * Fixed a bug in calculating the percentage of hits for each exit page ( Content -> Exit pages )

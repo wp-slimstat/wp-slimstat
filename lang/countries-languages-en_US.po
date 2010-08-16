@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wp-slimstat\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2010-04-13 12:56-0500\n"
+"PO-Revision-Date: 2010-08-05 13:09-0500\n"
 "Last-Translator: Camu <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -1615,7 +1615,7 @@ msgstr "Russian/Russia"
 
 #Russian/Moldavia
 msgid "l-ru-mo"
-msgstr ""
+msgstr "Russian"
 
 # Serbian
 msgid "l-sr"

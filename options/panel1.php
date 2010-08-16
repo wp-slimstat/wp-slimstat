@@ -9,6 +9,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 $wp_slimstat_options = array();
 $wp_slimstat_options['is_tracking'] = get_option('slimstat_is_tracking', 'yes');
 $wp_slimstat_options['enable_javascript'] = get_option('slimstat_enable_javascript', 'yes');
+$wp_slimstat_options['custom_js_path'] = get_option('slimstat_custom_js_path', WP_PLUGIN_URL.'/wp-slimstat');
 $wp_slimstat_options['browscap_autoupdate'] = get_option('slimstat_browscap_autoupdate', 'no');
 $wp_slimstat_options['ignore_interval'] = intval(get_option('slimstat_ignore_interval', '30'));
 $wp_slimstat_options['ignore_bots'] = get_option('slimstat_ignore_bots', 'no');
@@ -44,6 +45,18 @@ $wp_slimstat_options['use_separate_menu'] = get_option('slimstat_use_separate_me
 	<tr>
 		<td colspan="2" class="shortrow">
 			<span class="description"><?php _e('Adds a javascript code to your pages to track visits, screen resolutions, outbound links, downloads and more','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row" rowspan="2"><label for="custom_js_path"><?php _e('Custom path','wp-slimstat-options') ?></label></th>
+		<td colspan="2" class="widecolumn">
+			<input type="text" class="longtext" name="options[custom_js_path]" id="custom_js_path" value="<?php echo $wp_slimstat_options['custom_js_path']; ?>" size="50">
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">
+			<span class="description"><?php _e('If you moved <code>wp-slimstat-js.php</code> out of the original folder, specify here the new path. Default:','wp-slimstat-options'); echo " <code>".WP_PLUGIN_URL."/wp-slimstat</code>"; ?></span>
 		</td>
 	</tr>
 	

@@ -1,6 +1,7 @@
 <?php
 
 // Please change this path if your plugins' folder is not in its standard location. Do not include a trailing slash.
+// Where is your wp-config.php located relatively to this file?
 $wp_root_folder = '../../..';
 
 // Ok, you don't need to edit anything below this line. Thank you

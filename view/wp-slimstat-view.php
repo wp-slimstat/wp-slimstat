@@ -6,7 +6,9 @@ class wp_slimstat_view {
 	public function __construct($user_filters = ''){
 		global $wpdb, $table_prefix;
 
-		// We use WP SlimStat tables to retrieve metrics
+		// We use Wordpress and WP SlimStat tables to retrieve metrics
+		$this->table_posts = $table_prefix . 'posts';
+		$this->table_users = $table_prefix . 'users';
 		$this->table_stats = $table_prefix . 'slim_stats';
 		$this->table_countries = $table_prefix . 'slim_countries';
 		$this->table_browsers = $table_prefix . 'slim_browsers';
@@ -18,7 +20,7 @@ class wp_slimstat_view {
 		$this->starting_from = 0;
 
 		// Limit results to...
-		$this->limit_results = get_option('slimstat_rows_to_show', '20');
+		$this->limit_results = empty($user_filters['limit_results'])?get_option('slimstat_rows_to_show', '20'):intval($user_filters['limit_results']);
 
 		// Calculate filters
 		$this->filters_to_parse = array(
@@ -29,6 +31,7 @@ class wp_slimstat_view {
 			'browser' => 'string',
 			'version' => 'string',
 			'css_version' => 'string',
+			'author' => 'string',
 			'country' => 'string',
 			'domain' => 'string',
 			'ip' => 'string',
@@ -37,10 +40,16 @@ class wp_slimstat_view {
 			'resource' => 'string',
 			'referer' => 'string',
 			'resolution' => 'string',
-			'searchterms' => 'string'
+			'searchterms' => 'string',
+			'limit-results' => 'integer'
 		);
 
+		// Avoid warnings in strict mode
 		$this->filters_parsed = array();
+		$this->day_filter_active = false;
+		$this->custom_data_filter = false;
+		$this->filters_query = '';
+		$this->current_date = array();
 		
 		foreach ($this->filters_to_parse as $a_filter_label => $a_filter_type){
 			if(!empty($user_filters) && !empty($user_filters[$a_filter_label])){
@@ -48,9 +57,9 @@ class wp_slimstat_view {
 				$f_operator = !empty($user_filters[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $user_filters[$a_filter_label.'-op']))):'equals';
 				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
 			}
-			else if (!empty($_GET['filter']) && !empty($_GET['f_value']) && !empty($_GET['f_operator']) && $_GET['filter']==$a_filter_label){
+			else if (!empty($_GET['filter']) && !empty($_GET['f_value']) && $_GET['filter']==$a_filter_label){
 				$f_value = ($a_filter_type == 'integer')?abs(intval($_GET['f_value'])):$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_value'])));
-				$f_operator = $wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_operator'])));
+				$f_operator = !empty($_GET['f_operator'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_operator']))):'equals';
 				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
 			}
 			else if(!empty($_GET[$a_filter_label])){
@@ -61,7 +70,6 @@ class wp_slimstat_view {
 		}
 	
 		// Date filter
-		$this->current_date = array();		
 		if (!empty($this->filters_parsed['day'][0])){
 			$this->current_date['d'] = sprintf('%02d', $this->filters_parsed['day'][0]);
 			if (empty($this->filters_parsed['interval'][0]))
@@ -103,11 +111,14 @@ class wp_slimstat_view {
 		$this->filters_sql_from = array('browsers' => '', 'screenres' => '');
 		$this->filters_sql_where = '';
 		if (!empty($this->filters_parsed)){
-			$this->filters_query = $filters_query;
+			if (!empty($filters_query))
+				$this->filters_query = $filters_query;
+			else
+				$this->filters_query = '';
 			
 			foreach($this->filters_parsed as $a_filter_label => $a_filter_details){
-				// Skip filters on date
-				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year') && ($a_filter_label != 'interval')){
+				// Skip filters on date and author
+				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year') && ($a_filter_label != 'interval') && ($a_filter_label != 'author')){
 					
 					// Filters on the IP address require a special treatment
 					if ($a_filter_label == 'ip'){
@@ -134,6 +145,25 @@ class wp_slimstat_view {
 						default:
 							$this->filters_sql_where .= " AND $a_filter_column = '{$a_filter_details[0]}'";
 					}
+				}
+				
+				if ($a_filter_label == 'author'){
+					$sql = "SELECT tp.`ID` 
+							FROM $this->table_posts tp, $this->table_users tu 
+							WHERE tu.`user_login` = '{$a_filter_details[0]}'
+								AND tp.`post_author` = tu.`ID`
+								AND tp.`post_status` = 'publish'";
+					$array_post_id_by_user = $wpdb->get_results($sql, ARRAY_A);
+					if (count($array_post_id_by_user) > 0){
+						$array_permalinks_by_user = array();
+						$site_home_url = get_bloginfo('url'); 
+						foreach($array_post_id_by_user as $a_result){
+							$array_permalinks_by_user[] = str_replace($site_home_url, '', get_permalink($a_result['ID']));
+						}
+						$this->filters_sql_where .= " AND `resource` IN ('".implode("','", $array_permalinks_by_user)."')";
+					}
+					else
+						$this->filters_sql_where .= " AND `resource` IN ('[nothing found]')";
 				}
 
 				// Some columns are in separate tables, so we need to join these tables
@@ -350,6 +380,15 @@ class wp_slimstat_view {
 				WHERE `domain` <> '{$_SERVER['SERVER_NAME']}' AND `domain` <> '' $this->filters_date_sql_where $this->filters_sql_where";
 		return intval($wpdb->get_var($sql));
 	}
+	
+	public function count_all_visitors(){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*)
+				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+				WHERE `visit_id` > 0 $this->filters_date_sql_where $this->filters_sql_where";
+		return intval($wpdb->get_var($sql));
+	}
 
 	public function get_average_pageviews_by_day(){
 		if ($this->day_filter_active){			
@@ -558,7 +597,8 @@ class wp_slimstat_view {
 	public function get_recent_downloads(){
 		global $wpdb;
 
-		$sql = "SELECT SUBSTRING(`outbound_resource`, 1, 35) short_string, `outbound_resource`, LENGTH(`outbound_resource`) len
+		$sql = "SELECT SUBSTRING(`outbound_resource`, 1, 35) short_string, `outbound_resource`, LENGTH(`outbound_resource`) len,
+					DATE_FORMAT( FROM_UNIXTIME( `dt` ), '%d/%m/%Y %H:%i' ) customdatetime
 				FROM `$this->table_outbound` t1
 				WHERE `type` = 1 $this->filters_date_sql_where
 				ORDER BY `dt` DESC
@@ -582,7 +622,8 @@ class wp_slimstat_view {
 	public function get_recent_internal_searches(){
 		global $wpdb;
 
-		$sql = "SELECT SUBSTRING(`searchterms`, 1, 30) short_string, `searchterms`, LENGTH(`searchterms`) len
+		$sql = "SELECT SUBSTRING(`searchterms`, 1, 30) short_string, `searchterms`, LENGTH(`searchterms`) len,
+					DATE_FORMAT( FROM_UNIXTIME( `dt` ), '%d/%m/%Y %H:%i' ) customdatetime
 				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
 				WHERE (`resource` = '__l_s__' OR `resource` = '') $this->filters_date_sql_where $this->filters_sql_where
 				GROUP BY `searchterms`
@@ -819,13 +860,13 @@ class wp_slimstat_view {
 			}
 			else{
 				// Days are clickable, so we need to carry the information about current filters
-				$encoded_filters_query = urlencode(str_replace('interval=','xinterval=', $this->filters_query));
+				$encoded_filters_query = !empty($this->filters_query)?urlencode(str_replace('interval=','xinterval=', $this->filters_query)):'';
 
 				for($i=1;$i<=31;$i++) { 
 					$categories_xml .= "<category name='$i'/>";
-					$current_period_xml_data1 .= $this->_format_value($array_current_period_data1[$i], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D$i%26month%3D{$this->current_date['m']}%26year%3D{$this->current_date['y']}$encoded_filters_query");
-					$current_period_xml_data2 .= $this->_format_value($array_current_period_data2[$i]);
-					$previous_period_xml .= $this->_format_value($array_previous_period_data1[$i], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D$i%26month%3D{$this->previous_month['m']}%26year%3D{$this->previous_month['y']}$encoded_filters_query");
+					$current_period_xml_data1 .= !empty($array_current_period_data1[$i])?$this->_format_value($array_current_period_data1[$i], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D$i%26month%3D{$this->current_date['m']}%26year%3D{$this->current_date['y']}$encoded_filters_query"):'<set/>';
+					$current_period_xml_data2 .= !empty($array_current_period_data2[$i])?$this->_format_value($array_current_period_data2[$i]):'<set/>';
+					$previous_period_xml .= !empty($array_previous_period_data1[$i])?$this->_format_value($array_previous_period_data1[$i], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D$i%26month%3D{$this->previous_month['m']}%26year%3D{$this->previous_month['y']}$encoded_filters_query"):'<set/>';
 				}
 			}
 		}

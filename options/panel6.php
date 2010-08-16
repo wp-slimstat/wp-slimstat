@@ -5,6 +5,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
+// Load the options
+$wp_slimstat_options = array();
+$wp_slimstat_options['enable_footer_link'] = get_option('slimstat_enable_footer_link', 'yes');
+
 ?>
 
 <table class="form-table">
@@ -31,3 +35,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <h3><?php _e("Vote and show your appreciation",'wp-slimstat-options') ?></h3>
 <p><?php _e('Tell other people if WP SlimStat works for you and how good it is. <a href="http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&amp;topic_id=14104">Rate it</a> on its Plugin Directory page.','wp-slimstat-options') ?></p>
+
+<h3><?php _e("Show footer link",'wp-slimstat-options') ?></h3>
+<p><?php _e("If an unwanted link to WP SlimStat is showing up in your template's footer, select NO here below. Otherwise, I'd really appreciate if you could leave this enabled.",'wp-slimstat-options') ?></p>
+<form action="admin.php?page=wp-slimstat/options/index.php&slimpanel=6" method="post">
+<p><input type="radio" name="options[enable_footer_link]" id="enable_footer_link" value="yes"<?php echo ($wp_slimstat_options['enable_footer_link'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<input type="radio" name="options[enable_footer_link]" value="no" <?php echo ($wp_slimstat_options['enable_footer_link'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?></p>
+<p class="submit"><input type="submit" value="Save Changes" class="button-primary" name="Submit"></p>
+</form>

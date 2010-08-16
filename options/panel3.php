@@ -10,6 +10,7 @@ $wp_slimstat_options = array();
 $wp_slimstat_options['ignore_ip'] = get_option('slimstat_ignore_ip', array());
 $wp_slimstat_options['ignore_resources'] = get_option('slimstat_ignore_resources', array());
 $wp_slimstat_options['ignore_browsers'] = get_option('slimstat_ignore_browsers', array());
+$wp_slimstat_options['ignore_users'] = get_option('slimstat_ignore_users', array());
 
 ?>
 
@@ -37,5 +38,14 @@ $wp_slimstat_options['ignore_browsers'] = get_option('slimstat_ignore_browsers',
 	$list_to_show = '';
 	foreach($wp_slimstat_options['ignore_browsers'] as $a_browser)
 		$list_to_show .= $a_browser.', ';
+	echo substr($list_to_show, 0, -2);
+?></textarea></p>
+
+<h3><label for="ignore_users"><?php _e('Users to ignore','wp-slimstat-options') ?></label></h3>
+<p><?php _e("Enter a list of Wordpress users you don't want to track, separated by commas.",'wp-slimstat-options') ?></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_users]" id="ignore_users"><?php
+	$list_to_show = '';
+	foreach($wp_slimstat_options['ignore_users'] as $a_user)
+		$list_to_show .= $a_user.', ';
 	echo substr($list_to_show, 0, -2);
 ?></textarea></p>

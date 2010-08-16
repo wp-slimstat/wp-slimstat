@@ -26,6 +26,7 @@ delete_option('slimstat_ignore_resources');
 delete_option('slimstat_ignore_browsers');
 delete_option('slimstat_can_view');
 delete_option('slimstat_can_admin');
+delete_option('slimstat_enable_footer_link');
 
 // Remove scheduled autopurge events
 wp_clear_scheduled_hook('wp_slimstat_purge');
