@@ -196,8 +196,8 @@ class wp_slimstat {
 		// Please do not remove this function, it helps me keep track of WP SlimStat's userbase.
 		// Your privacy is 100% guaranteed, I promise :-)
 		$opts = array( 'http'=>array( 'method'=>'GET', 'header'=>"Accept-language: en\r\nUser-Agent: wp-slimstat\r\n" ) );
-		$context = stream_context_create($opts);
-		$devnull = file_get_contents('http://www.duechiacchiere.it/wp-slimstat-count.php?h='.urlencode(get_bloginfo('url')).'&v='.$this->version.'&c='.$this->_count_records(), false, $context);
+		$context = @stream_context_create($opts);
+		$devnull = @file_get_contents('http://www.duechiacchiere.it/wp-slimstat-count.php?h='.urlencode(get_bloginfo('url')).'&v='.$this->version.'&c='.$this->_count_records(), false, $context);
 	}
 	// end activate
 
@@ -256,7 +256,7 @@ class wp_slimstat {
 		}
 
 		$stat = array();
-
+		$referer = array(); 
 		if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
 			$referer = @parse_url( $_SERVER['HTTP_REFERER'] );
 			if ( !$referer ) {
