@@ -56,7 +56,7 @@ to your eyes only. Features the famous one-click install-and-go. Results are sho
 * A new member has joined the WP SlimStat Family: [WP SlimStat ShortCodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/)
 * Improved the Options > Maintenance panel: now you can delete rows based on the IP address, and use some new filters (thank you Herman)
 * Now you can filter metrics [based on authors](http://lab.duechiacchiere.it/index.php?topic=33.0) (thank you Matt)
-* A new option under Options > General allows you to move [tt]wp-slimstat-js.php[/tt] out of its original folder, for security reasons (thank you Steven). You will have to edit this file accordingly, though, before moving it
+* A new option under Options > General allows you to move `wp-slimstat-js.php` out of its original folder, for security reasons (thank you Steven). You will have to edit this file accordingly, though, before moving it
 * Added a new option to filter hits based on users being logged in (Options > Filters)
 * Added a new option to optimize your database, if needed (Options > Maintenance)
 * Fixed a bug that prevented links with target=_blank to open in a new window (thank you Julius and [Wordpress Deutschland](http://forum.wordpress-deutschland.org/konfiguration/71929-ext-links-oeffnen-sich-im-gleichen-fenster-trotz-_blank-2.html))
