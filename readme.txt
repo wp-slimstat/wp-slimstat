@@ -53,7 +53,7 @@ to your eyes only. Features the famous one-click install-and-go. Results are sho
 == Changelog ==
 
 = 2.1 =
-* Fixed a bug that prevented Visitors to be tracked properly. If you downloaded/installed WP SlimStat 2.0.9, go to Settings > WP SlimStat > General tab and (unless you have  explicitly changed this option) set the value for this field to the default one shown in the description underneath. 
+* Fixed a bug that prevented Visitors to be tracked properly. If you downloaded/installed WP SlimStat 2.0.9, go to Settings > WP SlimStat > General tab and (unless you have  explicitly changed this option) set the value for `Custom Path` to the default one shown in the description underneath. 
 * Updated browscap.ini and cache.php to the latest version available
 
 = 2.0.9 =
