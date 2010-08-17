@@ -145,7 +145,7 @@ class wp_slimstat {
 		add_option('slimstat_enable_javascript', 'yes', '', 'no');
 		
 		// Custom path to get to wp-slimstat-js.php
-		add_option('slimstat_custom_js_path', WP_PLUGIN_URL, '', 'no');
+		add_option('slimstat_custom_js_path', WP_PLUGIN_URL.'/wp-slimstat', '', 'no');
 
 		// Enable Browscap's autoupdate feature
 		add_option('slimstat_browscap_autoupdate', 'yes', '', 'no');
