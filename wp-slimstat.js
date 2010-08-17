@@ -87,7 +87,6 @@ function slimstat_track_link(event){
 	
 	// You can choose to disable this for some links (to avoid conflicts with Lightbox and friends)
 	if (element.className.indexOf('noslimstat') == -1){
-		
 		switch(element.target){
 			case '_blank':
 			case '_new':

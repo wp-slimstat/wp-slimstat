@@ -52,6 +52,10 @@ to your eyes only. Features the famous one-click install-and-go. Results are sho
 
 == Changelog ==
 
+= 2.1.0 =
+* Fixed a bug that prevented Visitors to be tracked properly. If you downloaded/installed WP SlimStat 2.0.9, go to Options > General and (unless you have  explicitly changed this option) replace the value in the field with the default one shown in the description underneath. 
+* Updated browscap.ini and cache.php to the latest version available
+
 = 2.0.9 =
 * A new member has joined the WP SlimStat Family: [WP SlimStat ShortCodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/)
 * Improved the Options > Maintenance panel: now you can delete rows based on the IP address, and use some new filters (thank you Herman)
@@ -84,20 +88,6 @@ to your eyes only. Features the famous one-click install-and-go. Results are sho
 * Fixed a possible XSS vulnerability when parsing filters (thank you Nadav)
 * Some graphic fine-tuning to adapt the layout to the new admin interface and colors
 * Geolocalization: updated the information in the CSV file included (July 2010)
-
-= 2.0.6 =
-* First 'stable' version, finally!
-* Added a World map to graphically represent hits and visits. You can use filters for content drill-down (thank you Michael)
-* Added number_format to improve readability (thank you Digo)
-* Added a new icon near to each IP address, to see all the details about that address (thank you Digo)
-* Added an option to set the number of results listed within each module
-* Added an internal feature that allows me to keep track of all the sites using WP SlimStat out there
-* Fixed a bug in calculating the percentage of hits for each exit page ( Content -> Exit pages )
-* Fixed a bug in calculating unique IPs ( Dashboard -> Summary for... )
-* Fixed a bug in the 'Internal Searches' module
-* Custom reports now shares the same class used by the main View panels
-* Improved the overall security and stability of WP SlimStat
-* Introduced some SQL code optimizations for faster queries
 
 == Localization ==
 
