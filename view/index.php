@@ -32,7 +32,7 @@ $current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 // Text direction
 if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
 
-// It seems like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
+// It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
 $slimstat_plugin_url = (FORCE_SSL_ADMIN || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 // Import class definition
