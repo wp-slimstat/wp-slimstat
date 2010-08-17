@@ -154,7 +154,7 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 									$language = __('l-'.$results[$i]['language'], 'countries-languages');
 									$platform = __($results[$i]['platform'],'countries-languages');
 
-									echo "<p class='header'>$ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>{$results[$i]['customdatetime']}</span></p>";
+									echo "<p class='header'>$ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span class='widecolumn'>{$results[$i]['customdatetime']}</span></p>";
 									$visit_id = $results[$i]['visit_id'];
 								}
 								$last_element = ($i == $count_results-1)?' class="last"':'';
