@@ -634,7 +634,9 @@ class wp_slimstat {
 	// Input: none
 	// Output: none
 	public function wp_slimstat_stylesheet() {
-		$stylesheeth_url = WP_PLUGIN_URL . '/wp-slimstat/css/view.css';
+		// It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
+		$slimstat_plugin_url = (FORCE_SSL_ADMIN || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+		$stylesheeth_url = $slimstat_plugin_url . '/wp-slimstat/css/view.css';
 		wp_register_style('wp-slimstat-view', $stylesheeth_url);
 		wp_enqueue_style('wp-slimstat-view');
 	}
@@ -648,13 +650,15 @@ class wp_slimstat {
 		global $current_user;
 
 		// Load localization files
-		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
+		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
+
+		$slimstat_plugin_url = (FORCE_SSL_ADMIN || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 		$array_allowed_users = get_option('slimstat_can_view', array());
 		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
 		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users) || current_user_can('manage_options')) {
 			if ($use_separate_menu == 'yes'){
-				add_menu_page( 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', '', WP_PLUGIN_URL.'/wp-slimstat/images/wp-slimstat-menu.png' );
+				add_menu_page( 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', '', $slimstat_plugin_url.'/wp-slimstat/images/wp-slimstat-menu.png' );
 			}
 			else{
 				add_submenu_page( 'index.php', 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/view/index.php' );
@@ -702,13 +706,15 @@ class wp_slimstat {
 			$my_secret_key = get_option('slimstat_secret', '123');
 			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', WP_PLUGIN_URL.'/wp-slimstat');
 			$enable_footer_link = get_option('slimstat_enable_footer_link', 'yes');
+			$slimstat_plugin_url = (FORCE_SSL_ADMIN || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 			
-			if ($enable_footer_link == 'yes') 
-				echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.WP_PLUGIN_URL.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height"15" alt="WP SlimStat"/></a></p>';
+			if ($enable_footer_link == 'yes') {	
+				echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.$slimstat_plugin_url.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height"15" alt="WP SlimStat"/></a></p>';
+			}
 			echo "<script type='text/javascript'>slimstat_tid='$intval_tid';";
 			echo "slimstat_path='$custom_slimstat_js_path';";
 			echo 'slimstat_session_id=\''.md5($intval_tid.$my_secret_key).'\';</script>';
-			echo '<script type="text/javascript" src="'.WP_PLUGIN_URL.'/wp-slimstat/wp-slimstat.js"></script>'."\n";
+			echo "<script type='text/javascript' src='$slimstat_plugin_url/wp-slimstat/wp-slimstat.js'></script>\n";
 		}
 	}
 	// end wp_slimstat_javascript
