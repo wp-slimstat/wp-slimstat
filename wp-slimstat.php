@@ -350,6 +350,7 @@ class wp_slimstat {
 					FROM `$this->table_browsers` 
 					WHERE `browser` = '{$browser['browser']}' AND
 							`version` = '{$browser['version']}' AND
+							`platform` = '{$browser['platform']}' AND
 							`css_version` = '{$browser['css_version']}' LIMIT 1";
 
 		$insert_new_browser_sql .= $select_sql . ")";
