@@ -19,7 +19,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 		if ($current->current_non_zero_count+$current->previous_non_zero_count == 0){ ?>
 			<p class="nodata"><?php _e('No data to display','wp-slimstat-view') ?></p>
 		<?php } else { ?>
-		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="765" height="170" id="line" >
+		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="765" height="170" id="line" >
          <param name="movie" value="<?php echo $slimstat_plugin_url ?>/wp-slimstat/view/swf/fcf.swf" />
          <param name="FlashVars" value="&dataXML=<?php echo $current->xml ?>&chartWidth=765&chartHeight=170">
          <param name="quality" value="high" />

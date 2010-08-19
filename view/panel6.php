@@ -24,7 +24,7 @@ $dataXML .= "</data></map>";
 	<div class="postbox" style="height:535px" >
 		<h3><?php _e('World Map - Values represent the percentage of hits coming from that Country', 'wp-slimstat-view'); ?></h3>
 		<div class="container" style="height:505px">
-		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="765" height="570" id="worldmap">
+		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="765" height="570" id="worldmap">
          <param name="movie" value="<?php echo $slimstat_plugin_url ?>/wp-slimstat/view/swf/world.swf" />
          <param name="FlashVars" value="&dataXML=<?php echo $dataXML ?>&mapWidth=765&mapHeight=570">
          <param name="quality" value="high" />
