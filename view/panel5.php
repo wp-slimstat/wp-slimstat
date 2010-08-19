@@ -147,6 +147,7 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 				} else {
 					switch ($function_to_use){
 						case 'get_details_recent_visits':
+							$visit_id = 0;
 							for($i=0;$i<$count_results;$i++){
 								if ($visit_id != $results[$i]['visit_id']){
 									$ip_address = "<a href='http://www.ip2location.com/{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$slimstat_plugin_url/wp-slimstat/images/whois.gif' /></a> {$results[$i]['ip']}";
