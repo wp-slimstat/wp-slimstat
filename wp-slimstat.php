@@ -710,7 +710,7 @@ class wp_slimstat {
 			$slimstat_plugin_url = (FORCE_SSL_ADMIN || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 			
 			if ($enable_footer_link == 'yes') {	
-				echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.$slimstat_plugin_url.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height"15" alt="WP SlimStat"/></a></p>';
+				echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.$slimstat_plugin_url.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height="15" alt="WP SlimStat"/></a></p>';
 			}
 			echo "<script type='text/javascript'>slimstat_tid='$intval_tid';";
 			echo "slimstat_path='$custom_slimstat_js_path';";
