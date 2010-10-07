@@ -55,7 +55,7 @@ to your eyes only. Features the famous one-click install-and-go.
 
 = 2.2 =
 * WP SlimStat is now faster than ever! Most SQL queries have been optimized and are now able to better leverage indexes
-* Multisite aware - Perform network installations in a few clicks (highly experimental, I need volunteer to test it!). The [underlying functions](http://core.trac.wordpress.org/ticket/14170#comment:22) are being discussed by WP Core developers, so this may change in the foreseeable future. Please don't test this feature on a production environment!
+* Multisite aware - Perform network installations in a few clicks (highly experimental, I need volunteers to test it!). The [underlying functions](http://core.trac.wordpress.org/ticket/14170#comment:22) are being discussed by WP Core developers, so this may change in the foreseeable future. Please don't test this feature on a production environment!
 * Javascript code is now minified (thank you Google Page Speed)
 * Added a new option to track legged in WP users
 * Added a new option to filter metrics by post category ID
