@@ -9,10 +9,10 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	<div class="postbox">
 		<h3><?php
 			if (!$wp_slimstat_view->day_filter_active){
-				_e( 'Unique (human) visitors by day - Click on a day for hourly metrics', 'wp-slimstat-view' ); 
+				_e( 'Human Visits by day - Click on a day for hourly metrics', 'wp-slimstat-view' ); 
 			}
 			else{
-				_e( 'Unique (human) visitors by hour', 'wp-slimstat-view' );
+				_e( 'Human Visits by hour', 'wp-slimstat-view' );
 			}
 			?></h3>
 		<?php $current = $wp_slimstat_view->get_visits_by_day(); 
@@ -49,7 +49,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			$metrics_per_visit = $wp_slimstat_view->get_max_and_average_pages_per_visit();
 		?>
 		<div class="container noscroll">
-			<p><span class="element-title"><?php _e( 'Human visitors', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($total_visitors) ?></span></p>
+			<p><span class="element-title"><?php _e( 'Human visits', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($total_visitors) ?></span></p>
 			<p><span class="element-title"><?php _e( 'One time visitors', 'wp-slimstat-view' ); ?></span> <span><?php $one_time_visitors = $wp_slimstat_view->count_new_visitors(); echo number_format($one_time_visitors); ?></span></p>
 			<p><span class="element-title"><?php _e( 'Bounce rate', 'wp-slimstat-view' ); ?></span> <span><?php echo $bounce_rate ?>%</span></p>
 			<p><span class="element-title"><?php _e( 'Bots', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_bots()) ?></span></p>

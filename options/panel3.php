@@ -1,8 +1,8 @@
 <?php
 // Avoid direct access to this piece of code
-if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
-  header('Location: /');
-  exit;
+if (strpos($_SERVER['SCRIPT_FILENAME'], basename(__FILE__))){
+	header('Location: /');
+	exit;
 }
 
 // Load the options

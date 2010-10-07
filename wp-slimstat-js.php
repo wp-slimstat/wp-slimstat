@@ -60,9 +60,13 @@ if (!$is_table_active) exit;
 // Well, looks like we are ready to roll
 $stat = array();
 
-// This secret key is used to make sure the script only works when called from a legitimate referer (the blog itself!)
+// This secret key is used to make sure the script only works when called from a legit referer (the blog itself!)
 if (($secret_key = slimstat_get_option('slimstat_secret')) === false) exit;
-$site_url = slimstat_get_option('siteurl');
+
+// Blog URL detection
+$site_url = slimstat_get_option('home');
+if (empty($site_url)) $site_url = slimstat_get_option('siteurl');
+if (empty($site_url)) $site_url = $_SERVER['HTTP_HOST'];
 
 // This request is not coming from the same domain
 if (empty($_SERVER['HTTP_REFERER']) || (strpos($_SERVER['HTTP_REFERER'], $site_url) === false) ) exit;
@@ -77,7 +81,10 @@ else {
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
 if (!empty($_GET['obr'])){
 	$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string( strip_tags($_GET['obd']) ):'';
-	if ( strlen( $_GET['obr'] ) > 0 && substr( $_GET['obr'], 0, 1 ) != '/' ) $stat['outbound_resource'] = '/'.$_GET['obr'];
+	if ( strlen( $_GET['obr'] ) > 0 && substr( $_GET['obr'], 0, 1 ) != '/' )
+		$stat['outbound_resource'] = '/'.$_GET['obr'];
+	else
+		$stat['outbound_resource'] = '';
 	$stat['outbound_resource'] = mysql_real_escape_string( strip_tags($stat['outbound_resource']) );
 	$stat['type'] = isset($_GET['ty'])?intval($_GET['ty']):1; // type=1 stands for download
 	
@@ -129,7 +136,7 @@ if ( empty($stat['screenres_id']) ) {
 	}
 }
 
-// Is this a returning user? Does s/he have a cookie set by slimstat?
+// Is this a human visitor? Does s/he have a cookie set by slimstat?
 if (!empty($_COOKIE['slimstat_tracking_code']) && strlen($_COOKIE['slimstat_tracking_code']) == 32){
 	$clean_tracking_code = mysql_real_escape_string( $_COOKIE['slimstat_tracking_code'] );
 	$select_sql = "SELECT `visit_id` FROM {$table_prefix}slim_visits WHERE `tracking_code` = '$clean_tracking_code'";

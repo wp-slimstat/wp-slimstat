@@ -125,22 +125,22 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			} ?></h3>
 		<div class="container">
 			<?php
-				$results = $wp_slimstat_view->get_top('resource', '', 62, true);
+				$results = $wp_slimstat_view->get_top('resource', '', 60, true);
 				$count_results = count($results); // 0 if $results is null
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
 					for($i=0;$i<$count_results;$i++){
-						$show_title_tooltip = ($results[$i]['len'] > 62)?' title="'.$results[$i]['long_string'].'"':'';
+						$show_title_tooltip = ($results[$i]['len'] > 60)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
 						$element_url = get_bloginfo('url').$results[$i]['long_string'];
-						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 62)?'...':'');
+						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 60)?'...':'');
 						if (!isset($wp_slimstat_view->filters_parsed['resource'][0]))	$element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=4$filters_query&resource={$results[$i]['long_string']}'>$element_text</a>";
 
 						echo "<p$last_element$show_title_tooltip><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='$slimstat_plugin_url/wp-slimstat/images/url.gif' /></a>";
-						echo $element_text."</span> <span>".number_format($results[$i]['count'])."</span></p>";
+						echo $element_text."</span> <span class='narrowcolumn'>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>
@@ -227,7 +227,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='$slimstat_plugin_url/wp-slimstat/images/url.gif' /></a> ";
-						echo $element_text."</span> <span>$percentage%</span> <span>".number_format($results[$i]['count'])."</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span class='narrowcolumn'>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>

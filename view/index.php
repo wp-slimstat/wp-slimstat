@@ -1,5 +1,4 @@
 <?php 
-
 // Avoid direct access to this piece of code
 if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   header('Location: /');
@@ -78,7 +77,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 			}
 		?>
 		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter pageviews where','wp-slimstat-view') ?>
-			<select name="filter" onchange="if(this.value=='author'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
+			<select name="filter" onchange="if(this.value=='author'||this.value=='category'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
 				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
 				<option value="version"><?php _e('Browser version','wp-slimstat-view') ?></option>
 				<option value="css_version"><?php _e('CSS version','wp-slimstat-view') ?></option>
@@ -92,6 +91,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 				<option value="referer"><?php _e('Referer','wp-slimstat-view') ?></option>
 				<option value="resolution"><?php _e('Screen Resolution','wp-slimstat-view') ?></option>
 				<option value="author"><?php _e('Post Author','wp-slimstat-view') ?></option>
+				<option value="category-id"><?php _e('Post Category ID','wp-slimstat-view') ?></option>
 			</select> 
 			<select name="f_operator" style="width:12em">
 				<option value="equals"><?php _e('Is equal to','wp-slimstat-view') ?></option>

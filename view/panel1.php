@@ -66,7 +66,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			<p><span class='element-title'><?php _e( 'Pageviews', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($current_pageviews); ?></span></p>
 			<p><span class='element-title'><?php _e( 'Unique IPs', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_unique_ips()); ?></span></p>
 			<p><span class='element-title'><?php _e( 'Avg Pageviews', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format(($current->current_non_zero_count > 0)?intval($current_pageviews/$current->current_non_zero_count):0); ?></span></p>
-			<?php if (!$wp_slimstat_view->day_filter_active){ ?>
+			<?php if (!$wp_slimstat_view->day_filter_active && empty($wp_slimstat_view->day_interval)){ ?>
 			<p><span class='element-title'><?php _e( 'On', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->current_date['d'].'/'.$wp_slimstat_view->current_date['m'] ?></span> <span><?php echo number_format(intval($today_pageviews)); ?></span></p>
 			<p><span class='element-title'><?php _e( 'On', 'wp-slimstat-view' ); echo ' '.$wp_slimstat_view->yesterday['d'].'/'.$wp_slimstat_view->yesterday['m'] ?></span> <span><?php echo number_format(intval($yesterday_pageviews)); ?></span></p>
 			<p class="last"><span class='element-title'><?php _e( 'Last Month', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format(intval(array_sum($current->previous_data1))); ?></span></p>
@@ -103,24 +103,25 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 		<h3><?php _e( 'Popular pages of all time', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php
-				$results = $wp_slimstat_view->get_top('resource', '', 65);
+				$results = $wp_slimstat_view->get_top('resource', '', 60);
 				$count_results = count($results); // 0 if $results is null
 				if ($count_results == 0) {
 					echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 				} else {
 					for($i=0;$i<$count_results;$i++){
-						$show_title_tooltip = ($results[$i]['len'] > 65)?' title="'.$results[$i]['long_string'].'"':'';
+						$show_title_tooltip = ($results[$i]['len'] > 60)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
 						$element_url = get_bloginfo('url').$results[$i]['long_string'];
-						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 65)?'...':'');
+						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 60)?'...':'');
+						$clean_long_string = urlencode($results[$i]['long_string']);
 						echo "<p$last_element$show_title_tooltip><span class='element-title'>";
 						if (strpos($element_url, '[404]') == 0){
 							echo "<a target='_blank' title='$element_title'";
 							echo " href='$element_url'><img src='$slimstat_plugin_url/wp-slimstat/images/url.gif' /></a>";
 						}
-						if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&resource={$results[$i]['short_string']}'>$element_text</a>";
-						echo $element_text."</span> <span>".number_format($results[$i]['count'])."</span></p>";
+						if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&resource=$clean_long_string'>$element_text</a>";
+						echo $element_text."</span> <span class='narrowcolumn'>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>
@@ -145,7 +146,8 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$show_title_tooltip = ($results[$i]['len'] > 35)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 35)?'...':'');
-						if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&searchterms={$results[$i]['short_string']}'>$element_text</a>";
+						$clean_long_string = urlencode($results[$i]['long_string']);
+						if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $element_text = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=1$filters_query&searchterms=$clean_long_string'>$element_text</a>";
 						
 						echo "<p$last_element$show_title_tooltip>$element_text</p>";
 					}
@@ -201,7 +203,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";
 						echo " href='$element_url'><img src='$slimstat_plugin_url/wp-slimstat/images/url.gif' /></a> ";
-						echo $element_text."</span> <span>$percentage%</span> <span>".number_format($results[$i]['count'])."</span></p>";
+						echo $element_text."</span> <span>$percentage%</span> <span class='narrowcolumn'>".number_format($results[$i]['count'])."</span></p>";
 					}
 				}
 			?>

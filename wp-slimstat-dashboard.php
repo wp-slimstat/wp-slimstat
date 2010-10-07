@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: Adds some widgets to monitor your WP SlimStat reports directly from your dashboard.
-Version: 2.1
+Version: 2.1.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -38,7 +38,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 		$wpdb->query("SET @@session.time_zone = '+00:00'");
 		
 		// It seems like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
-		$this->slimstat_plugin_url = (FORCE_SSL_ADMIN || $_SERVER['HTTPS']=='on')?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+		$this->slimstat_plugin_url = (FORCE_SSL_ADMIN || (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS']=='1' || strtolower($_SERVER['HTTPS'])=='on')))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 	}
 	// end __construct
 	

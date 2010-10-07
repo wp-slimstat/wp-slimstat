@@ -13,6 +13,7 @@ $wp_slimstat_options['custom_js_path'] = get_option('slimstat_custom_js_path', W
 $wp_slimstat_options['browscap_autoupdate'] = get_option('slimstat_browscap_autoupdate', 'no');
 $wp_slimstat_options['ignore_interval'] = intval(get_option('slimstat_ignore_interval', '30'));
 $wp_slimstat_options['ignore_bots'] = get_option('slimstat_ignore_bots', 'no');
+$wp_slimstat_options['track_users'] = get_option('slimstat_track_users', 'no');
 $wp_slimstat_options['auto_purge'] = intval(get_option('slimstat_auto_purge', '0'));
 $wp_slimstat_options['use_separate_menu'] = get_option('slimstat_use_separate_menu', 'no');
 
@@ -99,6 +100,21 @@ $wp_slimstat_options['use_separate_menu'] = get_option('slimstat_use_separate_me
 	<tr>
 		<td colspan="2" class="shortrow">
 			<span class="description"><?php _e('Ignores requests from user agents whose operating system and CSS version are unknown','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	
+	<tr valign="top">
+		<th scope="row" rowspan="2"><label for="track_users"><?php _e('Track users','wp-slimstat-options') ?></label></th>
+		<td class="narrowcolumn">
+			<input type="radio" name="options[track_users]" id="track_users" value="yes"<?php echo ($wp_slimstat_options['track_users'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>
+		</td>
+		<td class="widecolumn">
+			<input type="radio" name="options[track_users]" value="no" <?php echo ($wp_slimstat_options['track_users'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>			
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="shortrow">
+			<span class="description"><?php _e('Tracks logged in users, adding their login to the resource they requested','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 	

@@ -177,11 +177,13 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 								$country = __('c-'.$results[$i]['country'],'countries-languages');
 								$title_domain = (strlen($results[$i]['domain']) > 25)?" title='{$results[$i]['domain']}'":'';
 								$resource_short = $results[$i]['short_string'];
+								$clean_long_string = urlencode($results[$i]['resource']);
+								$title_resource = '';
 								if (strlen($results[$i]['resource']) > 40){
 									$resource_short .= '...';
 									$title_resource = " title='{$results[$i]['resource']}'";
 								}
-								if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource={$results[$i]['resource']}'>$resource_short</a>";
+								if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource=$clean_long_string'>$resource_short</a>";
 
 								echo "<p$last_element$title_resource>$resource_short <span>{$results[$i]['customdatetime']}</span> <span>$country</span> <span>$language</span> <span$title_domain>{$results[$i]['domain_short']}</span> <span>{$results[$i]['ip']}</span></p>";
 							}
@@ -190,13 +192,14 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 							for($i=0;$i<$count_results;$i++){
 								$last_element = ($i == $count_results-1)?' class="last"':'';
 								$resource_short = $results[$i]['resource'];
+								$clean_long_string = urlencode($results[$i]['resource']);
 								if (strlen($results[$i]['resource']) > 50){
 									$title_resource = " title='{$results[$i]['resource']}'";
 									$resource_short = substr($results[$i]['resource'], 0, 50).'...';
 								}
 								$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
 								$element_url = get_bloginfo('url').$results[$i]['resource'];
-								if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource={$results[$i]['resource']}'>$resource_short</a>";
+								if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource=$clean_long_string'>$resource_short</a>";
 								$title_domain = (strlen($results[$i]['domain']) > 35)?" title='{$results[$i]['domain']}'":'';
 
 								echo "<p$last_element$show_title_tooltip><a target='_blank' title='$element_title'";
@@ -208,8 +211,11 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 							for($i=0;$i<$count_results;$i++){
 								$last_element = ($i == $count_results-1)?' class="last"':'';
 								$country = __('c-'.$results[$i]['country'],'countries-languages');
-								if (!isset($wp_slimstat_view->filters_parsed['browser'][0])) $browser = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&browser=".htmlspecialchars($results[$i]['browser'])."'>$browser</a>";	
+								$clean_long_string = urlencode($results[$i]['browser']);
+								$browser = $results[$i]['browser'];
+								if (!isset($wp_slimstat_view->filters_parsed['browser'][0])) $browser = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&browser=$clean_long_string'>$browser</a>";	
 								$resource_short = $results[$i]['resource'];
+								$title_resource = '';
 								if (strlen($results[$i]['resource']) > 30){
 									$title_resource = " title='{$results[$i]['resource']}'";
 									$resource_short = substr($results[$i]['resource'], 0, 30);
@@ -224,8 +230,9 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 								$last_element = ($i == $count_results-1)?' class="last"':'';
 								$country = __('c-'.$results[$i]['short_string'],'countries-languages');
 								$searchterms = str_replace('\\', '', htmlspecialchars($results[$i]['searchterms']));
+								$clean_long_string = urlencode($results[$i]['short_string']);
 								if (empty($searchterms)) $searchterms = __('N/A', 'wp-slimstat-view');
-								if (!isset($wp_slimstat_view->filters_parsed['country'][0])) $country = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&country=".htmlspecialchars($results[$i]['short_string'])."'>$country</a>";	
+								if (!isset($wp_slimstat_view->filters_parsed['country'][0])) $country = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&country=$clean_long_string'>$country</a>";	
 								$resource_short = $results[$i]['resource'];
 								$title_resource = '';
 								if (strlen($results[$i]['resource']) > 50){
@@ -241,13 +248,14 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 								$last_element = ($i == $count_results-1)?' class="last"':'';
 								$country = __('c-'.$results[$i]['country'],'countries-languages');
 								$searchterms = str_replace('\\', '', htmlspecialchars($results[$i]['searchterms']));
-								
+								$clean_long_string = urlencode($results[$i]['resource']);
 								$resource_short = $results[$i]['resource'];
+								$title_resource = '';
 								if (strlen($results[$i]['resource']) > 50){
 									$title_resource = " title='{$results[$i]['resource']}'";
 									$resource_short = substr($results[$i]['resource'], 0, 50);
 								}
-								if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource=".htmlspecialchars($results[$i]['resource'])."'>$resource_short</a>";	
+								if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource=$clean_long_string'>$resource_short</a>";	
 								echo "<p$last_element$title_resource>$resource_short <span>{$results[$i]['customdatetime']}</span> <span>$country</span> <span>$searchterms</span></p>";
 							}
 							break;
@@ -256,9 +264,11 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 								$last_element = ($i == $count_results-1)?' class="last"':'';
 								$country = __('c-'.$results[$i]['country'],'countries-languages');
 								$searchterms = str_replace('\\', '', htmlspecialchars($results[$i]['searchterms']));
+								$clean_long_string = urlencode($results[$i]['searchterms']);
 								if (empty($searchterms)) $searchterms = __('N/A', 'wp-slimstat-view');
-								if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $searchterms = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&searchterms={$results[$i]['short_string']}'>$searchterms</a>";	
+								if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $searchterms = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&searchterms=$clean_long_string'>$searchterms</a>";	
 								$resource_short = $results[$i]['resource'];
+								$title_resource = '';
 								if (strlen($results[$i]['resource']) > 50){
 									$title_resource = " title='{$results[$i]['resource']}'";
 									$resource_short = substr($results[$i]['resource'], 0, 50);

@@ -35,6 +35,7 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['browscap_autoupdate']) && !slimstat_update_option('slimstat_browscap_autoupdate', $_POST['options']['browscap_autoupdate'], 'yesno')) $faulty_fields = __('Autoupdate Browsers DB','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ignore_interval']) && !slimstat_update_option('slimstat_ignore_interval', $_POST['options']['ignore_interval'], 'integer')) $faulty_fields .= __('Ignore interval','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ignore_bots']) && !slimstat_update_option('slimstat_ignore_bots', $_POST['options']['ignore_bots'], 'yesno')) $faulty_fields .= __('Ignore bots','wp-slimstat-options').', ';
+	if (isset($_POST['options']['track_users']) && !slimstat_update_option('slimstat_track_users', $_POST['options']['track_users'], 'yesno')) $faulty_fields .= __('Track users','wp-slimstat-options').', ';	
 	if (isset($_POST['options']['auto_purge']) && !slimstat_update_option('slimstat_auto_purge', $_POST['options']['auto_purge'], 'integer')) $faulty_fields .= __('Auto purge','wp-slimstat-options').', ';
 	if (isset($_POST['options']['use_separate_menu']) && !slimstat_update_option('slimstat_use_separate_menu', $_POST['options']['use_separate_menu'], 'yesno')) $faulty_fields .= __('Use separate menu','wp-slimstat-options').', ';
 	if (isset($_POST['options']['convert_ip_addresses']) && !slimstat_update_option('slimstat_convert_ip_addresses', $_POST['options']['convert_ip_addresses'], 'yesno')) $faulty_fields .= __('Convert IP addresses','wp-slimstat-options').', ';

@@ -3,13 +3,13 @@
 Donate link: http://www.duechiacchiere.it/wp-slimstat
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
-Tested up to: 3.0.1
-Stable tag: 2.1
+Tested up to: 3.1
+Stable tag: 2.2
 
 == Description ==
 A simple but powerful real-time web analytics plugin for Wordpress. It doesn't require any subscription
 to external statistic services: all metrics are kept on your local server, private and accessible
-to your eyes only. Features the famous one-click install-and-go. Results are shown in real-time!
+to your eyes only. Features the famous one-click install-and-go.
 
 ## Requirements
 * Wordpress 2.9 or higher
@@ -19,22 +19,23 @@ to your eyes only. Features the famous one-click install-and-go. Results are sho
 * At least 5 MB of free DB space
 
 ## Main Features
-* Tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
-* Tracks outbound links and downloads
-* Tracks internal searches
-* Tracks screen resolutions and other browser-related parameters
-* Extendable API to let you develop your own reports
+* It tracks visits (user sessions up to 30 minutes) as defined by Google Analytics
+* It tracks outbound links and downloads
+* It tracks internal searches
+* It tracks screen resolutions and other browser-related parameters
+* It works with [W3 Total Cache](http://lab.duechiacchiere.it/index.php?topic=45.0)!
+* It exports a simple API to let you develop your own reports
 * Fully localizable in your language (please contribute!)
 * The best country, browser and platform detection ever seen (thanks to [Browscap](http://code.google.com/p/phpbrowscap/) and [MaxMind](http://www.maxmind.com/) )
 * Real-time charts to help you visualize your visitors' trends (thanks to [FusionCharts](http://www.fusioncharts.com/free/) free edition)
 * The browser recognition database is automatically updated every 2 weeks
-* Shows detailed information about each visitor: Country, city, area, organization, etc (thanks to [IP2Location](http://www.ip2location.com) )
-* 10,000 hits use just 1.4 megabytes of DB space
-* Ignore hits based on IP addresses and networks, browsers, referrers and permalinks
-* Can restrict view/admin to specific users
-* Uses WP timezone settings and date formatting
-* Has a lot of filters for content drill-down
-* Includes a detailed World Map
+* It shows detailed information about each visitor: Country, city, area, organization, etc (thanks to [IP2Location](http://www.ip2location.com) )
+* 10,000 pageviews use just 1.4 megabytes of DB space
+* It ignores pageviews based on IP addresses, browsers, referrers, users and permalinks
+* You can restrict view/admin access to specific users
+* It uses WP timezone settings and date formatting
+* It has a lot of filters for content drill-down
+* It includes a detailed World Map
 
 == Installation ==
 
@@ -51,6 +52,19 @@ to your eyes only. Features the famous one-click install-and-go. Results are sho
 2. Options
 
 == Changelog ==
+
+= 2.2 =
+* WP SlimStat is now faster than ever! Most SQL queries have been optimized and are now able to better leverage indexes
+* Multisite aware - Perform network installations in a few clicks (highly experimental, I need volunteer to test it!). The [underlying functions](http://core.trac.wordpress.org/ticket/14170#comment:22) are being discussed by WP Core developers, so this may change in the foreseeable future. Please don't test this feature on a production environment!
+* Javascript code is now minified (thank you Google Page Speed)
+* Added a new option to track legged in WP users
+* Added a new option to filter metrics by post category ID
+* Visitor Tracking (via cookie) is now PHP-based, not Javascript-based anymore, making it even more reliable
+* Improved the way visitors are counted in some metrics
+* Fixed some more warning errors that came out with PHP in 'strict' mode (thank you Julien Schmidt)
+* Fixed a bug that prevented the correct display of long times frames, spanning through multiple months
+* Fixed a bug that prevented filtering by search terms containing single and double quotes
+* Geolocalization: updated the information in the CSV file included (October 2010). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 
 = 2.1 =
 * Fixed a bug that prevented Visitors to be tracked properly. If you downloaded/installed WP SlimStat 2.0.9, go to Settings > WP SlimStat > General tab and (unless you have  explicitly changed this option) set the value for `Custom Path` to the default one shown in the description underneath. 
@@ -72,25 +86,6 @@ to your eyes only. Features the famous one-click install-and-go. Results are sho
 * Bounce rate percentages are now even more accurate
 * Geolocalization: updated the information in the CSV file included (August 2010). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 
-= 2.0.8 =
-* WP SlimStat speaks German! Thank you [Digo](http://www.showhypnose.org/blog/)!
-* Added a new option to some metrics to access more detailed information about hits and visits
-* Added more options to show statistics and metrics on your website. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.0#post_displaymetrics) for further details
-* Now it detects if you are using HTTPS in your admin pages (thank you Tuxicoman)
-* In order to avoid conflicts with Lightbox and friends, you can now "mark" specific links to ignore. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.msg2#post_avoidconflicts) for further details
-* Fixed a bug in calculating some percentages
-* Reorganized the 'Raw Data' section
-* Changed the extension of WP SlimStat Custom Reports from .php to .txt, so that it won't appear in your Plugins page anymore
-
-= 2.0.7 =
-* Added an option to let you choose if you want WP SlimStat to add a separate admin menu, or keep it integrate with Wordpress' menus
-* Now you can display a lot of metrics on your website. See the [How-to Guide](http://lab.duechiacchiere.it/index.php?topic=2.0)
-* Fixed a conflict between WP SlimStat and WP SlimStat Dashboard Widgets
-* Fixed a bug that prevented the autoupdate of Browscap to run periodically
-* Fixed a possible XSS vulnerability when parsing filters (thank you Nadav)
-* Some graphic fine-tuning to adapt the layout to the new admin interface and colors
-* Geolocalization: updated the information in the CSV file included (July 2010)
-
 == Localization ==
 
 Wp-SlimStat is fully localizable. Everything can be translate in your language
@@ -99,13 +94,15 @@ Object (.po) standard to do this. If you want to provide a localized file in you
 language, use the template files (.pot) you'll find inside the `lang` folder.
 
 == List of donors in alphabetical order ==
+* [Andrea Pinti](http://andreapinti.com/)
 * [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
 * [Herman Peet](http://www.hermanpeet.nl/)
 * [La casetta delle pesche](http://www.lacasettadellepesche.it/)
+* Mora Systems
 
 == Contributors in alphabetical order ==
 * [Digo](http://www.showhypnose.org/blog/) - German localization
-* Tuxicoman - French localization
+* [Tuxicoman](http://tuxicoman.jesuislibre.net/) - French localization
 
 = Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
