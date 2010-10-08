@@ -57,7 +57,7 @@ to your eyes only. Features the famous one-click install-and-go.
 * WP SlimStat is now faster than ever! Most SQL queries have been optimized and are now able to better leverage indexes
 * Multisite aware - Perform network installations in a few clicks (highly experimental, I need volunteers to test it!). The [underlying functions](http://core.trac.wordpress.org/ticket/14170#comment:22) are being discussed by WP Core developers, so this may change in the foreseeable future. Please don't test this feature on a production environment!
 * Javascript code is now minified (thank you Google Page Speed)
-* Added a new option to track legged in WP users
+* Added a new option to track logged in WP users
 * Added a new option to filter metrics by post category ID
 * Visitor Tracking (via cookie) is now PHP-based, not Javascript-based anymore, making it even more reliable
 * Improved the way visitors are counted in some metrics
