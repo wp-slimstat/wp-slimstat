@@ -103,11 +103,10 @@ class wp_slimstat_view {
 		$this->yesterday_utime_start = strtotime("{$this->yesterday['y']}/{$this->yesterday['m']}/{$this->yesterday['d']} 00:00");
 		$this->yesterday_utime_end = $this->yesterday_utime_start + 86399;
 	
-		$this->previous_month['d'] = date_i18n('d', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-{$this->current_date['d']}") );
 		$this->previous_month['m'] = date_i18n('m', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-{$this->current_date['d']}") );
 		$this->previous_month['y'] = date_i18n('Y', strtotime("{$this->current_date['y']}-".($this->current_date['m'] - 1)."-{$this->current_date['d']}") );
-		$this->previous_month_utime_start = strtotime("{$this->previous_month['y']}/{$this->previous_month['m']}/{$this->previous_month['d']} 00:00");
-		$this->previous_month_utime_end = strtotime("{$this->previous_month['y']}/{$this->previous_month['m']}/{$this->previous_month['d']} +1 month")-1;
+		$this->previous_month_utime_start = strtotime("{$this->previous_month['y']}/{$this->previous_month['m']}/01 00:00");
+		$this->previous_month_utime_end = strtotime("{$this->previous_month['y']}/{$this->previous_month['m']}/01 +1 month")-1;
 
 		$this->filters_sql_from = array('browsers' => '', 'screenres' => '');
 		$this->filters_sql_where = '';
