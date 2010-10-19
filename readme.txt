@@ -55,7 +55,7 @@ to your eyes only. Features the famous one-click install-and-go.
 
 = 2.2.1 =
 * Maintenance release, fixed minor bugs here and there
-* Added new ways to filter and order your metrics. I was inspired by [this article](http://www.searchenginepeople.com/blog/optimizing-title-tag.html) in adding a way to find the least accessed information on your blogs
+* Added new ways of filtering and ordering your metrics. I was inspired by [this article](http://www.searchenginepeople.com/blog/optimizing-title-tag.html)
 * Improved support for multi-site installations (thank you Paul Hastings)
 * Smarter support for websites using HTTPS
 * Fixed a bug that prevented, in some specific cases, the correct tracking of search engines and other bots (thank you Herman Peet)
