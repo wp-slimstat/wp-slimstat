@@ -83,7 +83,7 @@ if (isset($_POST['options'])){
 				break;
 			
 		}
-		$rows_affected =  $wpdb->query("DELETE FROM `{$table_prefix}slim_stats` WHERE $delete_sql");
+		$rows_affected =  $wpdb->query("DELETE FROM `{$wpdb->prefix}slim_stats` WHERE $delete_sql");
 		$message_to_show = __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
 	}
 	
@@ -151,9 +151,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 	
 	return false;
 }
-
 ?>
-
 <div class="wrap">
 	<div id="analytics-icon" class="<?php echo $wp_locale->text_direction ?>"></div>
 	<h2 class="medium">
@@ -175,8 +173,8 @@ function slimstat_update_option( $_option, $_value, $_type ){
 				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php">'.__('No','wp-slimstat-options').'</a>';
 			}
 			if (isset($_GET['ds']) && $_GET['ds']=='confirm'){
-				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_stats`");
-				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_visits`");
+				$wpdb->query("TRUNCATE TABLE `{$wpdb->prefix}slim_stats`");
+				$wpdb->query("TRUNCATE TABLE `{$wpdb->prefix}slim_visits`");
 				_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-options');
 			}
 			if (isset($_GET['di2c']) && $_GET['di2c']=='yes'){
@@ -185,7 +183,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 				echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php">'.__('No','wp-slimstat-options').'</a>';
 			}
 			if (isset($_GET['di2c']) && $_GET['di2c']=='confirm'){
-				$wpdb->query("TRUNCATE TABLE `{$table_prefix}slim_countries`");
+				$wpdb->query("TRUNCATE TABLE `{$wpdb->prefix}slim_countries`");
 				_e('Your IP-to-countries table has been successfully emptied. Now go to your Plugins panel and deactivate/reactivate WP SlimStat to load the new data.','wp-slimstat-options');
 			}
 			echo '</p></div>';

@@ -32,7 +32,7 @@ $current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
 
 // It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
-$slimstat_plugin_url = (FORCE_SSL_ADMIN || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+$slimstat_plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 // Import class definition
 require_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
@@ -53,6 +53,8 @@ if (!empty($wp_slimstat_view->filters_parsed)){
 // Reset MySQL timezone settings, our dates and times are recorded using WP settings
 $wpdb->query("SET @@session.time_zone = '+00:00'");
 
+// Invert the order of all panels
+$reverse = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
 ?>
 
 <div class="wrap">
@@ -62,7 +64,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 		foreach($array_panels as $a_panel_id => $a_panel_name){
 			echo '<a class="menu-tabs';
 			if ($current_panel != $a_panel_id+1) echo ' menu-tab-inactive';
-			echo '" href="index.php?page=wp-slimstat/view/index.php&slimpanel='.($a_panel_id+1).$filters_query.'">'.$a_panel_name.'</a>';
+			echo '" href="index.php?page=wp-slimstat/view/index.php&slimpanel='.($a_panel_id+1).$filters_query.'&direction='.$wp_slimstat_view->direction.'">'.$a_panel_name.'</a>';
 		}
 		?>
 	</h2>
@@ -77,7 +79,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 			}
 		?>
 		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter pageviews where','wp-slimstat-view') ?>
-			<select name="filter" onchange="if(this.value=='author'||this.value=='category'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
+			<select name="filter" onchange="if(this.value=='author'||this.value=='category-id'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
 				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
 				<option value="version"><?php _e('Browser version','wp-slimstat-view') ?></option>
 				<option value="css_version"><?php _e('CSS version','wp-slimstat-view') ?></option>
@@ -127,6 +129,7 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 			</select>
 			+ <input type="text" name="interval" value="" size="3"> <?php _e('days', 'wp-slimstat-view') ?> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 			<input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary"></span>
+			<?php if ($current_panel != 5): ?><a class="button-primary" href="index.php?page=wp-slimstat/view/index.php&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$filters_query; ?>"><?php _e('Reverse order','wp-slimstat-view') ?></a><?php endif; ?>
 		</p>
 	</form>
 	

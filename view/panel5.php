@@ -10,9 +10,6 @@ $orderby_column = 'dt';
 $allowed_columns = array('ip', 'language', 'country', 'domain', 'searchterms', 'resource', 'browser', 'platform', 'plugins', 'resolution', 'dt');
 if (!empty($_GET['orderby']) && in_array($_GET['orderby'], $allowed_columns)) $orderby_column = $_GET['orderby'];
 
-$direction_orderby = 'desc';
-if (!empty($_GET['direction']) && $_GET['direction'] == 'asc') $direction_orderby = 'asc';
-
 $wp_slimstat_view->starting_from = 0;
 if (!empty($_GET['starting'])) $wp_slimstat_view->starting_from = intval($_GET['starting']);
 
@@ -27,7 +24,9 @@ $allowed_functions = array(
 	'get_recent_browsers',
 	'get_recent_countries',
 	'get_recent_resources',
-	'get_recent_searchterms'
+	'get_recent_searchterms',
+	'get_top_resources',
+	'get_top_searchterms'
 );
 if (!empty($_GET['ftu']) && in_array($_GET['ftu'], $allowed_functions)) $function_to_use = $_GET['ftu'];
 
@@ -70,8 +69,20 @@ switch ($function_to_use){
 		$count_raw_data = $wp_slimstat_view->count_recent('searchterms');
 		$add_to_box_title = __( 'Recent Keywords', 'wp-slimstat-view' );
 		break;
+	case 'get_top_resources':
+		$results = $wp_slimstat_view->get_top('resource');
+		$count_raw_data = $wp_slimstat_view->count_top('resource');
+		$add_to_box_title = __( 'Top Resources', 'wp-slimstat-view' );
+		$orderby_column = 'count';
+		break;
+	case 'get_top_searchterms':
+		$results = $wp_slimstat_view->get_top('searchterms');
+		$count_raw_data = $wp_slimstat_view->count_top('searchterms');
+		$add_to_box_title = __( 'Top Keywords', 'wp-slimstat-view' );
+		$orderby_column = 'count';
+		break;
 	default:
-		$results = $wp_slimstat_view->get_raw_data($orderby_column, $direction_orderby);
+		$results = $wp_slimstat_view->get_raw_data($orderby_column);
 		$count_raw_data = $wp_slimstat_view->count_raw_data();
 		$add_to_box_title = '';
 }
@@ -125,18 +136,20 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 			$ending_point = min($count_raw_data, $wp_slimstat_view->starting_from+50);
 			if ($wp_slimstat_view->starting_from > 0){
 				$new_starting = ($wp_slimstat_view->starting_from > 50)?$wp_slimstat_view->starting_from-50:0;
-				echo "<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&starting=$new_starting&orderby=$orderby_column&direction=$direction_orderby&ftu=$function_to_use&cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
+				echo "<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&starting=$new_starting&orderby=$orderby_column&direction=$wp_slimstat_view->direction&ftu=$function_to_use&cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
 			}
 			if ($ending_point < $count_raw_data && $count_results > 0){
 				$new_starting = $wp_slimstat_view->starting_from + 50;
-				echo "<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&starting=$new_starting&orderby=$orderby_column&direction=$direction_orderby&ftu=$function_to_use&cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
+				echo "<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&starting=$new_starting&orderby=$orderby_column&direction=$wp_slimstat_view->direction&ftu=$function_to_use&cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
 			} ?></div>
 		<h3><?php
 			if ($count_results == 0) {
 				_e('No records found', 'wp-slimstat-view');
 			}
 			else {
-				echo $add_to_box_title.'  '.sprintf(__('Records: %d - %d. Order by: %s %s', 'wp-slimstat-view'), $wp_slimstat_view->starting_from, $ending_point, $orderby_column, $direction_orderby); 
+				$reverse_orderby = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
+				$invert_direction_link = "<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&starting=$wp_slimstat_view->starting_from&orderby=$orderby_column&direction=$reverse_orderby&ftu=$function_to_use&cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('reverse','wp-slimstat-view')."</a>";
+				echo $add_to_box_title.'  '.sprintf(__('Records: %d - %d. Order by: %s %s (%s)', 'wp-slimstat-view'), $wp_slimstat_view->starting_from, $ending_point, $orderby_column, $wp_slimstat_view->direction, $invert_direction_link); 
 			}
 		?></h3>
 		<div class="container">
@@ -198,12 +211,15 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 									$resource_short = substr($results[$i]['resource'], 0, 50).'...';
 								}
 								$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
-								$element_url = get_bloginfo('url').$results[$i]['resource'];
-								if (!isset($wp_slimstat_view->filters_parsed['resource'][0])) $resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource=$clean_long_string'>$resource_short</a>";
+								$element_url = get_bloginfo('url').preg_replace('/\[.*\]/','', $results[$i]['resource']);
+								$resource_short = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=5$filters_query&resource=$clean_long_string'>$resource_short</a>";
 								$title_domain = (strlen($results[$i]['domain']) > 35)?" title='{$results[$i]['domain']}'":'';
-
-								echo "<p$last_element$show_title_tooltip><a target='_blank' title='$element_title'";
-								echo " href='$element_url'><img src='$slimstat_plugin_url/wp-slimstat/images/url.gif' /></a> ";
+								
+								echo "<p$last_element$show_title_tooltip>";
+								if (strpos($results[$i]['resource'], '[404]') === false){
+									echo "<a target='_blank' title='$element_title'";
+									echo " href='$element_url'><img src='$slimstat_plugin_url/wp-slimstat/images/url.gif' /></a> ";
+								}
 								echo $resource_short." <span>{$results[$i]['customdatetime']}</span> <span$title_domain>{$results[$i]['domain_short']}</span></p>";
 							}
 							break;
@@ -275,6 +291,17 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 								}
 
 								echo "<p$last_element>$searchterms <span>{$results[$i]['customdatetime']}</span> <span>$country</span> <span$title_resource>$resource_short</span></p>";
+							}
+							break;
+						case 'get_top_resources':
+						case 'get_top_searchterms':
+							for($i=0;$i<$count_results;$i++){
+								$last_element = ($i == $count_results-1)?' class="last"':'';
+								$long_string = str_replace('\\', '', htmlspecialchars($results[$i]['long_string']));
+								$clean_long_string = urlencode($results[$i]['long_string']);
+								if (empty($long_string)) $long_string = __('N/A', 'wp-slimstat-view');
+
+								echo "<p$last_element>$long_string <span>{$results[$i]['count']}</span></p>";
 							}
 							break;
 						

@@ -1,10 +1,10 @@
 === WP SlimStat ===
 
-Donate link: http://www.duechiacchiere.it/wp-slimstat
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
 Tested up to: 3.1
-Stable tag: 2.2
+Stable tag: 2.2.1
 
 == Description ==
 A simple but powerful real-time web analytics plugin for Wordpress. It doesn't require any subscription
@@ -53,11 +53,21 @@ to your eyes only. Features the famous one-click install-and-go.
 
 == Changelog ==
 
+= 2.2.1 =
+* Maintenance release, fixed minor bugs here and there
+* Added new ways to filter and order your metrics. I was inspired by [this article](http://www.searchenginepeople.com/blog/optimizing-title-tag.html) in adding a way to find the least accessed information on your blogs
+* Improved support for multi-site installations (thank you Paul Hastings)
+* Smarter support for websites using HTTPS
+* Fixed a bug that prevented, in some specific cases, the correct tracking of search engines and other bots (thank you Herman Peet)
+* Fixed a bug that occurred when filtering by keywords containing special characters (like &, ?, etc)
+* The ID passed to the javascript is now encoded, for improved security and better 'privacy'
+* `Browscap.ini` has been updated to the latest version available
+
 = 2.2 =
 * WP SlimStat is now faster than ever! Most SQL queries have been optimized and are now able to better leverage indexes
 * Multisite aware - Perform network installations in a few clicks (highly experimental, I need volunteers to test it!). The [underlying functions](http://core.trac.wordpress.org/ticket/14170#comment:22) are being discussed by WP Core developers, so this may change in the foreseeable future. Please don't test this feature on a production environment!
 * Javascript code is now minified (thank you Google Page Speed)
-* Added a new option to track logged in WP users
+* Added a new option to track legged in WP users
 * Added a new option to filter metrics by post category ID
 * Visitor Tracking (via cookie) is now PHP-based, not Javascript-based anymore, making it even more reliable
 * Improved the way visitors are counted in some metrics
@@ -96,9 +106,12 @@ language, use the template files (.pot) you'll find inside the `lang` folder.
 == List of donors in alphabetical order ==
 * [Andrea Pinti](http://andreapinti.com/)
 * [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
+* [Hans Schantz](http://www.aetherczar.com/)
 * [Herman Peet](http://www.hermanpeet.nl/)
 * [La casetta delle pesche](http://www.lacasettadellepesche.it/)
+* [Mobilize Mail](http://blog.mobilizemail.com/)
 * Mora Systems
+* Neil Robinson
 
 == Contributors in alphabetical order ==
 * [Digo](http://www.showhypnose.org/blog/) - German localization

@@ -62,6 +62,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 <div class="metabox-holder <?php echo $wp_locale->text_direction ?>">
 	<div class="postbox">
+		<div class="more"><a href="index.php?page=wp-slimstat/view/index.php&slimpanel=5&ftu=get_top_searchterms&cmo=1<?php echo $filters_query; ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 		<h3><?php _e( 'Top Keywords', 'wp-slimstat-view' ); ?></h3>
 		<div class="container">
 			<?php

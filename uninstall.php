@@ -6,15 +6,14 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 }
 
 function uninstall(){
-	global $wpdb, $table_prefix;
+	global $wpdb;
 
 	// Goodbye data...
-	$wpdb->query("DROP TABLE IF EXISTS `{$table_prefix}slim_countries`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$table_prefix}slim_stats`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$table_prefix}slim_outbound`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$table_prefix}slim_browsers`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$table_prefix}slim_screenres`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$table_prefix}slim_visits`");
+	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_stats`");
+	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_outbound`");
+	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_browsers`");
+	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_screenres`");
+	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_visits`");
 
 	// Goodbye options...
 	delete_option('slimstat_secret');
@@ -41,6 +40,8 @@ function uninstall(){
 	wp_clear_scheduled_hook('wp_slimstat_purge');
 }
 
+global $wpdb;
+
 if (function_exists('is_multisite') && is_multisite()) {
 	// check if it is a network installation - if so, run the uninstall function for each blog id
 	if (isset($_GET['networkwide']) && ($_GET['networkwide'] == 1)) {
@@ -59,4 +60,5 @@ if (function_exists('is_multisite') && is_multisite()) {
 else{
 	uninstall();
 }
+$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->base_prefix}slim_countries`");
 ?>

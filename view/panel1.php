@@ -36,7 +36,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 			<p><span class='element-title'><?php _e( 'Total Hits', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_total_pageviews(false)); ?></span></p>
 			<p><span class='element-title'><?php _e( 'Data Size', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->get_data_size() ?></span></p>
 			<p><span class='element-title'><?php _e( 'Tracking Active', 'wp-slimstat-view' ); ?></span> <span><?php _e(get_option('slimstat_is_tracking', 'no'), 'countries-languages') ?></span></p>
-			<p><span class='element-title'><?php _e( 'Auto purge', 'wp-slimstat-view' ); ?></span> <span><?php echo (($auto_purge = get_option('slimstat_auto_purge', '0')) > 0)?$auto_purge.' days':'No'; ?></span></p>
+			<p><span class='element-title'><?php _e( 'Auto purge', 'wp-slimstat-view' ); ?></span> <span><?php echo (($auto_purge = get_option('slimstat_auto_purge', '0')) > 0)?$auto_purge.' '.__('days','wp-slimstat-view'):'No'; ?></span></p>
 			<p><span class='element-title'>Geo IP</span> <span><?php echo date (get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv')) ?></span></p>
 			<p class="last"><span class='element-title'>BrowsCap</span> <span><?php echo date (get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')) ?></span></p>
 		</div>
@@ -112,7 +112,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$show_title_tooltip = ($results[$i]['len'] > 60)?' title="'.$results[$i]['long_string'].'"':'';
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['long_string']);
-						$element_url = get_bloginfo('url').$results[$i]['long_string'];
+						$element_url = get_bloginfo('url').preg_replace('/\[.*\]/','', $results[$i]['long_string']);
 						$element_text = $results[$i]['short_string'].(($results[$i]['len'] > 60)?'...':'');
 						$clean_long_string = urlencode($results[$i]['long_string']);
 						echo "<p$last_element$show_title_tooltip><span class='element-title'>";

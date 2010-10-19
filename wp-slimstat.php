@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.2
+Version: 2.2.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -24,7 +24,7 @@ class wp_slimstat {
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.2';
+		$this->version = '2.2.1';
 
 		// We use a bunch of tables to store data
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
@@ -341,7 +341,7 @@ class wp_slimstat {
 
 		// We want to record both hits and searches (through site search form)
 		if ( empty( $_REQUEST['s'] ) ) {
-			$stat['searchterms'] = $this->_get_search_terms( $referer );
+			$stat['searchterms'] = $wpdb->escape( $this->_get_search_terms( $referer ) );
 			if ( isset( $_SERVER['REQUEST_URI'] ) ) {
 				$stat['resource'] = $wpdb->escape( $_SERVER['REQUEST_URI'] );
 			}
@@ -353,7 +353,7 @@ class wp_slimstat {
 			}
 		} // end if ( empty( $_REQUEST['s'] ) )
 		else {
-			$stat['searchterms'] = htmlspecialchars( $_REQUEST['s'] );
+			$stat['searchterms'] = $wpdb->escape( stripslashes( $_REQUEST['s'] ) );
 
 			// Mark the resource to remember that this is a 'local search'
 			$stat['resource'] = '';
@@ -370,7 +370,8 @@ class wp_slimstat {
 		if (is_404()) $stat['resource'] = '[404]'.$stat['resource'];
 		
 		// Track logged-in users
-		if (get_option('slimstat_track_users', 'no') == 'yes')
+		if ((get_option('slimstat_track_users', 'no') == 'yes') &&
+			is_user_logged_in() && !empty($current_user->user_login))
 			$stat['resource'] = "[u:$current_user->user_login]".$stat['resource'];
 
 		// Loads the class to determine the user agent
@@ -411,11 +412,11 @@ class wp_slimstat {
 
 		// If platform = unknown or css_version = 0, it's a bot
 		$ignore_bots = get_option('slimstat_ignore_bots', 'no');
-		if ( ($ignore_bots == 'yes') && ($browser['css_version'] == '0') || 
+		if ( ($ignore_bots == 'yes') && ( ($browser['css_version'] == '0') || 
 			($browser['platform'] == 'unknown') ||
 			(strpos($browser['browser'], 'crawl') !== false) ||
 			(strpos($browser['browser'], 'bot') !== false) || 
-			(strpos($browser['browser'], 'libw') !== false) ) return $_argument;
+			(strpos($browser['browser'], 'libw') !== false) ) ) return $_argument;
 
 		$stat['dt'] = date_i18n('U');
 
@@ -671,7 +672,7 @@ class wp_slimstat {
 			if( preg_match( $a_sniff[0], $array_url['host'] ) ) {
 				parse_str( $array_url['query'], $q );
 				if ( isset( $q[ $a_sniff[1] ] ) ) {
-					$search_terms = htmlspecialchars( trim( urldecode( $q[ $a_sniff[1] ] ) ) );
+					$search_terms = stripslashes( trim( urldecode( $q[ $a_sniff[1] ] ) ) );
 					break;
 				}
 			}
@@ -715,7 +716,7 @@ class wp_slimstat {
 	// Output: none
 	public function wp_slimstat_stylesheet() {
 		// It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
-		$slimstat_plugin_url = (FORCE_SSL_ADMIN || (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS']=='1' || strtolower($_SERVER['HTTPS'])=='on')))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+		$slimstat_plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 		$stylesheeth_url = $slimstat_plugin_url . '/wp-slimstat/css/view.css';
 		wp_register_style('wp-slimstat-view', $stylesheeth_url);
 		wp_enqueue_style('wp-slimstat-view');
@@ -732,7 +733,7 @@ class wp_slimstat {
 		// Load localization files
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
-		$slimstat_plugin_url = (FORCE_SSL_ADMIN || (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS']=='1' || strtolower($_SERVER['HTTPS'])=='on')))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+		$slimstat_plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 		$array_allowed_users = get_option('slimstat_can_view', array());
 		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
@@ -780,19 +781,23 @@ class wp_slimstat {
 	// Description: Adds a javascript code to track users' screen resolution and other browser-based information
 	// Input: none
 	// Output: HTML code
-	public function wp_slimstat_javascript() {	
+	public function wp_slimstat_javascript() {
+		global $wpdb;
 		if ($this->tid > 0){
 			$intval_tid = intval($this->tid);
+			$hexval_tid = base_convert($intval_tid, 10, 16);
 			$my_secret_key = get_option('slimstat_secret', '123');
 			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', WP_PLUGIN_URL.'/wp-slimstat');
 			$enable_footer_link = get_option('slimstat_enable_footer_link', 'yes');
-			$slimstat_plugin_url = (FORCE_SSL_ADMIN || (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS']=='1' || strtolower($_SERVER['HTTPS'])=='on')))?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+			$slimstat_plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 			
 			if ($enable_footer_link == 'yes') {	
 				echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.$slimstat_plugin_url.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height="15" alt="WP SlimStat"/></a></p>';
 			}
-			echo "<script type='text/javascript'>slimstat_tid='$intval_tid';";
+			echo "<script type='text/javascript'>slimstat_tid='$hexval_tid';";
 			echo "slimstat_path='$custom_slimstat_js_path';";
+			$slimstat_blog_id = (function_exists('is_multisite') && is_multisite())?$wpdb->blogid:0;
+			echo "slimstat_blog_id='$slimstat_blog_id';";
 			echo 'slimstat_session_id=\''.md5($intval_tid.$my_secret_key).'\';</script>';
 			echo "<script type='text/javascript' src='$slimstat_plugin_url/wp-slimstat/wp-slimstat.js'></script>\n";
 		}

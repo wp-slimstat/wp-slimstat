@@ -7,8 +7,10 @@ $wp_root_folder = '../../..';
 // Ok, you don't need to edit anything below this line. Thank you
 
 // Abort execution if config file cannot be located
-if (!file_exists($wp_root_folder.'/wp-config.php')) exit;
-
+if (!file_exists($wp_root_folder.'/wp-config.php')){
+	echo 'wp-config not found';
+	exit;
+}
 // Parse config file
 $wp_config = file_get_contents($wp_root_folder.'/wp-config.php');
 $parsed_config = token_get_all($wp_config);
@@ -43,25 +45,54 @@ foreach($clean_tokens as $a_token_id => $a_token) {
 }
 
 // This is odd, but it could happen...
-if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host) || empty($table_prefix)) exit;
+if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host) || empty($table_prefix)){
+	echo 'Error parsing wp-config';
+	exit;
+}
 
 // Let's see if we can connect to the database
 $db_handle = mysql_connect($db_host, $db_user, $db_password);
-if (!$db_handle || !mysql_select_db($db_name)) exit;
+if (!$db_handle || !mysql_select_db($db_name)){
+	echo 'Could not connect to the db';
+	exit;
+}
 
 // Abort if WP SlimStat main table isn't in the database (plugin not activated?)
 $db_list_tables = @mysql_query("SHOW TABLES");
+
 $is_table_active = false;
-while ($row = @mysql_fetch_row($db_list_tables)) {
-    if ($is_table_active = ($row[0] == "{$table_prefix}slim_stats")) break;
+
+// Multisite awareness - Let's retry with the blog id 
+$blog_id = intval($_GET['bid']);
+if (!empty($blog_id)){
+	$multi_table_prefix = "{$table_prefix}{$blog_id}_";
+	while ($row = @mysql_fetch_row($db_list_tables)) {
+		if ($is_table_active = ($row[0] == "{$multi_table_prefix}slim_stats")){
+			$table_prefix = $multi_table_prefix;
+			break;
+		}
+	}
 }
-if (!$is_table_active) exit;
+// Let's see if we can find it a single-site blog
+if (!$is_table_active){
+	while ($row = @mysql_fetch_row($db_list_tables)) {
+		if ($is_table_active = ($row[0] == "{$table_prefix}slim_stats")) break;
+	}
+	
+	if (!$is_table_active){
+		echo 'SlimStat table not found';
+		exit;
+	}
+}
 
 // Well, looks like we are ready to roll
 $stat = array();
 
 // This secret key is used to make sure the script only works when called from a legit referer (the blog itself!)
-if (($secret_key = slimstat_get_option('slimstat_secret')) === false) exit;
+if (($secret_key = slimstat_get_option('slimstat_secret')) === false){
+	echo 'Secret key not initialized';
+	exit;
+}
 
 // Blog URL detection
 $site_url = slimstat_get_option('home');
@@ -69,13 +100,16 @@ if (empty($site_url)) $site_url = slimstat_get_option('siteurl');
 if (empty($site_url)) $site_url = $_SERVER['HTTP_HOST'];
 
 // This request is not coming from the same domain
-if (empty($_SERVER['HTTP_REFERER']) || (strpos($_SERVER['HTTP_REFERER'], $site_url) === false) ) exit;
+if (empty($_SERVER['HTTP_REFERER']) || (strpos($_SERVER['HTTP_REFERER'], $site_url) === false) ){
+	echo 'Invalid referer';
+	exit;
+}
 
 // Is the ID valid?
-if ( empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($_GET['id'].$secret_key)))) exit;
-else {
-	// Prepare the information to be store into the database
-	$stat['id'] = isset( $_GET['id'] )?intval( $_GET['id'] ):0;
+$stat['id'] = empty($_GET['id'])?0:base_convert($_GET['id'], 16, 10);
+if ( empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id'].$secret_key)))){
+	echo 'Invalid key';
+	exit;
 }
 
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
