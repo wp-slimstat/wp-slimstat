@@ -37,6 +37,9 @@ to your eyes only. Features the famous one-click install-and-go.
 * It has a lot of filters for content drill-down
 * It includes a detailed World Map
 
+## Child projects
+* [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/)
+
 == Installation ==
 
 1. Upload the entire folder and all the subfolders to your Wordpress plugins' folder
@@ -82,26 +85,18 @@ to your eyes only. Features the famous one-click install-and-go.
 * WP SlimStat speaks French! Thank you Tuxicoman!
 * Updated browscap.ini and cache.php to the latest version available
 
-= 2.0.9 =
-* A new member has joined the WP SlimStat Family: [WP SlimStat ShortCodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/)
-* Improved the Options > Maintenance panel: now you can delete rows based on the IP address, and use some new filters (thank you Herman)
-* Now you can filter metrics [based on authors](http://lab.duechiacchiere.it/index.php?topic=33.0) (thank you Matt)
-* A new option under Options > General allows you to move `wp-slimstat-js.php` out of its original folder, for security reasons (thank you Steven). You will have to edit this file accordingly, though, before moving it
-* Added a new option to filter hits based on users being logged in (Options > Filters)
-* Added a new option to optimize your database, if needed (Options > Maintenance)
-* Fixed a bug that prevented links with target=_blank to open in a new window (thank you Julius and [Wordpress Deutschland](http://forum.wordpress-deutschland.org/konfiguration/71929-ext-links-oeffnen-sich-im-gleichen-fenster-trotz-_blank-2.html))
-* Fixed a typo that prevented one of the icons to show up correctly
-* Fixed a problem with BrowsCap that occurred when the cache folder was not writeable (thank you Julius)
-* Fixed some warning errors that came out with PHP in 'strict' mode (error reporting = E_ALL and WP_DEBUG = true, thank you Olivier Sermann)
-* Bounce rate percentages are now even more accurate
-* Geolocalization: updated the information in the CSV file included (August 2010). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
+== Language Localization ==
 
-== Localization ==
+Wp-SlimStat can speak your language! I used the Portable Object (.po) standard
+to implement this feature. If you want to provide a localized file in your
+language, use the template files (.pot) you'll find inside the `lang` folder,
+and contact me via the [support forum](http://lab.duechiacchiere.it) when you're ready
+to send me your files. Right now the following localizations are available (in
+alphabetical order):
 
-Wp-SlimStat is fully localizable. Everything can be translate in your language
-and character encoding. As for every other Wordpress plugin, I used the Portable
-Object (.po) standard to do this. If you want to provide a localized file in your
-language, use the template files (.pot) you'll find inside the `lang` folder.
+* French - [Tuxicoman](http://tuxicoman.jesuislibre.net/) and Vidal Arpin
+* German - [Digo](http://www.showhypnose.org/blog/)
+* Italian
 
 == List of donors in alphabetical order ==
 * [Andrea Pinti](http://andreapinti.com/)
@@ -112,10 +107,6 @@ language, use the template files (.pot) you'll find inside the `lang` folder.
 * [Mobilize Mail](http://blog.mobilizemail.com/)
 * Mora Systems
 * Neil Robinson
-
-== Contributors in alphabetical order ==
-* [Digo](http://www.showhypnose.org/blog/) - German localization
-* [Tuxicoman](http://tuxicoman.jesuislibre.net/) - French localization
 
 = Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
