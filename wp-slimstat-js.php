@@ -59,24 +59,27 @@ if (!$db_handle || !mysql_select_db($db_name)){
 
 // Abort if WP SlimStat main table isn't in the database (plugin not activated?)
 $db_list_tables = @mysql_query("SHOW TABLES");
-
 $is_table_active = false;
+$multisite_table_prefix = $table_prefix;
 
 // Multisite awareness - Let's retry with the blog id 
 $blog_id = intval($_GET['bid']);
 if (!empty($blog_id)){
-	$multi_table_prefix = "{$table_prefix}{$blog_id}_";
 	while ($row = @mysql_fetch_row($db_list_tables)) {
-		if ($is_table_active = ($row[0] == "{$multi_table_prefix}slim_stats")){
-			$table_prefix = $multi_table_prefix;
+		if ($is_table_active = ($row[0] == "{$table_prefix}{$blog_id}_slim_stats")){
+			$multisite_table_prefix = "{$table_prefix}{$blog_id}_";
 			break;
 		}
 	}
 }
 // Let's see if we can find it a single-site blog
 if (!$is_table_active){
+	
 	while ($row = @mysql_fetch_row($db_list_tables)) {
-		if ($is_table_active = ($row[0] == "{$table_prefix}slim_stats")) break;
+		if ($is_table_active = ($row[0] == "{$table_prefix}slim_stats")){
+			$multisite_table_prefix = $table_prefix;
+			break;
+		}
 	}
 	
 	if (!$is_table_active){
@@ -84,6 +87,8 @@ if (!$is_table_active){
 		exit;
 	}
 }
+
+echo $multisite_table_prefix;
 
 // Well, looks like we are ready to roll
 $stat = array();
@@ -128,12 +133,12 @@ if (!empty($_GET['obr'])){
 	if (!empty($timezone)) date_default_timezone_set('UTC');
 	$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
 	
-	$insert_new_outbound_sql = "INSERT INTO `{$table_prefix}slim_outbound` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
+	$insert_new_outbound_sql = "INSERT INTO `{$multisite_table_prefix}slim_outbound` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
 			SELECT '" . implode( "', '", array_values( $stat ) ) . "'
 			FROM DUAL
 			WHERE NOT EXISTS ( 
 				SELECT `outbound_id` 
-				FROM `{$table_prefix}slim_outbound`
+				FROM `{$multisite_table_prefix}slim_outbound`
 				WHERE ";
 	foreach ($stat as $a_key => $a_value) {
 		$insert_new_outbound_sql .= "`$a_key` = '$a_value'" . (($a_key != 'dt')?" AND ":" LIMIT 1 ");
@@ -173,12 +178,12 @@ if ( empty($stat['screenres_id']) ) {
 // Is this a human visitor? Does s/he have a cookie set by slimstat?
 if (!empty($_COOKIE['slimstat_tracking_code']) && strlen($_COOKIE['slimstat_tracking_code']) == 32){
 	$clean_tracking_code = mysql_real_escape_string( $_COOKIE['slimstat_tracking_code'] );
-	$select_sql = "SELECT `visit_id` FROM {$table_prefix}slim_visits WHERE `tracking_code` = '$clean_tracking_code'";
+	$select_sql = "SELECT `visit_id` FROM {$multisite_table_prefix}slim_visits WHERE `tracking_code` = '$clean_tracking_code'";
 	$stat['visit_id'] = slimstat_get_var($select_sql);
 	
 	// Yes, we don't check that this is a 'legit' tracking code
 	if ( empty($stat['visit_id']) ) {
-		$insert_sql = "INSERT INTO `{$table_prefix}slim_visits` ( `tracking_code` )
+		$insert_sql = "INSERT INTO `{$multisite_table_prefix}slim_visits` ( `tracking_code` )
 						SELECT '$clean_tracking_code'
 						FROM DUAL
 						WHERE NOT EXISTS ( $select_sql )";
@@ -192,7 +197,7 @@ if (!empty($_COOKIE['slimstat_tracking_code']) && strlen($_COOKIE['slimstat_trac
 }
 
 // Finally we can update the information about this visit
-$update_sql = "UPDATE `{$table_prefix}slim_stats`
+$update_sql = "UPDATE `{$multisite_table_prefix}slim_stats`
 				SET `screenres_id` = {$stat['screenres_id']}, `plugins` = '{$stat['plugins']}', `visit_id` = '{$stat['visit_id']}'
 				WHERE `id` = {$stat['id']} AND `screenres_id` = 0";
 
@@ -200,9 +205,10 @@ mysql_query($update_sql);
 mysql_close($db_handle);
 
 function slimstat_get_option($_option_name = '') {
-	global $table_prefix;
+	global $multisite_table_prefix;
 	
-	$resource = @mysql_query("SELECT `option_value` FROM `{$table_prefix}options` WHERE `option_name` = '{$_option_name}'");
+	$resource = @mysql_query("SELECT `option_value` FROM `{$multisite_table_prefix}options` WHERE `option_name` = '{$_option_name}'");
+	
 	$result = @mysql_fetch_assoc($resource);
 	if (!empty($result['option_value']))
 		return $result['option_value'];
