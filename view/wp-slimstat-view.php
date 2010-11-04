@@ -6,15 +6,15 @@ class wp_slimstat_view {
 	public function __construct($user_filters = ''){
 		global $wpdb;
 
-		// We use a bunch of tables to store data
+		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
-		$this->table_browsers = $wpdb->prefix . 'slim_browsers';
-		$this->table_screenres = $wpdb->prefix . 'slim_screenres';
 		$this->table_visits = $wpdb->prefix . 'slim_visits';
 		$this->table_outbound = $wpdb->prefix . 'slim_outbound';
 		
-		// This table can be shared among the various installations
+		// Some tables can be shared among the various installations (wordpress multi-user)
 		$this->table_countries = $wpdb->base_prefix . 'slim_countries';
+		$this->table_browsers = $wpdb->base_prefix . 'slim_browsers';
+		$this->table_screenres = $wpdb->base_prefix . 'slim_screenres';
 		
 		// Start from...
 		$this->starting_from = 0;
@@ -904,7 +904,7 @@ class wp_slimstat_view {
 					$day_in_interval = date('d', mktime(0,0,0,$this->current_date['m'],$this->current_date['d']+$i, $this->current_date['y']));
 					$month_in_interval = date('m', mktime(0,0,0,$this->current_date['m'],$this->current_date['d']+$i, $this->current_date['y']));
 					$year_in_interval = date('Y', mktime(0,0,0,$this->current_date['m'],$this->current_date['d']+$i, $this->current_date['y']));
-					if (strtotime("$year_in_interval-$month_in_interval-$day_in_interval") > time()) break;
+					if (strtotime("$year_in_interval-$month_in_interval-$day_in_interval") > date_i18n('U')) break;
 					
 					$categories_xml .= "<category name='$day_in_interval/$month_in_interval'/>";
 					$current_period_xml_data1 .= !empty($array_current_period_data1[$month_in_interval.$day_in_interval])?$this->_format_value($array_current_period_data1[$month_in_interval.$day_in_interval], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D{$day_in_interval}%26month%3D{$month_in_interval}%26year%3D{$year_in_interval}$encoded_filters_query"):'<set/>';
