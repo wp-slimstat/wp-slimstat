@@ -95,7 +95,6 @@ function slimstat_track_link(event){
 					window.open(document_location, element.target);
 		}
 	}
-	
 	slimstat_track_event(slimstat_url);
 	
 	// Prevent execution of the default action

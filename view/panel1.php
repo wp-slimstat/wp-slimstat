@@ -33,12 +33,12 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 	<div class="postbox">
 		<h3><?php _e( 'About WP-SlimStat', 'wp-slimstat-view' ); ?></h3>
 		<div class="container noscroll">
-			<p><span class='element-title'><?php _e( 'Total Hits', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_total_pageviews(false)); ?></span></p>
+			<p><span class='element-title'><?php _e( 'Total Hits', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_total_pageviews(false)) ?></span></p>
 			<p><span class='element-title'><?php _e( 'Data Size', 'wp-slimstat-view' ); ?></span> <span><?php echo $wp_slimstat_view->get_data_size() ?></span></p>
 			<p><span class='element-title'><?php _e( 'Tracking Active', 'wp-slimstat-view' ); ?></span> <span><?php _e(get_option('slimstat_is_tracking', 'no'), 'countries-languages') ?></span></p>
 			<p><span class='element-title'><?php _e( 'Auto purge', 'wp-slimstat-view' ); ?></span> <span><?php echo (($auto_purge = get_option('slimstat_auto_purge', '0')) > 0)?$auto_purge.' '.__('days','wp-slimstat-view'):'No'; ?></span></p>
-			<p><span class='element-title'>Geo IP</span> <span><?php echo date (get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv')) ?></span></p>
-			<p class="last"><span class='element-title'>BrowsCap</span> <span><?php echo date (get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')) ?></span></p>
+			<p><span class='element-title'>Geo IP</span> <span><?php echo date(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv')) ?></span></p>
+			<p class="last"><span class='element-title'>BrowsCap</span> <span><?php echo date(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')) ?></span></p>
 		</div>
 	</div>
 </div>

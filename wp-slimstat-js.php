@@ -176,6 +176,7 @@ if ( empty($stat['screenres_id']) ) {
 }
 
 // Is this a human visitor? Does s/he have a cookie set by slimstat?
+$stat['visit_id'] = 0;
 if (!empty($_COOKIE['slimstat_tracking_code']) && strlen($_COOKIE['slimstat_tracking_code']) == 32){
 	$clean_tracking_code = mysql_real_escape_string( $_COOKIE['slimstat_tracking_code'] );
 	$select_sql = "SELECT `visit_id` FROM {$multisite_table_prefix}slim_visits WHERE `tracking_code` = '$clean_tracking_code'";

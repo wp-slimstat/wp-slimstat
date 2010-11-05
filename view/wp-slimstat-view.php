@@ -20,7 +20,7 @@ class wp_slimstat_view {
 		$this->starting_from = 0;
 
 		// Limit results to...
-		$this->limit_results = empty($user_filters['limit_results'])?get_option('slimstat_rows_to_show', '20'):intval($user_filters['limit_results']);
+		if (empty($this->limit_results)) $this->limit_results = empty($user_filters['limit_results'])?get_option('slimstat_rows_to_show', '20'):intval($user_filters['limit_results']);
 
 		// Calculate filters
 		$this->filters_to_parse = array(

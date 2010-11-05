@@ -58,12 +58,12 @@ $reverse = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
 ?>
 
 <div class="wrap">
-	<div id="analytics-icon" class="<?php echo $wp_locale->text_direction ?>"></div>
+	<div id="analytics-icon" class="icon32 <?php echo $wp_locale->text_direction ?>"></div>
 	<h2 class="medium">
 		<?php		
 		foreach($array_panels as $a_panel_id => $a_panel_name){
-			echo '<a class="menu-tabs';
-			if ($current_panel != $a_panel_id+1) echo ' menu-tab-inactive';
+			echo '<a class="nav-tab nav-tab';
+			echo ($current_panel == $a_panel_id+1)?'-active':'-inactive';
 			echo '" href="index.php?page=wp-slimstat/view/index.php&slimpanel='.($a_panel_id+1).$filters_query.'&direction='.$wp_slimstat_view->direction.'">'.$a_panel_name.'</a>';
 		}
 		?>

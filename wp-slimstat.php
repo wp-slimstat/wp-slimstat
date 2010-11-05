@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: WP SlimStat
-Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
+Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.2.1
+Version: 2.2.2
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -16,78 +16,40 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 class wp_slimstat {
 
-	// Function: __construct
-	// Description: Constructor -- Sets things up.
-	// Input: none
-	// Output: none
+	/**
+	 * Constructor -- Sets things up.
+	 */
 	public function __construct() {
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.2.1';
-
-		// We use a bunch of tables to store data
+		$this->version = '2.2.2';
+		
+		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
-		$this->table_browsers = $wpdb->prefix . 'slim_browsers';
-		$this->table_screenres = $wpdb->prefix . 'slim_screenres';
 		$this->table_visits = $wpdb->prefix . 'slim_visits';
 		$this->table_outbound = $wpdb->prefix . 'slim_outbound';
 		
-		// This table can be shared among the various installations
+		// Some tables can be shared among the various installations (wordpress multi-user)
 		$this->table_countries = $wpdb->base_prefix . 'slim_countries';
+		$this->table_browsers = $wpdb->base_prefix . 'slim_browsers';
+		$this->table_screenres = $wpdb->base_prefix . 'slim_screenres';
 
 		// Let's keep track of transaction IDs
 		$this->tid = 0;
 	}
 	// end __construct
 
-	// Function: activate
-	// Description: Loops through the network of blogs (for multisite installations)
-	// Input: none
-	// Output: none
-	public function activate(){
+	/**
+	 * Creates and populates tables, if they aren't already there.
+	 */
+	public function activate() {
 		global $wpdb;
- 
-		if (function_exists('is_multisite') && is_multisite()){
-			// check if it is a network activation - if so, run the activation function for each blog id
-			if (isset($_GET['networkwide']) && ($_GET['networkwide'] == 1)) {
-				$old_blog = $wpdb->blogid;
-			
-				// Get all blog ids
-				$blogids = $wpdb->get_col($wpdb->prepare("SELECT blog_id FROM $wpdb->blogs"));
-				foreach ($blogids as $blog_id) {
-					switch_to_blog($blog_id);
-					$this->_activate();
-				}
-				switch_to_blog($old_blog);
-				return;
-			}	
-		} 
-		$this->_activate();		
-	}
-	// end activate
-	
-	// Function: new_blog_activate
-	// Description: If this is a multisite environment, we need to setup our tables every time a new blog is created, if the case
-	// Input: none
-	// Output: none
-	public function new_blog_activate(){
-		global $wpdb;
- 
-		if (is_plugin_active_for_network('shiba-custom-background/shiba-custom-background.php')){
-			$old_blog = $wpdb->blogid;
-			switch_to_blog($blog_id);
-			$this->_activate();
-			switch_to_blog($old_blog);
-		}
-	}
-	// end new_blog_activate
-
-	// Function: _activate
-	// Description: Creates and populates tables, if they aren't already there.
-	// Input: none
-	// Output: none
-	private function _activate() {
+		
+		// Update table names in case of network activation
+		$this->table_stats = $wpdb->prefix . 'slim_stats';
+		$this->table_visits = $wpdb->prefix . 'slim_visits';
+		$this->table_outbound = $wpdb->prefix . 'slim_outbound';
 
 		// Table that stores the actual data about visits
 		$stats_table_sql =
@@ -160,21 +122,15 @@ class wp_slimstat {
 			)";
 
 		// Ok, let's create the table structure
-		if ( $this->_create_table($country_table_sql, $this->table_countries) &&
-				$this->_create_table($browsers_table_sql, $this->table_browsers) &&
-				$this->_create_table($screen_res_table_sql, $this->table_screenres) &&
-				$this->_create_table($visits_table_sql, $this->table_visits) &&
-				$this->_create_table($outbound_table_sql, $this->table_outbound) &&
-				$this->_create_table($stats_table_sql, $this->table_stats) ) {
-			if (!$this->_import_countries()) {
-				// TODO: display an alert in the admin interface with instructions for manually uploading the file;
-				// Currently it looks like there's no way to do this in Wordpress :-(
-			}
+		if ($this->_create_table($country_table_sql, $this->table_countries, false)){
+			$this->_import_countries();
 		}
-		else {
-			// TODO: display an alert in the admin interface with instructions for manually uploading the file;
-			// Currently it looks like there's no way to do this in Wordpress :-(
-		}
+		
+		$this->_create_table($browsers_table_sql, $this->table_browsers);
+		$this->_create_table($screen_res_table_sql, $this->table_screenres);
+		$this->_create_table($visits_table_sql, $this->table_visits);
+		$this->_create_table($outbound_table_sql, $this->table_outbound);
+		$this->_create_table($stats_table_sql, $this->table_stats);
 
 		// We need a secret key to make sure the js-php interaction is secure
 		add_option('slimstat_secret', md5(time()), '', 'no');
@@ -237,59 +193,30 @@ class wp_slimstat {
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
 			
-		// Please do not remove this function, it helps me keep track of WP SlimStat's userbase.
+		// Please do not remove this function, it helps me keep track of WP SlimStat's user base.
 		// Your privacy is 100% guaranteed, I promise :-)
 		$opts = array( 'http'=>array( 'method'=>'GET', 'header'=>"Accept-language: en\r\nUser-Agent: wp-slimstat\r\n" ) );
 		$context = @stream_context_create($opts);
 		$devnull = @file_get_contents('http://www.duechiacchiere.it/wp-slimstat-count.php?h='.urlencode(get_bloginfo('url')).'&v='.$this->version.'&c='.$this->_count_records(), false, $context);
 	}
-	// end _activate
-	
-	// Function: deactivate
-	// Description: Loops through the network of blogs (for multisite installations) and removes all the settings
-	// Input: none
-	// Output: none
-	public function deactivate() {
-		global $wpdb;
- 
-		if (function_exists('is_multisite') && is_multisite()) {
-			
-			// check if it is a network activation - if so, run the deactivation function for each blog id
-			if (isset($_GET['networkwide']) && ($_GET['networkwide'] == 1)) {
-				$old_blog = $wpdb->blogid;
-			
-				// Get all blog ids
-				$blogids = $wpdb->get_col($wpdb->prepare("SELECT blog_id FROM $wpdb->blogs"));
-				foreach ($blogids as $blog_id) {
-					switch_to_blog($blog_id);
-					$this->_deactivate();
-				}
-				switch_to_blog($old_blog);
-				return;
-			}	
-		} 
-		$this->_deactivate();		
-	}
-	// end deactivate
+	// end activate
 
-	// Function: _deactivate
-	// Description: Performs some clean-up maintenance (disable cron job).
-	// Input: none
-	// Output: none
-	private function _deactivate() {
+	/**
+	 * Performs some clean-up maintenance (disable cron job).
+	 */
+	public function deactivate() {
 
 		// Unschedule the autopurge hook
 		if (wp_next_scheduled('wp_slimstat_purge') > 0)
 			wp_clear_scheduled_hook('wp_slimstat_purge');
 	}
-	// end _deactivate
+	// end deactivate
 
-	// Function: slimtrack
-	// Description: This is the function which tracks visits
-	// Input: search string (optional)
-	// Output: search string (optional)
+	/**
+	 * This is the function which tracks visits
+	 */
 	public function slimtrack( $_argument = '' ) {
-		global $wpdb, $cookiehash;
+		global $wpdb;
 
 		// Is tracking enabled?
 		if (get_option('slimstat_is_tracking', 'yes') == 'no') return $_argument;
@@ -317,7 +244,7 @@ class wp_slimstat {
 		if ($long_user_ip === false) return $_argument;
 
 		foreach($array_ip_to_ignore as $a_ip_range){
-			list ($ip_to_ignore, $mask) = explode("/", $a_ip_range);
+			list ($ip_to_ignore, $mask) = @explode("/", $a_ip_range);
 			if (empty($mask)) $mask = 32;
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') ); 
@@ -482,13 +409,17 @@ class wp_slimstat {
 	}
 	// end slimtrack
 
-	// Function: _create_table
-	// Description: Creates a table in the database
-	// Input: SQL with the structure of the table to be created, name of the table
-	// Output: boolean to detect if table was created
-	private function _create_table($_sql = '', $_tablename = '') {
+	/**
+	 * Creates a table in the database
+	 */
+	private function _create_table($_sql = '', $_tablename = '', $_check_if_exists = true) {
 	    global $wpdb;
 
+		// If the table is already there, we won't do anything
+		if ($_check_if_exists)
+			foreach ( $wpdb->get_col("SHOW TABLES", 0) as $a_table )
+				if ( $a_table == $_tablename ) return false;
+	
 		$wpdb->query( $_sql );
 
 		// Let's make sure this table was actually created
@@ -499,12 +430,11 @@ class wp_slimstat {
 		}
 		return false;
 	}
-	// end createTable
+	// end _create_table
 
-	// Function: _import_countries
-	// Description: Reads data from CSV file and copies them into countries table
-	// Input: none
-	// Output: boolean to detect if table was filled
+	/**
+	 * Reads data from CSV file and copies them into countries table
+	 */
 	private function _import_countries() {
 		global $wpdb;
 
@@ -560,10 +490,9 @@ class wp_slimstat {
 	}
 	// end _import_countries
 
-	// Function: _get_country
-	// Description: searches for country associated to a given IP address
-	// Input: IP address
-	// Output: country name
+	/**
+	 * Searches for country associated to a given IP address
+	 */
 	private function _get_country( $_ip = '') {
 		global $wpdb;
 
@@ -578,10 +507,9 @@ class wp_slimstat {
 	}
 	// end _get_country
 
-	// Function: _get_ip2long_remote_ip
-	// Description: Tries to find the user's REAL IP address
-	// Input: none
-	// Output: IP address converted as long integer
+	/**
+	 * Tries to find the user's REAL IP address
+	 */
 	private function _get_ip2long_remote_ip() {
 		if (isset($_SERVER["HTTP_CLIENT_IP"]) && 
 			long2ip($long_ip = ip2long($_SERVER["HTTP_CLIENT_IP"])) == $_SERVER["HTTP_CLIENT_IP"]) return $long_ip;
@@ -603,10 +531,9 @@ class wp_slimstat {
 	}
 	// end _get_ip2long_remote_ip
 
-	// Function: _get_language
-	// Description: Extracts the accepted language from browser headers
-	// Input: none
-	// Output: language code
+	/**
+	 * Extracts the accepted language from browser headers
+	 */
 	private function _get_language() {
 		global $wpdb;
 		$array_languages = array(); 
@@ -621,12 +548,11 @@ class wp_slimstat {
 		}
 		return 'xx';  // Indeterminable language
 	}
-	// end getLanguage
+	// end _get_language
 
-	// Function: _get_search_terms
-	// Description: Sniffs out referrals from search engines and tries to determine the query string
-	// Input: url to analyze
-	// Output: a string of search terms, sanitized
+	/**
+	 * Sniffs out referrals from search engines and tries to determine the query string
+	 */
 	private function _get_search_terms( $_url = '' ) { 
 		global $wpdb;
 
@@ -682,38 +608,34 @@ class wp_slimstat {
 	}
 	// end _get_search_terms
 
-	// Function: _count_records
-	// Description: Counts how many visits are currently recorded in the database
-	// Input: none
-	// Output: integer
+	/**
+	 * Counts how many visits are currently recorded in the database
+	 */
 	private function _count_records() {
 		global $wpdb;
 
 		$sql = "SELECT COUNT(*) FROM `$this->table_stats`";
 		return intval($wpdb->get_var($sql));
 	}
+	// end _count_records
 
-	// Function: wp_slimstat_purge
-	// Description: Removes old entries from the database
-	// Input: none
-	// Output: none
+	/**
+	 * Removes old entries from the database
+	 */
 	public function wp_slimstat_purge() {
 		global $wpdb;
 
 		if (($autopurge_interval = intval(get_option('slimstat_auto_purge', 0))) <= 0) return;
 
-		$autopurge_interval = strtotime("-$autopurge_interval day");
-
 		// Delete old entries		
-		$delete_sql = "DELETE ts, tv FROM `$this->table_stats` ts, `$this->table_visits` tv WHERE ts.`dt` < '$autopurge_interval' AND ts.`visit_id` = tv.`visit_id`";
+		$delete_sql = "DELETE ts, tv FROM `$this->table_stats` ts, `$this->table_visits` tv WHERE ts.`dt` < DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY) AND ts.`visit_id` = tv.`visit_id`";
 		$wpdb->query($delete_sql);
 	}
 	// end wp_slimstat_purge
 
-	// Function: wp_slimstat_stylesheet
-	// Description: Adds a custom stylesheet file to the admin interface
-	// Input: none
-	// Output: none
+	/**
+	 * Loads a custom stylesheet file for the administration panels
+	 */
 	public function wp_slimstat_stylesheet() {
 		// It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
 		$slimstat_plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
@@ -723,10 +645,9 @@ class wp_slimstat {
 	}
 	// end wp_slimstat_stylesheet
 
-	// Function: wp_slimstat_add_view_menu
-	// Description: Adds a new entry in the admin menu, to view the stats
-	// Input: none
-	// Output: none
+	/**
+	 * Adds a new entry in the admin menu, to view the stats
+	 */
 	public function wp_slimstat_add_view_menu( $_s ) {
 		global $current_user;
 
@@ -751,10 +672,9 @@ class wp_slimstat {
 	}
 	// end wp_slimstat_add_view_menu
 
-	// Function: wp_slimstat_add_config_menu
-	// Description: Adds a new entry in the admin menu, to manage SlimStat options
-	// Input: none
-	// Output: none
+	/**
+	 * Adds a new entry in the admin menu, to manage SlimStat options
+	 */
 	public function wp_slimstat_add_config_menu( $_s ) {
 		global $current_user;
 
@@ -777,10 +697,9 @@ class wp_slimstat {
 	}
 	// end wp_slimstat_add_config_menu
 
-	// Function: wp_slimstat_javascript
-	// Description: Adds a javascript code to track users' screen resolution and other browser-based information
-	// Input: none
-	// Output: HTML code
+	/**
+	 * Adds a javascript code to track users' screen resolution and other browser-based information
+	 */
 	public function wp_slimstat_javascript() {
 		global $wpdb;
 		if ($this->tid > 0){
@@ -803,7 +722,19 @@ class wp_slimstat {
 		}
 	}
 	// end wp_slimstat_javascript
-
+	
+	/**
+	 * Contextual help (link to the support forum)
+	 */
+	public function wp_slimstat_contextual_help($contextual_help, $screen_id, $screen) {
+		if (($screen_id == 'wp-slimstat/view/index') || ($screen_id == 'wp-slimstat/options/index')){
+			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
+			$contextual_help = __('Need help on how to use WP SlimStat? Visit the official','wp-slimstat-view').' <a href="http://lab.duechiacchiere.it/index.php?board=1.0" target="_blank">'.__('support forum','wp-slimstat-view').'</a>. ';
+			$contextual_help .= __('Feeling generous?','wp-slimstat-view').' <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" target="_blank">'.__('Donate a few bucks!','wp-slimstat-view').'</a>';
+		}
+		return $contextual_help;
+	}
+	// end wp_slimstat_contextual_help
 }
 // end of class declaration
 
@@ -811,29 +742,27 @@ class wp_slimstat {
 $wp_slimstat = new wp_slimstat();
 
 // Define when we want to run the tracking: on init
-add_action( 'wp', array( &$wp_slimstat, 'slimtrack' ), 5 );
+add_action('wp', array(&$wp_slimstat, 'slimtrack'),5);
 
 // Initialization routine should be executed on activation
 register_activation_hook( __FILE__, array( &$wp_slimstat, 'activate' ) );
 register_deactivation_hook( __FILE__, array( &$wp_slimstat, 'deactivate' ) );
 
-// Add appropriate entries in the admin menu, if this user can view/admin WP SlimStats
-add_action( 'admin_menu', array( &$wp_slimstat, 'wp_slimstat_add_view_menu' ) );
-add_action( 'admin_menu', array( &$wp_slimstat, 'wp_slimstat_add_config_menu' ) );
+// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
+add_action('admin_menu', array(&$wp_slimstat, 'wp_slimstat_add_view_menu'));
+add_action('admin_menu', array(&$wp_slimstat, 'wp_slimstat_add_config_menu'));
 
-// Add some custom styles
+// Add some custom stylesheets
 add_action('admin_print_styles-wp-slimstat/view/index.php', array( &$wp_slimstat, 'wp_slimstat_stylesheet') );
 add_action('admin_print_styles-wp-slimstat/options/index.php', array( &$wp_slimstat, 'wp_slimstat_stylesheet') );
 
-// Track screen resolutions, outbound links and other stuff using a javascript component
+// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
 if (get_option('slimstat_enable_javascript', 'no') == 'yes'){
-	add_action('wp_footer', array( &$wp_slimstat,'wp_slimstat_javascript'), 10);
+	add_action('wp_footer', array(&$wp_slimstat,'wp_slimstat_javascript'),10);
 }
 
 // Create a hook to use with the daily cron job
-add_action('wp_slimstat_purge', array( &$wp_slimstat,'wp_slimstat_purge') );
+add_action('wp_slimstat_purge', array(&$wp_slimstat,'wp_slimstat_purge'));
 
-// Make WP SlimStat multi-site aware
-add_action( 'wpmu_new_blog', array( &$wp_slimstat,'new_blog_activate'), 10, 6);
-
-?>
+// Contextual help
+add_action('contextual_help', array(&$wp_slimstat,'wp_slimstat_contextual_help'), 10,3);
