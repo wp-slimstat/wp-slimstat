@@ -118,7 +118,7 @@ alphabetical order):
 * [Mobilize Mail](http://blog.mobilizemail.com/)
 * Mora Systems
 * Neil Robinson
-* Sahin Eksioglu
+* [Sahin Eksioglu](http://www.alternatifblog.com/)
 
 = Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
