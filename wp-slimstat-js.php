@@ -88,8 +88,6 @@ if (!$is_table_active){
 	}
 }
 
-echo $multisite_table_prefix;
-
 // Well, looks like we are ready to roll
 $stat = array();
 
