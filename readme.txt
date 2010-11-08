@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
 Tested up to: 3.1
-Stable tag: 2.2.2
+Stable tag: 2.2.3
 
 == Description ==
 A simple but powerful real-time web analytics plugin for Wordpress. It doesn't require any subscription
@@ -50,6 +50,7 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 4. You'll see a new entry under the Dashboard menu
 5. To customize all its options, go to Settings > Slimstat
 6. Show your appreciation! Tell your friends you are using WP SlimStat, write an article about it!
+7. If you're blocking the access to your `wp-content` folder, move `wp-slimstat-js.php` to a different folder, and edit the first line to let WP SlimStat know where your `wp-config.php` is located
 
 == Screenshots ==
 
@@ -57,6 +58,9 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 2. Options
 
 == Changelog ==
+
+= 2.2.3 =
+* Maintance release: apparently the new optimized SQL to purge the old records was misbehaving on some installations. Now it should be fixed.
 
 = 2.2.2 =
 * Support for network installations has been dropped from WP SlimStat's source code. WP developers haven't yet released a fix to address [some of the issues](http://core.trac.wordpress.org/ticket/14170) affecting the activation process. You may want to use [Proper Network Activation](http://wordpress.org/extend/plugins/proper-network-activation/) by Scribu, if you're planning to install my plugin for a network of blogs.

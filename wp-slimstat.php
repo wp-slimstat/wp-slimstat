@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.2.2
+Version: 2.2.3
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -628,7 +628,7 @@ class wp_slimstat {
 		if (($autopurge_interval = intval(get_option('slimstat_auto_purge', 0))) <= 0) return;
 
 		// Delete old entries		
-		$delete_sql = "DELETE ts, tv FROM `$this->table_stats` ts, `$this->table_visits` tv WHERE ts.`dt` < DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY) AND ts.`visit_id` = tv.`visit_id`";
+		$delete_sql = "DELETE ts, tv FROM `$this->table_stats` ts, `$this->table_visits` tv WHERE ts.`dt` < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY)) AND ts.`visit_id` = tv.`visit_id`";
 		$wpdb->query($delete_sql);
 	}
 	// end wp_slimstat_purge
