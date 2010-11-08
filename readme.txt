@@ -65,7 +65,7 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 = 2.2.2 =
 * Support for network installations has been dropped from WP SlimStat's source code. WP developers haven't yet released a fix to address [some of the issues](http://core.trac.wordpress.org/ticket/14170) affecting the activation process. You may want to use [Proper Network Activation](http://wordpress.org/extend/plugins/proper-network-activation/) by Scribu, if you're planning to install my plugin for a network of blogs.
 * If you were using version 2.2.1 in a network of blogs (WP MultiSite), some of the tables created by my plugin are not needed anymore (redundant). Please contact me on my [support forum](http://lab.duechiacchiere.it/) for further information, each case needs to be addressed in a different way.
-* WP SlimStat now speaks Spanish (thank you Noé Martinez)
+* WP SlimStat now speaks Spanish (thank you Noe Martinez)
 * Fixed a bug that prevented filtering data using intervals when the last day of the interval was the current day
 * WP SlimStat Dashboard Widgets has been updated and some bugs have been fixed
 * Geolocation: updated the information in the CSV file included (November 2010). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
@@ -107,7 +107,7 @@ alphabetical order):
 * French ([Tuxicoman](http://tuxicoman.jesuislibre.net/) and Vidal Arpin)
 * German - ([Digo](http://www.showhypnose.org/blog/))
 * Italian
-* Spanish (Noé Martinez)
+* Spanish (Noe Martinez)
 
 == List of donors in alphabetical order ==
 * [Andrea Pinti](http://andreapinti.com/)
@@ -118,6 +118,7 @@ alphabetical order):
 * [Mobilize Mail](http://blog.mobilizemail.com/)
 * Mora Systems
 * Neil Robinson
+* Sahin Eksioglu
 
 = Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
