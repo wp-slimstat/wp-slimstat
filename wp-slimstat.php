@@ -23,7 +23,7 @@ class wp_slimstat {
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.2.2';
+		$this->version = '2.2.3';
 		
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
