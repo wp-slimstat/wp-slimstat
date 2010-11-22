@@ -310,11 +310,11 @@ class wp_slimstat {
 		// Do autoupdate?
 		$do_autoUpdate = get_option('slimstat_browscap_autoupdate', 'no');
 		if (($do_autoUpdate == 'yes') && 
-			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 664) ||
-			(intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 664))){
+			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 664))){
 			$browscap->doAutoUpdate = false;
 		}
 		else{
+			$browscap->remoteIniUrl = 'http://browsers.garykeith.com/stream.asp?PHP_BrowsCapINI';
 			$browscap->doAutoUpdate = ($do_autoUpdate == 'yes');
 		}
 
