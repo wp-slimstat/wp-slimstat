@@ -13,6 +13,7 @@ to your eyes only. Features the famous one-click install-and-go.
 
 ## Requirements
 * Wordpress 2.9 or higher
+* [Proper Network Activation](http://wordpress.org/extend/plugins/proper-network-activation/), if you're planning to use it in a multiblog environment
 * PHP 5.1 or higher
 * MySQL 5.x or higher
 * At least 5 MB of free web space
