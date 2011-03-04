@@ -672,6 +672,7 @@ class wp_slimstat {
 
 		$array_allowed_users = get_option('slimstat_can_view', array());
 		$minimum_capability = get_option('slimstat_capability_can_view', 'read');
+		$minimum_capability = empty($minimum_capability)?'read':$minimum_capability;
 		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
 		
 		if ((empty($array_allowed_users) && $minimum_capability == 'read') || in_array($current_user->user_login, $array_allowed_users) || current_user_can($minimum_capability)) {
