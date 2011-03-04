@@ -208,6 +208,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 						$last_element = ($i == $count_results-1)?' class="last"':'';
 						$percentage = ($count_pageviews_with_referer > 0)?sprintf("%01.2f", (100*$results[$i]['count']/$count_pageviews_with_referer)):0;
 						$site_domain = str_replace('www.','', $results[$i]['domain']);
+						$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['domain']);
 						if (!isset($wp_slimstat_view->filters_parsed['domain'][0])) $site_domain = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&slimpanel=3$filters_query&domain={$results[$i]['domain']}'>$site_domain</a>";
 				
 						echo "<p$last_element><span class='element-title'><a target='_blank' title='$element_title'";

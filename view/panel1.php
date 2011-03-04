@@ -61,7 +61,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 				$today_pageviews = !empty($current->current_data1[$wp_slimstat_view->current_date['d']])?$current->current_data1[$wp_slimstat_view->current_date['d']]:0;
 				$yesterday_pageviews = (intval($wp_slimstat_view->current_date['d'])==1)?(!empty($current->previous_data1[$wp_slimstat_view->yesterday['d']])?$current->previous_data1[$wp_slimstat_view->yesterday['d']]:0):(!empty($current->current_data1[$wp_slimstat_view->yesterday['d']])?$current->current_data1[$wp_slimstat_view->yesterday['d']]:0);
 			}
-			$current_pageviews = intval(array_sum($current->current_data1));
+			$current_pageviews = $wp_slimstat_view->count_total_pageviews(true);
 		?>
 			<p><span class='element-title'><?php _e( 'Pageviews', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($current_pageviews); ?></span></p>
 			<p><span class='element-title'><?php _e( 'Unique IPs', 'wp-slimstat-view' ); ?></span> <span><?php echo number_format($wp_slimstat_view->count_unique_ips()); ?></span></p>

@@ -111,9 +111,3 @@ msgstr ""
 #: wp-slimstat-dashboard.php:266
 msgid "Recent Keywords &raquo; Pages"
 msgstr ""
-
-#~ msgid "Analytics"
-#~ msgstr ""
-
-#~ msgid "Options"
-#~ msgstr ""

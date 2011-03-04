@@ -33,6 +33,7 @@ function uninstall(){
 	delete_option('slimstat_ignore_browsers');
 	delete_option('slimstat_ignore_users');
 	delete_option('slimstat_can_view');
+	delete_option('slimstat_capability_can_view');
 	delete_option('slimstat_can_admin');
 	delete_option('slimstat_enable_footer_link');
 

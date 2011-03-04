@@ -196,7 +196,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	// Input: none
 	// Output: HTML code
 	public function show_traffic_sources(){
-		$results = $this->get_top('domain', 'referer');
+		$results = $this->get_top('domain', 'referer', 65, true);
 		$count_results = count($results); // 0 if $results is null
 		$count_pageviews_with_referer = $this->count_referers();
 		if ($count_results == 0) {
@@ -226,7 +226,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	public function show_keywords_and_pages(){
 		$results = $this->get_recent_keywords_pages();
 		$count_results = count($results); // 0 if $results is null
-		if ($count_results == 0) {
+		if ($count_results == 0){
 			echo '<p class="slimstat-row nodata">'.__('No data to display','wp-slimstat-dashboard').'</p>';
 		} else {		
 			for($i=0;$i<$count_results;$i++){
@@ -269,7 +269,10 @@ add_action('admin_print_styles-index.php', array( &$wp_slimstat_dashboard, 'slim
 // Input: none
 // Output: none
 function wp_slimstat_add_dashboard_widgets() {
-	global $wp_slimstat_dashboard;
+	global $wp_slimstat_dashboard, $current_user;
+ 	$array_allowed_users = get_option('slimstat_can_view', array());	
+ 	if (!empty($array_allowed_users) && !in_array($current_user->user_login, $array_allowed_users) ) return;
+
 	wp_add_dashboard_widget('show_top_five_pages', 'WP SlimStat - '.__('Top 5 pages', 'wp-slimstat-dashboard'), array( &$wp_slimstat_dashboard,'show_top_five_pages'));
 	wp_add_dashboard_widget('show_pathstats', 'WP SlimStat - '.__('Pathstats', 'wp-slimstat-dashboard'), array( &$wp_slimstat_dashboard,'show_pathstats'));
 	wp_add_dashboard_widget('show_about_wp_slimstat', 'WP SlimStat - '.__('About', 'wp-slimstat-dashboard'), array( &$wp_slimstat_dashboard,'show_about_wp_slimstat'));

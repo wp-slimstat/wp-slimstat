@@ -23,14 +23,14 @@ if (isset($_POST['options'])){
 
 <h3><label for="ignore_resources"><?php _e('Pages and posts to ignore','wp-slimstat-options') ?></label></h3>
 <p><?php _e("Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>starts</strong> with any of them.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_resources]" id="ignore_resources"><?php echo implode(', ', slimstat_get_option('ignore_resources',array())) ?></textarea></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_resources]" id="ignore_resources"><?php echo implode(',', slimstat_get_option('ignore_resources',array())) ?></textarea></p>
 
 <h3><label for="ignore_browsers"><?php _e('Browsers to ignore','wp-slimstat-options') ?></label></h3>
 <p><?php _e("Enter a list of browsers you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_browsers]" id="ignore_browsers"><?php echo implode(', ', slimstat_get_option('ignore_browsers',array())) ?></textarea></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_browsers]" id="ignore_browsers"><?php echo implode(',', slimstat_get_option('ignore_browsers',array())) ?></textarea></p>
 
 <h3><label for="ignore_users"><?php _e('Users to ignore','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of Wordpress users you don't want to track, separated by commas.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_users]" id="ignore_users"><?php echo implode(', ', slimstat_get_option('ignore_users',array())) ?></textarea></p>
+<p><?php _e("Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored.",'wp-slimstat-options') ?></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_users]" id="ignore_users"><?php echo implode(',', slimstat_get_option('ignore_users',array())) ?></textarea></p>
 <p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p>
 </form>

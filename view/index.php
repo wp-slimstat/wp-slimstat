@@ -45,7 +45,7 @@ if (!empty($wp_slimstat_view->filters_parsed)){
 	$filters_list = __('Current filters:','wp-slimstat-view').' ';
 	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
-		$filters_list .= "<code>{$a_filter_label} {$a_filter_details[1]} {$a_filter_value_no_slashes}</code>, ";
+		$filters_list .= "<code>".htmlspecialchars("{$a_filter_label} {$a_filter_details[1]} {$a_filter_value_no_slashes}")."</code>, ";
 		$filters_query .= "&amp;{$a_filter_label}={$a_filter_value_no_slashes}&amp;{$a_filter_label}-op={$a_filter_details[1]}";
 	}
 }

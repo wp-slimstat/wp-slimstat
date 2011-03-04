@@ -31,7 +31,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 	switch($_type){
 		case 'list':
 			// Avoid XSS attacks
-			$clean_value = preg_replace('/[^a-zA-Z0-9\,\.\/]/', '', $_value);
+			$clean_value = preg_replace('/[^a-zA-Z0-9\,\.\/\ \-\_]/', '', $_value);
 			if (strlen($_value)==0){
 				update_option('slimstat_'.$_option, array());
 			}
@@ -82,7 +82,7 @@ function slimstat_error_message($_faulty_fields){
 		foreach($array_panels as $a_panel_id => $a_panel_details){
 			echo '<a class="nav-tab nav-tab';
 			echo ($current_panel == $a_panel_id+1)?'-active':'-inactive';
-			echo '" href="admin.php?page=wp-slimstat/options/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_details.'</a>';
+			echo '" href="options-general.php?page=wp-slimstat/options/index.php&slimpanel='.($a_panel_id+1).'">'.$a_panel_details.'</a>';
 		}
 		?>
 	</h2>

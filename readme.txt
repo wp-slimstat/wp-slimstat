@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
 Tested up to: 3.1
-Stable tag: 2.2.3
+Stable tag: 2.3
 
 == Description ==
 A simple but powerful real-time web analytics plugin for Wordpress. It doesn't require any subscription
@@ -60,6 +60,20 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 
 == Changelog ==
 
+= 2.3 =
+* I've been kind of busy, but this plugin is still actively maintained, don't worry!
+* Geolocation: updated the information in the CSV file included March 2011). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
+* Browscap.ini: updated to the latest version available (February 2011)
+* Implemented some DB optimization for large data collections. You can now switch to InnoDB at anytime, if your provider supports this feature (thank you [GoMySQL](http://lab.duechiacchiere.it/index.php?topic=74))
+* Fixed a bug in deleting old entries with autopurge
+* Fixed a bug related to timezones and php.ini (thank you [zipper1976](http://lab.duechiacchiere.it/index.php?topic=365.0))
+* Fixed a vulnerability related to XSS attempts (thank you [distortednet](http://lab.duechiacchiere.it/index.php?topic=110.0))
+* Fixed a bug in generating the URL's to go to referring pages (thank you [randall](http://lab.duechiacchiere.it/index.php?topic=314.0))
+* Fixed a bug in calculating percentages in WP SlimStat Dashboard (thank you Pietro)
+* Added a new code to counts all the visits not associated to any browser
+* Added: usernames in filters can now include spaces, underscores and dashes
+* Added: a new filter to restrict the access to WP Slimstat based on user capabilities
+
 = 2.2.3 =
 * Maintance release: apparently the new optimized SQL to purge the old records was misbehaving on some installations. Now it should be fixed.
 
@@ -96,7 +110,7 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 * Fixed a bug that prevented filtering by search terms containing single and double quotes
 * Geolocation: updated the information in the CSV file included (October 2010). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 
-== Language Localization ==
+== Languages ==
 
 Wp-SlimStat can speak your language! I used the Portable Object (.po) standard
 to implement this feature. If you want to provide a localized file in your

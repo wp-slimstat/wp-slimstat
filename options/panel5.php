@@ -40,6 +40,41 @@ if (isset($_GET['ot']) && $_GET['ot']=='yes'){
 	_e('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options');		
 	echo '</p></div>';
 }
+if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
+	$have_innodb = $wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
+	if ($have_innodb[0]['Value'] != 'YES') return;
+	
+	$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_outbound` ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_visits` ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE `{$wpdb->base_prefix}slim_browsers` ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE `{$wpdb->base_prefix}slim_countries` ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE `{$wpdb->base_prefix}slim_screenres` ENGINE = InnoDB");
+	
+	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
+	_e('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat-options');		
+	echo '</p></div>';
+}
+if (isset($_GET['ssidx'])){
+	if($_GET['ssidx']=='create'){
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ADD INDEX `resource_idx`(`resource`(20))");
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ADD INDEX `browser_idx`(`browser_id`(4))");
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ADD INDEX `visit_idx`(`visit_id`(4))");
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_visits` ADD INDEX `tracking_code_idx`(`tracking_code`(8))");
+		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
+		_e('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options');		
+		echo '</p></div>';
+	}
+	if($_GET['ssidx']=='remove'){
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` DROP INDEX `resource_idx`");
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` DROP INDEX `browser_idx`");
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` DROP INDEX `visit_idx`");
+		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_visits` DROP INDEX `tracking_code_idx`");
+		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
+		_e('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options');		
+		echo '</p></div>';
+	}
+}
 if (isset($_POST['options'])){
 	if (isset($_POST['options']['conditional_delete_field']) &&
 		isset($_POST['options']['conditional_delete_operator']) &&
@@ -99,16 +134,22 @@ if (count($details_wp_slim_stat) == 1) {
 		$overhead_suffix = 'MB';
 	}
 	echo '<tr><th scope="row">'.__('Current Status','wp-slimstat-options').'</th>';
-	echo '<td>'.__('Engine','wp-slimstat-options').": {$details_wp_slim_stat[0]['Engine']}<br/>";
-	echo __('Records','wp-slimstat-options').": {$details_wp_slim_stat[0]['Rows']}<br/>";
+	echo '<td>'.__('Engine','wp-slimstat-options').": {$details_wp_slim_stat[0]['Engine']} ";
+	$have_innodb = $wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
+	$note_too_many_rows = ($details_wp_slim_stat[0]['Rows'] > 200000)?__(", it may take some time and exceed PHP's maximum execution time",'wp-slimstat-options'):'';
+	if ($have_innodb[0]['Value'] == 'YES' && $details_wp_slim_stat[0]['Engine'] == 'MyISAM') echo '[<a href="?page=wp-slimstat/options/index.php&engine=innodb&slimpanel=5">'.__('switch to InnoDB','wp_slimstat_options').$note_too_many_rows.'</a>]';
+
+	echo "<br/>".__('Records','wp-slimstat-options').": {$details_wp_slim_stat[0]['Rows']}<br/>";
 	echo __('Average Record Length','wp-slimstat-options').": {$details_wp_slim_stat[0]['Avg_row_length']} bytes<br/>";
 	echo __('Created on','wp-slimstat-options').": {$details_wp_slim_stat[0]['Create_time']}<br/>";
-	echo __('Approximate Overhead','wp-slimstat-options').": {$details_wp_slim_stat[0]['Data_free']} $overhead_suffix ";
-	if ($details_wp_slim_stat[0]['Data_free'] > 0) echo "[<a href='?page=wp-slimstat/options/index.php&ot=yes&slimpanel=5'>optimize</a>]";
+	if ($details_wp_slim_stat[0]['Engine'] == 'MyISAM'){
+		echo __('Approximate Overhead','wp-slimstat-options').": {$details_wp_slim_stat[0]['Data_free']} $overhead_suffix ";
+		if ($details_wp_slim_stat[0]['Data_free'] > 0) echo "[<a href='?page=wp-slimstat/options/index.php&ot=yes&slimpanel=5'>".__('optimize','wp-slimstat-options')."</a>]";
+	}
 	echo '</td></tr>';
 }
 ?>
-	<tr>
+	<tr class="tall">
 		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
 		<td>
 			<form action="options-general.php?page=wp-slimstat/options/index.php&slimpanel=5" method="post"
@@ -136,31 +177,34 @@ if (count($details_wp_slim_stat) == 1) {
 			</form>
 		</td>
 	</tr>
-	<tr><td>&nbsp;</td></tr>
-	<tr>
-		<th scope="row"><?php _e('Empty database','wp-slimstat-options') ?></th>
-		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=5"><?php _e('DELETE STATS','wp-slimstat-options'); ?></a>
-		</td>
+<?php
+$check_index = $wpdb->get_results("SHOW INDEX FROM `{$wpdb->prefix}slim_stats` WHERE Key_name = 'resource_idx'");
+if (empty($check_index)): ?>
+	<tr class="tall">
+		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&ssidx=create&slimpanel=5"><?php _e('Activate Indexes','wp-slimstat-options'); ?></a></th>
+		<td><?php _e('Use this feature if you want to improve the overall performance of your stats. You will need about 30% more DB space, to store the extra information required.','wp-slimstat-options') ?></td>
 	</tr>
-	<tr><td>&nbsp;</td></tr>
-	<tr valign="top">
-		<th scope="row"><?php _e('Reset Ip-to-Countries','wp-slimstat-options') ?></th>
-		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=5"><?php _e('EMPTY IP-TO-COUNTRIES','wp-slimstat-options'); ?></a>
-		</td>
+<?php else: ?>
+<tr class="tall">
+		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&ssidx=remove&slimpanel=5"><?php _e('Remove Indexes','wp-slimstat-options'); ?></a></th>
+		<td><?php _e('Use this feature if you want to save some DB space, while slightly degrading WP SlimStat overall performances.','wp-slimstat-options') ?></td>
 	</tr>
-	<tr><td>&nbsp;</td></tr>
-	
+<?php endif ?>
+	<tr class="tall">
+		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=5"><?php _e('Delete Records','wp-slimstat-options'); ?></a></th>
+		<td><?php _e('Select this option if you want to empty your WP SlimStat database.','wp-slimstat-options') ?></td>
+	</tr>
+
+	<tr class="tall">
+		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=5"><?php _e('Reset Countries','wp-slimstat-options'); ?></a></th>
+		<td><?php _e('Select this option if you want to empty your WP SlimStat database.','wp-slimstat-options') ?></td>
+	</tr>
 <?php 
 $check_column = $wpdb->get_var("SHOW COLUMNS FROM `{$wpdb->prefix}slim_stats` LIKE 'browser_id'");
 if (empty($check_column)): ?>
-	<tr valign="top">
-		<th scope="row"><?php _e('Old table detected','wp-slimstat-options') ?></th>
-		<td>
-			<a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=5"><?php _e('RESET STATS','wp-slimstat-options'); ?></a>
-			&mdash; <?php _e('It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process.','wp-slimstat-options') ?>
-		</td>
+	<tr class="tall">
+		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=5"><?php _e('RESET STATS','wp-slimstat-options'); ?></a></th>
+		<td><?php _e('It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process.','wp-slimstat-options') ?></td>
 	</tr>
 <?php endif; ?>
 </tbody>

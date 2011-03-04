@@ -11,7 +11,7 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['is_tracking']) && !slimstat_update_option('is_tracking', $_POST['options']['is_tracking'], 'yesno')) $faulty_fields = __('Activate tracking','wp-slimstat-options').', ';
 	if (isset($_POST['options']['enable_javascript']) && !slimstat_update_option('enable_javascript', $_POST['options']['enable_javascript'], 'yesno')) $faulty_fields = __('Enable JS Tracking','wp-slimstat-options').', ';
 	if (isset($_POST['options']['custom_js_path']) && !slimstat_update_option('custom_js_path', $_POST['options']['custom_js_path'], 'text')) $faulty_fields = __('Custom path','wp-slimstat-options').', ';
-	if (isset($_POST['options']['browscap_autoupdate']) && !slimstat_update_option('browscap_autoupdate', $_POST['options']['browscap_autoupdate'], 'yesno')) $faulty_fields = __('Autoupdate Browsers DB','wp-slimstat-options').', ';
+	if (isset($_POST['options']['browscap_autoupdate']) && !slimstat_update_option('browscap_autoupdate', $_POST['options']['browscap_autoupdate'], 'yesno')) $faulty_fields = __('Autoupdate DB','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ignore_interval']) && !slimstat_update_option('ignore_interval', $_POST['options']['ignore_interval'], 'integer')) $faulty_fields .= __('Ignore interval','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ignore_bots']) && !slimstat_update_option('ignore_bots', $_POST['options']['ignore_bots'], 'yesno')) $faulty_fields .= __('Ignore bots','wp-slimstat-options').', ';
 	if (isset($_POST['options']['track_users']) && !slimstat_update_option('track_users', $_POST['options']['track_users'], 'yesno')) $faulty_fields .= __('Track users','wp-slimstat-options').', ';	
@@ -58,7 +58,7 @@ if (isset($_POST['options']['auto_purge'])){
 		</td>
 	</tr>
 	<tr>
-		<th scope="row"><label for="browscap_autoupdate"><?php _e('Autoupdate Browsers DB','wp-slimstat-options') ?></label></th>
+		<th scope="row"><label for="browscap_autoupdate"><?php _e('Autoupdate DB','wp-slimstat-options') ?></label></th>
 		<td>
 			<input type="radio" name="options[browscap_autoupdate]" id="ignore_bots" value="yes"<?php echo (slimstat_get_option('browscap_autoupdate','no') == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?> &nbsp; &nbsp; &nbsp;
 			<input type="radio" name="options[browscap_autoupdate]" value="no" <?php echo (slimstat_get_option('browscap_autoupdate','no') == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>

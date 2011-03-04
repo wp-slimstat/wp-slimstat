@@ -162,6 +162,15 @@
 }
 
 /* Options Panel */
+.form-table tr.tall{
+ height:65px;
+}
+.form-table th{
+ width:150px;
+}
+.form-table tr.tall th{
+ vertical-align:middle;
+}
 .form-table th,
 .form-table td{
  padding:3px 10px;

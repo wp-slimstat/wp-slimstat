@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.2.3
+Version: 2.3
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -23,7 +23,7 @@ class wp_slimstat {
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.2.3';
+		$this->version = '2.3';
 		
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
@@ -37,6 +37,9 @@ class wp_slimstat {
 
 		// Let's keep track of transaction IDs
 		$this->tid = 0;
+		
+		//$autopurge_interval = intval(get_option('slimstat_auto_purge', 0));
+		//echo "DELETE FROM `$this->table_stats` ts WHERE ts.`visit_id` = 0 AND ts.`dt` < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))";
 	}
 	// end __construct
 
@@ -50,6 +53,10 @@ class wp_slimstat {
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
 		$this->table_visits = $wpdb->prefix . 'slim_visits';
 		$this->table_outbound = $wpdb->prefix . 'slim_outbound';
+
+		$have_innodb = $wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
+		$use_innodb = '';
+		if ($have_innodb[0]['Value'] == 'YES') $use_innodb = ' ENGINE=InnoDB';
 
 		// Table that stores the actual data about visits
 		$stats_table_sql =
@@ -68,7 +75,7 @@ class wp_slimstat {
 				`visit_id` INT UNSIGNED NOT NULL DEFAULT 0,
 				`dt` INT(10) UNSIGNED DEFAULT 0,
 				PRIMARY KEY `id` (`id`)
-			)";
+			)$use_innodb";
 
 		// We store in the database the information about Countries. So you don't
 		// need to access a remote service to translate numbers and codes
@@ -78,7 +85,7 @@ class wp_slimstat {
 				`ip_to` INT UNSIGNED DEFAULT 0,
 				`country_code` CHAR(2) DEFAULT '',
 				KEY `ip_from_idx` (`ip_from`, `ip_to`)
-			)";
+			)$use_innodb";
 
 		// A lookup table for browsers can help save some space
 		$browsers_table_sql =
@@ -89,7 +96,7 @@ class wp_slimstat {
 				`platform` VARCHAR(15) DEFAULT '',
 				`css_version` VARCHAR(5) DEFAULT '',
 				PRIMARY KEY (`browser_id`)
-			)";
+			)$use_innodb";
 
 		// A lookup table for screen resolutions can help save some space, too
 		$screen_res_table_sql =
@@ -99,7 +106,7 @@ class wp_slimstat {
 				`colordepth` VARCHAR(5) DEFAULT '',
 				`antialias` BOOL DEFAULT FALSE,
 				PRIMARY KEY (`screenres_id`)
-			)";
+			)$use_innodb";
 
 		// This table will keep track of visits (user sessions of at most 30 minutes)
 		$visits_table_sql =
@@ -107,7 +114,7 @@ class wp_slimstat {
 				`visit_id` INT UNSIGNED NOT NULL auto_increment,
 				`tracking_code` VARCHAR(255) DEFAULT '',
 				PRIMARY KEY (`visit_id`)
-			)";
+			)$use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
 		$outbound_table_sql = 
@@ -119,7 +126,7 @@ class wp_slimstat {
 				`id` INT UNSIGNED NOT NULL DEFAULT 0,
 				`dt` INT(10) UNSIGNED DEFAULT 0,
 				PRIMARY KEY (`outbound_id`)
-			)";
+			)$use_innodb";
 
 		// Ok, let's create the table structure
 		if ($this->_create_table($country_table_sql, $this->table_countries, false)){
@@ -182,6 +189,9 @@ class wp_slimstat {
 
 		// List of users who can view the stats: if empty, all users are allowed
 		add_option('slimstat_can_view', array(), '', 'no');
+
+		// List of capabilities needed to view the stats: if empty, all users are allowed
+		add_option('slimstat_capability_can_view', array(), '', 'no');
 
 		// List of users who can administer this plugin's options: if empty, all users are allowed
 		add_option('slimstat_can_admin', array(), '', 'no');
@@ -310,11 +320,11 @@ class wp_slimstat {
 		// Do autoupdate?
 		$do_autoUpdate = get_option('slimstat_browscap_autoupdate', 'no');
 		if (($do_autoUpdate == 'yes') && 
-			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 664))){
+			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 664) ||
+			(intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 664))){
 			$browscap->doAutoUpdate = false;
 		}
 		else{
-			$browscap->remoteIniUrl = 'http://browsers.garykeith.com/stream.asp?PHP_BrowsCapINI';
 			$browscap->doAutoUpdate = ($do_autoUpdate == 'yes');
 		}
 
@@ -630,6 +640,10 @@ class wp_slimstat {
 		// Delete old entries		
 		$delete_sql = "DELETE ts, tv FROM `$this->table_stats` ts, `$this->table_visits` tv WHERE ts.`dt` < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY)) AND ts.`visit_id` = tv.`visit_id`";
 		$wpdb->query($delete_sql);
+		
+		// Delete all the other entries with no matching visit records
+		$delete_sql = "DELETE ts FROM `$this->table_stats` ts WHERE ts.`dt` < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))";
+		$wpdb->query($delete_sql);
 	}
 	// end wp_slimstat_purge
 
@@ -657,16 +671,16 @@ class wp_slimstat {
 		$slimstat_plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 		$array_allowed_users = get_option('slimstat_can_view', array());
+		$minimum_capability = get_option('slimstat_capability_can_view', 'read');
 		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
-		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users) || current_user_can('manage_options')) {
+		
+		if ((empty($array_allowed_users) && $minimum_capability == 'read') || in_array($current_user->user_login, $array_allowed_users) || current_user_can($minimum_capability)) {
 			if ($use_separate_menu == 'yes'){
-				add_menu_page( 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', '', $slimstat_plugin_url.'/wp-slimstat/images/wp-slimstat-menu.png' );
+				add_menu_page( 'SlimStat', 'SlimStat', $minimum_capability, WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', '', $slimstat_plugin_url.'/wp-slimstat/images/wp-slimstat-menu.png' );
 			}
 			else{
-				add_submenu_page( 'index.php', 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/view/index.php' );
+				add_submenu_page( 'index.php', 'SlimStat', 'SlimStat', $minimum_capability, WP_PLUGIN_DIR.'/wp-slimstat/view/index.php' );
 			}
-			
-
 		}
 		return $_s;
 	}

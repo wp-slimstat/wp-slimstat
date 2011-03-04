@@ -74,6 +74,7 @@ class wp_slimstat_view {
 		}
 	
 		// Date filter
+		date_default_timezone_set('UTC');
 		if (!empty($this->filters_parsed['day'][0])){
 			$this->current_date['d'] = sprintf('%02d', $this->filters_parsed['day'][0]);
 			if (empty($this->filters_parsed['interval'][0]))
@@ -99,6 +100,7 @@ class wp_slimstat_view {
 		else {
 			$this->current_date['y'] = date_i18n('Y');
 		}
+		
 		$this->current_date['h'] = date_i18n('H');
 		$this->current_date_utime_start = strtotime("{$this->current_date['y']}/{$this->current_date['m']}/{$this->current_date['d']} 00:00");
 
@@ -455,14 +457,18 @@ class wp_slimstat_view {
 
 	public function get_browsers(){
 		global $wpdb;
-
+		$sql = "SELECT COUNT(*)
+				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+				WHERE t1.`browser_id` = 0 $this->filters_date_sql_where $this->filters_sql_where";
+		$not_specified_array[] = array('browser' => __('Not specified','wp-slimstat-view'), 'version' => 0, 'count' => intval($wpdb->get_var($sql)));
+		
 		$sql = "SELECT DISTINCT `browser`,`version`, COUNT(*) count
 				FROM `$this->table_stats` t1, `$this->table_browsers` tb {$this->filters_sql_from['screenres']}
 				WHERE t1.`browser_id` = tb.`browser_id` AND tb.`browser` <> '' $this->filters_date_sql_where $this->filters_sql_where
 				GROUP BY `browser`, `version`
 				ORDER BY count DESC, `browser` ASC
 				LIMIT 0,$this->limit_results";
-		return $wpdb->get_results($sql, ARRAY_A);
+		return array_merge($wpdb->get_results($sql, ARRAY_A), $not_specified_array);
 	}
 
 	public function get_data_size(){
