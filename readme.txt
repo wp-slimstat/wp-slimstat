@@ -64,7 +64,7 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 * I've been kind of busy, but this plugin is still actively maintained, don't worry!
 * Geolocation: updated the information in the CSV file included March 2011). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 * Browscap.ini: updated to the latest version available (February 2011)
-* Implemented some DB optimization for large data collections. You can now switch to InnoDB at anytime, if your provider supports this feature (thank you [GoMySQL](http://lab.duechiacchiere.it/index.php?topic=74))
+* Implemented some DB optimizations for large data collections. You can now switch to InnoDB at anytime, if your provider supports this feature (thank you [GoMySQL](http://lab.duechiacchiere.it/index.php?topic=74))
 * Fixed a bug in deleting old entries with autopurge
 * Fixed a bug related to timezones and php.ini (thank you [zipper1976](http://lab.duechiacchiere.it/index.php?topic=365.0))
 * Fixed a vulnerability related to XSS attempts (thank you [distortednet](http://lab.duechiacchiere.it/index.php?topic=110.0))
