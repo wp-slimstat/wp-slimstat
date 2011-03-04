@@ -191,7 +191,7 @@ class wp_slimstat {
 		add_option('slimstat_can_view', array(), '', 'no');
 
 		// List of capabilities needed to view the stats: if empty, all users are allowed
-		add_option('slimstat_capability_can_view', array(), '', 'no');
+		add_option('slimstat_capability_can_view', 'read', '', 'no');
 
 		// List of users who can administer this plugin's options: if empty, all users are allowed
 		add_option('slimstat_can_admin', array(), '', 'no');
