@@ -127,6 +127,7 @@ alphabetical order):
 == List of donors in alphabetical order ==
 * [Andrea Pinti](http://andreapinti.com/)
 * [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
+* [Dennis Kowallek](http://www.adopt-a-plant.com)
 * [Hans Schantz](http://www.aetherczar.com/)
 * [Herman Peet](http://www.hermanpeet.nl/)
 * [La casetta delle pesche](http://www.lacasettadellepesche.it/)
