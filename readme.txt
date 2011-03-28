@@ -135,6 +135,7 @@ alphabetical order):
 * Mora Systems
 * Neil Robinson
 * [Sahin Eksioglu](http://www.alternatifblog.com/)
+* [Saill White](http://saillwhite.com)
 
 = Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
