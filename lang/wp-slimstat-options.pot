@@ -1,8 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Slim Stat 2.3\n"
+"Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-03-04 11:34-0500\n"
+"POT-Creation-Date: 2011-04-29 13:13-0500\n"
+"PO-Revision-Date: 2011-04-29 13:18-0500\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -117,7 +118,7 @@ msgstr ""
 #: panel1.php:78
 #: panel1.php:86
 #: panel1.php:102
-#: panel2.php:23
+#: panel2.php:24
 #: panel5.php:12
 #: panel5.php:22
 #: panel6.php:42
@@ -127,7 +128,7 @@ msgstr ""
 #: ../options/panel1.php:78
 #: ../options/panel1.php:86
 #: ../options/panel1.php:102
-#: ../options/panel2.php:23
+#: ../options/panel2.php:24
 #: ../options/panel5.php:12
 #: ../options/panel5.php:22
 #: ../options/panel6.php:42
@@ -140,7 +141,7 @@ msgstr ""
 #: panel1.php:79
 #: panel1.php:87
 #: panel1.php:103
-#: panel2.php:24
+#: panel2.php:25
 #: panel5.php:13
 #: panel5.php:23
 #: panel6.php:43
@@ -150,7 +151,7 @@ msgstr ""
 #: ../options/panel1.php:79
 #: ../options/panel1.php:87
 #: ../options/panel1.php:103
-#: ../options/panel2.php:24
+#: ../options/panel2.php:25
 #: ../options/panel5.php:13
 #: ../options/panel5.php:23
 #: ../options/panel6.php:43
@@ -228,43 +229,55 @@ msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat
 msgstr ""
 
 #: panel1.php:109
-#: panel2.php:37
-#: panel3.php:35
+#: panel2.php:46
+#: panel3.php:39
 #: panel4.php:30
 #: ../options/panel1.php:109
-#: ../options/panel2.php:37
-#: ../options/panel3.php:35
+#: ../options/panel2.php:46
+#: ../options/panel3.php:39
 #: ../options/panel4.php:30
 msgid "Save Changes"
 msgstr ""
 
 #: panel2.php:11
-#: panel2.php:21
+#: panel2.php:22
 #: ../options/panel2.php:11
-#: ../options/panel2.php:21
+#: ../options/panel2.php:22
 msgid "Convert IP addresses"
 msgstr ""
 
 #: panel2.php:12
-#: panel2.php:29
+#: panel2.php:30
 #: ../options/panel2.php:12
-#: ../options/panel2.php:29
+#: ../options/panel2.php:30
+msgid "Number format"
+msgstr ""
+
+#: panel2.php:13
+#: panel2.php:38
+#: ../options/panel2.php:13
+#: ../options/panel2.php:38
 msgid "Limit results to"
 msgstr ""
 
-#: panel2.php:25
-#: ../options/panel2.php:25
-msgid "Shows hostnames instead of IP addresses. It slows down the rendering of your metrics."
+#: panel2.php:26
+#: ../options/panel2.php:26
+msgid "View hostnames instead of IP addresses. It slows down the rendering of your metrics."
 msgstr ""
 
-#: panel2.php:31
-#: ../options/panel2.php:31
+#: panel2.php:34
+#: ../options/panel2.php:34
+msgid "Choose what number format you want to use, European or American."
+msgstr ""
+
+#: panel2.php:40
+#: ../options/panel2.php:40
 msgid "rows"
 msgstr ""
 
-#: panel2.php:32
-#: ../options/panel2.php:32
-msgid "Defines the number of results to return for each module. Please use a <strong>positive</strong> value."
+#: panel2.php:41
+#: ../options/panel2.php:41
+msgid "Specify the number of results to return for each module. Please use a <strong>positive</strong> value."
 msgstr ""
 
 #: panel3.php:11
@@ -304,26 +317,36 @@ msgstr ""
 
 #: panel3.php:25
 #: ../options/panel3.php:25
-msgid "Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>starts</strong> with any of them."
+msgid "Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1</em>, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>contains</strong> at least one of them."
 msgstr ""
 
 #: panel3.php:28
 #: ../options/panel3.php:28
-msgid "Browsers to ignore"
+msgid "User agents to ignore"
 msgstr ""
 
 #: panel3.php:29
 #: ../options/panel3.php:29
-msgid "Enter a list of browsers you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these."
+msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these."
 msgstr ""
 
 #: panel3.php:32
 #: ../options/panel3.php:32
-msgid "Users to ignore"
+msgid "Referers to ignore"
 msgstr ""
 
 #: panel3.php:33
 #: ../options/panel3.php:33
+msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. WP SlimStat will ignore all the referers that <strong>contain</strong> at least one of them."
+msgstr ""
+
+#: panel3.php:36
+#: ../options/panel3.php:36
+msgid "Users to ignore"
+msgstr ""
+
+#: panel3.php:37
+#: ../options/panel3.php:37
 msgid "Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored."
 msgstr ""
 
@@ -609,12 +632,12 @@ msgstr ""
 
 #: panel6.php:33
 #: ../options/panel6.php:33
-msgid "Don't want to donate? You can still help"
+msgid "Don't want or cannot donate? You can still help"
 msgstr ""
 
 #: panel6.php:34
 #: ../options/panel6.php:34
-msgid "If you don't like donating money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
+msgid "If you cannot donate money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
 msgstr ""
 
 #: panel6.php:36
@@ -631,33 +654,3 @@ msgstr ""
 #: ../options/panel6.php:40
 msgid "If an unwanted link to WP SlimStat is showing up in your template's footer, select NO here below. Otherwise, I'd really appreciate if you could leave this enabled."
 msgstr ""
-
-#~ msgid "Who can manage these options"
-#~ msgstr ""
-
-#~ msgid "Empty database"
-#~ msgstr ""
-
-#~ msgid "DELETE STATS"
-#~ msgstr ""
-
-#~ msgid "EMPTY IP-TO-COUNTRIES"
-#~ msgstr ""
-
-#~ msgid "Old table detected"
-#~ msgstr ""
-
-#~ msgid "Need help on how to use WP SlimStat? Visit the official"
-#~ msgstr ""
-
-#~ msgid "support forum"
-#~ msgstr ""
-
-#~ msgid "Feeling generous?"
-#~ msgstr ""
-
-#~ msgid "Donate a few bucks!"
-#~ msgstr ""
-
-#~ msgid "Thank you"
-#~ msgstr ""

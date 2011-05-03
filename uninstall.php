@@ -1,9 +1,6 @@
 <?php
 // Avoid direct access to this piece of code
-if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
-  header('Location: /');
-  exit;
-}
+if (!defined('WP_UNINSTALL_PLUGIN')) exit;
 
 function uninstall(){
 	global $wpdb;
@@ -27,10 +24,12 @@ function uninstall(){
 	delete_option('slimstat_auto_purge');
 	delete_option('slimstat_use_separate_menu');
 	delete_option('slimstat_convert_ip_addresses');
+	delete_option('slimstat_use_european_separators');
 	delete_option('slimstat_rows_to_show');
 	delete_option('slimstat_ignore_ip');
 	delete_option('slimstat_ignore_resources');
 	delete_option('slimstat_ignore_browsers');
+	delete_option('slimstat_ignore_referers');
 	delete_option('slimstat_ignore_users');
 	delete_option('slimstat_can_view');
 	delete_option('slimstat_capability_can_view');

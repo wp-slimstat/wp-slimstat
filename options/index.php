@@ -31,7 +31,7 @@ function slimstat_update_option( $_option, $_value, $_type ){
 	switch($_type){
 		case 'list':
 			// Avoid XSS attacks
-			$clean_value = preg_replace('/[^a-zA-Z0-9\,\.\/\ \-\_]/', '', $_value);
+			$clean_value = preg_replace('/[^a-zA-Z0-9\,\.\/\ \-\_\?=&;]/', '', $_value);
 			if (strlen($_value)==0){
 				update_option('slimstat_'.$_option, array());
 			}

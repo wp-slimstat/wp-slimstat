@@ -19,15 +19,19 @@ if (isset($_POST['options'])){
 <form action="admin.php?page=wp-slimstat/options/index.php&slimpanel=3" method="post">
 <h3><label for="ignore_ip"><?php _e('IP addresses to ignore','wp-slimstat-options') ?></label></h3>
 <p><?php _e("Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly.",'wp-slimstat-options') ?></p>
-<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_ip]" id="ignore_ip"><?php echo implode(', ', slimstat_get_option('ignore_ip',array())) ?></textarea></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_ip]" id="ignore_ip"><?php echo implode(',', slimstat_get_option('ignore_ip',array())) ?></textarea></p>
 
 <h3><label for="ignore_resources"><?php _e('Pages and posts to ignore','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>starts</strong> with any of them.",'wp-slimstat-options') ?></p>
+<p><?php _e("Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1</em>, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>contains</strong> at least one of them.",'wp-slimstat-options') ?></p>
 <p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_resources]" id="ignore_resources"><?php echo implode(',', slimstat_get_option('ignore_resources',array())) ?></textarea></p>
 
-<h3><label for="ignore_browsers"><?php _e('Browsers to ignore','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of browsers you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these.",'wp-slimstat-options') ?></p>
+<h3><label for="ignore_browsers"><?php _e('User agents to ignore','wp-slimstat-options') ?></label></h3>
+<p><?php _e("Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these.",'wp-slimstat-options') ?></p>
 <p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_browsers]" id="ignore_browsers"><?php echo implode(',', slimstat_get_option('ignore_browsers',array())) ?></textarea></p>
+
+<h3><label for="ignore_referers"><?php _e('Referers to ignore','wp-slimstat-options') ?></label></h3>
+<p><?php _e("Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. WP SlimStat will ignore all the referers that <strong>contain</strong> at least one of them.",'wp-slimstat-options') ?></p>
+<p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_referers]" id="ignore_referers"><?php echo implode(',', slimstat_get_option('ignore_referers',array())) ?></textarea></p>
 
 <h3><label for="ignore_users"><?php _e('Users to ignore','wp-slimstat-options') ?></label></h3>
 <p><?php _e("Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored.",'wp-slimstat-options') ?></p>

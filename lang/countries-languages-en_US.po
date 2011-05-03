@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: WP-SlimStat Countries & Languages\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: Vidal Arpin <vidal@arpin.ca>\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2287,6 +2287,14 @@ msgstr "Swedish (Sweden)"
 # Swedish (Finland)
 msgid "l-sv-fi"
 msgstr "Swedish (Finland)"
+
+# Japanes
+msgid "l-ja-jp"
+msgstr "Japanese"
+
+# Turkish
+msgid "l-tr-tr"
+msgstr "Turkish"
 
 # Unknown
 msgid "l-"

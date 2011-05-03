@@ -8,10 +8,12 @@
  float:right;
 }
 .wrap form p{
- margin:6px;
+ margin:5px 1px;
+ overflow:auto;
 }
 .wrap form p span{
  float:left;
+ margin:5px 0;
 }
 .wrap form p span.rtl{
  float:right;
@@ -19,7 +21,7 @@
 .wrap h2.medium{
  border-bottom:1px solid #CCCCCC;
  font-size:.9em;
- margin-bottom:15px;
+ margin-bottom:5px;
  padding-bottom:0;
 }
 .wrap .nav-tab{
@@ -39,79 +41,82 @@
  font-weight:700;
  position:relative;
 }
-
-.metabox-holder{
- float:left;
- margin:0 6px;
- width:253px;
+.current-filters,.current-filters code{
+ clear:left;
+ margin-top:15px;
+ vertical-align:top;
 }
-.metabox-holder.rtl{
- float:right;
-}
-.metabox-holder.medium{
- margin:0 1px;
- width:515px;
-}
-.metabox-holder.wide{
- width:770px;
-}
-.metabox-holder.tall{
- width:1005px;
-}
-.metabox-holder h3{
- cursor:default; 
+.current-filters code{
+ padding:2px 3px;
 }
 .postbox{
- height:197px;
+ float:left;
+ height:205px;
+ margin-right:5px;
+ width:255px;
+}
+.postbox.rtl{
+ float:right;
+}
+.postbox.medium{
+ width:517px;
+}
+.postbox.wide{
+ width:780px;
+}
+.postbox.tall{
+ width:1005px;
+}
+.postbox h3{
+ cursor:default;
+ font-size:.9em;
+ margin:0;
+ padding:5px 0 5px 5px;
 }
 .postbox div.more{
  background:url("../images/gray-grad.png") repeat-x scroll left top #DFDFDF;
  float:right;
  font-size:0.85em;
- height:20px;
- padding:6px 6px 0;
+ height:15px;
+ padding:5px 5px 0;
 }
 .rtl .postbox div.more{
  float:left;
 }
 .postbox div.container{
- overflow-x:hidden;
  overflow-y:auto;
- height:171px;
- width:255px;
+ height:183px;
 }
 .postbox div.container.noscroll{
  overflow-y:hidden;
 }
-.medium .postbox div.container{
- width:512px;
-}
-.wide .postbox div.container{
- width:767px;
-}
-.tall .postbox{
- height:455px;
-}
-.tall .postbox div.container{
- height:430px;
- width:1000px;
-}
-.postbox a.activate-filter{
- text-decoration:none;
-}
 .postbox p{
  border-bottom:1px dashed #ddd;
- font-size:.85em;
- height:1.6em;
+ font-size:.8em;
  margin:0;
+ overflow:auto;
  padding:5px 5px 5px 6px;
- display:block;
+ white-space:nowrap;
 }
 .postbox p.header{
  background-color:#eee;
 }
 .postbox p.last{
  border:0;
+}
+.postbox.tall{
+ height:455px;
+}
+.postbox.tall div.container{
+ height:434px;
+}
+.postbox a.activate-filter{
+ text-decoration:none;
+}
+.postbox #wp-element-details{
+ clear:left;
+ display:block;
+ font-size:.8em;
 }
 .postbox p.nodata{
  border:0;
@@ -123,7 +128,7 @@
  float:left;
  padding:2px 6px 0 0;
 }
-.rtl .postbox p img{
+.postbox.rtl p img{
  float:right;
  padding:2px 0 0 6px;
 }
@@ -132,7 +137,7 @@
  min-width:50px;
  text-align:right;
 }
-.rtl .postbox p span{
+.postbox.rtl p span{
  float:left;
  text-align:left;
 }
@@ -140,7 +145,7 @@
  float:left;
  text-align:left;
 }
-.rtl .postbox p span.element-title{
+.postbox.rtl p span.element-title{
  float:right;
  text-align:right;
 }
@@ -152,7 +157,7 @@
  min-width:100px;
  text-align:center;
 }
-.tall .postbox span{
+.postbox.tall  span{
  margin:0 15px;
 }
 .fusion-credits{

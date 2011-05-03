@@ -26,13 +26,8 @@ $array_panels = array(
 );
 
 // What panel to display
-$current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']); 
+$current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 
-// Text direction
-if ($wp_locale->text_direction != 'ltr') $array_panels = array_reverse($array_panels, true);
-
-// It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
-$slimstat_plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 // Import class definition
 require_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
@@ -55,7 +50,63 @@ $wpdb->query("SET @@session.time_zone = '+00:00'");
 
 // Invert the order of all panels
 $reverse = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
+
+// Filter for the Raw Data page
+$allowed_functions = array(
+	'get_details_recent_visits',
+	'get_recent_404',
+	'get_recent_bouncing_pages',
+	'get_recent_countries',
+	'get_recent_resources',
+	'get_recent_searchterms',
+	'get_top_resources',
+	'get_top_searchterms',
+	'get_top_traffic_sources'
+);
+$function_to_use = '';
+if (!empty($_GET['ftu']) && in_array($_GET['ftu'], $allowed_functions)) $function_to_use = $_GET['ftu'];
+
+// Utilities
+function title_period($_title_string, $_extra_class = ' noscroll'){
+	global $wp_slimstat_view;
+	
+	echo "<h3>$_title_string ";
+	if (empty($wp_slimstat_view->day_interval)){
+		if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
+		echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; 
+	}
+	else
+		_e('this period', 'wp-slimstat-view');
+	echo "</h3><div class='container$_extra_class'>";
+}
+function trim_value($_string = '', $_length = 32){
+	if (strlen($_string) > $_length){
+		$result['text'] = substr($_string, 0, $_length).'...';
+		$result['tooltip'] = " title='".htmlspecialchars($_string, ENT_QUOTES)."'";
+	}
+	else{
+		$result['text'] = $_string;
+		$result['tooltip'] = '';
+	}
+	$result['text'] = str_replace('\\', '', htmlspecialchars($result['text'], ENT_QUOTES));
+	return $result;
+}
 ?>
+
+<script type="text/javascript">
+jQuery(document).ready(function(){
+ jQuery(".slimstat-tooltips p").hover(
+	function(){
+		this.savetitle = this.title;
+		jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
+		this.title = '';
+	},
+	function(){
+		this.title = this.savetitle;
+		jQuery("#wp-element-details").remove();
+	});
+});
+</script>
 
 <div class="wrap">
 	<div id="analytics-icon" class="icon32 <?php echo $wp_locale->text_direction ?>"></div>
@@ -71,21 +122,23 @@ $reverse = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
 	
 	<form action="index.php" method="get" name="setslimstatfilters">
 		<input type="hidden" name="page" value="wp-slimstat/view/index.php">
-		<input type="hidden" name="slimpanel" value="<?php echo intval($_GET['slimpanel']) ?>">
+		<input type="hidden" name="slimpanel" value="<?php echo !empty($_GET['slimpanel'])?intval($_GET['slimpanel']):1; ?>">
+		<?php if ($current_panel == 5) echo "<input type='hidden' name='ftu' value='$function_to_use'>"; ?>
 		<?php // Keep other filters persistent
 			foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 				echo "<input type='hidden' name='{$a_filter_label}' value='{$a_filter_details[0]}'>";
 				echo "<input type='hidden' name='{$a_filter_label}-op' value='{$a_filter_details[1]}'>";
 			}
 		?>
-		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter pageviews where','wp-slimstat-view') ?>
-			<select name="filter" onchange="if(this.value=='author'||this.value=='category-id'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
+		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Show records where','wp-slimstat-view') ?>
+			<select name="filter" style="width:9em" onchange="if(this.value=='author'||this.value=='category-id'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
 				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
 				<option value="version"><?php _e('Browser version','wp-slimstat-view') ?></option>
 				<option value="css_version"><?php _e('CSS version','wp-slimstat-view') ?></option>
 				<option value="country"><?php _e('Country Code','wp-slimstat-view') ?></option>
 				<option value="domain"><?php _e('Domain','wp-slimstat-view') ?></option>
 				<option value="ip"><?php _e('IP','wp-slimstat-view') ?></option>
+				<option value="user"><?php _e('User','wp-slimstat-view') ?></option>
 				<option value="searchterms"><?php _e('Keywords','wp-slimstat-view') ?></option>
 				<option value="language"><?php _e('Language Code','wp-slimstat-view') ?></option>
 				<option value="platform"><?php _e('Operating System','wp-slimstat-view') ?></option>
@@ -95,15 +148,17 @@ $reverse = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
 				<option value="author"><?php _e('Post Author','wp-slimstat-view') ?></option>
 				<option value="category-id"><?php _e('Post Category ID','wp-slimstat-view') ?></option>
 			</select> 
-			<select name="f_operator" style="width:12em">
-				<option value="equals"><?php _e('Is equal to','wp-slimstat-view') ?></option>
+			<select name="f_operator" style="width:9em" onchange="if(this.value=='is empty'||this.value=='is not empty'){document.setslimstatfilters.f_value.disabled=true;} else {document.setslimstatfilters.f_value.disabled=false;}">
+				<option value="equals"><?php _e('Equals','wp-slimstat-view') ?></option>
 				<option value="contains"><?php _e('Contains','wp-slimstat-view') ?></option>
 				<option value="does not contain"><?php _e('Does not contain','wp-slimstat-view') ?></option>
 				<option value="starts with"><?php _e('Starts with','wp-slimstat-view') ?></option>
 				<option value="ends with"><?php _e('Ends with','wp-slimstat-view') ?></option>
+				<option value="is empty"><?php _e('Is empty','wp-slimstat-view') ?></option>
+				<option value="is not empty"><?php _e('Is not empty','wp-slimstat-view') ?></option>
 			</select>
-			<input type="text" name="f_value" value="" size="15">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-			<span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter by date','wp-slimstat-view') ?> <select name="day" style="width:6em">
+			<input type="text" name="f_value" value="" size="12">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+			<span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter by date','wp-slimstat-view') ?> <select name="day">
 				<option value=""><?php _e('Day','wp-slimstat-view') ?></option>
 				<option>01</option><option>02</option><option>03</option><option>04</option><option>05</option>
 				<option>06</option><option>07</option><option>08</option><option>09</option><option>10</option>
@@ -113,13 +168,14 @@ $reverse = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
 				<option>26</option><option>27</option><option>28</option><option>29</option><option>30</option>
 				<option>31</option>
 			</select> 
-			<select name="month" style="width:6em">
+			<select name="month">
 				<option value=""><?php _e('Month','wp-slimstat-view') ?></option>
-				<option>01</option><option>02</option><option>03</option><option>04</option><option>05</option>
-				<option>06</option><option>07</option><option>08</option><option>09</option><option>10</option>
-				<option>11</option><option>12</option>
+				<option value="01"><?php _e('January') ?></option><option value="02"><?php _e('February') ?></option><option value="03"><?php _e('March') ?></option>
+				<option value="04"><?php _e('April') ?></option><option value="05"><?php _e('May') ?></option><option value="06"><?php _e('June') ?></option>
+				<option value="07"><?php _e('July') ?></option><option value="08"><?php _e('August') ?></option><option value="09"><?php _e('September') ?></option>
+				<option value="10"><?php _e('October') ?></option><option value="11"><?php _e('November') ?></option><option value="12"><?php _e('December') ?></option>
 			</select>
-			<select name="year" style="width:6em">
+			<select name="year">
 				<option value=""><?php _e('Year','wp-slimstat-view') ?></option>
 				<?php
 					$current_year = date_i18n('Y'); 
@@ -127,18 +183,18 @@ $reverse = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
 						echo "<option>$i</option>";
 				?>
 			</select>
-			+ <input type="text" name="interval" value="" size="3"> <?php _e('days', 'wp-slimstat-view') ?> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-			<input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary"></span>
-			<?php if ($current_panel != 5): ?><a class="button-primary" href="index.php?page=wp-slimstat/view/index.php&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$filters_query; ?>"><?php _e('Reverse order','wp-slimstat-view') ?></a><?php endif; ?>
+			+ <input type="text" name="interval" value="" size="3" title="<?php _e('days', 'wp-slimstat-view') ?>">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+			<span class="<?php echo $wp_locale->text_direction ?>"><input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary">
+			<?php if ($current_panel != 5): ?><a class="button-primary" href="index.php?page=wp-slimstat/view/index.php&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$filters_query; ?>"><?php _e('Reverse','wp-slimstat-view') ?></a><?php endif; ?></span>
 		</p>
 	</form>
 	
-	<p style="clear:both;padding:6px 6px 0"><?php 
+	<p class="current-filters"><?php 
 		$get_filter_to_use = !empty($_GET['ftu'])?"&ftu={$_GET['ftu']}":'';
 		$get_orderby = !empty($_GET['orderby'])?"&ftu={$_GET['orderby']}":'';
 		$get_direction = !empty($_GET['direction'])?"&ftu={$_GET['direction']}":'';
 		
-		if (!empty($filters_list)) echo substr($filters_list, 0, -2)." [<a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction'>".__('reset','wp-slimstat-view').'</a>]'; ?></p>
+		if (!empty($filters_list)) echo substr($filters_list, 0, -2)." <a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/cancel.gif' alt='".__('reset','wp-slimstat-view')."'/></a>"; ?></p>
 	
 	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
 </div>

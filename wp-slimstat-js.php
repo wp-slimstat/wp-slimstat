@@ -62,8 +62,8 @@ $db_list_tables = @mysql_query("SHOW TABLES");
 $is_table_active = false;
 $multisite_table_prefix = $table_prefix;
 
-// Multisite awareness - Let's retry with the blog id 
-$blog_id = intval($_GET['bid']);
+// Multisite awareness - Let's retry with the blog id
+$blog_id = isset($_GET['bid'])?intval($_GET['bid']):0;
 if (!empty($blog_id)){
 	while ($row = @mysql_fetch_row($db_list_tables)) {
 		if ($is_table_active = ($row[0] == "{$table_prefix}{$blog_id}_slim_stats")){
@@ -134,8 +134,8 @@ if (!empty($_GET['obr'])){
 	$insert_new_outbound_sql = "INSERT INTO `{$multisite_table_prefix}slim_outbound` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
 			SELECT '" . implode( "', '", array_values( $stat ) ) . "'
 			FROM DUAL
-			WHERE NOT EXISTS ( 
-				SELECT `outbound_id` 
+			WHERE NOT EXISTS (
+				SELECT `outbound_id`
 				FROM `{$multisite_table_prefix}slim_outbound`
 				WHERE ";
 	foreach ($stat as $a_key => $a_value) {
@@ -155,8 +155,8 @@ $screenres['antialias'] = (!empty($_GET['aa']) && $_GET['aa']=='1')?'1':'0';
 
 // Now we insert the new screen resolution in the lookup table, if it doesn't exist
 $select_sql = "SELECT `screenres_id`
-				FROM `{$table_prefix}slim_screenres` 
-				WHERE `resolution` = '{$screenres['resolution']}' AND `colordepth` = '{$screenres['colordepth']}' AND `antialias` = {$screenres['antialias']} 
+				FROM `{$table_prefix}slim_screenres`
+				WHERE `resolution` = '{$screenres['resolution']}' AND `colordepth` = '{$screenres['colordepth']}' AND `antialias` = {$screenres['antialias']}
 				LIMIT 1";
 
 $stat['screenres_id'] = slimstat_get_var($select_sql);
@@ -166,7 +166,7 @@ if ( empty($stat['screenres_id']) ) {
 					FROM DUAL
 					WHERE NOT EXISTS ( $select_sql )";
 	@mysql_query($insert_sql);
-	$stat['screenres_id'] = @mysql_insert_id(); 
+	$stat['screenres_id'] = @mysql_insert_id();
 	
 	if ( empty($stat['screenres_id']) ) { // This can happen if another transaction had added the new line in the meanwhile
 		$stat['screenres_id'] = slimstat_get_var($select_sql);
@@ -187,7 +187,7 @@ if (!empty($_COOKIE['slimstat_tracking_code']) && strlen($_COOKIE['slimstat_trac
 						FROM DUAL
 						WHERE NOT EXISTS ( $select_sql )";
 		@mysql_query($insert_sql);
-		$stat['visit_id'] = @mysql_insert_id(); 
+		$stat['visit_id'] = @mysql_insert_id();
 	
 		if ( empty($stat['visit_id']) ) { // This can happen if another transaction had added the new line in the meanwhile
 			$stat['visit_id'] = slimstat_get_var($select_sql);
