@@ -13,8 +13,8 @@ if (isset($_GET['ds']) || isset($_GET['di2c'])){
 		echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php&slimpanel=5">'.__('No','wp-slimstat-options').'</a>';
 	}
 	if (isset($_GET['ds']) && $_GET['ds']=='confirm'){
-		$wpdb->query("TRUNCATE TABLE `{$wpdb->prefix}slim_stats`");
-		$wpdb->query("TRUNCATE TABLE `{$wpdb->prefix}slim_visits`");
+		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_stats");
+		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_visits");
 		_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-options');
 	}
 	if (isset($_GET['di2c']) && $_GET['di2c']=='yes'){
@@ -23,19 +23,19 @@ if (isset($_GET['ds']) || isset($_GET['di2c'])){
 		echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php&slimpanel=5">'.__('No','wp-slimstat-options').'</a>';
 	}
 	if (isset($_GET['di2c']) && $_GET['di2c']=='confirm'){
-		$wpdb->query("TRUNCATE TABLE `{$wpdb->prefix}slim_countries`");
+		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_countries");
 		_e('Your IP-to-countries table has been successfully emptied. Now go to your Plugins panel and deactivate/reactivate WP SlimStat to load the new data.','wp-slimstat-options');
 	}
 	echo '</p></div>';
 }
 if (isset($_GET['rs']) && $_GET['rs']=='yes'){
-	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_stats`");
+	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_stats");
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	_e('Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat.','wp-slimstat-options');		
 	echo '</p></div>';
 }
 if (isset($_GET['ot']) && $_GET['ot']=='yes'){
-	$wpdb->query("OPTIMIZE TABLE `{$wpdb->prefix}slim_stats`");
+	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_stats");
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	_e('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options');		
 	echo '</p></div>';
@@ -44,12 +44,12 @@ if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
 	$have_innodb = $wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 	if ($have_innodb[0]['Value'] != 'YES') return;
 	
-	$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ENGINE = InnoDB");
-	$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_outbound` ENGINE = InnoDB");
-	$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_visits` ENGINE = InnoDB");
-	$wpdb->query("ALTER TABLE `{$wpdb->base_prefix}slim_browsers` ENGINE = InnoDB");
-	$wpdb->query("ALTER TABLE `{$wpdb->base_prefix}slim_countries` ENGINE = InnoDB");
-	$wpdb->query("ALTER TABLE `{$wpdb->base_prefix}slim_screenres` ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_outbound ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_visits ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_countries ENGINE = InnoDB");
+	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres ENGINE = InnoDB");
 	
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	_e('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat-options');		
@@ -57,19 +57,19 @@ if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
 }
 if (isset($_GET['ssidx'])){
 	if($_GET['ssidx']=='create'){
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ADD INDEX `resource_idx`(`resource`(20))");
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ADD INDEX `browser_idx`(`browser_id`(4))");
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` ADD INDEX `visit_idx`(`visit_id`(4))");
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_visits` ADD INDEX `tracking_code_idx`(`tracking_code`(8))");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX resource_idx(resource(20))");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX visit_idx(visit_id)");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_visits ADD INDEX tracking_code_idx(tracking_code(8))");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 		_e('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options');		
 		echo '</p></div>';
 	}
 	if($_GET['ssidx']=='remove'){
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` DROP INDEX `resource_idx`");
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` DROP INDEX `browser_idx`");
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_stats` DROP INDEX `visit_idx`");
-		$wpdb->query("ALTER TABLE `{$wpdb->prefix}slim_visits` DROP INDEX `tracking_code_idx`");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX resource_idx");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX browser_idx");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX visit_idx");
+		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_visits DROP INDEX tracking_code_idx");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 		_e('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options');		
 		echo '</p></div>';
@@ -110,7 +110,7 @@ if (isset($_POST['options'])){
 				break;
 			
 		}
-		$rows_affected =  $wpdb->query("DELETE FROM `{$wpdb->prefix}slim_stats` WHERE $delete_sql");
+		$rows_affected =  $wpdb->query("DELETE FROM {$wpdb->prefix}slim_stats WHERE $delete_sql");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 		_e('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
 		echo '</p></div>';
@@ -178,7 +178,7 @@ if (count($details_wp_slim_stat) == 1) {
 		</td>
 	</tr>
 <?php
-$check_index = $wpdb->get_results("SHOW INDEX FROM `{$wpdb->prefix}slim_stats` WHERE Key_name = 'resource_idx'");
+$check_index = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}slim_stats WHERE Key_name = 'resource_idx'");
 if (empty($check_index)): ?>
 	<tr class="tall">
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&ssidx=create&slimpanel=5"><?php _e('Activate Indexes','wp-slimstat-options'); ?></a></th>
@@ -200,7 +200,7 @@ if (empty($check_index)): ?>
 		<td><?php _e('Select this option if you want to empty your WP SlimStat database.','wp-slimstat-options') ?></td>
 	</tr>
 <?php 
-$check_column = $wpdb->get_var("SHOW COLUMNS FROM `{$wpdb->prefix}slim_stats` LIKE 'browser_id'");
+$check_column = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}slim_stats LIKE 'browser_id'");
 if (empty($check_column)): ?>
 	<tr class="tall">
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&rs=yes&slimpanel=5"><?php _e('RESET STATS','wp-slimstat-options'); ?></a></th>
