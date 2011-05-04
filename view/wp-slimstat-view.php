@@ -302,16 +302,6 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 
-	public function count_top($_field = 'id', $_only_current_month = false){
-		global $wpdb;
-
-		$sql = "SELECT COUNT( DISTINCT `$_field`)
-				FROM `$this->table_stats` t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
-				WHERE t1.`$_field` <> '' AND  t1.`$_field` <> '__l_s__'
-				".($_only_current_month?$this->filters_date_sql_where:'')." $this->filters_sql_where";
-		return intval($wpdb->get_var($sql));
-	}
-
 	public function get_data_size(){
 		global $wpdb;
 
