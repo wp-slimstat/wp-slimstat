@@ -14,6 +14,11 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME']){
   exit;
 }
 
+$table_structure = $wpdb->get_results("SHOW COLUMNS FROM wp_slim_stats", ARRAY_A);
+print_r($table_structure);
+
+exit;
+
 class wp_slimstat{
 
 	/**
@@ -89,9 +94,9 @@ class wp_slimstat{
 				language VARCHAR(5) DEFAULT '',
 				country VARCHAR(2) DEFAULT '',
 				domain VARCHAR(255) DEFAULT '',
-				referer VARCHAR(255) DEFAULT '',
-				searchterms VARCHAR(255) DEFAULT '',
-				resource VARCHAR(255) DEFAULT '',
+				referer VARCHAR(2048) DEFAULT '',
+				searchterms VARCHAR(2048) DEFAULT '',
+				resource VARCHAR(2048) DEFAULT '',
 				browser_id SMALLINT UNSIGNED NOT NULL DEFAULT 0,
 				screenres_id SMALLINT UNSIGNED NOT NULL DEFAULT 0,
 				plugins VARCHAR(255) DEFAULT '',
@@ -143,7 +148,7 @@ class wp_slimstat{
 			"CREATE TABLE IF NOT EXISTS {$wpdb->prefix}slim_outbound (
 				outbound_id INT UNSIGNED NOT NULL auto_increment,
 				outbound_domain VARCHAR(255) DEFAULT '',
-				outbound_resource VARCHAR(255) DEFAULT '',
+				outbound_resource VARCHAR(2048) DEFAULT '',
 				type TINYINT UNSIGNED DEFAULT 0,
 				id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
@@ -161,7 +166,7 @@ class wp_slimstat{
 		$this->_create_table($outbound_table_sql, $this->table_outbound);
 		if (!$this->_create_table($stats_table_sql, $this->table_stats, true)){
 			// Update the table structure ( versions < 2.4 ), if needed
-			$this->_update_table();
+			$this->_update_stats_table();
 		}
 
 		// We need a secret key to make sure the js-php interaction is secure
@@ -464,20 +469,30 @@ class wp_slimstat{
 	/**
 	 * Updates the table structure, adding a new column 'user' to wp_slim_stats
 	 */
-	private function _update_table(){
+	private function _update_stats_table(){
 	    global $wpdb;
 
-		// If the column is already there, we won't do anything
-		if ($wpdb->get_var("SHOW COLUMNS FROM wp_slim_stats LIKE 'user'", 0, 0) != NULL) return false;
-
-		$wpdb->query("ALTER TABLE $this->table_stats ADD COLUMN user VARCHAR(255) DEFAULT '' AFTER ip");
-
-		// Let's make sure the new column was actually added
-		if ($wpdb->get_var("SHOW COLUMNS FROM wp_slim_stats LIKE 'user'", 0, 0) != NULL) return true;
-
-		return false;
+		$table_structure = $wpdb->get_results("SHOW COLUMNS FROM $this->table_stats", ARRAY_A);
+		$user_field_exists = false;
+		$is_field_right_size = true;
+		
+		// Let's see if the structure is up-to-date
+		foreach($table_structure as $a_row){
+			if ($a_row['Field'] == 'user') $user_field_exists = true;
+			if ($a_row['Field'] == 'referer' && $a_row['Type'] == 'varchar(255)') $is_field_right_size = false;
+		}
+		
+		if (!$user_field_exists)
+			$wpdb->query("ALTER TABLE $this->table_stats ADD COLUMN user VARCHAR(255) DEFAULT '' AFTER ip");
+			
+		if (!$is_field_right_size){
+			$wpdb->query("ALTER TABLE $this->table_stats MODIFY referer VARCHAR(2048), MODIFY searchterms VARCHAR(2048), MODIFY resource VARCHAR(2048)");
+			$wpdb->query("ALTER TABLE $this->table_outbound MODIFY outbound_resource VARCHAR(2048)");
+			
+		}
+		return true;
 	}
-	// end _update_table
+	// end _update_stats_table
 
 	/**
 	 * Reads data from CSV file and copies them into countries table
@@ -601,7 +616,7 @@ class wp_slimstat{
 
 		parse_str($_url['query'], $query);
 		parse_str("daum=q&eniro=search_word&naver=query&images.google=q&google=q&yahoo=p&msn=q&bing=q&aol=query&aol=encquery&lycos=query&ask=q&altavista=q&netscape=query&cnn=query&about=terms&mamma=query&alltheweb=q&voila=rdata&virgilio=qs&live=q&baidu=wd&alice=qs&yandex=text&najdi=q&aol=q&mama=query&seznam=q&search=q&wp=szukaj&onet=qt&szukacz=q&yam=k&pchome=q&kvasir=q&sesam=q&ozu=q&terra=query&mynet=q&ekolay=q&rambler=words", $query_formats);
-		preg_match("/(daum|eniro|naver|images.google|google|yahoo|msn|bing|aol|aol|lycos|ask|altavista|netscape|cnn|about|mamma|alltheweb|voila|virgilio|live|baidu|alice|yandex|najdi|aol|mama|seznam|search|wp|onet|szukacz|yam|pchome|kvasir|sesam|ozu|terra|mynet|ekolay|rambler)./", $array_url['host'], $matches);
+		preg_match("/(daum|eniro|naver|images.google|google|yahoo|msn|bing|aol|aol|lycos|ask|altavista|netscape|cnn|about|mamma|alltheweb|voila|virgilio|live|baidu|alice|yandex|najdi|aol|mama|seznam|search|wp|onet|szukacz|yam|pchome|kvasir|sesam|ozu|terra|mynet|ekolay|rambler)./", $_url['host'], $matches);
 		if (isset($matches[1]) && isset($query[$query_formats[$matches[1]]])) return str_replace('\\', '', trim(urldecode($query[$query_formats[$matches[1]]])));
 
 		// We weren't lucky, but there's still hope

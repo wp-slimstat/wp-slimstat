@@ -3,7 +3,7 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
-Tested up to: 3.1.2
+Tested up to: 3.1.1
 Stable tag: 2.4
 
 == Description ==
@@ -15,7 +15,7 @@ to your eyes only. Features the famous one-click install-and-go.
 * Wordpress 2.9 or higher
 * [Proper Network Activation](http://wordpress.org/extend/plugins/proper-network-activation/), if you're planning to use it in a multiblog environment
 * PHP 5.1 or higher
-* MySQL 5.x or higher
+* MySQL 5.0.3 or higher
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
 
