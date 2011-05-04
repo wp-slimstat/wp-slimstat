@@ -63,7 +63,7 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 = 2.4 =
 * Added: allow admins to choose what to use for decimal point and thousands separator (Settings > Views)
 * Added: tooltips to get extra information about a request (hover over entries)
-* Added: commenters' tracking, aka Spy View,  and corresponding filter (thank you [Davide](http://www.davidetomasello.it/))
+* Added: commenters' tracking, aka Spy View,  and corresponding filter (thank you [Davide](http://www.davidetomasello.it))
 * Added: ignore hits by referer
 * Added: two new filters, `empty` and `not empty`
 * Updated: search keywords are now detected using Google Analytics' approach
