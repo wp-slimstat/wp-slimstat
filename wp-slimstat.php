@@ -14,11 +14,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME']){
   exit;
 }
 
-$table_structure = $wpdb->get_results("SHOW COLUMNS FROM wp_slim_stats", ARRAY_A);
-print_r($table_structure);
-
-exit;
-
 class wp_slimstat{
 
 	/**
