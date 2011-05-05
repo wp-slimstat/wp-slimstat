@@ -20,7 +20,7 @@ $dataXML .= "</data></map>";
 echo $dataXML;
 ?>
 
-<div class="postbox tall <?php echo $wp_locale->text_direction ?>" style="height:535px" >
+<div class="postbox tall <?php echo $wp_locale->text_direction ?>" style="height:535px;overflow-y:hidden" >
 	<h3><?php _e('World Map - Values represent the percentage of hits coming from that Country', 'wp-slimstat-view'); ?></h3>
 	<div class="container" style="height:505px">
 		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="765" height="570" id="worldmap">
