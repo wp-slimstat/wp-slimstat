@@ -2,14 +2,16 @@
 // Avoid direct access to this piece of code
 if (!defined('WP_UNINSTALL_PLUGIN')) exit;
 
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_countries");
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_browsers");
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_screenres");
+
 function uninstall(){
 	global $wpdb;
 
 	// Goodbye data...
-	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_stats`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_outbound`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_browsers`");
-	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_screenres`");
+	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_stats");
+	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_outbound");
 	$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->prefix}slim_visits`");
 
 	// Goodbye options...
@@ -60,5 +62,4 @@ if (function_exists('is_multisite') && is_multisite()) {
 else{
 	uninstall();
 }
-$wpdb->query("DROP TABLE IF EXISTS `{$wpdb->base_prefix}slim_countries`");
 ?>
