@@ -341,9 +341,12 @@ class wp_slimstat{
 			if (!empty($stat['resource']) && strpos($stat['resource'], $a_filter) === 0) return $_argument;
 		}
 
+		// Don't track logged-in users, if the corresponding option is enabled
+		if (get_option('slimstat_track_users', 'no') == 'no' &&  is_user_logged_in() && !empty($current_user->user_login)) return $_argument;
+
 		// Track commenters and logged-in users
 		if (isset($_COOKIE['comment_author_'. COOKIEHASH])) $stat['user'] = $_COOKIE['comment_author_'. COOKIEHASH];
-		if (get_option('slimstat_track_users', 'no') == 'yes' &&  is_user_logged_in() && !empty($current_user->user_login)) $stat['user'] = $current_user->user_login;
+		if (is_user_logged_in() && !empty($current_user->user_login)) $stat['user'] = $current_user->user_login;		
 
 		// Loads the class to determine the user agent
 		require 'browscap.php';
