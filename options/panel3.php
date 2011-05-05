@@ -10,6 +10,7 @@ if (isset($_POST['options'])){
 	$faulty_fields = '';
 	if (isset($_POST['options']['ignore_ip']) && !slimstat_update_option('ignore_ip', $_POST['options']['ignore_ip'], 'list')) $faulty_fields .= __('Ignore IPs','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ignore_resources']) && !slimstat_update_option('ignore_resources', $_POST['options']['ignore_resources'], 'list')) $faulty_fields .= __('Ignore resources','wp-slimstat-options').', ';
+	if (isset($_POST['options']['ignore_referers']) && !slimstat_update_option('ignore_referers', $_POST['options']['ignore_referers'], 'list')) $faulty_fields .= __('Ignore referers','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ignore_browsers']) && !slimstat_update_option('ignore_browsers', $_POST['options']['ignore_browsers'], 'list')) $faulty_fields .= __('Ignore browsers','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ignore_users']) && !slimstat_update_option('ignore_users', $_POST['options']['ignore_users'], 'list')) $faulty_fields .= __('Ignore users','wp-slimstat-options').', ';
 	

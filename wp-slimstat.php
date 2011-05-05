@@ -311,7 +311,7 @@ class wp_slimstat{
 		// Is this referer blacklisted?
 		$to_ignore = get_option('slimstat_ignore_referers', array());
 		foreach($to_ignore as $a_filter){
-			if (!empty($stat['referer']) && strpos($stat['domain'].$stat['referer'], $a_filter) === 0) return $_argument;
+			if (!empty($stat['referer']) && strpos($stat['domain'].$stat['referer'], $a_filter) !== false) return $_argument;
 		}
 
 		// We want to record both hits and searches (performed through the site search form)
