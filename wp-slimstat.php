@@ -691,14 +691,10 @@ class wp_slimstat{
 		$array_allowed_users = get_option('slimstat_can_admin', array());
 		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
 		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users)){
-			if ($use_separate_menu == 'yes')
-				add_submenu_page(WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', 'Options', 'Options', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
-			else{
-				if (current_user_can('manage_options'))
-					add_options_page('SlimStat', 'SlimStat', 'manage_options', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
-				else
-					add_menu_page('SlimStat Config', 'SlimStat Config', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
-			}
+			if ($use_separate_menu == 'yes' || !current_user_can('manage_options'))
+				add_menu_page('SlimStat Config', 'SlimStat Config', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
+			else
+				add_submenu_page('options-general.php', 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
 		}
 		return $_s;
 	}

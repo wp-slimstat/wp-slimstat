@@ -21,50 +21,50 @@ $wp_slimstat_view->limit_results = 50;
 if (empty($function_to_use)) $function_to_use = '';
 switch ($function_to_use){
 	case 'get_details_recent_visits':
-		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.language, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.platform', 't1.visit_id > 0', 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.language, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', 't1.visit_id > 0', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records('t1.visit_id > 0');
 		$add_to_box_title = __('Spy View', 'wp-slimstat-view');
 		break;
 	case 'get_recent_404':
-		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.platform', "t1.resource LIKE '[404]%'", 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', "t1.resource LIKE '[404]%'", 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.resource LIKE '[404]%'", "DISTINCT t1.resource");
 		$add_to_box_title = __('Recent 404 pages', 'wp-slimstat-view');
 		break;
 	case 'get_recent_bouncing_pages':
-		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.platform', '', 'browsers', 'HAVING COUNT(visit_id) = 1');
+		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', '', 'browsers', 'HAVING COUNT(visit_id) = 1');
 		$count_raw_data = $wp_slimstat_view->count_bouncing_pages();
 		$add_to_box_title = __('Recent bouncing pages', 'wp-slimstat-view');
 		break;
 	case 'get_recent_countries':
-		$results = $wp_slimstat_view->get_recent('t1.country', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.platform', "t1.country <> '' AND t1.country <> 'xx'", 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.country', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', "t1.country <> '' AND t1.country <> 'xx'", 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.country <> '' AND t1.country <> 'xx'", "DISTINCT t1.country");
 		$add_to_box_title = __( 'Recent Countries', 'wp-slimstat-view' );
 		break;
 	case 'get_recent_searchterms':
-		$results = $wp_slimstat_view->get_recent('t1.searchterms', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.platform', '', 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.searchterms', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.searchterms <> ''", "DISTINCT t1.searchterms");
 		$add_to_box_title = __('Recent Keywords', 'wp-slimstat-view');
 		break;
 	case 'get_top_resources':
-		$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.searchterms, t1.domain, t1.referer, tb.browser, tb.platform', '', 'browsers');
+		$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.searchterms, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.resource <> ''", 'DISTINCT t1.resource');
 		$add_to_box_title = __('Top Resources', 'wp-slimstat-view');
 		$orderby_column = 'count';
 		break;
 	case 'get_top_searchterms':
-		$results = $wp_slimstat_view->get_top('t1.searchterms', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.platform', '', 'browsers');
+		$results = $wp_slimstat_view->get_top('t1.searchterms', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.searchterms <> ''", 'DISTINCT t1.searchterms');
 		$add_to_box_title = __('Top Keywords', 'wp-slimstat-view');
 		$orderby_column = 'count';
 		break;
 	case 'get_top_traffic_sources':
-		$results = $wp_slimstat_view->get_top('t1.domain', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.searchterms, t1.referer, tb.browser, tb.platform', '', 'browsers');
+		$results = $wp_slimstat_view->get_top('t1.domain', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.searchterms, t1.referer, tb.browser, tb.version, tb.platform', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.domain <> ''", 'DISTINCT t1.domain');
 		$add_to_box_title = __('Top Traffic Sources', 'wp-slimstat-view');
 		$orderby_column = 'count';
 		break;
 	default:
-		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.platform', '', 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.resource <> ''", "DISTINCT t1.resource");
 		$add_to_box_title = __('Recent Contents', 'wp-slimstat-view');
 }
@@ -149,8 +149,9 @@ for($i=0;$i<$count_results;$i++){
 		$country = __('c-'.$results[$i]['country'],'countries-languages');
 		$language = __('l-'.$results[$i]['language'], 'countries-languages');
 		$platform = __($results[$i]['platform'],'countries-languages');
+		if ($results[$i]['version'] == 0) $results[$i]['version'] = '';
 
-		echo "<p class='header'>$ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
+		echo "<p class='header'>$ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>{$results[$i]['browser']} {$results[$i]['version']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
 		$visit_id = $results[$i]['visit_id'];
 	}
 	$last_element = ($i == $count_results-1)?' class="last"':'';
@@ -164,7 +165,7 @@ for($i=0;$i<$count_results;$i++){
 				echo __('Direct visit to','wp-slimstat-view');
 			if (empty($results[$i]['resource'])){
 				$searchterms = trim_value($results[$i]['searchterms'], 70);
-				$results[$i]['resource'] = __('Search results page for','wp-slimstat-view')."<strong>{$searchterms['text']}</strong>";
+				$results[$i]['resource'] = __('Search results page for','wp-slimstat-view')." <strong>{$searchterms['text']}</strong>";
 			}
 			echo ' '.substr($results[$i]['resource'], 0, 70);
 			break;
