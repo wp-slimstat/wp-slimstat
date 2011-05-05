@@ -35,11 +35,6 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 		
 		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
 		$wpdb->query("SET @@session.time_zone = '+00:00'");
-
-		// Date format
-		$this->date_format = get_option('date_format', 'd-m-Y');
-		$this->time_format = get_option('time_format', 'g:i a');
-		$this->date_time_format = $this->date_format.' '.$this->time_format;
 		
 		// Information about visits and pageviews
 		$this->current_pageviews = $this->count_records();
@@ -193,8 +188,9 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	 */
 	public function add_dashboard_widgets() {
 		global $current_user;
-		$array_allowed_users = get_option('slimstat_can_view', array());	
-		if (!empty($array_allowed_users) && !in_array($current_user->user_login, $array_allowed_users) ) return;
+		$array_allowed_users = get_option('slimstat_can_view', array());
+
+		if (!empty($array_allowed_users) && !in_array($current_user->user_login, $array_allowed_users)) return;
 
 		wp_add_dashboard_widget('slim_top_pages', 'WP SlimStat - '.__('Top pages for this month', 'wp-slimstat-dashboard'), array(&$this,'show_top_pages'));
 		wp_add_dashboard_widget('slim_spy_view', 'WP SlimStat - '.__('Spy View', 'wp-slimstat-dashboard'), array(&$this,'show_spy_view'));
