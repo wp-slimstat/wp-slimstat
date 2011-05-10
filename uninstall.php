@@ -2,6 +2,8 @@
 // Avoid direct access to this piece of code
 if (!defined('WP_UNINSTALL_PLUGIN')) exit;
 
+global $wpdb;
+
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_countries");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_browsers");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_screenres");
@@ -41,8 +43,6 @@ function uninstall(){
 	// Remove scheduled autopurge events
 	wp_clear_scheduled_hook('wp_slimstat_purge');
 }
-
-global $wpdb;
 
 if (function_exists('is_multisite') && is_multisite()) {
 	// check if it is a network installation - if so, run the uninstall function for each blog id
