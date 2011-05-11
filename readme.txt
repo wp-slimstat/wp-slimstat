@@ -7,9 +7,7 @@ Tested up to: 3.1.1
 Stable tag: 2.4
 
 == Description ==
-A simple but powerful real-time web analytics plugin for Wordpress. It doesn't require any subscription
-to external statistic services: all metrics are kept on your local server, private and accessible
-to your eyes only. Features the famous one-click install-and-go.
+A lightwight but powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
 
 ## Requirements
 * Wordpress 2.9 or higher (it may not work on multisite environments)
