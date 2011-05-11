@@ -23,7 +23,6 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 * Support for both InnoDB and MyISAM (autodetect)
 * Visit tracking (user sessions up to 30 minutes) as defined by Google Analytics
 * Spy view, screen resolution tracking and other browser-related parameters
-(http://deanjrobinson.com/projects/fluency-admin/)
 * The best country, browser and platform detection ever seen (thanks to [Browscap](http://code.google.com/p/phpbrowscap/) and [MaxMind](http://www.maxmind.com/) )
 * Real-time charts (thanks to [FusionCharts](http://www.fusioncharts.com/free/) free edition)
 * 10,000 hits take just 1.4 megabytes of DB space
