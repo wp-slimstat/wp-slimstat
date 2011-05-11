@@ -12,21 +12,20 @@ to external statistic services: all metrics are kept on your local server, priva
 to your eyes only. Features the famous one-click install-and-go.
 
 ## Requirements
-* Wordpress 2.9 or higher
-* [Proper Network Activation](http://wordpress.org/extend/plugins/proper-network-activation/), if you're planning to use it in a multiblog environment
+* Wordpress 2.9 or higher (it may not work on multisite environments)
 * PHP 5.1 or higher
 * MySQL 5.0.3 or higher
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
 
 ## Database usage
-WP SlimStat needs to create its own tables in order to maintain the complex information about visits, visitors, browsers and Countries. It creates 3 new tables for each blog, plus 3 shared tables (6 tables in total, for a single-user installation). Please keep this in mind before activating WP SlimStat on large networks of blogs. The alternative? Google Analytics, so that you don't have to carry the load of storing the information on your server at all. Even if this means losing most of the amazing features that make WP SlimStat unique.
+WP SlimStat needs to create its own tables in order to maintain the complex information about visits, visitors, browsers and Countries. It creates 3 new tables for each blog, plus 3 shared tables (6 tables in total, for a single-user installation). Please keep this in mind before activating WP SlimStat on large networks of blogs.
 
 ## Main Features
 * Support for both InnoDB and MyISAM (autodetect)
 * Visit tracking (user sessions up to 30 minutes) as defined by Google Analytics
 * Spy view, screen resolution tracking and other browser-related parameters
-* Compatible with [W3 Total Cache](http://lab.duechiacchiere.it/index.php?topic=45.0) and [Fluency Admin](http://deanjrobinson.com/projects/fluency-admin/)
+(http://deanjrobinson.com/projects/fluency-admin/)
 * The best country, browser and platform detection ever seen (thanks to [Browscap](http://code.google.com/p/phpbrowscap/) and [MaxMind](http://www.maxmind.com/) )
 * Real-time charts (thanks to [FusionCharts](http://www.fusioncharts.com/free/) free edition)
 * 10,000 hits take just 1.4 megabytes of DB space
@@ -39,7 +38,7 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 
 == Installation ==
 
-1. If you are upgrading from a previous version, deactivate it
+1. If you are upgrading from a previous version, *deactivate WP SlimStat*
 2. Upload all the files and folders to your server
 3. Activate it 
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
