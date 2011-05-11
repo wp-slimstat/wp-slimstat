@@ -1,7 +1,7 @@
 === WP SlimStat ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
-Tags: analytics, statistics, slimstat, shortstat, tracking, pathstat, reports, referers, hits, pageviews, world map, stats, maxmind, fusion charts
+Tags: analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
 Tested up to: 3.1.1
 Stable tag: 2.4
