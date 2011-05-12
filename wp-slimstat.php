@@ -13,7 +13,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME']){
   header('Location: /');
   exit;
 }
- 
+
 class wp_slimstat{
 
 	/**
