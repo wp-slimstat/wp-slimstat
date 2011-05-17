@@ -1,0 +1,119 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 0.9.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-05-14 15:37-0500\n"
+"PO-Revision-Date: 2010-10-29 22:24+0100\n"
+"Last-Translator: Noé Martínez <noah@iespana.es>\n"
+"Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Italian\n"
+"X-Poedit-Country: ITALY\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:61
+#: wp-slimstat-dashboard.php:81
+#: wp-slimstat-dashboard.php:149
+#: wp-slimstat-dashboard.php:169
+#: wp-slimstat-dashboard.php:192
+#: wp-slimstat-dashboard.php:218
+msgid "No data to display"
+msgstr "No hay datos actualmente"
+
+#: wp-slimstat-dashboard.php:86
+msgid "c-"
+msgstr "c-"
+
+#: wp-slimstat-dashboard.php:93
+#: wp-slimstat-dashboard.php:198
+#, php-format
+msgid "Open %s in a new window"
+msgstr "Abrir %s en una nueva ventana"
+
+#: wp-slimstat-dashboard.php:99
+msgid "Direct visit to"
+msgstr "Visitas directa a"
+
+#: wp-slimstat-dashboard.php:112
+msgid "Total Hits"
+msgstr "Total de Accesos"
+
+#: wp-slimstat-dashboard.php:113
+msgid "Data Size"
+msgstr "Tamaño de Datos"
+
+#: wp-slimstat-dashboard.php:114
+msgid "Tracking Active"
+msgstr "Seguimiento Activo"
+
+#: wp-slimstat-dashboard.php:115
+msgid "Auto purge"
+msgstr "AutoLimpiar Base de Datos"
+
+#: wp-slimstat-dashboard.php:130
+msgid "Pageviews"
+msgstr "Páginas Vistitadas"
+
+#: wp-slimstat-dashboard.php:131
+msgid "Unique IPs"
+msgstr "Direcciones IP Unicas"
+
+#: wp-slimstat-dashboard.php:132
+msgid "Avg Pageviews"
+msgstr "Promedio de Páginas Vistas"
+
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:134
+msgid "On"
+msgstr "En"
+
+#: wp-slimstat-dashboard.php:135
+msgid "Last Month"
+msgstr "Último Mes"
+
+#: wp-slimstat-dashboard.php:222
+msgid "Open referer in a new window"
+msgstr "Abrir referido en una nueva ventana"
+
+#: wp-slimstat-dashboard.php:259
+msgid "Top 5 pages"
+msgstr "5 Páginas más Vistas"
+
+#: wp-slimstat-dashboard.php:260
+msgid "Pathstats"
+msgstr "Detalle de Accesos"
+
+#: wp-slimstat-dashboard.php:261
+msgid "About"
+msgstr "Información"
+
+#: wp-slimstat-dashboard.php:262
+msgid "Summary of pageviews"
+msgstr "Sumario de Páginas Visitadas"
+
+#: wp-slimstat-dashboard.php:263
+msgid "User Agents"
+msgstr "Navegadores"
+
+#: wp-slimstat-dashboard.php:264
+msgid "Recent Keywords"
+msgstr "Palabras Recientes"
+
+#: wp-slimstat-dashboard.php:265
+msgid "Traffic Sources"
+msgstr "Origen del Tráfico"
+
+#: wp-slimstat-dashboard.php:266
+msgid "Recent Keywords &raquo; Pages"
+msgstr "Palabras Recientes &raquo; Página"
+
+#~ msgid "Analytics"
+#~ msgstr "Statistiche"
+
+#~ msgid "Options"
+#~ msgstr "Opzioni"
