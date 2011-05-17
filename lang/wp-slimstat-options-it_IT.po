@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-05-03 13:38-0500\n"
-"PO-Revision-Date: 2011-05-03 13:38-0500\n"
+"POT-Creation-Date: 2011-05-17 12:55-0500\n"
+"PO-Revision-Date: 2011-05-17 12:55-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -175,7 +175,7 @@ msgstr "Decidi se avere un menu separato per WP SlimStat nel pannello di amminis
 
 #: ../options/panel1.php:109
 #: ../options/panel2.php:46
-#: ../options/panel3.php:39
+#: ../options/panel3.php:40
 #: ../options/panel4.php:30
 msgid "Save Changes"
 msgstr "Salva le modifiche"
@@ -220,50 +220,54 @@ msgid "Ignore resources"
 msgstr "Ignora pagine"
 
 #: ../options/panel3.php:13
+msgid "Ignore referers"
+msgstr "Ignora pagine"
+
+#: ../options/panel3.php:14
 msgid "Ignore browsers"
 msgstr "Ignora browser"
 
-#: ../options/panel3.php:14
+#: ../options/panel3.php:15
 msgid "Ignore users"
 msgstr "Ignora utenti"
 
-#: ../options/panel3.php:20
+#: ../options/panel3.php:21
 msgid "IP addresses to ignore"
 msgstr "Indirizzi IP da ignorare"
 
-#: ../options/panel3.php:21
+#: ../options/panel3.php:22
 msgid "Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
 msgstr "Inserisci una lista di reti che non vuoi tracciare, separate da virgola. Ogni rete <strong>deve</strong> essere definita usando la <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>notazione CIDR</a> (ad esempio <em>192.168.1.1/24</em>). Se il formato non &egrave; corretto, WP SlimStat potrebbe non funzionare correttamente."
 
-#: ../options/panel3.php:24
+#: ../options/panel3.php:25
 msgid "Pages and posts to ignore"
 msgstr "Pagine e post da ignorare"
 
-#: ../options/panel3.php:25
+#: ../options/panel3.php:26
 msgid "Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1</em>, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>contains</strong> at least one of them."
 msgstr "Inserisci una lista di permalink che non vuoi tracciare, separati da virgola. Non &egrave; necessario indicare il dominio: <em>/about, ?p=1</em>, ecc. WP SlimStat ignorer&agrave; tutte le richieste il cui permalink <strong>inizia</strong> con uno di quelli indicati."
 
-#: ../options/panel3.php:28
+#: ../options/panel3.php:29
 msgid "User agents to ignore"
 msgstr "User agent (browser) da ignorare"
 
-#: ../options/panel3.php:29
+#: ../options/panel3.php:30
 msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these."
 msgstr "Inserisci una lista di browser che non vuoi tracciare, separati da virgola. Se lo desideri, puoi anche specificare la versione del browser aggiungendo uno slash dopo il nome (ad esempio <em>Firefox/3.6</em>). WP SlimStat ignorer&agrave; tutti i browser il cui nome <strong>inizia</strong> con uno dei valori specificati."
 
-#: ../options/panel3.php:32
+#: ../options/panel3.php:33
 msgid "Referers to ignore"
 msgstr "Link in ingresso da ignorare"
 
-#: ../options/panel3.php:33
+#: ../options/panel3.php:34
 msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. WP SlimStat will ignore all the referers that <strong>contain</strong> at least one of them."
 msgstr "Inserisci una lista di link in ingresso che non vuoi tracciare, separati da virgola: <code>miosito.com, /ignore-me-please</code>, ecc. WP SlimStat ignorer&agrave; tutte le richieste il cui link d'origine <strong>contiene</strong> uno di quelli indicati."
 
-#: ../options/panel3.php:36
+#: ../options/panel3.php:37
 msgid "Users to ignore"
 msgstr "Utenti da ignorare"
 
-#: ../options/panel3.php:37
+#: ../options/panel3.php:38
 msgid "Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored."
 msgstr "Inserisci una lista di nomi utente che non vuoi tracciare, separati da virgola. Ricorda che gli spazi <em>non</em> vengono ignorati."
 

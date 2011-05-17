@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-05-03 13:40-0500\n"
-"PO-Revision-Date: 2011-05-03 13:40-0500\n"
+"POT-Creation-Date: 2011-05-17 12:55-0500\n"
+"PO-Revision-Date: 2011-05-17 12:56-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -44,194 +44,202 @@ msgstr "Mappa"
 msgid "Custom Reports"
 msgstr "Rapporti personali"
 
-#: ../view/index.php:40
+#: ../view/index.php:43
 msgid "Current filters:"
 msgstr "Filtri attivi:"
 
-#: ../view/index.php:79
+#: ../view/index.php:53
+msgid "x"
+msgstr "x"
+
+#: ../view/index.php:89
 msgid "this period"
 msgstr "periodo"
 
-#: ../view/index.php:133
+#: ../view/index.php:143
 msgid "Show records where"
 msgstr "Mostra righe per cui"
 
-#: ../view/index.php:135
+#: ../view/index.php:145
 #: ../view/panel5.php:90
 msgid "Browser"
 msgstr "Browser"
 
-#: ../view/index.php:136
+#: ../view/index.php:146
 msgid "Browser version"
 msgstr "Versione Browser"
 
-#: ../view/index.php:137
+#: ../view/index.php:147
 msgid "CSS version"
 msgstr "Versione CSS"
 
-#: ../view/index.php:138
+#: ../view/index.php:148
 msgid "Country Code"
 msgstr "Codice Paese"
 
-#: ../view/index.php:139
+#: ../view/index.php:149
 #: ../view/panel5.php:93
 msgid "Domain"
 msgstr "Dominio"
 
-#: ../view/index.php:140
+#: ../view/index.php:150
 #: ../view/panel5.php:94
 msgid "IP"
 msgstr "IP"
 
-#: ../view/index.php:141
+#: ../view/index.php:151
 msgid "User"
 msgstr "Utente"
 
-#: ../view/index.php:142
+#: ../view/index.php:152
+msgid "Visit ID"
+msgstr "ID Visita"
+
+#: ../view/index.php:153
 #: ../view/panel5.php:95
 msgid "Keywords"
 msgstr "Parola chiave"
 
-#: ../view/index.php:143
+#: ../view/index.php:154
 msgid "Language Code"
 msgstr "Codice Lingua"
 
-#: ../view/index.php:144
+#: ../view/index.php:155
 #: ../view/panel5.php:97
 msgid "Operating System"
 msgstr "Sistema operativo"
 
-#: ../view/index.php:145
+#: ../view/index.php:156
 #: ../view/panel5.php:98
 msgid "Permalink"
 msgstr "Permalink"
 
-#: ../view/index.php:146
+#: ../view/index.php:157
 msgid "Referer"
 msgstr "Riferimento"
 
-#: ../view/index.php:147
+#: ../view/index.php:158
 #: ../view/panel5.php:100
 msgid "Screen Resolution"
 msgstr "Risoluzione schermo"
 
-#: ../view/index.php:148
+#: ../view/index.php:159
 msgid "Post Author"
 msgstr "Autore articolo"
 
-#: ../view/index.php:149
+#: ../view/index.php:160
 msgid "Post Category ID"
 msgstr "ID Categoria"
 
-#: ../view/index.php:152
+#: ../view/index.php:163
 msgid "Equals"
 msgstr "&Egrave; uguale a"
 
-#: ../view/index.php:153
+#: ../view/index.php:164
 msgid "Contains"
 msgstr "Contiene"
 
-#: ../view/index.php:154
+#: ../view/index.php:165
 msgid "Does not contain"
 msgstr "Non contiene"
 
-#: ../view/index.php:155
+#: ../view/index.php:166
 msgid "Starts with"
 msgstr "Inizia con"
 
-#: ../view/index.php:156
+#: ../view/index.php:167
 msgid "Ends with"
 msgstr "Finisce per"
 
-#: ../view/index.php:157
+#: ../view/index.php:168
+msgid "Sounds like"
+msgstr "Assomiglia a"
+
+#: ../view/index.php:169
 msgid "Is empty"
 msgstr "&Egrave; vuoto"
 
-#: ../view/index.php:158
+#: ../view/index.php:170
 msgid "Is not empty"
 msgstr "Non &egrave; vuoto"
 
-#: ../view/index.php:161
+#: ../view/index.php:173
 msgid "Filter by date"
 msgstr "Filtra per data"
 
-#: ../view/index.php:162
+#: ../view/index.php:174
 msgid "Day"
 msgstr "Giorno"
 
-#: ../view/index.php:172
+#: ../view/index.php:184
 msgid "Month"
 msgstr "Mese"
 
-#: ../view/index.php:173
+#: ../view/index.php:185
 msgid "January"
 msgstr "Gennaio"
 
-#: ../view/index.php:173
+#: ../view/index.php:185
 msgid "February"
 msgstr "Febbraio"
 
-#: ../view/index.php:173
+#: ../view/index.php:185
 msgid "March"
 msgstr "Marzo"
 
-#: ../view/index.php:174
+#: ../view/index.php:186
 msgid "April"
 msgstr "Aprile"
 
-#: ../view/index.php:174
+#: ../view/index.php:186
 msgid "May"
 msgstr "Maggio"
 
-#: ../view/index.php:174
+#: ../view/index.php:186
 msgid "June"
 msgstr "Giugno"
 
-#: ../view/index.php:175
+#: ../view/index.php:187
 msgid "July"
 msgstr "Luglio"
 
-#: ../view/index.php:175
+#: ../view/index.php:187
 msgid "August"
 msgstr "Agosto"
 
-#: ../view/index.php:175
+#: ../view/index.php:187
 msgid "September"
 msgstr "Settembre"
 
-#: ../view/index.php:176
+#: ../view/index.php:188
 msgid "October"
 msgstr "Ottobre"
 
-#: ../view/index.php:176
+#: ../view/index.php:188
 msgid "November"
 msgstr "Novembre"
 
-#: ../view/index.php:176
+#: ../view/index.php:188
 msgid "December"
 msgstr "Dicembre"
 
-#: ../view/index.php:179
+#: ../view/index.php:191
 msgid "Year"
 msgstr "Anno"
 
-#: ../view/index.php:186
+#: ../view/index.php:198
 #: ../view/panel1.php:35
 msgid "days"
 msgstr "giorni"
 
-#: ../view/index.php:187
+#: ../view/index.php:199
 #: ../view/panel5.php:110
 msgid "Go"
 msgstr "Vai"
 
-#: ../view/index.php:188
+#: ../view/index.php:200
 msgid "Reverse"
 msgstr "Inverti"
-
-#: ../view/index.php:197
-msgid "reset"
-msgstr "annulla"
 
 #: ../view/panel1.php:12
 msgid "Pageviews by day - Click on a day for hourly metrics"
@@ -243,7 +251,6 @@ msgstr "Accessi orari"
 
 #: ../view/panel1.php:16
 #: ../view/panel1.php:50
-#: ../view/wp-slimstat-view-2.3.php:581
 msgid "Pageviews"
 msgstr "Accessi"
 
@@ -252,9 +259,6 @@ msgstr "Accessi"
 #: ../view/panel2.php:16
 #: ../view/panel2.php:39
 #: ../view/panel3.php:16
-#: ../view/wp-slimstat-view-2.3.php:581
-#: ../view/wp-slimstat-view-2.3.php:869
-#: ../view/wp-slimstat-view-2.3.php:892
 msgid "Unique IPs"
 msgstr "IP unici"
 
@@ -292,7 +296,7 @@ msgstr "IP unici"
 #: ../view/panel4.php:173
 #: ../view/panel4.php:205
 #: ../view/panel4.php:228
-#: ../view/panel5.php:135
+#: ../view/panel5.php:137
 msgid "No data to display"
 msgstr "Nessun dato da visualizzare"
 
@@ -350,7 +354,6 @@ msgstr "Bot"
 
 #: ../view/panel1.php:53
 #: ../view/panel4.php:25
-#: ../view/wp-slimstat-view-2.3.php:483
 msgid "Avg Pageviews"
 msgstr "Media accessi"
 
@@ -416,7 +419,7 @@ msgstr "Ricerca per"
 #: ../view/panel3.php:81
 #: ../view/panel4.php:184
 #: ../view/panel4.php:239
-#: ../view/panel5.php:149
+#: ../view/panel5.php:151
 msgid "c-"
 msgstr "c-"
 
@@ -429,14 +432,14 @@ msgstr "c-"
 #: ../view/panel4.php:192
 #: ../view/panel4.php:213
 #: ../view/panel4.php:247
-#: ../view/panel5.php:157
-#: ../view/panel5.php:201
+#: ../view/panel5.php:160
+#: ../view/panel5.php:204
 #, php-format
 msgid "Open %s in a new window"
 msgstr "Apri %s in una nuova finestra"
 
 #: ../view/panel1.php:113
-#: ../view/panel5.php:164
+#: ../view/panel5.php:167
 msgid "Direct visit to"
 msgstr "Visita diretta a"
 
@@ -485,7 +488,6 @@ msgid "Human Visits by hour"
 msgstr "Visite umane per ogni ora"
 
 #: ../view/panel2.php:16
-#: ../view/wp-slimstat-view-2.3.php:892
 msgid "Visits"
 msgstr "Visite"
 
@@ -507,7 +509,6 @@ msgstr "Pagine per visita"
 
 #: ../view/panel2.php:44
 #: ../view/panel4.php:25
-#: ../view/wp-slimstat-view-2.3.php:483
 msgid "Longest visit"
 msgstr "Visita pi&ugrave; lunga"
 
@@ -521,7 +522,7 @@ msgstr "Lingue"
 
 #: ../view/panel2.php:56
 #: ../view/panel2.php:76
-#: ../view/panel5.php:150
+#: ../view/panel5.php:152
 msgid "l-"
 msgstr "l-"
 
@@ -572,7 +573,6 @@ msgid "Traffic Sources by hour"
 msgstr "Sorgenti di traffico orarie"
 
 #: ../view/panel3.php:16
-#: ../view/wp-slimstat-view-2.3.php:869
 msgid "Domains"
 msgstr "Domini"
 
@@ -725,25 +725,25 @@ msgstr "&laquo; Precedenti"
 msgid "Next &raquo;"
 msgstr "Successivi &raquo;"
 
-#: ../view/panel5.php:128
+#: ../view/panel5.php:130
 msgid "No records found"
 msgstr "Nessun record trovato"
 
-#: ../view/panel5.php:131
+#: ../view/panel5.php:133
 msgid "reverse"
 msgstr "inverti"
 
-#: ../view/panel5.php:132
+#: ../view/panel5.php:134
 #, php-format
 msgid "Records: %d - %d. Order by: %s %s (%s)"
 msgstr "Righe: %d - %d. Ordinamento: %s %s (%s)"
 
-#: ../view/panel5.php:167
+#: ../view/panel5.php:170
 msgid "Search results page for"
 msgstr "Pagina risultati per"
 
-#: ../view/panel5.php:172
-#: ../view/panel5.php:196
+#: ../view/panel5.php:175
+#: ../view/panel5.php:199
 msgid "Local search results page"
 msgstr "Ricerca locale"
 
@@ -759,9 +759,11 @@ msgstr "Rapporti personalizzati"
 msgid "Yes, you can! Create and view your personalized analytics for WP SlimStat. In order to do this, just write a new plugin that fetches the desired information from the database and then hook it to the action <code>wp_slimstat_custom_report</code>. A demo plugin comes with the package. It shows how to write custom reports in 5 minutes. You can find it inside the plugin&apos;s folder: <code>wp-slimstat-custom-report-demo.php</code>. For more information, visit my <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">support forum</a>."
 msgstr "Si, si pu&ograve;! Creare e vedere le proprie statistiche personalizzate per WP SlimStat. Per far questo, ti basta scrivere un nuovo plugin che preleva le informazioni desiderate dal database, per poi agganciarlo al codice <code>wp_slimstat_custom_report</code>. Un esempio &egrave; incluso con la distribuzione. Mostra come scrivere rapporti personalizzati in 5 minuti. Lo trovi nella cartella del plugin: <code>wp-slimstat-custom-report-demo.php</code>. Per ulteriori informazioni, visita il mio <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">forum di supporto</a>."
 
-#: ../view/wp-slimstat-view-2.3.php:501
-msgid "Not specified"
-msgstr "Non specificato"
+#~ msgid "reset"
+#~ msgstr "annulla"
+
+#~ msgid "Not specified"
+#~ msgstr "Non specificato"
 
 #~ msgid "Reverse order"
 #~ msgstr "Inverti ordine"
