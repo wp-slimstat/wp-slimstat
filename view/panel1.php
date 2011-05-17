@@ -81,7 +81,7 @@ for($i=0;$i<$count_results;$i++){
 	<div class="more"><a href="index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5&amp;ftu=get_details_recent_visits<?php echo $filters_query; ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 	<h3><?php _e('Spy View', 'wp-slimstat-view'); ?></h3>
 	<div class="container"><?php
-$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser', 't1.visit_id > 0', 'browsers');
+$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser', 't1.visit_id > 0', 'browsers', '', 't1.visit_id DESC, t1.id ASC');
 $count_results = count($results);
 $visit_id = 0;
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';

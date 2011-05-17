@@ -21,7 +21,7 @@ $wp_slimstat_view->limit_results = 50;
 if (empty($function_to_use)) $function_to_use = '';
 switch ($function_to_use){
 	case 'get_details_recent_visits':
-		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.language, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', 't1.visit_id > 0', 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.language, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform', 't1.visit_id > 0', 'browsers', '', 't1.visit_id DESC, t1.id ASC');
 		$count_raw_data = $wp_slimstat_view->count_records('t1.visit_id > 0');
 		$add_to_box_title = __('Spy View', 'wp-slimstat-view');
 		break;
@@ -111,18 +111,20 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 	</p>
 </form>
 
-<div class="postbox tall <?php echo $wp_locale->text_direction ?>">
-	<div class="more"><?php 
+<div class="postbox tall <?php echo $wp_locale->text_direction ?>"><?php 
 $count_results = count($results);
 $ending_point = min($count_raw_data, $wp_slimstat_view->starting_from+50);
+$previous_next = '';
 if ($wp_slimstat_view->starting_from > 0){
 	$new_starting = ($wp_slimstat_view->starting_from > 50)?$wp_slimstat_view->starting_from-50:0;
-	echo "<a href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
+	$previous_next = "<a href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
 }
 if ($ending_point < $count_raw_data && $count_results > 0){
 	$new_starting = $wp_slimstat_view->starting_from + 50;
-	echo "<a href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
-} ?></div>
+	$previous_next .= "<a href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
+} 
+if (!empty($previous_next)) echo "<div class='more'>$previous_next</div>";
+?>
 <h3><?php
 if ($count_results == 0)
 	_e('No records found', 'wp-slimstat-view');

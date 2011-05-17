@@ -28,20 +28,30 @@ $array_panels = array(
 // What panel to display
 $current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 
-
 // Import class definition
 require_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
 
 // Instantiate a new copy of the class
 $wp_slimstat_view = new wp_slimstat_view();
 
+$get_filter_to_use = !empty($_GET['ftu'])?"&ftu={$_GET['ftu']}":'';
+$get_orderby = !empty($_GET['orderby'])?"&ftu={$_GET['orderby']}":'';
+$get_direction = !empty($_GET['direction'])?"&ftu={$_GET['direction']}":'';
 $filters_list = $filters_query = '';
+
 if (!empty($wp_slimstat_view->filters_parsed)){
 	$filters_list = __('Current filters:','wp-slimstat-view').' ';
 	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
-		$filters_list .= "<code>".htmlspecialchars("{$a_filter_label} {$a_filter_details[1]} {$a_filter_value_no_slashes}")."</code>, ";
-		$filters_query .= "&amp;{$a_filter_label}={$a_filter_value_no_slashes}&amp;{$a_filter_label}-op={$a_filter_details[1]}";
+		$filters_list .= "<code>".htmlspecialchars("$a_filter_label {$a_filter_details[1]} $a_filter_value_no_slashes")."</code> [[$a_filter_label]], ";
+		$filters_query .= "&amp;$a_filter_label=$a_filter_value_no_slashes&amp;$a_filter_label-op={$a_filter_details[1]}";
+	}
+	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
+		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
+		$url_filter_removed = str_replace("&amp;$a_filter_label=$a_filter_value_no_slashes&amp;$a_filter_label-op={$a_filter_details[1]}", '', $filters_query);
+		$filters_list = str_replace("[[$a_filter_label]]", 
+				" <a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction$url_filter_removed'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/cancel.gif' alt='".__('x','wp-slimstat-view')."'/></a>",
+				$filters_list);
 	}
 }
 
@@ -139,6 +149,7 @@ jQuery(document).ready(function(){
 				<option value="domain"><?php _e('Domain','wp-slimstat-view') ?></option>
 				<option value="ip"><?php _e('IP','wp-slimstat-view') ?></option>
 				<option value="user"><?php _e('User','wp-slimstat-view') ?></option>
+				<option value="visit_id"><?php _e('Visit ID','wp-slimstat-view') ?></option>
 				<option value="searchterms"><?php _e('Keywords','wp-slimstat-view') ?></option>
 				<option value="language"><?php _e('Language Code','wp-slimstat-view') ?></option>
 				<option value="platform"><?php _e('Operating System','wp-slimstat-view') ?></option>
@@ -154,6 +165,7 @@ jQuery(document).ready(function(){
 				<option value="does not contain"><?php _e('Does not contain','wp-slimstat-view') ?></option>
 				<option value="starts with"><?php _e('Starts with','wp-slimstat-view') ?></option>
 				<option value="ends with"><?php _e('Ends with','wp-slimstat-view') ?></option>
+				<option value="sounds like"><?php _e('Sounds like','wp-slimstat-view') ?></option>
 				<option value="is empty"><?php _e('Is empty','wp-slimstat-view') ?></option>
 				<option value="is not empty"><?php _e('Is not empty','wp-slimstat-view') ?></option>
 			</select>
@@ -188,13 +200,7 @@ jQuery(document).ready(function(){
 			<?php if ($current_panel != 5): ?><a class="button-primary" href="index.php?page=wp-slimstat/view/index.php&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$filters_query; ?>"><?php _e('Reverse','wp-slimstat-view') ?></a><?php endif; ?></span>
 		</p>
 	</form>
-	
-	<p class="current-filters"><?php 
-		$get_filter_to_use = !empty($_GET['ftu'])?"&ftu={$_GET['ftu']}":'';
-		$get_orderby = !empty($_GET['orderby'])?"&ftu={$_GET['orderby']}":'';
-		$get_direction = !empty($_GET['direction'])?"&ftu={$_GET['direction']}":'';
-		
-		if (!empty($filters_list)) echo substr($filters_list, 0, -2)." <a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/cancel.gif' alt='".__('reset','wp-slimstat-view')."'/></a>"; ?></p>
-	
-	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
+<?php if (!empty($filters_list)): ?>
+	<p class="current-filters"><a href='index.php?page=wp-slimstat/view/index.php&slimpanel=<?php echo $current_panel ?>'><img src='<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/images/cancel.gif'/></a> <?php echo substr($filters_list, 0, -2) ?></p>
+<?php endif; if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
 </div>

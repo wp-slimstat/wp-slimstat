@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
-Tested up to: 3.1.2
-Stable tag: 2.4
+Tested up to: 3.2
+Stable tag: 2.4.1
 
 == Description ==
 A lightwight but powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
@@ -51,10 +51,18 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 == Changelog ==
 
 = Wishlist and planned features =
-* Antiflood: ignore requests after a given threshold is reached (hits in a given amount of time)
 * Check to see if username exists in regards to configuration permissions
 * Google URL's parser
 * Replacing Flash with JQuery to draw charts
+
+= 2.4.1 =
+* Maintenance release
+* Added: filter by visit_id (which is empty when the visitor is a bot or search engine spider)
+* Added: filter results where field SOUNDS LIKE query
+* Added: you can remove single filters now, not just the entire list (thank you Davide)
+* Updated: CSS is forward compatible with Wordpress 3.2
+* Fixed: an issue with permissions
+* Fixed: minor problems with the new DB structure, file permissions, CSS compatibility
 
 = 2.4 =
 * Added: allow admins to choose what to use for decimal point and thousands separator (Settings > Views)
@@ -88,19 +96,6 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 * Added a new code to counts all the visits not associated to any browser
 * Added: usernames in filters can now include spaces, underscores and dashes
 * Added: a new filter to restrict the access to WP Slimstat based on user capabilities
-
-= 2.2.3 =
-* Maintance release: apparently the new optimized SQL to purge the old records was misbehaving on some installations. Now it should be fixed.
-
-= 2.2.2 =
-* Support for network installations has been dropped from WP SlimStat's source code. WP developers haven't yet released a fix to address [some of the issues](http://core.trac.wordpress.org/ticket/14170) affecting the activation process. You may want to use [Proper Network Activation](http://wordpress.org/extend/plugins/proper-network-activation/) by Scribu, if you're planning to install my plugin for a network of blogs.
-* If you were using version 2.2.1 in a network of blogs (WP MultiSite), some of the tables created by my plugin are not needed anymore (redundant). Please contact me on my [support forum](http://lab.duechiacchiere.it/) for further information, each case needs to be addressed in a different way.
-* WP SlimStat now speaks Spanish (thank you Noe Martinez)
-* Fixed a bug that prevented filtering data using intervals when the last day of the interval was the current day
-* WP SlimStat Dashboard Widgets has been updated and some bugs have been fixed
-* Geolocation: updated the information in the CSV file included (November 2010). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
-* The interface has been updated to make it compatible with [Fluency Admin](http://deanjrobinson.com/projects/fluency-admin/). Please make sure to empty your cache and refresh the CSS to load the updated version
-* **Work in progress**: I'm starting to implement the DB optimizations suggested by [GoMySQL](http://lab.duechiacchiere.it/index.php?topic=74.0). You will be able to activate/deactivate these features in the Maintenance panel. For larger databases, you may need to run those SQL queries directly in phpMyAdmin to avoid timeouts and the like.
 
 == Languages ==
 

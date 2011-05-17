@@ -47,6 +47,7 @@ class wp_slimstat_view {
 			'domain' => 'string',
 			'ip' => 'string',
 			'user' => 'string',
+			'visit_id' => 'string',
 			'language' => 'string',
 			'platform' => 'string',
 			'resource' => 'string',
@@ -166,6 +167,9 @@ class wp_slimstat_view {
 							break;
 						case 'ends with':
 							$this->filters_sql_where .= " AND $a_filter_column LIKE '%{$a_filter_details[0]}'";
+							break;
+						case 'sounds like':
+							$this->filters_sql_where .= " AND $a_filter_column SOUNDS LIKE '%{$a_filter_details[0]}'";
 							break;
 						case 'is empty':
 							$this->filters_sql_where .= " AND $a_filter_column = ''";
@@ -341,7 +345,7 @@ class wp_slimstat_view {
 		return $wpdb->get_var($sql);
 	}
 
-	public function get_recent($_field = 'id', $_more_fields = '', $_custom_where = '', $_join_tables = '', $_having_clause = ''){
+	public function get_recent($_field = 'id', $_more_fields = '', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = ''){
 		global $wpdb;
 
 		// Include the appropriate tables in the query
@@ -353,6 +357,7 @@ class wp_slimstat_view {
 			$sql_from = " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
 
 		$fields = empty($_more_fields)?$_field:"$_field, $_more_fields";
+		$order_by = empty($_order_by)?"t1.dt $this->direction":"$_order_by";
 		$sql = "SELECT $fields, t1.dt
 				FROM (
 					SELECT $_field, MAX(t1.id) maxid
@@ -360,7 +365,7 @@ class wp_slimstat_view {
 					WHERE ".(empty($_custom_where)?"$_field <> '' AND  $_field <> '__l_s__'":$_custom_where)." $this->filters_sql_where $this->filters_date_sql_where
 					GROUP BY $_field $_having_clause
 				) AS ts1 INNER JOIN $this->table_stats t1 ON ts1.maxid = t1.id $sql_from
-				ORDER BY t1.dt $this->direction
+				ORDER BY $order_by
 				LIMIT $this->starting_from, $this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}

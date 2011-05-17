@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.4
+Version: 2.4.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -23,7 +23,7 @@ class wp_slimstat{
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.4';
+		$this->version = '2.4.1';
 
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix.'slim_stats';
