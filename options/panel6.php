@@ -34,7 +34,7 @@ if (isset($_POST['options'])){
 <p><?php _e("If you cannot donate money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!",'wp-slimstat-options') ?></p>
 
 <h3><?php _e("Vote and show your appreciation",'wp-slimstat-options') ?></h3>
-<p><?php _e('Tell other people if WP SlimStat works for you and how good it is. <a href="http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&amp;topic_id=14104">Rate it</a> on its Plugin Directory page.','wp-slimstat-options') ?></p>
+<p><?php _e('Tell other people if WP SlimStat works for you and how good it is. <a href="http://wordpress.org/extend/plugins/wp-slimstat/">Rate it</a> on its Plugin Directory page.','wp-slimstat-options') ?></p>
 
 <h3><?php _e("Show footer link",'wp-slimstat-options') ?></h3>
 <p><?php _e("If an unwanted link to WP SlimStat is showing up in your template's footer, select NO here below. Otherwise, I'd really appreciate if you could leave this enabled.",'wp-slimstat-options') ?></p>

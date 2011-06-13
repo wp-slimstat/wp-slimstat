@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-05-17 12:55-0500\n"
-"PO-Revision-Date: 2011-05-17 12:55-0500\n"
+"POT-Creation-Date: 2011-06-13 11:00-0500\n"
+"PO-Revision-Date: 2011-06-13 11:00-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -505,8 +505,8 @@ msgid "Vote and show your appreciation"
 msgstr "Vota e condividi"
 
 #: ../options/panel6.php:37
-msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&amp;topic_id=14104\">Rate it</a> on its Plugin Directory page."
-msgstr "Fai sapere agli altri se WP SlimStat funziona bene e quanto ti piace. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&amp;topic_id=14104\">Votalo</a> sulla pagina apposita di Wordpress."
+msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on its Plugin Directory page."
+msgstr "Fai sapere agli altri se WP SlimStat funziona bene e quanto ti piace. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Votalo</a> sulla pagina apposita di Wordpress."
 
 #: ../options/panel6.php:40
 msgid "If an unwanted link to WP SlimStat is showing up in your template's footer, select NO here below. Otherwise, I'd really appreciate if you could leave this enabled."
