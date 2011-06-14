@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-13 11:00-0500\n"
-"PO-Revision-Date: 2011-06-13 11:00-0500\n"
+"POT-Creation-Date: 2011-06-14 12:54-0500\n"
+"PO-Revision-Date: 2011-06-14 12:54-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -97,7 +97,7 @@ msgstr "Menu indipendente"
 #: ../options/panel1.php:78
 #: ../options/panel1.php:86
 #: ../options/panel1.php:102
-#: ../options/panel2.php:24
+#: ../options/panel2.php:26
 #: ../options/panel5.php:12
 #: ../options/panel5.php:22
 #: ../options/panel6.php:42
@@ -110,7 +110,7 @@ msgstr "Si"
 #: ../options/panel1.php:79
 #: ../options/panel1.php:87
 #: ../options/panel1.php:103
-#: ../options/panel2.php:25
+#: ../options/panel2.php:27
 #: ../options/panel5.php:13
 #: ../options/panel5.php:23
 #: ../options/panel6.php:43
@@ -138,6 +138,7 @@ msgid "Latency"
 msgstr "Latenza"
 
 #: ../options/panel1.php:71
+#: ../options/panel2.php:56
 msgid "seconds"
 msgstr "secondi"
 
@@ -174,42 +175,60 @@ msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat
 msgstr "Decidi se avere un menu separato per WP SlimStat nel pannello di amministrazione di Wordpress."
 
 #: ../options/panel1.php:109
-#: ../options/panel2.php:46
+#: ../options/panel2.php:62
 #: ../options/panel3.php:40
 #: ../options/panel4.php:30
 msgid "Save Changes"
 msgstr "Salva le modifiche"
 
 #: ../options/panel2.php:11
-#: ../options/panel2.php:22
+#: ../options/panel2.php:24
 msgid "Convert IP addresses"
 msgstr "Converti indirizzi IP"
 
 #: ../options/panel2.php:12
-#: ../options/panel2.php:30
+#: ../options/panel2.php:32
 msgid "Number format"
 msgstr "Formato dei numeri"
 
 #: ../options/panel2.php:13
-#: ../options/panel2.php:38
+#: ../options/panel2.php:40
 msgid "Limit results to"
 msgstr "Limita risultati a"
 
-#: ../options/panel2.php:26
+#: ../options/panel2.php:14
+#: ../options/panel2.php:47
+msgid "IP Lookup"
+msgstr "Localizza IP"
+
+#: ../options/panel2.php:15
+#: ../options/panel2.php:54
+msgid "Refresh every"
+msgstr "Aggiorna ogni"
+
+#: ../options/panel2.php:28
 msgid "View hostnames instead of IP addresses. It slows down the rendering of your metrics."
 msgstr "Mostra i nomi degli host invece degli indirizzi IP. Potrebbe rallentare la visualizzazione delle statistiche."
 
-#: ../options/panel2.php:34
+#: ../options/panel2.php:36
 msgid "Choose what number format you want to use, European or American."
 msgstr "Scegli il formato dei numeri dell'interfaccia (Europeo o Americano)"
 
-#: ../options/panel2.php:40
+#: ../options/panel2.php:42
 msgid "rows"
 msgstr "righe"
 
-#: ../options/panel2.php:41
+#: ../options/panel2.php:43
 msgid "Specify the number of results to return for each module. Please use a <strong>positive</strong> value."
 msgstr "Indica il numero di risultati da restituire per ogni modulo. Per favore, utilizza un valore <strong>positivo</strong>."
+
+#: ../options/panel2.php:50
+msgid "Customize the IP lookup service URL."
+msgstr "Personalizza la URL del servizio di geolocalizzazione degli IP."
+
+#: ../options/panel2.php:57
+msgid "Refresh the RAW DATA view every X seconds. Zero disables this feature."
+msgstr "Aggiorna automaticamente la vista DATI GREZZI ogni X secondi. Zero disabilita questa funzione."
 
 #: ../options/panel3.php:11
 msgid "Ignore IPs"
@@ -467,13 +486,16 @@ msgid "Delete Records"
 msgstr "Cancella tutto"
 
 #: ../options/panel5.php:195
-#: ../options/panel5.php:200
 msgid "Select this option if you want to empty your WP SlimStat database."
 msgstr "Seleziona questa opzione se vuoi completamente <strong>svuotare</strong> il DB di WP SlimStat."
 
 #: ../options/panel5.php:199
 msgid "Reset Countries"
 msgstr "Resetta Ip2Countries"
+
+#: ../options/panel5.php:200
+msgid "Select this option if you want to empty your geolocation table (useful when you want to load new data)."
+msgstr "Seleziona questa opzione se vuoi svuotare la tabella per la geolocalizzazione (utile quando intendi caricare le nuove definizioni)."
 
 #: ../options/panel5.php:206
 msgid "RESET STATS"

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
 Tested up to: 3.2
-Stable tag: 2.4.1
+Stable tag: 2.4.2
 
 == Description ==
 A lightwight but powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
@@ -53,7 +53,15 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 = Wishlist and planned features =
 * Check to see if username exists in regards to configuration permissions
 * Google URL's parser
-* Replacing Flash with JQuery to draw charts
+* Replace Flash with JQuery to draw charts
+
+= 2.4.2 =
+* I like to move it, move it :) Drag and drop WP Slimstat panels around, organize your stats to fit your style (thank you Davide)
+* Added: customize the IP lookup service URL, use your own if you like! (Go to Settings > Slim Stat > Views)
+* Added: auto refresh the RAW Data panel every X seconds (Go to Settings > Slim Stat > Views to enable this feature)
+* Updated: Spy view details now show search terms (thank you Sharon)
+* Fixed: a bug that affected downloads tracking (thank you [ronthai](http://wordpress.org/support/topic/plugin-wp-slimstat-some-questions-and-praise))
+* Geolocation: updated to June 2011, 148393 rows. Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 
 = 2.4.1 =
 * Maintenance release

@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.4.1
+Version: 2.4.2
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -23,7 +23,7 @@ class wp_slimstat{
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.4.1';
+		$this->version = '2.4.2';
 
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix.'slim_stats';
@@ -53,7 +53,7 @@ class wp_slimstat{
 		add_action('admin_menu', array(&$this, 'wp_slimstat_add_config_menu'));
 
 		// Add some custom stylesheets
-		add_action('admin_print_styles-wp-slimstat/view/index.php', array(&$this, 'wp_slimstat_stylesheet'));
+		add_action('admin_print_styles-wp-slimstat', array(&$this, 'wp_slimstat_stylesheet'));
 		add_action('admin_print_styles-wp-slimstat/options/index.php', array(&$this, 'wp_slimstat_stylesheet'));
 
 		// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
@@ -174,7 +174,7 @@ class wp_slimstat{
 		add_option('slimstat_enable_javascript', 'yes', '', 'no');
 
 		// Custom path to get to wp-slimstat-js.php
-		add_option('slimstat_custom_js_path', WP_PLUGIN_URL.'/wp-slimstat', '', 'no');
+		add_option('slimstat_custom_js_path', get_option('siteurl').'/wp-slimstat', '', 'no');
 
 		// Enable Browscap's autoupdate feature
 		add_option('slimstat_browscap_autoupdate', 'no', '', 'no');
@@ -202,6 +202,12 @@ class wp_slimstat{
 
 		// Activate or deactivate the conversion of ip addresses into hostnames
 		add_option('slimstat_rows_to_show', '20', '', 'no');
+		
+		// Customize the IP Lookup service (geolocation) URL
+		add_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips=', '', 'no');
+
+		// Refresh the RAW DATA view every X seconds
+		add_option('slimstat_refresh_interval', '0', '', 'no');
 
 		// List of IPs to ignore
 		add_option('slimstat_ignore_ip', array(), '', 'no');
@@ -472,22 +478,19 @@ class wp_slimstat{
 
 		$table_structure = $wpdb->get_results("SHOW COLUMNS FROM $this->table_stats", ARRAY_A);
 		$user_field_exists = false;
-		$is_field_right_size = true;
-		
+
 		// Let's see if the structure is up-to-date
 		foreach($table_structure as $a_row){
 			if ($a_row['Field'] == 'user') $user_field_exists = true;
-			if ($a_row['Field'] == 'referer' && $a_row['Type'] == 'varchar(255)') $is_field_right_size = false;
+			if ($a_row['Field'] == 'referer' && $a_row['Type'] == 'varchar(255)'){
+				$wpdb->query("ALTER TABLE $this->table_stats MODIFY referer VARCHAR(2048), MODIFY searchterms VARCHAR(2048), MODIFY resource VARCHAR(2048)");
+				$wpdb->query("ALTER TABLE $this->table_outbound MODIFY outbound_resource VARCHAR(2048)");
+			}
 		}
-		
+
 		if (!$user_field_exists)
 			$wpdb->query("ALTER TABLE $this->table_stats ADD COLUMN user VARCHAR(255) DEFAULT '' AFTER ip");
-			
-		if (!$is_field_right_size){
-			$wpdb->query("ALTER TABLE $this->table_stats MODIFY referer VARCHAR(2048), MODIFY searchterms VARCHAR(2048), MODIFY resource VARCHAR(2048)");
-			$wpdb->query("ALTER TABLE $this->table_outbound MODIFY outbound_resource VARCHAR(2048)");
-			
-		}
+
 		return true;
 	}
 	// end _update_stats_table
@@ -658,6 +661,8 @@ class wp_slimstat{
 		$stylesheeth_url = $this->plugin_url . '/wp-slimstat/css/view.css';
 		wp_register_style('wp-slimstat-view', $stylesheeth_url);
 		wp_enqueue_style('wp-slimstat-view');
+
+		wp_enqueue_script('dashboard');
 	}
 	// end wp_slimstat_stylesheet
 
@@ -677,10 +682,11 @@ class wp_slimstat{
 
 		if ((empty($array_allowed_users) && $minimum_capability == 'read') || in_array($current_user->user_login, $array_allowed_users) || current_user_can($minimum_capability)){
 			if ($use_separate_menu == 'yes')
-				add_menu_page('SlimStat', 'SlimStat', $minimum_capability, WP_PLUGIN_DIR.'/wp-slimstat/view/index.php', '', $this->plugin_url.'/wp-slimstat/images/wp-slimstat-menu.png');
+				$new_entry = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'), $this->plugin_url.'/wp-slimstat/images/wp-slimstat-menu.png');
 			else
-				add_submenu_page('index.php', 'SlimStat', 'SlimStat', $minimum_capability, WP_PLUGIN_DIR.'/wp-slimstat/view/index.php');
+				$new_entry = add_dashboard_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'));
 		}
+		add_action('load-'.$new_entry, array(&$this, 'wp_slimstat_stylesheet'));
 		return $_s;
 	}
 	// end wp_slimstat_add_view_menu
@@ -695,13 +701,21 @@ class wp_slimstat{
 		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
 		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users)){
 			if ($use_separate_menu == 'yes' || !current_user_can('manage_options'))
-				add_menu_page('SlimStat Config', 'SlimStat Config', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
+				add_submenu_page('wp-slimstat', 'Config', 'Config', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
 			else
 				add_submenu_page('options-general.php', 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
 		}
 		return $_s;
 	}
 	// end wp_slimstat_add_config_menu
+
+	/**
+	 * Includes the appropriate panel to view the stats
+	 */
+	public function wp_slimstat_include_view(){
+		include(WP_PLUGIN_DIR.'/wp-slimstat/view/index.php');
+	}
+	// end wp_slimstat_include_view
 
 	/**
 	 * Adds a javascript code to track users' screen resolution and other browser-based information
@@ -712,7 +726,7 @@ class wp_slimstat{
 			$intval_tid = intval($this->tid);
 			$hexval_tid = base_convert($intval_tid, 10, 16);
 			$my_secret_key = get_option('slimstat_secret', '123');
-			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', WP_PLUGIN_URL.'/wp-slimstat');
+			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', get_option('siteurl').'/wp-slimstat');
 			$enable_footer_link = get_option('slimstat_enable_footer_link', 'yes');
 
 			if ($enable_footer_link == 'yes') echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.$this->plugin_url.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height="15" alt="WP SlimStat"/></a></p>';
@@ -732,7 +746,7 @@ class wp_slimstat{
 	 */
 	public function wp_slimstat_contextual_help($contextual_help, $screen_id, $screen){
 		if (($screen_id == 'wp-slimstat/view/index') || ($screen_id == 'wp-slimstat/options/index')){
-			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
+			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 			$contextual_help = __('Need help on how to use WP SlimStat? Visit the official','wp-slimstat-view').' <a href="http://wordpress.org/tags/wp-slimstat?forum_id=10" target="_blank">'.__('support forum','wp-slimstat-view').'</a>. ';
 			$contextual_help .= __('Feeling generous?','wp-slimstat-view').' <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" target="_blank">'.__('Donate a few bucks!','wp-slimstat-view').'</a>';
 		}

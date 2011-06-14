@@ -80,6 +80,7 @@
  float:left;
 }
 .postbox div.container{
+ background-color:#fff;
  height:181px;
  min-width:255px;
  overflow-y:auto;

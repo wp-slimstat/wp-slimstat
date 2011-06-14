@@ -197,7 +197,7 @@ if (empty($check_index)): ?>
 
 	<tr class="tall">
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=5"><?php _e('Reset Countries','wp-slimstat-options'); ?></a></th>
-		<td><?php _e('Select this option if you want to empty your WP SlimStat database.','wp-slimstat-options') ?></td>
+		<td><?php _e('Select this option if you want to empty your geolocation table (useful when you want to load new data).','wp-slimstat-options') ?></td>
 	</tr>
 <?php 
 $check_column = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}slim_stats LIKE 'browser_id'");

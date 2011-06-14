@@ -30,6 +30,8 @@ function uninstall(){
 	delete_option('slimstat_convert_ip_addresses');
 	delete_option('slimstat_use_european_separators');
 	delete_option('slimstat_rows_to_show');
+	delete_option('slimstat_ip_lookup_service');
+	delete_option('slimstat_refresh_interval');
 	delete_option('slimstat_ignore_ip');
 	delete_option('slimstat_ignore_resources');
 	delete_option('slimstat_ignore_browsers');

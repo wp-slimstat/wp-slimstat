@@ -517,9 +517,9 @@ class wp_slimstat_view {
 					$abs_i = abs($i);
 					$padded_i = ($abs_i<10)?'0'.$abs_i:$abs_i;
 					$categories_xml .= "<category name='$abs_i'/>";
-					$current_period_xml_data1 .= !empty($result->current_data1[$padded_i])?$this->_format_value($result->current_data1[$padded_i], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D$abs_i%26month%3D{$this->current_date['m']}%26year%3D{$this->current_date['y']}$encoded_filters_query"):'<set/>';
+					$current_period_xml_data1 .= !empty($result->current_data1[$padded_i])?$this->_format_value($result->current_data1[$padded_i], "{$_SERVER['PHP_SELF']}%3Fpage=wp-slimstat%26slimpanel%3D$_current_panel%26day%3D$abs_i%26month%3D{$this->current_date['m']}%26year%3D{$this->current_date['y']}$encoded_filters_query"):'<set/>';
 					$current_period_xml_data2 .= !empty($result->current_data2[$padded_i])?$this->_format_value($result->current_data2[$padded_i]):'<set/>';
-					$previous_period_xml .= !empty($result->previous_data1[$padded_i])?$this->_format_value($result->previous_data1[$padded_i], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D$abs_i%26month%3D{$this->previous_month['m']}%26year%3D{$this->previous_month['y']}$encoded_filters_query"):'<set/>';
+					$previous_period_xml .= !empty($result->previous_data1[$padded_i])?$this->_format_value($result->previous_data1[$padded_i], "{$_SERVER['PHP_SELF']}%3Fpage=wp-slimstat%26slimpanel%3D$_current_panel%26day%3D$abs_i%26month%3D{$this->previous_month['m']}%26year%3D{$this->previous_month['y']}$encoded_filters_query"):'<set/>';
 				}
 			}
 		}
@@ -542,7 +542,7 @@ class wp_slimstat_view {
 				if (strtotime("$year_in_interval-$month_in_interval-$day_in_interval") > date_i18n('U')) break;
 
 				$categories_xml .= "<category name='$day_in_interval/$month_in_interval'/>";
-				$current_period_xml_data1 .= !empty($result->current_data1[$month_in_interval.$day_in_interval])?$this->_format_value($result->current_data1[$month_in_interval.$day_in_interval], "index.php%3Fpage=wp-slimstat/view/index.php%26slimpanel%3D$_current_panel%26day%3D{$day_in_interval}%26month%3D{$month_in_interval}%26year%3D{$year_in_interval}$encoded_filters_query"):'<set/>';
+				$current_period_xml_data1 .= !empty($result->current_data1[$month_in_interval.$day_in_interval])?$this->_format_value($result->current_data1[$month_in_interval.$day_in_interval], "{$_SERVER['PHP_SELF']}%3Fpage=wp-slimstat%26slimpanel%3D$_current_panel%26day%3D{$day_in_interval}%26month%3D{$month_in_interval}%26year%3D{$year_in_interval}$encoded_filters_query"):'<set/>';
 				$current_period_xml_data2 .= !empty($result->current_data2[$month_in_interval.$day_in_interval])?$this->_format_value($result->current_data2[$month_in_interval.$day_in_interval]):'<set/>';
 			}
 		}

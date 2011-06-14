@@ -125,8 +125,6 @@ function slimstat_track_download(event){
 	slimstat_info += "&go=n"; // Avoid server-side redirect
 	slimstat_url = slimstat_path+'/wp-slimstat-js.php'+slimstat_info;
 	
-	alert(slimstat_url);
-	
 	// This is necessary to give the browser some time to elaborate the request
 	setTimeout('document.location = "' + document_location + '"', 500);
 	

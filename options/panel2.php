@@ -11,6 +11,8 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['convert_ip_addresses']) && !slimstat_update_option('convert_ip_addresses', $_POST['options']['convert_ip_addresses'], 'yesno')) $faulty_fields .= __('Convert IP addresses','wp-slimstat-options').', ';
 	if (isset($_POST['options']['use_european_separators']) && !slimstat_update_option('use_european_separators', $_POST['options']['use_european_separators'], 'yesno')) $faulty_fields .= __('Number format','wp-slimstat-options').', ';
 	if (isset($_POST['options']['rows_to_show']) && !slimstat_update_option('rows_to_show', $_POST['options']['rows_to_show'], 'integer')) $faulty_fields .= __('Limit results to','wp-slimstat-options').', ';
+	if (isset($_POST['options']['ip_lookup_service']) && !slimstat_update_option('ip_lookup_service', $_POST['options']['ip_lookup_service'], 'text')) $faulty_fields .= __('IP Lookup','wp-slimstat-options').', ';
+	if (isset($_POST['options']['refresh_interval']) && !slimstat_update_option('refresh_interval', $_POST['options']['refresh_interval'], 'integer')) $faulty_fields .= __('Refresh every','wp-slimstat-options').', ';
 	
 	slimstat_error_message($faulty_fields);
 }
@@ -39,6 +41,20 @@ if (isset($_POST['options'])){
 		<td>
 			<input type="text" name="options[rows_to_show]" id="rows_to_show" value="<?php echo slimstat_get_option('rows_to_show','20'); ?>" size="4"> <?php _e('rows','wp-slimstat-options') ?>
 			<span class="description"><?php _e('Specify the number of results to return for each module. Please use a <strong>positive</strong> value.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><label for="ip_lookup_service"><?php _e('IP Lookup','wp-slimstat-options') ?></label></th>
+		<td>
+			<input type="text" name="options[ip_lookup_service]" id="ip_lookup_service" value="<?php echo slimstat_get_option('ip_lookup_service','http://www.maxmind.com/app/lookup_city?ips='); ?>" size="60">
+			<span class="description"><?php _e('Customize the IP lookup service URL.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><label for="refresh_interval"><?php _e('Refresh every','wp-slimstat-options') ?></label></th>
+		<td>
+			<input type="text" name="options[refresh_interval]" id="refresh_interval" value="<?php echo slimstat_get_option('refresh_interval','0'); ?>" size="4"> <?php _e('seconds','wp-slimstat-options') ?>
+			<span class="description"><?php _e('Refresh the RAW DATA view every X seconds. Zero disables this feature.','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 </tbody>

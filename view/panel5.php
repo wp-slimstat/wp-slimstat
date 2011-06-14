@@ -71,8 +71,8 @@ switch ($function_to_use){
 if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 ?>
 
-<form action="index.php" method="get">
-	<input type="hidden" name="page" value="wp-slimstat/view/index.php">
+<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="get">
+	<input type="hidden" name="page" value="wp-slimstat">
 	<input type="hidden" name="slimpanel" value="5">
 	<input type='hidden' name='ftu' value='<?php echo $function_to_use; ?>'>
 	
@@ -117,11 +117,11 @@ $ending_point = min($count_raw_data, $wp_slimstat_view->starting_from+50);
 $previous_next = '';
 if ($wp_slimstat_view->starting_from > 0){
 	$new_starting = ($wp_slimstat_view->starting_from > 50)?$wp_slimstat_view->starting_from-50:0;
-	$previous_next = "<a href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
+	$previous_next = "<a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
 }
 if ($ending_point < $count_raw_data && $count_results > 0){
 	$new_starting = $wp_slimstat_view->starting_from + 50;
-	$previous_next .= "<a href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
+	$previous_next .= "<a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
 } 
 if (!empty($previous_next)) echo "<div class='more'>$previous_next</div>";
 ?>
@@ -130,7 +130,7 @@ if ($count_results == 0)
 	_e('No records found', 'wp-slimstat-view');
 else {
 	$reverse_orderby = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
-	$invert_direction_link = "<a href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;starting=$wp_slimstat_view->starting_from&amp;orderby=$orderby_column&amp;direction=$reverse_orderby&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('reverse','wp-slimstat-view')."</a>";
+	$invert_direction_link = "<a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;starting=$wp_slimstat_view->starting_from&amp;orderby=$orderby_column&amp;direction=$reverse_orderby&amp;ftu=$function_to_use&amp;cmo=".intval($wp_slimstat_view->custom_data_filter)."'>".__('reverse','wp-slimstat-view')."</a>";
 	echo $add_to_box_title.'  '.sprintf(__('Records: %d - %d. Order by: %s %s (%s)', 'wp-slimstat-view'), $wp_slimstat_view->starting_from, $ending_point, $orderby_column, $wp_slimstat_view->direction, $invert_direction_link); 
 } ?></h3><div class="container"><?php
 				
@@ -144,10 +144,10 @@ for($i=0;$i<$count_results;$i++){
 	if ($visit_id != $results[$i]['visit_id'] || $results[$i]['visit_id'] == 0){
 		
 		if (empty($results[$i]['user']))
-			$ip_address = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
+			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
 		else
-			$ip_address = "<a class='activate-filter' href='index.php?page=wp-slimstat/view/index.php&amp;slimpanel=5$filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
-		$ip_address = "<a href='http://www.infosniper.net/index.php?ip_address={$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/whois.gif' /></a> $ip_address";
+			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
+		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/whois.gif' /></a> $ip_address";
 		$country = __('c-'.$results[$i]['country'],'countries-languages');
 		$language = __('l-'.$results[$i]['language'], 'countries-languages');
 		$platform = __($results[$i]['platform'],'countries-languages');
@@ -165,11 +165,12 @@ for($i=0;$i<$count_results;$i++){
 				echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> {$results[$i]['domain']} &raquo;";
 			else
 				echo __('Direct visit to','wp-slimstat-view');
-			if (empty($results[$i]['resource'])){
-				$searchterms = trim_value($results[$i]['searchterms'], 70);
-				$results[$i]['resource'] = __('Search results page for','wp-slimstat-view')." <strong>{$searchterms['text']}</strong>";
-			}
+			$searchterms = trim_value($results[$i]['searchterms'], 70);
+			if (empty($results[$i]['resource']))				
+				$results[$i]['resource'] = __('Local search page','wp-slimstat-view');
+
 			echo ' '.substr($results[$i]['resource'], 0, 70);
+			if (!empty($searchterms['text'])) echo " <span{$searchterms['tooltip']}><strong>{$searchterms['text']}</strong></span>";
 			break;
 		case 'get_recent_searchterms':
 			if (empty($results[$i]['resource'])) $results[$i]['resource'] = __('Local search results page','wp-slimstat-view');

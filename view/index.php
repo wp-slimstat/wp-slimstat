@@ -5,6 +5,18 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
+global $wpdb;
+
+// IP Lookup service URL
+$ip_lookup_url = get_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips=');
+
+// Retrieve the order of this tab's panels
+$user = wp_get_current_user();
+$option = (get_option('slimstat_use_separate_menu', 'no') == 'yes')?'meta-box-order_toplevel_page_wp-slimstat':'meta-box-order_dashboard_page_wp-slimstat';
+$panels_order = get_user_option($option, $user->ID);
+$panels_order = explode(',', $panels_order[0]);
+if(!$panels_order || count($panels_order)!=39) $panels_order = array('p1_01','p1_02','p1_03','p1_04','p1_05','p1_06','p1_07','p1_08','p1_09','p1_10','p2_01','p2_02','p2_03','p2_04','p2_05','p2_06','p2_07','p2_08','p2_09','p2_10','p2_11','p3_01','p3_02','p3_03','p3_04','p3_05','p3_06','p3_07','p3_08','p4_01','p4_02','p4_03','p4_04','p4_05','p4_06','p4_07','p4_08','p4_09','p4_10');
+
 // Load localization files
 load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 load_plugin_textdomain('countries-languages', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
@@ -50,7 +62,7 @@ if (!empty($wp_slimstat_view->filters_parsed)){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
 		$url_filter_removed = str_replace("&amp;$a_filter_label=$a_filter_value_no_slashes&amp;$a_filter_label-op={$a_filter_details[1]}", '', $filters_query);
 		$filters_list = str_replace("[[$a_filter_label]]", 
-				" <a href='index.php?page=wp-slimstat/view/index.php&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction$url_filter_removed'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/cancel.gif' alt='".__('x','wp-slimstat-view')."'/></a>",
+				" <a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction$url_filter_removed'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/cancel.gif' alt='".__('x','wp-slimstat-view')."'/></a>",
 				$filters_list);
 	}
 }
@@ -77,13 +89,12 @@ $function_to_use = '';
 if (!empty($_GET['ftu']) && in_array($_GET['ftu'], $allowed_functions)) $function_to_use = $_GET['ftu'];
 
 // Utilities
-function title_period($_title_string, $_extra_class = ' noscroll'){
-	global $wp_slimstat_view;
+function title_period($_title_string, $_wp_slimstat_view, $_extra_class = ' noscroll'){
 	
-	echo "<h3>$_title_string ";
-	if (empty($wp_slimstat_view->day_interval)){
-		if ($wp_slimstat_view->day_filter_active) echo $wp_slimstat_view->current_date['d'].'/';
-		echo $wp_slimstat_view->current_date['m'].'/'.$wp_slimstat_view->current_date['y']; 
+	echo "<h3 class='hndle'>$_title_string ";
+	if (empty($_wp_slimstat_view->day_interval)){
+		if ($_wp_slimstat_view->day_filter_active) echo $_wp_slimstat_view->current_date['d'].'/';
+		echo $_wp_slimstat_view->current_date['m'].'/'.$_wp_slimstat_view->current_date['y']; 
 	}
 	else
 		_e('this period', 'wp-slimstat-view');
@@ -104,6 +115,7 @@ function trim_value($_string = '', $_length = 32){
 ?>
 
 <script type="text/javascript">
+<?php $refresh_interval = get_option('slimstat_refresh_interval', '0'); if (($refresh_interval > 0) && ($current_panel == 5)) echo "window.setTimeout('location.reload()', $refresh_interval*1000);"; ?>
 jQuery(document).ready(function(){
  jQuery(".slimstat-tooltips p").hover(
 	function(){
@@ -125,13 +137,13 @@ jQuery(document).ready(function(){
 		foreach($array_panels as $a_panel_id => $a_panel_name){
 			echo '<a class="nav-tab nav-tab';
 			echo ($current_panel == $a_panel_id+1)?'-active':'-inactive';
-			echo '" href="index.php?page=wp-slimstat/view/index.php&slimpanel='.($a_panel_id+1).$filters_query.'&direction='.$wp_slimstat_view->direction.'">'.$a_panel_name.'</a>';
+			echo '" href="'.$_SERVER['PHP_SELF'].'?page=wp-slimstat&slimpanel='.($a_panel_id+1).$filters_query.'&direction='.$wp_slimstat_view->direction.'">'.$a_panel_name.'</a>';
 		}
 		?>
 	</h2>
 	
-	<form action="index.php" method="get" name="setslimstatfilters">
-		<input type="hidden" name="page" value="wp-slimstat/view/index.php">
+	<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="get" name="setslimstatfilters">
+		<input type="hidden" name="page" value="wp-slimstat">
 		<input type="hidden" name="slimpanel" value="<?php echo !empty($_GET['slimpanel'])?intval($_GET['slimpanel']):1; ?>">
 		<?php if ($current_panel == 5) echo "<input type='hidden' name='ftu' value='$function_to_use'>"; ?>
 		<?php // Keep other filters persistent
@@ -197,10 +209,15 @@ jQuery(document).ready(function(){
 			</select>
 			+ <input type="text" name="interval" value="" size="3" title="<?php _e('days', 'wp-slimstat-view') ?>">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 			<span class="<?php echo $wp_locale->text_direction ?>"><input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary">
-			<?php if ($current_panel != 5): ?><a class="button-primary" href="index.php?page=wp-slimstat/view/index.php&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$filters_query; ?>"><?php _e('Reverse','wp-slimstat-view') ?></a><?php endif; ?></span>
+			<?php if ($current_panel != 5): ?><a class="button-primary" href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$filters_query; ?>"><?php _e('Reverse','wp-slimstat-view') ?></a><?php endif; ?></span>
 		</p>
 	</form>
 <?php if (!empty($filters_list)): ?>
-	<p class="current-filters"><a href='index.php?page=wp-slimstat/view/index.php&slimpanel=<?php echo $current_panel ?>'><img src='<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/images/cancel.gif'/></a> <?php echo substr($filters_list, 0, -2) ?></p>
-<?php endif; if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
+	<p class="current-filters"><?php if(count($wp_slimstat_view->filters_parsed) > 1): ?><a href='<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>'><img src='<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/images/cancel.gif'/></a> <?php endif; echo substr($filters_list, 0, -2) ?></p>
+<?php endif; $meta_box_order_nonce = wp_create_nonce('meta-box-order'); ?>
+<div class="meta-box-sortables">
+<form style="display:none" method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo $meta_box_order_nonce ?>" /></form>
+<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php")) require_once(WP_PLUGIN_DIR."/wp-slimstat/view/panel$current_panel.php"); ?>
+
+</div>
 </div>
