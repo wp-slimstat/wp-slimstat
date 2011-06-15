@@ -250,17 +250,18 @@ for($i=0;$i<$count_results;$i++){
 			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
 		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/whois.gif' /></a> $ip_address";
 		$country = __('c-'.$results[$i]['country'],'countries-languages');
+		$browser_version = ($results[$i]['version']!='0')?$results[$i]['version']:'';
 
-		echo "<p class='header'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
+		echo "<p class='header'>$ip_address <span>{$results[$i]['browser']} $browser_version</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
 		$outbound_id = $results[$i]['outbound_id'];
 	}
 	$last_element = ($i == $count_results-1)?' class="last"':'';
-	$resource = trim_value($results[$i]['outbound_resource'], 35);
-	$outbound_resource = trim_value($results[$i]['outbound_domain'], 32);
+	$outbound_resource = trim_value($results[$i]['outbound_resource'], 45);
+	$outbound_domain = trim_value($results[$i]['outbound_domain'], 32);
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['outbound_resource']);
-	echo "<p$last_element title='{$results[$i]['domain']}{$results[$i]['referer']}'>";
-	echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> <span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>";
-	echo " <span>{$outbound_resource['text']}</span></p>";
+	echo "<p$last_element>";
+	echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> <span class='element-title'{$outbound_resource['tooltip']}>{$outbound_resource['text']}</span>";
+	echo " <span>{$outbound_domain['text']}</span></p>";
 } ?>
 	</div>
 </div><?php	break;

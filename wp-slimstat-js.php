@@ -118,10 +118,8 @@ if ( empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['i
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
 if (!empty($_GET['obr'])){
 	$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string( strip_tags($_GET['obd']) ):'';
-	if ( strlen( $_GET['obr'] ) > 0 && substr( $_GET['obr'], 0, 1 ) != '/' )
-		$stat['outbound_resource'] = '/'.$_GET['obr'];
-	else
-		$stat['outbound_resource'] = '';
+	if (!empty($_GET['obr']))
+		$stat['outbound_resource'] = ((substr($_GET['obr'], 0, 1) != '/')?'/':'').$_GET['obr'];
 	$stat['outbound_resource'] = mysql_real_escape_string( strip_tags($stat['outbound_resource']) );
 	$stat['type'] = isset($_GET['ty'])?intval($_GET['ty']):1; // type=1 stands for download
 	

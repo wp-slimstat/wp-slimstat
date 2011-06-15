@@ -373,14 +373,10 @@ class wp_slimstat_view {
 	public function get_recent_outbound($_type = 0){
 		global $wpdb;
 
-		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, t1.ip, t1.user, t1.resource, t1.referer, t1.country, tob.dt
-				FROM (
-					SELECT tob.outbound_resource, MAX(tob.outbound_id) outbound_id
-					FROM $this->table_outbound tob INNER JOIN $this->table_stats t1 ON t1.id = tob.id {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
-					WHERE type = $_type $this->filters_sql_where $this->filters_date_sql_where
-					GROUP BY tob.outbound_resource
-				) AS ts1 INNER JOIN $this->table_outbound tob ON ts1.outbound_id = tob.outbound_id INNER JOIN $this->table_stats t1 ON tob.id = t1.id
-				ORDER BY t1.dt $this->direction
+		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, t1.ip, t1.user, t1.resource, t1.referer, t1.country, tb.browser, tb.version, tob.dt
+				FROM $this->table_outbound tob INNER JOIN $this->table_stats t1 ON tob.id = t1.id INNER JOIN $this->table_browsers tb on t1.browser_id = tb.browser_id
+				WHERE type = $_type $this->filters_sql_where $this->filters_date_sql_where
+				ORDER BY tob.dt $this->direction
 				LIMIT $this->starting_from,$this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
