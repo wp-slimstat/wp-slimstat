@@ -51,6 +51,11 @@
 .current-filters code{
  padding:2px 3px;
 }
+.sortable-placeholder{
+ float:left;
+ margin-right:5px;
+ width:auto;
+}
 .postbox{
  background-color:#fff;
  float:left;
