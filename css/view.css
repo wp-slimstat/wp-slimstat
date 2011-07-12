@@ -136,11 +136,37 @@
  text-align:center;
 }
 .postbox p span.widecolumn{
- min-width:100px;
+ min-width:85px;
  text-align:center;
 }
-.postbox.tall  span{
+.postbox.tall span{
  margin:0 15px;
+}
+.postbox.tall p a.first-column{
+ display:inline-block;
+ min-width:330px;
+}
+.postbox .highlight-keywords{
+ color:#900;
+}
+.postbox .highlight-user{
+ font-weight:bold;
+}
+.postbox p.is-search-engine{
+ background-color:#e4e4ff;
+}
+.postbox p.is-direct{
+ background-color:#d7ffd7;
+}
+.postbox p.is-known-user{
+ background-color:#ffc;
+}
+span.little-color-box{
+ border:1px solid #ccc;
+ display:block;
+ float:left;
+ margin-right:5px;
+ padding:2px 5px;
 }
 .fusion-credits{
  clear:both;

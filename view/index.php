@@ -100,7 +100,7 @@ function title_period($_title_string, $_wp_slimstat_view, $_extra_class = ' nosc
 		_e('this period', 'wp-slimstat-view');
 	echo "</h3><div class='container$_extra_class'>";
 }
-function trim_value($_string = '', $_length = 32){
+function trim_value($_string = '', $_length = 40){
 	if (strlen($_string) > $_length){
 		$result['text'] = substr($_string, 0, $_length).'...';
 		$result['tooltip'] = " title='".htmlspecialchars($_string, ENT_QUOTES)."'";

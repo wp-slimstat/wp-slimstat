@@ -137,28 +137,39 @@ else {
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 
 $visit_id = -1;
+$convert_ip_addresses = get_option('slimstat_convert_ip_addresses');
 for($i=0;$i<$count_results;$i++){
 	$results[$i]['ip'] = long2ip($results[$i]['ip']);
+	if (get_option('slimstat_convert_ip_addresses', 'no') == 'yes'){
+		$host_by_ip = gethostbyaddr( $results[$i]['ip'] );
+		$host_by_ip = trim_value($host_by_ip, 50);
+		$host_by_ip['text'] .= ($host_by_ip['text'] != $results[$i]['ip'])?" ({$results[$i]['ip']})":'';
+	}
+	else{
+		$host_by_ip = array('text' => $results[$i]['ip'], 'tooltip' => '');
+	}
 	$results[$i]['dt'] = date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']);
 
 	if ($visit_id != $results[$i]['visit_id'] || $results[$i]['visit_id'] == 0){
-		
+		$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(!empty($results[$i]['visit_id'])?' is-direct':'');
 		if (empty($results[$i]['user']))
-			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
-		else
-			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
+			$ip_address = "<a{$host_by_ip['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$host_by_ip['text']}</a>";
+		else{
+			$ip_address = "<a{$host_by_ip['tooltip']} class='activate-filter highlight-user' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a> ({$results[$i]['ip']})";
+			$highlight_row = ' is-known-user';
+		}
 		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/whois.gif' /></a> $ip_address";
-		$country = __('c-'.$results[$i]['country'],'countries-languages');
-		$language = __('l-'.$results[$i]['language'], 'countries-languages');
-		$platform = __($results[$i]['platform'],'countries-languages');
+		$country = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;country-op=equal&amp;country={$results[$i]['country']}'>".__('c-'.$results[$i]['country'],'countries-languages')."</a>";
+		$language = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;language-op=equal&amp;language={$results[$i]['language']}'>".__('l-'.$results[$i]['language'], 'countries-languages')."</a>";
+		$platform = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;platform-op=equal&amp;platform={$results[$i]['platform']}'>".__($results[$i]['platform'],'countries-languages')."</a>";
+		$browser = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$filters_query&amp;browser-op=equal&amp;browser={$results[$i]['browser']}'>{$results[$i]['browser']}</a>";
 		if ($results[$i]['version'] == 0) $results[$i]['version'] = '';
 
-		echo "<p class='header'>$ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>{$results[$i]['browser']} {$results[$i]['version']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
+		echo "<p class='header$highlight_row'>$ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>$browser {$results[$i]['version']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
 		$visit_id = $results[$i]['visit_id'];
 	}
-	$last_element = ($i == $count_results-1)?' class="last"':'';
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['referer']);
-	echo "<p$last_element>";
+	echo "<p>";
 	switch ($function_to_use){
 		case 'get_details_recent_visits':
 			if (!empty($results[$i]['domain']))
@@ -170,7 +181,7 @@ for($i=0;$i<$count_results;$i++){
 				$results[$i]['resource'] = __('Local search page','wp-slimstat-view');
 
 			echo ' '.substr($results[$i]['resource'], 0, 70);
-			if (!empty($searchterms['text'])) echo " <span{$searchterms['tooltip']}><strong>{$searchterms['text']}</strong></span>";
+			if (!empty($searchterms['text'])) echo " <span{$searchterms['tooltip']} class='highlight-term'>{$searchterms['text']}</span>";
 			break;
 		case 'get_recent_searchterms':
 			if (empty($results[$i]['resource'])) $results[$i]['resource'] = __('Local search results page','wp-slimstat-view');
@@ -204,9 +215,15 @@ for($i=0;$i<$count_results;$i++){
 			$referer = trim_value($results[$i]['referer'], 200);
 			$url_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['domain'].$referer['text']);
 			$domain_span = !empty($results[$i]['domain'])?"<span><a target='_blank' title='$url_title' href='http://{$results[$i]['domain']}{$referer['text']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> {$domain['text']}</span>":'';
-			echo "<span class='element-title'{$resource['tooltip']}>{$resource['text']}</span><span><strong>{$searchterms['text']}</strong></span>$domain_span";
+			echo "<span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>$domain_span<span class='highlight-term'>{$searchterms['text']}</span>";
 	}
 	echo '</p>';
 } ?>
 	</div>
 </div>
+<p style="clear:left"><span style="float:left;padding:3px 5px 0"><?php _e('Color codes:','wp-slimstat-view') ?></span>
+	<span class="little-color-box" style="background-color:#e4e4ff"><?php _e('Coming from a Search Engine','wp-slimstat-view') ?></span>
+	<span class="little-color-box" style="background-color:#ffc"><?php _e('Known Users','wp-slimstat-view') ?></span>
+	<span class="little-color-box" style="background-color:#d7ffd7"><?php _e('Other Humans','wp-slimstat-view') ?></span>
+	<span class="little-color-box" style="background-color:#eee"><?php _e('Bots or Crawlers','wp-slimstat-view') ?></span>
+</p>

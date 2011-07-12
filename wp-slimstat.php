@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.4.2
+Version: 2.4.3
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -23,7 +23,7 @@ class wp_slimstat{
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.4.2';
+		$this->version = '2.4.3';
 
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix.'slim_stats';
@@ -41,38 +41,68 @@ class wp_slimstat{
 		// Let's keep track of transaction IDs
 		$this->tid = 0;
 
-		// Define when we want to run the tracking: on init
-		add_action('wp', array(&$this, 'slimtrack'), 5);
+		if (!is_admin()){
+			// Define when we want to run the tracking: on init
+			add_action('wp', array(&$this, 'slimtrack'), 5);
 
-		// Initialization routine should be executed on activation
-		register_activation_hook(__FILE__, array(&$this, 'activate'));
-		register_deactivation_hook(__FILE__, array(&$this, 'deactivate'));
-
-		// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
-		add_action('admin_menu', array(&$this, 'wp_slimstat_add_view_menu'));
-		add_action('admin_menu', array(&$this, 'wp_slimstat_add_config_menu'));
-
-		// Add some custom stylesheets
-		add_action('admin_print_styles-wp-slimstat', array(&$this, 'wp_slimstat_stylesheet'));
-		add_action('admin_print_styles-wp-slimstat/options/index.php', array(&$this, 'wp_slimstat_stylesheet'));
-
-		// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
-		if (get_option('slimstat_enable_javascript', 'no') == 'yes'){
-			add_action('wp_footer', array(&$this,'wp_slimstat_javascript'), 10);
+			// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
+			if (get_option('slimstat_enable_javascript', 'no') == 'yes'){
+				add_action('wp_footer', array(&$this,'wp_slimstat_javascript'), 10);
+			}
 		}
+		else{
+			// Initialization routine should be executed on activation
+			register_activation_hook(__FILE__, array(&$this, 'activate'));
+			register_deactivation_hook(__FILE__, array(&$this, 'deactivate'));
 
+			// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
+			add_action('admin_menu', array(&$this, 'wp_slimstat_add_view_menu'));
+			add_action('admin_menu', array(&$this, 'wp_slimstat_add_config_menu'));
+
+			// Add some custom stylesheets
+			add_action('admin_print_styles-wp-slimstat', array(&$this, 'wp_slimstat_stylesheet'));
+			add_action('admin_print_styles-wp-slimstat/options/index.php', array(&$this, 'wp_slimstat_stylesheet'));
+
+			// Contextual help
+			add_action('contextual_help', array(&$this, 'wp_slimstat_contextual_help'), 10, 3);
+		}
 		// Create a hook to use with the daily cron job
-		add_action('wp_slimstat_purge', array(&$this, 'wp_slimstat_purge'));
+		add_action('wp_slimstat_purge', array(&$this, 'wp_slimstat_purge'));	
 
-		// Contextual help
-		add_action('contextual_help', array(&$this, 'wp_slimstat_contextual_help'), 10, 3);
+		// Add a link to the admin bar
+		add_action('admin_bar_menu', array(&$this, "wp_slimstat_adminbar"), 100);
 	}
 	// end __construct
 
 	/**
+	 * Support for WP MU network activations (experimental)
+	 */
+	 public function activate(){
+		global $wpdb;
+		
+		if (function_exists('is_multisite') && is_multisite()){
+			$blogids = $wpdb->get_col($wpdb->prepare("
+				SELECT blog_id
+				FROM $wpdb->blogs
+				WHERE site_id = %d
+				AND deleted = 0
+				AND spam = 0", $wpdb->siteid));
+
+			foreach ($blogids as $blog_id) {
+				switch_to_blog($blog_id);
+				$this->_activate();
+			}
+			restore_current_blog();
+		}
+		else{
+			$this->_activate();
+		}
+	 }
+
+	/**
 	 * Creates and populates tables, if they aren't already there.
 	 */
-	public function activate() {
+	private function _activate(){
 		global $wpdb;
 
 		// Is InnoDB available?
@@ -253,7 +283,7 @@ class wp_slimstat{
 	 */
 	public function deactivate(){
 		// Unschedule the autopurge hook
-		if (wp_next_scheduled('wp_slimstat_purge') > 0) wp_clear_scheduled_hook('wp_slimstat_purge');
+		wp_clear_scheduled_hook('wp_slimstat_purge');
 	}
 	// end deactivate
 
@@ -457,13 +487,13 @@ class wp_slimstat{
 	private function _create_table($_sql = '', $_tablename = '', $_fail_on_exists = false){
 	    global $wpdb;
 		if ($_fail_on_exists)
-			foreach ($wpdb->get_col("SHOW TABLES", 0) as $a_table)
+			foreach ($wpdb->get_col("SHOW TABLES LIKE '$_tablename'", 0) as $a_table)
 				if ($a_table == $_tablename) return false;
 
 		$wpdb->query($_sql);
 
 		// Let's make sure this table was actually created
-		foreach ($wpdb->get_col("SHOW TABLES", 0) as $a_table)
+		foreach ($wpdb->get_col("SHOW TABLES LIKE '$_tablename'", 0) as $a_table)
 			if ($a_table == $_tablename) return true;
 
 		return false;
@@ -647,10 +677,10 @@ class wp_slimstat{
 		if (($autopurge_interval = intval(get_option('slimstat_auto_purge', 0))) <= 0) return;
 
 		// Delete old entries
-		$wpdb->query("DELETE ts, tv FROM `$this->table_stats` ts, `$this->table_visits` tv WHERE ts.`dt` < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY)) AND ts.`visit_id` = tv.`visit_id`");
+		$wpdb->query("DELETE ts, tv FROM $this->table_stats ts INNER JOIN $this->table_visits tv ON ts.visit_id = tv.visit_id WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
 
 		// Delete all the other entries with no matching visit records
-		$wpdb->query("DELETE ts FROM `$this->table_stats` ts WHERE ts.`dt` < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
+		$wpdb->query("DELETE ts FROM $this->table_stats ts WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
 	}
 	// end wp_slimstat_purge
 
@@ -753,6 +783,14 @@ class wp_slimstat{
 		return $contextual_help;
 	}
 	// end wp_slimstat_contextual_help
+	
+	public function wp_slimstat_adminbar() {
+		global $wp_admin_bar, $blog_id;
+		if (!is_super_admin() || !is_admin_bar_showing()) return;
+
+		$wp_admin_bar->add_menu( array( 'id' => 'slimstat', 'title' => 'SlimStat', 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat') ) );
+  }
+
 }
 // end of class declaration
 

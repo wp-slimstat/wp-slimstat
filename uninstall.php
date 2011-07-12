@@ -47,20 +47,19 @@ function uninstall(){
 }
 
 if (function_exists('is_multisite') && is_multisite()) {
-	// check if it is a network installation - if so, run the uninstall function for each blog id
-	if (isset($_GET['networkwide']) && ($_GET['networkwide'] == 1)) {
-		$old_blog = $wpdb->blogid;
-			
-		// Get all blog ids
-		$blogids = $wpdb->get_col($wpdb->prepare("SELECT blog_id FROM $wpdb->blogs"));
-		foreach ($blogids as $blog_id) {
-			switch_to_blog($blog_id);
-			uninstall();
-		}
-		switch_to_blog($old_blog);
-		return;
-	}	
-} 
+	$blogids = $wpdb->get_col($wpdb->prepare("
+		SELECT blog_id
+		FROM $wpdb->blogs
+		WHERE site_id = %d
+			AND deleted = 0
+			AND spam = 0", $wpdb->siteid));
+
+	foreach ($blogids as $blog_id) {
+		switch_to_blog($blog_id);
+		uninstall();
+	}
+	restore_current_blog();
+}
 else{
 	uninstall();
 }

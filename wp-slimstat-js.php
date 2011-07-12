@@ -62,7 +62,7 @@ $db_list_tables = @mysql_query("SHOW TABLES");
 $is_table_active = false;
 $multisite_table_prefix = $table_prefix;
 
-// Multisite awareness - Let's retry with the blog id
+// Multisite awareness
 $blog_id = isset($_GET['bid'])?intval($_GET['bid']):0;
 if (!empty($blog_id)){
 	while ($row = @mysql_fetch_row($db_list_tables)) {
@@ -72,7 +72,7 @@ if (!empty($blog_id)){
 		}
 	}
 }
-// Let's see if we can find it a single-site blog
+// Let's see if this is a stand-alone blog
 if (!$is_table_active){
 	
 	while ($row = @mysql_fetch_row($db_list_tables)) {
@@ -103,7 +103,7 @@ if (empty($site_url)) $site_url = slimstat_get_option('siteurl');
 if (empty($site_url)) $site_url = $_SERVER['HTTP_HOST'];
 
 // This request is not coming from the same domain
-if (empty($_SERVER['HTTP_REFERER']) || (strpos($_SERVER['HTTP_REFERER'], $site_url) === false) ){
+if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
 	echo 'Invalid referer';
 	exit;
 }

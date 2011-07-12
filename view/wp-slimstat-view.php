@@ -373,7 +373,7 @@ class wp_slimstat_view {
 	public function get_recent_outbound($_type = 0){
 		global $wpdb;
 
-		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, t1.ip, t1.user, t1.resource, t1.referer, t1.country, tb.browser, tb.version, tob.dt
+		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, t1.ip, t1.user, t1.resource, t1.referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
 				FROM $this->table_outbound tob INNER JOIN $this->table_stats t1 ON tob.id = t1.id INNER JOIN $this->table_browsers tb on t1.browser_id = tb.browser_id
 				WHERE type = $_type $this->filters_sql_where $this->filters_date_sql_where
 				ORDER BY tob.dt $this->direction

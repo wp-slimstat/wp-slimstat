@@ -4,13 +4,13 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 2.9.2
 Tested up to: 3.2
-Stable tag: 2.4.2
+Stable tag: 2.4.3
 
 == Description ==
 A lightwight but powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
 
 ## Requirements
-* Wordpress 2.9 or higher (it may not work on multisite environments)
+* Wordpress 3.0 or higher (it may not work on large multisite environments)
 * PHP 5.1 or higher
 * MySQL 5.0.3 or higher
 * At least 5 MB of free web space
@@ -55,6 +55,18 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 * Google URL's parser
 * Replace Flash with JQuery to draw charts
 
+= 2.4.3 =
+* Maintenance release
+* Added: reintroduced support for network activations. As pointed out [in the mailing list](http://lists.automattic.com/pipermail/wp-hackers/2011-June/039871.html) by some core Wordpress developers, there's no ideal solution for large networks, and if your network has more than 40 blogs, the activation process will most likely timeout.
+* Added: new color-coded interface to visually identify types of visits on-the-fly (thank you Davide). Refer to the Raw Data tab to learn about what each color means.
+* Added: hostnames to the Raw Data view (thank you Jonathan)
+* Added: entry in the admin bar, to access your stats from anywhere
+* Updated: Browser Detection Database (Released: Wed, 22 Jun 2011 23:26:51 -0000)
+* Updated: some code optimizations
+* Fixed: a bug in SlimStat Dashboard preventing some users from seeing the widgets (thank you [Flauschi](http://wordpress.org/support/topic/plugin-wp-slimstat-dashboard-widgets-are-not-displayed-all-the-time?replies=2#post-2203682))
+* Fixed: layout improvements (thank you Jonathan)
+* Fixed: a bug with multisite environments and referrers (thank you [kevinff](http://wordpress.org/support/topic/plugin-wp-slimstat-javascript-not-included-in-my-pages))
+
 = 2.4.2 =
 * I like to move it, move it :) Drag and drop WP Slimstat panels around, organize your stats to fit your style (thank you Davide)
 * Added: customize the IP lookup service URL, use your own if you like! (Go to Settings > Slim Stat > Views)
@@ -64,7 +76,6 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 * Geolocation: updated to June 2011, 148393 rows. Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 
 = 2.4.1 =
-* Maintenance release
 * Added: filter by visit_id (which is empty when the visitor is a bot or search engine spider)
 * Added: filter results where field SOUNDS LIKE query
 * Added: you can remove single filters now, not just the entire list (thank you Davide)
@@ -93,18 +104,6 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 * Simplified most DB queries, moving some business logic from MySQL to PHP
 * Changed the IP lookup service to InfoSniper, which offers much more detailed information about your visitors
 
-= 2.3 =
-* Geolocation: updated the information in the CSV file included (March 2011). Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
-* Browscap.ini: updated to the latest version available (February 2011)
-* Implemented some DB optimizations for large data collections. You can now switch to InnoDB at anytime, if your provider supports this feature (thank you [GoMySQL](http://lab.duechiacchiere.it/index.php?topic=74))
-* Fixed a bug in deleting old entries with autopurge
-* Fixed a bug related to timezones and php.ini (thank you [zipper1976](http://lab.duechiacchiere.it/index.php?topic=365.0))
-* Fixed a vulnerability related to XSS attempts (thank you [distortednet](http://lab.duechiacchiere.it/index.php?topic=110.0))
-* Fixed a bug in calculating percentages in WP SlimStat Dashboard (thank you Pietro)
-* Added a new code to counts all the visits not associated to any browser
-* Added: usernames in filters can now include spaces, underscores and dashes
-* Added: a new filter to restrict the access to WP Slimstat based on user capabilities
-
 == Languages ==
 
 Wp-SlimStat can speak your language! I used the Portable Object (.po) standard
@@ -120,17 +119,10 @@ alphabetical order):
 * Spanish (Noe Martinez)
 
 == List of donors in alphabetical order ==
-* [Andrea Pinti](http://andreapinti.com/)
-* [Bluewave Blog](http://blog.bluewaveweb.co.uk/)
-* [Dennis Kowallek](http://www.adopt-a-plant.com)
-* [Hans Schantz](http://www.aetherczar.com/)
-* [Herman Peet](http://www.hermanpeet.nl/)
-* [La casetta delle pesche](http://www.lacasettadellepesche.it/)
-* [Mobilize Mail](http://blog.mobilizemail.com/)
-* Mora Systems
-* Neil Robinson
-* [Sahin Eksioglu](http://www.alternatifblog.com/)
-* [Saill White](http://saillwhite.com)
+[Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Dennis Kowallek](http://www.adopt-a-plant.com),
+[Hans Schantz](http://www.aetherczar.com/), [Herman Peet](http://www.hermanpeet.nl/), [La casetta delle pesche](http://www.lacasettadellepesche.it/),
+[Mobilize Mail](http://blog.mobilizemail.com/), Mora Systems, Neil Robinson, [Sahin Eksioglu](http://www.alternatifblog.com/),
+[Saill White](http://saillwhite.com), Wayne Liebman
 
 = Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.

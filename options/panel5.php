@@ -111,8 +111,9 @@ if (isset($_POST['options'])){
 			
 		}
 		$rows_affected =  $wpdb->query("DELETE FROM {$wpdb->prefix}slim_stats WHERE $delete_sql");
+		if (empty($rows_affected)) $rows_affected = 0;
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-		_e('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
+		echo __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
 		echo '</p></div>';
 	}
 }
@@ -152,7 +153,7 @@ if (count($details_wp_slim_stat) == 1) {
 	<tr class="tall">
 		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
 		<td>
-			<form action="options-general.php?page=wp-slimstat/options/index.php&slimpanel=5" method="post"
+			<form action="admin.php?page=wp-slimstat/options/index.php&slimpanel=5" method="post"
 				onsubmit="return(confirm('<?php _e('Are you sure you want to PERMANENTLY delete these rows from your database?','wp-slimstat-options'); ?>'))">
 			<?php _e('Delete rows where','wp-slimstat-options') ?>
 			<select name="options[conditional_delete_field]">
