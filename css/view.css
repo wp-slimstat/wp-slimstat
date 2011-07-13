@@ -116,6 +116,7 @@
 .postbox.rtl p img{float:right;padding:2px 0 0 6px}
 .postbox p span{
  float:right;
+ margin:0 5px;
  min-width:50px;
  text-align:right;
 }
