@@ -5,7 +5,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
-global $wpdb;
+global $wpdb, $wp_locale;
 
 // IP Lookup service URL
 $ip_lookup_url = get_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips=');
