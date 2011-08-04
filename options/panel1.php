@@ -53,8 +53,8 @@ if (isset($_POST['options']['auto_purge'])){
 	<tr>
 		<th scope="row"><label for="custom_js_path"><?php _e('Custom path','wp-slimstat-options') ?></label></th>
 		<td>
-			<input type="text" class="longtext" name="options[custom_js_path]" id="custom_js_path" value="<?php echo slimstat_get_option('custom_js_path',WP_PLUGIN_URL.'/wp-slimstat'); ?>" size="50">
-			<span class="description"><?php _e('If you moved <code>wp-slimstat-js.php</code> out of the original folder, specify here the new path. Default:','wp-slimstat-options'); echo " <code>".WP_PLUGIN_URL."/wp-slimstat</code>"; ?></span>
+			<input type="text" class="longtext" name="options[custom_js_path]" id="custom_js_path" value="<?php echo slimstat_get_option('custom_js_path', get_option('siteurl').'/wp-content/plugins/wp-slimstat'); ?>" size="50">
+			<span class="description"><?php _e('If you moved <code>wp-slimstat-js.php</code> out of the original folder, specify here the new path. Default:','wp-slimstat-options'); echo " <code>".get_option('siteurl')."/wp-content/plugins/wp-slimstat</code>"; ?></span>
 		</td>
 	</tr>
 	<tr>

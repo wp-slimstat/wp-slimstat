@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-14 12:54-0500\n"
-"PO-Revision-Date: 2011-06-14 12:54-0500\n"
+"POT-Creation-Date: 2011-08-04 16:14-0500\n"
+"PO-Revision-Date: 2011-08-04 16:14-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -353,155 +353,155 @@ msgstr "Gli indici dii WP SlimStat sono stati creati con successo."
 msgid "Your WP SlimStat indexes have been successfully removed."
 msgstr "Gli indici dii WP SlimStat sono stati rimossi con successo."
 
-#: ../options/panel5.php:115
+#: ../options/panel5.php:116
 msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
 msgstr "La tabella di WP SlimStat &egrave; stata svuotata con successo. Righe rimosse:"
 
-#: ../options/panel5.php:121
+#: ../options/panel5.php:122
 msgid "Please note that these commands cannot be undone!"
 msgstr "Attenzione: queste operazioni <strong>non possono</strong> essere annullate!"
 
-#: ../options/panel5.php:136
+#: ../options/panel5.php:137
 msgid "Current Status"
 msgstr "Stato attuale"
 
-#: ../options/panel5.php:137
+#: ../options/panel5.php:138
 msgid "Engine"
 msgstr "Motore"
 
-#: ../options/panel5.php:139
+#: ../options/panel5.php:140
 msgid ", it may take some time and exceed PHP's maximum execution time"
 msgstr ", potrebbe volerci del tempo ed il tuo limite per l'esecuzione di PHP potrebbe essere superato"
 
-#: ../options/panel5.php:140
+#: ../options/panel5.php:141
 msgid "switch to InnoDB"
 msgstr "passa ad InnoDB"
 
-#: ../options/panel5.php:142
+#: ../options/panel5.php:143
 msgid "Records"
 msgstr "Righe"
 
-#: ../options/panel5.php:143
+#: ../options/panel5.php:144
 msgid "Average Record Length"
 msgstr "Lunghezza media dei record"
 
-#: ../options/panel5.php:144
+#: ../options/panel5.php:145
 msgid "Created on"
 msgstr "Creata il"
 
-#: ../options/panel5.php:146
+#: ../options/panel5.php:147
 msgid "Approximate Overhead"
 msgstr "Overhead stimato"
 
-#: ../options/panel5.php:147
+#: ../options/panel5.php:148
 msgid "optimize"
 msgstr "ottimizza"
 
-#: ../options/panel5.php:153
+#: ../options/panel5.php:154
 msgid "Clean database"
 msgstr "Pulisci il database"
 
-#: ../options/panel5.php:156
+#: ../options/panel5.php:157
 msgid "Are you sure you want to PERMANENTLY delete these rows from your database?"
 msgstr "Sei sicuro di voler cancellare PERMANENTEMENTE questi dati?"
 
-#: ../options/panel5.php:157
+#: ../options/panel5.php:158
 msgid "Delete rows where"
 msgstr "Cancella le righe in cui"
 
-#: ../options/panel5.php:159
+#: ../options/panel5.php:160
 msgid "Country Code"
 msgstr "Codice Paese"
 
-#: ../options/panel5.php:160
+#: ../options/panel5.php:161
 msgid "Domain"
 msgstr "Dominio"
 
-#: ../options/panel5.php:161
+#: ../options/panel5.php:162
 msgid "IP Address"
 msgstr "Indirizzo IP"
 
-#: ../options/panel5.php:162
+#: ../options/panel5.php:163
 msgid "Language Code"
 msgstr "Codice Lingua"
 
-#: ../options/panel5.php:163
+#: ../options/panel5.php:164
 msgid "Permalink"
 msgstr "Permalink"
 
-#: ../options/panel5.php:164
+#: ../options/panel5.php:165
 msgid "Search Terms"
 msgstr "Parole Chiave"
 
-#: ../options/panel5.php:167
+#: ../options/panel5.php:168
 msgid "Is equal to"
 msgstr "&Egrave; uguale a"
 
-#: ../options/panel5.php:168
+#: ../options/panel5.php:169
 msgid "Contains"
 msgstr "Contiene"
 
-#: ../options/panel5.php:169
+#: ../options/panel5.php:170
 msgid "Does not contain"
 msgstr "Non contiene"
 
-#: ../options/panel5.php:170
+#: ../options/panel5.php:171
 msgid "Starts with"
 msgstr "Inizia per"
 
-#: ../options/panel5.php:171
+#: ../options/panel5.php:172
 msgid "Ends with"
 msgstr "Finisce per"
 
-#: ../options/panel5.php:172
+#: ../options/panel5.php:173
 msgid "Does not start with"
 msgstr "Non inizia per"
 
-#: ../options/panel5.php:173
+#: ../options/panel5.php:174
 msgid "Does not end with"
 msgstr "Non finisce per"
 
-#: ../options/panel5.php:176
+#: ../options/panel5.php:177
 msgid "DELETE"
 msgstr "CANCELLA"
 
-#: ../options/panel5.php:184
+#: ../options/panel5.php:185
 msgid "Activate Indexes"
 msgstr "Attiva indici"
 
-#: ../options/panel5.php:185
+#: ../options/panel5.php:186
 msgid "Use this feature if you want to improve the overall performance of your stats. You will need about 30% more DB space, to store the extra information required."
 msgstr "Usa questa funzionalit&agrave; se vuoi migliorare la performance delle statistiche. Il database avr&agrave; bisogno di circa il 30% in pi&ugrave; di spazio, per conservare l'informazione aggiuntiva."
 
-#: ../options/panel5.php:189
+#: ../options/panel5.php:190
 msgid "Remove Indexes"
 msgstr "Rimuovi indici"
 
-#: ../options/panel5.php:190
+#: ../options/panel5.php:191
 msgid "Use this feature if you want to save some DB space, while slightly degrading WP SlimStat overall performances."
 msgstr "Usa questa funzionalit&agrave; se vuoi risparmiare spazio nel DB, a costo di una performance leggermente pi&agrave; bassa."
 
-#: ../options/panel5.php:194
+#: ../options/panel5.php:195
 msgid "Delete Records"
 msgstr "Cancella tutto"
 
-#: ../options/panel5.php:195
+#: ../options/panel5.php:196
 msgid "Select this option if you want to empty your WP SlimStat database."
 msgstr "Seleziona questa opzione se vuoi completamente <strong>svuotare</strong> il DB di WP SlimStat."
 
-#: ../options/panel5.php:199
+#: ../options/panel5.php:200
 msgid "Reset Countries"
 msgstr "Resetta Ip2Countries"
 
-#: ../options/panel5.php:200
+#: ../options/panel5.php:201
 msgid "Select this option if you want to empty your geolocation table (useful when you want to load new data)."
 msgstr "Seleziona questa opzione se vuoi svuotare la tabella per la geolocalizzazione (utile quando intendi caricare le nuove definizioni)."
 
-#: ../options/panel5.php:206
+#: ../options/panel5.php:207
 msgid "RESET STATS"
 msgstr "RESETTA STATISTICHE"
 
-#: ../options/panel5.php:207
+#: ../options/panel5.php:208
 msgid "It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process."
 msgstr "Pare che la struttura del tuo database non sia aggiornata all'ultima versione. Per favore, clicca sul pulsante qui a fianco per resettare le tabelle (tutti i dati andranno persi, mi spiace), quindi disattiva/riattiva WP SlimStat per completare l'aggiornamento."
 

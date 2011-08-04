@@ -8,11 +8,9 @@ class wp_slimstat_view {
 
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
-		$this->table_visits = $wpdb->prefix . 'slim_visits';
 		$this->table_outbound = $wpdb->prefix . 'slim_outbound';
 
 		// Some tables can be shared among the various installations (wordpress network)
-		$this->table_countries = $wpdb->base_prefix . 'slim_countries';
 		$this->table_browsers = $wpdb->base_prefix . 'slim_browsers';
 		$this->table_screenres = $wpdb->base_prefix . 'slim_screenres';
 
@@ -29,7 +27,8 @@ class wp_slimstat_view {
 		$this->plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
 
 		// Base DOMAIN for this blog
-		$this->blog_domain = home_url();
+		$this->blog_domain = get_bloginfo('url');
+		$this->blog_domain = is_ssl()?str_replace('http://', 'https://', $this->blog_domain):$this->blog_domain;
 		if (strpos(substr($this->blog_domain, 8), '/') > 0) $this->blog_domain = substr($this->blog_domain, 0, 8+strpos(substr($this->blog_domain, 8), '/'));
 
 		// Calculate filters

@@ -38,18 +38,17 @@ class wp_slimstat_custom_reports extends wp_slimstat_view{
 	// Description: Fetches popular pages from the DB
 	// Input: none
 	// Output: array of results
-	// Notes: $this->table_stats is initialized inside the parent class
-	//        $this->limit_results is set to the value defined by the user in the Options panel
+	// Notes: $this->limit_results is set to the value defined by the user in the Options panel
 	//        You can include WP SlimStat filters by using the corresponding variables. Please
 	//        refer to the source code of wp-slimstat-view.php for more information, or visit our
 	//        support forum for help.
 	private function _get_top_custom_pages(){
 		global $wpdb;
 
-		$sql = "SELECT `resource`, COUNT(*) count
-				FROM `$this->table_stats`
-				WHERE `resource` <> ''
-				GROUP BY `resource`
+		$sql = "SELECT resource, COUNT(*) count
+				FROM {$wpdb->prefix}slim_stats
+				WHERE resource <> ''
+				GROUP BY resource
 				ORDER BY count DESC
 				LIMIT 0,$this->limit_results";
 	

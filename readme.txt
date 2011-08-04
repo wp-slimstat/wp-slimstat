@@ -2,9 +2,9 @@
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, fusion charts
-Requires at least: 2.9.2
+Requires at least: 3.0
 Tested up to: 3.2
-Stable tag: 2.4.3
+Stable tag: 2.4.4
 
 == Description ==
 A lightwight but powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
@@ -43,6 +43,61 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 6. Customize all its options, go to Settings > Slimstat
 8. If you're blocking access to your `wp-content` folder, move `wp-slimstat-js.php` to a different folder, and edit the first line of code to let WP SlimStat know where your `wp-config.php` is
 
+== Frequently Asked Questions ==
+
+= How do I create my own custom reports? =
+You will need to write a plugin that retrieves the information from WP SlimStat tables and displays it using
+the format described here below. A demo plugin is included within the package: take a look at its source code
+(which I tried to keep as simple as possible) and then cut your imagination loose! 
+
+More information at http://lab.duechiacchiere.it/index.php?topic=2.0#post_customreports
+
+= How do I add some stats to my theme? =
+WP SlimStat 2 allows you to display its reports on your website. Including filters!
+You will need to edit your template and add something like this where you want your metrics to appear:
+`// Load WP SlimStat VIEW, the library with all the metrics
+require_once(WP_PLUGIN_DIR.'/wp-slimstat/view/wp-slimstat-view.php');
+
+// Define a filter: I want to show only hits by people who where using Firefox, any version
+$filters = array('browser' => 'Firefox', 'browser-op' => 'contains');
+
+// Instantiate a new copy of that class
+$wp_slimstat_view = new wp_slimstat_view($filters);
+
+// Use the appropriate method to display your stats
+echo $wp_slimstat_view->count_records('1=1', '*', false);`
+
+[Here](http://lab.duechiacchiere.it/index.php?topic=2.0#post_displaymetrics) you can find a list of all available functions and filters.
+
+= I am experiencing a conflict with Lightbox or one of its clones =
+After clicking on the thumbnail, the bigger image would show up not inside the 'nice' popup window as expected?
+The way my plugin tracks external/outbound links is incompatible with the way Lightbox works. Unfortunately, 
+Javascript doesn't allow me to detect if a specific link is being "managed" by Lightbox, so here's the workaround.
+
+Let's say you have a link associated to Lightbox (or one of its hundreds clones):
+
+`<a href="/wp-slimstat">Open Image in LightBox</a>`
+
+To tell WP SlimStat to let Lightbox do its job, change it to:
+
+`<a href="/wp-slimstat" class="noslimstat">Open Image in LightBox</a>`
+
+The click will still be tracked, but will avoid any conflicts with third party Javascript codes.
+
+= Can I track downloads and other actions? =
+WP SlimStat can track outbound links (clicks on links taking users to other websites), downloads and other events.
+Outbound links are automatically tracked, once you activate the corresponding option (Enable JS Tracking) in your admin panel.
+In order to explicitly track downloads, you need to change your link from
+
+`<a href="/path/to/my/download.zip">Download this cool file</a>`
+
+to
+
+`<a href="/path/to/my/download.zip" onclick="slimstat_track_download(event)">Download this cool file</a>`
+
+Please make sure to use exactly this syntax when modifying your links. This is going to change in version 2.5, 
+to allow admins to track other types of actions, like Facebook Like clicks or Google+1 clicks. Stay tuned!
+
 == Screenshots ==
 
 1. Reports
@@ -50,10 +105,20 @@ WP SlimStat needs to create its own tables in order to maintain the complex info
 
 == Changelog ==
 
-= Wishlist and planned features =
-* Check to see if username exists in regards to configuration permissions
-* Google URL's parser
+= What's cooking? =
+* Google Images URL's parser
+* Better bot detection
+* Track Google+1 and Facebook Like clicks
 * Replace Flash with JQuery to draw charts
+* Check to see if username exists when configuring permissions
+* Spam tracking / filtering
+* Improved WP Dashboard widgets
+
+= 2.4.4 =
+* Fixed: a few bugs that affected network activations, now WP SlimStat should work fine with WPMU (thank you [Kevin](http://wordpress.org/support/topic/plugin-wp-slimstat-javascript-not-included-in-my-pages))
+* Fixed: some PHP warnings in DEBUG mode
+* Fixed: visits coming from the server itself (bots, analyzers, etc) are now ignored (thank you [PeterN](http://lab.duechiacchiere.it/index.php?topic=428.0))
+* Geolocation: updated to August 2011, 150241 rows. Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 
 = 2.4.3 =
 * Maintenance release
@@ -113,10 +178,11 @@ and contact me via the [support forum](http://lab.duechiacchiere.it) when you're
 to send me your files. Right now the following localizations are available (in
 alphabetical order):
 
-* French ([Tuxicoman](http://tuxicoman.jesuislibre.net/) and Vidal Arpin)
-* German - ([Digo](http://www.showhypnose.org/blog/))
+* French ([Tuxicoman](http://tuxicoman.jesuislibre.net/), Vidal Arpin)
+* German ([Digo](http://www.showhypnose.org/blog/))
 * Italian
 * Spanish (Noe Martinez)
+* Swedish (Zebel Khan)
 
 == List of donors in alphabetical order ==
 [Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Dennis Kowallek](http://www.adopt-a-plant.com),
