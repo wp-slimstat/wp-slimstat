@@ -96,7 +96,7 @@ class wp_slimstat{
 	/**
 	 * Support for WP MU network activations (experimental)
 	 */
-	static function new_blog($_blog_id){
+	public function new_blog($_blog_id){
 		switch_to_blog($_blog_id);
 		$this->_activate();
 		restore_current_blog();
