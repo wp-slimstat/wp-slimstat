@@ -24,6 +24,7 @@ function uninstall(){
 	delete_option('slimstat_browscap_autoupdate');
 	delete_option('slimstat_ignore_interval');
 	delete_option('slimstat_ignore_bots');
+	delete_option('slimstat_ignore_spammers');
 	delete_option('slimstat_track_users');
 	delete_option('slimstat_auto_purge');
 	delete_option('slimstat_use_separate_menu');
