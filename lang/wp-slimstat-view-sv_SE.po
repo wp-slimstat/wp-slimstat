@@ -1,0 +1,781 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 2.4\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-07-28 07:36-0500\n"
+"PO-Revision-Date: 2011-07-28 07:36-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: ZebEl of Sweden\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: ../view\n"
+"Plural-Forms: plurals=2; plural=1 != 1\n"
+"X-Poedit-Language: Swedish\n"
+"X-Poedit-Country: SWEDEN\n"
+"X-Poedit-SearchPath-0: ../view\n"
+
+#: ../view/index.php:31
+msgid "Dashboard"
+msgstr "Panel"
+
+#: ../view/index.php:32
+msgid "Visitors"
+msgstr "Besökare"
+
+#: ../view/index.php:33
+msgid "Traffic Sources"
+msgstr "Trafikkällor"
+
+#: ../view/index.php:34
+msgid "Content"
+msgstr "Innehåll"
+
+#: ../view/index.php:35
+msgid "Raw Data"
+msgstr "Rådata"
+
+#: ../view/index.php:36
+msgid "World Map"
+msgstr "Världskarta"
+
+#: ../view/index.php:37
+msgid "Custom Reports"
+msgstr "Anpassade Rapporter"
+
+#: ../view/index.php:55
+msgid "Current filters:"
+msgstr "Nuvarande filter:"
+
+#: ../view/index.php:65
+msgid "x"
+msgstr "x"
+
+#: ../view/index.php:100
+msgid "this period"
+msgstr "denna period"
+
+#: ../view/index.php:155
+msgid "Show records where"
+msgstr "Visa poster då"
+
+#: ../view/index.php:157
+#: ../view/panel5.php:90
+msgid "Browser"
+msgstr "Webbläsare"
+
+#: ../view/index.php:158
+msgid "Browser version"
+msgstr "Webbläsarens version"
+
+#: ../view/index.php:159
+msgid "CSS version"
+msgstr "CSS version"
+
+#: ../view/index.php:160
+msgid "Country Code"
+msgstr "Landskod"
+
+#: ../view/index.php:161
+#: ../view/panel5.php:93
+msgid "Domain"
+msgstr "Domän"
+
+#: ../view/index.php:162
+#: ../view/panel5.php:94
+msgid "IP"
+msgstr "IP"
+
+#: ../view/index.php:163
+msgid "User"
+msgstr "Användare"
+
+#: ../view/index.php:164
+msgid "Visit ID"
+msgstr "Besöks-ID"
+
+#: ../view/index.php:165
+#: ../view/panel5.php:95
+msgid "Keywords"
+msgstr "Nyckelord"
+
+#: ../view/index.php:166
+msgid "Language Code"
+msgstr "Språkkod"
+
+#: ../view/index.php:167
+#: ../view/panel5.php:97
+msgid "Operating System"
+msgstr "Operativsystem"
+
+#: ../view/index.php:168
+#: ../view/panel5.php:98
+msgid "Permalink"
+msgstr "Permalänk"
+
+#: ../view/index.php:169
+msgid "Referer"
+msgstr "Refererare"
+
+#: ../view/index.php:170
+#: ../view/panel5.php:100
+msgid "Screen Resolution"
+msgstr "Bildskärmens Upplösning"
+
+#: ../view/index.php:171
+msgid "Post Author"
+msgstr "Inläggsförfattare"
+
+#: ../view/index.php:172
+msgid "Post Category ID"
+msgstr "Inläggskategorins ID"
+
+#: ../view/index.php:175
+msgid "Equals"
+msgstr "Är lika med"
+
+#: ../view/index.php:176
+msgid "Contains"
+msgstr "Innehåller"
+
+#: ../view/index.php:177
+msgid "Does not contain"
+msgstr "Innehåller ej"
+
+#: ../view/index.php:178
+msgid "Starts with"
+msgstr "Börjar med"
+
+#: ../view/index.php:179
+msgid "Ends with"
+msgstr "Slutar med"
+
+#: ../view/index.php:180
+msgid "Sounds like"
+msgstr "Låter som"
+
+#: ../view/index.php:181
+msgid "Is empty"
+msgstr "Är tomt"
+
+#: ../view/index.php:182
+msgid "Is not empty"
+msgstr "Är inte tomt"
+
+#: ../view/index.php:185
+msgid "Filter by date"
+msgstr "Sortera efter datum"
+
+#: ../view/index.php:186
+msgid "Day"
+msgstr "Dag"
+
+#: ../view/index.php:196
+msgid "Month"
+msgstr "Månad"
+
+#: ../view/index.php:197
+msgid "January"
+msgstr "Januari"
+
+#: ../view/index.php:197
+msgid "February"
+msgstr "Februari"
+
+#: ../view/index.php:197
+msgid "March"
+msgstr "Mars"
+
+#: ../view/index.php:198
+msgid "April"
+msgstr "April"
+
+#: ../view/index.php:198
+msgid "May"
+msgstr "Maj"
+
+#: ../view/index.php:198
+msgid "June"
+msgstr "Juni"
+
+#: ../view/index.php:199
+msgid "July"
+msgstr "Juli"
+
+#: ../view/index.php:199
+msgid "August"
+msgstr "Augusti"
+
+#: ../view/index.php:199
+msgid "September"
+msgstr "September"
+
+#: ../view/index.php:200
+msgid "October"
+msgstr "Oktober"
+
+#: ../view/index.php:200
+msgid "November"
+msgstr "November"
+
+#: ../view/index.php:200
+msgid "December"
+msgstr "December"
+
+#: ../view/index.php:203
+msgid "Year"
+msgstr "År"
+
+#: ../view/index.php:210
+#: ../view/panel1.php:45
+msgid "days"
+msgstr "dagar"
+
+#: ../view/index.php:211
+#: ../view/panel5.php:110
+msgid "Go"
+msgstr "Gå"
+
+#: ../view/index.php:212
+msgid "Reverse"
+msgstr "Vänd om"
+
+#: ../view/panel1.php:20
+msgid "Pageviews by day - Click on a day for hourly metrics"
+msgstr "Dagliga sidvisningar - Klicka på en dag för timvis metrik"
+
+#: ../view/panel1.php:22
+msgid "Pageviews by hour"
+msgstr "Sidvisningar per timme"
+
+#: ../view/panel1.php:24
+#: ../view/panel1.php:60
+msgid "Pageviews"
+msgstr "Sidvisningar"
+
+#: ../view/panel1.php:24
+#: ../view/panel1.php:61
+#: ../view/panel2.php:24
+#: ../view/panel2.php:47
+#: ../view/panel3.php:25
+msgid "Unique IPs"
+msgstr "Unika IP-adresser"
+
+#: ../view/panel1.php:26
+#: ../view/panel1.php:79
+#: ../view/panel1.php:101
+#: ../view/panel1.php:150
+#: ../view/panel1.php:170
+#: ../view/panel1.php:192
+#: ../view/panel1.php:215
+#: ../view/panel1.php:235
+#: ../view/panel2.php:26
+#: ../view/panel2.php:62
+#: ../view/panel2.php:84
+#: ../view/panel2.php:106
+#: ../view/panel2.php:137
+#: ../view/panel2.php:158
+#: ../view/panel2.php:178
+#: ../view/panel2.php:210
+#: ../view/panel2.php:231
+#: ../view/panel3.php:27
+#: ../view/panel3.php:66
+#: ../view/panel3.php:87
+#: ../view/panel3.php:109
+#: ../view/panel3.php:133
+#: ../view/panel3.php:155
+#: ../view/panel3.php:181
+#: ../view/panel4.php:31
+#: ../view/panel4.php:50
+#: ../view/panel4.php:71
+#: ../view/panel4.php:93
+#: ../view/panel4.php:114
+#: ../view/panel4.php:135
+#: ../view/panel4.php:164
+#: ../view/panel4.php:186
+#: ../view/panel4.php:221
+#: ../view/panel4.php:245
+#: ../view/panel5.php:137
+msgid "No data to display"
+msgstr "Ingen data att visa"
+
+#: ../view/panel1.php:40
+msgid "About WP SlimStat"
+msgstr "Om WP SlimStat"
+
+#: ../view/panel1.php:42
+#: ../view/panel3.php:49
+msgid "Total Hits"
+msgstr "Total Antal Träffar"
+
+#: ../view/panel1.php:43
+msgid "Data Size"
+msgstr "Datastorlek"
+
+#: ../view/panel1.php:44
+msgid "Tracking Active"
+msgstr "Spårning Aktivt"
+
+#: ../view/panel1.php:45
+msgid "Auto purge"
+msgstr "Rensa automatiskt"
+
+#: ../view/panel1.php:45
+msgid "No"
+msgstr "Nej"
+
+#: ../view/panel1.php:46
+msgid "Latency"
+msgstr "Fördröjning"
+
+#: ../view/panel1.php:46
+msgid "seconds"
+msgstr "sekunder"
+
+#: ../view/panel1.php:46
+msgid "Off"
+msgstr "Avstängd"
+
+#: ../view/panel1.php:47
+msgid "Oldest visit"
+msgstr "Äldsta besök"
+
+#: ../view/panel1.php:54
+#: ../view/panel2.php:40
+#: ../view/panel3.php:47
+msgid "Summary for"
+msgstr "Sammanfattning för"
+
+#: ../view/panel1.php:62
+#: ../view/panel2.php:50
+msgid "Bots"
+msgstr "Robotar"
+
+#: ../view/panel1.php:63
+#: ../view/panel4.php:29
+msgid "Avg Pageviews"
+msgstr "Sidvisningar Genomsnitt"
+
+#: ../view/panel1.php:65
+#: ../view/panel1.php:66
+msgid "On"
+msgstr "Den"
+
+#: ../view/panel1.php:67
+msgid "Last Month"
+msgstr "Förra Månaden"
+
+#: ../view/panel1.php:74
+#: ../view/panel1.php:95
+#: ../view/panel1.php:145
+#: ../view/panel1.php:187
+#: ../view/panel1.php:210
+#: ../view/panel3.php:61
+#: ../view/panel3.php:104
+#: ../view/panel3.php:176
+#: ../view/panel4.php:45
+#: ../view/panel4.php:66
+#: ../view/panel4.php:109
+msgid "More"
+msgstr "Mer"
+
+#: ../view/panel1.php:75
+msgid "Recent Known Visitors"
+msgstr "Senast Kända Besökare"
+
+#: ../view/panel1.php:96
+#: ../view/panel5.php:26
+msgid "Spy View"
+msgstr "Spion Vy"
+
+#: ../view/panel1.php:116
+msgid "Search for"
+msgstr "Sök efter"
+
+#: ../view/panel1.php:127
+#: ../view/panel1.php:218
+#: ../view/panel2.php:214
+#: ../view/panel3.php:91
+#: ../view/panel4.php:200
+#: ../view/panel4.php:256
+#: ../view/panel5.php:162
+msgid "c-"
+msgstr "c-"
+
+#: ../view/panel1.php:132
+#: ../view/panel1.php:198
+#: ../view/panel1.php:240
+#: ../view/panel3.php:114
+#: ../view/panel3.php:162
+#: ../view/panel4.php:75
+#: ../view/panel4.php:207
+#: ../view/panel4.php:228
+#: ../view/panel4.php:264
+#: ../view/panel5.php:171
+#: ../view/panel5.php:216
+#, php-format
+msgid "Open %s in a new window"
+msgstr "Öppna %s i ett nytt fönster"
+
+#: ../view/panel1.php:137
+#: ../view/panel5.php:178
+msgid "Direct visit to"
+msgstr "Dirigera besök till"
+
+#: ../view/panel1.php:146
+#: ../view/panel5.php:46
+msgid "Recent Keywords"
+msgstr "Senaste Nyckelord"
+
+#: ../view/panel1.php:166
+msgid "Languages - Just Visitors"
+msgstr "Språk - Endast Besökare"
+
+#: ../view/panel1.php:173
+#: ../view/panel2.php:65
+#: ../view/panel5.php:163
+msgid "l-"
+msgstr "l-"
+
+#: ../view/panel1.php:175
+#: ../view/panel2.php:68
+msgid "Code"
+msgstr "Kod"
+
+#: ../view/panel1.php:175
+#: ../view/panel1.php:243
+#: ../view/panel2.php:68
+#: ../view/panel2.php:94
+#: ../view/panel2.php:120
+#: ../view/panel2.php:143
+#: ../view/panel2.php:163
+#: ../view/panel2.php:183
+#: ../view/panel2.php:197
+#: ../view/panel2.php:216
+#: ../view/panel2.php:237
+#: ../view/panel3.php:93
+#: ../view/panel3.php:117
+#: ../view/panel3.php:140
+#: ../view/panel3.php:165
+#: ../view/panel4.php:169
+#: ../view/panel4.php:226
+msgid "Hits"
+msgstr "Träffar"
+
+#: ../view/panel1.php:188
+msgid "Popular pages for"
+msgstr "Populära sidor för"
+
+#: ../view/panel1.php:196
+#: ../view/panel2.php:120
+#: ../view/panel2.php:143
+#: ../view/panel2.php:163
+#: ../view/panel2.php:183
+#: ../view/panel2.php:216
+#: ../view/panel2.php:237
+#: ../view/panel3.php:70
+#: ../view/panel3.php:93
+#: ../view/panel3.php:117
+#: ../view/panel3.php:165
+msgid "Last"
+msgstr "Senast"
+
+#: ../view/panel1.php:211
+#: ../view/panel5.php:41
+msgid "Recent Countries"
+msgstr "Senaste Länder"
+
+#: ../view/panel1.php:230
+msgid "Traffic Sources Overview"
+msgstr "Trafikkällor Översikt"
+
+#: ../view/panel2.php:20
+msgid "Human Visits by day - Click on a day for hourly metrics"
+msgstr "Mänskliga besök per dag - Klicka på en dag för timvis metrik"
+
+#: ../view/panel2.php:22
+msgid "Human Visits by hour"
+msgstr "Mänskliga besök per timme"
+
+#: ../view/panel2.php:24
+msgid "Visits"
+msgstr "Besök"
+
+#: ../view/panel2.php:46
+msgid "Human visits"
+msgstr "Mänskliga besök"
+
+#: ../view/panel2.php:48
+msgid "New visitors"
+msgstr "Nya besökare"
+
+#: ../view/panel2.php:49
+msgid "Bounce rate"
+msgstr "Studsfrekvens"
+
+#: ../view/panel2.php:51
+msgid "Pages per visit"
+msgstr "Sidor per besök"
+
+#: ../view/panel2.php:52
+#: ../view/panel4.php:29
+msgid "Longest visit"
+msgstr "Längsta besök"
+
+#: ../view/panel2.php:52
+msgid "hits"
+msgstr "Träffar"
+
+#: ../view/panel2.php:58
+msgid "Languages"
+msgstr "Språk"
+
+#: ../view/panel2.php:80
+msgid "User agents"
+msgstr "Användaragenter"
+
+#: ../view/panel2.php:102
+msgid "IP Addresses and Domains"
+msgstr "IP-adresser och Domäner"
+
+#: ../view/panel2.php:133
+msgid "Operating Systems"
+msgstr "Operativsystemen"
+
+#: ../view/panel2.php:154
+msgid "Screen Resolutions"
+msgstr "Skärmupplösning"
+
+#: ../view/panel2.php:174
+msgid "Screen Resolutions with colordepth"
+msgstr "Skärmupplösning med färgdjup"
+
+#: ../view/panel2.php:192
+#: ../view/panel5.php:99
+msgid "Plugins"
+msgstr "Tillägg"
+
+#: ../view/panel2.php:206
+msgid "Top Countries"
+msgstr "Länder i Topp"
+
+#: ../view/panel2.php:227
+msgid "Browsers and Operating Systems"
+msgstr "Webbläsare och Operativsystemen"
+
+#: ../view/panel3.php:21
+msgid "Traffic Sources by day - Click on a day for hourly metrics"
+msgstr "Trafikkällor per dag - Klicka på dag för timvis metrik"
+
+#: ../view/panel3.php:23
+msgid "Traffic Sources by hour"
+msgstr "Trafikkällor per timme"
+
+#: ../view/panel3.php:25
+msgid "Domains"
+msgstr "Domäner"
+
+#: ../view/panel3.php:50
+msgid "Unique Referers"
+msgstr "Unika Refererare"
+
+#: ../view/panel3.php:51
+msgid "Direct Visits"
+msgstr "Direkta Besök"
+
+#: ../view/panel3.php:52
+#: ../view/panel3.php:129
+msgid "Search Engines"
+msgstr "Sökmotorer"
+
+#: ../view/panel3.php:53
+msgid "Unique Pages Referred"
+msgstr "Unika Sidor Refererad"
+
+#: ../view/panel3.php:54
+msgid "Bounces"
+msgstr "Studsar"
+
+#: ../view/panel3.php:55
+msgid "Unique Internal"
+msgstr "Unik internt"
+
+#: ../view/panel3.php:62
+#: ../view/panel5.php:57
+msgid "Top Keywords"
+msgstr "Nyckelord i Topp"
+
+#: ../view/panel3.php:83
+msgid "Top Countries for"
+msgstr "Länder i Topp för"
+
+#: ../view/panel3.php:105
+msgid "Top Traffic Sources for"
+msgstr "Trafikkällor i Topp för"
+
+#: ../view/panel3.php:151
+msgid "Sites for"
+msgstr "Webbplatser för"
+
+#: ../view/panel3.php:177
+msgid "Recent Keywords &raquo; Pages"
+msgstr "Senaste Nyckelord & Sidor"
+
+#: ../view/panel3.php:215
+msgid "Open referer in a new window"
+msgstr "Öppna refererare i ett nytt förnster"
+
+#: ../view/panel4.php:16
+msgid "Average pageviews per visit by day - Click on a day for hourly metrics"
+msgstr "Sidvisningar i genomsnitt per besök och dag - Klicka på en dag för timvis metrik"
+
+#: ../view/panel4.php:18
+msgid "Average pageviews per visit by hour"
+msgstr "Sidvisningar i genomsnitt per besök per timme"
+
+#: ../view/panel4.php:46
+#: ../view/panel5.php:69
+msgid "Recent Contents"
+msgstr "Senaste Innehåll"
+
+#: ../view/panel4.php:67
+#: ../view/panel5.php:36
+msgid "Recent bouncing pages"
+msgstr "Senast studsande sidor"
+
+#: ../view/panel4.php:89
+msgid "Recent Feeds"
+msgstr "Senaste Kanaler"
+
+#: ../view/panel4.php:110
+#: ../view/panel5.php:31
+msgid "Recent 404 pages"
+msgstr "Senaste 404 sidor"
+
+#: ../view/panel4.php:131
+msgid "Recent Internal Searches"
+msgstr "Senaste Internsökningar"
+
+#: ../view/panel4.php:152
+msgid "Top Categories for"
+msgstr "Kategorier i Topp för"
+
+#: ../view/panel4.php:181
+msgid "Recent Outbound Links"
+msgstr "Senast Utgående Länkar"
+
+#: ../view/panel4.php:216
+msgid "Top Exit Pages for"
+msgstr "Utgångssida i Topp för"
+
+#: ../view/panel4.php:240
+msgid "Recent Downloads"
+msgstr "Senaste Nedladdningar"
+
+#: ../view/panel5.php:51
+msgid "Top Resources"
+msgstr "Topp Källor"
+
+#: ../view/panel5.php:63
+msgid "Top Traffic Sources"
+msgstr "Trafikkällor i Topp"
+
+#: ../view/panel5.php:87
+msgid "Order by"
+msgstr "Sortera efter"
+
+#: ../view/panel5.php:89
+msgid "Select filter"
+msgstr "Välj filter"
+
+#: ../view/panel5.php:91
+msgid "Country"
+msgstr "Land"
+
+#: ../view/panel5.php:92
+msgid "Date/Time"
+msgstr "Datum/Tid"
+
+#: ../view/panel5.php:96
+msgid "Language"
+msgstr "Språk"
+
+#: ../view/panel5.php:103
+msgid "Select sorting"
+msgstr "Välj sortering"
+
+#: ../view/panel5.php:104
+msgid "Ascending"
+msgstr "Stigande"
+
+#: ../view/panel5.php:105
+msgid "Descending"
+msgstr "Sjunkande"
+
+#: ../view/panel5.php:108
+msgid "Starting from record #"
+msgstr "Börja med post #"
+
+#: ../view/panel5.php:120
+msgid "&laquo; Previous"
+msgstr "< Föregående"
+
+#: ../view/panel5.php:124
+msgid "Next &raquo;"
+msgstr "Nästa >"
+
+#: ../view/panel5.php:130
+msgid "No records found"
+msgstr "Ingen post hittades"
+
+#: ../view/panel5.php:133
+msgid "reverse"
+msgstr "omvänd"
+
+#: ../view/panel5.php:134
+#, php-format
+msgid "Records: %d - %d. Order by: %s %s (%s)"
+msgstr "Poster: %d - %d. Sortera efter: %s %s (%s)"
+
+#: ../view/panel5.php:181
+msgid "Local search page"
+msgstr "Lokal sökningssida"
+
+#: ../view/panel5.php:187
+#: ../view/panel5.php:211
+msgid "Local search results page"
+msgstr "Lokal sida för sökresultat"
+
+#: ../view/panel5.php:224
+msgid "Color codes:"
+msgstr "Färgkoder"
+
+#: ../view/panel5.php:225
+msgid "Coming from a Search Engine"
+msgstr "Kommer från en Sökmotor"
+
+#: ../view/panel5.php:226
+msgid "Known Users"
+msgstr "Kända Besökare"
+
+#: ../view/panel5.php:227
+msgid "Other Humans"
+msgstr "Andra Människor"
+
+#: ../view/panel5.php:228
+msgid "Bots or Crawlers"
+msgstr "Robotar och Crawlers "
+
+#: ../view/panel6.php:24
+msgid "World Map - Values represent the percentage of hits coming from that Country"
+msgstr "Världskarta - Värdet representerar procent av träffar som kommer från det Landet"
+
+#: ../view/panel7.php:11
+msgid "Pluggable custom reports"
+msgstr "Insticksbara anpassade rapporter"
+
+#: ../view/panel7.php:13
+msgid "Yes, you can! Create and view your personalized analytics for WP SlimStat. In order to do this, just write a new plugin that fetches the desired information from the database and then hook it to the action <code>wp_slimstat_custom_report</code>. A demo plugin comes with the package. It shows how to write custom reports in 5 minutes. You can find it inside the plugin&apos;s folder: <code>wp-slimstat-custom-report-demo.php</code>. For more information, visit my <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">support forum</a>."
+msgstr "Visst, kan du det! Skapa och visa dina personifierade analyser med WP SlimStat. För att kunna göra det, skriver du bara ett nytt tillägg, vilken kan hämta önskad information från databasen, som  sedan hakas fast till funktionen <code>wp_slimstat_custom_report</code>. En demo följer med paketet. Den visar hur man skriver anpassade rapporter i 5 minuter. Du kan hitta den i tillägets mapp: <code>wp_slimstat-custom-report-demo.php</code>. For mer information, besök mitt <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">supportforum</a>."
+
