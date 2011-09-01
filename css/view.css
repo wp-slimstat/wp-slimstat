@@ -201,6 +201,13 @@
 .postbox p.is-known-user{
  background-color:#ffc;
 }
+.postbox p.is-spam{
+ background-color:#C30A4D;
+ color:#fff;
+}
+.postbox p.is-spam a{
+ color:#fff;
+}
 span.little-color-box{
  border:1px solid #ccc;
  display:block;

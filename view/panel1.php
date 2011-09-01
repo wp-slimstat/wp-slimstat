@@ -92,6 +92,7 @@ if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-s
 for($i=0;$i<$count_results;$i++){
 	$strings = trim_value($results[$i]['user']);
 	$extra_info = "title='".date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']).', '.long2ip($results[$i]['ip'])."'";
+	if (strpos($results[$i]['user'], '[spam]') !== false) $extra_info .= ' class="is-spam"';
 	$clean_string = urlencode($results[$i]['user']);
 	if (!isset($wp_slimstat_view->filters_parsed['user'][1]) || $wp_slimstat_view->filters_parsed['user'][1]!='equals')
 		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=1$wp_slimstat_view->filters_query&amp;user=$clean_string'>{$strings['text']}</a>";
