@@ -109,9 +109,9 @@ In order to explicitly track downloads, you need to change your link from
 
 to
 
-`<a href="/path/to/my/download.zip" onclick="ss_te(event,38)">Download this cool file</a>`
+`<a href="/path/to/my/download.zip" onclick="ss_te(event,1)">Download this cool file</a>`
 
-Please make sure to use exactly this syntax when modifying your links. The second parameter (38, in the example here above)
+Please make sure to use exactly this syntax when modifying your links. The second parameter (1, in the example here above)
 can be any number between 2 and 254. Zero is reserved for tracking outbound clicks, 1 is for downloads.
 
 == Screenshots ==
