@@ -57,9 +57,9 @@ If the third param is set to false, then the event may not be specified (use an 
 
 Handy shortcuts will make your life easier:
 
-* Google Plus One: change the default Google tag to `<g:plusone callback="slimstat_plusone"></g:plusone>`. Then take a look at SlimStat > Content > Recent Events. Positive entries will have code = 3, negative ones (undo +1) code = 4.
+* *Google Plus One*: change the default Google tag to `<g:plusone callback="slimstat_plusone"></g:plusone>`. Then take a look at SlimStat > Content > Recent Events. Positive entries will have code = 3, negative ones (undo +1) code = 4.
 Remember: Google's javascript must be loaded *after* slimstat.js, so make sure to put things in the right place in your souce code.
-* onClick mouse event: add the following code to the links you want to track: `onclick="if(typeof ss_te == 'function'){ss_te('', 5, false);}` where 5 can be any number between 2 and 254.
+* *onClick mouse event*: add the following code to the links you want to track: `onclick="if(typeof ss_te == 'function'){ss_te('', 5, false);}"` where 5 can be any number between 2 and 254.
 
 = How do I create my own custom reports? =
 You will need to write a plugin that retrieves the information from WP SlimStat tables and displays it using
