@@ -116,26 +116,26 @@ if ( empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['i
 }
 
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
-if (!empty($_GET['obr'])){
-	$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string( strip_tags($_GET['obd']) ):'';
-	if (!empty($_GET['obr']))
-		$stat['outbound_resource'] = ((substr($_GET['obr'], 0, 1) != '/')?'/':'').$_GET['obr'];
-	$stat['outbound_resource'] = mysql_real_escape_string( strip_tags($stat['outbound_resource']) );
+$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string( strip_tags($_GET['obd']) ):'';
+$stat['outbound_resource'] = !empty($_GET['obr'])?mysql_real_escape_string( ((substr($_GET['obr'], 0, 1) != '/')?'/':'').$_GET['obr'] ):'';
+
+if (!empty($stat['outbound_domain']) && !empty($stat['outbound_resource'])){
 	$stat['type'] = isset($_GET['ty'])?intval($_GET['ty']):1; // type=1 stands for download
-	
+
 	$timezone = slimstat_get_option('timezone_string');
 	if (!empty($timezone)) date_default_timezone_set($timezone);
 	$lt = localtime();
 	if (!empty($timezone)) date_default_timezone_set('UTC');
 	$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
 	
-	$insert_new_outbound_sql = "INSERT INTO `{$multisite_table_prefix}slim_outbound` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
-			SELECT '" . implode( "', '", array_values( $stat ) ) . "'
-			FROM DUAL
-			WHERE NOT EXISTS (
-				SELECT `outbound_id`
-				FROM `{$multisite_table_prefix}slim_outbound`
-				WHERE ";
+	$insert_new_outbound_sql = "
+INSERT INTO `{$multisite_table_prefix}slim_outbound` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
+	SELECT '" . implode( "', '", array_values( $stat ) ) . "'
+	FROM DUAL
+		WHERE NOT EXISTS (
+			SELECT `outbound_id`
+			FROM `{$multisite_table_prefix}slim_outbound`
+			WHERE ";
 	foreach ($stat as $a_key => $a_value) {
 		$insert_new_outbound_sql .= "`$a_key` = '$a_value'" . (($a_key != 'dt')?" AND ":" LIMIT 1 ");
 	}
@@ -145,7 +145,6 @@ if (!empty($_GET['obr'])){
 	if (empty($_GET['go']) || $_GET['go'] == 'y') header('Location: '.$stat['outbound_domain'].$stat['outbound_resource']);
 	exit;
 }
-
 $stat['plugins'] = (!empty($_GET['pl']))?mysql_real_escape_string(substr(str_replace('|', ', ', $_GET['pl']), 0, -2)):'';
 $screenres['resolution'] = (!empty($_GET['sw']) && !empty($_GET['sh']))?mysql_real_escape_string( $_GET['sw'].'x'.$_GET['sh'] ):'';
 $screenres['colordepth'] = (!empty($_GET['cd']))?mysql_real_escape_string( $_GET['cd'] ):'';

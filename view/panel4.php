@@ -4,20 +4,6 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   header('Location: /');
   exit;
 }
-
-foreach($panels_order as $a_panel_id)
-	switch($a_panel_id):
-		case 'p4_01':
-?>
-
-<div class="postbox wide <?php echo $wp_locale->text_direction ?>" id="p4_01"><?php 
-echo '<h3 class="hndle">';
-if (!$wp_slimstat_view->day_filter_active)
-	_e('Average pageviews per visit by day - Click on a day for hourly metrics', 'wp-slimstat-view');
-else
-	_e('Average pageviews per visit by hour', 'wp-slimstat-view');
-echo '</h3>';
-
 // This panel has a slightly different query
 $sql_from_where = "
 	FROM (
@@ -26,23 +12,43 @@ $sql_from_where = "
 		WHERE [where_clause]
 		GROUP BY visit_id
 	) AS ts1";
-$current = $wp_slimstat_view->extract_data_for_chart('AVG(ts1.count)', 'MAX(ts1.count)', 4, __('Avg Pageviews','wp-slimstat-view'), __('Longest visit','wp-slimstat-view'), 2, "AND visit_id > 0", $sql_from_where);
-if ($current->current_non_zero_count+$current->previous_non_zero_count == 0)
+$datachart = $wp_slimstat_view->extract_data_for_chart('ROUND(AVG(ts1.count),2)', 'MAX(ts1.count)', 4, __('Avg Pageviews','wp-slimstat-view'), __('Longest visit','wp-slimstat-view'), "AND visit_id > 0", $sql_from_where);
+
+foreach($panels_order as $a_panel_id)
+	switch($a_panel_id):
+		case 'p4_01':
+?>
+
+<div class="postbox wide <?php echo $wp_locale->text_direction ?>" id="p4_01"><?php
+$tooltip_content = '<strong>'.htmlspecialchars(__('Chart interaction','wp-slimstat-view'), ENT_QUOTES).'</strong><ul><li>'.htmlspecialchars(__('Use your mouse wheel to zoom in and out','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('While zooming in, drag the chart to move to a different area','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('Double click on an empty region to reset zoom level','wp-slimstat-view'), ENT_QUOTES).'</li>';
+$tooltip_content .= (!$wp_slimstat_view->day_filter_active)?'<li>'.htmlspecialchars(__('Click on a day for hourly metrics','wp-slimstat-view'), ENT_QUOTES).'</li>':'';
+$tooltip_content .= '</ul>';
+
+echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.gif' width='16' height='16' title='$tooltip_content' /><h3 class='hndle'>";
+if (!$wp_slimstat_view->day_filter_active)
+	_e('Daily Average Pageviews per Visit', 'wp-slimstat-view');
+else
+	_e('Hourly Average Pageviews per Visit', 'wp-slimstat-view');
+echo '</h3>';
+if ($datachart->current_non_zero_count+$datachart->previous_non_zero_count == 0)
 	echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 else{ ?>
-	<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="780" height="180" id="line" >
-		<param name="movie" value="<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/view/swf/fcf.swf" />
-		<param name="FlashVars" value="&amp;dataXML=<?php echo $current->xml ?>&amp;chartWidth=780&amp;chartHeight=180">
-		<param name="quality" value="high" />
-		<param name="wmode" value="transparent" />
-		<embed src="<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/view/swf/fcf.swf" flashVars="&amp;dataXML=<?php echo $current->xml ?>&amp;chartWidth=780&amp;chartHeight=180" quality="high" width="780" height="180" name="line" wmode="transparent" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
-	</object><?php
+	<div class="container noscroll"><div id="chart-placeholder"></div><div id="chart-legend"></div></div>
+	<script id="source">function initChart(){
+		window.chart_data = [[<?php echo $datachart->current_data1 ?>], [<?php echo $datachart->previous_data ?>], [<?php echo $datachart->current_data2 ?>]];
+		window.ticks = [<?php echo $datachart->ticks ?>];
+		var a = {label:"<?php echo $datachart->current_data1_label ?>",data:window.chart_data[0]}, b = {label:"<?php echo $datachart->previous_data_label ?>",data:window.chart_data[1]}, c = {label:"<?php echo $datachart->current_data2_label ?>",data:window.chart_data[2]};
+		jQuery.plot(jQuery("#chart-placeholder"),[a,b,c],{zoom:{interactive:true},pan:{interactive:true},series:{lines:{show:true},points:{show:true},colors:[{opacity:0.85}]},xaxis:{tickSize:1,tickDecimals:0<?php echo "$datachart->min_max_ticks"; echo (!empty($wp_slimstat_view->day_interval) && $wp_slimstat_view->day_interval > 20)?',ticks:[]':',ticks:window.ticks' ?>,zoomRange:[5,window.ticks.length],panRange:[0,window.ticks.length]},yaxis:{tickDecimals:0,tickFormatter:tickFormatter,zoomRange:[5,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>],panRange:[0,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>]}, grid:{backgroundColor:"#ffffff",borderWidth:0,hoverable:true,clickable:true},legend:{container:"#chart-legend",noColumns:3}});
+	}
+	initChart();
+	jQuery("#chart-placeholder").bind("dblclick",initChart);
+	</script><?php
 } ?>
 </div>
 
 <?php break; case 'p4_02': ?>
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_02">
-	<div class="more"><a href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_resources&amp;cmo=1<?php echo $filters_query; ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
+	<div class="more"><a href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_resources<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 	<h3 class="hndle"><?php _e('Recent Contents', "wp-slimstat-view"); ?></h3>
 	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user');
@@ -54,7 +60,7 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info = "title='".date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']).', '.(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	$clean_string = urlencode($results[$i]['resource']);
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
-		$strings['text']= "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
+		$strings['text']= "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
 
 	echo "<p $extra_info>{$strings['text']}</p>";
 } ?>
@@ -63,8 +69,9 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p4_03': ?>
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_03">
-	<div class="more"><a href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_bouncing_pages&amp;cmo=1<?php echo $filters_query; ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
-	<h3 class="hndle"><?php _e('Recent bouncing pages', 'wp-slimstat-view'); ?></h3>
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('A <em>bounce page</em> refers to a single-page visit or a visit in which the person left your site from the entrance page.','wp-slimstat-view') ?>' />
+	<div class="more"><a href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_bouncing_pages<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
+	<h3 class="hndle"><?php _e('Recent Bounce Pages', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user', '', '', 'HAVING COUNT(visit_id) = 1');
 $count_results = count($results);
@@ -77,9 +84,9 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info = "title='".date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']).', '.(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	$clean_string = urlencode($results[$i]['resource']);
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
 
-	echo "<p $extra_info><a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> {$strings['text']}</p>";
+	echo "<p $extra_info><a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$strings['text']}</p>";
 } ?>
 	</div>
 </div>
@@ -97,7 +104,7 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info = "title='".date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']).', '.(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	$clean_string = urlencode($results[$i]['resource']);
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
 
 	echo "<p $extra_info>{$strings['text']}</p>";
 } ?>
@@ -106,7 +113,7 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p4_05': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p4_05">
-	<div class="more"><a href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_404<?php echo $filters_query; ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
+	<div class="more"><a href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_404<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 	<h3 class="hndle"><?php _e('Recent 404 pages', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user', "resource LIKE '[404]%'");
@@ -119,7 +126,7 @@ for($i=0;$i<$count_results;$i++){
 	$clean_string = urlencode($results[$i]['resource']);
 	$strings['text'] = str_replace('[404]', '', $strings['text']);
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
 
 	echo "<p $extra_info>{$strings['text']}</p>";
 } ?>
@@ -140,7 +147,7 @@ for($i=0;$i<$count_results;$i++){
 	$highlight_row = !empty($results[$i]['user'])?'class="is-known-user"':'';
 	$clean_string = urlencode($results[$i]['searchterms']);
 	if (!isset($wp_slimstat_view->filters_parsed['searchterms'][1]) || $wp_slimstat_view->filters_parsed['searchterms'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;searchterms=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;searchterms=$clean_string'>{$strings['text']}</a>";
 
 	echo "<p $highlight_row$extra_info>{$strings['text']}</p>";
 } ?>
@@ -169,7 +176,7 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info = "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}'";
 	$clean_string = urlencode($results[$i]['resource']);
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
 
 	echo "<p $extra_info><span class='element-title'>{$strings['text']}</span> <span>$percentage%</span></p>";
 } ?>
@@ -191,12 +198,12 @@ for($i=0;$i<$count_results;$i++){
 	if ($outbound_id != $results[$i]['outbound_id']){
 		$highlight_row = '';
 		if (empty($results[$i]['user']))
-			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
+			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
 		else{
-			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
+			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
 			$highlight_row = ' is-known-user';
 		}
-		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/whois.gif' /></a> $ip_address";
+		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/images/whois.gif' /></a> $ip_address";
 		$country = __('c-'.$results[$i]['country'],'countries-languages');
 
 		echo "<p class='header$highlight_row'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
@@ -206,7 +213,7 @@ for($i=0;$i<$count_results;$i++){
 	$outbound_resource = trim_value($results[$i]['outbound_domain'], 40);
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['outbound_domain'].$results[$i]['outbound_resource']);
 	echo "<p><span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>";
-	echo " <span><a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> {$outbound_resource['text']}</span></p>";
+	echo " <span><a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$outbound_resource['text']}</span></p>";
 } ?>
 	</div>
 </div>
@@ -215,7 +222,7 @@ for($i=0;$i<$count_results;$i++){
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_09"><?php
 title_period(__('Top Exit Pages for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
 
-$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "visit_id > 0 AND resource <> '' AND resource <> '__l_s__'");
+$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "t1.visit_id > 0 AND t1.resource <> '' AND t1.resource <> '__l_s__' AND t1.resource NOT LIKE '[404]%'");
 $count_results = count($results);
 $count_exit_pages = $wp_slimstat_view->count_exit_pages();
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
@@ -228,18 +235,19 @@ for($i=0;$i<$count_results;$i++){
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
 	$element_url = $wp_slimstat_view->blog_domain.$results[$i]['resource'];
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
 
-	echo "<p $extra_info><a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> {$strings['text']}</p>";
+	echo "<p $extra_info><a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$strings['text']}</p>";
 } ?>
 	</div>
 </div>
 
 <?php break; case 'p4_10': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p4_10">
-	<h3 class="hndle"><?php _e('Recent Downloads', 'wp-slimstat-view'); ?></h3>
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('WP SlimStat can track specific events (clicks, downloads, etc) triggered by your visitors. Add <strong>onclick="ss_te(event,<em>code</em>)"</strong> to your links, where <em>code</em> is an integer value between 2 and 254 (1 is for downloads)','wp-slimstat-view') ?>' />
+	<h3 class="hndle"><?php _e('Recent Events', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
-$results = $wp_slimstat_view->get_recent_outbound(1);
+$results = $wp_slimstat_view->get_recent_outbound();
 $count_results = count($results);
 $outbound_id = 0;
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
@@ -249,10 +257,10 @@ for($i=0;$i<$count_results;$i++){
 	$results[$i]['dt'] = date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']);
 	if ($outbound_id != $results[$i]['outbound_id']){
 		if (empty($results[$i]['user']))
-			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
+			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
 		else
-			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
-		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/whois.gif' /></a> $ip_address";
+			$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
+		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/images/whois.gif' /></a> $ip_address";
 		$country = __('c-'.$results[$i]['country'],'countries-languages');
 		$browser_version = ($results[$i]['version']!='0')?$results[$i]['version']:'';
 
@@ -262,7 +270,7 @@ for($i=0;$i<$count_results;$i++){
 	$outbound_resource = trim_value($results[$i]['outbound_resource'], 45);
 	$outbound_domain = trim_value($results[$i]['outbound_domain'], 36);
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['outbound_resource']);
-	echo "<p><a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/url.gif' /></a> <span class='element-title'{$outbound_resource['tooltip']}>{$outbound_resource['text']}</span> <span>{$outbound_domain['text']}</span></p>";
+	echo "<p><a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> <span class='element-title'{$outbound_resource['tooltip']}>{$outbound_resource['text']}</span> <span style='color:#f00;font-weight:700'>{$results[$i]['type']}</span> <span>{$outbound_domain['text']}</span></p>";
 } ?>
 	</div>
 </div><?php	break;

@@ -5,7 +5,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
-global $wpdb, $wp_locale;
+global $wpdb, $wp_locale, $month;
 
 // IP Lookup service URL
 $ip_lookup_url = get_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips=');
@@ -49,20 +49,19 @@ $wp_slimstat_view = new wp_slimstat_view();
 $get_filter_to_use = !empty($_GET['ftu'])?"&ftu={$_GET['ftu']}":'';
 $get_orderby = !empty($_GET['orderby'])?"&ftu={$_GET['orderby']}":'';
 $get_direction = !empty($_GET['direction'])?"&ftu={$_GET['direction']}":'';
-$filters_list = $filters_query = '';
+$filters_list = '';
 
 if (!empty($wp_slimstat_view->filters_parsed)){
 	$filters_list = __('Current filters:','wp-slimstat-view').' ';
 	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
 		$filters_list .= "<code>".htmlspecialchars("$a_filter_label {$a_filter_details[1]} $a_filter_value_no_slashes")."</code> [[$a_filter_label]], ";
-		$filters_query .= "&amp;$a_filter_label=$a_filter_value_no_slashes&amp;$a_filter_label-op={$a_filter_details[1]}";
 	}
 	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
-		$url_filter_removed = str_replace("&amp;$a_filter_label=$a_filter_value_no_slashes&amp;$a_filter_label-op={$a_filter_details[1]}", '', $filters_query);
+		$url_filter_removed = str_replace("&$a_filter_label=$a_filter_value_no_slashes&$a_filter_label-op={$a_filter_details[1]}", '', $wp_slimstat_view->filters_query);
 		$filters_list = str_replace("[[$a_filter_label]]", 
-				" <a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction$url_filter_removed'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/cancel.gif' alt='".__('x','wp-slimstat-view')."'/></a>",
+				" <a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction$url_filter_removed'><img src='$wp_slimstat_view->plugin_url/images/cancel.gif' alt='".__('x','wp-slimstat-view')."'/></a>",
 				$filters_list);
 	}
 }
@@ -115,19 +114,83 @@ function trim_value($_string = '', $_length = 40){
 ?>
 
 <script type="text/javascript">
-<?php $refresh_interval = get_option('slimstat_refresh_interval', '0'); if (($refresh_interval > 0) && ($current_panel == 5)) echo "window.setTimeout('location.reload()', $refresh_interval*1000);"; ?>
+<?php $refresh_interval = get_option('slimstat_refresh_interval', '0'); if (($refresh_interval > 0) && ($current_panel == 5)) echo "window.setTimeout('location.reload()', $refresh_interval*1000);"; 
+if ($current_panel < 5): ?>
+function tickFormatter(n){
+	n += '';
+	x = n.split('.');
+	x1 = x[0];
+	x2 = x.length > 1 ? '<?php echo $wp_slimstat_view->decimal_separator ?>' + x[1] : '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + '<?php echo $wp_slimstat_view->thousand_separator ?>' + '$2');
+	}
+	return x1 + x2;
+}
+function showTooltip(x, y, content, class_label){
+	var class_attribute = class_label ? ' class="'+class_label+'"':'';
+	jQuery('<div id="jquery-tooltip"' + class_attribute + '>' + content + '</div>').css({
+		top:y-15,
+		left:x+10,
+	}).appendTo("body").fadeIn(200);
+}
+var previousPoint = null;
+
 jQuery(document).ready(function(){
- jQuery(".slimstat-tooltips p").hover(
-	function(){
-		this.savetitle = this.title;
-		jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
-		this.title = '';
-	},
-	function(){
-		this.title = this.savetitle;
-		jQuery("#wp-element-details").remove();
+	jQuery(".slimstat-tooltips p").hover(
+		function(){
+			this.savetitle = this.title;
+			jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
+			this.title = '';
+		},
+		function(){
+			this.title = this.savetitle;
+			jQuery("#wp-element-details").remove();
+		}
+	);
+	jQuery("#chart-placeholder").bind("plothover", function(event, pos, item){
+		jQuery("#x").text(pos.x.toFixed(2));
+		jQuery("#y").text(pos.y.toFixed(2));
+		if (item){
+			if (previousPoint != item.dataIndex){
+				previousPoint = item.dataIndex;
+				showTooltip(item.pageX, item.pageY, item.series.label+': <b>'+window.ticks[item.datapoint[0]][1]+'</b> = '+tickFormatter(item.datapoint[1]));
+			}
+		}
+		else{
+			jQuery("#jquery-tooltip").remove();
+			previousPoint = null;            
+		}
 	});
+	jQuery("#chart-placeholder").bind("plotclick", function(event, pos, item){
+        if (item && typeof(window.chart_data[item.seriesIndex][item.datapoint[0]][2]) != 'undefined'){
+			document.location.href = '<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat'+window.chart_data[item.seriesIndex][item.datapoint[0]][2];
+        }
+    });
+	jQuery(".module-tooltip").hover(
+			function(event){
+				this.savetitle = this.title;
+				showTooltip(event.pageX-240, event.pageY+10, this.title, 'tooltip-fixed-width');
+				this.title = '';
+			},
+			function(){
+				this.title = this.savetitle;
+				jQuery("#jquery-tooltip").remove();
+			}
+	);
+	jQuery(".item-tooltip").hover(
+			function(event){
+				this.savetitle = this.title;
+				showTooltip(event.pageX+10, event.pageY+10, this.title, 'tooltip-fixed-width');
+				this.title = '';
+			},
+			function(){
+				this.title = this.savetitle;
+				jQuery("#jquery-tooltip").remove();
+			}
+	);
 });
+<?php endif ?>
 </script>
 
 <div class="wrap">
@@ -137,19 +200,20 @@ jQuery(document).ready(function(){
 		foreach($array_panels as $a_panel_id => $a_panel_name){
 			echo '<a class="nav-tab nav-tab';
 			echo ($current_panel == $a_panel_id+1)?'-active':'-inactive';
-			echo '" href="'.$_SERVER['PHP_SELF'].'?page=wp-slimstat&slimpanel='.($a_panel_id+1).$filters_query.'&direction='.$wp_slimstat_view->direction.'">'.$a_panel_name.'</a>';
+			echo '" href="'.$_SERVER['PHP_SELF'].'?page=wp-slimstat&slimpanel='.($a_panel_id+1).$wp_slimstat_view->filters_query.'&direction='.$wp_slimstat_view->direction.'">'.$a_panel_name.'</a>';
 		}
 		?>
 	</h2>
 	
-	<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="get" name="setslimstatfilters">
+	<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="get" name="setslimstatfilters"
+		onsubmit="if (this.year.value == '<?php _e('Year','wp-slimstat-view') ?>') this.year.value = ''">
 		<input type="hidden" name="page" value="wp-slimstat">
 		<input type="hidden" name="slimpanel" value="<?php echo !empty($_GET['slimpanel'])?intval($_GET['slimpanel']):1; ?>">
 		<?php if ($current_panel == 5) echo "<input type='hidden' name='ftu' value='$function_to_use'>"; ?>
 		<?php // Keep other filters persistent
 			foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
-				echo "<input type='hidden' name='{$a_filter_label}' value='{$a_filter_details[0]}'>";
-				echo "<input type='hidden' name='{$a_filter_label}-op' value='{$a_filter_details[1]}'>";
+				echo "<input type='hidden' name='$a_filter_label' value='{$a_filter_details[0]}'>";
+				echo "<input type='hidden' name='$a_filter_label-op' value='{$a_filter_details[1]}'>";
 			}
 		?>
 		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Show records where','wp-slimstat-view') ?>
@@ -157,6 +221,8 @@ jQuery(document).ready(function(){
 				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
 				<option value="version"><?php _e('Browser version','wp-slimstat-view') ?></option>
 				<option value="css_version"><?php _e('CSS version','wp-slimstat-view') ?></option>
+				<option value="type"><?php _e('Browser type','wp-slimstat-view') ?></option>
+				<option value="platform"><?php _e('Operating System','wp-slimstat-view') ?></option>
 				<option value="country"><?php _e('Country Code','wp-slimstat-view') ?></option>
 				<option value="domain"><?php _e('Domain','wp-slimstat-view') ?></option>
 				<option value="ip"><?php _e('IP','wp-slimstat-view') ?></option>
@@ -164,10 +230,10 @@ jQuery(document).ready(function(){
 				<option value="visit_id"><?php _e('Visit ID','wp-slimstat-view') ?></option>
 				<option value="searchterms"><?php _e('Keywords','wp-slimstat-view') ?></option>
 				<option value="language"><?php _e('Language Code','wp-slimstat-view') ?></option>
-				<option value="platform"><?php _e('Operating System','wp-slimstat-view') ?></option>
 				<option value="resource"><?php _e('Permalink','wp-slimstat-view') ?></option>
 				<option value="referer"><?php _e('Referer','wp-slimstat-view') ?></option>
 				<option value="resolution"><?php _e('Screen Resolution','wp-slimstat-view') ?></option>
+				<option value="colordepth"><?php _e('Color depth','wp-slimstat-view') ?></option>
 				<option value="author"><?php _e('Post Author','wp-slimstat-view') ?></option>
 				<option value="category-id"><?php _e('Post Category ID','wp-slimstat-view') ?></option>
 			</select> 
@@ -183,37 +249,33 @@ jQuery(document).ready(function(){
 			</select>
 			<input type="text" name="f_value" value="" size="12">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 			<span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Filter by date','wp-slimstat-view') ?> <select name="day">
-				<option value=""><?php _e('Day','wp-slimstat-view') ?></option>
-				<option>01</option><option>02</option><option>03</option><option>04</option><option>05</option>
-				<option>06</option><option>07</option><option>08</option><option>09</option><option>10</option>
-				<option>11</option><option>12</option><option>13</option><option>14</option><option>15</option>
-				<option>16</option><option>17</option><option>18</option><option>19</option><option>20</option>
-				<option>21</option><option>22</option><option>23</option><option>24</option><option>25</option>
-				<option>26</option><option>27</option><option>28</option><option>29</option><option>30</option>
-				<option>31</option>
-			</select> 
-			<select name="month">
-				<option value=""><?php _e('Month','wp-slimstat-view') ?></option>
-				<option value="01"><?php _e('January') ?></option><option value="02"><?php _e('February') ?></option><option value="03"><?php _e('March') ?></option>
-				<option value="04"><?php _e('April') ?></option><option value="05"><?php _e('May') ?></option><option value="06"><?php _e('June') ?></option>
-				<option value="07"><?php _e('July') ?></option><option value="08"><?php _e('August') ?></option><option value="09"><?php _e('September') ?></option>
-				<option value="10"><?php _e('October') ?></option><option value="11"><?php _e('November') ?></option><option value="12"><?php _e('December') ?></option>
-			</select>
-			<select name="year">
-				<option value=""><?php _e('Year','wp-slimstat-view') ?></option>
-				<?php
-					$current_year = date_i18n('Y'); 
-					for($i=$current_year;$i>$current_year-3;$i--)
+				<option value=""><?php _e('Day','wp-slimstat-view') ?></option><?php
+				for($i=1;$i<=31;$i++){
+					if(!empty($wp_slimstat_view->filters_parsed['day'][0]) && $wp_slimstat_view->filters_parsed['day'][0] == $i)
+						echo "<option selected='selected'>$i</option>";
+					else
 						echo "<option>$i</option>";
+				} 
+				?></select> 
+			<select name="month">
+				<option value=""><?php _e('Month','wp-slimstat-view') ?></option><?php
+				for($i=1;$i<=12;$i++){
+					if(!empty($wp_slimstat_view->filters_parsed['month'][0]) && $wp_slimstat_view->filters_parsed['month'][0] == $i)
+						echo "<option value='$i' selected='selected'>{$month[zeroise($i, 2)]}</option>";
+					else
+						echo "<option value='$i'>{$month[zeroise($i, 2)]}</option>";
+				} 
 				?>
 			</select>
+			<input type="text" name="year" size="4" onfocus="if(this.value == '<?php _e('Year','wp-slimstat-view') ?>') this.value = '';" onblur="if(this.value == '') this.value = '<?php _e('Year','wp-slimstat-view') ?>';"
+				value="<?php echo !empty($wp_slimstat_view->filters_parsed['year'][0])?$wp_slimstat_view->filters_parsed['year'][0]:__('Year','wp-slimstat-view') ?>">
 			+ <input type="text" name="interval" value="" size="3" title="<?php _e('days', 'wp-slimstat-view') ?>">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 			<span class="<?php echo $wp_locale->text_direction ?>"><input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary">
-			<?php if ($current_panel != 5): ?><a class="button-primary" href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$filters_query; ?>"><?php _e('Reverse','wp-slimstat-view') ?></a><?php endif; ?></span>
+			<?php if ($current_panel != 5): ?><a class="button-primary" href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$wp_slimstat_view->filters_query; ?>"><?php _e('Reverse','wp-slimstat-view') ?></a><?php endif; ?></span>
 		</p>
 	</form>
 <?php if (!empty($filters_list)): ?>
-	<p class="current-filters"><?php if(count($wp_slimstat_view->filters_parsed) > 1): ?><a href='<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>'><img src='<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/images/cancel.gif'/></a> <?php endif; echo substr($filters_list, 0, -2) ?></p>
+	<p class="current-filters"><?php if(count($wp_slimstat_view->filters_parsed) > 1): ?><a href='<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>'><img src='<?php echo $wp_slimstat_view->plugin_url ?>/images/cancel.gif'/></a> <?php endif; echo substr($filters_list, 0, -2) ?></p>
 <?php endif; $meta_box_order_nonce = wp_create_nonce('meta-box-order'); ?>
 <div class="meta-box-sortables">
 <form style="display:none" method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo $meta_box_order_nonce ?>" /></form>

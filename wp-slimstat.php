@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.4.4
+Version: 2.5
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -23,10 +23,7 @@ class wp_slimstat{
 		global $wpdb;
 
 		// Current version
-		$this->version = '2.4.4';
-
-		// It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
-		$this->plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+		$this->version = '2.5';
 
 		// Let's keep track of transaction IDs
 		$this->tid = 0;
@@ -50,7 +47,7 @@ class wp_slimstat{
 			add_action('admin_menu', array(&$this, 'wp_slimstat_add_config_menu'));
 
 			// Add some custom stylesheets
-			add_action('admin_print_styles-wp-slimstat', array(&$this, 'wp_slimstat_stylesheet'));
+			//add_action('admin_print_styles-wp-slimstat', array(&$this, 'wp_slimstat_stylesheet'));
 			add_action('admin_print_styles-wp-slimstat/options/index.php', array(&$this, 'wp_slimstat_stylesheet'));
 
 			// Contextual help
@@ -151,6 +148,7 @@ class wp_slimstat{
 				version VARCHAR(15) DEFAULT '',
 				platform VARCHAR(15) DEFAULT '',
 				css_version VARCHAR(5) DEFAULT '',
+				type TINYINT UNSIGNED DEFAULT 0,
 				PRIMARY KEY (browser_id)
 			)$use_innodb";
 
@@ -194,7 +192,7 @@ class wp_slimstat{
 		$this->_create_table($visits_table_sql, $wpdb->prefix.'slim_visits');
 		$this->_create_table($outbound_table_sql, $wpdb->prefix.'slim_outbound');
 		if (!$this->_create_table($stats_table_sql, $wpdb->prefix.'slim_stats', true)){
-			// Update the table structure ( versions < 2.4 ), if needed
+			// Update the table structure ( versions < 2.5 ), if needed
 			$this->_update_stats_table();
 		}
 
@@ -218,6 +216,9 @@ class wp_slimstat{
 
 		// Don't ignore bots and spiders by default
 		add_option('slimstat_ignore_bots', 'no', '', 'no');
+		
+		// Ignore spammers?
+		add_option('slimstat_ignore_spammers', 'no', '', 'no');
 
 		// Tracks logged in users, adding their login to the resource they requested
 		add_option('slimstat_track_users', 'yes', '', 'no');
@@ -335,8 +336,8 @@ class wp_slimstat{
 
 		// User's IP address
 		$long_user_ip = $this->_get_ip2long_remote_ip();
-		
-		// Is this visit coming from the server itself ( = other script crawling the site)
+
+		// Is this visit coming from the server itself ( = other script crawling the site or localhost)
 		if ($long_user_ip === false || $long_user_ip == ip2long($_SERVER['SERVER_ADDR']))
 			return $_argument;
 
@@ -358,6 +359,29 @@ class wp_slimstat{
 		$referer = array();
 
 		$stat['ip'] = sprintf("%u", $long_user_ip);
+
+		// Is this a spammer?
+		$spam_comment = $wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$wpdb->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
+		$stat['user'] = '';
+		if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
+			if (get_option('slimstat_ignore_spammers', 'no') == 'yes')
+				return $_argument;
+			else
+				$stat['user'] .= "[spam] {$spam_comment['comment_author']}";
+		}
+		// Track commenters and logged-in users
+		else{
+			// Don't track logged-in users, if the corresponding option is enabled
+			if (get_option('slimstat_track_users', 'no') == 'no' &&  is_user_logged_in() && !empty($current_user->user_login))
+				return $_argument;
+
+			if (isset($_COOKIE['comment_author_'. COOKIEHASH]))
+				$stat['user'] = $_COOKIE['comment_author_'. COOKIEHASH];
+
+			if (is_user_logged_in() && !empty($current_user->user_login))
+				$stat['user'] = $current_user->user_login;
+		}
+
 		$stat['language'] = $this->_get_language();
 		$stat['country'] = $this->_get_country($stat['ip']);
 
@@ -403,13 +427,6 @@ class wp_slimstat{
 			if (!empty($stat['resource']) && strpos($stat['resource'], $a_filter) !== false) return $_argument;
 		}
 
-		// Don't track logged-in users, if the corresponding option is enabled
-		if (get_option('slimstat_track_users', 'no') == 'no' &&  is_user_logged_in() && !empty($current_user->user_login)) return $_argument;
-
-		// Track commenters and logged-in users
-		if (isset($_COOKIE['comment_author_'. COOKIEHASH])) $stat['user'] = $_COOKIE['comment_author_'. COOKIEHASH];
-		if (is_user_logged_in() && !empty($current_user->user_login)) $stat['user'] = $current_user->user_login;
-
 		// Loads the class to determine the user agent
 		require 'browscap.php';
 
@@ -433,27 +450,35 @@ class wp_slimstat{
 		$browser['version'] = $browser_details['Version'];
 		$browser['platform'] = strtolower($browser_details['Platform']);
 		$browser['css_version'] = $browser_details['CssVersion'];
+		$browser['type'] = 0;
+
+		// Browser Types: 
+		//		0: regular
+		//		1: crawler
+		//		2: mobile
+		//		3: syndication reader
+		if ($browser_details['Crawler'] == 'true' || $browser_details['Browser'] == 'Default Browser')
+			$browser['type'] = 1;
+		elseif ($browser_details['isMobileDevice'] == 'true')
+			$browser['type'] = 2;
+		elseif ($browser_details['isSyndicationReader'] == 'true')
+			$browser['type'] = 3;
 
 		// Is this browser blacklisted?
 		$to_ignore = get_option('slimstat_ignore_browsers', array());
 		foreach($to_ignore as $a_filter){
-			// TODO: use regolar expressions to filter browsers
 			if (strpos($a_filter, $browser['browser'].'/'.$browser['version']) === 0) return $_argument;
 		}
 
-		// If platform = unknown or css_version = 0, it's likely a bot
+		// Ignore bots?
 		$ignore_bots = get_option('slimstat_ignore_bots', 'no');
-		if ( ($ignore_bots == 'yes') && ( ($browser['css_version'] == '0') ||
-			($browser['platform'] == 'unknown') ||
-			(strpos($browser['browser'], 'crawl') !== false) ||
-			(strpos($browser['browser'], 'bot') !== false) ||
-			(strpos($browser['browser'], 'libw') !== false) ) ) return $_argument;
+		if (($ignore_bots == 'yes') && ($browser['type'] == 1)) return $_argument;
 
 		$stat['dt'] = date_i18n('U');
 
 		// Now we insert the new browser in the lookup table, if it doesn't exist
-		$insert_new_browser_sql = "INSERT INTO {$wpdb->base_prefix}slim_browsers (browser, version, platform, css_version)
-			SELECT %s,%s,%s,%s
+		$insert_new_browser_sql = "INSERT INTO {$wpdb->base_prefix}slim_browsers (browser, version, platform, css_version, type)
+			SELECT %s,%s,%s,%s,%d
 			FROM DUAL
 			WHERE NOT EXISTS ( ";
 		$select_sql = "SELECT browser_id
@@ -461,7 +486,8 @@ class wp_slimstat{
 					WHERE browser = %s AND
 							version = %s AND
 							platform = %s AND
-							css_version = %s LIMIT 1";
+							css_version = %s AND
+							type = %d LIMIT 1";
 
 		$insert_new_browser_sql .= $select_sql . ")";
 
@@ -527,25 +553,42 @@ class wp_slimstat{
 	// end _create_table
 
 	/**
-	 * Updates the table structure, adding a new column 'user' to wp_slim_stats
+	 * Updates the table structure, adding new columns and resizing existing ones
 	 */
 	private function _update_stats_table(){
 	    global $wpdb;
 
+		// Update wp_slim_stats
 		$table_structure = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}slim_stats", ARRAY_A);
-		$user_field_exists = false;
+		$field_exists = false;
 
 		// Let's see if the structure is up-to-date
 		foreach($table_structure as $a_row){
-			if ($a_row['Field'] == 'user') $user_field_exists = true;
+			if ($a_row['Field'] == 'user') $field_exists = true;
 			if ($a_row['Field'] == 'referer' && $a_row['Type'] == 'varchar(255)'){
 				$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats MODIFY referer VARCHAR(2048), MODIFY searchterms VARCHAR(2048), MODIFY resource VARCHAR(2048)");
 				$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_outbound MODIFY outbound_resource VARCHAR(2048)");
 			}
 		}
 
-		if (!$user_field_exists)
+		if (!$field_exists)
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD COLUMN user VARCHAR(255) DEFAULT '' AFTER ip");
+
+		// Update wp_slim_browsers
+		$table_structure = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->base_prefix}slim_browsers", ARRAY_A);
+		$field_exists = false;
+
+		// Let's see if the structure is up-to-date
+		foreach($table_structure as $a_row){
+			if ($a_row['Field'] == 'type') $field_exists = true;
+		}
+
+		if (!$field_exists){
+			$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers ADD COLUMN type TINYINT UNSIGNED DEFAULT 0 AFTER css_version");
+			
+			// Set the type of existing browsers
+			$wpdb->query("UPDATE {$wpdb->base_prefix}slim_browsers SET type = 1 WHERE platform = 'unknown' AND css_version = '0'");
+		}
 
 		return true;
 	}
@@ -719,22 +762,23 @@ class wp_slimstat{
 	 * Loads a custom stylesheet file for the administration panels
 	 */
 	public function wp_slimstat_stylesheet(){
-		$stylesheeth_url = $this->plugin_url . '/wp-slimstat/css/view.css';
-		wp_register_style('wp-slimstat-view', $stylesheeth_url);
+		$stylesheet_url = plugins_url('/css/view.css', __FILE__);
+		wp_register_style('wp-slimstat-view', $stylesheet_url);
 		wp_enqueue_style('wp-slimstat-view');
-
-		wp_enqueue_script('dashboard');
 	}
 	// end wp_slimstat_stylesheet
+
+	public function wp_slimstat_enqueue_scripts(){
+		wp_enqueue_script('dashboard');
+		wp_enqueue_script('slimstat_flot', plugins_url('/view/flot/jquery.flot.min.js', __FILE__), array('jquery'), '0.7');
+		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/view/flot/jquery.flot.navigate.min.js', __FILE__), array('jquery','slimstat_flot'), '0.7');
+	}
 
 	/**
 	 * Adds a new entry in the admin menu, to view the stats
 	 */
 	public function wp_slimstat_add_view_menu($_s){
 		global $current_user;
-
-		// Load localization files
-		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
 		$array_allowed_users = get_option('slimstat_can_view', array());
 		$minimum_capability = get_option('slimstat_capability_can_view', 'read');
@@ -743,11 +787,12 @@ class wp_slimstat{
 
 		if ((empty($array_allowed_users) && $minimum_capability == 'read') || in_array($current_user->user_login, $array_allowed_users) || current_user_can($minimum_capability)){
 			if ($use_separate_menu == 'yes')
-				$new_entry = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'), $this->plugin_url.'/wp-slimstat/images/wp-slimstat-menu.png');
+				$new_entry = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'), plugins_url('/images/wp-slimstat-menu.png', __FILE__));
 			else
 				$new_entry = add_dashboard_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'));
 		}
 		add_action('load-'.$new_entry, array(&$this, 'wp_slimstat_stylesheet'));
+		add_action('load-'.$new_entry, array(&$this, 'wp_slimstat_enqueue_scripts'));
 		return $_s;
 	}
 	// end wp_slimstat_add_view_menu
@@ -790,14 +835,14 @@ class wp_slimstat{
 			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', get_option('siteurl').'/wp-slimstat');
 			$enable_footer_link = get_option('slimstat_enable_footer_link', 'yes');
 
-			if ($enable_footer_link == 'yes') echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.$this->plugin_url.'/wp-slimstat/images/wp-slimstat-antipixel.png" width="80" height="15" alt="WP SlimStat"/></a></p>';
+			if ($enable_footer_link == 'yes') echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.plugins_url('/images/wp-slimstat-antipixel.png', __FILE__).'" width="80" height="15" alt="WP SlimStat"/></a></p>';
 
 			echo "<script type='text/javascript'>slimstat_tid='$hexval_tid';";
 			echo "slimstat_path='$custom_slimstat_js_path';";
 			$slimstat_blog_id = (function_exists('is_multisite') && is_multisite())?$wpdb->blogid:0;
 			echo "slimstat_blog_id='$slimstat_blog_id';";
 			echo 'slimstat_session_id=\''.md5($intval_tid.$my_secret_key).'\';</script>';
-			echo "<script type='text/javascript' src='$this->plugin_url/wp-slimstat/wp-slimstat.js'></script>\n";
+			echo "<script type='text/javascript' src='".plugins_url('/wp-slimstat.js', __FILE__)."'></script>\n";
 		}
 	}
 	// end wp_slimstat_javascript

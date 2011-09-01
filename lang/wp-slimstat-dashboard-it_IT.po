@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat Dashboard 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-05-03 13:29-0500\n"
-"PO-Revision-Date: 2011-05-03 13:31-0500\n"
+"POT-Creation-Date: 2011-09-01 09:09-0500\n"
+"PO-Revision-Date: 2011-09-01 09:09-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -15,83 +15,83 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: wp-slimstat-dashboard.php:81
-#: wp-slimstat-dashboard.php:103
-#: wp-slimstat-dashboard.php:158
-#: wp-slimstat-dashboard.php:177
+#: wp-slimstat-dashboard.php:75
+#: wp-slimstat-dashboard.php:97
+#: wp-slimstat-dashboard.php:152
+#: wp-slimstat-dashboard.php:171
 msgid "No data to display"
 msgstr "Nessun dato da visualizzare"
 
-#: wp-slimstat-dashboard.php:86
+#: wp-slimstat-dashboard.php:80
 msgid "Last"
 msgstr "Ultimo"
 
-#: wp-slimstat-dashboard.php:88
-#: wp-slimstat-dashboard.php:124
+#: wp-slimstat-dashboard.php:82
+#: wp-slimstat-dashboard.php:118
 #, php-format
 msgid "Open %s in a new window"
 msgstr "Apri %s in una nuova finestra"
 
-#: wp-slimstat-dashboard.php:110
+#: wp-slimstat-dashboard.php:104
 msgid "Search for"
 msgstr "Ricerca per"
 
-#: wp-slimstat-dashboard.php:118
+#: wp-slimstat-dashboard.php:112
 msgid "c-"
 msgstr "c-"
 
-#: wp-slimstat-dashboard.php:129
+#: wp-slimstat-dashboard.php:123
 msgid "Direct visit to"
 msgstr "Visita diretta a"
 
-#: wp-slimstat-dashboard.php:139
-#: wp-slimstat-dashboard.php:142
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:136
 msgid "Pageviews"
 msgstr "Accessi"
 
-#: wp-slimstat-dashboard.php:139
-#: wp-slimstat-dashboard.php:143
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:137
 msgid "Unique IPs"
 msgstr "IP Unici"
 
-#: wp-slimstat-dashboard.php:144
+#: wp-slimstat-dashboard.php:138
 msgid "Bots"
 msgstr "Bot"
 
-#: wp-slimstat-dashboard.php:145
+#: wp-slimstat-dashboard.php:139
 msgid "Avg Pageviews"
 msgstr "Media accessi"
 
-#: wp-slimstat-dashboard.php:146
-#: wp-slimstat-dashboard.php:147
+#: wp-slimstat-dashboard.php:140
+#: wp-slimstat-dashboard.php:141
 msgid "On"
 msgstr "Il"
 
-#: wp-slimstat-dashboard.php:148
+#: wp-slimstat-dashboard.php:142
 msgid "Last Month"
 msgstr "Mese scorso"
 
-#: wp-slimstat-dashboard.php:165
+#: wp-slimstat-dashboard.php:159
 msgid "Hits"
 msgstr "Accessi"
 
-#: wp-slimstat-dashboard.php:199
+#: wp-slimstat-dashboard.php:194
 msgid "Top pages for this month"
 msgstr "Pagine viste questo mese"
 
-#: wp-slimstat-dashboard.php:200
+#: wp-slimstat-dashboard.php:195
 msgid "Spy View"
 msgstr "Spioncino"
 
-#: wp-slimstat-dashboard.php:201
+#: wp-slimstat-dashboard.php:196
 msgid "Summary for this month"
 msgstr "Sommario per il mese corrente"
 
-#: wp-slimstat-dashboard.php:202
+#: wp-slimstat-dashboard.php:197
 msgid "User Agents"
 msgstr "Browser"
 
-#: wp-slimstat-dashboard.php:203
+#: wp-slimstat-dashboard.php:198
 msgid "Recent Keywords"
 msgstr "Parole chiave recenti"
 

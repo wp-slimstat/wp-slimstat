@@ -56,10 +56,44 @@
  margin-right:5px;
  width:auto;
 }
+#chart-placeholder{
+ background-color:#fff;
+ height:155px;
+ margin:5px 0 0 10px;
+ width:760px;
+}
+#chart-legend{
+ float:right;
+ margin-top:5px;
+}
+#chart-legend td{
+ font-size:.85em;
+}
+#chart-legend td.legendLabel{
+ padding-right:10px;
+}
+#jquery-tooltip{
+ background-color:#ffe;
+ border:1px solid #aab;
+ display:none;
+ opacity:0.95;
+ padding:5px;
+ position:absolute;
+}
+#jquery-tooltip.tooltip-fixed-width{
+ width:200px;
+}
+#jquery-tooltip ul{
+ margin-top:5px;
+}
+#jquery-tooltip li{
+ list-style-type:circle;
+ margin-left:20px;
+}
 .postbox{
  background-color:#fff;
  float:left;
- height:205px;
+ height:209px;
  margin-right:5px;
  overflow:hidden;
  padding:0;
@@ -86,13 +120,13 @@
 }
 .postbox div.container{
  background-color:#fff;
- height:181px;
+ height:184px;
  min-width:255px;
  overflow-y:auto;
 }
 .postbox.tall div.container{min-width:1005px}
 .postbox div.container.noscroll{
- overflow-y:hidden;
+ overflow:hidden;
 }
 .postbox p{
  border-bottom:1px dashed #ddd;
@@ -113,6 +147,11 @@
 .postbox #wp-element-details{clear:left;display:block;font-size:.8em}
 .postbox p.nodata{border:0;color:#999;padding-top:70px;text-align:center}
 .postbox p img{float:left;padding:2px 6px 0 0}
+.postbox img.module-tooltip{
+ float:right;
+ margin:4px 3px 0 0;
+}
+.postbox p img.item-tooltip{padding:0 0 0 5px}
 .postbox.rtl p img{float:right;padding:2px 0 0 6px}
 .postbox p span{
  float:right;

@@ -2,9 +2,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slimstat French Translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-14 15:37-0500\n"
-"PO-Revision-Date: 2010-10-20 23:52-0500\n"
-"Last-Translator: Vidal Arpin <vidal@arpin.ca>\n"
+"POT-Creation-Date: 2011-09-01 09:09-0500\n"
+"PO-Revision-Date: 2011-09-01 09:09-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: Vidal Arpin <vidal@arpin.ca>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -13,105 +13,124 @@ msgstr ""
 "X-Poedit-Country: CANADA\n"
 "X-Poedit-KeywordsList: __;_e\n"
 "Plural-Forms: s\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: .\n"
 
-#: wp-slimstat-dashboard.php:61
-#: wp-slimstat-dashboard.php:81
-#: wp-slimstat-dashboard.php:149
-#: wp-slimstat-dashboard.php:169
-#: wp-slimstat-dashboard.php:192
-#: wp-slimstat-dashboard.php:218
+#: wp-slimstat-dashboard.php:75
+#: wp-slimstat-dashboard.php:97
+#: wp-slimstat-dashboard.php:152
+#: wp-slimstat-dashboard.php:171
 msgid "No data to display"
 msgstr "Aucune donnée à afficher"
 
-#: wp-slimstat-dashboard.php:86
-msgid "c-"
-msgstr "c-"
+#: wp-slimstat-dashboard.php:80
+msgid "Last"
+msgstr ""
 
-#: wp-slimstat-dashboard.php:93
-#: wp-slimstat-dashboard.php:198
+#: wp-slimstat-dashboard.php:82
+#: wp-slimstat-dashboard.php:118
 #, php-format
 msgid "Open %s in a new window"
 msgstr "Ouvrir %s dans une nouvelle fenêtre"
 
-#: wp-slimstat-dashboard.php:99
+#: wp-slimstat-dashboard.php:104
+msgid "Search for"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:112
+msgid "c-"
+msgstr "c-"
+
+#: wp-slimstat-dashboard.php:123
 msgid "Direct visit to"
 msgstr "Visite directe vers"
 
-#: wp-slimstat-dashboard.php:112
-msgid "Total Hits"
-msgstr "Total des accès"
-
-#: wp-slimstat-dashboard.php:113
-msgid "Data Size"
-msgstr "Taille des données"
-
-#: wp-slimstat-dashboard.php:114
-msgid "Tracking Active"
-msgstr "Traçage actif"
-
-#: wp-slimstat-dashboard.php:115
-msgid "Auto purge"
-msgstr "Purge automatique"
-
-#: wp-slimstat-dashboard.php:130
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:136
 msgid "Pageviews"
 msgstr "Pages de vues"
 
-#: wp-slimstat-dashboard.php:131
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:137
 msgid "Unique IPs"
 msgstr "IPs uniques"
 
-#: wp-slimstat-dashboard.php:132
+#: wp-slimstat-dashboard.php:138
+msgid "Bots"
+msgstr ""
+
+#: wp-slimstat-dashboard.php:139
 msgid "Avg Pageviews"
 msgstr "Moyenne des pages vues"
 
-#: wp-slimstat-dashboard.php:133
-#: wp-slimstat-dashboard.php:134
+#: wp-slimstat-dashboard.php:140
+#: wp-slimstat-dashboard.php:141
 msgid "On"
 msgstr "Actif"
 
-#: wp-slimstat-dashboard.php:135
+#: wp-slimstat-dashboard.php:142
 msgid "Last Month"
 msgstr "Mois dernier"
 
-#: wp-slimstat-dashboard.php:222
-msgid "Open referer in a new window"
-msgstr "Ouvrir le référent dans une nouvelle fenêtre"
+#: wp-slimstat-dashboard.php:159
+msgid "Hits"
+msgstr ""
 
-#: wp-slimstat-dashboard.php:259
-msgid "Top 5 pages"
-msgstr "Les 5 pages les plus populaires"
+#: wp-slimstat-dashboard.php:194
+msgid "Top pages for this month"
+msgstr ""
 
-#: wp-slimstat-dashboard.php:260
-msgid "Pathstats"
-msgstr "Statistiques des chemins d'accès"
+#: wp-slimstat-dashboard.php:195
+msgid "Spy View"
+msgstr ""
 
-#: wp-slimstat-dashboard.php:261
-msgid "About"
-msgstr "À propos"
+#: wp-slimstat-dashboard.php:196
+msgid "Summary for this month"
+msgstr ""
 
-#: wp-slimstat-dashboard.php:262
-msgid "Summary of pageviews"
-msgstr "Sommaire des pages vues"
-
-#: wp-slimstat-dashboard.php:263
+#: wp-slimstat-dashboard.php:197
 msgid "User Agents"
 msgstr "Agents utilisateur"
 
-#: wp-slimstat-dashboard.php:264
+#: wp-slimstat-dashboard.php:198
 msgid "Recent Keywords"
 msgstr "Mots clés récents"
 
-#: wp-slimstat-dashboard.php:265
-msgid "Traffic Sources"
-msgstr "Sources de trafic"
+#~ msgid "Total Hits"
+#~ msgstr "Total des accès"
 
-#: wp-slimstat-dashboard.php:266
-msgid "Recent Keywords &raquo; Pages"
-msgstr "Mots clés récents &raquo; Pages"
+#~ msgid "Data Size"
+#~ msgstr "Taille des données"
+
+#~ msgid "Tracking Active"
+#~ msgstr "Traçage actif"
+
+#~ msgid "Auto purge"
+#~ msgstr "Purge automatique"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Ouvrir le référent dans une nouvelle fenêtre"
+
+#~ msgid "Top 5 pages"
+#~ msgstr "Les 5 pages les plus populaires"
+
+#~ msgid "Pathstats"
+#~ msgstr "Statistiques des chemins d'accès"
+
+#~ msgid "About"
+#~ msgstr "À propos"
+
+#~ msgid "Summary of pageviews"
+#~ msgstr "Sommaire des pages vues"
+
+#~ msgid "Traffic Sources"
+#~ msgstr "Sources de trafic"
+
+#~ msgid "Recent Keywords &raquo; Pages"
+#~ msgstr "Mots clés récents &raquo; Pages"
 
 #~ msgid "Analytics"
 #~ msgstr "Statistiche"
+
 #~ msgid "Options"
 #~ msgstr "Opzioni"
-

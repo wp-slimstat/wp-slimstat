@@ -8,6 +8,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 // Data about our visits
 $current_pageviews = $wp_slimstat_view->count_records();
 $total_visitors = $wp_slimstat_view->count_records('visit_id > 0');
+$datachart = $wp_slimstat_view->extract_data_for_chart('COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', 2, __('Visits','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 'AND tb.type = 0', '', 'browsers');
 
 foreach($panels_order as $a_panel_id)
 	switch($a_panel_id):
@@ -15,23 +16,29 @@ foreach($panels_order as $a_panel_id)
 ?>
 
 <div class="postbox wide <?php echo $wp_locale->text_direction ?>" id="p2_01"><?php
-echo '<h3 class="hndle">';
+$tooltip_content = '<strong>'.htmlspecialchars(__('Chart interaction','wp-slimstat-view'), ENT_QUOTES).'</strong><ul><li>'.htmlspecialchars(__('Use your mouse wheel to zoom in and out','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('While zooming in, drag the chart to move to a different area','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('Double click on an empty region to reset zoom level','wp-slimstat-view'), ENT_QUOTES).'</li>';
+$tooltip_content .= (!$wp_slimstat_view->day_filter_active)?'<li>'.htmlspecialchars(__('Click on a day for hourly metrics','wp-slimstat-view'), ENT_QUOTES).'</li>':'';
+$tooltip_content .= '</ul>';
+
+echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.gif' width='16' height='16' title='$tooltip_content' /><h3 class='hndle'>";
 if (!$wp_slimstat_view->day_filter_active)
-	_e('Human Visits by day - Click on a day for hourly metrics', 'wp-slimstat-view');
+	_e('Daily Human Visits', 'wp-slimstat-view');
 else
-	_e('Human Visits by hour', 'wp-slimstat-view');
+	_e('Hourly Human Visits', 'wp-slimstat-view');
 echo '</h3>';
-$current = $wp_slimstat_view->extract_data_for_chart('COUNT(DISTINCT(visit_id))', 'COUNT(DISTINCT(ip))', 2, __('Visits','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 0, 'AND visit_id > 0');
-if ($current->current_non_zero_count+$current->previous_non_zero_count == 0)
+if ($datachart->current_non_zero_count+$datachart->previous_non_zero_count == 0)
 	echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 else{ ?>
-	<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="780" height="180" id="line" >
-		<param name="movie" value="<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/view/swf/fcf.swf" />
-		<param name="FlashVars" value="&amp;dataXML=<?php echo $current->xml ?>&amp;chartWidth=780&amp;chartHeight=180">
-		<param name="quality" value="high" />
-		<param name="wmode" value="transparent" />
-		<embed src="<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/view/swf/fcf.swf" flashVars="&amp;dataXML=<?php echo $current->xml ?>&amp;chartWidth=780&amp;chartHeight=180" quality="high" width="780" height="180" name="line" wmode="transparent" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
-	</object><?php
+	<div class="container noscroll"><div id="chart-placeholder"></div><div id="chart-legend"></div></div>
+	<script id="source">function initChart(){
+		window.chart_data = [[<?php echo $datachart->current_data1 ?>], [<?php echo $datachart->previous_data ?>], [<?php echo $datachart->current_data2 ?>]];
+		window.ticks = [<?php echo $datachart->ticks ?>];
+		var a = {label:"<?php echo $datachart->current_data1_label ?>",data:window.chart_data[0]}, b = {label:"<?php echo $datachart->previous_data_label ?>",data:window.chart_data[1]}, c = {label:"<?php echo $datachart->current_data2_label ?>",data:window.chart_data[2]};
+		jQuery.plot(jQuery("#chart-placeholder"),[a,b,c],{zoom:{interactive:true},pan:{interactive:true},series:{lines:{show:true},points:{show:true},colors:[{opacity:0.85}]},xaxis:{tickSize:1,tickDecimals:0<?php echo "$datachart->min_max_ticks"; echo (!empty($wp_slimstat_view->day_interval) && $wp_slimstat_view->day_interval > 20)?',ticks:[]':',ticks:window.ticks' ?>,zoomRange:[5,window.ticks.length],panRange:[0,window.ticks.length]},yaxis:{tickDecimals:0,tickFormatter:tickFormatter,zoomRange:[5,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>],panRange:[0,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>]}, grid:{backgroundColor:"#ffffff",borderWidth:0,hoverable:true,clickable:true},legend:{container:"#chart-legend",noColumns:3}});
+	}
+	initChart();
+	jQuery("#chart-placeholder").bind("dblclick",initChart);
+	</script><?php
 } ?>
 </div>
 
@@ -43,11 +50,15 @@ $new_visitors = $wp_slimstat_view->count_new_visitors();
 $bounce_rate = ($total_visitors > 0)?sprintf("%01.2f", (100*$new_visitors/$total_visitors)):0;
 if (intval($bounce_rate) > 99) $bounce_rate = '100';
 $metrics_per_visit = $wp_slimstat_view->get_max_and_average_pages_per_visit(); ?>
-		<p><span class="element-title"><?php _e('Human visits', 'wp-slimstat-view') ?></span> <span><?php echo number_format($total_visitors, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
-		<p><span class="element-title"><?php _e('Unique IPs', 'wp-slimstat-view') ?></span> <span><?php echo number_format($wp_slimstat_view->count_records('1=1', 'DISTINCT ip'), 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
+		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('A visit is a session of at most 30 minutes. Returning visitors are counted multiple times if they perform multiple visits.','wp-slimstat-view') ?>' />
+			<span class="element-title"><?php _e('Human visits', 'wp-slimstat-view') ?></span> <span><?php echo number_format($total_visitors, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
+		<p><span class="element-title"><?php _e('Bots', 'wp-slimstat-view') ?></span> <span><?php echo number_format($wp_slimstat_view->count_records('tb.type = 1', '*', true, 'browsers'), 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
+		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('This number includes <strong>human visits</strong> only.','wp-slimstat-view') ?>' />
+			<span class="element-title"><?php _e('Unique IPs', 'wp-slimstat-view') ?></span> <span><?php echo number_format($wp_slimstat_view->count_records('visit_id > 0', 'DISTINCT ip'), 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p><span class="element-title"><?php _e('New visitors', 'wp-slimstat-view') ?></span> <span><?php echo number_format($new_visitors, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
-		<p><span class="element-title"><?php _e('Bounce rate', 'wp-slimstat-view') ?></span> <span><?php echo number_format($bounce_rate, 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?>%</span></p>
-		<p><span class="element-title"><?php _e('Bots', 'wp-slimstat-view') ?></span> <span><?php echo number_format($wp_slimstat_view->count_records('visit_id = 0'), 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
+		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('The percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.','wp-slimstat-view') ?>' />
+			<span class="element-title"><?php _e('Bounce rate', 'wp-slimstat-view') ?></span> <span><?php echo number_format($bounce_rate, 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?>%</span></p>
+		
 		<p><span class="element-title"><?php _e('Pages per visit', 'wp-slimstat-view') ?></span> <span><?php echo number_format($metrics_per_visit['avg'], 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p class="last"><span class="element-title"><?php _e('Longest visit', 'wp-slimstat-view') ?></span> <span><?php echo number_format($metrics_per_visit['max'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator).' '.__('hits','wp-slimstat-view') ?></span></p>
 	</div>
@@ -68,7 +79,7 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info = "title='".__('Code','wp-slimstat-view').": {$results[$i]['language']}, ".__('Hits','wp-slimstat-view').": {$results[$i]['count']}'";
 	$clean_string = urlencode($results[$i]['language']);
 	if (!isset($wp_slimstat_view->filters_parsed['language'][1]) || $wp_slimstat_view->filters_parsed['language'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$filters_query&amp;language=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;language=$clean_string'>{$strings['text']}</a>";
 
 	echo "<p $extra_info><span class='element-title'>{$strings['text']}</span> <span class='narrowcolumn' style='text-align:right'>$percentage%</span></p>";
 } ?>
@@ -77,9 +88,10 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p2_04': ?>
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p2_04">
-	<h3 class="hndle"><?php _e('User agents', 'wp-slimstat-view'); ?></h3>
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('WP SlimStat can be configured to ignore given user agents under Settings > SlimStat > Filters.<br/><br/><strong>Legend</strong><ul><li>0: Regular user</li><li>1: Bot</li><li>2: Mobile</li><li>3: Syndication reader</li></ul>','wp-slimstat-view') ?>' />
+	<h3 class="hndle"><?php _e('User Agents', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
-$results = $wp_slimstat_view->get_top('tb.browser, tb.version', '', "tb.browser <> ''", 'browsers');
+$results = $wp_slimstat_view->get_top('tb.browser, tb.version, tb.type', '', "tb.browser <> ''", 'browsers');
 $count_results = count($results);
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 
@@ -89,10 +101,10 @@ for($i=0;$i<$count_results;$i++){
 	$browser_string = "{$results[$i]['browser']} $browser_version";
 	$clean_string = urlencode($results[$i]['browser']);
 	if (!isset($wp_slimstat_view->filters_parsed['browser'][1]) || $wp_slimstat_view->filters_parsed['browser'][1]!='equals')
-		$browser_string = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$filters_query&amp;browser=$clean_string".(!empty($browser_version)?"&amp;version=$browser_version":'')."'>$browser_string</a>";
+		$browser_string = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;browser=$clean_string".(!empty($browser_version)?"&amp;version=$browser_version":'')."'>$browser_string</a>";
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info = "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}'";
-	echo "<p $extra_info><span class='element-title'>$browser_string</span> <span>$percentage%</span></p>";
+	echo "<p $extra_info><span class='element-title'>[<strong>{$results[$i]['type']}</strong>] $browser_string</span> <span>$percentage%</span></p>";
 } ?>
 	</div>
 </div>
@@ -120,8 +132,8 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']);
 	$extra_info .= (!empty($results['user']))?", User: {$results['user']}'":"'";
 	if (!isset($wp_slimstat_view->filters_parsed['ip'][1]) || $wp_slimstat_view->filters_parsed['ip'][1]!='equals')
-		$host_by_ip['text'] = "<a{$host_by_ip['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$filters_query&amp;ip={$results[$i]['ip']}'>{$host_by_ip['text']}</a>";
-	$host_by_ip['text'] = "[{$results[$i]['country']}] <a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/wp-slimstat/images/whois.gif' /></a> ".$host_by_ip['text'];
+		$host_by_ip['text'] = "<a{$host_by_ip['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;ip={$results[$i]['ip']}'>{$host_by_ip['text']}</a>";
+	$host_by_ip['text'] = "[{$results[$i]['country']}] <a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/images/whois.gif' /></a> ".$host_by_ip['text'];
 
 	echo "<p $extra_info><span class='element-title'>{$host_by_ip['text']}</span> <span>$percentage%</span></p>";
 } ?>
@@ -142,7 +154,7 @@ for($i=0;$i<$count_results;$i++){
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	if (!isset($wp_slimstat_view->filters_parsed['platform'][1]) || $wp_slimstat_view->filters_parsed['platform'][1]!='equals')
-		$platform = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$filters_query&amp;platform={$results[$i]['platform']}'>$platform</a>";
+		$platform = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;platform={$results[$i]['platform']}'>$platform</a>";
 
 	echo "<p $extra_info><span class='element-title'>$platform</span> <span>$percentage%</span></p>";
 } ?>
@@ -162,7 +174,7 @@ for($i=0;$i<$count_results;$i++){
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	if (!isset($wp_slimstat_view->filters_parsed['resolution'][1]) || $wp_slimstat_view->filters_parsed['resolution'][1]!='equals')
-		$results[$i]['resolution'] = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$filters_query&amp;resolution={$results[$i]['resolution']}'>{$results[$i]['resolution']}</a>";
+		$results[$i]['resolution'] = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;resolution={$results[$i]['resolution']}'>{$results[$i]['resolution']}</a>";
 
 	echo "<p $extra_info><span class='element-title'>{$results[$i]['resolution']}</span> <span>$percentage%</span></p>";
 } ?>
@@ -215,7 +227,7 @@ for($i=0;$i<$count_results;$i++){
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	if (!isset($wp_slimstat_view->filters_parsed['country'][1]) || $wp_slimstat_view->filters_parsed['country'][1]!='equals')
-		$country = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$filters_query&amp;country={$results[$i]['country']}'>$country</a>";
+		$country = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;country={$results[$i]['country']}'>$country</a>";
 
 	echo "<p $extra_info><span class='element-title'>$country</span> <span class='narrowcolumn'>$percentage%</span></p>";
 } ?>

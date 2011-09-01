@@ -24,11 +24,11 @@ echo $dataXML;
 	<h3><?php _e('World Map - Values represent the percentage of hits coming from that Country', 'wp-slimstat-view'); ?></h3>
 	<div class="container" style="height:505px">
 		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="765" height="570" id="worldmap">
-			<param name="movie" value="<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/view/swf/world.swf" />
+			<param name="movie" value="<?php echo $wp_slimstat_view->plugin_url ?>/view/swf/world.swf" />
 			<param name="FlashVars" value="&amp;dataXML=<?php echo $dataXML ?>&amp;mapWidth=765&amp;mapHeight=570">
 			<param name="quality" value="high" />
 			<param name="wmode" value="transparent" />
-			<embed src="<?php echo $wp_slimstat_view->plugin_url ?>/wp-slimstat/view/swf/world.swf" flashVars="&amp;dataXML=<?php echo $dataXML ?>&amp;mapWidth=765&amp;mapHeight=570" quality="high" width="1000" height="500" name="line" wmode="transparent" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+			<embed src="<?php echo $wp_slimstat_view->plugin_url ?>/view/swf/world.swf" flashVars="&amp;dataXML=<?php echo $dataXML ?>&amp;mapWidth=765&amp;mapHeight=570" quality="high" width="1000" height="500" name="line" wmode="transparent" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
 		</object>
 	</div>
 </div>

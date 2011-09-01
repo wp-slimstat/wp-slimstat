@@ -12,7 +12,7 @@ if (typeof XMLHttpRequest == "undefined") {
 	};
 }
 
-function slimstat_detectPlugin(substrs) {
+function slimstat_detect_plugin(substrs) {
 	if (navigator.plugins) {
 		for (var i = 0; i < navigator.plugins.length; i++) {
 			var plugin = navigator.plugins[i];
@@ -34,7 +34,7 @@ function slimstat_detectPlugin(substrs) {
 }
 
 // Sends an asynchronous request to the server 
-function slimstat_track_event(url){
+function slimstat_record_event(url){
 	var slimstat_request = false;
 	try {
 		slimstat_request = new XMLHttpRequest();
@@ -95,42 +95,69 @@ function slimstat_track_link(event){
 					window.open(document_location, element.target);
 		}
 	}
-	slimstat_track_event(slimstat_url);
+	slimstat_record_event(slimstat_url);
 	
 	// Prevent execution of the default action
 	if (event.preventDefault) event.preventDefault();
 	else event.returnValue = false;
 }
 
-function slimstat_track_download(event){
-	var element;
-	if (!event) var event = window.event;
-	if (event.target) element = event.target;
-	else if (event.srcElement) element = event.srcElement;
-	if (element.nodeType == 3) // defeat Safari bug
-		element = element.parentNode;
-
-	if (element){
-		while (element.tagName != "A") element = element.parentNode;
-		document_location = element.href;
-		slimstat_info = "?obd=" + element.hostname + "&obr=" + element.pathname;
-	}
-	else{
-		document_location = this.href;
-		slimstat_info = "?obd=" + this.hostname + "&obr=" + this.pathname;
-	}
-	slimstat_info += "&ty=1"; // type=1 stands for download
+function ss_te(event, code, load_target){
+	// Handle Optional parameters
+	if (typeof code == 'undefined' || code == 0) return 0;
+	if (typeof load_target == 'undefined') var load_target = true;
+	
+	slimstat_info = "?ty="+code; 
 	slimstat_info += "&id="+slimstat_tid;
 	slimstat_info += "&sid="+slimstat_session_id;
 	slimstat_info += "&go=n"; // Avoid server-side redirect
+
+	if (load_target){
+		if (!event) var event = window.event;
+		var element;
+
+		if (event.target)
+			element = event.target;
+		else if (event.srcElement)
+			element = event.srcElement;
+		if (element.nodeType == 3) // defeat Safari bug
+			element = element.parentNode;
+
+		if (element){
+			while (element.tagName != "A")
+				element = element.parentNode;
+			document_location = element.href;
+			if (typeof element.hostname == 'undefined' || typeof element.pathname == 'undefined') return 0;
+			slimstat_info += "&obd=" + element.hostname + "&obr=" + element.pathname;
+		}
+		else{
+			document_location = this.href;
+			if (typeof this.hostname == 'undefined' || typeof this.pathname == 'undefined') return 0;
+			slimstat_info += "&obd=" + this.hostname + "&obr=" + this.pathname;
+		}
+
+		// This is necessary to give the browser some time to elaborate the request
+		setTimeout('document.location = "' + document_location + '"', 500);
+	}
+	else{
+		slimstat_info += "&obd=" + document.location.hostname + "&obr=" + document.location.pathname;
+	}
+
 	slimstat_url = slimstat_path+'/wp-slimstat-js.php'+slimstat_info;
 
-	// This is necessary to give the browser some time to elaborate the request
-	setTimeout('document.location = "' + document_location + '"', 500);
-	
-	slimstat_track_event(slimstat_url);
-	if (event.preventDefault) event.preventDefault();
-	else event.returnValue = false;
+	slimstat_record_event(slimstat_url);
+	if (event.preventDefault)
+		event.preventDefault();
+	else
+		event.returnValue = false;
+}
+
+// Track Google+1 clicks
+function slimstat_plusone(obj){
+	if (obj.state == 'off')
+		ss_te(obj, 4, false);
+	else
+		ss_te(obj, 3, false);
 }
 
 // Hide the link to WP SlimStat
@@ -200,16 +227,17 @@ slimstat_info += "&sh="+screen.height;
 slimstat_info += "&cd="+screen.colorDepth;
 slimstat_info += "&aa="+(screen.fontSmoothingEnabled?'1':'0');
 slimstat_info += "&id="+slimstat_tid;
+slimstat_info += "&ty=0";
 slimstat_info += "&sid="+slimstat_session_id;
 slimstat_info += "&bid="+slimstat_blog_id;
 slimstat_info += "&pl=";
 
 for (var slimstat_alias in slimstat_plugins) {
 	var slimstat_plugin = slimstat_plugins[slimstat_alias];
-	if (slimstat_detectPlugin(slimstat_plugin.substrs) ||
+	if (slimstat_detect_plugin(slimstat_plugin.substrs) ||
 		(detectableWithVB && slimstat_detectActiveXControl(slimstat_plugin.progIds)) ){
 		slimstat_info += slimstat_alias +"|";
 	}
 }
 slimstat_url = slimstat_path+'/wp-slimstat-js.php'+slimstat_info;
-slimstat_track_event(slimstat_url);
+slimstat_record_event(slimstat_url);

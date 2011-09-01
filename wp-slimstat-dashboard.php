@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
 Description: Add some widgets to monitor your WP SlimStat reports directly from your Wordpress dashboard.
-Version: 2.4.4
+Version: 2.5
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -40,9 +40,9 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 		$this->current_pageviews = $this->count_records();
 
 		// Localization files
-		load_plugin_textdomain('wp-slimstat-dashboard', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
-		load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
-		load_plugin_textdomain('countries-languages', WP_PLUGIN_URL .'/wp-slimstat/lang', '/wp-slimstat/lang');
+		load_plugin_textdomain('wp-slimstat-dashboard', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
+		load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
+		load_plugin_textdomain('countries-languages', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
 		// If a local translation for countries and languages does not exist, use English
 		if (!isset($l10n['countries-languages'])){
@@ -61,8 +61,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	 * Enqueues a custom CSS for the admin interface
 	 */
 	public function slimstat_stylesheet(){
-        $myStyleUrl = WP_PLUGIN_URL . '/wp-slimstat/css/dashboard.css';
-		wp_register_style('wp_slimstat_dashboard_stylesheet', $myStyleUrl);
+		wp_register_style('wp_slimstat_dashboard_stylesheet', plugins_url('/css/dashboard.css', __FILE__));
 		wp_enqueue_style( 'wp_slimstat_dashboard_stylesheet');
     }
 	// end slimstat_stylesheet
@@ -71,7 +70,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	 * Displays the top pages by pageviews
 	 */
 	public function show_top_pages(){
-		$results = $this->get_top('t1.resource', 't1.ip, t1.user', '', '');
+		$results = $this->get_top('t1.resource', 't1.ip, t1.user', "t1.resource NOT LIKE '[404]%'", '');
 		$count_results = count($results);
 		if ($count_results == 0) '<p class="slimstat-row nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 
@@ -83,7 +82,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 			$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
 			$element_url = $this->blog_domain.$results[$i]['resource'];
 
-			echo "<p$last_element $extra_info><a target='_blank' title='$element_title' href='$element_url'><img src='$this->plugin_url/wp-slimstat/images/url.gif' /></a> <span class='element-title'>{$strings['text']}</span> <span class='narrowcolumn' style='text-align:right'>".number_format($results[$i]['count'], 0, $this->decimal_separator, $this->thousand_separator)."</span></p>";
+			echo "<p$last_element $extra_info><a target='_blank' title='$element_title' href='$element_url'><img src='".plugins_url('/images/url.gif', __FILE__)."' /></a> <span class='element-title'>{$strings['text']}</span> <span class='narrowcolumn' style='text-align:right'>".number_format($results[$i]['count'], 0, $this->decimal_separator, $this->thousand_separator)."</span></p>";
 		}
 	}
 	// end show_top_pages
@@ -109,7 +108,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 					$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=1&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
 				else
 					$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&slimpanel=1&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
-				$ip_address = "<a href='http://www.infosniper.net/index.php?ip_address={$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$this->plugin_url/wp-slimstat/images/whois.gif' /></a> $ip_address";
+				$ip_address = "<a href='http://www.infosniper.net/index.php?ip_address={$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='".plugins_url('/images/whois.gif', __FILE__)."' /></a> $ip_address";
 				$country = __('c-'.$results[$i]['country'],'countries-languages');
 
 				echo "<p class='slimstat-row header'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
@@ -119,7 +118,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 			$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['referer']);
 			echo "<p$last_element title='{$results[$i]['domain']}{$results[$i]['referer']}'>";
 			if (!empty($results[$i]['domain']))
-				echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$this->plugin_url/wp-slimstat/images/url.gif' /></a> {$results[$i]['domain']} &raquo;";
+				echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".plugins_url('/images/url.gif', __FILE__)."' /></a> {$results[$i]['domain']} &raquo;";
 			else
 				echo __('Direct visit to','wp-slimstat-view');
 			echo ' '.substr($results[$i]['resource'], 0, 40).'</p>';
@@ -131,16 +130,16 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	 * Displays a summary of pageviews for this month
 	 */
 	public function show_summary_for(){
-		$current = $this->extract_data_for_chart('COUNT(ip)', 'COUNT(DISTINCT(ip))', 1, __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 0, '');
-		$today_pageviews = !empty($current->current_data1[$this->current_date['d']])?$current->current_data1[$this->current_date['d']]:0;
-		$yesterday_pageviews = (intval($this->current_date['d'])==1)?(!empty($current->previous_data1[$this->yesterday['d']])?$current->previous_data1[$this->yesterday['d']]:0):(!empty($current->current_data1[$this->yesterday['d']])?$current->current_data1[$this->yesterday['d']]:0); ?>
+		$current_data = $this->extract_data_for_chart('COUNT(ip)', 'COUNT(DISTINCT(ip))', 1, __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
+		$today_pageviews = !empty($current_data->current_data1[$this->current_date['d']])?$current_data->current_data1[$this->current_date['d']]:0;
+		$yesterday_pageviews = (intval($this->current_date['d'])==1)?(!empty($current_data->previous_data1[$this->yesterday['d']])?$current_data->previous_data1[$this->yesterday['d']]:0):(!empty($current_data->current_data1[$this->yesterday['d']])?$current_data->current_data1[$this->yesterday['d']]:0); ?>
 		<p class="slimstat-row"><span class='element-title'><?php _e('Pageviews', 'wp-slimstat-view') ?></span> <span><?php echo number_format($this->current_pageviews, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
 		<p class="slimstat-row"><span class='element-title'><?php _e('Unique IPs', 'wp-slimstat-view') ?></span> <span><?php echo number_format($this->count_records('1=1', 'DISTINCT ip'), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('Bots', 'wp-slimstat-view') ?></span> <span><?php echo number_format($this->count_records('visit_id = 0'), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('Avg Pageviews', 'wp-slimstat-view') ?></span> <span><?php echo number_format(($current->current_non_zero_count > 0)?intval($this->current_pageviews/$current->current_non_zero_count):0, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('On', 'wp-slimstat-view'); echo ' '.$this->current_date['d'].'/'.$this->current_date['m'] ?></span> <span><?php echo number_format(intval($today_pageviews), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('On', 'wp-slimstat-view'); echo ' '.$this->yesterday['d'].'/'.$this->yesterday['m'] ?></span> <span><?php echo number_format(intval($yesterday_pageviews), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row last"><span class='element-title'><?php _e('Last Month', 'wp-slimstat-view'); ?></span> <span><?php echo number_format(intval(array_sum($current->previous_data1)), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p><?php
+		<p class="slimstat-row"><span class='element-title'><?php _e('Bots', 'wp-slimstat-view') ?></span> <span><?php echo number_format($this->count_records('tb.type = 1', '*', true, 'browsers'), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e('Avg Pageviews', 'wp-slimstat-view') ?></span> <span><?php echo number_format(($current_data->current_non_zero_count > 0)?intval($this->current_pageviews/$current_data->current_non_zero_count):0, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e('On', 'wp-slimstat-view'); echo ' '.$this->current_date['d'].'/'.$this->current_date['m'] ?></span> <span><?php echo number_format($current_data->today, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
+		<p class="slimstat-row"><span class='element-title'><?php _e('On', 'wp-slimstat-view'); echo ' '.$this->yesterday['d'].'/'.$this->yesterday['m'] ?></span> <span><?php echo number_format($current_data->yesterday, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
+		<p class="slimstat-row last"><span class='element-title'><?php _e('Last Month', 'wp-slimstat-view'); ?></span> <span><?php echo number_format($current_data->previous_total, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p><?php
 	}
 	// end show_summary_for
 

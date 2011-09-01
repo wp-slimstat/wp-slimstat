@@ -12,8 +12,6 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['enable_javascript']) && !slimstat_update_option('enable_javascript', $_POST['options']['enable_javascript'], 'yesno')) $faulty_fields = __('Enable JS Tracking','wp-slimstat-options').', ';
 	if (isset($_POST['options']['custom_js_path']) && !slimstat_update_option('custom_js_path', $_POST['options']['custom_js_path'], 'text')) $faulty_fields = __('Custom path','wp-slimstat-options').', ';
 	if (isset($_POST['options']['browscap_autoupdate']) && !slimstat_update_option('browscap_autoupdate', $_POST['options']['browscap_autoupdate'], 'yesno')) $faulty_fields = __('Autoupdate DB','wp-slimstat-options').', ';
-	if (isset($_POST['options']['ignore_interval']) && !slimstat_update_option('ignore_interval', $_POST['options']['ignore_interval'], 'integer')) $faulty_fields .= __('Ignore interval','wp-slimstat-options').', ';
-	if (isset($_POST['options']['ignore_bots']) && !slimstat_update_option('ignore_bots', $_POST['options']['ignore_bots'], 'yesno')) $faulty_fields .= __('Ignore bots','wp-slimstat-options').', ';
 	if (isset($_POST['options']['track_users']) && !slimstat_update_option('track_users', $_POST['options']['track_users'], 'yesno')) $faulty_fields .= __('Track users','wp-slimstat-options').', ';	
 	if (isset($_POST['options']['auto_purge']) && !slimstat_update_option('auto_purge', $_POST['options']['auto_purge'], 'integer')) $faulty_fields .= __('Auto purge','wp-slimstat-options').', ';
 	if (isset($_POST['options']['use_separate_menu']) && !slimstat_update_option('use_separate_menu', $_POST['options']['use_separate_menu'], 'yesno')) $faulty_fields .= __('Use separate menu','wp-slimstat-options').', ';
@@ -63,21 +61,6 @@ if (isset($_POST['options']['auto_purge'])){
 			<input type="radio" name="options[browscap_autoupdate]" id="ignore_bots" value="yes"<?php echo (slimstat_get_option('browscap_autoupdate','no') == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?> &nbsp; &nbsp; &nbsp;
 			<input type="radio" name="options[browscap_autoupdate]" value="no" <?php echo (slimstat_get_option('browscap_autoupdate','no') == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
 			<span class="description"><?php _e("Enables Browscap's autoupdate feature. Please make sure your <code>cache</code> subfolder is writable.",'wp-slimstat-options') ?></span>
-		</td>
-	</tr>
-	<tr>
-		<th scope="row"><label for="ignore_interval"><?php _e('Latency','wp-slimstat-options') ?></label></th>
-		<td>
-			<input type="text" name="options[ignore_interval]" id="ignore_interval" value="<?php echo slimstat_get_option('ignore_interval','30'); ?>" size="4"> <?php _e('seconds','wp-slimstat-options') ?>
-			<span class="description"><?php _e('Ignores pageviews identical to an existing one recorded less than <strong>X</strong> seconds ago. Zero disables this feature.','wp-slimstat-options') ?></span>
-		</td>
-	</tr>
-	<tr>
-		<th scope="row"><label for="ignore_bots"><?php _e('Ignore bots','wp-slimstat-options') ?></label></th>
-		<td>
-			<input type="radio" name="options[ignore_bots]" id="ignore_bots" value="yes"<?php echo (slimstat_get_option('ignore_bots','no') == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?> &nbsp; &nbsp; &nbsp;
-			<input type="radio" name="options[ignore_bots]" value="no" <?php echo (slimstat_get_option('ignore_bots','no') == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
-			<span class="description"><?php _e('Ignores requests from user agents whose operating system and CSS version are unknown','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 	<tr>

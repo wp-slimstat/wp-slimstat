@@ -3,7 +3,7 @@
 // Let's define the main class with all the methods that we need
 class wp_slimstat_view {
 
-	public function __construct($user_filters = ''){
+	public function __construct($user_filters = array()){
 		global $wpdb;
 
 		// We use three of tables to store data about visits
@@ -24,7 +24,7 @@ class wp_slimstat_view {
 		$this->date_time_format = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
 
 		// It looks like WP_PLUGIN_URL doesn't honor the HTTPS setting in wp-config.php
-		$this->plugin_url = is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL;
+		$this->plugin_url = (is_ssl()?str_replace('http://', 'https://', WP_PLUGIN_URL):WP_PLUGIN_URL).'/wp-slimstat';
 
 		// Base DOMAIN for this blog
 		$this->blog_domain = get_bloginfo('url');
@@ -33,33 +33,34 @@ class wp_slimstat_view {
 
 		// Calculate filters
 		$this->filters_to_parse = array(
-			'day' => 'integer',
-			'month' => 'integer',
-			'year' => 'integer',
-			'interval' => 'integer',
-			'browser' => 'string',
-			'version' => 'string',
-			'css_version' => 'string',
-			'author' => 'string',
-			'category-id' => 'integer',
-			'country' => 'string',
-			'domain' => 'string',
-			'ip' => 'string',
-			'user' => 'string',
-			'visit_id' => 'string',
-			'language' => 'string',
-			'platform' => 'string',
-			'resource' => 'string',
-			'referer' => 'string',
-			'resolution' => 'string',
-			'searchterms' => 'string',
-			'limit-results' => 'integer'
+			'country' => array('string', 't1.'),
+			'domain' => array('string', 't1.'),
+			'ip' => array('string', 't1.'),
+			'user' => array('string', 't1.'),
+			'visit_id' => array('string', 't1.'),
+			'language' => array('string', 't1.'),
+			'resource' => array('string', 't1.'),
+			'referer' => array('string', 't1.'),
+			'searchterms' => array('string', 't1.'),
+			'browser' => array('string', 'tb.'),
+			'version' => array('string', 'tb.'),
+			'css_version' => array('string', 'tb.'),
+			'type' => array('integer', 'tb.'),
+			'platform' => array('string', 'tb.'),
+			'resolution' => array('string', 'tss.'),
+			'colordepth' => array('string', 'tss.'),
+			'day' => array('integer', ''),
+			'month' => array('integer', ''),
+			'year' => array('integer', ''),
+			'interval' => array('integer', ''),
+			'author' => array('string', ''),
+			'category-id' => array('integer', ''),
+			'limit-results' => array('integer', '')
 		);
 
 		// Avoid warnings in strict mode
 		$this->filters_parsed = array();
 		$this->day_filter_active = false;
-		$this->custom_data_filter = false;
 		$this->filters_query = '';
 		$this->current_date = array();
 
@@ -72,21 +73,27 @@ class wp_slimstat_view {
 			$this->decimal_separator = '.'; $this->thousand_separator = ',';
 		}
 
-		foreach ($this->filters_to_parse as $a_filter_label => $a_filter_type){
-			if(!empty($user_filters) && !empty($user_filters[$a_filter_label])){
-				$f_value = ($a_filter_type == 'integer')?abs(intval($user_filters[$a_filter_label])):$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($user_filters[$a_filter_label]))));
+		foreach ($this->filters_to_parse as $a_filter_label => $a_filter_details){
+			if (!empty($user_filters) && !empty($user_filters[$a_filter_label])){
+				$f_value = ($a_filter_details[0] == 'integer')?abs(intval($user_filters[$a_filter_label])):$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($user_filters[$a_filter_label]))));
+				if ((in_array($a_filter_label, array('day','month','year','interval')) || $a_filter_details[0] == 'string') && empty($f_value)) continue;
 				$f_operator = !empty($user_filters[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $user_filters[$a_filter_label.'-op']))):'equals';
-				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
+				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator, $a_filter_details[1]);
+				$this->filters_query .= "&$a_filter_label=$f_value&$a_filter_label-op=$f_operator";
 			}
-			else if (!empty($_GET['filter']) && (!empty($_GET['f_value']) || strpos($_GET['f_operator'], 'empty') > 0) && $_GET['filter']==$a_filter_label){
-				$f_value = ($a_filter_type == 'integer')?abs(intval($_GET['f_value'])):(!empty($_GET['f_value'])?$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($_GET['f_value'])))):'');
+			elseif (!empty($_GET['filter']) && (isset($_GET['f_value']) || strpos($_GET['f_operator'], 'empty') > 0) && $_GET['filter']==$a_filter_label){
+				$f_value = ($a_filter_details[0] == 'integer')?abs(intval($_GET['f_value'])):(!empty($_GET['f_value'])?$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($_GET['f_value'])))):'');
+				if ((in_array($a_filter_label, array('day','month','year','interval')) || $a_filter_details[0] == 'string') && empty($f_value)) continue;
 				$f_operator = !empty($_GET['f_operator'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_operator']))):'equals';
-				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
+				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator, $a_filter_details[1]);
+				$this->filters_query .= "&$a_filter_label=$f_value&$a_filter_label-op=$f_operator";
 			}
-			else if(!empty($_GET[$a_filter_label]) || (isset($_GET[$a_filter_label.'-op']) && strpos($_GET[$a_filter_label.'-op'], 'empty') > 0)){
-				$f_value = ($a_filter_type == 'integer')?abs(intval($_GET[$a_filter_label])):(!empty($_GET[$a_filter_label])?$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($_GET[$a_filter_label])))):'');
+			elseif (isset($_GET[$a_filter_label]) || (isset($_GET[$a_filter_label.'-op']) && strpos($_GET[$a_filter_label.'-op'], 'empty') > 0)){
+				$f_value = ($a_filter_details[0] == 'integer')?abs(intval($_GET[$a_filter_label])):(!empty($_GET[$a_filter_label])?$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($_GET[$a_filter_label])))):'');
+				if ((in_array($a_filter_label, array('day','month','year','interval')) || $a_filter_details[0] == 'string') && empty($f_value)) continue;
 				$f_operator = !empty($_GET[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label.'-op']))):'equals';
-				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator);
+				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator, $a_filter_details[1]);
+				$this->filters_query .= "&$a_filter_label=$f_value&$a_filter_label-op=$f_operator";
 			}
 		}
 
@@ -97,24 +104,23 @@ class wp_slimstat_view {
 			if (empty($this->filters_parsed['interval'][0]))
 				$this->day_filter_active = true;
 			else
-				$this->day_interval = $this->filters_parsed['interval'][0];
-			$this->custom_data_filter = true;
+				$this->day_interval = abs($this->filters_parsed['interval'][0]);
 		}
-		else {
+		else{
 			$this->current_date['d'] = date_i18n('d');
 		}
+
 		if (!empty($this->filters_parsed['month'][0])){
 			$this->current_date['m'] = sprintf('%02d', $this->filters_parsed['month'][0]);
-			$this->custom_data_filter = true;
 		}
-		else {
+		else{
 			$this->current_date['m'] = date_i18n('m');
 		}
+
 		if (!empty($this->filters_parsed['year'][0])){
 			$this->current_date['y'] = sprintf('%04d', $this->filters_parsed['year'][0]);
-			$this->custom_data_filter = true;
 		}
-		else {
+		else{
 			$this->current_date['y'] = date_i18n('Y');
 		}
 
@@ -135,12 +141,7 @@ class wp_slimstat_view {
 		$this->filters_sql_from = array('browsers' => '', 'screenres' => '');
 		$this->filters_sql_where = '';
 		if (!empty($this->filters_parsed)){
-			if (!empty($filters_query))
-				$this->filters_query = $filters_query;
-			else
-				$this->filters_query = '';
-
-			foreach($this->filters_parsed as $a_filter_label => $a_filter_details){
+			foreach ($this->filters_parsed as $a_filter_label => $a_filter_details){
 				// Skip filters on date and author
 				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year') && ($a_filter_label != 'interval')
 					&& ($a_filter_label != 'author') && ($a_filter_label != 'category-id')){
@@ -150,11 +151,10 @@ class wp_slimstat_view {
 						$a_filter_column = 'INET_NTOA(ip)';
 					}
 					else{
-						$a_filter_column = "$a_filter_label";
+						$a_filter_column = "{$a_filter_details[2]}$a_filter_label";
 					}
 
-
-					switch($a_filter_details[1]){
+					switch ($a_filter_details[1]){
 						case 'contains':
 							$this->filters_sql_where .= " AND $a_filter_column LIKE '%{$a_filter_details[0]}%'";
 							break;
@@ -192,13 +192,13 @@ class wp_slimstat_view {
 					if (count($array_post_id_by_user) > 0){
 						$array_permalinks_by_user = array();
 						$site_home_url = get_bloginfo('url');
-						foreach($array_post_id_by_user as $a_result){
+						foreach ($array_post_id_by_user as $a_result){
 							$array_permalinks_by_user[] = str_replace($site_home_url, '', get_permalink($a_result['ID']));
 						}
-						$this->filters_sql_where .= " AND resource IN ('".implode("','", $array_permalinks_by_user)."')";
+						$this->filters_sql_where .= " AND t1.resource IN ('".implode("','", $array_permalinks_by_user)."')";
 					}
 					else
-						$this->filters_sql_where .= " AND resource IN ('[nothing found]')";
+						$this->filters_sql_where .= " AND t1.resource IN ('[nothing found]')";
 				}
 
 				if ($a_filter_label == 'category-id'){
@@ -210,24 +210,26 @@ class wp_slimstat_view {
 					if (count($array_post_id_by_category) > 0){
 						$array_permalinks_by_category = array();
 						$site_home_url = get_bloginfo('url');
-						foreach($array_post_id_by_category as $a_result){
+						foreach ($array_post_id_by_category as $a_result){
 							$array_permalinks_by_category[] = str_replace($site_home_url, '', get_permalink($a_result['object_id']));
 						}
-						$this->filters_sql_where .= " AND resource IN ('".implode("','", $array_permalinks_by_category)."')";
+						$this->filters_sql_where .= " AND t1.resource IN ('".implode("','", $array_permalinks_by_category)."')";
 					}
 					else
-						$this->filters_sql_where .= " AND resource IN ('[nothing found]')";
+						$this->filters_sql_where .= " AND t1.resource IN ('[nothing found]')";
 				}
 
 				// Some columns are in separate tables, so we need to join these tables
-				switch($a_filter_label){
+				switch ($a_filter_label){
 					case 'browser':
 					case 'platform':
 					case 'version':
 					case 'css_version':
+					case 'type':
 						$this->filters_sql_from['browsers'] = "INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
 						break;
 					case 'resolution':
+					case 'colordepth':
 						$this->filters_sql_from['screenres'] = "INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
 						break;
 					default:
@@ -257,7 +259,7 @@ class wp_slimstat_view {
 	public function count_bouncing_pages(){
 		global $wpdb;
 
-		$sql = "SELECT COUNT(*) count 
+		$sql = "SELECT COUNT(*) count
 				FROM (
 					SELECT resource
 					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
@@ -275,7 +277,7 @@ class wp_slimstat_view {
 				FROM (
 					SELECT resource, visit_id, dt
 					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
-					WHERE visit_id > 0 AND resource <> '' AND resource <> '__l_s__' $this->filters_date_sql_where $this->filters_sql_where
+					WHERE visit_id > 0 AND resource <> '' AND resource <> '__l_s__' $this->filters_sql_where $this->filters_date_sql_where
 					GROUP BY visit_id
 					HAVING dt = MAX(dt)
 				) AS ts1";
@@ -288,20 +290,26 @@ class wp_slimstat_view {
 		$sql = "SELECT COUNT(*) FROM (
 					SELECT ip
 					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
-					WHERE visit_id > 0 $this->filters_date_sql_where $this->filters_sql_where
+					WHERE visit_id > 0 $this->filters_sql_where $this->filters_date_sql_where
 					GROUP BY ip
 					HAVING COUNT(visit_id) = 1)
 				AS ts1";
 		return intval($wpdb->get_var($sql));
 	}
 
-	public function count_records($_where_clause = '1=1', $_field = '*', $_only_current_period = true){
+	public function count_records($_where_clause = '1=1', $_field = '*', $_only_current_period = true, $_join_tables = ''){
 		global $wpdb;
 
+		$sql_from = '';
+		if(strpos($_join_tables,'browsers')!==false && empty($this->filters_sql_from['browsers']))
+			$sql_from .= " INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
+
+		if(strpos($_join_tables,'screenres')!==false && empty($this->filters_sql_from['screenres']))
+			$sql_from .= " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+
 		$sql = "SELECT COUNT($_field) count
-				FROM `$this->table_stats` t1 ".
-					($_only_current_period?$this->filters_sql_from['browsers'].' '.$this->filters_sql_from['screenres']:'')."
-				WHERE $_where_clause ".($_only_current_period?$this->filters_date_sql_where.$this->filters_sql_where:'');
+				FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']} $sql_from
+				WHERE $_where_clause $this->filters_sql_where ".($_only_current_period?$this->filters_date_sql_where:'');
 		return intval($wpdb->get_var($sql));
 	}
 
@@ -328,7 +336,7 @@ class wp_slimstat_view {
 		$sql = "SELECT AVG(ts1.count) avg, MAX(ts1.count) max FROM (
 					SELECT count(ip) count, visit_id
 					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
-					WHERE visit_id > 0 $this->filters_date_sql_where $this->filters_sql_where
+					WHERE visit_id > 0 $this->filters_sql_where $this->filters_date_sql_where
 					GROUP BY visit_id
 				) AS ts1";
 		return $wpdb->get_row($sql, ARRAY_A);
@@ -338,7 +346,7 @@ class wp_slimstat_view {
 		global $wpdb;
 
 		$sql = "SELECT t1.dt
-				FROM $this->table_stats t1 
+				FROM $this->table_stats t1
 				ORDER BY t1.dt ASC
 				LIMIT 0,1";
 		return $wpdb->get_var($sql);
@@ -348,19 +356,26 @@ class wp_slimstat_view {
 		global $wpdb;
 
 		// Include the appropriate tables in the query
-		$sql_from = '';
-		if(strpos($_join_tables,'browsers')!==false)
+		$sql_from = $sql_internal_from = '';
+		if(strpos($_join_tables,'browsers')!==false){
+			if (empty($this->filters_sql_from['browsers'])) 
+				$sql_internal_from .= " INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
 			$sql_from .= " INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
+		}
 
-		if(strpos($_join_tables,'screenres')!==false)
-			$sql_from = " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+		if(strpos($_join_tables,'screenres')!==false){
+			if (empty($this->filters_sql_from['screenres'])) 
+				$sql_internal_from .= " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+			$sql_from .= " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+		}
+
 
 		$fields = empty($_more_fields)?$_field:"$_field, $_more_fields";
 		$order_by = empty($_order_by)?"t1.dt $this->direction":"$_order_by";
 		$sql = "SELECT $fields, t1.dt
 				FROM (
 					SELECT $_field, MAX(t1.id) maxid
-					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']} $sql_internal_from
 					WHERE ".(empty($_custom_where)?"$_field <> '' AND  $_field <> '__l_s__'":$_custom_where)." $this->filters_sql_where $this->filters_date_sql_where
 					GROUP BY $_field $_having_clause
 				) AS ts1 INNER JOIN $this->table_stats t1 ON ts1.maxid = t1.id $sql_from
@@ -369,12 +384,14 @@ class wp_slimstat_view {
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
-	public function get_recent_outbound($_type = 0){
+	public function get_recent_outbound($_type = -1){
 		global $wpdb;
 
-		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, t1.ip, t1.user, t1.resource, t1.referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
+		$where_clause = ($_type != -1)?"tob.type = $_type":'tob.type > 0';
+
+		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, tob.type, t1.ip, t1.user, t1.resource, t1.referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
 				FROM $this->table_outbound tob INNER JOIN $this->table_stats t1 ON tob.id = t1.id INNER JOIN $this->table_browsers tb on t1.browser_id = tb.browser_id
-				WHERE type = $_type $this->filters_sql_where $this->filters_date_sql_where
+				WHERE $where_clause $this->filters_sql_where $this->filters_date_sql_where
 				ORDER BY tob.dt $this->direction
 				LIMIT $this->starting_from,$this->limit_results";
 		return $wpdb->get_results($sql, ARRAY_A);
@@ -384,21 +401,25 @@ class wp_slimstat_view {
 		global $wpdb;
 
 		// Include the appropriate tables in the query
-		$sql_from = '';
-		$filters_sql_from_browsers = $this->filters_sql_from['browsers'];
-		$filters_sql_from_screenres = $this->filters_sql_from['screenres'];
-		if(strpos($_join_tables,'browsers')!==false)
-			$sql_from .= $filters_sql_from_browsers = " INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
+		$sql_from = $sql_internal_from = '';
+		if(strpos($_join_tables,'browsers')!==false){
+			if (empty($this->filters_sql_from['browsers'])) 
+				$sql_internal_from .= " INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
+			$sql_from .= " INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
+		}
 
-		if(strpos($_join_tables,'screenres')!==false)
-			$sql_from .= $filters_sql_from_screenres = " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+		if(strpos($_join_tables,'screenres')!==false){
+			if (empty($this->filters_sql_from['screenres'])) 
+				$sql_internal_from .= " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+			$sql_from .= " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+		}
 
 		$fields = empty($_more_fields)?$_field:"$_field, $_more_fields";
 		$sql = "SELECT $fields, t1.dt, ts1.count
 				FROM (
 					SELECT $_field, MAX(t1.id) id, COUNT(*) count
-					FROM $this->table_stats t1 $filters_sql_from_browsers $filters_sql_from_screenres
-					WHERE ".(empty($_custom_where)?"$_field <> '' AND  $_field <> '__l_s__'":$_custom_where)." $this->filters_date_sql_where $this->filters_sql_where
+					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']} $sql_internal_from
+					WHERE ".(empty($_custom_where)?"$_field <> '' AND  $_field <> '__l_s__'":$_custom_where)." $this->filters_sql_where $this->filters_date_sql_where
 					GROUP BY $_field
 				) AS ts1 INNER JOIN $this->table_stats t1 ON ts1.id = t1.id $sql_from
 				ORDER BY ts1.count $this->direction, $_field ASC
@@ -406,163 +427,188 @@ class wp_slimstat_view {
 		return $wpdb->get_results($sql, ARRAY_A);
 	}
 
-	public function extract_data_for_chart($_data1, $_data2, $_current_panel = 1, $_label_data1 = '', $_label_data2 = '', $_decimal_precision = 0, $_custom_where_clause = '', $_sql_from_where = ''){
+	public function extract_data_for_chart($_data1, $_data2, $_current_panel = 1, $_label_data1 = '', $_label_data2 = '', $_custom_where_clause = '', $_sql_from_where = '', $_join_tables = ''){
 		global $wpdb, $wp_locale;
 
+		// Avoid PHP warnings in strict mode
+		$result->current_total1 = $result->current_total2 = $result->current_non_zero_count = $result->previous_total = $result->previous_non_zero_count = $result->today = $result->yesterday = $result->max_yaxis = 0;
+		$result->current_data1 = $result->current_data2 = $result->previous_data = $result->ticks = '';
+		$data1 = $data2 = array();
+
 		if ($this->day_filter_active){
+			// SQL query
 			$select_fields = "DATE_FORMAT(FROM_UNIXTIME(dt), '%H') h, DATE_FORMAT(FROM_UNIXTIME(dt), '%d') d";
 			$time_constraints = "(dt BETWEEN '$this->current_date_utime_start' AND '$this->current_date_utime_end' OR dt BETWEEN '$this->yesterday_utime_start' AND '$this->yesterday_utime_end') ";
 			$group_and_order = " GROUP BY h, d ORDER BY d ASC, h asc";
+
+			// Data parsing
+			$filter_idx = 'd'; $group_idx = 'h';
+			$data_start_value = 0; $data_end_value = 24;
+			$result->min_max_ticks = ',min:0,max:23';
+			$result->ticks = '[0,"00"],[1,"01"],[2,"02"],[3,"03"],[4,"04"],[5,"05"],[6,"06"],[7,"07"],[8,"08"],[9,"09"],[10,"10"],[11,"11"],[12,"12"],[13,"13"],[14,"14"],[15,"15"],[16,"16"],[17,"17"],[18,"18"],[19,"19"],[20,"20"],[21,"21"],[22,"22"],[23,"23"],';
+			$label_date_format = get_option('date_format', 'd-m-Y');
 		}
 		else{
+			// SQL query
 			$select_fields = "DATE_FORMAT(FROM_UNIXTIME(dt), '%m') m, DATE_FORMAT(FROM_UNIXTIME(dt), '%d') d";
 			$time_constraints = "(dt BETWEEN '$this->current_date_utime_start' AND '$this->current_date_utime_end'";
 			if (empty($this->day_interval)) $time_constraints .= " OR dt BETWEEN '$this->previous_month_utime_start' AND '$this->previous_month_utime_end'";
 			$time_constraints .= ')';
 			$group_and_order = " GROUP BY m, d ORDER BY m ASC,d ASC";
+
+			// Data parsing
+			$filter_idx = 'm'; $group_idx = 'd';
+			if (empty($this->day_interval)){
+				$data_start_value = 0; $data_end_value = 31;
+				$result->min_max_ticks = ',min:0,max:30';
+				$result->ticks = '[0,"1"],[1,"2"],[2,"3"],[3,"4"],[4,"5"],[5,"6"],[6,"7"],[7,"8"],[8,"9"],[9,"10"],[10,"11"],[11,"12"],[12,"13"],[13,"14"],[14,"15"],[15,"16"],[16,"17"],[17,"18"],[18,"19"],[19,"20"],[20,"21"],[21,"22"],[22,"23"],[23,"24"],[24,"25"],[25,"26"],[26,"27"],[27,"28"],[28,"29"],[29,"30"],[30,"31"],';
+				$label_date_format = 'm/Y';
+			}
+			else{
+				$data_start_value = 0; $data_end_value = $this->day_interval;
+				$result->min_max_ticks = '';
+				$label_date_format = '';
+			}
 		}
 
 		// This SQL query has a standard format: grouped by day or hour and then data1 and data2 represent the information we want to extract
 		$sql = "SELECT $select_fields, $_data1 data1, $_data2 data2";
 
+		$sql_from = '';
+		if(strpos($_join_tables,'browsers')!==false && empty($this->filters_sql_from['browsers']))
+			$sql_from .= " INNER JOIN $this->table_browsers tb ON t1.browser_id = tb.browser_id";
+
+		if(strpos($_join_tables,'screenres')!==false && empty($this->filters_sql_from['screenres']))
+			$sql_from .= " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
+
 		// Panel 4 has a slightly different structure
 		if(empty($_sql_from_where)){
-			$sql .= "	FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+			$sql .= "	FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']} $sql_from
 						WHERE $time_constraints $this->filters_sql_where $_custom_where_clause";
 		}
 		else{
-			$sql_no_placeholders = str_replace('[from_tables]', "$this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}", $_sql_from_where);
+			$sql_no_placeholders = str_replace('[from_tables]', "$this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']} $sql_from", $_sql_from_where);
 			$sql_no_placeholders = str_replace('[where_clause]', "$time_constraints $this->filters_sql_where $_custom_where_clause", $sql_no_placeholders);
 			$sql .= $sql_no_placeholders;
 		}
 		$sql .= $group_and_order;
-
 		$array_results = $wpdb->get_results($sql, ARRAY_A);
 
-		// Avoid PHP warnings in strict mode
-		$current_period_xml_data1 = $current_period_xml_data2 = $previous_period_xml = $categories_xml = '';
+		if (!is_array($array_results) || empty($array_results))
+			return $result;
 
-		$result->xml = '';
-		$result->current_data1 = array();
-		$result->current_data2 = array();
-		$result->previous_data1 = array();
-		$result->current_non_zero_count = 0;
-		$result->previous_non_zero_count = 0;
-
-		if (!is_array($array_results) || empty($array_results)) return $result;
-
-		// Reorganize the information retrieved
-		if (empty($this->day_interval)){
-			// Filter by day and group by hour if "day filter" is active, by month and day otherwise
-			$filter_idx = ($this->day_filter_active)?'d':'m';
-			$group_idx = ($this->day_filter_active)?'h':'d';
-
-			foreach($array_results as $a_result){
-				if($a_result[$filter_idx] == $this->current_date[$filter_idx]) {
-					$result->current_data1[$a_result[$group_idx]] = $a_result['data1'];
-					$result->current_data2[$a_result[$group_idx]] = $a_result['data2'];
-					if ($a_result['data1'] > 0) $result->current_non_zero_count++;
+		// Double-pass: reorganize the data and then format it for Flot
+		foreach ($array_results as $a_result){
+			$data1[$a_result[$filter_idx].$a_result[$group_idx]] = $a_result['data1'];
+			$data2[$a_result[$filter_idx].$a_result[$group_idx]] = $a_result['data2'];
+			if ($a_result['data1'] > 0){
+				if ($a_result[$filter_idx] == $this->current_date[$filter_idx]){
+					$result->current_non_zero_count++;
 				}
 				else {
-					$result->previous_data1[$a_result[$group_idx]] = $a_result['data1'];
-					if ($a_result['data1'] > 0) $result->previous_non_zero_count++;
+					$result->previous_non_zero_count++;
 				}
-			}
-		} // if (empty($this->day_interval))
-		else{
-			foreach($array_results as $a_result){
-				$result->current_data1[$a_result['m'].$a_result['d']] = $a_result['data1'];
-				$result->current_data2[$a_result['m'].$a_result['d']] = $a_result['data2'];
-				if ($a_result['data1'] > 0) $result->current_non_zero_count++;
 			}
 		}
 
-		// Generate the XML for the flash chart
-		if (empty($this->day_interval)){
+		$result->max_yaxis = max(max($data1), max($data2));
+		$filters_query_without_date = remove_query_arg(array('day','day-op','month','month-op','year','year-op','interval','interval-op'), $this->filters_query);
+		if (!empty($filters_query_without_date) && strpos($filters_query_without_date, 0, 1) != '&') $filters_query_without_date = '&'.$filters_query_without_date;
+
+		for ($i=$data_start_value;$i<$data_end_value;$i++){
 			if ($this->day_filter_active){
-				$data_start_value = 0; $data_end_value = 24;
+				$timestamp_current = mktime($i, 0, 0, $this->current_date['m'], $this->current_date['d'], $this->current_date['y']);
+				$hour_idx_current = date('H', $timestamp_current);
+				$day_idx_current = date('d', $timestamp_current);
+				$month_idx_current = date('m', $timestamp_current);
+				$year_idx_current = date('Y', $timestamp_current);
+				$date_idx_current = $day_idx_current.$hour_idx_current;
+				$strtotime_current = strtotime("$year_idx_current-$month_idx_current-$day_idx_current $hour_idx_current:00:00");
+				$current_filter_query = '';
 
-				// Right-to-left 
-				if ($wp_locale->text_direction == 'rtl'){
-					$data_start_value = -23;
-					$data_end_value = 1;
+				$timestamp_previous = mktime($i, 0, 0, $this->current_date['m'], $this->current_date['d']-1, $this->current_date['y']);
+				$hour_idx_previous = date('H', $timestamp_previous);
+				$day_idx_previous = date('d', $timestamp_previous);
+				$month_idx_previous = date('m', $timestamp_previous);
+				$year_idx_previous = date('Y', $timestamp_previous);
+				$date_idx_previous = $day_idx_previous.$hour_idx_previous;
+				$strtotime_previous = strtotime("$year_idx_previous-$month_idx_previous-$day_idx_previous $hour_idx_previous:00:00");
+				$previous_filter_query = '';
+			}
+			else{
+				$timestamp_current = mktime(0, 0, 0, $this->current_date['m'], (!empty($this->day_interval)?$this->current_date['d']:1)+$i, $this->current_date['y']);
+				$day_idx_current = date('d', $timestamp_current);
+				$month_idx_current = date('m', $timestamp_current);
+				$year_idx_current = date('Y', $timestamp_current);
+				$date_idx_current = $month_idx_current.$day_idx_current;
+				$strtotime_current = strtotime("$year_idx_current-$month_idx_current-$day_idx_current 00:00:00");
+				$current_filter_query = ",'$filters_query_without_date&slimpanel=$_current_panel&day=$day_idx_current&month=$month_idx_current&year=$year_idx_current'";
+
+				$timestamp_previous = mktime(0, 0, 0, $this->current_date['m']-1, (!empty($this->day_interval)?$this->current_date['d']:1)+$i, $this->current_date['y']);
+				$day_idx_previous = date('d', $timestamp_previous);
+				$month_idx_previous = date('m', $timestamp_previous);
+				$year_idx_previous = date('Y', $timestamp_previous);
+				$date_idx_previous = $month_idx_previous.$day_idx_previous;
+				$strtotime_previous = strtotime("$year_idx_previous-$month_idx_previous-$day_idx_previous 00:00:00");
+				$previous_filter_query = ",'$filters_query_without_date&slimpanel=$_current_panel&day=$day_idx_previous&month=$month_idx_previous&year=$year_idx_previous'";
+
+				if ($date_idx_current == "{$this->current_date['m']}{$this->current_date['d']}" && !empty($array_results[$i]['data1'])) $result->today = $array_results[$i]['data1'];
+				if ($date_idx_current == "{$this->yesterday['m']}{$this->yesterday['d']}" && !empty($array_results[$i]['data1'])) $result->yesterday = $array_results[$i]['data1'];
+			}
+
+			// Format each group of data
+			if (!empty($data1[$date_idx_current])){
+				$result->current_data1 .= "[$i,{$data1[$date_idx_current]}$current_filter_query],";
+				$result->current_total1 += $data1[$date_idx_current];
+				$result->current_non_zero_count++;
+			}
+			elseif($strtotime_current <= date_i18n('U')){
+				$result->current_data1 .= "[$i,0],";
+			}
+
+			if (!empty($data2[$date_idx_current])){
+				$result->current_data2 .= "[$i,{$data2[$date_idx_current]}$current_filter_query],";
+				$result->current_total2 += $data2[$date_idx_current];
+			}
+			elseif($strtotime_current <= date_i18n('U')){
+				$result->current_data2 .= "[$i,0],";
+			}
+
+			if (empty($this->day_interval)){
+				if (!empty($data1[$date_idx_previous])){
+					$result->previous_data .= "[$i,{$data1[$date_idx_previous]}$previous_filter_query],";
+					$result->previous_total += $data1[$date_idx_previous];
 				}
-
-				for($i=$data_start_value;$i<$data_end_value;$i++){ // showing a hourly graph
-					$abs_i = abs($i);
-					$padded_i = ($abs_i<10)?'0'.$abs_i:$abs_i;
-					$categories_xml .= "<category name='$abs_i'/>";
-					$current_period_xml_data1 .= !empty($result->current_data1[$padded_i])?$this->_format_value($result->current_data1[$padded_i]):'<set/>';
-					$current_period_xml_data2 .= !empty($result->current_data2[$padded_i])?$this->_format_value($result->current_data2[$padded_i]):'<set/>';
-					$previous_period_xml .= !empty($result->previous_data1[$padded_i])?$this->_format_value($result->previous_data1[$padded_i]):'<set/>';
+				elseif($strtotime_previous <= date_i18n('U')){
+					$result->previous_data .= "[$i,0],";
 				}
 			}
 			else{
-				// Days are clickable, so we need to carry the information about current filters
-				$encoded_filters_query = !empty($this->filters_query)?urlencode(str_replace('interval=','xinterval=', $this->filters_query)):'';
-				$data_start_value = 1; $data_end_value = 32;
-
-				// Right-to-left 
-				if ($wp_locale->text_direction == 'rtl'){
-					$data_start_value = -31;
-					$data_end_value = 0;
-				}
-
-				for($i=$data_start_value;$i<$data_end_value;$i++){
-					$abs_i = abs($i);
-					$padded_i = ($abs_i<10)?'0'.$abs_i:$abs_i;
-					$categories_xml .= "<category name='$abs_i'/>";
-					$current_period_xml_data1 .= !empty($result->current_data1[$padded_i])?$this->_format_value($result->current_data1[$padded_i], "{$_SERVER['PHP_SELF']}%3Fpage=wp-slimstat%26slimpanel%3D$_current_panel%26day%3D$abs_i%26month%3D{$this->current_date['m']}%26year%3D{$this->current_date['y']}$encoded_filters_query"):'<set/>';
-					$current_period_xml_data2 .= !empty($result->current_data2[$padded_i])?$this->_format_value($result->current_data2[$padded_i]):'<set/>';
-					$previous_period_xml .= !empty($result->previous_data1[$padded_i])?$this->_format_value($result->previous_data1[$padded_i], "{$_SERVER['PHP_SELF']}%3Fpage=wp-slimstat%26slimpanel%3D$_current_panel%26day%3D$abs_i%26month%3D{$this->previous_month['m']}%26year%3D{$this->previous_month['y']}$encoded_filters_query"):'<set/>';
-				}
-			}
-		}
-		else{
-			// Days are clickable, so we need to carry the information about current filters
-			$encoded_filters_query = !empty($this->filters_query)?urlencode(str_replace('interval=','xinterval=', $this->filters_query)):'';
-			$data_start_value = 0; $data_end_value = $this->day_interval;
-
-			// Right-to-left 
-			if ($wp_locale->text_direction == 'rtl'){
-				$data_start_value = 1-$this->day_interval;
-				$data_end_value = 1;
-			}
-
-			for($i=$data_start_value;$i<$data_end_value;$i++){
-				$abs_i = abs($i);
-				$day_in_interval = date('d', mktime(0,0,0,$this->current_date['m'],$this->current_date['d']+$abs_i, $this->current_date['y']));
-				$month_in_interval = date('m', mktime(0,0,0,$this->current_date['m'],$this->current_date['d']+$abs_i, $this->current_date['y']));
-				$year_in_interval = date('Y', mktime(0,0,0,$this->current_date['m'],$this->current_date['d']+$abs_i, $this->current_date['y']));
-				if (strtotime("$year_in_interval-$month_in_interval-$day_in_interval") > date_i18n('U')) break;
-
-				$categories_xml .= "<category name='$day_in_interval/$month_in_interval'/>";
-				$current_period_xml_data1 .= !empty($result->current_data1[$month_in_interval.$day_in_interval])?$this->_format_value($result->current_data1[$month_in_interval.$day_in_interval], "{$_SERVER['PHP_SELF']}%3Fpage=wp-slimstat%26slimpanel%3D$_current_panel%26day%3D{$day_in_interval}%26month%3D{$month_in_interval}%26year%3D{$year_in_interval}$encoded_filters_query"):'<set/>';
-				$current_period_xml_data2 .= !empty($result->current_data2[$month_in_interval.$day_in_interval])?$this->_format_value($result->current_data2[$month_in_interval.$day_in_interval]):'<set/>';
+				$date_label = date('d/m', mktime(0, 0, 0, $this->current_date['m'], $this->current_date['d']+$i, $this->current_date['y']));
+				$result->ticks .= "[$i, \"$date_label\"],";
 			}
 		}
 
-		$result->xml = "<graph canvasBorderThickness='0' yaxisminvalue='1' canvasBorderColor='ffffff' decimalPrecision='$_decimal_precision' divLineAlpha='20' formatNumberScale='0' lineThickness='2' showNames='1' showShadow='0' showValues='0' yAxisName='$_label_data1' decimalSeparator='$this->decimal_separator' thousandSeparator='$this->thousand_separator'>";
-		$result->xml .= "<categories>$categories_xml</categories>";
-
-		if ($this->day_filter_active){
-			$result->xml .= "<dataset seriesname='$_label_data1 {$this->yesterday['d']}/{$this->yesterday['m']}/{$this->yesterday['y']}' color='00aaff' showValue='1'>$previous_period_xml</dataset>";
-			$result->xml .= "<dataset seriesname='$_label_data1 {$this->current_date['d']}/{$this->current_date['m']}/{$this->current_date['y']}' color='0022cc' showValue='1' anchorSides='10'>$current_period_xml_data1</dataset>";
-			$result->xml .= "<dataset seriesname='$_label_data2 {$this->current_date['d']}/{$this->current_date['m']}/{$this->current_date['y']}' color='bbbbbb' showValue='1' anchorSides='10'>$current_period_xml_data2</dataset>";
+		if (!empty($result->current_data1)){
+			$result->current_data1 = substr($result->current_data1, 0, -1);
+			$result->current_data1_label = "$_label_data1".(!empty($label_date_format)?' '.date_i18n($label_date_format, mktime(0, 0, 0, $this->current_date['m'], $this->current_date['d'], $this->current_date['y'])):'');
 		}
-		else{
-			if (!empty($previous_period_xml)){
-				$result->xml .= "<dataset seriesname='$_label_data1 {$this->previous_month['m']}/{$this->previous_month['y']}' color='00aaff' showValue='1'>$previous_period_xml</dataset>";
-				$result->xml .= "<dataset seriesname='$_label_data1 {$this->current_date['m']}/{$this->current_date['y']}' color='0022cc' showValue='1' anchorSides='10'>$current_period_xml_data1</dataset>";
-				$result->xml .= "<dataset seriesname='$_label_data2 {$this->current_date['m']}/{$this->current_date['y']}' color='bbbbbb' showValue='1' anchorSides='10'>$current_period_xml_data2</dataset>";
-			}
-			else{
-				$result->xml .= "<dataset seriesname='$_label_data1' color='0022cc' showValue='1' anchorSides='10'>$current_period_xml_data1</dataset>";
-				$result->xml .= "<dataset seriesname='$_label_data2' color='bbbbbb' showValue='1' anchorSides='10'>$current_period_xml_data2</dataset>";
-			}
+		if (!empty($result->current_data2)){
+			$result->current_data2 = substr($result->current_data2, 0, -1);
+			$result->current_data2_label = "$_label_data2".(!empty($label_date_format)?' '.date_i18n($label_date_format, mktime(0, 0, 0, $this->current_date['m'], $this->current_date['d'], $this->current_date['y'])):'');
 		}
-		$result->xml .= '</graph>';
-
+		if (!empty($result->previous_data)){
+			$result->previous_data = substr($result->previous_data, 0, -1);
+			$result->previous_data_label = "$_label_data1";
+			if (!empty($label_date_format))
+				if ($this->day_filter_active)
+					$result->previous_data_label .= ' '.date_i18n($label_date_format, mktime(0, 0, 0, $this->yesterday['m'], $this->yesterday['d'], $this->yesterday['y']));
+				else
+					$result->previous_data_label .= ' '.date_i18n($label_date_format, mktime(0, 0, 0, $this->previous_month['m'], 1, $this->previous_month['y']));
+		}
+		if (!empty($result->ticks)){
+			$result->ticks = substr($result->ticks, 0, -1);
+		}
 		return $result;
 	}
 
