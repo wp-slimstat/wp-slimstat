@@ -33,7 +33,7 @@ else{ ?>
 	<script id="source">function initChart(){
 		window.chart_data = [[<?php echo $datachart->current_data1 ?>], [<?php echo $datachart->previous_data ?>], [<?php echo $datachart->current_data2 ?>]];
 		window.ticks = [<?php echo $datachart->ticks ?>];
-		var a = {label:"<?php echo $datachart->current_data1_label ?>",data:window.chart_data[0]}, b = {<?php echo !empty($datachart->previous_data_label)?"label:'$datachart->previous_data_label',data:window.chart_data[1]":''; ?>}, c = {label:"<?php echo $datachart->current_data2_label ?>",data:window.chart_data[2]};
+		var c = {label:"<?php echo $datachart->current_data1_label ?>",data:window.chart_data[0]}, b = {<?php echo !empty($datachart->previous_data_label)?"label:'$datachart->previous_data_label',data:window.chart_data[1]":''; ?>}, a = {label:"<?php echo $datachart->current_data2_label ?>",data:window.chart_data[2]};
 		jQuery.plot(jQuery("#chart-placeholder"),[a,b,c],{zoom:{interactive:true},pan:{interactive:true},series:{lines:{show:true},points:{show:true},colors:[{opacity:0.85}]},xaxis:{tickSize:1,tickDecimals:0<?php echo "$datachart->min_max_ticks"; echo (!empty($wp_slimstat_view->day_interval) && $wp_slimstat_view->day_interval > 20)?',ticks:[]':',ticks:window.ticks' ?>,zoomRange:[5,window.ticks.length],panRange:[0,window.ticks.length]},yaxis:{tickDecimals:0,tickFormatter:tickFormatter,zoomRange:[5,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>],panRange:[0,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>]}, grid:{backgroundColor:"#ffffff",borderWidth:0,hoverable:true,clickable:true},legend:{container:"#chart-legend",noColumns:3}});
 	}
 	initChart();
