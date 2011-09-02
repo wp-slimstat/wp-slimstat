@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-09-01 09:42-0500\n"
-"PO-Revision-Date: 2011-09-01 11:45-0500\n"
+"POT-Creation-Date: 2011-09-02 12:12-0500\n"
+"PO-Revision-Date: 2011-09-02 12:12-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -246,6 +246,9 @@ msgid "Double click on an empty region to reset zoom level"
 msgstr "Fai doppio click in una regione vuota per azzerare l'ingrandimento"
 
 #: ../view/panel1.php:20
+#: ../view/panel2.php:20
+#: ../view/panel3.php:21
+#: ../view/panel4.php:24
 msgid "Click on a day for hourly metrics"
 msgstr "Clicca su un giorno per vedere il dettaglio orario"
 
@@ -259,12 +262,12 @@ msgstr "Accessi orari"
 
 #: ../view/panel1.php:30
 #: ../view/panel1.php:90
-#: ../view/panel1.php:112
-#: ../view/panel1.php:161
-#: ../view/panel1.php:182
-#: ../view/panel1.php:204
-#: ../view/panel1.php:227
-#: ../view/panel1.php:247
+#: ../view/panel1.php:113
+#: ../view/panel1.php:162
+#: ../view/panel1.php:183
+#: ../view/panel1.php:205
+#: ../view/panel1.php:228
+#: ../view/panel1.php:248
 #: ../view/panel2.php:30
 #: ../view/panel2.php:73
 #: ../view/panel2.php:96
@@ -373,10 +376,10 @@ msgid "When visitors comment on your blog, Wordpress assigns them cookies stored
 msgstr "Quando i lettori lasciano un commento, Wordpress assegna loro dei cookie memorizzati sui loro computer. WP SlimStat sfrutta queste informazioni per identificare i visitatori noti."
 
 #: ../view/panel1.php:85
-#: ../view/panel1.php:106
-#: ../view/panel1.php:156
-#: ../view/panel1.php:199
-#: ../view/panel1.php:222
+#: ../view/panel1.php:107
+#: ../view/panel1.php:157
+#: ../view/panel1.php:200
+#: ../view/panel1.php:223
 #: ../view/panel3.php:69
 #: ../view/panel3.php:112
 #: ../view/panel3.php:184
@@ -390,17 +393,17 @@ msgstr "Dettagli"
 msgid "Recent Known Visitors"
 msgstr "Visitatori noti"
 
-#: ../view/panel1.php:107
+#: ../view/panel1.php:108
 #: ../view/panel5.php:23
 msgid "Spy View"
 msgstr "Spioncino in tempo reale"
 
-#: ../view/panel1.php:127
+#: ../view/panel1.php:128
 msgid "Search for"
 msgstr "Ricerca per"
 
-#: ../view/panel1.php:138
-#: ../view/panel1.php:230
+#: ../view/panel1.php:139
+#: ../view/panel1.php:231
 #: ../view/panel2.php:226
 #: ../view/panel3.php:99
 #: ../view/panel4.php:207
@@ -409,9 +412,9 @@ msgstr "Ricerca per"
 msgid "c-"
 msgstr "c-"
 
-#: ../view/panel1.php:143
-#: ../view/panel1.php:210
-#: ../view/panel1.php:252
+#: ../view/panel1.php:144
+#: ../view/panel1.php:211
+#: ../view/panel1.php:253
 #: ../view/panel3.php:122
 #: ../view/panel3.php:170
 #: ../view/panel4.php:82
@@ -424,36 +427,36 @@ msgstr "c-"
 msgid "Open %s in a new window"
 msgstr "Apri %s in una nuova finestra"
 
-#: ../view/panel1.php:148
+#: ../view/panel1.php:149
 #: ../view/panel5.php:174
 msgid "Direct visit to"
 msgstr "Visita diretta a"
 
-#: ../view/panel1.php:157
+#: ../view/panel1.php:158
 msgid "Recent Search Terms"
 msgstr "Parole chiave recenti"
 
-#: ../view/panel1.php:177
+#: ../view/panel1.php:178
 msgid "Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session."
 msgstr "Sessioni uniche iniziate dai tuoi visitatori. Se un utente &egrave; inattivo sul sito per almeno 30 minuti, ogni futura attivit&agrave; sar&agrave; associata ad una nuova sessione. Utenti che lasciano il sito ma tornano entro 30 minuti, saranno invece tracciati con la sessione originale."
 
-#: ../view/panel1.php:178
+#: ../view/panel1.php:179
 msgid "Languages - Just Visitors"
 msgstr "Lingue - Solo visitatori"
 
-#: ../view/panel1.php:185
+#: ../view/panel1.php:186
 #: ../view/panel2.php:76
 #: ../view/panel5.php:159
 msgid "l-"
 msgstr "l-"
 
-#: ../view/panel1.php:187
+#: ../view/panel1.php:188
 #: ../view/panel2.php:79
 msgid "Code"
 msgstr "Cod"
 
-#: ../view/panel1.php:187
-#: ../view/panel1.php:255
+#: ../view/panel1.php:188
+#: ../view/panel1.php:256
 #: ../view/panel2.php:79
 #: ../view/panel2.php:106
 #: ../view/panel2.php:132
@@ -472,11 +475,11 @@ msgstr "Cod"
 msgid "Hits"
 msgstr "Visite"
 
-#: ../view/panel1.php:200
+#: ../view/panel1.php:201
 msgid "Popular Resources for"
 msgstr "Pagine popolari del"
 
-#: ../view/panel1.php:208
+#: ../view/panel1.php:209
 #: ../view/panel2.php:132
 #: ../view/panel2.php:155
 #: ../view/panel2.php:175
@@ -490,12 +493,12 @@ msgstr "Pagine popolari del"
 msgid "Last"
 msgstr "Ultimo"
 
-#: ../view/panel1.php:223
+#: ../view/panel1.php:224
 #: ../view/panel5.php:38
 msgid "Recent Countries"
 msgstr "Paesi recenti"
 
-#: ../view/panel1.php:242
+#: ../view/panel1.php:243
 msgid "Traffic Sources Overview"
 msgstr "Panoramica sorgenti di traffico"
 
@@ -505,7 +508,7 @@ msgstr "Visite"
 
 #: ../view/panel2.php:25
 msgid "Daily Human Visits"
-msgstr "Visitei umane giornaliere"
+msgstr "Visite umane giornaliere"
 
 #: ../view/panel2.php:27
 msgid "Hourly Human Visits"
