@@ -297,7 +297,7 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 
-	public function count_records($_where_clause = '1=1', $_field = '*', $_only_current_period = true, $_join_tables = ''){
+	public function count_records($_where_clause = '1=1', $_field = '*', $_use_filters = true, $_join_tables = ''){
 		global $wpdb;
 
 		$sql_from = '';
@@ -308,8 +308,8 @@ class wp_slimstat_view {
 			$sql_from .= " INNER JOIN $this->table_screenres tss ON t1.screenres_id = tss.screenres_id";
 
 		$sql = "SELECT COUNT($_field) count
-				FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']} $sql_from
-				WHERE $_where_clause $this->filters_sql_where ".($_only_current_period?$this->filters_date_sql_where:'');
+				FROM $this->table_stats t1 ".($_use_filters?"{$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}":'')." $sql_from
+				WHERE $_where_clause ".($_use_filters?"$this->filters_sql_where $this->filters_date_sql_where":'');
 		return intval($wpdb->get_var($sql));
 	}
 

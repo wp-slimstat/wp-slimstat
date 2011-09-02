@@ -7,8 +7,8 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 // Data about our visits
 $current_pageviews = $wp_slimstat_view->count_records();
-$total_visitors = $wp_slimstat_view->count_records('visit_id > 0');
-$datachart = $wp_slimstat_view->extract_data_for_chart('COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', 2, __('Visits','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 'AND tb.type = 0', '', 'browsers');
+$total_visitors = $wp_slimstat_view->count_records('(tb.type = 0 OR tb.type = 2)');
+$datachart = $wp_slimstat_view->extract_data_for_chart('COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', 2, __('Visits','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 'AND (tb.type = 0 OR tb.type = 2)', '', 'browsers');
 
 foreach($panels_order as $a_panel_id)
 	switch($a_panel_id):
