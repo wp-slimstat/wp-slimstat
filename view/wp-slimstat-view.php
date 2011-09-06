@@ -492,6 +492,7 @@ class wp_slimstat_view {
 			$sql .= $sql_no_placeholders;
 		}
 		$sql .= $group_and_order;
+
 		$array_results = $wpdb->get_results($sql, ARRAY_A);
 
 		if (!is_array($array_results) || empty($array_results))
@@ -541,6 +542,7 @@ class wp_slimstat_view {
 				$month_idx_current = date('m', $timestamp_current);
 				$year_idx_current = date('Y', $timestamp_current);
 				$date_idx_current = $month_idx_current.$day_idx_current;
+
 				$strtotime_current = strtotime("$year_idx_current-$month_idx_current-$day_idx_current 00:00:00");
 				$current_filter_query = ",'$filters_query_without_date&slimpanel=$_current_panel&day=$day_idx_current&month=$month_idx_current&year=$year_idx_current'";
 
@@ -552,8 +554,8 @@ class wp_slimstat_view {
 				$strtotime_previous = strtotime("$year_idx_previous-$month_idx_previous-$day_idx_previous 00:00:00");
 				$previous_filter_query = ",'$filters_query_without_date&slimpanel=$_current_panel&day=$day_idx_previous&month=$month_idx_previous&year=$year_idx_previous'";
 
-				if ($date_idx_current == "{$this->current_date['m']}{$this->current_date['d']}" && !empty($array_results[$i]['data1'])) $result->today = $array_results[$i]['data1'];
-				if ($date_idx_current == "{$this->yesterday['m']}{$this->yesterday['d']}" && !empty($array_results[$i]['data1'])) $result->yesterday = $array_results[$i]['data1'];
+				if ($date_idx_current == "{$this->current_date['m']}{$this->current_date['d']}" && !empty($data1[$date_idx_current])) $result->today = $data1[$date_idx_current];
+				if ($date_idx_current == "{$this->yesterday['m']}{$this->yesterday['d']}" && !empty($data1[$date_idx_current])) $result->yesterday = $data1[$date_idx_current];
 			}
 
 			// Format each group of data
