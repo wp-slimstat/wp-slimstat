@@ -61,7 +61,7 @@ switch ($function_to_use){
 		$orderby_column = 'count';
 		break;
 	default:
-		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.resource, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.resource <> ''", "DISTINCT t1.resource");
 		$add_to_box_title = __('Recent Contents', 'wp-slimstat-view');
 }
