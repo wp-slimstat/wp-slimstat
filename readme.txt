@@ -3,7 +3,7 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, fusion charts
 Requires at least: 3.0
-Tested up to: 3.2.1
+Tested up to: 3.3
 Stable tag: 2.5
 
 == Description ==
@@ -118,7 +118,7 @@ can be any number between 2 and 254. Zero is reserved for tracking outbound clic
 
 1. Dashboard
 2. Configuration panel
-3. It works on your mobile device!
+3. It works on your mobile device
 
 == Changelog ==
 
