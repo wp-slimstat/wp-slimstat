@@ -116,8 +116,9 @@ can be any number between 2 and 254. Zero is reserved for tracking outbound clic
 
 == Screenshots ==
 
-1. Reports
-2. Options
+1. Dashboard
+2. Configuration panel
+3. It works on your mobile device!
 
 == Changelog ==
 
