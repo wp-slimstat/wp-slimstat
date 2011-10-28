@@ -1,0 +1,59 @@
+#slim_top_pages div.inside,
+#slim_spy_view div.inside,
+#slim_summary_for div.inside,
+#slim_user_agents div.inside,
+#slim_recent_keywords div.inside,
+#show_traffic_sources div.inside,
+#show_keywords_and_pages div.inside{
+ overflow-x:hidden;
+ overflow-y:auto;
+ height:200px;
+ margin:0;
+}
+.postbox h3 span.right{
+ float:right;
+ font-size:.90em;
+ font-weight:400;
+ right:5px;
+ position:absolute;
+}
+.postbox p.slimstat-row{
+ border-bottom:1px dashed #ddd;
+ font-size:.85em;
+ height:1.6em;
+ margin:0;
+ padding:5px 5px 5px 6px;
+}
+.postbox p.slimstat-row.header{
+ background-color:#eee;
+}
+.postbox p.slimstat-row.last{
+ border:0;
+}
+.postbox p.slimstat-row.nodata{
+ border:0;
+ color:#999;
+ padding:30px 0;
+ text-align:center;
+}
+.postbox p.slimstat-row img{
+ float:left;
+ padding:2px 6px 0 0;
+}
+.postbox p.slimstat-row span{
+ float:right;
+ min-width:50px;
+ text-align:right;
+}
+.postbox p.slimstat-row span.element-title{
+ float:left;
+ text-align:left;
+}
+.postbox p.slimstat-row span.narrowcolumn{
+ min-width:30px;
+ text-align:center;
+}
+.postbox p.slimstat-row span.widecolumn{
+ min-width:100px;
+ text-align:center;
+}
