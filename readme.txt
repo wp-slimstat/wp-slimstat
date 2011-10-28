@@ -142,7 +142,7 @@ Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 
 == Changelog ==
 
-= What's cooking? =
+= Planned features =
 * Google Images URL's parser
 * Display visit duration and time on site
 * Forward-compatible browser detection (thank you Davide, for pointing this out)
