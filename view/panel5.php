@@ -68,7 +68,7 @@ switch ($function_to_use){
 if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 ?>
 
-<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="get">
+<form action="<?php echo $admin_url ?>" method="get">
 	<input type="hidden" name="page" value="wp-slimstat">
 	<input type="hidden" name="slimpanel" value="5">
 	<input type='hidden' name='ftu' value='<?php echo $function_to_use; ?>'>
@@ -113,11 +113,11 @@ $ending_point = min($count_raw_data, $wp_slimstat_view->starting_from+50);
 $previous_next = '';
 if ($wp_slimstat_view->starting_from > 0){
 	$new_starting = ($wp_slimstat_view->starting_from > 50)?$wp_slimstat_view->starting_from-50:0;
-	$previous_next = "<a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
+	$previous_next = "<a href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use'>".__('&laquo; Previous','wp-slimstat-view')."</a> ";
 }
 if ($ending_point < $count_raw_data && $count_results > 0){
 	$new_starting = $wp_slimstat_view->starting_from + 50;
-	$previous_next .= "<a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
+	$previous_next .= "<a href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;starting=$new_starting&amp;orderby=$orderby_column&amp;direction=$wp_slimstat_view->direction&amp;ftu=$function_to_use'>".__('Next &raquo;','wp-slimstat-view')."</a> ";
 } 
 if (!empty($previous_next)) echo "<div class='more'>$previous_next</div>";
 ?>
@@ -126,7 +126,7 @@ if ($count_results == 0)
 	_e('No records found', 'wp-slimstat-view');
 else {
 	$reverse_orderby = ($wp_slimstat_view->direction == 'ASC')?'DESC':'ASC';
-	$invert_direction_link = "<a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;starting=$wp_slimstat_view->starting_from&amp;orderby=$orderby_column&amp;direction=$reverse_orderby&amp;ftu=$function_to_use'>".__('reverse','wp-slimstat-view')."</a>";
+	$invert_direction_link = "<a href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;starting=$wp_slimstat_view->starting_from&amp;orderby=$orderby_column&amp;direction=$reverse_orderby&amp;ftu=$function_to_use'>".__('reverse','wp-slimstat-view')."</a>";
 	echo $add_to_box_title.'  '.sprintf(__('Records: %d - %d. Order by: %s %s (%s)', 'wp-slimstat-view'), $wp_slimstat_view->starting_from, $ending_point, $orderby_column, $wp_slimstat_view->direction, $invert_direction_link); 
 } ?></h3><div class="container"><?php
 				
@@ -149,16 +149,16 @@ for($i=0;$i<$count_results;$i++){
 	if ($visit_id != $results[$i]['visit_id'] || $results[$i]['visit_id'] == 0){
 		$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(!empty($results[$i]['visit_id'])?' is-direct':'');
 		if (empty($results[$i]['user']))
-			$ip_address = "<a{$host_by_ip['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$host_by_ip['text']}</a>";
+			$ip_address = "<a{$host_by_ip['tooltip']} class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$host_by_ip['text']}</a>";
 		else{
-			$ip_address = "<a{$host_by_ip['tooltip']} class='activate-filter highlight-user' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a> ({$results[$i]['ip']})";
+			$ip_address = "<a{$host_by_ip['tooltip']} class='activate-filter highlight-user' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a> ({$results[$i]['ip']})";
 			$highlight_row = ' is-known-user';
 		}
 		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/images/whois.gif' /></a> $ip_address";
-		$country = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;country-op=equal&amp;country={$results[$i]['country']}'>".__('c-'.$results[$i]['country'],'countries-languages')."</a>";
-		$language = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;language-op=equal&amp;language={$results[$i]['language']}'>".__('l-'.$results[$i]['language'], 'countries-languages')."</a>";
-		$platform = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;platform-op=equal&amp;platform={$results[$i]['platform']}'>".__($results[$i]['platform'],'countries-languages')."</a>";
-		$browser = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;browser-op=equal&amp;browser={$results[$i]['browser']}'>{$results[$i]['browser']}</a>";
+		$country = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;country-op=equal&amp;country={$results[$i]['country']}'>".__('c-'.$results[$i]['country'],'countries-languages')."</a>";
+		$language = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;language-op=equal&amp;language={$results[$i]['language']}'>".__('l-'.$results[$i]['language'], 'countries-languages')."</a>";
+		$platform = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;platform-op=equal&amp;platform={$results[$i]['platform']}'>".__($results[$i]['platform'],'countries-languages')."</a>";
+		$browser = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;browser-op=equal&amp;browser={$results[$i]['browser']}'>{$results[$i]['browser']}</a>";
 		if ($results[$i]['version'] == 0) $results[$i]['version'] = '';
 
 		echo "<p class='header$highlight_row'>[<strong>{$results[$i]['type']}</strong>] $ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>$browser {$results[$i]['version']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";

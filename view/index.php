@@ -12,6 +12,7 @@ $ip_lookup_url = get_option('slimstat_ip_lookup_service', 'http://www.maxmind.co
 
 // Retrieve the order of this tab's panels
 $user = wp_get_current_user();
+$admin_url = admin_url('index.php');
 $option = (get_option('slimstat_use_separate_menu', 'no') == 'yes')?'meta-box-order_toplevel_page_wp-slimstat':'meta-box-order_dashboard_page_wp-slimstat';
 $panels_order = get_user_option($option, $user->ID);
 $panels_order = explode(',', $panels_order[0]);

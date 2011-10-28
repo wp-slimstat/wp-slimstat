@@ -41,7 +41,7 @@ function uninstall(){
 	delete_option('slimstat_can_view');
 	delete_option('slimstat_capability_can_view');
 	delete_option('slimstat_can_admin');
-	delete_option('slimstat_enable_footer_link');
+	delete_option('slimstat_enable_footer_link'); // Not used anymore, left for backward compatibility
 
 	// Remove scheduled autopurge events
 	wp_clear_scheduled_hook('wp_slimstat_purge');

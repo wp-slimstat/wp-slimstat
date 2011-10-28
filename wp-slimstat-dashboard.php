@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
 Description: Add some widgets to monitor your WP SlimStat reports directly from your Wordpress dashboard.
-Version: 2.5
+Version: 2.5.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -16,6 +16,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 // In order to activate this plugin, WP SlimStat needs to be installed and active
 $plugins = get_option('active_plugins');
+$admin_url = admin_url('index.php');
 if (!in_array('wp-slimstat/wp-slimstat.php', $plugins)) return;
 
 if (!empty($_GET['page']) || ! preg_match('#wp-admin/(index.php)?(\?.*)?$#', $_SERVER['REQUEST_URI'])) return;
@@ -105,9 +106,9 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 			}
 			if ($visit_id != $results[$i]['visit_id']){
 				if (empty($results[$i]['user']))
-					$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=1&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
+					$ip_address = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=1&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
 				else
-					$ip_address = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&slimpanel=1&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
+					$ip_address = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&slimpanel=1&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
 				$ip_address = "<a href='http://www.infosniper.net/index.php?ip_address={$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='".plugins_url('/images/whois.gif', __FILE__)."' /></a> $ip_address";
 				$country = __('c-'.$results[$i]['country'],'countries-languages');
 
@@ -175,7 +176,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 			$last_element = ($i == $count_results-1)?' class="slimstat-row last"':' class="slimstat-row"';
 			$extra_info = "title='".date_i18n($this->date_time_format, $results[$i]['dt']).', '.(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 			$clean_string = urlencode($results[$i]['searchterms']);
-			if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=1&amp;searchterms=$clean_string'>{$strings['text']}</a>";
+			if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=1&amp;searchterms=$clean_string'>{$strings['text']}</a>";
 
 			echo "<p$last_element $extra_info>{$strings['text']}</p>";
 		}

@@ -79,7 +79,7 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info = "title='".__('Code','wp-slimstat-view').": {$results[$i]['language']}, ".__('Hits','wp-slimstat-view').": {$results[$i]['count']}'";
 	$clean_string = urlencode($results[$i]['language']);
 	if (!isset($wp_slimstat_view->filters_parsed['language'][1]) || $wp_slimstat_view->filters_parsed['language'][1]!='equals')
-		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;language=$clean_string'>{$strings['text']}</a>";
+		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;language=$clean_string'>{$strings['text']}</a>";
 
 	echo "<p $extra_info><span class='element-title'>{$strings['text']}</span> <span class='narrowcolumn' style='text-align:right'>$percentage%</span></p>";
 } ?>
@@ -101,7 +101,7 @@ for($i=0;$i<$count_results;$i++){
 	$browser_string = "{$results[$i]['browser']} $browser_version";
 	$clean_string = urlencode($results[$i]['browser']);
 	if (!isset($wp_slimstat_view->filters_parsed['browser'][1]) || $wp_slimstat_view->filters_parsed['browser'][1]!='equals')
-		$browser_string = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;browser=$clean_string".(!empty($browser_version)?"&amp;version=$browser_version":'')."'>$browser_string</a>";
+		$browser_string = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;browser=$clean_string".(!empty($browser_version)?"&amp;version=$browser_version":'')."'>$browser_string</a>";
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info = "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}'";
 	echo "<p $extra_info><span class='element-title'>[<strong>{$results[$i]['type']}</strong>] $browser_string</span> <span>$percentage%</span></p>";
@@ -132,7 +132,7 @@ for($i=0;$i<$count_results;$i++){
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']);
 	$extra_info .= (!empty($results['user']))?", User: {$results['user']}'":"'";
 	if (!isset($wp_slimstat_view->filters_parsed['ip'][1]) || $wp_slimstat_view->filters_parsed['ip'][1]!='equals')
-		$host_by_ip['text'] = "<a{$host_by_ip['tooltip']} class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;ip={$results[$i]['ip']}'>{$host_by_ip['text']}</a>";
+		$host_by_ip['text'] = "<a{$host_by_ip['tooltip']} class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;ip={$results[$i]['ip']}'>{$host_by_ip['text']}</a>";
 	$host_by_ip['text'] = "[{$results[$i]['country']}] <a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/images/whois.gif' /></a> ".$host_by_ip['text'];
 
 	echo "<p $extra_info><span class='element-title'>{$host_by_ip['text']}</span> <span>$percentage%</span></p>";
@@ -154,7 +154,7 @@ for($i=0;$i<$count_results;$i++){
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	if (!isset($wp_slimstat_view->filters_parsed['platform'][1]) || $wp_slimstat_view->filters_parsed['platform'][1]!='equals')
-		$platform = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;platform={$results[$i]['platform']}'>$platform</a>";
+		$platform = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;platform={$results[$i]['platform']}'>$platform</a>";
 
 	echo "<p $extra_info><span class='element-title'>$platform</span> <span>$percentage%</span></p>";
 } ?>
@@ -174,7 +174,7 @@ for($i=0;$i<$count_results;$i++){
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	if (!isset($wp_slimstat_view->filters_parsed['resolution'][1]) || $wp_slimstat_view->filters_parsed['resolution'][1]!='equals')
-		$results[$i]['resolution'] = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;resolution={$results[$i]['resolution']}'>{$results[$i]['resolution']}</a>";
+		$results[$i]['resolution'] = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;resolution={$results[$i]['resolution']}'>{$results[$i]['resolution']}</a>";
 
 	echo "<p $extra_info><span class='element-title'>{$results[$i]['resolution']}</span> <span>$percentage%</span></p>";
 } ?>
@@ -227,7 +227,7 @@ for($i=0;$i<$count_results;$i++){
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	if (!isset($wp_slimstat_view->filters_parsed['country'][1]) || $wp_slimstat_view->filters_parsed['country'][1]!='equals')
-		$country = "<a class='activate-filter' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;country={$results[$i]['country']}'>$country</a>";
+		$country = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=2$wp_slimstat_view->filters_query&amp;country={$results[$i]['country']}'>$country</a>";
 
 	echo "<p $extra_info><span class='element-title'>$country</span> <span class='narrowcolumn'>$percentage%</span></p>";
 } ?>

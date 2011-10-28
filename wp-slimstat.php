@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.5
+Version: 2.5.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -22,18 +22,17 @@ class wp_slimstat{
 	public function __construct(){
 		global $wpdb;
 
-		// Current version
-		$this->version = '2.5';
-
 		// Let's keep track of transaction IDs
 		$this->tid = 0;
 
 		if (!is_admin()){
-			// Define when we want to run the tracking: on init
-			add_action('wp', array(&$this, 'slimtrack'), 5);
+			// Is tracking active?
+			if (get_option('slimstat_is_tracking', 'yes') == 'yes'){
+				add_action('wp', array(&$this, 'slimtrack'), 5);
+			}
 
 			// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
-			if (get_option('slimstat_enable_javascript', 'no') == 'yes'){
+			if ((get_option('slimstat_enable_javascript', 'no') == 'yes') && (get_option('slimstat_is_tracking', 'yes') == 'yes')){
 				add_action('wp_footer', array(&$this,'wp_slimstat_javascript'), 10);
 			}
 		}
@@ -137,7 +136,7 @@ class wp_slimstat{
 				ip_from INT UNSIGNED DEFAULT 0,
 				ip_to INT UNSIGNED DEFAULT 0,
 				country_code CHAR(2) DEFAULT '',
-				KEY ip_from_idx (ip_from, ip_to)
+				CONSTRAINT ip_from_idx KEY (ip_from, ip_to)
 			)";
 
 		// A lookup table for browsers can help save some space
@@ -268,18 +267,9 @@ class wp_slimstat{
 		// List of users who can administer this plugin's options: if empty, all users are allowed
 		add_option('slimstat_can_admin', array(), '', 'no');
 
-		// List of users who can administer this plugin's options: if empty, all users are allowed
-		add_option('slimstat_enable_footer_link', 'yes', '', 'no');
-
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
-
-		// Please do not remove this function, it helps me to keep track of who is using WP SlimStat.
-		// Your privacy is 100% guaranteed, I promise :-)
-		$opts = array('http'=>array( 'method'=>'GET', 'header'=>"Accept-language: en\r\nUser-Agent: wp-slimstat\r\n"));
-		$context = @stream_context_create($opts);
-		$devnull = @file_get_contents('http://www.duechiacchiere.it/wp-slimstat-count.php?h='.urlencode(get_bloginfo('url')).'&v='.$this->version.'&c='.$this->_count_records(), false, $context);
 	}
 	// end _activate
 
@@ -316,9 +306,6 @@ class wp_slimstat{
 	public function slimtrack($_argument = ''){
 		global $wpdb;
 
-		// Is tracking enabled?
-		if (get_option('slimstat_is_tracking', 'yes') == 'no') return $_argument;
-
 		// Should we ignore this user?
 		if (is_user_logged_in()){
 			global $current_user;
@@ -338,8 +325,8 @@ class wp_slimstat{
 		$long_user_ip = $this->_get_ip2long_remote_ip();
 
 		// Is this visit coming from the server itself ( = other script crawling the site or localhost)
-		if ($long_user_ip === false || $long_user_ip == ip2long($_SERVER['SERVER_ADDR']))
-			return $_argument;
+		//if ($long_user_ip === false || $long_user_ip == ip2long($_SERVER['SERVER_ADDR']))
+		//	return $_argument;
 
 		// Is this IP blacklisted?
 		$to_ignore = get_option('slimstat_ignore_ip', array());
@@ -418,6 +405,7 @@ class wp_slimstat{
 			$stat['resource'] = ''; // Mark the resource to remember that this is a 'local search'
 		}
 
+
 		// Mark 404 pages
 		if (is_404()) $stat['resource'] = '[404]'.$stat['resource'];
 
@@ -436,8 +424,8 @@ class wp_slimstat{
 		// Do autoupdate?
 		$do_autoUpdate = get_option('slimstat_browscap_autoupdate', 'no');
 		if (($do_autoUpdate == 'yes') &&
-			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 664) ||
-			(intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 664))){
+			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 644) ||
+			(intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 644))){
 			$browscap->doAutoUpdate = false;
 		}
 		else
@@ -828,14 +816,11 @@ class wp_slimstat{
 	 */
 	public function wp_slimstat_javascript(){
 		global $wpdb;
-		if ($this->tid > 0){
-			$intval_tid = intval($this->tid);
+		$intval_tid = intval($this->tid);
+		if ($intval_tid > 0){
 			$hexval_tid = base_convert($intval_tid, 10, 16);
 			$my_secret_key = get_option('slimstat_secret', '123');
 			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', get_option('siteurl').'/wp-slimstat');
-			$enable_footer_link = get_option('slimstat_enable_footer_link', 'yes');
-
-			if ($enable_footer_link == 'yes') echo '<p id="statsbywpslimstat" style="text-align:center"><a href="http://www.duechiacchiere.it/wp-slimstat" title="A simple but powerful web analytics plugin for Wordpress"><img src="'.plugins_url('/images/wp-slimstat-antipixel.png', __FILE__).'" width="80" height="15" alt="WP SlimStat"/></a></p>';
 
 			echo "<script type='text/javascript'>slimstat_tid='$hexval_tid';";
 			echo "slimstat_path='$custom_slimstat_js_path';";

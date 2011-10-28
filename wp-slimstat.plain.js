@@ -71,35 +71,12 @@ function slimstat_track_link(event){
 	slimstat_info += "&go=n"; // Avoid server-side redirect
 	slimstat_url = slimstat_path+'/wp-slimstat-js.php'+slimstat_info;
 	
-	// You can choose to disable this for some links (to avoid conflicts with Lightbox and friends)
-	if (element.className.indexOf('noslimstat') == -1){
-		switch(element.target){
-			case '_blank':
-			case '_new':
-				window.open(document_location, element.target);
-				break;
-			case null:
-			case 'undefined':
-			case '':
-			case '_self':
-				// This is necessary to give the browser some time to elaborate the request
-				setTimeout('self.location.href = "' + document_location + '"', 500);
-				break;
-			case '_parent':
-				setTimeout('parent.location.href = "' + document_location + '"', 500);
-				break;
-			default:
-				if (top.frames[element.target])
-					setTimeout('top.frames['+element.target+'].location.href = "' + document_location + '"', 500);
-				else
-					window.open(document_location, element.target);
-		}
-	}
 	slimstat_record_event(slimstat_url);
 	
-	// Prevent execution of the default action
-	if (event.preventDefault) event.preventDefault();
-	else event.returnValue = false;
+	// Wait 300 ms
+	var date = new Date(); var curDate = null;
+	do { curDate = new Date(); } 
+	while(curDate-date < 300); 
 }
 
 function ss_te(event, code, load_target){
