@@ -124,15 +124,14 @@ can be any number between 2 and 254. Zero is reserved for tracking outbound clic
 = Why does WP SlimStat show more page views than actual pages clicked by a user? =
 "Phantom" page views can occur when a user's browser does automatic feed retrieval,
 [link pre-fetching](https://developer.mozilla.org/en/Link_prefetching_FAQ), or a page refresh. WP SlimStat tracks these because they are valid
-requests from that user's browser and are indistinguishable from user link clicks.
+requests from that user's browser and are indistinguishable from user link clicks. You can ignore these visits setting the corresponding option
+in Settings > SlimStat > Filters
 
 = How do I stop WP SlimStat from tracking spammers? =
 Go to Settings > SlimStat > Filters and set "Ignore Spammers" to YES.
 
 = How do I stop WP SlimStat from recording new visits on my site? =
 Go to Settings > SlimStat > General and set "Activate tracking" to NO.
-
-
 
 == Screenshots ==
 
