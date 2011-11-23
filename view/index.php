@@ -240,6 +240,7 @@ jQuery(document).ready(function(){
 			</select> 
 			<select name="f_operator" style="width:9em" onchange="if(this.value=='is empty'||this.value=='is not empty'){document.setslimstatfilters.f_value.disabled=true;} else {document.setslimstatfilters.f_value.disabled=false;}">
 				<option value="equals"><?php _e('Equals','wp-slimstat-view') ?></option>
+				<option value="not equal to"><?php _e('Is not equal to','wp-slimstat-view') ?></option>
 				<option value="contains"><?php _e('Contains','wp-slimstat-view') ?></option>
 				<option value="does not contain"><?php _e('Does not contain','wp-slimstat-view') ?></option>
 				<option value="starts with"><?php _e('Starts with','wp-slimstat-view') ?></option>

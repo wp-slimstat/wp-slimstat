@@ -155,6 +155,9 @@ class wp_slimstat_view {
 					}
 
 					switch ($a_filter_details[1]){
+						case 'not equal to':
+							$this->filters_sql_where .= " AND $a_filter_column <> '{$a_filter_details[0]}'";
+							break;
 						case 'contains':
 							$this->filters_sql_where .= " AND $a_filter_column LIKE '%{$a_filter_details[0]}%'";
 							break;

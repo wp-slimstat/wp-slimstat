@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-09-01 09:43-0500\n"
-"PO-Revision-Date: 2011-09-01 09:43-0500\n"
+"POT-Creation-Date: 2011-11-23 12:10-0500\n"
+"PO-Revision-Date: 2011-11-23 12:11-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: ZebEl of Sweden\n"
 "MIME-Version: 1.0\n"
@@ -16,192 +16,196 @@ msgstr ""
 "X-Poedit-Country: SWEDEN\n"
 "X-Poedit-SearchPath-0: ../view\n"
 
-#: ../view/index.php:31
+#: ../view/index.php:32
 msgid "Dashboard"
 msgstr "Panel"
 
-#: ../view/index.php:32
+#: ../view/index.php:33
 msgid "Visitors"
 msgstr "Besökare"
 
-#: ../view/index.php:33
+#: ../view/index.php:34
 msgid "Traffic Sources"
 msgstr "Trafikkällor"
 
-#: ../view/index.php:34
+#: ../view/index.php:35
 msgid "Content"
 msgstr "Innehåll"
 
-#: ../view/index.php:35
+#: ../view/index.php:36
 msgid "Raw Data"
 msgstr "Rådata"
 
-#: ../view/index.php:36
+#: ../view/index.php:37
 msgid "World Map"
 msgstr "Världskarta"
 
-#: ../view/index.php:37
+#: ../view/index.php:38
 msgid "Custom Reports"
 msgstr "Anpassade Rapporter"
 
-#: ../view/index.php:55
+#: ../view/index.php:56
 msgid "Current filters:"
 msgstr "Nuvarande filter:"
 
-#: ../view/index.php:64
+#: ../view/index.php:65
 msgid "x"
 msgstr "x"
 
-#: ../view/index.php:99
+#: ../view/index.php:100
 msgid "this period"
 msgstr "denna period"
 
-#: ../view/index.php:209
-#: ../view/index.php:270
-#: ../view/index.php:271
+#: ../view/index.php:210
+#: ../view/index.php:272
+#: ../view/index.php:273
 msgid "Year"
 msgstr "År"
 
-#: ../view/index.php:219
+#: ../view/index.php:220
 msgid "Show records where"
 msgstr "Visa poster då"
 
-#: ../view/index.php:221
+#: ../view/index.php:222
 #: ../view/panel5.php:86
 msgid "Browser"
 msgstr "Webbläsare"
 
-#: ../view/index.php:222
+#: ../view/index.php:223
 msgid "Browser version"
 msgstr "Webbläsarens version"
 
-#: ../view/index.php:223
+#: ../view/index.php:224
 msgid "CSS version"
 msgstr "CSS version"
 
-#: ../view/index.php:224
+#: ../view/index.php:225
 #, fuzzy
 msgid "Browser type"
 msgstr "Webbläsare"
 
-#: ../view/index.php:225
+#: ../view/index.php:226
 #: ../view/panel5.php:93
 msgid "Operating System"
 msgstr "Operativsystem"
 
-#: ../view/index.php:226
+#: ../view/index.php:227
 msgid "Country Code"
 msgstr "Landskod"
 
-#: ../view/index.php:227
+#: ../view/index.php:228
 #: ../view/panel5.php:89
 msgid "Domain"
 msgstr "Domän"
 
-#: ../view/index.php:228
+#: ../view/index.php:229
 #: ../view/panel5.php:90
 msgid "IP"
 msgstr "IP"
 
-#: ../view/index.php:229
+#: ../view/index.php:230
 msgid "User"
 msgstr "Användare"
 
-#: ../view/index.php:230
+#: ../view/index.php:231
 msgid "Visit ID"
 msgstr "Besöks-ID"
 
-#: ../view/index.php:231
+#: ../view/index.php:232
 #: ../view/panel5.php:91
 msgid "Keywords"
 msgstr "Nyckelord"
 
-#: ../view/index.php:232
+#: ../view/index.php:233
 msgid "Language Code"
 msgstr "Språkkod"
 
-#: ../view/index.php:233
+#: ../view/index.php:234
 #: ../view/panel5.php:94
 msgid "Permalink"
 msgstr "Permalänk"
 
-#: ../view/index.php:234
+#: ../view/index.php:235
 msgid "Referer"
 msgstr "Refererare"
 
-#: ../view/index.php:235
+#: ../view/index.php:236
 #: ../view/panel5.php:96
 msgid "Screen Resolution"
 msgstr "Bildskärmens Upplösning"
 
-#: ../view/index.php:236
+#: ../view/index.php:237
 #, fuzzy
 msgid "Color depth"
 msgstr "Färgkoder"
 
-#: ../view/index.php:237
+#: ../view/index.php:238
 msgid "Post Author"
 msgstr "Inläggsförfattare"
 
-#: ../view/index.php:238
+#: ../view/index.php:239
 msgid "Post Category ID"
 msgstr "Inläggskategorins ID"
 
-#: ../view/index.php:241
+#: ../view/index.php:242
 msgid "Equals"
 msgstr "Är lika med"
 
-#: ../view/index.php:242
+#: ../view/index.php:243
+msgid "Is not equal to"
+msgstr ""
+
+#: ../view/index.php:244
 msgid "Contains"
 msgstr "Innehåller"
 
-#: ../view/index.php:243
+#: ../view/index.php:245
 msgid "Does not contain"
 msgstr "Innehåller ej"
 
-#: ../view/index.php:244
+#: ../view/index.php:246
 msgid "Starts with"
 msgstr "Börjar med"
 
-#: ../view/index.php:245
+#: ../view/index.php:247
 msgid "Ends with"
 msgstr "Slutar med"
 
-#: ../view/index.php:246
+#: ../view/index.php:248
 msgid "Sounds like"
 msgstr "Låter som"
 
-#: ../view/index.php:247
+#: ../view/index.php:249
 msgid "Is empty"
 msgstr "Är tomt"
 
-#: ../view/index.php:248
+#: ../view/index.php:250
 msgid "Is not empty"
 msgstr "Är inte tomt"
 
-#: ../view/index.php:251
+#: ../view/index.php:253
 msgid "Filter by date"
 msgstr "Sortera efter datum"
 
-#: ../view/index.php:252
+#: ../view/index.php:254
 msgid "Day"
 msgstr "Dag"
 
-#: ../view/index.php:261
+#: ../view/index.php:263
 msgid "Month"
 msgstr "Månad"
 
-#: ../view/index.php:272
+#: ../view/index.php:274
 #: ../view/panel1.php:52
 msgid "days"
 msgstr "dagar"
 
-#: ../view/index.php:273
+#: ../view/index.php:275
 #: ../view/panel5.php:106
 msgid "Go"
 msgstr "Gå"
 
-#: ../view/index.php:274
+#: ../view/index.php:276
 msgid "Reverse"
 msgstr "Vänd om"
 
@@ -248,6 +252,9 @@ msgid "Double click on an empty region to reset zoom level"
 msgstr ""
 
 #: ../view/panel1.php:20
+#: ../view/panel2.php:20
+#: ../view/panel3.php:21
+#: ../view/panel4.php:24
 #, fuzzy
 msgid "Click on a day for hourly metrics"
 msgstr "Dagliga sidvisningar - Klicka på en dag för timvis metrik"
@@ -263,7 +270,7 @@ msgid "Hourly pageviews"
 msgstr "Sidvisningar"
 
 #: ../view/panel1.php:30
-#: ../view/panel1.php:90
+#: ../view/panel1.php:89
 #: ../view/panel1.php:112
 #: ../view/panel1.php:161
 #: ../view/panel1.php:182
@@ -364,20 +371,20 @@ msgstr ""
 msgid "Bots"
 msgstr "Robotar"
 
+#: ../view/panel1.php:74
 #: ../view/panel1.php:75
-#: ../view/panel1.php:76
 msgid "On"
 msgstr "Den"
 
-#: ../view/panel1.php:77
+#: ../view/panel1.php:76
 msgid "Last Month"
 msgstr "Förra Månaden"
 
-#: ../view/panel1.php:84
+#: ../view/panel1.php:83
 msgid "When visitors comment on your blog, Wordpress assigns them cookies stored on their computer. WP SlimStat leverages this information to identify returning visitors."
 msgstr ""
 
-#: ../view/panel1.php:85
+#: ../view/panel1.php:84
 #: ../view/panel1.php:106
 #: ../view/panel1.php:156
 #: ../view/panel1.php:199
@@ -391,7 +398,7 @@ msgstr ""
 msgid "More"
 msgstr "Mer"
 
-#: ../view/panel1.php:86
+#: ../view/panel1.php:85
 msgid "Recent Known Visitors"
 msgstr "Senast Kända Besökare"
 

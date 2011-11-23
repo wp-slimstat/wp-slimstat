@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-09-02 12:12-0500\n"
-"PO-Revision-Date: 2011-09-02 12:12-0500\n"
+"POT-Creation-Date: 2011-11-23 12:41-0500\n"
+"PO-Revision-Date: 2011-11-23 12:41-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,190 +16,194 @@ msgstr ""
 "Plural-Forms: s\n"
 "X-Poedit-SearchPath-0: ../view\n"
 
-#: ../view/index.php:31
+#: ../view/index.php:32
 msgid "Dashboard"
 msgstr "Bacheca"
 
-#: ../view/index.php:32
+#: ../view/index.php:33
 msgid "Visitors"
 msgstr "Visitatori"
 
-#: ../view/index.php:33
+#: ../view/index.php:34
 msgid "Traffic Sources"
 msgstr "Sorgenti di traffico"
 
-#: ../view/index.php:34
+#: ../view/index.php:35
 msgid "Content"
 msgstr "Contenuto"
 
-#: ../view/index.php:35
+#: ../view/index.php:36
 msgid "Raw Data"
 msgstr "Dati grezzi"
 
-#: ../view/index.php:36
+#: ../view/index.php:37
 msgid "World Map"
 msgstr "Mappa"
 
-#: ../view/index.php:37
+#: ../view/index.php:38
 msgid "Custom Reports"
 msgstr "Rapporti personali"
 
-#: ../view/index.php:55
+#: ../view/index.php:56
 msgid "Current filters:"
 msgstr "Filtri attivi:"
 
-#: ../view/index.php:64
+#: ../view/index.php:65
 msgid "x"
 msgstr "x"
 
-#: ../view/index.php:99
+#: ../view/index.php:100
 msgid "this period"
 msgstr "periodo"
 
-#: ../view/index.php:209
-#: ../view/index.php:270
-#: ../view/index.php:271
+#: ../view/index.php:210
+#: ../view/index.php:272
+#: ../view/index.php:273
 msgid "Year"
 msgstr "Anno"
 
-#: ../view/index.php:219
+#: ../view/index.php:220
 msgid "Show records where"
 msgstr "Mostra righe per cui"
 
-#: ../view/index.php:221
+#: ../view/index.php:222
 #: ../view/panel5.php:86
 msgid "Browser"
 msgstr "Browser"
 
-#: ../view/index.php:222
+#: ../view/index.php:223
 msgid "Browser version"
 msgstr "Versione Browser"
 
-#: ../view/index.php:223
+#: ../view/index.php:224
 msgid "CSS version"
 msgstr "Versione CSS"
 
-#: ../view/index.php:224
+#: ../view/index.php:225
 msgid "Browser type"
 msgstr "Tipo di browser (int)"
 
-#: ../view/index.php:225
+#: ../view/index.php:226
 #: ../view/panel5.php:93
 msgid "Operating System"
 msgstr "Sistema operativo"
 
-#: ../view/index.php:226
+#: ../view/index.php:227
 msgid "Country Code"
 msgstr "Codice Paese"
 
-#: ../view/index.php:227
+#: ../view/index.php:228
 #: ../view/panel5.php:89
 msgid "Domain"
 msgstr "Dominio"
 
-#: ../view/index.php:228
+#: ../view/index.php:229
 #: ../view/panel5.php:90
 msgid "IP"
 msgstr "IP"
 
-#: ../view/index.php:229
+#: ../view/index.php:230
 msgid "User"
 msgstr "Utente"
 
-#: ../view/index.php:230
+#: ../view/index.php:231
 msgid "Visit ID"
 msgstr "ID Visita"
 
-#: ../view/index.php:231
+#: ../view/index.php:232
 #: ../view/panel5.php:91
 msgid "Keywords"
 msgstr "Parola chiave"
 
-#: ../view/index.php:232
+#: ../view/index.php:233
 msgid "Language Code"
 msgstr "Codice Lingua"
 
-#: ../view/index.php:233
+#: ../view/index.php:234
 #: ../view/panel5.php:94
 msgid "Permalink"
 msgstr "Permalink"
 
-#: ../view/index.php:234
+#: ../view/index.php:235
 msgid "Referer"
 msgstr "Riferimento"
 
-#: ../view/index.php:235
+#: ../view/index.php:236
 #: ../view/panel5.php:96
 msgid "Screen Resolution"
 msgstr "Risoluzione schermo"
 
-#: ../view/index.php:236
+#: ../view/index.php:237
 msgid "Color depth"
 msgstr "Profondit&agrave; colori"
 
-#: ../view/index.php:237
+#: ../view/index.php:238
 msgid "Post Author"
 msgstr "Autore articolo"
 
-#: ../view/index.php:238
+#: ../view/index.php:239
 msgid "Post Category ID"
 msgstr "ID Categoria"
 
-#: ../view/index.php:241
+#: ../view/index.php:242
 msgid "Equals"
 msgstr "&Egrave; uguale a"
 
-#: ../view/index.php:242
+#: ../view/index.php:243
+msgid "Is not equal to"
+msgstr "&Egrave; diverso da"
+
+#: ../view/index.php:244
 msgid "Contains"
 msgstr "Contiene"
 
-#: ../view/index.php:243
+#: ../view/index.php:245
 msgid "Does not contain"
 msgstr "Non contiene"
 
-#: ../view/index.php:244
+#: ../view/index.php:246
 msgid "Starts with"
 msgstr "Inizia con"
 
-#: ../view/index.php:245
+#: ../view/index.php:247
 msgid "Ends with"
 msgstr "Finisce per"
 
-#: ../view/index.php:246
+#: ../view/index.php:248
 msgid "Sounds like"
 msgstr "Assomiglia a"
 
-#: ../view/index.php:247
+#: ../view/index.php:249
 msgid "Is empty"
 msgstr "&Egrave; vuoto"
 
-#: ../view/index.php:248
+#: ../view/index.php:250
 msgid "Is not empty"
 msgstr "Non &egrave; vuoto"
 
-#: ../view/index.php:251
+#: ../view/index.php:253
 msgid "Filter by date"
 msgstr "Filtra per data"
 
-#: ../view/index.php:252
+#: ../view/index.php:254
 msgid "Day"
 msgstr "Giorno"
 
-#: ../view/index.php:261
+#: ../view/index.php:263
 msgid "Month"
 msgstr "Mese"
 
-#: ../view/index.php:272
+#: ../view/index.php:274
 #: ../view/panel1.php:52
 msgid "days"
 msgstr "giorni"
 
-#: ../view/index.php:273
+#: ../view/index.php:275
 #: ../view/panel5.php:106
 msgid "Go"
 msgstr "Vai"
 
-#: ../view/index.php:274
+#: ../view/index.php:276
 msgid "Reverse"
 msgstr "Inverti"
 
@@ -261,13 +265,13 @@ msgid "Hourly pageviews"
 msgstr "Accessi orari"
 
 #: ../view/panel1.php:30
-#: ../view/panel1.php:90
-#: ../view/panel1.php:113
-#: ../view/panel1.php:162
-#: ../view/panel1.php:183
-#: ../view/panel1.php:205
-#: ../view/panel1.php:228
-#: ../view/panel1.php:248
+#: ../view/panel1.php:89
+#: ../view/panel1.php:112
+#: ../view/panel1.php:161
+#: ../view/panel1.php:182
+#: ../view/panel1.php:204
+#: ../view/panel1.php:227
+#: ../view/panel1.php:247
 #: ../view/panel2.php:30
 #: ../view/panel2.php:73
 #: ../view/panel2.php:96
@@ -362,24 +366,24 @@ msgstr "Questo numero include solo i visitatori identificati come bot dal sistem
 msgid "Bots"
 msgstr "Bot"
 
+#: ../view/panel1.php:74
 #: ../view/panel1.php:75
-#: ../view/panel1.php:76
 msgid "On"
 msgstr "Il"
 
-#: ../view/panel1.php:77
+#: ../view/panel1.php:76
 msgid "Last Month"
 msgstr "Mese scorso"
 
-#: ../view/panel1.php:84
+#: ../view/panel1.php:83
 msgid "When visitors comment on your blog, Wordpress assigns them cookies stored on their computer. WP SlimStat leverages this information to identify returning visitors."
 msgstr "Quando i lettori lasciano un commento, Wordpress assegna loro dei cookie memorizzati sui loro computer. WP SlimStat sfrutta queste informazioni per identificare i visitatori noti."
 
-#: ../view/panel1.php:85
-#: ../view/panel1.php:107
-#: ../view/panel1.php:157
-#: ../view/panel1.php:200
-#: ../view/panel1.php:223
+#: ../view/panel1.php:84
+#: ../view/panel1.php:106
+#: ../view/panel1.php:156
+#: ../view/panel1.php:199
+#: ../view/panel1.php:222
 #: ../view/panel3.php:69
 #: ../view/panel3.php:112
 #: ../view/panel3.php:184
@@ -389,21 +393,21 @@ msgstr "Quando i lettori lasciano un commento, Wordpress assegna loro dei cookie
 msgid "More"
 msgstr "Dettagli"
 
-#: ../view/panel1.php:86
+#: ../view/panel1.php:85
 msgid "Recent Known Visitors"
 msgstr "Visitatori noti"
 
-#: ../view/panel1.php:108
+#: ../view/panel1.php:107
 #: ../view/panel5.php:23
 msgid "Spy View"
 msgstr "Spioncino in tempo reale"
 
-#: ../view/panel1.php:128
+#: ../view/panel1.php:127
 msgid "Search for"
 msgstr "Ricerca per"
 
-#: ../view/panel1.php:139
-#: ../view/panel1.php:231
+#: ../view/panel1.php:138
+#: ../view/panel1.php:230
 #: ../view/panel2.php:226
 #: ../view/panel3.php:99
 #: ../view/panel4.php:207
@@ -412,9 +416,9 @@ msgstr "Ricerca per"
 msgid "c-"
 msgstr "c-"
 
-#: ../view/panel1.php:144
-#: ../view/panel1.php:211
-#: ../view/panel1.php:253
+#: ../view/panel1.php:143
+#: ../view/panel1.php:210
+#: ../view/panel1.php:252
 #: ../view/panel3.php:122
 #: ../view/panel3.php:170
 #: ../view/panel4.php:82
@@ -427,36 +431,36 @@ msgstr "c-"
 msgid "Open %s in a new window"
 msgstr "Apri %s in una nuova finestra"
 
-#: ../view/panel1.php:149
+#: ../view/panel1.php:148
 #: ../view/panel5.php:174
 msgid "Direct visit to"
 msgstr "Visita diretta a"
 
-#: ../view/panel1.php:158
+#: ../view/panel1.php:157
 msgid "Recent Search Terms"
 msgstr "Parole chiave recenti"
 
-#: ../view/panel1.php:178
+#: ../view/panel1.php:177
 msgid "Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session."
 msgstr "Sessioni uniche iniziate dai tuoi visitatori. Se un utente &egrave; inattivo sul sito per almeno 30 minuti, ogni futura attivit&agrave; sar&agrave; associata ad una nuova sessione. Utenti che lasciano il sito ma tornano entro 30 minuti, saranno invece tracciati con la sessione originale."
 
-#: ../view/panel1.php:179
+#: ../view/panel1.php:178
 msgid "Languages - Just Visitors"
 msgstr "Lingue - Solo visitatori"
 
-#: ../view/panel1.php:186
+#: ../view/panel1.php:185
 #: ../view/panel2.php:76
 #: ../view/panel5.php:159
 msgid "l-"
 msgstr "l-"
 
-#: ../view/panel1.php:188
+#: ../view/panel1.php:187
 #: ../view/panel2.php:79
 msgid "Code"
 msgstr "Cod"
 
-#: ../view/panel1.php:188
-#: ../view/panel1.php:256
+#: ../view/panel1.php:187
+#: ../view/panel1.php:255
 #: ../view/panel2.php:79
 #: ../view/panel2.php:106
 #: ../view/panel2.php:132
@@ -475,11 +479,11 @@ msgstr "Cod"
 msgid "Hits"
 msgstr "Visite"
 
-#: ../view/panel1.php:201
+#: ../view/panel1.php:200
 msgid "Popular Resources for"
 msgstr "Pagine popolari del"
 
-#: ../view/panel1.php:209
+#: ../view/panel1.php:208
 #: ../view/panel2.php:132
 #: ../view/panel2.php:155
 #: ../view/panel2.php:175
@@ -493,12 +497,12 @@ msgstr "Pagine popolari del"
 msgid "Last"
 msgstr "Ultimo"
 
-#: ../view/panel1.php:224
+#: ../view/panel1.php:223
 #: ../view/panel5.php:38
 msgid "Recent Countries"
 msgstr "Paesi recenti"
 
-#: ../view/panel1.php:243
+#: ../view/panel1.php:242
 msgid "Traffic Sources Overview"
 msgstr "Panoramica sorgenti di traffico"
 
@@ -912,9 +916,6 @@ msgstr "Si, si pu&ograve;! Creare e vedere le proprie statistiche personalizzate
 
 #~ msgid "Filter pageviews where"
 #~ msgstr "Filtra accessi in cui:"
-
-#~ msgid "Is equal to"
-#~ msgstr "Uguale a"
 
 #~ msgid "Popular pages of all time"
 #~ msgstr "Pagine in assoluto pi&ugrave; popolari"

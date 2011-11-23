@@ -35,6 +35,11 @@ if (isset($_GET['rs']) && $_GET['rs']=='yes'){
 	echo '</p></div>';
 }
 if (isset($_GET['ot']) && $_GET['ot']=='yes'){
+	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_browsers");
+	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_countries");
+	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_outbound");
+	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_screenres");
+	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_visits");
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_stats");
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	_e('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options');		
@@ -119,39 +124,45 @@ if (isset($_POST['options'])){
 }
 ?>
 
-<h3><?php _e('Please note that these commands cannot be undone!','wp-slimstat-options') ?></h3>
 <table class="form-table <?php echo $wp_locale->text_direction ?>">
 <tbody>
 <?php
-$details_wp_slim_stat = $wpdb->get_results("SHOW TABLE STATUS LIKE '{$wpdb->prefix}slim_stats'", ARRAY_A);
-if (count($details_wp_slim_stat) == 1) {
-	$overhead_suffix = 'bytes';
-	if ($details_wp_slim_stat[0]['Data_free'] > 1024){
-		$details_wp_slim_stat[0]['Data_free'] = intval($details_wp_slim_stat[0]['Data_free']/1024);
+$details_wp_slim_tables = $wpdb->get_results("SHOW TABLE STATUS LIKE '{$wpdb->prefix}slim%'", ARRAY_A);
+echo '<tr><th scope="row">'.__('Database Information','wp-slimstat-options').'</th>';
+echo '<td>'.__('Engine','wp-slimstat-options').": {$details_wp_slim_tables[0]['Engine']} ";
+$have_innodb = $wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
+$note_too_many_rows = ($details_wp_slim_tables[0]['Rows'] > 200000)?__(", it may take some time and exceed PHP's maximum execution time",'wp-slimstat-options'):'';
+if ($have_innodb[0]['Value'] == 'YES' && $details_wp_slim_tables[0]['Engine'] == 'MyISAM') echo '[<a href="?page=wp-slimstat/options/index.php&engine=innodb&slimpanel=5">'.__('switch to InnoDB','wp_slimstat_options')."</a> $note_too_many_rows]<br/>";
+
+foreach ($details_wp_slim_tables as $a_table){
+	$overhead_suffix = 'bytes'; $show_optimize = false;
+	if ($a_table['Data_free'] > 1024){
+		$a_table['Data_free'] = intval($a_table['Data_free']/1024);
 		$overhead_suffix = 'KB';
 	}
-	if ($details_wp_slim_stat[0]['Data_free'] > 1024){
-		$details_wp_slim_stat[0]['Data_free'] = intval($details_wp_slim_stat[0]['Data_free']/1024);
+	if ($a_table['Data_free'] > 1024){
+		$a_table['Data_free'] = intval($a_table['Data_free']/1024);
 		$overhead_suffix = 'MB';
 	}
-	echo '<tr><th scope="row">'.__('Current Status','wp-slimstat-options').'</th>';
-	echo '<td>'.__('Engine','wp-slimstat-options').": {$details_wp_slim_stat[0]['Engine']} ";
-	$have_innodb = $wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
-	$note_too_many_rows = ($details_wp_slim_stat[0]['Rows'] > 200000)?__(", it may take some time and exceed PHP's maximum execution time",'wp-slimstat-options'):'';
-	if ($have_innodb[0]['Value'] == 'YES' && $details_wp_slim_stat[0]['Engine'] == 'MyISAM') echo '[<a href="?page=wp-slimstat/options/index.php&engine=innodb&slimpanel=5">'.__('switch to InnoDB','wp_slimstat_options').$note_too_many_rows.'</a>]';
-
-	echo "<br/>".__('Records','wp-slimstat-options').": {$details_wp_slim_stat[0]['Rows']}<br/>";
-	echo __('Average Record Length','wp-slimstat-options').": {$details_wp_slim_stat[0]['Avg_row_length']} bytes<br/>";
-	echo __('Created on','wp-slimstat-options').": {$details_wp_slim_stat[0]['Create_time']}<br/>";
-	if ($details_wp_slim_stat[0]['Engine'] == 'MyISAM'){
-		echo __('Approximate Overhead','wp-slimstat-options').": {$details_wp_slim_stat[0]['Data_free']} $overhead_suffix ";
-		if ($details_wp_slim_stat[0]['Data_free'] > 0) echo "[<a href='?page=wp-slimstat/options/index.php&ot=yes&slimpanel=5'>".__('optimize','wp-slimstat-options')."</a>]";
+	$data_size_suffix = 'KB';
+	$table_size = ( $a_table['Data_length'] / 1024 ) + ( $a_table['Index_length'] / 1024 );
+	if ($table_size > 1024){
+		$table_size /= 1024;
+		$data_size_suffix = 'MB';
 	}
-	echo '</td></tr>';
+	$table_size = number_format($table_size, 2).' '.$data_size_suffix;
+	
+	echo "<br/><strong>{$a_table['Name']}</strong>: ".__('Size','wp-slimstat-options').": $table_size | ".__('Records','wp-slimstat-options').": {$a_table['Rows']} | ".__('Average Record Length','wp-slimstat-options').": {$a_table['Avg_row_length']} bytes | ".__('Created on','wp-slimstat-options').": {$a_table['Create_time']}";
+	if ($a_table['Engine'] == 'MyISAM' && $a_table['Data_free'] > 0){
+		echo ' | '.__('Approximate Overhead','wp-slimstat-options').": {$a_table['Data_free']} $overhead_suffix ";
+		$show_optimize = true;
+	}
 }
+if ($show_optimize) echo "[<a href='?page=wp-slimstat/options/index.php&ot=yes&slimpanel=5'>".__('Optimize tables','wp-slimstat-options')."</a>]";
+echo '</td></tr>';
 ?>
 	<tr class="tall">
-		<th scope="row"><?php _e('Clean database','wp-slimstat-options') ?></th>
+		<th scope="row"><?php _e('Purge Data','wp-slimstat-options') ?></th>
 		<td>
 			<form action="admin.php?page=wp-slimstat/options/index.php&slimpanel=5" method="post"
 				onsubmit="return(confirm('<?php _e('Are you sure you want to PERMANENTLY delete these rows from your database?','wp-slimstat-options'); ?>'))">
@@ -192,8 +203,8 @@ if (empty($check_index)): ?>
 	</tr>
 <?php endif ?>
 	<tr class="tall">
-		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=5"><?php _e('Delete Records','wp-slimstat-options'); ?></a></th>
-		<td><?php _e('Select this option if you want to empty your WP SlimStat database.','wp-slimstat-options') ?></td>
+		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&ds=yes&slimpanel=5"><?php _e('Factory Reset','wp-slimstat-options'); ?></a></th>
+		<td><?php _e('Select this option if you want to empty your WP SlimStat database (does not reset your settings).','wp-slimstat-options') ?></td>
 	</tr>
 
 	<tr class="tall">

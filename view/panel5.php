@@ -210,7 +210,7 @@ for($i=0;$i<$count_results;$i++){
 			$domain = trim_value($results[$i]['domain'], 50);
 			$referer = trim_value($results[$i]['referer'], 200);
 			$url_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['domain'].$referer['text']);
-			$domain_span = !empty($results[$i]['domain'])?"<span><a target='_blank' title='$url_title' href='http://{$results[$i]['domain']}{$referer['text']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$domain['text']}</span>":'';
+			$domain_span = !empty($results[$i]['domain'])?"<span><a target='_blank' title='$url_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$domain['text']}</span>":'';
 			echo "<span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>$domain_span<span class='highlight-term'>{$searchterms['text']}</span>";
 	}
 	echo '</p>';

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slimstat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-09-01 09:43-0500\n"
-"PO-Revision-Date: 2011-09-01 09:43-0500\n"
+"POT-Creation-Date: 2011-11-23 12:10-0500\n"
+"PO-Revision-Date: 2011-11-23 12:11-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: Vidal Arpin <vidal@arpin.ca>\n"
 "MIME-Version: 1.0\n"
@@ -16,192 +16,196 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SearchPath-0: ../view\n"
 
-#: ../view/index.php:31
+#: ../view/index.php:32
 msgid "Dashboard"
 msgstr "Tableau de bord"
 
-#: ../view/index.php:32
+#: ../view/index.php:33
 msgid "Visitors"
 msgstr "Visiteurs"
 
-#: ../view/index.php:33
+#: ../view/index.php:34
 msgid "Traffic Sources"
 msgstr "Sources de trafic"
 
-#: ../view/index.php:34
+#: ../view/index.php:35
 msgid "Content"
 msgstr "Contenu"
 
-#: ../view/index.php:35
+#: ../view/index.php:36
 msgid "Raw Data"
 msgstr "Données brutes"
 
-#: ../view/index.php:36
+#: ../view/index.php:37
 msgid "World Map"
 msgstr "Carte du monde"
 
-#: ../view/index.php:37
+#: ../view/index.php:38
 msgid "Custom Reports"
 msgstr "Rapports personnalisés"
 
-#: ../view/index.php:55
+#: ../view/index.php:56
 msgid "Current filters:"
 msgstr "Filtres actifs :"
 
-#: ../view/index.php:64
+#: ../view/index.php:65
 msgid "x"
 msgstr ""
 
-#: ../view/index.php:99
+#: ../view/index.php:100
 msgid "this period"
 msgstr "cette période"
 
-#: ../view/index.php:209
-#: ../view/index.php:270
-#: ../view/index.php:271
+#: ../view/index.php:210
+#: ../view/index.php:272
+#: ../view/index.php:273
 msgid "Year"
 msgstr "Année"
 
-#: ../view/index.php:219
+#: ../view/index.php:220
 msgid "Show records where"
 msgstr ""
 
-#: ../view/index.php:221
+#: ../view/index.php:222
 #: ../view/panel5.php:86
 msgid "Browser"
 msgstr "le navigateur Web"
 
-#: ../view/index.php:222
+#: ../view/index.php:223
 msgid "Browser version"
 msgstr "la version du navigateur Web"
 
-#: ../view/index.php:223
+#: ../view/index.php:224
 msgid "CSS version"
 msgstr "la version CSS"
 
-#: ../view/index.php:224
+#: ../view/index.php:225
 #, fuzzy
 msgid "Browser type"
 msgstr "le navigateur Web"
 
-#: ../view/index.php:225
+#: ../view/index.php:226
 #: ../view/panel5.php:93
 msgid "Operating System"
 msgstr "le système d'exploitation"
 
-#: ../view/index.php:226
+#: ../view/index.php:227
 msgid "Country Code"
 msgstr "le code du pays"
 
-#: ../view/index.php:227
+#: ../view/index.php:228
 #: ../view/panel5.php:89
 msgid "Domain"
 msgstr "le domaine"
 
-#: ../view/index.php:228
+#: ../view/index.php:229
 #: ../view/panel5.php:90
 msgid "IP"
 msgstr "l'IP"
 
-#: ../view/index.php:229
+#: ../view/index.php:230
 msgid "User"
 msgstr ""
 
-#: ../view/index.php:230
+#: ../view/index.php:231
 #, fuzzy
 msgid "Visit ID"
 msgstr "Visites"
 
-#: ../view/index.php:231
+#: ../view/index.php:232
 #: ../view/panel5.php:91
 msgid "Keywords"
 msgstr "les mots clés"
 
-#: ../view/index.php:232
+#: ../view/index.php:233
 msgid "Language Code"
 msgstr "le code du langage"
 
-#: ../view/index.php:233
+#: ../view/index.php:234
 #: ../view/panel5.php:94
 msgid "Permalink"
 msgstr "le permalien"
 
-#: ../view/index.php:234
+#: ../view/index.php:235
 msgid "Referer"
 msgstr "le référent"
 
-#: ../view/index.php:235
+#: ../view/index.php:236
 #: ../view/panel5.php:96
 msgid "Screen Resolution"
 msgstr "la résolution de l'écran"
 
-#: ../view/index.php:236
+#: ../view/index.php:237
 msgid "Color depth"
 msgstr ""
 
-#: ../view/index.php:237
+#: ../view/index.php:238
 msgid "Post Author"
 msgstr "l'auteur de l'article"
 
-#: ../view/index.php:238
+#: ../view/index.php:239
 msgid "Post Category ID"
 msgstr "l'ID de la catégorie de l'article"
 
-#: ../view/index.php:241
+#: ../view/index.php:242
 msgid "Equals"
 msgstr ""
 
-#: ../view/index.php:242
+#: ../view/index.php:243
+msgid "Is not equal to"
+msgstr ""
+
+#: ../view/index.php:244
 msgid "Contains"
 msgstr "contienne"
 
-#: ../view/index.php:243
+#: ../view/index.php:245
 msgid "Does not contain"
 msgstr "ne contienne pas"
 
-#: ../view/index.php:244
+#: ../view/index.php:246
 msgid "Starts with"
 msgstr "commence par"
 
-#: ../view/index.php:245
+#: ../view/index.php:247
 msgid "Ends with"
 msgstr "finisse par"
 
-#: ../view/index.php:246
+#: ../view/index.php:248
 msgid "Sounds like"
 msgstr ""
 
-#: ../view/index.php:247
+#: ../view/index.php:249
 msgid "Is empty"
 msgstr ""
 
-#: ../view/index.php:248
+#: ../view/index.php:250
 msgid "Is not empty"
 msgstr ""
 
-#: ../view/index.php:251
+#: ../view/index.php:253
 msgid "Filter by date"
 msgstr "Filtrer par date"
 
-#: ../view/index.php:252
+#: ../view/index.php:254
 msgid "Day"
 msgstr "Jour"
 
-#: ../view/index.php:261
+#: ../view/index.php:263
 msgid "Month"
 msgstr "Mois"
 
-#: ../view/index.php:272
+#: ../view/index.php:274
 #: ../view/panel1.php:52
 msgid "days"
 msgstr "jours"
 
-#: ../view/index.php:273
+#: ../view/index.php:275
 #: ../view/panel5.php:106
 msgid "Go"
 msgstr "Aller"
 
-#: ../view/index.php:274
+#: ../view/index.php:276
 #, fuzzy
 msgid "Reverse"
 msgstr "Inverser"
@@ -249,6 +253,9 @@ msgid "Double click on an empty region to reset zoom level"
 msgstr ""
 
 #: ../view/panel1.php:20
+#: ../view/panel2.php:20
+#: ../view/panel3.php:21
+#: ../view/panel4.php:24
 #, fuzzy
 msgid "Click on a day for hourly metrics"
 msgstr "Pages vues par jour - Cliquer sur une journée pour les métriques horaires"
@@ -264,7 +271,7 @@ msgid "Hourly pageviews"
 msgstr "Pages vues"
 
 #: ../view/panel1.php:30
-#: ../view/panel1.php:90
+#: ../view/panel1.php:89
 #: ../view/panel1.php:112
 #: ../view/panel1.php:161
 #: ../view/panel1.php:182
@@ -367,20 +374,20 @@ msgstr ""
 msgid "Bots"
 msgstr "Robots"
 
+#: ../view/panel1.php:74
 #: ../view/panel1.php:75
-#: ../view/panel1.php:76
 msgid "On"
 msgstr "Actif"
 
-#: ../view/panel1.php:77
+#: ../view/panel1.php:76
 msgid "Last Month"
 msgstr "Mois dernier"
 
-#: ../view/panel1.php:84
+#: ../view/panel1.php:83
 msgid "When visitors comment on your blog, Wordpress assigns them cookies stored on their computer. WP SlimStat leverages this information to identify returning visitors."
 msgstr ""
 
-#: ../view/panel1.php:85
+#: ../view/panel1.php:84
 #: ../view/panel1.php:106
 #: ../view/panel1.php:156
 #: ../view/panel1.php:199
@@ -394,7 +401,7 @@ msgstr ""
 msgid "More"
 msgstr "Plus"
 
-#: ../view/panel1.php:86
+#: ../view/panel1.php:85
 #, fuzzy
 msgid "Recent Known Visitors"
 msgstr "Mots clés récemment utilisés"
@@ -900,9 +907,6 @@ msgstr "Oui, c'est possible! Créer et voir des statistiques personalisées pour
 
 #~ msgid "Filter pageviews where"
 #~ msgstr "Filtrer les pages vues pour que"
-
-#~ msgid "Is equal to"
-#~ msgstr "soit égal à"
 
 #~ msgid "Reverse order"
 #~ msgstr "Inverser l'ordre"

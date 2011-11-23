@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
 Description: Add some widgets to monitor your WP SlimStat reports directly from your Wordpress dashboard.
-Version: 2.5.1
+Version: 2.5.2
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -71,7 +71,7 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	 * Displays the top pages by pageviews
 	 */
 	public function show_top_pages(){
-		$results = $this->get_top('t1.resource', 't1.ip, t1.user', "t1.resource NOT LIKE '[404]%'", '');
+		$results = $this->get_top('t1.resource', 't1.ip, t1.user', "t1.resource NOT LIKE '[%'", '');
 		$count_results = count($results);
 		if ($count_results == 0) '<p class="slimstat-row nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 

@@ -124,7 +124,7 @@ for($i=0;$i<$count_results;$i++){
 	$strings = trim_value($results[$i]['resource'], 65);
 	$extra_info = "title='".date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']).', '.(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	$clean_string = urlencode($results[$i]['resource']);
-	$strings['text'] = str_replace('[404]', '', $strings['text']);
+	$strings['text'] = preg_replace('/\[.+\]/', '', $strings['text']);
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
 		$strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=4$wp_slimstat_view->filters_query&amp;resource=$clean_string'>{$strings['text']}</a>";
 
@@ -222,7 +222,7 @@ for($i=0;$i<$count_results;$i++){
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_09"><?php
 title_period(__('Top Exit Pages for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
 
-$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "t1.visit_id > 0 AND t1.resource <> '' AND t1.resource <> '__l_s__' AND t1.resource NOT LIKE '[404]%'");
+$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "t1.visit_id > 0 AND t1.resource <> '' AND t1.resource <> '__l_s__' AND t1.resource NOT LIKE '[%'");
 $count_results = count($results);
 $count_exit_pages = $wp_slimstat_view->count_exit_pages();
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';

@@ -199,7 +199,7 @@ for($i=0;$i<$count_results;$i++){
 	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_top_resources<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div><?php
 title_period(__('Popular Resources for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
 
-$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "t1.resource NOT LIKE '[404]%'", '');
+$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "t1.resource NOT LIKE '[%'", '');
 $count_results = count($results);
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 

@@ -8,10 +8,36 @@ if (strpos($_SERVER['SCRIPT_FILENAME'], basename(__FILE__))){
 // Update the options
 if (isset($_POST['options'])){
 	$faulty_fields = '';
-	if (isset($_POST['options']['can_view']) && !slimstat_update_option('can_view', $_POST['options']['can_view'], 'list')) $faulty_fields .= __('Users who can access the reports','wp-slimstat-options').', ';
+	if (!empty($_POST['options']['can_view'])){
+		// Make sure all the users exist in the system 
+		$user_array = explode(',', $_POST['options']['can_view']);
+		$sql_user_list = "'".implode("','", $user_array)."'";
+		if ($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array)){
+			if (!slimstat_update_option('can_view', $_POST['options']['can_view'], 'list')) $faulty_fields .= __('Users who can access the reports','wp-slimstat-options').', ';
+		}
+		else{
+			$faulty_fields .= __('Users who can access the reports (username not found)','wp-slimstat-options').', ';
+		}
+	}
+	else{
+		slimstat_update_option('can_view', '', 'list');
+	}
 	if (isset($_POST['options']['capability_can_view']) && !slimstat_update_option('capability_can_view', $_POST['options']['capability_can_view'], 'text')) $faulty_fields .= __('Roles and capabilities','wp-slimstat-options').', ';
-	if (isset($_POST['options']['can_admin']) && !slimstat_update_option('can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Users who can configure WP SlimStat','wp-slimstat-options').', ';
-	
+	if (!empty($_POST['options']['can_admin'])){
+		// Make sure all the users exist in the system 
+		$user_array = explode(',', $_POST['options']['can_admin']);
+		$sql_user_list = "'".implode("','", $user_array)."'";
+		echo intval($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array));
+		if ($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array)){
+			if (!slimstat_update_option('can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Users who can configure WP SlimStat','wp-slimstat-options').', ';
+		}
+		else{
+			$faulty_fields .= __('Users who can configure WP SlimStat (username not found)','wp-slimstat-options').', ';
+		}
+	}
+	else{
+		slimstat_update_option('can_admin', '', 'list');
+	}
 	slimstat_error_message($faulty_fields);
 }
 ?>

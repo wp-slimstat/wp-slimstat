@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.5.1
+Version: 2.5.2
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -33,7 +33,7 @@ class wp_slimstat{
 
 			// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
 			if ((get_option('slimstat_enable_javascript', 'no') == 'yes') && (get_option('slimstat_is_tracking', 'yes') == 'yes')){
-				add_action('wp_footer', array(&$this,'wp_slimstat_javascript'), 10);
+				add_action('wp_footer', array(&$this, 'wp_slimstat_javascript'), 10);
 			}
 		}
 		else{
@@ -48,9 +48,6 @@ class wp_slimstat{
 			// Add some custom stylesheets
 			//add_action('admin_print_styles-wp-slimstat', array(&$this, 'wp_slimstat_stylesheet'));
 			add_action('admin_print_styles-wp-slimstat/options/index.php', array(&$this, 'wp_slimstat_stylesheet'));
-
-			// Contextual help
-			add_action('contextual_help', array(&$this, 'wp_slimstat_contextual_help'), 10, 3);
 		}
 		// Create a hook to use with the daily cron job
 		add_action('wp_slimstat_purge', array(&$this, 'wp_slimstat_purge'));
@@ -136,8 +133,8 @@ class wp_slimstat{
 				ip_from INT UNSIGNED DEFAULT 0,
 				ip_to INT UNSIGNED DEFAULT 0,
 				country_code CHAR(2) DEFAULT '',
-				CONSTRAINT ip_from_idx KEY (ip_from, ip_to)
-			)";
+				CONSTRAINT ip_from_idx PRIMARY KEY (ip_from, ip_to)
+			)$use_innodb";
 
 		// A lookup table for browsers can help save some space
 		$browsers_table_sql =
@@ -215,9 +212,12 @@ class wp_slimstat{
 
 		// Don't ignore bots and spiders by default
 		add_option('slimstat_ignore_bots', 'no', '', 'no');
-		
+
 		// Ignore spammers?
 		add_option('slimstat_ignore_spammers', 'no', '', 'no');
+
+		// Ignore Link Prefetching?
+		add_option('slimstat_ignore_prefetch', 'no', '', 'no');
 
 		// Tracks logged in users, adding their login to the resource they requested
 		add_option('slimstat_track_users', 'yes', '', 'no');
@@ -245,6 +245,9 @@ class wp_slimstat{
 
 		// List of IPs to ignore
 		add_option('slimstat_ignore_ip', array(), '', 'no');
+		
+		// List of Countries to ignore
+		add_option('slimstat_ignore_countries', array(), '', 'no');
 
 		// List of local resources to ignore
 		add_option('slimstat_ignore_resources', array(), '', 'no');
@@ -371,14 +374,26 @@ class wp_slimstat{
 
 		$stat['language'] = $this->_get_language();
 		$stat['country'] = $this->_get_country($stat['ip']);
+		
+		// Country table not initialized
+		if ($stat['country'] === false) return $_argument;
+		
+		// Is this country blacklisted?
+		$to_ignore = get_option('slimstat_ignore_countries', array());
+		foreach($to_ignore as $a_filter)
+			if ($stat['country'] == $a_filter) return $_argument;
 
 		if (isset( $_SERVER['HTTP_REFERER'])){
 			$referer = @parse_url($_SERVER['HTTP_REFERER']);
 			if (!$referer)
 				$referer = $_SERVER['HTTP_REFERER'];
-			else if (isset( $referer['host'])){
+			else if (isset($referer['host'])){
 				$stat['domain'] = $referer['host'];
 				$stat['referer'] = str_replace( $referer['scheme'].'://'.$referer['host'], '', $_SERVER['HTTP_REFERER'] );
+
+				// Fix Google Images referring domain
+				if ((strpos($stat['domain'], 'www.google') !== false) && (strpos($stat['referer'], '/imgres?') !== false))
+					$stat['domain'] = str_replace('www.google', 'images.google', $stat['domain']);
 			}
 		}
 
@@ -404,7 +419,16 @@ class wp_slimstat{
 			$stat['searchterms'] = str_replace('\\', '', $_REQUEST['s']);
 			$stat['resource'] = ''; // Mark the resource to remember that this is a 'local search'
 		}
-
+		
+		// Mark or ignore Firefox prefetching requests (X-Moz: Prefetch)
+		if ((isset($_SERVER['HTTP_X_MOZ'])) && (strtolower($_SERVER['HTTP_X_MOZ']) == 'prefetch')){
+			if (get_option('slimstat_ignore_prefetch', 'no') == 'yes'){
+				return $_argument;
+			}
+			else{
+				$stat['resource'] = '[PRE]'.$stat['resource'];
+			}
+		}
 
 		// Mark 404 pages
 		if (is_404()) $stat['resource'] = '[404]'.$stat['resource'];
@@ -422,16 +446,19 @@ class wp_slimstat{
 		$browscap = new browscap(WP_PLUGIN_DIR.'/wp-slimstat/cache');
 
 		// Do autoupdate?
-		$do_autoUpdate = get_option('slimstat_browscap_autoupdate', 'no');
-		if (($do_autoUpdate == 'yes') &&
-			((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 644) ||
-			(intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 644))){
+		$browscap->doAutoUpdate = (get_option('slimstat_browscap_autoupdate', 'no') == 'yes');
+		if (($browscap->doAutoUpdate) && ((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 644) || (intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 644))){
 			$browscap->doAutoUpdate = false;
 		}
-		else
-			$browscap->doAutoUpdate = ($do_autoUpdate == 'yes');
 
 		$browser_details = $browscap->getBrowser($_SERVER['HTTP_USER_AGENT'], true);
+
+		// This User Agent hasn't been recognized, let's try with a heuristic match
+		if ($browser_details['Browser'] == 'Default Browser'){
+			require 'browscap_heuristic.php';
+			$browscap = new browscap_heuristic();
+			$browser_details = $browscap->getBrowser($_SERVER['HTTP_USER_AGENT']);
+		}
 
 		// This information goes into a separate lookup table
 		$browser['browser'] = $browser_details['Browser'];
@@ -650,6 +677,11 @@ class wp_slimstat{
 					WHERE ip_from <= $_ip AND ip_to >= $_ip";
 
 		$country_code = $wpdb->get_var($sql, 0 , 0);
+		
+		// Error handling
+		$error = mysql_error();
+		if (!empty($error)) return false;
+		
 		if (!empty($country_code)) return $country_code;
 
 		return 'xx';
@@ -708,8 +740,8 @@ class wp_slimstat{
 		if(!is_array($_url) || !isset($_url['host']) || !isset($_url['query'])) return '';
 
 		parse_str($_url['query'], $query);
-		parse_str("daum=q&eniro=search_word&naver=query&images.google=q&google=q&yahoo=p&msn=q&bing=q&aol=query&aol=encquery&lycos=query&ask=q&altavista=q&netscape=query&cnn=query&about=terms&mamma=query&alltheweb=q&voila=rdata&virgilio=qs&live=q&baidu=wd&alice=qs&yandex=text&najdi=q&aol=q&mama=query&seznam=q&search=q&wp=szukaj&onet=qt&szukacz=q&yam=k&pchome=q&kvasir=q&sesam=q&ozu=q&terra=query&mynet=q&ekolay=q&rambler=words", $query_formats);
-		preg_match("/(daum|eniro|naver|images.google|google|yahoo|msn|bing|aol|aol|lycos|ask|altavista|netscape|cnn|about|mamma|alltheweb|voila|virgilio|live|baidu|alice|yandex|najdi|aol|mama|seznam|search|wp|onet|szukacz|yam|pchome|kvasir|sesam|ozu|terra|mynet|ekolay|rambler)./", $_url['host'], $matches);
+		parse_str("daum=q&eniro=search_word&naver=query&google=q&www.google=as_q&yahoo=p&msn=q&bing=q&aol=query&aol=encquery&lycos=query&ask=q&altavista=q&netscape=query&cnn=query&about=terms&mamma=query&alltheweb=q&voila=rdata&virgilio=qs&live=q&baidu=wd&alice=qs&yandex=text&najdi=q&aol=q&mama=query&seznam=q&search=q&wp=szukaj&onet=qt&szukacz=q&yam=k&pchome=q&kvasir=q&sesam=q&ozu=q&terra=query&mynet=q&ekolay=q&rambler=words", $query_formats);
+		preg_match("/(daum|eniro|naver|google|www.google|yahoo|msn|bing|aol|aol|lycos|ask|altavista|netscape|cnn|about|mamma|alltheweb|voila|virgilio|live|baidu|alice|yandex|najdi|aol|mama|seznam|search|wp|onet|szukacz|yam|pchome|kvasir|sesam|ozu|terra|mynet|ekolay|rambler)./", $_url['host'], $matches);
 		if (isset($matches[1]) && isset($query[$query_formats[$matches[1]]])) return str_replace('\\', '', trim(urldecode($query[$query_formats[$matches[1]]])));
 
 		// We weren't lucky, but there's still hope
@@ -827,23 +859,11 @@ class wp_slimstat{
 			$slimstat_blog_id = (function_exists('is_multisite') && is_multisite())?$wpdb->blogid:0;
 			echo "slimstat_blog_id='$slimstat_blog_id';";
 			echo 'slimstat_session_id=\''.md5($intval_tid.$my_secret_key).'\';</script>';
-			echo "<script type='text/javascript' src='".plugins_url('/wp-slimstat.js', __FILE__)."'></script>\n";
+			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), false, true);
+			wp_enqueue_script('wp_slimstat');
 		}
 	}
 	// end wp_slimstat_javascript
-
-	/**
-	 * Contextual help (link to the support forum)
-	 */
-	public function wp_slimstat_contextual_help($contextual_help, $screen_id, $screen){
-		if (($screen_id == 'wp-slimstat/view/index') || ($screen_id == 'wp-slimstat/options/index')){
-			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
-			$contextual_help = __('Need help on how to use WP SlimStat? Visit the official','wp-slimstat-view').' <a href="http://wordpress.org/tags/wp-slimstat?forum_id=10" target="_blank">'.__('support forum','wp-slimstat-view').'</a>. ';
-			$contextual_help .= __('Feeling generous?','wp-slimstat-view').' <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" target="_blank">'.__('Donate a few bucks!','wp-slimstat-view').'</a>';
-		}
-		return $contextual_help;
-	}
-	// end wp_slimstat_contextual_help
 
 	public function wp_slimstat_adminbar() {
 		global $wp_admin_bar, $blog_id;
