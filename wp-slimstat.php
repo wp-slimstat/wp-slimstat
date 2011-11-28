@@ -2,8 +2,8 @@
 /*
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
-Description: A simple but powerful web analytics plugin for Wordpress.
-Version: 2.5.2
+Description: A powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
+Version: 2.5.3
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -33,7 +33,8 @@ class wp_slimstat{
 
 			// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
 			if ((get_option('slimstat_enable_javascript', 'no') == 'yes') && (get_option('slimstat_is_tracking', 'yes') == 'yes')){
-				add_action('wp_footer', array(&$this, 'wp_slimstat_javascript'), 10);
+				add_action('init', array(&$this, 'wp_slimstat_register_tracking_script'));
+				add_action('wp_footer', array(&$this, 'wp_slimstat_js_data'), 10);
 			}
 		}
 		else{
@@ -844,9 +845,17 @@ class wp_slimstat{
 	// end wp_slimstat_include_view
 
 	/**
-	 * Adds a javascript code to track users' screen resolution and other browser-based information
+	 * Enqueues a javascript to track users' screen resolution and other browser-based information
 	 */
-	public function wp_slimstat_javascript(){
+	public function wp_slimstat_register_tracking_script(){
+		wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), false, true);
+	}
+	// end wp_slimstat_javascript
+
+	/**
+	 * Adds some javascript data specific to this pageview 
+	 */
+	public function wp_slimstat_js_data(){
 		global $wpdb;
 		$intval_tid = intval($this->tid);
 		if ($intval_tid > 0){
@@ -859,11 +868,10 @@ class wp_slimstat{
 			$slimstat_blog_id = (function_exists('is_multisite') && is_multisite())?$wpdb->blogid:0;
 			echo "slimstat_blog_id='$slimstat_blog_id';";
 			echo 'slimstat_session_id=\''.md5($intval_tid.$my_secret_key).'\';</script>';
-			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), false, true);
-			wp_enqueue_script('wp_slimstat');
+			wp_print_scripts('wp_slimstat');
 		}
 	}
-	// end wp_slimstat_javascript
+	// end wp_slimstat_js_data
 
 	public function wp_slimstat_adminbar() {
 		global $wp_admin_bar, $blog_id;
@@ -875,5 +883,5 @@ class wp_slimstat{
 }
 // end of class declaration
 
-// Ok, let's use every tool we defined here above
+// Ok, let's dance, Sparky!
 $wp_slimstat = new wp_slimstat();

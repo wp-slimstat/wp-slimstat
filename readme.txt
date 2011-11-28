@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.0
 Tested up to: 3.3
-Stable tag: 2.5.2
+Stable tag: 2.5.3
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
@@ -144,6 +144,9 @@ Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 = Planned features =
 * Display visit duration and time on site
 * Add "internal" stats about your blog: post count, comments per post, table sizes, etc
+
+= 2.5.3 =
+* Maintenance release: it looks like 2.5.2 shipped with an annoying bug, triggered by some templates out there, preventing visits to be properly tracked. If you haven't experienced any problems, there's no need to upgrade
 
 = 2.5.2 =
 * Added: forward compatible (heuristic) user agent detection, for those browsers not yet identified by Browscap (thank you Davide)
