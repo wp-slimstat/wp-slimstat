@@ -16,12 +16,11 @@ foreach($panels_order as $a_panel_id)
 ?>
 
 <div class="postbox wide <?php echo $wp_locale->text_direction ?>" id="p2_01"><?php
-// $tooltip_content = '<strong>'.htmlspecialchars(__('Chart interaction','wp-slimstat-view'), ENT_QUOTES).'</strong><ul><li>'.htmlspecialchars(__('Use your mouse wheel to zoom in and out','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('While zooming in, drag the chart to move to a different area','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('Double click on an empty region to reset zoom level','wp-slimstat-view'), ENT_QUOTES).'</li>';
-// $tooltip_content .= (!$wp_slimstat_view->day_filter_active)?'<li>'.htmlspecialchars(__('Click on a day for hourly metrics','wp-slimstat-view'), ENT_QUOTES).'</li>':'';
-// $tooltip_content .= '</ul>';
+$tooltip_content = '<strong>'.htmlspecialchars(__('Chart interaction','wp-slimstat-view'), ENT_QUOTES).'</strong><ul><li>'.htmlspecialchars(__('Use your mouse wheel to zoom in and out','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('While zooming in, drag the chart to move to a different area','wp-slimstat-view'), ENT_QUOTES).'</li><li>'.htmlspecialchars(__('Double click on an empty region to reset zoom level','wp-slimstat-view'), ENT_QUOTES).'</li>';
+$tooltip_content .= (!$wp_slimstat_view->day_filter_active)?'<li>'.htmlspecialchars(__('Click on a day for hourly metrics','wp-slimstat-view'), ENT_QUOTES).'</li>':'';
+$tooltip_content .= '</ul>';
 
-// echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.gif' width='16' height='16' title='$tooltip_content' />";
-echo '<h3 class="hndle">';
+echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.gif' width='16' height='16' title='$tooltip_content' /><h3 class='hndle'>";
 if (!$wp_slimstat_view->day_filter_active)
 	_e('Daily Human Visits', 'wp-slimstat-view');
 else
@@ -35,7 +34,7 @@ else{ ?>
 		window.chart_data = [[<?php echo $datachart->current_data1 ?>], [<?php echo $datachart->previous_data ?>], [<?php echo $datachart->current_data2 ?>]];
 		window.ticks = [<?php echo $datachart->ticks ?>];
 		var c = {label:"<?php echo $datachart->current_data1_label ?>",data:window.chart_data[0]}, b = {label:"<?php echo $datachart->previous_data_label ?>",data:window.chart_data[1]}, a = {label:"<?php echo $datachart->current_data2_label ?>",data:window.chart_data[2]};
-		jQuery.plot(jQuery("#chart-placeholder"),[a,b,c],{zoom:{interactive:false},pan:{interactive:false},series:{lines:{show:true},points:{show:true},colors:[{opacity:0.85}]},xaxis:{tickSize:1,tickDecimals:0<?php echo "$datachart->min_max_ticks"; echo (!empty($wp_slimstat_view->day_interval) && $wp_slimstat_view->day_interval > 20)?',ticks:[]':',ticks:window.ticks' ?>,zoomRange:[5,window.ticks.length],panRange:[0,window.ticks.length]},yaxis:{tickDecimals:0,tickFormatter:tickFormatter,zoomRange:[5,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>],panRange:[0,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>]}, grid:{backgroundColor:"#ffffff",borderWidth:0,hoverable:true,clickable:true},legend:{container:"#chart-legend",noColumns:3}});
+		jQuery.plot(jQuery("#chart-placeholder"),[a,b,c],{zoom:{interactive:true},pan:{interactive:true},series:{lines:{show:true},points:{show:true},colors:[{opacity:0.85}]},xaxis:{tickSize:1,tickDecimals:0<?php echo "$datachart->min_max_ticks"; echo (!empty($wp_slimstat_view->day_interval) && $wp_slimstat_view->day_interval > 20)?',ticks:[]':',ticks:window.ticks' ?>,zoomRange:[5,window.ticks.length],panRange:[0,window.ticks.length]},yaxis:{tickDecimals:0,tickFormatter:tickFormatter,zoomRange:[5,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>],panRange:[0,<?php echo $datachart->max_yaxis+intval($datachart->max_yaxis/5) ?>]}, grid:{backgroundColor:"#ffffff",borderWidth:0,hoverable:true,clickable:true},legend:{container:"#chart-legend",noColumns:3}});
 	}
 	initChart();
 	jQuery("#chart-placeholder").bind("dblclick",initChart);
