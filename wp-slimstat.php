@@ -421,8 +421,9 @@ class wp_slimstat{
 			$stat['resource'] = ''; // Mark the resource to remember that this is a 'local search'
 		}
 		
-		// Mark or ignore Firefox prefetching requests (X-Moz: Prefetch)
-		if ((isset($_SERVER['HTTP_X_MOZ'])) && (strtolower($_SERVER['HTTP_X_MOZ']) == 'prefetch')){
+		// Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
+		if ((isset($_SERVER['HTTP_X_MOZ']) && (strtolower($_SERVER['HTTP_X_MOZ']) == 'prefetch')) ||
+			(isset($_SERVER["HTTP_X_PURPOSE"]) && (strtolower($_SERVER['HTTP_X_PURPOSE']) == 'preview')))
 			if (get_option('slimstat_ignore_prefetch', 'no') == 'yes'){
 				return $_argument;
 			}
