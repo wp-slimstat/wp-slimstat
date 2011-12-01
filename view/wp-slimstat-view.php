@@ -562,35 +562,39 @@ class wp_slimstat_view {
 			}
 
 			// Format each group of data
-			if (!empty($data1[$date_idx_current])){
-				$result->current_data1 .= "[$i,{$data1[$date_idx_current]}$current_filter_query],";
-				$result->current_total1 += $data1[$date_idx_current];
-				$result->current_non_zero_count++;
-			}
-			elseif($strtotime_current <= date_i18n('U')){
-				$result->current_data1 .= "[$i,0],";
-			}
-
-			if (!empty($data2[$date_idx_current])){
-				$result->current_data2 .= "[$i,{$data2[$date_idx_current]}$current_filter_query],";
-				$result->current_total2 += $data2[$date_idx_current];
-			}
-			elseif($strtotime_current <= date_i18n('U')){
-				$result->current_data2 .= "[$i,0],";
-			}
-
-			if (empty($this->day_interval)){
-				if (!empty($data1[$date_idx_previous])){
-					$result->previous_data .= "[$i,{$data1[$date_idx_previous]}$previous_filter_query],";
-					$result->previous_total += $data1[$date_idx_previous];
+			if (($i == $day_idx_current - 1) || $this->day_filter_active){
+				if (!empty($data1[$date_idx_current])){
+					$result->current_data1 .= "[$i,{$data1[$date_idx_current]}$current_filter_query],";
+					$result->current_total1 += $data1[$date_idx_current];
+					$result->current_non_zero_count++;
+				}	
+				elseif($strtotime_current <= date_i18n('U')){
+					$result->current_data1 .= "[$i,0],";
 				}
-				elseif($strtotime_previous <= date_i18n('U')){
-					$result->previous_data .= "[$i,0],";
+
+				if (!empty($data2[$date_idx_current])){
+					$result->current_data2 .= "[$i,{$data2[$date_idx_current]}$current_filter_query],";
+					$result->current_total2 += $data2[$date_idx_current];
+				}
+				elseif($strtotime_current <= date_i18n('U')){
+					$result->current_data2 .= "[$i,0],";
 				}
 			}
-			else{
-				$date_label = date('d/m', mktime(0, 0, 0, $this->current_date['m'], $this->current_date['d']+$i, $this->current_date['y']));
-				$result->ticks .= "[$i, \"$date_label\"],";
+
+			if (($i == $day_idx_previous - 1) || $this->day_filter_active){
+				if (empty($this->day_interval)){
+					if (!empty($data1[$date_idx_previous])){
+						$result->previous_data .= "[$i,{$data1[$date_idx_previous]}$previous_filter_query],";
+						$result->previous_total += $data1[$date_idx_previous];
+					}
+					elseif($strtotime_previous <= date_i18n('U')){
+						$result->previous_data .= "[$i,0],";
+					}
+				}
+				else{
+					$date_label = date('d/m', mktime(0, 0, 0, $this->current_date['m'], $this->current_date['d']+$i, $this->current_date['y']));
+					$result->ticks .= "[$i, \"$date_label\"],";
+				}
 			}
 		}
 
