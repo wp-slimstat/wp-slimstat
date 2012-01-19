@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
-Version: 2.5.3
+Version: 2.6
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -45,10 +45,16 @@ class wp_slimstat{
 			// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
 			add_action('admin_menu', array(&$this, 'wp_slimstat_add_view_menu'));
 			add_action('admin_menu', array(&$this, 'wp_slimstat_add_config_menu'));
+			
+			// Display the new column in the Edit Posts screen
+			if (get_option('slimstat_add_posts_column', 'no') == 'yes'){
+				add_filter('manage_posts_columns', array(&$this,'add_column_header'));
+				add_action('manage_posts_custom_column', array(&$this,'add_post_column'));
+			}
 
 			// Add some custom stylesheets
-			//add_action('admin_print_styles-wp-slimstat', array(&$this, 'wp_slimstat_stylesheet'));
 			add_action('admin_print_styles-wp-slimstat/options/index.php', array(&$this, 'wp_slimstat_stylesheet'));
+			add_action('admin_print_styles-edit.php', array(&$this, 'wp_slimstat_stylesheet'));
 		}
 		// Create a hook to use with the daily cron job
 		add_action('wp_slimstat_purge', array(&$this, 'wp_slimstat_purge'));
@@ -226,6 +232,9 @@ class wp_slimstat{
 		// Automatically purge stats db after x days (0 = no purge)
 		add_option('slimstat_auto_purge', '120', '', 'no');
 
+		// Shows a new column to the Edit Posts page with the number of hits per post
+		add_option('slimstat_add_posts_column', 'no', '', 'no');
+
 		// Use a separate menu for the admin interface
 		add_option('slimstat_use_separate_menu', 'no', '', 'no');
 
@@ -235,8 +244,11 @@ class wp_slimstat{
 		// Specify what number format to use (European or American)
 		add_option('slimstat_use_european_separators', 'yes', '', 'no');
 
-		// Activate or deactivate the conversion of ip addresses into hostnames
+		// Number of rows to show in each module
 		add_option('slimstat_rows_to_show', '20', '', 'no');
+		
+		// Number of rows to show in the Raw Data panel
+		add_option('slimstat_number_results_raw_data', '50', '', 'no');
 
 		// Customize the IP Lookup service (geolocation) URL
 		add_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips=', '', 'no');
@@ -744,7 +756,14 @@ class wp_slimstat{
 		parse_str($_url['query'], $query);
 		parse_str("daum=q&eniro=search_word&naver=query&google=q&www.google=as_q&yahoo=p&msn=q&bing=q&aol=query&aol=encquery&lycos=query&ask=q&altavista=q&netscape=query&cnn=query&about=terms&mamma=query&alltheweb=q&voila=rdata&virgilio=qs&live=q&baidu=wd&alice=qs&yandex=text&najdi=q&aol=q&mama=query&seznam=q&search=q&wp=szukaj&onet=qt&szukacz=q&yam=k&pchome=q&kvasir=q&sesam=q&ozu=q&terra=query&mynet=q&ekolay=q&rambler=words", $query_formats);
 		preg_match("/(daum|eniro|naver|google|www.google|yahoo|msn|bing|aol|aol|lycos|ask|altavista|netscape|cnn|about|mamma|alltheweb|voila|virgilio|live|baidu|alice|yandex|najdi|aol|mama|seznam|search|wp|onet|szukacz|yam|pchome|kvasir|sesam|ozu|terra|mynet|ekolay|rambler)./", $_url['host'], $matches);
-		if (isset($matches[1]) && isset($query[$query_formats[$matches[1]]])) return str_replace('\\', '', trim(urldecode($query[$query_formats[$matches[1]]])));
+		
+		if (isset($matches[1]) && isset($query[$query_formats[$matches[1]]])){
+			// Test for encodings different from UTF-8
+			if (!mb_check_encoding($query[$query_formats[$matches[1]]], 'UTF-8'))
+				$query[$query_formats[$matches[1]]] = mb_convert_encoding($query[$query_formats[$matches[1]]], 'UTF-8', 'Windows-1251');
+		
+			return str_replace('\\', '', trim(urldecode($query[$query_formats[$matches[1]]])));
+		}
 
 		// We weren't lucky, but there's still hope
 		foreach(array_unique(array_values($query_formats)) as $a_format)
@@ -874,12 +893,37 @@ class wp_slimstat{
 	}
 	// end wp_slimstat_js_data
 
+	/**
+	 * Adds a new entry to the Wordpress Toolbar
+	 */	 
 	public function wp_slimstat_adminbar() {
 		global $wp_admin_bar, $blog_id;
 		if (!is_super_admin() || !is_admin_bar_showing()) return;
 
 		$wp_admin_bar->add_menu( array( 'id' => 'slimstat', 'title' => 'SlimStat', 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat') ) );
-  }
+	}
+	// end wp_slimstat_adminbar
+	
+	/**
+	 * Adds a new column header to the Posts panel (to show the number of pageviews for each post)
+	 */
+	public function add_column_header($_columns){
+		$_columns['wp-slimstat'] = "<img src='".plugins_url('/images/stats.gif', __FILE__)."' width='17' height='12' alt='SlimStat' />";
+		return $_columns;
+	}
+	// end add_comment_column_header
+	
+	/**
+	 * Adds a new column to the Posts management panel
+	 */
+	public function add_post_column($_column_name){
+		if ('wp-slimstat' != $_column_name) return;
+		global $post, $wpdb;
+		$permalink = str_replace(get_bloginfo('url'), '', get_permalink( $post->ID ));
+		$count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats WHERE resource = %s", $permalink));
+		echo "<a href='index.php?page=wp-slimstat&amp;filter=resource&amp;f_operator=equals&amp;f_value=$permalink'>$count</a>";
+	}
+	// end add_column
 
 }
 // end of class declaration

@@ -424,14 +424,9 @@ class browscap
 			if ($this->_getUpdateMethod() == self::UPDATE_LOCAL) {
 				$remote_tmstp = $this->_getLocalMTime();
 			} else {
-				try {
-					$remote_tmstp = $this->_getRemoteMTime();
-				}
-				catch (Browscap_Exception $e){
-					return false;
-				}
+				$remote_tmstp = $this->_getRemoteMTime();
 			}
-			
+
 			if ($remote_tmstp < $local_tmstp) {
 				// No update needed, return
 				touch($path);
@@ -458,10 +453,11 @@ class browscap
 			$content .= preg_replace($pattern, '$1="$2"', $subject) . "\n";
 		}
 		
-		if (!file_put_contents($path, $content)) {
-			throw new Browscap_Exception("Could not write .ini content to $path");
+		if ($url != $path) {
+			if (!file_put_contents($path, $content)) {
+				throw new Browscap_Exception("Could not write .ini content to $path");
+			}
 		}
-		
 		return true;
 	}
 	

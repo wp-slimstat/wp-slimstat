@@ -27,10 +27,12 @@ function uninstall(){
 	delete_option('slimstat_ignore_spammers');
 	delete_option('slimstat_track_users');
 	delete_option('slimstat_auto_purge');
+	delete_option('slimstat_add_posts_column');	
 	delete_option('slimstat_use_separate_menu');
 	delete_option('slimstat_convert_ip_addresses');
 	delete_option('slimstat_use_european_separators');
 	delete_option('slimstat_rows_to_show');
+	delete_option('slimstat_rows_raw_data');
 	delete_option('slimstat_ip_lookup_service');
 	delete_option('slimstat_refresh_interval');
 	delete_option('slimstat_ignore_ip');

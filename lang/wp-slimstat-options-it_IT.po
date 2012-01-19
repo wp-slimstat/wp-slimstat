@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-11-23 12:40-0500\n"
-"PO-Revision-Date: 2011-11-23 12:41-0500\n"
+"POT-Creation-Date: 2012-01-19 13:50-0500\n"
+"PO-Revision-Date: 2012-01-19 13:53-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -49,27 +49,27 @@ msgid "There was an error updating the following fields:"
 msgstr "Si &egrave; verificato un errore nell'aggiornamento dei seguenti parametri:"
 
 #: ../options/panel1.php:11
-#: ../options/panel1.php:36
+#: ../options/panel1.php:37
 msgid "Activate tracking"
 msgstr "Attiva tracking"
 
 #: ../options/panel1.php:12
-#: ../options/panel1.php:44
+#: ../options/panel1.php:45
 msgid "Enable JS Tracking"
 msgstr "Attiva tracciamento JS"
 
 #: ../options/panel1.php:13
-#: ../options/panel1.php:52
+#: ../options/panel1.php:53
 msgid "Custom path"
 msgstr "Percorso personalizzato"
 
 #: ../options/panel1.php:14
-#: ../options/panel1.php:59
+#: ../options/panel1.php:60
 msgid "Autoupdate DB"
 msgstr "Autoaggiorna DB"
 
 #: ../options/panel1.php:15
-#: ../options/panel1.php:67
+#: ../options/panel1.php:68
 msgid "Track users"
 msgstr "Traccia utenti"
 
@@ -78,16 +78,21 @@ msgid "Auto purge"
 msgstr "Pulizia DB"
 
 #: ../options/panel1.php:17
-#: ../options/panel1.php:83
+msgid "Add column to Posts"
+msgstr "Mostra dati in Articoli"
+
+#: ../options/panel1.php:18
+#: ../options/panel1.php:92
 msgid "Use separate menu"
 msgstr "Menu indipendente"
 
-#: ../options/panel1.php:38
-#: ../options/panel1.php:46
-#: ../options/panel1.php:61
-#: ../options/panel1.php:69
-#: ../options/panel1.php:85
-#: ../options/panel2.php:26
+#: ../options/panel1.php:39
+#: ../options/panel1.php:47
+#: ../options/panel1.php:62
+#: ../options/panel1.php:70
+#: ../options/panel1.php:86
+#: ../options/panel1.php:94
+#: ../options/panel2.php:27
 #: ../options/panel3.php:44
 #: ../options/panel3.php:52
 #: ../options/panel3.php:60
@@ -96,12 +101,13 @@ msgstr "Menu indipendente"
 msgid "Yes"
 msgstr "Si"
 
-#: ../options/panel1.php:39
-#: ../options/panel1.php:47
-#: ../options/panel1.php:62
-#: ../options/panel1.php:70
-#: ../options/panel1.php:86
-#: ../options/panel2.php:27
+#: ../options/panel1.php:40
+#: ../options/panel1.php:48
+#: ../options/panel1.php:63
+#: ../options/panel1.php:71
+#: ../options/panel1.php:87
+#: ../options/panel1.php:95
+#: ../options/panel2.php:28
 #: ../options/panel3.php:45
 #: ../options/panel3.php:53
 #: ../options/panel3.php:61
@@ -110,104 +116,122 @@ msgstr "Si"
 msgid "No"
 msgstr "No"
 
-#: ../options/panel1.php:40
+#: ../options/panel1.php:41
 msgid "You may want to stop WP SlimStat from tracking users for a while, but still be able to access your metrics."
 msgstr "Potresti decidere di fermare il tracciamento delle visite, ma voler accedere le statistiche passate allo stesso tempo."
 
-#: ../options/panel1.php:48
+#: ../options/panel1.php:49
 msgid "Adds a javascript code to your pages to track visits, screen resolutions, outbound links, downloads and more"
 msgstr "Aggiunge un codice javascript alle tue pagine per tracciare visite, risoluzioni schermo, link in uscita, download ed altro."
 
-#: ../options/panel1.php:55
+#: ../options/panel1.php:56
 msgid "If you moved <code>wp-slimstat-js.php</code> out of the original folder, specify here the new path. Default:"
 msgstr "Se hai spostato <code>wp-slimstat-js.php</code> in una cartella diversa da quella di default, specifica qui il nuovo percorso. Predefinito:"
 
-#: ../options/panel1.php:63
+#: ../options/panel1.php:64
 msgid "Enables Browscap's autoupdate feature. Please make sure your <code>cache</code> subfolder is writable."
 msgstr "Abilita la funzione di Browscap di aggiornare automaticamente le definizioni dei browser. Assicurati che la sottocartella <code>cache</code> sia scrivibile."
 
-#: ../options/panel1.php:71
+#: ../options/panel1.php:72
 msgid "Tracks logged in users, adding their login to the resource they requested"
 msgstr "Traccia i visitatori autenticati, aggiungendo la loro username all'inizio della risorsa che hanno richiesto"
 
-#: ../options/panel1.php:75
+#: ../options/panel1.php:76
 msgid "Autopurge"
 msgstr "Pulizia DB"
 
-#: ../options/panel1.php:77
+#: ../options/panel1.php:78
 msgid "days"
 msgstr "giorni"
 
-#: ../options/panel1.php:78
+#: ../options/panel1.php:79
 msgid "Next purge is scheduled on"
 msgstr "La prossima pulizia verr&agrave; effettuata il"
 
-#: ../options/panel1.php:79
+#: ../options/panel1.php:80
 msgid "Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature."
 msgstr "Cancella automaticamente le visite pi&ugrave; vecchie di <strong>X</strong> giorni fa (usa il sistema interno di cron job di Wordpress). Zero disattiva la funzione."
 
-#: ../options/panel1.php:87
+#: ../options/panel1.php:84
+msgid "Add Posts column"
+msgstr "Mostra dati in Articoli"
+
+#: ../options/panel1.php:88
+msgid "Shows a new column to the Posts page with the number of hits per post (may slow down page rendering)"
+msgstr "Aggiunge una nuova colonna alla pagina degli Articoli, con il numero di accessi per post (potrebbe rallentare la visualizzazione)"
+
+#: ../options/panel1.php:96
 msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat or not."
 msgstr "Decidi se avere un menu separato per WP SlimStat nel pannello di amministrazione di Wordpress."
 
-#: ../options/panel1.php:92
-#: ../options/panel2.php:62
+#: ../options/panel1.php:101
+#: ../options/panel2.php:70
 #: ../options/panel3.php:97
 #: ../options/panel4.php:56
 msgid "Save Changes"
 msgstr "Salva le modifiche"
 
 #: ../options/panel2.php:11
-#: ../options/panel2.php:24
+#: ../options/panel2.php:25
 msgid "Convert IP addresses"
 msgstr "Converti indirizzi IP"
 
 #: ../options/panel2.php:12
-#: ../options/panel2.php:32
+#: ../options/panel2.php:33
 msgid "Number format"
 msgstr "Formato dei numeri"
 
 #: ../options/panel2.php:13
-#: ../options/panel2.php:40
+#: ../options/panel2.php:41
 msgid "Limit results to"
 msgstr "Limita risultati a"
 
 #: ../options/panel2.php:14
-#: ../options/panel2.php:47
+#: ../options/panel2.php:48
+msgid "Rows in Raw view"
+msgstr "Righe in Dati grezzi"
+
+#: ../options/panel2.php:15
+#: ../options/panel2.php:55
 msgid "IP Lookup"
 msgstr "Localizza IP"
 
-#: ../options/panel2.php:15
-#: ../options/panel2.php:54
+#: ../options/panel2.php:16
+#: ../options/panel2.php:62
 msgid "Refresh every"
 msgstr "Aggiorna ogni"
 
-#: ../options/panel2.php:28
+#: ../options/panel2.php:29
 msgid "View hostnames instead of IP addresses. It slows down the rendering of your metrics."
 msgstr "Mostra i nomi degli host invece degli indirizzi IP. Potrebbe rallentare la visualizzazione delle statistiche."
 
-#: ../options/panel2.php:36
+#: ../options/panel2.php:37
 msgid "Choose what number format you want to use, European or American."
 msgstr "Scegli il formato dei numeri dell'interfaccia (Europeo o Americano)"
 
-#: ../options/panel2.php:42
+#: ../options/panel2.php:43
+#: ../options/panel2.php:50
 msgid "rows"
 msgstr "righe"
 
-#: ../options/panel2.php:43
+#: ../options/panel2.php:44
 msgid "Specify the number of results to return for each module. Please use a <strong>positive</strong> value."
 msgstr "Indica il numero di risultati da restituire per ogni modulo. Per favore, utilizza un valore <strong>positivo</strong>."
 
-#: ../options/panel2.php:50
+#: ../options/panel2.php:51
+msgid "Specify the number of rows per page to show in the Raw panel. Please use a <strong>positive</strong> value."
+msgstr "Indica il numero di risultati da mostrare per pagina nella vista Dati grezzi. Per favore, usa un numero positivo."
+
+#: ../options/panel2.php:58
 msgid "Customize the IP lookup service URL."
 msgstr "Personalizza la URL del servizio di geolocalizzazione degli IP."
 
-#: ../options/panel2.php:56
+#: ../options/panel2.php:64
 #: ../options/panel3.php:68
 msgid "seconds"
 msgstr "secondi"
 
-#: ../options/panel2.php:57
+#: ../options/panel2.php:65
 msgid "Refresh the RAW DATA view every X seconds. Zero disables this feature."
 msgstr "Aggiorna automaticamente la vista DATI GREZZI ogni X secondi. Zero disabilita questa funzione."
 

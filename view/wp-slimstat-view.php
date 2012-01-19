@@ -287,19 +287,6 @@ class wp_slimstat_view {
 		return intval($wpdb->get_var($sql));
 	}
 
-	public function count_new_visitors(){
-		global $wpdb;
-
-		$sql = "SELECT COUNT(*) FROM (
-					SELECT ip
-					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
-					WHERE visit_id > 0 $this->filters_sql_where $this->filters_date_sql_where
-					GROUP BY ip
-					HAVING COUNT(visit_id) = 1)
-				AS ts1";
-		return intval($wpdb->get_var($sql));
-	}
-
 	public function count_records($_where_clause = '1=1', $_field = '*', $_use_filters = true, $_join_tables = ''){
 		global $wpdb;
 
@@ -313,6 +300,19 @@ class wp_slimstat_view {
 		$sql = "SELECT COUNT($_field) count
 				FROM $this->table_stats t1 ".($_use_filters?"{$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}":'')." $sql_from
 				WHERE $_where_clause ".($_use_filters?"$this->filters_sql_where $this->filters_date_sql_where":'');
+		return intval($wpdb->get_var($sql));
+	}
+
+	public function count_records_having($_where_clause = '1=1', $_field = 'ip', $_having_clause = ''){
+		global $wpdb;
+
+		$sql = "SELECT COUNT(*) FROM (
+					SELECT $_field
+					FROM $this->table_stats t1 {$this->filters_sql_from['browsers']} {$this->filters_sql_from['screenres']}
+					WHERE $_where_clause $this->filters_sql_where $this->filters_date_sql_where
+					GROUP BY $_field
+					".(!empty($_having_clause)?"HAVING $_having_clause":'').")
+				AS ts1";
 		return intval($wpdb->get_var($sql));
 	}
 
@@ -562,7 +562,7 @@ class wp_slimstat_view {
 			}
 
 			// Format each group of data
-			if (($i == $day_idx_current - 1) || $this->day_filter_active){
+			if (($i == $day_idx_current - 1) || $this->day_filter_active || !empty($this->day_interval)){
 				if (!empty($data1[$date_idx_current])){
 					$result->current_data1 .= "[$i,{$data1[$date_idx_current]}$current_filter_query],";
 					$result->current_total1 += $data1[$date_idx_current];
@@ -581,7 +581,7 @@ class wp_slimstat_view {
 				}
 			}
 
-			if (($i == $day_idx_previous - 1) || $this->day_filter_active){
+			if (($i == $day_idx_previous - 1) || $this->day_filter_active || !empty($this->day_interval)){
 				if (empty($this->day_interval)){
 					if (!empty($data1[$date_idx_previous])){
 						$result->previous_data .= "[$i,{$data1[$date_idx_previous]}$previous_filter_query],";

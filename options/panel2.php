@@ -11,6 +11,7 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['convert_ip_addresses']) && !slimstat_update_option('convert_ip_addresses', $_POST['options']['convert_ip_addresses'], 'yesno')) $faulty_fields .= __('Convert IP addresses','wp-slimstat-options').', ';
 	if (isset($_POST['options']['use_european_separators']) && !slimstat_update_option('use_european_separators', $_POST['options']['use_european_separators'], 'yesno')) $faulty_fields .= __('Number format','wp-slimstat-options').', ';
 	if (isset($_POST['options']['rows_to_show']) && !slimstat_update_option('rows_to_show', $_POST['options']['rows_to_show'], 'integer')) $faulty_fields .= __('Limit results to','wp-slimstat-options').', ';
+	if (isset($_POST['options']['rows_raw_data']) && !slimstat_update_option('rows_raw_data', $_POST['options']['rows_raw_data'], 'integer')) $faulty_fields .= __('Rows in Raw view','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ip_lookup_service']) && !slimstat_update_option('ip_lookup_service', $_POST['options']['ip_lookup_service'], 'text')) $faulty_fields .= __('IP Lookup','wp-slimstat-options').', ';
 	if (isset($_POST['options']['refresh_interval']) && !slimstat_update_option('refresh_interval', $_POST['options']['refresh_interval'], 'integer')) $faulty_fields .= __('Refresh every','wp-slimstat-options').', ';
 	
@@ -41,6 +42,13 @@ if (isset($_POST['options'])){
 		<td>
 			<input type="text" name="options[rows_to_show]" id="rows_to_show" value="<?php echo slimstat_get_option('rows_to_show','20'); ?>" size="4"> <?php _e('rows','wp-slimstat-options') ?>
 			<span class="description"><?php _e('Specify the number of results to return for each module. Please use a <strong>positive</strong> value.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><label for="rows_raw_data"><?php _e('Rows in Raw view','wp-slimstat-options') ?></label></th>
+		<td>
+			<input type="text" name="options[rows_raw_data]" id="rows_raw_data" value="<?php echo slimstat_get_option('rows_raw_data','50'); ?>" size="4"> <?php _e('rows','wp-slimstat-options') ?>
+			<span class="description"><?php _e('Specify the number of rows per page to show in the Raw panel. Please use a <strong>positive</strong> value.','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 	<tr>

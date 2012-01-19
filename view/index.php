@@ -12,11 +12,11 @@ $ip_lookup_url = get_option('slimstat_ip_lookup_service', 'http://www.maxmind.co
 
 // Retrieve the order of this tab's panels
 $user = wp_get_current_user();
-$admin_url = admin_url('index.php');
+$admin_url = get_admin_url();
 $option = (get_option('slimstat_use_separate_menu', 'no') == 'yes')?'meta-box-order_toplevel_page_wp-slimstat':'meta-box-order_dashboard_page_wp-slimstat';
 $panels_order = get_user_option($option, $user->ID);
 $panels_order = explode(',', $panels_order[0]);
-if(!$panels_order || count($panels_order)!=39) $panels_order = array('p1_01','p1_02','p1_03','p1_04','p1_05','p1_06','p1_07','p1_08','p1_09','p1_10','p2_01','p2_02','p2_03','p2_04','p2_05','p2_06','p2_07','p2_08','p2_09','p2_10','p2_11','p3_01','p3_02','p3_03','p3_04','p3_05','p3_06','p3_07','p3_08','p4_01','p4_02','p4_03','p4_04','p4_05','p4_06','p4_07','p4_08','p4_09','p4_10');
+if(!$panels_order || count($panels_order)!=40) $panels_order = array('p1_01','p1_02','p1_03','p1_04','p1_05','p1_06','p1_07','p1_08','p1_09','p1_10','p2_01','p2_02','p2_03','p2_04','p2_05','p2_06','p2_07','p2_08','p2_09','p2_10','p2_11','p2_12','p3_01','p3_02','p3_03','p3_04','p3_05','p3_06','p3_07','p3_08','p4_01','p4_02','p4_03','p4_04','p4_05','p4_06','p4_07','p4_08','p4_09','p4_10');
 
 // Load localization files
 load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
@@ -66,6 +66,9 @@ if (!empty($wp_slimstat_view->filters_parsed)){
 				$filters_list);
 	}
 }
+else{
+	$filters_list = '<h3>'.ucfirst(date_i18n('F Y')).'</h3>  ';
+}
 
 // Reset MySQL timezone settings, our dates and times are recorded using WP settings
 $wpdb->query("SET @@session.time_zone = '+00:00'");
@@ -79,6 +82,7 @@ $allowed_functions = array(
 	'get_recent_404',
 	'get_recent_bouncing_pages',
 	'get_recent_countries',
+	'get_recent_known_visitors',
 	'get_recent_resources',
 	'get_recent_searchterms',
 	'get_top_resources',
@@ -88,18 +92,6 @@ $allowed_functions = array(
 $function_to_use = '';
 if (!empty($_GET['ftu']) && in_array($_GET['ftu'], $allowed_functions)) $function_to_use = $_GET['ftu'];
 
-// Utilities
-function title_period($_title_string, $_wp_slimstat_view, $_extra_class = ' noscroll'){
-	
-	echo "<h3 class='hndle'>$_title_string ";
-	if (empty($_wp_slimstat_view->day_interval)){
-		if ($_wp_slimstat_view->day_filter_active) echo $_wp_slimstat_view->current_date['d'].'/';
-		echo $_wp_slimstat_view->current_date['m'].'/'.$_wp_slimstat_view->current_date['y']; 
-	}
-	else
-		_e('this period', 'wp-slimstat-view');
-	echo "</h3><div class='container$_extra_class'>";
-}
 function trim_value($_string = '', $_length = 40){
 	if (strlen($_string) > $_length){
 		$result['text'] = substr($_string, 0, $_length).'...';
@@ -197,11 +189,11 @@ jQuery(document).ready(function(){
 <div class="wrap">
 	<div id="analytics-icon" class="icon32 <?php echo $wp_locale->text_direction ?>"></div>
 	<h2 class="medium">
-		<?php		
+		<?php
 		foreach($array_panels as $a_panel_id => $a_panel_name){
-			echo '<a class="nav-tab nav-tab';
+			echo "<a class='nav-tab nav-tab";
 			echo ($current_panel == $a_panel_id+1)?'-active':'-inactive';
-			echo '" href="'.$_SERVER['PHP_SELF'].'?page=wp-slimstat&slimpanel='.($a_panel_id+1).$wp_slimstat_view->filters_query.'&direction='.$wp_slimstat_view->direction.'">'.$a_panel_name.'</a>';
+			echo "' href='$admin_url?page=wp-slimstat&slimpanel=".($a_panel_id+1).$wp_slimstat_view->filters_query."&direction=$wp_slimstat_view->direction'>$a_panel_name</a>";
 		}
 		?>
 	</h2>

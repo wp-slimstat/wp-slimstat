@@ -14,6 +14,7 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['browscap_autoupdate']) && !slimstat_update_option('browscap_autoupdate', $_POST['options']['browscap_autoupdate'], 'yesno')) $faulty_fields = __('Autoupdate DB','wp-slimstat-options').', ';
 	if (isset($_POST['options']['track_users']) && !slimstat_update_option('track_users', $_POST['options']['track_users'], 'yesno')) $faulty_fields .= __('Track users','wp-slimstat-options').', ';	
 	if (isset($_POST['options']['auto_purge']) && !slimstat_update_option('auto_purge', $_POST['options']['auto_purge'], 'integer')) $faulty_fields .= __('Auto purge','wp-slimstat-options').', ';
+	if (isset($_POST['options']['add_posts_column']) && !slimstat_update_option('add_posts_column', $_POST['options']['add_posts_column'], 'yesno')) $faulty_fields .= __('Add column to Posts','wp-slimstat-options').', ';
 	if (isset($_POST['options']['use_separate_menu']) && !slimstat_update_option('use_separate_menu', $_POST['options']['use_separate_menu'], 'yesno')) $faulty_fields .= __('Use separate menu','wp-slimstat-options').', ';
 
 	slimstat_error_message($faulty_fields);
@@ -77,6 +78,14 @@ if (isset($_POST['options']['auto_purge'])){
 			<input type="text" name="options[auto_purge]" id="auto_purge" value="<?php echo slimstat_get_option('auto_purge','0'); ?>" size="4"> <?php _e('days','wp-slimstat-options') ?>
 			<?php if (wp_get_schedule('wp_slimstat_purge')) echo '&mdash; '.__('Next purge is scheduled on','wp-slimstat-options').' '.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')); ?>
 			<span class="description"><?php _e('Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><label for="add_posts_column"><?php _e('Add Posts column','wp-slimstat-options') ?></label></th>
+		<td>
+			<input type="radio" name="options[add_posts_column]" id="add_posts_column" value="yes"<?php echo (slimstat_get_option('add_posts_column','no') == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>  &nbsp; &nbsp; &nbsp;
+			<input type="radio" name="options[add_posts_column]" value="no" <?php echo (slimstat_get_option('add_posts_column','no') == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?>
+			<span class="description"><?php _e('Shows a new column to the Posts page with the number of hits per post (may slow down page rendering)','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 	<tr>

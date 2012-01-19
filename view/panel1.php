@@ -57,9 +57,8 @@ else{ ?>
 </div>
 
 <?php break; case 'p1_03': ?>
-<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p1_03"><?php
-title_period(__('Summary for', 'wp-slimstat-view'), $wp_slimstat_view);
-
+<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p1_03">
+	<h3 class='hndle'><?php _e('Summary', 'wp-slimstat-view') ?></h3><div class='container'><?php
 if (!$wp_slimstat_view->day_filter_active){
 	$today_pageviews = !empty($datachart->current_data1[$wp_slimstat_view->current_date['d']])?$datachart->current_data1[$wp_slimstat_view->current_date['d']]:0;
 	$yesterday_pageviews = (intval($wp_slimstat_view->current_date['d'])==1)?(!empty($datachart->previous_data1[$wp_slimstat_view->yesterday['d']])?$datachart->previous_data1[$wp_slimstat_view->yesterday['d']]:0):(!empty($datachart->current_data1[$wp_slimstat_view->yesterday['d']])?$datachart->current_data1[$wp_slimstat_view->yesterday['d']]:0);
@@ -81,7 +80,7 @@ if (!$wp_slimstat_view->day_filter_active){ ?>
 <?php break; case 'p1_04': ?>
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p1_04">
 	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('When visitors comment on your blog, Wordpress assigns them cookies stored on their computer. WP SlimStat leverages this information to identify returning visitors.','wp-slimstat-view') ?>' />
-	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_details_recent_visits&amp;user-op=is%20not%20empty<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
+	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_known_visitors<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 	<h3 class="hndle"><?php _e('Recent Known Visitors', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_recent('t1.user', 't1.ip');
@@ -196,9 +195,9 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p1_08': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p1_08">
-	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_top_resources<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div><?php
-title_period(__('Popular Resources for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
-
+	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_top_resources<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
+	<h3 class="hndle"><?php _e('Popular Resources', 'wp-slimstat-view') ?></h3>
+	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "t1.resource NOT LIKE '[%'", '');
 $count_results = count($results);
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
@@ -239,7 +238,7 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p1_10': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p1_10">
-	<h3 class="hndle"><span><?php _e('Traffic Sources Overview', 'wp-slimstat-view'); ?></span></h3>
+	<h3 class="hndle"><?php _e('Traffic Sources Overview', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_top('t1.domain', 't1.ip, t1.user, t1.referer', '', '');
 $count_results = count($results);

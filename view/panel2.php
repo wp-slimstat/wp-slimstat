@@ -7,7 +7,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 // Data about our visits
 $current_pageviews = $wp_slimstat_view->count_records();
-$total_visitors = $wp_slimstat_view->count_records('(tb.type = 0 OR tb.type = 2)', '*', true, 'browsers');
+$total_visitors = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id');
 $datachart = $wp_slimstat_view->extract_data_for_chart('COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', 2, __('Visits','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 'AND (tb.type = 0 OR tb.type = 2)', '', 'browsers');
 
 foreach($panels_order as $a_panel_id)
@@ -43,10 +43,9 @@ else{ ?>
 </div>
 
 <?php break; case 'p2_02': ?>
-<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p2_02"><?php
-title_period(__('Summary for', 'wp-slimstat-view'), $wp_slimstat_view);
-
-$new_visitors = $wp_slimstat_view->count_new_visitors();
+<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p2_02">
+	<h3 class='hndle'><?php _e('Summary', 'wp-slimstat-view') ?></h3><div class='container'><?php
+$new_visitors = $wp_slimstat_view->count_records_having('visit_id > 0', 'ip', 'COUNT(visit_id) = 1');
 $bounce_rate = ($total_visitors > 0)?sprintf("%01.2f", (100*$new_visitors/$total_visitors)):0;
 if (intval($bounce_rate) > 99) $bounce_rate = '100';
 $metrics_per_visit = $wp_slimstat_view->get_max_and_average_pages_per_visit(); ?>
@@ -250,6 +249,52 @@ for($i=0;$i<$count_results;$i++){
 
 	echo "<p $extra_info><span class='element-title'>{$results[$i]['browser']} {$results[$i]['version']} / $platform</span> <span>$percentage%</span></p>";
 } ?>
+	</div>
+</div>
+
+<?php break; case 'p2_12': ?>
+<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p2_12">
+	<h3 class="hndle"><?php _e('Visit Duration', 'wp-slimstat-view'); ?></h3>
+	<div class="container slimstat-tooltips"><?php
+//$results = $wp_slimstat_view->get_top('tb.browser, tb.version, tb.platform', 't1.ip, t1.user', "t1.visit_id > 0", 'browsers');
+//$count_results = count($results);
+//if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
+$count = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) >= 0 AND max(dt) - min(dt) <= 30');
+$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$count/$total_visitors)):0;
+$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
+echo "<p $extra_info><span class='element-title'>".__('0 - 30 seconds','wp-slimstat-view')."</span> <span>$percentage%</span></p>";
+
+$count = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 30 AND max(dt) - min(dt) <= 60');
+$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$count/$total_visitors)):0;
+$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
+echo "<p $extra_info><span class='element-title'>".__('31 - 60 seconds','wp-slimstat-view')."</span> <span>$percentage%</span></p>";
+
+$count = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 60 AND max(dt) - min(dt) <= 180');
+$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$count/$total_visitors)):0;
+$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
+echo "<p $extra_info><span class='element-title'>".__('1 - 3 minutes','wp-slimstat-view')."</span> <span>$percentage%</span></p>";
+
+$count = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 180 AND max(dt) - min(dt) <= 300');
+$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$count/$total_visitors)):0;
+$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
+echo "<p $extra_info><span class='element-title'>".__('3 - 5 minutes','wp-slimstat-view')."</span> <span>$percentage%</span></p>";
+
+$count = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 300 AND max(dt) - min(dt) <= 600');
+$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$count/$total_visitors)):0;
+$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
+echo "<p $extra_info><span class='element-title'>".__('5 - 10 minutes','wp-slimstat-view')."</span> <span>$percentage%</span></p>";
+
+$count = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 600 AND max(dt) - min(dt) <= 1200');
+$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$count/$total_visitors)):0;
+$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
+echo "<p $extra_info><span class='element-title'>".__('10 - 20 minutes','wp-slimstat-view')."</span> <span>$percentage%</span></p>";
+
+$count = $wp_slimstat_view->count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 1200');
+$percentage = ($total_visitors > 0)?sprintf("%01.2f", (100*$count/$total_visitors)):0;
+$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
+echo "<p class='last' $extra_info><span class='element-title'>".__('More than 20 minutes','wp-slimstat-view')."</span> <span>$percentage%</span></p>";
+
+?>
 	</div>
 </div><?php break;
 	default:

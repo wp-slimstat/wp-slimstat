@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.0
-Tested up to: 3.3
-Stable tag: 2.5.3
+Tested up to: 3.3.1
+Stable tag: 2.6
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
@@ -144,6 +144,17 @@ Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 = Planned features =
 * Display visit duration and time on site
 * Add "internal" stats about your blog: post count, comments per post, table sizes, etc
+
+= 2.6 =
+* Added: Visit Duration panel under the Visitors tab
+* Added: a new column under Posts, with the number of pageviews per post (go to Settings > SlimStat > General to activate it)
+* Added: option to customize the number of rows shown in the Raw Data view
+* Updated: Browscap Engine to the latest release available (November 2011)
+* Updated: Minor aesthetic changes to the interface
+* Fixed: bug in generating some internal URLs when redirects are in place (thank you Elio and Alexander)
+* Fixed: error when parsing search strings with encoding different from UTF-8 (thank you Alexander)
+* Fixed: detailed view for recent known visitors
+* Geolocation: updated to January 2012, 158624 rows. Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
 
 = 2.5.3 =
 * Maintenance release: it looks like 2.5.2 shipped with an annoying bug, triggered by some templates out there, preventing visits to be properly tracked. If you haven't experienced any problems, there's no need to upgrade

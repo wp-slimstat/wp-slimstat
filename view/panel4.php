@@ -155,9 +155,9 @@ for($i=0;$i<$count_results;$i++){
 </div>
 
 <?php break; case 'p4_07': ?>
-<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_07"><?php
-title_period(__('Top Categories for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
-
+<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_07">
+	<h3 class="hndle"><?php _e('Top Categories', 'wp-slimstat-view') ?></h3>
+	<div class="container slimstat-tooltips"><?php
 $categories = get_categories();
 $where_categories = 'resource IN (';
 foreach ($categories as $a_category){
@@ -219,9 +219,9 @@ for($i=0;$i<$count_results;$i++){
 </div>
 
 <?php break; case 'p4_09': ?>
-<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_09"><?php
-title_period(__('Top Exit Pages for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
-
+<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_09">
+	<h3 class="hndle"><?php _e('Top Exit Pages', 'wp-slimstat-view') ?></h3>
+	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user', "t1.visit_id > 0 AND t1.resource <> '' AND t1.resource <> '__l_s__' AND t1.resource NOT LIKE '[%'");
 $count_results = count($results);
 $count_exit_pages = $wp_slimstat_view->count_exit_pages();

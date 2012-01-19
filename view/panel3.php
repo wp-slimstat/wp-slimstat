@@ -49,10 +49,8 @@ $unique_referers = $wp_slimstat_view->count_records("domain <> '{$_SERVER['SERVE
 $direct_visits = $wp_slimstat_view->count_records("domain = ''", "DISTINCT id");
 $pages_referred = $wp_slimstat_view->count_records("domain <> ''", "DISTINCT resource");
 $bouncing_pages = $wp_slimstat_view->count_bouncing_pages();
-$referred_from_internal = $wp_slimstat_view->count_records("domain = '{$_SERVER['SERVER_NAME']}'", "DISTINCT resource");
-
-title_period(__('Summary for', 'wp-slimstat-view'), $wp_slimstat_view); ?>
-
+$referred_from_internal = $wp_slimstat_view->count_records("domain = '{$_SERVER['SERVER_NAME']}'", "DISTINCT resource"); ?>
+	<h3 class='hndle'><?php _e('Summary', 'wp-slimstat-view') ?></h3><div class='container'>
 		<p><span class="element-title"><?php _e('Pageviews', 'wp-slimstat-view') ?></span> <span><?php echo number_format($current_pageviews, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p><span class="element-title"><?php _e('Unique Referers', 'wp-slimstat-view') ?></span> <span><?php echo number_format($unique_referers, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p><span class="element-title"><?php _e('Direct Visits', 'wp-slimstat-view') ?></span> <span><?php echo number_format($direct_visits, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
@@ -87,9 +85,8 @@ for($i=0;$i<$count_results;$i++){
 </div>
 
 <?php break; case 'p3_04': ?>
-<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p3_04"><?php
-title_period(__('Top Countries for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
-
+<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p3_04"><h3 class="hndle"><?php _e('Top Countries', 'wp-slimstat-view') ?></h3>
+	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_top('t1.country', 't1.ip, t1.user');
 $count_results = count($results);
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
@@ -109,9 +106,9 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p3_05': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p3_05">
-	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_top_traffic_sources<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div><?php
-title_period(__('Top Traffic Sources for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
-
+	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_top_traffic_sources<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
+	<h3 class="hndle"><?php _e('Top Traffic Sources', 'wp-slimstat-view') ?></h3>
+	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_top('t1.domain', 't1.ip, t1.user, t1.referer');
 $count_results = count($results);
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
@@ -155,9 +152,9 @@ for($i=0;$i<$count_results;$i++){
 </div>
 
 <?php break; case 'p3_07': ?>
-<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p3_07"><?php
-title_period(__('Sites for', 'wp-slimstat-view'), $wp_slimstat_view, ' slimstat-tooltips');
-
+<div class="postbox <?php echo $wp_locale->text_direction ?>" id="p3_07">
+	<h3 class="hndle"><?php _e('Sites', 'wp-slimstat-view') ?></h3>
+	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_top('t1.domain', 't1.ip, t1.user, t1.referer', "searchterms = '' AND domain <> '{$_SERVER['SERVER_NAME']}' AND domain <> ''");
 $count_results = count($results);
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';

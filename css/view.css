@@ -130,11 +130,11 @@
 }
 .postbox p{
  border-bottom:1px dashed #ddd;
- font-size:.85em;
+ font-size:.9em;
  margin:0;
  max-width:245px;
  overflow:auto;
- padding:5px;
+ padding:4px 5px;
 }
 .postbox.medium p{max-width:507px}
 .postbox.wide p{max-width:770px}
@@ -151,11 +151,10 @@
  float:right;
  margin:4px 3px 0 0;
 }
-.postbox p img.item-tooltip{padding:0 0 0 5px}
 .postbox.rtl p img{float:right;padding:2px 0 0 6px}
 .postbox p span{
  float:right;
- margin:0 5px;
+ margin:3px 0;
  min-width:50px;
  text-align:right;
 }
@@ -219,6 +218,12 @@ span.little-color-box{
  clear:both;
  text-align:right;
  width:1000px;
+}
+
+/* Posts panel */
+th.column-wp-slimstat, td.column-wp-slimstat{
+ text-align:center;
+ width:5%;
 }
 
 /* Options Panel */
