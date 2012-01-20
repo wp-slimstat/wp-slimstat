@@ -7,7 +7,7 @@ Tested up to: 3.3.1
 Stable tag: 2.6
 
 == Description ==
-A powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
+A powerful real-time web analytics plugin for Wordpress.
 
 = Main Features =
 * Supports both InnoDB and MyISAM (autodetect)
@@ -142,8 +142,10 @@ Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 == Changelog ==
 
 = Planned features =
-* Display visit duration and time on site
 * Add "internal" stats about your blog: post count, comments per post, table sizes, etc
+* Enable regular expressions or wildcards in filters
+* Merge with WP SlimStat Shortcodes
+* Antiflood monitor
 
 = 2.6 =
 * Added: Visit Duration panel under the Visitors tab
