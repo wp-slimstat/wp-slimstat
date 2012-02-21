@@ -2,7 +2,7 @@
 /*
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
-Description: A powerful real-time web analytics plugin for Wordpress. Spy your visitors and track what they do on your website.
+Description: A powerful real-time web analytics plugin for Wordpress.
 Version: 2.6
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
