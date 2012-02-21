@@ -92,7 +92,8 @@ if (!$is_table_active){
 $stat = array();
 
 // This secret key is used to make sure the script only works when called from a legit referer (the blog itself!)
-if (($secret_key = slimstat_get_option('slimstat_secret')) === false){
+$slimstat_options = slimstat_get_option('slimstat_options', array());
+if (empty($slimstat_options['secret'])){
 	echo 'Secret key not initialized';
 	exit;
 }
@@ -110,7 +111,7 @@ if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_
 
 // Is the ID valid?
 $stat['id'] = empty($_GET['id'])?0:base_convert($_GET['id'], 16, 10);
-if ( empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id'].$secret_key)))){
+if (empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id'].$secret_key)))){
 	echo 'Invalid key';
 	exit;
 }
@@ -170,37 +171,31 @@ if ( empty($stat['screenres_id']) ) {
 	}
 }
 
-// Is this a human visitor? Does s/he have a cookie set by slimstat?
-$stat['visit_id'] = 0;
-if (!empty($_COOKIE['slimstat_tracking_code']) && strlen($_COOKIE['slimstat_tracking_code']) == 32){
-	$clean_tracking_code = mysql_real_escape_string( $_COOKIE['slimstat_tracking_code'] );
-	$select_sql = "SELECT `visit_id` FROM {$multisite_table_prefix}slim_visits WHERE `tracking_code` = '$clean_tracking_code'";
-	$stat['visit_id'] = slimstat_get_var($select_sql);
-	
-	// Yes, we don't check that this is a 'legit' tracking code
-	if ( empty($stat['visit_id']) ) {
-		$insert_sql = "INSERT INTO `{$multisite_table_prefix}slim_visits` ( `tracking_code` )
-						SELECT '$clean_tracking_code'
-						FROM DUAL
-						WHERE NOT EXISTS ( $select_sql )";
-		@mysql_query($insert_sql);
-		$stat['visit_id'] = @mysql_insert_id();
-	
-		if ( empty($stat['visit_id']) ) { // This can happen if another transaction had added the new line in the meanwhile
-			$stat['visit_id'] = slimstat_get_var($select_sql);
-		}
+// Update the visit_id for this session's first pageview
+if (isset($_COOKIE['slimstat_tracking_code'])){
+	list($identifier, $control_code) = explode('.', $_COOKIE['slimstat_tracking_code']);
+			
+	// Make sure only authorized information is recorded
+	if ((strpos($identifier, 'id') !== false) && ($control_code == md5($identifier.$secret_key))){
+
+		// Emulate auto-increment on visit_id
+		mysql_query("UPDATE {$multisite_table_prefix}slim_stats 
+						SET visit_id = (
+							SELECT max_visit_id FROM ( SELECT MAX(visit_id) AS max_visit_id FROM {$multisite_table_prefix}slim_stats ) AS sub_max_visit_id_table
+						) + 1
+						WHERE id = {$stat['id']} AND visit_id = 0");
 	}
 }
 
 // Finally we can update the information about this visit
-$update_sql = "UPDATE `{$multisite_table_prefix}slim_stats`
-				SET `screenres_id` = {$stat['screenres_id']}, `plugins` = '{$stat['plugins']}', `visit_id` = '{$stat['visit_id']}'
-				WHERE `id` = {$stat['id']} AND `screenres_id` = 0";
+$update_sql = "UPDATE {$multisite_table_prefix}slim_stats
+				SET screenres_id = {$stat['screenres_id']}, plugins = '{$stat['plugins']}'
+				WHERE id = {$stat['id']} AND screenres_id = 0";
 
 mysql_query($update_sql);
 mysql_close($db_handle);
 
-function slimstat_get_option($_option_name = '') {
+function slimstat_get_option($_option_name = '', $_default_value = '') {
 	global $multisite_table_prefix;
 	
 	$resource = @mysql_query("SELECT `option_value` FROM `{$multisite_table_prefix}options` WHERE `option_name` = '{$_option_name}'");
@@ -209,7 +204,7 @@ function slimstat_get_option($_option_name = '') {
 	if (!empty($result['option_value']))
 		return $result['option_value'];
 	else
-		return false;
+		return $_default_value;
 }
 function slimstat_get_var($_sql_query = '') {	
 	$resource = @mysql_query($_sql_query);

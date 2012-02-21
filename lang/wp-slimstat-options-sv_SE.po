@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-11-23 12:09-0500\n"
-"PO-Revision-Date: 2011-11-23 12:09-0500\n"
+"POT-Creation-Date: 2012-01-31 09:59-0500\n"
+"PO-Revision-Date: 2012-01-31 09:59-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: ZebEl of Sweden\n"
 "MIME-Version: 1.0\n"
@@ -49,27 +49,27 @@ msgid "There was an error updating the following fields:"
 msgstr "Det var ett fel vid uppdatering av följande fält"
 
 #: panel1.php:11
-#: panel1.php:36
+#: panel1.php:37
 msgid "Activate tracking"
 msgstr "Aktivera spårning"
 
 #: panel1.php:12
-#: panel1.php:44
+#: panel1.php:45
 msgid "Enable JS Tracking"
 msgstr "Sätt på JS Spårning"
 
 #: panel1.php:13
-#: panel1.php:52
+#: panel1.php:53
 msgid "Custom path"
 msgstr "Anpassad sökväg"
 
 #: panel1.php:14
-#: panel1.php:59
+#: panel1.php:60
 msgid "Autoupdate DB"
 msgstr "Autouppdatera DB"
 
 #: panel1.php:15
-#: panel1.php:67
+#: panel1.php:68
 msgid "Track users"
 msgstr "Spåra användare"
 
@@ -78,152 +78,175 @@ msgid "Auto purge"
 msgstr "Autorensning"
 
 #: panel1.php:17
-#: panel1.php:83
+msgid "Add column to Posts"
+msgstr ""
+
+#: panel1.php:18
+#: panel1.php:92
 msgid "Use separate menu"
 msgstr "Använd separat meny"
-
-#: panel1.php:38
-#: panel1.php:46
-#: panel1.php:61
-#: panel1.php:69
-#: panel1.php:85
-#: panel2.php:26
-#: panel3.php:32
-#: panel3.php:40
-#: panel3.php:48
-#: panel5.php:12
-#: panel5.php:22
-msgid "Yes"
-msgstr "Ja"
 
 #: panel1.php:39
 #: panel1.php:47
 #: panel1.php:62
 #: panel1.php:70
 #: panel1.php:86
+#: panel1.php:94
 #: panel2.php:27
-#: panel3.php:33
-#: panel3.php:41
-#: panel3.php:49
-#: panel5.php:13
-#: panel5.php:23
+#: panel3.php:44
+#: panel3.php:52
+#: panel3.php:60
+#: panel5.php:11
+msgid "Yes"
+msgstr "Ja"
+
+#: panel1.php:40
+#: panel1.php:48
+#: panel1.php:63
+#: panel1.php:71
+#: panel1.php:87
+#: panel1.php:95
+#: panel2.php:28
+#: panel3.php:45
+#: panel3.php:53
+#: panel3.php:61
+#: panel5.php:12
 msgid "No"
 msgstr "Nej"
 
-#: panel1.php:40
+#: panel1.php:41
 msgid "You may want to stop WP SlimStat from tracking users for a while, but still be able to access your metrics."
 msgstr "Du kanske vill stoppa WP SlimStat att spåra användare ett tag men fortfarande vill kunna ha tillgång till dina mätningar."
 
-#: panel1.php:48
+#: panel1.php:49
 msgid "Adds a javascript code to your pages to track visits, screen resolutions, outbound links, downloads and more"
 msgstr "Lägger javaskript kod till dina sidor för att spåra besöken, skärmupplösningar, utgående länkar, nedladdningar med mera."
 
-#: panel1.php:55
+#: panel1.php:56
 msgid "If you moved <code>wp-slimstat-js.php</code> out of the original folder, specify here the new path. Default:"
 msgstr "Ifall du flyttat ut <code>wp-slimstat-js.php</code> ur den ursprungliga mappen, specificera här den nya sökvägen. Förvald:"
 
-#: panel1.php:63
+#: panel1.php:64
 msgid "Enables Browscap's autoupdate feature. Please make sure your <code>cache</code> subfolder is writable."
 msgstr "Sätt på Browscaps autouppdaterings drag. Vänligen säkerställ din <code>cache</code> undermapp är skrivbar."
 
-#: panel1.php:71
+#: panel1.php:72
 msgid "Tracks logged in users, adding their login to the resource they requested"
 msgstr "Spåra inloggade användare, lägger till deras inloggning till den källa de begärt"
 
-#: panel1.php:75
+#: panel1.php:76
 msgid "Autopurge"
 msgstr "Autorensning"
 
-#: panel1.php:77
+#: panel1.php:78
 msgid "days"
 msgstr "Dagar"
 
-#: panel1.php:78
+#: panel1.php:79
 msgid "Next purge is scheduled on"
 msgstr "Nästa rensning är planerad till"
 
-#: panel1.php:79
+#: panel1.php:80
 msgid "Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature."
 msgstr "Automatiskt tar bort sidvisningar äldre än <strong>X</strong> dagar (använder Wordpress kronjob). Noll, stänger av detta drag."
 
-#: panel1.php:87
+#: panel1.php:84
+msgid "Add Posts column"
+msgstr ""
+
+#: panel1.php:88
+msgid "Shows a new column to the Posts page with the number of hits per post (may slow down page rendering)"
+msgstr ""
+
+#: panel1.php:96
 msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat or not."
 msgstr "Låter dig bestämma om du vill ha en separat admin meny för WP SlimStat eller ej."
 
-#: panel1.php:92
-#: panel2.php:62
-#: panel3.php:85
-#: panel4.php:30
+#: panel1.php:101
+#: panel2.php:70
+#: panel3.php:97
+#: panel4.php:56
 msgid "Save Changes"
 msgstr "Spara ändringar"
 
 #: panel2.php:11
-#: panel2.php:24
+#: panel2.php:25
 msgid "Convert IP addresses"
 msgstr "Nuvarande IP-adresser"
 
 #: panel2.php:12
-#: panel2.php:32
+#: panel2.php:33
 msgid "Number format"
 msgstr "Nummerformat"
 
 #: panel2.php:13
-#: panel2.php:40
+#: panel2.php:41
 msgid "Limit results to"
 msgstr "Begränsa resultat till"
 
 #: panel2.php:14
-#: panel2.php:47
-msgid "IP Lookup"
+#: panel2.php:48
+msgid "Rows in Raw view"
 msgstr ""
 
 #: panel2.php:15
-#: panel2.php:54
+#: panel2.php:55
+msgid "IP Lookup"
+msgstr ""
+
+#: panel2.php:16
+#: panel2.php:62
 msgid "Refresh every"
 msgstr ""
 
-#: panel2.php:28
+#: panel2.php:29
 msgid "View hostnames instead of IP addresses. It slows down the rendering of your metrics."
 msgstr "Visa värdnamn istället för IP-adresser. Det dämpar renderingen av dina mätningar."
 
-#: panel2.php:36
+#: panel2.php:37
 msgid "Choose what number format you want to use, European or American."
 msgstr "Välj vilken nummerformat du vill använda, Europeiska eller Amerikanska."
 
-#: panel2.php:42
+#: panel2.php:43
+#: panel2.php:50
 msgid "rows"
 msgstr "rader"
 
-#: panel2.php:43
+#: panel2.php:44
 msgid "Specify the number of results to return for each module. Please use a <strong>positive</strong> value."
 msgstr "Specificera antalet utfall att returnera för varje modul. Vänligen använd ett <strong>positivt</strong> värde."
 
-#: panel2.php:50
+#: panel2.php:51
+#, fuzzy
+msgid "Specify the number of rows per page to show in the Raw panel. Please use a <strong>positive</strong> value."
+msgstr "Specificera antalet utfall att returnera för varje modul. Vänligen använd ett <strong>positivt</strong> värde."
+
+#: panel2.php:58
 msgid "Customize the IP lookup service URL."
 msgstr ""
 
-#: panel2.php:56
-#: panel3.php:56
+#: panel2.php:64
+#: panel3.php:68
 msgid "seconds"
 msgstr "Sekunder"
 
-#: panel2.php:57
+#: panel2.php:65
 msgid "Refresh the RAW DATA view every X seconds. Zero disables this feature."
 msgstr ""
 
 #: panel3.php:11
-#: panel3.php:30
+#: panel3.php:42
 msgid "Ignore bots"
 msgstr "Ignorera robotar"
 
 #: panel3.php:12
-#: panel3.php:38
+#: panel3.php:50
 #, fuzzy
 msgid "Ignore Spammers"
 msgstr "Ignorera användare"
 
 #: panel3.php:13
-#: panel3.php:46
+#: panel3.php:58
 #, fuzzy
 msgid "Ignore Prefetch"
 msgstr "Ignorera källor"
@@ -253,303 +276,320 @@ msgstr "Ignorera källor"
 msgid "Ignore browsers"
 msgstr "Ignorera webbläsare"
 
-#: panel3.php:20
+#: panel3.php:25
 msgid "Ignore users"
 msgstr "Ignorera användare"
 
-#: panel3.php:26
+#: panel3.php:28
+msgid "Ignore users (username not found)"
+msgstr ""
+
+#: panel3.php:38
 #, fuzzy
 msgid "General settings"
 msgstr "Allmänt"
 
-#: panel3.php:34
+#: panel3.php:46
 msgid "Do not track visits from crawlers, search engine spiders and other bots"
 msgstr ""
 
-#: panel3.php:42
+#: panel3.php:54
 msgid "Do not track visits from users identified as spammers by a third-party tool (i.e. Akismet)"
 msgstr ""
 
-#: panel3.php:50
+#: panel3.php:62
 msgid "Do not track visits generated by Firefox' <a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>Link Prefetching functionality</a>"
 msgstr ""
 
-#: panel3.php:54
+#: panel3.php:66
 msgid "Latency"
 msgstr "Fördröjning"
 
-#: panel3.php:57
+#: panel3.php:69
 #, fuzzy
 msgid "Do not track visits identical to an existing one recorded less than <strong>X</strong> seconds ago. Zero disables this feature."
 msgstr "Ignorerar sidvisningar identiska med en existerande sidvisning registrerad mindre än <strong>X</strong> sekunder sedan. Noll, stänger av detta drag."
 
-#: panel3.php:62
+#: panel3.php:74
 #, fuzzy
 msgid "IP addresses"
 msgstr "IP-adress"
 
-#: panel3.php:63
+#: panel3.php:75
 msgid "Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
 msgstr "Ange en lista över nätverk du inte vill spåra, separerat med kommatecken. Varje nätverk <strong>måste</strong> vara definierad att använda <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (t.ex. <em>192.168.1.1/24</em>). Om formatet är inkorrekt, WP SlimStat kanske inte spårar sidvisningarna ordentligt."
 
-#: panel3.php:66
+#: panel3.php:78
 #, fuzzy
 msgid "Pages and posts"
 msgstr "Sidor och inlägg att ignorera"
 
-#: panel3.php:67
+#: panel3.php:79
 msgid "Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1</em>, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>contains</strong> at least one of them."
 msgstr "Ange en lista över permalänkar du inte vill spåra, separerat med kommatecken. Du bör utelämna domännamn från dessa källor: <em>/about, ?p=1</em>, etc. WP SlimStat kommer att ignorera alla de sidvisningar, vars permalänk <strong>innehåller</strong> minst ett utav dem."
 
-#: panel3.php:70
+#: panel3.php:82
 #, fuzzy
 msgid "Countries"
 msgstr "Återställ Länder"
 
-#: panel3.php:71
+#: panel3.php:83
 msgid "Enter a list of Country codes (i.e.: <code>en-us, it, es</code>) you don't want to track, separated by commas."
 msgstr ""
 
-#: panel3.php:74
+#: panel3.php:86
 #, fuzzy
 msgid "User agents"
 msgstr "Anvädaragenter att ignorera"
 
-#: panel3.php:75
+#: panel3.php:87
 msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these."
 msgstr "Ange en lista över webbläsare (användaragenter) du inte vill spåra, separerade med kommatecken. Du kan specificera webbläsarens version genom att lägga till en snedstreck efter namnet  (t.ex. <em>Firefox/3.6</em>). WP SlimStat kommer att ignorera alla webbläsare vars identifieringsstring <strong>börjar</strong> med en utav dessa."
 
-#: panel3.php:78
+#: panel3.php:90
 #, fuzzy
 msgid "Referers"
 msgstr "Refererare att ignorera"
 
-#: panel3.php:79
+#: panel3.php:91
 msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. WP SlimStat will ignore all the referers that <strong>contain</strong> at least one of them."
 msgstr "Ange en lista över refererings-URLer du inte vill spåra, separerade med kommatecken: <code>minsida.com, /ignore-me-please</code>, etc. WP SlimStat kommer ignorera alla refererare som <strong>innehåller</strong> minst en utav dessa."
 
-#: panel3.php:82
+#: panel3.php:94
 msgid "Users"
 msgstr ""
 
-#: panel3.php:83
+#: panel3.php:95
 msgid "Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored."
 msgstr "Ange en lista över Wordpressanvändare du inte vill spåra, separerade med kommatecken. Vänligen var medveten om att mellanrum ignoreras <em>inte</em>."
 
-#: panel4.php:11
-#: panel4.php:19
+#: panel4.php:16
+#: panel4.php:45
 msgid "Users who can access the reports"
 msgstr "Användare som kan få tillgång till rapporter"
 
-#: panel4.php:12
-#: panel4.php:23
+#: panel4.php:19
+#, fuzzy
+msgid "Users who can access the reports (username not found)"
+msgstr "Användare som kan få tillgång till rapporter"
+
+#: panel4.php:25
+#: panel4.php:49
 msgid "Roles and capabilities"
 msgstr "Roller och rättigheter"
 
-#: panel4.php:13
-#: panel4.php:27
+#: panel4.php:32
+#: panel4.php:53
 msgid "Users who can configure WP SlimStat"
 msgstr "Användare som kan konfigurera WP SlimStat"
 
-#: panel4.php:20
+#: panel4.php:35
+#, fuzzy
+msgid "Users who can configure WP SlimStat (username not found)"
+msgstr "Användare som kan konfigurera WP SlimStat"
+
+#: panel4.php:46
 msgid "Enter a list of users allowed to view WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all</strong> users (including subscribers) will have access to the reports."
 msgstr "Ange en lista över användare tillåtna att överblicka WP SlimStats rapporter, separerade med kommatecken. Administratörer är villkorslös tillåtna, så du behöver inte ange dem här. Om detta fält är tomt, kommer <strong>alla</strong> användare (inkluderar prenumeranter) att få tillgång till rapporter."
 
-#: panel4.php:24
+#: panel4.php:50
 msgid "Enter the lowest <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> that users need to have in order to access all the stats (<code>read</code> is the default value). If this field is empty, <strong>all</strong> users (including subscribers) will have access to the reports."
 msgstr "Ange den lägsta <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>behörighet</a> som användarna behöver ha för att få tillgång till all statistik (<code>läs</code> är det förvalda värdet). Om detta fält är tomt, <strong>alla</strong> användare (inkluderar prenumeranter) kommer att få tillgång till rapporter."
 
-#: panel4.php:28
+#: panel4.php:54
 msgid "Enter a list of users allowed to edit these options. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all</strong> users (but subscribers) will have access to the options panel."
 msgstr "Ange en lista över användare som är godkända att ändra dessa alternativ. Vänligen var uppmärksam att administratörer är <strong>inte</strong> villkorslöst tillåtna, så glöm inte att inkludera dig själv! Om detta fält är tomt, <strong>alla</strong> användare (utom prenumeranter) kommer att få tillgång till inställningspanelen."
 
-#: panel5.php:11
+#: panel5.php:10
 msgid "Are you sure you want to remove all the information about your hits and visits?"
 msgstr "Är du säker på att du vill ta bort all information om dina träffar och besök?"
 
-#: panel5.php:18
+#: panel5.php:16
 msgid "Your WP SlimStat table has been successfully emptied."
 msgstr "Din WP SlimStat tabell har framgångsrikt tömts."
 
-#: panel5.php:21
-msgid "Are you sure you want to empty the ip-to-countries table?"
-msgstr "Är du säker på att du vill tömma ip-till-länders tabeller?"
+#: panel5.php:62
+#, fuzzy
+msgid "Your Geolocation data has been successfully updated."
+msgstr "Dina inställningar har framgångsrikt uppdaterats"
 
-#: panel5.php:27
-msgid "Your IP-to-countries table has been successfully emptied. Now go to your Plugins panel and deactivate/reactivate WP SlimStat to load the new data."
-msgstr "Din IP-till-länders tabell har framgångsrikt tömts. Nu får du fortsätta till ditt Tilläggs panel och avaktivera/aktivera om WP SlimStat att ladda den nya informationen.\" "
+#: panel5.php:65
+#: panel5.php:69
+msgid "ERROR: Your Geolocation source file is not readable."
+msgstr ""
 
-#: panel5.php:34
+#: panel5.php:77
 msgid "Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat."
 msgstr "Din WP SlimStat tabell har framgångsrikt återställts. Nu får du fortsätta till ditt Tilläggs panel och avaktivera/aktivera om WP SlimStat.\" "
 
-#: panel5.php:45
+#: panel5.php:87
 msgid "Your WP SlimStat table has been successfully optimized."
 msgstr "Din WP SlimStat tabell har framgångsrikt optimerats."
 
-#: panel5.php:60
+#: panel5.php:101
 msgid "Your WP SlimStat tables have been successfully converted to InnoDB."
 msgstr "Din WP SlimStat tabell har framgångsrikt konverterat till InnoDB."
 
-#: panel5.php:70
+#: panel5.php:110
 msgid "Your WP SlimStat indexes have been successfully created."
 msgstr "Din WP SlimStat tabell har framgångsrikt skapats."
 
-#: panel5.php:79
+#: panel5.php:118
 msgid "Your WP SlimStat indexes have been successfully removed."
 msgstr "Din WP SlimStat index har framgångsrikt avlägsnats."
 
-#: panel5.php:121
+#: panel5.php:160
 msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
 msgstr "Din WP SlimStat tabell har framgångsrikt rensats. Påverkade rader:"
 
-#: panel5.php:131
+#: panel5.php:170
 msgid "Database Information"
 msgstr ""
 
-#: panel5.php:132
+#: panel5.php:171
 msgid "Engine"
 msgstr "Motor"
 
-#: panel5.php:134
+#: panel5.php:173
 msgid ", it may take some time and exceed PHP's maximum execution time"
 msgstr ", det kan ta lite tid och därmed överträffas PHPs maximum exekveringstid"
 
-#: panel5.php:135
+#: panel5.php:174
 msgid "switch to InnoDB"
 msgstr "koppla om till InnoDB"
 
-#: panel5.php:155
+#: panel5.php:194
 msgid "Size"
 msgstr ""
 
-#: panel5.php:155
+#: panel5.php:194
 msgid "Records"
 msgstr "Poster"
 
-#: panel5.php:155
+#: panel5.php:194
 msgid "Average Record Length"
 msgstr "Genomsnittlig Postlängd"
 
-#: panel5.php:155
+#: panel5.php:194
 msgid "Created on"
 msgstr "Skapad den"
 
-#: panel5.php:157
+#: panel5.php:196
 msgid "Approximate Overhead"
 msgstr "Ungefärlig Överhuvud"
 
-#: panel5.php:161
+#: panel5.php:200
 #, fuzzy
 msgid "Optimize tables"
 msgstr "Optimera"
 
-#: panel5.php:165
+#: panel5.php:204
 msgid "Purge Data"
 msgstr ""
 
-#: panel5.php:168
+#: panel5.php:207
 msgid "Are you sure you want to PERMANENTLY delete these rows from your database?"
 msgstr "Är du säker på att du vill ta bort dessa rader PERMANENT från din databas?"
 
-#: panel5.php:169
+#: panel5.php:208
 msgid "Delete rows where"
 msgstr "Ta bort rader där"
 
-#: panel5.php:171
+#: panel5.php:210
 msgid "Country Code"
 msgstr "Landskod"
 
-#: panel5.php:172
+#: panel5.php:211
 msgid "Domain"
 msgstr "Domän"
 
-#: panel5.php:173
+#: panel5.php:212
 msgid "IP Address"
 msgstr "IP-adress"
 
-#: panel5.php:174
+#: panel5.php:213
 msgid "Language Code"
 msgstr "Språkkod"
 
-#: panel5.php:175
+#: panel5.php:214
 msgid "Permalink"
 msgstr "Permalänk"
 
-#: panel5.php:176
+#: panel5.php:215
 msgid "Search Terms"
 msgstr "Söktermer"
 
-#: panel5.php:179
+#: panel5.php:218
 msgid "Is equal to"
 msgstr "Är lika med"
 
-#: panel5.php:180
+#: panel5.php:219
 msgid "Contains"
 msgstr "Innehåller"
 
-#: panel5.php:181
+#: panel5.php:220
 msgid "Does not contain"
 msgstr "Innehåller inte"
 
-#: panel5.php:182
+#: panel5.php:221
 msgid "Starts with"
 msgstr "Börjar med"
 
-#: panel5.php:183
+#: panel5.php:222
 msgid "Ends with"
 msgstr "Slutar med"
 
-#: panel5.php:184
+#: panel5.php:223
 msgid "Does not start with"
 msgstr "Börjar inte med"
 
-#: panel5.php:185
+#: panel5.php:224
 msgid "Does not end with"
 msgstr "Slutar inte med"
 
-#: panel5.php:188
+#: panel5.php:227
 msgid "DELETE"
 msgstr "TA BORT"
 
-#: panel5.php:196
+#: panel5.php:235
 msgid "Activate Indexes"
 msgstr "Aktivera index"
 
-#: panel5.php:197
+#: panel5.php:236
 msgid "Use this feature if you want to improve the overall performance of your stats. You will need about 30% more DB space, to store the extra information required."
 msgstr "Använd detta drag om du vill förbättra din statistiks helhetsprestanda. Du behöver omkring 30% mer databasutrymme att spara den krävda extra informationen."
 
-#: panel5.php:201
+#: panel5.php:240
 msgid "Remove Indexes"
 msgstr "Avlägsna Index"
 
-#: panel5.php:202
+#: panel5.php:241
 msgid "Use this feature if you want to save some DB space, while slightly degrading WP SlimStat overall performances."
 msgstr "Använd detta drag om du vill spara visst databasutrymme, medan det försämrar något WP SlimStats helhetsprestanda."
 
-#: panel5.php:206
+#: panel5.php:245
 msgid "Factory Reset"
 msgstr ""
 
-#: panel5.php:207
+#: panel5.php:246
 #, fuzzy
 msgid "Select this option if you want to empty your WP SlimStat database (does not reset your settings)."
 msgstr "Välj detta alternativ om du vill tömma din WP SlimStat databas."
 
-#: panel5.php:211
-msgid "Reset Countries"
-msgstr "Återställ Länder"
+#: panel5.php:250
+msgid "Update Geolocation DB"
+msgstr ""
 
-#: panel5.php:212
-msgid "Select this option if you want to empty your geolocation table (useful when you want to load new data)."
+#: panel5.php:251
+#, fuzzy
+msgid "Select this option if you want to load the new geolocation data into your database."
 msgstr "Välj detta alternativ om du vill tömma din databas."
 
-#: panel5.php:218
+#: panel5.php:257
 msgid "RESET STATS"
 msgstr "ÅTERSTÄLL STATISTIK"
 
-#: panel5.php:219
+#: panel5.php:258
 msgid "It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process."
 msgstr "Det ser ut så att du behöver uppdatera strukturen av en utav tabeller som används av detta tillägg. Vänligen tryck på knappen här ovan att återställa din tabell (all data kommer att utraderas, tråkigt!), avaktivera/aktivera om WP SlimStat sedan för att fullborda installationsförfarandet."
 
@@ -572,6 +612,20 @@ msgstr "Rösta och visa din tacksamhet"
 #: panel6.php:29
 msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on its Plugin Directory page."
 msgstr "Berätta för andra människor om WP SlimStat fungerar för dig och hur bra den är. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Betygsätt den</a> på Tilläggets Katalogsida."
+
+#~ msgid "Are you sure you want to empty the ip-to-countries table?"
+#~ msgstr "Är du säker på att du vill tömma ip-till-länders tabeller?"
+
+#~ msgid ""
+#~ "Your IP-to-countries table has been successfully emptied. Now go to your "
+#~ "Plugins panel and deactivate/reactivate WP SlimStat to load the new data."
+#~ msgstr ""
+#~ "Din IP-till-länders tabell har framgångsrikt tömts. Nu får du fortsätta "
+#~ "till ditt Tilläggs panel och avaktivera/aktivera om WP SlimStat att ladda "
+#~ "den nya informationen.\" "
+
+#~ msgid "Reset Countries"
+#~ msgstr "Återställ Länder"
 
 #~ msgid "Please note that these commands cannot be undone!"
 #~ msgstr "Vänligen notera att dessa kommandon kan inte ångras!"

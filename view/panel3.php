@@ -21,7 +21,7 @@ $tooltip_content = '<strong>'.htmlspecialchars(__('Chart interaction','wp-slimst
 $tooltip_content .= (!$wp_slimstat_view->day_filter_active)?'<li>'.htmlspecialchars(__('Click on a day for hourly metrics','wp-slimstat-view'), ENT_QUOTES).'</li>':'';
 $tooltip_content .= '</ul>';
 
-echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.gif' width='16' height='16' title='$tooltip_content' /><h3 class='hndle'>";
+echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.png' width='10' height='10' title='$tooltip_content' /><h3 class='hndle'>";
 if (!$wp_slimstat_view->day_filter_active)
 	_e('Daily Traffic Sources', 'wp-slimstat-view');
 else
@@ -56,7 +56,7 @@ $referred_from_internal = $wp_slimstat_view->count_records("domain = '{$_SERVER[
 		<p><span class="element-title"><?php _e('Direct Visits', 'wp-slimstat-view') ?></span> <span><?php echo number_format($direct_visits, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p><span class="element-title"><?php _e('Search Engines', 'wp-slimstat-view') ?></span> <span><?php echo number_format($search_engines, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p><span class="element-title"><?php _e('Unique Pages Referred', 'wp-slimstat-view') ?></span> <span><?php echo number_format($pages_referred, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
-		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('This field identifies the number of single-page visits to your site over the selected period.','wp-slimstat-view') ?>' />
+		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('This field identifies the number of single-page visits to your site over the selected period.','wp-slimstat-view') ?>' />
 			<span class="element-title"><?php _e('Bounces', 'wp-slimstat-view') ?></span> <span><?php echo number_format($bouncing_pages, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p class="last"><span class="element-title"><?php _e('Unique Internal', 'wp-slimstat-view') ?></span> <span><?php echo number_format($referred_from_internal, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 	</div>

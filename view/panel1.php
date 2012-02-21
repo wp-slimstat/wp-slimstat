@@ -7,7 +7,7 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
 
 // Data about our visits
 $current_pageviews = $wp_slimstat_view->count_records();
-$total_visitors = $wp_slimstat_view->count_records('visit_id > 0');
+$total_human_hits = $wp_slimstat_view->count_records('visit_id > 0');
 $datachart = $wp_slimstat_view->extract_data_for_chart('COUNT(ip)', 'COUNT(DISTINCT(ip))', 1, __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
 
 foreach($panels_order as $a_panel_id)
@@ -20,7 +20,7 @@ $tooltip_content = '<strong>'.htmlspecialchars(__('Chart interaction','wp-slimst
 $tooltip_content .= (!$wp_slimstat_view->day_filter_active)?'<li>'.htmlspecialchars(__('Click on a day for hourly metrics','wp-slimstat-view'), ENT_QUOTES).'</li>':'';
 $tooltip_content .= '</ul>';
 
-echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.gif' width='16' height='16' title='$tooltip_content' /><h3 class='hndle'>";
+echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.png' width='10' height='10' title='$tooltip_content' /><h3 class='hndle'>";
 if (!$wp_slimstat_view->day_filter_active)
 	_e('Daily pageviews', 'wp-slimstat-view');
 else
@@ -48,9 +48,9 @@ else{ ?>
 	<div class="container noscroll">
 		<p><span class='element-title'><?php _e('Total Hits', 'wp-slimstat-view') ?></span> <span><?php echo number_format($wp_slimstat_view->count_records('1=1', '*', false), 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p><span class='element-title'><?php _e('Data Size', 'wp-slimstat-view') ?></span> <span><?php echo $wp_slimstat_view->get_data_size() ?></span></p>
-		<p><span class='element-title'><?php _e('Tracking Active', 'wp-slimstat-view') ?></span> <span><?php _e(get_option('slimstat_is_tracking', 'no'), 'countries-languages') ?></span></p>
-		<p><span class='element-title'><?php _e('Auto purge', 'wp-slimstat-view') ?></span> <span><?php echo (($auto_purge = get_option('slimstat_auto_purge', '0')) > 0)?$auto_purge.' '.__('days','wp-slimstat-view'):__('No','wp-slimstat-view') ?></span></p>
-		<p><span class='element-title'><?php _e('Latency', 'wp-slimstat-view') ?></span> <span><?php echo (($ignore_interval = get_option('slimstat_ignore_interval', '0')) > 0)?$ignore_interval.' '.__('seconds','wp-slimstat-view'):__('Off','wp-slimstat-view') ?></span></p>
+		<p><span class='element-title'><?php _e('Tracking Active', 'wp-slimstat-view') ?></span> <span><?php _e($wp_slimstat->options['is_tracking'], 'countries-languages') ?></span></p>
+		<p><span class='element-title'><?php _e('Auto purge', 'wp-slimstat-view') ?></span> <span><?php echo ($wp_slimstat->options['auto_purge'] > 0)?$wp_slimstat->options['auto_purge'].' '.__('days','wp-slimstat-view'):__('No','wp-slimstat-view') ?></span></p>
+		<p><span class='element-title'><?php _e('Latency', 'wp-slimstat-view') ?></span> <span><?php echo ($wp_slimstat->options['ignore_interval'] > 0)?$wp_slimstat->options['ignore_interval'].' '.__('seconds','wp-slimstat-view'):__('Off','wp-slimstat-view') ?></span></p>
 		<p><span class='element-title'><?php _e('Oldest visit', 'wp-slimstat-view') ?></span> <span><?php echo date(get_option('date_format'), $wp_slimstat_view->get_oldest_visit()) ?></span></p>
 		<p class="last"><span class='element-title'>Geo IP</span> <span><?php echo date(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv')) ?></span></p>
 	</div>
@@ -64,10 +64,10 @@ if (!$wp_slimstat_view->day_filter_active){
 	$yesterday_pageviews = (intval($wp_slimstat_view->current_date['d'])==1)?(!empty($datachart->previous_data1[$wp_slimstat_view->yesterday['d']])?$datachart->previous_data1[$wp_slimstat_view->yesterday['d']]:0):(!empty($datachart->current_data1[$wp_slimstat_view->yesterday['d']])?$datachart->current_data1[$wp_slimstat_view->yesterday['d']]:0);
 } ?>
 		<p><span class='element-title'><?php _e('Pageviews', 'wp-slimstat-view') ?></span> <span><?php echo number_format($current_pageviews, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
-		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('This number may differ from the sum of the points in the chart, because it counts each IP only once over the entire period.','wp-slimstat-view') ?>' />
+		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('This number may differ from the sum of the points in the chart, because it counts each IP only once over the entire period.','wp-slimstat-view') ?>' />
 			<span class='element-title'><?php _e('Unique IPs', 'wp-slimstat-view') ?></span><span><?php echo number_format($wp_slimstat_view->count_records('1=1', 'DISTINCT ip'), 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
 		<p><span class='element-title'><?php _e('Avg Pageviews', 'wp-slimstat-view') ?></span> <span><?php echo number_format(($datachart->current_non_zero_count > 0)?intval($current_pageviews/$datachart->current_non_zero_count):0, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
-		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('This number includes just those visitors identified as bots by the system. Browsers with Javascript disabled (but whose user agent is legit) are considered &quot;regular&quot; visitors.','wp-slimstat-view') ?>' />
+		<p><img class='item-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('This number includes just those visitors identified as bots by the system. Browsers with Javascript disabled (but whose user agent is legit) are considered &quot;regular&quot; visitors.','wp-slimstat-view') ?>' />
 			<span class='element-title'><?php _e('Bots', 'wp-slimstat-view') ?></span><span><?php echo number_format($wp_slimstat_view->count_records('tb.type = 1', '*', true, 'browsers'), 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p><?php
 if (!$wp_slimstat_view->day_filter_active){ ?>
 		<p><span class='element-title'><?php _e('On', 'wp-slimstat-view'); echo ' '.$wp_slimstat_view->current_date['d'].'/'.$wp_slimstat_view->current_date['m'] ?></span> <span><?php echo number_format($datachart->today, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?></span></p>
@@ -79,7 +79,7 @@ if (!$wp_slimstat_view->day_filter_active){ ?>
 
 <?php break; case 'p1_04': ?>
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p1_04">
-	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('When visitors comment on your blog, Wordpress assigns them cookies stored on their computer. WP SlimStat leverages this information to identify returning visitors.','wp-slimstat-view') ?>' />
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('When visitors comment on your blog, Wordpress assigns them cookies stored on their computer. WP SlimStat leverages this information to identify returning visitors.','wp-slimstat-view') ?>' />
 	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_known_visitors<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 	<h3 class="hndle"><?php _e('Recent Known Visitors', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
@@ -112,7 +112,7 @@ if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-s
 
 for($i=0;$i<$count_results;$i++){
 	$results[$i]['ip'] = long2ip($results[$i]['ip']);
-	if (get_option('slimstat_convert_ip_addresses', 'no') == 'yes'){
+	if ($wp_slimstat->options['convert_ip_addresses'] == 'yes'){
 		$host_by_ip = gethostbyaddr( $results[$i]['ip'] );
 		$host_by_ip = trim_value($host_by_ip, 40);
 		$host_by_ip['text'] .= ($host_by_ip['text'] != $results[$i]['ip'])?" ({$results[$i]['ip']})":'';
@@ -173,7 +173,7 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p1_07': ?>
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p1_07">
-	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session.','wp-slimstat-view') ?>' />
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session.','wp-slimstat-view') ?>' />
 	<h3 class="hndle"><?php _e('Languages - Just Visitors', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_top('t1.language', '', "t1.visit_id > 0 AND t1.language <> ''");
@@ -182,7 +182,7 @@ if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-s
 
 for($i=0;$i<$count_results;$i++){
 	$strings = trim_value(__('l-'.$results[$i]['language'], 'countries-languages'), 35);
-	$percentage = ($total_visitors > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['count']/$total_visitors)), 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator):0;
+	$percentage = ($total_human_hits > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['count']/$total_human_hits)), 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator):0;
 	$extra_info = "title='".__('Code','wp-slimstat-view').": {$results[$i]['language']}, ".__('Hits','wp-slimstat-view').": {$results[$i]['count']}'";
 	$clean_string = urlencode($results[$i]['language']);
 	if (!isset($wp_slimstat_view->filters_parsed['language'][1]) || $wp_slimstat_view->filters_parsed['language'][1]!='equals')

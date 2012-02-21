@@ -4,7 +4,6 @@ if (strpos($_SERVER['SCRIPT_FILENAME'], basename(__FILE__))){
 	header('Location: /');
 	exit;
 }
-
 if (isset($_GET['ds']) || isset($_GET['di2c'])){
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	if (isset($_GET['ds']) && $_GET['ds']=='yes'){
@@ -14,17 +13,61 @@ if (isset($_GET['ds']) || isset($_GET['di2c'])){
 	}
 	if (isset($_GET['ds']) && $_GET['ds']=='confirm'){
 		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_stats");
-		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_visits");
 		_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-options');
-	}
-	if (isset($_GET['di2c']) && $_GET['di2c']=='yes'){
-		_e('Are you sure you want to empty the ip-to-countries table?','wp-slimstat-options');
-		echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=confirm&slimpanel=5">'.__('Yes','wp-slimstat-options').'</a>';
-		echo ' <a class="button-secondary" href="?page=wp-slimstat/options/index.php&slimpanel=5">'.__('No','wp-slimstat-options').'</a>';
 	}
 	if (isset($_GET['di2c']) && $_GET['di2c']=='confirm'){
 		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_countries");
-		_e('Your IP-to-countries table has been successfully emptied. Now go to your Plugins panel and deactivate/reactivate WP SlimStat to load the new data.','wp-slimstat-options');
+		$country_file = WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv';
+
+		// To avoid problems with SAFE_MODE, we will not use is_file or file_exists, but a loop to scan current directory
+		$is_country_file = false;
+		$handle = opendir(WP_PLUGIN_DIR.'/wp-slimstat/');
+		while (false !== ($filename = readdir($handle))){
+			if (strpos(WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv', $filename) !== false){
+				$is_country_file = true;
+			}
+		}
+		closedir($handle);
+
+		if ($is_country_file){
+
+			// Allow plenty of time for this to happen
+			@set_time_limit(600);
+
+			// Since the file can be too big, we are not using file_get_contents to not exceed the server's memory limit
+			if ($handle = fopen(WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv', 'r')){
+
+				$row_counter = 0;
+				$insert_sql = "INSERT INTO {$wpdb->base_prefix}slim_countries (ip_from, ip_to, country_code) VALUES ";
+
+				while (!feof($handle)){
+					$entry = fgets($handle);
+					if (empty($entry)) break;
+					$entry = str_replace("\n", '', $entry);
+					$array_entry = explode(',', $entry);
+					$insert_sql .= "('".implode( "','", $array_entry )."'),";
+					if ($row_counter == 200) {
+						$insert_sql = substr($insert_sql, 0, -1);
+						$wpdb->query($insert_sql);
+						$row_counter = 0;
+						$insert_sql = "INSERT INTO {$wpdb->base_prefix}slim_countries (ip_from, ip_to, country_code) VALUES ";
+					}
+					else $row_counter++;
+				}
+				if (!empty($insert_sql) && $insert_sql != "INSERT INTO {$wpdb->base_prefix}slim_countries (ip_from, ip_to, country_code) VALUES ") {
+					$insert_sql = substr($insert_sql, 0, -1);
+					$wpdb->query($insert_sql);
+				}
+				fclose( $handle );
+				_e('Your Geolocation data has been successfully updated.','wp-slimstat-options');
+			}
+			else{
+				_e('ERROR: Your Geolocation source file is not readable.','wp-slimstat-options');
+			}
+		}
+		else{
+			_e('ERROR: Your Geolocation source file is not readable.','wp-slimstat-options');
+		}
 	}
 	echo '</p></div>';
 }
@@ -39,7 +82,6 @@ if (isset($_GET['ot']) && $_GET['ot']=='yes'){
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_countries");
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_outbound");
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_screenres");
-	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_visits");
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_stats");
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	_e('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options');		
@@ -51,7 +93,6 @@ if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
 	
 	$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ENGINE = InnoDB");
 	$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_outbound ENGINE = InnoDB");
-	$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_visits ENGINE = InnoDB");
 	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers ENGINE = InnoDB");
 	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_countries ENGINE = InnoDB");
 	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres ENGINE = InnoDB");
@@ -65,7 +106,6 @@ if (isset($_GET['ssidx'])){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX resource_idx(resource(20))");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX visit_idx(visit_id)");
-		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_visits ADD INDEX tracking_code_idx(tracking_code(8))");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 		_e('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options');		
 		echo '</p></div>';
@@ -74,7 +114,6 @@ if (isset($_GET['ssidx'])){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX resource_idx");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX browser_idx");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX visit_idx");
-		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_visits DROP INDEX tracking_code_idx");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 		_e('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options');		
 		echo '</p></div>';
@@ -208,8 +247,8 @@ if (empty($check_index)): ?>
 	</tr>
 
 	<tr class="tall">
-		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=yes&slimpanel=5"><?php _e('Reset Countries','wp-slimstat-options'); ?></a></th>
-		<td><?php _e('Select this option if you want to empty your geolocation table (useful when you want to load new data).','wp-slimstat-options') ?></td>
+		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/options/index.php&di2c=confirm&slimpanel=5"><?php _e('Update Geolocation DB','wp-slimstat-options'); ?></a></th>
+		<td><?php _e('Select this option if you want to load the new geolocation data into your database.','wp-slimstat-options') ?></td>
 	</tr>
 <?php 
 $check_column = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}slim_stats LIKE 'browser_id'");

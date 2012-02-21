@@ -14,7 +14,7 @@ if (!empty($_GET['orderby']) && in_array($_GET['orderby'], $allowed_columns)) $o
 if (!empty($_GET['starting'])) $wp_slimstat_view->starting_from = intval($_GET['starting']);
 
 // Retrieve results
-$wp_slimstat_view->limit_results = get_option('slimstat_rows_raw_data', '50');
+$wp_slimstat_view->limit_results = $wp_slimstat->options['number_results_raw_data'];
 if (empty($function_to_use)) $function_to_use = '';
 switch ($function_to_use){
 	case 'get_details_recent_visits':
@@ -86,29 +86,31 @@ if (!empty($add_to_box_title)) $add_to_box_title .= ' - ';
 	?>
 	<p><span class="<?php echo $wp_locale->text_direction ?>">
 		<?php if (empty($function_to_use)): _e('Order by','wp-slimstat-view'); ?>
-		<select name="orderby">
-			<option value=""><?php _e('Select filter','wp-slimstat-view') ?></option>
-			<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
-			<option value="country"><?php _e('Country','wp-slimstat-view') ?></option>
-			<option value="dt"><?php _e('Date/Time','wp-slimstat-view') ?></option>
-			<option value="domain"><?php _e('Domain','wp-slimstat-view') ?></option>
-			<option value="ip"><?php _e('IP','wp-slimstat-view') ?></option>
-			<option value="searchterms"><?php _e('Keywords','wp-slimstat-view') ?></option>
-			<option value="language"><?php _e('Language','wp-slimstat-view') ?></option>
-			<option value="platform"><?php _e('Operating System','wp-slimstat-view') ?></option>
-			<option value="resource"><?php _e('Permalink','wp-slimstat-view') ?></option>
-			<option value="plugins"><?php _e('Plugins','wp-slimstat-view') ?></option>
-			<option value="resolution"><?php _e('Screen Resolution','wp-slimstat-view') ?></option>
-		</select> 
-		<select name="direction" style="width:12em">
-			<option value=""><?php _e('Select sorting','wp-slimstat-view') ?></option>
-			<option value="asc"><?php _e('Ascending','wp-slimstat-view') ?></option>
-			<option value="desc"><?php _e('Descending','wp-slimstat-view') ?></option>
-		</select>
+			<select name="orderby">
+				<option value=""><?php _e('Select filter','wp-slimstat-view') ?></option>
+				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
+				<option value="country"><?php _e('Country','wp-slimstat-view') ?></option>
+				<option value="dt"><?php _e('Date/Time','wp-slimstat-view') ?></option>
+				<option value="domain"><?php _e('Domain','wp-slimstat-view') ?></option>
+				<option value="ip"><?php _e('IP','wp-slimstat-view') ?></option>
+				<option value="searchterms"><?php _e('Keywords','wp-slimstat-view') ?></option>
+				<option value="language"><?php _e('Language','wp-slimstat-view') ?></option>
+				<option value="platform"><?php _e('Operating System','wp-slimstat-view') ?></option>
+				<option value="resource"><?php _e('Permalink','wp-slimstat-view') ?></option>
+				<option value="plugins"><?php _e('Plugins','wp-slimstat-view') ?></option>
+				<option value="resolution"><?php _e('Screen Resolution','wp-slimstat-view') ?></option>
+			</select> 
+			<select name="direction" style="width:12em">
+				<option value=""><?php _e('Select sorting','wp-slimstat-view') ?></option>
+				<option value="asc"><?php _e('Ascending','wp-slimstat-view') ?></option>
+				<option value="desc"><?php _e('Descending','wp-slimstat-view') ?></option>
+			</select>
+		</span>
 		<?php endif; // empty($function_to_use)
+		echo "<span class='$wp_locale->text_direction'> &nbsp;&nbsp;&nbsp;";
 		_e('Starting from record #', 'wp-slimstat-view'); if (empty($count_raw_data)) $count_raw_data = 0; ?>
 		<input type="text" name="starting" value="" size="15"> / <?php echo number_format($count_raw_data, 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator) ?>&nbsp;</span>
-		<input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary"></span>
+		<span class="<?php echo $wp_locale->text_direction ?>"><input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary"></span>
 	</p>
 </form>
 
@@ -138,10 +140,9 @@ else {
 if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 
 $visit_id = -1;
-$convert_ip_addresses = get_option('slimstat_convert_ip_addresses');
 for($i=0;$i<$count_results;$i++){
 	$results[$i]['ip'] = long2ip($results[$i]['ip']);
-	if (get_option('slimstat_convert_ip_addresses', 'no') == 'yes'){
+	if ($wp_slimstat->options['convert_ip_addresses'] == 'yes'){
 		$host_by_ip = gethostbyaddr( $results[$i]['ip'] );
 		$host_by_ip = trim_value($host_by_ip, 50);
 		$host_by_ip['text'] .= ($host_by_ip['text'] != $results[$i]['ip'])?" ({$results[$i]['ip']})":'';
@@ -167,7 +168,7 @@ for($i=0;$i<$count_results;$i++){
 		if ($results[$i]['version'] == 0) $results[$i]['version'] = '';
 
 		echo "<p class='header$highlight_row'>[<strong>{$results[$i]['type']}</strong>] $ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>$browser {$results[$i]['version']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span>";
-		if ($function_to_use != 'get_details_recent_visits' && $function_to_use != 'get_recent_known_visitors')	echo "<span class='widecolumn'>{$results[$i]['dt']}</span>";
+		if (!empty($function_to_use) && $function_to_use != 'get_details_recent_visits' && $function_to_use != 'get_recent_known_visitors')	echo "<span class='widecolumn'>{$results[$i]['dt']}</span>";
 		echo "</p>";
 		$visit_id = $results[$i]['visit_id'];
 	}
@@ -220,15 +221,15 @@ for($i=0;$i<$count_results;$i++){
 			$referer = trim_value($results[$i]['referer'], 200);
 			$url_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['domain'].$referer['text']);
 			$domain_span = !empty($results[$i]['domain'])?"<span><a target='_blank' title='$url_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$domain['text']}</span>":'';
-			echo "<span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>$domain_span<span class='highlight-term'>{$searchterms['text']}</span>";
+			echo "<span class='widecolumn'>{$results[$i]['dt']}</span><span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>$domain_span<span class='highlight-term'>{$searchterms['text']}</span>";
 	}
 	echo '</p>';
 } ?>
 	</div>
 </div>
-<p style="clear:left"><span style="float:left;padding:3px 5px 0"><?php _e('Color codes:','wp-slimstat-view') ?></span>
-	<span class="little-color-box" style="background-color:#e4e4ff"><?php _e('Coming from a Search Engine','wp-slimstat-view') ?></span>
-	<span class="little-color-box" style="background-color:#ffc"><?php _e('Known Users','wp-slimstat-view') ?></span>
-	<span class="little-color-box" style="background-color:#d7ffd7"><?php _e('Other Humans','wp-slimstat-view') ?></span>
+<p style="clear:both" class="legend <?php echo $wp_locale->text_direction ?>"><span class="legend-title"><?php _e('Color codes:','wp-slimstat-view') ?></span>
+	<span class="little-color-box" style="background-color:#FDFFD9"><?php _e('Coming from a Search Engine','wp-slimstat-view') ?></span>
+	<span class="little-color-box" style="background-color:#ffcc7a"><?php _e('Known Users','wp-slimstat-view') ?></span>
+	<span class="little-color-box" style="background-color:#A8E6FF"><?php _e('Other Humans','wp-slimstat-view') ?></span>
 	<span class="little-color-box" style="background-color:#eee"><?php _e('Bots, Crawlers and others','wp-slimstat-view') ?></span>
 </p>

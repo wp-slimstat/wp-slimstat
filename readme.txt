@@ -4,19 +4,22 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.0
 Tested up to: 3.3.1
-Stable tag: 2.6
+Stable tag: 2.7
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
 
+= Upgrading from a previous version? =
+Please remember to deactivate and reactivate WP SlimStat, in order to update the db structure.
+
 = Main Features =
-* Supports both InnoDB and MyISAM (autodetect)
-* Tracks Google Plus One and Facebook Like clicks
-* Tracks known commenters, screen resolutions, spammers and other browser-related parameters
+* Real-time web analytics reports
+* Modern, easy to use and customizable interface (yep, you can also drag-and-drop widgets around)
+* Advanced tools, like commenters tracking, Google Plus One and Facebook Like click tracking
 * The best country, browser and platform detection ever seen, thanks to [Browscap](https://github.com/garetjax/phpbrowscap) and [MaxMind](http://www.maxmind.com/)
-* Filters visits based on IP addresses, browsers, referrers, users and permalinks
+* Drill-down capabilities: filter your stats based on IP addresses, browsers, referrers, users and much more
 * View and admin access can be restricted to specific users
-* World Map
+* Pan-and-zoom World Map provided by amMap.
 
 = Requirements =
 * Wordpress 3.0 or higher (it may not work on large multisite environments)
@@ -24,13 +27,14 @@ A powerful real-time web analytics plugin for Wordpress.
 * MySQL 5.0.3 or higher
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
+* At least 450kb of free memory for the tracker
 
 ## Browser Compatibility
 As of version 2.5, WP SlimStat has switched from Flash to Javascript to draw its charts. This new approach, though, is not compatible with Internet Explorer 8 or older,
 so you're encouraged to either keep your current version of WP SlimStat, or upgrade your browser.
 
 ## Database usage
-WP SlimStat needs to create its own tables in order to maintain the complex information about visits, visitors, browsers and Countries. It creates 3 new tables for each blog, plus 3 shared tables (6 tables in total, for a single-user installation). Please keep this in mind before activating WP SlimStat on large networks of blogs.
+WP SlimStat needs to create its own tables in order to maintain the complex information about visits, visitors, browsers and Countries. It creates 2 new tables for each blog, plus 3 shared tables (5 tables in total, for a single-user installation). Please keep this in mind before activating WP SlimStat on large networks of blogs.
 
 You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/), which enables shortcodes to show your metrics in a widget or a page.
 
@@ -105,7 +109,7 @@ To tell WP SlimStat to let Lightbox do its job, change it to:
 The click will still be tracked, but will avoid any conflicts with third party Javascript codes.
 
 = After installing WP Supercache (or other caching plugin), WP SlimStat shows very few visits, why is that? =
-This plugin is incompatible with WP Supercache, WP Cache, Hyper Cache, or any page-based caching plugin.
+This plugin *is incompatible* with WP Supercache, WP Cache, Hyper Cache, or any page-based caching plugin.
 
 = Can I track downloads and other actions? =
 WP SlimStat can track outbound links (clicks on links taking users to other websites), downloads and other events.
@@ -146,6 +150,21 @@ Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 * Enable regular expressions or wildcards in filters
 * Merge with WP SlimStat Shortcodes
 * Antiflood monitor
+
+= 2.7 =
+* Added: Goodbye FusionMaps, welcome AmMap, which brings a new world map with pan and zoom capabilities
+* Added: Direct access to the panels from the Admin Bar
+* Added: Russian localization, thank you Alexander
+* Updated: 'human' detection is now relying mainly on COOKIES, Javascript is only needed to detect screen resolution and other browser-related information
+* Updated: various performance improvements in the tracking code (more than halved DB accesses needed to record a new hit)
+* Updated: one of the database tables is not needed anymore, deactivate/activate WP SlimStat to get rid of it
+* Updated: it's now much easier to update the geolocation data, no need to deactivate/activate WP Slimstat anymore
+* Updated: RTL (right-to-left) support has been greatly improved (thank you Itamar)
+* Updated: color-codes have a better contrast now (thank you [Steve](http://www.webcommons.biz/))
+* Updated: Browscap library has been updated to version 1.0
+* Fixed: 'is not empty' filter wasn't working properly
+* Fixed: heuristic browser detection for mobile browsers is now much more accurate
+* Geolocation: updated to February 2012, 160222 rows. Go to Options > Maintenance > Reset Ip-to-Countries.
 
 = 2.6 =
 * Added: Visit Duration panel under the Visitors tab
@@ -202,12 +221,13 @@ alphabetical order):
 * French ([Tuxicoman](http://tuxicoman.jesuislibre.net/), Vidal Arpin)
 * German ([Digo](http://www.showhypnose.org/blog/))
 * Italian
+* Russian (Alexander)
 * Spanish (Noe Martinez)
 * Swedish (Zebel Khan)
 
 == List of donors in alphabetical order ==
-[Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Dennis Kowallek](http://www.adopt-a-plant.com),
-[Hans Schantz](http://www.aetherczar.com/), [Herman Peet](http://www.hermanpeet.nl/), [La casetta delle pesche](http://www.lacasettadellepesche.it/),
+[Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Caigo](http://www.blumannaro.net/), 
+[Dennis Kowallek](http://www.adopt-a-plant.com), [Hans Schantz](http://www.aetherczar.com/), [Herman Peet](http://www.hermanpeet.nl/), [La casetta delle pesche](http://www.lacasettadellepesche.it/),
 [Mobilize Mail](http://blog.mobilizemail.com/), Mora Systems, Neil Robinson, [Sahin Eksioglu](http://www.alternatifblog.com/),
 [Saill White](http://saillwhite.com), Wayne Liebman
 

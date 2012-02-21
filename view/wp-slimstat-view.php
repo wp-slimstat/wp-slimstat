@@ -4,7 +4,7 @@
 class wp_slimstat_view {
 
 	public function __construct($user_filters = array()){
-		global $wpdb;
+		global $wpdb, $wp_slimstat;
 
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
@@ -18,7 +18,7 @@ class wp_slimstat_view {
 		$this->starting_from = 0;
 
 		// Limit results to...
-		$this->limit_results = empty($user_filters['limit_results'])?get_option('slimstat_rows_to_show', '20'):intval($user_filters['limit_results']);
+		$this->limit_results = empty($user_filters['limit_results'])?$wp_slimstat->options['rows_to_show']:intval($user_filters['limit_results']);
 
 		// Date format
 		$this->date_time_format = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
@@ -69,32 +69,44 @@ class wp_slimstat_view {
 
 		// Decimal and thousands separators
 		$this->decimal_separator = ','; $this->thousand_separator = '.';
-		if (get_option('slimstat_use_european_separators', 'yes') == 'no') {
+		if ($wp_slimstat->options['use_european_separators'] == 'no') {
 			$this->decimal_separator = '.'; $this->thousand_separator = ',';
 		}
 
 		foreach ($this->filters_to_parse as $a_filter_label => $a_filter_details){
-			if (!empty($user_filters) && !empty($user_filters[$a_filter_label])){
-				$f_value = ($a_filter_details[0] == 'integer')?abs(intval($user_filters[$a_filter_label])):$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($user_filters[$a_filter_label]))));
-				if ((in_array($a_filter_label, array('day','month','year','interval')) || $a_filter_details[0] == 'string') && empty($f_value)) continue;
-				$f_operator = !empty($user_filters[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $user_filters[$a_filter_label.'-op']))):'equals';
-				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator, $a_filter_details[1]);
-				$this->filters_query .= "&$a_filter_label=$f_value&$a_filter_label-op=$f_operator";
+			if (isset($user_filters[$a_filter_label.'-op'])){
+				// Avoid PHP warnings
+				if (empty($user_filters[$a_filter_label]))
+					$f_value = '';
+				else
+					$f_value = $user_filters[$a_filter_label];
+				$f_operator = $user_filters[$a_filter_label.'-op'];
 			}
-			elseif (!empty($_GET['filter']) && (isset($_GET['f_value']) || strpos($_GET['f_operator'], 'empty') > 0) && $_GET['filter']==$a_filter_label){
-				$f_value = ($a_filter_details[0] == 'integer')?abs(intval($_GET['f_value'])):(!empty($_GET['f_value'])?$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($_GET['f_value'])))):'');
-				if ((in_array($a_filter_label, array('day','month','year','interval')) || $a_filter_details[0] == 'string') && empty($f_value)) continue;
-				$f_operator = !empty($_GET['f_operator'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET['f_operator']))):'equals';
-				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator, $a_filter_details[1]);
-				$this->filters_query .= "&$a_filter_label=$f_value&$a_filter_label-op=$f_operator";
+			// Data coming from the INPUT FORM
+			elseif (isset($_GET['filter']) && $_GET['filter']==$a_filter_label){
+				if (empty($_GET['f_value'])){
+					if (in_array($a_filter_label, array('day','month','year','interval'))) continue;
+					$f_value = '';
+				}
+				else
+					$f_value = $_GET['f_value'];
+				$f_operator = empty($_GET['f_operator'])?'equals':$_GET['f_operator'];
 			}
-			elseif (isset($_GET[$a_filter_label]) || (isset($_GET[$a_filter_label.'-op']) && strpos($_GET[$a_filter_label.'-op'], 'empty') > 0)){
-				$f_value = ($a_filter_details[0] == 'integer')?abs(intval($_GET[$a_filter_label])):(!empty($_GET[$a_filter_label])?$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($_GET[$a_filter_label])))):'');
-				if ((in_array($a_filter_label, array('day','month','year','interval')) || $a_filter_details[0] == 'string') && empty($f_value)) continue;
-				$f_operator = !empty($_GET[$a_filter_label.'-op'])?$wpdb->escape(htmlspecialchars(str_replace('\\', '', $_GET[$a_filter_label.'-op']))):'equals';
-				$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator, $a_filter_details[1]);
-				$this->filters_query .= "&$a_filter_label=$f_value&$a_filter_label-op=$f_operator";
+			// Other filters previously set by the user
+			elseif (isset($_GET[$a_filter_label.'-op']) || isset($_GET[$a_filter_label])){
+				if (empty($_GET[$a_filter_label])){
+					if (in_array($a_filter_label, array('day','month','year','interval'))) continue;
+					$f_value = '';
+				}
+				else
+					$f_value = $_GET[$a_filter_label];
+				$f_operator = empty($_GET[$a_filter_label.'-op'])?'equals':$_GET[$a_filter_label.'-op'];
 			}
+			else continue;
+			$f_value = ($a_filter_details[0] == 'integer')?abs(intval($f_value)):$wpdb->escape(str_replace('\\', '', htmlspecialchars_decode(urldecode($f_value))));
+			$f_operator = $wpdb->escape(htmlspecialchars(str_replace('\\', '', $f_operator)));
+			$this->filters_parsed[$a_filter_label] = array($f_value, $f_operator, $a_filter_details[1]);
+			$this->filters_query .= "&$a_filter_label=$f_value&$a_filter_label-op=$f_operator";
 		}
 
 		// Date filter
@@ -143,14 +155,15 @@ class wp_slimstat_view {
 		if (!empty($this->filters_parsed)){
 			foreach ($this->filters_parsed as $a_filter_label => $a_filter_details){
 				// Skip filters on date and author
-				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year') && ($a_filter_label != 'interval')
-					&& ($a_filter_label != 'author') && ($a_filter_label != 'category-id')){
+				if (($a_filter_label != 'day') && ($a_filter_label != 'month') && ($a_filter_label != 'year') && ($a_filter_label != 'interval') &&
+					($a_filter_label != 'author') && ($a_filter_label != 'category-id')){
 
 					// Filters on the IP address require a special treatment
 					if ($a_filter_label == 'ip'){
 						$a_filter_column = 'INET_NTOA(ip)';
 					}
 					else{
+						// $a_filter_details[2] is the table identifier (t1 = wp_slim_stats, tb = wp_slim_browsers, tss = wp_slim_screenres)
 						$a_filter_column = "{$a_filter_details[2]}$a_filter_label";
 					}
 
@@ -171,7 +184,7 @@ class wp_slimstat_view {
 							$this->filters_sql_where .= " AND $a_filter_column LIKE '%{$a_filter_details[0]}'";
 							break;
 						case 'sounds like':
-							$this->filters_sql_where .= " AND $a_filter_column SOUNDS LIKE '%{$a_filter_details[0]}'";
+							$this->filters_sql_where .= " AND SOUNDEX($a_filter_column) = SOUNDEX('{$a_filter_details[0]}')";
 							break;
 						case 'is empty':
 							$this->filters_sql_where .= " AND $a_filter_column = ''";
@@ -186,9 +199,38 @@ class wp_slimstat_view {
 
 				// I know, this is not the best way of handling these two filters...
 				if ($a_filter_label == 'author'){
+					switch ($a_filter_details[1]){
+						case 'not equal to':
+							$user_filters_sql_where = "tu.user_login <> '{$a_filter_details[0]}'";
+							break;
+						case 'contains':
+							$user_filters_sql_where = "tu.user_login LIKE '%{$a_filter_details[0]}%'";
+							break;
+						case 'does not contain':
+							$user_filters_sql_where = "tu.user_login NOT LIKE '%{$a_filter_details[0]}%'";
+							break;
+						case 'starts with':
+							$user_filters_sql_where = "tu.user_login LIKE '{$a_filter_details[0]}%'";
+							break;
+						case 'ends with':
+							$user_filters_sql_where = "tu.user_login LIKE '%{$a_filter_details[0]}'";
+							break;
+						case 'sounds like':
+							$user_filters_sql_where = "SOUNDEX(tu.user_login) = SOUNDEX('%{$a_filter_details[0]}%')";
+							break;
+						case 'is empty':
+							$user_filters_sql_where = "tu.user_login = ''";
+							break;
+						case 'is not empty':
+							$user_filters_sql_where = "tu.user_login <> ''";
+							break;
+						default:
+							$user_filters_sql_where = " tu.user_login = '{$a_filter_details[0]}'";
+					}
+				
 					$sql = "SELECT tp.ID
 							FROM $wpdb->posts tp, $wpdb->users tu
-							WHERE tu.user_login = '{$a_filter_details[0]}'
+							WHERE $user_filters_sql_where
 								AND tp.post_author = tu.ID
 								AND tp.post_status = 'publish'";
 					$array_post_id_by_user = $wpdb->get_results($sql, ARRAY_A);
@@ -448,7 +490,7 @@ class wp_slimstat_view {
 			$filter_idx = 'd'; $group_idx = 'h';
 			$data_start_value = 0; $data_end_value = 24;
 			$result->min_max_ticks = ',min:0,max:23';
-			$result->ticks = '[0,"00"],[1,"01"],[2,"02"],[3,"03"],[4,"04"],[5,"05"],[6,"06"],[7,"07"],[8,"08"],[9,"09"],[10,"10"],[11,"11"],[12,"12"],[13,"13"],[14,"14"],[15,"15"],[16,"16"],[17,"17"],[18,"18"],[19,"19"],[20,"20"],[21,"21"],[22,"22"],[23,"23"],';
+			$result->ticks = ($wp_locale->text_direction == 'rtl')?'[0,"23"],[1,"22"],[2,"21"],[3,"20"],[4,"19"],[5,"18"],[6,"17"],[7,"16"],[8,"15"],[9,"14"],[10,"13"],[11,"12"],[12,"11"],[13,"10"],[14,"9"],[15,"8"],[16,"7"],[17,"6"],[18,"5"],[19,"4"],[20,"3"],[21,"2"],[22,"1"],[23,"0"],':'[0,"00"],[1,"01"],[2,"02"],[3,"03"],[4,"04"],[5,"05"],[6,"06"],[7,"07"],[8,"08"],[9,"09"],[10,"10"],[11,"11"],[12,"12"],[13,"13"],[14,"14"],[15,"15"],[16,"16"],[17,"17"],[18,"18"],[19,"19"],[20,"20"],[21,"21"],[22,"22"],[23,"23"],';
 			$label_date_format = get_option('date_format', 'd-m-Y');
 		}
 		else{
@@ -464,7 +506,7 @@ class wp_slimstat_view {
 			if (empty($this->day_interval)){
 				$data_start_value = 0; $data_end_value = 31;
 				$result->min_max_ticks = ',min:0,max:30';
-				$result->ticks = '[0,"1"],[1,"2"],[2,"3"],[3,"4"],[4,"5"],[5,"6"],[6,"7"],[7,"8"],[8,"9"],[9,"10"],[10,"11"],[11,"12"],[12,"13"],[13,"14"],[14,"15"],[15,"16"],[16,"17"],[17,"18"],[18,"19"],[19,"20"],[20,"21"],[21,"22"],[22,"23"],[23,"24"],[24,"25"],[25,"26"],[26,"27"],[27,"28"],[28,"29"],[29,"30"],[30,"31"],';
+				$result->ticks = ($wp_locale->text_direction == 'rtl')?'[0,"31"],[1,"30"],[2,"29"],[3,"28"],[4,"27"],[5,"26"],[6,"25"],[7,"24"],[8,"23"],[9,"22"],[10,"21"],[11,"20"],[12,"19"],[13,"18"],[14,"17"],[15,"16"],[16,"15"],[17,"14"],[18,"13"],[19,"12"],[20,"11"],[21,"10"],[22,"9"],[23,"8"],[24,"7"],[25,"6"],[26,"5"],[27,"4"],[28,"3"],[29,"2"],[30,"1"],':'[0,"1"],[1,"2"],[2,"3"],[3,"4"],[4,"5"],[5,"6"],[6,"7"],[7,"8"],[8,"9"],[9,"10"],[10,"11"],[11,"12"],[12,"13"],[13,"14"],[14,"15"],[15,"16"],[16,"17"],[17,"18"],[18,"19"],[19,"20"],[20,"21"],[21,"22"],[22,"23"],[23,"24"],[24,"25"],[25,"26"],[26,"27"],[27,"28"],[28,"29"],[29,"30"],[30,"31"],';
 				$label_date_format = 'm/Y';
 			}
 			else{
@@ -519,9 +561,11 @@ class wp_slimstat_view {
 		$filters_query_without_date = remove_query_arg(array('day','day-op','month','month-op','year','year-op','interval','interval-op'), $this->filters_query);
 		if (!empty($filters_query_without_date) && strpos($filters_query_without_date, 0, 1) != '&') $filters_query_without_date = '&'.$filters_query_without_date;
 
+		$k = ($wp_locale->text_direction == 'rtl')?$data_start_value-$data_end_value+1:0;
 		for ($i=$data_start_value;$i<$data_end_value;$i++){
+			$j = abs($k+$i);
 			if ($this->day_filter_active){
-				$timestamp_current = mktime($i, 0, 0, $this->current_date['m'], $this->current_date['d'], $this->current_date['y']);
+				$timestamp_current = mktime($j, 0, 0, $this->current_date['m'], $this->current_date['d'], $this->current_date['y']);
 				$hour_idx_current = date('H', $timestamp_current);
 				$day_idx_current = date('d', $timestamp_current);
 				$month_idx_current = date('m', $timestamp_current);
@@ -530,7 +574,7 @@ class wp_slimstat_view {
 				$strtotime_current = strtotime("$year_idx_current-$month_idx_current-$day_idx_current $hour_idx_current:00:00");
 				$current_filter_query = '';
 
-				$timestamp_previous = mktime($i, 0, 0, $this->current_date['m'], $this->current_date['d']-1, $this->current_date['y']);
+				$timestamp_previous = mktime($j, 0, 0, $this->current_date['m'], $this->current_date['d']-1, $this->current_date['y']);
 				$hour_idx_previous = date('H', $timestamp_previous);
 				$day_idx_previous = date('d', $timestamp_previous);
 				$month_idx_previous = date('m', $timestamp_previous);
@@ -540,7 +584,7 @@ class wp_slimstat_view {
 				$previous_filter_query = '';
 			}
 			else{
-				$timestamp_current = mktime(0, 0, 0, $this->current_date['m'], (!empty($this->day_interval)?$this->current_date['d']:1)+$i, $this->current_date['y']);
+				$timestamp_current = mktime(0, 0, 0, $this->current_date['m'], (!empty($this->day_interval)?$this->current_date['d']:1)+$j, $this->current_date['y']);
 				$day_idx_current = date('d', $timestamp_current);
 				$month_idx_current = date('m', $timestamp_current);
 				$year_idx_current = date('Y', $timestamp_current);
@@ -549,7 +593,7 @@ class wp_slimstat_view {
 				$strtotime_current = strtotime("$year_idx_current-$month_idx_current-$day_idx_current 00:00:00");
 				$current_filter_query = ",'$filters_query_without_date&slimpanel=$_current_panel&day=$day_idx_current&month=$month_idx_current&year=$year_idx_current'";
 
-				$timestamp_previous = mktime(0, 0, 0, $this->current_date['m']-1, (!empty($this->day_interval)?$this->current_date['d']:1)+$i, $this->current_date['y']);
+				$timestamp_previous = mktime(0, 0, 0, $this->current_date['m']-1, (!empty($this->day_interval)?$this->current_date['d']:1)+$j, $this->current_date['y']);
 				$day_idx_previous = date('d', $timestamp_previous);
 				$month_idx_previous = date('m', $timestamp_previous);
 				$year_idx_previous = date('Y', $timestamp_previous);
@@ -562,7 +606,8 @@ class wp_slimstat_view {
 			}
 
 			// Format each group of data
-			if (($i == $day_idx_current - 1) || $this->day_filter_active || !empty($this->day_interval)){
+			
+			if (($j == $day_idx_current - 1) || $this->day_filter_active || !empty($this->day_interval)){
 				if (!empty($data1[$date_idx_current])){
 					$result->current_data1 .= "[$i,{$data1[$date_idx_current]}$current_filter_query],";
 					$result->current_total1 += $data1[$date_idx_current];
@@ -581,7 +626,7 @@ class wp_slimstat_view {
 				}
 			}
 
-			if (($i == $day_idx_previous - 1) || $this->day_filter_active || !empty($this->day_interval)){
+			if (($j == $day_idx_previous - 1) || $this->day_filter_active || !empty($this->day_interval)){
 				if (empty($this->day_interval)){
 					if (!empty($data1[$date_idx_previous])){
 						$result->previous_data .= "[$i,{$data1[$date_idx_previous]}$previous_filter_query],";

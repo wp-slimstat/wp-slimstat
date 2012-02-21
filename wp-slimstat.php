@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-Version: 2.6
+Version: 2.7
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -24,15 +24,105 @@ class wp_slimstat{
 
 		// Let's keep track of transaction IDs
 		$this->tid = 0;
+		if (($this->options = get_option('slimstat_options', array())) == array()){
+			$this->options = array(
+				// We need a secret key to make sure the js-php interaction is secure
+				'secret' => get_option('slimstat_secret', md5(time())),
+
+				// You can activate or deactivate tracking, but still be able to view reports
+				'is_tracking' => get_option('slimstat_is_tracking', 'yes'),
+
+				// Track screen resolutions, outbound links and other stuff using a javascript component
+				'enable_javascript' => get_option('slimstat_enable_javascript', 'yes'),
+
+				// Custom path to get to wp-slimstat-js.php
+				'custom_js_path' => get_option('siteurl').'/wp-content/plugins/wp-slimstat',
+
+				// Enable Browscap's autoupdate capability
+				'browscap_autoupdate' => get_option('slimstat_browscap_autoupdate', 'no'),
+
+				// Tracks logged in users, adding their login to the resource they requested
+				'track_users' => get_option('slimstat_track_users', 'yes'),
+
+				// Automatically purge stats db after x days (0 = no purge)
+				'auto_purge' => get_option('slimstat_auto_purge', '120'),
+
+				// Shows a new column to the Edit Posts page with the number of hits per post
+				'add_posts_column' => get_option('slimstat_add_posts_column', 'no'),
+
+				// Use a separate menu for the admin interface
+				'use_separate_menu' => get_option('slimstat_use_separate_menu', 'no'),
+
+				// Activate or deactivate the conversion of ip addresses into hostnames
+				'convert_ip_addresses' => get_option('slimstat_convert_ip_addresses', 'no'),
+
+				// Specify what number format to use (European or American)
+				'use_european_separators' => get_option('slimstat_use_european_separators', 'yes'),
+
+				// Number of rows to show in each module
+				'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
+
+				// Number of rows to show in the Raw Data panel
+				'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
+
+				// Customize the IP Lookup service (geolocation) URL
+				'ip_lookup_service' => get_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips='),
+
+				// Refresh the RAW DATA view every X seconds
+				'refresh_interval' => get_option('slimstat_refresh_interval', '0'),
+
+				// Don't ignore bots and spiders by default
+				'ignore_bots' => get_option('slimstat_ignore_bots', 'no'),
+
+				// Ignore spammers?
+				'ignore_spammers' => get_option('slimstat_ignore_spammers', 'no'),
+
+				// Ignore Link Prefetching?
+				'ignore_prefetch' => get_option('slimstat_ignore_prefetch', 'no'),
+
+				// Ignore requests that have the same information and are less than x seconds far from each other
+				'ignore_interval' => get_option('slimstat_ignore_interval', '30'),
+
+				// List of IPs to ignore
+				'ignore_ip' => get_option('slimstat_ignore_ip', array()),
+
+				// List of Countries to ignore
+				'ignore_countries' => get_option('slimstat_ignore_countries', array()),
+
+				// List of local resources to ignore
+				'ignore_resources' => get_option('slimstat_ignore_resources', array()),
+
+				// List of domains to ignore
+				'ignore_referers' => get_option('slimstat_ignore_referers', array()),
+
+				// List of browsers to ignore
+				'ignore_browsers' => get_option('slimstat_ignore_browsers', array()),
+
+				// List of users to ignore
+				'ignore_users' => get_option('slimstat_ignore_users', array()),
+
+				// List of users who can view the stats: if empty, all users are allowed
+				'can_view' => get_option('slimstat_can_view', array()),
+
+				// List of capabilities needed to view the stats: if empty, all users are allowed
+				'capability_can_view' => get_option('slimstat_capability_can_view', 'read'),
+
+				// List of users who can administer this plugin's options: if empty, all users are allowed
+				'can_admin' => get_option('slimstat_can_admin', array())
+			);
+
+			// Save these default options in the database
+			add_option('slimstat_options', $this->options, '', 'no');
+		}
 
 		if (!is_admin()){
 			// Is tracking active?
-			if (get_option('slimstat_is_tracking', 'yes') == 'yes'){
+			if ($this->options['is_tracking'] == 'yes'){
 				add_action('wp', array(&$this, 'slimtrack'), 5);
 			}
 
 			// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
-			if ((get_option('slimstat_enable_javascript', 'no') == 'yes') && (get_option('slimstat_is_tracking', 'yes') == 'yes')){
+			if (($this->options['enable_javascript'] == 'yes') && ($this->options['is_tracking'] == 'yes')){
 				add_action('init', array(&$this, 'wp_slimstat_register_tracking_script'));
 				add_action('wp_footer', array(&$this, 'wp_slimstat_js_data'), 10);
 			}
@@ -47,7 +137,7 @@ class wp_slimstat{
 			add_action('admin_menu', array(&$this, 'wp_slimstat_add_config_menu'));
 			
 			// Display the new column in the Edit Posts screen
-			if (get_option('slimstat_add_posts_column', 'no') == 'yes'){
+			if ($this->options['add_posts_column'] == 'yes'){
 				add_filter('manage_posts_columns', array(&$this,'add_column_header'));
 				add_action('manage_posts_custom_column', array(&$this,'add_post_column'));
 			}
@@ -55,15 +145,16 @@ class wp_slimstat{
 			// Add some custom stylesheets
 			add_action('admin_print_styles-wp-slimstat/options/index.php', array(&$this, 'wp_slimstat_stylesheet'));
 			add_action('admin_print_styles-edit.php', array(&$this, 'wp_slimstat_stylesheet'));
+			
+			// Hook for WPMU - New blog created
+			add_action('wpmu_new_blog', array(&$this, 'new_blog'), 10, 1);
 		}
-		// Create a hook to use with the daily cron job
-		add_action('wp_slimstat_purge', array(&$this, 'wp_slimstat_purge'));
-
-		// Hook for WPMU - New blog created
-		add_action('wpmu_new_blog', array(&$this, 'new_blog'), 10, 1);
-
+		
 		// Add a link to the admin bar
 		add_action('admin_bar_menu', array(&$this, "wp_slimstat_adminbar"), 100);
+		
+		// Create a hook to use with the daily cron job
+		add_action('wp_slimstat_purge', array(&$this, 'wp_slimstat_purge'));
 	}
 	// end __construct
 
@@ -106,7 +197,7 @@ class wp_slimstat{
 	/**
 	 * Creates and populates tables, if they aren't already there.
 	 */
-	private function _activate(){
+	protected function _activate(){
 		global $wpdb;
 
 		// Is InnoDB available?
@@ -165,14 +256,6 @@ class wp_slimstat{
 				PRIMARY KEY (screenres_id)
 			)$use_innodb";
 
-		// This table will keep track of visits (user sessions of up to 30 minutes)
-		$visits_table_sql =
-			"CREATE TABLE IF NOT EXISTS {$wpdb->prefix}slim_visits (
-				visit_id INT UNSIGNED NOT NULL auto_increment,
-				tracking_code VARCHAR(255) DEFAULT '',
-				PRIMARY KEY (visit_id)
-			)$use_innodb";
-
 		// This table will track outbound links (clicks on links to external sites)
 		$outbound_table_sql =
 			"CREATE TABLE IF NOT EXISTS {$wpdb->prefix}slim_outbound (
@@ -192,96 +275,11 @@ class wp_slimstat{
 
 		$this->_create_table($browsers_table_sql, $wpdb->base_prefix.'slim_browsers');
 		$this->_create_table($screen_res_table_sql, $wpdb->base_prefix.'slim_screenres');
-		$this->_create_table($visits_table_sql, $wpdb->prefix.'slim_visits');
 		$this->_create_table($outbound_table_sql, $wpdb->prefix.'slim_outbound');
 		if (!$this->_create_table($stats_table_sql, $wpdb->prefix.'slim_stats', true)){
-			// Update the table structure ( versions < 2.5 ), if needed
-			$this->_update_stats_table();
+			// Update the table structure and options, if needed
+			$this->_update_tables_and_options();
 		}
-
-		// We need a secret key to make sure the js-php interaction is secure
-		add_option('slimstat_secret', md5(time()), '', 'no');
-
-		// Activate or deactivate tracking, but still be able to view reports
-		add_option('slimstat_is_tracking', 'yes', '', 'no');
-
-		// Track screen resolutions, outbound links and other stuff using a javascript component
-		add_option('slimstat_enable_javascript', 'yes', '', 'no');
-
-		// Custom path to get to wp-slimstat-js.php
-		add_option('slimstat_custom_js_path', get_option('siteurl').'/wp-content/plugins/wp-slimstat', '', 'no');
-
-		// Enable Browscap's autoupdate feature
-		add_option('slimstat_browscap_autoupdate', 'no', '', 'no');
-
-		// Ignore requests that have the same information and are less than x seconds far from each other
-		add_option('slimstat_ignore_interval', '30', '', 'no');
-
-		// Don't ignore bots and spiders by default
-		add_option('slimstat_ignore_bots', 'no', '', 'no');
-
-		// Ignore spammers?
-		add_option('slimstat_ignore_spammers', 'no', '', 'no');
-
-		// Ignore Link Prefetching?
-		add_option('slimstat_ignore_prefetch', 'no', '', 'no');
-
-		// Tracks logged in users, adding their login to the resource they requested
-		add_option('slimstat_track_users', 'yes', '', 'no');
-
-		// Automatically purge stats db after x days (0 = no purge)
-		add_option('slimstat_auto_purge', '120', '', 'no');
-
-		// Shows a new column to the Edit Posts page with the number of hits per post
-		add_option('slimstat_add_posts_column', 'no', '', 'no');
-
-		// Use a separate menu for the admin interface
-		add_option('slimstat_use_separate_menu', 'no', '', 'no');
-
-		// Activate or deactivate the conversion of ip addresses into hostnames
-		add_option('slimstat_convert_ip_addresses', 'no', '', 'no');
-
-		// Specify what number format to use (European or American)
-		add_option('slimstat_use_european_separators', 'yes', '', 'no');
-
-		// Number of rows to show in each module
-		add_option('slimstat_rows_to_show', '20', '', 'no');
-		
-		// Number of rows to show in the Raw Data panel
-		add_option('slimstat_number_results_raw_data', '50', '', 'no');
-
-		// Customize the IP Lookup service (geolocation) URL
-		add_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips=', '', 'no');
-
-		// Refresh the RAW DATA view every X seconds
-		add_option('slimstat_refresh_interval', '0', '', 'no');
-
-		// List of IPs to ignore
-		add_option('slimstat_ignore_ip', array(), '', 'no');
-		
-		// List of Countries to ignore
-		add_option('slimstat_ignore_countries', array(), '', 'no');
-
-		// List of local resources to ignore
-		add_option('slimstat_ignore_resources', array(), '', 'no');
-
-		// List of browsers to ignore
-		add_option('slimstat_ignore_browsers', array(), '', 'no');
-
-		// List of domains to ignore
-		add_option('slimstat_ignore_referers', array(), '', 'no');
-
-		// List of users to ignore
-		add_option('slimstat_ignore_users', array(), '', 'no');
-
-		// List of users who can view the stats: if empty, all users are allowed
-		add_option('slimstat_can_view', array(), '', 'no');
-
-		// List of capabilities needed to view the stats: if empty, all users are allowed
-		add_option('slimstat_capability_can_view', 'read', '', 'no');
-
-		// List of users who can administer this plugin's options: if empty, all users are allowed
-		add_option('slimstat_can_admin', array(), '', 'no');
 
 		// Schedule the autopurge hook
 		if (!wp_next_scheduled('wp_slimstat_purge'))
@@ -321,15 +319,8 @@ class wp_slimstat{
 	 */
 	public function slimtrack($_argument = ''){
 		global $wpdb;
-
-		// Should we ignore this user?
-		if (is_user_logged_in()){
-			global $current_user;
-			$to_ignore = get_option('slimstat_ignore_users', array());
-			if (in_array($current_user->user_login, $to_ignore)) return $_argument;
-		}
-
-		// We do not want to track admin pages
+		
+		// Do not track admin pages
 		if ( is_admin() ||
 				strpos($_SERVER['PHP_SELF'], 'wp-content/') !== FALSE ||
 				strpos($_SERVER['PHP_SELF'], 'wp-cron.php') !== FALSE ||
@@ -337,16 +328,39 @@ class wp_slimstat{
 				strpos($_SERVER['PHP_SELF'], 'wp-login.php') !== FALSE ||
 				strpos($_SERVER['PHP_SELF'], 'wp-comments-post.php') !== FALSE ) return $_argument;
 
+		$stat = array();
 		// User's IP address
 		$long_user_ip = $this->_get_ip2long_remote_ip();
 
-		// Is this visit coming from the server itself ( = other script crawling the site or localhost)
-		//if ($long_user_ip === false || $long_user_ip == ip2long($_SERVER['SERVER_ADDR']))
-		//	return $_argument;
+		// Should we ignore this user?
+		if (is_user_logged_in()){
+			global $current_user;
+			if (in_array($current_user->user_login, $this->options['ignore_users'])) return $_argument;
 
-		// Is this IP blacklisted?
-		$to_ignore = get_option('slimstat_ignore_ip', array());
-		foreach($to_ignore as $a_ip_range){
+			// Don't track logged-in users, if the corresponding option is enabled
+			if ($this->options['track_users'] == 'no' && !empty($current_user->user_login)) return $_argument;
+
+			// Track commenters and logged-in users
+			if (!empty($current_user->user_login))
+				$stat['user'] = $current_user->user_login;
+
+			$not_spam = true;
+		}
+		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
+			// Is this a spammer?
+			$spam_comment = $wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$wpdb->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
+			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
+				if ($this->options['ignore_spammers'] == 'yes')
+					return $_argument;
+				else
+					$stat['user'] .= "[spam] {$spam_comment['comment_author']}";
+			}
+			else
+				$stat['user'] = $_COOKIE['comment_author_'.COOKIEHASH];
+		}
+
+		// Should we ignore this IP address?
+		foreach($this->options['ignore_ip'] as $a_ip_range){
 			list ($ip_to_ignore, $mask) = @explode("/", trim($a_ip_range));
 			if (empty($mask)) $mask = 32;
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
@@ -358,42 +372,16 @@ class wp_slimstat{
 		}
 
 		// Avoid PHP warnings
-		$stat = array();
 		$referer = array();
-
 		$stat['ip'] = sprintf("%u", $long_user_ip);
-
-		// Is this a spammer?
-		$spam_comment = $wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$wpdb->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
-		$stat['user'] = '';
-		if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
-			if (get_option('slimstat_ignore_spammers', 'no') == 'yes')
-				return $_argument;
-			else
-				$stat['user'] .= "[spam] {$spam_comment['comment_author']}";
-		}
-		// Track commenters and logged-in users
-		else{
-			// Don't track logged-in users, if the corresponding option is enabled
-			if (get_option('slimstat_track_users', 'no') == 'no' &&  is_user_logged_in() && !empty($current_user->user_login))
-				return $_argument;
-
-			if (isset($_COOKIE['comment_author_'. COOKIEHASH]))
-				$stat['user'] = $_COOKIE['comment_author_'. COOKIEHASH];
-
-			if (is_user_logged_in() && !empty($current_user->user_login))
-				$stat['user'] = $current_user->user_login;
-		}
-
 		$stat['language'] = $this->_get_language();
 		$stat['country'] = $this->_get_country($stat['ip']);
-		
+
 		// Country table not initialized
 		if ($stat['country'] === false) return $_argument;
-		
+
 		// Is this country blacklisted?
-		$to_ignore = get_option('slimstat_ignore_countries', array());
-		foreach($to_ignore as $a_filter)
+		foreach($this->options['ignore_countries'] as $a_filter)
 			if ($stat['country'] == $a_filter) return $_argument;
 
 		if (isset( $_SERVER['HTTP_REFERER'])){
@@ -411,8 +399,7 @@ class wp_slimstat{
 		}
 
 		// Is this referer blacklisted?
-		$to_ignore = get_option('slimstat_ignore_referers', array());
-		foreach($to_ignore as $a_filter)
+		foreach($this->options['ignore_referers'] as $a_filter)
 			if (!empty($stat['referer']) && strpos($stat['domain'].$stat['referer'], $a_filter) !== false) return $_argument;
 
 		// We want to record both hits and searches (performed through the site search form)
@@ -436,7 +423,7 @@ class wp_slimstat{
 		// Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
 		if ((isset($_SERVER['HTTP_X_MOZ']) && (strtolower($_SERVER['HTTP_X_MOZ']) == 'prefetch')) ||
 			(isset($_SERVER["HTTP_X_PURPOSE"]) && (strtolower($_SERVER['HTTP_X_PURPOSE']) == 'preview'))){
-			if (get_option('slimstat_ignore_prefetch', 'no') == 'yes'){
+			if ($this->options['ignore_prefetch'] == 'yes'){
 				return $_argument;
 			}
 			else{
@@ -448,8 +435,7 @@ class wp_slimstat{
 		if (is_404()) $stat['resource'] = '[404]'.$stat['resource'];
 
 		// Is this resource blacklisted?
-		$to_ignore = get_option('slimstat_ignore_resources', array());
-		foreach($to_ignore as $a_filter){
+		foreach($this->options['ignore_resources'] as $a_filter){
 			if (!empty($stat['resource']) && strpos($stat['resource'], $a_filter) !== false) return $_argument;
 		}
 
@@ -460,7 +446,7 @@ class wp_slimstat{
 		$browscap = new browscap(WP_PLUGIN_DIR.'/wp-slimstat/cache');
 
 		// Do autoupdate?
-		$browscap->doAutoUpdate = (get_option('slimstat_browscap_autoupdate', 'no') == 'yes');
+		$browscap->doAutoUpdate = ($this->options['browscap_autoupdate'] == 'yes');
 		if (($browscap->doAutoUpdate) && ((intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/browscap.ini')), -3)) < 644) || (intval(substr(sprintf('%o',fileperms(WP_PLUGIN_DIR.'/wp-slimstat/cache/cache.php')), -3)) < 644))){
 			$browscap->doAutoUpdate = false;
 		}
@@ -494,14 +480,36 @@ class wp_slimstat{
 			$browser['type'] = 3;
 
 		// Is this browser blacklisted?
-		$to_ignore = get_option('slimstat_ignore_browsers', array());
-		foreach($to_ignore as $a_filter){
+		foreach($this->options['ignore_browsers'] as $a_filter){
 			if (strpos($a_filter, $browser['browser'].'/'.$browser['version']) === 0) return $_argument;
 		}
 
 		// Ignore bots?
-		$ignore_bots = get_option('slimstat_ignore_bots', 'no');
-		if (($ignore_bots == 'yes') && ($browser['type'] == 1)) return $_argument;
+		if (($this->options['ignore_bots'] == 'yes') && ($browser['type'] == 1)) return $_argument;
+
+		// Is this a returning visitor?
+		if (isset($_COOKIE['slimstat_tracking_code'])){
+			list($identifier, $control_code) = explode('.', $_COOKIE['slimstat_tracking_code']);
+			
+			// Make sure only authorized information is recorded
+			if ($control_code == md5($identifier.$this->options['secret'])){
+
+				// Set the visit_id for this session's first pageview
+				if (strpos($identifier, 'id') !== false){
+					// Emulate auto-increment on visit_id
+					$wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}slim_stats 
+													SET visit_id = (
+														SELECT max_visit_id FROM ( SELECT MAX(visit_id) AS max_visit_id FROM {$wpdb->prefix}slim_stats ) AS sub_max_visit_id_table
+													) + 1
+													WHERE id = %d AND visit_id = 0", intval($identifier)));
+					$stat['visit_id'] = $wpdb->get_var($wpdb->prepare("SELECT visit_id FROM {$wpdb->prefix}slim_stats WHERE id = %d", intval($identifier)));
+					@setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].$this->options['secret']), time()+1800, '/');
+				}
+				else{
+					$stat['visit_id'] = intval($identifier);
+				}
+			}
+		}
 
 		$stat['dt'] = date_i18n('U');
 
@@ -523,12 +531,12 @@ class wp_slimstat{
 		$wpdb->query($wpdb->prepare($insert_new_browser_sql, array_merge($browser, array_values($browser))));
 		$stat['browser_id'] = $wpdb->insert_id;
 
-		if (empty($stat['browser_id'])) // This can happen if the browser already exists in the table
+		// This can happen if the browser already exists in the table
+		if (empty($stat['browser_id'])) 
 			$stat['browser_id'] = $wpdb->get_var($wpdb->prepare($select_sql, $browser));
 
-		// Last but not least, we insert the information about this visit
 		// If the same user visited the same page in the last X seconds, we ignore it
-		$ignore_interval = intval(get_option('slimstat_ignore_interval', '30'));
+		$ignore_interval = intval($this->options['ignore_interval']);
 
 		$insert_new_hit_sql = "INSERT INTO {$wpdb->prefix}slim_stats ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
 			SELECT " . substr(str_repeat('%s,', count($stat)), 0, -1) . "
@@ -552,10 +560,9 @@ class wp_slimstat{
 			$this->tid = $wpdb->get_var($wpdb->prepare($select_sql, $stat));
 
 		// Is this a new visitor?
-		if (!isset($_COOKIE['slimstat_tracking_code']) || strlen($_COOKIE['slimstat_tracking_code']) != 32){
-			// Set a cookie to track this visitor (Google and other non-human engines will just ignore it)
-			$my_secret_key = get_option('slimstat_secret', '123');
-			@setcookie('slimstat_tracking_code', md5($this->tid.$my_secret_key), time()+1800, '/');
+		if (!isset($_COOKIE['slimstat_tracking_code']) && !empty($this->tid)){
+			// Set a 30-minute cookie to track this visitor (Google and other non-human engines will just ignore it)
+			@setcookie('slimstat_tracking_code', "{$this->tid}id.".md5($this->tid.'id'.$this->options['secret']), time()+1800, '/');
 		}
 
 		return $_argument;
@@ -565,7 +572,7 @@ class wp_slimstat{
 	/**
 	 * Creates a table in the database
 	 */
-	private function _create_table($_sql = '', $_tablename = '', $_fail_on_exists = false){
+	protected function _create_table($_sql = '', $_tablename = '', $_fail_on_exists = false){
 	    global $wpdb;
 		if ($_fail_on_exists)
 			foreach ($wpdb->get_col("SHOW TABLES LIKE '$_tablename'", 0) as $a_table)
@@ -584,14 +591,13 @@ class wp_slimstat{
 	/**
 	 * Updates the table structure, adding new columns and resizing existing ones
 	 */
-	private function _update_stats_table(){
+	protected function _update_tables_and_options(){
 	    global $wpdb;
 
-		// Update wp_slim_stats
+		// WP_SLIM_STATS: Let's see if the structure is up-to-date
 		$table_structure = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}slim_stats", ARRAY_A);
 		$field_exists = false;
-
-		// Let's see if the structure is up-to-date
+		
 		foreach($table_structure as $a_row){
 			if ($a_row['Field'] == 'user') $field_exists = true;
 			if ($a_row['Field'] == 'referer' && $a_row['Type'] == 'varchar(255)'){
@@ -599,24 +605,61 @@ class wp_slimstat{
 				$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_outbound MODIFY outbound_resource VARCHAR(2048)");
 			}
 		}
-
 		if (!$field_exists)
 			$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD COLUMN user VARCHAR(255) DEFAULT '' AFTER ip");
 
-		// Update wp_slim_browsers
+		// WP_SLIM_BROWSERS: Let's see if the structure is up-to-date
 		$table_structure = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->base_prefix}slim_browsers", ARRAY_A);
 		$field_exists = false;
 
-		// Let's see if the structure is up-to-date
 		foreach($table_structure as $a_row){
 			if ($a_row['Field'] == 'type') $field_exists = true;
 		}
-
 		if (!$field_exists){
 			$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers ADD COLUMN type TINYINT UNSIGNED DEFAULT 0 AFTER css_version");
 			
 			// Set the type of existing browsers
 			$wpdb->query("UPDATE {$wpdb->base_prefix}slim_browsers SET type = 1 WHERE platform = 'unknown' AND css_version = '0'");
+		}
+		
+		// WP_SLIM_VISITS: not needed starting from version 2.7
+		$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_visits");
+		
+		// Options are kept in a single array, starting from version 2.8
+		if (get_option('slimstat_secret', 'still there?') != 'still there?'){
+			delete_option('slimstat_secret');
+
+			delete_option('slimstat_is_tracking');
+			delete_option('slimstat_enable_javascript');
+			delete_option('slimstat_custom_js_path');
+			delete_option('slimstat_browscap_autoupdate');
+			delete_option('slimstat_track_users');
+			delete_option('slimstat_auto_purge');
+			delete_option('slimstat_add_posts_column');	
+			delete_option('slimstat_use_separate_menu');
+
+			delete_option('slimstat_convert_ip_addresses');
+			delete_option('slimstat_use_european_separators');
+			delete_option('slimstat_rows_to_show');
+			delete_option('slimstat_number_results_raw_data');
+			delete_option('slimstat_ip_lookup_service');
+			delete_option('slimstat_refresh_interval');
+
+			delete_option('slimstat_ignore_bots');
+			delete_option('slimstat_ignore_spammers');
+			delete_option('slimstat_ignore_prefetch');
+			delete_option('slimstat_ignore_interval');			
+			delete_option('slimstat_ignore_ip');
+			delete_option('slimstat_ignore_countries');
+			delete_option('slimstat_ignore_resources');
+			delete_option('slimstat_ignore_referers');
+			delete_option('slimstat_ignore_browsers');
+			delete_option('slimstat_ignore_users');
+
+			delete_option('slimstat_can_view');
+			delete_option('slimstat_capability_can_view');
+			delete_option('slimstat_can_admin');
+			delete_option('slimstat_enable_footer_link');
 		}
 
 		return true;
@@ -626,7 +669,7 @@ class wp_slimstat{
 	/**
 	 * Reads data from CSV file and copies them into countries table
 	 */
-	private function _import_countries(){
+	protected function _import_countries(){
 		global $wpdb;
 
 		// If there is already a (not empty) country table, skip import
@@ -671,7 +714,7 @@ class wp_slimstat{
 			}
 			else $row_counter++;
 		}
-		if (!empty($insert_sql) && $insert_sql != "INSERT INTO {$wpdb->base_prefix}slim_countries (ip_from, ip_to, country_code) VALUES ") {
+		if (!empty($insert_sql) && $insert_sql != "INSERT INTO {$wpdb->base_prefix}slim_countries (ip_from, ip_to, country_code) VALUES "){
 			$insert_sql = substr($insert_sql, 0, -1);
 			$wpdb->query($insert_sql);
 		}
@@ -683,7 +726,7 @@ class wp_slimstat{
 	/**
 	 * Searches for country associated to a given IP address
 	 */
-	private function _get_country($_ip = ''){
+	protected function _get_country($_ip = ''){
 		global $wpdb;
 
 		$sql = "SELECT country_code
@@ -705,7 +748,7 @@ class wp_slimstat{
 	/**
 	 * Tries to find the user's REAL IP address
 	 */
-	private function _get_ip2long_remote_ip(){
+	protected function _get_ip2long_remote_ip(){
 		if (isset($_SERVER["HTTP_CLIENT_IP"]) && long2ip($long_ip = ip2long($_SERVER["HTTP_CLIENT_IP"])) == $_SERVER["HTTP_CLIENT_IP"])
 			return $long_ip;
 
@@ -734,7 +777,7 @@ class wp_slimstat{
 	/**
 	 * Extracts the accepted language from browser headers
 	 */
-	private function _get_language(){
+	protected function _get_language(){
 		if(isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])){
 
 			// Capture up to the first delimiter (, found in Safari)
@@ -750,7 +793,7 @@ class wp_slimstat{
 	/**
 	 * Sniffs out referrals from search engines and tries to determine the query string
 	 */
-	private function _get_search_terms($_url = array()){
+	protected function _get_search_terms($_url = array()){
 		if(!is_array($_url) || !isset($_url['host']) || !isset($_url['query'])) return '';
 
 		parse_str($_url['query'], $query);
@@ -777,7 +820,7 @@ class wp_slimstat{
 	/**
 	 * Counts how many visits are currently recorded in the database
 	 */
-	private function _count_records(){
+	protected function _count_records(){
 		global $wpdb;
 		return intval($wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats"));
 	}
@@ -789,12 +832,9 @@ class wp_slimstat{
 	public function wp_slimstat_purge(){
 		global $wpdb;
 
-		if (($autopurge_interval = intval(get_option('slimstat_auto_purge', 0))) <= 0) return;
+		if (($autopurge_interval = intval($this->options['auto_purge'])) <= 0) return;
 
 		// Delete old entries
-		$wpdb->query("DELETE ts, tv FROM {$wpdb->prefix}slim_stats ts INNER JOIN {$wpdb->prefix}slim_visits tv ON ts.visit_id = tv.visit_id WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
-
-		// Delete all the other entries with no matching visit records
 		$wpdb->query("DELETE ts FROM {$wpdb->prefix}slim_stats ts WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
 	}
 	// end wp_slimstat_purge
@@ -821,16 +861,13 @@ class wp_slimstat{
 	public function wp_slimstat_add_view_menu($_s){
 		global $current_user;
 
-		$array_allowed_users = get_option('slimstat_can_view', array());
-		$minimum_capability = get_option('slimstat_capability_can_view', 'read');
-		$minimum_capability = empty($minimum_capability)?'read':$minimum_capability;
-		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
+		$this->options['capability_can_view'] = empty($this->options['capability_can_view'])?'read':$this->options['capability_can_view'];
 
-		if ((empty($array_allowed_users) && $minimum_capability == 'read') || in_array($current_user->user_login, $array_allowed_users) || current_user_can($minimum_capability)){
-			if ($use_separate_menu == 'yes')
-				$new_entry = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'), plugins_url('/images/wp-slimstat-menu.png', __FILE__));
+		if ((empty($this->options['can_view']) && $this->options['capability_can_view'] == 'read') || in_array($current_user->user_login, $this->options['can_view']) || current_user_can($this->options['capability_can_view'])){
+			if ($this->options['use_separate_menu'] == 'yes')
+				$new_entry = add_menu_page('SlimStat', 'SlimStat', $this->options['capability_can_view'], 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'), plugins_url('/images/wp-slimstat-menu.png', __FILE__));
 			else
-				$new_entry = add_dashboard_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'));
+				$new_entry = add_dashboard_page('SlimStat', 'SlimStat', $this->options['capability_can_view'], 'wp-slimstat', array(&$this, 'wp_slimstat_include_view'));
 		}
 		add_action('load-'.$new_entry, array(&$this, 'wp_slimstat_stylesheet'));
 		add_action('load-'.$new_entry, array(&$this, 'wp_slimstat_enqueue_scripts'));
@@ -844,10 +881,8 @@ class wp_slimstat{
 	public function wp_slimstat_add_config_menu($_s){
 		global $current_user;
 
-		$array_allowed_users = get_option('slimstat_can_admin', array());
-		$use_separate_menu = get_option('slimstat_use_separate_menu', 'no');
-		if (empty($array_allowed_users) || in_array($current_user->user_login, $array_allowed_users)){
-			if ($use_separate_menu == 'yes' || !current_user_can('manage_options'))
+		if (empty($this->options['can_admin']) || in_array($current_user->user_login, $this->options['can_admin'])){
+			if ($this->options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
 				add_submenu_page('wp-slimstat', 'Config', 'Config', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
 			else
 				add_submenu_page('options-general.php', 'SlimStat', 'SlimStat', 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/options/index.php');
@@ -880,14 +915,12 @@ class wp_slimstat{
 		$intval_tid = intval($this->tid);
 		if ($intval_tid > 0){
 			$hexval_tid = base_convert($intval_tid, 10, 16);
-			$my_secret_key = get_option('slimstat_secret', '123');
-			$custom_slimstat_js_path = get_option('slimstat_custom_js_path', get_option('siteurl').'/wp-slimstat');
 
 			echo "<script type='text/javascript'>slimstat_tid='$hexval_tid';";
-			echo "slimstat_path='$custom_slimstat_js_path';";
+			echo "slimstat_path='{$this->options['custom_js_path']}';";
 			$slimstat_blog_id = (function_exists('is_multisite') && is_multisite())?$wpdb->blogid:0;
 			echo "slimstat_blog_id='$slimstat_blog_id';";
-			echo 'slimstat_session_id=\''.md5($intval_tid.$my_secret_key).'\';</script>';
+			echo 'slimstat_session_id=\''.md5($intval_tid.$this->options['secret']).'\';</script>';
 			wp_print_scripts('wp_slimstat');
 		}
 	}
@@ -896,11 +929,22 @@ class wp_slimstat{
 	/**
 	 * Adds a new entry to the Wordpress Toolbar
 	 */	 
-	public function wp_slimstat_adminbar() {
-		global $wp_admin_bar, $blog_id;
+	public function wp_slimstat_adminbar(){
 		if (!is_super_admin() || !is_admin_bar_showing()) return;
+		global $wp_admin_bar, $current_user, $blog_id;		
+		load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 
-		$wp_admin_bar->add_menu( array( 'id' => 'slimstat', 'title' => 'SlimStat', 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat') ) );
+		$this->options['capability_can_view'] = empty($this->options['capability_can_view'])?'read':$this->options['capability_can_view'];
+
+		if ((empty($this->options['can_view']) && $this->options['capability_can_view'] == 'read') || in_array($current_user->user_login, $this->options['can_view']) || current_user_can($this->options['capability_can_view'])){
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat', 'title' => 'SlimStat', 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat') ) );
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel1', 'title' => __('Dashboard','wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=1'), 'parent' => 'slimstat' ) );
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel2', 'title' => __('Visitors','wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=2'), 'parent' => 'slimstat' ) );
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel3', 'title' => __('Traffic Sources','wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=3'), 'parent' => 'slimstat' ) );
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel4', 'title' => __('Content','wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=4'), 'parent' => 'slimstat' ) );
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel5', 'title' => __('Raw Data','wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=5'), 'parent' => 'slimstat' ) );
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel6', 'title' => __('World Map','wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=6'), 'parent' => 'slimstat' ) );
+		}
 	}
 	// end wp_slimstat_adminbar
 	
@@ -924,8 +968,36 @@ class wp_slimstat{
 		echo "<a href='index.php?page=wp-slimstat&amp;filter=resource&amp;f_operator=equals&amp;f_value=$permalink'>$count</a>";
 	}
 	// end add_column
+	
+	public function update_option($_option, $_value, $_type){
+		if (!isset($_value) || !array_key_exists($_option, $this->options)) return false;
 
-}
+		// Is there anything we need to update?
+		if (($_type != 'list' && $this->options[$_option] == $_value) || implode(',', $this->options[$_option]) == $_value) return true;
+
+		switch($_type){
+			case 'list':
+				// Avoid XSS attacks
+				$clean_value = preg_replace('/[^a-zA-Z0-9\,\.\/\ \-\_\?=&;]/', '', $_value);
+				if (strlen($_value)==0)
+					$this->options[$_option] = array();
+				else
+					$this->options[$_option] = explode(',',$clean_value);
+				break;
+			case 'yesno':
+				if ($_value=='yes' || $_value=='no')
+					$this->options[$_option] = $_value;
+				break;
+			case 'integer':
+				$this->options[$_option] = abs(intval($_value));
+				break;
+			default:
+				$this->options[$_option] = strip_tags($_value);
+				break;
+		}
+		return update_option('slimstat_options', $this->options);
+	}
+} 
 // end of class declaration
 
 // Ok, let's dance, Sparky!

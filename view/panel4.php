@@ -24,7 +24,7 @@ $tooltip_content = '<strong>'.htmlspecialchars(__('Chart interaction','wp-slimst
 $tooltip_content .= (!$wp_slimstat_view->day_filter_active)?'<li>'.htmlspecialchars(__('Click on a day for hourly metrics','wp-slimstat-view'), ENT_QUOTES).'</li>':'';
 $tooltip_content .= '</ul>';
 
-echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.gif' width='16' height='16' title='$tooltip_content' /><h3 class='hndle'>";
+echo "<img class='module-tooltip' src='$wp_slimstat_view->plugin_url/images/info.png' width='10' height='10' title='$tooltip_content' /><h3 class='hndle'>";
 if (!$wp_slimstat_view->day_filter_active)
 	_e('Daily Average Pageviews per Visit', 'wp-slimstat-view');
 else
@@ -69,7 +69,7 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p4_03': ?>
 <div class="postbox <?php echo $wp_locale->text_direction ?>" id="p4_03">
-	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('A <em>bounce page</em> refers to a single-page visit or a visit in which the person left your site from the entrance page.','wp-slimstat-view') ?>' />
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('A <em>bounce page</em> refers to a single-page visit or a visit in which the person left your site from the entrance page.','wp-slimstat-view') ?>' />
 	<div class="more"><a href="<?php echo $admin_url ?>?page=wp-slimstat&amp;slimpanel=5&amp;ftu=get_recent_bouncing_pages<?php echo $wp_slimstat_view->filters_query ?>"><?php _e('More','wp-slimstat-view') ?></a></div>
 	<h3 class="hndle"><?php _e('Recent Bounce Pages', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
@@ -244,7 +244,7 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p4_10': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p4_10">
-	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.gif' width='16' height='16' title='<?php _e('WP SlimStat can track specific events (clicks, downloads, etc) triggered by your visitors. Add <strong>onclick="ss_te(event,<em>code</em>)"</strong> to your links, where <em>code</em> is an integer value between 2 and 254 (1 is for downloads)','wp-slimstat-view') ?>' />
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('WP SlimStat can track specific events (clicks, downloads, etc) triggered by your visitors. Add <strong>onclick="ss_te(event,<em>code</em>)"</strong> to your links, where <em>code</em> is an integer value between 2 and 254 (1 is for downloads)','wp-slimstat-view') ?>' />
 	<h3 class="hndle"><?php _e('Recent Events', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
 $results = $wp_slimstat_view->get_recent_outbound();

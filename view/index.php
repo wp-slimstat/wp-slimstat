@@ -5,15 +5,15 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
-global $wpdb, $wp_locale, $month;
+global $wpdb, $wp_locale, $month, $wp_slimstat;
 
 // IP Lookup service URL
-$ip_lookup_url = get_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips=');
+$ip_lookup_url = $wp_slimstat->options['ip_lookup_service'];
 
 // Retrieve the order of this tab's panels
 $user = wp_get_current_user();
 $admin_url = get_admin_url();
-$option = (get_option('slimstat_use_separate_menu', 'no') == 'yes')?'meta-box-order_toplevel_page_wp-slimstat':'meta-box-order_dashboard_page_wp-slimstat';
+$option = ($wp_slimstat->options['use_separate_menu'] == 'yes')?'meta-box-order_toplevel_page_wp-slimstat':'meta-box-order_dashboard_page_wp-slimstat';
 $panels_order = get_user_option($option, $user->ID);
 $panels_order = explode(',', $panels_order[0]);
 if(!$panels_order || count($panels_order)!=40) $panels_order = array('p1_01','p1_02','p1_03','p1_04','p1_05','p1_06','p1_07','p1_08','p1_09','p1_10','p2_01','p2_02','p2_03','p2_04','p2_05','p2_06','p2_07','p2_08','p2_09','p2_10','p2_11','p2_12','p3_01','p3_02','p3_03','p3_04','p3_05','p3_06','p3_07','p3_08','p4_01','p4_02','p4_03','p4_04','p4_05','p4_06','p4_07','p4_08','p4_09','p4_10');
@@ -53,16 +53,19 @@ $get_direction = !empty($_GET['direction'])?"&ftu={$_GET['direction']}":'';
 $filters_list = '';
 
 if (!empty($wp_slimstat_view->filters_parsed)){
-	$filters_list = __('Current filters:','wp-slimstat-view').' ';
+	$filters_list = "<span class='filters-title $wp_locale->text_direction'>";
+	if(count($wp_slimstat_view->filters_parsed) > 1)
+		$filters_list .= "<a class='cancel-all-filters' href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&slimpanel=$current_panel'><img src='$wp_slimstat_view->plugin_url/images/cancel.png'/></a>";
+	$filters_list .= __('Current filters:','wp-slimstat-view').'</span> ';
 	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
-		$filters_list .= "<code>".htmlspecialchars("$a_filter_label {$a_filter_details[1]} $a_filter_value_no_slashes")."</code> [[$a_filter_label]], ";
+		$filters_list .= "<span class='filter-item $wp_locale->text_direction'><code>".htmlspecialchars("$a_filter_label {$a_filter_details[1]} $a_filter_value_no_slashes")."</code> [[$a_filter_label]]</span> ";
 	}
 	foreach($wp_slimstat_view->filters_parsed as $a_filter_label => $a_filter_details){
 		$a_filter_value_no_slashes = str_replace('\\','', $a_filter_details[0]);
 		$url_filter_removed = str_replace("&$a_filter_label=$a_filter_value_no_slashes&$a_filter_label-op={$a_filter_details[1]}", '', $wp_slimstat_view->filters_query);
 		$filters_list = str_replace("[[$a_filter_label]]", 
-				" <a href='{$_SERVER['PHP_SELF']}?page=wp-slimstat&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction$url_filter_removed'><img src='$wp_slimstat_view->plugin_url/images/cancel.gif' alt='".__('x','wp-slimstat-view')."'/></a>",
+				" <a href='$admin_url?page=wp-slimstat&slimpanel=$current_panel$get_filter_to_use$get_orderby$get_direction$url_filter_removed'><img src='$wp_slimstat_view->plugin_url/images/cancel.png' alt='".__('x','wp-slimstat-view')."'/></a>",
 				$filters_list);
 	}
 }
@@ -107,7 +110,7 @@ function trim_value($_string = '', $_length = 40){
 ?>
 
 <script type="text/javascript">
-<?php $refresh_interval = get_option('slimstat_refresh_interval', '0'); if (($refresh_interval > 0) && ($current_panel == 5)) echo "window.setTimeout('location.reload()', $refresh_interval*1000);"; 
+<?php if (($wp_slimstat->options['refresh_interval'] > 0) && ($current_panel == 5)) echo "window.setTimeout('location.reload()', {$wp_slimstat->options['refresh_interval']}*1000);"; 
 if ($current_panel < 5): ?>
 function tickFormatter(n){
 	n += '';
@@ -156,8 +159,21 @@ jQuery(document).ready(function(){
 		}
 	});
 	jQuery("#chart-placeholder").bind("plotclick", function(event, pos, item){
-        if (item && typeof(window.chart_data[item.seriesIndex][item.datapoint[0]][2]) != 'undefined'){
-			document.location.href = '<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat'+window.chart_data[item.seriesIndex][item.datapoint[0]][2];
+<?php
+	$rtl_filler_current = $rtl_filler_previous = 0;
+	if ($wp_locale->text_direction == 'rtl' && !$wp_slimstat_view->day_filter_active){
+		$rtl_filler_current = 31-((date_i18n('Ym') == $wp_slimstat_view->current_date['y'].$wp_slimstat_view->current_date['m'])?$wp_slimstat_view->current_date['d']:cal_days_in_month(CAL_GREGORIAN, $wp_slimstat_view->current_date['m'], $wp_slimstat_view->current_date['y']));
+		$rtl_filler_previous = 31-cal_days_in_month(CAL_GREGORIAN, $wp_slimstat_view->previous_month['m'], $wp_slimstat_view->previous_month['y']);
+	}
+?>
+        if (item){
+			if (item.seriesIndex == 1 && typeof(window.chart_data[item.seriesIndex][item.datapoint[0]-<?php echo $rtl_filler_previous ?>][2]) != 'undefined'){
+				document.location.href = '<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat'+window.chart_data[item.seriesIndex][item.datapoint[0]-<?php echo $rtl_filler_previous ?>][2];
+			}
+			if (item.seriesIndex != 1 && typeof(window.chart_data[item.seriesIndex][item.datapoint[0]-<?php echo $rtl_filler_current ?>][2]) != 'undefined'){
+				document.location.href = '<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat'+window.chart_data[item.seriesIndex][item.datapoint[0]-<?php echo $rtl_filler_current ?>][2];
+				
+			}
         }
     });
 	jQuery(".module-tooltip").hover(
@@ -210,7 +226,8 @@ jQuery(document).ready(function(){
 			}
 		?>
 		<p><span class="<?php echo $wp_locale->text_direction ?>"><?php _e('Show records where','wp-slimstat-view') ?>
-			<select name="filter" style="width:9em" onchange="if(this.value=='author'||this.value=='category-id'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
+			<select name="filter" style="width:9em" onchange="if(this.value=='category-id'){document.setslimstatfilters.f_operator.value='equals';document.setslimstatfilters.f_operator.disabled=true;} else {document.setslimstatfilters.f_operator.disabled=false;}">
+				<option value="no-filter-selected"><?php _e('Filter by','wp-slimstat-view') ?></option>
 				<option value="browser"><?php _e('Browser','wp-slimstat-view') ?></option>
 				<option value="version"><?php _e('Browser version','wp-slimstat-view') ?></option>
 				<option value="css_version"><?php _e('CSS version','wp-slimstat-view') ?></option>
@@ -264,12 +281,12 @@ jQuery(document).ready(function(){
 			<input type="text" name="year" size="4" onfocus="if(this.value == '<?php _e('Year','wp-slimstat-view') ?>') this.value = '';" onblur="if(this.value == '') this.value = '<?php _e('Year','wp-slimstat-view') ?>';"
 				value="<?php echo !empty($wp_slimstat_view->filters_parsed['year'][0])?$wp_slimstat_view->filters_parsed['year'][0]:__('Year','wp-slimstat-view') ?>">
 			+ <input type="text" name="interval" value="" size="3" title="<?php _e('days', 'wp-slimstat-view') ?>">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-			<span class="<?php echo $wp_locale->text_direction ?>"><input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary">
+			<span class="go-button <?php echo $wp_locale->text_direction ?>"><input type="submit" value="<?php _e('Go','wp-slimstat-view') ?>" class="button-primary">
 			<?php if ($current_panel != 5): ?><a class="button-primary" href="<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>&direction=<?php echo $reverse.$wp_slimstat_view->filters_query; ?>"><?php _e('Reverse','wp-slimstat-view') ?></a><?php endif; ?></span>
 		</p>
 	</form>
 <?php if (!empty($filters_list)): ?>
-	<p class="current-filters"><?php if(count($wp_slimstat_view->filters_parsed) > 1): ?><a href='<?php echo $_SERVER['PHP_SELF'] ?>?page=wp-slimstat&slimpanel=<?php echo $current_panel ?>'><img src='<?php echo $wp_slimstat_view->plugin_url ?>/images/cancel.gif'/></a> <?php endif; echo substr($filters_list, 0, -2) ?></p>
+	<p class="current-filters <?php echo $wp_locale->text_direction ?>"><?php echo substr($filters_list, 0, -2) ?></p>
 <?php endif; $meta_box_order_nonce = wp_create_nonce('meta-box-order'); ?>
 <div class="meta-box-sortables">
 <form style="display:none" method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo $meta_box_order_nonce ?>" /></form>

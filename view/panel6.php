@@ -4,32 +4,39 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   header('Location: /');
   exit;
 }
-
-$dataXML = @file_get_contents(WP_PLUGIN_DIR.'/wp-slimstat/view/swf/world.xml');
-$dataXML .= "<data>";
+$dataXML = "<map map_file='".plugins_url('/swf/world3.swf', __FILE__)."' tl_long='-168.49' tl_lat='83.63' br_long='190.3' br_lat='-55.58' zoom_x='0%' zoom_y='0%' zoom='100%'>";
+$dataXML .= @file_get_contents(WP_PLUGIN_DIR.'/wp-slimstat/view/swf/map_data.xml');
+$dataXML .= "</map>";
 
 $countries = $wp_slimstat_view->get_top('t1.country', '');
 $total_count = $wp_slimstat_view->count_records('1=1', '*');
 
 foreach($countries as $a_country){
-	$percentage = ($total_count > 0)?sprintf("%01.1f", (100*$a_country['count']/$total_count)):0;
-	$dataXML .= "<entity id='{$a_country['country']}' value='{$percentage}'/>";
+	$percentage = sprintf("%01.2f", (100*$a_country['count']/$total_count));
+	$percentage_format = ($total_count > 0)?number_format($percentage, 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator):0;
+	$a_country['count'] = number_format($a_country['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
+	$dataXML = str_replace(": 0' mc_name='".strtoupper($a_country['country'])."'", ": $percentage_format% ({$a_country['count']})' mc_name='".strtoupper($a_country['country'])."' value='$percentage' url='$admin_url?page=wp-slimstat&amp;slimpanel=1$wp_slimstat_view->filters_query&amp;country={$a_country['country']}'", $dataXML);
 }
 
-$dataXML .= "</data></map>";
-echo $dataXML;
 ?>
 
-<div class="postbox tall <?php echo $wp_locale->text_direction ?>" style="height:535px;overflow-y:hidden" >
-	<h3><?php _e('World Map - Values represent the percentage of hits coming from that Country', 'wp-slimstat-view'); ?></h3>
-	<div class="container" style="height:505px">
-		<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase=https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0" width="765" height="570" id="worldmap">
-			<param name="movie" value="<?php echo $wp_slimstat_view->plugin_url ?>/view/swf/world.swf" />
-			<param name="FlashVars" value="&amp;dataXML=<?php echo $dataXML ?>&amp;mapWidth=765&amp;mapHeight=570">
-			<param name="quality" value="high" />
-			<param name="wmode" value="transparent" />
-			<embed src="<?php echo $wp_slimstat_view->plugin_url ?>/view/swf/world.swf" flashVars="&amp;dataXML=<?php echo $dataXML ?>&amp;mapWidth=765&amp;mapHeight=570" quality="high" width="1000" height="500" name="line" wmode="transparent" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
-		</object>
+<div class="postbox tall <?php echo $wp_locale->text_direction ?>" style="height:623px;overflow-y:hidden">
+	<h3><?php _e('World Map - Click on a Country to activate the corresponding filter', 'wp-slimstat-view'); ?></h3>
+	<div class="container" style="height:605px" id="slimstat-world-map">
+		<p class="nodata"><?php _e('No data to display','wp-slimstat-view') ?></p>
 	</div>
 </div>
-<p class="fusion-credits">Powered by <a target="_blank" href="http://www.fusioncharts.com/maps">FusionMaps</a>.</p>
+
+<script type="text/javascript" src="<?php echo plugins_url('/swf/swfobject.js', __FILE__); ?>"></script>
+<script type="text/javascript">
+// <![CDATA[
+var flashvars = {
+	settings_file: escape("<?php echo plugins_url('/swf/map_settings.xml', __FILE__); ?>"),
+	map_data: escape("<?php echo $dataXML ?>")
+};
+var params = {};
+var attributes = {};
+swfobject.embedSWF("<?php echo plugins_url('/swf/map.swf', __FILE__); ?>", "slimstat-world-map", "900", "600", "8.0.0", "expressInstall.swf", flashvars, params, attributes);
+// ]]>
+</script>
+

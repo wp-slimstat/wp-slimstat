@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
 Description: Add some widgets to monitor your WP SlimStat reports directly from your Wordpress dashboard.
-Version: 2.6
+Version: 2.7
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -187,8 +187,8 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 	 * Attaches all the widgets to the dashboard
 	 */
 	public function add_dashboard_widgets() {
-		global $current_user;
-		$array_allowed_users = get_option('slimstat_can_view', array());
+		global $current_user, $wp_slimstat;
+		$array_allowed_users = $wp_slimstat->options['can_view'];
 
 		if (!empty($array_allowed_users) && !in_array($current_user->user_login, $array_allowed_users)) return;
 

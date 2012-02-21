@@ -137,9 +137,6 @@ function slimstat_plusone(obj){
 		ss_te(obj, 3, false);
 }
 
-// Hide the link to WP SlimStat
-if (document.getElementById('statsbywpslimstat')) document.getElementById('statsbywpslimstat').style.display = 'none';
-
 // Here we write out the VBScript block for MSIE Windows
 var detectableWithVB = false;
 if ((navigator.userAgent.indexOf('MSIE') != -1) && (navigator.userAgent.indexOf('Win') != -1)) {
