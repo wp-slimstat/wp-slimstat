@@ -1,0 +1,698 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 2.4\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-01-31 09:57-0500\n"
+"PO-Revision-Date: 2012-01-31 09:57-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Spanish\n"
+"X-Poedit-Country: SPAIN\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: ../options\n"
+
+#: ../options/index.php:14
+msgid "General"
+msgstr "General"
+
+#: ../options/index.php:15
+msgid "Views"
+msgstr "Vistas"
+
+#: ../options/index.php:16
+msgid "Filters"
+msgstr "Filtros"
+
+#: ../options/index.php:17
+msgid "Permissions"
+msgstr "Permisos"
+
+#: ../options/index.php:18
+msgid "Maintenance"
+msgstr "Mantenimiento"
+
+#: ../options/index.php:19
+msgid "Support"
+msgstr ""
+
+#: ../options/index.php:69
+msgid "Your settings have been successfully updated."
+msgstr "Tu configuración se ha actualizado con exito."
+
+#: ../options/index.php:72
+msgid "There was an error updating the following fields:"
+msgstr "Se ha encontrado un error actualizando los siguientes campos:"
+
+#: ../options/panel1.php:11
+#: ../options/panel1.php:37
+msgid "Activate tracking"
+msgstr "Activar seguimiento"
+
+#: ../options/panel1.php:12
+#: ../options/panel1.php:45
+msgid "Enable JS Tracking"
+msgstr "Activar seguimiento JS"
+
+#: ../options/panel1.php:13
+#: ../options/panel1.php:53
+msgid "Custom path"
+msgstr "Ruta personalizada"
+
+#: ../options/panel1.php:14
+#: ../options/panel1.php:60
+#, fuzzy
+msgid "Autoupdate DB"
+msgstr "AutoActualizar Base de Datos de Navegadores"
+
+#: ../options/panel1.php:15
+#: ../options/panel1.php:68
+msgid "Track users"
+msgstr "Seguimiento de Usuarios"
+
+#: ../options/panel1.php:16
+msgid "Auto purge"
+msgstr "AutoPurgar"
+
+#: ../options/panel1.php:17
+msgid "Add column to Posts"
+msgstr ""
+
+#: ../options/panel1.php:18
+#: ../options/panel1.php:92
+msgid "Use separate menu"
+msgstr "Menu independiente"
+
+#: ../options/panel1.php:39
+#: ../options/panel1.php:47
+#: ../options/panel1.php:62
+#: ../options/panel1.php:70
+#: ../options/panel1.php:86
+#: ../options/panel1.php:94
+#: ../options/panel2.php:27
+#: ../options/panel3.php:44
+#: ../options/panel3.php:52
+#: ../options/panel3.php:60
+#: ../options/panel5.php:11
+msgid "Yes"
+msgstr "Si"
+
+#: ../options/panel1.php:40
+#: ../options/panel1.php:48
+#: ../options/panel1.php:63
+#: ../options/panel1.php:71
+#: ../options/panel1.php:87
+#: ../options/panel1.php:95
+#: ../options/panel2.php:28
+#: ../options/panel3.php:45
+#: ../options/panel3.php:53
+#: ../options/panel3.php:61
+#: ../options/panel5.php:12
+msgid "No"
+msgstr "No"
+
+#: ../options/panel1.php:41
+msgid "You may want to stop WP SlimStat from tracking users for a while, but still be able to access your metrics."
+msgstr ""
+
+#: ../options/panel1.php:49
+msgid "Adds a javascript code to your pages to track visits, screen resolutions, outbound links, downloads and more"
+msgstr "Añadir codigo javascript a tus paginas para seguimiento de visitas, resoluciones de pantalla, descargas y mas"
+
+#: ../options/panel1.php:56
+msgid "If you moved <code>wp-slimstat-js.php</code> out of the original folder, specify here the new path. Default:"
+msgstr "Si has movido <code>wp-slimstat-js.php</code> fuera de la ruta original, especifica aqui la nueva ruta. Por Defecto:"
+
+#: ../options/panel1.php:64
+msgid "Enables Browscap's autoupdate feature. Please make sure your <code>cache</code> subfolder is writable."
+msgstr "Activar AutoActualización de capas del navegador.  Por favor asegurate  de que la carpeta <code>cache</code> tiene permisos de escritura."
+
+#: ../options/panel1.php:72
+msgid "Tracks logged in users, adding their login to the resource they requested"
+msgstr "Seguimiento de usuarios registrados, indexados en su entrada al recurso que solicitó"
+
+#: ../options/panel1.php:76
+msgid "Autopurge"
+msgstr "Autopurgar"
+
+#: ../options/panel1.php:78
+msgid "days"
+msgstr "dias"
+
+#: ../options/panel1.php:79
+msgid "Next purge is scheduled on"
+msgstr "Próxima purga programada para"
+
+#: ../options/panel1.php:80
+msgid "Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature."
+msgstr "Eliminar automaticamente páginas visitadas desde <strong>X</strong> dias (usa el sistema interno de trabajo sincronizados de Wordpress). 0 desactiva esta función."
+
+#: ../options/panel1.php:84
+msgid "Add Posts column"
+msgstr ""
+
+#: ../options/panel1.php:88
+msgid "Shows a new column to the Posts page with the number of hits per post (may slow down page rendering)"
+msgstr ""
+
+#: ../options/panel1.php:96
+msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat or not."
+msgstr "Le permite decidir si quiere tener un menú aparte administrador de WP SlimStat o no."
+
+#: ../options/panel1.php:101
+#: ../options/panel2.php:70
+#: ../options/panel3.php:97
+#: ../options/panel4.php:56
+msgid "Save Changes"
+msgstr "Guardar Cambios"
+
+#: ../options/panel2.php:11
+#: ../options/panel2.php:25
+msgid "Convert IP addresses"
+msgstr "Convertir Direcciones IP"
+
+#: ../options/panel2.php:12
+#: ../options/panel2.php:33
+msgid "Number format"
+msgstr ""
+
+#: ../options/panel2.php:13
+#: ../options/panel2.php:41
+msgid "Limit results to"
+msgstr "Limitar resultados a"
+
+#: ../options/panel2.php:14
+#: ../options/panel2.php:48
+msgid "Rows in Raw view"
+msgstr ""
+
+#: ../options/panel2.php:15
+#: ../options/panel2.php:55
+msgid "IP Lookup"
+msgstr ""
+
+#: ../options/panel2.php:16
+#: ../options/panel2.php:62
+msgid "Refresh every"
+msgstr ""
+
+#: ../options/panel2.php:29
+#, fuzzy
+msgid "View hostnames instead of IP addresses. It slows down the rendering of your metrics."
+msgstr "Muestra los nombres de host en lugar de direcciones IP. Esto retrasa puede relentizar la actualización de los indicadores de visitas."
+
+#: ../options/panel2.php:37
+msgid "Choose what number format you want to use, European or American."
+msgstr ""
+
+#: ../options/panel2.php:43
+#: ../options/panel2.php:50
+msgid "rows"
+msgstr "Filas"
+
+#: ../options/panel2.php:44
+#, fuzzy
+msgid "Specify the number of results to return for each module. Please use a <strong>positive</strong> value."
+msgstr "Define el número de resultados devueltos por cada módulo. Por favor, use un valore <strong>positivo</strong>."
+
+#: ../options/panel2.php:51
+#, fuzzy
+msgid "Specify the number of rows per page to show in the Raw panel. Please use a <strong>positive</strong> value."
+msgstr "Define el número de resultados devueltos por cada módulo. Por favor, use un valore <strong>positivo</strong>."
+
+#: ../options/panel2.php:58
+msgid "Customize the IP lookup service URL."
+msgstr ""
+
+#: ../options/panel2.php:64
+#: ../options/panel3.php:68
+msgid "seconds"
+msgstr "segundos"
+
+#: ../options/panel2.php:65
+msgid "Refresh the RAW DATA view every X seconds. Zero disables this feature."
+msgstr ""
+
+#: ../options/panel3.php:11
+#: ../options/panel3.php:42
+msgid "Ignore bots"
+msgstr "Ignorar bots"
+
+#: ../options/panel3.php:12
+#: ../options/panel3.php:50
+#, fuzzy
+msgid "Ignore Spammers"
+msgstr "Ignorar usuarios"
+
+#: ../options/panel3.php:13
+#: ../options/panel3.php:58
+#, fuzzy
+msgid "Ignore Prefetch"
+msgstr "Ignorar recursos"
+
+#: ../options/panel3.php:14
+msgid "Ignore interval"
+msgstr "Ignorar Intervalo"
+
+#: ../options/panel3.php:15
+msgid "Ignore IPs"
+msgstr "Ignorar IPs"
+
+#: ../options/panel3.php:16
+#, fuzzy
+msgid "Ignore Countries"
+msgstr "Ignorar recursos"
+
+#: ../options/panel3.php:17
+msgid "Ignore resources"
+msgstr "Ignorar recursos"
+
+#: ../options/panel3.php:18
+#, fuzzy
+msgid "Ignore referers"
+msgstr "Ignorar recursos"
+
+#: ../options/panel3.php:19
+msgid "Ignore browsers"
+msgstr "Ignorar navegadores"
+
+#: ../options/panel3.php:25
+msgid "Ignore users"
+msgstr "Ignorar usuarios"
+
+#: ../options/panel3.php:28
+msgid "Ignore users (username not found)"
+msgstr ""
+
+#: ../options/panel3.php:38
+#, fuzzy
+msgid "General settings"
+msgstr "General"
+
+#: ../options/panel3.php:46
+#, fuzzy
+msgid "Do not track visits from crawlers, search engine spiders and other bots"
+msgstr "Ignorar las peticiones de los buscadores de los que se deconoces el sistema opertivo y la versión de su CSS."
+
+#: ../options/panel3.php:54
+msgid "Do not track visits from users identified as spammers by a third-party tool (i.e. Akismet)"
+msgstr ""
+
+#: ../options/panel3.php:62
+msgid "Do not track visits generated by Firefox' <a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>Link Prefetching functionality</a>"
+msgstr ""
+
+#: ../options/panel3.php:66
+msgid "Latency"
+msgstr "Latencia"
+
+#: ../options/panel3.php:69
+#, fuzzy
+msgid "Do not track visits identical to an existing one recorded less than <strong>X</strong> seconds ago. Zero disables this feature."
+msgstr "Ignorar paginas visitadas identicas a una existente que se registró hace menos de segundos. Cero deshabilita esta función."
+
+#: ../options/panel3.php:74
+#, fuzzy
+msgid "IP addresses"
+msgstr "Dirección IP"
+
+#: ../options/panel3.php:75
+msgid "Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
+msgstr "Introduzca una lista de redes que no desea realizar un seguimiento, separados por comas. Cada red debe <strong> </ strong> se define utilizando la <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'> notación CIDR </ a> ( es decir, <em> 192.168.1.1/24 </ em>). Si el formato es incorrecto, WP SlimStat no puede rastrear páginas vistas correctamente.192.168.1.1/24</em>). Se il formato non &egrave; corretto, WP SlimStat potrebbe non funzionare correttamente."
+
+#: ../options/panel3.php:78
+#, fuzzy
+msgid "Pages and posts"
+msgstr "Paginas y Entradas(Secciones) a ignorar"
+
+#: ../options/panel3.php:79
+#, fuzzy
+msgid "Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1</em>, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>contains</strong> at least one of them."
+msgstr "Introduzca una lista de enlaces permanentes que no desea realizar un seguimiento, separados por comas. Usted debe omitir el nombre de dominio de estos recursos:? <em> / Sobre, p = 1, etc WP SlimStat hará caso de todas las páginas vistas que permalink <strong> comienza </ strong> con cualquiera de ellos."
+
+#: ../options/panel3.php:82
+#, fuzzy
+msgid "Countries"
+msgstr "Reiniciar Ips por paises"
+
+#: ../options/panel3.php:83
+msgid "Enter a list of Country codes (i.e.: <code>en-us, it, es</code>) you don't want to track, separated by commas."
+msgstr ""
+
+#: ../options/panel3.php:86
+#, fuzzy
+msgid "User agents"
+msgstr "Usuarios a ignorar"
+
+#: ../options/panel3.php:87
+#, fuzzy
+msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these."
+msgstr "Introduzca una lista de navegadores que no desea realizar un seguimiento, separados por comas. Usted puede especificar la versión del navegador añadiendo una barra después del nombre (es decir, <em> Firefox/3.6 </ em>). WP SlimStat ignorará todos los navegadores cuya identificación <strong> cadena comienza."
+
+#: ../options/panel3.php:90
+#, fuzzy
+msgid "Referers"
+msgstr "Usuarios a ignorar"
+
+#: ../options/panel3.php:91
+#, fuzzy
+msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. WP SlimStat will ignore all the referers that <strong>contain</strong> at least one of them."
+msgstr "Introduzca una lista de enlaces permanentes que no desea realizar un seguimiento, separados por comas. Usted debe omitir el nombre de dominio de estos recursos:? <em> / Sobre, p = 1, etc WP SlimStat hará caso de todas las páginas vistas que permalink <strong> comienza </ strong> con cualquiera de ellos."
+
+#: ../options/panel3.php:94
+msgid "Users"
+msgstr ""
+
+#: ../options/panel3.php:95
+#, fuzzy
+msgid "Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored."
+msgstr "Escriba una lista de usuarios de Wordpress de los que no desea realizar un seguimiento, separados por comas."
+
+#: ../options/panel4.php:16
+#: ../options/panel4.php:45
+#, fuzzy
+msgid "Users who can access the reports"
+msgstr "Quien puede ver los informes"
+
+#: ../options/panel4.php:19
+#, fuzzy
+msgid "Users who can access the reports (username not found)"
+msgstr "Quien puede ver los informes"
+
+#: ../options/panel4.php:25
+#: ../options/panel4.php:49
+msgid "Roles and capabilities"
+msgstr ""
+
+#: ../options/panel4.php:32
+#: ../options/panel4.php:53
+msgid "Users who can configure WP SlimStat"
+msgstr ""
+
+#: ../options/panel4.php:35
+msgid "Users who can configure WP SlimStat (username not found)"
+msgstr ""
+
+#: ../options/panel4.php:46
+#, fuzzy
+msgid "Enter a list of users allowed to view WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all</strong> users (including subscribers) will have access to the reports."
+msgstr "Escriba una lista de usuarios que pueden ver los informes WP SlimStat, separados por comas. Administradores están implícitamente permitido, por lo que no es necesario enumerarlos aquí. Si este campo está vacío, <strong> todo </ strong> los usuarios (pero los suscriptores) tendrán acceso a los informes."
+
+#: ../options/panel4.php:50
+#, fuzzy
+msgid "Enter the lowest <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> that users need to have in order to access all the stats (<code>read</code> is the default value). If this field is empty, <strong>all</strong> users (including subscribers) will have access to the reports."
+msgstr "Escriba una lista de usuarios que pueden ver los informes WP SlimStat, separados por comas. Administradores están implícitamente permitido, por lo que no es necesario enumerarlos aquí. Si este campo está vacío, <strong> todo </ strong> los usuarios (pero los suscriptores) tendrán acceso a los informes."
+
+#: ../options/panel4.php:54
+#, fuzzy
+msgid "Enter a list of users allowed to edit these options. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all</strong> users (but subscribers) will have access to the options panel."
+msgstr "Escriba una lista de usuarios que están autorizados para actualizar estas opciones. Tenga en cuenta que <strong> los administradores no son </ strong> implícitamente autorizados, así que no olvide incluirse a sí mismo! Si este campo está vacío, <strong> todo </ strong> los usuarios (pero los suscriptores) tendrán acceso"
+
+#: ../options/panel5.php:10
+msgid "Are you sure you want to remove all the information about your hits and visits?"
+msgstr "Estas seguro de querer borrar toda la información sobre tus visitas?"
+
+#: ../options/panel5.php:16
+msgid "Your WP SlimStat table has been successfully emptied."
+msgstr "Tu tabla de WP SlimStat ha sido vaciada correctamente."
+
+#: ../options/panel5.php:62
+#, fuzzy
+msgid "Your Geolocation data has been successfully updated."
+msgstr "Tu configuración se ha actualizado con exito."
+
+#: ../options/panel5.php:65
+#: ../options/panel5.php:69
+msgid "ERROR: Your Geolocation source file is not readable."
+msgstr ""
+
+#: ../options/panel5.php:77
+msgid "Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat."
+msgstr "Tu tabla ha sido reseteada correctamente. Ahora reactiva el plugin desactivandolo y activandolo"
+
+#: ../options/panel5.php:87
+msgid "Your WP SlimStat table has been successfully optimized."
+msgstr "Tu tabla se ha optimizado correctamente."
+
+#: ../options/panel5.php:101
+#, fuzzy
+msgid "Your WP SlimStat tables have been successfully converted to InnoDB."
+msgstr "Tu tabla de WP SlimStat ha sido vaciada correctamente."
+
+#: ../options/panel5.php:110
+#, fuzzy
+msgid "Your WP SlimStat indexes have been successfully created."
+msgstr "Tu tabla de WP SlimStat ha sido vaciada correctamente."
+
+#: ../options/panel5.php:118
+#, fuzzy
+msgid "Your WP SlimStat indexes have been successfully removed."
+msgstr "Tu tabla de WP SlimStat ha sido vaciada correctamente."
+
+#: ../options/panel5.php:160
+msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
+msgstr "La tabla de WP SlimStat ha sido limpiada. Filas afectasdas:"
+
+#: ../options/panel5.php:170
+msgid "Database Information"
+msgstr ""
+
+#: ../options/panel5.php:171
+msgid "Engine"
+msgstr "Motor"
+
+#: ../options/panel5.php:173
+msgid ", it may take some time and exceed PHP's maximum execution time"
+msgstr ""
+
+#: ../options/panel5.php:174
+msgid "switch to InnoDB"
+msgstr ""
+
+#: ../options/panel5.php:194
+msgid "Size"
+msgstr ""
+
+#: ../options/panel5.php:194
+msgid "Records"
+msgstr "Registros"
+
+#: ../options/panel5.php:194
+msgid "Average Record Length"
+msgstr "Tamaño medio por Registro"
+
+#: ../options/panel5.php:194
+msgid "Created on"
+msgstr "Creado el"
+
+#: ../options/panel5.php:196
+msgid "Approximate Overhead"
+msgstr "Gasto General Aproximado"
+
+#: ../options/panel5.php:200
+msgid "Optimize tables"
+msgstr ""
+
+#: ../options/panel5.php:204
+msgid "Purge Data"
+msgstr ""
+
+#: ../options/panel5.php:207
+msgid "Are you sure you want to PERMANENTLY delete these rows from your database?"
+msgstr "Estas seguro de querer borrar PERMANENTEMENTE estos registros de tu Base de Datos?"
+
+#: ../options/panel5.php:208
+msgid "Delete rows where"
+msgstr "Borrar filas donde"
+
+#: ../options/panel5.php:210
+msgid "Country Code"
+msgstr "Código de Pais"
+
+#: ../options/panel5.php:211
+msgid "Domain"
+msgstr "Dominio"
+
+#: ../options/panel5.php:212
+msgid "IP Address"
+msgstr "Dirección IP"
+
+#: ../options/panel5.php:213
+msgid "Language Code"
+msgstr "Código de Idioma"
+
+#: ../options/panel5.php:214
+msgid "Permalink"
+msgstr "Enlace Permanente"
+
+#: ../options/panel5.php:215
+msgid "Search Terms"
+msgstr "Términos de Búsqueda"
+
+#: ../options/panel5.php:218
+msgid "Is equal to"
+msgstr "Es igual a:"
+
+#: ../options/panel5.php:219
+msgid "Contains"
+msgstr "Contiene"
+
+#: ../options/panel5.php:220
+msgid "Does not contain"
+msgstr "No contiene"
+
+#: ../options/panel5.php:221
+msgid "Starts with"
+msgstr "Empieza por"
+
+#: ../options/panel5.php:222
+msgid "Ends with"
+msgstr "Acaba en"
+
+#: ../options/panel5.php:223
+msgid "Does not start with"
+msgstr "No empieza por"
+
+#: ../options/panel5.php:224
+msgid "Does not end with"
+msgstr "No acaba en"
+
+#: ../options/panel5.php:227
+msgid "DELETE"
+msgstr "ELIMINAR"
+
+#: ../options/panel5.php:235
+#, fuzzy
+msgid "Activate Indexes"
+msgstr "Activar seguimiento"
+
+#: ../options/panel5.php:236
+msgid "Use this feature if you want to improve the overall performance of your stats. You will need about 30% more DB space, to store the extra information required."
+msgstr ""
+
+#: ../options/panel5.php:240
+msgid "Remove Indexes"
+msgstr ""
+
+#: ../options/panel5.php:241
+msgid "Use this feature if you want to save some DB space, while slightly degrading WP SlimStat overall performances."
+msgstr ""
+
+#: ../options/panel5.php:245
+msgid "Factory Reset"
+msgstr ""
+
+#: ../options/panel5.php:246
+msgid "Select this option if you want to empty your WP SlimStat database (does not reset your settings)."
+msgstr ""
+
+#: ../options/panel5.php:250
+msgid "Update Geolocation DB"
+msgstr ""
+
+#: ../options/panel5.php:251
+msgid "Select this option if you want to load the new geolocation data into your database."
+msgstr ""
+
+#: ../options/panel5.php:257
+msgid "RESET STATS"
+msgstr "REINICIAR ESTADÍSTICAS"
+
+#: ../options/panel5.php:258
+msgid "It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process."
+msgstr "Parece que es necesario actualizar la estructura de una de las tablas utilizadas por este plugin. Por favor, haga clic en el botón de aquí arriba para restablecer la mesa (todos los datos se perderán, lo siento), a continuación, desactivar / activar WP SlimStat para completar el proceso de instalación."
+
+#: ../options/panel6.php:19
+msgid "How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better, especially if you are making money out of it. Any donation received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family."
+msgstr "¿Qué valor tiene el seguimiento de sus visitantes para su sitio? WP SlimStat es y será siempre libre, pero la posibilidad de apoyar al autor si este plugin hecho su sitio web, mejor, especialmente si usted está haciendo dinero con ello. Cualquier donación recibida será reinvertido en el desarrollo de WP SlimStat, y para comprar algo de comida para mi familia hambrienta."
+
+#: ../options/panel6.php:25
+#, fuzzy
+msgid "Don't want or cannot donate? You can still help"
+msgstr "No quiero donar? Usted todavía puede ayudar a"
+
+#: ../options/panel6.php:26
+#, fuzzy
+msgid "If you cannot donate money, please consider blogging about WP SlimStat with a link to the plugin's page. Your users don't know you're using WP SlimStat, please let them know what makes your blog better. You can also contribute donating your time: do not hesitate to send me bug reports, your localization files, ideas on how to improve WP SlimStat and so on. Whatever you do, thanks for using WP SlimStat!"
+msgstr "Si no te gusta la donación de dinero, por que no crear un blog sobre WP SlimStat con un enlace a la página del plugin. Los usuarios no saben que está usando WP SlimStat, por favor, hágales saber lo que hace tu mejor. Usted también puede contribuir donando su tiempo: no"
+
+#: ../options/panel6.php:28
+msgid "Vote and show your appreciation"
+msgstr "Votar y mostrar su agradecimiento"
+
+#: ../options/panel6.php:29
+#, fuzzy
+msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on its Plugin Directory page."
+msgstr "Dile a otras personas si WP SlimStat trabaja para ti y lo bueno que es. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&topic_id=14104\"> se Tarifa </ a> en su Plugin página del Directorio."
+
+#, fuzzy
+#~ msgid "Are you sure you want to empty the ip-to-countries table?"
+#~ msgstr "Estas seguro que quieres guardar las ip de los paises en la tabla?"
+
+#~ msgid ""
+#~ "Your IP-to-countries table has been successfully emptied. Now go to your "
+#~ "Plugins panel and deactivate/reactivate WP SlimStat to load the new data."
+#~ msgstr ""
+#~ "Tu tabla de  Ips de Paises se ha borrado correctamente. Ahora ves a "
+#~ "Plugins y desactiva y reactiva el plugin para cargar los nuevos datos."
+
+#, fuzzy
+#~ msgid "Reset Countries"
+#~ msgstr "Reiniciar Ips por paises"
+
+#~ msgid "Please note that these commands cannot be undone!"
+#~ msgstr ""
+#~ "Tenga en cuenta que <strong>estos comandos</strong> no se puede deshacer!"
+
+#~ msgid "Current Status"
+#~ msgstr "Estado Actual"
+
+#~ msgid "Clean database"
+#~ msgstr "Limpiar Base de Datos"
+
+#, fuzzy
+#~ msgid "Delete Records"
+#~ msgstr "Registros"
+
+#~ msgid "Show footer link"
+#~ msgstr "Mostrar enlace en pie de pagina"
+
+#~ msgid ""
+#~ "If an unwanted link to WP SlimStat is showing up in your template's "
+#~ "footer, select NO here below. Otherwise, I'd really appreciate if you "
+#~ "could leave this enabled."
+#~ msgstr ""
+#~ "Si un enlace no deseado a WP SlimStat está apareciendo en el pie de su "
+#~ "plantilla, seleccione la opción NO a continuación. De lo contrario, me "
+#~ "gustaría mucho agradecería que deje este habilitado."
+
+#~ msgid "IP addresses to ignore"
+#~ msgstr "Direcciones IP a ignorar"
+
+#~ msgid "Users to ignore"
+#~ msgstr "Usuarios a ignorar"
+
+#~ msgid "Thank you"
+#~ msgstr "Gracias"
+
+#~ msgid "Who can manage these options"
+#~ msgstr "Quie puede cambiar opciones"
+
+#~ msgid "Browsers to ignore"
+#~ msgstr "Navegadores a ignorar"
+
+#~ msgid "Empty database"
+#~ msgstr "Vaciar Base de Datos"
+
+#~ msgid "DELETE STATS"
+#~ msgstr "Eliminar Estadísticas"
+
+#~ msgid "EMPTY IP-TO-COUNTRIES"
+#~ msgstr "Eliminar IPs por paises"
+
+#~ msgid "Old table detected"
+#~ msgstr "Tabla antigua detectada"

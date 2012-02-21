@@ -1,0 +1,2349 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP-SlimStat translation (French)\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Vidal Arpin <vidal@arpin.ca>\n"
+"Language-Team: Vidal Arpin <vidal@arpin.ca>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: s\n"
+"X-Poedit-Language: French\n"
+
+msgid "yes"
+msgstr "Oui"
+
+msgid "no"
+msgstr "Non"
+
+msgid "xx"
+msgstr "xx"
+
+msgid "unknown"
+msgstr "Inconnu"
+
+# Windows 7
+msgid "win7"
+msgstr "Windows 7"
+
+# Windows Vista
+msgid "winvista"
+msgstr "Windows Vista"
+
+# Windows 2003
+msgid "win2003"
+msgstr "Windows 2003"
+
+# Windows XP
+msgid "winxp"
+msgstr "Windows XP"
+
+# Windows NT
+msgid "winnt"
+msgstr "Windows NT"
+
+# Windows 2000
+msgid "win2000"
+msgstr "Windows 2000"
+
+# Windows ME
+msgid "winme"
+msgstr "Windows ME"
+
+# Windows 98
+msgid "win98"
+msgstr "Windows 98"
+
+# Windows 95
+msgid "win95"
+msgstr "Windows 95"
+
+# Windows 3.1
+msgid "win31"
+msgstr "Windows 3.1"
+
+# Windows 32-bit
+msgid "win32"
+msgstr "Windows 32-bit"
+
+# Windows 16-bit
+msgid "win16"
+msgstr "Windows 16-bit"
+
+# Mac 68K
+msgid "mac68k"
+msgstr "Mac 68K"
+
+# Mac OS X
+msgid "macosx"
+msgstr "Mac OS X"
+
+# Mac PowerPC
+msgid "macppc"
+msgstr "Mac PowerPC"
+
+# Mac
+msgid "mac"
+msgstr "Mac"
+
+# IBM OS/2
+msgid "os/2"
+msgstr "IBM OS/2"
+
+# Sun OS
+msgid "sunos"
+msgstr "Sun OS"
+
+# Solaris
+msgid "solaris"
+msgstr "Solaris"
+
+# UNIX
+msgid "unix"
+msgstr "UNIX"
+
+# IRIX
+msgid "irix"
+msgstr "IRIX"
+
+# HP-UX
+msgid "hp-ux"
+msgstr "HP-UX"
+
+# IBM AIX
+msgid "aix"
+msgstr "IBM AIX"
+
+# BeOS
+msgid "beos"
+msgstr "BeOS"
+
+# Cygwin
+msgid "cygwin"
+msgstr "Cygwin"
+
+# Darwin
+msgid "darwin"
+msgstr "Darwin"
+
+# Digital Unix
+msgid "digital unix"
+msgstr "Digital Unix"
+
+# Risc OS
+msgid "risc os"
+msgstr "Risc OS"
+
+# DEC Alpha
+msgid "dec alpha"
+msgstr "DEC Alpha"
+
+# VAX
+msgid "vax"
+msgstr "VAX"
+
+# openVMS
+msgid "openvms"
+msgstr "openVMS"
+
+# Linux
+msgid "linux"
+msgstr "Linux"
+
+# freeBSD
+msgid "freebsd"
+msgstr "freeBSD"
+
+# openBSD
+msgid "openbsd"
+msgstr "openBSD"
+
+# netBSD
+msgid "netbsd"
+msgstr "netBSD"
+
+# Debian
+msgid "debian"
+msgstr "Debian"
+
+# Amiga
+msgid "amiga"
+msgstr "Amiga"
+
+# Android
+msgid "android"
+msgstr "Android"
+
+# WyderOS
+msgid "wyderos"
+msgstr "WyderOS"
+
+# iPhone
+msgid "iphone osx"
+msgstr "iPhone"
+
+# Palm
+msgid "palm"
+msgstr "Palm"
+
+# WAP
+msgid "wap"
+msgstr "WAP"
+
+# Java
+msgid "java"
+msgstr "Java"
+
+# Windows CE
+msgid "wince"
+msgstr "Windows CE"
+
+# Symbian OS
+msgid "symbianos"
+msgstr "Symbian OS"
+
+# webOS
+msgid "webos"
+msgstr "webOS"
+
+# PowerTV
+msgid "powertv"
+msgstr "PowerTV"
+
+# 	Andorra
+msgid "c-ad"
+msgstr "Andorre"
+
+# 	United Arab Emirates
+msgid "c-ae"
+msgstr "Émirats arabes unis"
+
+# 	Afghanistan
+msgid "c-af"
+msgstr "Afghanistan"
+
+# 	Antigua and Barbuda
+msgid "c-ag"
+msgstr "Antigua et Barbuda"
+
+# 	Anguilla
+msgid "c-ai"
+msgstr "Anguilla"
+
+# 	Albania
+msgid "c-al"
+msgstr "Albanie"
+
+# 	Armenia
+msgid "c-am"
+msgstr "Arménie"
+
+# 	Netherlands Antilles
+msgid "c-an"
+msgstr "Antilles néerlandaises"
+
+# 	Angola
+msgid "c-ao"
+msgstr "Angola"
+
+# 	Antarctica
+msgid "c-aq"
+msgstr "Antarctique"
+
+# 	Argentina
+msgid "c-ar"
+msgstr "Argentine"
+
+# 	American Samoa
+msgid "c-as"
+msgstr "Samoa américaines"
+
+# 	Austria
+msgid "c-at"
+msgstr "Autriche"
+
+# 	Australia
+msgid "c-au"
+msgstr "Australie"
+
+# 	Aruba
+msgid "c-aw"
+msgstr "Aruba"
+
+# 	Åland Islands
+msgid "c-ax"
+msgstr "Îles Åland"
+
+# 	Azerbaijan
+msgid "c-az"
+msgstr "Azerbaïdjan"
+
+# 	Bosnia and Herzegovina
+msgid "c-ba"
+msgstr "Bosnie-Herzégovine"
+
+# 	Barbados
+msgid "c-bb"
+msgstr "Barbade"
+
+# 	Bangladesh
+msgid "c-bd"
+msgstr "Bangladesh"
+
+# 	Belgium
+msgid "c-be"
+msgstr "Belgique"
+
+# 	Burkina Faso
+msgid "c-bf"
+msgstr "Burkina Faso"
+
+# 	Bulgaria
+msgid "c-bg"
+msgstr "Bulgarie"
+
+# 	Bahrain
+msgid "c-bh"
+msgstr "Bahreïn"
+
+# 	Burundi
+msgid "c-bi"
+msgstr "Burundi"
+
+# 	Benin
+msgid "c-bj"
+msgstr "Bénin"
+
+# 	Saint Barthélemy
+msgid "c-bl"
+msgstr "Saint-Barthélemy"
+
+# 	Bermuda
+msgid "c-bm"
+msgstr "Bermudes"
+
+# 	Brunei Darussalam
+msgid "c-bn"
+msgstr "Brunéi Darussalam"
+
+# 	Bolivia
+msgid "c-bo"
+msgstr "État plurinational de Bolivie"
+
+# 	Brazil
+msgid "c-br"
+msgstr "Brésil"
+
+# 	Bahamas
+msgid "c-bs"
+msgstr "Bahamas"
+
+# 	Bhutan
+msgid "c-bt"
+msgstr "Bhoutan"
+
+# 	Burma
+msgid "c-bu"
+msgstr "Birmanie"
+
+# 	Bouvet Island
+msgid "c-bv"
+msgstr "Île Bouvet"
+
+# 	Botswana
+msgid "c-bw"
+msgstr "Botswana"
+
+# 	Belarus
+msgid "c-by"
+msgstr "Bélarus"
+
+# 	Belize
+msgid "c-bz"
+msgstr "Belize"
+
+# 	Canada
+msgid "c-ca"
+msgstr "Canada"
+
+# 	Cocos (Keeling) Islands
+msgid "c-cc"
+msgstr "Îles Cocos (Keeling)"
+
+# 	The Democratic Republic of the Congo
+msgid "c-cd"
+msgstr "République démocratique du Congo"
+
+# 	Central African Republic
+msgid "c-cf"
+msgstr "République centrafricaine"
+
+# 	Congo
+msgid "c-cg"
+msgstr "Congo"
+
+# 	Switzerland
+msgid "c-ch"
+msgstr "Suisse"
+
+# 	Côte d'Ivoire
+msgid "c-ci"
+msgstr "Côte d'Ivoire"
+
+# 	Cook Islands
+msgid "c-ck"
+msgstr "Îles Cook"
+
+# 	Chile
+msgid "c-cl"
+msgstr "Chili"
+
+# 	Cameroon
+msgid "c-cm"
+msgstr "Cameroun"
+
+# 	China
+msgid "c-cn"
+msgstr "Chine"
+
+# 	Colombia
+msgid "c-co"
+msgstr "Colombie"
+
+# 	Costa Rica
+msgid "c-cr"
+msgstr "Costa Rica"
+
+# 	Serbia and Montenegro
+msgid "c-cs"
+msgstr "Serbie-et-Monténégro"
+
+# 	Cuba
+msgid "c-cu"
+msgstr "Cuba"
+
+# 	Cape Verde
+msgid "c-cv"
+msgstr "Cap-Vert"
+
+# 	Christmas Island
+msgid "c-cx"
+msgstr "Île Christmas"
+
+# 	Cyprus
+msgid "c-cy"
+msgstr "Chypre"
+
+# 	Czech Republic
+msgid "c-cz"
+msgstr "République tchèque"
+
+# 	German Democratic Republic
+msgid "c-dd"
+msgstr "République démocratique allemande"
+
+# 	Germany
+msgid "c-de"
+msgstr "Allemagne"
+
+# 	Djibouti
+msgid "c-dj"
+msgstr "Djibouti"
+
+# 	Denmark
+msgid "c-dk"
+msgstr "Danemark"
+
+# 	Dominica
+msgid "c-dm"
+msgstr "Dominique"
+
+# 	Dominican Republic
+msgid "c-do"
+msgstr "République dominicaine"
+
+# 	Algeria
+msgid "c-dz"
+msgstr "Algérie"
+
+# 	Ecuador
+msgid "c-ec"
+msgstr "Équateur"
+
+# 	Estonia
+msgid "c-ee"
+msgstr "Estonie"
+
+# 	Egypt
+msgid "c-eg"
+msgstr "Égypte"
+
+# 	Western Sahara
+msgid "c-eh"
+msgstr "Sahara occidental"
+
+# 	Eritrea
+msgid "c-er"
+msgstr "Érythrée"
+
+# 	Spain
+msgid "c-es"
+msgstr "Espagne"
+
+# 	Ethiopia
+msgid "c-et"
+msgstr "Éthiopie"
+
+# 	Finland
+msgid "c-fi"
+msgstr "Finlande"
+
+# 	Fiji
+msgid "c-fj"
+msgstr "Fidji"
+
+# 	Falkland Islands (Malvinas)
+msgid "c-fk"
+msgstr "Îles Falkland (Malvinas)"
+
+# 	Federated States of Micronesia
+msgid "c-fm"
+msgstr "États fédérés de Micronésie"
+
+# 	Faroe Islands
+msgid "c-fo"
+msgstr "Îles Féroé"
+
+# 	France
+msgid "c-fr"
+msgstr "France"
+
+# 	Gabon
+msgid "c-ga"
+msgstr "Gabon"
+
+# 	United Kingdom
+msgid "c-gb"
+msgstr "Royaume-Uni"
+
+# 	Grenada
+msgid "c-gd"
+msgstr "Grenade"
+
+# 	Georgia
+msgid "c-ge"
+msgstr "Géorgie"
+
+# 	French Guiana
+msgid "c-gf"
+msgstr "Guyane française"
+
+# 	Guernsey
+msgid "c-gg"
+msgstr "Guernesey"
+
+# 	Ghana
+msgid "c-gh"
+msgstr "Ghana"
+
+# 	Gibraltar
+msgid "c-gi"
+msgstr "Gibraltar"
+
+# 	Greenland
+msgid "c-gl"
+msgstr "Groenland"
+
+# 	Gambia
+msgid "c-gm"
+msgstr "Gambie"
+
+# 	Guinea
+msgid "c-gn"
+msgstr "Guinée"
+
+# 	Guadeloupe
+msgid "c-gp"
+msgstr "Guadeloupe"
+
+# 	Equatorial Guinea
+msgid "c-gq"
+msgstr "Guinée équatoriale"
+
+# 	Greece
+msgid "c-gr"
+msgstr "Grèce"
+
+# 	South Georgia and the South Sandwich Islands
+msgid "c-gs"
+msgstr "Géorgie du sud et les Îles Sandwich du sud"
+
+# 	Guatemala
+msgid "c-gt"
+msgstr "Guatemala"
+
+# 	Guam
+msgid "c-gu"
+msgstr "Guam"
+
+# 	Guinea-Bissau
+msgid "c-gw"
+msgstr "Guinée-Bissau"
+
+# 	Guyana
+msgid "c-gy"
+msgstr "Guyana"
+
+# 	Hong Kong
+msgid "c-hk"
+msgstr "Hong Kong"
+
+# 	Heard Island and McDonald Islands
+msgid "c-hm"
+msgstr "Île Heard et îles MacDonald"
+
+# 	Honduras
+msgid "c-hn"
+msgstr "Honduras"
+
+# 	Croatia
+msgid "c-hr"
+msgstr "Croatie"
+
+# 	Haiti
+msgid "c-ht"
+msgstr "Haïti"
+
+# 	Hungary
+msgid "c-hu"
+msgstr "Hongrie"
+
+# 	Indonesia
+msgid "c-id"
+msgstr "Indonésie"
+
+# 	Ireland
+msgid "c-ie"
+msgstr "Irlande"
+
+# 	Israel
+msgid "c-il"
+msgstr "Israël"
+
+# 	Isle of Man
+msgid "c-im"
+msgstr "Île de Man"
+
+# 	India
+msgid "c-in"
+msgstr "Inde"
+
+# 	British Indian Ocean Territory
+msgid "c-io"
+msgstr "Territoire britannique de l'océan Indien"
+
+# 	Iraq
+msgid "c-iq"
+msgstr "Irak"
+
+# 	Islamic Republic of Iran
+msgid "c-ir"
+msgstr "République islamique d'Iran"
+
+# 	Iceland
+msgid "c-is"
+msgstr "Islande"
+
+# 	Italy
+msgid "c-it"
+msgstr "Italie"
+
+# 	Jersey
+msgid "c-je"
+msgstr "Jersey"
+
+# 	Jamaica
+msgid "c-jm"
+msgstr "Jamaïque"
+
+# 	Jordan
+msgid "c-jo"
+msgstr "Jordanie"
+
+# 	Japan
+msgid "c-jp"
+msgstr "Japon"
+
+# 	Kenya
+msgid "c-ke"
+msgstr "Kenya"
+
+# 	Kyrgyzstan
+msgid "c-kg"
+msgstr "Kirghizistan"
+
+# 	Cambodia
+msgid "c-kh"
+msgstr "Cambodge"
+
+# 	Kiribati
+msgid "c-ki"
+msgstr "Kiribati"
+
+# 	Comoros
+msgid "c-km"
+msgstr "Comores"
+
+# 	Saint Kitts and Nevis
+msgid "c-kn"
+msgstr "Saint-Kitts-et-Nevis"
+
+# 	Democratic People's Republic of Korea
+msgid "c-kp"
+msgstr "République populaire démocratique de Corée"
+
+# 	Republic of Korea
+msgid "c-kr"
+msgstr "République de Corée"
+
+# 	Kuwait
+msgid "c-kw"
+msgstr "Koweït"
+
+# 	Cayman Islands
+msgid "c-ky"
+msgstr "Îles Caïmanes"
+
+# 	Kazakhstan
+msgid "c-kz"
+msgstr "Kazakhstan"
+
+# 	Lao People's Democratic Republic
+msgid "c-la"
+msgstr "République démocratique populaire lao"
+
+# 	Lebanon
+msgid "c-lb"
+msgstr "Liban"
+
+# 	Saint Lucia
+msgid "c-lc"
+msgstr "Sainte-Lucie"
+
+# 	Liechtenstein
+msgid "c-li"
+msgstr "Liechtenstein"
+
+# 	Sri Lanka
+msgid "c-lk"
+msgstr "Sri Lanka"
+
+# 	Liberia
+msgid "c-lr"
+msgstr "Libéria"
+
+# 	Lesotho
+msgid "c-ls"
+msgstr "Lesotho"
+
+# 	Lithuania
+msgid "c-lt"
+msgstr "Lituanie"
+
+# 	Luxembourg
+msgid "c-lu"
+msgstr "Luxembourg"
+
+# 	Latvia
+msgid "c-lv"
+msgstr "Lettonie"
+
+# 	Libyan Arab Jamahiriya
+msgid "c-ly"
+msgstr "Jamahiriya arabe libyenne"
+
+# 	Morocco
+msgid "c-ma"
+msgstr "Maroc"
+
+# 	Monaco
+msgid "c-mc"
+msgstr "Monaco"
+
+# 	Moldova
+msgid "c-md"
+msgstr "République de Moldova"
+
+# 	Montenegro
+msgid "c-me"
+msgstr "Monténégro"
+
+# 	Saint Martin
+msgid "c-mf"
+msgstr "Saint-Martin"
+
+# 	Madagascar
+msgid "c-mg"
+msgstr "Madagascar"
+
+# 	Marshall Islands
+msgid "c-mh"
+msgstr "Îles Marshall"
+
+# 	The Former Yugoslav Republic of Macedonia
+msgid "c-mk"
+msgstr "Ex-république yougoslave de Macédoine"
+
+# 	Mali
+msgid "c-ml"
+msgstr "Mali"
+
+# 	Myanmar
+msgid "c-mm"
+msgstr "Myanmar"
+
+# 	Mongolia
+msgid "c-mn"
+msgstr "Mongolie"
+
+# 	Macao
+msgid "c-mo"
+msgstr "Macao"
+
+# 	Northern Mariana Islands
+msgid "c-mp"
+msgstr "Îles Mariannes du nord"
+
+# 	Martinique
+msgid "c-mq"
+msgstr "Martinique"
+
+# 	Mauritania
+msgid "c-mr"
+msgstr "Mauritanie"
+
+# 	Montserrat
+msgid "c-ms"
+msgstr "Montserrat"
+
+# 	Malta
+msgid "c-mt"
+msgstr "Malte"
+
+# 	Mauritius
+msgid "c-mu"
+msgstr "Maurice"
+
+# 	Maldives
+msgid "c-mv"
+msgstr "Maldives"
+
+# 	Malawi
+msgid "c-mw"
+msgstr "Malawi"
+
+# 	Mexico
+msgid "c-mx"
+msgstr "Mexique"
+
+# 	Malaysia
+msgid "c-my"
+msgstr "Malaisie"
+
+# 	Mozambique
+msgid "c-mz"
+msgstr "Mozambique"
+
+# 	Namibia
+msgid "c-na"
+msgstr "Namibie"
+
+# 	New Caledonia
+msgid "c-nc"
+msgstr "Nouvelle-Calédonie"
+
+# 	Niger
+msgid "c-ne"
+msgstr "Niger"
+
+# 	Norfolk Island
+msgid "c-nf"
+msgstr "Île Norfolk"
+
+# 	Nigeria
+msgid "c-ng"
+msgstr "Nigéria"
+
+# 	Nicaragua
+msgid "c-ni"
+msgstr "Nicaragua"
+
+# 	Netherlands
+msgid "c-nl"
+msgstr "Pays-bas"
+
+# 	Norway
+msgid "c-no"
+msgstr "Norvège"
+
+# 	Nepal
+msgid "c-np"
+msgstr "Népal"
+
+# 	Nauru
+msgid "c-nr"
+msgstr "Nauru"
+
+# 	Neutral Zone
+msgid "c-nt"
+msgstr "Zone neutre"
+
+# 	Niue
+msgid "c-nu"
+msgstr "Niué"
+
+# 	New Zealand
+msgid "c-nz"
+msgstr "Nouvelle-Zélande"
+
+# 	Oman
+msgid "c-om"
+msgstr "Oman"
+
+# 	Panama
+msgid "c-pa"
+msgstr "Panama"
+
+# 	Peru
+msgid "c-pe"
+msgstr "Pérou"
+
+# 	French Polynesia
+msgid "c-pf"
+msgstr "Polynésie française"
+
+# 	Papua New Guinea
+msgid "c-pg"
+msgstr "Papouasie-Nouvelle-Guinée"
+
+# 	Philippines
+msgid "c-ph"
+msgstr "Philippines"
+
+# 	Pakistan
+msgid "c-pk"
+msgstr "Pakistan"
+
+# 	Poland
+msgid "c-pl"
+msgstr "Pologne"
+
+# 	Saint Pierre and Miquelon
+msgid "c-pm"
+msgstr "Saint-Pierre-et-Miquelon"
+
+# 	Pitcairn
+msgid "c-pn"
+msgstr "Pitcairn"
+
+# 	Puerto Rico
+msgid "c-pr"
+msgstr "Porto Rico"
+
+# 	Occupied Palestinian Territory
+msgid "c-ps"
+msgstr "Territoire palestinien occupé"
+
+# 	Portugal
+msgid "c-pt"
+msgstr "Portugal"
+
+# 	Palau
+msgid "c-pw"
+msgstr "Palaos"
+
+# 	Paraguay
+msgid "c-py"
+msgstr "Paraguay"
+
+# 	Qatar
+msgid "c-qa"
+msgstr "Qatar"
+
+# 	Réunion
+msgid "c-re"
+msgstr "Réunion"
+
+# 	Romania
+msgid "c-ro"
+msgstr "Roumanie"
+
+# 	Serbia
+msgid "c-rs"
+msgstr "Serbie"
+
+# 	Russian Federation
+msgid "c-ru"
+msgstr "Fédération de Russie"
+
+# 	Rwanda
+msgid "c-rw"
+msgstr "Rwanda"
+
+# 	Saudi Arabia
+msgid "c-sa"
+msgstr "Arabie saoudite"
+
+# 	Solomon Islands
+msgid "c-sb"
+msgstr "Îles Salomon"
+
+# 	Seychelles
+msgid "c-sc"
+msgstr "Seychelles"
+
+# 	Sudan
+msgid "c-sd"
+msgstr "Soudan"
+
+# 	Sweden
+msgid "c-se"
+msgstr "Suède"
+
+# 	Singapore
+msgid "c-sg"
+msgstr "Singapour"
+
+# 	Saint Helena, Ascension and Tristan da Cunha
+msgid "c-sh"
+msgstr "Sainte-Hélène, Ascension et Tristan da Cunha"
+
+# 	Slovenia
+msgid "c-si"
+msgstr "Slovénie"
+
+# 	Svalbard and Jan Mayen
+msgid "c-sj"
+msgstr "Svalbard et île Jan Mayen"
+
+# 	Slovakia
+msgid "c-sk"
+msgstr "Slovaquie"
+
+# 	Sierra Leone
+msgid "c-sl"
+msgstr "Sierra Leone"
+
+# 	San Marino
+msgid "c-sm"
+msgstr "Saint-Marin"
+
+# 	Senegal
+msgid "c-sn"
+msgstr "Sénégal"
+
+# 	Somalia
+msgid "c-so"
+msgstr "Somalie"
+
+# 	Suriname
+msgid "c-sr"
+msgstr "Suriname"
+
+# 	Sao Tome and Principe
+msgid "c-st"
+msgstr "Sao Tomé-et-Principe"
+
+# 	Union of Soviet Socialist Republics
+msgid "c-su"
+msgstr "Union des républiques socialistes soviétiques"
+
+# 	El Salvador
+msgid "c-sv"
+msgstr "El Salvador"
+
+# 	Syrian Arab Republic
+msgid "c-sy"
+msgstr "République arabe syrienne"
+
+# 	Swaziland
+msgid "c-sz"
+msgstr "Swaziland"
+
+# 	Turks and Caicos Islands
+msgid "c-tc"
+msgstr "Îles Turks et Caïques"
+
+# 	Chad
+msgid "c-td"
+msgstr "Tchad"
+
+# 	French Southern Territories
+msgid "c-tf"
+msgstr "Terres australes françaises"
+
+# 	Togo
+msgid "c-tg"
+msgstr "Togo"
+
+# 	Thailand
+msgid "c-th"
+msgstr "Thaïlande"
+
+# 	Tajikistan
+msgid "c-tj"
+msgstr "Tadjikistan"
+
+# 	Tokelau
+msgid "c-tk"
+msgstr "Tokelau"
+
+# 	Timor-Leste
+msgid "c-tl"
+msgstr "Timor-Leste"
+
+# 	Turkmenistan
+msgid "c-tm"
+msgstr "Turkménistan"
+
+# 	Tunisia
+msgid "c-tn"
+msgstr "Tunisie"
+
+# 	Tonga
+msgid "c-to"
+msgstr "Tonga"
+
+# 	East Timor
+msgid "c-tp"
+msgstr "Timor oriental"
+
+# 	Turkey
+msgid "c-tr"
+msgstr "Turquie "
+
+# 	Trinidad and Tobago
+msgid "c-tt"
+msgstr "Trinité-et-Tobago "
+
+# 	Tuvalu
+msgid "c-tv"
+msgstr "Tuvalu"
+
+# 	Taiwan, Province of China
+msgid "c-tw"
+msgstr "Taïwan, province de Chine"
+
+# 	United Republic of Tanzania
+msgid "c-tz"
+msgstr "République-unie de Tanzanie"
+
+# 	Ukraine
+msgid "c-ua"
+msgstr "Ukraine"
+
+# 	Uganda
+msgid "c-ug"
+msgstr "Ouganda"
+
+# 	United States Minor Outlying Islands
+msgid "c-um"
+msgstr "îles mineures éloignées des États-Unis"
+
+# 	United States
+msgid "c-us"
+msgstr "États-Unis"
+
+# 	Uruguay
+msgid "c-uy"
+msgstr "Uruguay"
+
+# 	Uzbekistan
+msgid "c-uz"
+msgstr "Ouzbékistan "
+
+# 	Holy See (Vatican City State)
+msgid "c-va"
+msgstr "Saint-siège (état de la cité du Vatican) "
+
+# 	Saint Vincent and the Grenadines
+msgid "c-vc"
+msgstr "Saint-Vincent-et-les Grenadines"
+
+# 	Venezuela
+msgid "c-ve"
+msgstr "République bolivarienne du Venezuela"
+
+# 	British Virgin Islands
+msgid "c-vg"
+msgstr "Îles vierges britanniques"
+
+# 	U.S. Virgin Islands
+msgid "c-vi"
+msgstr "Îles vierges des États-Unis"
+
+# 	Viet Nam
+msgid "c-vn"
+msgstr "Viet Nam"
+
+# 	Vanuatu
+msgid "c-vu"
+msgstr "Vanuatu"
+
+# 	Wallis and Futuna
+msgid "c-wf"
+msgstr "Wallis et Futuna"
+
+# 	Samoa
+msgid "c-ws"
+msgstr "Samoa"
+
+# 	Democratic Yemen
+msgid "c-yd"
+msgstr "République démocratique populaire du Yémen"
+
+# 	Yemen
+msgid "c-ye"
+msgstr "Yémen"
+
+# 	Mayotte
+msgid "c-yt"
+msgstr "Mayotte"
+
+# 	Yugoslavia
+msgid "c-yu"
+msgstr "Yougoslavie"
+
+# 	South Africa
+msgid "c-za"
+msgstr "Afrique du sud"
+
+# 	Zambia
+msgid "c-zm"
+msgstr "Zambie"
+
+# 	Zaire
+msgid "c-zr"
+msgstr "Zaïre"
+
+# 	Zimbabwe
+msgid "c-zw"
+msgstr "Zimbabwe"
+
+# 	Ascension Island
+msgid "c-ac"
+msgstr "Île Ascension"
+
+# 	Canary Islands
+msgid "c-ic"
+msgstr "Îles Canaries"
+
+# 	Ceuta, Melilla
+msgid "c-ea"
+msgstr "Ceuta et Melilla"
+
+# 	Clipperton Island
+msgid "c-cp"
+msgstr "Île de Clipperton"
+
+# 	Diego Garcia
+msgid "c-dg"
+msgstr "Diego Garcia"
+
+# 	France, Metropolitan
+msgid "c-fx"
+msgstr "France métropolitaine"
+
+# 	United Kingdom
+msgid "c-uk"
+msgstr "Royaume-Uni"
+
+# 	Tristan da Cunha
+msgid "c-ta"
+msgstr "Tristan da Cunha"
+
+# 	European Union
+msgid "c-eu"
+msgstr "Union européenne"
+
+# Unknown
+msgid "c-"
+msgstr "Inconnu"
+
+# Unknown
+msgid "c-xx"
+msgstr "Inconnu"
+
+# 	Afar
+msgid "l-aa"
+msgstr "Afar"
+
+# 	Abkhazian
+msgid "l-ab"
+msgstr "Abkhaze"
+
+# 	Avestan
+msgid "l-ae"
+msgstr "Avestique"
+
+# 	Afrikaans
+msgid "l-af"
+msgstr "Afrikaans"
+
+# 	Akan
+msgid "l-ak"
+msgstr "Akan"
+
+# 	Amharic
+msgid "l-am"
+msgstr "Amharique"
+
+# 	Aragonese
+msgid "l-an"
+msgstr "Aragonais"
+
+# 	Arabic
+msgid "l-ar"
+msgstr "Arabe"
+
+# 	Assamese
+msgid "l-as"
+msgstr "Assamais"
+
+# 	Avaric
+msgid "l-av"
+msgstr "Avar"
+
+# 	Aymara
+msgid "l-ay"
+msgstr "Aymara"
+
+# 	Azerbaijani
+msgid "l-az"
+msgstr "Azéri"
+
+# 	Bashkir
+msgid "l-ba"
+msgstr "Bachkir"
+
+# 	Belarusian
+msgid "l-be"
+msgstr "Biélorusse"
+
+# 	Bulgarian
+msgid "l-bg"
+msgstr "Bulgare"
+
+# 	Bihari languages
+msgid "l-bh"
+msgstr "Langues Bihari"
+
+# 	Bislama
+msgid "l-bi"
+msgstr "Bichelamar"
+
+# 	Bambara
+msgid "l-bm"
+msgstr "Bambara"
+
+# 	Bengali
+msgid "l-bn"
+msgstr "Bengalî"
+
+# 	Tibetan
+msgid "l-bo"
+msgstr "Tibétain"
+
+# 	Breton
+msgid "l-br"
+msgstr "Breton"
+
+# 	Bosnian
+msgid "l-bs"
+msgstr "Bosnien"
+
+# 	Catalan; Valencian
+msgid "l-ca"
+msgstr "Catalan; Valencien"
+
+# 	Chechen
+msgid "l-ce"
+msgstr "Tchétchène"
+
+# 	Chamorro
+msgid "l-ch"
+msgstr "Chamorro"
+
+# 	Corsican
+msgid "l-co"
+msgstr "Corse"
+
+# 	Cree
+msgid "l-cr"
+msgstr "Cri"
+
+# 	Czech
+msgid "l-cs"
+msgstr "Tchèque"
+
+# 	Church Slavic; Church Slavonic
+msgid "l-cu"
+msgstr "Vieux slave"
+
+# 	Chuvash
+msgid "l-cv"
+msgstr "Tchouvache"
+
+# 	Welsh
+msgid "l-cy"
+msgstr "Gallois"
+
+# 	Danish
+msgid "l-da"
+msgstr "Danois"
+
+# 	German
+msgid "l-de"
+msgstr "Allemand"
+
+# 	Dhivehi; Divehi; Maldivian
+msgid "l-dv"
+msgstr "Dhivehi; Divehi; Maldivien"
+
+# 	Dzongkha
+msgid "l-dz"
+msgstr "Dzongkha"
+
+# 	Ewe
+msgid "l-ee"
+msgstr "Ewe"
+
+# 	Modern Greek (1453-)
+msgid "l-el"
+msgstr "Grec moderne"
+
+# 	English
+msgid "l-en"
+msgstr "Anglais"
+
+# 	Esperanto
+msgid "l-eo"
+msgstr "Espéranto"
+
+# 	Spanish; Castilian
+msgid "l-es"
+msgstr "Espagnol; Castillan"
+
+# 	Estonian
+msgid "l-et"
+msgstr "Estonien"
+
+# 	Basque
+msgid "l-eu"
+msgstr "Basque"
+
+# 	Persian
+msgid "l-fa"
+msgstr "Persan"
+
+# 	Fulah
+msgid "l-ff"
+msgstr "Peul"
+
+# 	Finnish
+msgid "l-fi"
+msgstr "Finnois"
+
+# 	Fijian
+msgid "l-fj"
+msgstr "Fidjien"
+
+# 	Faroese
+msgid "l-fo"
+msgstr "Féringien"
+
+# 	French
+msgid "l-fr"
+msgstr "Français"
+
+# 	Western Frisian
+msgid "l-fy"
+msgstr "Frison"
+
+# 	Irish
+msgid "l-ga"
+msgstr "Irlandais"
+
+# 	Scottish Gaelic; Gaelic
+msgid "l-gd"
+msgstr "Écossais"
+
+# 	Galician
+msgid "l-gl"
+msgstr "Galicien"
+
+# 	Guarani
+msgid "l-gn"
+msgstr "Guarani"
+
+# 	Gujarati
+msgid "l-gu"
+msgstr "Gujarâtî"
+
+# 	Manx
+msgid "l-gv"
+msgstr "Mannois"
+
+# 	Hausa
+msgid "l-ha"
+msgstr "Haoussa"
+
+# 	Hebrew
+msgid "l-he"
+msgstr "Hébreu"
+
+# 	Hindi
+msgid "l-hi"
+msgstr "Hindî"
+
+# 	Hiri Motu
+msgid "l-ho"
+msgstr "Hiri motu"
+
+# 	Croatian
+msgid "l-hr"
+msgstr "Croate"
+
+# 	Haitian; Haitian Creole
+msgid "l-ht"
+msgstr "Haïtien; Créole haïtien"
+
+# 	Hungarian
+msgid "l-hu"
+msgstr "Hongrois"
+
+# 	Armenian
+msgid "l-hy"
+msgstr "Arménien"
+
+# 	Herero
+msgid "l-hz"
+msgstr "Herero"
+
+# 	Interlingua (International Auxiliary Language Association)
+msgid "l-ia"
+msgstr "Interlingua (International Auxiliary Language Association)"
+
+# 	Indonesian
+msgid "l-id"
+msgstr "Indonésien"
+
+# 	Interlingue; Occidental
+msgid "l-ie"
+msgstr "Occidental"
+
+# 	Igbo
+msgid "l-ig"
+msgstr "Igbo"
+
+# 	Sichuan Yi; Nuosu
+msgid "l-ii"
+msgstr "Yi"
+
+# 	Inupiaq
+msgid "l-ik"
+msgstr "Inupiaq"
+
+# 	Indonesian
+msgid "l-in"
+msgstr "Indonésien"
+
+# 	Ido
+msgid "l-io"
+msgstr "Ido"
+
+# 	Icelandic
+msgid "l-is"
+msgstr "Islandais"
+
+# 	Italian
+msgid "l-it"
+msgstr "Italien"
+
+# 	Inuktitut
+msgid "l-iu"
+msgstr "Inuktitut"
+
+# 	Hebrew
+msgid "l-iw"
+msgstr "Hébreu"
+
+# 	Japanese
+msgid "l-ja"
+msgstr "Japonais"
+
+# 	Yiddish
+msgid "l-ji"
+msgstr "Yiddish"
+
+# 	Javanese
+msgid "l-jv"
+msgstr "Javanais"
+
+# 	Javanese
+msgid "l-jw"
+msgstr "Javanais"
+
+# 	Georgian
+msgid "l-ka"
+msgstr "Géorgien"
+
+# 	Kongo
+msgid "l-kg"
+msgstr "Kikongo"
+
+# 	Kikuyu; Gikuyu
+msgid "l-ki"
+msgstr "Kikuyu; Gikuyu"
+
+# 	Kuanyama; Kwanyama
+msgid "l-kj"
+msgstr "Kuanyama"
+
+# 	Kazakh
+msgid "l-kk"
+msgstr "Kazakh"
+
+# 	Kalaallisut; Greenlandic
+msgid "l-kl"
+msgstr "Kalaallisut; Groenlandais"
+
+# 	Central Khmer
+msgid "l-km"
+msgstr "Khmer"
+
+# 	Kannada
+msgid "l-kn"
+msgstr "kannada"
+
+# 	Korean
+msgid "l-ko"
+msgstr "Coréen"
+
+# 	Kanuri
+msgid "l-kr"
+msgstr "Kanouri"
+
+# 	Kashmiri
+msgid "l-ks"
+msgstr "Kashmiri"
+
+# 	Kurdish
+msgid "l-ku"
+msgstr "Kurde"
+
+# 	Komi
+msgid "l-kv"
+msgstr "Komi"
+
+# 	Cornish
+msgid "l-kw"
+msgstr "Cornique"
+
+# 	Kirghiz; Kyrgyz
+msgid "l-ky"
+msgstr "Kirghiz"
+
+# 	Latin
+msgid "l-la"
+msgstr "Latin"
+
+# 	Luxembourgish; Letzeburgesch
+msgid "l-lb"
+msgstr "Luxembourgeois"
+
+# 	Ganda
+msgid "l-lg"
+msgstr "Ganda"
+
+# 	Limburgan; Limburge; Limburgish
+msgid "l-li"
+msgstr "Limbourgeois"
+
+# 	Lingala
+msgid "l-ln"
+msgstr "Lingala"
+
+# 	Lao
+msgid "l-lo"
+msgstr "Lao"
+
+# 	Lithuanian
+msgid "l-lt"
+msgstr "Lituanien"
+
+# 	Luba-Katanga
+msgid "l-lu"
+msgstr "Tchiluba"
+
+# 	Latvian
+msgid "l-lv"
+msgstr "Letton"
+
+# 	Malagasy
+msgid "l-mg"
+msgstr "Malgache"
+
+# 	Marshallese
+msgid "l-mh"
+msgstr "Marshallais"
+
+# 	Maori
+msgid "l-mi"
+msgstr "Māori"
+
+# 	Macedonian
+msgid "l-mk"
+msgstr "Macédonien"
+
+# 	Malayalam
+msgid "l-ml"
+msgstr "Malayalam"
+
+# 	Mongolian
+msgid "l-mn"
+msgstr "Mongol"
+
+# 	Moldavian; Moldovan
+msgid "l-mo"
+msgstr "Moldave"
+
+# 	Marathi
+msgid "l-mr"
+msgstr "Marâthî"
+
+# 	Malay
+msgid "l-ms"
+msgstr "Malais"
+
+# 	Maltese
+msgid "l-mt"
+msgstr "Maltais"
+
+# 	Burmese
+msgid "l-my"
+msgstr "Birman"
+
+# 	Nauru
+msgid "l-na"
+msgstr "Nauruan"
+
+# 	Norwegian Bokmål
+msgid "l-nb"
+msgstr "Norvégien Bokmål"
+
+# 	North Ndebele
+msgid "l-nd"
+msgstr "Ndébélé du Nord"
+
+# 	Nepali
+msgid "l-ne"
+msgstr "Népalais"
+
+# 	Ndonga
+msgid "l-ng"
+msgstr "Ndonga"
+
+# 	Dutch; Flemish
+msgid "l-nl"
+msgstr "Néerlandais; Flamand"
+
+# 	Norwegian Nynorsk
+msgid "l-nn"
+msgstr "Norvégien Nynorsk"
+
+# 	Norwegian
+msgid "l-no"
+msgstr "Norvégien"
+
+# 	South Ndebele
+msgid "l-nr"
+msgstr "Ndébélé du Sud"
+
+# 	Navajo; Navaho
+msgid "l-nv"
+msgstr "Navajo"
+
+# 	Nyanja; Chewa; Chichewa
+msgid "l-ny"
+msgstr "Chichewa"
+
+# 	Occitan (post 1500)
+msgid "l-oc"
+msgstr "Occitan"
+
+# 	Ojibwa
+msgid "l-oj"
+msgstr "Ojibwé"
+
+# 	Oromo
+msgid "l-om"
+msgstr "Oromo"
+
+# 	Oriya
+msgid "l-or"
+msgstr "Oriya"
+
+# 	Ossetian; Ossetic
+msgid "l-os"
+msgstr "Ossète"
+
+# 	Panjabi; Punjabi
+msgid "l-pa"
+msgstr "Panjâbî"
+
+# 	Pali
+msgid "l-pi"
+msgstr "Pâli"
+
+# 	Polish
+msgid "l-pl"
+msgstr "Polonais"
+
+# 	Pushto; Pashto
+msgid "l-ps"
+msgstr "Pachto"
+
+# 	Portuguese
+msgid "l-pt"
+msgstr "Portugais"
+
+# 	Quechua
+msgid "l-qu"
+msgstr "Quechua"
+
+# 	Romansh
+msgid "l-rm"
+msgstr "Romanche"
+
+# 	Rundi
+msgid "l-rn"
+msgstr "Kirundi"
+
+# 	Romanian; Moldavian; Moldovan
+msgid "l-ro"
+msgstr "Roumain; Moldave"
+
+# 	Russian
+msgid "l-ru"
+msgstr "Russe"
+
+# 	Kinyarwanda
+msgid "l-rw"
+msgstr "Kinyarwanda"
+
+# 	Sanskrit
+msgid "l-sa"
+msgstr "Sanskrit"
+
+# 	Sardinian
+msgid "l-sc"
+msgstr "Sarde"
+
+# 	Sindhi
+msgid "l-sd"
+msgstr "Sindhi"
+
+# 	Northern Sami
+msgid "l-se"
+msgstr "Same du Nord"
+
+# 	Sango
+msgid "l-sg"
+msgstr "Sango"
+
+# 	Serbo-Croatian
+msgid "l-sh"
+msgstr "Serbo-croate"
+
+# 	Sinhala; Sinhalese
+msgid "l-si"
+msgstr "Cingalais"
+
+# 	Slovak
+msgid "l-sk"
+msgstr "Slovaque"
+
+# 	Slovenian
+msgid "l-sl"
+msgstr "Slovène"
+
+# 	Samoan
+msgid "l-sm"
+msgstr "Samoan"
+
+# 	Shona
+msgid "l-sn"
+msgstr "Shona"
+
+# 	Somali
+msgid "l-so"
+msgstr "Somali"
+
+# 	Albanian
+msgid "l-sq"
+msgstr "Albanais"
+
+# 	Serbian
+msgid "l-sr"
+msgstr "Serbe"
+
+# 	Swati
+msgid "l-ss"
+msgstr "Siswati"
+
+# 	Southern Sotho
+msgid "l-st"
+msgstr "Sotho du Sud"
+
+# 	Sundanese
+msgid "l-su"
+msgstr "Sundanais"
+
+# 	Swedish
+msgid "l-sv"
+msgstr "Suédois"
+
+# 	Swahili
+msgid "l-sw"
+msgstr "Swahili"
+
+# 	Tamil
+msgid "l-ta"
+msgstr "Tamoul"
+
+# 	Telugu
+msgid "l-te"
+msgstr "Télougou"
+
+# 	Tajik
+msgid "l-tg"
+msgstr "Tadjik"
+
+# 	Thai
+msgid "l-th"
+msgstr "Thaï"
+
+# 	Tigrinya
+msgid "l-ti"
+msgstr "Tigrinya"
+
+# 	Turkmen
+msgid "l-tk"
+msgstr "Turkmène"
+
+# 	Tagalog
+msgid "l-tl"
+msgstr "Tagalog"
+
+# 	Tswana
+msgid "l-tn"
+msgstr "Tswana"
+
+# 	Tonga (Tonga Islands)
+msgid "l-to"
+msgstr "Tongien"
+
+# 	Turkish
+msgid "l-tr"
+msgstr "Turc"
+
+# 	Tsonga
+msgid "l-ts"
+msgstr "Tsonga"
+
+# 	Tatar
+msgid "l-tt"
+msgstr "Tatar"
+
+# 	Twi
+msgid "l-tw"
+msgstr "Twi"
+
+# 	Tahitian
+msgid "l-ty"
+msgstr "Tahitien"
+
+# 	Uighur; Uyghur
+msgid "l-ug"
+msgstr "Ouïghour"
+
+# 	Ukrainian
+msgid "l-uk"
+msgstr "Ukrainien"
+
+# 	Urdu
+msgid "l-ur"
+msgstr "Ourdou"
+
+# 	Uzbek
+msgid "l-uz"
+msgstr "Ouzbek"
+
+# 	Venda
+msgid "l-ve"
+msgstr "Venda"
+
+# 	Vietnamese
+msgid "l-vi"
+msgstr "Vietnamien"
+
+# 	Volapük
+msgid "l-vo"
+msgstr "Volapük"
+
+# 	Walloon
+msgid "l-wa"
+msgstr "Wallon"
+
+# 	Wolof
+msgid "l-wo"
+msgstr "Wolof"
+
+# 	Xhosa
+msgid "l-xh"
+msgstr "Xhosa"
+
+# 	Yiddish
+msgid "l-yi"
+msgstr "Yiddish"
+
+# 	Yoruba
+msgid "l-yo"
+msgstr "Yoruba"
+
+# 	Zhuang; Chuang
+msgid "l-za"
+msgstr "Zhuang"
+
+# 	Chinese
+msgid "l-zh"
+msgstr "Chinois"
+
+# 	Zulu
+msgid "l-zu"
+msgstr "Zoulou"
+
+# Arabic (Saudi Arabia)
+msgid "l-ar-sa"
+msgstr "Arabe (Arabie saoudite)"
+
+# Arabic (Iraq)
+msgid "l-ar-iq"
+msgstr "Arabe (Irak)"
+
+# Arabic (Egypt)
+msgid "l-ar-eg"
+msgstr "Arabe (Égypte)"
+
+# Arabic (Libya)
+msgid "l-ar-ly"
+msgstr "Arabe (Libye)"
+
+# Arabic (Algeria)
+msgid "l-ar-dz"
+msgstr "Arabe (Algérie)"
+
+# Arabic (Morocco)
+msgid "l-ar-ma"
+msgstr "Arabe (Maroc)"
+
+# Arabic (Tunisia)
+msgid "l-ar-tn"
+msgstr "Arabe (Tunisie)"
+
+# Arabic (Oman)
+msgid "l-ar-om"
+msgstr "Arabe (Oman)"
+
+# Arabic (Yemen)
+msgid "l-ar-ye"
+msgstr "Arabe (Yémen)"
+
+# Arabic (Syria)
+msgid "l-ar-sy"
+msgstr "Arabe (Syrie)"
+
+# Arabic (Jordan)
+msgid "l-ar-jo"
+msgstr "Arabe (Jordanie)"
+
+# Arabic (Lebanon)
+msgid "l-ar-lb"
+msgstr "Arabe (Liban)"
+
+# Arabic (Kuwait)
+msgid "l-ar-kw"
+msgstr "Arabe (Koweït)"
+
+# Arabic (United Arab Emirates)
+msgid "l-ar-ae"
+msgstr "Arabe (Émirats arabes unis)"
+
+# Arabic (Bahrain)
+msgid "l-ar-bh"
+msgstr "Arabe (Bahreïn)"
+
+# Arabic (Qatar)
+msgid "l-ar-qa"
+msgstr "Arabe (Qatar)"
+
+# Chinese (China)
+msgid "l-zh-cn"
+msgstr "Chinois (Chine)"
+
+# Chinese (Taiwan)
+msgid "l-zh-tw"
+msgstr "Chinois (Taïwan)"
+
+# Chinese (Hong Kong)
+msgid "l-zh-hk"
+msgstr "Chinois (Hong Kong)"
+
+# Chinese (Singapore)
+msgid "l-zh-sg"
+msgstr "Chinois (Singapour)"
+
+# Dutch (Netherlands)
+msgid "l-nl-nl"
+msgstr "Néerlandais (Pays-bas)"
+
+# Dutch (Belgium)
+msgid "l-nl-be"
+msgstr "Néerlandais (Belgique)"
+
+# English (United Kingdom)
+msgid "l-en-gb"
+msgstr "Anglais (Royaume-Uni)"
+
+# English (United States)
+msgid "l-en-us"
+msgstr "Anglais (États-Unis)"
+
+# English (Australia)
+msgid "l-en-au"
+msgstr "Anglais (Australie)"
+
+# English (Canada)
+msgid "l-en-ca"
+msgstr "Anglais (Canada)"
+
+# English (New Zealand)
+msgid "l-en-nz"
+msgstr "Anglais (Nouvelle-Zélande)"
+
+# English (Ireland)
+msgid "l-en-ie"
+msgstr "Anglais (Irlande)"
+
+# English (South Africa)
+msgid "l-en-za"
+msgstr "Anglais (Afrique du Sud)"
+
+# English (Jamaica)
+msgid "l-en-jm"
+msgstr "Anglais (Jamaïque)"
+
+# English (Belize)
+msgid "l-en-bz"
+msgstr "Anglais (Belize)"
+
+# English (Trinidad)
+msgid "l-en-tt"
+msgstr "Anglais (Trinité)"
+
+# French (Belgium)
+msgid "l-fr-be"
+msgstr "Français (Belgique)"
+
+# French (France)
+msgid "l-fr-fr"
+msgstr "Français (France)"
+
+# French (Switzerland)
+msgid "l-fr-ch"
+msgstr "Français (Suisse)"
+
+# French (Canada)
+msgid "l-fr-ca"
+msgstr "Français (Canada)"
+
+# French (Luxembourg)
+msgid "l-fr-lu"
+msgstr "Français (Luxembourg)"
+
+# German (Austria)
+msgid "l-de-at"
+msgstr "Allemand (Autriche)"
+
+# German (Germany)
+msgid "l-de-de"
+msgstr "Allemand (Allemagne)"
+
+# German (Switzerland)
+msgid "l-de-ch"
+msgstr "Allemand (Suisse)"
+
+# German (Luxembourg)
+msgid "l-de-lu"
+msgstr "Allemand (Luxembourg)"
+
+# German (Liechtenstein)
+msgid "l-de-li"
+msgstr "Allemand (Liechtenstein)"
+
+# Greek (Greece)
+msgid "l-el-gr"
+msgstr "Grec moderne (Grèce)"
+
+# Spanish (Dominican Republic)
+msgid "l-es-do"
+msgstr "Espagnol (République dominicaine)"
+
+# Spanish (Argentina)
+msgid "l-es-ar"
+msgstr "Espagnol (Argentine)"
+
+# Spanish (Colombia)
+msgid "l-es-co"
+msgstr "Espagnol (Colombie)"
+
+# Spanish (Mexico)
+msgid "l-es-mx"
+msgstr "Espagnol (Mexique)"
+
+# Spanish (Spain)
+msgid "l-es-es"
+msgstr "Espagnol (Espagne)"
+
+# Spanish (Guatemala)
+msgid "l-es-gt"
+msgstr "Espagnol (Guatemala)"
+
+# Spanish (Costa Rica)
+msgid "l-es-cr"
+msgstr "Espagnol (Costa Rica)"
+
+# Spanish (Panama)
+msgid "l-es-pa"
+msgstr "Espagnol (Panama)"
+
+# Spanish (Venezuela)
+msgid "l-es-ve"
+msgstr "Espagnol (Venezuela)"
+
+# Spanish (Peru)
+msgid "l-es-pe"
+msgstr "Espagnol (Pérou)"
+
+# Spanish (Ecuador)
+msgid "l-es-ec"
+msgstr "Espagnol (Équateur)"
+
+# Spanish (Chile)
+msgid "l-es-cl"
+msgstr "Espagnol (Chili)"
+
+# Spanish (Uruguay)
+msgid "l-es-uy"
+msgstr "Espagnol (Uruguay)"
+
+# Spanish (Paraguay)
+msgid "l-es-py"
+msgstr "Espagnol (Paraguay)"
+
+# Spanish (Bolivia)
+msgid "l-es-bo"
+msgstr "Espagnol (Bolivie)"
+
+# Spanish (El Salvador)
+msgid "l-es-sv"
+msgstr "Espagnol (El Salvador)"
+
+# Spanish (Honduras)
+msgid "l-es-hn"
+msgstr "Espagnol (Honduras)"
+
+# Spanish (Nicaragua)
+msgid "l-es-ni"
+msgstr "Espagnol (Nicaragua)"
+
+# Spanish (Puerto Rico)
+msgid "l-es-pr"
+msgstr "Espagnol (Porto Rico)"
+
+# Hebrew (Israel)
+msgid "l-he-il"
+msgstr "Hébreu (Israël)"
+
+# Hungarian (Hungary)
+msgid "l-hu-hu"
+msgstr "Hongrois (Hongrie)"
+
+# Internet Explorer Easter Egg
+msgid "l-ie-ee"
+msgstr "Internet Explorer Easter Egg"
+
+# Italian (Italia)
+msgid "l-it-it"
+msgstr "Italien (Italie)"
+
+# Italian (Switzerland)
+msgid "l-it-ch"
+msgstr "Italien (Suisse)"
+
+# Korean (Republic of Korea)
+msgid "l-ko-kr"
+msgstr "Coréen (République de Corée)"
+
+# Korean (Democratic People's Republic of Korea)
+msgid "l-ko-kp"
+msgstr "Coréen (République populaire démocratique de Corée)"
+
+# Portuguese (Brazil)
+msgid "l-pt-br"
+msgstr "Portugais (Brésil)"
+
+# Romanian (Moldava)
+msgid "l-ro-md"
+msgstr "Roumain (Moldova)"
+
+# Russian (Russia)
+msgid "l-ru-ru"
+msgstr "Russe (Fédération de Russie)"
+
+# Russian (Moldava)
+msgid "l-ru-md"
+msgstr "Russe (Moldova)"
+
+# Swedish (Sweden)
+msgid "l-sv-se"
+msgstr "Suédois (Suède)"
+
+# Swedish (Finland)
+msgid "l-sv-fi"
+msgstr "Suédois (Finlande)"
+
+# Unknown
+msgid "l-"
+msgstr "Inconnue"
+
+# Unknown
+msgid "l-empty"
+msgstr "Inconnue"
+
+# Unknown
+msgid "l-xx"
+msgstr "Inconnue"
+
