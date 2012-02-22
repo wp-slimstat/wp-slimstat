@@ -1,0 +1,136 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 0.9.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-09-01 09:08-0500\n"
+"PO-Revision-Date: 2011-09-01 09:08-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Russian\n"
+"X-Poedit-Country: RUSSIA\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:75
+#: wp-slimstat-dashboard.php:97
+#: wp-slimstat-dashboard.php:152
+#: wp-slimstat-dashboard.php:171
+msgid "No data to display"
+msgstr "Нет данных"
+
+#: wp-slimstat-dashboard.php:80
+msgid "Last"
+msgstr "Последние"
+
+#: wp-slimstat-dashboard.php:82
+#: wp-slimstat-dashboard.php:118
+#, php-format
+msgid "Open %s in a new window"
+msgstr "Открыть %s в новом окне"
+
+#: wp-slimstat-dashboard.php:104
+msgid "Search for"
+msgstr "Искать"
+
+#: wp-slimstat-dashboard.php:112
+msgid "c-"
+msgstr "c-"
+
+#: wp-slimstat-dashboard.php:123
+msgid "Direct visit to"
+msgstr "Прямой вход"
+
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:136
+msgid "Pageviews"
+msgstr "Просмотров"
+
+#: wp-slimstat-dashboard.php:133
+#: wp-slimstat-dashboard.php:137
+msgid "Unique IPs"
+msgstr "Уникальных IP"
+
+#: wp-slimstat-dashboard.php:138
+msgid "Bots"
+msgstr "Роботы"
+
+#: wp-slimstat-dashboard.php:139
+msgid "Avg Pageviews"
+msgstr "Среднее кол-во просмотров"
+
+#: wp-slimstat-dashboard.php:140
+#: wp-slimstat-dashboard.php:141
+msgid "On"
+msgstr "за"
+
+#: wp-slimstat-dashboard.php:142
+msgid "Last Month"
+msgstr "За предыдущий месяц"
+
+#: wp-slimstat-dashboard.php:159
+msgid "Hits"
+msgstr "просмотры"
+
+#: wp-slimstat-dashboard.php:194
+msgid "Top pages for this month"
+msgstr "Популярные страницы за этот месяц"
+
+#: wp-slimstat-dashboard.php:195
+msgid "Spy View"
+msgstr "Шпионский просмотр"
+
+#: wp-slimstat-dashboard.php:196
+msgid "Summary for this month"
+msgstr "Суммарно за этот месяц"
+
+#: wp-slimstat-dashboard.php:197
+msgid "User Agents"
+msgstr "Популярные браузеры"
+
+#: wp-slimstat-dashboard.php:198
+msgid "Recent Keywords"
+msgstr "Последние поисковые запросы"
+
+msgid "Total Hits"
+msgstr "Всего просмотров"
+
+#~ msgid "Data Size"
+#~ msgstr "Размер данных"
+
+#~ msgid "Tracking Active"
+#~ msgstr ""
+
+#~ msgid "Auto purge"
+#~ msgstr "automatischer Reorg"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Ziel in einem neuen Fenster &ouml;ffnen"
+
+#~ msgid "Top 5 pages"
+#~ msgstr "Top 5"
+
+#~ msgid "Pathstats"
+#~ msgstr "DIGO TODO * Pathstats"
+
+#~ msgid "About"
+#~ msgstr "&Uuml;ber"
+
+#~ msgid "Summary of pageviews"
+#~ msgstr "Zusammenfassung Seitenaufrufe"
+
+#~ msgid "Traffic Sources"
+#~ msgstr "Traffic-Quellen"
+
+#~ msgid "Recent Keywords &raquo; Pages"
+#~ msgstr "aktuelle Suchw&ouml;rter &raquo; Seiten"
+
+#~ msgid "Analytics"
+#~ msgstr "Statistiche"
+
+#~ msgid "Options"
+#~ msgstr "Opzioni"
