@@ -92,7 +92,8 @@ if (!$is_table_active){
 $stat = array();
 
 // This secret key is used to make sure the script only works when called from a legit referer (the blog itself!)
-$slimstat_options = slimstat_get_option('slimstat_options', array());
+$slimstat_options = unserialize(slimstat_get_option('slimstat_options', ''));
+
 if (empty($slimstat_options['secret'])){
 	echo 'Secret key not initialized';
 	exit;
@@ -111,7 +112,7 @@ if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_
 
 // Is the ID valid?
 $stat['id'] = empty($_GET['id'])?0:base_convert($_GET['id'], 16, 10);
-if (empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id'].$secret_key)))){
+if (empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id'].$slimstat_options['secret'])))){
 	echo 'Invalid key';
 	exit;
 }
@@ -176,7 +177,7 @@ if (isset($_COOKIE['slimstat_tracking_code'])){
 	list($identifier, $control_code) = explode('.', $_COOKIE['slimstat_tracking_code']);
 			
 	// Make sure only authorized information is recorded
-	if ((strpos($identifier, 'id') !== false) && ($control_code == md5($identifier.$secret_key))){
+	if ((strpos($identifier, 'id') !== false) && ($control_code == md5($identifier.$slimstat_options['secret']))){
 
 		// Emulate auto-increment on visit_id
 		mysql_query("UPDATE {$multisite_table_prefix}slim_stats 
@@ -184,6 +185,9 @@ if (isset($_COOKIE['slimstat_tracking_code'])){
 							SELECT max_visit_id FROM ( SELECT MAX(visit_id) AS max_visit_id FROM {$multisite_table_prefix}slim_stats ) AS sub_max_visit_id_table
 						) + 1
 						WHERE id = {$stat['id']} AND visit_id = 0");
+
+		$stat['visit_id'] = slimstat_get_var("SELECT visit_id FROM {$multisite_table_prefix}slim_stats WHERE id = ".intval($identifier));
+		@setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].$slimstat_options['secret']), time()+1800, '/');
 	}
 }
 
