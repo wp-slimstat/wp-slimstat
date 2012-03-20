@@ -76,7 +76,7 @@ if (isset($_POST['options'])){
 <p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_ip]" id="ignore_ip"><?php echo implode(',', $GLOBALS['wp_slimstat']->options['ignore_ip']) ?></textarea></p>
 
 <h3><label for="ignore_resources"><?php _e('Pages and posts','wp-slimstat-options') ?></label></h3>
-<p><?php _e("Enter a list of URLs you don't want to track, separated by commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>/abou*</code> will match /about and /abound, <code>/abo*t</code> will match /aboundant and /about, <code>/abo!t</code> will match /about and /abort.",'wp-slimstat-options') ?></p>
+<p><?php _e("Enter a list of URLs you don't want to track, separated by commas. Don't the domain name: <em>/about, ?p=1</em>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>/abou*</code> will match /about and /abound, <code>/abo*t</code> will match /aboundant and /about, <code>/abo!t</code> will match /about and /abort.",'wp-slimstat-options') ?></p>
 <p><textarea class="large-text code" cols="50" rows="1" name="options[ignore_resources]" id="ignore_resources"><?php echo implode(',', $GLOBALS['wp_slimstat']->options['ignore_resources']) ?></textarea></p>
 
 <h3><label for="ignore_countries"><?php _e('Countries','wp-slimstat-options') ?></label></h3>

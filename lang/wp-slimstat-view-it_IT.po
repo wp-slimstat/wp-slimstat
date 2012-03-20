@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-03-20 12:46-0500\n"
-"PO-Revision-Date: 2012-03-20 12:47-0500\n"
+"POT-Creation-Date: 2012-03-16 14:32-0500\n"
+"PO-Revision-Date: 2012-03-16 14:33-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -299,9 +299,9 @@ msgstr "Accessi orari"
 #: ../view/panel4.php:121
 #: ../view/panel4.php:142
 #: ../view/panel4.php:171
-#: ../view/panel4.php:194
-#: ../view/panel4.php:231
-#: ../view/panel4.php:256
+#: ../view/panel4.php:193
+#: ../view/panel4.php:230
+#: ../view/panel4.php:255
 #: ../view/panel5.php:140
 #: ../view/panel6.php:26
 msgid "No data to display"
@@ -415,9 +415,9 @@ msgstr "Ricerca per"
 #: ../view/panel1.php:234
 #: ../view/panel2.php:226
 #: ../view/panel3.php:96
-#: ../view/panel4.php:208
-#: ../view/panel4.php:267
-#: ../view/panel5.php:169
+#: ../view/panel4.php:207
+#: ../view/panel4.php:266
+#: ../view/panel5.php:164
 msgid "c-"
 msgstr "c-"
 
@@ -427,16 +427,16 @@ msgstr "c-"
 #: ../view/panel3.php:119
 #: ../view/panel3.php:167
 #: ../view/panel4.php:82
-#: ../view/panel4.php:238
-#: ../view/panel4.php:275
-#: ../view/panel5.php:180
-#: ../view/panel5.php:228
+#: ../view/panel4.php:237
+#: ../view/panel4.php:274
+#: ../view/panel5.php:175
+#: ../view/panel5.php:223
 #, php-format
 msgid "Open %s in a new window"
 msgstr "Apri %s in una nuova finestra"
 
 #: ../view/panel1.php:152
-#: ../view/panel5.php:189
+#: ../view/panel5.php:184
 msgid "Direct visit to"
 msgstr "Visita diretta a"
 
@@ -454,7 +454,7 @@ msgstr "Lingue - Solo visitatori"
 
 #: ../view/panel1.php:189
 #: ../view/panel2.php:76
-#: ../view/panel5.php:170
+#: ../view/panel5.php:165
 msgid "l-"
 msgstr "l-"
 
@@ -486,7 +486,7 @@ msgstr "Codice"
 #: ../view/panel3.php:145
 #: ../view/panel3.php:171
 #: ../view/panel4.php:176
-#: ../view/panel4.php:236
+#: ../view/panel4.php:235
 msgid "Hits"
 msgstr "Visite"
 
@@ -745,26 +745,22 @@ msgid "Top Categories"
 msgstr "Classifica categorie "
 
 #: ../view/panel4.php:188
-msgid "The value A:n tells you which link was clicked (the n-th in the page). If an ID is associated to that link, it will be used instead."
-msgstr "Il valore A:m dice quale link &egrave; stato cliccato (l'n-esimo nella pagina). Associando un ID al link, quel valore verr&agrave; usato dove presente."
-
-#: ../view/panel4.php:189
 msgid "Recent Outbound Links"
 msgstr "Link in uscita"
 
-#: ../view/panel4.php:217
+#: ../view/panel4.php:216
 msgid "Open in a new window"
 msgstr "Apri in una nuova finestra"
 
-#: ../view/panel4.php:226
+#: ../view/panel4.php:225
 msgid "Top Exit Pages"
 msgstr "Pagine d'uscita"
 
-#: ../view/panel4.php:250
+#: ../view/panel4.php:249
 msgid "WP SlimStat can track specific events (clicks, downloads, etc) triggered by your visitors. Add <strong>onclick=\"ss_te(event,<em>code</em>)\"</strong> to your links, where <em>code</em> is an integer value between 2 and 254 (1 is for downloads)"
 msgstr "WP SlimStat pu&ograve; tracciare specifici eventi (click, download, ecc) attivati dai visitatori. Aggiungi <strong>onclick=\"ss_te(event,<em>code</em>)\"</strong> ai tuoi link, dove <em>code</em> &egrave; un intero tra 2 e 254 (1 &egrave; per i download)"
 
-#: ../view/panel4.php:251
+#: ../view/panel4.php:250
 msgid "Recent Events"
 msgstr "Eventi Recenti"
 
@@ -845,32 +841,32 @@ msgstr "inverti"
 msgid "Records: %d - %d. Order by: %s %s (%s)"
 msgstr "Righe: %d - %d. Ordinamento: %s %s (%s)"
 
-#: ../view/panel5.php:193
+#: ../view/panel5.php:188
 msgid "Local search page"
 msgstr "Ricerca locale"
 
-#: ../view/panel5.php:199
-#: ../view/panel5.php:223
+#: ../view/panel5.php:194
+#: ../view/panel5.php:218
 msgid "Local search results page"
 msgstr "Ricerca locale"
 
-#: ../view/panel5.php:236
+#: ../view/panel5.php:231
 msgid "Color codes:"
 msgstr "Significato dei colori:"
 
-#: ../view/panel5.php:237
+#: ../view/panel5.php:232
 msgid "Coming from a Search Engine"
 msgstr "Provenienti da motore di ricerca"
 
-#: ../view/panel5.php:238
+#: ../view/panel5.php:233
 msgid "Known Users"
 msgstr "Utenti  noti"
 
-#: ../view/panel5.php:239
+#: ../view/panel5.php:234
 msgid "Other Humans"
 msgstr "Altri visitatori umani"
 
-#: ../view/panel5.php:240
+#: ../view/panel5.php:235
 msgid "Bots, Crawlers and others"
 msgstr "Bot, spider ed altro"
 
