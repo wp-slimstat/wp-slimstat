@@ -74,7 +74,7 @@ if (isset($_GET['ds']) || isset($_GET['di2c'])){
 if (isset($_GET['rs']) && $_GET['rs']=='yes'){
 	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_stats");
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-	_e('Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat.','wp-slimstat-options');		
+	_e('Your WP SlimStat table has been successfully reset. Now go to your Plugins panel and deactivate/reactivate WP SlimStat.','wp-slimstat-options');
 	echo '</p></div>';
 }
 if (isset($_GET['ot']) && $_GET['ot']=='yes'){
@@ -84,7 +84,7 @@ if (isset($_GET['ot']) && $_GET['ot']=='yes'){
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_screenres");
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_stats");
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-	_e('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options');		
+	_e('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options');
 	echo '</p></div>';
 }
 if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
@@ -98,7 +98,7 @@ if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
 	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres ENGINE = InnoDB");
 	
 	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-	_e('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat-options');		
+	_e('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat-options');
 	echo '</p></div>';
 }
 if (isset($_GET['ssidx'])){
@@ -107,7 +107,7 @@ if (isset($_GET['ssidx'])){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX visit_idx(visit_id)");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-		_e('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options');		
+		_e('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options');
 		echo '</p></div>';
 	}
 	if($_GET['ssidx']=='remove'){
@@ -115,7 +115,7 @@ if (isset($_GET['ssidx'])){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX browser_idx");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX visit_idx");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-		_e('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options');		
+		_e('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options');
 		echo '</p></div>';
 	}
 }
@@ -152,7 +152,7 @@ if (isset($_POST['options'])){
 			case 'does-not-end-with':
 				$delete_sql = "{$_POST['options']['conditional_delete_field']} NOT LIKE '%$escaped_value'";
 				break;
-			
+	
 		}
 		$rows_affected =  $wpdb->query("DELETE FROM {$wpdb->prefix}slim_stats WHERE $delete_sql");
 		if (empty($rows_affected)) $rows_affected = 0;

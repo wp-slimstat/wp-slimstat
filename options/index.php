@@ -41,7 +41,7 @@ function slimstat_error_message($_faulty_fields){
 	<div id="analytics-icon" class="icon32 <?php echo $wp_locale->text_direction ?>"></div>
 	<h2 class="medium">
 		<?php
-		$admin_page_url = ($wp_slimstat->options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))?'admin.php':'options-general.php';
+		$admin_page_url = ($GLOBALS['wp_slimstat']->options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))?'admin.php':'options-general.php';
 		foreach($array_panels as $a_panel_id => $a_panel_details){
 			echo '<a class="nav-tab nav-tab';
 			echo ($current_panel == $a_panel_id+1)?'-active':'-inactive';

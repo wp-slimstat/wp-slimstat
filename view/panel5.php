@@ -14,59 +14,59 @@ if (!empty($_GET['orderby']) && in_array($_GET['orderby'], $allowed_columns)) $o
 if (!empty($_GET['starting'])) $wp_slimstat_view->starting_from = intval($_GET['starting']);
 
 // Retrieve results
-$wp_slimstat_view->limit_results = $wp_slimstat->options['number_results_raw_data'];
+$wp_slimstat_view->limit_results = $GLOBALS['wp_slimstat']->options['number_results_raw_data'];
 if (empty($function_to_use)) $function_to_use = '';
 switch ($function_to_use){
 	case 'get_details_recent_visits':
-		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.language, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', 't1.visit_id > 0', 'browsers', '', 't1.visit_id DESC, t1.id ASC');
+		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.other_ip, t1.user, t1.language, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', 't1.visit_id > 0', 'browsers', '', 't1.visit_id DESC, t1.id ASC');
 		$count_raw_data = $wp_slimstat_view->count_records('t1.visit_id > 0');
 		$add_to_box_title = __('Spy View', 'wp-slimstat-view');
 		break;
 	case 'get_recent_404':
-		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', "t1.resource LIKE '[404]%'", 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.other_ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', "t1.resource LIKE '[404]%'", 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.resource LIKE '[404]%'", "DISTINCT t1.resource");
 		$add_to_box_title = __('Recent 404 pages', 'wp-slimstat-view');
 		break;
 	case 'get_recent_bouncing_pages':
-		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers', 'HAVING COUNT(visit_id) = 1');
+		$results = $wp_slimstat_view->get_recent('t1.resource', 't1.ip, t1.other_ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers', 'HAVING COUNT(visit_id) = 1');
 		$count_raw_data = $wp_slimstat_view->count_bouncing_pages();
 		$add_to_box_title = __('Recent bouncing pages', 'wp-slimstat-view');
 		break;
 	case 'get_recent_countries':
-		$results = $wp_slimstat_view->get_recent('t1.country', 't1.ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', "t1.country <> '' AND t1.country <> 'xx'", 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.country', 't1.ip, t1.other_ip, t1.user, t1.language, t1.searchterms, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', "t1.country <> '' AND t1.country <> 'xx'", 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.country <> '' AND t1.country <> 'xx'", "DISTINCT t1.country");
 		$add_to_box_title = __('Recent Countries', 'wp-slimstat-view');
 		break;
 	case 'get_recent_known_visitors':
-		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.country, t1.language, t1.searchterms, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', "t1.user <> ''", 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.other_ip, t1.user, t1.country, t1.language, t1.searchterms, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', "t1.user <> ''", 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.user <> ''", 'DISTINCT t1.user');
 		$add_to_box_title = __('Known Visitors', 'wp-slimstat-view');
 		break;
 	case 'get_recent_searchterms':
-		$results = $wp_slimstat_view->get_recent('t1.searchterms', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.searchterms', 't1.ip, t1.other_ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.searchterms <> ''", "DISTINCT t1.searchterms");
 		$add_to_box_title = __('Recent Keywords', 'wp-slimstat-view');
 		break;
 	case 'get_top_resources':
-		$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.searchterms, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
+		$results = $wp_slimstat_view->get_top('t1.resource', 't1.ip, t1.other_ip, t1.user, t1.language, t1.country, t1.visit_id, t1.searchterms, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.resource <> ''", 'DISTINCT t1.resource');
 		$add_to_box_title = __('Top Resources', 'wp-slimstat-view');
 		$orderby_column = 'count';
 		break;
 	case 'get_top_searchterms':
-		$results = $wp_slimstat_view->get_top('t1.searchterms', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
+		$results = $wp_slimstat_view->get_top('t1.searchterms', 't1.ip, t1.other_ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.searchterms <> ''", 'DISTINCT t1.searchterms');
 		$add_to_box_title = __('Top Keywords', 'wp-slimstat-view');
 		$orderby_column = 'count';
 		break;
 	case 'get_top_traffic_sources':
-		$results = $wp_slimstat_view->get_top('t1.domain', 't1.ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.searchterms, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
+		$results = $wp_slimstat_view->get_top('t1.domain', 't1.ip, t1.other_ip, t1.user, t1.language, t1.country, t1.visit_id, t1.resource, t1.searchterms, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records("t1.domain <> ''", 'DISTINCT t1.domain');
 		$add_to_box_title = __('Top Traffic Sources', 'wp-slimstat-view');
 		$orderby_column = 'count';
 		break;
 	default:
-		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.user, t1.resource, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
+		$results = $wp_slimstat_view->get_recent('t1.id', 't1.ip, t1.other_ip, t1.user, t1.resource, t1.language, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser, tb.version, tb.platform, tb.type', '', 'browsers');
 		$count_raw_data = $wp_slimstat_view->count_records();
 		$add_to_box_title = __('Recent Contents', 'wp-slimstat-view');
 }
@@ -142,7 +142,7 @@ if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-s
 $visit_id = -1;
 for($i=0;$i<$count_results;$i++){
 	$results[$i]['ip'] = long2ip($results[$i]['ip']);
-	if ($wp_slimstat->options['convert_ip_addresses'] == 'yes'){
+	if ($GLOBALS['wp_slimstat']->options['convert_ip_addresses'] == 'yes'){
 		$host_by_ip = gethostbyaddr( $results[$i]['ip'] );
 		$host_by_ip = trim_value($host_by_ip, 50);
 		$host_by_ip['text'] .= ($host_by_ip['text'] != $results[$i]['ip'])?" ({$results[$i]['ip']})":'';
@@ -161,24 +161,30 @@ for($i=0;$i<$count_results;$i++){
 			$highlight_row = ' is-known-user';
 		}
 		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/images/whois.gif' /></a> $ip_address";
+		$other_ip_address = '';
+		if (!empty($results[$i]['other_ip'])){
+			$results[$i]['other_ip'] = long2ip($results[$i]['other_ip']);
+			$other_ip_address = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;other_ip-op=equal&amp;other_ip={$results[$i]['other_ip']}'>{$results[$i]['other_ip']}</a>";
+		}
 		$country = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;country-op=equal&amp;country={$results[$i]['country']}'>".__('c-'.$results[$i]['country'],'countries-languages')."</a>";
 		$language = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;language-op=equal&amp;language={$results[$i]['language']}'>".__('l-'.$results[$i]['language'], 'countries-languages')."</a>";
 		$platform = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;platform-op=equal&amp;platform={$results[$i]['platform']}'>".__($results[$i]['platform'],'countries-languages')."</a>";
 		$browser = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=5$wp_slimstat_view->filters_query&amp;browser-op=equal&amp;browser={$results[$i]['browser']}'>{$results[$i]['browser']}</a>";
 		if ($results[$i]['version'] == 0) $results[$i]['version'] = '';
 
-		echo "<p class='header$highlight_row'>[<strong>{$results[$i]['type']}</strong>] $ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>$browser {$results[$i]['version']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span>";
+		echo "<p class='header$highlight_row'>[<strong>{$results[$i]['type']}</strong>] $ip_address <span class='widecolumn'>$platform</span> <span class='widecolumn'>$browser {$results[$i]['version']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>$language</span> <span>$other_ip_address</span>";
 		if (!empty($function_to_use) && $function_to_use != 'get_details_recent_visits' && $function_to_use != 'get_recent_known_visitors')	echo "<span class='widecolumn'>{$results[$i]['dt']}</span>";
 		echo "</p>";
 		$visit_id = $results[$i]['visit_id'];
 	}
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['referer']);
+	$element_url = (strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'];
 	echo "<p>";
 	switch ($function_to_use){
 		case 'get_details_recent_visits':
 		case 'get_recent_known_visitors':
 			if (!empty($results[$i]['domain']))
-				echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$results[$i]['domain']} &raquo;";
+				echo "<a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$results[$i]['domain']} &raquo;";
 			else
 				echo __('Direct visit to','wp-slimstat-view');
 			$searchterms = trim_value($results[$i]['searchterms'], 70);
@@ -220,7 +226,7 @@ for($i=0;$i<$count_results;$i++){
 			$domain = trim_value($results[$i]['domain'], 50);
 			$referer = trim_value($results[$i]['referer'], 200);
 			$url_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['domain'].$referer['text']);
-			$domain_span = !empty($results[$i]['domain'])?"<span><a target='_blank' title='$url_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$domain['text']}</span>":'';
+			$domain_span = !empty($results[$i]['domain'])?"<span><a target='_blank' title='$url_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$domain['text']}</span>":'';
 			echo "<span class='widecolumn'>{$results[$i]['dt']}</span><span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>$domain_span<span class='highlight-term'>{$searchterms['text']}</span>";
 	}
 	echo '</p>';

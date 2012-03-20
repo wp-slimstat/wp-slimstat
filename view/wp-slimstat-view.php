@@ -4,7 +4,7 @@
 class wp_slimstat_view {
 
 	public function __construct($user_filters = array()){
-		global $wpdb, $wp_slimstat;
+		global $wpdb;
 
 		// We use three of tables to store data about visits
 		$this->table_stats = $wpdb->prefix . 'slim_stats';
@@ -18,7 +18,7 @@ class wp_slimstat_view {
 		$this->starting_from = 0;
 
 		// Limit results to...
-		$this->limit_results = empty($user_filters['limit_results'])?$wp_slimstat->options['rows_to_show']:intval($user_filters['limit_results']);
+		$this->limit_results = empty($user_filters['limit_results'])?$GLOBALS['wp_slimstat']->options['rows_to_show']:intval($user_filters['limit_results']);
 
 		// Date format
 		$this->date_time_format = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
@@ -36,6 +36,7 @@ class wp_slimstat_view {
 			'country' => array('string', 't1.'),
 			'domain' => array('string', 't1.'),
 			'ip' => array('string', 't1.'),
+			'other_ip' => array('string', 't1.'),
 			'user' => array('string', 't1.'),
 			'visit_id' => array('string', 't1.'),
 			'language' => array('string', 't1.'),
@@ -69,7 +70,7 @@ class wp_slimstat_view {
 
 		// Decimal and thousands separators
 		$this->decimal_separator = ','; $this->thousand_separator = '.';
-		if ($wp_slimstat->options['use_european_separators'] == 'no') {
+		if ($GLOBALS['wp_slimstat']->options['use_european_separators'] == 'no') {
 			$this->decimal_separator = '.'; $this->thousand_separator = ',';
 		}
 
@@ -159,12 +160,14 @@ class wp_slimstat_view {
 					($a_filter_label != 'author') && ($a_filter_label != 'category-id')){
 
 					// Filters on the IP address require a special treatment
-					if ($a_filter_label == 'ip'){
-						$a_filter_column = 'INET_NTOA(ip)';
+					if ($a_filter_label == 'ip' || $a_filter_label == 'other_ip'){
+						$a_filter_column = "INET_NTOA($a_filter_label)";
+						$a_filter_empty = '0.0.0.0';
 					}
 					else{
 						// $a_filter_details[2] is the table identifier (t1 = wp_slim_stats, tb = wp_slim_browsers, tss = wp_slim_screenres)
 						$a_filter_column = "{$a_filter_details[2]}$a_filter_label";
+						$a_filter_empty = '0';
 					}
 
 					switch ($a_filter_details[1]){
@@ -190,7 +193,7 @@ class wp_slimstat_view {
 							$this->filters_sql_where .= " AND $a_filter_column = ''";
 							break;
 						case 'is not empty':
-							$this->filters_sql_where .= " AND $a_filter_column <> ''";
+							$this->filters_sql_where .= " AND $a_filter_column <> '' AND $a_filter_column <> '$a_filter_empty'";
 							break;
 						default:
 							$this->filters_sql_where .= " AND $a_filter_column = '{$a_filter_details[0]}'";
@@ -227,7 +230,7 @@ class wp_slimstat_view {
 						default:
 							$user_filters_sql_where = " tu.user_login = '{$a_filter_details[0]}'";
 					}
-				
+
 					$sql = "SELECT tp.ID
 							FROM $wpdb->posts tp, $wpdb->users tu
 							WHERE $user_filters_sql_where
@@ -434,7 +437,7 @@ class wp_slimstat_view {
 
 		$where_clause = ($_type != -1)?"tob.type = $_type":'tob.type > 0';
 
-		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, tob.type, t1.ip, t1.user, t1.resource, t1.referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
+		$sql = "SELECT tob.outbound_id, tob.outbound_domain, tob.outbound_resource, tob.type, tob.notes, t1.ip, t1.user, t1.domain, t1.resource, t1.referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
 				FROM $this->table_outbound tob INNER JOIN $this->table_stats t1 ON tob.id = t1.id INNER JOIN $this->table_browsers tb on t1.browser_id = tb.browser_id
 				WHERE $where_clause $this->filters_sql_where $this->filters_date_sql_where
 				ORDER BY tob.dt $this->direction
@@ -606,7 +609,7 @@ class wp_slimstat_view {
 			}
 
 			// Format each group of data
-			
+
 			if (($j == $day_idx_current - 1) || $this->day_filter_active || !empty($this->day_interval)){
 				if (!empty($data1[$date_idx_current])){
 					$result->current_data1 .= "[$i,{$data1[$date_idx_current]}$current_filter_query],";
@@ -676,4 +679,3 @@ class wp_slimstat_view {
 		}
 	}
 }
-?>

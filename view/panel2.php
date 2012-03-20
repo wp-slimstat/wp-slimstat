@@ -120,7 +120,7 @@ if ($count_results == 0) echo '<p class="nodata">'.__('No data to display','wp-s
 for($i=0;$i<$count_results;$i++){
 	$percentage = ($current_pageviews > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['count']/$current_pageviews)), 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator):0;
 	$results[$i]['ip'] = long2ip($results[$i]['ip']);
-	if ($wp_slimstat->options['convert_ip_addresses'] == 'yes'){
+	if ($GLOBALS['wp_slimstat']->options['convert_ip_addresses'] == 'yes'){
 		$host_by_ip = gethostbyaddr( $results[$i]['ip'] );
 		$host_by_ip = trim_value($host_by_ip, 60);
 		$host_by_ip['text'] .= ($host_by_ip['text'] != $results[$i]['ip'])?" ({$results[$i]['ip']})":'';

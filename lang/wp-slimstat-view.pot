@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-02-21 17:36-0500\n"
-"PO-Revision-Date: 2012-02-21 17:36-0500\n"
+"POT-Creation-Date: 2012-03-20 12:45-0500\n"
+"PO-Revision-Date: 2012-03-20 12:46-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -51,8 +51,8 @@ msgid "x"
 msgstr ""
 
 #: ../view/index.php:218
-#: ../view/index.php:281
 #: ../view/index.php:282
+#: ../view/index.php:283
 msgid "Year"
 msgstr ""
 
@@ -101,107 +101,111 @@ msgid "IP"
 msgstr ""
 
 #: ../view/index.php:239
-msgid "User"
+msgid "Private IP"
 msgstr ""
 
 #: ../view/index.php:240
-msgid "Visit ID"
+msgid "User"
 msgstr ""
 
 #: ../view/index.php:241
+msgid "Visit ID"
+msgstr ""
+
+#: ../view/index.php:242
 #: ../view/panel5.php:96
 msgid "Keywords"
 msgstr ""
 
-#: ../view/index.php:242
+#: ../view/index.php:243
 msgid "Language Code"
 msgstr ""
 
-#: ../view/index.php:243
+#: ../view/index.php:244
 #: ../view/panel5.php:99
 msgid "Permalink"
 msgstr ""
 
-#: ../view/index.php:244
+#: ../view/index.php:245
 msgid "Referer"
 msgstr ""
 
-#: ../view/index.php:245
+#: ../view/index.php:246
 #: ../view/panel5.php:101
 msgid "Screen Resolution"
 msgstr ""
 
-#: ../view/index.php:246
+#: ../view/index.php:247
 msgid "Color depth"
 msgstr ""
 
-#: ../view/index.php:247
+#: ../view/index.php:248
 msgid "Post Author"
 msgstr ""
 
-#: ../view/index.php:248
+#: ../view/index.php:249
 msgid "Post Category ID"
 msgstr ""
 
-#: ../view/index.php:251
+#: ../view/index.php:252
 msgid "Equals"
 msgstr ""
 
-#: ../view/index.php:252
+#: ../view/index.php:253
 msgid "Is not equal to"
 msgstr ""
 
-#: ../view/index.php:253
+#: ../view/index.php:254
 msgid "Contains"
 msgstr ""
 
-#: ../view/index.php:254
+#: ../view/index.php:255
 msgid "Does not contain"
 msgstr ""
 
-#: ../view/index.php:255
+#: ../view/index.php:256
 msgid "Starts with"
 msgstr ""
 
-#: ../view/index.php:256
+#: ../view/index.php:257
 msgid "Ends with"
 msgstr ""
 
-#: ../view/index.php:257
+#: ../view/index.php:258
 msgid "Sounds like"
 msgstr ""
 
-#: ../view/index.php:258
+#: ../view/index.php:259
 msgid "Is empty"
 msgstr ""
 
-#: ../view/index.php:259
+#: ../view/index.php:260
 msgid "Is not empty"
 msgstr ""
 
-#: ../view/index.php:262
+#: ../view/index.php:263
 msgid "Filter by date"
 msgstr ""
 
-#: ../view/index.php:263
+#: ../view/index.php:264
 msgid "Day"
 msgstr ""
 
-#: ../view/index.php:272
+#: ../view/index.php:273
 msgid "Month"
 msgstr ""
 
-#: ../view/index.php:283
+#: ../view/index.php:284
 #: ../view/panel1.php:52
 msgid "days"
 msgstr ""
 
-#: ../view/index.php:284
+#: ../view/index.php:285
 #: ../view/panel5.php:113
 msgid "Go"
 msgstr ""
 
-#: ../view/index.php:285
+#: ../view/index.php:286
 msgid "Reverse"
 msgstr ""
 
@@ -265,11 +269,11 @@ msgstr ""
 #: ../view/panel1.php:30
 #: ../view/panel1.php:88
 #: ../view/panel1.php:111
-#: ../view/panel1.php:160
-#: ../view/panel1.php:181
-#: ../view/panel1.php:203
-#: ../view/panel1.php:226
-#: ../view/panel1.php:246
+#: ../view/panel1.php:165
+#: ../view/panel1.php:186
+#: ../view/panel1.php:208
+#: ../view/panel1.php:231
+#: ../view/panel1.php:251
 #: ../view/panel2.php:31
 #: ../view/panel2.php:73
 #: ../view/panel2.php:96
@@ -285,7 +289,7 @@ msgstr ""
 #: ../view/panel3.php:114
 #: ../view/panel3.php:138
 #: ../view/panel3.php:160
-#: ../view/panel3.php:186
+#: ../view/panel3.php:187
 #: ../view/panel4.php:34
 #: ../view/panel4.php:56
 #: ../view/panel4.php:78
@@ -293,9 +297,9 @@ msgstr ""
 #: ../view/panel4.php:121
 #: ../view/panel4.php:142
 #: ../view/panel4.php:171
-#: ../view/panel4.php:193
-#: ../view/panel4.php:228
-#: ../view/panel4.php:253
+#: ../view/panel4.php:194
+#: ../view/panel4.php:231
+#: ../view/panel4.php:256
 #: ../view/panel5.php:140
 #: ../view/panel6.php:26
 msgid "No data to display"
@@ -380,12 +384,12 @@ msgstr ""
 
 #: ../view/panel1.php:83
 #: ../view/panel1.php:105
-#: ../view/panel1.php:155
-#: ../view/panel1.php:198
-#: ../view/panel1.php:221
+#: ../view/panel1.php:160
+#: ../view/panel1.php:203
+#: ../view/panel1.php:226
 #: ../view/panel3.php:67
 #: ../view/panel3.php:109
-#: ../view/panel3.php:181
+#: ../view/panel3.php:182
 #: ../view/panel4.php:51
 #: ../view/panel4.php:73
 #: ../view/panel4.php:116
@@ -401,65 +405,64 @@ msgstr ""
 msgid "Spy View"
 msgstr ""
 
-#: ../view/panel1.php:126
+#: ../view/panel1.php:127
 msgid "Search for"
 msgstr ""
 
-#: ../view/panel1.php:137
-#: ../view/panel1.php:229
+#: ../view/panel1.php:138
+#: ../view/panel1.php:234
 #: ../view/panel2.php:226
 #: ../view/panel3.php:96
-#: ../view/panel4.php:207
-#: ../view/panel4.php:264
-#: ../view/panel5.php:164
+#: ../view/panel4.php:208
+#: ../view/panel4.php:267
+#: ../view/panel5.php:169
 msgid "c-"
 msgstr ""
 
-#: ../view/panel1.php:142
-#: ../view/panel1.php:209
-#: ../view/panel1.php:251
+#: ../view/panel1.php:145
+#: ../view/panel1.php:214
+#: ../view/panel1.php:256
 #: ../view/panel3.php:119
 #: ../view/panel3.php:167
 #: ../view/panel4.php:82
-#: ../view/panel4.php:214
-#: ../view/panel4.php:235
-#: ../view/panel4.php:272
-#: ../view/panel5.php:175
-#: ../view/panel5.php:222
+#: ../view/panel4.php:238
+#: ../view/panel4.php:275
+#: ../view/panel5.php:180
+#: ../view/panel5.php:228
 #, php-format
 msgid "Open %s in a new window"
 msgstr ""
 
-#: ../view/panel1.php:147
-#: ../view/panel5.php:183
+#: ../view/panel1.php:152
+#: ../view/panel5.php:189
 msgid "Direct visit to"
 msgstr ""
 
-#: ../view/panel1.php:156
+#: ../view/panel1.php:161
 msgid "Recent Search Terms"
 msgstr ""
 
-#: ../view/panel1.php:176
+#: ../view/panel1.php:181
 msgid "Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session."
 msgstr ""
 
-#: ../view/panel1.php:177
+#: ../view/panel1.php:182
 msgid "Languages - Just Visitors"
 msgstr ""
 
-#: ../view/panel1.php:184
+#: ../view/panel1.php:189
 #: ../view/panel2.php:76
-#: ../view/panel5.php:165
+#: ../view/panel5.php:170
 msgid "l-"
 msgstr ""
 
-#: ../view/panel1.php:186
+#: ../view/panel1.php:191
 #: ../view/panel2.php:79
 msgid "Code"
 msgstr ""
 
-#: ../view/panel1.php:186
-#: ../view/panel1.php:254
+#: ../view/panel1.php:191
+#: ../view/panel1.php:259
 #: ../view/panel2.php:79
 #: ../view/panel2.php:106
 #: ../view/panel2.php:132
@@ -479,17 +482,18 @@ msgstr ""
 #: ../view/panel3.php:98
 #: ../view/panel3.php:122
 #: ../view/panel3.php:145
-#: ../view/panel3.php:170
+#: ../view/panel3.php:171
 #: ../view/panel4.php:176
-#: ../view/panel4.php:233
+#: ../view/panel4.php:236
 msgid "Hits"
 msgstr ""
 
-#: ../view/panel1.php:199
+#: ../view/panel1.php:204
 msgid "Popular Resources"
 msgstr ""
 
-#: ../view/panel1.php:207
+#: ../view/panel1.php:212
+#: ../view/panel1.php:259
 #: ../view/panel2.php:132
 #: ../view/panel2.php:155
 #: ../view/panel2.php:175
@@ -499,16 +503,16 @@ msgstr ""
 #: ../view/panel3.php:76
 #: ../view/panel3.php:98
 #: ../view/panel3.php:122
-#: ../view/panel3.php:170
+#: ../view/panel3.php:171
 msgid "Last"
 msgstr ""
 
-#: ../view/panel1.php:222
+#: ../view/panel1.php:227
 #: ../view/panel5.php:38
 msgid "Recent Countries"
 msgstr ""
 
-#: ../view/panel1.php:241
+#: ../view/panel1.php:246
 msgid "Traffic Sources Overview"
 msgstr ""
 
@@ -692,11 +696,11 @@ msgstr ""
 msgid "Sites"
 msgstr ""
 
-#: ../view/panel3.php:182
+#: ../view/panel3.php:183
 msgid "Recent Search Terms &raquo; Pages"
 msgstr ""
 
-#: ../view/panel3.php:220
+#: ../view/panel3.php:221
 msgid "Open referer in a new window"
 msgstr ""
 
@@ -739,18 +743,26 @@ msgid "Top Categories"
 msgstr ""
 
 #: ../view/panel4.php:188
+msgid "The value A:n tells you which link was clicked (the n-th in the page). If an ID is associated to that link, it will be used instead."
+msgstr ""
+
+#: ../view/panel4.php:189
 msgid "Recent Outbound Links"
 msgstr ""
 
-#: ../view/panel4.php:223
+#: ../view/panel4.php:217
+msgid "Open in a new window"
+msgstr ""
+
+#: ../view/panel4.php:226
 msgid "Top Exit Pages"
 msgstr ""
 
-#: ../view/panel4.php:247
+#: ../view/panel4.php:250
 msgid "WP SlimStat can track specific events (clicks, downloads, etc) triggered by your visitors. Add <strong>onclick=\"ss_te(event,<em>code</em>)\"</strong> to your links, where <em>code</em> is an integer value between 2 and 254 (1 is for downloads)"
 msgstr ""
 
-#: ../view/panel4.php:248
+#: ../view/panel4.php:251
 msgid "Recent Events"
 msgstr ""
 
@@ -831,32 +843,32 @@ msgstr ""
 msgid "Records: %d - %d. Order by: %s %s (%s)"
 msgstr ""
 
-#: ../view/panel5.php:187
+#: ../view/panel5.php:193
 msgid "Local search page"
 msgstr ""
 
-#: ../view/panel5.php:193
-#: ../view/panel5.php:217
+#: ../view/panel5.php:199
+#: ../view/panel5.php:223
 msgid "Local search results page"
 msgstr ""
 
-#: ../view/panel5.php:230
+#: ../view/panel5.php:236
 msgid "Color codes:"
 msgstr ""
 
-#: ../view/panel5.php:231
+#: ../view/panel5.php:237
 msgid "Coming from a Search Engine"
 msgstr ""
 
-#: ../view/panel5.php:232
+#: ../view/panel5.php:238
 msgid "Known Users"
 msgstr ""
 
-#: ../view/panel5.php:233
+#: ../view/panel5.php:239
 msgid "Other Humans"
 msgstr ""
 
-#: ../view/panel5.php:234
+#: ../view/panel5.php:240
 msgid "Bots, Crawlers and others"
 msgstr ""
 

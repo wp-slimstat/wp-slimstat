@@ -117,7 +117,7 @@ for($i=0;$i<$count_results;$i++){
 	$strings = trim_value($results[$i]['domain'], 64);
 	$percentage = ($count_pageviews_with_referer > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['count']/$count_pageviews_with_referer)), 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator):0;
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['domain']);
-	$element_url = 'http://'.$results[$i]['domain'].$results[$i]['referer'];
+	$element_url = (strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'];
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info = "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	$clean_string = urlencode($results[$i]['domain']);
@@ -165,13 +165,14 @@ for($i=0;$i<$count_results;$i++){
 	$strings = trim_value($results[$i]['referer'], 200);
 	$percentage = ($count_pageviews_with_referer > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['count']/$count_pageviews_with_referer)), 2, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator):0;
 	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['domain'].$strings['text']);
+	$element_url = (strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'];
 	
 	$results[$i]['count'] = number_format($results[$i]['count'], 0, $wp_slimstat_view->decimal_separator, $wp_slimstat_view->thousand_separator);
 	$extra_info = "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}, ".__('Last','wp-slimstat-view').": ".(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
 	if (!isset($wp_slimstat_view->filters_parsed['domain'][1]) || $wp_slimstat_view->filters_parsed['domain'][1]!='equals')
 		$clean_domain = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=3$wp_slimstat_view->filters_query&amp;domain={$results[$i]['domain']}'>$clean_domain</a>";
 
-	echo "<p $extra_info><span class='element-title'><a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a>$clean_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
+	echo "<p $extra_info><span class='element-title'><a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a>$clean_domain</span> <span class='narrowcolumn'>$percentage%</span></p>";
 } ?>
 	</div>
 </div>
@@ -216,9 +217,8 @@ for($i=0;$i<$count_results;$i++){
 	$clean_long_string = urlencode($results[$i]['resource']);
 	if (!isset($wp_slimstat_view->filters_parsed['resource'][1]) || $wp_slimstat_view->filters_parsed['resource'][1]!='equals')
 		$resource_to_show = "<a class='activate-filter' href='$admin_url?page=wp-slimstat&amp;slimpanel=3$wp_slimstat_view->filters_query&amp;resource=$clean_long_string'>$resource_to_show</a>";
-
-	echo "<p $highlight_row$extra_info><span class='element-title'$show_searchterms_tooltip><a target='_blank' title='".__('Open referer in a new window','wp-slimstat-view')."'";
-	echo " href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> ";
+	$element_url = (strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'];
+	echo "<p $highlight_row$extra_info><span class='element-title'$show_searchterms_tooltip><a target='_blank' title='".__('Open referer in a new window','wp-slimstat-view')."' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> ";
 	echo $searchterms_to_show."</span> <span$show_resource_tooltip>$resource_to_show</span></p>";
 } ?>
 	</div>

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-02-21 17:35-0500\n"
-"PO-Revision-Date: 2012-02-21 17:35-0500\n"
+"POT-Creation-Date: 2012-03-16 14:25-0500\n"
+"PO-Revision-Date: 2012-03-16 14:32-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -309,16 +309,16 @@ msgid "IP addresses"
 msgstr "Indirizzi IP"
 
 #: ../options/panel3.php:75
-msgid "Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.1.1/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
-msgstr "Inserisci una lista di reti che non vuoi tracciare, separate da virgola. Ogni rete <strong>deve</strong> essere definita usando la <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>notazione CIDR</a> (ad esempio <em>192.168.1.1/24</em>). Se il formato non &egrave; corretto, WP SlimStat potrebbe non funzionare correttamente."
+msgid "Enter a list of networks you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>CIDR notation</a> (i.e. <em>192.168.0.0/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
+msgstr "Inserisci una lista di reti che non vuoi tracciare, separate da virgola. Ogni rete <strong>deve</strong> essere definita usando la <a href='http://lab.duechiacchiere.it/index.php?topic=26.0' target='_blank'>notazione CIDR</a> (ad esempio <em>192.168.0.0/24</em>). Se il formato non &egrave; corretto, WP SlimStat potrebbe non funzionare correttamente."
 
 #: ../options/panel3.php:78
 msgid "Pages and posts"
 msgstr "Pagine e post"
 
 #: ../options/panel3.php:79
-msgid "Enter a list of permalinks you don't want to track, separated by commas. You should omit the domain name from these resources: <em>/about, ?p=1</em>, etc. WP SlimStat will ignore all the pageviews whose permalink <strong>contains</strong> at least one of them."
-msgstr "Inserisci una lista di permalink che non vuoi tracciare, separati da virgola. Non &egrave; necessario indicare il dominio: <em>/about, ?p=1</em>, ecc. WP SlimStat ignorer&agrave; tutte le richieste il cui permalink <strong>inizia</strong> con uno di quelli indicati."
+msgid "Enter a list of URLs you don't want to track, separated by commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>/abou*</code> will match /about and /abound, <code>/abo*t</code> will match /aboundant and /about, <code>/abo!t</code> will match /about and /abort."
+msgstr "Inserisci una lista di URL che non vuoi tracciare, separate da virgola. Non includere il dominio: <em>/chi-sono, ?p=1</em>, etc. Caratteri jolly: <code>*</code> per indicare 'una qualsiasi stringa, inclusa quella vuota', <code>!</code> per indicare 'un qualsiasi carattere'. Ad esempio, <code>/chi-so*</code> intercetta sia /chi-sono che /chi-somiglia, <code>/cor!a</code> intercetta /corda e /corazzata, <code>/cor!a</code> intercetta /corda e /corta."
 
 #: ../options/panel3.php:82
 msgid "Countries"
@@ -333,16 +333,16 @@ msgid "User agents"
 msgstr "Browser da ignorare"
 
 #: ../options/panel3.php:87
-msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). WP SlimStat will ignore all the browsers whose identification string <strong>starts</strong> with one of these."
-msgstr "Inserisci una lista di browser che non vuoi tracciare, separati da virgola. Se lo desideri, puoi anche specificare la versione del browser aggiungendo uno slash dopo il nome (ad esempio <em>Firefox/3.6</em>). WP SlimStat ignorer&agrave; tutti i browser il cui nome <strong>inizia</strong> con uno dei valori specificati."
+msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>Chr*</code> will match Chrome and Chromium, <code>IE/!.0</code> will match IE/7.0 and IE/8.0."
+msgstr "Inserisci una lista di browser che non vuoi tracciare, separati da virgola. Se lo desideri, puoi anche specificare la versione del browser aggiungendo uno slash dopo il nome (ad esempio <em>Firefox/3.6</em>). Caratteri jolly: <code>*</code> per indicare 'una qualsiasi stringa, inclusa quella vuota', <code>!</code> per indicare 'un qualsiasi carattere'. Ad esempio, <code>Chr*</code> include Chrome e Chromium, <code>IE/!.0</code> include IE/7.0 ed IE/8.0."
 
 #: ../options/panel3.php:90
 msgid "Referers"
 msgstr "Link in ingresso"
 
 #: ../options/panel3.php:91
-msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. WP SlimStat will ignore all the referers that <strong>contain</strong> at least one of them."
-msgstr "Inserisci una lista di link in ingresso che non vuoi tracciare, separati da virgola: <code>miosito.com, /ignore-me-please</code>, ecc. WP SlimStat ignorer&agrave; tutte le richieste il cui link d'origine <strong>contiene</strong> uno di quelli indicati."
+msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'."
+msgstr "Inserisci una lista di link in ingresso che non vuoi tracciare, separati da virgola: <code>miosito.com, /ignora-questa-pagina</code>, ecc. Caratteri jolly: <code>*</code> per indicare 'una qualsiasi stringa, inclusa quella vuota', <code>!</code> per indicare 'un qualsiasi carattere'."
 
 #: ../options/panel3.php:94
 msgid "Users"
@@ -595,6 +595,17 @@ msgstr "Vota e condividi"
 #: ../options/panel6.php:29
 msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on its Plugin Directory page."
 msgstr "Fai sapere agli altri se WP SlimStat funziona bene e quanto ti piace. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Votalo</a> sulla pagina apposita di Wordpress."
+
+#~ msgid ""
+#~ "Enter a list of permalinks you don't want to track, separated by commas. "
+#~ "You should omit the domain name from these resources: <em>/about, ?p=1</"
+#~ "em>, etc. WP SlimStat will ignore all the pageviews whose permalink "
+#~ "<strong>contains</strong> at least one of them."
+#~ msgstr ""
+#~ "Inserisci una lista di permalink che non vuoi tracciare, separati da "
+#~ "virgola. Non &egrave; necessario indicare il dominio: <em>/about, ?p=1</"
+#~ "em>, ecc. WP SlimStat ignorer&agrave; tutte le richieste il cui permalink "
+#~ "<strong>inizia</strong> con uno di quelli indicati."
 
 #~ msgid "Are you sure you want to empty the ip-to-countries table?"
 #~ msgstr ""

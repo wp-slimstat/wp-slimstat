@@ -185,6 +185,7 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p4_08': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p4_08">
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('The value A:n tells you which link was clicked (the n-th in the page). If an ID is associated to that link, it will be used instead.','wp-slimstat-view') ?>' />
 	<h3 class="hndle"><?php _e('Recent Outbound Links', 'wp-slimstat-view'); ?></h3>
 	<div class="container"><?php
 $results = $wp_slimstat_view->get_recent_outbound(0);
@@ -205,15 +206,17 @@ for($i=0;$i<$count_results;$i++){
 		}
 		$ip_address = "<a href='$ip_lookup_url{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='$wp_slimstat_view->plugin_url/images/whois.gif' /></a> $ip_address";
 		$country = __('c-'.$results[$i]['country'],'countries-languages');
+		$results[$i]['notes'] = str_replace('|ET:click', '', $results[$i]['notes']);
 
-		echo "<p class='header$highlight_row'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
+		echo "<p class='header$highlight_row'>$ip_address <span>{$results[$i]['notes']}</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
 		$outbound_id = $results[$i]['outbound_id'];
 	}
 	$resource = trim_value($results[$i]['resource'], 35);
 	$outbound_resource = trim_value($results[$i]['outbound_domain'], 40);
-	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['outbound_domain'].$results[$i]['outbound_resource']);
-	echo "<p><span class='element-title'{$resource['tooltip']}>{$resource['text']}</span>";
-	echo " <span><a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$outbound_resource['text']}</span></p>";
+	$element_url = (strpos($results[$i]['outbound_resource'], '://') == false)?"http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}":$results[$i]['outbound_resource'];
+	$element_title = __('Open in a new window','wp-slimstat-view');	
+
+	echo "<p><span class='element-title'{$resource['tooltip']}>{$resource['text']}</span> <span><a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> {$outbound_resource['text']}</span></p>";
 } ?>
 	</div>
 </div>
@@ -243,7 +246,7 @@ for($i=0;$i<$count_results;$i++){
 </div>
 
 <?php break; case 'p4_10': ?>
-<div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p4_10">
+<div class="postbox wide <?php echo $wp_locale->text_direction ?>" id="p4_10">
 	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('WP SlimStat can track specific events (clicks, downloads, etc) triggered by your visitors. Add <strong>onclick="ss_te(event,<em>code</em>)"</strong> to your links, where <em>code</em> is an integer value between 2 and 254 (1 is for downloads)','wp-slimstat-view') ?>' />
 	<h3 class="hndle"><?php _e('Recent Events', 'wp-slimstat-view'); ?></h3>
 	<div class="container slimstat-tooltips"><?php
@@ -267,10 +270,13 @@ for($i=0;$i<$count_results;$i++){
 		echo "<p class='header'>$ip_address <span>{$results[$i]['browser']} $browser_version</span> <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
 		$outbound_id = $results[$i]['outbound_id'];
 	}
-	$outbound_resource = trim_value($results[$i]['outbound_resource'], 45);
-	$outbound_domain = trim_value($results[$i]['outbound_domain'], 36);
-	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['outbound_resource']);
-	echo "<p><a target='_blank' title='$element_title' href='http://{$results[$i]['outbound_domain']}{$results[$i]['outbound_resource']}'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> <span class='element-title'{$outbound_resource['tooltip']}>{$outbound_resource['text']}</span> <span style='color:#f00;font-weight:700'>{$results[$i]['type']}</span> <span>{$outbound_domain['text']}</span></p>";
+	$outbound_resource = trim_value($results[$i]['outbound_resource'], 50);
+	$resource = trim_value($results[$i]['resource'], 50);
+	$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
+	$element_url = (strpos($results[$i]['resource'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['resource']}":$results[$i]['resource'];
+	$results[$i]['notes'] = str_replace('|', '&nbsp;&nbsp;', str_replace('|ET:click', '', $results[$i]['notes']));
+
+	echo "<p><a target='_blank' title='$element_title' href='$element_url'><img src='$wp_slimstat_view->plugin_url/images/url.gif' /></a> <span class='element-title'{$resource['tooltip']}>{$resource['text']}</span> <span>{$results[$i]['notes']}</span> <span style='color:#f00;font-weight:700'>{$results[$i]['type']}</span> <span>{$outbound_resource['text']}</span></p>";
 } ?>
 	</div>
 </div><?php	break;

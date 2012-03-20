@@ -2,15 +2,12 @@
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
-Requires at least: 3.0
+Requires at least: 3.1
 Tested up to: 3.3.1
-Stable tag: 2.7
+Stable tag: 2.8
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
-
-= Upgrading from a previous version? =
-Please remember to deactivate and reactivate WP SlimStat, in order to update the db structure.
 
 = Main Features =
 * Real-time web analytics reports
@@ -40,7 +37,6 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 
 == Installation ==
 
-1. If you are upgrading from a previous version, *deactivate WP SlimStat*
 2. Upload all the files and folders to your server
 3. Activate it 
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
@@ -151,6 +147,19 @@ Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 * Merge with WP SlimStat Shortcodes
 * Antiflood monitor
 
+= 2.8 =
+* Added: WP SlimStat now looks for HTTP headers like X_FORWARDED_FOR to get, when available, private IP addresses of people using proxies
+* Added: You can now use wildcards in your filters: `*` for any string, `!` for any single character
+* Added: new columns to track even more information about events and outbound links (thank you [SpenceDesign](http://wordpress.org/support/topic/plugin-wp-slimstat-tracking-right-click-of-download-links))
+* Added: started working on heat maps. The information is already being collected, but not shown to the admin... just yet!
+* Added: WP SlimStat won't activate on networks that have more than 50 blogs
+* Fixed: Screen antialias detection is now much more accurate
+* Fixed: visitors' tracking wasn't working properly for some users.
+* Updated: Event tracking has been completely rewritten and optimized (thank you [SpenceDesign](http://wordpress.org/support/topic/plugin-wp-slimstat-tracking-right-click-of-download-links))
+* Updated: Referer is now being stored as the whole URL, to keep track of port numbers, HTTPS and other protocols
+* Updated: Browscap Database (February 2012)
+* Updated: Geolocation Database (March 2012,  to February 2012, 173415 rows). Go to Options > Maintenance > Reset Ip-to-Countries.
+
 = 2.7 =
 * Added: Goodbye FusionMaps, welcome AmMap, which brings a new world map with pan and zoom capabilities
 * Added: Direct access to the panels from the Admin Bar
@@ -229,7 +238,7 @@ alphabetical order):
 [Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Caigo](http://www.blumannaro.net/), 
 [Dennis Kowallek](http://www.adopt-a-plant.com), [Hans Schantz](http://www.aetherczar.com/), [Herman Peet](http://www.hermanpeet.nl/), [La casetta delle pesche](http://www.lacasettadellepesche.it/),
 [Mobilize Mail](http://blog.mobilizemail.com/), Mora Systems, Neil Robinson, [Sahin Eksioglu](http://www.alternatifblog.com/),
-[Saill White](http://saillwhite.com), Wayne Liebman
+[Saill White](http://saillwhite.com), [SpenceDesign](http://spencedesign.com/), Wayne Liebman
 
 = Dashboard Widgets = 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.

@@ -63,8 +63,8 @@ $is_table_active = false;
 $multisite_table_prefix = $table_prefix;
 
 // Multisite awareness
-$blog_id = isset($_GET['bid'])?intval($_GET['bid']):0;
-if (!empty($blog_id)){
+$blog_id = isset($_GET['bid'])?intval($_GET['bid']):1;
+if (!empty($blog_id) && $blog_id > 1){
 	while ($row = @mysql_fetch_row($db_list_tables)) {
 		if ($is_table_active = ($row[0] == "{$table_prefix}{$blog_id}_slim_stats")){
 			$multisite_table_prefix = "{$table_prefix}{$blog_id}_";
@@ -105,10 +105,10 @@ if (empty($site_url)) $site_url = slimstat_get_option('siteurl');
 if (empty($site_url)) $site_url = $_SERVER['HTTP_HOST'];
 
 // This request is not coming from the same domain
-if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
-	echo 'Invalid referer';
-	exit;
-}
+//if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
+//	echo 'Invalid referer';
+//	exit;
+//}
 
 // Is the ID valid?
 $stat['id'] = empty($_GET['id'])?0:base_convert($_GET['id'], 16, 10);
@@ -118,12 +118,14 @@ if (empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id
 }
 
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
-$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string( strip_tags($_GET['obd']) ):'';
-$stat['outbound_resource'] = !empty($_GET['obr'])?mysql_real_escape_string( ((substr($_GET['obr'], 0, 1) != '/')?'/':'').$_GET['obr'] ):'';
+$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string(strip_tags($_GET['obd'])):'';
+$stat['outbound_resource'] = !empty($_GET['obr'])?mysql_real_escape_string(strip_tags(trim($_GET['obr']))):'';
+if (!empty($stat['outbound_resource']) && strpos($stat['outbound_resource'], '://') == false && substr($stat['outbound_resource'], 0, 1) != '/' && substr($stat['outbound_resource'], 0, 1) != '#') $stat['outbound_resource'] = '/'.$stat['outbound_resource'];
+$stat['notes'] = !empty($_GET['no'])?mysql_real_escape_string(strip_tags(trim($_GET['no']))):'';
+$stat['position'] = !empty($_GET['po'])?mysql_real_escape_string(strip_tags(trim($_GET['po']))):'';
+$stat['type'] = isset($_GET['ty'])?intval($_GET['ty']):-1;
 
-if (!empty($stat['outbound_domain']) && !empty($stat['outbound_resource'])){
-	$stat['type'] = isset($_GET['ty'])?intval($_GET['ty']):1; // type=1 stands for download
-
+if (!empty($stat['outbound_resource']) && $stat['type'] >= 0){
 	$timezone = slimstat_get_option('timezone_string');
 	if (!empty($timezone)) date_default_timezone_set($timezone);
 	$lt = localtime();
@@ -142,9 +144,9 @@ INSERT INTO `{$multisite_table_prefix}slim_outbound` ( `" . implode( "`, `", arr
 		$insert_new_outbound_sql .= "`$a_key` = '$a_value'" . (($a_key != 'dt')?" AND ":" LIMIT 1 ");
 	}
 	$insert_new_outbound_sql .= ")";
-	
+
 	@mysql_query($insert_new_outbound_sql);
-	if (empty($_GET['go']) || $_GET['go'] == 'y') header('Location: '.$stat['outbound_domain'].$stat['outbound_resource']);
+	@mysql_close($db_handle);
 	exit;
 }
 $stat['plugins'] = (!empty($_GET['pl']))?mysql_real_escape_string(substr(str_replace('|', ', ', $_GET['pl']), 0, -2)):'';
@@ -196,8 +198,8 @@ $update_sql = "UPDATE {$multisite_table_prefix}slim_stats
 				SET screenres_id = {$stat['screenres_id']}, plugins = '{$stat['plugins']}'
 				WHERE id = {$stat['id']} AND screenres_id = 0";
 
-mysql_query($update_sql);
-mysql_close($db_handle);
+@mysql_query($update_sql);
+@mysql_close($db_handle);
 
 function slimstat_get_option($_option_name = '', $_default_value = '') {
 	global $multisite_table_prefix;
@@ -218,5 +220,3 @@ function slimstat_get_var($_sql_query = '') {
 	else
 		return false;
 }
-
-?>

@@ -5,15 +5,15 @@ if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
   exit;
 }
 
-global $wpdb, $wp_locale, $month, $wp_slimstat;
+global $wpdb, $wp_locale, $month;
 
 // IP Lookup service URL
-$ip_lookup_url = $wp_slimstat->options['ip_lookup_service'];
+$ip_lookup_url = $GLOBALS['wp_slimstat']->options['ip_lookup_service'];
 
 // Retrieve the order of this tab's panels
 $user = wp_get_current_user();
 $admin_url = get_admin_url();
-$option = ($wp_slimstat->options['use_separate_menu'] == 'yes')?'meta-box-order_toplevel_page_wp-slimstat':'meta-box-order_dashboard_page_wp-slimstat';
+$option = ($GLOBALS['wp_slimstat']->options['use_separate_menu'] == 'yes')?'meta-box-order_toplevel_page_wp-slimstat':'meta-box-order_dashboard_page_wp-slimstat';
 $panels_order = get_user_option($option, $user->ID);
 $panels_order = explode(',', $panels_order[0]);
 if(!$panels_order || count($panels_order)!=40) $panels_order = array('p1_01','p1_02','p1_03','p1_04','p1_05','p1_06','p1_07','p1_08','p1_09','p1_10','p2_01','p2_02','p2_03','p2_04','p2_05','p2_06','p2_07','p2_08','p2_09','p2_10','p2_11','p2_12','p3_01','p3_02','p3_03','p3_04','p3_05','p3_06','p3_07','p3_08','p4_01','p4_02','p4_03','p4_04','p4_05','p4_06','p4_07','p4_08','p4_09','p4_10');
@@ -110,7 +110,7 @@ function trim_value($_string = '', $_length = 40){
 ?>
 
 <script type="text/javascript">
-<?php if (($wp_slimstat->options['refresh_interval'] > 0) && ($current_panel == 5)) echo "window.setTimeout('location.reload()', {$wp_slimstat->options['refresh_interval']}*1000);"; 
+<?php if (($GLOBALS['wp_slimstat']->options['refresh_interval'] > 0) && ($current_panel == 5)) echo "window.setTimeout('location.reload()', {$GLOBALS['wp_slimstat']->options['refresh_interval']}*1000);"; 
 if ($current_panel < 5): ?>
 function tickFormatter(n){
 	n += '';
@@ -236,6 +236,7 @@ jQuery(document).ready(function(){
 				<option value="country"><?php _e('Country Code','wp-slimstat-view') ?></option>
 				<option value="domain"><?php _e('Domain','wp-slimstat-view') ?></option>
 				<option value="ip"><?php _e('IP','wp-slimstat-view') ?></option>
+				<option value="other_ip"><?php _e('Private IP','wp-slimstat-view') ?></option>
 				<option value="user"><?php _e('User','wp-slimstat-view') ?></option>
 				<option value="visit_id"><?php _e('Visit ID','wp-slimstat-view') ?></option>
 				<option value="searchterms"><?php _e('Keywords','wp-slimstat-view') ?></option>
