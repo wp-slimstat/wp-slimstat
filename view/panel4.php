@@ -185,6 +185,7 @@ for($i=0;$i<$count_results;$i++){
 
 <?php break; case 'p4_08': ?>
 <div class="postbox medium <?php echo $wp_locale->text_direction ?>" id="p4_08">
+	<img class='module-tooltip' src='<?php echo $wp_slimstat_view->plugin_url ?>/images/info.png' width='10' height='10' title='<?php _e('The value A:n tells you which link was clicked (the n-th in the page). If an ID is associated to that link, it will be used instead.','wp-slimstat-view') ?>' />
 	<h3 class="hndle"><?php _e('Recent Outbound Links', 'wp-slimstat-view'); ?></h3>
 	<div class="container"><?php
 $results = $wp_slimstat_view->get_recent_outbound(0);
