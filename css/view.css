@@ -1,0 +1,73 @@
+#analytics-icon{background-image:url(../images/wp-slimstat.png);background-position:center;background-repeat:no-repeat;margin-top:10px;width:45px}
+.wrap form p{overflow:auto;margin:5px 1px}
+.wrap form p span{float:left;margin:5px 0}
+.wrap h2.medium{border-bottom:1px solid #CCC;font-size:.9em;margin-bottom:5px;padding-bottom:0}
+.wrap .nav-tab{color:#464646;font-size:1em;font-style:normal;line-height:1.1em;text-decoration:none;border-style:dashed;padding:10px}
+.wrap a.nav-tab.nav-tab-inactive:hover{background-color:#fff}
+.wrap .nav-tab.nav-tab-active{font-weight:700;position:relative;border-style:solid}
+.current-filters{clear:both;overflow:auto;vertical-align:top}
+.current-filters.rtl a{vertical-align:top}
+.current-filters a.cancel-all-filters{margin:0 5px}
+.current-filters code{padding:2px 3px}
+.filter-item{margin:0 5px 0 0}
+.sortable-placeholder{float:left;margin-right:5px;width:auto}
+#chart-placeholder{background-color:#fff;height:155px;width:770px;margin:5px 5px 0}
+#chart-legend{float:right;margin-top:5px}
+#chart-legend td{font-size:.85em}
+#chart-legend td.legendLabel{padding-right:10px}
+#jquery-tooltip{background-color:#ffe;border:1px solid #aab;display:none;opacity:0.95;position:absolute;padding:5px}
+#jquery-tooltip.tooltip-fixed-width{width:200px}
+#jquery-tooltip ul{margin-top:5px}
+#jquery-tooltip li{list-style-type:circle;margin-left:20px}
+.postbox{background-color:#fff;float:left;height:209px;margin-right:5px;overflow:hidden;width:auto;padding:0}
+.postbox.medium{min-width:517px}
+.postbox.wide{min-width:780px}
+.postbox.tall{min-width:900px;height:455px}
+.postbox h3{cursor:default;font-size:1em;margin:0;padding:6px 0 5px 5px}
+.postbox.rtl h3{padding:6px 5px 5px 0}
+.postbox div.more{float:right;font-size:.8em;height:17px;padding:6px 5px 0}
+.rtl .postbox div.more{float:left}
+.postbox div.container{background-color:#fff;height:184px;min-width:255px;overflow-y:auto}
+.postbox.tall div.container{min-width:900px;height:434px}
+.postbox div.container.noscroll{overflow:hidden}
+.postbox p{border-bottom:1px dashed #ddd;font-size:.9em;max-width:245px;overflow:auto;margin:0;padding:7px 5px}
+.postbox.medium p{max-width:507px}
+.postbox.wide p{max-width:770px}
+.postbox.tall p{max-width:995px}
+.postbox p.header{background-color:#eee}
+.postbox p.last{border:0}
+.postbox a.activate-filter{text-decoration:none}
+.postbox #wp-element-details{clear:left;display:block;font-size:.8em;padding:3px 0 0}
+.postbox p.nodata{border:0;color:#999;padding-top:70px;text-align:center}
+.postbox p img{float:left;padding:0 3px 0 0}
+.postbox img.module-tooltip{float:right;margin:7px 5px 0 0}
+.postbox.rtl img.module-tooltip{float:left;margin:7px 0 0 5px}
+.postbox.rtl p img{float:right;padding:2px 0 0 6px}
+.postbox p span{float:right;min-width:50px;text-align:right;padding:0 5px}
+.postbox.rtl p span{float:left;text-align:left}
+.postbox p span.element-title{float:left;text-align:left;padding:0}
+.postbox.rtl p span.element-title{float:right;text-align:right;padding:0}
+.postbox p span.narrowcolumn{min-width:30px;text-align:center}
+.postbox p span.widecolumn{min-width:85px;text-align:center}
+.postbox.tall span{margin:0 15px}
+.postbox.tall p a.first-column{display:inline-block;min-width:330px}
+.postbox .highlight-keywords{color:#900}
+.postbox .highlight-user{font-weight:700}
+.postbox p.is-search-engine{background-color:#FDFFD9}
+.postbox p.is-direct{background-color:#A8E6FF}
+.postbox p.is-known-user{background-color:#ffcc7a}
+.postbox p.is-spam{background-color:#C30A4D;color:#fff}
+.postbox p.is-spam a{color:#fff}
+.postbox p.is-known-user a{color:#222}
+.legend-title{float:left;padding:3px 5px 0}
+.little-color-box{border:1px solid #ccc;display:block;float:left;margin-right:5px;padding:2px 5px}
+th.column-wp-slimstat,td.column-wp-slimstat{text-align:center;width:5%}
+.form-table tr.tall{height:65px}
+.form-table th{width:150px}
+.form-table th,.form-table td{padding:3px 10px}
+.form-table .description{clear:both;display:block;margin-bottom:10px}
+.form-table input{margin:0 3px 0 0}
+.form-table.rtl input{margin:0 0 0 3px}
+.form-table input.longtext{width:400px}
+#analytics-icon.rtl,.wrap form p span.rtl,.filters-title.rtl,.filter-item.rtl,.postbox.rtl,.rtl .legend-title,.rtl .little-color-box,.form-table.rtl span.block-element{float:right}
+.current-filters a,.form-table tr.tall th{vertical-align:middle}

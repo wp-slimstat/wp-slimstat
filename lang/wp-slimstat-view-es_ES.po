@@ -1,0 +1,1013 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 2.4\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-01-31 10:00-0500\n"
+"PO-Revision-Date: 2012-01-31 10:00-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Spanish\n"
+"X-Poedit-Country: SPAIN\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: ../view\n"
+
+#: ../view/index.php:32
+msgid "Dashboard"
+msgstr "Sumario"
+
+#: ../view/index.php:33
+msgid "Visitors"
+msgstr "Visitantes"
+
+#: ../view/index.php:34
+msgid "Traffic Sources"
+msgstr "Origen del Tráfico"
+
+#: ../view/index.php:35
+msgid "Content"
+msgstr "Contenido"
+
+#: ../view/index.php:36
+msgid "Raw Data"
+msgstr "Detalle de Datos"
+
+#: ../view/index.php:37
+msgid "World Map"
+msgstr "Mapa del Mundo"
+
+#: ../view/index.php:38
+msgid "Custom Reports"
+msgstr "Informes Personalizados"
+
+#: ../view/index.php:56
+msgid "Current filters:"
+msgstr "Filtros Actuales:"
+
+#: ../view/index.php:65
+msgid "x"
+msgstr ""
+
+#: ../view/index.php:202
+#: ../view/index.php:264
+#: ../view/index.php:265
+msgid "Year"
+msgstr "Año"
+
+#: ../view/index.php:212
+msgid "Show records where"
+msgstr ""
+
+#: ../view/index.php:214
+#: ../view/panel5.php:91
+msgid "Browser"
+msgstr "Navegador"
+
+#: ../view/index.php:215
+msgid "Browser version"
+msgstr "Versión del Navegador"
+
+#: ../view/index.php:216
+msgid "CSS version"
+msgstr "Versión de CSS"
+
+#: ../view/index.php:217
+#, fuzzy
+msgid "Browser type"
+msgstr "Navegador"
+
+#: ../view/index.php:218
+#: ../view/panel5.php:98
+msgid "Operating System"
+msgstr "Sistema Operativo"
+
+#: ../view/index.php:219
+msgid "Country Code"
+msgstr "Código de Pais"
+
+#: ../view/index.php:220
+#: ../view/panel5.php:94
+msgid "Domain"
+msgstr "Dominio"
+
+#: ../view/index.php:221
+#: ../view/panel5.php:95
+msgid "IP"
+msgstr "IP"
+
+#: ../view/index.php:222
+msgid "User"
+msgstr ""
+
+#: ../view/index.php:223
+#, fuzzy
+msgid "Visit ID"
+msgstr "Visitas"
+
+#: ../view/index.php:224
+#: ../view/panel5.php:96
+msgid "Keywords"
+msgstr "Palabras clave"
+
+#: ../view/index.php:225
+msgid "Language Code"
+msgstr "Código de Idioma"
+
+#: ../view/index.php:226
+#: ../view/panel5.php:99
+msgid "Permalink"
+msgstr "Enlace Permanente"
+
+#: ../view/index.php:227
+msgid "Referer"
+msgstr "Referido"
+
+#: ../view/index.php:228
+#: ../view/panel5.php:101
+msgid "Screen Resolution"
+msgstr "Resolución de Pantalla"
+
+#: ../view/index.php:229
+msgid "Color depth"
+msgstr ""
+
+#: ../view/index.php:230
+msgid "Post Author"
+msgstr "Autor de la entrada(sección)"
+
+#: ../view/index.php:231
+msgid "Post Category ID"
+msgstr "ID de la entrada(sección) de la Categoria"
+
+#: ../view/index.php:234
+msgid "Equals"
+msgstr ""
+
+#: ../view/index.php:235
+msgid "Is not equal to"
+msgstr ""
+
+#: ../view/index.php:236
+msgid "Contains"
+msgstr "Contiene"
+
+#: ../view/index.php:237
+msgid "Does not contain"
+msgstr "No contiene"
+
+#: ../view/index.php:238
+msgid "Starts with"
+msgstr "Empieza por"
+
+#: ../view/index.php:239
+msgid "Ends with"
+msgstr "Acaba en"
+
+#: ../view/index.php:240
+msgid "Sounds like"
+msgstr ""
+
+#: ../view/index.php:241
+msgid "Is empty"
+msgstr ""
+
+#: ../view/index.php:242
+msgid "Is not empty"
+msgstr ""
+
+#: ../view/index.php:245
+msgid "Filter by date"
+msgstr "Filtrar por fecha"
+
+#: ../view/index.php:246
+msgid "Day"
+msgstr "Día"
+
+#: ../view/index.php:255
+msgid "Month"
+msgstr "Mes"
+
+#: ../view/index.php:266
+#: ../view/panel1.php:52
+msgid "days"
+msgstr "dias"
+
+#: ../view/index.php:267
+#: ../view/panel5.php:111
+msgid "Go"
+msgstr "Ir"
+
+#: ../view/index.php:268
+#, fuzzy
+msgid "Reverse"
+msgstr "inverso"
+
+#: ../view/panel1.php:11
+#: ../view/panel1.php:66
+#: ../view/panel3.php:54
+msgid "Pageviews"
+msgstr "Paginas visitadas"
+
+#: ../view/panel1.php:11
+#: ../view/panel1.php:68
+#: ../view/panel2.php:11
+#: ../view/panel2.php:56
+#: ../view/panel3.php:12
+msgid "Unique IPs"
+msgstr "IPs Unicas"
+
+#: ../view/panel1.php:19
+#: ../view/panel2.php:19
+#: ../view/panel3.php:20
+#: ../view/panel4.php:23
+msgid "Chart interaction"
+msgstr ""
+
+#: ../view/panel1.php:19
+#: ../view/panel2.php:19
+#: ../view/panel3.php:20
+#: ../view/panel4.php:23
+msgid "Use your mouse wheel to zoom in and out"
+msgstr ""
+
+#: ../view/panel1.php:19
+#: ../view/panel2.php:19
+#: ../view/panel3.php:20
+#: ../view/panel4.php:23
+msgid "While zooming in, drag the chart to move to a different area"
+msgstr ""
+
+#: ../view/panel1.php:19
+#: ../view/panel2.php:19
+#: ../view/panel3.php:20
+#: ../view/panel4.php:23
+msgid "Double click on an empty region to reset zoom level"
+msgstr ""
+
+#: ../view/panel1.php:20
+#: ../view/panel2.php:20
+#: ../view/panel3.php:21
+#: ../view/panel4.php:24
+#, fuzzy
+msgid "Click on a day for hourly metrics"
+msgstr "Páginas visitadas por día - Haz click en un día para ver las visitas por horas"
+
+#: ../view/panel1.php:25
+#, fuzzy
+msgid "Daily pageviews"
+msgstr "Paginas visitadas"
+
+#: ../view/panel1.php:27
+#, fuzzy
+msgid "Hourly pageviews"
+msgstr "Paginas visitadas"
+
+#: ../view/panel1.php:30
+#: ../view/panel1.php:88
+#: ../view/panel1.php:111
+#: ../view/panel1.php:160
+#: ../view/panel1.php:181
+#: ../view/panel1.php:203
+#: ../view/panel1.php:226
+#: ../view/panel1.php:246
+#: ../view/panel2.php:30
+#: ../view/panel2.php:72
+#: ../view/panel2.php:95
+#: ../view/panel2.php:117
+#: ../view/panel2.php:148
+#: ../view/panel2.php:169
+#: ../view/panel2.php:189
+#: ../view/panel2.php:221
+#: ../view/panel2.php:242
+#: ../view/panel3.php:31
+#: ../view/panel3.php:72
+#: ../view/panel3.php:92
+#: ../view/panel3.php:114
+#: ../view/panel3.php:138
+#: ../view/panel3.php:160
+#: ../view/panel3.php:186
+#: ../view/panel4.php:34
+#: ../view/panel4.php:56
+#: ../view/panel4.php:78
+#: ../view/panel4.php:100
+#: ../view/panel4.php:121
+#: ../view/panel4.php:142
+#: ../view/panel4.php:171
+#: ../view/panel4.php:193
+#: ../view/panel4.php:228
+#: ../view/panel4.php:253
+#: ../view/panel5.php:138
+#: ../view/panel6.php:26
+msgid "No data to display"
+msgstr "No hay datos que mostrar"
+
+#: ../view/panel1.php:47
+#, fuzzy
+msgid "About WP SlimStat"
+msgstr "Acerca de  WP-SlimStat"
+
+#: ../view/panel1.php:49
+msgid "Total Hits"
+msgstr "Total de Accesos"
+
+#: ../view/panel1.php:50
+msgid "Data Size"
+msgstr "Tamaño de los Datos"
+
+#: ../view/panel1.php:51
+msgid "Tracking Active"
+msgstr "Seguimiento Activo"
+
+#: ../view/panel1.php:52
+msgid "Auto purge"
+msgstr "Autopurgar"
+
+#: ../view/panel1.php:52
+msgid "No"
+msgstr ""
+
+#: ../view/panel1.php:53
+msgid "Latency"
+msgstr ""
+
+#: ../view/panel1.php:53
+msgid "seconds"
+msgstr ""
+
+#: ../view/panel1.php:53
+msgid "Off"
+msgstr ""
+
+#: ../view/panel1.php:54
+#, fuzzy
+msgid "Oldest visit"
+msgstr "Visita más larga"
+
+#: ../view/panel1.php:61
+#: ../view/panel2.php:47
+#: ../view/panel3.php:53
+#, fuzzy
+msgid "Summary"
+msgstr "Sumario de"
+
+#: ../view/panel1.php:67
+msgid "This number may differ from the sum of the points in the chart, because it counts each IP only once over the entire period."
+msgstr ""
+
+#: ../view/panel1.php:69
+#: ../view/panel4.php:15
+msgid "Avg Pageviews"
+msgstr "Promedio Paginas Visitadas"
+
+#: ../view/panel1.php:70
+msgid "This number includes just those visitors identified as bots by the system. Browsers with Javascript disabled (but whose user agent is legit) are considered &quot;regular&quot; visitors."
+msgstr ""
+
+#: ../view/panel1.php:71
+#: ../view/panel2.php:54
+msgid "Bots"
+msgstr "Motores de Búsqueda"
+
+#: ../view/panel1.php:73
+#: ../view/panel1.php:74
+msgid "On"
+msgstr "El"
+
+#: ../view/panel1.php:75
+msgid "Last Month"
+msgstr "Último Mes"
+
+#: ../view/panel1.php:82
+msgid "When visitors comment on your blog, Wordpress assigns them cookies stored on their computer. WP SlimStat leverages this information to identify returning visitors."
+msgstr ""
+
+#: ../view/panel1.php:83
+#: ../view/panel1.php:105
+#: ../view/panel1.php:155
+#: ../view/panel1.php:198
+#: ../view/panel1.php:221
+#: ../view/panel3.php:67
+#: ../view/panel3.php:109
+#: ../view/panel3.php:181
+#: ../view/panel4.php:51
+#: ../view/panel4.php:73
+#: ../view/panel4.php:116
+msgid "More"
+msgstr "Más"
+
+#: ../view/panel1.php:84
+#, fuzzy
+msgid "Recent Known Visitors"
+msgstr "Palabras clave recientes"
+
+#: ../view/panel1.php:106
+#: ../view/panel5.php:23
+msgid "Spy View"
+msgstr ""
+
+#: ../view/panel1.php:126
+#, fuzzy
+msgid "Search for"
+msgstr "Sumario de"
+
+#: ../view/panel1.php:137
+#: ../view/panel1.php:229
+#: ../view/panel2.php:225
+#: ../view/panel3.php:96
+#: ../view/panel4.php:207
+#: ../view/panel4.php:264
+#: ../view/panel5.php:163
+msgid "c-"
+msgstr "c-"
+
+#: ../view/panel1.php:142
+#: ../view/panel1.php:209
+#: ../view/panel1.php:251
+#: ../view/panel3.php:119
+#: ../view/panel3.php:167
+#: ../view/panel4.php:82
+#: ../view/panel4.php:214
+#: ../view/panel4.php:235
+#: ../view/panel4.php:272
+#: ../view/panel5.php:174
+#: ../view/panel5.php:221
+#, php-format
+msgid "Open %s in a new window"
+msgstr "Abrir %s en una nueva ventana"
+
+#: ../view/panel1.php:147
+#: ../view/panel5.php:182
+msgid "Direct visit to"
+msgstr "Visita directa a"
+
+#: ../view/panel1.php:156
+#, fuzzy
+msgid "Recent Search Terms"
+msgstr "Búsquedas Internas Recientes"
+
+#: ../view/panel1.php:176
+msgid "Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session."
+msgstr ""
+
+#: ../view/panel1.php:177
+msgid "Languages - Just Visitors"
+msgstr "Idiomas - Solo Visitantes"
+
+#: ../view/panel1.php:184
+#: ../view/panel2.php:75
+#: ../view/panel5.php:164
+msgid "l-"
+msgstr "l-"
+
+#: ../view/panel1.php:186
+#: ../view/panel2.php:78
+msgid "Code"
+msgstr ""
+
+#: ../view/panel1.php:186
+#: ../view/panel1.php:254
+#: ../view/panel2.php:78
+#: ../view/panel2.php:105
+#: ../view/panel2.php:131
+#: ../view/panel2.php:154
+#: ../view/panel2.php:174
+#: ../view/panel2.php:194
+#: ../view/panel2.php:208
+#: ../view/panel2.php:227
+#: ../view/panel2.php:248
+#: ../view/panel2.php:264
+#: ../view/panel2.php:269
+#: ../view/panel2.php:274
+#: ../view/panel2.php:279
+#: ../view/panel2.php:284
+#: ../view/panel2.php:289
+#: ../view/panel2.php:294
+#: ../view/panel3.php:98
+#: ../view/panel3.php:122
+#: ../view/panel3.php:145
+#: ../view/panel3.php:170
+#: ../view/panel4.php:176
+#: ../view/panel4.php:233
+#, fuzzy
+msgid "Hits"
+msgstr "Visitas"
+
+#: ../view/panel1.php:199
+#, fuzzy
+msgid "Popular Resources"
+msgstr "Paginas más populares de"
+
+#: ../view/panel1.php:207
+#: ../view/panel2.php:131
+#: ../view/panel2.php:154
+#: ../view/panel2.php:174
+#: ../view/panel2.php:194
+#: ../view/panel2.php:227
+#: ../view/panel2.php:248
+#: ../view/panel3.php:76
+#: ../view/panel3.php:98
+#: ../view/panel3.php:122
+#: ../view/panel3.php:170
+msgid "Last"
+msgstr ""
+
+#: ../view/panel1.php:222
+#: ../view/panel5.php:38
+msgid "Recent Countries"
+msgstr "Paises Recientes"
+
+#: ../view/panel1.php:241
+msgid "Traffic Sources Overview"
+msgstr "Ver el Origen del Tráfico"
+
+#: ../view/panel2.php:11
+msgid "Visits"
+msgstr "Visitas"
+
+#: ../view/panel2.php:25
+#, fuzzy
+msgid "Daily Human Visits"
+msgstr "Visitas humanas"
+
+#: ../view/panel2.php:27
+#, fuzzy
+msgid "Hourly Human Visits"
+msgstr "Visitas humanas"
+
+#: ../view/panel2.php:52
+msgid "A visit is a session of at most 30 minutes. Returning visitors are counted multiple times if they perform multiple visits."
+msgstr ""
+
+#: ../view/panel2.php:53
+msgid "Human visits"
+msgstr "Visitas humanas"
+
+#: ../view/panel2.php:55
+msgid "This number includes <strong>human visits</strong> only."
+msgstr ""
+
+#: ../view/panel2.php:57
+#, fuzzy
+msgid "New visitors"
+msgstr "Visitantes"
+
+#: ../view/panel2.php:58
+msgid "The percentage of single-page visits, i.e. visits in which the person left your site from the entrance page."
+msgstr ""
+
+#: ../view/panel2.php:59
+msgid "Bounce rate"
+msgstr "Porcentaje de Abandonos"
+
+#: ../view/panel2.php:61
+msgid "Pages per visit"
+msgstr "Páginas por visita"
+
+#: ../view/panel2.php:62
+#: ../view/panel4.php:15
+msgid "Longest visit"
+msgstr "Visita más larga"
+
+#: ../view/panel2.php:62
+#, fuzzy
+msgid "hits"
+msgstr "Visitas"
+
+#: ../view/panel2.php:68
+msgid "Languages"
+msgstr "Idiomas"
+
+#: ../view/panel2.php:90
+msgid "WP SlimStat can be configured to ignore given user agents under Settings > SlimStat > Filters.<br/><br/><strong>Legend</strong><ul><li>0: Regular user</li><li>1: Bot</li><li>2: Mobile</li><li>3: Syndication reader</li></ul>"
+msgstr ""
+
+#: ../view/panel2.php:91
+#, fuzzy
+msgid "User Agents"
+msgstr "Buscadores"
+
+#: ../view/panel2.php:113
+msgid "IP Addresses and Domains"
+msgstr "Direcciones IP y Dominios"
+
+#: ../view/panel2.php:144
+msgid "Operating Systems"
+msgstr "Sistemas Operativos"
+
+#: ../view/panel2.php:165
+msgid "Screen Resolutions"
+msgstr "Resolución de Pantalla"
+
+#: ../view/panel2.php:185
+msgid "Screen Resolutions with colordepth"
+msgstr "Resolución de Pantalla con profundidad de color"
+
+#: ../view/panel2.php:203
+#: ../view/panel5.php:100
+msgid "Plugins"
+msgstr "Plugins instalados"
+
+#: ../view/panel2.php:217
+#: ../view/panel3.php:88
+msgid "Top Countries"
+msgstr "Paises que más visitan"
+
+#: ../view/panel2.php:238
+msgid "Browsers and Operating Systems"
+msgstr "Navegadores y Sistemas Operativos"
+
+#: ../view/panel2.php:257
+#, fuzzy
+msgid "Visit Duration"
+msgstr "Visitas"
+
+#: ../view/panel2.php:265
+msgid "0 - 30 seconds"
+msgstr ""
+
+#: ../view/panel2.php:270
+msgid "31 - 60 seconds"
+msgstr ""
+
+#: ../view/panel2.php:275
+msgid "1 - 3 minutes"
+msgstr ""
+
+#: ../view/panel2.php:280
+msgid "3 - 5 minutes"
+msgstr ""
+
+#: ../view/panel2.php:285
+msgid "5 - 10 minutes"
+msgstr ""
+
+#: ../view/panel2.php:290
+msgid "10 - 20 minutes"
+msgstr ""
+
+#: ../view/panel2.php:295
+msgid "More than 20 minutes"
+msgstr ""
+
+#: ../view/panel3.php:12
+msgid "Domains"
+msgstr "Dominios"
+
+#: ../view/panel3.php:26
+#, fuzzy
+msgid "Daily Traffic Sources"
+msgstr "Origen del Tráfico"
+
+#: ../view/panel3.php:28
+#, fuzzy
+msgid "Hourly Traffic Sources"
+msgstr "Origen del Tráfico"
+
+#: ../view/panel3.php:55
+msgid "Unique Referers"
+msgstr "Referidos Únicos"
+
+#: ../view/panel3.php:56
+msgid "Direct Visits"
+msgstr "Visitas Directas"
+
+#: ../view/panel3.php:57
+msgid "Search Engines"
+msgstr "Motores de Búsqueda"
+
+#: ../view/panel3.php:58
+msgid "Unique Pages Referred"
+msgstr "Únicamente Referidos desde páginas"
+
+#: ../view/panel3.php:59
+msgid "This field identifies the number of single-page visits to your site over the selected period."
+msgstr ""
+
+#: ../view/panel3.php:60
+#, fuzzy
+msgid "Bounces"
+msgstr "Porcentaje de Abandonos"
+
+#: ../view/panel3.php:61
+msgid "Unique Internal"
+msgstr "Únicamente interno"
+
+#: ../view/panel3.php:68
+#, fuzzy
+msgid "Top Search Terms"
+msgstr "Principales Recursos"
+
+#: ../view/panel3.php:110
+#: ../view/panel5.php:65
+#, fuzzy
+msgid "Top Traffic Sources"
+msgstr "Origen del Tráfico"
+
+#: ../view/panel3.php:134
+#, fuzzy
+msgid "Top Search Engines"
+msgstr "Motores de Búsqueda"
+
+#: ../view/panel3.php:156
+#, fuzzy
+msgid "Sites"
+msgstr "Sitios para"
+
+#: ../view/panel3.php:182
+#, fuzzy
+msgid "Recent Search Terms &raquo; Pages"
+msgstr "Palabras clave recientes &raquo; Página"
+
+#: ../view/panel3.php:220
+msgid "Open referer in a new window"
+msgstr "Abrir referido en una nueva página"
+
+#: ../view/panel4.php:29
+#, fuzzy
+msgid "Daily Average Pageviews per Visit"
+msgstr "Promedio de páginas vistas por horas"
+
+#: ../view/panel4.php:31
+#, fuzzy
+msgid "Hourly Average Pageviews per Visit"
+msgstr "Promedio de páginas vistas por horas"
+
+#: ../view/panel4.php:52
+#: ../view/panel5.php:71
+msgid "Recent Contents"
+msgstr "Contenidos Recientes"
+
+#: ../view/panel4.php:72
+msgid "A <em>bounce page</em> refers to a single-page visit or a visit in which the person left your site from the entrance page."
+msgstr ""
+
+#: ../view/panel4.php:74
+#, fuzzy
+msgid "Recent Bounce Pages"
+msgstr "Páginas recientes de rebote"
+
+#: ../view/panel4.php:96
+msgid "Recent Feeds"
+msgstr "Feeds Recientes"
+
+#: ../view/panel4.php:117
+#: ../view/panel5.php:28
+msgid "Recent 404 pages"
+msgstr "Páginas 404 recientes"
+
+#: ../view/panel4.php:138
+msgid "Recent Internal Searches"
+msgstr "Búsquedas Internas Recientes"
+
+#: ../view/panel4.php:159
+#, fuzzy
+msgid "Top Categories"
+msgstr "Principales Páginas de Salida"
+
+#: ../view/panel4.php:188
+msgid "Recent Outbound Links"
+msgstr "Enlaces Salientes Recientes"
+
+#: ../view/panel4.php:223
+#, fuzzy
+msgid "Top Exit Pages"
+msgstr "Principales Páginas de Salida"
+
+#: ../view/panel4.php:247
+msgid "WP SlimStat can track specific events (clicks, downloads, etc) triggered by your visitors. Add <strong>onclick=\"ss_te(event,<em>code</em>)\"</strong> to your links, where <em>code</em> is an integer value between 2 and 254 (1 is for downloads)"
+msgstr ""
+
+#: ../view/panel4.php:248
+#, fuzzy
+msgid "Recent Events"
+msgstr "Contenidos Recientes"
+
+#: ../view/panel5.php:33
+msgid "Recent bouncing pages"
+msgstr "Páginas recientes de rebote"
+
+#: ../view/panel5.php:43
+#, fuzzy
+msgid "Known Visitors"
+msgstr "Palabras clave recientes"
+
+#: ../view/panel5.php:48
+msgid "Recent Keywords"
+msgstr "Palabras clave recientes"
+
+#: ../view/panel5.php:53
+msgid "Top Resources"
+msgstr "Principales Recursos"
+
+#: ../view/panel5.php:59
+msgid "Top Keywords"
+msgstr "Top Palabras Clave"
+
+#: ../view/panel5.php:88
+msgid "Order by"
+msgstr "Ordenar por"
+
+#: ../view/panel5.php:90
+msgid "Select filter"
+msgstr "Seleccionar filtro"
+
+#: ../view/panel5.php:92
+msgid "Country"
+msgstr "País"
+
+#: ../view/panel5.php:93
+msgid "Date/Time"
+msgstr "Fecha/Hora"
+
+#: ../view/panel5.php:97
+msgid "Language"
+msgstr "Idioma"
+
+#: ../view/panel5.php:104
+msgid "Select sorting"
+msgstr "Seleccionar orden"
+
+#: ../view/panel5.php:105
+msgid "Ascending"
+msgstr "Ascendente"
+
+#: ../view/panel5.php:106
+msgid "Descending"
+msgstr "Descendente"
+
+#: ../view/panel5.php:109
+msgid "Starting from record #"
+msgstr "Empezar a partir del registro #"
+
+#: ../view/panel5.php:121
+msgid "&laquo; Previous"
+msgstr "&laquo; Anterior"
+
+#: ../view/panel5.php:125
+msgid "Next &raquo;"
+msgstr "Siguiente  &raquo;"
+
+#: ../view/panel5.php:131
+msgid "No records found"
+msgstr "No se han encontrado registros"
+
+#: ../view/panel5.php:134
+msgid "reverse"
+msgstr "inverso"
+
+#: ../view/panel5.php:135
+#, php-format
+msgid "Records: %d - %d. Order by: %s %s (%s)"
+msgstr "Registros: %d - %d. Ordenados por: %s %s (%s)"
+
+#: ../view/panel5.php:186
+msgid "Local search page"
+msgstr ""
+
+#: ../view/panel5.php:192
+#: ../view/panel5.php:216
+msgid "Local search results page"
+msgstr ""
+
+#: ../view/panel5.php:229
+msgid "Color codes:"
+msgstr ""
+
+#: ../view/panel5.php:230
+#, fuzzy
+msgid "Coming from a Search Engine"
+msgstr "Motores de Búsqueda"
+
+#: ../view/panel5.php:231
+#, fuzzy
+msgid "Known Users"
+msgstr "Navegadores recientes"
+
+#: ../view/panel5.php:232
+msgid "Other Humans"
+msgstr ""
+
+#: ../view/panel5.php:233
+msgid "Bots, Crawlers and others"
+msgstr ""
+
+#: ../view/panel6.php:24
+msgid "World Map - Click on a Country to activate the corresponding filter"
+msgstr ""
+
+#: ../view/panel7.php:11
+msgid "Pluggable custom reports"
+msgstr "Informes Personalizados"
+
+#: ../view/panel7.php:13
+msgid "Yes, you can! Create and view your personalized analytics for WP SlimStat. In order to do this, just write a new plugin that fetches the desired information from the database and then hook it to the action <code>wp_slimstat_custom_report</code>. A demo plugin comes with the package. It shows how to write custom reports in 5 minutes. You can find it inside the plugin&apos;s folder: <code>wp-slimstat-custom-report-demo.php</code>. For more information, visit my <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">support forum</a>."
+msgstr "Puedes crear y ver tú análisis personalizado de estadísticas. Con el fin de hacer esto, simplemente escribe un nuevo plugin que obtiene la información deseada de la base de datos  y luego programa la acción wp_slimstat_custom_report <code> </ code>. Una demostración del plugin viene con el paquete. Se muestra cómo escribir informes personalizados en 5 minutos. Se puede encontrar dentro de la carpeta del plugin: wp-<code> slimstat-custom-informe-demo.php </ code>. Traducción al español. Francisco Noé Martínez Burgos.Navalcarnero(Madrid-España). Para obtener más información, visite mi <a href=\"http://lab.duechiacchiere.it/\"  target=\"_blank\"> Foro de Soporte </ a>."
+
+#~ msgid "this period"
+#~ msgstr "este periodo"
+
+#, fuzzy
+#~ msgid "Top Countries for"
+#~ msgstr "Paises que más visitan"
+
+#, fuzzy
+#~ msgid "Top Traffic Sources for"
+#~ msgstr "Origen del Tráfico para"
+
+#~ msgid ""
+#~ "World Map - Values represent the percentage of hits coming from that "
+#~ "Country"
+#~ msgstr ""
+#~ "Mapa del Mundo - Los valores representan el porcentaje de visitas "
+#~ "procedentes de ese país"
+
+#, fuzzy
+#~ msgid "May"
+#~ msgstr "Día"
+
+#~ msgid "reset"
+#~ msgstr "reiniciar"
+
+#~ msgid "Pageviews by hour"
+#~ msgstr "Páginas visitadas por horas"
+
+#~ msgid "Human Visits by day - Click on a day for hourly metrics"
+#~ msgstr ""
+#~ "Visitas humanas por día - Haz click en un día para ver los indicadores "
+#~ "por horas"
+
+#~ msgid "Human Visits by hour"
+#~ msgstr "Visitas humanas por hora"
+
+#~ msgid "Traffic Sources by day - Click on a day for hourly metrics"
+#~ msgstr ""
+#~ "Origen del Tráfico por día - Haz click encima del gráfico de un día para "
+#~ "ver las visitas por horas"
+
+#~ msgid "Traffic Sources by hour"
+#~ msgstr "Origen del Tráfico por horas"
+
+#~ msgid ""
+#~ "Average pageviews per visit by day - Click on a day for hourly metrics"
+#~ msgstr ""
+#~ "Promedio de páginas vistas por día - Haz click encima del gráfico de un "
+#~ "día para ver las visitas por horas"
+
+#~ msgid "Recent Downloads"
+#~ msgstr "Descargas Recientes"
+
+#~ msgid "Filter pageviews where"
+#~ msgstr "Filtrar páginas visitadas dondé:"
+
+#~ msgid "Reverse order"
+#~ msgstr "Invertir orden"
+
+#~ msgid "Popular pages of all time"
+#~ msgstr "Páginas más populares"
+
+#~ msgid "One time visitors"
+#~ msgstr "Visitantes de una sola visita"
+
+#~ msgid "Flash"
+#~ msgstr "Flash"
+
+#~ msgid "Silverlight"
+#~ msgstr "Silverlight"
+
+#~ msgid "Acrobat"
+#~ msgstr "Acrobat"
+
+#~ msgid "Java"
+#~ msgstr "Java"
+
+#~ msgid "Media Player"
+#~ msgstr "Media Player"
+
+#~ msgid "Real Player"
+#~ msgstr "Real Player"
+
+#~ msgid "Details about Recent Visits"
+#~ msgstr "Detalles sobre visitas recientes"
+
+#~ msgid "Countries for"
+#~ msgstr "De Paises"
+
+#~ msgid "N/A"
+#~ msgstr "N/D"
+
+#~ msgid "Date and time"
+#~ msgstr "Fecha y hora"
+
+#~ msgid "Direct visit"
+#~ msgstr "Visita Directa"
+
+#, fuzzy
+#~ msgid " days"
+#~ msgstr "giorni"
+
+#~ msgid "Unique Visits"
+#~ msgstr "Visite uniche"
