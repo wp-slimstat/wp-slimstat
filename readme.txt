@@ -51,7 +51,7 @@ Where:
 
 * `e` is the event that was triggered
 * `c` is a numeric value between 1 and 254 (zero is reserved for outbound clicks)
-* `f` tells the function if the target should be opened or not (useful in conjunction with Lightbox and friends)
+* `f` - this parameter is deprecated and will be removed in the next releases
 * `n` is a custom text (up to 512 chars long) that you can use to add a note to the event tracked. If the ID attribute is defined, and no note has been specified, the ID value will be used. If the function is attached to a key-related event, the key pressed will be recorded as a note.
 
 Examples:
