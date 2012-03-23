@@ -142,11 +142,11 @@ function slimstat_send_to_server(url, async){
 	return false;
 }
 
-function ss_te(e, c, load_target, note){
+function ss_te(e, c, deprecated, note){
 	// Check function params
 	if (typeof e == 'undefined') var e = window.event;
 	code = parseInt(c);
-	if (typeof load_target == 'undefined') var load_target = true;
+	if (typeof deprecated == 'undefined') var deprecated = true;
 	if (typeof note == 'undefined') var note = '';
 
 	var node = (typeof e.target != 'undefined')?e.target:((typeof e.srcElement != 'undefined')?e.srcElement:false);
@@ -157,29 +157,63 @@ function ss_te(e, c, load_target, note){
 		e = window.event;
 	}
 
+	if (!node) return false;
+
 	// Old Safari bug
-	if (node && node.nodeType == 3) node = node.parentNode; 
+	if (node.nodeType == 3) node = node.parentNode;
 
 	// This function can be attached to click and mousedown events
-	var async = true;
+	var async = false;
+	var parent_node = node.parentNode;
 	var node_hostname = '';
-	var node_pathname = '';
-	if (node && typeof node.getAttribute == 'function'){
-		if (typeof node.hash != 'undefined' && node.hash.length > 0 && node.hostname == location.hostname){
-			node_pathname = escape(node.hash);
-		}
-		else{
-			async = false;
-			node_hostname = (typeof node.hostname != 'undefined')?node.hostname:'';
-			node_pathname = escape((typeof node.href != 'undefined')?node.href:'');
-		}
-		// If this element has an ID, we can use that for the note
-		if ((note.substring(0, 2) == 'A:' || note.length == 0) &&
-			node.getAttribute('id') != 'undefined' &&
-			node.getAttribute('id') != null &&
-			node.getAttribute('id').length > 0) note = 'ID:'+node.getAttribute('id');
+	var node_pathname = location.pathname;
+	var slimstat_info = '';
+
+	// This handler can be attached to any element, but only A carry the extra info we need
+	switch (node.nodeName){
+		case 'FORM':
+			if (node.action.length > 0) node_pathname = escape(node.action);
+			break;
+
+		case 'INPUT':
+			// Let's look for a FORM element
+			while (typeof parent_node != 'undefined' && parent_node.nodeName != 'FORM' && parent_node.nodeName != 'BODY') parent_node = parent_node.parentNode;
+			if (typeof parent_node.action != 'undefined' && parent_node.action.length > 0){
+				node_pathname = escape(parent_node.action);
+				break;
+			}
+
+		default:
+			if (node.nodeName != 'A'){
+				if (typeof node.getAttribute == 'function' && node.getAttribute('id') != 'undefined' && node.getAttribute('id') != null && node.getAttribute('id').length > 0){
+					node_pathname = node.getAttribute('id');
+					break;
+				}
+				while (typeof node != 'undefined' && node.nodeName != 'A' && node.nodeName != 'BODY') node = node.parentNode;
+			}
+
+			// Anchor in the same page
+			if (typeof node.hash != 'undefined' && node.hash.length > 0 && node.hostname == location.hostname){
+				async = true;
+				node_pathname = escape(node.hash);
+			}
+			// Any other element
+			else{
+				// Wait for the server to respond
+				node_hostname = (typeof node.hostname != 'undefined')?node.hostname:'';
+				if (typeof node.href != 'undefined'){
+					node_pathname = escape(node.href);
+				}				
+			}
+
+			// If this element has an ID, we can use that for the note
+			if (typeof node.getAttribute == 'function' &&
+				(note.substring(0, 2) == 'A:' || note.length == 0) &&
+				node.getAttribute('id') != 'undefined' &&
+				node.getAttribute('id') != null &&
+				node.getAttribute('id').length > 0) note = 'ID:'+node.getAttribute('id');
 	}
-	var slimstat_info = "&obd="+node_hostname+"&obr="+node_pathname;
+	slimstat_info = "&obd="+node_hostname+"&obr="+node_pathname;
 
 	// Track mouse coordinates
 	var pos_x = -1; var pos_y = -1;
@@ -193,7 +227,7 @@ function ss_te(e, c, load_target, note){
 		pos_x = e.clientX+document.body.scrollLeft+document.documentElement.scrollLeft;
 		pos_y = e.clientY+document.body.scrollTop+document.documentElement.scrollTop;
 	}
-	if (pos_x > 0 && pos_y > 0) slimstat_info += '&po='+pos_x+','+pos_y;
+	if (pos_x > 0 && pos_y > 0) slimstat_info += ((slimstat_info.length > 0)?'&':'?')+'po='+pos_x+','+pos_y;
 
 	// Event type and button pressed
 	note += '|ET:'+e.type;
