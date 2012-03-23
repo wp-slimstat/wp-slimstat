@@ -122,10 +122,15 @@ for($i=0;$i<$count_results;$i++){
 		$host_by_ip = array('text' => $results[$i]['ip'], 'tooltip' => '');
 	}
 	$results[$i]['dt'] = date_i18n($wp_slimstat_view->date_time_format, $results[$i]['dt']);
-	if (empty($results[$i]['resource'])){
+	if (!empty($results[$i]['searchterms'])){
 		$searchterms = trim_value($results[$i]['searchterms'], 32);
-		$results[$i]['resource'] = __('Search for','wp-slimstat-view').': '.$searchterms['text'];
+		$searchterms_span = " <span{$searchterms['tooltip']}>{$searchterms['text']}</span>";
+		if (empty($results[$i]['resource'])){
+			$results[$i]['resource'] = __('Search for','wp-slimstat-view').': '.$searchterms['text'];
+		}
 	}
+	else
+		$searchterms_span = '';
 	if ($visit_id != $results[$i]['visit_id']){
 		$highlight_row = empty($results[$i]['searchterms'])?' is-direct':' is-search-engine';
 		if (empty($results[$i]['user']))
@@ -150,7 +155,7 @@ for($i=0;$i<$count_results;$i++){
 	}
 	else
 		echo __('Direct visit to','wp-slimstat-view');
-	echo ' '.substr($results[$i]['resource'], 0, 40).'</p>';
+	echo ' '.substr($results[$i]['resource'], 0, 40)."$searchterms_span</p>";
 } ?>
 	</div>
 </div>
