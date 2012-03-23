@@ -16,7 +16,7 @@ A powerful real-time web analytics plugin for Wordpress.
 * The best country, browser and platform detection ever seen, thanks to [Browscap](https://github.com/garetjax/phpbrowscap) and [MaxMind](http://www.maxmind.com/)
 * Drill-down capabilities: filter your stats based on IP addresses, browsers, referrers, users and much more
 * View and admin access can be restricted to specific users
-* Pan-and-zoom World Map provided by amMap.
+* Pan-and-zoom World Map, thanks to [amMap](http://www.ammap.com/).
 
 = Requirements =
 * Wordpress 3.1 or higher (it may not work on large multisite environments)
