@@ -132,14 +132,14 @@ function slimstat_send_to_server(url, async){
 	try {
 		request = new XMLHttpRequest();
 	} catch (failed) {
-		request = false;
+		return false;
 	}
 	if (request) {
 		request.open('GET', slimstat_path+'/wp-slimstat-js.php'+"?id="+slimstat_tid+"&sid="+slimstat_session_id+"&bid="+slimstat_blog_id+"&"+url, async);
 		request.send(null);
-	}
-	
-	return true;
+		return true;
+	}	
+	return false;
 }
 
 function ss_te(e, c, load_target, note){
@@ -161,7 +161,7 @@ function ss_te(e, c, load_target, note){
 	if (node && node.nodeType == 3) node = node.parentNode; 
 
 	// This function can be attached to click and mousedown events
-	var target_location = '';
+	var async = true;
 	var node_hostname = '';
 	var node_pathname = '';
 	if (node && typeof node.getAttribute == 'function'){
@@ -169,9 +169,9 @@ function ss_te(e, c, load_target, note){
 			node_pathname = escape(node.hash);
 		}
 		else{
-			target_location = (typeof node.href != 'undefined')?node.href:'';
+			async = false;
 			node_hostname = (typeof node.hostname != 'undefined')?node.hostname:'';
-			node_pathname = escape(target_location);
+			node_pathname = escape((typeof node.href != 'undefined')?node.href:'');
 		}
 		// If this element has an ID, we can use that for the note
 		if ((note.substring(0, 2) == 'A:' || note.length == 0) &&
@@ -205,38 +205,7 @@ function ss_te(e, c, load_target, note){
 			note += '|BT:'+e.which;
 	}
 
-	slimstat_send_to_server("ty="+code+slimstat_info+"&no="+escape(note), !target_location);
-
-	// Does the target need to be loaded? Note: if jQuery has handlers associated to this node, don't bother loading the URL
-	if (!load_target || !target_location || e.type != 'click' || (typeof jQuery != 'undefined' && typeof(jQuery(node).data('events')) != 'undefined')) return true;
-
-	switch(node.getAttribute('target')){
-		case '_blank':
-		case '_new':
-			window.open(target_location, node.getAttribute('target'));
-			break;
-		case null:
-		case 'undefined':
-		case '':
-		case '_self':
-			// This is necessary to give the browser some time to elaborate the request
-			self.location.href = target_location;
-			break;
-		case '_parent':
-			parent.location.href = target_location;
-			break;
-		default:
-			if (top.frames[e.target])
-				top.frames[node].location.href = target_location;
-			else
-				window.open(target_location, node.getAttribute('target'));
-	}
-
-	if (typeof e.preventDefault == 'function')
-		e.preventDefault();
-	else
-		e.returnValue = false;
-	return true;
+	return slimstat_send_to_server("ty="+code+slimstat_info+"&no="+escape(note), async);
 }
 
 // Attach an event listener to all external links

@@ -144,6 +144,11 @@ class wp_slimstat{
 			// Show the activation and config links, if the network is not too large
 			add_filter('plugin_action_links', array(&$this, 'plugin_action_links'), 10, 2);
 
+			// Add a link to view stats to each post
+			if ((empty($this->options['can_view']) && $this->options['capability_can_view'] == 'read') || in_array($current_user->user_login, $this->options['can_view']) || current_user_can($this->options['capability_can_view'])){
+				add_filter('post_row_actions', array(&$this, 'post_row_actions'), 15, 2);
+			}
+
 			if (function_exists('is_network_admin') && !is_network_admin()){
 				// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
 				add_action('admin_menu', array(&$this, 'wp_slimstat_add_view_menu'));
@@ -975,6 +980,19 @@ class wp_slimstat{
 		return $links;
 	}
 	// end plugin_action_links
+
+	/**
+	 * Add a link to each post in Edit Posts, to go directly to the stats with the corresponding filter set
+	 */
+	public function post_row_actions($actions, $post){
+		$parsed_permalink = parse_url( get_permalink($post->ID) );
+		if ($this->options['use_separate_menu'] == 'yes')
+			$actions['wp-slimstat'] = "<a href='admin.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>Stats</a>";
+		else
+			$actions['wp-slimstat'] = "<a href='index.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>Stats</a>";
+		return $actions;
+	}
+	// end post_row_actions
 
 	/**
 	 * Enqueues a javascript to track users' screen resolution and other browser-based information
