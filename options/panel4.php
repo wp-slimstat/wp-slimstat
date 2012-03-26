@@ -27,7 +27,6 @@ if (isset($_POST['options'])){
 		// Make sure all the users exist in the system 
 		$user_array = explode(',', $_POST['options']['can_admin']);
 		$sql_user_list = "'".implode("','", $user_array)."'";
-		echo intval($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array));
 		if ($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array)){
 			if (!$GLOBALS['wp_slimstat']->update_option('can_admin', $_POST['options']['can_admin'], 'list')) $faulty_fields .= __('Users who can configure WP SlimStat','wp-slimstat-options').', ';
 		}
