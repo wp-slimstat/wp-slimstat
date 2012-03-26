@@ -230,6 +230,6 @@ class wp_slimstat_dashboard extends wp_slimstat_view{
 // end of class declaration
 
 // Bootstrap
-add_action('plugins_loaded', array('wp_slimstat_dashboard', 'init'), 10);
+add_action('init', array('wp_slimstat_dashboard', 'init'), 10);
 
 ?>

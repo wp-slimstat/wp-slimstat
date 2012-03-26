@@ -51,7 +51,7 @@ else{ ?>
 		<p><span class='element-title'><?php _e('Tracking Active', 'wp-slimstat-view') ?></span> <span><?php _e($GLOBALS['wp_slimstat']->options['is_tracking'], 'countries-languages') ?></span></p>
 		<p><span class='element-title'><?php _e('Auto purge', 'wp-slimstat-view') ?></span> <span><?php echo ($GLOBALS['wp_slimstat']->options['auto_purge'] > 0)?$GLOBALS['wp_slimstat']->options['auto_purge'].' '.__('days','wp-slimstat-view'):__('No','wp-slimstat-view') ?></span></p>
 		<p><span class='element-title'><?php _e('Latency', 'wp-slimstat-view') ?></span> <span><?php echo ($GLOBALS['wp_slimstat']->options['ignore_interval'] > 0)?$GLOBALS['wp_slimstat']->options['ignore_interval'].' '.__('seconds','wp-slimstat-view'):__('Off','wp-slimstat-view') ?></span></p>
-		<p><span class='element-title'><?php _e('Oldest visit', 'wp-slimstat-view') ?></span> <span><?php echo date(get_option('date_format'), $wp_slimstat_view->get_oldest_visit()) ?></span></p>
+		<p><span class='element-title'><?php _e('Oldest visit', 'wp-slimstat-view') ?></span> <span><?php $dt = $wp_slimstat_view->get_oldest_visit(); echo ($dt == null)?__('No visits','wp-slimstat-view'):date(get_option('date_format'), $dt) ?></span></p>
 		<p class="last"><span class='element-title'>Geo IP</span> <span><?php echo date(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/geoip.csv')) ?></span></p>
 	</div>
 </div>

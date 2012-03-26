@@ -180,6 +180,14 @@ class wp_slimstat{
 	// end __construct
 
 	/**
+	 * Create a new instance of this class
+	 */
+	public function init(){
+		$GLOBALS[ __CLASS__ ] = new self;
+	}
+	// end init
+
+	/**
 	 * Support for WP MU network activations (experimental)
 	 */
 	public function activate(){
@@ -1096,4 +1104,4 @@ class wp_slimstat{
 // end of class declaration
 
 // Ok, let's dance, Sparky!
-$GLOBALS['wp_slimstat'] = new wp_slimstat();
+add_action('plugins_loaded', array('wp_slimstat', 'init'), 5);
