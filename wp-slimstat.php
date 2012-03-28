@@ -142,12 +142,10 @@ class wp_slimstat{
 			add_action('wpmu_new_blog', array(&$this, 'new_blog'), 10, 1);
 
 			// Show the activation and config links, if the network is not too large
-			add_filter('plugin_action_links', array(&$this, 'plugin_action_links'), 10, 2);
+			add_filter('plugin_action_links_wp-slimstat/wp-slimstat.php', array(&$this, 'plugin_action_links'), 10, 2);
 
 			// Add a link to view stats to each post
-			if ((empty($this->options['can_view']) && $this->options['capability_can_view'] == 'read') || in_array($current_user->user_login, $this->options['can_view']) || current_user_can($this->options['capability_can_view'])){
-				add_filter('post_row_actions', array(&$this, 'post_row_actions'), 15, 2);
-			}
+			add_filter('post_row_actions', array(&$this, 'post_row_actions'), 15, 2);
 
 			if (function_exists('is_network_admin') && !is_network_admin()){
 				// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
@@ -203,12 +201,12 @@ class wp_slimstat{
 
 			foreach ($blogids as $blog_id) {
 				switch_to_blog($blog_id);
-				$this->_activate();
+				$this->activate_single();
 			}
 			restore_current_blog();
 		}
 		else{
-			$this->_activate();
+			$this->activate_single();
 		}
 	}
 	// end activate
@@ -218,7 +216,7 @@ class wp_slimstat{
 	 */
 	public function new_blog($_blog_id){
 		switch_to_blog($_blog_id);
-		$this->_activate();
+		$this->activate_single();
 		restore_current_blog();
 	}
 	// end new_blog
@@ -226,7 +224,7 @@ class wp_slimstat{
 	/**
 	 * Creates and populates tables, if they aren't already there.
 	 */
-	protected function _activate(){
+	public function activate_single(){
 		global $wpdb;
 
 		// Is InnoDB available?
@@ -302,7 +300,7 @@ class wp_slimstat{
 
 		// Ok, let's create the table structure
 		if ($this->_create_table($country_table_sql, $wpdb->base_prefix.'slim_countries')){
-			$this->_import_countries();
+			$this->import_countries();
 		}
 
 		$this->_create_table($browsers_table_sql, $wpdb->base_prefix.'slim_browsers');
@@ -314,7 +312,7 @@ class wp_slimstat{
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
 	}
-	// end _activate
+	// end activate_single
 
 	/**
 	 * Performs some clean-up maintenance (disable cron job).
@@ -634,6 +632,9 @@ class wp_slimstat{
 	protected function _update_tables_and_options(){
 	    global $wpdb;
 
+		// Create initial structure or missing tables
+		$this->activate_single();
+
 		// WP_SLIM_STATS: Let's see if the structure is up-to-date
 		$table_structure = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}slim_stats", ARRAY_A);
 		$user_exists = $other_ip_exists = false;
@@ -736,7 +737,7 @@ class wp_slimstat{
 	/**
 	 * Reads data from CSV file and copies them into countries table
 	 */
-	protected function _import_countries(){
+	public function import_countries(){
 		global $wpdb;
 
 		// If there is already a (not empty) country table, skip import
@@ -773,7 +774,7 @@ class wp_slimstat{
 			$entry = str_replace("\n", '', $entry);
 			$array_entry = explode(',', $entry);
 			$insert_sql .= "('".implode( "','", $array_entry )."'),";
-			if ($row_counter == 200) {
+			if ($row_counter == 500) {
 				$insert_sql = substr($insert_sql, 0, -1);
 				$wpdb->query($insert_sql);
 				$row_counter = 0;
@@ -788,7 +789,7 @@ class wp_slimstat{
 		fclose( $handle );
 		return true;
 	}
-	// end _import_countries
+	// end import_countries
 
 	/**
 	 * Searches for country associated to a given IP address
@@ -974,31 +975,33 @@ class wp_slimstat{
 	/**
 	 * Removes the activation link if the network is too big
 	 */
-	public	function plugin_action_links($links, $file){
-		if ($file == plugin_basename( dirname(__FILE__).'/wp-slimstat.php' )){
-			if (function_exists('get_blog_count') && (get_blog_count() > 50))
-				$links = array();
-			else if (empty($this->options['can_admin']) || in_array($current_user->user_login, $this->options['can_admin'])){
-				if ($this->options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
-					$links[] = '<a href="admin.php?page=wp-slimstat/options/index.php">Config</a>';
-				else
-					$links[] = '<a href="options-general.php?page=wp-slimstat/options/index.php">Config</a>';
-			}
+	public function plugin_action_links($_links, $_file){
+		if (function_exists('get_blog_count') && (get_blog_count() > 50))
+			return $_links;
+
+		if (empty($this->options['can_admin']) || in_array($current_user->user_login, $this->options['can_admin'])){
+			load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
+			if ($this->options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
+				$_links['wp-slimstat'] = '<a href="admin.php?page=wp-slimstat/options/index.php">'.__('Config','wp-slimstat').'</a>';
+			else
+				$_links['wp-slimstat'] = '<a href="options-general.php?page=wp-slimstat/options/index.php">'.__('Config','wp-slimstat').'</a>';
 		}
-		return $links;
+		return $_links;
 	}
 	// end plugin_action_links
 
 	/**
 	 * Add a link to each post in Edit Posts, to go directly to the stats with the corresponding filter set
 	 */
-	public function post_row_actions($actions, $post){
-		$parsed_permalink = parse_url( get_permalink($post->ID) );
+	public function post_row_actions($_actions, $_post){
+		if (!in_array($current_user->user_login, $this->options['can_view']) && !current_user_can($this->options['capability_can_view']))
+			return $_actions;
+
+		$parsed_permalink = parse_url( get_permalink($_post->ID) );
 		if ($this->options['use_separate_menu'] == 'yes')
-			$actions['wp-slimstat'] = "<a href='admin.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>Stats</a>";
+			return array_merge($_actions, array('wp-slimstat' => "<a href='admin.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>".__('Stats','wp-slimstat')."</a>"));
 		else
-			$actions['wp-slimstat'] = "<a href='index.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>Stats</a>";
-		return $actions;
+			return array_merge($_actions, array('wp-slimstat' => "<a href='index.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>".__('Stats','wp-slimstat')."</a>"));
 	}
 	// end post_row_actions
 
@@ -1045,7 +1048,7 @@ class wp_slimstat{
 			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel2', 'title' => __('Visitors', 'wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=2'), 'parent' => 'slimstat' ) );
 			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel3', 'title' => __('Traffic Sources', 'wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=3'), 'parent' => 'slimstat' ) );
 			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel4', 'title' => __('Content', 'wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=4'), 'parent' => 'slimstat' ) );
-			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel5', 'title' => __('Raw Data', 'wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=5'), 'parent' => 'slimstat' ) );
+			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel5', 'title' => __('Real Time', 'wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=5'), 'parent' => 'slimstat' ) );
 			$wp_admin_bar->add_menu( array( 'id' => 'slimstat-panel6', 'title' => __('World Map', 'wp-slimstat-view'), 'href' => get_site_url($blog_id, '/wp-admin/index.php?page=wp-slimstat&slimpanel=6'), 'parent' => 'slimstat' ) );
 		}
 	}
