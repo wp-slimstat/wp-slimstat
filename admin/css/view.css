@@ -28,7 +28,7 @@
 .postbox p{border-top:1px solid #ddd;overflow:auto;margin:0;overflow:hidden;padding:5px;text-overflow:ellipsis}
 .postbox p:first-child{border:0}
 .postbox p.nodata{border:0;color:#999;padding-top:70px;text-align:center}
-.postbox p.loading{background:transparent url(../images/spinning_wheel.gif) 49% 90% no-repeat scroll;padding-top:100px;}
+.postbox p.loading{background:transparent url(../images/spinning_wheel.gif) 49% 90% no-repeat scroll;padding-top:120px;}
 .postbox p span{float:right;margin-left:10px}
 .postbox a{text-decoration:none}
 .postbox #wp-element-details{display:block;font-size:.8em;font-weight:400;line-height:1.5em;overflow:hidden;padding:5px 0 0;text-overflow:ellipsis}
