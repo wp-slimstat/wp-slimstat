@@ -75,6 +75,7 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 * `visitor's name`: visitor's name according to the cookie set by Wordpress after leaving a comment
 
 Advanced filters:
+
 * `browser capabilities`: plugins or extensions installed by that user (flash, java, silverlight...)
 * `browser version`: user agent version (9.0, 11, ...)
 * `browser type`: 1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others
