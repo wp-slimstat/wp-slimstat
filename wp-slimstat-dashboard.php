@@ -1,235 +1,102 @@
 <?php
 /*
 Plugin Name: WP SlimStat Dashboard Widgets
-Plugin URI: http://lab.duechiacchiere.it/index.php?board=1.0
-Description: Add some widgets to monitor your WP SlimStat reports directly from your Wordpress dashboard.
-Version: 2.8
+Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
+Description: Monitor your visitors from your Wordpress dashboard.
+Version: 2.8.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
 
-// Avoid direct access to this piece of code
-if (__FILE__ == $_SERVER['SCRIPT_FILENAME'] ) {
-  header('Location: /');
-  exit;
-}
-
 // In order to activate this plugin, WP SlimStat needs to be installed and active
-$plugins = get_option('active_plugins');
-if (!in_array('wp-slimstat/wp-slimstat.php', $plugins)) return;
+if (!in_array('wp-slimstat/wp-slimstat.php', get_option('active_plugins', array()))) return;
 
-if (!empty($_GET['page']) || ! preg_match('#wp-admin/(index.php)?(\?.*)?$#', $_SERVER['REQUEST_URI'])) return;
-
-// Import the class where all the reports are defined
-if (!class_exists('wp_slimstat_view')) include_once(WP_PLUGIN_DIR."/wp-slimstat/view/wp-slimstat-view.php");
-
-class wp_slimstat_dashboard extends wp_slimstat_view{
-
+class wp_slimstat_dashboard{
 	/**
-	 * Constructor -- Sets things up.
+	 * Loads localization files and adds a few actions
 	 */
-	public function __construct(){		
-		global $wpdb;
-		
-		parent::__construct();
-		
-		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
-		$wpdb->query("SET @@session.time_zone = '+00:00'");
-		
-		// Information about visits and pageviews
-		$this->current_pageviews = $this->count_records();
-		$this->admin_url = get_admin_url();
-
-		// Localization files
-		load_plugin_textdomain('wp-slimstat-dashboard', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
-		load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
-		load_plugin_textdomain('countries-languages', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
-
-		// If a local translation for countries and languages does not exist, use English
-		if (!isset($l10n['countries-languages'])){
-			load_textdomain('countries-languages', WP_PLUGIN_DIR .'/wp-slimstat/lang/countries-languages-en_US.mo');
-		}
-
+	public static function init(){
 		// Add some custom stylesheets
-		add_action('admin_print_styles-index.php', array(&$this, 'slimstat_stylesheet'));
+		add_action('admin_print_styles-index.php', array(__CLASS__, 'wp_slimstat_dashboard_css_js'));
 
 		// Hook into the 'wp_dashboard_setup' action to register our function
-		add_action('wp_dashboard_setup', array(&$this, 'add_dashboard_widgets'));
-	}
-	// end __construct
-
-	/**
-	 * Create a new instance of this class
-	 */
-	public function init(){
-		$GLOBALS[ __CLASS__ ] = new self;
+		add_action('wp_dashboard_setup', array(__CLASS__, 'add_dashboard_widgets'));
 	}
 	// end init
-
-	/**
-	 * Enqueues a custom CSS for the admin interface
-	 */
-	public function slimstat_stylesheet(){
-		wp_register_style('wp_slimstat_dashboard_stylesheet', plugins_url('/css/dashboard.css', __FILE__));
-		wp_enqueue_style( 'wp_slimstat_dashboard_stylesheet');
-    }
-	// end slimstat_stylesheet
-
-	/**
-	 * Displays the top pages by pageviews
-	 */
-	public function show_top_pages(){
-		$results = $this->get_top('t1.resource', 't1.ip, t1.user', "t1.resource NOT LIKE '[%'", '');
-		$count_results = count($results);
-		if ($count_results == 0) '<p class="slimstat-row nodata">'.__('No data to display','wp-slimstat-view').'</p>';
-
-		for($i=0;$i<$count_results;$i++){
-			$strings = $this->trim_value($results[$i]['resource'], 60);
-			$last_element = ($i == $count_results-1)?' class="slimstat-row last"':' class="slimstat-row"';
-			$extra_info = "title='".__('Last','wp-slimstat-view').': '.date_i18n($this->date_time_format, $results[$i]['dt']).', '.(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
-			$clean_string = urlencode($results[$i]['resource']);
-			$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['resource']);
-			$element_url = $this->blog_domain.$results[$i]['resource'];
-
-			echo "<p$last_element $extra_info><a target='_blank' title='$element_title' href='$element_url'><img src='".plugins_url('/images/url.gif', __FILE__)."' /></a> <span class='element-title'>{$strings['text']}</span> <span class='narrowcolumn' style='text-align:right'>".number_format($results[$i]['count'], 0, $this->decimal_separator, $this->thousand_separator)."</span></p>";
-		}
-	}
-	// end show_top_pages
 	
 	/**
-	 * Displays what users have recently browsed (visits)
+	 * Loads a custom stylesheet file for the administration panels
 	 */
-	public function show_spy_view(){
-		$results = $this->get_recent('t1.id', 't1.ip, t1.user, t1.resource, t1.searchterms, t1.visit_id, t1.country, t1.domain, t1.referer, tb.browser', 't1.visit_id > 0', 'browsers');
-		$count_results = count($results);
-		$visit_id = 0;
-		if ($count_results == 0) echo '<p class="slimstat-row nodata">'.__('No data to display','wp-slimstat-view').'</p>';
-
-		for($i=0;$i<$count_results;$i++){
-			$results[$i]['ip'] = long2ip($results[$i]['ip']);
-			$results[$i]['dt'] = date_i18n($this->date_time_format, $results[$i]['dt']);
-			if (!empty($results[$i]['searchterms'])){
-				$searchterms = $this->trim_value($results[$i]['searchterms'], 32);
-				$searchterms_span = " <span{$searchterms['tooltip']}>{$searchterms['text']}</span>";
-				if (empty($results[$i]['resource'])){
-					$results[$i]['resource'] = __('Search for','wp-slimstat-view').': '.$searchterms['text'];
-				}
-			}
-			else
-				$searchterms_span = '';
-			if ($visit_id != $results[$i]['visit_id']){
-				if (empty($results[$i]['user']))
-					$ip_address = "<a class='activate-filter' href='$this->admin_url?page=wp-slimstat&amp;slimpanel=1&amp;ip-op=equal&amp;ip={$results[$i]['ip']}'>{$results[$i]['ip']}</a>";
-				else
-					$ip_address = "<a class='activate-filter' href='$this->admin_url?page=wp-slimstat&slimpanel=1&amp;user-op=equal&amp;user={$results[$i]['user']}'>{$results[$i]['user']}</a>";
-				$ip_address = "<a href='http://www.infosniper.net/index.php?ip_address={$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'><img src='".plugins_url('/images/whois.gif', __FILE__)."' /></a> $ip_address";
-				$country = __('c-'.$results[$i]['country'],'countries-languages');
-
-				echo "<p class='slimstat-row header'>$ip_address <span class='widecolumn'>$country</span> <span class='widecolumn'>{$results[$i]['browser']}</span> <span class='widecolumn'>{$results[$i]['dt']}</span></p>";
-				$visit_id = $results[$i]['visit_id'];
-			}
-			$last_element = ($i == $count_results-1)?' class="slimstat-row last"':' class="slimstat-row"';
-			$element_title = sprintf(__('Open %s in a new window','wp-slimstat-view'), $results[$i]['referer']);
-			echo "<p$last_element title='{$results[$i]['domain']}{$results[$i]['referer']}'>";
-			if (!empty($results[$i]['domain']))
-				echo "<a target='_blank' title='$element_title' href='http://{$results[$i]['domain']}{$results[$i]['referer']}'><img src='".plugins_url('/images/url.gif', __FILE__)."' /></a> {$results[$i]['domain']} &raquo;";
-			else
-				echo __('Direct visit to','wp-slimstat-view');
-			echo ' '.substr($results[$i]['resource'], 0, 40)."$searchterms_span</p>";
-		}
+	public static function wp_slimstat_dashboard_css_js(){
+		wp_register_style('wp-slimstat-dashboard-view', plugins_url('/admin/css/dashboard.css', __FILE__));
+		wp_enqueue_style('wp-slimstat-dashboard-view');
+		wp_enqueue_script('slimstat_flot', plugins_url('/admin/view/flot/jquery.flot.min.js', __FILE__), array('jquery'), '0.7');
+		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/view/flot/jquery.flot.navigate.min.js', __FILE__), array('jquery','slimstat_flot'), '0.7');
+		wp_enqueue_script('slimstat_admin', plugins_url('/admin/view/flot/slimstat.admin.js', __FILE__));
 	}
-	// end show_spy_view
-
-	/**
-	 * Displays a summary of pageviews for this month
-	 */
-	public function show_summary_for(){
-		$current_data = $this->extract_data_for_chart('COUNT(ip)', 'COUNT(DISTINCT(ip))', 1, __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
-		$today_pageviews = !empty($current_data->current_data1[$this->current_date['d']])?$current_data->current_data1[$this->current_date['d']]:0;
-		$yesterday_pageviews = (intval($this->current_date['d'])==1)?(!empty($current_data->previous_data1[$this->yesterday['d']])?$current_data->previous_data1[$this->yesterday['d']]:0):(!empty($current_data->current_data1[$this->yesterday['d']])?$current_data->current_data1[$this->yesterday['d']]:0); 
-		$total_human_visits = $this->count_records_having('visit_id > 0', 'visit_id'); ?>
-		<p class="slimstat-row"><span class='element-title'><?php _e('Pageviews', 'wp-slimstat-view') ?></span> <span><?php echo number_format($this->current_pageviews, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('Visits', 'wp-slimstat-view') ?></span> <span><?php echo number_format($total_human_visits, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('Unique IPs', 'wp-slimstat-view') ?></span> <span><?php echo number_format($this->count_records('1=1', 'DISTINCT ip'), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('Bots', 'wp-slimstat-view') ?></span> <span><?php echo number_format($this->count_records('tb.type = 1', '*', true, 'browsers'), 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('On', 'wp-slimstat-view'); echo ' '.$this->current_date['d'].'/'.$this->current_date['m'] ?></span> <span><?php echo number_format($current_data->today, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row"><span class='element-title'><?php _e('On', 'wp-slimstat-view'); echo ' '.$this->yesterday['d'].'/'.$this->yesterday['m'] ?></span> <span><?php echo number_format($current_data->yesterday, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p>
-		<p class="slimstat-row last"><span class='element-title'><?php _e('Last Month', 'wp-slimstat-view'); ?></span> <span><?php echo number_format($current_data->previous_total, 0, $this->decimal_separator, $this->thousand_separator) ?></span></p><?php
-	}
-	// end show_summary_for
-
-	/**
-	 * Displays a list of recent user agents
-	 */
-	public function show_user_agents(){
-		$results = $this->get_top('tb.browser, tb.version', '', "tb.browser <> ''", 'browsers');
-		$count_results = count($results);
-		if ($count_results == 0) echo '<p class="slimstat-row nodata">'.__('No data to display','wp-slimstat-view').'</p>';
-
-		for($i=0;$i<$count_results;$i++){
-			$last_element = ($i == $count_results-1)?' class="slimstat-row last"':' class="slimstat-row"';
-			$percentage = ($this->current_pageviews > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['count']/$this->current_pageviews)), 2, $this->decimal_separator, $this->thousand_separator):0;
-			$browser_version = ($results[$i]['version']!=0)?$results[$i]['version']:'';
-			$results[$i]['count'] = number_format($results[$i]['count'], 0, $this->decimal_separator, $this->thousand_separator);
-			$extra_info = "title='".__('Hits','wp-slimstat-view').": {$results[$i]['count']}'";
-			echo "<p$last_element $extra_info><span class='element-title'>{$results[$i]['browser']} $browser_version</span> <span>$percentage%</span></p>";
-		}
-	}
-	// end show_user_agents
-
-	/**
-	 * Displays a list of recent search queries
-	 */
-	public function show_recent_keywords(){
-		$results = $this->get_recent('t1.searchterms', 't1.ip, t1.user');
-		$count_results = count($results);
-		if ($count_results == 0) echo '<p class="slimstat-row nodata">'.__('No data to display','wp-slimstat-view').'</p>';
-
-		for($i=0;$i<$count_results;$i++){
-			$strings = $this->trim_value($results[$i]['searchterms'], 50);
-			$last_element = ($i == $count_results-1)?' class="slimstat-row last"':' class="slimstat-row"';
-			$extra_info = "title='".date_i18n($this->date_time_format, $results[$i]['dt']).', '.(empty($results[$i]['user'])?long2ip($results[$i]['ip']):$results[$i]['user'])."'";
-			$clean_string = urlencode($results[$i]['searchterms']);
-			if (!isset($wp_slimstat_view->filters_parsed['searchterms'][0])) $strings['text'] = "<a{$strings['tooltip']} class='activate-filter' href='$this->admin_url?page=wp-slimstat&amp;slimpanel=1&amp;searchterms=$clean_string'>{$strings['text']}</a>";
-
-			echo "<p$last_element $extra_info>{$strings['text']}</p>";
-		}
-	}
-	// end show_recent_keywords
+	// end wp_slimstat_stylesheet
 
 	/**
 	 * Attaches all the widgets to the dashboard
 	 */
-	public function add_dashboard_widgets() {
-		global $current_user;
-		$array_allowed_users = $GLOBALS['wp_slimstat']->options['can_view'];
+	public static function add_dashboard_widgets(){
+		if (!empty(wp_slimstat::$options['can_view']) && !in_array($GLOBALS['current_user']->user_login, wp_slimstat::$options['can_view'])) return;
 
-		if (!empty($array_allowed_users) && !in_array($current_user->user_login, $array_allowed_users)) return;
+		include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/wp-slimstat-boxes.php");
+		wp_slimstat_boxes::init();
 
-		wp_add_dashboard_widget('slim_top_pages', 'WP SlimStat - '.__('Top pages for this month', 'wp-slimstat-dashboard'), array(&$this,'show_top_pages'));
-		wp_add_dashboard_widget('slim_spy_view', 'WP SlimStat - '.__('Spy View', 'wp-slimstat-dashboard'), array(&$this,'show_spy_view'));
-		wp_add_dashboard_widget('slim_summary_for', 'WP SlimStat - '.__('Summary for this month', 'wp-slimstat-dashboard'), array(&$this,'show_summary_for'));
-		wp_add_dashboard_widget('slim_user_agents', 'WP SlimStat - '.__('User Agents', 'wp-slimstat-dashboard'), array(&$this,'show_user_agents'));
-		wp_add_dashboard_widget('slim_recent_keywords', 'WP SlimStat - '.__('Recent Keywords', 'wp-slimstat-dashboard'), array(&$this,'show_recent_keywords'));
+		$widgets = array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_05','slim_p1_06','slim_p1_08','slim_p1_11','slim_p1_12','slim_p2_04','slim_p2_12','slim_p4_07','slim_p4_11');
+		
+		foreach ($widgets as $a_widget)
+			wp_add_dashboard_widget($a_widget, wp_slimstat_boxes::$all_boxes_titles[$a_widget], array(__CLASS__, $a_widget));
 	}
 	// end add_dashboard_widgets
 
-	private function trim_value($_string = '', $_length = 32){
-		if (strlen($_string) > $_length){
-			$result['text'] = substr($_string, 0, $_length).'...';
-			$result['tooltip'] = " title='".htmlspecialchars($_string, ENT_QUOTES)."'";
-		}
-		else{
-			$result['text'] = $_string;
-			$result['tooltip'] = '';
-		}
-		$result['text'] = str_replace('\\', '', htmlspecialchars($result['text'], ENT_QUOTES));
-		return $result;
+	// Widget wrappers
+	public static function slim_p1_01(){
+		$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))', __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
+		wp_slimstat_boxes::show_chart('slim_p1_01', $chart_data);
+	}	
+	public static function slim_p1_02(){
+		wp_slimstat_boxes::show_about_wpslimstat('slim_p1_02');
+	}
+	public static function slim_p1_03(){
+		$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))', __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
+		wp_slimstat_boxes::show_overview_summary('slim_p1_03', wp_slimstat_db::count_records(), $chart_data);
+	}
+	public static function slim_p1_04(){
+		wp_slimstat_boxes::show_results('recent', 'slim_p1_04', 'user');
+	}
+	public static function slim_p1_05(){
+		wp_slimstat_boxes::show_spy_view('slim_p1_05');
+	}
+	public static function slim_p1_06(){
+		wp_slimstat_boxes::show_results('recent', 'slim_p1_06', 'searchterms');
+	}
+	public static function slim_p1_08(){
+		wp_slimstat_boxes::show_results('popular', 'slim_p1_08', 'resource', array('total_for_percentage' => wp_slimstat_db::count_records()));
+	}
+	public static function slim_p1_11(){
+		wp_slimstat_boxes::show_results('popular', 'slim_p1_11', 'user', array('total_for_percentage' => wp_slimstat_db::count_records('t1.user <> ""')));
+	}
+	public static function slim_p1_12(){
+		wp_slimstat_boxes::show_results('popular', 'slim_p1_12', 'searchterms', array('total_for_percentage' => wp_slimstat_db::count_records('t1.searchterms <> ""')));
+	}
+	public static function slim_p2_04(){
+		wp_slimstat_boxes::show_results('popular', 'slim_p2_04', 'browser', array('total_for_percentage' => wp_slimstat_db::count_records(), 'more_columns' => ',tb.version'));
+	}
+	public static function slim_p2_12(){
+		wp_slimstat_boxes::show_visit_duration('slim_p2_12', wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id'));
+	}
+	public static function slim_p4_07(){
+		wp_slimstat_boxes::show_results('popular', 'slim_p4_07', 'category', array('total_for_percentage' => wp_slimstat_db::count_records('tci.category <> ""')));
+	}
+	public static function slim_p4_11(){
+		wp_slimstat_boxes::show_results('popular', 'slim_p4_11', 'resource', array('total_for_percentage' => wp_slimstat_db::count_records('tci.content_type = "post"'), 'custom_where' => 'tci.content_type = "post"'));
 	}
 }
 // end of class declaration
 
 // Bootstrap
-add_action('init', array('wp_slimstat_dashboard', 'init'), 10);
-
-?>
+if (function_exists('add_action') && empty($_GET['page']) && preg_match('#wp-admin/(index.php)?(\?.*)?$#', $_SERVER['REQUEST_URI']))
+	add_action('init', array('wp_slimstat_dashboard', 'init'), 10);

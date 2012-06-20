@@ -3,20 +3,40 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
-Tested up to: 3.3.1
-Stable tag: 2.8
+Tested up to: 3.4
+Stable tag: 2.8.1
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
 
 = Main Features =
 * Real-time web analytics reports
-* Modern, easy to use and customizable interface (yep, you can also drag-and-drop widgets around)
-* Advanced tools, like commenters tracking, Google Plus One and Facebook Like click tracking
-* The best country, browser and platform detection ever seen, thanks to [Browscap](https://github.com/garetjax/phpbrowscap) and [MaxMind](http://www.maxmind.com/)
+* Modern, easy to use and customizable interface (yep, you can move boxes around and hide the ones you don't need)
+* Commenters tracking, Google Plus One and Facebook Like click tracking
+* Fully compliant with European Privacy Laws (IP Anonymizer)
+* The best country, browser and platform detection ever seen
+* This product includes GeoLite data created by [MaxMind](http://www.maxmind.com/)
 * Drill-down capabilities: filter your stats based on IP addresses, browsers, referrers, users and much more
 * View and admin access can be restricted to specific users
 * Pan-and-zoom World Map, thanks to [amMap](http://www.ammap.com/).
+
+= Available data =
+* Right Now: a detailed view of the most recent activity on your site (Username, Public IP, Private IP, Browser, Referring URL, Visit Session, Resources accessed, and much more)
+* Overview: Daily/Hourly Pageviews (chart), Currently Connected, Spy View, Recent Known Visitors, Traffic Sources Overview, Recent Search Terms, Popular Posts, Recent Countries, Recent/Top Languages
+* Visitors: Daily/Hourly Human Visits, Visit Duration, Bots, Top User Agents, Top Operating Systems, Top IP Addresses, Top Screen Resolutions, Colordepths, Browser Plugins (Flash, Acrobat, etc), Top Countries
+* Content: Daily/Hourly Average Pageviews per visit, Outbound Links, Recent Events, Recent URLs, Recent Bounce Pages, Recent Feeds, Recent 404 URLs, Recent Internal Searches, Top Categories
+* Traffic Sources: Daily/Hourly Traffic Sources, Top Search Terms, Top Traffic Sources, Top Search Engines, Top Sites, Correlation between search terms and pages, Unique Referrers
+* World Map: pan and zoom to get detailed visual information about your visitors
+* Custom Reports: bring your own report!
+
+= What are people saying about WP SlimStat? =
+* WP SlimStat has been really good - I'm really pleased with it and am using it on 6 websites - [kieronam](http://wordpress.org/support/topic/plugin-wp-slimstat-possible-to-suppress-cookies?replies=5)
+* I like SlimStat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
+* WP-SlimStat is the only plugin I still use as a beginner [..]  I hope ALL the other plugin people learn from your dedication - [ronthai](http://wordpress.org/support/topic/plugin-wp-slimstat-problem-after-update-to-slimstat-28#post-2715928)
+* My client loves Slimstat so much that she has created a page for the funniest search terms (via Slimstat) that brought people to her site - [saill](http://wordpress.org/support/topic/plugin-wp-slimstat-awesome-use-of-slimstat)
+* I love this plugin. Been using it for the better part of a year now. - [mikeambrosio](http://wordpress.org/support/topic/plugin-wp-slimstat-visual-chart-stopped-working)
+* With JetPack, my page views are between zero or 20 on the average [..] With WP SlimStat I saw page views went up to an average of 200 per day for five days now and unique visitors are on the rise as well - [h2ofilters](http://wordpress.org/support/topic/plugin-wp-slimstat-why-does-is-data-different-from-jetpack-or-wpstats#post-2831769)
+* What i liked so much on your slimstats is the very accurate hourly realtime stats [quakesos](http://wordpress.org/support/topic/plugin-wp-slimstat-w3-total-cache#post-2043814)
 
 = Requirements =
 * Wordpress 3.1 or higher (it may not work on large multisite environments)
@@ -29,7 +49,7 @@ A powerful real-time web analytics plugin for Wordpress.
 = Browser Compatibility =
 WP SlimStat uses HTML5 canvases to display its charts. This approach is not compatible with Internet Explorer 8 or older, so you're encouraged to upgrade your browser.
 
-You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/), which enables shortcodes to show your metrics in a widget or a page.
+You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/), which allows you to share your reports with your readers.
 
 == Installation ==
 
@@ -42,49 +62,83 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 
 == Frequently Asked Questions ==
 
-= Can I track Google Plus One and other events? =
-Yes, this plugin includes a Javascript function that can be used to track any event: click, mouseover, focus, keypress, etc. Here's the syntax:
+= What do all those filters in the dropdown menu mean? =
+* `browser`: user agent (Firefox, Chrome, ...)
+* `country code`: 2-letter code (us, ru, de, it, ...)
+* `referring domain`: domain name of the referrer page (i.e., www.google.com if a visitor was coming from Google)
+* `ip`: visitor's public IP address
+* `search terms`: keywords visitors used to find your website on a search engine
+* `language code`: please refer to the [language culture names](http://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx) (first column) for more information
+* `operating system`: accepts identifiers like win7, win98, macosx, ...; please refer to [this manual page](http://php.net/manual/en/function.get-browser.php) for more information about these codes
+* `permalink`: URL accessed on your site
+* `referer`: complete URL of the referrer page
+* `visitor's name`: visitor's name according to the cookie set by Wordpress after leaving a comment
 
-`ss_te(e, c, f, n)`
+Advanced filters:
+* `browser capabilities`: plugins or extensions installed by that user (flash, java, silverlight...)
+* `browser version`: user agent version (9.0, 11, ...)
+* `browser type`: 1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others
+* `color depth`: visitor's screen's color depth (8, 16, 24, ...)
+* `css version`: what CSS standard was supported by that browser (1, 2, 3 and other integer values)
+* `pageview attributes`: this field is set to [pre] if the resource has been accessed through Link Prefetching or similar techniques
+* `post author`: author associated to that post/page when the resource was accessed
+* `post category id`: ID of the category/term associated to the resource, when available
+* `private ip`: visitor's private IP address, if available
+* `resource content type`: post, page, cpt:*custom-post-type*, attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the [Conditional Tags](http://codex.wordpress.org/Conditional_Tags) manual page for more information
+* `screen resolution`: viewport width and height (1024x768, 800x600, ...)
+* `visit id`: generally used in conjunction with 'is not empty', identifies human visitors
+
+= Can I track clicks and other events happening on the page? =
+Yes, this plugin includes a Javascript function that can be attached to any event: click, mouseover, focus, keypress, etc. Here's the syntax:
+
+`ss_track(e, c, n)`
 
 Where:
 
-* `e` is the event that was triggered
+* `e` is the event that was triggered (the word 'event' *must* be used when attaching event handlers to HTML tags, see examples below)
 * `c` is a numeric value between 1 and 254 (zero is reserved for outbound clicks)
-* `f` - this parameter is deprecated and will be removed in the next releases
-* `n` is a custom text (up to 512 chars long) that you can use to add a note to the event tracked. If the ID attribute is defined, and no note has been specified, the ID value will be used. If the function is attached to a key-related event, the key pressed will be recorded as a note.
+* `n` is a custom text (up to 512 chars long) that you can use to add a note to the event tracked. If the ID attribute is defined, and no note has been specified, the former will be recorded. If the function is attached to a key-related event, the key pressed will be recorded.
 
 Examples:
 
-* `onclick="if(typeof ss_te == 'function') ss_te(event, 5, false, 'clicked on first link');"`
-* `onkeypress="if(typeof ss_te == 'function') ss_te(event, 20, false);"`
-* To make your life easier, a *Google Plus One* callback function is included as well: `<g:plusone callback="slimstat_plusone"></g:plusone>`. Positive entries will have code = 3, negative ones (undo +1) code = 4. Remember: Google's javascript must be loaded *after* slimstat.js, so make sure to put things in the right place in your souce code.
+* `onclick="if(typeof ss_track == 'function') ss_track(event, 5, 'clicked on first link');"`
+* `onkeypress="if(typeof ss_track == 'function') ss_track(event, 20);"`
+* To make your life easier, a *Google Plus One* callback function is included as well: `<g:plusone callback="slimstat_plusone"></g:plusone>`. They will be identified by the note 'google-plus-on/off'. Pleae refer to the [official documentation](https://developers.google.com/+/plugins/+1button/) for more information.
 
 = How do I create my own custom reports? =
-You need to [write a plugin](http://lab.duechiacchiere.it/index.php?topic=2.0#post_customreports) that retrieves the information from WP SlimStat tables and displays it using
-the format described here below. A demo plugin is included within the package: take a look at its source code
-(which I tried to keep as simple as possible) and cut your imagination loose! 
+You will need to embed them in a plugin that leverages WP SlimStat APIs to retrieve the data. You can also access WP SlimStat's tables directly, for more complicated stuff.
+Please refer to the database description and API reference guide here below for more information on what tables/methods are available.
 
-= How do I display stats on my website? =
-WP SlimStat has two ways of displaying its reports on your website. Including filters!
+Let's say you came up with your own SQL query, something like
 
-*Direct access*
-You will need to edit your template and add something like this where you want your metrics to appear:
-`// Load WP SlimStat VIEW, the library with all the metrics
-require_once(WP_PLUGIN_DIR.'/wp-slimstat/view/wp-slimstat-view.php');
+`SELECT resource, COUNT(*) countresults
+FROM $this->table_stats
+WHERE resource <> ''
+GROUP BY resource
+ORDER BY countresults DESC
+LIMIT 0,20`
 
-// Define a filter: I want to show only hits by people who where using Firefox, any version
-$filters = array('browser' => 'Firefox', 'browser-op' => 'contains');
+Just write a function that gets the results and displays them, making sure to use the same HTML mark-up shown in the example here below:
 
-// Instantiate a new copy of that class
-$wp_slimstat_view = new wp_slimstat_view($filters);
+`public function my_cystom_report() {
+	$sql = "SELECT ...";
+	$results = $wpdb->get_results($sql, ARRAY_A);
 
-// Use the appropriate method to display your stats
-echo $wp_slimstat_view->count_records('1=1', '*', false);`
+	// Boxes come in three sizes: wide, medium, normal (default).
+	wp_slimstat_boxes:box_header('my_custom_box_id', 'My Custom Box Inline Help', 'medium', false, '', 'My cool report');
 
-*Using shortcodes*
-Please refer to [this](http://lab.duechiacchiere.it/index.php?topic=2.0#post_shortcodes) page for more information.
-[Here](http://lab.duechiacchiere.it/index.php?topic=2.0#post_displaymetrics) you can find a list of all available functions and filters.
+	foreach($results as $a_result){
+		echo "<p>{$a_result['resource']} <span>{$a_result['countresults']}</span></p>";
+	}
+	
+	wp_slimstat_boxes:box_footer(); // closes the DIV's open by box_header
+}`
+
+Then let WP SlimStat know about it:
+
+`add_action('wp_slimstat_custom_report', 'my_cystom_report');`
+
+Save your file as `my_custom_report.php` and then [follow these instructions](http://codex.wordpress.org/Writing_a_Plugin#Standard_Plugin_Information) on how to make a plugin out of that file.
 
 = Can I disable outbound link tracking on a given link? =
 Yes. This is useful if you notice that, after clicking on a Lightbox-powered thumbnail, the image doesn't open inside the popup window as expected.
@@ -113,18 +167,163 @@ Go to Settings > SlimStat > Filters and set "Ignore Spammers" to YES.
 = How do I stop WP SlimStat from recording new visits on my site? =
 Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 
+= Can I add/show reports on my website? =
+WP SlimStat has two ways of displaying its reports on your website. Including filters!
+
+*Shortcodes*
+
+Please download and install [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) to enable shortcode support in WP SlimStat.
+
+*Direct access*
+
+You will need to edit your template and add something like this where you want your metrics to appear:
+
+`// Load WP SlimStat VIEW, the library with all the metrics
+require_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/view/wp-slimstat-db.php');
+
+// Initialize the API with the following filter: show only hits by people who where using Firefox, any version
+wp_slimstat_db::init('browser contains Firefox');
+
+// Use the appropriate method to display your stats
+echo wp_slimstat_db::count_records('1=1', '*', false);`
+
+*Available methods*
+
+* `count_records($where_clause = '1=1', $column = '*', $use_filters = true)` - returns the number of records matching your criteria
+ * **$where_clause** is the one used in the SQL query
+ * **$column**, if specified, will count DISTINCT values
+ * **$use_filters** can be true or false, it enables or disables previously set filters (useful to count ALL the records in the database, since by default a filter for the current month is enabled)
+* `count_bouncing_pages()` - returns the number of [pages that 'bounce'](http://en.wikipedia.org/wiki/Bounce_rate#Definition)
+* `count_exit_pages()` - returns the number of [exit pages](http://support.google.com/analytics/bin/answer.py?hl=en&answer=2525491)
+* `get_recent($column = 'id', $custom_where = '', $join_tables = '', $having_clause = '')` - returns recent results matching your criteria
+ * **$column** is the column you want group results by
+ * **$custom_where** can be used to replace the default WHERE clause
+ * **$join_tables** by default, this method return all the columns of wp_slim_stats; if you need to access (join) other tables, use this param to list them: `tb.*, tss.*, tci.*`
+ * **$having_clause** can be used to further filter results based on aggregate functions
+* `get_popular($column = 'id', $custom_where = '', $join_tables = '')`
+ * **$column** is the column you want group results by
+ * **$custom_where** can be used to replace the default WHERE clause
+ * **$_more_columns** to 'group by' more than one column and return the corresponding rows
+
+*Examples*
+
+Recent Posts: 
+
+`wp_slimstat_db::init('content_type equals post');
+$results = wp_slimstat_db::get_recent('t1.resource');
+foreach ($results...`
+
+Top Languages last month:
+
+`wp_slimstat_db::init('month equals '.date('n', strtotime('-1 month')));
+$results = wp_slimstat_db::get_popular('t1.language');
+foreach ($results...`
+
+*Database description (see wp-slimstat-admin.php)*
+
+wp_slim_stats t1
+
+`id INT UNSIGNED NOT NULL auto_increment,
+ip INT UNSIGNED DEFAULT 0,
+other_ip INT UNSIGNED DEFAULT 0,
+user VARCHAR(255) DEFAULT '',
+language VARCHAR(5) DEFAULT '',
+country VARCHAR(2) DEFAULT '',
+domain VARCHAR(255) DEFAULT '',
+referer VARCHAR(2048) DEFAULT '',
+searchterms VARCHAR(2048) DEFAULT '',
+resource VARCHAR(2048) DEFAULT '',
+browser_id SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+screenres_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+content_info_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+plugins VARCHAR(255) DEFAULT '',
+notes VARCHAR(512) DEFAULT '',
+visit_id INT UNSIGNED NOT NULL DEFAULT 0,
+dt INT(10) UNSIGNED DEFAULT 0,
+PRIMARY KEY id (id)`
+
+wp_slim_countries tc
+
+`ip_from INT UNSIGNED DEFAULT 0,
+ip_to INT UNSIGNED DEFAULT 0,
+country_code CHAR(2) DEFAULT '',
+CONSTRAINT ip_from_idx PRIMARY KEY (ip_from, ip_to)`
+
+wp_slim_browsers tb
+
+`browser_id SMALLINT UNSIGNED NOT NULL auto_increment,
+browser VARCHAR(40) DEFAULT '',
+version VARCHAR(15) DEFAULT '',
+platform VARCHAR(15) DEFAULT '',
+css_version VARCHAR(5) DEFAULT '',
+type TINYINT UNSIGNED DEFAULT 0,
+PRIMARY KEY (browser_id)`
+
+wp_slim_screenres tss
+
+`screenres_id MEDIUMINT UNSIGNED NOT NULL auto_increment,
+resolution VARCHAR(12) DEFAULT '',
+colordepth VARCHAR(5) DEFAULT '',
+antialias BOOL DEFAULT FALSE,
+PRIMARY KEY (screenres_id)`
+
+wp_slim_content_info tci
+
+`content_info_id MEDIUMINT UNSIGNED NOT NULL auto_increment,
+content_type VARCHAR(64) DEFAULT '',
+category VARCHAR(256) DEFAULT '',
+author VARCHAR(64) DEFAULT '',
+PRIMARY KEY (content_info_id)`
+
+wp_slim_outbound to
+
+`outbound_id INT UNSIGNED NOT NULL auto_increment,
+outbound_domain VARCHAR(255) DEFAULT '',
+outbound_resource VARCHAR(2048) DEFAULT '',
+type TINYINT UNSIGNED DEFAULT 0,
+notes VARCHAR(512) DEFAULT '',
+position VARCHAR(32) DEFAULT '',
+id INT UNSIGNED NOT NULL DEFAULT 0,
+dt INT(10) UNSIGNED DEFAULT 0,
+PRIMARY KEY (outbound_id)`
+
 == Screenshots ==
 
-1. Dashboard
-2. Configuration panel
-3. Mobile view
+1. What's happening right now on your site
+2. All the information at your fingertips
+3. Configuration panels offer flexibility and plenty of options
+4. Mobile view, to keep an eye on your stats on the go
 
 == Changelog ==
 
 = Planned features =
 * Add "internal" stats about your blog: post count, comments per post, table sizes, etc
-* Merge with WP SlimStat Shortcodes
-* Antiflood monitor
+* Javascript-based tracking functionality (a-la Google Analytics), that plays nicely with W3 Total Cache & co.
+* Antiflood monitor and database monitor
+
+= 2.8.1 =
+* Added: new filters
+* Added: counter for currently connected users
+* Added: a brand-new contextual help, for those overwhelmed by all the information provided by WP SlimStat
+* Added: "Show on screen" functionality, to hide/show panels and further customize the layout of WP SlimStat views
+* Added: IP Anonymizer functionality (Settings > SlimStat > Filters). Thank you [Hebbet](http://wordpress.org/support/topic/plugin-wp-slimstat-anonymize-ip-addresses) and [johannes.b](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
+* Added: QuickTime (browser extension) is now being tracked
+* Added: tons of icons and flags (for Countries, browsers, operating systems and plugins), to make the interface even more intuitive
+* Fixed: a bug in the activation procedure was preventing, in some cases, WP SlimStat from creating its tables
+* Fixed: the Dashboard Widgets plugin now follows the permission settings to view the stats
+* Fixed: stats in Posts screen were not activating the right filter
+* Fixed: a bug in the function to display the tooltips in the chart
+* Updated: it's now much easier to write your own custom reports
+* Updated: rewritten this readme and elaborated on many 'hidden' details to make WP SlimStat easier to use
+* Updated: rearranged the overall folder structure, now easier to understand
+* Updated: the 'engine' to visualize your stats has been completely rewritten and modularized
+* Updated: using static PHP classes for improved performance
+* Updated: [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) has been revamped, check it out!
+* Updated: halved the amount of memory needed to identify user agents (while keeping the usual sharp, accurate information)
+* Updated: color and styling changes
+* Updated: weekends are now highlighed in the chart
+* Updated: rearranged the order of the main tabs to give more emphasis to visitors and what's happening right now (thank you Jennifer)
+* Updated: filters on Authors and Category IDs are now much more efficient
 
 = 2.8 =
 * Added: WP SlimStat now looks for HTTP headers like X_FORWARDED_FOR to get, when available, private IP addresses of people using proxies
@@ -154,27 +353,23 @@ Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 * Fixed: heuristic browser detection for mobile browsers is now much more accurate
 * Geolocation: updated to February 2012, 160222 rows. Go to Options > Maintenance > Reset Ip-to-Countries.
 
-= 2.6 =
-* Added: Visit Duration panel under the Visitors tab
-* Added: a new column under Posts, with the number of pageviews per post (go to Settings > SlimStat > General to activate it)
-* Added: option to customize the number of rows shown in the Raw Data view
-* Updated: Browscap Engine to the latest release available (November 2011)
-* Updated: Minor aesthetic changes to the interface
-* Fixed: bug in generating some internal URLs when redirects are in place (thank you Elio and Alexander)
-* Fixed: error when parsing search strings with encoding different from UTF-8 (thank you Alexander)
-* Fixed: detailed view for recent known visitors
-* Geolocation: updated to January 2012, 158624 rows. Go to Options > Maintenance > Reset Ip-to-Countries. Then deactivate/reactivate WP SlimStat to import the new file.
+(Previous versions omitted)
 
-== List of donors in alphabetical order ==
+== Donors ==
 [Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Caigo](http://www.blumannaro.net/), 
-[Dennis Kowallek](http://www.adopt-a-plant.com), [Hans Schantz](http://www.aetherczar.com/), [Herman Peet](http://www.hermanpeet.nl/), [La casetta delle pesche](http://www.lacasettadellepesche.it/),
+[Dennis Kowallek](http://www.adopt-a-plant.com), [Hans Schantz](http://www.aetherczar.com/), [Herman Peet](http://www.hermanpeet.nl/), 
+John Montano, [La casetta delle pesche](http://www.lacasettadellepesche.it/),
 [Mobilize Mail](http://blog.mobilizemail.com/), Mora Systems, Neil Robinson, [Sahin Eksioglu](http://www.alternatifblog.com/),
 [Saill White](http://saillwhite.com), [SpenceDesign](http://spencedesign.com/), Wayne Liebman
 
-= Database usage =
-WP SlimStat needs to create its own tables in order to maintain the complex information about visits, visitors, browsers and Countries. It creates 2 new tables for each blog, plus 3 shared tables (5 tables in total, for a single-user installation). Please keep this in mind before activating WP SlimStat on large networks of blogs.
+== Guest Stars ==
 
-= Dashboard Widgets = 
+* [Thomas Nielsen](http://www.bogt.dk/) who helped with the new icon set.
+
+== Database usage ==
+WP SlimStat needs to create its own tables in order to maintain the complex information about visits, visitors, browsers and Countries. It creates 2 new tables for each blog, plus 4 shared tables (6 tables in total, for a single-user installation). Please keep this in mind before activating WP SlimStat on large networks of blogs.
+
+== Dashboard Widgets == 
 After you download and install WP SlimStat, you'll see not one, but two new plugins in your administration panel.
 Don't worry, you just need to activate the first one in order to track your visitors. WP SlimStat Dashboard Widgets
 adds some reports directly to your dashboard. 

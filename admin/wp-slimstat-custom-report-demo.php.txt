@@ -1,0 +1,56 @@
+<?php
+/*
+Plugin Name: WP SlimStat Custom Reports
+Plugin URI: http://www.duechiacchiere.it/wp-slimstat/
+Description: This is not a real plugin, it just demonstrates how to add your custom reports to WP SlimStat.
+Version: 1.2
+Author: Camu
+Author URI: http://www.duechiacchiere.it/
+*/
+
+// In order to activate this plugin, WP SlimStat needs to be installed and active
+if (!in_array('wp-slimstat/wp-slimstat.php', get_option('active_plugins'))) return;
+
+class wp_slimstat_custom_reports{
+
+	// Function: _get_top_custom_pages
+	// Description: Fetches popular pages from the DB
+	// Input: none
+	// Output: array of results
+	// Notes: wp_slimstat_view::$filters_parsed is an array containing all the filters set by the user through the dropdown menus
+	//        Please refer to readme.txt for a list of filters and to learn how to leverage this information in your queries
+	protected static function _get_top_custom_pages(){
+		$sql = "SELECT resource, COUNT(*) countresults
+				FROM {$GLOBALS['wpdb']->prefix}slim_stats
+				WHERE resource <> ''
+				GROUP BY resource
+				ORDER BY countresults DESC
+				LIMIT 0,".wp_slimstat_view::$filters_parsed['limit_results'];
+
+		return $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
+	}
+	// end _get_top_pages
+
+	// Function: show_top_custom_pages
+	// Description: Formats the results obtained through _get_top_pages
+	// Input: none
+	// Output: HTML code
+	// Notes: wp_slimstat_modules contains a few methods that standardize the HTML required to display a module
+	public static function show_top_custom_pages() {
+		$results = self::_get_top_custom_pages();
+		
+		// Boxes come in three sizes: wide, medium, normal (default).
+		wp_slimstat_modules::box_header('my_custom_box_id', 'My Custom Box Title', 'My Custom Box Inline Help', 'medium');
+
+		foreach($results as $a_result){
+			echo "<p>{$a_result['resource']} <span>{$a_result['countresults']}</span></p>";
+		}
+		wp_slimstat_modules::box_footer(); // closes the DIV's open by box_header
+	}
+	// end show_top_pages
+}
+// end of class declaration
+
+// Use the hook 'wp_slimstat_custom_report' to attach your reports to the panel
+// Of course you can attach as many reports as you want :-)
+add_action('wp_slimstat_custom_report', array('wp_slimstat_custom_reports', 'show_top_custom_pages'));

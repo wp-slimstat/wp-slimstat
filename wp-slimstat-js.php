@@ -8,8 +8,7 @@ $wp_root_folder = '../../..';
 
 // Abort execution if config file cannot be located
 if (!file_exists($wp_root_folder.'/wp-config.php')){
-	echo 'wp-config not found';
-	exit;
+	exit('wp-config not found');
 }
 // Parse config file
 $wp_config = file_get_contents($wp_root_folder.'/wp-config.php');
@@ -46,15 +45,17 @@ foreach($clean_tokens as $a_token_id => $a_token) {
 
 // This is odd, but it could happen...
 if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host) || empty($table_prefix)){
-	echo 'Error parsing wp-config';
-	exit;
+	exit('Error parsing wp-config');
 }
 
 // Let's see if we can connect to the database
 $db_handle = mysql_connect($db_host, $db_user, $db_password);
-if (!$db_handle || !mysql_select_db($db_name)){
-	echo 'Could not connect to the db';
-	exit;
+if (!$db_handle){
+	exit('Could not connect: '.mysql_error());
+}
+if (!mysql_select_db($db_name)){
+	@mysql_close($db_handle);
+	die('Could not select the db: '.mysql_error());
 }
 
 // Abort if WP SlimStat main table isn't in the database (plugin not activated?)
@@ -83,8 +84,8 @@ if (!$is_table_active){
 	}
 	
 	if (!$is_table_active){
-		echo 'SlimStat table not found';
-		exit;
+		@mysql_close($db_handle);
+		exit('SlimStat table not found');
 	}
 }
 
@@ -95,8 +96,8 @@ $stat = array();
 $slimstat_options = unserialize(slimstat_get_option('slimstat_options', ''));
 
 if (empty($slimstat_options['secret'])){
-	echo 'Secret key not initialized';
-	exit;
+	@mysql_close($db_handle);
+	exit('Secret key not initialized');
 }
 
 // Blog URL detection
@@ -105,16 +106,16 @@ if (empty($site_url)) $site_url = slimstat_get_option('siteurl');
 if (empty($site_url)) $site_url = $_SERVER['HTTP_HOST'];
 
 // This request is not coming from the same domain
-//if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
-//	echo 'Invalid referer';
-//	exit;
-//}
+if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
+	@mysql_close($db_handle);
+	exit('HTTP_REFERER is not valid');
+}
 
 // Is the ID valid?
 $stat['id'] = empty($_GET['id'])?0:base_convert($_GET['id'], 16, 10);
 if (empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id'].$slimstat_options['secret'])))){
-	echo 'Invalid key';
-	exit;
+	@mysql_close($db_handle);
+	exit('Key is not valid');
 }
 
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
@@ -133,36 +134,36 @@ if (!empty($stat['outbound_resource']) && $stat['type'] >= 0){
 	$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
 	
 	$insert_new_outbound_sql = "
-INSERT INTO `{$multisite_table_prefix}slim_outbound` ( `" . implode( "`, `", array_keys( $stat ) ) . "` )
+INSERT INTO {$multisite_table_prefix}slim_outbound ( " . implode( ", ", array_keys( $stat ) ) . " )
 	SELECT '" . implode( "', '", array_values( $stat ) ) . "'
 	FROM DUAL
 		WHERE NOT EXISTS (
-			SELECT `outbound_id`
-			FROM `{$multisite_table_prefix}slim_outbound`
+			SELECT outbound_id
+			FROM {$multisite_table_prefix}slim_outbound
 			WHERE ";
 	foreach ($stat as $a_key => $a_value) {
-		$insert_new_outbound_sql .= "`$a_key` = '$a_value'" . (($a_key != 'dt')?" AND ":" LIMIT 1 ");
+		$insert_new_outbound_sql .= "$a_key = '$a_value'" . (($a_key != 'dt')?" AND ":" LIMIT 1 ");
 	}
 	$insert_new_outbound_sql .= ")";
 
 	@mysql_query($insert_new_outbound_sql);
 	@mysql_close($db_handle);
-	exit;
+	exit(0);
 }
-$stat['plugins'] = (!empty($_GET['pl']))?mysql_real_escape_string(substr(str_replace('|', ', ', $_GET['pl']), 0, -2)):'';
+$stat['plugins'] = (!empty($_GET['pl']))?mysql_real_escape_string(substr(str_replace('|', ',', $_GET['pl']), 0, -1)):'';
 $screenres['resolution'] = (!empty($_GET['sw']) && !empty($_GET['sh']))?mysql_real_escape_string( $_GET['sw'].'x'.$_GET['sh'] ):'';
 $screenres['colordepth'] = (!empty($_GET['cd']))?mysql_real_escape_string( $_GET['cd'] ):'';
 $screenres['antialias'] = (!empty($_GET['aa']) && $_GET['aa']=='1')?'1':'0';
 
 // Now we insert the new screen resolution in the lookup table, if it doesn't exist
-$select_sql = "SELECT `screenres_id`
-				FROM `{$table_prefix}slim_screenres`
-				WHERE `resolution` = '{$screenres['resolution']}' AND `colordepth` = '{$screenres['colordepth']}' AND `antialias` = {$screenres['antialias']}
+$select_sql = "SELECT screenres_id
+				FROM {$table_prefix}slim_screenres
+				WHERE resolution = '{$screenres['resolution']}' AND colordepth = '{$screenres['colordepth']}' AND antialias = {$screenres['antialias']}
 				LIMIT 1";
 
 $stat['screenres_id'] = slimstat_get_var($select_sql);
 if ( empty($stat['screenres_id']) ) {
-	$insert_sql = "INSERT INTO `{$table_prefix}slim_screenres` ( `" . implode( "`, `", array_keys( $screenres ) ) . "` )
+	$insert_sql = "INSERT INTO {$table_prefix}slim_screenres ( " . implode( ", ", array_keys( $screenres ) ) . " )
 					SELECT '" . implode( "', '", array_values( $screenres ) ) . "'
 					FROM DUAL
 					WHERE NOT EXISTS ( $select_sql )";
@@ -200,11 +201,12 @@ $update_sql = "UPDATE {$multisite_table_prefix}slim_stats
 
 @mysql_query($update_sql);
 @mysql_close($db_handle);
+exit(0);
 
 function slimstat_get_option($_option_name = '', $_default_value = '') {
 	global $multisite_table_prefix;
 	
-	$resource = @mysql_query("SELECT `option_value` FROM `{$multisite_table_prefix}options` WHERE `option_name` = '{$_option_name}'");
+	$resource = @mysql_query("SELECT option_value FROM {$multisite_table_prefix}options WHERE option_name = '{$_option_name}'");
 	
 	$result = @mysql_fetch_assoc($resource);
 	if (!empty($result['option_value']))

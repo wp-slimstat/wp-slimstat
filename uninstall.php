@@ -14,9 +14,11 @@ function uninstall(){
 	// Goodbye data...
 	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_stats");
 	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_outbound");
+	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_content_info");
 
 	// Goodbye options...
 	delete_option('slimstat_options');
+	$wpdb->query("DELETE FROM {$wpdb->prefix}usermeta WHERE meta_key LIKE '%wp-slimstat%'");
 
 	// Remove scheduled autopurge events
 	wp_clear_scheduled_hook('wp_slimstat_purge');
