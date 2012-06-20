@@ -237,7 +237,7 @@ class wp_slimstat_boxes{
 	public static function box_header($_id = 'p0', $_tooltip = '', $_postbox_class = '', $_more = false, $_inside_class = '', $_title = ''){
 		echo "<div class='postbox $_postbox_class' id='$_id'".(in_array($_id, self::$hidden_boxes)?' style="display:none"':'').'>';
 		if (!empty($_tooltip)) echo "<span class='box-help' title='$_tooltip'></span>";
-		if ($_more) echo '<a class="more" href="javascript:;"></a>';
+		//if ($_more) echo '<a class="more" href="javascript:;"></a>';
 		echo "<h3 class='hndle'>".(!empty($_title)?$_title:self::$all_boxes_titles[$_id])."</h3><div class='inside $_inside_class'>";
 	}
 
