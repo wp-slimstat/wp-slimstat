@@ -25,7 +25,7 @@ class wp_slimstat_boxes{
 	public static function init(){
 		self::$current_screen = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 		self::$current_screen_url = wp_slimstat_admin::$admin_url.self::$current_screen;
-		self::$ip_lookup_url = wp_slimstat::$options['ip_lookup_service'];
+		self::$ip_lookup_url = !empty(wp_slimstat::$options['ip_lookup_service'])?wp_slimstat::$options['ip_lookup_service']:'http://www.maxmind.com/app/lookup_city?ips=';
 		self::$plugin_url = plugins_url('', dirname(__FILE__));
 		self::$home_url = home_url();
 		self::$meta_box_order_nonce = wp_create_nonce('meta-box-order');
@@ -343,7 +343,7 @@ class wp_slimstat_boxes{
 				$element_value = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat-view').'" href="'.$element_url.'"></a>'.$element_value;
 			}
 			if (!empty($results[$i]['ip']))
-				$element_title .= '<br><a target="_blank" title="WHOIS: '.$results[$i]['ip'].'" class="whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a> IP: <a title="'.sprintf(__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip']).'" href="'.self::fs_url('ip', $results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
+				$element_title .= '<br><a target="_blank" title="WHOIS: '.$results[$i]['ip'].'" class="whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a> IP: <a title="'.sprintf(__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip']).'" href="'.self::fs_url('ip', $results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
 
 			echo "<p title='$element_title'>$element_value$percentage</p>";
 		}
@@ -420,7 +420,7 @@ class wp_slimstat_boxes{
 					$host_by_ip = "<a class='highlight-user' href='".self::fs_url('user', $results[$i]['user'])."'>{$results[$i]['user']}</a>";
 					$highlight_row = ' is-known-user';
 				}
-				$host_by_ip = "<a class='whois' href='".wp_slimstat::$options['ip_lookup_service']."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
+				$host_by_ip = "<a class='whois' href='".self::$ip_lookup_url."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
 				$country = ($results[$i]['country'] != 'xx')?__('c-'.$results[$i]['country'], 'countries-languages'):'';
 				$other_ip_tag = !empty($results[$i]['other_ip'])?" <span><a href='".self::fs_url('other_ip', $results[$i]['other_ip'])."'>{$results[$i]['other_ip']}</a></span>":'';
 		

@@ -113,9 +113,9 @@ class wp_slimstat_admin{
 				referer VARCHAR(2048) DEFAULT '',
 				searchterms VARCHAR(2048) DEFAULT '',
 				resource VARCHAR(2048) DEFAULT '',
-				browser_id SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-				screenres_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
-				content_info_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+				browser_id SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+				screenres_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 1,
+				content_info_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 1,
 				plugins VARCHAR(255) DEFAULT '',
 				notes VARCHAR(512) DEFAULT '',
 				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
@@ -179,23 +179,23 @@ class wp_slimstat_admin{
 			)$use_innodb";
 
 		// Ok, let's create the table structure
-		if ($success = self::_create_table($country_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_countries')){
-			$success = $success && self::import_countries();
-		}
-		$success = $success && self::_create_table($browsers_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_browsers');
-		$success = $success && self::_create_table($screen_res_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_screenres');
-		$success = $success && self::_create_table($content_info_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_content_info');
-		$success = $success && self::_create_table($outbound_table_sql, $GLOBALS['wpdb']->prefix.'slim_outbound');
-		$success = $success && self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats');
+		self::_create_table($country_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_countries');
+		self::import_countries();
+
+		self::_create_table($browsers_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_browsers');
+		self::_create_table($screen_res_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_screenres');
+		self::_create_table($content_info_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_content_info');
+		self::_create_table($outbound_table_sql, $GLOBALS['wpdb']->prefix.'slim_outbound');
+		self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats');
 
 		// Schedule the autopurge hook
-		if ($success && !wp_next_scheduled('wp_slimstat_purge'))
+		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
 
 		// If this function hasn't been called during the upgrade process, make sure to update all the options
 		if ($_activate) self::update_tables_and_options(true);
 
-		return $success;
+		return true;
 	}
 	// end init_environment
 
@@ -325,6 +325,14 @@ class wp_slimstat_admin{
 		if (!$position_exists) // added in 2.8.1
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ADD COLUMN position VARCHAR(32) DEFAULT '' AFTER notes");
 		// END: WP_SLIM_OUTBOUND
+		
+		// WP_SLIM_CONTENT_INFO
+		$count_content_info = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info");
+		if ($count_content_info == 0){
+			$GLOBALS['wpdb']->query("INSERT INTO {$GLOBALS['wpdb']->base_prefix}slim_content_info (author) VALUES ('admin')");
+		}
+		$GLOBALS['wpdb']->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET content_info_id = 1 WHERE content_info_id = 0");
+		// END: WP_SLIM_CONTENT_INFO
 
 		// Options are kept in a single array, starting from version 2.7
 		if (get_option('slimstat_secret', 'still there?') != 'still there?'){
@@ -707,7 +715,6 @@ class wp_slimstat_admin{
 	 * Creates a table in the database
 	 */
 	protected static function _create_table($_sql = '', $_tablename = ''){
-file_put_contents('c:\wamp\www\aaa.txt', "$_sql\n\n", FILE_APPEND);
 		$GLOBALS['wpdb']->query($_sql);
 
 		// Let's make sure this table was actually created

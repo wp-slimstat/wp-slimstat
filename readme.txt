@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.4
-Stable tag: 2.8.1
+Stable tag: 2.8.2
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -61,6 +61,11 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 6. If you're blocking access to your `wp-content` folder, move `wp-slimstat-js.php` to a different folder, and edit its first line of code to let WP SlimStat know where your `wp-config.php` is
 
 == Frequently Asked Questions ==
+
+= I'm very surprised by is the discrepancies between Google Analytics, Jetpack Stats and Slimstat. Might you have any idea why this might be occurring? =
+Both Jetpack and GA use Javascript to track visitors. All the other pageviews are ignored, because search engines and other crawlers don't execute that client-side code.
+
+WP SlimStat has a server-side tracking engine, which can capture ALL of your visitors, both 'humans' and 'bots'. That's the main reason why you may see more (some times much more) traffic recorded by WP SlimStat. 
 
 = What do all those filters in the dropdown menu mean? =
 * `browser`: user agent (Firefox, Chrome, ...)
@@ -301,6 +306,11 @@ PRIMARY KEY (outbound_id)`
 * Add "internal" stats about your blog: post count, comments per post, table sizes, etc
 * Javascript-based tracking functionality (a-la Google Analytics), that plays nicely with W3 Total Cache & co.
 * Antiflood monitor and database monitor
+
+= 2.8.2 =
+* Fixed: empty Right Now screen reported by some users
+* Fixed: Javascript error on Dashboard Widgets (thank you [astereo](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-dash-widgets-js-issue?replies=6#post-2917386))
+* Fixed: in some specific cases, the IP Lookup URL was not initialized
 
 = 2.8.1 =
 * Added: new filters

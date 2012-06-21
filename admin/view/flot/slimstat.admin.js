@@ -99,29 +99,23 @@ jQuery(document).ready(function(){
 	});
 	
 
-	
-	jQuery('#more-dialog').dialog({
-		modal : true,
-		autoOpen : false,
-		closeOnEscape : true,
-		draggable : false,
-		open: function(){
-            jQuery('.ui-widget-overlay').bind('click',function(){
-                jQuery('#more-dialog').dialog('close');
-            })
-        },
-		resizable : false,
-		width : '760'
-//		'buttons'       : {
-//			"Close": function() {
-//				jQuery(this).dialog('close');
-//			}
-//		}
-	});
-	jQuery('.more').click(function(event) {
-		event.preventDefault();
-		jQuery('#more-dialog').dialog('open');
-	});
-	
-	
+	if (typeof jQuery('#more-dialog').dialog == 'function'){
+		jQuery('#more-dialog').dialog({
+			modal : true,
+			autoOpen : false,
+			closeOnEscape : true,
+			draggable : false,
+			open: function(){
+				jQuery('.ui-widget-overlay').bind('click',function(){
+					jQuery('#more-dialog').dialog('close');
+				})
+			},
+			resizable : false,
+			width : '760'
+		});
+		jQuery('.more').click(function(event) {
+			event.preventDefault();
+			jQuery('#more-dialog').dialog('open');
+		});
+	}	
 });

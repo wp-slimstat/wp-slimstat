@@ -68,7 +68,7 @@ for($i=0;$i<$count_results;$i++){
 			$ip_address .= " <a title='".sprintf(__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip'])."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('ip', $results[$i]['ip'])."'>({$results[$i]['ip']})</a>";
 			$highlight_row = ' is-known-user';
 		}
-		$ip_address = "<a class='whois16 image' href='".wp_slimstat::$options['ip_lookup_service']."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $ip_address";
+		if (!empty(wp_slimstat::$options['ip_lookup_service'])) $ip_address = "<a class='whois16 image' href='".wp_slimstat::$options['ip_lookup_service']."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $ip_address";
 		$other_ip_address = '';
 		if (!empty($results[$i]['other_ip'])){
 			$results[$i]['other_ip'] = long2ip($results[$i]['other_ip']);
