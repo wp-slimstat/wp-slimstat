@@ -147,7 +147,7 @@ Then let WP SlimStat know about it:
 Save your file as `my_custom_report.php` and then [follow these instructions](http://codex.wordpress.org/Writing_a_Plugin#Standard_Plugin_Information) on how to make a plugin out of that file.
 
 = Can I disable outbound link tracking on a given link? =
-Yes. This is useful if you notice that, after clicking on a Lightbox-powered thumbnail, the image doesn't open inside the popup window as expected.
+Yes, you can. This is useful if you notice that, after clicking on a Lightbox-powered thumbnail, the image doesn't open inside the popup window as expected.
 Let's say you have a link associated to Lightbox (or one of its clones):
 
 `<a href="/wp-slimstat">Open Image in LightBox</a>`
