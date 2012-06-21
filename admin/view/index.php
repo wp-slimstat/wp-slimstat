@@ -55,7 +55,7 @@ echo '</script>';
 				<option value="notes"><?php _e('Pageview Attributes','wp-slimstat-view') ?></option>
 				<option value="author"><?php _e('Post Author','wp-slimstat-view') ?></option>
 				<option value="category"><?php _e('Post Category ID','wp-slimstat-view') ?></option>
-				<option value="other_ip"><?php _e('Private IP','wp-slimstat-view') ?></option>
+				<option value="other_ip"><?php _e('Originating IP','wp-slimstat-view') ?></option>
 				<option value="content_type"><?php _e('Resource Content Type','wp-slimstat-view') ?></option>
 				<option value="resolution"><?php _e('Screen Resolution','wp-slimstat-view') ?></option>
 				<option value="visit_id"><?php _e('Visit ID','wp-slimstat-view') ?></option>

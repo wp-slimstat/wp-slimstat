@@ -72,7 +72,7 @@ for($i=0;$i<$count_results;$i++){
 		$other_ip_address = '';
 		if (!empty($results[$i]['other_ip'])){
 			$results[$i]['other_ip'] = long2ip($results[$i]['other_ip']);
-			$other_ip_address = "<a class='text-filter' title='".sprintf(__('Filter results where private IP equals %s','wp-slimstat-view'), $results[$i]['other_ip'])."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('other_ip', $results[$i]['other_ip'])."'>(".__('Private IP','wp-slimstat-view').": {$results[$i]['other_ip']})</a>";
+			$other_ip_address = "<a class='text-filter' title='".sprintf(__("Filter results where ther user's real IP equals %s",'wp-slimstat-view'), $results[$i]['other_ip'])."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('other_ip', $results[$i]['other_ip'])."'>(".__('Originating IP','wp-slimstat-view').": {$results[$i]['other_ip']})</a>";
 		}
 		
 		// Country
