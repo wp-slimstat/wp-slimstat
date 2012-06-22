@@ -187,13 +187,13 @@ class wp_slimstat_boxes{
 		if (!is_array($_operators)) $_operators = array($_operators);
 		
 		$new_filters_string = urldecode(self::$filters_string);
+		$new_filters_string = preg_replace("/starting\s[^|]+\|/i", '', $new_filters_string);
 		
 		foreach ($_keys as $idx => $a_key){
-			if ($_values[$idx]!== '0' && empty($_values[$idx]) && $_operators[$idx] != 'is_empty' && $_operators[$idx] != 'is_not_empty')
-				$new_filters_string = preg_replace("/([^_]?)$a_key [^\|]+\|/i", '$1', $new_filters_string, -1, $count);
-			else{
+			$new_filters_string = preg_replace("/(?<!_)$a_key [^|]+\|/i", '', $new_filters_string);
+			if ($_values[$idx] === '0' || !empty($_values[$idx]) || $_operators[$idx] == 'is_empty' || $_operators[$idx] == 'is_not_empty'){
 				$_operators[$idx] = empty($_operators[$idx])?'equals':$_operators[$idx];
-				$new_filters_string = preg_replace("/([^_]?)$a_key [^\|]+\|/i", '$1', $new_filters_string)."$a_key {$_operators[$idx]} {$_values[$idx]}|";
+				$new_filters_string .= "$a_key {$_operators[$idx]} {$_values[$idx]}|";
 			}
 		}
 		return urlencode($new_filters_string);
