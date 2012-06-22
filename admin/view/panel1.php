@@ -3,7 +3,7 @@
 if (!function_exists('add_action')) exit(0);
 
 // Available icons
-$supported_browser_icons = array('Android','Anonymouse','BlackBerry','CFNetwork','Chrome','Chromium','Default Browser','FacebookExternalHit','FeedBurner','Feedfetcher-Google','Firefox','Googlebot','Google Web Preview','IE','IEMobile','iPad','iPhone','iPod Touch','Maxthon','Mediapartners-Google','Mozilla','NewsGatorOnline','Netscape','Nokia','Opera','Opera Mini','Opera Mobi','Safari','WordPress');
+$supported_browser_icons = array('Android','Anonymouse','Baiduspider','BlackBerry','BingBot','CFNetwork','Chrome','Chromium','Default Browser','Exabot/BiggerBetter','FacebookExternalHit','FeedBurner','Feedfetcher-Google','Firefox','Googlebot','Google Web Preview','IE','IEMobile','iPad','iPhone','iPod Touch','Maxthon','Mediapartners-Google','msnbot','Mozilla','NewsGatorOnline','Netscape','Nokia','Opera','Opera Mini','Opera Mobi','Safari','WordPress','Yahoo! Slurp','YandexBot');
 $supported_os_icons = array('android','Android','blackberry os','iphone osx','ios','java','linux','macosx','symbianos','win7','Win7','winvista','winxp','unknown');
 
 // Retrieve results

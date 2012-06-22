@@ -24,8 +24,10 @@ echo '</script>';
 	<div id="analytics-icon" class="icon32"></div>
 	<h2>WP SlimStat</h2>
 	<p class="nav-tabs"><?php
+		$filters_no_starting = wp_slimstat_boxes::replace_query_arg('starting');
+		if (!empty($filters_no_starting)) $filters_no_starting .= '&fs=';
 		foreach($array_screens as $a_panel_id => $a_panel_name){
-			echo "<a class='nav-tab nav-tab".((wp_slimstat_boxes::$current_screen == $a_panel_id+1)?'-active':'-inactive')."' href='".wp_slimstat_admin::$admin_url.($a_panel_id+1).(!empty(wp_slimstat_boxes::$filters_string)?'&amp;fs='.wp_slimstat_boxes::$filters_string:'')."'>$a_panel_name</a>";
+			echo "<a class='nav-tab nav-tab".((wp_slimstat_boxes::$current_screen == $a_panel_id+1)?'-active':'-inactive')."' href='".wp_slimstat_admin::$admin_url.($a_panel_id+1).$filters_no_starting."'>$a_panel_name</a>";
 		} ?>
 	</p>
 	
