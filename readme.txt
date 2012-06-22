@@ -62,12 +62,16 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 
 == Frequently Asked Questions ==
 
-= I'm very surprised by is the discrepancies between Google Analytics, Jetpack Stats and Slimstat. Might you have any idea why this might be occurring? =
+= I'm very surprised by the discrepancies between Google Analytics, Jetpack Stats and Slimstat. Why is that? =
 Both Jetpack and GA use Javascript to track visitors. All the other pageviews are ignored, because search engines and other crawlers don't execute that client-side code.
 
-WP SlimStat has a server-side tracking engine, which can capture ALL of your visitors, both 'humans' and 'bots'. That's the main reason why you may see more (some times much more) traffic recorded by WP SlimStat. 
+WP SlimStat, on the other side, has a server-based tracking engine, which can capture *all* of your visitors, both 'humans' and 'bots'. That's the main reason why you may see more (some times much more) traffic recorded by WP SlimStat. 
 
-= What do all those filters in the dropdown menu mean? =
+= How do I use all those filters in the dropdown menu? =
+Here's a brief description of their meaning. Please remember that you can access the same information directly from within the admin, by 'pulling' the Help tab that should appear in the top right hand corner.
+
+Basic filters:
+
 * `browser`: user agent (Firefox, Chrome, ...)
 * `country code`: 2-letter code (us, ru, de, it, ...)
 * `referring domain`: domain name of the referrer page (i.e., www.google.com if a visitor was coming from Google)
@@ -95,7 +99,7 @@ Advanced filters:
 * `visit id`: generally used in conjunction with 'is not empty', identifies human visitors
 
 = Can I track clicks and other events happening on the page? =
-Yes, this plugin includes a Javascript function that can be attached to any event: click, mouseover, focus, keypress, etc. Here's the syntax:
+Yes, you can. This plugin includes a Javascript function that can be attached to any event: click, mouseover, focus, keypress, etc. Here's the syntax:
 
 `ss_track(e, c, n)`
 
@@ -174,20 +178,20 @@ Go to Settings > SlimStat > Filters and set "Ignore Spammers" to YES.
 Go to Settings > SlimStat > General and set "Activate tracking" to NO.
 
 = Can I add/show reports on my website? =
-WP SlimStat has two ways of displaying its reports on your website. Including filters!
+Yes, you can. WP SlimStat offers two ways of displaying its reports on your website.
 
-*Shortcodes*
+*Via shortcodes*
 
 Please download and install [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) to enable shortcode support in WP SlimStat.
 
-*Direct access*
+*Using the API*
 
 You will need to edit your template and add something like this where you want your metrics to appear:
 
-`// Load WP SlimStat VIEW, the library with all the metrics
+`// Load WP SlimStat DB, the API library exposing all the reports
 require_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/view/wp-slimstat-db.php');
 
-// Initialize the API with the following filter: show only hits by people who where using Firefox, any version
+// Initialize the API. You can pass a filter in the options, i.e. show only hits by people who where using Firefox, any version
 wp_slimstat_db::init('browser contains Firefox');
 
 // Use the appropriate method to display your stats
