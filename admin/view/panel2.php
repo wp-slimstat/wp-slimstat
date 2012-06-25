@@ -55,7 +55,7 @@ foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 			break;
 		case 'slim_p1_10':
 			wp_slimstat_boxes::box_header('slim_p1_10', '', '', true);
-			wp_slimstat_boxes::show_results('popular_complete', 'slim_p1_10', 'domain', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""')));
+			wp_slimstat_boxes::show_results('popular_complete', 'slim_p1_10', 'domain', array('total_for_percentage' => wp_slimstat_db::count_records('t1.domain <> "" AND t1.domain <> "'.wp_slimstat_boxes::$home_url_parsed['host'].'"'), 'custom_where' => 't1.domain <> "" AND t1.domain <> "'.wp_slimstat_boxes::$home_url_parsed['host'].'"'));
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_11':

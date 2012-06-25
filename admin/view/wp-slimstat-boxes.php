@@ -9,6 +9,7 @@ class wp_slimstat_boxes{
 	public static $ip_lookup_url = '';
 	public static $plugin_url = '';
 	public static $home_url = '';
+	public static $home_url_parsed = '';
 	public static $meta_box_order_nonce = '';
 
 	// Tab panels drag-and-drop functionality
@@ -28,6 +29,7 @@ class wp_slimstat_boxes{
 		self::$ip_lookup_url = !empty(wp_slimstat::$options['ip_lookup_service'])?wp_slimstat::$options['ip_lookup_service']:'http://www.maxmind.com/app/lookup_city?ips=';
 		self::$plugin_url = plugins_url('', dirname(__FILE__));
 		self::$home_url = home_url();
+		self::$home_url_parsed = parse_url(self::$home_url);
 		self::$meta_box_order_nonce = wp_create_nonce('meta-box-order');
 
 		// Retrieve the order of this tab's panels and which ones are hidden
@@ -289,6 +291,10 @@ class wp_slimstat_boxes{
 						$element_value = '';
 						foreach ($cat_ids as $a_cat_id){
 							$cat_name = get_cat_name($a_cat_id);
+							if (empty($cat_name)) {
+								$tag = get_term($a_cat_id, 'post_tag');
+								if (!empty($tag)) $cat_name = $tag->name;
+							}
 							$element_value .= ', '.(!empty($cat_name)?$cat_name:$a_cat_id);
 						}
 						$element_value = substr($element_value, 2);
@@ -319,6 +325,9 @@ class wp_slimstat_boxes{
 					if ($post_id > 0){
 						$element_title = "<br>{$results[$i]['resource']}";
 						$element_value = get_the_title($post_id);
+					}
+					else{
+						$element_value = rawurldecode($results[$i]['resource']);
 					}
 					break;
 				default:
@@ -408,7 +417,7 @@ class wp_slimstat_boxes{
 				$results[$i]['resource'] = __('Search for','wp-slimstat-view').': '.$results[$i]['searchterms'];
 			}
 			if (!empty($results[$i]['resource']) && $_type == 0){
-				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat-view').'" href="'.$results[$i]['resource'].'"></a> '.$results[$i]['resource'];
+				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat-view').'" href="'.$results[$i]['resource'].'"></a> '.rawurldecode($results[$i]['resource']);
 			}
 
 			if ($visit_id != $results[$i]['visit_id']){
@@ -648,7 +657,7 @@ class wp_slimstat_boxes{
 			<p><?php self::inline_help(htmlspecialchars(__('A request to load a single HTML file. WP SlimStat logs a "pageview" each time the tracking code is executed.','wp-slimstat-view'), ENT_QUOTES)) ?>
 				<?php _e('Pageviews', 'wp-slimstat-view') ?> <span><?php echo number_format($_current_pageviews, 0, wp_slimstat_db::$decimal_separator, wp_slimstat_db::$thousand_separator) ?></span></p>
 			<p><?php self::inline_help(htmlspecialchars(__('This counter is based on any user activity in the last 5 minutes.','wp-slimstat-view'), ENT_QUOTES)) ?>
-				<?php _e('Last 5 minutes', 'wp-slimstat-view') ?> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt > UNIX_TIMESTAMP()-300', '*', false), 0, wp_slimstat_db::$decimal_separator, wp_slimstat_db::$thousand_separator) ?></span></p>
+				<?php _e('Last 5 minutes', 'wp-slimstat-view') ?> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt > UNIX_TIMESTAMP()-300'), 0, wp_slimstat_db::$decimal_separator, wp_slimstat_db::$thousand_separator) ?></span></p>
 			<p><?php self::inline_help(htmlspecialchars(__('How many pages have been visited on average during the current period.','wp-slimstat-view'), ENT_QUOTES)) ?>
 				<?php _e('Avg Pageviews', 'wp-slimstat-view') ?> <span><?php echo number_format(($_chart_data->current_non_zero_count > 0)?intval($_current_pageviews/$_chart_data->current_non_zero_count):0, 0, wp_slimstat_db::$decimal_separator, wp_slimstat_db::$thousand_separator) ?></span></p>
 			<p><?php self::inline_help(htmlspecialchars(__('A bot is a program that operates as an agent for a user or another program or simulates a human activity. Browsers with Javascript disabled (but whose user agent is legit) are not considered <em>bots</em>.','wp-slimstat-view'), ENT_QUOTES)) ?>
