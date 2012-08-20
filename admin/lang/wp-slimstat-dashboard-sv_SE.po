@@ -1,0 +1,75 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slimstat Dashboard\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-20 11:32-0500\n"
+"PO-Revision-Date: 2012-06-20 11:32-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: ZebEl of Sweden\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
+"X-Poedit-Language: Swedish\n"
+"X-Poedit-Country: SWEDEN\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Pageviews"
+msgstr "Sidvisningar"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Unique IPs"
+msgstr "Unika IP-adresser"
+
+#~ msgid "No data to display"
+#~ msgstr "Ingen data att visa"
+
+#~ msgid "Last"
+#~ msgstr "Sista"
+
+#~ msgid "Open %s in a new window"
+#~ msgstr "Öppna %s i ett nytt fönster"
+
+#~ msgid "Search for"
+#~ msgstr "Sök efter"
+
+#~ msgid "c-"
+#~ msgstr "c-"
+
+#~ msgid "Direct visit to"
+#~ msgstr "Direkt besök till"
+
+#~ msgid "Bots"
+#~ msgstr "Robotar"
+
+#~ msgid "Avg Pageviews"
+#~ msgstr "Sidvisningar i genomsnitt"
+
+#~ msgid "On"
+#~ msgstr "På"
+
+#~ msgid "Last Month"
+#~ msgstr "Förra Månaden"
+
+#~ msgid "Hits"
+#~ msgstr "Träffar"
+
+#~ msgid "Top pages for this month"
+#~ msgstr "Sidor i topp för denna månad"
+
+#~ msgid "Spy View"
+#~ msgstr "Spion Vy"
+
+#~ msgid "Summary for this month"
+#~ msgstr "Sammanfattning för denna månad"
+
+#~ msgid "User Agents"
+#~ msgstr "Användaragent"
+
+#~ msgid "Recent Keywords"
+#~ msgstr "Senaste Nyckelord"
