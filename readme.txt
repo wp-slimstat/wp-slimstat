@@ -64,10 +64,10 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 == Frequently Asked Questions ==
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
-Try [increasing the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. WP SlimStat requires about 3.5 Mb of RAM to track a pageview.
+Try [increasing the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. WP SlimStat requires about 5 Mb of RAM to track a pageview.
 
 = When trying to access amy of the SlimStat options in the backend, I get the following error: You do not have sufficient permissions to access this page. =
-You were playing with the plugin's permission settings, weren't you? But don't worry, there's a secret passage that will allow you to unlock your access. Create a new user `slimstatadmin`, and assign him the Administrator role. Then log into your WordPress admin area with the new user and... voilà: you can now access WP SlimStat's settings again. Update your users' permissions and then get rid of this newly created user.
+You were playing with the plugin's permission settings, weren't you? But don't worry, there's a secret passage that will allow you to unlock your access. Create a new user `slimstatadmin`, and assign him the Administrator role. Then log into your WordPress admin area with the new user and... voila: you can now access WP SlimStat's settings again. Update your users' permissions and then get rid of this newly created user.
 
 = I'm very surprised by the discrepancies between Google Analytics, Jetpack Stats and Slimstat. Why is that? =
 Both Jetpack and GA use Javascript to track visitors. All the other pageviews are ignored, because search engines and other crawlers don't execute that client-side code.
