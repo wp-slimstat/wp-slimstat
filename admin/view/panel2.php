@@ -4,13 +4,13 @@ if (!function_exists('add_action')) exit(0);
 
 // Data about our visits
 $current_pageviews = wp_slimstat_db::count_records();
-$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))', __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
+$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))');
 
 foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 	switch($a_box_id){
 		case 'slim_p1_01':
-			wp_slimstat_boxes::box_header('slim_p1_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', empty(wp_slimstat_db::$day_filter_active)?__('Daily Pageviews', 'wp-slimstat-view'):__('Hourly Pageviews', 'wp-slimstat-view'));
-			wp_slimstat_boxes::show_chart('slim_p1_01', $chart_data);
+			wp_slimstat_boxes::box_header('slim_p1_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_boxes::chart_title(__('Pageviews', 'wp-slimstat-view')));
+			wp_slimstat_boxes::show_chart('slim_p1_01', $chart_data, array(__('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_02':
@@ -19,7 +19,7 @@ foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_03':
-			wp_slimstat_boxes::box_header('slim_p1_03');
+			wp_slimstat_boxes::box_header('slim_p1_03', '', '', false, 'noscroll');
 			wp_slimstat_boxes::show_overview_summary('slim_p1_03', $current_pageviews, $chart_data);
 			wp_slimstat_boxes::box_footer();
 			break;
@@ -45,7 +45,7 @@ foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 			break;
 		case 'slim_p1_08':
 			wp_slimstat_boxes::box_header('slim_p1_08', '', 'medium', true);
-			wp_slimstat_boxes::show_results('popular', 'slim_p1_08', 'resource', array('total_for_percentage' => $current_pageviews));
+			wp_slimstat_boxes::show_results('popular', 'slim_p1_08', 'SUBSTRING_INDEX(t1.resource, "?", 1)', array('total_for_percentage' => $current_pageviews, 'as_column' => ' AS resource'));
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_09':

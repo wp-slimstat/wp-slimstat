@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP SlimStat Dashboard\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-20 11:28-0500\n"
-"PO-Revision-Date: 2012-06-20 11:30-0500\n"
+"POT-Creation-Date: 2012-07-19 14:10-0500\n"
+"PO-Revision-Date: 2012-07-19 14:10-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -16,15 +16,15 @@ msgstr ""
 "Plural-Forms: s\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: wp-slimstat-dashboard.php:57
-#: wp-slimstat-dashboard.php:64
+#: wp-slimstat-dashboard.php:58
+#: wp-slimstat-dashboard.php:65
 msgid "Pageviews"
-msgstr "Seitenaufrufe"
+msgstr "Seitenzugriffe"
 
-#: wp-slimstat-dashboard.php:57
-#: wp-slimstat-dashboard.php:64
+#: wp-slimstat-dashboard.php:58
+#: wp-slimstat-dashboard.php:65
 msgid "Unique IPs"
-msgstr "eindeutige IPs"
+msgstr "eindeutige IP-Adressen"
 
 #~ msgid "No data to display"
 #~ msgstr "keine Daten vorhanden"
@@ -36,58 +36,58 @@ msgstr "eindeutige IPs"
 #~ msgstr "c-"
 
 #~ msgid "Direct visit to"
-#~ msgstr "Direkter Zugriff auf"
+#~ msgstr "Direkter Besuch von"
 
 #~ msgid "Avg Pageviews"
-#~ msgstr "durchschnittliche Zugriffe"
+#~ msgstr "Durchschn. Seitenzugriffe"
 
 #~ msgid "On"
-#~ msgstr "Am"
+#~ msgstr "am"
 
 #~ msgid "Last Month"
-#~ msgstr "im letzten Monat"
+#~ msgstr "Letzter Monat"
 
 #~ msgid "User Agents"
 #~ msgstr "Browser"
 
 #~ msgid "Recent Keywords"
-#~ msgstr "k&uuml;rzliche verwendete Schlagw&ouml;rter"
+#~ msgstr "Letzte verwendete Suchbegriffe"
 
 #~ msgid "Total Hits"
-#~ msgstr "Summe Zugriffe"
+#~ msgstr "Summe Seitenzugriffe"
 
 #~ msgid "Data Size"
-#~ msgstr "Datenbankgr&ouml;&szlig;e"
+#~ msgstr "Datenbankgr&ouml;sse"
 
 #~ msgid "Tracking Active"
-#~ msgstr "Slimstat aktiv"
+#~ msgstr "Verfolgung aktiv"
 
 #~ msgid "Auto purge"
-#~ msgstr "automatischer Reorg"
+#~ msgstr "autom. Bereinigung"
 
 #~ msgid "Open referer in a new window"
-#~ msgstr "Ziel in einem neuen Fenster &ouml;ffnen"
+#~ msgstr "Herkunft in neuem Fenster &ouml;ffnen"
 
 #~ msgid "Top 5 pages"
-#~ msgstr "Top 5"
+#~ msgstr "Top 5 Seiten"
 
 #~ msgid "Pathstats"
-#~ msgstr "DIGO TODO * Pathstats"
+#~ msgstr "Verlauf"
 
 #~ msgid "About"
 #~ msgstr "&Uuml;ber"
 
 #~ msgid "Summary of pageviews"
-#~ msgstr "Zusammenfassung Seitenaufrufe"
+#~ msgstr "Zusammenfassung der Seitenzugriffe"
 
 #~ msgid "Traffic Sources"
-#~ msgstr "Traffic-Quellen"
+#~ msgstr "Traffic-Ursprung"
 
 #~ msgid "Recent Keywords &raquo; Pages"
-#~ msgstr "aktuelle Suchw&ouml;rter &raquo; Seiten"
+#~ msgstr "Letzte Suchbegriffe &raquo; Seiten"
 
 #~ msgid "Analytics"
-#~ msgstr "Statistiche"
+#~ msgstr "Auswertungen"
 
 #~ msgid "Options"
-#~ msgstr "Opzioni"
+#~ msgstr "Optionen"

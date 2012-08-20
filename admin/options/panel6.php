@@ -6,6 +6,9 @@ if (strpos($_SERVER['SCRIPT_FILENAME'], basename(__FILE__))){
 }
 ?>
 
+<h3><?php _e("Need help?",'wp-slimstat-options') ?></h3>
+<p><?php _e("Please visit our official <a href='http://wordpress.org/support/plugin/wp-slimstat' target='_blank'>support forum</a> to see if your question has already been answered. If not, feel free to post your request there, I'll do my best to address your concerns as soon as possible.",'wp-slimstat-options') ?></p>
+
 <table class="form-table">
 <tbody>
 	<tr valign="top">
@@ -20,7 +23,7 @@ if (strpos($_SERVER['SCRIPT_FILENAME'], basename(__FILE__))){
 </table>
 
 <h3><?php _e("Don't want or cannot donate?",'wp-slimstat-options') ?></h3>
-<p><?php _e("If you cannot donate money, please consider blogging about WP SlimStat, Your visitors don't know you're using WP SlimStat! You can also contribute by donating your spare time: send me bug reports, localization files and ideas on how to improve WP SlimStat.",'wp-slimstat-options') ?></p>
+<p><?php _e("If you cannot donate money, please consider blogging about WP SlimStat, your visitors may not know you're using it! You can also contribute by donating some of your spare time: send me bug reports, localization files and ideas on how to improve WP SlimStat.",'wp-slimstat-options') ?></p>
 
 <h3><?php _e("Show your appreciation",'wp-slimstat-options') ?></h3>
 <p><?php _e('Tell other people if WP SlimStat works for you and how good it is. <a href="http://wordpress.org/extend/plugins/wp-slimstat/">Rate it</a> on its Plugin Directory page.','wp-slimstat-options') ?></p>

@@ -6,13 +6,12 @@ if (!function_exists('add_action')) exit(0);
 $current_pageviews = wp_slimstat_db::count_records();
 $total_human_hits = wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1');
 $total_human_visits = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id');
-$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(DISTINCT t1.visit_id)', 'COUNT(DISTINCT t1.ip)', __('Visits','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), 'AND (tb.type = 0 OR tb.type = 2)');
 
 foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 	switch($a_box_id){
 		case 'slim_p2_01':
-			wp_slimstat_boxes::box_header('slim_p2_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', empty(wp_slimstat_db::$day_filter_active)?__('Daily Human Visits', 'wp-slimstat-view'):__('Hourly Human Visits', 'wp-slimstat-view'));
-			wp_slimstat_boxes::show_chart('slim_p2_01', $chart_data);
+			wp_slimstat_boxes::box_header('slim_p2_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_boxes::chart_title(__('Human Visits', 'wp-slimstat-view')));
+			wp_slimstat_boxes::show_chart('slim_p2_01', wp_slimstat_db::extract_data_for_chart('COUNT(DISTINCT t1.visit_id)', 'COUNT(DISTINCT t1.ip)', 'AND (tb.type = 0 OR tb.type = 2) AND t1.visit_id <> 0'), array(__('Visits','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p2_02': 

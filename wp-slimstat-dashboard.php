@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: Monitor your visitors from your Wordpress dashboard.
-Version: 2.8.2
+Version: 2.8.3
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -40,7 +40,8 @@ class wp_slimstat_dashboard{
 	 * Attaches all the widgets to the dashboard
 	 */
 	public static function add_dashboard_widgets(){
-		if (!empty(wp_slimstat::$options['can_view']) && !in_array($GLOBALS['current_user']->user_login, wp_slimstat::$options['can_view'])) return;
+		if (!empty(wp_slimstat::$options['can_view']) && !in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_view']))) && !in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_admin']))) && !current_user_can('manage_options'))
+			return;
 
 		include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/wp-slimstat-boxes.php");
 		wp_slimstat_boxes::init();
@@ -54,8 +55,8 @@ class wp_slimstat_dashboard{
 
 	// Widget wrappers
 	public static function slim_p1_01(){
-		$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))', __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
-		wp_slimstat_boxes::show_chart('slim_p1_01', $chart_data);
+		$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))');
+		wp_slimstat_boxes::show_chart('slim_p1_01', $chart_data, array(__('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 	}	
 	public static function slim_p1_02(){
 		wp_slimstat_boxes::show_about_wpslimstat('slim_p1_02');

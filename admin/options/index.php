@@ -3,7 +3,7 @@
 if (!function_exists('add_action')) exit(0);
 
 // Load localization files
-load_plugin_textdomain('wp-slimstat-options', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
+load_plugin_textdomain('wp-slimstat-options', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 
 // Define the panels (true or false if you want the FORM wrapper around your panel)
 $array_panels = array(

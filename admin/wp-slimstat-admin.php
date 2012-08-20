@@ -25,6 +25,11 @@ class wp_slimstat_admin{
 		// Add a link to view stats to each post
 		add_filter('post_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
 
+		// Remove spammers from the database
+		if (wp_slimstat::$options['ignore_spammers'] == 'yes'){
+			add_action('transition_comment_status', array(__CLASS__, 'remove_spam'), 15, 3);
+		}
+
 		if (function_exists('is_network_admin') && !is_network_admin()){
 			// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
 			add_action('admin_menu', array(__CLASS__, 'wp_slimstat_add_view_menu'));
@@ -330,8 +335,8 @@ class wp_slimstat_admin{
 		$count_content_info = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info");
 		if ($count_content_info == 0){
 			$GLOBALS['wpdb']->query("INSERT INTO {$GLOBALS['wpdb']->base_prefix}slim_content_info (author) VALUES ('admin')");
+			$GLOBALS['wpdb']->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET content_info_id = 1 WHERE content_info_id = 0");
 		}
-		$GLOBALS['wpdb']->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET content_info_id = 1 WHERE content_info_id = 0");
 		// END: WP_SLIM_CONTENT_INFO
 
 		// Options are kept in a single array, starting from version 2.7
@@ -373,15 +378,37 @@ class wp_slimstat_admin{
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
-			self::update_option('version', wp_slimstat::$version, 'string');
+			self::update_option('version', wp_slimstat::$version, 'text');
 		}
 		
 		// Options added and changed in 2.8.1
 		if (!isset(wp_slimstat::$options['anonymize_ip'])){
 			self::update_option('anonymize_ip', 'no', 'yesno');
 		}
-		self::update_option('custom_js_path', str_replace(home_url(), '', wp_slimstat::$options['custom_js_path']), 'text');
+		if (version_compare(wp_slimstat::$options['version'], '2.8.1', '<'))
+			self::update_option('custom_js_path', str_replace(home_url(), '', wp_slimstat::$options['custom_js_path']), 'text');
 
+		// Starting from 2.8.3 lists (i.e., users who can view the reports) are saved as plain text, not arrays
+		if (version_compare(wp_slimstat::$options['version'], '2.8.3', '<')){
+			self::update_option('ignore_ip', implode(', ', wp_slimstat::$options['ignore_ip']));
+			self::update_option('ignore_countries', implode(', ', wp_slimstat::$options['ignore_countries']));
+			self::update_option('ignore_resources', implode(', ', wp_slimstat::$options['ignore_resources']));
+			self::update_option('ignore_referers', implode(', ', wp_slimstat::$options['ignore_referers']));
+			self::update_option('ignore_browsers', implode(', ', wp_slimstat::$options['ignore_browsers']));
+			self::update_option('ignore_users', implode(', ', wp_slimstat::$options['ignore_users']));
+			self::update_option('can_view', implode(', ', wp_slimstat::$options['can_view']));
+			self::update_option('can_admin', implode(', ', wp_slimstat::$options['can_admin']));
+		}
+		// New options added in 2.8.3
+		if (!isset(wp_slimstat::$options['ignore_capabilities'])){
+			self::update_option('ignore_capabilities', '', 'text');
+		}
+		if (!isset(wp_slimstat::$options['enable_cdn'])){
+			self::update_option('enable_cdn', 'no', 'yesno');
+		}
+		if (!isset(wp_slimstat::$options['markings'])){
+			self::update_option('markings', '', 'text');
+		}
 
 		return true;
 	}
@@ -390,20 +417,12 @@ class wp_slimstat_admin{
 	/**
 	 * Updates the array of options and stores the new values in the database
 	 */
-	public static function update_option($_option = 'undefined', $_value = '', $_type = 'string'){
+	public static function update_option($_option = 'undefined', $_value = '', $_type = 'text'){
 		// Is there anything we need to update?
-		if (isset(wp_slimstat::$options[$_option]) && 
-			(($_type != 'list' && wp_slimstat::$options[$_option] == $_value) || ($_type == 'list' && implode(',', wp_slimstat::$options[$_option]) == $_value))) return true;
+
+		if (isset(wp_slimstat::$options[$_option]) && wp_slimstat::$options[$_option] == $_value) return true;
 
 		switch($_type){
-			case 'list':
-				// Avoid XSS attacks
-				$clean_value = preg_replace('/[^a-zA-Z0-9\,\.\/\ \-\?\!=&;_\*]/', '', $_value);
-				if (strlen($_value)==0)
-					wp_slimstat::$options[$_option] = array();
-				else
-					wp_slimstat::$options[$_option] = explode(',', $clean_value);
-				break;
 			case 'yesno':
 				if ($_value=='yes' || $_value=='no')
 					wp_slimstat::$options[$_option] = $_value;
@@ -475,6 +494,16 @@ class wp_slimstat_admin{
 	// end import_countries
 
 	/**
+	 * Removes 'spammers' from the database when the corresponding comments are marked as spam
+	 */
+	public static function remove_spam($_new_status = '', $_old_status = '', $_comment = ''){
+		if ($_new_status == 'spam'){
+			$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE user = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
+		}
+	}
+	// end remove_spam
+
+	/**
 	 * Loads a custom stylesheet file for the administration panels
 	 */
 	public static function wp_slimstat_stylesheet(){
@@ -496,11 +525,19 @@ class wp_slimstat_admin{
 	public static function wp_slimstat_add_view_menu($_s){
 		wp_slimstat::$options['capability_can_view'] = empty(wp_slimstat::$options['capability_can_view'])?'read':wp_slimstat::$options['capability_can_view'];
 
-		if ((empty(wp_slimstat::$options['can_view']) && wp_slimstat::$options['capability_can_view'] == 'read') || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::$options['can_view'])) || current_user_can(wp_slimstat::$options['capability_can_view'])){
-			if (wp_slimstat::$options['use_separate_menu'] == 'yes')
-				$new_entry = add_menu_page('SlimStat', 'SlimStat', wp_slimstat::$options['capability_can_view'], 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'), plugins_url('/admin/images/wp-slimstat-menu.png', dirname(__FILE__)));
+		// If the list is empty, let's use the minimum capability
+		if (empty(wp_slimstat::$options['can_view']))
+			$minimum_capability = wp_slimstat::$options['capability_can_view'];
+		else
+			$minimum_capability = 'read';
+
+		if (empty(wp_slimstat::$options['can_view']) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_view']))) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_admin']))) || current_user_can('manage_options')){
+			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options')){
+				$new_entry = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'), plugins_url('/admin/images/wp-slimstat-menu.png', dirname(__FILE__)));
+				add_submenu_page('wp-slimstat', __('Reports','wp-slimstat-view'), __('Reports','wp-slimstat-view'), $minimum_capability, 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'));
+			}
 			else
-				$new_entry = add_dashboard_page('SlimStat', 'SlimStat', wp_slimstat::$options['capability_can_view'], 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry = add_dashboard_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'));
 
 			// Load styles and Javascript needed to make the reports look nice and interactive
 			add_action('load-'.$new_entry, array(__CLASS__, 'wp_slimstat_stylesheet'));
@@ -514,7 +551,7 @@ class wp_slimstat_admin{
 	 * Adds a new entry in the admin menu, to manage SlimStat options
 	 */
 	public static function wp_slimstat_add_config_menu($_s){
-		if (empty(wp_slimstat::$options['can_admin']) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::$options['can_admin']))){
+		if (empty(wp_slimstat::$options['can_admin']) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_admin']))) || $GLOBALS['current_user']->user_login == 'slimstatadmin'){
 			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
 				add_submenu_page('wp-slimstat', __('Config','wp-slimstat-view'), __('Config','wp-slimstat-view'), 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/admin/options/index.php');
@@ -555,14 +592,15 @@ class wp_slimstat_admin{
 	 * Add a link to each post in Edit Posts, to go directly to the stats with the corresponding filter set
 	 */
 	public static function post_row_actions($_actions, $_post){
-		if (!in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::$options['can_view'])) && !current_user_can(wp_slimstat::$options['capability_can_view']))
+		if (!in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_view']))) && !current_user_can(wp_slimstat::$options['capability_can_view']))
 			return $_actions;
 
 		$parsed_permalink = parse_url( get_permalink($_post->ID) );
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes')
-			return array_merge($_actions, array('wp-slimstat' => "<a href='admin.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>".__('Stats','wp-slimstat-view')."</a>"));
+			$page = 'admin.php';
 		else
-			return array_merge($_actions, array('wp-slimstat' => "<a href='index.php?page=wp-slimstat&amp;slimpanel=1&amp;filter=resource&amp;f_operator=contains&amp;f_value={$parsed_permalink['path']}'>".__('Stats','wp-slimstat-view')."</a>"));
+			$page = 'index.php';
+		return array_merge($_actions, array('wp-slimstat' => "<a href='$page?page=wp-slimstat&amp;slimpanel=1&amp;fs=resource+contains+{$parsed_permalink['path']}%7C'>".__('Stats','wp-slimstat-view')."</a>"));
 	}
 	// end post_row_actions
 
@@ -570,7 +608,7 @@ class wp_slimstat_admin{
 	 * Adds a new column header to the Posts panel (to show the number of pageviews for each post)
 	 */
 	public static function add_column_header($_columns){
-		$_columns['wp-slimstat'] = "<img src='".plugins_url('/admin/images/stats.gif', dirname(__FILE__))."' width='17' height='12' alt='SlimStat' />";
+		$_columns['wp-slimstat'] = "<img src='".plugins_url('/admin/images/wp-slimstat-menu.png', dirname(__FILE__))."' width='16' height='16' alt='SlimStat' />";
 		return $_columns;
 	}
 	// end add_comment_column_header
@@ -647,7 +685,6 @@ class wp_slimstat_admin{
 <ul>
 <li><b>'.__('Browser','wp-slimstat-view').'</b>: '.__('User agent (Firefox, Chrome, ...)','wp-slimstat-view').'</li>
 <li><b>'.__('Country Code','wp-slimstat-view').'</b>: '.__('2-letter code (us, ru, de, it, ...)','wp-slimstat-view').'</li>
-<li><b>'.__('Referring Domain','wp-slimstat-view').'</b>: '.__('Domain name of the referrer page (i.e., www.google.com if a visitor was coming from Google)','wp-slimstat-view').'</li>
 <li><b>'.__('IP','wp-slimstat-view').'</b>: '.__('Visitor\'s public IP address','wp-slimstat-view').'</li>
 <li><b>'.__('Search Terms','wp-slimstat-view').'</b>: '.__('Keywords used by your visitors to find your website on a search engine','wp-slimstat-view').'</li>
 <li><b>'.__('Language Code','wp-slimstat-view').'</b>: '.__('Please refer to this <a target="_blank" href="http://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx">language culture page</a> (first column) for more information','wp-slimstat-view').'</li>

@@ -19,3 +19,8 @@
 #chart-legend{font-size:.95em;margin-top:5px}
 #chart-legend table{margin:5px auto}
 #chart-legend td.legendLabel{padding-right:25px}
+
+#jquery-tooltip{background-color:#ffe;border:1px solid #aab;display:none;opacity:0.95;position:absolute;padding:5px}
+#jquery-tooltip.tooltip-fixed-width{width:200px}
+#jquery-tooltip ul{margin-top:5px}
+#jquery-tooltip li{list-style-type:circle;margin-left:20px}

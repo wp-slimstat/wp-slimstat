@@ -5,13 +5,12 @@ if (!function_exists('add_action')) exit(0);
 // Data about our visits
 $current_pageviews = wp_slimstat_db::count_records();
 $count_pageviews_with_referer = wp_slimstat_db::count_records('t1.referer <> ""');
-$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(DISTINCT(`domain`))', 'COUNT(DISTINCT(ip))', __('Domains','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'), "AND domain <> '' AND domain <> '{$_SERVER['SERVER_NAME']}'");
 
 foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 	switch($a_box_id){
 		case 'slim_p3_01':
-			wp_slimstat_boxes::box_header('slim_p3_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', empty(wp_slimstat_db::$day_filter_active)?__('Daily Traffic Sources', 'wp-slimstat-view'):__('Hourly Traffic Sources', 'wp-slimstat-view'));
-			wp_slimstat_boxes::show_chart('slim_p3_01', $chart_data);
+			wp_slimstat_boxes::box_header('slim_p3_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_boxes::chart_title(__('Traffic Sources', 'wp-slimstat-view')));
+			wp_slimstat_boxes::show_chart('slim_p3_01', wp_slimstat_db::extract_data_for_chart('COUNT(DISTINCT(`domain`))', 'COUNT(DISTINCT(ip))', "AND domain <> '' AND domain <> '{$_SERVER['SERVER_NAME']}'"), array(__('Domains','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p3_02':

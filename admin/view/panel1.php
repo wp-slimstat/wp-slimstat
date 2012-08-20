@@ -4,40 +4,40 @@ if (!function_exists('add_action')) exit(0);
 
 // Available icons
 $supported_browser_icons = array('Android','Anonymouse','Baiduspider','BlackBerry','BingBot','CFNetwork','Chrome','Chromium','Default Browser','Exabot/BiggerBetter','FacebookExternalHit','FeedBurner','Feedfetcher-Google','Firefox','Googlebot','Google Feedfetcher','Google Web Preview','IE','IEMobile','iPad','iPhone','iPod Touch','Maxthon','Mediapartners-Google','msnbot','Mozilla','NewsGatorOnline','Netscape','Nokia','Opera','Opera Mini','Opera Mobi','Python','PycURL','Safari','WordPress','Yahoo! Slurp','YandexBot');
-$supported_os_icons = array('android','Android','blackberry os','iphone osx','ios','java','linux','macosx','symbianos','win7','Win7','winvista','winxp','unknown');
+$supported_os_icons = array('android','blackberry os','iphone osx','ios','java','linux','macosx','symbianos','win7','winvista','winxp','unknown');
 
 // Retrieve results
-wp_slimstat_db::$filters_parsed['limit_results'] = wp_slimstat::$options['number_results_raw_data'];
+wp_slimstat_db::$filters['parsed']['limit_results'][1] = wp_slimstat::$options['number_results_raw_data'];
 $results = wp_slimstat_db::get_recent('t1.id', '', 'tb.*,tci.*');
 
 // Pagination
 $count_raw_data = wp_slimstat_db::count_records();
 $count_results = count($results);
-$ending_point = min($count_raw_data, wp_slimstat_db::$filters_parsed['starting']+wp_slimstat_db::$filters_parsed['limit_results']);
+$ending_point = min($count_raw_data, wp_slimstat_db::$filters['parsed']['starting'][1] + wp_slimstat_db::$filters['parsed']['limit_results'][1]);
 $previous_next = '';
-if (wp_slimstat_db::$filters_parsed['starting'] - wp_slimstat_db::$filters_parsed['limit_results'] > 0){
+if (wp_slimstat_db::$filters['parsed']['starting'][1] - wp_slimstat_db::$filters['parsed']['limit_results'][1] > 0){
 	$previous_next .= '<a class="first" href="'.wp_slimstat_boxes::fs_url('starting', 0, 'equals').'"></a> ';
 }
-if (wp_slimstat_db::$filters_parsed['starting'] > 0){
-	$new_starting = (wp_slimstat_db::$filters_parsed['starting'] > wp_slimstat_db::$filters_parsed['limit_results'])?wp_slimstat_db::$filters_parsed['starting']-wp_slimstat_db::$filters_parsed['limit_results']:0;
+if (wp_slimstat_db::$filters['parsed']['starting'][1] > 0){
+	$new_starting = (wp_slimstat_db::$filters['parsed']['starting'][1] > wp_slimstat_db::$filters['parsed']['limit_results'][1])?wp_slimstat_db::$filters['parsed']['starting'][1]-wp_slimstat_db::$filters['parsed']['limit_results'][1]:0;
 	$previous_next .= '<a class="previous" href="'.wp_slimstat_boxes::fs_url('starting', $new_starting, 'equals').'"></a> ';
 }
 if ($ending_point < $count_raw_data && $count_results > 0){
-	$new_starting = wp_slimstat_db::$filters_parsed['starting'] + wp_slimstat_db::$filters_parsed['limit_results'];
+	$new_starting = wp_slimstat_db::$filters['parsed']['starting'][1] + wp_slimstat_db::$filters['parsed']['limit_results'][1];
 	$previous_next .= '<a class="next" href="'.wp_slimstat_boxes::fs_url('starting', $new_starting, 'equals').'"></a> ';
 }
-if ($ending_point + wp_slimstat_db::$filters_parsed['limit_results'] < $count_raw_data && $count_results > 0){
-	$new_starting = $count_raw_data - $count_raw_data%wp_slimstat_db::$filters_parsed['limit_results'];
+if ($ending_point + wp_slimstat_db::$filters['parsed']['limit_results'][1] < $count_raw_data && $count_results > 0){
+	$new_starting = $count_raw_data - $count_raw_data%wp_slimstat_db::$filters['parsed']['limit_results'][1];
 	$previous_next .= '<a class="last" href="'.wp_slimstat_boxes::fs_url('starting', $new_starting, 'equals').'"></a> ';
 }
 
 // Display results
-echo "<div class='postbox tall'><div class='previous-next'>$previous_next</div><h3>";
+echo "<div class='postbox tall'><div class='previous-next'>$previous_next</div><h3 class='hndle'>";
 if ($count_results == 0){
 	_e('No records found', 'wp-slimstat-view');
 }
 else {
-	echo sprintf(__('Records: %d - %d of %d. Direction: %s', 'wp-slimstat-view'), wp_slimstat_db::$filters_parsed['starting'], $ending_point, $count_raw_data, wp_slimstat_db::$filters_parsed['direction']); 
+	echo sprintf(__('Records: %d - %d of %d. Direction: %s', 'wp-slimstat-view'), wp_slimstat_db::$filters['parsed']['starting'][1], $ending_point, $count_raw_data, wp_slimstat_db::$filters['parsed']['direction'][1]); 
 } 
 echo '</h3><div class="inside">';
 				
@@ -54,7 +54,7 @@ for($i=0;$i<$count_results;$i++){
 	else{
 		$host_by_ip = $results[$i]['ip'];
 	}
-	$results[$i]['dt'] = date_i18n(wp_slimstat_db::$date_time_format, $results[$i]['dt']);
+	$results[$i]['dt'] = date_i18n(wp_slimstat_db::$formats['date_time_format'], $results[$i]['dt']);
 
 	if ($visit_id != $results[$i]['visit_id'] || $results[$i]['visit_id'] == 0){
 		$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':((!empty($results[$i]['visit_id']) && $results[$i]['type'] != 1)?' is-direct':'');
@@ -76,7 +76,7 @@ for($i=0;$i<$count_results;$i++){
 		}
 		
 		// Country
-		$results[$i]['country'] = "<a class='country image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('country', $results[$i]['country'])."'><img src='".wp_slimstat_boxes::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat-view').': '.__('c-'.$results[$i]['country'],'countries-languages')."' width='16' height='11'/></a>";
+		$results[$i]['country'] = "<a class='image first' href='".wp_slimstat_boxes::fs_url('country', $results[$i]['country'])."'><img src='".wp_slimstat_boxes::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat-view').': '.__('c-'.$results[$i]['country'],'countries-languages')."' width='16' height='16'/></a>";
 
 		// Browser
 		if ($results[$i]['version'] == 0) $results[$i]['version'] = '';
@@ -89,7 +89,7 @@ for($i=0;$i<$count_results;$i++){
 		$results[$i]['browser'] = "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('browser', $results[$i]['browser'])."'>$browser_icon</a>";
 
 		// Platform
-		if (in_array($results[$i]['platform'], $supported_os_icons)){
+		if (in_array(strtolower($results[$i]['platform']), $supported_os_icons)){
 			$platform_icon = "<img src='".wp_slimstat_boxes::$plugin_url.'/images/platforms/'.sanitize_title($results[$i]['platform']).'.png'."' title='".__('Platform','wp-slimstat-view').': '.__($results[$i]['platform'],'countries-languages')."' width='16' height='16'/>";
 		}
 		else{
@@ -98,12 +98,11 @@ for($i=0;$i<$count_results;$i++){
 		$results[$i]['platform'] = "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('platform', $results[$i]['platform'])."'>$platform_icon</a>";
 		
 		// Browser Type
-		$results[$i]['type'] = ($results[$i]['type'] != 0)?"<a class='browser-type-{$results[$i]['type']}' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('type', $results[$i]['type'])."' title='".__('Browser Type','wp-slimstat-view').": {$results[$i]['type']}'></a>":'';
+		//$results[$i]['type'] = ($results[$i]['type'] != 0)?"<a class='browser-type-{$results[$i]['type']} image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('type', $results[$i]['type'])."' title='".__('Browser Type','wp-slimstat-view').": {$results[$i]['type']}'></a>":'';
 		
 		// Plugins
 		$plugins = '';
 		if (!empty($results[$i]['plugins'])){
-			if (!empty($results[$i]['type'])) $plugins = '|';
 			$results[$i]['plugins'] = explode(',', $results[$i]['plugins']);
 			foreach($results[$i]['plugins'] as $a_plugin){
 				$a_plugin = trim($a_plugin);
@@ -111,7 +110,7 @@ for($i=0;$i<$count_results;$i++){
 			}
 		}
 
-		echo "<p class='header$highlight_row'>{$results[$i]['country']} {$results[$i]['browser']} {$results[$i]['platform']} $ip_address $other_ip_address <span>{$results[$i]['type']} $plugins</span>";
+		echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} {$results[$i]['browser']} {$results[$i]['platform']} $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span>";
 		if (!empty($function_to_use) && $function_to_use != 'get_details_recent_visits' && $function_to_use != 'get_recent_known_visitors')	echo "<span class='widecolumn'>{$results[$i]['dt']}</span>";
 		echo "</p>";
 		$visit_id = $results[$i]['visit_id'];
@@ -124,17 +123,15 @@ for($i=0;$i<$count_results;$i++){
 	if (!empty($results[$i]['resource'])){
 		$post_id = url_to_postid(strtok($results[$i]['resource'], '?'));
 		if ($post_id > 0){
-			$results[$i]['resource'] = "<a class='url' target='_blank' title='".__('Open this post in a new window','wp-slimstat-view')."' href='{$results[$i]['resource']}'></a> ".get_the_title($post_id);
+			$results[$i]['resource'] = "<a class='url' target='_blank' title='".__('Open this post in a new window','wp-slimstat-view')."' href='{$results[$i]['resource']}'></a>".get_the_title($post_id);
 		}
 		else{
-			$results[$i]['resource'] = "<a class='url' target='_blank' title='".__('Open this page in a new window','wp-slimstat-view')."' href='{$results[$i]['resource']}'></a> ".rawurldecode($results[$i]['resource']);
+			$results[$i]['resource'] = "<a class='url' target='_blank' title='".__('Open this page in a new window','wp-slimstat-view')."' href='{$results[$i]['resource']}'></a>".rawurldecode($results[$i]['resource']);
 		}
 	}
 	if (empty($results[$i]['resource'])){
 		$results[$i]['resource'] = __('Local search results page','wp-slimstat-view');
 	}
-		
-	$results[$i]['resource'] = "<em class='resource'>{$results[$i]['resource']}</em>";
 
 	// Search Terms, with link to original SERP
 	if (!empty($results[$i]['searchterms'])){
@@ -158,9 +155,9 @@ for($i=0;$i<$count_results;$i++){
 	}
 	
 	$results[$i]['domain'] = (!empty($results[$i]['domain']) && empty($results[$i]['searchterms']))?"<em class='domain'><a class='url' target='_blank' title='".__('Open in a new window','wp-slimstat-view')."' href='{$results[$i]['referer']}'></a> {$results[$i]['domain']}</em>":'';
-
+	$results[$i]['dt'] = "<em class='datetime'>{$results[$i]['dt']}</em>";
 	$results[$i]['content_type'] = !empty($results[$i]['content_type'])?"<a href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('content_type', $results[$i]['content_type'])."' title='".sprintf(__('Filter results where content type equals %s','wp-slimstat-view'), $results[$i]['content_type'])."'>{$results[$i]['content_type']}</a>: ":'';
-	echo "{$results[$i]['content_type']} {$results[$i]['resource']} <span>{$results[$i]['searchterms']} {$results[$i]['domain']} {$results[$i]['dt']}</span>";
+	echo "<em class='resource'>{$results[$i]['content_type']} {$results[$i]['resource']}</em> <span class='details'>{$results[$i]['searchterms']} {$results[$i]['domain']} {$results[$i]['dt']}</span>";
 	echo '</p>';
 } ?>
 	</div>

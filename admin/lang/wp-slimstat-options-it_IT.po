@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slim Stat 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-20 11:41-0500\n"
-"PO-Revision-Date: 2012-06-20 11:44-0500\n"
+"POT-Creation-Date: 2012-07-19 15:18-0500\n"
+"PO-Revision-Date: 2012-07-19 15:24-0500\n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
@@ -81,11 +81,12 @@ msgstr "Menu indipendente"
 #: ../options/panel1.php:64
 #: ../options/panel1.php:72
 #: ../options/panel2.php:23
-#: ../options/panel3.php:42
-#: ../options/panel3.php:50
-#: ../options/panel3.php:58
-#: ../options/panel3.php:66
-#: ../options/panel3.php:74
+#: ../options/panel3.php:43
+#: ../options/panel3.php:51
+#: ../options/panel3.php:59
+#: ../options/panel3.php:67
+#: ../options/panel3.php:75
+#: ../options/panel3.php:83
 #: ../options/panel5.php:9
 msgid "Yes"
 msgstr "Si"
@@ -95,11 +96,12 @@ msgstr "Si"
 #: ../options/panel1.php:65
 #: ../options/panel1.php:73
 #: ../options/panel2.php:24
-#: ../options/panel3.php:43
-#: ../options/panel3.php:51
-#: ../options/panel3.php:59
-#: ../options/panel3.php:67
-#: ../options/panel3.php:75
+#: ../options/panel3.php:44
+#: ../options/panel3.php:52
+#: ../options/panel3.php:60
+#: ../options/panel3.php:68
+#: ../options/panel3.php:76
+#: ../options/panel3.php:84
 #: ../options/panel5.php:10
 msgid "No"
 msgstr "No"
@@ -151,8 +153,8 @@ msgstr "Decidi se avere un menu separato per WP SlimStat nel pannello di amminis
 
 #: ../options/panel1.php:79
 #: ../options/panel2.php:66
-#: ../options/panel3.php:111
-#: ../options/panel4.php:51
+#: ../options/panel3.php:120
+#: ../options/panel4.php:59
 msgid "Save Changes"
 msgstr "Salva le modifiche"
 
@@ -212,7 +214,7 @@ msgid "Customize the IP lookup service URL."
 msgstr "Personalizza la URL del servizio di geolocalizzazione degli IP."
 
 #: ../options/panel2.php:60
-#: ../options/panel3.php:82
+#: ../options/panel3.php:91
 msgid "seconds"
 msgstr "secondi"
 
@@ -221,175 +223,189 @@ msgid "Refresh the Right Now screen every X seconds. Zero disables this feature.
 msgstr "Aggiorna automaticamente la vista In Diretta ogni X secondi. Zero disabilita questa funzione."
 
 #: ../options/panel3.php:8
-#: ../options/panel3.php:40
+#: ../options/panel3.php:41
 msgid "Track users"
 msgstr "Traccia utenti"
 
 #: ../options/panel3.php:9
-#: ../options/panel3.php:48
+#: ../options/panel3.php:49
 msgid "Ignore bots"
 msgstr "Ignora bot"
 
 #: ../options/panel3.php:10
-#: ../options/panel3.php:56
+#: ../options/panel3.php:57
 msgid "Ignore Spammers"
 msgstr "Ignora spammer"
 
 #: ../options/panel3.php:11
-#: ../options/panel3.php:64
+#: ../options/panel3.php:65
 msgid "Anonymize IP Addresses"
 msgstr "Oscura indirizzi IP"
 
 #: ../options/panel3.php:12
-#: ../options/panel3.php:72
+#: ../options/panel3.php:73
 msgid "Ignore Prefetch"
 msgstr "Ignora prefetch"
 
 #: ../options/panel3.php:13
+#: ../options/panel3.php:81
+msgid "Ignore My Domain"
+msgstr "Ignora il mio dominio"
+
+#: ../options/panel3.php:14
 msgid "Ignore interval"
 msgstr "Latenza"
 
-#: ../options/panel3.php:14
+#: ../options/panel3.php:15
 msgid "Ignore IPs"
 msgstr "Ignora IP"
 
-#: ../options/panel3.php:15
+#: ../options/panel3.php:16
 msgid "Ignore Countries"
 msgstr "Ignora Paesi"
 
-#: ../options/panel3.php:16
+#: ../options/panel3.php:17
 msgid "Ignore resources"
 msgstr "Ignora pagine"
 
-#: ../options/panel3.php:17
+#: ../options/panel3.php:18
 msgid "Ignore referers"
 msgstr "Ignora pagine"
 
-#: ../options/panel3.php:18
+#: ../options/panel3.php:19
 msgid "Ignore browsers"
 msgstr "Ignora browser"
 
-#: ../options/panel3.php:24
+#: ../options/panel3.php:25
 msgid "Ignore users"
 msgstr "Ignora utenti"
 
-#: ../options/panel3.php:27
-msgid "Ignore users (username not found)"
-msgstr "Ignora utenti (username non trovata)"
+#: ../options/panel3.php:28
+msgid "Ignore users: username not found"
+msgstr "Ignora utenti: username non trovata"
 
-#: ../options/panel3.php:36
+#: ../options/panel3.php:37
 msgid "General settings"
 msgstr "Impostazioni generali"
 
-#: ../options/panel3.php:44
-msgid "Tracks logged in users, adding their login to the resource they requested"
+#: ../options/panel3.php:45
+msgid "Select YES if you want to track logged in users, adding their login to the resource they requested"
 msgstr "Traccia i visitatori autenticati, aggiungendo la loro username all'inizio della risorsa che hanno richiesto"
 
-#: ../options/panel3.php:52
-msgid "Do not track visits from crawlers, search engine spiders and other bots"
+#: ../options/panel3.php:53
+msgid "If this option is active, visits from crawlers, search engine spiders and other bots will not be tracked"
 msgstr "Non tracciare le visite effettuate da crawler ed altri bot"
 
-#: ../options/panel3.php:60
-msgid "Do not track visits from users identified as spammers by a third-party tool (i.e. Akismet)"
+#: ../options/panel3.php:61
+msgid "Select YES if you don't want to track visits from users identified as spammers by a third-party tool (i.e. Akismet)"
 msgstr "Non tracciare le visite di utenti identificati come spammer da soluzioni di terze parti (ad es. Akismet)"
 
-#: ../options/panel3.php:68
-msgid "Mask the last octet of your visitors' IP addresses to comply with European Privacy Laws"
+#: ../options/panel3.php:69
+msgid "This option masks the last octet of your visitors' IP addresses to comply with European Privacy Laws"
 msgstr "Oscura l'ultima parte dell'indirizzo IP dei tuoi visitatori per conformarti alle leggi Europee sulla privacy"
 
-#: ../options/panel3.php:76
-msgid "Do not track visits generated by Firefox' <a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>Link Prefetching functionality</a>"
+#: ../options/panel3.php:77
+msgid "Select YES if you don't want to track visits generated by Firefox's <a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>Link Prefetching functionality</a>"
 msgstr "Non tracciare le visite generate dalla funzione <a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>Link Prefetching</a> di Firefox"
 
-#: ../options/panel3.php:80
+#: ../options/panel3.php:85
+#, php-format
+msgid "If this option is active, visits coming from %s will not be tracked"
+msgstr "Se quest'opzione &egrave; attiva, le visite provenienti da %s non saranno tracciate"
+
+#: ../options/panel3.php:89
 msgid "Latency"
 msgstr "Latenza"
 
-#: ../options/panel3.php:83
-msgid "Do not track visits identical to an existing one recorded less than <strong>X</strong> seconds ago. Zero disables this feature."
+#: ../options/panel3.php:92
+msgid "Select YES to avoid tracking visits identical to an existing one recorded less than <strong>X</strong> seconds ago. Zero disables this feature."
 msgstr "Non tracciare le visite identiche ad una gi&agrave; esistente registrata meno di <strong>X</strong> secondi fa. Zero disattiva la funzione."
 
-#: ../options/panel3.php:88
+#: ../options/panel3.php:97
 msgid "IP addresses"
 msgstr "Indirizzi IP"
 
-#: ../options/panel3.php:89
+#: ../options/panel3.php:98
 msgid "List all the IP addresses you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.0.0/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
 msgstr "Inserisci una lista di reti che non vuoi tracciare, separate da virgola. Ogni rete <strong>deve</strong> essere definita usando la <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>notazione CIDR</a> (ad esempio <em>192.168.0.0/24</em>). Se il formato non &egrave; corretto, WP SlimStat potrebbe non funzionare correttamente."
 
-#: ../options/panel3.php:92
+#: ../options/panel3.php:101
 msgid "Pages and posts"
 msgstr "Pagine e post"
 
-#: ../options/panel3.php:93
+#: ../options/panel3.php:102
 msgid "List all the URLs you don't want to track, separated by commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>/abou*</code> will match /about and /abound, <code>/abo*t</code> will match /aboundant and /about, <code>/abo!t</code> will match /about and /abort. Strings are case-insensitive."
 msgstr "Inserisci una lista di URL che non vuoi tracciare, separate da virgola. Non includere il dominio: <em>/chi-sono, ?p=1</em>, etc. Caratteri jolly: <code>*</code> per indicare 'una qualsiasi stringa, inclusa quella vuota', <code>!</code> per indicare 'un qualsiasi carattere'. Ad esempio, <code>/chi-so*</code> intercetta sia /chi-sono che /chi-somiglia, <code>/cor!a</code> intercetta /corda e /corazzata, <code>/cor!a</code> intercetta /corda e /corta. Maiuscole e minuscole non fanno differenza."
 
-#: ../options/panel3.php:96
+#: ../options/panel3.php:105
 msgid "Countries"
 msgstr "Paesi"
 
-#: ../options/panel3.php:97
+#: ../options/panel3.php:106
 msgid "List all the Country codes (i.e.: <code>en-us, it, es</code>) you don't want to track, separated by commas."
 msgstr "Inserisci una lista di codici di Paesi (ad es. <code>en-us, it, es</code>) che non desideri tracciare, separati da virgola."
 
-#: ../options/panel3.php:100
+#: ../options/panel3.php:109
 msgid "User agents"
 msgstr "Browser da ignorare"
 
-#: ../options/panel3.php:101
+#: ../options/panel3.php:110
 msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>Chr*</code> will match Chrome and Chromium, <code>IE/!.0</code> will match IE/7.0 and IE/8.0. Strings are case-insensitive."
 msgstr "Inserisci una lista di browser che non vuoi tracciare, separati da virgola. Se lo desideri, puoi anche specificare la versione del browser aggiungendo uno slash dopo il nome (ad esempio <em>Firefox/3.6</em>). Caratteri jolly: <code>*</code> per indicare 'una qualsiasi stringa, inclusa quella vuota', <code>!</code> per indicare 'un qualsiasi carattere'. Ad esempio, <code>Chr*</code> include Chrome e Chromium, <code>IE/!.0</code> include IE/7.0 ed IE/8.0. Maiuscole e minuscole non fanno differenza."
 
-#: ../options/panel3.php:104
+#: ../options/panel3.php:113
 msgid "Referers"
 msgstr "Link in ingresso"
 
-#: ../options/panel3.php:105
+#: ../options/panel3.php:114
 msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. Strings are case-insensitive."
 msgstr "Inserisci una lista di link in ingresso che non vuoi tracciare, separati da virgola: <code>miosito.com, /ignora-questa-pagina</code>, ecc. Caratteri jolly: <code>*</code> per indicare 'una qualsiasi stringa, inclusa quella vuota', <code>!</code> per indicare 'un qualsiasi carattere'. Maiuscole e minuscole non fanno differenza."
 
-#: ../options/panel3.php:108
+#: ../options/panel3.php:117
 msgid "Users"
 msgstr "Utenti"
 
-#: ../options/panel3.php:109
+#: ../options/panel3.php:118
 msgid "Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored and that usernames are case-insensitive."
 msgstr "Inserisci una lista di nomi utente che non vuoi tracciare, separati da virgola. Ricorda che gli spazi <em>non</em> vengono ignorati e che maiuscole e minuscole non fanno differenza."
 
 #: ../options/panel4.php:13
-#: ../options/panel4.php:40
-msgid "Users who can access the reports"
-msgstr "Utenti che possono guardare le statistiche"
+#: ../options/panel4.php:48
+msgid "Read access"
+msgstr "Accesso alle viste"
 
 #: ../options/panel4.php:16
-msgid "Users who can access the reports (username not found)"
-msgstr "Utenti che possono guardare le statistiche (username non trovata)"
+msgid "Read access: username not found"
+msgstr "Accesso alle viste: username non trovata"
 
-#: ../options/panel4.php:22
-#: ../options/panel4.php:44
-msgid "Roles and capabilities"
-msgstr "Ruoli e capability"
+#: ../options/panel4.php:24
+#: ../options/panel4.php:52
+msgid "Minimum capability"
+msgstr "Capability minima"
 
-#: ../options/panel4.php:28
-#: ../options/panel4.php:48
-msgid "Users who can configure WP SlimStat"
-msgstr "Utenti che possono configurare WP SlimStat"
+#: ../options/panel4.php:27
+msgid "Invalid minimum capability. Please check <a href=\"http://codex.wordpress.org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
+msgstr "Capability minima non valida. Per favore fai riferimento a <a href=\"http://codex.wordpress.org/Roles_and_Capabilities\" target=\"_new\">questa pagina</a> (in inglese) per ulteriori informazioni"
 
-#: ../options/panel4.php:31
-msgid "Users who can configure WP SlimStat (username not found)"
-msgstr "Utenti che possono configurare WP SlimStat (username non trovata)"
+#: ../options/panel4.php:36
+#: ../options/panel4.php:56
+msgid "Config access"
+msgstr "Accesso alla configurazione"
 
-#: ../options/panel4.php:41
-msgid "List all the users who can access WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all</strong> users (including subscribers) will have access to the reports. Usernames are case-insensitive."
-msgstr "Inserisci una lista di utenti abilitati a visualizzare i rapporti di WP SlimStat, separati da virgola. Gli amministratori sono implicitamente autorizzati, quindi non serve indicarli. Se questo campo &egrave; vuoto, <strong>tutti</strong> gli utenti (inclusi i sottoscrittori) hanno accesso alle statistiche. Maiuscole e minuscole non fanno differenza."
-
-#: ../options/panel4.php:45
-msgid "Define the lowest <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> that users need to have in order to access all the stats (<code>read</code> is the default value). If this field is empty, <strong>all</strong> users (including subscribers) will have access to the reports."
-msgstr "Inserisci il nome della <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> minima che un utente deve avere per accedere alle statistiche (<code>read</code> &egrave; il valore standard). Se questo campo &egrave; lasciato vuoto, <strong>tutti</strong> gli utenti avranno accesso alle statistiche."
+#: ../options/panel4.php:39
+msgid "Config access: username not found"
+msgstr "Accesso alla configurazione: username non trovata"
 
 #: ../options/panel4.php:49
-msgid "List all the users who can edit these options. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all</strong> users (but subscribers) will have access to the options panel. Usernames are case-insensitive."
+msgid "List all the users who can view WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all your users</strong> are granted access. Usernames are case-insensitive."
+msgstr "Inserisci una lista di utenti abilitati a visualizzare i rapporti di WP SlimStat, separati da virgola. Gli amministratori sono implicitamente autorizzati, quindi non serve indicarli. Se questo campo &egrave; vuoto, <strong>tutti</strong> gli utenti (inclusi i sottoscrittori) hanno accesso alle statistiche. Maiuscole e minuscole non fanno differenza."
+
+#: ../options/panel4.php:53
+msgid "Define the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to view the reports (default: <code>read</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here above. In this case, the list has precedence over the capability."
+msgstr "Specifica la <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> minima che un utente deve avere per accedere alle statistiche (<code>read</code> &egrave; il valore standard). Se questo campo &egrave; lasciato vuoto, <strong>tutti</strong> gli utenti avranno accesso alle statistiche."
+
+#: ../options/panel4.php:57
+msgid "List all the users who can edit these options, separated by commas. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all your users</strong> (except <em>Subscribers</em>) will be granted access. Users listed here automatically inherit 'Read access' to the reports. Usernames are case-insensitive."
 msgstr "Inserisci una lista di username abilitati a modificare queste opzioni. Ti ricordo che gli amministratori <strong>non sono</strong> implicitamente inclusi, quindi non dimenticare di includere il tuo username! Se questo campo &egrave; vuoto, <strong>tutti</strong> gli utenti (tranne i sottoscrittori) hanno accesso alle opzioni. Maiuscole e minuscole non fanno differenza."
 
 #: ../options/panel5.php:8
@@ -593,8 +609,8 @@ msgid "Don't want or cannot donate?"
 msgstr "Non ti va o non hai la possibilit&agrave; di donare denaro? "
 
 #: ../options/panel6.php:23
-msgid "If you cannot donate money, please consider blogging about WP SlimStat, Your visitors don't know you're using WP SlimStat! You can also contribute by donating your spare time: send me bug reports, localization files and ideas on how to improve WP SlimStat."
-msgstr "Se non puoi donare una cifra in denaro, puoi sempre scrivere un post sul tuo blog che parli di WP SlimStat, ed aggiungere un link alla pagina sul mio blog. I tuoi utenti non sanno che stai usando WP SlimStat, quindi farai un favore sia a loro che a me, se deciderai di parlarne. Volendo, puoi anche donare un po' del tuo tempo: mandami un messaggio sul forum se trovi un errore, la localizzazione dell'interfaccia, o semplicemente un'idea per rendere il plugin sempre migliore. Qualsiasi cosa tu decida di fare, grazie per usare WP SlimStat!"
+msgid "If you cannot donate money, please consider blogging about WP SlimStat, your visitors may not know you're using it! You can also contribute by donating some of your spare time: send me bug reports, localization files and ideas on how to improve WP SlimStat."
+msgstr "Se non puoi donare una cifra in denaro, puoi sempre scrivere un post sul tuo blog che parli di WP SlimStat. I tuoi utenti non sanno che stai usando WP SlimStat! Volendo, puoi anche donare un po' del tuo tempo: mandami un messaggio sul forum se trovi un errore, la localizzazione dell'interfaccia, o semplicemente un'idea per rendere il plugin sempre migliore."
 
 #: ../options/panel6.php:25
 msgid "Show your appreciation"
@@ -603,6 +619,21 @@ msgstr "Vota e condividi"
 #: ../options/panel6.php:26
 msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on its Plugin Directory page."
 msgstr "Fai sapere agli altri se WP SlimStat funziona bene e quanto ti piace. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Votalo</a> sulla pagina apposita di Wordpress."
+
+#~ msgid "Users who can access the reports"
+#~ msgstr "Utenti che possono guardare le statistiche"
+
+#~ msgid "Users who can access the reports (username not found)"
+#~ msgstr "Utenti che possono guardare le statistiche (username non trovata)"
+
+#~ msgid "Roles and capabilities"
+#~ msgstr "Ruoli e capability"
+
+#~ msgid "Users who can configure WP SlimStat"
+#~ msgstr "Utenti che possono configurare WP SlimStat"
+
+#~ msgid "Users who can configure WP SlimStat (username not found)"
+#~ msgstr "Utenti che possono configurare WP SlimStat (username non trovata)"
 
 #~ msgid "Autoupdate DB"
 #~ msgstr "Autoaggiorna DB"

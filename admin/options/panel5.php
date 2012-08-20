@@ -65,7 +65,8 @@ if (isset($_GET['ssidx'])){
 	if($_GET['ssidx']=='create'){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX resource_idx(resource(20))");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
-		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX visit_idx(visit_id)");
+		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers ADD INDEX all_idx(browser,version,platform,css_version,type)");
+		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres ADD INDEX all_idx(resolution,colordepth,antialias)");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 		_e('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options');
 		echo '</p></div>';
@@ -73,7 +74,8 @@ if (isset($_GET['ssidx'])){
 	if($_GET['ssidx']=='remove'){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX resource_idx");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX browser_idx");
-		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX visit_idx");
+		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers DROP INDEX all_idx");
+		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres DROP INDEX all_idx");
 		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 		_e('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options');
 		echo '</p></div>';
@@ -167,28 +169,29 @@ foreach ($details_wp_slim_tables as $a_table){
 if ($show_optimize) echo "[<a href='?page=wp-slimstat/admin/options/index.php&ot=yes&slimpanel=5'>".__('Optimize tables','wp-slimstat-options')."</a>]";
 echo '</td></tr>';
 ?>
-	<tr class="tall">
-		<th scope="row"><?php _e('Purge Data','wp-slimstat-options') ?></th>
+	<tr>
+		<th scope="row"><label for="conditional_delete_field"><?php _e('Purge Data','wp-slimstat-options') ?></label></th>
 		<td>
-			<?php _e('Delete rows where','wp-slimstat-options') ?>
-			<select name="options[conditional_delete_field]">
-				<option value="country"><?php _e('Country Code','wp-slimstat-options') ?></option>
-				<option value="domain"><?php _e('Domain','wp-slimstat-options') ?></option>
-				<option value="INET_NTOA(ip)"><?php _e('IP Address','wp-slimstat-options') ?></option>
-				<option value="language"><?php _e('Language Code','wp-slimstat-options') ?></option>
-				<option value="resource"><?php _e('Permalink','wp-slimstat-options') ?></option>
-				<option value="searchterms"><?php _e('Search Terms','wp-slimstat-options') ?></option>
-			</select> 
-			<select name="options[conditional_delete_operator]" style="width:12em">
-				<option value="equal"><?php _e('Is equal to','wp-slimstat-options') ?></option>
-				<option value="like"><?php _e('Contains','wp-slimstat-options') ?></option>
-				<option value="not-like"><?php _e('Does not contain','wp-slimstat-options') ?></option>
-				<option value="starts-with"><?php _e('Starts with','wp-slimstat-options') ?></option>
-				<option value="ends-with"><?php _e('Ends with','wp-slimstat-options') ?></option>
-				<option value="does-not-start-with"><?php _e('Does not start with','wp-slimstat-options') ?></option>
-				<option value="does-not-end-with"><?php _e('Does not end with','wp-slimstat-options') ?></option>
-			</select>
-			<input type="text" name="options[conditional_delete_value]" id="delete_value" value="" size="20">
+			<span class="nowrap">
+				<?php _e('Delete rows where','wp-slimstat-options') ?>
+				<select name="options[conditional_delete_field]" id="conditional_delete_field">
+					<option value="country"><?php _e('Country Code','wp-slimstat-options') ?></option>
+					<option value="INET_NTOA(ip)"><?php _e('IP Address','wp-slimstat-options') ?></option>
+					<option value="language"><?php _e('Language Code','wp-slimstat-options') ?></option>
+					<option value="resource"><?php _e('Permalink','wp-slimstat-options') ?></option>
+					<option value="searchterms"><?php _e('Search Terms','wp-slimstat-options') ?></option>
+				</select> 
+				<select name="options[conditional_delete_operator]" id="conditional_delete_operator" style="width:12em">
+					<option value="equal"><?php _e('Is equal to','wp-slimstat-options') ?></option>
+					<option value="like"><?php _e('Contains','wp-slimstat-options') ?></option>
+					<option value="not-like"><?php _e('Does not contain','wp-slimstat-options') ?></option>
+					<option value="starts-with"><?php _e('Starts with','wp-slimstat-options') ?></option>
+					<option value="ends-with"><?php _e('Ends with','wp-slimstat-options') ?></option>
+					<option value="does-not-start-with"><?php _e('Does not start with','wp-slimstat-options') ?></option>
+					<option value="does-not-end-with"><?php _e('Does not end with','wp-slimstat-options') ?></option>
+				</select>
+				<input type="text" name="options[conditional_delete_value]" id="delete_value" value="" size="20">
+			</span>
 			<input type="submit" value="<?php _e('DELETE','wp-slimstat-options') ?>" class="button-primary" name="Submit"
 				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY delete these rows from your database?','wp-slimstat-options'); ?>'))">
 		</td>
@@ -196,29 +199,29 @@ echo '</td></tr>';
 <?php
 $check_index = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}slim_stats WHERE Key_name = 'resource_idx'");
 if (empty($check_index)): ?>
-	<tr class="tall">
+	<tr>
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&ssidx=create&slimpanel=5"><?php _e('Activate Indexes','wp-slimstat-options'); ?></a></th>
 		<td><?php _e('Use this feature if you want to improve the overall performance of your stats. You will need about 30% more DB space, to store the extra information required.','wp-slimstat-options') ?></td>
 	</tr>
 <?php else: ?>
-<tr class="tall">
+<tr>
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&ssidx=remove&slimpanel=5"><?php _e('Remove Indexes','wp-slimstat-options'); ?></a></th>
 		<td><?php _e('Use this feature if you want to save some DB space, while slightly degrading WP SlimStat overall performances.','wp-slimstat-options') ?></td>
 	</tr>
 <?php endif ?>
-	<tr class="tall">
+	<tr>
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&ds=yes&slimpanel=5"><?php _e('Factory Reset','wp-slimstat-options'); ?></a></th>
 		<td><?php _e('Select this option if you want to empty your WP SlimStat database (does not reset your settings).','wp-slimstat-options') ?></td>
 	</tr>
 
-	<tr class="tall">
+	<tr>
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&di2c=confirm&slimpanel=5"><?php _e('Update Geolocation DB','wp-slimstat-options'); ?></a></th>
 		<td><?php _e('Select this option if you want to load the new geolocation data into your database.','wp-slimstat-options') ?></td>
 	</tr>
 <?php 
 $check_column = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}slim_stats LIKE 'browser_id'");
 if (empty($check_column)): ?>
-	<tr class="tall">
+	<tr>
 		<th scope="row"><a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&rs=yes&slimpanel=5"><?php _e('RESET STATS','wp-slimstat-options'); ?></a></th>
 		<td><?php _e('It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process.','wp-slimstat-options') ?></td>
 	</tr>

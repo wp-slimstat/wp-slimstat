@@ -11,6 +11,7 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['number_results_raw_data']) && !wp_slimstat_admin::update_option('number_results_raw_data', $_POST['options']['number_results_raw_data'], 'integer')) $faulty_fields .= __('Right now','wp-slimstat-options').', ';
 	if (isset($_POST['options']['ip_lookup_service']) && !wp_slimstat_admin::update_option('ip_lookup_service', $_POST['options']['ip_lookup_service'], 'text')) $faulty_fields .= __('IP Lookup','wp-slimstat-options').', ';
 	if (isset($_POST['options']['refresh_interval']) && !wp_slimstat_admin::update_option('refresh_interval', $_POST['options']['refresh_interval'], 'integer')) $faulty_fields .= __('Refresh every','wp-slimstat-options').', ';
+	if (isset($_POST['options']['markings']) && !wp_slimstat_admin::update_option('markings', $_POST['options']['markings'], 'text')) $faulty_fields .= __('Chart Annotations','wp-slimstat-options').', ';
 	
 	slimstat_error_message($faulty_fields);
 }
@@ -63,4 +64,9 @@ if (isset($_POST['options'])){
 	</tr>
 </tbody>
 </table>
+<h3><label for="markings"><?php _e('Chart Annotations','wp-slimstat-options') ?></label></h3>
+<p><?php _e("Add <em>markings</em> to each chart by specifying a date and its description in the field below. Useful to keep track of special events and correlate them to your analytics. Please use the following format:<code>YYYY MM DD HH:mm=Description 1,YYYY MM DD HH:mm=Description 2</code>. For example: 2012 12 31 23:55=New Year's Eve.",'wp-slimstat-options') ?></p>
+<p><textarea class="large-text code" cols="50" rows="3" name="options[markings]" id="markings"><?php echo stripslashes(wp_slimstat::$options['markings']) ?></textarea></p>
+
+
 <p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p>

@@ -2,82 +2,56 @@
 
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db {
-	// These tables contain the data about visits and visitors
-	public static $table_stats = '';
-	public static $table_outbound = '';
-
-	// Lookup tables (shared among the various installations in a wordpress multiuser environment)
-	public static $table_browsers = '';
-	public static $table_screenres = '';
-	public static $table_content_info = '';
-
 	// Date ranges
-	public static $current_date = array();
-	public static $previous_date = array();
-	public static $yesterday = array();
-	public static $previous_month = array();
-	public static $date_time_format = 'Y-m-d g:i a';
-	public static $day_filter_active = false;
-
+	public static $timeframes = array('current_day' => array('hour_selected' => false, 'day_selected' => false, 'month_selected' => false, 'year_selected' => false));
+	
 	// Number format
-	public static $decimal_separator = ',';
-	public static $thousand_separator = '.';
+	public static $formats = array('decimal' => ',', 'thousand' => '.');
 
 	// Filters
-	public static $filters_parsed;
-	public static $filters_date_sql_where = '';
-	protected static $filters_sql_from = array('browsers' => '', 'screenres' => '', 'content_info' => '');
-	protected static $filters_sql_where = '';
+	public static $filters = array(
+		'parsed' => array('direction' => array('equals', 'desc'), 'limit_results' => array('equals', 20), 'starting' => array('equals', 0)),
+		'date_sql_where' => '',
+		'sql_from' => array('browsers' => '', 'screenres' => '', 'content_info' => '', 'outbound' => ''),
+		'sql_where' => ''
+	);
 
 	public static function init($_filters_string = ''){
-		self::$table_stats = $GLOBALS['wpdb']->prefix.'slim_stats';
-		self::$table_outbound = $GLOBALS['wpdb']->prefix.'slim_outbound';
-		self::$table_browsers = $GLOBALS['wpdb']->base_prefix.'slim_browsers';
-		self::$table_screenres = $GLOBALS['wpdb']->base_prefix.'slim_screenres';
-		self::$table_content_info = $GLOBALS['wpdb']->base_prefix.'slim_content_info';
-
-		self::$date_time_format = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
-
 		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
 		$GLOBALS['wpdb']->query("SET @@session.time_zone = '+00:00'");
+		date_default_timezone_set('UTC');
 
+		// Decimal and thousand separators
 		if (wp_slimstat::$options['use_european_separators'] == 'no'){
-			self::$decimal_separator = '.';
-			self::$thousand_separator = ',';
+			self::$formats['decimal'] = '.';
+			self::$formats['thousand'] = ',';	
 		}
 
-		// Parse the string with all the filters
+		// Use WordPress' settings for date and time format
+		self::$formats['date_time_format'] = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
+
+		// Parse all the filters
 		if (!empty($_filters_string)){
 			if (substr($_filters_string, -1) != '|') $_filters_string .= '|';
 			preg_match_all('/([^\s|]+)\s([^\s|]+).((?:[^|]+)?)/', urldecode($_filters_string), $matches);
 
-			self::$filters_parsed = array();
 			foreach($matches[1] as $idx => $a_match){
 				// Some filters need extra 'decoding'
 				switch($a_match){
+					case 'strtotime': // TODO - TO BE REMOVED - add support for strtotime to right side of expression
+						$custom_date = strtotime($matches[3][$idx]);
+						self::$filters['parsed']['day'] = array('equals', date_i18n('j', $custom_date));
+						self::$filters['parsed']['month'] = array('equals', date_i18n('n', $custom_date));
+						self::$filters['parsed']['year'] = array('equals', date_i18n('Y', $custom_date));
+						break;
+					case 'interval':
+						if (intval($matches[3][$idx]) > 0) self::$filters['parsed']['interval'] = array('equals', intval($matches[3][$idx]));
+						break;
 					case 'direction':
 					case 'limit_results':
 					case 'starting':
-						self::$filters_parsed[$a_match] = $GLOBALS['wpdb']->escape(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx])));
-						break;
-					case 'strtotime':
-						$custom_date = strtotime($matches[3][$idx]);
-						self::$filters_parsed['day'] = array('equals', date_i18n('j', $custom_date));
-						self::$filters_parsed['month'] = array('equals', date_i18n('n', $custom_date));
-						self::$filters_parsed['year'] = array('equals', date_i18n('Y', $custom_date));
-						break;
-					case 'interval':
-						self::$filters_parsed['day'] = array('equals', !isset(self::$filters_parsed['day'][1])?date_i18n('j'):intval(self::$filters_parsed['day'][1]));
-						self::$filters_parsed['month'] = array('equals', !isset(self::$filters_parsed['month'][1])?date_i18n('n'):intval(self::$filters_parsed['month'][1]));
-						self::$filters_parsed['year'] = array('equals', !isset(self::$filters_parsed['year'][1])?date_i18n('Y'):intval(self::$filters_parsed['year'][1]));
-						if ($matches[3][$idx] == '-1')
-							self::$filters_parsed['interval'] = array('equals', intval((strtotime('now')-strtotime(self::$filters_parsed['year'][1].'-'.self::$filters_parsed['month'][1].'-'.self::$filters_parsed['day'][1]))/86400));
-						else
-							self::$filters_parsed['interval'] = array('equals', intval($matches[3][$idx]));
-						break;
 					case 'browser':
 					case 'country':
-					case 'domain':
 					case 'ip':
 					case 'searchterms':
 					case 'language':
@@ -97,78 +71,116 @@ class wp_slimstat_db {
 					case 'content_type':
 					case 'resolution':
 					case 'visit_id':
+					case 'hour':
 					case 'day':
 					case 'month':
 					case 'year':
-						self::$filters_parsed[$a_match] = array($matches[2][$idx], isset($matches[3][$idx])?$GLOBALS['wpdb']->escape(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx]))):'');
+						self::$filters['parsed'][$a_match] = array(isset($matches[2][$idx])?$matches[2][$idx]:'equals', isset($matches[3][$idx])?$GLOBALS['wpdb']->escape(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx]))):'');
 						break;
 					default:
 				}
 			}
 		}
 
-		// Default values for some filters
-		self::$filters_parsed['direction'] = !empty(self::$filters_parsed['direction'])?((self::$filters_parsed['direction'] != 'asc' && self::$filters_parsed['direction'] != 'desc')?'descd':self::$filters_parsed['direction']):'desc';
-		self::$filters_parsed['limit_results'] = empty(self::$filters_parsed['limit_results'])?wp_slimstat::$options['rows_to_show']:intval(self::$filters_parsed['limit_results']);
-
-		// This filter is only used in the 'Right Now' panel
-		self::$filters_parsed['starting'] = empty(self::$filters_parsed['starting'])?0:intval(self::$filters_parsed['starting']);
-
-		// Date ranges
-		date_default_timezone_set('UTC');
+		// self::$filters['parsed']['direction'] = !empty(self::$filters['parsed']['direction'])?((self::$filters['parsed']['direction'] != 'asc' && self::$filters['parsed']['direction'] != 'desc')?'desc':self::$filters['parsed']['direction']):'desc';
+		self::$filters['parsed']['limit_results'] = array('equals', empty(self::$filters['parsed']['limit_results'][1])?wp_slimstat::$options['rows_to_show']:intval(self::$filters['parsed']['limit_results'][1]));
 		
-		// Today
-		if (!empty(self::$filters_parsed['day'])){
-			self::$current_date['d'] = sprintf('%02d', self::$filters_parsed['day'][1]);
-			if (empty(self::$filters_parsed['interval'])) self::$day_filter_active = true;
+		// Current day: specified in the filters, or today otherwise
+		if (!empty(self::$filters['parsed']['hour'])){
+			self::$timeframes['current_day']['h'] = sprintf('%02d', self::$filters['parsed']['hour'][1]);
+			self::$timeframes['current_day']['hour_selected'] = true;
 		}
 		else{
-			self::$current_date['d'] = date_i18n('d');
+			self::$timeframes['current_day']['h'] = date_i18n('H');
 		}
-		self::$current_date['m'] = !empty(self::$filters_parsed['month'])?sprintf('%02d', self::$filters_parsed['month'][1]):date_i18n('m');
-		self::$current_date['y'] = !empty(self::$filters_parsed['year'])?sprintf('%04d', self::$filters_parsed['year'][1]):date_i18n('Y');
-		self::$current_date['h'] = date_i18n('H');
-		self::$current_date['u'] = strtotime(self::$current_date['y'].'/'.self::$current_date['m'].'/'.self::$current_date['d'].' 00:00');
-
-		// Yesterday
-		self::$yesterday['d'] = date_i18n('d', strtotime(self::$current_date['y'].'-'.self::$current_date['m'].'-'.(self::$current_date['d'] - 1)));
-		self::$yesterday['m'] = date_i18n('m', strtotime(self::$current_date['y'].'-'.self::$current_date['m'].'-'.(self::$current_date['d'] - 1)));
-		self::$yesterday['y'] = date_i18n('Y', strtotime(self::$current_date['y'].'-'.self::$current_date['m'].'-'.(self::$current_date['d'] - 1)));
-
-		// If user selected just the YEAR, select the entire period
-		if (empty(self::$filters_parsed['day']) && empty(self::$filters_parsed['month']) && !empty(self::$filters_parsed['year'])){
-			self::$current_date['m'] = '01';
-			if (self::$current_date['y'] == date_i18n('Y')){
-				self::$filters_parsed['interval'] = array('equals', intval((strtotime('now')-strtotime(self::$current_date['y'].'-01-01'))/86400));
-			}
-			else{
-				self::$filters_parsed['interval'] = array('equals', 365+date('L', strtotime(self::$current_date['y'].'-01-01')));
-			}
+		if (!empty(self::$filters['parsed']['day'])){
+			self::$timeframes['current_day']['d'] = sprintf('%02d', self::$filters['parsed']['day'][1]);
+			self::$timeframes['current_day']['day_selected'] = true;
 		}
+		else{
+			self::$timeframes['current_day']['d'] = date_i18n('d');
+			if (isset(self::$filters['parsed']['interval'])) unset(self::$filters['parsed']['interval']);
+		}
+		if (!empty(self::$filters['parsed']['month'])){
+			self::$timeframes['current_day']['m'] = sprintf('%02d', self::$filters['parsed']['month'][1]);
+			self::$timeframes['current_day']['month_selected'] = true;
+		}
+		else{
+			self::$timeframes['current_day']['m'] = date_i18n('m');
+		}
+		if (!empty(self::$filters['parsed']['year'])){
+			self::$timeframes['current_day']['y'] = sprintf('%04d', self::$filters['parsed']['year'][1]);
+			self::$timeframes['current_day']['year_selected'] = true;
+		}
+		else{
+			self::$timeframes['current_day']['y'] = date_i18n('Y');
+		}
+		self::$timeframes['current_day']['utime'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
+
+		// Previous day
+		self::$timeframes['previous_day']['utime'] = self::$timeframes['current_day']['utime'] - 86400;
+		self::$timeframes['previous_day']['d'] = date_i18n('d', self::$timeframes['previous_day']['utime']);
+		self::$timeframes['previous_day']['m'] = date_i18n('m', self::$timeframes['previous_day']['utime']);
+		self::$timeframes['previous_day']['y'] = date_i18n('Y', self::$timeframes['previous_day']['utime']);
 
 		// Previous month
-		self::$previous_month['m'] = date_i18n('m', strtotime(self::$current_date['y'].'-'.(self::$current_date['m'] - 1).'-01'));
-		self::$previous_month['y'] = date_i18n('Y', strtotime(self::$current_date['y'].'-'.(self::$current_date['m'] - 1).'-01'));
-
-		// SQL equivalents for given timeframes
-		if (empty(self::$filters_parsed['interval'][1])){
-			if (self::$day_filter_active){
-				self::$current_date['utime_start'] = strtotime(self::$current_date['y'].'/'.self::$current_date['m'].'/'.self::$current_date['d'].' 00:00');
-				self::$current_date['utime_end'] = self::$current_date['utime_start'] + 86399;
+		self::$timeframes['previous_month']['utime'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'] - 1, 1, self::$timeframes['current_day']['y']);
+		self::$timeframes['previous_month']['m'] = date_i18n('m', self::$timeframes['previous_month']['utime']);
+		self::$timeframes['previous_month']['y'] = date_i18n('Y', self::$timeframes['previous_month']['utime']);
+// print_r(self::$timeframes);
+		// SQL timeframes
+		if (empty(self::$filters['parsed']['interval'][1])){
+			if (self::$timeframes['current_day']['hour_selected']){
+				self::$timeframes['current_utime_start'] = mktime(self::$timeframes['current_day']['h'], 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
+				self::$timeframes['current_utime_end'] = self::$timeframes['current_utime_start'] + 3599;
+				self::$timeframes['previous_utime_start'] = self::$timeframes['current_utime_start'] - 3600;
+				self::$timeframes['previous_utime_end'] = self::$timeframes['current_utime_start'] - 1;
+				self::$timeframes['label_current'] = date_i18n(get_option('time_format', 'g:i a'), self::$timeframes['current_utime_start']);
+				self::$timeframes['label_previous'] = date_i18n(get_option('time_format', 'g:i a'), self::$timeframes['previous_utime_start']);
+			}
+			elseif (self::$timeframes['current_day']['day_selected']){
+				self::$timeframes['current_utime_start'] = self::$timeframes['current_day']['utime'];
+				self::$timeframes['current_utime_end'] = self::$timeframes['current_day']['utime'] + 86399;
+				self::$timeframes['previous_utime_start'] = self::$timeframes['previous_day']['utime'];
+				self::$timeframes['previous_utime_end'] = self::$timeframes['previous_day']['utime'] + 86399;
+				if (self::$formats['decimal'] == '.'){
+					self::$timeframes['label_current'] = date_i18n('m/d', self::$timeframes['current_utime_start']);
+					self::$timeframes['label_previous'] = date_i18n('m/d',self::$timeframes['previous_utime_start']);
+				}
+				else{
+					self::$timeframes['label_current'] = date_i18n('d/m', self::$timeframes['current_utime_start']);
+					self::$timeframes['label_previous'] = date_i18n('d/m', self::$timeframes['previous_utime_start']);
+				}
+			}
+			elseif (self::$timeframes['current_day']['year_selected'] && !self::$timeframes['current_day']['month_selected']){
+				self::$timeframes['current_utime_start'] = mktime(0, 0, 0, 1, 1, self::$timeframes['current_day']['y']);
+				self::$timeframes['current_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-01-01 00:00 +1 year')-1;
+				self::$timeframes['previous_utime_start'] = mktime(0, 0, 0, 1, 1, self::$timeframes['current_day']['y'] - 1);
+				self::$timeframes['previous_utime_end'] = strtotime((self::$timeframes['current_day']['y']-1).'-01-01 00:00 +1 year')-1;
+				self::$timeframes['label_current'] = date_i18n('Y', self::$timeframes['current_utime_start']);
+				self::$timeframes['label_previous'] = date_i18n('Y', self::$timeframes['previous_utime_start']);
 			}
 			else{
-				self::$current_date['utime_start'] = strtotime(self::$current_date['y'].'/'.self::$current_date['m'].'/01 00:00');
-				self::$current_date['utime_end'] = strtotime(self::$current_date['y'].'/'.self::$current_date['m'].'/01 +1 month')-1;
+				self::$timeframes['current_utime_start'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'], 1, self::$timeframes['current_day']['y']);
+				self::$timeframes['current_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.self::$timeframes['current_day']['m'].'-01 00:00 +1 month')-1;
+				self::$timeframes['previous_utime_start'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'] - 1, 1, self::$timeframes['current_day']['y']);
+				self::$timeframes['previous_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.(self::$timeframes['current_day']['m'] - 1).'-01 00:00 +1 month')-1;
+				self::$timeframes['label_current'] = date_i18n('m/Y', self::$timeframes['current_utime_start']);
+				self::$timeframes['label_previous'] = date_i18n('m/Y', self::$timeframes['previous_utime_start']);
 			}
 		}
 		else{
-			self::$current_date['utime_start'] = strtotime(self::$current_date['y'].'/'.self::$current_date['m'].'/'.self::$current_date['d'].' 00:00');
-			self::$current_date['utime_end'] = strtotime(self::$current_date['y'].'/'.self::$current_date['m'].'/'.self::$current_date['d'].' +'.self::$filters_parsed['interval'][1].' days')-1;
+			self::$timeframes['current_utime_start'] = self::$timeframes['current_day']['utime'];
+			self::$timeframes['current_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.self::$timeframes['current_day']['m'].'-'.self::$timeframes['current_day']['d'].' 00:00 +'.self::$filters['parsed']['interval'][1].' days')-1;
+			self::$timeframes['previous_utime_start'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'] - 1, self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
+			self::$timeframes['previous_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.(self::$timeframes['current_day']['m'] - 1).'-'.self::$timeframes['current_day']['d'].' 00:00 +'.self::$filters['parsed']['interval'][1].' days')-1;
+			self::$timeframes['label_current'] = '';
+			self::$timeframes['label_previous'] = '';
 		}
-		self::$filters_date_sql_where = ' AND t1.dt BETWEEN '.self::$current_date['utime_start'].' AND '.self::$current_date['utime_end'];
+		self::$filters['date_sql_where'] = ' AND t1.dt BETWEEN '.self::$timeframes['current_utime_start'].' AND '.self::$timeframes['current_utime_end'];
 
 		// Now let's translate these filters into pieces of SQL to be used later
-		$filters_dropdown = array_diff_key(self::$filters_parsed, array('day' => 1, 'month' => 1, 'year' => 1, 'interval' => 0, 'direction' => 'asc', 'limit_results' => 20, 'starting' => 0));
+		$filters_dropdown = array_diff_key(self::$filters['parsed'], array('hour' => 1, 'day' => 1, 'month' => 1, 'year' => 1, 'interval' => 0, 'direction' => 1, 'limit_results' => 1, 'starting' => 1));
 		foreach ($filters_dropdown as $a_filter_label => $a_filter_details){
 			$a_filter_column = self::get_table_identifier($a_filter_label).$a_filter_label;
 			$a_filter_value = $a_filter_details[1];
@@ -186,60 +198,67 @@ class wp_slimstat_db {
 
 			switch ($a_filter_details[0]){
 				case 'is_not_equal_to':
-					self::$filters_sql_where .= " AND $a_filter_column <> '$a_filter_value'";
+					self::$filters['sql_where'] .= " AND $a_filter_column <> '$a_filter_value'";
 					break;
 				case 'contains':
-					self::$filters_sql_where .= " AND $a_filter_column LIKE '%$a_filter_value%'";
+					self::$filters['sql_where'] .= " AND $a_filter_column LIKE '%$a_filter_value%'";
 					break;
 				case 'does_not_contain':
-					self::$filters_sql_where .= " AND $a_filter_column NOT LIKE '%$a_filter_value%'";
+					self::$filters['sql_where'] .= " AND $a_filter_column NOT LIKE '%$a_filter_value%'";
 					break;
 				case 'starts_with':
-					self::$filters_sql_where .= " AND $a_filter_column LIKE '$a_filter_value%'";
+					self::$filters['sql_where'] .= " AND $a_filter_column LIKE '$a_filter_value%'";
 					break;
 				case 'ends_with':
-					self::$filters_sql_where .= " AND $a_filter_column LIKE '%$a_filter_value'";
+					self::$filters['sql_where'] .= " AND $a_filter_column LIKE '%$a_filter_value'";
 					break;
 				case 'sounds_like':
-					self::$filters_sql_where .= " AND SOUNDEX($a_filter_column) = SOUNDEX('$a_filter_value')";
+					self::$filters['sql_where'] .= " AND SOUNDEX($a_filter_column) = SOUNDEX('$a_filter_value')";
 					break;
 				case 'is_empty':
-					self::$filters_sql_where .= " AND $a_filter_column = '' AND $a_filter_column <> '$a_filter_empty'";
+					self::$filters['sql_where'] .= " AND $a_filter_column = '' AND $a_filter_column <> '$a_filter_empty'";
 					break;
 				case 'is_not_empty':
-					self::$filters_sql_where .= " AND $a_filter_column <> '' AND $a_filter_column <> '$a_filter_empty'";
+					self::$filters['sql_where'] .= " AND $a_filter_column <> '' AND $a_filter_column <> '$a_filter_empty'";
 					break;
 				case 'is_greater_than':
-					self::$filters_sql_where .= " AND $a_filter_column > '$a_filter_value'";
+					self::$filters['sql_where'] .= " AND $a_filter_column > '$a_filter_value'";
 					break;
 				case 'is_less_than':
-					self::$filters_sql_where .= " AND $a_filter_column < '$a_filter_value'";
+					self::$filters['sql_where'] .= " AND $a_filter_column < '$a_filter_value'";
 					break;
 				default:
-					self::$filters_sql_where .= " AND $a_filter_column = '$a_filter_value'";
+					self::$filters['sql_where'] .= " AND $a_filter_column = '$a_filter_value'";
 			}
 
 			// Some columns are in separate tables, so we need to join them
 			switch (self::get_table_identifier($a_filter_label)){
 				case 'tb.':
-					self::$filters_sql_from['browsers'] = 'INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
+					self::$filters['sql_from']['browsers'] = 'INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_browsers tb ON t1.browser_id = tb.browser_id';
 					break;
 				case 'tss.':
-					self::$filters_sql_from['screenres'] = 'INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
+					self::$filters['sql_from']['screenres'] = 'INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_screenres tss ON t1.screenres_id = tss.screenres_id';
 					break;
 				case 'tci.':
-					self::$filters_sql_from['content_info'] = 'INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
+					self::$filters['sql_from']['content_info'] = 'INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_content_info tci ON t1.content_info_id = tci.content_info_id';
+					break;
+				case 'to.':
+					self::$filters['sql_from']['outbound'] = 'INNER JOIN '.$GLOBALS['wpdb']->prefix.'slim_outbound to ON t1.id = to.id';
 					break;
 				default:
 			}
 		}
+		self::$filters['sql_from']['all_others'] = trim(self::$filters['sql_from']['browsers'].' '.self::$filters['sql_from']['screenres'].' '.self::$filters['sql_from']['content_info'].' '.self::$filters['sql_from']['outbound']);
+		self::$filters['sql_from']['all'] = $GLOBALS['wpdb']->prefix.'slim_stats t1 '.self::$filters['sql_from']['all_others'];
 	}
 	// end init
 
 	/**
 	 * Associates tables and their 'SQL aliases'
 	 */
-	public static function get_table_identifier($_field = 'id'){
+	public static function get_table_identifier($_field = 'id', $_as_column = ''){
+		if (!empty($_as_column)) return '';
+
 		switch($_field){
 			case 'browser':
 			case 'version':
@@ -271,8 +290,8 @@ class wp_slimstat_db {
 			SELECT COUNT(*) count
 				FROM (
 					SELECT resource
-					FROM '.self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info'].'
-					WHERE visit_id <> 0 AND resource <> "__l_s__" AND resource <> "" '.self::$filters_sql_where.' '.self::$filters_date_sql_where.'
+					FROM '.self::$filters['sql_from']['all'].'
+					WHERE visit_id <> 0 AND resource <> "__l_s__" AND resource <> "" '.self::$filters['sql_where'].' '.self::$filters['date_sql_where'].'
 					GROUP BY visit_id
 					HAVING COUNT(visit_id) = 1
 				) as ts1'));
@@ -283,50 +302,28 @@ class wp_slimstat_db {
 			SELECT COUNT(*) count
 				FROM (
 					SELECT resource, visit_id, dt
-					FROM '.self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info'].'
-					WHERE visit_id > 0 AND resource <> "" AND resource <> "__l_s__" '.self::$filters_sql_where.' '.self::$filters_date_sql_where.'
+					FROM '.self::$filters['sql_from']['all'].'
+					WHERE visit_id > 0 AND resource <> "" AND resource <> "__l_s__" '.self::$filters['sql_where'].' '.self::$filters['date_sql_where'].'
 					GROUP BY visit_id
 					HAVING dt = MAX(dt)
 				) AS ts1'));
 	}
 
 	public static function count_records($_where_clause = '1=1', $_distinct_column = '*', $_use_filters = true, $_join_tables = ''){
-		// Include the appropriate tables in the query
-		$sql_from = '';
-		if (empty(self::$filters_sql_from['browsers']) && strpos($_where_clause, 'tb.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-
-		if (empty(self::$filters_sql_from['screenres']) && strpos($_where_clause, 'tss.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-
-		if (empty(self::$filters_sql_from['content_info']) && strpos($_where_clause, 'tci.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
-			
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
 
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT($column) count
-				FROM ".self::$table_stats.' t1 '.($_use_filters?self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info']:'')." $sql_from
-				WHERE ".(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters_sql_where.' '.self::$filters_date_sql_where:'')));
+				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
+				WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where'].' '.self::$filters['date_sql_where']:'')));
 	}
 
 	public static function count_records_having($_where_clause = '1=1', $_column = 't1.ip', $_having_clause = ''){
-		// Include the appropriate tables in the query
-		$sql_from = '';
-		if (empty(self::$filters_sql_from['browsers']) && strpos($_where_clause, 'tb.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-
-		if (empty(self::$filters_sql_from['screenres']) && strpos($_where_clause, 'tss.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-
-		if (empty(self::$filters_sql_from['content_info']) && strpos($_where_clause, 'tci.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
-
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT(*) FROM (
 					SELECT $_column
-					FROM ".self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info']." $sql_from
-					WHERE $_where_clause ".self::$filters_sql_where.' '.self::$filters_date_sql_where."
+					FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_where_clause)."
+					WHERE $_where_clause ".self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 					GROUP BY $_column
 					".(!empty($_having_clause)?"HAVING $_having_clause":'').')
 				AS ts1'));
@@ -335,7 +332,7 @@ class wp_slimstat_db {
 	public static function get_data_size(){
 		$suffix = 'KB';
 
-		$sql = 'SHOW TABLE STATUS LIKE "'.self::$table_stats.'"';
+		$sql = 'SHOW TABLE STATUS LIKE "'.$GLOBALS['wpdb']->prefix.'slim_stats"';
 		$myTableDetails = $GLOBALS['wpdb']->get_row($sql, 'ARRAY_A', 0);
 
 		$myTableSize = ( $myTableDetails['Data_length'] / 1024 ) + ( $myTableDetails['Index_length'] / 1024 );
@@ -344,15 +341,15 @@ class wp_slimstat_db {
 			$myTableSize /= 1024;
 			$suffix = 'MB';
 		}
-		return number_format($myTableSize, 2, self::$decimal_separator, self::$thousand_separator).' '.$suffix;
+		return number_format($myTableSize, 2, self::$formats['decimal'], self::$formats['thousand']).' '.$suffix;
 	}
 
 	public static function get_max_and_average_pages_per_visit(){
 		return $GLOBALS['wpdb']->get_row('
 			SELECT AVG(ts1.count) avg, MAX(ts1.count) max FROM (
 					SELECT count(ip) count, visit_id
-					FROM '.self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info'].'
-					WHERE visit_id > 0 '.self::$filters_sql_where.' '.self::$filters_date_sql_where.'
+					FROM '.self::$filters['sql_from']['all'].'
+					WHERE visit_id > 0 '.self::$filters['sql_where'].' '.self::$filters['date_sql_where'].'
 					GROUP BY visit_id
 				) AS ts1', ARRAY_A);
 	}
@@ -360,282 +357,256 @@ class wp_slimstat_db {
 	public static function get_oldest_visit(){
 		return $GLOBALS['wpdb']->get_var('
 			SELECT t1.dt
-				FROM '.self::$table_stats.' t1
+				FROM '.$GLOBALS['wpdb']->prefix.'slim_stats t1
 				ORDER BY t1.dt ASC
 				LIMIT 0,1');
 	}
 
 	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = ''){
-		// Include the appropriate tables in the query
-		$sql_from = $sql_inner_from = '';
-		if (strpos($_join_tables, 'tb.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-		if (empty(self::$filters_sql_from['browsers']) && (strpos($_column, 'tb.') !== false || strpos($_custom_where, 'tb.') !== false))
-			$sql_inner_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-
-		if(strpos($_join_tables, 'tss.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-		if (empty(self::$filters_sql_from['screenres']) && (strpos($_column, 'tss.') !== false || strpos($_custom_where, 'tss.') !== false))
-			$sql_inner_from .=  ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-
-		if(strpos($_join_tables,'tci.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
-		if (empty(self::$filters_sql_from['content_info']) && strpos($_column.$_custom_where, 'tci.') !== false)
-			$sql_inner_from .=  ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
-
 		return $GLOBALS['wpdb']->get_results('
 			SELECT t1.*'.(!empty($_join_tables)?", $_join_tables":'')."
 				FROM (
 					SELECT $_column, MAX(t1.id) maxid
-					FROM ".self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info']." $sql_inner_from
-					WHERE ".(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters_sql_where.' '.self::$filters_date_sql_where."
+					FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
+					WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 					GROUP BY $_column $_having_clause
-				) AS ts1 INNER JOIN ".self::$table_stats." t1 ON ts1.maxid = t1.id $sql_from
-				ORDER BY ".(empty($_order_by)?'t1.dt '.self::$filters_parsed['direction']:$_order_by).'
-				LIMIT '.self::$filters_parsed['starting'].', '.self::$filters_parsed['limit_results'], ARRAY_A);
+				) AS ts1 INNER JOIN ".$GLOBALS['wpdb']->prefix.'slim_stats t1 ON ts1.maxid = t1.id '.self::_add_filters_to_sql_from($_join_tables, true)."
+				ORDER BY ".(empty($_order_by)?'t1.dt '.self::$filters['parsed']['direction'][1]:$_order_by).'
+				LIMIT '.self::$filters['parsed']['starting'][1].', '.self::$filters['parsed']['limit_results'][1], ARRAY_A);
 	}
 
 	public static function get_recent_outbound($_type = -1){
 		return $GLOBALS['wpdb']->get_results('
 			SELECT tob.outbound_id as visit_id, tob.outbound_domain, tob.outbound_resource as resource, tob.type, tob.notes, t1.ip, t1.other_ip, t1.user, "local" as domain, t1.resource as referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
-				FROM  '.self::$table_stats.' t1 INNER JOIN '.self::$table_outbound.' tob ON tob.id = t1.id INNER JOIN '.self::$table_browsers.' tb on t1.browser_id = tb.browser_id '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info'].'
-				WHERE '.(($_type != -1)?"tob.type = $_type":'tob.type > 0').' '.self::$filters_sql_where.' '.self::$filters_date_sql_where.'
-				ORDER BY tob.dt '.self::$filters_parsed['direction'].'
-				LIMIT '.self::$filters_parsed['starting'].','.self::$filters_parsed['limit_results'], ARRAY_A);
+				FROM  '.$GLOBALS['wpdb']->prefix.'slim_stats t1 INNER JOIN '.$GLOBALS['wpdb']->prefix.'slim_outbound tob ON tob.id = t1.id INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_browsers tb on t1.browser_id = tb.browser_id '.self::$filters['sql_from']['screenres'].' '.self::$filters['sql_from']['content_info'].'
+				WHERE '.(($_type != -1)?"tob.type = $_type":'tob.type > 0').' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where'].'
+				ORDER BY tob.dt '.self::$filters['parsed']['direction'][1].'
+				LIMIT '.self::$filters['parsed']['starting'][1].','.self::$filters['parsed']['limit_results'][1], ARRAY_A);
 	}
 
 	public static function get_popular_complete($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = ''){
-		// Include the appropriate tables in the query
-		$sql_from = $sql_inner_from = '';
-		if (strpos($_join_tables, 'tb.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-		if (empty(self::$filters_sql_from['browsers']) && strpos($_column.$_custom_where, 'tb.') !== false)
-			$sql_inner_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-
-		if(strpos($_join_tables, 'tss.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-		if (empty(self::$filters_sql_from['screenres']) && strpos($_column.$_custom_where, 'tss.') !== false)
-			$sql_inner_from .=  ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-
-		if(strpos($_join_tables,'tci.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
-		if (empty(self::$filters_sql_from['content_info']) && strpos($_column.$_custom_where, 'tci.') !== false)
-			$sql_inner_from .=  ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
-
 		return $GLOBALS['wpdb']->get_results('
 			SELECT t1.*'.(!empty($_join_tables)?", $_join_tables":'').", ts1.count
 				FROM (
 					SELECT $_column, MAX(t1.id) maxid, COUNT(*) count
-					FROM ".self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info']." $sql_inner_from
-					WHERE ".(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters_sql_where.' '.self::$filters_date_sql_where."
+					FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
+					WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 					GROUP BY $_column $_having_clause
-				) AS ts1 JOIN ".self::$table_stats." t1 ON ts1.maxid = t1.id $sql_from
-				ORDER BY ts1.count ".self::$filters_parsed['direction']."
-				LIMIT ".self::$filters_parsed['starting'].', '.self::$filters_parsed['limit_results'], ARRAY_A);
+				) AS ts1 JOIN ".$GLOBALS['wpdb']->prefix.'slim_stats t1 ON ts1.maxid = t1.id '.self::_add_filters_to_sql_from($_join_tables, true).'
+				ORDER BY ts1.count '.self::$filters['parsed']['direction'][1]."
+				LIMIT ".self::$filters['parsed']['starting'][1].', '.self::$filters['parsed']['limit_results'][1], ARRAY_A);
 	}
 
-	public static function get_popular($_column = 't1.id', $_custom_where = '', $_more_columns = '', $_having_clause = ''){
-		// Include the appropriate tables in the query
-		$sql_from = '';
-		if (empty(self::$filters_sql_from['browsers']) && strpos($_column.$_custom_where.$_more_columns, 'tb.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-
-		if (empty(self::$filters_sql_from['screenres']) && strpos($_column.$_custom_where.$_more_columns, 'tss.') !== false)
-			$sql_from .=  ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-
-		if (empty(self::$filters_sql_from['content_info']) && strpos($_column.$_custom_where.$_more_columns, 'tci.') !== false)
-			$sql_from .=  ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
-
+	public static function get_popular($_column = 't1.id', $_custom_where = '', $_more_columns = '', $_having_clause = '', $_as_column = ''){
 		return $GLOBALS['wpdb']->get_results("
-			SELECT $_column$_more_columns, COUNT(*) count
-			FROM ".self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info']." $sql_from
-			WHERE ".(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters_sql_where.' '.self::$filters_date_sql_where."
+			SELECT $_column$_as_column$_more_columns, COUNT(*) count
+			FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where.$_more_columns).'
+			WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 			GROUP BY $_column$_more_columns $_having_clause
-			ORDER BY count ".self::$filters_parsed['direction']."
-			LIMIT ".self::$filters_parsed['starting'].', '.self::$filters_parsed['limit_results'], ARRAY_A);
+			ORDER BY count ".self::$filters['parsed']['direction'][1]."
+			LIMIT ".self::$filters['parsed']['starting'][1].', '.self::$filters['parsed']['limit_results'][1], ARRAY_A);
 	}
 
-	public static function extract_data_for_chart($_data1, $_data2, $_label_data1 = '', $_label_data2 = '', $_custom_where_clause = '', $_sql_from_where = ''){
+	public static function extract_data_for_chart($_data1, $_data2, $_custom_where_clause = '', $_sql_from_where = ''){
 		// Avoid PHP warnings in strict mode
-		$result->current_total1 = $result->current_total2 = $result->current_non_zero_count = $result->previous_total = $result->previous_non_zero_count = $result->today = $result->yesterday = $result->max_yaxis = 0;
-		$result->current_data1 = $result->current_data2 = $result->previous_data = $result->ticks = '';
-		$data1 = $data2 = array();
+		$result = array(
+			'current' => array('non_zero_count' => 0, 'data1' => '', 'data2' => '', 'total1' => 0, 'total2' => 0),
+			'previous' => array('non_zero_count' => 0, 'data' => '', 'total' => 0),
+			'max_yaxis' => 0,
+			'ticks' => '', 'markings' => ''
+		);
+		$data = array();
 
-		if (self::$day_filter_active){
-			// SQL query
-			$select_columns = "DATE_FORMAT(FROM_UNIXTIME(dt), '%H') h, DATE_FORMAT(FROM_UNIXTIME(dt), '%d') d";
-			$time_constraints = '(dt BETWEEN '.self::$current_date['utime_start'].' AND '.self::$current_date['utime_end'].' OR dt BETWEEN '.(strtotime(self::$yesterday['y'].'/'.self::$yesterday['m'].'/'.self::$yesterday['d'].' 00:00')).' AND '.(strtotime(self::$yesterday['y'].'/'.self::$yesterday['m'].'/'.self::$yesterday['d'].' 00:00')+86399).') ';
-			$group_and_order = " GROUP BY h, d ORDER BY d ASC, h asc";
+		$time_constraints = '(dt BETWEEN '.self::$timeframes['current_utime_start'].' AND '.self::$timeframes['current_utime_end'].' OR dt BETWEEN '.self::$timeframes['previous_utime_start'].' AND '.self::$timeframes['previous_utime_end'].')';
+		$data['count_offset'] = 0;
+		if (empty(self::$filters['parsed']['interval'][1])){
+			if (self::$timeframes['current_day']['hour_selected']){
+				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d %H:%i') datestamp, $_data1 data1, $_data2 data2";
+				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%H'), DATE_FORMAT(FROM_UNIXTIME(dt), '%i') ORDER BY datestamp ASC";
+				$data['end_value'] = 60;
+				$data['count_offset'] = 1;
+			}
+			elseif (self::$timeframes['current_day']['day_selected']){
+				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d %H:00') datestamp, $_data1 data1, $_data2 data2";
+				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%d'), DATE_FORMAT(FROM_UNIXTIME(dt), '%H') ORDER BY datestamp ASC";
+				$data['end_value'] = 24;
+				$data['count_offset'] = 1;
+			}
+			elseif (self::$timeframes['current_day']['year_selected'] && !self::$timeframes['current_day']['month_selected']){
+				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m 01 00:00') datestamp, $_data1 data1, $_data2 data2";
+				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%Y'), DATE_FORMAT(FROM_UNIXTIME(dt), '%m') ORDER BY datestamp ASC";
+				$data['end_value'] = 12;
 
-			// Data parsing
-			$filter_idx = 'd'; $group_idx = 'h';
-			$data_start_value = 0; $data_end_value = 24;
-			$result->min_max_ticks = ',min:0,max:23';
-			$result->ticks = ($GLOBALS['wp_locale']->text_direction == 'rtl')?'[0,"23"],[1,"22"],[2,"21"],[3,"20"],[4,"19"],[5,"18"],[6,"17"],[7,"16"],[8,"15"],[9,"14"],[10,"13"],[11,"12"],[12,"11"],[13,"10"],[14,"9"],[15,"8"],[16,"7"],[17,"6"],[18,"5"],[19,"4"],[20,"3"],[21,"2"],[22,"1"],[23,"0"],':'[0,"00"],[1,"01"],[2,"02"],[3,"03"],[4,"04"],[5,"05"],[6,"06"],[7,"07"],[8,"08"],[9,"09"],[10,"10"],[11,"11"],[12,"12"],[13,"13"],[14,"14"],[15,"15"],[16,"16"],[17,"17"],[18,"18"],[19,"19"],[20,"20"],[21,"21"],[22,"22"],[23,"23"],';
-			$label_date_format = get_option('date_format', 'd-m-Y');
-		}
-		else{
-			// SQL query
-			$select_columns = "DATE_FORMAT(FROM_UNIXTIME(dt), '%m') m, DATE_FORMAT(FROM_UNIXTIME(dt), '%d') d";
-			$time_constraints = '(dt BETWEEN '.self::$current_date['utime_start'].' AND '.self::$current_date['utime_end'];
-			if (empty(self::$filters_parsed['interval'][1])) $time_constraints .= ' OR dt BETWEEN '.(strtotime(self::$previous_month['y'].'/'.self::$previous_month['m'].'/01 00:00')).' AND '.(strtotime(self::$previous_month['y'].'/'.self::$previous_month['m'].'/01 +1 month')-1);
-			$time_constraints .= ')';
-			$group_and_order = " GROUP BY m, d ORDER BY m ASC,d ASC";
-
-			// Data parsing
-			$filter_idx = 'm'; $group_idx = 'd';
-			if (empty(self::$filters_parsed['interval'][1])){
-				$data_start_value = 0; $data_end_value = 31;
-				$result->min_max_ticks = ',min:0,max:30';
-				$result->ticks = ($GLOBALS['wp_locale']->text_direction == 'rtl')?'[0,"31"],[1,"30"],[2,"29"],[3,"28"],[4,"27"],[5,"26"],[6,"25"],[7,"24"],[8,"23"],[9,"22"],[10,"21"],[11,"20"],[12,"19"],[13,"18"],[14,"17"],[15,"16"],[16,"15"],[17,"14"],[18,"13"],[19,"12"],[20,"11"],[21,"10"],[22,"9"],[23,"8"],[24,"7"],[25,"6"],[26,"5"],[27,"4"],[28,"3"],[29,"2"],[30,"1"],':'[0,"1"],[1,"2"],[2,"3"],[3,"4"],[4,"5"],[5,"6"],[6,"7"],[7,"8"],[8,"9"],[9,"10"],[10,"11"],[11,"12"],[12,"13"],[13,"14"],[14,"15"],[15,"16"],[16,"17"],[17,"18"],[18,"19"],[19,"20"],[20,"21"],[21,"22"],[22,"23"],[23,"24"],[24,"25"],[25,"26"],[26,"27"],[27,"28"],[28,"29"],[29,"30"],[30,"31"],';
-				$label_date_format = 'm/Y';
 			}
 			else{
-				$data_start_value = 0; $data_end_value = self::$filters_parsed['interval'][1];
-				$result->min_max_ticks = '';
-				$label_date_format = '';
+				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d 00:00') datestamp, $_data1 data1, $_data2 data2";
+				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%m'), DATE_FORMAT(FROM_UNIXTIME(dt), '%d') ORDER BY datestamp ASC";
+				$data['end_value'] = 31;
+
 			}
 		}
-
-		// This SQL query has a standard format: grouped by day or hour and then data1 and data2 represent the information we want to extract
-		$sql = "SELECT $select_columns, $_data1 data1, $_data2 data2";
-
-		$sql_from = '';
-		if (empty(self::$filters_sql_from['browsers']) && strpos($_data1.$_data2.$_custom_where_clause, 'tb.') !== false)
-			$sql_from .= ' INNER JOIN '.self::$table_browsers.' tb ON t1.browser_id = tb.browser_id';
-
-		if (empty(self::$filters_sql_from['screenres']) && strpos($_data1.$_data2.$_custom_where_clause, 'tss.') !== false)
-			$sql_from .=  ' INNER JOIN '.self::$table_screenres.' tss ON t1.screenres_id = tss.screenres_id';
-
-		if (empty(self::$filters_sql_from['content_info']) && strpos($_data1.$_data2.$_custom_where_clause, 'tci.') !== false)
-			$sql_from .=  ' INNER JOIN '.self::$table_content_info.' tci ON t1.content_info_id = tci.content_info_id';
+		else{
+			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d 00:00') datestamp, $_data1 data1, $_data2 data2";
+			$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%m'), DATE_FORMAT(FROM_UNIXTIME(dt), '%d') ORDER BY datestamp ASC";
+			$data['end_value'] = self::$filters['parsed']['interval'][1];
+			$data['count_offset'] = -1; // skip ticks generation
+		}
 
 		// Panel 4 has a slightly different structure
 		if(empty($_sql_from_where)){
-			$sql .= '	FROM '.self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info']." $sql_from
-						WHERE $time_constraints ".self::$filters_sql_where.' '.$_custom_where_clause;
+			$sql .= '	FROM '.self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause)."
+						WHERE $time_constraints ".self::$filters['sql_where'].' '.$_custom_where_clause;
 		}
 		else{
-			$sql_no_placeholders = str_replace('[from_tables]', self::$table_stats.' t1 '.self::$filters_sql_from['browsers'].' '.self::$filters_sql_from['screenres'].' '.self::$filters_sql_from['content_info']." $sql_from", $_sql_from_where);
-			$sql_no_placeholders = str_replace('[where_clause]', $time_constraints.' '.self::$filters_sql_where.' '.$_custom_where_clause, $sql_no_placeholders);
+			$sql_no_placeholders = str_replace('[from_tables]', self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause), $_sql_from_where);
+			$sql_no_placeholders = str_replace('[where_clause]', $time_constraints.' '.self::$filters['sql_where'].' '.$_custom_where_clause, $sql_no_placeholders);
 			$sql .= $sql_no_placeholders;
 		}
-		$sql .= $group_and_order;
+		$sql .= ' '.$group_and_order;
 
 		$array_results = $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
 
 		if (!is_array($array_results) || empty($array_results))
-			return $result;
+			$array_results = array_fill(0, $data['end_value']*2, array('datestamp' => 0, 'data1' => 0, 'data2' => 0, ));
 
-		// Double-pass: reorganize the data and then format it for Flot
+		// Reorganize the data and then format it for Flot
 		foreach ($array_results as $a_result){
-			$data1[$a_result[$filter_idx].$a_result[$group_idx]] = $a_result['data1'];
-			$data2[$a_result[$filter_idx].$a_result[$group_idx]] = $a_result['data2'];
+			$data[0][$a_result['datestamp']] = $a_result['data1'];
+			$data[1][$a_result['datestamp']] = $a_result['data2'];
 		}
+//print_r($data);
+		$result['max_yaxis'] = max(max($data[0]), max($data[1]));
+		// $result['min_max_ticks'] = ',min:0,max:'.($data['end_value']-1);
+		$result['ticks'] = self::_generate_ticks($data['end_value'], $data['count_offset']);
 
-		$result->max_yaxis = max(max($data1), max($data2));
-		$k = ($GLOBALS['wp_locale']->text_direction == 'rtl')?$data_start_value-$data_end_value+1:0;
-		for ($i=$data_start_value;$i<$data_end_value;$i++){
+		$markings = '';
+
+		// Reverse the chart, if needed
+		$k = ($GLOBALS['wp_locale']->text_direction == 'rtl')?1-$data['end_value']:0;
+
+		for ($i=0;$i<$data['end_value'];$i++){
 			$j = abs($k+$i);
-			if (self::$day_filter_active){
-				$timestamp_current = mktime($j, 0, 0, self::$current_date['m'], self::$current_date['d'], self::$current_date['y']);
-				$hour_idx_current = date('H', $timestamp_current);
-				$day_idx_current = date('d', $timestamp_current);
-				$month_idx_current = date('m', $timestamp_current);
-				$year_idx_current = date('Y', $timestamp_current);
-				$date_idx_current = $day_idx_current.$hour_idx_current;
-				$strtotime_current = strtotime("$year_idx_current-$month_idx_current-$day_idx_current $hour_idx_current:00:00");
-				$current_filter_query = '';
-
-				$timestamp_previous = mktime($j, 0, 0, self::$current_date['m'], self::$current_date['d']-1, self::$current_date['y']);
-				$hour_idx_previous = date('H', $timestamp_previous);
-				$day_idx_previous = date('d', $timestamp_previous);
-				$month_idx_previous = date('m', $timestamp_previous);
-				$year_idx_previous = date('Y', $timestamp_previous);
-				$date_idx_previous = $day_idx_previous.$hour_idx_previous;
-				$strtotime_previous = strtotime("$year_idx_previous-$month_idx_previous-$day_idx_previous $hour_idx_previous:00:00");
-				$previous_filter_query = '';
-
-				if ($date_idx_current == self::$current_date['m'].self::$current_date['d'] && !empty($data1[$date_idx_current])) $result->today = $data1[$date_idx_current];
-				if ($date_idx_current == self::$yesterday['m'].self::$yesterday['d'] && !empty($data1[$date_idx_current])) $result->yesterday = $data1[$date_idx_current];
-			}
-			else{
-				$timestamp_current = mktime(0, 0, 0, self::$current_date['m'], (!empty(self::$filters_parsed['interval'][1])?self::$current_date['d']:1)+$j, self::$current_date['y']);
-				$day_idx_current = date('d', $timestamp_current);
-				$month_idx_current = date('m', $timestamp_current);
-				$year_idx_current = date('Y', $timestamp_current);
-				$date_idx_current = $month_idx_current.$day_idx_current;
-
-				$strtotime_current = strtotime("$year_idx_current-$month_idx_current-$day_idx_current 00:00:00");
-				$current_filter_query = ',"'.wp_slimstat_boxes::replace_query_arg(array('day','month','year'), array($day_idx_current, $month_idx_current, $year_idx_current)).'&slimpanel='.wp_slimstat_boxes::$current_screen.'"';
-
-				$timestamp_previous = mktime(0, 0, 0, self::$current_date['m']-1, (!empty(self::$filters_parsed['interval'][1])?self::$current_date['d']:1)+$j, self::$current_date['y']);
-				$day_idx_previous = date('d', $timestamp_previous);
-				$month_idx_previous = date('m', $timestamp_previous);
-				$year_idx_previous = date('Y', $timestamp_previous);
-				$date_idx_previous = $month_idx_previous.$day_idx_previous;
-				$strtotime_previous = strtotime("$year_idx_previous-$month_idx_previous-$day_idx_previous 00:00:00");
-				$previous_filter_query = ',"'.wp_slimstat_boxes::replace_query_arg(array('day','month','year'), array($day_idx_previous, $month_idx_previous, $year_idx_previous)).'&slimpanel='.wp_slimstat_boxes::$current_screen.'"';
-			}
-
-			// Format each group of data
-
-			if (($j == $day_idx_current - 1) || self::$day_filter_active || !empty(self::$filters_parsed['interval'][1])){
-				if (!empty($data1[$date_idx_current])){
-					$result->current_data1 .= "[$i,{$data1[$date_idx_current]}$current_filter_query],";
-					$result->current_total1 += $data1[$date_idx_current];
-					$result->current_non_zero_count++;
-				}	
-				elseif($strtotime_current <= date_i18n('U')){
-					$result->current_data1 .= "[$i,0],";
+			if (empty(self::$filters['parsed']['interval'][1])){
+				if (self::$timeframes['current_day']['hour_selected']){
+					$datestamp['timestamp_current'] = mktime(self::$timeframes['current_day']['h'], $j, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
+					$datestamp['timestamp_previous'] = mktime(self::$timeframes['current_day']['h'] - 1, $j, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
+					$datestamp['filter_current'] =  '';
+					$datestamp['filter_previous'] =  '';
+					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.self::$timeframes['current_day']['d'].' '.self::$timeframes['current_day']['h'].':'.sprintf('%02d', $j);
+//print_r($datestamp['marking_signature']);
+					$datestamp['group'] = 'h';
 				}
-
-				if (!empty($data2[$date_idx_current])){
-					$result->current_data2 .= "[$i,{$data2[$date_idx_current]}$current_filter_query],";
-					$result->current_total2 += $data2[$date_idx_current];
+				elseif (self::$timeframes['current_day']['day_selected']){
+					$datestamp['timestamp_current'] = mktime($j, 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
+					$datestamp['timestamp_previous'] = mktime($j, 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d']-1, self::$timeframes['current_day']['y']);
+					$datestamp['filter_current'] = ',"'.wp_slimstat_boxes::fs_url(array('hour','day','month','year'), array($j, self::$timeframes['current_day']['d'], self::$timeframes['current_day']['m'], self::$timeframes['current_day']['y'])).'"';
+					$datestamp['filter_previous'] = ',"'.wp_slimstat_boxes::fs_url(array('hour','day','month','year'), array($j, date_i18n('d', $datestamp['timestamp_previous']), date_i18n('m', $datestamp['timestamp_previous']), date_i18n('Y', $datestamp['timestamp_previous']))).'"';
+					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.self::$timeframes['current_day']['d'].' '.sprintf('%02d', $j);
+					$datestamp['group'] = 'd';
 				}
-				elseif($strtotime_current <= date_i18n('U')){
-					$result->current_data2 .= "[$i,0],";
-				}
-			}
-
-			if (($j == $day_idx_previous - 1) || self::$day_filter_active || !empty(self::$filters_parsed['interval'][1])){
-				if (empty(self::$filters_parsed['interval'][1])){
-					if (!empty($data1[$date_idx_previous])){
-						$result->previous_data .= "[$i,{$data1[$date_idx_previous]}$previous_filter_query],";
-						$result->previous_total += $data1[$date_idx_previous];
-					}
-					elseif($strtotime_previous <= date_i18n('U')){
-						$result->previous_data .= "[$i,0],";
-					}
+				elseif (self::$timeframes['current_day']['year_selected'] && !self::$timeframes['current_day']['month_selected']){
+					$datestamp['timestamp_current'] = mktime(0, 0, 0, $j+1, 1, self::$timeframes['current_day']['y']);
+					$datestamp['timestamp_previous'] = mktime(0, 0, 0, $j+1, 1, self::$timeframes['current_day']['y']-1);
+					$datestamp['filter_current'] = ',"'.wp_slimstat_boxes::fs_url(array('month','year'), array($j+1, self::$timeframes['current_day']['y'])).'"';
+					$datestamp['filter_previous'] = ',"'.wp_slimstat_boxes::fs_url(array('month','year'), array($j+1, self::$timeframes['current_day']['y']-1)).'"';
+					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.sprintf('%02d', $j+1);
+					$datestamp['group'] = 'Y';
 				}
 				else{
-					$date_label = date('d/m', mktime(0, 0, 0, self::$current_date['m'], self::$current_date['d']+$i, self::$current_date['y']));
-					$result->ticks .= "[$i, \"$date_label\"],";
+					$datestamp['timestamp_current'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'], $j+1, self::$timeframes['current_day']['y']);
+					$datestamp['timestamp_previous'] = mktime(0, 0, 0, self::$timeframes['current_day']['m']-1, $j+1, self::$timeframes['current_day']['y']);
+					$datestamp['filter_current'] =  ',"'.wp_slimstat_boxes::fs_url(array('day','month','year'), array($j+1, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['y'])).'"';
+					$datestamp['filter_previous'] =  ',"'.wp_slimstat_boxes::fs_url(array('day','month','year'), array($j+1, date_i18n('m', $datestamp['timestamp_previous']), date_i18n('Y', $datestamp['timestamp_previous']))).'"';
+					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.sprintf('%02d', $j+1);
+					$datestamp['group'] = 'm';
+				}
+			}
+			else{
+				$datestamp['timestamp_current'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d']+$j, self::$timeframes['current_day']['y']);
+				$datestamp['timestamp_previous'] = mktime(0, 0, 0, self::$timeframes['current_day']['m']-1, self::$timeframes['current_day']['d']+$j, self::$timeframes['current_day']['y']);
+				$datestamp['filter_current'] =  ',"'.wp_slimstat_boxes::fs_url(array('day','month','year'), array(self::$timeframes['current_day']['d']+$j, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['y'])).'"';
+				$datestamp['filter_previous'] =  ',"'.wp_slimstat_boxes::fs_url(array('day','month','year'), array(self::$timeframes['current_day']['d']+$j, date_i18n('m', $datestamp['timestamp_previous']), date_i18n('Y', $datestamp['timestamp_previous']))).'"';
+				$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.sprintf('%02d', self::$timeframes['current_day']['d']+$j);
+				$datestamp['group'] = 'm';
+			}
+
+			$datestamp['current'] = date_i18n('Y m d H:i', $datestamp['timestamp_current']);
+			$datestamp['previous'] = date_i18n('Y m d H:i', $datestamp['timestamp_previous']);
+//print_r(substr($datestamp['current'], 0, $datestamp['marking_substr']));
+			
+
+			// if (date_i18n('md', $datestamp['timestamp_current']) == self::$timeframes['current_day']['m'].self::$timeframes['current_day']['d'] && !empty($data[0][$datestamp['current']])) $result['today'] = $data[0][$datestamp['current']];
+			// if ($date_idx_current == self::$timeframes['previous_day']['m'].self::$timeframes['previous_day']['d'] && !empty($data1[$date_idx_current])) $result['yesterday'] = $data1[$date_idx_current];
+
+			// Format each group of data
+			//if (($j == $day_idx_current - 1) || self::$timeframes['current_day']['day_selected'] || !empty(self::$filters['parsed']['interval'][1])){
+			if (date_i18n($datestamp['group'], $datestamp['timestamp_current']) == date_i18n($datestamp['group'], self::$timeframes['current_utime_start']) || !empty(self::$filters['parsed']['interval'][1])){
+				if (!empty($data[0][$datestamp['current']])){
+					$result['current']['data1'] .= "[$i,{$data[0][$datestamp['current']]}{$datestamp['filter_current']}],";
+					$result['current']['total1'] += $data[0][$datestamp['current']];
+					$result['current']['non_zero_count']++;
+				}	
+				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
+					$result['current']['data1'] .= "[$i,0],";
+				}
+
+				if (!empty($data[1][$datestamp['current']])){
+					$result['current']['data2'] .= "[$i,{$data[1][$datestamp['current']]}{$datestamp['filter_current']}],";
+					$result['current']['total2'] += $data[1][$datestamp['current']];
+				}
+				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
+					$result['current']['data2'] .= "[$i,0],";
+				}
+			}
+
+			//if (($j == $day_idx_previous - 1) || self::$timeframes['current_day']['d']['selected'] || !empty(self::$filters['parsed']['interval'][1])){
+				//if (empty(self::$filters['parsed']['interval'][1])){
+			if (date_i18n($datestamp['group'], $datestamp['timestamp_previous']) == date_i18n($datestamp['group'], self::$timeframes['previous_utime_start']) && empty(self::$filters['parsed']['interval'][1])){
+				if (!empty($data[0][$datestamp['previous']])){
+					$result['previous']['data'] .= "[$i,{$data[0][$datestamp['previous']]}{$datestamp['filter_previous']}],";
+					$result['previous']['total'] += $data[0][$datestamp['previous']];
+
+
+
+					//if ((substr($datestamp['current'], 0, $datestamp['marking_substr']), $markings)) $result['markings'] .= "[$i,'gino']";
+				}
+				elseif($datestamp['timestamp_previous'] <= date_i18n('U')){
+					$result['previous']['data'] .= "[$i,0],";
+				}
+				//}
+				//else{
+				//	$date_label = date('d/m', mktime(0, 0, 0, self::$current_date['m'], self::$current_date['d']+$i, self::$current_date['y']));
+				//	$result->ticks .= "[$i, \"$date_label\"],";
+				//}
+			}
+			//}
+			
+			if (!empty(self::$filters['parsed']['interval'][1])){
+				$result['ticks'] .= "[$i, '".((self::$formats['decimal'] == '.')?date_i18n('m/d', $datestamp['timestamp_current']):date_i18n('d/m', $datestamp['timestamp_current']))."'],";
+			}
+			
+			if (!empty(wp_slimstat::$options['markings'])){
+				preg_match_all("/{$datestamp['marking_signature']}[^\=]*\=([^,]+)/", wp_slimstat::$options['markings'], $matches);
+//print_r($matches);
+				if (!empty($matches[1])){
+					$current_marking_description = '';
+					foreach($matches[1] as $a_description){
+						$current_marking_description .= trim($a_description).', ';
+					}
+					$current_marking_description = substr($current_marking_description, 0, -2);
+					$result['markings'] .= "[$i,SlimStatAdmin.options['max_yaxis']+1,'$current_marking_description'],";
 				}
 			}
 		}
+		
 
-		if (!empty($result->current_data1)){
-			$result->current_data1 = substr($result->current_data1, 0, -1);
-			$result->current_data1_label = "$_label_data1".(!empty($label_date_format)?' '.date_i18n($label_date_format, mktime(0, 0, 0, self::$current_date['m'], self::$current_date['d'], self::$current_date['y'])):'');
-		}
-		if (!empty($result->current_data2)){
-			$result->current_data2 = substr($result->current_data2, 0, -1);
-			$result->current_data2_label = "$_label_data2".(!empty($label_date_format)?' '.date_i18n($label_date_format, mktime(0, 0, 0, self::$current_date['m'], self::$current_date['d'], self::$current_date['y'])):'');
-		}
-		if (!empty($result->previous_data)){
-			$result->previous_data = substr($result->previous_data, 0, -1);
-			$result->previous_data_label = "$_label_data1";
-			if (!empty($label_date_format))
-				if (self::$day_filter_active)
-					$result->previous_data_label .= ' '.date_i18n($label_date_format, mktime(0, 0, 0, self::$yesterday['m'], self::$yesterday['d'], self::$yesterday['y']));
-				else
-					$result->previous_data_label .= ' '.date_i18n($label_date_format, mktime(0, 0, 0, self::$previous_month['m'], 1, self::$previous_month['y']));
-		}
-		if (!empty($result->ticks)){
-			$result->ticks = substr($result->ticks, 0, -1);
-		}
+		$result['current']['data1'] = substr($result['current']['data1'], 0, -1);
+		$result['current']['data2'] = substr($result['current']['data2'], 0, -1);
+		$result['previous']['data'] = substr($result['previous']['data'], 0, -1);
+		$result['ticks'] = substr($result['ticks'], 0, -1);
+		$result['markings'] = substr($result['markings'], 0, -1);
+		
+//print_r($result);
 		return $result;
 	}
 
@@ -647,5 +618,39 @@ class wp_slimstat_db {
 		else{
 			return (intval($_value)==$_value)?"<set value='$_value' link='$_link'/>":sprintf("<set value='%01.2f' link='%s'/>", $_value, $_link);
 		}
+	}
+	
+	protected function _add_filters_to_sql_from($_sql_tables = '', $_ignore_empty = false){
+		$sql_from = '';
+		if (($_ignore_empty || empty(self::$filters['sql_from']['browsers'])) && strpos($_sql_tables, 'tb.') !== false)
+			$sql_from .= ' INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_browsers tb ON t1.browser_id = tb.browser_id';
+
+		if (($_ignore_empty || empty(self::$filters['sql_from']['screenres'])) && strpos($_sql_tables, 'tss.') !== false)
+			$sql_from .=  ' INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_screenres tss ON t1.screenres_id = tss.screenres_id';
+
+		if (($_ignore_empty || empty(self::$filters['sql_from']['content_info'])) && strpos($_sql_tables, 'tci.') !== false)
+			$sql_from .=  ' INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_content_info tci ON t1.content_info_id = tci.content_info_id';
+			
+		if (($_ignore_empty || empty(self::$filters['sql_from']['outbound'])) && strpos($_sql_tables, 'to.') !== false)
+			$sql_from .=  ' INNER JOIN '.$GLOBALS['wpdb']->prefix.'slim_outbound to ON t1.id = to.id';
+		
+		return $sql_from;
+	}
+	
+	protected function _generate_ticks($_count = 0, $_offset = 0){
+		$ticks = '';
+		if ($_offset < 0) return $ticks;
+
+		if ($GLOBALS['wp_locale']->text_direction == 'rtl'){
+			for ($i = 0; $i < $_count; $i++){
+				$ticks .= '['.$i.',"'.($_count - $i - $_offset).'"],';
+			}
+		}
+		else{
+			for ($i = 0; $i < $_count; $i++){
+				$ticks .= '['.$i.',"'.($i - $_offset + 1).'"],';
+			}
+		}
+		return $ticks;	
 	}
 }

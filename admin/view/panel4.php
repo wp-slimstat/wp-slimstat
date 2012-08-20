@@ -10,13 +10,12 @@ $sql_from_where = "
 		WHERE [where_clause]
 		GROUP BY t1.visit_id
 	) AS ts1";
-$chart_data = wp_slimstat_db::extract_data_for_chart('ROUND(AVG(ts1.count),2)', 'MAX(ts1.count)', __('Avg Pageviews','wp-slimstat-view'), __('Longest visit','wp-slimstat-view'), 'AND t1.visit_id > 0', $sql_from_where);
 
 foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 	switch($a_box_id){
 		case 'slim_p4_01':
-			wp_slimstat_boxes::box_header('slim_p4_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', empty(wp_slimstat_db::$day_filter_active)?__('Daily Average Pageviews per Visit', 'wp-slimstat-view'):__('Hourly Average Pageviews per Visit', 'wp-slimstat-view'));
-			wp_slimstat_boxes::show_chart('slim_p4_01', $chart_data);
+			wp_slimstat_boxes::box_header('slim_p4_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_boxes::chart_title(__('Average Pageviews per Visit', 'wp-slimstat-view')));
+			wp_slimstat_boxes::show_chart('slim_p4_01', wp_slimstat_db::extract_data_for_chart('ROUND(AVG(ts1.count),2)', 'MAX(ts1.count)', 'AND t1.visit_id > 0', $sql_from_where), array(__('Avg Pageviews','wp-slimstat-view'), __('Longest visit','wp-slimstat-view')));
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p4_02':

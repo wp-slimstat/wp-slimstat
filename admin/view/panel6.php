@@ -6,14 +6,14 @@ $dataXML = "<map map_file='".plugins_url('/swf/world3.swf', __FILE__)."' tl_long
 $dataXML .= @file_get_contents(WP_PLUGIN_DIR.'/wp-slimstat/admin/view/swf/map_data.xml');
 $dataXML .= "</map>";
 // Limit results doesn't apply here
-wp_slimstat_db::$filters_parsed['limit_results'] = 9999;
+wp_slimstat_db::$filters['parsed']['limit_results'][1] = 9999;
 $countries = wp_slimstat_db::get_popular('t1.country');
 $total_count = wp_slimstat_db::count_records('1=1', '*');
 
 foreach($countries as $a_country){
 	$percentage = sprintf("%01.2f", (100*$a_country['count']/$total_count));
-	$percentage_format = ($total_count > 0)?number_format($percentage, 2, wp_slimstat_db::$decimal_separator, wp_slimstat_db::$thousand_separator):0;
-	$a_country['count'] = number_format($a_country['count'], 0, wp_slimstat_db::$decimal_separator, wp_slimstat_db::$thousand_separator);
+	$percentage_format = ($total_count > 0)?number_format($percentage, 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0;
+	$a_country['count'] = number_format($a_country['count'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']);
 	$dataXML = str_replace(": 0' mc_name='".strtoupper($a_country['country'])."'", ": $percentage_format% ({$a_country['count']})' mc_name='".strtoupper($a_country['country'])."' value='$percentage' url='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('country', $a_country['country'])."'", $dataXML);
 }
 

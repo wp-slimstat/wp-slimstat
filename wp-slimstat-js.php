@@ -48,6 +48,11 @@ if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host)
 	exit('Error parsing wp-config');
 }
 
+$data_string = base64_decode($_POST['data']);
+if (!$data_string){
+	exit('Invalid data format');
+}
+
 // Let's see if we can connect to the database
 $db_handle = mysql_connect($db_host, $db_user, $db_password);
 if (!$db_handle){
@@ -55,7 +60,7 @@ if (!$db_handle){
 }
 if (!mysql_select_db($db_name)){
 	@mysql_close($db_handle);
-	die('Could not select the db: '.mysql_error());
+	exit('Could not select the db: '.mysql_error());
 }
 
 // Abort if WP SlimStat main table isn't in the database (plugin not activated?)
@@ -63,8 +68,11 @@ $db_list_tables = @mysql_query("SHOW TABLES");
 $is_table_active = false;
 $multisite_table_prefix = $table_prefix;
 
+// Parse the information we received
+parse_str($data_string, $data);
+
 // Multisite awareness
-$blog_id = isset($_GET['bid'])?intval($_GET['bid']):1;
+$blog_id = isset($data['bid'])?intval($data['bid']):1;
 if (!empty($blog_id) && $blog_id > 1){
 	while ($row = @mysql_fetch_row($db_list_tables)) {
 		if ($is_table_active = ($row[0] == "{$table_prefix}{$blog_id}_slim_stats")){
@@ -112,19 +120,19 @@ if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_
 }
 
 // Is the ID valid?
-$stat['id'] = empty($_GET['id'])?0:base_convert($_GET['id'], 16, 10);
-if (empty($_GET['obr']) && (empty($_GET['id']) || ($_GET['sid'] != md5($stat['id'].$slimstat_options['secret'])))){
+$stat['id'] = empty($data['id'])?0:base_convert($data['id'], 16, 10);
+if (empty($data['obr']) && (empty($data['id']) || ($data['sid'] != md5($stat['id'].$slimstat_options['secret'])))){
 	@mysql_close($db_handle);
 	exit('Key is not valid');
 }
 
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
-$stat['outbound_domain'] = !empty($_GET['obd'])?mysql_real_escape_string(strip_tags($_GET['obd'])):'';
-$stat['outbound_resource'] = !empty($_GET['obr'])?mysql_real_escape_string(strip_tags(trim($_GET['obr']))):'';
+$stat['outbound_domain'] = !empty($data['obd'])?mysql_real_escape_string(strip_tags($data['obd'])):'';
+$stat['outbound_resource'] = !empty($data['obr'])?mysql_real_escape_string(strip_tags(trim($data['obr']))):'';
 if (!empty($stat['outbound_resource']) && strpos($stat['outbound_resource'], '://') == false && substr($stat['outbound_resource'], 0, 1) != '/' && substr($stat['outbound_resource'], 0, 1) != '#') $stat['outbound_resource'] = '/'.$stat['outbound_resource'];
-$stat['notes'] = !empty($_GET['no'])?mysql_real_escape_string(strip_tags(trim($_GET['no']))):'';
-$stat['position'] = !empty($_GET['po'])?mysql_real_escape_string(strip_tags(trim($_GET['po']))):'';
-$stat['type'] = isset($_GET['ty'])?intval($_GET['ty']):-1;
+$stat['notes'] = !empty($data['no'])?mysql_real_escape_string(strip_tags(trim($data['no']))):'';
+$stat['position'] = !empty($data['po'])?mysql_real_escape_string(strip_tags(trim($data['po']))):'';
+$stat['type'] = isset($data['ty'])?intval($data['ty']):-1;
 
 if (!empty($stat['outbound_resource']) && $stat['type'] >= 0){
 	$timezone = slimstat_get_option('timezone_string');
@@ -150,10 +158,10 @@ INSERT INTO {$multisite_table_prefix}slim_outbound ( " . implode( ", ", array_ke
 	@mysql_close($db_handle);
 	exit(0);
 }
-$stat['plugins'] = (!empty($_GET['pl']))?mysql_real_escape_string(substr(str_replace('|', ',', $_GET['pl']), 0, -1)):'';
-$screenres['resolution'] = (!empty($_GET['sw']) && !empty($_GET['sh']))?mysql_real_escape_string( $_GET['sw'].'x'.$_GET['sh'] ):'';
-$screenres['colordepth'] = (!empty($_GET['cd']))?mysql_real_escape_string( $_GET['cd'] ):'';
-$screenres['antialias'] = (!empty($_GET['aa']) && $_GET['aa']=='1')?'1':'0';
+$stat['plugins'] = (!empty($data['pl']))?mysql_real_escape_string(substr(str_replace('|', ',', $data['pl']), 0, -1)):'';
+$screenres['resolution'] = (!empty($data['sw']) && !empty($data['sh']))?mysql_real_escape_string( $data['sw'].'x'.$data['sh'] ):'';
+$screenres['colordepth'] = (!empty($data['cd']))?mysql_real_escape_string( $data['cd'] ):'';
+$screenres['antialias'] = (!empty($data['aa']) && $data['aa']=='1')?'1':'0';
 
 // Now we insert the new screen resolution in the lookup table, if it doesn't exist
 $select_sql = "SELECT screenres_id
