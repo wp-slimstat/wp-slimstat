@@ -84,8 +84,8 @@
 #slimstat-world-map{height:100%;left:0;top:24px;position:absolute;width:100%}
 
 /* Box-specific styles */
-#slim_p1_05 .inside span{max-width:48%}
-#slim_p1_05 .inside em{width:100%}
+.inside span.date-and-other{max-width:48%}
+.inside span.date-and-other em{width:100%}
 
 /* Misc Icons and Buttons */
 a.image{display:inline-block;height:16px;margin-left:5px;vertical-align:text-bottom}

@@ -451,7 +451,7 @@ class wp_slimstat_boxes{
 				$results[$i]['country'] = "<a class='image first' href='".self::fs_url('other_ip', $results[$i]['country'])."'><img src='".wp_slimstat_boxes::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat-view').': '.__('c-'.$results[$i]['country'],'countries-languages')."' width='16' height='16'/></a>";
 				$results[$i]['other_ip'] = !empty($results[$i]['other_ip'])?" <a href='".self::fs_url('other_ip', $results[$i]['other_ip'])."'>".long2ip($results[$i]['other_ip']).'</a>&nbsp;&nbsp;':'';
 		
-				echo "<p class='header$highlight_row'>{$results[$i]['country']} $host_by_ip <span><em>{$results[$i]['other_ip']} {$results[$i]['dt']}</em></span></p>";
+				echo "<p class='header$highlight_row'>{$results[$i]['country']} $host_by_ip <span class='date-and-other'><em>{$results[$i]['other_ip']} {$results[$i]['dt']}</em></span></p>";
 				$visit_id = $results[$i]['visit_id'];
 			}
 
