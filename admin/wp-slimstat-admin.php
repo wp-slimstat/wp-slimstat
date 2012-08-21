@@ -375,11 +375,6 @@ class wp_slimstat_admin{
 			delete_option('slimstat_can_admin');
 			delete_option('slimstat_enable_footer_link');
 		}
-
-		// New option 'version' added in version 2.8 - Keep it up-to-date
-		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
-			self::update_option('version', wp_slimstat::$version, 'text');
-		}
 		
 		// Options added and changed in 2.8.1
 		if (!isset(wp_slimstat::$options['anonymize_ip'])){
@@ -408,6 +403,11 @@ class wp_slimstat_admin{
 		}
 		if (!isset(wp_slimstat::$options['markings'])){
 			self::update_option('markings', '', 'text');
+		}
+
+		// New option 'version' added in version 2.8 - Keep it up-to-date
+		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
+			self::update_option('version', wp_slimstat::$version, 'text');
 		}
 
 		return true;
