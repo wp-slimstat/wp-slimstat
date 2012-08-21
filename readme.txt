@@ -322,6 +322,7 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 2. All the information at your fingertips
 3. Configuration panels offer flexibility and plenty of options
 4. Mobile view, to keep an eye on your stats on the go
+5. Access your stats from within Wordpress for iOS
 
 == Changelog ==
 
