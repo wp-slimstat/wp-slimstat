@@ -33,9 +33,9 @@ A powerful real-time web analytics plugin for Wordpress.
 * One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
 * WP SlimStat has been really good - I'm really pleased with it and am using it on 6 websites - [kieronam](http://wordpress.org/support/topic/plugin-wp-slimstat-possible-to-suppress-cookies?replies=5)
 * I like SlimStat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
-* WP-SlimStat is the only plugin I still use as a beginner [..]  I hope ALL the other plugin people learn from your dedication - [ronthai](http://wordpress.org/support/topic/plugin-wp-slimstat-problem-after-update-to-slimstat-28#post-2715928)
-* My client loves Slimstat so much that she has created a page for the funniest search terms (via Slimstat) that brought people to her site - [saill](http://wordpress.org/support/topic/plugin-wp-slimstat-awesome-use-of-slimstat)
-* I love this plugin. Been using it for the better part of a year now. - [mikeambrosio](http://wordpress.org/support/topic/plugin-wp-slimstat-visual-chart-stopped-working)
+* Thanks again for your help, all is well now, this plugin is epic - [thescarletfire](http://wordpress.org/support/topic/plugin-wp-slimstat-just-updated-and-now-a-problem)
+* My client loves Slimstat so much - [saill](http://wordpress.org/support/topic/plugin-wp-slimstat-awesome-use-of-slimstat)
+* I love this plugin. Been using it for the better part of a year now - [mikeambrosio](http://wordpress.org/support/topic/plugin-wp-slimstat-visual-chart-stopped-working)
 * With JetPack, my page views are between zero or 20 on the average [..] With WP SlimStat I saw page views went up to an average of 200 per day for five days now and unique visitors are on the rise as well - [h2ofilters](http://wordpress.org/support/topic/plugin-wp-slimstat-why-does-is-data-different-from-jetpack-or-wpstats#post-2831769)
 * What i liked so much on your slimstats is the very accurate hourly realtime stats [quakesos](http://wordpress.org/support/topic/plugin-wp-slimstat-w3-total-cache#post-2043814)
 
