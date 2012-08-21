@@ -20,7 +20,7 @@ foreach($countries as $a_country){
 ?>
 
 <div class="postbox tall" style="position:relative;padding-bottom:67.9%;height:0;overflow:hidden;">
-	<h3><?php _e('World Map - Click on active Countries to activate the corresponding filter', 'wp-slimstat-view'); ?></h3>
+	<h3 class="hndle"><?php _e('World Map - Click on active Countries to activate the corresponding filter', 'wp-slimstat-view'); ?></h3>
 	<div class="container" style="height:605px" id="slimstat-world-map">
 		<p class="nodata"><?php _e('No data to display','wp-slimstat-view') ?></p>
 	</div>
