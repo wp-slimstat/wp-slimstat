@@ -65,7 +65,7 @@ class wp_slimstat{
 				if (array_key_exists(strtolower($a_capability), $GLOBALS['current_user']->allcaps)) return $_argument;
 			}
 
-			if (in_array($GLOBALS['current_user']->user_login, array_map('strtolower', self::string_to_array(self::$options['ignore_users'])))) return $_argument;
+			if (stripos(self::$options['ignore_users'], $GLOBALS['current_user']->user_login) !== false) return $_argument;
 
 			// Track commenters and logged-in users
 			if (!empty($GLOBALS['current_user']->user_login)) $stat['user'] = $GLOBALS['current_user']->user_login;
@@ -115,7 +115,7 @@ class wp_slimstat{
 		if ($stat['country'] === false) return $_argument;
 
 		// Is this country blacklisted?
-		if (in_array($stat['country'], array_map('strtolower', self::string_to_array(self::$options['ignore_countries'])))) return $_argument;
+		if (in_array($stat['country'], strtolower(self::$options['ignore_countries']))) return $_argument;
 
 		if (isset( $_SERVER['HTTP_REFERER'])){
 			$referer = @parse_url($_SERVER['HTTP_REFERER']);
@@ -867,7 +867,7 @@ class wp_slimstat{
 
 		self::$options['capability_can_view'] = empty(self::$options['capability_can_view'])?'read':self::$options['capability_can_view'];
 
-		if (empty(self::$options['can_view']) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', self::string_to_array(self::$options['can_view']))) || current_user_can('manage_options')){
+		if (empty(self::$options['can_view']) || stripos(self::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
 			$slimstat_view_url = get_site_url($GLOBALS['blog_id'], '/wp-admin/index.php?page=wp-slimstat');
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-header', 'title' => 'SlimStat', 'href' => $slimstat_view_url));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel1', 'href' => "$slimstat_view_url", 'parent' => 'slimstat-header', 'title' => __('Right Now', 'wp-slimstat-view')));
