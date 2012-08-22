@@ -57,6 +57,7 @@ class wp_slimstat_db {
 					case 'language':
 					case 'platform':
 					case 'resource':
+					case 'domain':
 					case 'referer':
 					case 'user':
 					case 'plugins':
