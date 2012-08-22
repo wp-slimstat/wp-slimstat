@@ -115,7 +115,7 @@ class wp_slimstat{
 		if ($stat['country'] === false) return $_argument;
 
 		// Is this country blacklisted?
-		if (in_array($stat['country'], strtolower(self::$options['ignore_countries']))) return $_argument;
+		if (stripos(self::$options['ignore_countries'], $stat['country']) !== false) return $_argument;
 
 		if (isset( $_SERVER['HTTP_REFERER'])){
 			$referer = @parse_url($_SERVER['HTTP_REFERER']);
