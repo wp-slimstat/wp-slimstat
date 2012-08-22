@@ -531,7 +531,7 @@ class wp_slimstat_admin{
 		else
 			$minimum_capability = 'read';
 
-		if (empty(wp_slimstat::$options['can_view']) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_view']))) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_admin']))) || current_user_can('manage_options')){
+		if (empty(wp_slimstat::$options['can_view']) || stripos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || stripos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
 			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options')){
 				$new_entry = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'), plugins_url('/admin/images/wp-slimstat-menu.png', dirname(__FILE__)));
 				add_submenu_page('wp-slimstat', __('Reports','wp-slimstat-view'), __('Reports','wp-slimstat-view'), $minimum_capability, 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'));
@@ -551,7 +551,7 @@ class wp_slimstat_admin{
 	 * Adds a new entry in the admin menu, to manage SlimStat options
 	 */
 	public static function wp_slimstat_add_config_menu($_s){
-		if (empty(wp_slimstat::$options['can_admin']) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_admin']))) || $GLOBALS['current_user']->user_login == 'slimstatadmin'){
+		if (empty(wp_slimstat::$options['can_admin']) || stripos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false || $GLOBALS['current_user']->user_login == 'slimstatadmin'){
 			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
 				add_submenu_page('wp-slimstat', __('Config','wp-slimstat-view'), __('Config','wp-slimstat-view'), 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/admin/options/index.php');
@@ -577,7 +577,7 @@ class wp_slimstat_admin{
 		if (function_exists('get_blog_count') && (get_blog_count() > 50))
 			return $_links;
 
-		if (empty(wp_slimstat::$options['can_admin']) || in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::$options['can_admin']))){
+		if (empty(wp_slimstat::$options['can_admin']) || stripos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false){
 			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
 				$_links['wp-slimstat'] = '<a href="admin.php?page=wp-slimstat/admin/options/index.php">'.__('Config','wp-slimstat-view').'</a>';
@@ -592,7 +592,7 @@ class wp_slimstat_admin{
 	 * Add a link to each post in Edit Posts, to go directly to the stats with the corresponding filter set
 	 */
 	public static function post_row_actions($_actions, $_post){
-		if (!in_array($GLOBALS['current_user']->user_login, array_map('strtolower', wp_slimstat::string_to_array(wp_slimstat::$options['can_view']))) && !current_user_can(wp_slimstat::$options['capability_can_view']))
+		if (stripos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) === false && !current_user_can(wp_slimstat::$options['capability_can_view']))
 			return $_actions;
 
 		$parsed_permalink = parse_url( get_permalink($_post->ID) );
