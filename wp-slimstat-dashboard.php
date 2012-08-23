@@ -55,15 +55,13 @@ class wp_slimstat_dashboard{
 
 	// Widget wrappers
 	public static function slim_p1_01(){
-		$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))');
-		wp_slimstat_boxes::show_chart('slim_p1_01', $chart_data, array(__('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
+		wp_slimstat_boxes::show_chart('slim_p1_01', wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))'), array(__('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 	}	
 	public static function slim_p1_02(){
 		wp_slimstat_boxes::show_about_wpslimstat('slim_p1_02');
 	}
 	public static function slim_p1_03(){
-		$chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))', __('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view'));
-		wp_slimstat_boxes::show_overview_summary('slim_p1_03', wp_slimstat_db::count_records(), $chart_data);
+		wp_slimstat_boxes::show_overview_summary('slim_p1_03', wp_slimstat_db::count_records(), wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))'), array(__('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 	}
 	public static function slim_p1_04(){
 		wp_slimstat_boxes::show_results('recent', 'slim_p1_04', 'user');
