@@ -61,18 +61,18 @@ for($i=0;$i<$count_results;$i++){
 		
 		// IP Address and user
 		if (empty($results[$i]['user'])){
-			$ip_address = "<a title='".sprintf(__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip'])."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('ip', $results[$i]['ip'])."'>$host_by_ip</a>";
+			$ip_address = "<a title='".(htmlspecialchars(sprintf__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip']), ENT_QUOTES)."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('ip', $results[$i]['ip'])."'>$host_by_ip</a>";
 		}
 		else{
-			$ip_address = "<a title='".sprintf(__('Filter results where user equals %s','wp-slimstat-view'), htmlspecialchars($results[$i]['user'], ENT_QUOTES))."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('user', $results[$i]['user'])."'>{$results[$i]['user']}</a>";
-			$ip_address .= " <a title='".sprintf(__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip'])."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('ip', $results[$i]['ip'])."'>({$results[$i]['ip']})</a>";
+			$ip_address = "<a title='".htmlspecialchars(sprintf(__('Filter results where user equals %s','wp-slimstat-view'), $results[$i]['user']), ENT_QUOTES)."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('user', $results[$i]['user'])."'>{$results[$i]['user']}</a>";
+			$ip_address .= " <a title='".htmlspecialchars(sprintf(__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip']), ENT_QUOTES)."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('ip', $results[$i]['ip'])."'>({$results[$i]['ip']})</a>";
 			$highlight_row = ' is-known-user';
 		}
 		if (!empty(wp_slimstat::$options['ip_lookup_service'])) $ip_address = "<a class='whois16 image' href='".wp_slimstat::$options['ip_lookup_service']."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $ip_address";
 		$other_ip_address = '';
 		if (!empty($results[$i]['other_ip'])){
 			$results[$i]['other_ip'] = long2ip($results[$i]['other_ip']);
-			$other_ip_address = "<a class='text-filter' title='".sprintf(__("Filter results where ther user's real IP equals %s",'wp-slimstat-view'), $results[$i]['other_ip'])."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('other_ip', $results[$i]['other_ip'])."'>(".__('Originating IP','wp-slimstat-view').": {$results[$i]['other_ip']})</a>";
+			$other_ip_address = "<a class='text-filter' title='".htmlspecialchars(sprintf(__("Filter results where ther user's real IP equals %s",'wp-slimstat-view'), ENT_QUOTES), $results[$i]['other_ip'])."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('other_ip', $results[$i]['other_ip'])."'>(".__('Originating IP','wp-slimstat-view').": {$results[$i]['other_ip']})</a>";
 		}
 		
 		// Country
@@ -123,10 +123,10 @@ for($i=0;$i<$count_results;$i++){
 	if (!empty($results[$i]['resource'])){
 		$post_id = url_to_postid(strtok($results[$i]['resource'], '?'));
 		if ($post_id > 0){
-			$results[$i]['resource'] = "<a class='url' target='_blank' title='".__('Open this post in a new window','wp-slimstat-view')."' href='{$results[$i]['resource']}'></a>".get_the_title($post_id);
+			$results[$i]['resource'] = "<a class='url' target='_blank' title='".htmlspecialchars(__('Open this post in a new window','wp-slimstat-view'), ENT_QUOTES)."' href='{$results[$i]['resource']}'></a>".get_the_title($post_id);
 		}
 		else{
-			$results[$i]['resource'] = "<a class='url' target='_blank' title='".__('Open this page in a new window','wp-slimstat-view')."' href='{$results[$i]['resource']}'></a>".rawurldecode($results[$i]['resource']);
+			$results[$i]['resource'] = "<a class='url' target='_blank' title='".htmlspecialchars(__('Open this page in a new window','wp-slimstat-view'), ENT_QUOTES)."' href='{$results[$i]['resource']}'></a>".rawurldecode($results[$i]['resource']);
 		}
 	}
 	if (empty($results[$i]['resource'])){
@@ -139,10 +139,10 @@ for($i=0;$i<$count_results;$i++){
 		preg_match("/(daum|naver|google|yahoo|bing|aol|lycos|ask|cnn|about|mamma|voila|virgilio|baidu|yandex|najdi|seznam|onet|szukacz|yam|pchome|kvasir|mynet|ekolay|rambler)./", $results[$i]['domain'], $matches);
 
 		if (!empty($matches) && !empty($query_formats[$matches[1]])){
-			$results[$i]['searchterms'] = "<a class='url' target='_blank' title='".__('Go to the corresponding search engine result page','wp-slimstat-view')."' href='http://{$results[$i]['domain']}/".$query_formats[$matches[1]].'='.urlencode($results[$i]['searchterms'])."'></a> {$results[$i]['searchterms']}";
+			$results[$i]['searchterms'] = "<a class='url' target='_blank' title='".htmlspecialchars(__('Go to the corresponding search engine result page','wp-slimstat-view'), ENT_QUOTES)."' href='http://{$results[$i]['domain']}/".$query_formats[$matches[1]].'='.urlencode($results[$i]['searchterms'])."'></a> {$results[$i]['searchterms']}";
 		}
 		else{
-			$results[$i]['searchterms'] = "<a class='url' target='_blank' title='".__('Go to the referring page','wp-slimstat-view')."' href='{$results[$i]['referer']}'></a> {$results[$i]['searchterms']}";
+			$results[$i]['searchterms'] = "<a class='url' target='_blank' title='".htmlspecialchars(__('Go to the referring page','wp-slimstat-view'), ENT_QUOTES)."' href='{$results[$i]['referer']}'></a> {$results[$i]['searchterms']}";
 		}
 
 		parse_str($results[$i]['referer'], $query_formats);
@@ -154,9 +154,9 @@ for($i=0;$i<$count_results;$i++){
 		$results[$i]['searchterms'] = "<em class='searchterms'>{$results[$i]['searchterms']} $query_details</em>";
 	}
 	
-	$results[$i]['domain'] = (!empty($results[$i]['domain']) && empty($results[$i]['searchterms']))?"<em class='domain'><a class='url' target='_blank' title='".__('Open in a new window','wp-slimstat-view')."' href='{$results[$i]['referer']}'></a> {$results[$i]['domain']}</em>":'';
+	$results[$i]['domain'] = (!empty($results[$i]['domain']) && empty($results[$i]['searchterms']))?"<em class='domain'><a class='url' target='_blank' title='".htmlspecialchars(__('Open in a new window','wp-slimstat-view'), ENT_QUOTES)."' href='{$results[$i]['referer']}'></a> {$results[$i]['domain']}</em>":'';
 	$results[$i]['dt'] = "<em class='datetime'>{$results[$i]['dt']}</em>";
-	$results[$i]['content_type'] = !empty($results[$i]['content_type'])?"<a href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('content_type', $results[$i]['content_type'])."' title='".sprintf(__('Filter results where content type equals %s','wp-slimstat-view'), $results[$i]['content_type'])."'>{$results[$i]['content_type']}</a>: ":'';
+	$results[$i]['content_type'] = !empty($results[$i]['content_type'])?"<a href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('content_type', $results[$i]['content_type'])."' title='".htmlspecialchars(sprintf(__('Filter results where content type equals %s','wp-slimstat-view'), $results[$i]['content_type']), ENT_QUOTES)."'>{$results[$i]['content_type']}</a>: ":'';
 	echo "<em class='resource'>{$results[$i]['content_type']} {$results[$i]['resource']}</em> <span class='details'>{$results[$i]['searchterms']} {$results[$i]['domain']} {$results[$i]['dt']}</span>";
 	echo '</p>';
 } ?>
