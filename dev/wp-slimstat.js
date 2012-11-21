@@ -66,22 +66,24 @@ var SlimStat = {
 	_detect_single_plugin : function (plugin_name) {
 		var plugin, haystack, found, i, j;
 		
-		if (navigator.plugins) {
-			for (i in navigator.plugins) {
-				haystack = '' + navigator.plugins[i].name + navigator.plugins[i].description;
-				found = 0;
+		try {
+			if (navigator.plugins) {
+				for (i in navigator.plugins) {
+					haystack = '' + navigator.plugins[i].name + navigator.plugins[i].description;
+					found = 0;
 
-				for (j in SlimStat._plugins[plugin_name].substrings) {
-					if (haystack.indexOf(SlimStat._plugins[plugin_name].substrings[j]) != -1) {
-						found++;
+					for (j in SlimStat._plugins[plugin_name].substrings) {
+						if (haystack.indexOf(SlimStat._plugins[plugin_name].substrings[j]) != -1) {
+							found++;
+						}
+					}
+
+					if (found == SlimStat._plugins[plugin_name].substrings.length) {
+						return true;
 					}
 				}
-
-				if (found == SlimStat._plugins[plugin_name].substrings.length) {
-					return true;
-				}
 			}
-		}
+		} catch (e) {}
 		return false;
 	},
 	

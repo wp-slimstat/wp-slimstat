@@ -9,17 +9,20 @@ class wp_slimstat_db {
 	public static $formats = array('decimal' => ',', 'thousand' => '.');
 
 	// Filters
-	public static $filters = array(
-		'parsed' => array('direction' => array('equals', 'desc'), 'limit_results' => array('equals', 20), 'starting' => array('equals', 0)),
-		'date_sql_where' => '',
-		'sql_from' => array('browsers' => '', 'screenres' => '', 'content_info' => '', 'outbound' => ''),
-		'sql_where' => ''
-	);
+	public static $filters = array();
 
 	public static function init($_filters_string = ''){
 		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
 		$GLOBALS['wpdb']->query("SET @@session.time_zone = '+00:00'");
 		date_default_timezone_set('UTC');
+
+		// Reset filters
+		self::$filters = array(
+			'parsed' => array('direction' => array('equals', 'desc'), 'limit_results' => array('equals', 20), 'starting' => array('equals', 0)),
+			'date_sql_where' => '',
+			'sql_from' => array('browsers' => '', 'screenres' => '', 'content_info' => '', 'outbound' => ''),
+			'sql_where' => ''
+		);
 
 		// Decimal and thousand separators
 		if (wp_slimstat::$options['use_european_separators'] == 'no'){
@@ -128,7 +131,7 @@ class wp_slimstat_db {
 		self::$timeframes['previous_month']['utime'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'] - 1, 1, self::$timeframes['current_day']['y']);
 		self::$timeframes['previous_month']['m'] = date_i18n('m', self::$timeframes['previous_month']['utime']);
 		self::$timeframes['previous_month']['y'] = date_i18n('Y', self::$timeframes['previous_month']['utime']);
-// print_r(self::$timeframes);
+
 		// SQL timeframes
 		if (empty(self::$filters['parsed']['interval'][1])){
 			if (self::$timeframes['current_day']['hour_selected']){
@@ -310,13 +313,13 @@ class wp_slimstat_db {
 				) AS ts1'));
 	}
 
-	public static function count_records($_where_clause = '1=1', $_distinct_column = '*', $_use_filters = true, $_join_tables = ''){
+	public static function count_records($_where_clause = '1=1', $_distinct_column = '*', $_use_filters = true, $_join_tables = '', $_use_date_filters = true){
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
 
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT($column) count
 				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
-				WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where'].' '.self::$filters['date_sql_where']:'')));
+				WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').' '.($_use_date_filters?self::$filters['date_sql_where']:'')));
 	}
 
 	public static function count_records_having($_where_clause = '1=1', $_column = 't1.ip', $_having_clause = ''){
@@ -355,12 +358,12 @@ class wp_slimstat_db {
 				) AS ts1', ARRAY_A);
 	}
 
-	public static function get_oldest_visit(){
+	public static function get_oldest_visit($_order = 'ASC'){
 		return $GLOBALS['wpdb']->get_var('
 			SELECT t1.dt
-				FROM '.$GLOBALS['wpdb']->prefix.'slim_stats t1
-				ORDER BY t1.dt ASC
-				LIMIT 0,1');
+				FROM '.$GLOBALS['wpdb']->prefix."slim_stats t1
+				ORDER BY t1.dt $_order
+				LIMIT 0,1");
 	}
 
 	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = ''){
@@ -475,9 +478,8 @@ class wp_slimstat_db {
 			$data[0][$a_result['datestamp']] = $a_result['data1'];
 			$data[1][$a_result['datestamp']] = $a_result['data2'];
 		}
-//print_r($data);
+
 		$result['max_yaxis'] = max(max($data[0]), max($data[1]));
-		// $result['min_max_ticks'] = ',min:0,max:'.($data['end_value']-1);
 		$result['ticks'] = self::_generate_ticks($data['end_value'], $data['count_offset']);
 
 		$markings = '';
@@ -494,7 +496,6 @@ class wp_slimstat_db {
 					$datestamp['filter_current'] =  '';
 					$datestamp['filter_previous'] =  '';
 					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.self::$timeframes['current_day']['d'].' '.self::$timeframes['current_day']['h'].':'.sprintf('%02d', $j);
-//print_r($datestamp['marking_signature']);
 					$datestamp['group'] = 'h';
 				}
 				elseif (self::$timeframes['current_day']['day_selected']){
@@ -533,14 +534,7 @@ class wp_slimstat_db {
 
 			$datestamp['current'] = date_i18n('Y m d H:i', $datestamp['timestamp_current']);
 			$datestamp['previous'] = date_i18n('Y m d H:i', $datestamp['timestamp_previous']);
-//print_r(substr($datestamp['current'], 0, $datestamp['marking_substr']));
-			
 
-			// if (date_i18n('md', $datestamp['timestamp_current']) == self::$timeframes['current_day']['m'].self::$timeframes['current_day']['d'] && !empty($data[0][$datestamp['current']])) $result['today'] = $data[0][$datestamp['current']];
-			// if ($date_idx_current == self::$timeframes['previous_day']['m'].self::$timeframes['previous_day']['d'] && !empty($data1[$date_idx_current])) $result['yesterday'] = $data1[$date_idx_current];
-
-			// Format each group of data
-			//if (($j == $day_idx_current - 1) || self::$timeframes['current_day']['day_selected'] || !empty(self::$filters['parsed']['interval'][1])){
 			if (date_i18n($datestamp['group'], $datestamp['timestamp_current']) == date_i18n($datestamp['group'], self::$timeframes['current_utime_start']) || !empty(self::$filters['parsed']['interval'][1])){
 				if (!empty($data[0][$datestamp['current']])){
 					$result['current']['data1'] .= "[$i,{$data[0][$datestamp['current']]}{$datestamp['filter_current']}],";
@@ -588,7 +582,6 @@ class wp_slimstat_db {
 			
 			if (!empty(wp_slimstat::$options['markings'])){
 				preg_match_all("/{$datestamp['marking_signature']}[^\=]*\=([^,]+)/", wp_slimstat::$options['markings'], $matches);
-//print_r($matches);
 				if (!empty($matches[1])){
 					$current_marking_description = '';
 					foreach($matches[1] as $a_description){
@@ -606,8 +599,7 @@ class wp_slimstat_db {
 		$result['previous']['data'] = substr($result['previous']['data'], 0, -1);
 		$result['ticks'] = substr($result['ticks'], 0, -1);
 		$result['markings'] = substr($result['markings'], 0, -1);
-		
-//print_r($result);
+
 		return $result;
 	}
 

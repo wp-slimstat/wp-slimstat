@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 2.8.3
+version: 2.8.4
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -12,7 +12,7 @@ class wp_slimstat{
 
 	protected static $tid = 0;
 	
-	public static $version = '2.8.3';
+	public static $version = '2.8.4';
 	public static $options = array();
 
 	/**
@@ -299,78 +299,57 @@ class wp_slimstat{
 			foreach ($content_info as $a_key => $a_value){
 				$select_sql .= "$a_key = %s AND ";
 			}
-			$select_sql = substr($select_sql, 0, -5);
+			$select_sql = $GLOBALS['wpdb']->prepare(substr($select_sql, 0, -5), $content_info);
 
 			// See if this content type is already in our lookup table
-			$stat['content_info_id'] = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare($select_sql, $content_info));
+			$stat['content_info_id'] = $GLOBALS['wpdb']->get_var($select_sql);
 
 			if (empty($stat['content_info_id'])){
 				// Insert the new content information in the lookup table
-				$insert_new_content_info_sql = "INSERT INTO {$GLOBALS['wpdb']->base_prefix}slim_content_info ( " . implode( ", ", array_keys( $content_info ) ) . " )
-					SELECT " . substr(str_repeat('%s,', count($content_info)), 0, -1) . "
-					FROM DUAL
-					WHERE NOT EXISTS ( $select_sql )";
+				$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
+					INSERT IGNORE INTO {$GLOBALS['wpdb']->base_prefix}slim_content_info (".implode(", ", array_keys($content_info)).')
+					VALUES ('.substr(str_repeat('%s,', count($content_info)), 0, -1).')', $content_info));
 
-				$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare($insert_new_content_info_sql, array_merge($content_info, array_values($content_info))));
 				$stat['content_info_id'] = $GLOBALS['wpdb']->insert_id;
 
 				// This may happen if the new content type was added just before performing the INSERT here above
 				if (empty($stat['content_info_id']))
-					$stat['content_info_id'] = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare($select_sql, $content_info));
+					$stat['content_info_id'] = $GLOBALS['wpdb']->get_var($select_sql);
 			}
 		}
 
 		// See if this browser is already in our lookup table
-		$select_sql = "SELECT browser_id
-					FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers
-					WHERE browser = %s AND
-							version = %s AND
-							platform = %s AND
-							css_version = %s AND
-							type = %d LIMIT 1";
-		$stat['browser_id'] = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare($select_sql, $browser));
+		$select_sql = $GLOBALS['wpdb']->prepare("
+			SELECT browser_id
+			FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers
+			WHERE browser = %s AND
+				version = %s AND
+				platform = %s AND
+				css_version = %s AND
+				type = %d LIMIT 1", $browser);
+
+		$stat['browser_id'] = $GLOBALS['wpdb']->get_var($select_sql);
 
 		if (empty($stat['browser_id'])){
 			// Insert the new browser in the lookup table
-			$insert_new_browser_sql = "INSERT INTO {$GLOBALS['wpdb']->base_prefix}slim_browsers (browser, version, platform, css_version, type)
-				SELECT %s,%s,%s,%s,%d
-				FROM DUAL
-				WHERE NOT EXISTS ( $select_sql )";
+			$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
+				INSERT IGNORE INTO {$GLOBALS['wpdb']->base_prefix}slim_browsers (browser, version, platform, css_version, type)
+				VALUES (%s,%s,%s,%s,%d)", $browser));
 
-			$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare($insert_new_browser_sql, array_merge($browser, array_values($browser))));
 			$stat['browser_id'] = $GLOBALS['wpdb']->insert_id;
 
 			// This may happen if the browser was added just before performing the INSERT here above
 			if (empty($stat['browser_id']))
-				$stat['browser_id'] = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare($select_sql, $browser));
+				$stat['browser_id'] = $GLOBALS['wpdb']->get_var($select_sql);
 		}
-
-		// If the same user visited the same page in the last X seconds, we ignore it
-		$ignore_interval = intval(self::$options['ignore_interval']);
 
 		$stat['dt'] = date_i18n('U');
 
-		$insert_new_hit_sql = "INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats ( " . implode( ", ", array_keys( $stat ) ) . " )
-			SELECT " . substr(str_repeat('%s,', count($stat)), 0, -1) . "
-			FROM DUAL
-			WHERE NOT EXISTS ( ";
-		$select_sql = "SELECT id
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats
-				WHERE ";
-		foreach ($stat as $a_key => $a_value){
-			if ($a_key == 'dt')
-				$select_sql .= "(TIME_TO_SEC(TIMEDIFF(FROM_UNIXTIME(%s),FROM_UNIXTIME(dt))) < $ignore_interval) AND ";
-			else
-				$select_sql .= "$a_key = %s AND ";
-		}
-		$select_sql = substr($select_sql, 0, -5);
-		$insert_new_hit_sql .= $select_sql.' LIMIT 1)';
+		$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
+			INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (".implode(", ", array_keys($stat)).')
+			VALUES ('.substr(str_repeat('%s,', count($stat)), 0, -1).')', $stat));
 
-		$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare($insert_new_hit_sql, array_merge($stat, array_values($stat))));
 		self::$tid = $GLOBALS['wpdb']->insert_id;
-
-		if (empty(self::$tid)) // There's already an entry with the same info, less than x seconds old
-			self::$tid = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare($select_sql, $stat));
 
 		// Is this a new visitor?
 		if (!isset($_COOKIE['slimstat_tracking_code']) && !empty(self::$tid)){
@@ -768,7 +747,7 @@ class wp_slimstat{
 			'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
 
 			// Customize the IP Lookup service (geolocation) URL
-			'ip_lookup_service' => get_option('slimstat_ip_lookup_service', 'http://www.maxmind.com/app/lookup_city?ips='),
+			'ip_lookup_service' => get_option('slimstat_ip_lookup_service', 'http://www.infosniper.net/?ip_address='),
 
 			// Refresh the RAW DATA view every X seconds
 			'refresh_interval' => get_option('slimstat_refresh_interval', '0'),
@@ -781,9 +760,6 @@ class wp_slimstat{
 
 			// Ignore Link Prefetching?
 			'ignore_prefetch' => get_option('slimstat_ignore_prefetch', 'no'),
-
-			// Ignore requests that have the same information and are less than x seconds far from each other
-			'ignore_interval' => get_option('slimstat_ignore_interval', '30'),
 
 			// List of IPs to ignore
 			'ignore_ip' => get_option('slimstat_ignore_ip', ''),

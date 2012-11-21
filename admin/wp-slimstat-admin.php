@@ -146,7 +146,8 @@ class wp_slimstat_admin{
 				platform VARCHAR(15) DEFAULT '',
 				css_version VARCHAR(5) DEFAULT '',
 				type TINYINT UNSIGNED DEFAULT 0,
-				PRIMARY KEY (browser_id)
+				PRIMARY KEY (browser_id),
+				UNIQUE KEY unique_browser (browser, version, platform, css_version, type)
 			)$use_innodb";
 
 		// A lookup table to store screen resolutions
@@ -156,7 +157,8 @@ class wp_slimstat_admin{
 				resolution VARCHAR(12) DEFAULT '',
 				colordepth VARCHAR(5) DEFAULT '',
 				antialias BOOL DEFAULT FALSE,
-				PRIMARY KEY (screenres_id)
+				PRIMARY KEY (screenres_id),
+				UNIQUE KEY unique_screenres (resolution, colordepth, antialias)
 			)$use_innodb";
 
 		// A lookup table to store content information
@@ -166,7 +168,8 @@ class wp_slimstat_admin{
 				content_type VARCHAR(64) DEFAULT '',
 				category VARCHAR(256) DEFAULT '',
 				author VARCHAR(64) DEFAULT '',
-				PRIMARY KEY (content_info_id)
+				PRIMARY KEY (content_info_id),
+				UNIQUE KEY unique_content_info (content_type, category, author)
 			)$use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
@@ -404,6 +407,20 @@ class wp_slimstat_admin{
 		if (!isset(wp_slimstat::$options['markings'])){
 			self::update_option('markings', '', 'text');
 		}
+		
+		// --- Updates for version 2.8.4 ---
+		// Maxmind IP2Country has been discontinued
+		if (wp_slimstat::$options['ip_lookup_service'] == 'http://www.maxmind.com/app/lookup_city?ips='){
+			self::update_option('ip_lookup_service', 'http://www.infosniper.net/?ip_address=', 'text');
+		}
+		// Lookup Tables now have unique keys
+		if (version_compare(wp_slimstat::$options['version'], '2.8.4', '<')){
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD UNIQUE KEY unique_browser (browser, version, platform, css_version, type)");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD UNIQUE KEY unique_screenres (resolution, colordepth, antialias)");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD UNIQUE KEY unique_content_info (content_type, category, author)");
+		}
+		
+		// --- END: Updates for version 2.8.4 ---
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){

@@ -332,6 +332,13 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Javascript-based tracking functionality (a-la Google Analytics), that plays nicely with W3 Total Cache & co.
 * Antiflood monitor and database monitor
 
+= 2.8.4 =
+* Fixed: SQL deadlock when tracking a new pageview (thank you Wordpressian.com)
+* Fixed: SQL bug in WP SlimStat Dashboard
+* Fixed: Custom Report demo was not using the new API (thank you [MongooseDoom](http://wordpress.org/support/topic/custom-report-demo-out-of-date))
+* Fixed: Javascript tracker compatibility with older versions of Internet Explorer (thank you [Ov3rfly](http://wordpress.org/support/topic/javascript-error-object-does-not-support-with-ie7ie6))
+* Updated: New UNIQUE indexes are now used on lookup tables
+
 = 2.8.3 =
 * Added: more browsers' icons; if your favorite browser's icon is missing, let me know and I'll add it
 * Added: got locked out of the settings page? We got a solution for that (see the FAQs)
@@ -418,7 +425,7 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 [Dennis Kowallek](http://www.adopt-a-plant.com), [Damian](http://wipeoutmedia.com/), [Hans Schantz](http://www.aetherczar.com/), Hajrudin Mulabecirovic,
 [Herman Peet](http://www.hermanpeet.nl/), John Montano, [La casetta delle pesche](http://www.lacasettadellepesche.it/), [Mobilize Mail](http://blog.mobilizemail.com/),
 Mora Systems, Neil Robinson, [Ovidiu](http://pacura.ru/), [Sahin Eksioglu](http://www.alternatifblog.com/), [Saill White](http://saillwhite.com),
-[SpenceDesign](http://spencedesign.com/), Stephane Sinclair, Wayne Liebman
+[Sharon Villines](http://sociocracy.info), [SpenceDesign](http://spencedesign.com/), Stephane Sinclair, [The Parson's Rant](http://www.howardparsons.info), Wayne Liebman
 
 == Special Thanks To ==
 

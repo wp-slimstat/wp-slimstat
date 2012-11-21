@@ -13,19 +13,20 @@ if (!in_array('wp-slimstat/wp-slimstat.php', get_option('active_plugins'))) retu
 
 class wp_slimstat_custom_reports{
 
-	// Function: _get_top_custom_pages
+	// Function: _get_time_spent_on_site
 	// Description: Fetches popular pages from the DB
 	// Input: none
 	// Output: array of results
 	// Notes: wp_slimstat_view::$filters_parsed is an array containing all the filters set by the user through the dropdown menus
 	//        Please refer to readme.txt for a list of filters and to learn how to leverage this information in your queries
-	protected static function _get_top_custom_pages(){
-		$sql = "SELECT resource, COUNT(*) countresults
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats
-				WHERE resource <> ''
-				GROUP BY resource
-				ORDER BY countresults DESC
-				LIMIT 0,".wp_slimstat_view::$filters_parsed['limit_results'];
+	protected static function _get_time_spent_on_site(){
+		$sql = "SELECT MIN(t1.dt) mindt, t1.ip, t1.user, t1.resource, t1.visit_id, MAX(t1.dt)-MIN(t1.dt) time_spent
+				FROM ".wp_slimstat_db::$filters['sql_from']['all']."
+				WHERE t1.ip <> 0 ".wp_slimstat_db::$filters['sql_where'].' '.wp_slimstat_db::$filters['date_sql_where']."
+				GROUP BY t1.ip, t1.user, t1.resource, t1.visit_id
+				HAVING time_spent <= 1800 AND time_spent > 0
+				ORDER BY t1.dt DESC
+				LIMIT ".wp_slimstat_db::$filters['parsed']['starting'][1].', '.wp_slimstat_db::$filters['parsed']['limit_results'][1];
 
 		return $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
 	}
@@ -35,17 +36,20 @@ class wp_slimstat_custom_reports{
 	// Description: Formats the results obtained through _get_top_pages
 	// Input: none
 	// Output: HTML code
-	// Notes: wp_slimstat_modules contains a few methods that standardize the HTML required to display a module
+	// Notes: wp_slimstat_boxes contains a few methods that standardize the HTML required to display a module
 	public static function show_top_custom_pages() {
-		$results = self::_get_top_custom_pages();
-		
+		$results = self::_get_time_spent_on_site();
+
 		// Boxes come in three sizes: wide, medium, normal (default).
-		wp_slimstat_modules::box_header('my_custom_box_id', 'My Custom Box Title', 'My Custom Box Inline Help', 'medium');
+		wp_slimstat_boxes::box_header('my_custom_box_id', 'Add some extra explanation here', 'wide', false, '', 'Time Spent on page');
 
 		foreach($results as $a_result){
-			echo "<p>{$a_result['resource']} <span>{$a_result['countresults']}</span></p>";
+			$clean_url = preg_replace('/\?.*/', '', $a_result['resource']);
+			$clean_ip = long2ip($a_result['ip']);
+			$time_spent = date('i:s', $a_result['time_spent']);
+			echo "<p title='URL: $clean_url'>$clean_ip <span>$time_spent</span></p>";
 		}
-		wp_slimstat_modules::box_footer(); // closes the DIV's open by box_header
+		wp_slimstat_boxes::box_footer(); // closes the DIV's open by box_header
 	}
 	// end show_top_pages
 }
