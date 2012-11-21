@@ -61,7 +61,7 @@ for($i=0;$i<$count_results;$i++){
 		
 		// IP Address and user
 		if (empty($results[$i]['user'])){
-			$ip_address = "<a title='".htmlspecialchars(sprintf__('Filter results where IP equals %s','wp-slimstat-view', $results[$i]['ip']), ENT_QUOTES)."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('ip', $results[$i]['ip'])."'>$host_by_ip</a>";
+			$ip_address = "<a title='".htmlspecialchars(sprintf(__('Filter results where IP equals %s','wp-slimstat-view'), $results[$i]['ip']), ENT_QUOTES)."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('ip', $results[$i]['ip'])."'>$host_by_ip</a>";
 		}
 		else{
 			$ip_address = "<a title='".htmlspecialchars(sprintf(__('Filter results where user equals %s','wp-slimstat-view'), $results[$i]['user']), ENT_QUOTES)."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('user', $results[$i]['user'])."'>{$results[$i]['user']}</a>";
