@@ -8,7 +8,7 @@ $supported_os_icons = array('android','blackberry os','iphone osx','ios','java',
 
 // Retrieve results
 wp_slimstat_db::$filters['parsed']['limit_results'][1] = wp_slimstat::$options['number_results_raw_data'];
-$results = wp_slimstat_db::get_recent('t1.id', '', 'tb.*,tci.*');
+$results = wp_slimstat_db::get_recent('t1.id', '', 'tb.*,tss.*,tci.*');
 
 // Pagination
 $count_raw_data = wp_slimstat_db::count_records();
@@ -108,6 +108,7 @@ for($i=0;$i<$count_results;$i++){
 				$a_plugin = trim($a_plugin);
 				$plugins .= "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('plugins', $a_plugin)."'><img src='".wp_slimstat_boxes::$plugin_url."/images/plugins/$a_plugin.png' title='".__($a_plugin,'countries-languages')."' width='16' height='16'/></a>";
 			}
+			$plugins .= '&nbsp;&nbsp;<a title="'.htmlentities(sprintf(__('Filter results where screen resolution equals %s','wp-slimstat-view'), $results[$i]['resolution']), ENT_QUOTES, 'UTF-8').'" href="'.wp_slimstat_boxes::fs_url('resolution', $results[$i]['resolution']).'">'.$results[$i]['resolution'].'</a>';
 		}
 
 		echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} {$results[$i]['browser']} {$results[$i]['platform']} $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span>";
