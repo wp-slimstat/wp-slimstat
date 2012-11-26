@@ -9,7 +9,8 @@ Author URI: http://www.duechiacchiere.it/
 */
 
 // In order to activate this plugin, WP SlimStat needs to be installed and active
-if (!in_array('wp-slimstat/wp-slimstat.php', get_option('active_plugins', array()))) return;
+$multisite_plugin_active = (is_multisite() && array_key_exists('wp-slimstat/wp-slimstat.php', get_site_option('active_sitewide_plugins', array())) );
+if (!$multisite_plugin_active && !in_array('wp-slimstat/wp-slimstat.php', get_option('active_plugins', array()))) return;
 
 class wp_slimstat_dashboard{
 	/**
