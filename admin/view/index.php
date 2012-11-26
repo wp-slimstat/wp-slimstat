@@ -14,7 +14,7 @@ $array_screens = array(
 );
 
 // Pass some information to Javascript, to be used when hidden modules are activated
-echo '<script type="text/javascript">SlimStatAdmin.options["filters_string"] = "'.urldecode(wp_slimstat_boxes::$filters_string).'"; ';
+echo '<script type="text/javascript">SlimStatAdmin.options["filters_string"] = "'.htmlentities(urldecode(wp_slimstat_boxes::$filters_string), ENT_QUOTES, 'UTF-8').'"; ';
 if ((wp_slimstat::$options['refresh_interval'] > 0) && (wp_slimstat_boxes::$current_screen == 1)) echo "window.setTimeout('location.reload()', ".wp_slimstat::$options['refresh_interval']."*1000);";
 echo '</script>';
 

@@ -103,7 +103,7 @@ class wp_slimstat_admin{
 	public static function init_environment($_activate = true){
 		// Is InnoDB available?
 		$have_innodb = $GLOBALS['wpdb']->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
-		$use_innodb = ($have_innodb[0]['Value'] == 'YES')?' ENGINE=InnoDB':'';
+		$use_innodb = ($have_innodb[0]['Value'] == 'YES')?'ENGINE=InnoDB':'';
 
 		// Table that stores the actual data about visits
 		$stats_table_sql =
@@ -126,7 +126,7 @@ class wp_slimstat_admin{
 				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
 				PRIMARY KEY id (id)
-			)$use_innodb";
+			) COLLATE utf8_general_ci $use_innodb";
 
 		// Information about Countries
 		$country_table_sql =
@@ -135,7 +135,7 @@ class wp_slimstat_admin{
 				ip_to INT UNSIGNED DEFAULT 0,
 				country_code CHAR(2) DEFAULT '',
 				CONSTRAINT ip_from_idx PRIMARY KEY (ip_from, ip_to)
-			)$use_innodb";
+			) COLLATE utf8_general_ci $use_innodb";
 
 		// A lookup table for browsers can help save some space
 		$browsers_table_sql =
@@ -148,7 +148,7 @@ class wp_slimstat_admin{
 				type TINYINT UNSIGNED DEFAULT 0,
 				PRIMARY KEY (browser_id),
 				UNIQUE KEY unique_browser (browser, version, platform, css_version, type)
-			)$use_innodb";
+			) COLLATE utf8_general_ci $use_innodb";
 
 		// A lookup table to store screen resolutions
 		$screen_res_table_sql =
@@ -159,7 +159,7 @@ class wp_slimstat_admin{
 				antialias BOOL DEFAULT FALSE,
 				PRIMARY KEY (screenres_id),
 				UNIQUE KEY unique_screenres (resolution, colordepth, antialias)
-			)$use_innodb";
+			) COLLATE utf8_general_ci $use_innodb";
 
 		// A lookup table to store content information
 		$content_info_table_sql =
@@ -170,7 +170,7 @@ class wp_slimstat_admin{
 				author VARCHAR(64) DEFAULT '',
 				PRIMARY KEY (content_info_id),
 				UNIQUE KEY unique_content_info (content_type, category, author)
-			)$use_innodb";
+			) COLLATE utf8_general_ci $use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
 		$outbound_table_sql =
@@ -184,7 +184,7 @@ class wp_slimstat_admin{
 				id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
 				PRIMARY KEY (outbound_id)
-			)$use_innodb";
+			) COLLATE utf8_general_ci $use_innodb";
 
 		// Ok, let's create the table structure
 		self::_create_table($country_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_countries');
@@ -387,16 +387,15 @@ class wp_slimstat_admin{
 			self::update_option('custom_js_path', str_replace(home_url(), '', wp_slimstat::$options['custom_js_path']), 'text');
 
 		// Starting from 2.8.3 lists (i.e., users who can view the reports) are saved as plain text, not arrays
-		if (version_compare(wp_slimstat::$options['version'], '2.8.3', '<')){
-			self::update_option('ignore_ip', implode(', ', wp_slimstat::$options['ignore_ip']));
-			self::update_option('ignore_countries', implode(', ', wp_slimstat::$options['ignore_countries']));
-			self::update_option('ignore_resources', implode(', ', wp_slimstat::$options['ignore_resources']));
-			self::update_option('ignore_referers', implode(', ', wp_slimstat::$options['ignore_referers']));
-			self::update_option('ignore_browsers', implode(', ', wp_slimstat::$options['ignore_browsers']));
-			self::update_option('ignore_users', implode(', ', wp_slimstat::$options['ignore_users']));
-			self::update_option('can_view', implode(', ', wp_slimstat::$options['can_view']));
-			self::update_option('can_admin', implode(', ', wp_slimstat::$options['can_admin']));
-		}
+		if (is_array(wp_slimstat::$options['ignore_ip'])) self::update_option('ignore_ip', implode(', ', wp_slimstat::$options['ignore_ip']));
+		if (is_array(wp_slimstat::$options['ignore_countries'])) self::update_option('ignore_countries', implode(', ', wp_slimstat::$options['ignore_countries']));
+		if (is_array(wp_slimstat::$options['ignore_resources'])) self::update_option('ignore_resources', implode(', ', wp_slimstat::$options['ignore_resources']));
+		if (is_array(wp_slimstat::$options['ignore_referers'])) self::update_option('ignore_referers', implode(', ', wp_slimstat::$options['ignore_referers']));
+		if (is_array(wp_slimstat::$options['ignore_browsers'])) self::update_option('ignore_browsers', implode(', ', wp_slimstat::$options['ignore_browsers']));
+		if (is_array(wp_slimstat::$options['ignore_users'])) self::update_option('ignore_users', implode(', ', wp_slimstat::$options['ignore_users']));
+		if (is_array(wp_slimstat::$options['can_view'])) self::update_option('can_view', implode(', ', wp_slimstat::$options['can_view']));
+		if (is_array(wp_slimstat::$options['can_admin'])) self::update_option('can_admin', implode(', ', wp_slimstat::$options['can_admin']));
+
 		// New options added in 2.8.3
 		if (!isset(wp_slimstat::$options['ignore_capabilities'])){
 			self::update_option('ignore_capabilities', '', 'text');
@@ -419,8 +418,17 @@ class wp_slimstat_admin{
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD UNIQUE KEY unique_screenres (resolution, colordepth, antialias)");
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD UNIQUE KEY unique_content_info (content_type, category, author)");
 		}
-		
 		// --- END: Updates for version 2.8.4 ---
+
+		// --- Updates for version 2.8.5 ---
+		// Tables are explicitly assigned the UTF-8 collation
+		if (version_compare(wp_slimstat::$options['version'], '2.8.5', '<')){
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
+		}
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){

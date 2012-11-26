@@ -24,22 +24,22 @@ foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_04':
-			wp_slimstat_boxes::box_header('slim_p1_04', htmlspecialchars(__('When visitors leave a comment on your blog, Wordpress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors.','wp-slimstat-view'), ENT_QUOTES));
+			wp_slimstat_boxes::box_header('slim_p1_04', htmlspecialchars(__('When visitors leave a comment on your blog, Wordpress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors.','wp-slimstat-view'), ENT_QUOTES, 'UTF-8'));
 			wp_slimstat_boxes::show_results('recent', 'slim_p1_04', 'user');
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_05':
-			wp_slimstat_boxes::box_header('slim_p1_05', htmlspecialchars(__('Take a sneak peek at what human visitors are doing on your website','wp-slimstat-view'), ENT_QUOTES).'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat-view'), ENT_QUOTES).'</strong><p class="legend"><span class="little-color-box is-search-engine" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('From a search result page','wp-slimstat-view'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Users','wp-slimstat-view'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Other Humans','wp-slimstat-view'), ENT_QUOTES).'</p>', 'medium', true);
+			wp_slimstat_boxes::box_header('slim_p1_05', htmlspecialchars(__('Take a sneak peek at what human visitors are doing on your website','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</strong><p class="legend"><span class="little-color-box is-search-engine" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('From a search result page','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Users','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Other Humans','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</p>', 'medium', true);
 			wp_slimstat_boxes::show_spy_view('slim_p1_05');
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_06':
-			wp_slimstat_boxes::box_header('slim_p1_06', htmlspecialchars(__('Keywords used by your visitors to find your website on a search engine','wp-slimstat-view'), ENT_QUOTES), '', true);
+			wp_slimstat_boxes::box_header('slim_p1_06', htmlspecialchars(__('Keywords used by your visitors to find your website on a search engine','wp-slimstat-view'), ENT_QUOTES, 'UTF-8'), '', true);
 			wp_slimstat_boxes::show_results('recent', 'slim_p1_06', 'searchterms');
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p1_07':
-			wp_slimstat_boxes::box_header('slim_p1_07', htmlspecialchars(__('Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session.','wp-slimstat-view'), ENT_QUOTES), '', true);
+			wp_slimstat_boxes::box_header('slim_p1_07', htmlspecialchars(__('Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session.','wp-slimstat-view'), ENT_QUOTES, 'UTF-8'), '', true);
 			wp_slimstat_boxes::show_results('popular', 'slim_p1_07', 'language', array('total_for_percentage' => wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1'), 'custom_where' => 't1.visit_id > 0 AND tb.type <> 1'));
 			wp_slimstat_boxes::box_footer();
 			break;

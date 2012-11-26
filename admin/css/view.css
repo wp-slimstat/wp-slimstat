@@ -73,10 +73,10 @@
 .tall p span{text-align:right;width:48%}
 .tall .user-details{width:60%}
 .tall .plugins{width:35%}
-.tall .details{width:48%}
+.tall .details{width:54%}
 .tall .resource{width:40%}
-.tall .searchterms{width:65%}
-.tall .datetime{width:30%}
+.tall .searchterms{width:50%}
+.tall .datetime{width:40%}
 .legend-title{float:left;padding:3px 5px 0}
 .little-color-box{background-color:#eee;border:1px solid #ccc;display:block;float:left;margin-right:5px;padding:2px 5px}
 

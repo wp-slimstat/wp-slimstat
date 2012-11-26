@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 2.8.4
+version: 2.8.5
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -12,7 +12,7 @@ class wp_slimstat{
 
 	protected static $tid = 0;
 	
-	public static $version = '2.8.4';
+	public static $version = '2.8.5';
 	public static $options = array();
 
 	/**
@@ -435,14 +435,16 @@ class wp_slimstat{
 	protected static function _get_search_terms($_url = array()){
 		if(!is_array($_url) || !isset($_url['host']) || !isset($_url['query'])) return '';
 
+		$query_formats = array('daum' => 'q', 'eniro' => 'search_word', 'naver' => 'query', 'google' => 'q', 'www.google' => 'as_q', 'yahoo' => 'p', 'msn' => 'q', 'bing' => 'q', 'aol' => 'query', 'lycos' => 'q', 'ask' => 'q', 'cnn' => 'query', 'about' => 'q', 'mamma' => 'q', 'voila' => 'rdata', 'virgilio' => 'qs', 'baidu' => 'wd', 'yandex' => 'text', 'najdi' => 'q', 'seznam' => 'q', 'search' => 'q', 'onet' => 'qt', 'yam' => 'k', 'pchome' => 'q', 'kvasir' => 'q', 'mynet' => 'q', 'nova_rambler' => 'words');
+		$charsets = array('baidu' => 'EUC-CN');
+
 		parse_str($_url['query'], $query);
-		parse_str("daum=q&eniro=search_word&naver=query&google=q&www.google=as_q&yahoo=p&msn=q&bing=q&aol=query&lycos=q&ask=q&cnn=query&about=q&mamma=q&voila=rdata&virgilio=qs&baidu=wd&yandex=text&najdi=q&seznam=q&search=q&onet=qt&yam=k&pchome=q&kvasir=q&mynet=q&nova_rambler=words", $query_formats);
 		preg_match("/(daum|eniro|naver|google|www.google|yahoo|msn|bing|aol|lycos|ask|cnn|about|mamma|voila|virgilio|baidu|yandex|najdi|seznam|search|onet|yam|pchome|kvasir|mynet|rambler)./", $_url['host'], $matches);
 
 		if (isset($matches[1]) && isset($query[$query_formats[$matches[1]]])){
 			// Test for encodings different from UTF-8
-			if (function_exists('mb_check_encoding') && !mb_check_encoding($query[$query_formats[$matches[1]]], 'UTF-8'))
-				$query[$query_formats[$matches[1]]] = mb_convert_encoding($query[$query_formats[$matches[1]]], 'UTF-8', 'Windows-1251');
+			if (function_exists('mb_check_encoding') && !mb_check_encoding($query[$query_formats[$matches[1]]], 'UTF-8') && !empty($charsets[$matches[1]]))
+				return mb_convert_encoding(urldecode($query[$query_formats[$matches[1]]]), 'UTF-8', $charsets[$matches[1]]);
 
 			return str_replace('\\', '', trim(urldecode($query[$query_formats[$matches[1]]])));
 		}
