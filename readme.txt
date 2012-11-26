@@ -31,12 +31,11 @@ A powerful real-time web analytics plugin for Wordpress.
 
 = What are people saying about WP SlimStat? =
 * One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
+* Great plugin and great support! Thanks for the author for his dedication to his product! - [mikolajek](http://wordpress.org/support/topic/a-must-have-2)
 * Thanks you for such an excellent plugin. I am using it to kick Jetpack out of all the wordpress installations that I manage for myself and others - [robertwagnervt](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
 * WP SlimStat has been really good - I'm really pleased with it and am using it on 6 websites - [kieronam](http://wordpress.org/support/topic/plugin-wp-slimstat-possible-to-suppress-cookies?replies=5)
 * I like SlimStat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
-* Thanks again for your help, all is well now, this plugin is epic - [thescarletfire](http://wordpress.org/support/topic/plugin-wp-slimstat-just-updated-and-now-a-problem)
 * I have a portal of twelve property agencies, where they list their properties with WP-Property, and they always asked if it was possible to get individual statistics per agency (regular WP users, something Jetpack can't do), and your plugin handled this nice and easy! - [Raphael Suzuki](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
-* I love this plugin. Been using it for the better part of a year now - [mikeambrosio](http://wordpress.org/support/topic/plugin-wp-slimstat-visual-chart-stopped-working)
 * With JetPack, my page views are between zero or 20 on the average [..] With WP SlimStat I saw page views went up to an average of 200 per day for five days now and unique visitors are on the rise as well - [h2ofilters](http://wordpress.org/support/topic/plugin-wp-slimstat-why-does-is-data-different-from-jetpack-or-wpstats#post-2831769)
 * What i liked so much on your slimstats is the very accurate hourly realtime stats [quakesos](http://wordpress.org/support/topic/plugin-wp-slimstat-w3-total-cache#post-2043814)
 
@@ -67,7 +66,7 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
 Try [increasing the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. WP SlimStat requires about 5 Mb of RAM to track a pageview.
 
-= When trying to access amy of the SlimStat options in the backend, I get the following error: You do not have sufficient permissions to access this page. =
+= When trying to access any of options screens, I get the following error: You do not have sufficient permissions to access this page. =
 You were playing with the plugin's permission settings, weren't you? But don't worry, there's a secret passage that will allow you to unlock your access. Create a new user `slimstatadmin`, and assign him the Administrator role. Then log into your WordPress admin area with the new user and... voila: you can now access WP SlimStat's settings again. Update your users' permissions and then get rid of this newly created user.
 
 = I'm very surprised by the discrepancies between Google Analytics, Jetpack Stats and Slimstat. Why is that? =
@@ -181,8 +180,8 @@ requests from that user's browser and are indistinguishable from user link click
 in Settings > SlimStat > Filters
 
 = Why can't WP SlimStat track visitors using IPv6? =
-IPv6 support, as of today, is still really limited both in PHP and MySQL. There are a few workaround that could be implemented, but the end
-result would be to complicate the DB structure, add overhead for tracking regular requests, and have a half-baked product.
+IPv6 support, as of today, is still really limited both in PHP and MySQL. There are a few workarounds that could be implemented, but this
+would make the DB structure less optimized, add overhead for tracking regular requests, and you would have a half-baked product.
 
 = How do I stop WP SlimStat from tracking spammers? =
 Go to Settings > SlimStat > Filters and set "Ignore Spammers" to YES.
