@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slimstat Dashboard\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-20 11:29-0500\n"
+"PO-Revision-Date: 2012-06-20 11:31-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: Vidal Arpin <vidal@arpin.ca>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: French\n"
+"X-Poedit-Country: CANADA\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"Plural-Forms: s\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Pageviews"
+msgstr "Pages de vues"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Unique IPs"
+msgstr "IPs uniques"
+
+#~ msgid "No data to display"
+#~ msgstr "Aucune donnée à afficher"
+
+#~ msgid "Open %s in a new window"
+#~ msgstr "Ouvrir %s dans une nouvelle fenêtre"
+
+#~ msgid "c-"
+#~ msgstr "c-"
+
+#~ msgid "Direct visit to"
+#~ msgstr "Visite directe vers"
+
+#~ msgid "Avg Pageviews"
+#~ msgstr "Moyenne des pages vues"
+
+#~ msgid "On"
+#~ msgstr "Actif"
+
+#~ msgid "Last Month"
+#~ msgstr "Mois dernier"
+
+#~ msgid "User Agents"
+#~ msgstr "Agents utilisateur"
+
+#~ msgid "Recent Keywords"
+#~ msgstr "Mots clés récents"
+
+#~ msgid "Total Hits"
+#~ msgstr "Total des accès"
+
+#~ msgid "Data Size"
+#~ msgstr "Taille des données"
+
+#~ msgid "Tracking Active"
+#~ msgstr "Traçage actif"
+
+#~ msgid "Auto purge"
+#~ msgstr "Purge automatique"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Ouvrir le référent dans une nouvelle fenêtre"
+
+#~ msgid "Top 5 pages"
+#~ msgstr "Les 5 pages les plus populaires"
+
+#~ msgid "Pathstats"
+#~ msgstr "Statistiques des chemins d'accès"
+
+#~ msgid "About"
+#~ msgstr "À propos"
+
+#~ msgid "Summary of pageviews"
+#~ msgstr "Sommaire des pages vues"
+
+#~ msgid "Traffic Sources"
+#~ msgstr "Sources de trafic"
+
+#~ msgid "Recent Keywords &raquo; Pages"
+#~ msgstr "Mots clés récents &raquo; Pages"
+
+#~ msgid "Analytics"
+#~ msgstr "Statistiche"
+
+#~ msgid "Options"
+#~ msgstr "Opzioni"
