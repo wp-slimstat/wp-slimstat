@@ -18,7 +18,11 @@ class wp_slimstat{
 	/**
 	 * Initialize some common variables
 	 */
-	public static function init(){		
+	public static function init(){
+		// Initialize WP SlimStat's options
+		wp_slimstat::$options = get_option('slimstat_options', array());
+		if (empty(wp_slimstat::$options)) wp_slimstat::import_old_options();
+
 		// This check here below is done to keep backward compatibility and should be removed sooner or later
 		if (!is_admin()){
 			// Is tracking active?
@@ -609,7 +613,10 @@ class wp_slimstat{
 				$browser['version'] = $match[2];
 		}
 
-		if ($browser['platform'] == 'unknown') $browser['type'] = 1;
+		if ($browser['platform'] == 'unknown'){
+			$browser['type'] = 1;
+			$browser['version'] = 0;
+		}
 
 		return $browser;
 	}
@@ -722,7 +729,7 @@ class wp_slimstat{
 			'enable_javascript' => get_option('slimstat_enable_javascript', 'yes'),
 
 			// Custom path to get to wp-slimstat-js.php
-			'custom_js_path' => '/wp-content/plugins/wp-slimstat',
+			'custom_js_path' => str_replace(home_url(), '', WP_PLUGIN_URL.'/wp-slimstat'),
 
 			// Tracks logged in users, adding their login to the resource they requested
 			'track_users' => get_option('slimstat_track_users', 'yes'),
@@ -861,12 +868,7 @@ class wp_slimstat{
 // end of class declaration
 
 // Ok, let's go, Sparky!
-if (function_exists('add_action')){
-
-	// Initialize WP SlimStat's options
-	wp_slimstat::$options = get_option('slimstat_options', array());
-	if (empty(wp_slimstat::$options) && function_exists('is_network_admin') && !is_network_admin()) wp_slimstat::import_old_options();
-	
+if (function_exists('add_action')){	
 	// Add the appropriate actions
 	add_action('plugins_loaded', array('wp_slimstat', 'init'), 5);
 	

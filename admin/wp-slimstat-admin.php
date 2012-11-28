@@ -70,16 +70,18 @@ class wp_slimstat_admin{
 		if (function_exists('is_multisite') && is_multisite() && isset($_GET['networkwide']) && ($_GET['networkwide'] == 1)){
 			$blogids = $GLOBALS['wpdb']->get_col($GLOBALS['wpdb']->prepare("
 				SELECT blog_id
-				FROM %s
+				FROM {$GLOBALS['wpdb']->blogs}
 				WHERE site_id = %d
 				AND deleted = 0
-				AND spam = 0", $GLOBALS['wpdb']->blogs, $GLOBALS['wpdb']->siteid));
+				AND spam = 0", $GLOBALS['wpdb']->siteid));
 
 			foreach ($blogids as $blog_id) {
 				switch_to_blog($blog_id);
+				wp_slimstat::$options = get_option('slimstat_options', array());
 				self::init_environment(true);
 			}
 			restore_current_blog();
+			wp_slimstat::$options = get_option('slimstat_options', array());
 		}
 		else{
 			self::init_environment(true);
@@ -92,8 +94,10 @@ class wp_slimstat_admin{
 	 */
 	public static function new_blog($_blog_id){
 		switch_to_blog($_blog_id);
+		wp_slimstat::$options = get_option('slimstat_options', array());
 		self::init_environment(true);
 		restore_current_blog();
+		wp_slimstat::$options = get_option('slimstat_options', array());
 	}
 	// end new_blog
 
@@ -169,7 +173,7 @@ class wp_slimstat_admin{
 				category VARCHAR(256) DEFAULT '',
 				author VARCHAR(64) DEFAULT '',
 				PRIMARY KEY (content_info_id),
-				UNIQUE KEY unique_content_info (content_type, category, author)
+				UNIQUE KEY unique_content_info (content_type(30), category(30), author(30))
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
@@ -200,7 +204,8 @@ class wp_slimstat_admin{
 		if (!wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
 
-		// If this function hasn't been called during the upgrade process, make sure to update all the options
+		// If this function hasn't been called during the upgrade process, make sure to init and update all the options
+		if (empty(wp_slimstat::$options)) wp_slimstat::import_old_options();
 		if ($_activate) self::update_tables_and_options(true);
 
 		return true;
@@ -386,7 +391,8 @@ class wp_slimstat_admin{
 		if (version_compare(wp_slimstat::$options['version'], '2.8.1', '<'))
 			self::update_option('custom_js_path', str_replace(home_url(), '', wp_slimstat::$options['custom_js_path']), 'text');
 
-		// Starting from 2.8.3 lists (i.e., users who can view the reports) are saved as plain text, not arrays
+		// --- Updates for version 2.8.3 ---
+		// Lists (i.e., users who can view the reports) are saved as plain text, not arrays
 		if (is_array(wp_slimstat::$options['ignore_ip'])) self::update_option('ignore_ip', implode(', ', wp_slimstat::$options['ignore_ip']));
 		if (is_array(wp_slimstat::$options['ignore_countries'])) self::update_option('ignore_countries', implode(', ', wp_slimstat::$options['ignore_countries']));
 		if (is_array(wp_slimstat::$options['ignore_resources'])) self::update_option('ignore_resources', implode(', ', wp_slimstat::$options['ignore_resources']));
@@ -396,7 +402,6 @@ class wp_slimstat_admin{
 		if (is_array(wp_slimstat::$options['can_view'])) self::update_option('can_view', implode(', ', wp_slimstat::$options['can_view']));
 		if (is_array(wp_slimstat::$options['can_admin'])) self::update_option('can_admin', implode(', ', wp_slimstat::$options['can_admin']));
 
-		// New options added in 2.8.3
 		if (!isset(wp_slimstat::$options['ignore_capabilities'])){
 			self::update_option('ignore_capabilities', '', 'text');
 		}
@@ -406,6 +411,7 @@ class wp_slimstat_admin{
 		if (!isset(wp_slimstat::$options['markings'])){
 			self::update_option('markings', '', 'text');
 		}
+		// --- END: Updates for version 2.8.3 ---
 		
 		// --- Updates for version 2.8.4 ---
 		// Maxmind IP2Country has been discontinued
@@ -416,7 +422,7 @@ class wp_slimstat_admin{
 		if (version_compare(wp_slimstat::$options['version'], '2.8.4', '<')){
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD UNIQUE KEY unique_browser (browser, version, platform, css_version, type)");
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD UNIQUE KEY unique_screenres (resolution, colordepth, antialias)");
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD UNIQUE KEY unique_content_info (content_type, category, author)");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD UNIQUE KEY unique_content_info (content_type(30), category(30), author(30))");
 		}
 		// --- END: Updates for version 2.8.4 ---
 
@@ -429,6 +435,7 @@ class wp_slimstat_admin{
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
 		}
+		// --- END: Updates for version 2.8.5 ---
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
@@ -446,7 +453,6 @@ class wp_slimstat_admin{
 		// Is there anything we need to update?
 
 		if (isset(wp_slimstat::$options[$_option]) && wp_slimstat::$options[$_option] == $_value) return true;
-
 		switch($_type){
 			case 'yesno':
 				if ($_value=='yes' || $_value=='no')

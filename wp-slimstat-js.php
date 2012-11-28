@@ -171,10 +171,8 @@ $select_sql = "SELECT screenres_id
 
 $stat['screenres_id'] = slimstat_get_var($select_sql);
 if ( empty($stat['screenres_id']) ) {
-	$insert_sql = "INSERT INTO {$table_prefix}slim_screenres ( " . implode( ", ", array_keys( $screenres ) ) . " )
-					SELECT '" . implode( "', '", array_values( $screenres ) ) . "'
-					FROM DUAL
-					WHERE NOT EXISTS ( $select_sql )";
+	$insert_sql = "INSERT IGNORE INTO {$table_prefix}slim_screenres (".implode( ', ', array_keys($screenres)).')
+					VALUES ('.substr(str_repeat('%s,', count($screenres)), 0, -1).')';
 	@mysql_query($insert_sql);
 	$stat['screenres_id'] = @mysql_insert_id();
 	
