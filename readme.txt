@@ -331,6 +331,11 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Javascript-based tracking functionality (a-la Google Analytics), that plays nicely with W3 Total Cache & co.
 * Antiflood monitor and database monitor
 
+= 2.8.6 =
+* Fixed: WP SlimStat Dashboard is now fully compatible with Wordpress MU (thank you [doublesharp](http://wordpress.org/support/topic/plugin-wp-slimstat-dashboard-widgets-not-working-on-multisite))
+* Updated: improved heuristic browser detection
+
+
 = 2.8.5 =
 * Fixed: XSS vulnerability that could be used to inject javascript code into the admin (thank you [xssAlert](http://wordpress.org/support/topic/xss-vurnability))
 * Fixed: Bug in the function that upgrades the environment and the options (thank you [thescarletfire](http://wordpress.org/support/topic/php-warning-stripos-expects-parameter-1-to-be-string-array-given))
