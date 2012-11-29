@@ -1,14 +1,13 @@
 <?php
 
-// Please change this path if your plugins' folder is not in its standard location. Do not include a trailing slash.
 // Where is your wp-config.php located relatively to this file?
 $wp_root_folder = '../../..';
 
-// Ok, you don't need to edit anything below this line. Thank you
+// That's all, stop editing! Happy tracking. 
 
-// Abort execution if config file cannot be located
+// Abort if config file cannot be found
 if (!file_exists($wp_root_folder.'/wp-config.php')){
-	exit('wp-config not found');
+	exit('Error: wp-config not found');
 }
 // Parse config file
 $wp_config = file_get_contents($wp_root_folder.'/wp-config.php');
@@ -48,7 +47,7 @@ if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host)
 	exit('Error parsing wp-config');
 }
 
-$data_string = base64_decode($_POST['data']);
+$data_string = base64_decode($_REQUEST['data']);
 if (!$data_string){
 	exit('Invalid data format');
 }
@@ -105,7 +104,7 @@ $slimstat_options = unserialize(slimstat_get_option('slimstat_options', ''));
 
 if (empty($slimstat_options['secret'])){
 	@mysql_close($db_handle);
-	exit('Secret key not initialized');
+	exit('Invalid private key');
 }
 
 // Blog URL detection
@@ -116,14 +115,14 @@ if (empty($site_url)) $site_url = $_SERVER['HTTP_HOST'];
 // This request is not coming from the same domain
 if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
 	@mysql_close($db_handle);
-	exit('HTTP_REFERER is not valid');
+	exit('Invalid HTTP_REFERER');
 }
 
 // Is the ID valid?
 $stat['id'] = empty($data['id'])?0:base_convert($data['id'], 16, 10);
 if (empty($data['obr']) && (empty($data['id']) || ($data['sid'] != md5($stat['id'].$slimstat_options['secret'])))){
 	@mysql_close($db_handle);
-	exit('Key is not valid');
+	exit('Invalid public key');
 }
 
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
@@ -141,20 +140,7 @@ if (!empty($stat['outbound_resource']) && $stat['type'] >= 0){
 	if (!empty($timezone)) date_default_timezone_set('UTC');
 	$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
 	
-	$insert_new_outbound_sql = "
-INSERT INTO {$multisite_table_prefix}slim_outbound ( " . implode( ", ", array_keys( $stat ) ) . " )
-	SELECT '" . implode( "', '", array_values( $stat ) ) . "'
-	FROM DUAL
-		WHERE NOT EXISTS (
-			SELECT outbound_id
-			FROM {$multisite_table_prefix}slim_outbound
-			WHERE ";
-	foreach ($stat as $a_key => $a_value) {
-		$insert_new_outbound_sql .= "$a_key = '$a_value'" . (($a_key != 'dt')?" AND ":" LIMIT 1 ");
-	}
-	$insert_new_outbound_sql .= ")";
-
-	@mysql_query($insert_new_outbound_sql);
+	@mysql_query(slimstat_prepare("INSERT INTO {$multisite_table_prefix}slim_outbound (".implode(', ', array_keys($stat)).') VALUES ('.substr(str_repeat('%s,', count($stat)), 0, -1).')', $screenres));
 	@mysql_close($db_handle);
 	exit(0);
 }
@@ -171,9 +157,7 @@ $select_sql = "SELECT screenres_id
 
 $stat['screenres_id'] = slimstat_get_var($select_sql);
 if ( empty($stat['screenres_id']) ) {
-	$insert_sql = "INSERT IGNORE INTO {$table_prefix}slim_screenres (".implode( ', ', array_keys($screenres)).')
-					VALUES ('.substr(str_repeat('%s,', count($screenres)), 0, -1).')';
-	@mysql_query($insert_sql);
+	@mysql_query(slimstat_prepare("INSERT IGNORE INTO {$table_prefix}slim_screenres (".implode(', ', array_keys($screenres)).') VALUES ('.substr(str_repeat('%s,', count($screenres)), 0, -1).')', $screenres));
 	$stat['screenres_id'] = @mysql_insert_id();
 	
 	if ( empty($stat['screenres_id']) ) { // This can happen if another transaction had added the new line in the meanwhile
@@ -201,11 +185,9 @@ if (isset($_COOKIE['slimstat_tracking_code'])){
 }
 
 // Finally we can update the information about this visit
-$update_sql = "UPDATE {$multisite_table_prefix}slim_stats
-				SET screenres_id = {$stat['screenres_id']}, plugins = '{$stat['plugins']}'
-				WHERE id = {$stat['id']} AND screenres_id = 0";
-
-@mysql_query($update_sql);
+if (!empty($stat['screenres_id'])){
+	@mysql_query("UPDATE {$multisite_table_prefix}slim_stats SET screenres_id = {$stat['screenres_id']}, plugins = '{$stat['plugins']}' WHERE id = {$stat['id']} AND screenres_id = 0");
+}
 @mysql_close($db_handle);
 exit(0);
 
@@ -227,4 +209,25 @@ function slimstat_get_var($_sql_query = '') {
 		return $result[0];
 	else
 		return false;
+}
+function slimstat_prepare( $query = null ) {
+	if ( is_null( $query ) ) return;
+
+	$args = func_get_args();
+	array_shift( $args );
+
+	// If args were passed as an array (as in vsprintf), move them up
+	if ( isset( $args[0] ) && is_array($args[0]) ) $args = $args[0];
+	
+	$query = str_replace("'%s'", '%s', $query); // in case someone mistakenly already singlequoted it
+	$query = str_replace('"%s"', '%s', $query); // doublequote unquoting
+	$query = preg_replace('|(?<!%)%s|', "'%s'", $query); // quote the strings, avoiding escaped strings like %%s
+	array_walk($args, 'slimstat_escape_by_ref');
+	return @vsprintf( $query, $args );
+}
+function slimstat_escape_by_ref( &$string ) {
+	if ( function_exists('mysql_real_escape_string') )
+		$string = mysql_real_escape_string($string);
+	else
+		$string = addslashes($string);
 }
