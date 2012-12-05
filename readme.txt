@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
-Tested up to: 3.4.2
-Stable tag: 2.8.5
+Tested up to: 3.5
+Stable tag: 2.8.6
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -62,6 +62,13 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 6. If you're blocking access to your `wp-content` folder, move `wp-slimstat-js.php` to a different folder, and edit its first line of code to let WP SlimStat know where your `wp-config.php` is
 
 == Frequently Asked Questions ==
+
+= I see a warning message saying that a misconfigured setting and/or server environment is preventing WP SlimStat from properly tracking my visitors. How can I troubleshoot this issue? =
+WP SlimStat's tracking engine has a server-side component, recording all the information available at the time the resource is served,
+and a client-side component, collecting extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
+clicks and the events they trigger. One of the files responsible for taking care of this is `wp-slimstat-js.php`, usually located inside
+`/wp-content/plugins/wp-slimstat/`. Try accessing that file directly with your browser: if you see a 404 or 500 error message, you will need
+to fix that problem, to allow WP SlimStat to do its job. The error message you should be getting is *Invalid data format*, which is the expected behavior.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
 Try [increasing the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. WP SlimStat requires about 5 Mb of RAM to track a pageview.
@@ -331,6 +338,12 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Javascript-based tracking functionality (a-la Google Analytics), that plays nicely with W3 Total Cache & co.
 * Antiflood monitor and database monitor
 
+= 2.8.6 =
+* Added: a warning message is displayed if WP SlimStat's tracking engine is not working properly
+* Added: link to see a page's stats directly on the Edit Pages screen (thank you JoseVega)
+* Fixed: empty Right Now screen for some users
+* Updated: improved performance by using optimized SQL queries
+
 = 2.8.5 =
 * Fixed: XSS vulnerability that could be used to inject javascript code into the admin (thank you [xssAlert](http://wordpress.org/support/topic/xss-vurnability))
 * Fixed: Bug in the function that upgrades the environment and the options (thank you [thescarletfire](http://wordpress.org/support/topic/php-warning-stripos-expects-parameter-1-to-be-string-array-given))
@@ -428,8 +441,9 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 
 == Donors ==
 [Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Caigo](http://www.blumannaro.net/), 
-[Dennis Kowallek](http://www.adopt-a-plant.com), [Damian](http://wipeoutmedia.com/), [Hans Schantz](http://www.aetherczar.com/), Hajrudin Mulabecirovic,
-[Herman Peet](http://www.hermanpeet.nl/), John Montano, [La casetta delle pesche](http://www.lacasettadellepesche.it/), [Mobilize Mail](http://blog.mobilizemail.com/),
+[Dennis Kowallek](http://www.adopt-a-plant.com), [Damian](http://wipeoutmedia.com/), [Giacomo Persichini](http://iojack.us),
+[Hans Schantz](http://www.aetherczar.com/), Hajrudin Mulabecirovic, [Herman Peet](http://www.hermanpeet.nl/), John Montano, 
+[La casetta delle pesche](http://www.lacasettadellepesche.it/), [Mobilize Mail](http://blog.mobilizemail.com/),
 Mora Systems, Neil Robinson, [Ovidiu](http://pacura.ru/), [Sahin Eksioglu](http://www.alternatifblog.com/), [Saill White](http://saillwhite.com),
 [Sharon Villines](http://sociocracy.info), [SpenceDesign](http://spencedesign.com/), Stephane Sinclair, [The Parson's Rant](http://www.howardparsons.info), Wayne Liebman
 

@@ -47,11 +47,6 @@ if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host)
 	exit('Error parsing wp-config');
 }
 
-$data_string = base64_decode($_REQUEST['data']);
-if (!$data_string){
-	exit('Invalid data format');
-}
-
 // Let's see if we can connect to the database
 $db_handle = mysql_connect($db_host, $db_user, $db_password);
 if (!$db_handle){
@@ -60,6 +55,11 @@ if (!$db_handle){
 if (!mysql_select_db($db_name)){
 	@mysql_close($db_handle);
 	exit('Could not select the db: '.mysql_error());
+}
+
+$data_string = base64_decode($_REQUEST['data']);
+if (!$data_string){
+	exit('Invalid data format');
 }
 
 // Abort if WP SlimStat main table isn't in the database (plugin not activated?)

@@ -2,38 +2,35 @@
 // Avoid direct access to this piece of code
 if (!function_exists('add_action')) exit(0);
 
+wp_slimstat_admin::check_screenres();
+
 if (isset($_GET['ds']) || isset($_GET['di2c'])){
-	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
 	if (isset($_GET['ds']) && $_GET['ds']=='yes'){
-		_e('Are you sure you want to remove all the information about your hits and visits?','wp-slimstat-options');
-		echo ' <a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&ds=confirm&slimpanel=5">'.__('Yes','wp-slimstat-options').'</a>';
-		echo ' <a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&slimpanel=5">'.__('No','wp-slimstat-options').'</a>';
+		wp_slimstat_admin::show_alert_message(__('Are you sure you want to remove all the information about your hits and visits?','wp-slimstat-options').'&nbsp;&nbsp;&nbsp;<a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&ds=confirm&slimpanel=5">'.__('Yes','wp-slimstat-options').'</a> <a class="button-secondary" href="?page=wp-slimstat/admin/options/index.php&slimpanel=5">'.__('No','wp-slimstat-options').'</a>', 'updated highlight below-h2');
 	}
 	if (isset($_GET['ds']) && $_GET['ds']=='confirm'){
 		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_stats");
-		_e('Your WP SlimStat table has been successfully emptied.','wp-slimstat-options');
+		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully emptied.','wp-slimstat-options'), 'updated below-h2');
 	}
 	if (isset($_GET['di2c']) && $_GET['di2c']=='confirm'){
 		$wpdb->query("TRUNCATE TABLE {$wpdb->prefix}slim_countries");
 		if (wp_slimstat_admin::import_countries()){
-			_e('Your Geolocation data has been successfully updated.','wp-slimstat-options');
+			wp_slimstat_admin::show_alert_message(__('Your Geolocation data has been successfully updated.','wp-slimstat-options'), 'updated below-h2');
 		}
 		else{
-			_e('ERROR: Your Geolocation source file is not readable.','wp-slimstat-options');
+			wp_slimstat_admin::show_alert_message(__('ERROR: Your Geolocation source file is not readable.','wp-slimstat-options'), 'error below-h2');
 		}
 	}
-	echo '</p></div>';
 }
 if (isset($_GET['rs']) && $_GET['rs']=='yes'){
 	// Delete the two tables created by WP SlimStat 0.9.2
 	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_stats");
 	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_countries");
-	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
+
 	if (wp_slimstat_admin::activate_single())
-		_e('Your WP SlimStat table has been successfully reset.','wp-slimstat-options');
+		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully reset.','wp-slimstat-options'), 'updated below-h2');
 	else
-		_e('ERROR: Your Slimstat table could not be initialized.','wp-slimstat-options');
-	echo '</p></div>';
+		wp_slimstat_admin::show_alert_message(__('ERROR: Your Slimstat table could not be initialized.','wp-slimstat-options'), 'error below-h2');
 }
 if (isset($_GET['ot']) && $_GET['ot']=='yes'){
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->base_prefix}slim_browsers");
@@ -42,9 +39,8 @@ if (isset($_GET['ot']) && $_GET['ot']=='yes'){
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->base_prefix}slim_screenres");
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_outbound");
 	$wpdb->query("OPTIMIZE TABLE {$wpdb->prefix}slim_stats");
-	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-	_e('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options');
-	echo '</p></div>';
+
+	wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully optimized.','wp-slimstat-options'), 'updated below-h2');
 }
 if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
 	$have_innodb = $wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
@@ -57,9 +53,7 @@ if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
 	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres ENGINE = InnoDB");
 	$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_content_info ENGINE = InnoDB");
 	
-	echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-	_e('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat-options');
-	echo '</p></div>';
+	wp_slimstat_admin::show_alert_message(__('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat-options'), 'updated below-h2');
 }
 if (isset($_GET['ssidx'])){
 	if($_GET['ssidx']=='create'){
@@ -67,18 +61,16 @@ if (isset($_GET['ssidx'])){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
 		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers ADD INDEX all_idx(browser,version,platform,css_version,type)");
 		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres ADD INDEX all_idx(resolution,colordepth,antialias)");
-		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-		_e('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options');
-		echo '</p></div>';
+
+		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat indexes have been successfully created.','wp-slimstat-options'), 'updated below-h2');
 	}
 	if($_GET['ssidx']=='remove'){
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX resource_idx");
 		$wpdb->query("ALTER TABLE {$wpdb->prefix}slim_stats DROP INDEX browser_idx");
 		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_browsers DROP INDEX all_idx");
 		$wpdb->query("ALTER TABLE {$wpdb->base_prefix}slim_screenres DROP INDEX all_idx");
-		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-		_e('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options');
-		echo '</p></div>';
+
+		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat indexes have been successfully removed.','wp-slimstat-options'), 'updated below-h2');
 	}
 }
 if (isset($_POST['options'])){
@@ -114,13 +106,11 @@ if (isset($_POST['options'])){
 			case 'does-not-end-with':
 				$delete_sql = "{$_POST['options']['conditional_delete_field']} NOT LIKE '%$escaped_value'";
 				break;
-	
 		}
-		$rows_affected =  $wpdb->query("DELETE FROM {$wpdb->prefix}slim_stats WHERE $delete_sql");
+		$rows_affected = $wpdb->query("DELETE FROM {$wpdb->prefix}slim_stats WHERE $delete_sql");
 		if (empty($rows_affected)) $rows_affected = 0;
-		echo '<div id="wp-slimstat-message" class="updated fade"><p>';
-		echo __('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected);
-		echo '</p></div>';
+
+		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat-options').' '.intval($rows_affected), 'updated below-h2');
 	}
 }
 ?>

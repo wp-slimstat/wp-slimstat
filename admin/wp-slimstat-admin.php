@@ -24,6 +24,7 @@ class wp_slimstat_admin{
 
 		// Add a link to view stats to each post
 		add_filter('post_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
+		add_filter('page_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
 
 		// Remove spammers from the database
 		if (wp_slimstat::$options['ignore_spammers'] == 'yes'){
@@ -677,6 +678,30 @@ class wp_slimstat_admin{
 			return $_current;
 		else
 			return $current;
+	}
+
+	/**
+	 * Displays an alert message
+	 */
+	public static function show_alert_message($_message = '', $_type = 'update'){
+		echo "<div id='wp-slimstat-message' class='$_type'><p>$_message</p></div>";
+	}
+
+	/**
+	 * Displays warning if plugin is not working properly (client-side data not collected for some reason)
+	 */
+	public static function check_screenres(){
+		if (wp_slimstat::$options['enable_javascript'] == 'yes'){
+			$count_humans = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE visit_id > 0");
+			if ($count_humans > 0){
+				$count_screenres = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_screenres");
+				if ($count_screenres == 0){
+					self::show_alert_message(__('WARNING: a misconfigured setting and/or server environment is preventing WP SlimStat from properly tracking your visitors. Please <a target="_blank" href="http://wordpress.org/extend/plugins/wp-slimstat/faq/">check the FAQs</a> for more information.','wp-slimstat-view'), 'error below-h2');
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	/**

@@ -28,8 +28,9 @@ echo '</script>';
 		if (!empty($filters_no_starting)) $filters_no_starting = '&fs='.$filters_no_starting;
 		foreach($array_screens as $a_panel_id => $a_panel_name){
 			echo "<a class='nav-tab nav-tab".((wp_slimstat_boxes::$current_screen == $a_panel_id+1)?'-active':'-inactive')."' href='".wp_slimstat_admin::$admin_url.($a_panel_id+1).$filters_no_starting."'>$a_panel_name</a>";
-		} ?>
-	</p>
+		} 
+		$using_screenres = wp_slimstat_admin::check_screenres(); 
+	?></p>
 	
 	<form action="<?php echo wp_slimstat_boxes::fs_url(); ?>" method="post" name="setslimstatfilters" id="slimstat-filters"
 		onsubmit="if (this.year.value == '<?php _e('Year','wp-slimstat-view') ?>') this.year.value = ''">
