@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP SlimStat Dashboard\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-20 11:29-0500\n"
+"PO-Revision-Date: 2012-06-20 11:31-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Italian\n"
+"X-Poedit-Country: ITALY\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Pageviews"
+msgstr "Páginas Vistitadas"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Unique IPs"
+msgstr "Direcciones IP Unicas"
+
+#~ msgid "No data to display"
+#~ msgstr "No hay datos actualmente"
+
+#~ msgid "Open %s in a new window"
+#~ msgstr "Abrir %s en una nueva ventana"
+
+#~ msgid "c-"
+#~ msgstr "c-"
+
+#~ msgid "Direct visit to"
+#~ msgstr "Visitas directa a"
+
+#~ msgid "Avg Pageviews"
+#~ msgstr "Promedio de Páginas Vistas"
+
+#~ msgid "On"
+#~ msgstr "En"
+
+#~ msgid "Last Month"
+#~ msgstr "Último Mes"
+
+#~ msgid "User Agents"
+#~ msgstr "Navegadores"
+
+#~ msgid "Recent Keywords"
+#~ msgstr "Palabras Recientes"
+
+#~ msgid "Total Hits"
+#~ msgstr "Total de Accesos"
+
+#~ msgid "Data Size"
+#~ msgstr "Tamaño de Datos"
+
+#~ msgid "Tracking Active"
+#~ msgstr "Seguimiento Activo"
+
+#~ msgid "Auto purge"
+#~ msgstr "AutoLimpiar Base de Datos"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Abrir referido en una nueva ventana"
+
+#~ msgid "Top 5 pages"
+#~ msgstr "5 Páginas más Vistas"
+
+#~ msgid "Pathstats"
+#~ msgstr "Detalle de Accesos"
+
+#~ msgid "About"
+#~ msgstr "Información"
+
+#~ msgid "Summary of pageviews"
+#~ msgstr "Sumario de Páginas Visitadas"
+
+#~ msgid "Traffic Sources"
+#~ msgstr "Origen del Tráfico"
+
+#~ msgid "Recent Keywords &raquo; Pages"
+#~ msgstr "Palabras Recientes &raquo; Página"
+
+#~ msgid "Analytics"
+#~ msgstr "Statistiche"
+
+#~ msgid "Options"
+#~ msgstr "Opzioni"

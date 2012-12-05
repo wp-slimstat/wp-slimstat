@@ -1,0 +1,1285 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 2.4\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-20 12:03-0500\n"
+"PO-Revision-Date: 2012-06-20 12:03-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: ZebEl of Sweden\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: ../view\n"
+"Plural-Forms: plurals=2; plural=1 != 1\n"
+"X-Poedit-Language: Swedish\n"
+"X-Poedit-Country: SWEDEN\n"
+"X-Poedit-SearchPath-0: ../view\n"
+
+#: ../view/index.php:7
+msgid "Right Now"
+msgstr ""
+
+#: ../view/index.php:7
+msgid "Details"
+msgstr ""
+
+#: ../view/index.php:8
+msgid "Overview"
+msgstr ""
+
+#: ../view/index.php:9
+msgid "Visitors"
+msgstr "Besökare"
+
+#: ../view/index.php:10
+msgid "Content"
+msgstr "Innehåll"
+
+#: ../view/index.php:11
+msgid "Traffic Sources"
+msgstr "Trafikkällor"
+
+#: ../view/index.php:12
+msgid "World Map"
+msgstr "Världskarta"
+
+#: ../view/index.php:13
+msgid "Custom Reports"
+msgstr "Anpassade Rapporter"
+
+#: ../view/index.php:33
+#: ../view/index.php:96
+#: ../view/index.php:97
+msgid "Year"
+msgstr "År"
+
+#: ../view/index.php:34
+msgid "Please refer to the contextual help (available on WP 3.3+) for more information on what these filters mean."
+msgstr ""
+
+#: ../view/index.php:35
+msgid "Show records where"
+msgstr "Visa poster då"
+
+#: ../view/index.php:38
+#: ../view/panel1.php:84
+#: ../view/panel1.php:87
+msgid "Browser"
+msgstr "Webbläsare"
+
+#: ../view/index.php:39
+#: ../view/wp-slimstat-boxes.php:298
+msgid "Country Code"
+msgstr "Landskod"
+
+#: ../view/index.php:40
+msgid "Referring Domain"
+msgstr ""
+
+#: ../view/index.php:41
+msgid "IP"
+msgstr "IP"
+
+#: ../view/index.php:42
+#, fuzzy
+msgid "Search Terms"
+msgstr "Topp Källor"
+
+#: ../view/index.php:43
+#: ../view/wp-slimstat-boxes.php:310
+msgid "Language Code"
+msgstr "Språkkod"
+
+#: ../view/index.php:44
+msgid "Operating System"
+msgstr "Operativsystem"
+
+#: ../view/index.php:45
+msgid "Permalink"
+msgstr "Permalänk"
+
+#: ../view/index.php:46
+msgid "Referer"
+msgstr "Refererare"
+
+#: ../view/index.php:47
+#, fuzzy
+msgid "Visitor's Name"
+msgstr "Besökare"
+
+#: ../view/index.php:49
+msgid "-- Advanced filters --"
+msgstr ""
+
+#: ../view/index.php:50
+#: ../view/wp-slimstat-boxes.php:67
+#, fuzzy
+msgid "Browser Capabilities"
+msgstr "Webbläsare"
+
+#: ../view/index.php:51
+#, fuzzy
+msgid "Browser Version"
+msgstr "Webbläsarens version"
+
+#: ../view/index.php:52
+#: ../view/panel1.php:101
+#, fuzzy
+msgid "Browser Type"
+msgstr "Webbläsare"
+
+#: ../view/index.php:53
+#, fuzzy
+msgid "Color Depth"
+msgstr "Färgkoder"
+
+#: ../view/index.php:54
+#, fuzzy
+msgid "CSS Version"
+msgstr "CSS version"
+
+#: ../view/index.php:55
+#, fuzzy
+msgid "Pageview Attributes"
+msgstr "Sidvisningar"
+
+#: ../view/index.php:56
+msgid "Post Author"
+msgstr "Inläggsförfattare"
+
+#: ../view/index.php:57
+msgid "Post Category ID"
+msgstr "Inläggskategorins ID"
+
+#: ../view/index.php:58
+#: ../view/panel1.php:75
+msgid "Private IP"
+msgstr ""
+
+#: ../view/index.php:59
+#, fuzzy
+msgid "Resource Content Type"
+msgstr "Senaste Innehåll"
+
+#: ../view/index.php:60
+msgid "Screen Resolution"
+msgstr "Bildskärmens Upplösning"
+
+#: ../view/index.php:61
+msgid "Visit ID"
+msgstr "Besöks-ID"
+
+#: ../view/index.php:64
+#, fuzzy
+msgid "equals"
+msgstr "Är lika med"
+
+#: ../view/index.php:65
+msgid "is not equal to"
+msgstr ""
+
+#: ../view/index.php:66
+#, fuzzy
+msgid "contains"
+msgstr "Innehåller"
+
+#: ../view/index.php:67
+#, fuzzy
+msgid "does not contain"
+msgstr "Innehåller ej"
+
+#: ../view/index.php:68
+#, fuzzy
+msgid "starts with"
+msgstr "Börjar med"
+
+#: ../view/index.php:69
+#, fuzzy
+msgid "ends with"
+msgstr "Slutar med"
+
+#: ../view/index.php:70
+#, fuzzy
+msgid "sounds like"
+msgstr "Låter som"
+
+#: ../view/index.php:71
+#, fuzzy
+msgid "is empty"
+msgstr "Är tomt"
+
+#: ../view/index.php:72
+#, fuzzy
+msgid "is not empty"
+msgstr "Är inte tomt"
+
+#: ../view/index.php:73
+msgid "is greater than"
+msgstr ""
+
+#: ../view/index.php:74
+msgid "is less than"
+msgstr ""
+
+#: ../view/index.php:77
+msgid "Filter by date"
+msgstr "Sortera efter datum"
+
+#: ../view/index.php:78
+msgid "Day"
+msgstr "Dag"
+
+#: ../view/index.php:87
+msgid "Month"
+msgstr "Månad"
+
+#: ../view/index.php:98
+#: ../view/wp-slimstat-boxes.php:634
+msgid "days"
+msgstr "dagar"
+
+#: ../view/index.php:99
+msgid "Go"
+msgstr "Gå"
+
+#: ../view/index.php:100
+#, fuzzy
+msgid "Reverse Order"
+msgstr "Vänd om"
+
+#: ../view/panel1.php:37
+msgid "No records found"
+msgstr "Ingen post hittades"
+
+#: ../view/panel1.php:40
+#, fuzzy, php-format
+msgid "Records: %d - %d of %d. Direction: %s"
+msgstr "Poster: %d - %d. Sortera efter: %s %s (%s)"
+
+#: ../view/panel1.php:45
+#: ../view/panel6.php:25
+#: ../view/wp-slimstat-boxes.php:271
+#: ../view/wp-slimstat-boxes.php:356
+#: ../view/wp-slimstat-boxes.php:392
+msgid "No data to display"
+msgstr "Ingen data att visa"
+
+#: ../view/panel1.php:64
+#: ../view/panel1.php:68
+#: ../view/wp-slimstat-boxes.php:346
+#, php-format
+msgid "Filter results where IP equals %s"
+msgstr ""
+
+#: ../view/panel1.php:67
+#, php-format
+msgid "Filter results where user equals %s"
+msgstr ""
+
+#: ../view/panel1.php:75
+#, php-format
+msgid "Filter results where private IP equals %s"
+msgstr ""
+
+#: ../view/panel1.php:79
+msgid "Country"
+msgstr "Land"
+
+#: ../view/panel1.php:79
+#: ../view/wp-slimstat-boxes.php:299
+#: ../view/wp-slimstat-boxes.php:424
+msgid "c-"
+msgstr "c-"
+
+#: ../view/panel1.php:93
+#: ../view/panel1.php:96
+msgid "Platform"
+msgstr ""
+
+#: ../view/panel1.php:127
+#, fuzzy
+msgid "Open this post in a new window"
+msgstr "Öppna %s i ett nytt fönster"
+
+#: ../view/panel1.php:130
+#, fuzzy
+msgid "Open this page in a new window"
+msgstr "Öppna %s i ett nytt fönster"
+
+#: ../view/panel1.php:134
+msgid "Local search results page"
+msgstr "Lokal sida för sökresultat"
+
+#: ../view/panel1.php:145
+msgid "Go to the corresponding search engine result page"
+msgstr ""
+
+#: ../view/panel1.php:148
+msgid "Go to the referring page"
+msgstr ""
+
+#: ../view/panel1.php:153
+msgid "src"
+msgstr ""
+
+#: ../view/panel1.php:154
+#, fuzzy
+msgid "serp"
+msgstr "Användare"
+
+#: ../view/panel1.php:160
+#, fuzzy
+msgid "Open in a new window"
+msgstr "Öppna %s i ett nytt fönster"
+
+#: ../view/panel1.php:162
+#, php-format
+msgid "Filter results where content type equals %s"
+msgstr ""
+
+#: ../view/panel1.php:168
+#: ../view/panel2.php:32
+#: ../view/panel4.php:53
+#: ../view/panel4.php:58
+#: ../view/panel5.php:43
+#, fuzzy
+msgid "Color codes"
+msgstr "Färgkoder"
+
+#: ../view/panel1.php:169
+#: ../view/panel2.php:32
+#: ../view/panel5.php:43
+#, fuzzy
+msgid "From a search result page"
+msgstr "Lokal sida för sökresultat"
+
+#: ../view/panel1.php:170
+#: ../view/panel2.php:32
+#: ../view/panel4.php:53
+#: ../view/panel4.php:58
+#: ../view/panel5.php:43
+msgid "Known Users"
+msgstr "Kända Besökare"
+
+#: ../view/panel1.php:171
+#: ../view/panel2.php:32
+#: ../view/panel4.php:53
+#: ../view/panel4.php:58
+#: ../view/panel5.php:43
+msgid "Other Humans"
+msgstr "Andra Människor"
+
+#: ../view/panel1.php:172
+#, fuzzy
+msgid "Bots, Crawlers and others"
+msgstr "Robotar och Crawlers "
+
+#: ../view/panel2.php:7
+#: ../view/wp-slimstat-boxes.php:457
+#: ../view/wp-slimstat-boxes.php:649
+#: ../view/wp-slimstat-boxes.php:748
+msgid "Pageviews"
+msgstr "Sidvisningar"
+
+#: ../view/panel2.php:7
+#: ../view/panel3.php:9
+#: ../view/panel5.php:8
+#: ../view/wp-slimstat-boxes.php:457
+#: ../view/wp-slimstat-boxes.php:460
+#: ../view/wp-slimstat-boxes.php:463
+#: ../view/wp-slimstat-boxes.php:673
+msgid "Unique IPs"
+msgstr "Unika IP-adresser"
+
+#: ../view/panel2.php:12
+#, fuzzy
+msgid "Daily Pageviews"
+msgstr "Sidvisningar"
+
+#: ../view/panel2.php:12
+#, fuzzy
+msgid "Hourly Pageviews"
+msgstr "Sidvisningar"
+
+#: ../view/panel2.php:27
+msgid "When visitors leave a comment on your blog, Wordpress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors."
+msgstr ""
+
+#: ../view/panel2.php:32
+#: ../view/panel5.php:43
+msgid "Take a sneak peek at what human visitors are doing on your website"
+msgstr ""
+
+#: ../view/panel2.php:37
+#: ../view/panel5.php:48
+msgid "Keywords used by your visitors to find your website on a search engine"
+msgstr ""
+
+#: ../view/panel2.php:42
+msgid "Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session."
+msgstr ""
+
+#: ../view/panel3.php:9
+#: ../view/wp-slimstat-boxes.php:460
+msgid "Visits"
+msgstr "Besök"
+
+#: ../view/panel3.php:14
+#, fuzzy
+msgid "Daily Human Visits"
+msgstr "Mänskliga besök"
+
+#: ../view/panel3.php:14
+#, fuzzy
+msgid "Hourly Human Visits"
+msgstr "Mänskliga besök"
+
+#: ../view/panel3.php:24
+#: ../view/panel3.php:84
+msgid "This report shows you what languages your users have installed on their computers."
+msgstr ""
+
+#: ../view/panel3.php:29
+#: ../view/panel3.php:79
+msgid "A user agent is a generic term for any program used for accessing a website. This includes browsers (such as Chrome), robots and spiders, and any other software program that retrieves information from a website.<br><br>You can ignore any given user agent by setting the corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+
+#: ../view/panel3.php:34
+msgid "Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+
+#: ../view/panel3.php:39
+#: ../view/panel3.php:74
+msgid "Which operating systems do your visitors use? Optimizing your site for the appropriate technical capabilities helps make your site more engaging and usable and can result in higher conversion rates and more sales."
+msgstr ""
+
+#: ../view/panel3.php:44
+msgid "This report shows the most common screen resolutions used by your visitors. Knowing the most popular screen resolution of your visitors will help you create content optimized for that resolution or you may opt for resolution-independence."
+msgstr ""
+
+#: ../view/panel3.php:49
+msgid "Which versions of Flash do your visitors have installed? Is Java supported on your visitors' platforms?"
+msgstr ""
+
+#: ../view/panel3.php:54
+#: ../view/panel5.php:28
+msgid "You can configure WP SlimStat to ignore a specific Country by setting the corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+
+#: ../view/panel3.php:64
+msgid "You can ignore any specific Country by setting the corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+
+#: ../view/panel3.php:69
+msgid "This report shows the most recent screen resolutions used by your visitors. Knowing the most popular screen resolution of your visitors will help you create content optimized for that resolution or you may opt for resolution-independence."
+msgstr ""
+
+#: ../view/panel4.php:13
+#: ../view/wp-slimstat-boxes.php:467
+#: ../view/wp-slimstat-boxes.php:653
+msgid "Avg Pageviews"
+msgstr "Sidvisningar Genomsnitt"
+
+#: ../view/panel4.php:13
+#: ../view/wp-slimstat-boxes.php:467
+#: ../view/wp-slimstat-boxes.php:682
+msgid "Longest visit"
+msgstr "Längsta besök"
+
+#: ../view/panel4.php:18
+#, fuzzy
+msgid "Daily Average Pageviews per Visit"
+msgstr "Sidvisningar i genomsnitt per besök per timme"
+
+#: ../view/panel4.php:18
+#, fuzzy
+msgid "Hourly Average Pageviews per Visit"
+msgstr "Sidvisningar i genomsnitt per besök per timme"
+
+#: ../view/panel4.php:23
+msgid "This report lists the most recent posts viewed on your site, by title."
+msgstr ""
+
+#: ../view/panel4.php:28
+msgid "A <em>bounce page</em> is a single-page visit, or visit in which the person left your site from the entrance (landing) page."
+msgstr ""
+
+#: ../view/panel4.php:38
+msgid "The 404 or Not Found error message is a HTTP standard response code indicating that the client was able to communicate with the server, but the server could not find what was requested.<br><br>This report can be useful to detect attack attempts, by looking at patterns in 404 URLs."
+msgstr ""
+
+#: ../view/panel4.php:43
+msgid "Searches performed using Wordpress' built-in search functionality."
+msgstr ""
+
+#: ../view/panel4.php:48
+msgid "Categories provide a helpful way to group related posts together, and to quickly tell readers what a post is about. Categories also make it easier for people to find your content."
+msgstr ""
+
+#: ../view/panel4.php:53
+msgid "<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding link has an ID attribute associated to it."
+msgstr ""
+
+#: ../view/panel4.php:58
+msgid "This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to leverage this functionality."
+msgstr ""
+
+#: ../view/panel4.php:63
+msgid "This report lists the most popular posts on your site, by title."
+msgstr ""
+
+#: ../view/panel5.php:8
+#: ../view/wp-slimstat-boxes.php:463
+msgid "Domains"
+msgstr "Domäner"
+
+#: ../view/panel5.php:13
+#, fuzzy
+msgid "Daily Traffic Sources"
+msgstr "Trafikkällor"
+
+#: ../view/panel5.php:13
+#, fuzzy
+msgid "Hourly Traffic Sources"
+msgstr "Trafikkällor i Topp"
+
+#: ../view/panel6.php:23
+msgid "World Map - Click on active Countries to activate the corresponding filter"
+msgstr ""
+
+#: ../view/panel7.php:8
+#, fuzzy
+msgid "Your report here"
+msgstr "Visa poster då"
+
+#: ../view/panel7.php:10
+#, fuzzy
+msgid "Yes, you can! Create and view your personalized analytics for WP SlimStat. Just write a new plugin that retrieves the desired information from the database and then hook it to the action <code>wp_slimstat_custom_report</code>. A demo plugin comes with the package. It shows how to write custom reports in 5 minutes: <code>wp-slimstat-custom-report-demo.php.txt</code>. For more information, visit my <a href=\"http://wordpress.org/tags/wp-slimstat?forum_id=10\" target=\"_blank\">support forum</a>."
+msgstr "Visst, kan du det! Skapa och visa dina personifierade analyser med WP SlimStat. För att kunna göra det, skriver du bara ett nytt tillägg, vilken kan hämta önskad information från databasen, som  sedan hakas fast till funktionen <code>wp_slimstat_custom_report</code>. En demo följer med paketet. Den visar hur man skriver anpassade rapporter i 5 minuter. Du kan hitta den i tillägets mapp: <code>wp_slimstat-custom-report-demo.php</code>. For mer information, besök mitt <a href=\"http://lab.duechiacchiere.it/\" target=\"_blank\">supportforum</a>."
+
+#: ../view/wp-slimstat-boxes.php:47
+#, fuzzy
+msgid "Pageviews (chart)"
+msgstr "Sidvisningar per timme"
+
+#: ../view/wp-slimstat-boxes.php:48
+msgid "About WP SlimStat"
+msgstr "Om WP SlimStat"
+
+#: ../view/wp-slimstat-boxes.php:49
+#: ../view/wp-slimstat-boxes.php:61
+#: ../view/wp-slimstat-boxes.php:76
+#, fuzzy
+msgid "Summary"
+msgstr "Sammanfattning för"
+
+#: ../view/wp-slimstat-boxes.php:50
+msgid "Recent Known Visitors"
+msgstr "Senast Kända Besökare"
+
+#: ../view/wp-slimstat-boxes.php:51
+#: ../view/wp-slimstat-boxes.php:81
+msgid "Spy View"
+msgstr "Spion Vy"
+
+#: ../view/wp-slimstat-boxes.php:52
+#: ../view/wp-slimstat-boxes.php:82
+#, fuzzy
+msgid "Recent Search Terms"
+msgstr "Senaste Internsökningar"
+
+#: ../view/wp-slimstat-boxes.php:53
+#, fuzzy
+msgid "Top Languages - Just Visitors"
+msgstr "Språk - Endast Besökare"
+
+#: ../view/wp-slimstat-boxes.php:54
+#, fuzzy
+msgid "Top Pages"
+msgstr "Utgångssida i Topp för"
+
+#: ../view/wp-slimstat-boxes.php:55
+#: ../view/wp-slimstat-boxes.php:70
+#: ../view/wp-slimstat-boxes.php:83
+msgid "Recent Countries"
+msgstr "Senaste Länder"
+
+#: ../view/wp-slimstat-boxes.php:56
+#: ../view/wp-slimstat-boxes.php:79
+msgid "Top Traffic Sources"
+msgstr "Trafikkällor i Topp"
+
+#: ../view/wp-slimstat-boxes.php:57
+#, fuzzy
+msgid "Top Known Visitors"
+msgstr "Senast Kända Besökare"
+
+#: ../view/wp-slimstat-boxes.php:58
+#: ../view/wp-slimstat-boxes.php:77
+#: ../view/wp-slimstat-boxes.php:97
+#, fuzzy
+msgid "Top Search Terms"
+msgstr "Topp Källor"
+
+#: ../view/wp-slimstat-boxes.php:59
+#: ../view/wp-slimstat-boxes.php:68
+#: ../view/wp-slimstat-boxes.php:78
+msgid "Top Countries"
+msgstr "Länder i Topp"
+
+#: ../view/wp-slimstat-boxes.php:60
+#, fuzzy
+msgid "Human Visits (chart)"
+msgstr "Mänskliga besök per timme"
+
+#: ../view/wp-slimstat-boxes.php:62
+#, fuzzy
+msgid "Top Languages"
+msgstr "Språk"
+
+#: ../view/wp-slimstat-boxes.php:63
+#, fuzzy
+msgid "Top User Agents"
+msgstr "Användaragenter"
+
+#: ../view/wp-slimstat-boxes.php:64
+#, fuzzy
+msgid "Top Service Providers"
+msgstr "Topp Källor"
+
+#: ../view/wp-slimstat-boxes.php:65
+#, fuzzy
+msgid "Top Operating Systems"
+msgstr "Operativsystemen"
+
+#: ../view/wp-slimstat-boxes.php:66
+#, fuzzy
+msgid "Top Screen Resolutions"
+msgstr "Skärmupplösning"
+
+#: ../view/wp-slimstat-boxes.php:69
+#, fuzzy
+msgid "Visit Duration"
+msgstr "Besöks-ID"
+
+#: ../view/wp-slimstat-boxes.php:71
+#, fuzzy
+msgid "Recent Screen Resolutions"
+msgstr "Skärmupplösning"
+
+#: ../view/wp-slimstat-boxes.php:72
+#, fuzzy
+msgid "Recent Operating Systems"
+msgstr "Operativsystemen"
+
+#: ../view/wp-slimstat-boxes.php:73
+#, fuzzy
+msgid "Recent User Agents"
+msgstr "Användaragenter"
+
+#: ../view/wp-slimstat-boxes.php:74
+#, fuzzy
+msgid "Recent Languages"
+msgstr "Språk"
+
+#: ../view/wp-slimstat-boxes.php:75
+#, fuzzy
+msgid "Traffic Sources (chart)"
+msgstr "Trafikkällor"
+
+#: ../view/wp-slimstat-boxes.php:80
+#, fuzzy
+msgid "Top Referring Search Engines"
+msgstr "Sökmotorer"
+
+#: ../view/wp-slimstat-boxes.php:84
+#: ../view/wp-slimstat-boxes.php:100
+#, fuzzy
+msgid "Top Landing Pages"
+msgstr "Utgångssida i Topp för"
+
+#: ../view/wp-slimstat-boxes.php:85
+#, fuzzy
+msgid "Average Pageviews per Visit (chart)"
+msgstr "Sidvisningar i genomsnitt per besök per timme"
+
+#: ../view/wp-slimstat-boxes.php:86
+#, fuzzy
+msgid "Recent Posts"
+msgstr "Senaste Innehåll"
+
+#: ../view/wp-slimstat-boxes.php:87
+#, fuzzy
+msgid "Recent Bounce Pages"
+msgstr "Senast studsande sidor"
+
+#: ../view/wp-slimstat-boxes.php:88
+msgid "Recent Feeds"
+msgstr "Senaste Kanaler"
+
+#: ../view/wp-slimstat-boxes.php:89
+#, fuzzy
+msgid "Recent 404 URLs"
+msgstr "Senaste 404 sidor"
+
+#: ../view/wp-slimstat-boxes.php:90
+msgid "Recent Internal Searches"
+msgstr "Senaste Internsökningar"
+
+#: ../view/wp-slimstat-boxes.php:91
+#, fuzzy
+msgid "Top Categories"
+msgstr "Kategorier i Topp för"
+
+#: ../view/wp-slimstat-boxes.php:92
+msgid "Recent Outbound Links"
+msgstr "Senast Utgående Länkar"
+
+#: ../view/wp-slimstat-boxes.php:93
+#, fuzzy
+msgid "Recent Events"
+msgstr "Senaste Innehåll"
+
+#: ../view/wp-slimstat-boxes.php:94
+#, fuzzy
+msgid "Top Posts"
+msgstr "Länder i Topp"
+
+#: ../view/wp-slimstat-boxes.php:95
+#, fuzzy
+msgid "Top Feeds"
+msgstr "Nyckelord i Topp"
+
+#: ../view/wp-slimstat-boxes.php:96
+#, fuzzy
+msgid "Top Internal Searches"
+msgstr "Senaste Internsökningar"
+
+#: ../view/wp-slimstat-boxes.php:98
+#, fuzzy
+msgid "Recent Categories"
+msgstr "Senaste Länder"
+
+#: ../view/wp-slimstat-boxes.php:99
+msgid "Top 404 URLs"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:101
+#, fuzzy
+msgid "Top Authors"
+msgstr "Inläggsförfattare"
+
+#: ../view/wp-slimstat-boxes.php:176
+msgid "Chart controls"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:176
+msgid "Use your mouse wheel to zoom in and out"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:176
+msgid "While zooming in, drag the chart to move to a different area"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:176
+msgid "Double click on an empty region to reset the zoom level"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:177
+msgid "Click on a data point to display the activity chart for each hour of that day"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:222
+msgid "Remove all filters"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:224
+msgid "Current filters:"
+msgstr "Nuvarande filter:"
+
+#: ../view/wp-slimstat-boxes.php:227
+#, fuzzy
+msgid "Remove filter for"
+msgstr "Välj filter"
+
+#: ../view/wp-slimstat-boxes.php:286
+#, fuzzy
+msgid "Category ID"
+msgstr "Inläggskategorins ID"
+
+#: ../view/wp-slimstat-boxes.php:311
+msgid "l-"
+msgstr "l-"
+
+#: ../view/wp-slimstat-boxes.php:314
+#, fuzzy
+msgid "OS Code"
+msgstr "Kod"
+
+#: ../view/wp-slimstat-boxes.php:327
+#, php-format
+msgid "Filter results where %s equals %s"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:334
+#: ../view/wp-slimstat-boxes.php:691
+#: ../view/wp-slimstat-boxes.php:702
+#: ../view/wp-slimstat-boxes.php:707
+#: ../view/wp-slimstat-boxes.php:712
+#: ../view/wp-slimstat-boxes.php:717
+#: ../view/wp-slimstat-boxes.php:722
+#: ../view/wp-slimstat-boxes.php:727
+#: ../view/wp-slimstat-boxes.php:732
+#: ../view/wp-slimstat-boxes.php:737
+msgid "Hits"
+msgstr "Träffar"
+
+#: ../view/wp-slimstat-boxes.php:339
+#: ../view/wp-slimstat-boxes.php:343
+#: ../view/wp-slimstat-boxes.php:411
+#: ../view/wp-slimstat-boxes.php:434
+#: ../view/wp-slimstat-boxes.php:441
+#, fuzzy
+msgid "Open this URL in a new window"
+msgstr "Öppna %s i ett nytt fönster"
+
+#: ../view/wp-slimstat-boxes.php:408
+msgid "Search for"
+msgstr "Sök efter"
+
+#: ../view/wp-slimstat-boxes.php:434
+#: ../view/wp-slimstat-boxes.php:441
+#, fuzzy
+msgid "Source"
+msgstr "Studsar"
+
+#: ../view/wp-slimstat-boxes.php:434
+#, php-format
+msgid "Filter results where domain equals %s"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:435
+msgid "Keywords"
+msgstr "Nyckelord"
+
+#: ../view/wp-slimstat-boxes.php:435
+#, php-format
+msgid "Filter results where searchterm equals %s"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:441
+#, php-format
+msgid "Filter results where resource equals %s"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:630
+#, fuzzy
+msgid "Total Pageviews"
+msgstr "Sidvisningar"
+
+#: ../view/wp-slimstat-boxes.php:631
+#, fuzzy
+msgid "DB Size"
+msgstr "Datastorlek"
+
+#: ../view/wp-slimstat-boxes.php:632
+msgid "Tracking Active"
+msgstr "Spårning Aktivt"
+
+#: ../view/wp-slimstat-boxes.php:633
+msgid "Javascript Tracking"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:634
+msgid "Auto purge"
+msgstr "Rensa automatiskt"
+
+#: ../view/wp-slimstat-boxes.php:634
+msgid "No"
+msgstr "Nej"
+
+#: ../view/wp-slimstat-boxes.php:635
+msgid "Latency"
+msgstr "Fördröjning"
+
+#: ../view/wp-slimstat-boxes.php:635
+msgid "seconds"
+msgstr "sekunder"
+
+#: ../view/wp-slimstat-boxes.php:635
+msgid "Off"
+msgstr "Avstängd"
+
+#: ../view/wp-slimstat-boxes.php:636
+msgid "Oldest visit"
+msgstr "Äldsta besök"
+
+#: ../view/wp-slimstat-boxes.php:636
+#, fuzzy
+msgid "No visits"
+msgstr "Nya besökare"
+
+#: ../view/wp-slimstat-boxes.php:648
+#: ../view/wp-slimstat-boxes.php:747
+msgid "A request to load a single HTML file. WP SlimStat logs a \"pageview\" each time the tracking code is executed."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:650
+msgid "This counter is based on any user activity in the last 5 minutes."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:651
+msgid "Last 5 minutes"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:652
+msgid "How many pages have been visited on average during the current period."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:654
+msgid "A bot is a program that operates as an agent for a user or another program or simulates a human activity. Browsers with Javascript disabled (but whose user agent is legit) are not considered <em>bots</em>."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:655
+#: ../view/wp-slimstat-boxes.php:680
+msgid "Bots"
+msgstr "Robotar"
+
+#: ../view/wp-slimstat-boxes.php:656
+msgid "Visitors who landed on your site after searching for a keyword on Google, Yahoo, etc."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:657
+#, fuzzy
+msgid "From Search Results"
+msgstr "Lokal sida för sökresultat"
+
+#: ../view/wp-slimstat-boxes.php:658
+#: ../view/wp-slimstat-boxes.php:659
+msgid "On"
+msgstr "Den"
+
+#: ../view/wp-slimstat-boxes.php:660
+msgid "Last Month"
+msgstr "Förra Månaden"
+
+#: ../view/wp-slimstat-boxes.php:670
+msgid "A visit is a session of at most 30 minutes. Returning visitors are counted multiple times if they perform multiple visits."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:671
+msgid "Human visits"
+msgstr "Mänskliga besök"
+
+#: ../view/wp-slimstat-boxes.php:672
+msgid "This number includes <strong>human visits</strong> only."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:674
+#: ../view/wp-slimstat-boxes.php:759
+msgid "Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:675
+#: ../view/wp-slimstat-boxes.php:760
+msgid "Bounce rate"
+msgstr "Studsfrekvens"
+
+#: ../view/wp-slimstat-boxes.php:676
+msgid "Visitors who had previously left a comment on your blog."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:677
+#, fuzzy
+msgid "Known visitors"
+msgstr "Senast Kända Besökare"
+
+#: ../view/wp-slimstat-boxes.php:678
+msgid "Human users who visited your site only once."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:679
+msgid "New visitors"
+msgstr "Nya besökare"
+
+#: ../view/wp-slimstat-boxes.php:681
+msgid "Pages per visit"
+msgstr "Sidor per besök"
+
+#: ../view/wp-slimstat-boxes.php:682
+msgid "hits"
+msgstr "Träffar"
+
+#: ../view/wp-slimstat-boxes.php:703
+#, fuzzy
+msgid "0 - 30 seconds"
+msgstr "sekunder"
+
+#: ../view/wp-slimstat-boxes.php:708
+#, fuzzy
+msgid "31 - 60 seconds"
+msgstr "sekunder"
+
+#: ../view/wp-slimstat-boxes.php:713
+msgid "1 - 3 minutes"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:718
+msgid "3 - 5 minutes"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:723
+msgid "5 - 7 minutes"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:728
+msgid "7 - 10 minutes"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:733
+msgid "10 - 20 minutes"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:738
+msgid "More than 20 minutes"
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:749
+msgid "A referrer (or referring site) is the site that a visitor previously visited before following a link to your site."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:750
+#, fuzzy
+msgid "Unique Referrers"
+msgstr "Unika Refererare"
+
+#: ../view/wp-slimstat-boxes.php:751
+msgid "Visitors who visited the site by typing the URL directly into their browser. <em>Direct</em> can also refer to the visitors who clicked on the links from their bookmarks/favorites, untagged links within emails, or links from documents that don't include tracking variables."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:752
+#, fuzzy
+msgid "Direct Pageviews"
+msgstr "Sidvisningar"
+
+#: ../view/wp-slimstat-boxes.php:753
+msgid "Visitors who came to your site via searches on Google or some other search engine."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:754
+#, fuzzy
+msgid "From a search result"
+msgstr "Lokal sida för sökresultat"
+
+#: ../view/wp-slimstat-boxes.php:755
+msgid "The first page that a user views during a session. This is also known as the <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on your home page, it gets counted (for that visit) as a landing page."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:756
+#, fuzzy
+msgid "Unique Landing Pages"
+msgstr "Unika IP-adresser"
+
+#: ../view/wp-slimstat-boxes.php:757
+msgid "Number of single-page visits to your site over the selected period."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:758
+#, fuzzy
+msgid "Bounce Pages"
+msgstr "Studsfrekvens"
+
+#: ../view/wp-slimstat-boxes.php:761
+msgid "Visitors who visited the site in the last 5 minutes coming from a search engine."
+msgstr ""
+
+#: ../view/wp-slimstat-boxes.php:762
+#, fuzzy
+msgid "Currently from search engines"
+msgstr "Kommer från en Sökmotor"
+
+#~ msgid "Dashboard"
+#~ msgstr "Panel"
+
+#~ msgid "Raw Data"
+#~ msgstr "Rådata"
+
+#~ msgid "x"
+#~ msgstr "x"
+
+#~ msgid "Domain"
+#~ msgstr "Domän"
+
+#, fuzzy
+#~ msgid "Click on a day for hourly metrics"
+#~ msgstr "Dagliga sidvisningar - Klicka på en dag för timvis metrik"
+
+#~ msgid "Total Hits"
+#~ msgstr "Total Antal Träffar"
+
+#~ msgid "More"
+#~ msgstr "Mer"
+
+#~ msgid "Direct visit to"
+#~ msgstr "Dirigera besök till"
+
+#, fuzzy
+#~ msgid "Popular Resources"
+#~ msgstr "Populära sidor för"
+
+#~ msgid "Last"
+#~ msgstr "Senast"
+
+#~ msgid "Traffic Sources Overview"
+#~ msgstr "Trafikkällor Översikt"
+
+#~ msgid "IP Addresses and Domains"
+#~ msgstr "IP-adresser och Domäner"
+
+#~ msgid "Screen Resolutions with colordepth"
+#~ msgstr "Skärmupplösning med färgdjup"
+
+#~ msgid "Plugins"
+#~ msgstr "Tillägg"
+
+#~ msgid "Browsers and Operating Systems"
+#~ msgstr "Webbläsare och Operativsystemen"
+
+#~ msgid "Direct Visits"
+#~ msgstr "Direkta Besök"
+
+#~ msgid "Search Engines"
+#~ msgstr "Sökmotorer"
+
+#~ msgid "Unique Pages Referred"
+#~ msgstr "Unika Sidor Refererad"
+
+#~ msgid "Unique Internal"
+#~ msgstr "Unik internt"
+
+#, fuzzy
+#~ msgid "Sites"
+#~ msgstr "Webbplatser för"
+
+#, fuzzy
+#~ msgid "Recent Search Terms &raquo; Pages"
+#~ msgstr "Senaste Nyckelord & Sidor"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Öppna refererare i ett nytt förnster"
+
+#~ msgid "Recent bouncing pages"
+#~ msgstr "Senast studsande sidor"
+
+#~ msgid "Recent Keywords"
+#~ msgstr "Senaste Nyckelord"
+
+#~ msgid "Top Resources"
+#~ msgstr "Topp Källor"
+
+#~ msgid "Order by"
+#~ msgstr "Sortera efter"
+
+#~ msgid "Date/Time"
+#~ msgstr "Datum/Tid"
+
+#~ msgid "Language"
+#~ msgstr "Språk"
+
+#~ msgid "Select sorting"
+#~ msgstr "Välj sortering"
+
+#~ msgid "Ascending"
+#~ msgstr "Stigande"
+
+#~ msgid "Descending"
+#~ msgstr "Sjunkande"
+
+#~ msgid "Starting from record #"
+#~ msgstr "Börja med post #"
+
+#~ msgid "&laquo; Previous"
+#~ msgstr "< Föregående"
+
+#~ msgid "Next &raquo;"
+#~ msgstr "Nästa >"
+
+#~ msgid "reverse"
+#~ msgstr "omvänd"
+
+#~ msgid "Local search page"
+#~ msgstr "Lokal sökningssida"
+
+#~ msgid "Pluggable custom reports"
+#~ msgstr "Insticksbara anpassade rapporter"
+
+#~ msgid "this period"
+#~ msgstr "denna period"
+
+#~ msgid "Top Countries for"
+#~ msgstr "Länder i Topp för"
+
+#~ msgid "Top Traffic Sources for"
+#~ msgstr "Trafikkällor i Topp för"
+
+#~ msgid ""
+#~ "World Map - Values represent the percentage of hits coming from that "
+#~ "Country"
+#~ msgstr ""
+#~ "Världskarta - Värdet representerar procent av träffar som kommer från det "
+#~ "Landet"
+
+#~ msgid "January"
+#~ msgstr "Januari"
+
+#~ msgid "February"
+#~ msgstr "Februari"
+
+#~ msgid "March"
+#~ msgstr "Mars"
+
+#~ msgid "April"
+#~ msgstr "April"
+
+#~ msgid "May"
+#~ msgstr "Maj"
+
+#~ msgid "June"
+#~ msgstr "Juni"
+
+#~ msgid "July"
+#~ msgstr "Juli"
+
+#~ msgid "August"
+#~ msgstr "Augusti"
+
+#~ msgid "September"
+#~ msgstr "September"
+
+#~ msgid "October"
+#~ msgstr "Oktober"
+
+#~ msgid "November"
+#~ msgstr "November"
+
+#~ msgid "December"
+#~ msgstr "December"
+
+#~ msgid "Human Visits by day - Click on a day for hourly metrics"
+#~ msgstr "Mänskliga besök per dag - Klicka på en dag för timvis metrik"
+
+#~ msgid "Traffic Sources by day - Click on a day for hourly metrics"
+#~ msgstr "Trafikkällor per dag - Klicka på dag för timvis metrik"
+
+#~ msgid "Traffic Sources by hour"
+#~ msgstr "Trafikkällor per timme"
+
+#~ msgid ""
+#~ "Average pageviews per visit by day - Click on a day for hourly metrics"
+#~ msgstr ""
+#~ "Sidvisningar i genomsnitt per besök och dag - Klicka på en dag för timvis "
+#~ "metrik"
+
+#~ msgid "Recent Downloads"
+#~ msgstr "Senaste Nedladdningar"
