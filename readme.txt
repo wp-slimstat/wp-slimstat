@@ -427,7 +427,7 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 
 == Donors ==
 [Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Caigo](http://www.blumannaro.net/), 
-[Dennis Kowallek](http://www.adopt-a-plant.com), [Damian](http://wipeoutmedia.com/), [Giacomo Persichini](http://iojack.us),
+[Dennis Kowallek](http://www.adopt-a-plant.com), [Damian](http://wipeoutmedia.com/), Giacomo Persichini,
 [Hans Schantz](http://www.aetherczar.com/), Hajrudin Mulabecirovic, [Herman Peet](http://www.hermanpeet.nl/), John Montano, 
 [La casetta delle pesche](http://www.lacasettadellepesche.it/), [Mobilize Mail](http://blog.mobilizemail.com/),
 Mora Systems, Neil Robinson, [Ovidiu](http://pacura.ru/), [Sahin Eksioglu](http://www.alternatifblog.com/), [Saill White](http://saillwhite.com),
