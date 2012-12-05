@@ -343,6 +343,7 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Added: link to see a page's stats directly on the Edit Pages screen (thank you JoseVega)
 * Fixed: empty Right Now screen for some users
 * Updated: improved performance by using optimized SQL queries
+* Updated: ip geolocation database (December 2012, 104530 rows). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
 
 = 2.8.5 =
 * Fixed: XSS vulnerability that could be used to inject javascript code into the admin (thank you [xssAlert](http://wordpress.org/support/topic/xss-vurnability))
