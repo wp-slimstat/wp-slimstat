@@ -67,7 +67,7 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 WP SlimStat's tracking engine has a server-side component, recording all the information available at the time the resource is served,
 and a client-side component, collecting extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
 clicks and the events they trigger. One of the files responsible for taking care of this is `wp-slimstat-js.php`, usually located inside
-`/wp-content/plugins/wp-slimstat/`. Try accessing that file directly with your browser: if you see a 404 or 500 error message, you will need
+`/wp-content/plugins/wp-slimstat/` Try accessing that file directly with your browser: if you see a 404 or 500 error message, you will need
 to fix that problem, to allow WP SlimStat to do its job. The error message you should be getting is *Invalid data format*, which is the expected behavior.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
