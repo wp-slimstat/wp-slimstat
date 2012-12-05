@@ -67,7 +67,7 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 WP SlimStat's tracking engine has a server-side component, recording all the information available at the time the resource is served,
 and a client-side component, collecting extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
 clicks and the events they trigger. One of the files responsible for taking care of this is `wp-slimstat-js.php`, usually located inside
-`/wp-content/plugins/wp-slimstat/`. Try accessing that file directly with your browser: if you see a 404 or 500 error message, you will need
+`/wp-content/plugins/wp-slimstat/` Try accessing that file directly with your browser: if you see a 404 or 500 error message, you will need
 to fix that problem, to allow WP SlimStat to do its job. The error message you should be getting is *Invalid data format*, which is the expected behavior.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
@@ -422,21 +422,6 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Updated: Referer is now being stored as the whole URL, to keep track of port numbers, HTTPS and other protocols
 * Updated: Browscap Database (February 2012)
 * Updated: Geolocation Database (March 2012, 173415 rows). Go to Options > Maintenance > Reset Ip-to-Countries.
-
-= 2.7 =
-* Added: Goodbye FusionMaps, welcome AmMap, which brings a new world map with pan and zoom capabilities
-* Added: Direct access to the panels from the Admin Bar
-* Added: Russian localization, thank you Alexander
-* Updated: 'human' detection is now relying mainly on COOKIES, Javascript is only needed to detect screen resolution and other browser-related information
-* Updated: various performance improvements in the tracking code (more than halved DB accesses needed to record a new hit)
-* Updated: one of the database tables is not needed anymore, deactivate/activate WP SlimStat to get rid of it
-* Updated: it's now much easier to update the geolocation data, no need to deactivate/activate WP Slimstat anymore
-* Updated: RTL (right-to-left) support has been greatly improved (thank you Itamar)
-* Updated: color-codes have a better contrast now (thank you [Steve](http://www.webcommons.biz/))
-* Updated: Browscap library has been updated to version 1.0
-* Fixed: 'is not empty' filter wasn't working properly
-* Fixed: heuristic browser detection for mobile browsers is now much more accurate
-* Geolocation: updated to February 2012, 160222 rows. Go to Options > Maintenance > Reset Ip-to-Countries.
 
 (Previous versions omitted)
 
