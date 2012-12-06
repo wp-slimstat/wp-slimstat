@@ -342,7 +342,9 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Added: a warning message is displayed if WP SlimStat's tracking engine is not working properly
 * Added: link to see a page's stats directly on the Edit Pages screen (thank you JoseVega)
 * Fixed: empty Right Now screen for some users
+* Fixed: bug in calculating visit durations
 * Updated: improved performance by using optimized SQL queries
+* Updated: styles are now compatible with Wordpress 3.5
 * Updated: ip geolocation database (December 2012, 104530 rows). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
 
 = 2.8.5 =

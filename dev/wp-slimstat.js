@@ -315,4 +315,4 @@ for (var i=0; i<links_in_this_page.length; i++) {
 }
 
 // Gathers all the information and sends it to the server
-SlimStat.send_to_server("sw="+(window.innerWidth||document.documentElement.clientWidth||document.body.offsetWidth)+"&sh="+(window.innerHeight||document.documentElement.clientHeight||document.body.offsetHeight)+"&cd="+screen.colorDepth+"&aa="+SlimStat.has_smoothing()+"&pl="+SlimStat.detect_plugins());
+SlimStat.send_to_server("sw="+(screen.width||window.innerWidth||document.documentElement.clientWidth||document.body.offsetWidth)+"&sh="+(screen.height||window.innerHeight||document.documentElement.clientHeight||document.body.offsetHeight)+"&cd="+screen.colorDepth+"&aa="+SlimStat.has_smoothing()+"&pl="+SlimStat.detect_plugins());
