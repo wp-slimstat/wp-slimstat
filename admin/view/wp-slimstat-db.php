@@ -315,7 +315,6 @@ class wp_slimstat_db {
 
 	public static function count_records($_where_clause = '1=1', $_distinct_column = '*', $_use_filters = true, $_join_tables = '', $_use_date_filters = true){
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
-
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT($column) count
 				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'

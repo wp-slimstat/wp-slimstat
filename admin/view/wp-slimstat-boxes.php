@@ -590,7 +590,7 @@ class wp_slimstat_boxes{
 				self::show_results('popular', 'p0', 'country', array('total_for_percentage' => wp_slimstat_db::count_records()));
 				break;
 			case '#slim_p2_02':
-				self::show_visitors_summary('p0', wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1'), wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id'));
+				self::show_visitors_summary('p0', wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1'), wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1', 'visit_id'));
 				break;
 			case '#slim_p2_03':
 				self::show_results('popular', 'p0', 'language', array('total_for_percentage' => wp_slimstat_db::count_records()));
@@ -614,7 +614,7 @@ class wp_slimstat_boxes{
 				wp_slimstat_boxes::show_results('popular', 'p0', 'country', array('total_for_percentage' => wp_slimstat_db::count_records()));
 				break;
 			case '#slim_p2_12':
-				self::show_visit_duration('slim_p2_12', wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id'));
+				self::show_visit_duration('slim_p2_12', wp_slimstat_db::count_records('visit_id > 0 AND tb.type <> 1', 'visit_id'));
 				break;
 			case '#slim_p2_14':
 				self::show_results('recent', 'p0', 'resolution', array('join_tables' => 'tss.*'));
@@ -758,42 +758,42 @@ class wp_slimstat_boxes{
 	public static function show_visit_duration($_id = 'p0', $_total_human_visits = 0){
 		if ($_id != 'p0' && in_array($_id, self::$hidden_boxes)) return;
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) >= 0 AND max(dt) - min(dt) <= 30');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) >= 0 AND max(t1.dt) - min(t1.dt) <= 30');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('0 - 30 seconds','wp-slimstat-view')." <span>$percentage%</span></p>";
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 30 AND max(dt) - min(dt) <= 60');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) > 30 AND max(t1.dt) - min(t1.dt) <= 60');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('31 - 60 seconds','wp-slimstat-view')." <span>$percentage%</span></p>";
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 60 AND max(dt) - min(dt) <= 180');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) > 60 AND max(t1.dt) - min(t1.dt) <= 180');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('1 - 3 minutes','wp-slimstat-view')." <span>$percentage%</span></p>";
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 180 AND max(dt) - min(dt) <= 300');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) > 180 AND max(t1.dt) - min(t1.dt) <= 300');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('3 - 5 minutes','wp-slimstat-view')." <span>$percentage%</span></p>";
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 300 AND max(dt) - min(dt) <= 420');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) > 300 AND max(t1.dt) - min(t1.dt) <= 420');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('5 - 7 minutes','wp-slimstat-view')." <span>$percentage%</span></p>";
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 420 AND max(dt) - min(dt) <= 600');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) > 420 AND max(t1.dt) - min(t1.dt) <= 600');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('7 - 10 minutes','wp-slimstat-view')." <span>$percentage%</span></p>";
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 600 AND max(dt) - min(dt) <= 1200');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) > 600 AND max(t1.dt) - min(t1.dt) <= 1200');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('10 - 20 minutes','wp-slimstat-view')." <span>$percentage%</span></p>";
 
-		$count = wp_slimstat_db::count_records_having('visit_id > 0', 'visit_id', 'max(dt) - min(dt) > 1200');
+		$count = wp_slimstat_db::count_records_having('t1.visit_id > 0 AND tb.type <> 1', 'visit_id', 'max(t1.dt) - min(t1.dt) > 1200');
 		$percentage = ($_total_human_visits > 0)?sprintf("%01.2f", (100*$count/$_total_human_visits)):0;
 		$extra_info =  "title='".__('Hits','wp-slimstat-view').": {$count}'";
 		echo "<p $extra_info>".__('More than 20 minutes','wp-slimstat-view')." <span>$percentage%</span></p>";

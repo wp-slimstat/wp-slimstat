@@ -64,8 +64,8 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 == Frequently Asked Questions ==
 
 = I see a warning message saying that a misconfigured setting and/or server environment is preventing WP SlimStat from properly tracking my visitors. How can I troubleshoot this issue? =
-WP SlimStat's tracking engine has a server-side component, recording all the information available at the time the resource is served,
-and a client-side component, collecting extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
+WP SlimStat's tracking engine has a server-side component, which records all the information available at the time the resource is served,
+and a client-side component, which collects extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
 clicks and the events they trigger. One of the files responsible for taking care of this is `wp-slimstat-js.php`, usually located inside
 `/wp-content/plugins/wp-slimstat/` Try accessing that file directly with your browser: if you see a 404 or 500 error message, you will need
 to fix that problem, to allow WP SlimStat to do its job. The error message you should be getting is *Invalid data format*, which is the expected behavior.
@@ -342,7 +342,9 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Added: a warning message is displayed if WP SlimStat's tracking engine is not working properly
 * Added: link to see a page's stats directly on the Edit Pages screen (thank you JoseVega)
 * Fixed: empty Right Now screen for some users
+* Fixed: bug in calculating visit durations
 * Updated: improved performance by using optimized SQL queries
+* Updated: styles are now compatible with Wordpress 3.5
 * Updated: ip geolocation database (December 2012, 104530 rows). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
 
 = 2.8.5 =
