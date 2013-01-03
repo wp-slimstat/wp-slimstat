@@ -1,0 +1,111 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP SlimStat Dashboard\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-20 11:31-0500\n"
+"PO-Revision-Date: 2012-06-20 11:32-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Russian\n"
+"X-Poedit-Country: RUSSIA\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Pageviews"
+msgstr "Просмотров"
+
+#: wp-slimstat-dashboard.php:57
+#: wp-slimstat-dashboard.php:64
+msgid "Unique IPs"
+msgstr "Уникальных IP"
+
+#~ msgid "No data to display"
+#~ msgstr "Нет данных"
+
+#~ msgid "Last"
+#~ msgstr "Последние"
+
+#~ msgid "Open %s in a new window"
+#~ msgstr "Открыть %s в новом окне"
+
+#~ msgid "Search for"
+#~ msgstr "Искать"
+
+#~ msgid "c-"
+#~ msgstr "c-"
+
+#~ msgid "Direct visit to"
+#~ msgstr "Прямой вход"
+
+#~ msgid "Bots"
+#~ msgstr "Роботы"
+
+#~ msgid "Avg Pageviews"
+#~ msgstr "Среднее кол-во просмотров"
+
+#~ msgid "On"
+#~ msgstr "за"
+
+#~ msgid "Last Month"
+#~ msgstr "За предыдущий месяц"
+
+#~ msgid "Hits"
+#~ msgstr "просмотры"
+
+#~ msgid "Top pages for this month"
+#~ msgstr "Популярные страницы за этот месяц"
+
+#~ msgid "Spy View"
+#~ msgstr "Шпионский просмотр"
+
+#~ msgid "Summary for this month"
+#~ msgstr "Суммарно за этот месяц"
+
+#~ msgid "User Agents"
+#~ msgstr "Популярные браузеры"
+
+#~ msgid "Recent Keywords"
+#~ msgstr "Последние поисковые запросы"
+
+#~ msgid "Total Hits"
+#~ msgstr "Всего просмотров"
+
+#~ msgid "Data Size"
+#~ msgstr "Размер данных"
+
+#~ msgid "Auto purge"
+#~ msgstr "automatischer Reorg"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Ziel in einem neuen Fenster &ouml;ffnen"
+
+#~ msgid "Top 5 pages"
+#~ msgstr "Top 5"
+
+#~ msgid "Pathstats"
+#~ msgstr "DIGO TODO * Pathstats"
+
+#~ msgid "About"
+#~ msgstr "&Uuml;ber"
+
+#~ msgid "Summary of pageviews"
+#~ msgstr "Zusammenfassung Seitenaufrufe"
+
+#~ msgid "Traffic Sources"
+#~ msgstr "Traffic-Quellen"
+
+#~ msgid "Recent Keywords &raquo; Pages"
+#~ msgstr "aktuelle Suchw&ouml;rter &raquo; Seiten"
+
+#~ msgid "Analytics"
+#~ msgstr "Statistiche"
+
+#~ msgid "Options"
+#~ msgstr "Opzioni"
