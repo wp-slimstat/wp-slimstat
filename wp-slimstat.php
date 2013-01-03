@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 2.8.6
+version: 2.8.7
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -12,17 +12,13 @@ class wp_slimstat{
 
 	protected static $tid = 0;
 	
-	public static $version = '2.8.5';
+	public static $version = '2.8.7';
 	public static $options = array();
 
 	/**
 	 * Initialize some common variables
 	 */
 	public static function init(){
-		// Initialize WP SlimStat's options
-		wp_slimstat::$options = get_option('slimstat_options', array());
-		if (empty(wp_slimstat::$options)) wp_slimstat::import_old_options();
-
 		// This check here below is done to keep backward compatibility and should be removed sooner or later
 		if (!is_admin()){
 			// Is tracking active?
@@ -33,6 +29,7 @@ class wp_slimstat{
 			// WP SlimStat tracks screen resolutions, outbound links and other stuff using some javascript custom code
 			if ((self::$options['enable_javascript'] == 'yes') && (self::$options['is_tracking'] == 'yes')){
 				add_action('init', array(__CLASS__, 'wp_slimstat_register_tracking_script'));
+				add_action('wp_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'));
 				add_action('wp_footer', array(__CLASS__, 'wp_slimstat_js_data'), 10);
 			}
 		}
@@ -220,16 +217,22 @@ class wp_slimstat{
 		}
 		elseif (is_tag()){
 			$content_info['content_type'] = 'tag';
-			$tag_info = array_pop(get_the_tags());
-			if (!empty($tag_info)) $content_info['category'] = "$tag_info->term_id";
+			$list_tags = get_the_tags();
+			if (is_array($list_tags)){
+				$tag_info = array_pop($list_tags);
+				if (!empty($tag_info)) $content_info['category'] = "$tag_info->term_id";
+			}
 		}
 		elseif (is_tax()){
 			$content_info['content_type'] = 'taxonomy';
 		}
 		elseif (is_category()){
 			$content_info['content_type'] = 'category';
-			$cat_info = array_pop(get_the_category());
-			if (!empty($cat_info)) $content_info['category'] = "$cat_info->term_id";
+			$list_categories = get_the_category();
+			if (is_array($list_categories)){
+				$cat_info = array_pop($list_categories);
+				if (!empty($cat_info)) $content_info['category'] = "$cat_info->term_id";
+			}
 		}
 		elseif (is_date()){
 			$content_info['content_type']= 'date';
@@ -272,6 +275,7 @@ class wp_slimstat{
 		if ((self::$options['ignore_bots'] == 'yes') && ($browser['type'] == 1)) return $_argument;
 
 		// Is this a returning visitor?
+		if (empty(self::$options['session_duration'])) self::$options['session_duration'] = 1800;
 		if (isset($_COOKIE['slimstat_tracking_code'])){
 			list($identifier, $control_code) = explode('.', $_COOKIE['slimstat_tracking_code']);
 
@@ -280,18 +284,25 @@ class wp_slimstat{
 
 				// Set the visit_id for this session's first pageview
 				if (strpos($identifier, 'id') !== false){
-					// Emulate auto-increment on visit_id
+					$stat['visit_id'] = get_option('slimstat_visit_id', -1);
+					if ($stat['visit_id'] == -1){
+						$stat['visit_id'] = intval($GLOBALS['wpdb']->get_var("SELECT MAX(visit_id) FROM {$GLOBALS['wpdb']->prefix}slim_stats"));
+					}
+					$stat['visit_id']++;
+					update_option('slimstat_visit_id', $stat['visit_id']);
+
 					$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
 						UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
-						SET visit_id = (
-							SELECT max_visit_id FROM ( SELECT MAX(visit_id) AS max_visit_id FROM {$GLOBALS['wpdb']->prefix}slim_stats ) AS sub_max_visit_id_table
-						) + 1
-						WHERE id = %d AND visit_id = 0", intval($identifier)));
-					$stat['visit_id'] = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT visit_id FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE id = %d", intval($identifier)));
-					@setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].self::$options['secret']), time()+1800, '/');
+						SET visit_id = %d
+						WHERE id = %d AND visit_id = 0", $stat['visit_id'], intval($identifier)));
+
+					@setcookie('slimstat_tracking_code', $stat['visit_id'].'.'.md5($stat['visit_id'].self::$options['secret']), time()+self::$options['session_duration'], COOKIEPATH);
 				}
 				else{
 					$stat['visit_id'] = intval($identifier);
+					if (self::$options['extend_session'] == 'yes'){
+						@setcookie('slimstat_tracking_code', $stat['visit_id'].'.'.md5($stat['visit_id'].self::$options['secret']), time()+self::$options['session_duration'], COOKIEPATH);
+					}
 				}
 			}
 		}
@@ -357,8 +368,8 @@ class wp_slimstat{
 
 		// Is this a new visitor?
 		if (!isset($_COOKIE['slimstat_tracking_code']) && !empty(self::$tid)){
-			// Set a 30-minute cookie to track this visitor (Google and other non-human engines will just ignore it)
-			@setcookie('slimstat_tracking_code', self::$tid.'id.'.md5(self::$tid.'id'.self::$options['secret']), time()+1800, '/');
+			// Set a cookie to track this visitor (Google and other non-human engines will just ignore it)
+			@setcookie('slimstat_tracking_code', self::$tid.'id.'.md5(self::$tid.'id'.self::$options['secret']), time()+self::$options['session_duration'], COOKIEPATH);
 		}
 
 		return $_argument;
@@ -804,7 +815,7 @@ class wp_slimstat{
 	// end import_old_options
 
 	/**
-	 * Enqueues a javascript to track users' screen resolution and other browser-based information
+	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_register_tracking_script(){
 		if (self::$options['enable_cdn'] == 'yes')
@@ -812,6 +823,10 @@ class wp_slimstat{
 		else
 			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), false, true);
 	}
+	public static function wp_slimstat_enqueue_tracking_script(){
+		wp_enqueue_script('wp_slimstat');
+	}
+	// end wp_slimstat_javascript
 	// end wp_slimstat_javascript
 
 	/**
@@ -868,7 +883,11 @@ class wp_slimstat{
 // end of class declaration
 
 // Ok, let's go, Sparky!
-if (function_exists('add_action')){	
+if (function_exists('add_action')){
+	// Load all the settings
+	wp_slimstat::$options = get_option('slimstat_options', array());
+	if (empty(wp_slimstat::$options)) wp_slimstat::import_old_options();
+
 	// Add the appropriate actions
 	add_action('plugins_loaded', array('wp_slimstat', 'init'), 5);
 	

@@ -1,16 +1,23 @@
 <?php
 
-// Where is your wp-config.php located relatively to this file?
-$wp_root_folder = '../../..';
+// Where is your wp-config.php located relatively to this file? (usually three folders up)
+define('RELPATH', '../../..');
 
 // That's all, stop editing! Happy tracking. 
 
 // Abort if config file cannot be found
-if (!file_exists($wp_root_folder.'/wp-config.php')){
-	exit('Error: wp-config not found');
+$abspath = __DIR__.'/'.RELPATH;
+if (!file_exists($abspath.'/wp-config.php')){
+	if (!file_exists($abspath.'/../wp-config.php')){
+		echo $abspath . '/../wp-config.php';
+		exit('Error: wp-config not found');
+	}
+	else{
+		$abspath = $abspath.'/..';
+	}
 }
 // Parse config file
-$wp_config = file_get_contents($wp_root_folder.'/wp-config.php');
+$wp_config = file_get_contents($abspath.'/wp-config.php');
 $parsed_config = token_get_all($wp_config);
 $db_name = $db_user = $db_password = $db_host = $table_prefix = '';
 
@@ -43,8 +50,11 @@ foreach($clean_tokens as $a_token_id => $a_token) {
 }
 
 // This is odd, but it could happen...
-if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host) || empty($table_prefix)){
+if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host)){
 	exit('Error parsing wp-config');
+}
+if (empty($table_prefix)){
+	$table_prefix = 'wp_';
 }
 
 // Let's see if we can connect to the database
@@ -57,8 +67,12 @@ if (!mysql_select_db($db_name)){
 	exit('Could not select the db: '.mysql_error());
 }
 
+// Process the data received by the client
+if (empty($_REQUEST['data'])){
+	exit('Invalid data format');
+}
 $data_string = base64_decode($_REQUEST['data']);
-if (!$data_string){
+if ($data_string === false){
 	exit('Invalid data format');
 }
 
@@ -82,7 +96,7 @@ if (!empty($blog_id) && $blog_id > 1){
 }
 // Let's see if this is a stand-alone blog
 if (!$is_table_active){
-	
+	@mysql_data_seek($db_list_tables, 0);
 	while ($row = @mysql_fetch_row($db_list_tables)) {
 		if ($is_table_active = ($row[0] == "{$table_prefix}slim_stats")){
 			$multisite_table_prefix = $table_prefix;
@@ -111,6 +125,7 @@ if (empty($slimstat_options['secret'])){
 $site_url = slimstat_get_option('home');
 if (empty($site_url)) $site_url = slimstat_get_option('siteurl');
 if (empty($site_url)) $site_url = $_SERVER['HTTP_HOST'];
+$cookiepath = preg_replace('|https?://[^/]+|i', '', $site_url . '/' );
 
 // This request is not coming from the same domain
 if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
@@ -166,21 +181,36 @@ if ( empty($stat['screenres_id']) ) {
 }
 
 // Update the visit_id for this session's first pageview
+if (empty($slimstat_options['session_duration'])) $slimstat_options['session_duration'] = 1800;
 if (isset($_COOKIE['slimstat_tracking_code'])){
 	list($identifier, $control_code) = explode('.', $_COOKIE['slimstat_tracking_code']);
 			
 	// Make sure only authorized information is recorded
-	if ((strpos($identifier, 'id') !== false) && ($control_code == md5($identifier.$slimstat_options['secret']))){
+	if ($control_code == md5($identifier.$slimstat_options['secret'])){
+		
+		// Set the visit_id for this session's first pageview
+		if (strpos($identifier, 'id') !== false){
 
-		// Emulate auto-increment on visit_id
-		mysql_query("UPDATE {$multisite_table_prefix}slim_stats 
-						SET visit_id = (
-							SELECT max_visit_id FROM ( SELECT MAX(visit_id) AS max_visit_id FROM {$multisite_table_prefix}slim_stats ) AS sub_max_visit_id_table
-						) + 1
-						WHERE id = {$stat['id']} AND visit_id = 0");
+			$stat['visit_id'] = slimstat_get_option('slimstat_visit_id', -1);
+			if ($stat['visit_id'] == -1){
+				$stat['visit_id'] = intval(slimstat_get_var("SELECT MAX(visit_id) FROM {$multisite_table_prefix}slim_stats"));
+			}
+			$stat['visit_id']++;
+			slimstat_update_option('slimstat_visit_id', $stat['visit_id']);
 
-		$stat['visit_id'] = slimstat_get_var("SELECT visit_id FROM {$multisite_table_prefix}slim_stats WHERE id = ".intval($identifier));
-		@setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].$slimstat_options['secret']), time()+1800, '/');
+			@mysql_query(slimstat_prepare("
+				UPDATE {$multisite_table_prefix}slim_stats 
+				SET visit_id = %d
+				WHERE id = %d AND visit_id = 0", $stat['visit_id'], intval($identifier)));
+
+			@setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].$slimstat_options['secret']), time()+$slimstat_options['session_duration'], $cookiepath);
+		}
+		else{
+			$stat['visit_id'] = intval($identifier);
+			if ($slimstat_options['extend_session'] == 'yes'){
+				@setcookie('slimstat_tracking_code', $stat['visit_id'].'.'.md5($stat['visit_id'].self::$options['secret']), time()+$slimstat_options['session_duration'], $cookiepath);
+			}
+		}
 	}
 }
 
@@ -194,13 +224,20 @@ exit(0);
 function slimstat_get_option($_option_name = '', $_default_value = '') {
 	global $multisite_table_prefix;
 	
-	$resource = @mysql_query("SELECT option_value FROM {$multisite_table_prefix}options WHERE option_name = '{$_option_name}'");
+	$resource = @mysql_query("SELECT option_value FROM {$multisite_table_prefix}options WHERE option_name = '$_option_name'");
 	
 	$result = @mysql_fetch_assoc($resource);
 	if (!empty($result['option_value']))
 		return $result['option_value'];
 	else
 		return $_default_value;
+}
+function slimstat_update_option($_option_name = '', $_option_value = '') {
+	global $multisite_table_prefix;
+	
+	@mysql_query("UPDATE {$multisite_table_prefix}options SET option_value = '$_option_value' WHERE option_name = '$_option_name'");
+	
+	return $_option_value;
 }
 function slimstat_get_var($_sql_query = '') {	
 	$resource = @mysql_query($_sql_query);

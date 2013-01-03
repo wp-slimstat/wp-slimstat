@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.5
-Stable tag: 2.8.6
+Stable tag: 2.8.7
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -40,7 +40,7 @@ A powerful real-time web analytics plugin for Wordpress.
 * What i liked so much on your slimstats is the very accurate hourly realtime stats [quakesos](http://wordpress.org/support/topic/plugin-wp-slimstat-w3-total-cache#post-2043814)
 
 = Requirements =
-* Wordpress 3.1 or higher (it may not work on large multisite environments)
+* Wordpress 3.1 or higher (it may not work on large multisite environments; some users have reported problems in accessing the configuration area with Wordpress 3.3.x or earlier)
 * PHP 5.1 or higher
 * MySQL 5.0.3 or higher
 * At least 5 MB of free web space
@@ -66,9 +66,13 @@ You may also like [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/w
 = I see a warning message saying that a misconfigured setting and/or server environment is preventing WP SlimStat from properly tracking my visitors. How can I troubleshoot this issue? =
 WP SlimStat's tracking engine has a server-side component, which records all the information available at the time the resource is served,
 and a client-side component, which collects extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
-clicks and the events they trigger. One of the files responsible for taking care of this is `wp-slimstat-js.php`, usually located inside
+clicks and the events they trigger. 
+
+One of the files responsible for taking care of this is `wp-slimstat-js.php`, usually located inside
 `/wp-content/plugins/wp-slimstat/` Try accessing that file directly with your browser: if you see a 404 or 500 error message, you will need
 to fix that problem, to allow WP SlimStat to do its job. The error message you should be getting is *Invalid data format*, which is the expected behavior.
+
+If you have moved your *wp-content* folder to a different location, you may need to edit the first few lines of that file, to specify where your wp-config.php is located.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
 Try [increasing the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. WP SlimStat requires about 5 Mb of RAM to track a pageview.
@@ -334,9 +338,24 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 == Changelog ==
 
 = Planned features =
-* Add "internal" stats about your blog: post count, comments per post, table sizes, etc
-* Javascript-based tracking functionality (a-la Google Analytics), that plays nicely with W3 Total Cache & co.
 * Antiflood monitor and database monitor
+* Heat maps
+* Daily Reports via email
+* "Internal" stats about your blog: post count, comments per post, average comment length, table sizes, etc
+* Javascript-based tracking functionality (a-la Google Analytics), that plays nicely with W3 Total Cache & co.
+
+= 2.8.7 =
+* Added: two new options to customize the duration of your visitors' sessions, for those who believe that 30 minutes are not enough
+* Fixed: usernames in filters are now allowed to have capital letters and spaces (thank you [Thomas Nielsen](http://www.bogt.dk/))
+* Fixed: options would reset to the default values on reactivation (thank you [mysticscholar](http://wordpress.org/support/topic/auto-purge-keeps-resetting))
+* Fixed: PHP warning when tag has no posts (thank you [wondible](http://wordpress.org/support/topic/array_pop-error-on-tag-with-no-posts))
+* Fixed: wp-slimstat-js.php is now also looking for your wp-config.php in the parent folder (thank you [pixolin](http://wordpress.org/support/topic/error-misconfigured-setting-when-wp-configphp-outside-wp-root))
+* Fixed: bug in calculating the Stats link for each post in the Edit Posts screen (thank you [dgunn](http://wordpress.org/support/topic/post-column-contains-incorrect-filters))
+* Fixed: apparently $table_prefix in wp-config.php can be left empty, who knew! (thank you [Ian](http://wordpress.org/support/topic/a-misconfigured-setting-andor-server-environment-is-preventing-wp-slimstat-from))
+* Fixed: Wordpress database deadlock (thank you [Texiwill](http://wordpress.org/support/topic/wordpress-database-error-deadlock-1))
+* Updated: WP SlimStat will now track your visitors' screen resolution, not the size of their viewport anymore
+* Updated: after the original maintainer announced that he would not be able to update the Browser Capabilities Project database, new volunteers stepped forward and took over
+* Updated: ip geolocation database (January 2013, 99104 rows). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
 
 = 2.8.6 =
 * Added: a warning message is displayed if WP SlimStat's tracking engine is not working properly
@@ -411,19 +430,6 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Updated: weekends are now highlighed in the chart
 * Updated: rearranged the order of the main tabs to give more emphasis to visitors and what's happening right now (thank you Jennifer)
 * Updated: filters on Authors and Category IDs are now much more efficient
-
-= 2.8 =
-* Added: WP SlimStat now looks for HTTP headers like X_FORWARDED_FOR to get, when available, private IP addresses of people using proxies
-* Added: You can now use wildcards in your filters: `*` for any string, `!` for any single character
-* Added: new columns to track even more information about events and outbound links (thank you [SpenceDesign](http://wordpress.org/support/topic/plugin-wp-slimstat-tracking-right-click-of-download-links))
-* Added: started working on heat maps. The information is already being collected, but not shown to the admin... just yet!
-* Added: WP SlimStat won't activate on networks that have more than 50 blogs
-* Fixed: Screen antialias detection is now much more accurate
-* Fixed: visitors' tracking wasn't working properly for some users.
-* Updated: Event tracking has been completely rewritten and optimized (thank you [SpenceDesign](http://wordpress.org/support/topic/plugin-wp-slimstat-tracking-right-click-of-download-links))
-* Updated: Referer is now being stored as the whole URL, to keep track of port numbers, HTTPS and other protocols
-* Updated: Browscap Database (February 2012)
-* Updated: Geolocation Database (March 2012, 173415 rows). Go to Options > Maintenance > Reset Ip-to-Countries.
 
 (Previous versions omitted)
 

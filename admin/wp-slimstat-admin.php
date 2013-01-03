@@ -437,6 +437,15 @@ class wp_slimstat_admin{
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
 		}
 		// --- END: Updates for version 2.8.5 ---
+		
+		// --- Updates for version 2.8.7 ---
+		if (!isset(wp_slimstat::$options['session_duration'])){
+			self::update_option('session_duration', '1800', 'integer');
+		}
+		if (!isset(wp_slimstat::$options['extend_session'])){
+			self::update_option('extend_session', 'no', 'yesno');
+		}
+		// --- END: Updates for version 2.8.7 ---
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
@@ -475,8 +484,8 @@ class wp_slimstat_admin{
 	 */
 	public static function import_countries(){
 		// If there is already a (not empty) country table, skip import
-		$country_rows = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_countries", 0);
-		if ( $country_rows !== false && $country_rows > 0 ) return false;
+		$country_rows = intval($GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_countries"));
+		if ( $country_rows > 0 ) return false;
 
 		$country_file = "geoip.csv";
 
@@ -563,7 +572,7 @@ class wp_slimstat_admin{
 		else
 			$minimum_capability = 'read';
 
-		if (empty(wp_slimstat::$options['can_view']) || stripos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || stripos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
+		if (empty(wp_slimstat::$options['can_view']) || strpos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || strpos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
 			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options')){
 				$new_entry = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'), plugins_url('/admin/images/wp-slimstat-menu.png', dirname(__FILE__)));
 				add_submenu_page('wp-slimstat', __('Reports','wp-slimstat-view'), __('Reports','wp-slimstat-view'), $minimum_capability, 'wp-slimstat', array(__CLASS__, 'wp_slimstat_include_view'));
@@ -583,7 +592,7 @@ class wp_slimstat_admin{
 	 * Adds a new entry in the admin menu, to manage SlimStat options
 	 */
 	public static function wp_slimstat_add_config_menu($_s){
-		if (empty(wp_slimstat::$options['can_admin']) || stripos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false || $GLOBALS['current_user']->user_login == 'slimstatadmin'){
+		if (empty(wp_slimstat::$options['can_admin']) || strpos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false || $GLOBALS['current_user']->user_login == 'slimstatadmin'){
 			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
 				add_submenu_page('wp-slimstat', __('Config','wp-slimstat-view'), __('Config','wp-slimstat-view'), 'edit_posts', WP_PLUGIN_DIR.'/wp-slimstat/admin/options/index.php');
@@ -609,7 +618,7 @@ class wp_slimstat_admin{
 		if (function_exists('get_blog_count') && (get_blog_count() > 50))
 			return $_links;
 
-		if (empty(wp_slimstat::$options['can_admin']) || stripos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false){
+		if (empty(wp_slimstat::$options['can_admin']) || strpos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false){
 			load_plugin_textdomain('wp-slimstat-view', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
 			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
 				$_links['wp-slimstat'] = '<a href="admin.php?page=wp-slimstat/admin/options/index.php">'.__('Config','wp-slimstat-view').'</a>';
@@ -624,15 +633,16 @@ class wp_slimstat_admin{
 	 * Add a link to each post in Edit Posts, to go directly to the stats with the corresponding filter set
 	 */
 	public static function post_row_actions($_actions, $_post){
-		if (stripos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) === false && !current_user_can(wp_slimstat::$options['capability_can_view']))
+		if (strpos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) === false && !current_user_can(wp_slimstat::$options['capability_can_view']))
 			return $_actions;
 
 		$parsed_permalink = parse_url( get_permalink($_post->ID) );
+		$parsed_permalink = urlencode( $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'') );
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes')
 			$page = 'admin.php';
 		else
 			$page = 'index.php';
-		return array_merge($_actions, array('wp-slimstat' => "<a href='$page?page=wp-slimstat&amp;slimpanel=1&amp;fs=resource+contains+{$parsed_permalink['path']}%7C'>".__('Stats','wp-slimstat-view')."</a>"));
+		return array_merge($_actions, array('wp-slimstat' => "<a href='$page?page=wp-slimstat&amp;slimpanel=1&amp;fs=resource+contains+{$parsed_permalink}%7C'>".__('Stats','wp-slimstat-view')."</a>"));
 	}
 	// end post_row_actions
 
