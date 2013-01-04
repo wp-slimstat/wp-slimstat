@@ -6,10 +6,9 @@ define('RELPATH', '../../..');
 // That's all, stop editing! Happy tracking. 
 
 // Abort if config file cannot be found
-$abspath = __DIR__.'/'.RELPATH;
+$abspath = dirname(__FILE__).'/'.RELPATH;
 if (!file_exists($abspath.'/wp-config.php')){
 	if (!file_exists($abspath.'/../wp-config.php')){
-		echo $abspath . '/../wp-config.php';
 		exit('Error: wp-config not found');
 	}
 	else{
