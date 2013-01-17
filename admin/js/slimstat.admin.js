@@ -7,6 +7,7 @@
 
 	chart_init: function() {
 		SlimStatAdmin._placeholder = jQuery("#chart-placeholder");
+		if (SlimStatAdmin._placeholder.is(':hidden')) return true;
 		SlimStatAdmin._chart_options = {
 			zoom: { interactive: true },
 			pan: { interactive: true },

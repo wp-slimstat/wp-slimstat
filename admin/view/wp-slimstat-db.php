@@ -11,7 +11,7 @@ class wp_slimstat_db {
 	// Filters
 	public static $filters = array();
 
-	public static function init($_filters_string = ''){
+	public static function init($_filters_string = '', $_system_filters_string = ''){
 		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
 		$GLOBALS['wpdb']->query("SET @@session.time_zone = '+00:00'");
 		date_default_timezone_set('UTC');
@@ -34,57 +34,8 @@ class wp_slimstat_db {
 		self::$formats['date_time_format'] = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
 
 		// Parse all the filters
-		if (!empty($_filters_string)){
-			if (substr($_filters_string, -1) != '|') $_filters_string .= '|';
-			preg_match_all('/([^\s|]+)\s([^\s|]+).((?:[^|]+)?)/', urldecode($_filters_string), $matches);
-
-			foreach($matches[1] as $idx => $a_match){
-				// Some filters need extra 'decoding'
-				switch($a_match){
-					case 'strtotime': // TODO - TO BE REMOVED - add support for strtotime to right side of expression
-						$custom_date = strtotime($matches[3][$idx]);
-						self::$filters['parsed']['day'] = array('equals', date_i18n('j', $custom_date));
-						self::$filters['parsed']['month'] = array('equals', date_i18n('n', $custom_date));
-						self::$filters['parsed']['year'] = array('equals', date_i18n('Y', $custom_date));
-						break;
-					case 'interval':
-						if (intval($matches[3][$idx]) > 0) self::$filters['parsed']['interval'] = array('equals', intval($matches[3][$idx]));
-						break;
-					case 'direction':
-					case 'limit_results':
-					case 'starting':
-					case 'browser':
-					case 'country':
-					case 'ip':
-					case 'searchterms':
-					case 'language':
-					case 'platform':
-					case 'resource':
-					case 'domain':
-					case 'referer':
-					case 'user':
-					case 'plugins':
-					case 'version':
-					case 'type':
-					case 'colordepth':
-					case 'css_version':
-					case 'notes':
-					case 'author':
-					case 'category':
-					case 'other_ip':
-					case 'content_type':
-					case 'resolution':
-					case 'visit_id':
-					case 'hour':
-					case 'day':
-					case 'month':
-					case 'year':
-						self::$filters['parsed'][$a_match] = array(isset($matches[2][$idx])?$matches[2][$idx]:'equals', isset($matches[3][$idx])?$GLOBALS['wpdb']->escape(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx]))):'');
-						break;
-					default:
-				}
-			}
-		}
+		if (!empty($_filters_string)) self::_init_filters($_filters_string);
+		if (!empty($_system_filters_string)) self::_init_filters($_system_filters_string);
 
 		// self::$filters['parsed']['direction'] = !empty(self::$filters['parsed']['direction'])?((self::$filters['parsed']['direction'] != 'asc' && self::$filters['parsed']['direction'] != 'desc')?'desc':self::$filters['parsed']['direction']):'desc';
 		self::$filters['parsed']['limit_results'] = array('equals', empty(self::$filters['parsed']['limit_results'][1])?wp_slimstat::$options['rows_to_show']:intval(self::$filters['parsed']['limit_results'][1]));
@@ -317,7 +268,7 @@ class wp_slimstat_db {
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT($column) count
-				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
+				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_join_tables).'
 				WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').' '.($_use_date_filters?self::$filters['date_sql_where']:'')));
 	}
 
@@ -534,7 +485,7 @@ class wp_slimstat_db {
 			$datestamp['current'] = date_i18n('Y m d H:i', $datestamp['timestamp_current']);
 			$datestamp['previous'] = date_i18n('Y m d H:i', $datestamp['timestamp_previous']);
 
-			if (date_i18n($datestamp['group'], $datestamp['timestamp_current']) == date_i18n($datestamp['group'], self::$timeframes['current_utime_start']) || !empty(self::$filters['parsed']['interval'][1])){
+			if (date_i18n($datestamp['group'], $datestamp['timestamp_current']) == date_i18n($datestamp['group'], self::$timeframes['current_utime_start'], true) || !empty(self::$filters['parsed']['interval'][1])){
 				if (!empty($data[0][$datestamp['current']])){
 					$result['current']['data1'] .= "[$i,{$data[0][$datestamp['current']]}{$datestamp['filter_current']}],";
 					$result['current']['total1'] += $data[0][$datestamp['current']];
@@ -555,7 +506,7 @@ class wp_slimstat_db {
 
 			//if (($j == $day_idx_previous - 1) || self::$timeframes['current_day']['d']['selected'] || !empty(self::$filters['parsed']['interval'][1])){
 				//if (empty(self::$filters['parsed']['interval'][1])){
-			if (date_i18n($datestamp['group'], $datestamp['timestamp_previous']) == date_i18n($datestamp['group'], self::$timeframes['previous_utime_start']) && empty(self::$filters['parsed']['interval'][1])){
+			if (date_i18n($datestamp['group'], $datestamp['timestamp_previous']) == date_i18n($datestamp['group'], self::$timeframes['previous_utime_start'], true) && empty(self::$filters['parsed']['interval'][1])){
 				if (!empty($data[0][$datestamp['previous']])){
 					$result['previous']['data'] .= "[$i,{$data[0][$datestamp['previous']]}{$datestamp['filter_previous']}],";
 					$result['previous']['total'] += $data[0][$datestamp['previous']];
@@ -600,6 +551,58 @@ class wp_slimstat_db {
 
 		return $result;
 	}
+
+	protected function _init_filters($_filters_string = ''){
+		if (substr($_filters_string, -1) != '|') $_filters_string .= '|';
+			preg_match_all('/([^\s|]+)\s([^\s|]+).((?:[^|]+)?)/', urldecode($_filters_string), $matches);
+
+		foreach($matches[1] as $idx => $a_match){
+			// Some filters need extra 'decoding'
+			switch($a_match){
+				case 'strtotime': // TODO - TO BE REMOVED - add support for strtotime to right side of expression
+					$custom_date = strtotime($matches[3][$idx]);
+					self::$filters['parsed']['day'] = array('equals', date_i18n('j', $custom_date));
+					self::$filters['parsed']['month'] = array('equals', date_i18n('n', $custom_date));
+					self::$filters['parsed']['year'] = array('equals', date_i18n('Y', $custom_date));
+					break;
+				case 'interval':
+					if (intval($matches[3][$idx]) > 0) self::$filters['parsed']['interval'] = array('equals', intval($matches[3][$idx]));
+					break;
+				case 'direction':
+				case 'limit_results':
+				case 'starting':
+				case 'browser':
+				case 'country':
+				case 'ip':
+				case 'searchterms':
+				case 'language':
+				case 'platform':
+				case 'resource':
+				case 'domain':
+				case 'referer':
+				case 'user':
+				case 'plugins':
+				case 'version':
+				case 'type':
+				case 'colordepth':
+				case 'css_version':
+				case 'notes':
+				case 'author':
+				case 'category':
+				case 'other_ip':
+				case 'content_type':
+				case 'resolution':
+				case 'visit_id':
+				case 'hour':
+				case 'day':
+				case 'month':
+				case 'year':
+					self::$filters['parsed'][$a_match] = array(isset($matches[2][$idx])?$matches[2][$idx]:'equals', isset($matches[3][$idx])?$GLOBALS['wpdb']->escape(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx]))):'');
+					break;
+				default:
+			}
+		}
+	}	
 
 	protected function _format_value($_value = 0, $_link = ''){
 		if ($_value == 0) return '<set/>';

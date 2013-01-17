@@ -2,8 +2,8 @@
 // Avoid direct access to this piece of code
 if (!function_exists('add_action')) exit(0);
 
-$dataXML = "<map map_file='".plugins_url('/swf/world3.swf', __FILE__)."' tl_long='-168.49' tl_lat='83.63' br_long='190.3' br_lat='-55.58' zoom_x='0%' zoom_y='0%' zoom='100%'>";
-$dataXML .= @file_get_contents(WP_PLUGIN_DIR.'/wp-slimstat/admin/view/swf/map_data.xml');
+$dataXML = "<map map_file='".plugins_url('/swf/world3.swf', dirname(__FILE__))."' tl_long='-168.49' tl_lat='83.63' br_long='190.3' br_lat='-55.58' zoom_x='0%' zoom_y='0%' zoom='100%'>";
+$dataXML .= @file_get_contents(WP_PLUGIN_DIR.'/wp-slimstat/admin/swf/map_data.xml');
 $dataXML .= "</map>";
 // Limit results doesn't apply here
 wp_slimstat_db::$filters['parsed']['limit_results'][1] = 9999;
@@ -26,16 +26,16 @@ foreach($countries as $a_country){
 	</div>
 </div>
 
-<script type="text/javascript" src="<?php echo plugins_url('/swf/swfobject.js', __FILE__); ?>"></script>
+<script type="text/javascript" src="<?php echo plugins_url('/swf/swfobject.js', dirname(__FILE__)); ?>"></script>
 <script type="text/javascript">
 // <![CDATA[
 var flashvars = {
-	settings_file: escape("<?php echo plugins_url('/swf/map_settings.xml', __FILE__); ?>"),
+	settings_file: escape("<?php echo plugins_url('/swf/map_settings.xml', dirname(__FILE__)); ?>"),
 	map_data: escape("<?php echo $dataXML ?>")
 };
 var params = {};
 var attributes = {};
-swfobject.embedSWF("<?php echo plugins_url('/swf/map.swf', __FILE__); ?>", "slimstat-world-map", "700", "440", "8.0.0", "expressInstall.swf", flashvars, params, attributes);
+swfobject.embedSWF("<?php echo plugins_url('/swf/map.swf', dirname(__FILE__)); ?>", "slimstat-world-map", "700", "440", "8.0.0", "expressInstall.swf", flashvars, params, attributes);
 // ]]>
 </script>
 

@@ -12,6 +12,7 @@ if (isset($_POST['options'])){
 	if (isset($_POST['options']['ip_lookup_service']) && !wp_slimstat_admin::update_option('ip_lookup_service', $_POST['options']['ip_lookup_service'], 'text')) $faulty_fields .= __('IP Lookup','wp-slimstat-options').', ';
 	if (isset($_POST['options']['refresh_interval']) && !wp_slimstat_admin::update_option('refresh_interval', $_POST['options']['refresh_interval'], 'integer')) $faulty_fields .= __('Refresh every','wp-slimstat-options').', ';
 	if (isset($_POST['options']['markings']) && !wp_slimstat_admin::update_option('markings', $_POST['options']['markings'], 'text')) $faulty_fields .= __('Chart Annotations','wp-slimstat-options').', ';
+	if (isset($_POST['options']['hide_stats_link_edit_posts']) && !wp_slimstat_admin::update_option('hide_stats_link_edit_posts', $_POST['options']['hide_stats_link_edit_posts'], 'yesno')) $faulty_fields .= __('Hide Stats Link','wp-slimstat-options').', ';
 	
 	slimstat_error_message($faulty_fields);
 }
@@ -60,6 +61,14 @@ if (isset($_POST['options'])){
 		<td>
 			<span class="block-element"><input type="text" name="options[refresh_interval]" id="refresh_interval" value="<?php echo wp_slimstat::$options['refresh_interval'] ?>" size="4"> <?php _e('seconds','wp-slimstat-options') ?></span>
 			<span class="description"><?php _e('Refresh the Right Now screen every X seconds. Zero disables this feature.','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><label for="hide_stats_link_edit_posts"><?php _e('Hide Stats Link','wp-slimstat-options') ?></label></th>
+		<td>
+			<span class="block-element"><input type="radio" name="options[hide_stats_link_edit_posts]" id="hide_stats_link_edit_posts" value="yes"<?php echo (wp_slimstat::$options['hide_stats_link_edit_posts'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+			<span class="block-element"><input type="radio" name="options[hide_stats_link_edit_posts]" value="no" <?php echo (wp_slimstat::$options['hide_stats_link_edit_posts'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?></span>
+			<span class="description"><?php _e('Enable this option if your users are confused by the Stats link associate to each post in the Edit Posts page.','wp-slimstat-options') ?></span>
 		</td>
 	</tr>
 </tbody>

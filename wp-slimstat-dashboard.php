@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: Monitor your visitors from your Wordpress dashboard.
-Version: 2.8.7
+Version: 2.9
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -31,9 +31,9 @@ class wp_slimstat_dashboard{
 	public static function wp_slimstat_dashboard_css_js(){
 		wp_register_style('wp-slimstat-dashboard-view', plugins_url('/admin/css/dashboard.css', __FILE__));
 		wp_enqueue_style('wp-slimstat-dashboard-view');
-		wp_enqueue_script('slimstat_flot', plugins_url('/admin/view/flot/jquery.flot.min.js', __FILE__), array('jquery'), '0.7');
-		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/view/flot/jquery.flot.navigate.min.js', __FILE__), array('jquery','slimstat_flot'), '0.7');
-		wp_enqueue_script('slimstat_admin', plugins_url('/admin/view/flot/slimstat.admin.js', __FILE__));
+		wp_enqueue_script('slimstat_flot', plugins_url('/admin/js/jquery.flot.min.js', __FILE__), array('jquery'), '0.7');
+		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/js/jquery.flot.navigate.min.js', __FILE__), array('jquery','slimstat_flot'), '0.7');
+		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', __FILE__));
 	}
 	// end wp_slimstat_stylesheet
 

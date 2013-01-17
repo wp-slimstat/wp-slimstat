@@ -5,6 +5,7 @@ if (!function_exists('add_action')) exit(0);
 // Update the options
 if (isset($_POST['options'])){
 	$faulty_fields = '';
+	if (isset($_POST['options']['restrict_authors_view']) && !wp_slimstat_admin::update_option('restrict_authors_view', $_POST['options']['restrict_authors_view'], 'yesno')) $faulty_fields .= __('Restrict Authors','wp-slimstat-options').', ';
 	if (!empty($_POST['options']['can_view'])){
 		// Make sure all the users exist in the system 
 		$user_array = wp_slimstat::string_to_array($_POST['options']['can_view']);
@@ -49,6 +50,19 @@ if (isset($_POST['options'])){
 	slimstat_error_message($faulty_fields);
 }
 ?>
+<table class="form-table <?php echo $wp_locale->text_direction ?>">
+<tbody>
+	<tr>
+		<th scope="row"><label for="restrict_authors_view"><?php _e('Restrict Authors','wp-slimstat-options') ?></label></th>
+		<td>
+			<span class="block-element"><input type="radio" name="options[restrict_authors_view]" id="restrict_authors_view" value="yes"<?php echo (wp_slimstat::$options['restrict_authors_view'] == 'yes')?' checked="checked"':''; ?>> <?php _e('Yes','wp-slimstat-options') ?>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+			<span class="block-element"><input type="radio" name="options[restrict_authors_view]" value="no" <?php echo (wp_slimstat::$options['restrict_authors_view'] == 'no')?'  checked="checked"':''; ?>> <?php _e('No','wp-slimstat-options') ?></span>
+			<span class="description"><?php _e('Enable this option if you want your authours to only see stats related to their own content','wp-slimstat-options') ?></span>
+		</td>
+	</tr>
+</tbody>
+</table>
+
 <h3><label for="can_view"><?php _e('Read access','wp-slimstat-options') ?></label></h3>
 <p><?php _e("List all the users who can view WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all your users</strong> are granted access. Usernames are case-insensitive.",'wp-slimstat-options') ?></p>
 <p><textarea class="large-text code" cols="50" rows="1" name="options[can_view]" id="can_view"><?php echo wp_slimstat::$options['can_view'] ?></textarea></p>

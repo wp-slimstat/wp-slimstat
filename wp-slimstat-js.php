@@ -1,22 +1,29 @@
 <?php
 
-// Where is your wp-config.php located relatively to this file? (usually three folders up)
-define('RELPATH', '../../..');
-
-// That's all, stop editing! Happy tracking. 
-
-// Abort if config file cannot be found
-$abspath = dirname(__FILE__).'/'.RELPATH;
-if (!file_exists($abspath.'/wp-config.php')){
-	if (!file_exists($abspath.'/../wp-config.php')){
-		exit('Error: wp-config not found');
+$abspath = dirname(__FILE__); // Same folder
+if (file_exists($abspath.'/wp-slimstat-config.php')){
+	include_once($abspath.'/wp-slimstat-config.php');
+}
+else{
+	$abspath = dirname(dirname($abspath)); // Two folders up (default wp-content location)
+	if (file_exists($abspath.'/wp-slimstat-config.php')){
+		include_once($abspath.'/wp-slimstat-config.php');
 	}
 	else{
-		$abspath = $abspath.'/..';
+		$abspath = dirname($abspath); // Three folders up (default wp-config.php location)
+		if (!file_exists($abspath.'/wp-config.php')){
+			$abspath = dirname($abspath);
+		}
+		$wp_config_path = $abspath.'/wp-config.php';
 	}
 }
+
+if (!file_exists($wp_config_path)){
+	exit('-101 : wp-config not found');
+}
+
 // Parse config file
-$wp_config = file_get_contents($abspath.'/wp-config.php');
+$wp_config = file_get_contents($wp_config_path);
 $parsed_config = token_get_all($wp_config);
 $db_name = $db_user = $db_password = $db_host = $table_prefix = '';
 
@@ -50,7 +57,7 @@ foreach($clean_tokens as $a_token_id => $a_token) {
 
 // This is odd, but it could happen...
 if (empty($db_name) || empty($db_user) || empty($db_password) || empty($db_host)){
-	exit('Error parsing wp-config');
+	exit('-102 : error parsing wp-config');
 }
 if (empty($table_prefix)){
 	$table_prefix = 'wp_';
@@ -59,26 +66,26 @@ if (empty($table_prefix)){
 // Let's see if we can connect to the database
 $db_handle = mysql_connect($db_host, $db_user, $db_password);
 if (!$db_handle){
-	exit('Could not connect: '.mysql_error());
+	exit('-103 : could not connect - '.mysql_error());
 }
 if (!mysql_select_db($db_name)){
 	@mysql_close($db_handle);
-	exit('Could not select the db: '.mysql_error());
-}
-
-// Process the data received by the client
-if (empty($_REQUEST['data'])){
-	exit('Invalid data format');
-}
-$data_string = base64_decode($_REQUEST['data']);
-if ($data_string === false){
-	exit('Invalid data format');
+	exit('-104 : could not select the db - '.mysql_error());
 }
 
 // Abort if WP SlimStat main table isn't in the database (plugin not activated?)
 $db_list_tables = @mysql_query("SHOW TABLES");
 $is_table_active = false;
 $multisite_table_prefix = $table_prefix;
+
+// Process the data received by the client
+if (empty($_REQUEST['data'])){
+	exit('-105 : invalid data format');
+}
+$data_string = base64_decode($_REQUEST['data']);
+if ($data_string === false){
+	exit('-106 : invalid data format');
+}
 
 // Parse the information we received
 parse_str($data_string, $data);
@@ -105,11 +112,11 @@ if (!$is_table_active){
 	
 	if (!$is_table_active){
 		@mysql_close($db_handle);
-		exit('SlimStat table not found');
+		exit('-107 : slimStat table not found');
 	}
 }
 
-// Well, looks like we are ready to roll
+// Well, it looks like we are ready to roll
 $stat = array();
 
 // This secret key is used to make sure the script only works when called from a legit referer (the blog itself!)
@@ -117,7 +124,7 @@ $slimstat_options = unserialize(slimstat_get_option('slimstat_options', ''));
 
 if (empty($slimstat_options['secret'])){
 	@mysql_close($db_handle);
-	exit('Invalid private key');
+	exit('-108 : invalid private key');
 }
 
 // Blog URL detection
@@ -129,14 +136,7 @@ $cookiepath = preg_replace('|https?://[^/]+|i', '', $site_url . '/' );
 // This request is not coming from the same domain
 if (empty($_SERVER['HTTP_REFERER']) || ((strpos($_SERVER['HTTP_REFERER'], $site_url) === false) && (strpos($_SERVER['HTTP_REFERER'], "http://" . $_SERVER['HTTP_HOST']) === false ))){
 	@mysql_close($db_handle);
-	exit('Invalid HTTP_REFERER');
-}
-
-// Is the ID valid?
-$stat['id'] = empty($data['id'])?0:base_convert($data['id'], 16, 10);
-if (empty($data['obr']) && (empty($data['id']) || ($data['sid'] != md5($stat['id'].$slimstat_options['secret'])))){
-	@mysql_close($db_handle);
-	exit('Invalid public key');
+	exit('-109 : invalid HTTP_REFERER');
 }
 
 // This script can be called either to track outbound links (and downloads) or 'returning' visitors
@@ -147,17 +147,39 @@ $stat['notes'] = !empty($data['no'])?mysql_real_escape_string(strip_tags(trim($d
 $stat['position'] = !empty($data['po'])?mysql_real_escape_string(strip_tags(trim($data['po']))):'';
 $stat['type'] = isset($data['ty'])?intval($data['ty']):-1;
 
+// Is the ID valid?
+$stat['id'] = empty($data['id'])?0:base_convert($data['id'], 16, 10);
+
+if (empty($data['obr']) && (empty($data['id']) || $data['sid'] != md5($stat['id'].$slimstat_options['secret'])) && $slimstat_options['javascript_mode'] != 'yes'){
+	@mysql_close($db_handle);
+	exit('-110 : invalid public key');
+}
+
 if (!empty($stat['outbound_resource']) && $stat['type'] >= 0){
 	$timezone = slimstat_get_option('timezone_string');
 	if (!empty($timezone)) date_default_timezone_set($timezone);
 	$lt = localtime();
 	if (!empty($timezone)) date_default_timezone_set('UTC');
 	$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
-	
-	@mysql_query(slimstat_prepare("INSERT INTO {$multisite_table_prefix}slim_outbound (".implode(', ', array_keys($stat)).') VALUES ('.substr(str_repeat('%s,', count($stat)), 0, -1).')', $screenres));
+
+	@mysql_query(slimstat_prepare("INSERT INTO {$multisite_table_prefix}slim_outbound (".implode(', ', array_keys($stat)).') VALUES ('.substr(str_repeat('%s,', count($stat)), 0, -1).')', $stat));
 	@mysql_close($db_handle);
 	exit(0);
 }
+
+if ($slimstat_options['javascript_mode'] == 'yes'){
+	include_once($wp_config_path);
+	include_once('./wp-slimstat.php');
+
+	// We can pass the information received from Javascript about content type and other resource-related information
+	wp_slimstat::slimtrack($data);
+
+	// Was this pageview tracked?
+	if (wp_slimstat::$tid < 0) exit('-100 : Visit filtered and not tracked');
+
+	$stat['id'] = wp_slimstat::$tid;
+}
+
 $stat['plugins'] = (!empty($data['pl']))?mysql_real_escape_string(substr(str_replace('|', ',', $data['pl']), 0, -1)):'';
 $screenres['resolution'] = (!empty($data['sw']) && !empty($data['sh']))?mysql_real_escape_string( $data['sw'].'x'.$data['sh'] ):'';
 $screenres['colordepth'] = (!empty($data['cd']))?mysql_real_escape_string( $data['cd'] ):'';
@@ -179,9 +201,10 @@ if ( empty($stat['screenres_id']) ) {
 	}
 }
 
-// Update the visit_id for this session's first pageview
-if (empty($slimstat_options['session_duration'])) $slimstat_options['session_duration'] = 1800;
+// Update the visit_id for this session
 if (isset($_COOKIE['slimstat_tracking_code'])){
+	if (empty($slimstat_options['session_duration'])) $slimstat_options['session_duration'] = 1800;
+
 	list($identifier, $control_code) = explode('.', $_COOKIE['slimstat_tracking_code']);
 			
 	// Make sure only authorized information is recorded
@@ -189,34 +212,46 @@ if (isset($_COOKIE['slimstat_tracking_code'])){
 		
 		// Set the visit_id for this session's first pageview
 		if (strpos($identifier, 'id') !== false){
-
 			$stat['visit_id'] = slimstat_get_option('slimstat_visit_id', -1);
 			if ($stat['visit_id'] == -1){
 				$stat['visit_id'] = intval(slimstat_get_var("SELECT MAX(visit_id) FROM {$multisite_table_prefix}slim_stats"));
 			}
+			$stat['id'] = intval($identifier);
 			$stat['visit_id']++;
 			slimstat_update_option('slimstat_visit_id', $stat['visit_id']);
 
-			@mysql_query(slimstat_prepare("
-				UPDATE {$multisite_table_prefix}slim_stats 
-				SET visit_id = %d
-				WHERE id = %d AND visit_id = 0", $stat['visit_id'], intval($identifier)));
-
-			@setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].$slimstat_options['secret']), time()+$slimstat_options['session_duration'], $cookiepath);
+			setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].$slimstat_options['secret']), time()+$slimstat_options['session_duration'], $cookiepath);
 		}
 		else{
 			$stat['visit_id'] = intval($identifier);
 			if ($slimstat_options['extend_session'] == 'yes'){
-				@setcookie('slimstat_tracking_code', $stat['visit_id'].'.'.md5($stat['visit_id'].self::$options['secret']), time()+$slimstat_options['session_duration'], $cookiepath);
+				setcookie('slimstat_tracking_code', $stat['visit_id'].'.'.md5($stat['visit_id'].$slimstat_options['secret']), time()+$slimstat_options['session_duration'], $cookiepath);
 			}
 		}
 	}
 }
+elseif ($slimstat_options['javascript_mode'] == 'yes'){
+	$stat['visit_id'] = slimstat_get_option('slimstat_visit_id', -1);
+	if ($stat['visit_id'] == -1){
+		$stat['visit_id'] = intval(slimstat_get_var("SELECT MAX(visit_id) FROM {$multisite_table_prefix}slim_stats"));
+	}
+	$stat['visit_id']++;
+	slimstat_update_option('slimstat_visit_id', $stat['visit_id']);
+
+	setcookie('slimstat_tracking_code', "{$stat['visit_id']}.".md5($stat['visit_id'].$slimstat_options['secret']), time()+$slimstat_options['session_duration'], $cookiepath);
+}
 
 // Finally we can update the information about this visit
-if (!empty($stat['screenres_id'])){
-	@mysql_query("UPDATE {$multisite_table_prefix}slim_stats SET screenres_id = {$stat['screenres_id']}, plugins = '{$stat['plugins']}' WHERE id = {$stat['id']} AND screenres_id = 0");
+if (!empty($stat['screenres_id']) || !empty($stat['visit_id'])){
+	$update_screenres_id = !empty($stat['screenres_id'])?"screenres_id = {$stat['screenres_id']},":'';
+	$update_visit_id = !empty($stat['visit_id'])?"visit_id = {$stat['visit_id']},":'';
+
+	@mysql_query("UPDATE {$multisite_table_prefix}slim_stats SET $update_screenres_id $update_visit_id plugins = '{$stat['plugins']}' WHERE id = {$stat['id']}");
 }
+// Send the ID back to Javascript to track future interactions
+echo base_convert($stat['id'], 10, 16);
+
+// Close the connection to the database
 @mysql_close($db_handle);
 exit(0);
 

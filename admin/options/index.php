@@ -11,6 +11,7 @@ $array_panels = array(
 	__('Views','wp-slimstat-options'),
 	__('Filters','wp-slimstat-options'),
 	__('Permissions','wp-slimstat-options'),
+	__('Advanced','wp-slimstat-options'),
 	__('Maintenance','wp-slimstat-options'),
 	__('Support','wp-slimstat-options')
 );

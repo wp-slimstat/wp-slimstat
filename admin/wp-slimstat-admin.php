@@ -23,8 +23,10 @@ class wp_slimstat_admin{
 		add_filter('plugin_action_links_wp-slimstat/wp-slimstat.php', array(__CLASS__, 'plugin_action_links'), 10, 2);
 
 		// Add a link to view stats to each post
-		add_filter('post_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
-		add_filter('page_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
+		if (wp_slimstat::$options['hide_stats_link_edit_posts'] == 'no'){
+			add_filter('post_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
+			add_filter('page_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
+		}
 
 		// Remove spammers from the database
 		if (wp_slimstat::$options['ignore_spammers'] == 'yes'){
@@ -446,6 +448,21 @@ class wp_slimstat_admin{
 			self::update_option('extend_session', 'no', 'yesno');
 		}
 		// --- END: Updates for version 2.8.7 ---
+		
+		// --- Updates for version 2.9 ---
+		if (!isset(wp_slimstat::$options['javascript_mode'])){
+			self::update_option('javascript_mode', 'yes', 'yesno');
+		}
+		if (!isset(wp_slimstat::$options['hide_stats_link_edit_posts'])){
+			self::update_option('hide_stats_link_edit_posts', 'no', 'yesno');
+		}
+		if (!isset(wp_slimstat::$options['enable_outbound_tracking'])){
+			self::update_option('enable_outbound_tracking', 'yes', 'yesno');
+		}
+		if (!isset(wp_slimstat::$options['restrict_authors_view'])){
+			self::update_option('restrict_authors_view', 'no', 'yesno');
+		}
+		// --- END: Updates for version 2.9 ---
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
@@ -555,9 +572,9 @@ class wp_slimstat_admin{
 
 	public static function wp_slimstat_enqueue_scripts(){
 		wp_enqueue_script('dashboard');
-		wp_enqueue_script('slimstat_flot', plugins_url('/admin/view/flot/jquery.flot.min.js', dirname(__FILE__)), array('jquery'), '0.7');
-		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/view/flot/jquery.flot.navigate.min.js', dirname(__FILE__)), array('jquery','slimstat_flot'), '0.7');
-		wp_enqueue_script('slimstat_admin', plugins_url('/admin/view/flot/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), '1.0');
+		wp_enqueue_script('slimstat_flot', plugins_url('/admin/js/jquery.flot.min.js', dirname(__FILE__)), array('jquery'), '0.7');
+		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/js/jquery.flot.navigate.min.js', dirname(__FILE__)), array('jquery','slimstat_flot'), '0.7');
+		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), '1.0');
 	}
 
 	/**
@@ -630,19 +647,15 @@ class wp_slimstat_admin{
 	// end plugin_action_links
 
 	/**
-	 * Add a link to each post in Edit Posts, to go directly to the stats with the corresponding filter set
+	 * Add a link to each post in fosts, to go directly to the stats with the corresponding filter set
 	 */
 	public static function post_row_actions($_actions, $_post){
-		if (strpos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) === false && !current_user_can(wp_slimstat::$options['capability_can_view']))
+		if ((strpos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) === false && !current_user_can(wp_slimstat::$options['capability_can_view'])) || wp_slimstat::$options['add_posts_column'] == 'yes')
 			return $_actions;
 
 		$parsed_permalink = parse_url( get_permalink($_post->ID) );
 		$parsed_permalink = urlencode( $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'') );
-		if (wp_slimstat::$options['use_separate_menu'] == 'yes')
-			$page = 'admin.php';
-		else
-			$page = 'index.php';
-		return array_merge($_actions, array('wp-slimstat' => "<a href='$page?page=wp-slimstat&amp;slimpanel=1&amp;fs=resource+contains+{$parsed_permalink}%7C'>".__('Stats','wp-slimstat-view')."</a>"));
+		return array_merge($_actions, array('wp-slimstat' => "<a href='".self::$admin_url."1&amp;fs=resource+contains+{$parsed_permalink}%7C'>".__('Stats','wp-slimstat-view')."</a>"));
 	}
 	// end post_row_actions
 
@@ -660,10 +673,10 @@ class wp_slimstat_admin{
 	 */
 	public static function add_post_column($_column_name, $_post_id){
 		if ('wp-slimstat' != $_column_name) return;
-		$parsed_permalink = parse_url( get_permalink($_post_id) );
-		$parsed_permalink['query'] = !empty($parsed_permalink['query'])?$parsed_permalink['query']:'';
-		$count = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE resource = %s", $parsed_permalink['path'].$parsed_permalink['query']));
-		echo '<a href="'.self::$admin_url.'1&amp;fs=resource+contains+'.$parsed_permalink['path'].$parsed_permalink['query'].'%7C">'.$count.'</a>';
+		$parsed_permalink = parse_url( get_permalink($_post->ID) );
+		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
+		$count = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE resource = %s", $parsed_permalink));
+		echo '<a href="'.self::$admin_url.'1&amp;fs=resource+contains+'.urlencode( $parsed_permalink ).'%7C">'.$count.'</a>';
 	}
 	// end add_column
 

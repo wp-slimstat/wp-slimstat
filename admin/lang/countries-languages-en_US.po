@@ -1,15 +1,14 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP-SlimStat Countries & Languages\n"
+"Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
 "Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: s\n"
-"X-Poedit-Language: English\n"
+"X-Generator: Poedit 1.5.4\n"
 
 msgid "yes"
 msgstr "Yes"
@@ -25,6 +24,9 @@ msgstr "Unknown"
 
 msgid "win7"
 msgstr "Windows 7"
+
+msgid "win8"
+msgstr "Windows 8"
 
 msgid "winphone7"
 msgstr "Windows Phone"
@@ -1113,7 +1115,7 @@ msgstr "Tuvalu"
 
 # 	Taiwan, Province of China
 msgid "c-tw"
-msgstr "Taiwan, Province of China"
+msgstr "Taiwan"
 
 # 	United Republic of Tanzania
 msgid "c-tz"
@@ -2085,7 +2087,7 @@ msgstr "Chinese (China)"
 
 # Chinese (Taiwan)
 msgid "l-zh-tw"
-msgstr "Chinese (Taiwan)"
+msgstr "Taiwanese"
 
 # Chinese (Hong Kong)
 msgid "l-zh-hk"
@@ -2334,4 +2336,3 @@ msgstr "Unknown"
 # Unknown
 msgid "l-xx"
 msgstr "Unknown"
-

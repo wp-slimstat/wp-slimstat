@@ -1,5 +1,6 @@
 var SlimStat = {
-	// private properties
+	// Private Properties
+	_tid : -1,
 	_base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
 	_plugins : {
 		acrobat: { substrings: [ "Adobe", "Acrobat" ], active_x_strings: [ "AcroPDF.PDF", "PDF.PDFCtrl.5" ] },
@@ -12,7 +13,7 @@ var SlimStat = {
 		silverlight: { substrings: [ "Silverlight" ], active_x_strings: [ "AgControl.AgControl" ] }
 	},
 
-	// Base64 encode / decode - http://www.webtoolkit.info/
+	// Base64 Encode - http://www.webtoolkit.info/
 	_base64_encode : function (input) {
 		var chr1, chr2, chr3, enc1, enc2, enc3, enc4, output = "", i = 0;
 
@@ -154,8 +155,8 @@ var SlimStat = {
 		}
 	},
 	
-	send_to_server : function (url, async) {
-		if (typeof slimstat_path == 'undefined' || typeof slimstat_tid == 'undefined' || typeof slimstat_session_id == 'undefined' || typeof slimstat_blog_id == 'undefined' || typeof url == 'undefined'){
+	send_to_server : function (data_to_send, async) {
+		if (typeof slimstat_path == 'undefined' || typeof slimstat_blog_id == 'undefined' || typeof data_to_send == 'undefined'){
 			return false;
 		}
 
@@ -172,20 +173,36 @@ var SlimStat = {
 			return false;
 		}
 		if (request) {
-			var data = "data="+SlimStat._base64_encode("id="+slimstat_tid+"&sid="+slimstat_session_id+"&bid="+slimstat_blog_id+"&"+url);
+			var data = "data="+SlimStat._base64_encode("bid="+slimstat_blog_id+"&is_slimstat=yes&"+data_to_send);
+			
+			if (typeof slimstat_tid == 'undefined'){
+				request.onreadystatechange = function () {
+					if(request.readyState == 4){
+						parsed_tid = parseInt(request.responseText, 16);
+						if (!isNaN(parsed_tid) && parsed_tid > 0) SlimStat._tid = request.responseText;
+					}
+				}
+			}
+			else
+				SlimStat._tid = slimstat_tid;
+
 			request.open('POST', slimstat_path+'/wp-slimstat-js.php', async);
 			request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			request.send(data);
+
 			return true;
 		}	
 		return false;
 	},
 	
 	ss_track : function (e, c, note) {
+		// Do nothing if we don't have a valid SlimStat._tid
+		if (SlimStat._tid < 0) return true;
+	
 		// Check function params
 		if (typeof e == 'undefined') var e = window.event;
-		code = (typeof c == 'undefined')?0:parseInt(c);
-		if (typeof note == 'undefined') var note = '';
+		var code = (typeof c == 'undefined')?0:parseInt(c);
+		var note_array = [];
 
 		var node = (typeof e.target != 'undefined')?e.target:((typeof e.srcElement != 'undefined')?e.srcElement:false);
 		if (!node) return false;
@@ -214,6 +231,7 @@ var SlimStat = {
 				}
 
 			default:
+				// Any other element
 				if (node.nodeName != 'A') {
 					if (typeof node.getAttribute == 'function' && node.getAttribute('id') != 'undefined' && node.getAttribute('id') != null && node.getAttribute('id').length > 0){
 						node_pathname = node.getAttribute('id');
@@ -227,21 +245,19 @@ var SlimStat = {
 					async = true;
 					node_pathname = escape(node.hash);
 				}
-				// Any other element
+
 				else {
-					// Wait for the server to respond
 					node_hostname = (typeof node.hostname != 'undefined')?node.hostname:'';
 					if (typeof node.href != 'undefined') {
 						node_pathname = escape(node.href);
 					}				
 				}
 
-				// If this element has an ID, we can use that for the note
-				if (typeof node.getAttribute == 'function' &&
-					(note.substring(0, 2) == 'A:' || note.length == 0) &&
-					node.getAttribute('id') != 'undefined' &&
-					node.getAttribute('id') != null &&
-					node.getAttribute('id').length > 0) note = 'ID:'+node.getAttribute('id');
+				// If this element has a title, we can record that as well
+				if (typeof node.getAttribute == 'function'){
+					if (node.getAttribute('title') != 'undefined' && node.getAttribute('title') != null && node.getAttribute('title').length > 0) note_array.push('Title:'+node.getAttribute('title'));
+					if (node.getAttribute('id') != 'undefined' && node.getAttribute('id') != null && node.getAttribute('id').length > 0) note_array.push('ID:'+node.getAttribute('id'));
+				}
 		}
 		slimstat_info = "&obd="+node_hostname+"&obr="+node_pathname;
 
@@ -260,16 +276,18 @@ var SlimStat = {
 		if (pos_x > 0 && pos_y > 0) slimstat_info += ((slimstat_info.length > 0)?'&':'?')+'po='+pos_x+','+pos_y;
 
 		// Event type and button pressed
-		note += '|ET:'+e.type;
+		note_array.push('Event:'+e.type);
+		if (typeof note != 'undefined' && note.length > 0) note_array.push(note);
 
 		if (e.type != 'click' && typeof(e.which) != 'undefined') {
-			if (e.type == 'keypress' )
-				note += '|BT:'+String.fromCharCode(parseInt(e.which));
+			if (e.type == 'keypress')
+				note_array.push('Key:'+String.fromCharCode(parseInt(e.which)));
 			else
-				note += '|BT:'+e.which;
+				note_array.push('Type:'+e.which);
 		}
 
-		return SlimStat.send_to_server("ty="+code+slimstat_info+"&no="+escape(note), async);
+		SlimStat.send_to_server("id="+SlimStat._tid+"&ty="+code+slimstat_info+"&no="+escape(note_array.join(', ')), async);
+		return true;
 	}
 }
 
@@ -300,19 +318,30 @@ function ss_track (e, c, note){ SlimStat.ss_track(e, c, note); }
 function slimstat_plusone (obj) { SlimStat.send_to_server('ty=4&obr='+escape('#google-plus-'+obj.state), true); }
 
 // Attaches an event listener to all external links
-var links_in_this_page = document.getElementsByTagName("a");
-for (var i=0; i<links_in_this_page.length; i++) {
-	if ((typeof slimstat_heatmap == 'undefined') && ((links_in_this_page[i].hostname == location.hostname) ||  (links_in_this_page[i].href.indexOf('://') == -1) || (links_in_this_page[i].className.indexOf('noslimstat') != -1))){
-		continue;
-	}
+if (typeof slimstat_disable_outbound_tracking == 'undefined'){
+	var links_in_this_page = document.getElementsByTagName("a");
+	for (var i=0; i<links_in_this_page.length; i++) {
+		if ((links_in_this_page[i].hostname == location.hostname) ||  (links_in_this_page[i].href.indexOf('://') == -1) || (links_in_this_page[i].className.indexOf('noslimstat') != -1)){
+			continue;
+		}
 
-	if (links_in_this_page[i].addEventListener) {
-		links_in_this_page[i].addEventListener("click", function (i) { return function (e) { SlimStat.ss_track(e, 0, "A:"+(i+1)) } }(i), false);
-	}
-	else if (links_in_this_page[i].attachEvent){
-		links_in_this_page[i].attachEvent("onclick", function (i) { return function (e) { SlimStat.ss_track(e, 0, "A:"+(i+1)) } }(i));
+		if (links_in_this_page[i].addEventListener) {
+			links_in_this_page[i].addEventListener("click", function (i) { return function (e) { SlimStat.ss_track(e, 0, "A:"+(i+1)) } }(i), false);
+		}
+		else if (links_in_this_page[i].attachEvent){
+			links_in_this_page[i].attachEvent("onclick", function (i) { return function (e) { SlimStat.ss_track(e, 0, "A:"+(i+1)) } }(i));
+		}
 	}
 }
 
+// Is Javascript Mode active?
+var current_data = '';
+if (typeof slimstat_tid != 'undefined' && parseInt(slimstat_tid, 16) >= 0 && typeof slimstat_session_id != 'undefined'){
+	current_data = "id="+slimstat_tid+"&sid="+slimstat_session_id;
+}
+else{
+	current_data = "ci="+slimstat_ci+"&ref="+SlimStat._base64_encode(document.referrer);
+}
+
 // Gathers all the information and sends it to the server
-SlimStat.send_to_server("sw="+(screen.width||window.innerWidth||document.documentElement.clientWidth||document.body.offsetWidth)+"&sh="+(screen.height||window.innerHeight||document.documentElement.clientHeight||document.body.offsetHeight)+"&cd="+screen.colorDepth+"&aa="+SlimStat.has_smoothing()+"&pl="+SlimStat.detect_plugins());
+if (current_data != '') SlimStat.send_to_server(current_data+"&sw="+(screen.width||window.innerWidth||document.documentElement.clientWidth||document.body.offsetWidth)+"&sh="+(screen.height||window.innerHeight||document.documentElement.clientHeight||document.body.offsetHeight)+"&cd="+screen.colorDepth+"&aa="+SlimStat.has_smoothing()+"&pl="+SlimStat.detect_plugins());

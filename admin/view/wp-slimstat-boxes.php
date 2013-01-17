@@ -2,6 +2,7 @@
 
 class wp_slimstat_boxes{
 	public static $filters_string = '';
+	public static $system_filters_string = '';
 
 	// Variables used to generate the HTML code for the metaboxes
 	public static $current_screen = '';
@@ -16,7 +17,7 @@ class wp_slimstat_boxes{
 	// Tab panels drag-and-drop functionality
 	public static $all_boxes_titles = array();
 	public static $all_boxes = '';
-	public static $hidden_boxes = '';
+	public static $hidden_boxes = array();
 	
 	// Shared descriptions
 	public static $chart_tooltip = '';
@@ -44,6 +45,7 @@ class wp_slimstat_boxes{
 			'language' => strtolower(__('Language Code','wp-slimstat-view')),
 			'platform' => strtolower(__('Operating System','wp-slimstat-view')),
 			'resource' => strtolower(__('Permalink','wp-slimstat-view')),
+			'domain' => strtolower(__('Domain','wp-slimstat-view')),
 			'referer' => strtolower(__('Referer','wp-slimstat-view')),
 			'user' => strtolower(__('Visitor\'s Name','wp-slimstat-view')),
 			'plugins' => strtolower(__('Browser Capabilities','wp-slimstat-view')),
@@ -194,14 +196,21 @@ class wp_slimstat_boxes{
 		if (!empty($_POST['month'])) self::$filters_string = self::replace_query_arg('month', $_POST['month'], 'equals');
 		if (!empty($_POST['year'])) self::$filters_string = self::replace_query_arg('year', $_POST['year'], 'equals');
 		if (!empty($_POST['interval'])) self::$filters_string = self::replace_query_arg('interval', $_POST['interval'], 'equals');
-		
+
 		// The 'starting' filter only applies to the 'Right Now' screen
 		if (self::$current_screen != 1) self::$filters_string = self::replace_query_arg('starting');
+
+		// System filters are used to restrict access to the stats based on some settings
+		if (wp_slimstat::$options['restrict_authors_view'] == 'yes' && !current_user_can('manage_options')) self::$system_filters_string = 'author contains '.$GLOBALS['current_user']->user_login;
 		
+		// Allow third-party add-ons to modify filters before they are used
+		self::$filters_string = apply_filters('slimstat_modify_admin_filters', self::$filters_string);
+		self::$system_filters_string = apply_filters('slimstat_modify_admin_system_filters', self::$system_filters_string);
+
 		// Import and initialize the API to interact with the database
 		include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/wp-slimstat-db.php");
-		wp_slimstat_db::init(self::$filters_string);
-		
+		wp_slimstat_db::init(self::$filters_string, self::$system_filters_string);
+
 		// Default text for the inline help associated to the chart
 		self::$chart_tooltip = '<strong>'.htmlentities(__('Chart controls','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</strong><ul><li>'.htmlentities(__('Use your mouse wheel to zoom in and out','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</li><li>'.htmlentities(__('While zooming in, drag the chart to move to a different area','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</li><li>'.htmlentities(__('Double click on an empty region to reset the zoom level','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</li>';
 		self::$chart_tooltip .= (!wp_slimstat_db::$timeframes['current_day']['day_selected'])?'<li>'.htmlentities(__('Click on a data point to display the activity chart for each hour of that day','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').'</li>':'';
@@ -215,10 +224,10 @@ class wp_slimstat_boxes{
 		if (!is_array($_keys)) $_keys = array($_keys);
 		if (!is_array($_values)) $_values = array($_values);
 		if (!is_array($_operators)) $_operators = array($_operators);
-		
+
 		$new_filters_string = urldecode(self::$filters_string);
 		$new_filters_string = preg_replace("/starting\s[^|]+\|/i", '', $new_filters_string);
-		
+
 		foreach ($_keys as $idx => $a_key){
 			$new_filters_string = preg_replace("/(?<!_)$a_key [^|]+\|/i", '', $new_filters_string);
 			if ($_values[$idx] === '0' || !empty($_values[$idx]) || $_operators[$idx] == 'is_empty' || $_operators[$idx] == 'is_not_empty'){
@@ -254,14 +263,14 @@ class wp_slimstat_boxes{
 			$filters_html .= __('Current filters:','wp-slimstat-view').'</span> ';
 			foreach($filters_dropdown as $a_filter_label => $a_filter_details){
 				$a_filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-				$filters_html .= "<span class='filter-item'><a class='remove-filter' title='".htmlentities(__('Remove filter for','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').' '.$a_filter_label."' href='".self::fs_url($a_filter_label)."'></a> <code>".self::$translations[$a_filter_label].' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat-view')." $a_filter_value_no_slashes</code> </span> ";
+				$filters_html .= "<span class='filter-item'><a class='remove-filter' title='".htmlentities(__('Remove filter for','wp-slimstat-view'), ENT_QUOTES, 'UTF-8').' '.self::$translations[$a_filter_label]."' href='".self::fs_url($a_filter_label)."'></a> <code>".self::$translations[$a_filter_label].' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat-view')." $a_filter_value_no_slashes</code> </span> ";
 			}
 		}
 		else{
 			$filters_html = '<h3>'.ucfirst(date_i18n('F Y')).'</h3>  ';
 		}
 		
-		return $filters_html;
+		return ($filters_html != "<span class='filters-title'>".__('Current filters:','wp-slimstat-view').'</span> ')?$filters_html:'';
 	}
 
 	public static function box_header($_id = 'p0', $_tooltip = '', $_postbox_class = '', $_more = false, $_inside_class = '', $_title = ''){
@@ -273,6 +282,18 @@ class wp_slimstat_boxes{
 
 	public static function box_footer(){
 		echo '</div></div>';
+	}
+	
+	/**
+	 * Attempts to convert a permalink into a post title
+	 */
+	public static function get_resource_title($_resource = ''){
+		$post_id = url_to_postid(strtok($_resource, '?'));
+		
+		if ($post_id > 0){
+			return get_the_title($post_id);
+		}
+		return urldecode($_resource);
 	}
 	
 	public static function chart_title($_title = ''){
@@ -414,12 +435,13 @@ class wp_slimstat_boxes{
 		//}
 		//else{ 
 			$rtl_filler_current = $rtl_filler_previous = 0;
-			if ($GLOBALS['wp_locale']->text_direction == 'rtl' && !wp_slimstat_db::$timeframes['current_day']['d']['selected']){
+			if ($GLOBALS['wp_locale']->text_direction == 'rtl' && !wp_slimstat_db::$timeframes['current_day']['day_selected']){
 				$rtl_filler_current = 31-((date_i18n('Ym') == wp_slimstat_db::$timeframes['current_day']['y'].wp_slimstat_db::$timeframes['current_day']['m'])?wp_slimstat_db::$timeframes['current_day']['d']:cal_days_in_month(CAL_GREGORIAN, wp_slimstat_db::$timeframes['current_day']['m'], wp_slimstat_db::$timeframes['current_day']['y']));
 				$rtl_filler_previous = 31-cal_days_in_month(CAL_GREGORIAN, wp_slimstat_db::$timeframes['previous_month']['m'], wp_slimstat_db::$timeframes['previous_month']['y']);
 			} ?>
 			<div id="chart-placeholder"></div><div id="chart-legend"></div>
 			<script type="text/javascript">
+				if (typeof SlimStatAdmin == 'undefined') var SlimStatAdmin = {data:[],ticks:[],options:[]};
 				SlimStatAdmin.options['rtl_filler_current'] = <?php echo $rtl_filler_current ?>;
 				SlimStatAdmin.options['rtl_filler_previous'] = <?php echo $rtl_filler_previous ?>;
 				SlimStatAdmin.options['interval'] = <?php echo !empty(wp_slimstat_db::$filters['parsed']['interval'])?wp_slimstat_db::$filters['parsed']['interval'][1]:0 ?>;
@@ -434,7 +456,6 @@ class wp_slimstat_boxes{
 				SlimStatAdmin.data.push({<?php echo !empty($_chart_data['previous']['data'])?"label:'{$_chart_labels[0]} ".wp_slimstat_db::$timeframes['label_previous']."',data:[{$_chart_data['previous']['data']}],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}":''; ?>});
 				SlimStatAdmin.data.push({label:'<?php echo $_chart_labels[1].' '.wp_slimstat_db::$timeframes['label_current'] ?>',data:[<?php echo $_chart_data['current']['data2'] ?>],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}});
 				SlimStatAdmin.data.push({label:'<?php echo $_chart_labels[0].' '.wp_slimstat_db::$timeframes['label_current'] ?>',data:[<?php echo $_chart_data['current']['data1'] ?>],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}});
-				
 			</script>
 			<?php 
 		//}
@@ -451,7 +472,7 @@ class wp_slimstat_boxes{
 		for($i=0;$i<count($results);$i++){
 			$element_title = '';
 			$results[$i]['ip'] = long2ip($results[$i]['ip']);
-			//if (!empty($results[$i]['other_ip'])) $results[$i]['other_ip'] = '<em class="other-ip">'..'</em>';
+
 			if (wp_slimstat::$options['convert_ip_addresses'] == 'yes'){
 				$host_by_ip = gethostbyaddr($results[$i]['ip']);
 				$host_by_ip .= ($host_by_ip != $results[$i]['ip'])?" ({$results[$i]['ip']})":'';
@@ -464,7 +485,7 @@ class wp_slimstat_boxes{
 				$results[$i]['resource'] = __('Search for','wp-slimstat-view').': '.htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
 			}
 			if (!empty($results[$i]['resource']) && $_type == 0){
-				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat-view').'" href="'.$results[$i]['resource'].'"></a>'.rawurldecode($results[$i]['resource']);
+				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat-view').'" href="'.$results[$i]['resource'].'"></a> '.self::get_resource_title($results[$i]['resource']);
 			}
 
 			if ($visit_id != $results[$i]['visit_id']){
@@ -488,12 +509,12 @@ class wp_slimstat_boxes{
 				if (!is_int($_type)){
 					$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
 					$element_title = " title='".__('Source','wp-slimstat-view').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat-view')."\" href=\"$element_url\"></a><a title=\"".sprintf(__('Filter results where domain equals %s','wp-slimstat-view'), $results[$i]['domain'])."\" href=\"".self::fs_url('domain', $results[$i]['domain'])."\">{$results[$i]['domain']}</a>";
-					$element_title .= !empty($results[$i]['searchterms'])?" ".__('Keywords','wp-slimstat-view').": <a title=\"".sprintf(__('Filter results where searchterm equals %s','wp-slimstat-view'), htmlentities(htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8'))."\" href=\"".self::fs_url('searchterms', $results[$i]['searchterms'])."\">".htmlentities(htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8')."</a>'":"'";
+					$element_title .= !empty($results[$i]['searchterms'])?"<br>".__('Keywords','wp-slimstat-view').": <a title=\"".sprintf(__('Filter results where searchterm equals %s','wp-slimstat-view'), htmlentities(htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8'))."\" href=\"".self::fs_url('searchterms', $results[$i]['searchterms'])."\">".htmlentities(htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8')."</a>'":"'";
 				}
 				else{
 					$permalink = parse_url($results[$i]['referer']);
 					$results[$i]['notes'] = str_replace('|ET:click', '', $results[$i]['notes']);
-					$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?'http://'.self::$home_url.$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
+					$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?self::$home_url.$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
 					$element_title = " title='".__('Source','wp-slimstat-view').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat-view')."\" href=\"$element_url\"></a><a title=\"".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat-view'), $permalink['path']), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url('resource', $permalink['path'])."\">{$permalink['path']}</a>";
 					$element_title .= !empty($results[$i]['notes'])?"<br>Link Details: {$results[$i]['notes']}'":"'";
 				}
@@ -690,7 +711,8 @@ class wp_slimstat_boxes{
 		<p><?php _e('Total Pageviews', 'wp-slimstat-view') ?> <span><?php echo number_format(wp_slimstat_db::count_records('1=1', '*', false, '', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 		<p><?php _e('DB Size', 'wp-slimstat-view') ?> <span><?php echo wp_slimstat_db::get_data_size() ?></span></p>
 		<p><?php _e('Tracking Active', 'wp-slimstat-view') ?> <span><?php _e(wp_slimstat::$options['is_tracking'], 'countries-languages') ?></span></p>
-		<p><?php _e('Javascript Tracking', 'wp-slimstat-view') ?> <span><?php _e(wp_slimstat::$options['enable_javascript'], 'countries-languages') ?></span></p>
+		<p><?php _e('Javascript Mode', 'wp-slimstat-view') ?> <span><?php _e(wp_slimstat::$options['javascript_mode'], 'countries-languages') ?></span></p>
+		<p><?php _e('Tracking Browser Caps', 'wp-slimstat-view') ?> <span><?php _e(wp_slimstat::$options['enable_javascript'], 'countries-languages') ?></span></p>
 		<p><?php _e('Auto purge', 'wp-slimstat-view') ?> <span><?php echo (wp_slimstat::$options['auto_purge'] > 0)?wp_slimstat::$options['auto_purge'].' '.__('days','wp-slimstat-view'):__('No','wp-slimstat-view') ?></span></p>
 		<p><?php _e('Oldest pageview', 'wp-slimstat-view') ?> <span><?php $dt = wp_slimstat_db::get_oldest_visit('ASC'); echo ($dt == null)?__('No visits','wp-slimstat-view'):date(get_option('date_format'), $dt) ?></span></p>
 		<p>Geo IP <span><?php echo date(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/geoip.csv')) ?></span></p><?php

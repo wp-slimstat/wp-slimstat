@@ -3,11 +3,12 @@ msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: Camu <info@duechiacchiere.it>\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=iso-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
 
 msgid "yes"
 msgstr "Si"
@@ -23,6 +24,12 @@ msgstr "Sconosciuto"
 
 msgid "win7"
 msgstr "Windows 7"
+
+msgid "win8"
+msgstr "Windows 8"
+
+msgid "winphone7"
+msgstr "Windows Phone"
 
 msgid "winvista"
 msgstr "Windows Vista"
@@ -1613,7 +1620,7 @@ msgstr "Russo"
 msgid "l-ru-ru"
 msgstr "Russo/Russia"
 
-#Russian/Moldavia
+# Russian/Moldavia
 msgid "l-ru-mo"
 msgstr "Russo/Moldavia"
 
@@ -1700,4 +1707,3 @@ msgstr "Sconosciuto"
 # Unknown
 msgid "l-xx"
 msgstr "Sconosciuto"
-
