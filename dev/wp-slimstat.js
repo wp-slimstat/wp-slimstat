@@ -156,7 +156,7 @@ var SlimStat = {
 	},
 	
 	send_to_server : function (data_to_send, async) {
-		if (typeof slimstat_path == 'undefined' || typeof slimstat_blog_id == 'undefined' || typeof data_to_send == 'undefined'){
+		if (typeof SlimStatParams.path == 'undefined' || typeof  SlimStatParams.blog_id == 'undefined' || typeof data_to_send == 'undefined'){
 			return false;
 		}
 
@@ -173,9 +173,9 @@ var SlimStat = {
 			return false;
 		}
 		if (request) {
-			var data = "data="+SlimStat._base64_encode("bid="+slimstat_blog_id+"&is_slimstat=yes&"+data_to_send);
+			var data = "data="+SlimStat._base64_encode("bid="+ SlimStatParams.blog_id+"&is_slimstat=yes&"+data_to_send);
 			
-			if (typeof slimstat_tid == 'undefined'){
+			if (typeof  SlimStatParams.tid == 'undefined'){
 				request.onreadystatechange = function () {
 					if(request.readyState == 4){
 						parsed_tid = parseInt(request.responseText, 16);
@@ -184,9 +184,9 @@ var SlimStat = {
 				}
 			}
 			else
-				SlimStat._tid = slimstat_tid;
+				SlimStat._tid =  SlimStatParams.tid;
 
-			request.open('POST', slimstat_path+'/wp-slimstat-js.php', async);
+			request.open('POST',  SlimStatParams.path+'/wp-slimstat-js.php', async);
 			request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			request.send(data);
 
@@ -318,7 +318,7 @@ function ss_track (e, c, note){ SlimStat.ss_track(e, c, note); }
 function slimstat_plusone (obj) { SlimStat.send_to_server('ty=4&obr='+escape('#google-plus-'+obj.state), true); }
 
 // Attaches an event listener to all external links
-if (typeof slimstat_disable_outbound_tracking == 'undefined'){
+if (typeof SlimStatParams.disable_outbound_tracking == 'undefined'){
 	var links_in_this_page = document.getElementsByTagName("a");
 	for (var i=0; i<links_in_this_page.length; i++) {
 		if ((links_in_this_page[i].hostname == location.hostname) ||  (links_in_this_page[i].href.indexOf('://') == -1) || (links_in_this_page[i].className.indexOf('noslimstat') != -1)){
@@ -336,11 +336,11 @@ if (typeof slimstat_disable_outbound_tracking == 'undefined'){
 
 // Is Javascript Mode active?
 var current_data = '';
-if (typeof slimstat_tid != 'undefined' && parseInt(slimstat_tid, 16) >= 0 && typeof slimstat_session_id != 'undefined'){
-	current_data = "id="+slimstat_tid+"&sid="+slimstat_session_id;
+if (typeof SlimStatParams.tid != 'undefined' && parseInt(SlimStatParams.tid, 16) >= 0 && typeof SlimStatParams.session_id != 'undefined'){
+	current_data = "id="+SlimStatParams.tid+"&sid="+SlimStatParams.session_id;
 }
 else{
-	current_data = "ci="+slimstat_ci+"&ref="+SlimStat._base64_encode(document.referrer)+"&res="+SlimStat._base64_encode(window.location.href);
+	current_data = "ci="+SlimStatParams.ci+"&ref="+SlimStat._base64_encode(document.referrer)+"&res="+SlimStat._base64_encode(window.location.href);
 }
 
 // Gathers all the information and sends it to the server
