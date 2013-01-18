@@ -19,18 +19,6 @@ $array_panels = array(
 // What panel to display
 $current_panel = empty($_GET['slimpanel'])?1:intval($_GET['slimpanel']);
 
-function slimstat_error_message($_faulty_fields){
-	// Display an alert in the admin interface if something went wrong
-	echo '<div class="updated fade"><p>';
-	if (empty($_faulty_fields)){
-			_e('Your settings have been successfully updated.','wp-slimstat-options');
-	}
-	else{
-		_e('There was an error updating the following fields:','wp-slimstat-options');
-		echo ' <strong>'.substr($_faulty_fields,0,-2).'</strong>';
-	}
-	echo "</p></div>\n";
-}
 ?>
 <div class="wrap">
 	<div id="analytics-icon" class="icon32 <?php echo $wp_locale->text_direction ?>"></div>
@@ -44,6 +32,42 @@ function slimstat_error_message($_faulty_fields){
 ?>
 	</p>
 	<form action="<?php echo "$admin_page_url?page=wp-slimstat/admin/options/index.php&slimpanel=$current_panel" ?>" method="post">
-	<?php if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/admin/options/panel$current_panel.php")) include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/options/panel$current_panel.php"); ?>
+<?php
+	if (is_readable(WP_PLUGIN_DIR."/wp-slimstat/admin/options/panel$current_panel.php")) include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/options/panel$current_panel.php");
+
+	// Update the options, defined by the file here above
+	if (isset($_POST['options']) && isset($options_on_this_page)){
+		foreach($options_on_this_page as $_option_name => $_option_details){
+			wp_slimstat_admin::update_setting($_option_name, $_option_details);
+		}
+
+		if (!empty(wp_slimstat_admin::$faulty_fields)){
+			wp_slimstat_admin::show_alert_message(__('There was an error updating the following fields:','wp-slimstat-options').' '.implode(', ', wp_slimstat_admin::$faulty_fields), 'updated below-h2');
+		}
+		else{
+			wp_slimstat_admin::show_alert_message(__('Your settings have been successfully updated.','wp-slimstat-options'), 'updated below-h2');
+		}
+	}
+	
+	if (isset($options_on_this_page)):
+?>
+		<table class="form-table <?php echo $wp_locale->text_direction ?>">
+		<tbody>
+<?php
+			foreach($options_on_this_page as $_option_name => $_option_details){
+				wp_slimstat_admin::settings_table_row($_option_name, $_option_details);
+			}
+?>
+		</tbody>
+		</table>
+<?php
+		foreach($options_on_this_page as $_option_name => $_option_details){
+			wp_slimstat_admin::settings_textarea($_option_name, $_option_details);
+		}
+?>
+		<p class="submit"><input type="submit" value="<?php _e('Save Changes') ?>" class="button-primary" name="Submit"></p>	
 	</form>
+<?php 
+	endif;
+?>
 </div>
