@@ -180,14 +180,11 @@ class wp_slimstat{
 			$stat['searchterms'] = str_replace('\\', '', $_REQUEST['s']);
 			$stat['resource'] = ''; // Mark the resource to remember that this is a 'local search'
 		}
-		
-		// Do not track admin pages
-		if (strpos($stat['resource'], 'wp-content/') !== false ||
-			strpos($stat['resource'], 'wp-cron.php') !== false ||
-			strpos($stat['resource'], 'xmlrpc.php') !== false ||
-			strpos($stat['resource'], 'wp-comments-post.php') !== false){
-				self::$tid = -208;
-				return $_argument;
+
+		// Do not track the script itself
+		if (strpos($stat['resource'], 'wp-slimstat-js.php') !== false){
+			self::$tid = -208;
+			return $_argument;
 		}
 
 		// Is this resource blacklisted?
