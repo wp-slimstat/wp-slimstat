@@ -889,7 +889,6 @@ class wp_slimstat{
 		wp_enqueue_script('wp_slimstat');
 	}
 	// end wp_slimstat_javascript
-	// end wp_slimstat_javascript
 
 	/**
 	 * Adds some javascript data specific to this pageview
@@ -897,17 +896,21 @@ class wp_slimstat{
 	public static function wp_slimstat_js_data(){
 		$intval_tid = intval(self::$tid);
 		$slimstat_blog_id = (function_exists('is_multisite') && is_multisite())?$GLOBALS['wpdb']->blogid:1;
-		if (self::$options['javascript_mode'] != 'yes'){
-			$current_data = ($intval_tid >= 0)?"slimstat_tid='".base_convert($intval_tid, 10, 16)."';slimstat_session_id='".md5($intval_tid.self::$options['secret'])."';":'';
-		}
-		else{
-			$current_data = "slimstat_ci='".base64_encode(serialize(self::_get_content_info()))."';";
-		}
-		if (self::$options['enable_outbound_tracking'] == 'no')
-			$current_data .= 'slimstat_disable_outbound_tracking = true;';
 
-		echo "<script type='text/javascript'>{$current_data}slimstat_path='".home_url(self::$options['custom_js_path'], __FILE__)."';slimstat_blog_id='$slimstat_blog_id';</script>";
-		wp_print_scripts('wp_slimstat');
+		$params = array('path' => home_url(self::$options['custom_js_path'], __FILE__), 'blog_id' => $slimstat_blog_id);
+
+		if (self::$options['javascript_mode'] != 'yes' && $intval_tid >= 0){
+			$params['tid'] = base_convert($intval_tid, 10, 16);
+			$params['session_id'] = md5($intval_tid.self::$options['secret']);
+		}
+		if (self::$options['javascript_mode'] == 'yes'){
+			$params['ci'] = base64_encode(serialize(self::_get_content_info()));
+		}
+		if (self::$options['enable_outbound_tracking'] == 'no'){
+			$params['disable_outbound_tracking'] = 'true';
+		}
+
+		wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
 	}
 	// end wp_slimstat_js_data
 
