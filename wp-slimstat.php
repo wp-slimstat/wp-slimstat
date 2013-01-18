@@ -56,10 +56,16 @@ class wp_slimstat{
 			
 			// Don't track users with given capabilities
 			foreach(self::string_to_array(self::$options['ignore_capabilities']) as $a_capability){
-				if (array_key_exists(strtolower($a_capability), $GLOBALS['current_user']->allcaps)) return $_argument;
+				if (array_key_exists(strtolower($a_capability), $GLOBALS['current_user']->allcaps)){
+					self::$tid = -200;
+					return $_argument;
+				}
 			}
 
-			if (strpos(self::$options['ignore_users'], $GLOBALS['current_user']->data->user_login) !== false) return $_argument;
+			if (strpos(self::$options['ignore_users'], $GLOBALS['current_user']->data->user_login) !== false){
+				self::$tid = -201;
+				return $_argument;
+			}
 
 			$stat['user'] = $GLOBALS['current_user']->data->user_login;
 			$not_spam = true;
@@ -68,8 +74,10 @@ class wp_slimstat{
 			// Is this a spammer?
 			$spam_comment = $GLOBALS['wpdb']->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
 			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
-				if (self::$options['ignore_spammers'] == 'yes')
+				if (self::$options['ignore_spammers'] == 'yes'){
+					self::$tid = -202;
 					return $_argument;
+				}
 				else
 					$stat['user'] .= "[spam] {$spam_comment['comment_author']}";
 			}
@@ -79,7 +87,10 @@ class wp_slimstat{
 
 		// User's IP address
 		list($long_user_ip, $long_other_ip) = self::_get_ip2long_remote_ip();
-		if ($long_user_ip == 0) return $_argument;
+		if ($long_user_ip == 0){
+			self::$tid = -203;
+			return $_argument;
+		}
 
 		// Should we ignore this IP address?
 		foreach(self::string_to_array(self::$options['ignore_ip']) as $a_ip_range){
@@ -89,11 +100,13 @@ class wp_slimstat{
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
 			$long_masked_user_ip = $long_user_ip & $long_mask;
 			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
-			if ($long_masked_user_ip == $long_masked_ip_to_ignore) return $_argument;
+			if ($long_masked_user_ip == $long_masked_ip_to_ignore){
+				self::$tid = -204;
+				return $_argument;
+			}
 		}
 
 		// Avoid PHP warnings
-		$referer = array();
 		if (self::$options['anonymize_ip'] == 'yes'){
 			$long_user_ip = $long_user_ip&4294967040;
 			$long_other_ip = $long_other_ip&4294967040;
@@ -104,11 +117,18 @@ class wp_slimstat{
 		$stat['country'] = self::_get_country($stat['ip']);
 
 		// Country table not initialized
-		if ($stat['country'] === false) return $_argument;
+		if ($stat['country'] === false){
+			self::$tid = -205;
+			return $_argument;
+		}
 
 		// Is this country blacklisted?
-		if (stripos(self::$options['ignore_countries'], $stat['country']) !== false) return $_argument;
+		if (stripos(self::$options['ignore_countries'], $stat['country']) !== false){
+			self::$tid = -206;
+			return $_argument;
+		}
 
+		$referer = array();
 		if (isset($_SERVER['HTTP_REFERER']) || (is_array($_argument) && isset($_argument['is_slimstat']))){
 			$stat['referer'] = (is_array($_argument) && !empty($_argument['ref']))?base64_decode($_argument['ref']):$_SERVER['HTTP_REFERER'];
 			$referer = parse_url($stat['referer']);
@@ -130,16 +150,19 @@ class wp_slimstat{
 		if (!empty($stat['referer'])){
 			foreach(self::string_to_array(self::$options['ignore_referers']) as $a_filter){
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if (preg_match("/^$pattern$/i", $stat['referer'])) return $_argument;
+				if (preg_match("/^$pattern$/i", $stat['referer'])){
+					self::$tid = -207;
+					return $_argument;
+				}
 			}
 		}
 
 		// We want to record both hits and searches (performed through the site search form)
-		if (is_array($_argument) && isset($_argument['is_slimstat'])){
+		if (is_array($_argument) && isset($_argument['res'])){
 			$stat['searchterms'] = self::_get_search_terms($referer);
-			
-			$parsed_permalink = parse_url($_SERVER['HTTP_REFERER']);
-			$stat['resource'] = !is_array($parsed_permalink)?$_SERVER['HTTP_REFERER']:$parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
+
+			$parsed_permalink = parse_url(base64_decode($_argument['res']));
+			$stat['resource'] = !is_array($parsed_permalink)?$_argument['res']:$parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
 		}
 		elseif (empty($_REQUEST['s'])){
 			$stat['searchterms'] = self::_get_search_terms($referer);
@@ -162,13 +185,19 @@ class wp_slimstat{
 		if (strpos($stat['resource'], 'wp-content/') !== false ||
 			strpos($stat['resource'], 'wp-cron.php') !== false ||
 			strpos($stat['resource'], 'xmlrpc.php') !== false ||
-			strpos($stat['resource'], 'wp-comments-post.php') !== false) return $_argument;
+			strpos($stat['resource'], 'wp-comments-post.php') !== false){
+				self::$tid = -208;
+				return $_argument;
+		}
 
 		// Is this resource blacklisted?
 		if (!empty($stat['resource'])){
 			foreach(self::string_to_array(self::$options['ignore_resources']) as $a_filter){
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if (preg_match("/^$pattern$/i", $stat['resource'])) return $_argument;
+				if (preg_match("/^$pattern$/i", $stat['resource'])){
+					self::$tid = -209;
+					return $_argument;
+				}
 			}
 		}
 
@@ -176,6 +205,7 @@ class wp_slimstat{
 		if ((isset($_SERVER['HTTP_X_MOZ']) && (strtolower($_SERVER['HTTP_X_MOZ']) == 'prefetch')) ||
 			(isset($_SERVER["HTTP_X_PURPOSE"]) && (strtolower($_SERVER['HTTP_X_PURPOSE']) == 'preview'))){
 			if (self::$options['ignore_prefetch'] == 'yes'){
+				self::$tid = -210;
 				return $_argument;
 			}
 			else{
@@ -191,12 +221,18 @@ class wp_slimstat{
 		$browser = self::_get_browser();
 
 		// Are we ignoring bots?
-		if (self::$options['javascript_mode'] == 'yes' && $browser['type']%2 != 0) return $_argument;
+		if (self::$options['javascript_mode'] == 'yes' && $browser['type']%2 != 0){
+			self::$tid = -211;
+			return $_argument;
+		}
 		
 		// Is this browser blacklisted?
 		foreach(self::string_to_array(self::$options['ignore_browsers']) as $a_filter){
 			$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-			if (preg_match("/^$pattern$/i", $browser['browser'].'/'.$browser['version'])) return $_argument;
+			if (preg_match("/^$pattern$/i", $browser['browser'].'/'.$browser['version'])){
+				self::$tid = -212;
+				return $_argument;
+			}
 		}
 
 		// Is this a returning visitor?
@@ -240,7 +276,10 @@ class wp_slimstat{
 		do_action('slimstat_track_pageview', $stat, $browser, $content_info);
 		
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
-		if (empty($stat) || empty($stat['dt'])) return $_argument;
+		if (empty($stat) || empty($stat['dt'])){
+			self::$tid = -213;
+			return $_argument;
+		}
 
 		// Now let's save this information in the database
 		if (!empty($content_info)){

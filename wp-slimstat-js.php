@@ -175,7 +175,7 @@ if ($slimstat_options['javascript_mode'] == 'yes'){
 	wp_slimstat::slimtrack($data);
 
 	// Was this pageview tracked?
-	if (wp_slimstat::$tid < 0) exit('-100 : Visit filtered and not tracked');
+	if (wp_slimstat::$tid < 0) exit(wp_slimstat::$tid.' : Visit not tracked');
 
 	$stat['id'] = wp_slimstat::$tid;
 }

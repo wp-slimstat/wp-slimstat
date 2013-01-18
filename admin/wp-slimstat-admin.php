@@ -2,6 +2,7 @@
 
 class wp_slimstat_admin{
 	public static $admin_url = '';
+	public static $faulty_fields = array();
 
 	/**
 	 * Init -- Sets things up.
@@ -708,6 +709,50 @@ class wp_slimstat_admin{
 	 */
 	public static function show_alert_message($_message = '', $_type = 'update'){
 		echo "<div id='wp-slimstat-message' class='$_type'><p>$_message</p></div>";
+	}
+	
+	public static function update_setting($_option_name = '', $_option_details = array('description' =>'', 'type' => '')){
+		// Some options need a special treatment and are updated directly in panel.php
+		if (isset($_option_details['skip_update'])) return true;
+
+		if (isset($_POST['options'][$_option_name]) && !self::update_option($_option_name, $_POST['options'][$_option_name], $_option_details['type']))
+			self::$faulty_fields[] = $_option_details['description'];
+	}
+
+	public static function settings_table_row($_option_name = '', $_option_details = array()){
+		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
+
+		switch($_option_details['type']){
+			case 'yesno': ?>
+				<tr>
+					<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+					<td>
+						<span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat-options') ?>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+						<span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat-options') ?></span>
+						<span class="description"><?php echo $_option_details['long_description'] ?></span>
+					</td>
+				</tr><?php
+				break;
+			case 'text':
+			case 'integer': ?>
+				<tr>
+					<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+					<td>
+						<span class="block-element"><?php echo $_option_details['before_input_field'] ?><input type="<?php echo ($_option_details['type'] == 'integer')?'number':'text' ?>" class="<?php echo ($_option_details['type'] == 'integer')?'small-text':'regular-text' ?>" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="<?php echo wp_slimstat::$options[$_option_name] ?>"> <?php echo $_option_details['after_input_field'] ?></span>
+						<span class="description"><?php echo $_option_details['long_description'] ?></span>
+					</td>
+				</tr><?php
+				break;
+			default:
+		}
+	}
+
+	public static function settings_textarea($_option_name = '', $_option_details = array('description' =>'', 'type' => '', 'long_description' => '')){
+		if ($_option_details['type'] != 'textarea') return; ?>
+		
+		<h3><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></h3>
+		<p><?php echo $_option_details['long_description'] ?></p>
+		<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo stripslashes(wp_slimstat::$options[$_option_name]) ?></textarea></p><?php
 	}
 
 	/**

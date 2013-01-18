@@ -340,7 +340,7 @@ if (typeof slimstat_tid != 'undefined' && parseInt(slimstat_tid, 16) >= 0 && typ
 	current_data = "id="+slimstat_tid+"&sid="+slimstat_session_id;
 }
 else{
-	current_data = "ci="+slimstat_ci+"&ref="+SlimStat._base64_encode(document.referrer);
+	current_data = "ci="+slimstat_ci+"&ref="+SlimStat._base64_encode(document.referrer)+"&res="+SlimStat._base64_encode(window.location.href);
 }
 
 // Gathers all the information and sends it to the server
