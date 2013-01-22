@@ -18,6 +18,8 @@ function uninstall(){
 
 	// Goodbye options...
 	delete_option('slimstat_options');
+	delete_option('slimstat_visit_id');
+
 	$wpdb->query("DELETE FROM {$wpdb->prefix}usermeta WHERE meta_key LIKE '%wp-slimstat%'");
 
 	// Remove scheduled autopurge events

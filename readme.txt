@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.5
-Stable tag: 2.9
+Stable tag: 2.9.1
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -346,6 +346,10 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 * Heat maps
 * Daily Reports via email
 * "Internal" stats about your blog: post count, comments per post, average comment length, table sizes, etc
+
+= 2.9.1 =
+* Fixed: a few issues arose after the release of version 2.9, related to the new JavaScript Mode option introduced in that version. I would like to thank Ed Konn, Melinda Hightower and all the other users who patiently helped me figure out what the problem was and pointed me in the right direction. You guys rock!
+* Fixed: cleaned up the plugin's stylesheet
 
 = 2.9 =
 * Added: you've been asking for it and here you have it: Javascript-based tracking functionality (a-la Google Analytics). Go the plugin's settings page to activate it. A nice side effect is that the option to ignore bots is now even more effective, check it out! (thank you, [Drew](http://wordpress.org/support/topic/feature-request-for-next-release))

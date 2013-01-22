@@ -43,7 +43,7 @@ class wp_slimstat_admin{
 			if (wp_slimstat::$options['add_posts_column'] == 'yes'){
 				add_filter('manage_posts_columns', array(__CLASS__, 'add_column_header'));
 				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
-				add_action('admin_print_styles-edit.php', array(__CLASS__, 'wp_slimstat_stylesheet'));
+				add_action('admin_print_styles-edit.php', array(__CLASS__, 'wp_slimstat_stylesheet'), 20);
 			}
 
 			// Add some custom stylesheets

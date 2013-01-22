@@ -36,7 +36,7 @@ if ($ending_point + wp_slimstat_db::$filters['parsed']['limit_results'][1] < $co
 }
 
 // Display results
-echo "<div class='postbox tall'><div class='previous-next'>$previous_next</div><h3 class='hndle'>";
+echo "<div class='postbox tall slimstat'><div class='previous-next'>$previous_next</div><h3 class='hndle'>";
 if ($count_results == 0){
 	_e('No records found', 'wp-slimstat-view');
 }

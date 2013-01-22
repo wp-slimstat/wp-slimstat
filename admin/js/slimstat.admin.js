@@ -198,8 +198,7 @@ jQuery(function(){
 	});
 
 	// Slimstat Dashboard CSS Tweaks
-	jQuery('[id^=slim_]').addClass('slimstat');
-	jQuery('#slim_p1_01').removeClass('slimstat');
+	jQuery('#dashboard-widgets-wrap div[id^=slim_]').addClass('slimstat');
 
 	// Modal Window
 	if (typeof jQuery('#modal-dialog').dialog == 'function'){
