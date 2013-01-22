@@ -30,14 +30,16 @@ if (!is_wp_error( $rss ) ){
 <h3><?php _e("Need help?",'wp-slimstat-options') ?></h3>
 <p><?php _e("Please visit our official <a href='http://wordpress.org/support/plugin/wp-slimstat' target='_blank'>support forum</a> to see if your question has already been answered. If not, feel free to post your request there, I'll do my best to address your concerns as soon as possible.",'wp-slimstat-options') ?></p>
 
-<div class='postbox tall' style="height:250px;">
+<div class='postbox wide slimstat'>
 	<h3 class='hndle'><?php _e('Recent messages from the support forum', 'wp-slimstat-view'); ?></h3>
-	<div class="inside" style="height:225px">
+	<div class="inside">
 		<?php foreach ( $rss_items as $item ) : ?>
 		<p><a target="_blank" href="<?php echo esc_url( $item->get_permalink() ); ?>"><?php echo esc_html( $item->get_title() ).' ('.$item->get_date('j F Y | g:i a').')'; ?></a></p>
     <?php endforeach; ?>
 	</div>
 </div>
+
+<div style="clear:both"></div>
 
 <h3><?php _e("Don't want or cannot donate?",'wp-slimstat-options') ?></h3>
 <p><?php _e("If you cannot donate money, please consider blogging about WP SlimStat, your visitors may not know you're using it! You can also contribute by donating some of your spare time: send me bug reports, localization files and ideas on how to improve WP SlimStat.",'wp-slimstat-options') ?></p>
