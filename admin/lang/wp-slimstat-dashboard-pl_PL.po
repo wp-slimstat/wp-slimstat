@@ -1,0 +1,130 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 0.9.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-09-01 09:08-0500\n"
+"PO-Revision-Date: 2013-01-07 10:54+0100\n"
+"Last-Translator: KL <klew@o2.pl>\n"
+"Language-Team: EXPROMO <expromo@expromo.pl>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s;\n"
+"Language: pl_PL\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:75 wp-slimstat-dashboard.php:97
+#: wp-slimstat-dashboard.php:152 wp-slimstat-dashboard.php:171
+msgid "No data to display"
+msgstr "Brak danych do wyświetlenia"
+
+#: wp-slimstat-dashboard.php:80
+msgid "Last"
+msgstr "Ostatni"
+
+#: wp-slimstat-dashboard.php:82 wp-slimstat-dashboard.php:118
+#, php-format
+msgid "Open %s in a new window"
+msgstr "Otwórz %s w nowym oknie"
+
+#: wp-slimstat-dashboard.php:104
+msgid "Search for"
+msgstr "Szukaj"
+
+#: wp-slimstat-dashboard.php:112
+msgid "c-"
+msgstr "c-"
+
+#: wp-slimstat-dashboard.php:123
+msgid "Direct visit to"
+msgstr "Bezpośrednie wejścia na"
+
+#: wp-slimstat-dashboard.php:133 wp-slimstat-dashboard.php:136
+msgid "Pageviews"
+msgstr "Odsłony podstron"
+
+#: wp-slimstat-dashboard.php:133 wp-slimstat-dashboard.php:137
+msgid "Unique IPs"
+msgstr "Unikalne IP"
+
+#: wp-slimstat-dashboard.php:138
+msgid "Bots"
+msgstr "Roboty"
+
+#: wp-slimstat-dashboard.php:139
+msgid "Avg Pageviews"
+msgstr "Średnio odsłon"
+
+#: wp-slimstat-dashboard.php:140 wp-slimstat-dashboard.php:141
+msgid "On"
+msgstr "W dniu"
+
+#: wp-slimstat-dashboard.php:142
+msgid "Last Month"
+msgstr "ostatnim miesiącu"
+
+#: wp-slimstat-dashboard.php:159
+msgid "Hits"
+msgstr "Wywołania"
+
+#: wp-slimstat-dashboard.php:194
+msgid "Top pages for this month"
+msgstr "Najczęściej odwiedzane podstrony w tym miesiącu"
+
+#: wp-slimstat-dashboard.php:195
+msgid "Spy View"
+msgstr "Tryb podglądu"
+
+#: wp-slimstat-dashboard.php:196
+msgid "Summary for this month"
+msgstr "Podsumowanie na ten miesiąc"
+
+#: wp-slimstat-dashboard.php:197
+msgid "User Agents"
+msgstr "Przeglądarki"
+
+#: wp-slimstat-dashboard.php:198
+msgid "Recent Keywords"
+msgstr "Ostatnie słowa kluczowe"
+
+#~ msgid "Total Hits"
+#~ msgstr "Summe Zugriffe"
+
+#~ msgid "Data Size"
+#~ msgstr "Datenbankgr&ouml;&szlig;e"
+
+#~ msgid "Tracking Active"
+#~ msgstr "Slimstat aktiv"
+
+#~ msgid "Auto purge"
+#~ msgstr "automatischer Reorg"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Ziel in einem neuen Fenster &ouml;ffnen"
+
+#~ msgid "Top 5 pages"
+#~ msgstr "Top 5"
+
+#~ msgid "Pathstats"
+#~ msgstr "DIGO TODO * Pathstats"
+
+#~ msgid "About"
+#~ msgstr "&Uuml;ber"
+
+#~ msgid "Summary of pageviews"
+#~ msgstr "Zusammenfassung Seitenaufrufe"
+
+#~ msgid "Traffic Sources"
+#~ msgstr "Traffic-Quellen"
+
+#~ msgid "Recent Keywords &raquo; Pages"
+#~ msgstr "aktuelle Suchw&ouml;rter &raquo; Seiten"
+
+#~ msgid "Analytics"
+#~ msgstr "Statistiche"
+
+#~ msgid "Options"
+#~ msgstr "Opzioni"
