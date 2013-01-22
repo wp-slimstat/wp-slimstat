@@ -312,8 +312,6 @@ class wp_slimstat_js{
 
 wp_slimstat_js::init_environment();
 if (wp_slimstat_js::$options['javascript_mode'] == 'yes'){
-
-	// Trick Wordpress into thinking this is the activation routine, so that no plugins are loaded
 	include_once(wp_slimstat_js::$wp_config_path);
 	include_once('./wp-slimstat.php');
 
