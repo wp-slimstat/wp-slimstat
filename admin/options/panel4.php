@@ -14,7 +14,7 @@ if (isset($_POST['options'])){
 	if (!empty($_POST['options']['can_view'])){
 		// Make sure all the users exist in the system 
 		$user_array = wp_slimstat::string_to_array($_POST['options']['can_view']);
-		$sql_user_list = "'".implode("','", $user_array)."'";
+		$sql_user_list = "'".implode("' COLLATE utf8_bin,'", $user_array)."' COLLATE utf8_bin";
 		if ($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array)){
 			if (!wp_slimstat_admin::update_option('can_view', $_POST['options']['can_view'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Read access','wp-slimstat-options');
 		}
@@ -41,7 +41,7 @@ if (isset($_POST['options'])){
 	if (!empty($_POST['options']['can_admin'])){
 		// Make sure all the users exist in the system 
 		$user_array = wp_slimstat::string_to_array($_POST['options']['can_admin']);
-		$sql_user_list = "'".implode("','", $user_array)."'";
+		$sql_user_list = "'".implode("' COLLATE utf8_bin,'", $user_array)."' COLLATE utf8_bin";
 		if ($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array)){
 			if (!wp_slimstat_admin::update_option('can_admin', $_POST['options']['can_admin'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Config access','wp-slimstat-options');
 		}
