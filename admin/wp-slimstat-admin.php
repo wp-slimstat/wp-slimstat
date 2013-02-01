@@ -130,7 +130,7 @@ class wp_slimstat_admin{
 				screenres_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 1,
 				content_info_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 1,
 				plugins VARCHAR(255) DEFAULT '',
-				notes VARCHAR(512) DEFAULT '',
+				notes VARCHAR(2048) DEFAULT '',
 				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
 				PRIMARY KEY id (id)
@@ -148,7 +148,7 @@ class wp_slimstat_admin{
 		// A lookup table for browsers can help save some space
 		$browsers_table_sql =
 			"CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_browsers (
-				browser_id SMALLINT UNSIGNED NOT NULL auto_increment,
+				browser_id MEDIUMINT UNSIGNED NOT NULL auto_increment,
 				browser VARCHAR(40) DEFAULT '',
 				version VARCHAR(15) DEFAULT '',
 				platform VARCHAR(15) DEFAULT '',
@@ -172,12 +172,13 @@ class wp_slimstat_admin{
 		// A lookup table to store content information
 		$content_info_table_sql =
 			"CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_content_info (
-				content_info_id MEDIUMINT UNSIGNED NOT NULL auto_increment,
+				content_info_id INT UNSIGNED NOT NULL auto_increment,
 				content_type VARCHAR(64) DEFAULT '',
 				category VARCHAR(256) DEFAULT '',
 				author VARCHAR(64) DEFAULT '',
+				content_id BIGINT(20) UNSIGNED DEFAULT 0,
 				PRIMARY KEY (content_info_id),
-				UNIQUE KEY unique_content_info (content_type(30), category(30), author(30))
+				UNIQUE KEY unique_content_info (content_type(20), category(20), author(20), content_id)
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
@@ -294,6 +295,9 @@ class wp_slimstat_admin{
 			// Move the information about 'prefetched pages' to the newly created field
 			$GLOBALS['wpdb']->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET notes = '[pre]', resource = SUBSTRING(resource, 6) WHERE resource LIKE '[PRE]%'");
 		}
+		else{
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats MODIFY notes VARCHAR(2048)");
+		}
 		// END: WP_SLIM_STATS
 
 		// WP_SLIM_BROWSERS
@@ -348,6 +352,21 @@ class wp_slimstat_admin{
 		if ($count_content_info == 0){
 			$GLOBALS['wpdb']->query("INSERT INTO {$GLOBALS['wpdb']->base_prefix}slim_content_info (author) VALUES ('admin')");
 			$GLOBALS['wpdb']->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET content_info_id = 1 WHERE content_info_id = 0");
+		}
+
+		$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->prefix}slim_content_info", ARRAY_A);
+		$content_id_exists = false;
+
+		foreach($table_structure as $a_row){
+			if ($a_row['Field'] == 'content_id'){
+				$content_id_exists = true;
+				break;
+			}
+		}
+		if (!$content_id_exists){ // New column added in version 2.9.2
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD COLUMN content_id BIGINT(20) UNSIGNED DEFAULT 0 AFTER author");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info DROP KEY unique_content_info");
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD UNIQUE KEY unique_content_info (content_type(30), category(30), author(30), content_id)");
 		}
 		// END: WP_SLIM_CONTENT_INFO
 
@@ -464,6 +483,12 @@ class wp_slimstat_admin{
 			self::update_option('restrict_authors_view', 'no', 'yesno');
 		}
 		// --- END: Updates for version 2.9 ---
+		
+		// --- Updates for version 2.9.2 ---
+		if (!isset(wp_slimstat::$options['async_load'])){
+			self::update_option('async_load', 'no', 'yesno');
+		}
+		// --- END: Updates for version 2.9.2 ---
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){

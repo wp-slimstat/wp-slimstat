@@ -9,7 +9,7 @@ $chart_data = wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DIST
 foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 	switch($a_box_id){
 		case 'slim_p1_01':
-			wp_slimstat_boxes::box_header('slim_p1_01', wp_slimstat_boxes::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_boxes::chart_title(__('Pageviews', 'wp-slimstat-view')));
+			wp_slimstat_boxes::box_header('slim_p1_01', wp_slimstat_boxes::$chart_tooltip, 'wide chart', false, 'noscroll', wp_slimstat_boxes::chart_title(__('Pageviews', 'wp-slimstat-view')));
 			wp_slimstat_boxes::show_chart('slim_p1_01', $chart_data, array(__('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 			wp_slimstat_boxes::box_footer();
 			break;

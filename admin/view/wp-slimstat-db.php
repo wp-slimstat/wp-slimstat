@@ -264,11 +264,11 @@ class wp_slimstat_db {
 				) AS ts1'));
 	}
 
-	public static function count_records($_where_clause = '1=1', $_distinct_column = '*', $_use_filters = true, $_join_tables = '', $_use_date_filters = true){
+	public static function count_records($_where_clause = '1=1', $_distinct_column = '*', $_use_filters = true, $_tables_to_join = '', $_use_date_filters = true){
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT($column) count
-				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_join_tables).'
+				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_tables_to_join).'
 				WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').' '.($_use_date_filters?self::$filters['date_sql_where']:'')));
 	}
 
@@ -370,6 +370,9 @@ class wp_slimstat_db {
 			'ticks' => '', 'markings' => ''
 		);
 		$data = array();
+
+		$reset_timezone = date_default_timezone_get();
+		date_default_timezone_set('UTC');
 
 		$time_constraints = '(dt BETWEEN '.self::$timeframes['current_utime_start'].' AND '.self::$timeframes['current_utime_end'].' OR dt BETWEEN '.self::$timeframes['previous_utime_start'].' AND '.self::$timeframes['previous_utime_end'].')';
 		$data['count_offset'] = 0;
@@ -543,6 +546,8 @@ class wp_slimstat_db {
 			}
 		}
 
+		date_default_timezone_set($reset_timezone);
+
 		$result['current']['data1'] = substr($result['current']['data1'], 0, -1);
 		$result['current']['data2'] = substr($result['current']['data2'], 0, -1);
 		$result['previous']['data'] = substr($result['previous']['data'], 0, -1);
@@ -620,7 +625,7 @@ class wp_slimstat_db {
 			$sql_from .= ' INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_browsers tb ON t1.browser_id = tb.browser_id';
 
 		if (($_ignore_empty || empty(self::$filters['sql_from']['screenres'])) && strpos($_sql_tables, 'tss.') !== false)
-			$sql_from .=  ' INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_screenres tss ON t1.screenres_id = tss.screenres_id';
+			$sql_from .=  ' LEFT JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_screenres tss ON t1.screenres_id = tss.screenres_id';
 
 		if (($_ignore_empty || empty(self::$filters['sql_from']['content_info'])) && strpos($_sql_tables, 'tci.') !== false)
 			$sql_from .=  ' INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_content_info tci ON t1.content_info_id = tci.content_info_id';

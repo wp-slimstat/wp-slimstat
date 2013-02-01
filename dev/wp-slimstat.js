@@ -1,15 +1,15 @@
 var SlimStat = {
 	// Private Properties
-	_tid : -1,
+	_id : -1,
 	_base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
 	_plugins : {
 		acrobat: { substrings: [ "Adobe", "Acrobat" ], active_x_strings: [ "AcroPDF.PDF", "PDF.PDFCtrl.5" ] },
 		director: { substrings: [ "Shockwave", "Director" ], active_x_strings: [ "SWCtl.SWCtl" ] },
-		flash: { substrings: [ "Shockwave", "Flash" ], active_x_strings: [ "ShockwaveFlash.ShockwaveFlash" ] },	
+		flash: { substrings: [ "Shockwave", "Flash" ], active_x_strings: [ "ShockwaveFlash.ShockwaveFlash" ] },
 		java: { substrings: [ "Java" ], active_x_strings: [ "JavaWebStart.isInstalled" ] },
 		mediaplayer: { substrings: [ "Windows Media" ], active_x_strings: [ "WMPlayer.OCX" ] },
-		quicktime: { substrings: [ "QuickTime" ], active_x_strings: [ "QuickTime.QuickTime" ] },	
-		real: { substrings: [ "RealPlayer" ], active_x_strings: [ "rmocx.RealPlayer G2 Control", "RealPlayer.RealPlayer(tm) ActiveX Control (32-bit)", "RealVideo.RealVideo(tm) ActiveX Control (32-bit)" ] },	
+		quicktime: { substrings: [ "QuickTime" ], active_x_strings: [ "QuickTime.QuickTime" ] },
+		real: { substrings: [ "RealPlayer" ], active_x_strings: [ "rmocx.RealPlayer G2 Control", "RealPlayer.RealPlayer(tm) ActiveX Control (32-bit)", "RealVideo.RealVideo(tm) ActiveX Control (32-bit)" ] },
 		silverlight: { substrings: [ "Silverlight" ], active_x_strings: [ "AgControl.AgControl" ] }
 	},
 
@@ -42,7 +42,7 @@ var SlimStat = {
 
 	_utf8_encode : function (string) {
 		var n, c, utftext = "";
-		
+
 		string = string.replace(/\r\n/g,"\n");
 
 		for (n = 0; n < string.length; n++) {
@@ -66,7 +66,7 @@ var SlimStat = {
 
 	_detect_single_plugin : function (plugin_name) {
 		var plugin, haystack, found, i, j;
-		
+
 		try {
 			if (navigator.plugins) {
 				for (i in navigator.plugins) {
@@ -87,16 +87,16 @@ var SlimStat = {
 		} catch (e) {}
 		return false;
 	},
-	
+
 	_detect_single_plugin_ie : function (plugin_name) {
 		var i;
-	
+
 		for (i in SlimStat._plugins[plugin_name].active_x_strings) {
 			if (detect_active_x_control(SlimStat._plugins[plugin_name].active_x_strings[i])) return true;
 		}
 		return false;
 	},
-	
+
 	detect_plugins : function () {
 		var a_plugin, plugins = "";
 
@@ -108,7 +108,7 @@ var SlimStat = {
 
 		return plugins;
 	},
-	
+
 	// From http://www.useragentman.com/blog/2009/11/29/how-to-detect-font-smoothing-using-javascript/
 	has_smoothing : function () {
 		// IE has screen.fontSmoothingEnabled - sweet!
@@ -154,9 +154,9 @@ var SlimStat = {
 			}
 		}
 	},
-	
+
 	send_to_server : function (data_to_send, async) {
-		if (typeof SlimStatParams.path == 'undefined' || typeof  SlimStatParams.blog_id == 'undefined' || typeof data_to_send == 'undefined'){
+		if (typeof SlimStatParams.ajaxurl == 'undefined' || typeof  SlimStatParams.blog_id == 'undefined' || typeof data_to_send == 'undefined'){
 			return false;
 		}
 
@@ -173,32 +173,32 @@ var SlimStat = {
 			return false;
 		}
 		if (request) {
-			var data = "data="+SlimStat._base64_encode("bid="+ SlimStatParams.blog_id+"&is_slimstat=yes&"+data_to_send);
-			
-			if (typeof  SlimStatParams.tid == 'undefined'){
+			var data = "action=slimtrack_js&nonce="+SlimStatParams.nonce+"&data="+SlimStat._base64_encode("bid="+ SlimStatParams.blog_id+"&"+data_to_send);
+
+			if (typeof  SlimStatParams.id == 'undefined'){
 				request.onreadystatechange = function () {
 					if(request.readyState == 4){
-						parsed_tid = parseInt(request.responseText, 16);
-						if (!isNaN(parsed_tid) && parsed_tid > 0) SlimStat._tid = request.responseText;
+						parsed_id = parseInt(request.responseText);
+						if (!isNaN(parsed_id) && parsed_id > 0) SlimStat._id = request.responseText;
 					}
 				}
 			}
 			else
-				SlimStat._tid =  SlimStatParams.tid;
+				SlimStat._id =  SlimStatParams.id;
 
-			request.open('POST',  SlimStatParams.path+'/wp-slimstat-js.php', async);
+			request.open('POST', SlimStatParams.ajaxurl, async);
 			request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			request.send(data);
 
 			return true;
-		}	
+		}
 		return false;
 	},
-	
+
 	ss_track : function (e, c, note) {
-		// Do nothing if we don't have a valid SlimStat._tid
-		if (SlimStat._tid < 0) return true;
-	
+		// Do nothing if we don't have a valid SlimStat._id
+		if (SlimStat._id < 0) return true;
+
 		// Check function params
 		if (typeof e == 'undefined') var e = window.event;
 		var code = (typeof c == 'undefined')?0:parseInt(c);
@@ -250,7 +250,7 @@ var SlimStat = {
 					node_hostname = (typeof node.hostname != 'undefined')?node.hostname:'';
 					if (typeof node.href != 'undefined') {
 						node_pathname = escape(node.href);
-					}				
+					}
 				}
 
 				// If this element has a title, we can record that as well
@@ -279,14 +279,13 @@ var SlimStat = {
 		note_array.push('Event:'+e.type);
 		if (typeof note != 'undefined' && note.length > 0) note_array.push(note);
 
-		if (e.type != 'click' && typeof(e.which) != 'undefined') {
+		if (e.type != 'click' && typeof(e.which) != 'undefined'){
 			if (e.type == 'keypress')
 				note_array.push('Key:'+String.fromCharCode(parseInt(e.which)));
 			else
 				note_array.push('Type:'+e.which);
 		}
-
-		SlimStat.send_to_server("id="+SlimStat._tid+"&ty="+code+slimstat_info+"&no="+escape(note_array.join(', ')), async);
+		SlimStat.send_to_server("id="+SlimStat._id+"&ty="+code+slimstat_info+"&no="+escape(note_array.join(', ')), async);
 		return true;
 	}
 }
@@ -336,8 +335,8 @@ if (typeof SlimStatParams.disable_outbound_tracking == 'undefined'){
 
 // Is Javascript Mode active?
 var current_data = '';
-if (typeof SlimStatParams.tid != 'undefined' && parseInt(SlimStatParams.tid, 16) >= 0 && typeof SlimStatParams.session_id != 'undefined'){
-	current_data = "id="+SlimStatParams.tid+"&sid="+SlimStatParams.session_id;
+if (typeof SlimStatParams.id != 'undefined'){
+	current_data = "id="+SlimStatParams.id;
 }
 else{
 	current_data = "ci="+SlimStatParams.ci+"&ref="+SlimStat._base64_encode(document.referrer)+"&res="+SlimStat._base64_encode(window.location.href);

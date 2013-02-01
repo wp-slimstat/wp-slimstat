@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.5
-Stable tag: 2.9.1
+Stable tag: 2.9.2
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -67,17 +67,9 @@ WP SlimStat's tracking engine has a server-side component, which records all the
 and a client-side component, which collects extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
 clicks and the events they trigger. 
 
-One of the files responsible for taking care of this is `wp-slimstat-js.php`, usually located inside your */wp-content/plugins/wp-slimstat/* folder.
-Point your browser to that file directly: if you see a 404 or 500 error message (or a blank page) you will need to fix that problem, to allow WP SlimStat to do its job.
-The error message you should be getting is *Invalid data format*, which is the expected behavior.
-
-If you moved your *wp-config.php* to a different location, create a file called wp-slimstat-config.php in your wp-content folder. There you will define a variable
-called $wp_config_path which contains the absolute path to your wp-config.php, i.e. something like:
-
-`$wp_config_path = "/var/www/my-secret-folder/wp-config.php";`
-
-If you are now allowing access to your wp-content/plugins folder, wp-slimstat-js.php will have to be moved to a different location.
-After you do that, create a file called wp-slimstat-config.php *in the same folder* where you put wp-slimstat-js.php, and follow the instructions here above.
+One of the files responsible for taking care of this is `admin-ajax.php`, usually located inside your */wp-admin/* folder.
+Point your browser to that file directly: if you see an error 404 or 500, then you will need to fix that problem, to allow WP SlimStat to do its job.
+If you see the number zero, then you're fine.
 
 = I am using W3 Total Cache/WP Super Cache, and it looks like your plugin is not tracking all of my visitors. Can you help me? =
 Simply go to Settings > SlimStat and enable the option Javascript Mode. WP SlimStat will only track human visitors (just like Google Analytics does, pretty much), but its accuracy will dramatically improve.
@@ -88,7 +80,7 @@ Try [to increase the amount of memory](http://codex.wordpress.org/Editing_wp-con
 = When trying to access any of options screens, I get the following error: You do not have sufficient permissions to access this page. =
 You were playing with the plugin's permission settings, weren't you? But don't worry, there's a secret passage that will allow you to unlock your access. Create a new user `slimstatadmin`, and assign him the Administrator role. Then log into your WordPress admin area with the new user and... voila: you can now access WP SlimStat's settings again. Update your users' permissions and then get rid of this newly created user.
 
-= I'm very surprised by the discrepancies between Google Analytics, Jetpack Stats and Slimstat. Why is that? =
+= Why do I see discrepancies between Google Analytics, Jetpack Stats and Slimstat? =
 Both Jetpack and GA use Javascript to track visitors. All the other pageviews are ignored, because search engines and other crawlers don't execute that client-side code.
 
 WP SlimStat, on the other side, has a server-based tracking engine, which can capture *all* of your visitors, both 'humans' and 'bots'. That's the main reason why you may see more (some times much more) traffic recorded by WP SlimStat. 
@@ -226,10 +218,11 @@ echo wp_slimstat_db::count_records('1=1', '*', false);`
 
 *Available methods*
 
-* `count_records($where_clause = '1=1', $column = '*', $use_filters = true)` - returns the number of records matching your criteria
+* `count_records($where_clause = '1=1', $column = '*', $use_filters = true, $use_date_filters = true)` - returns the number of records matching your criteria
  * **$where_clause** is the one used in the SQL query
  * **$column**, if specified, will count DISTINCT values
  * **$use_filters** can be true or false, it enables or disables previously set filters (useful to count ALL the records in the database, since by default a filter for the current month is enabled)
+ * **$use_date_filters** can be set to false to count ALL the pageviews from the beginning of time
 * `count_bouncing_pages()` - returns the number of [pages that 'bounce'](http://en.wikipedia.org/wiki/Bounce_rate#Definition)
 * `count_exit_pages()` - returns the number of [exit pages](http://support.google.com/analytics/bin/answer.py?hl=en&answer=2525491)
 * `get_recent($column = 'id', $custom_where = '', $join_tables = '', $having_clause = '')` - returns recent results matching your criteria
@@ -341,11 +334,9 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 
 == Changelog ==
 
-= Planned features =
-* Antiflood monitor and database monitor
-* Heat maps
-* Daily Reports via email
-* "Internal" stats about your blog: post count, comments per post, average comment length, table sizes, etc
+= 2.9.2 =
+* Added: asynchronous views, to make your stats load faster (even on your Wordpress Dashboard). Enable it under Settings > Views
+* Added: posts and pages' IDs are now being tracked as well, so that you can keep analyzing your traffic even if your permalink structure changes (thank you, [Clifford Paulick](http://wordpress.org/support/topic/current-posts-stats))
 
 = 2.9.1 =
 * Fixed: a few issues arose after the release of version 2.9, related to the new JavaScript Mode option introduced in that version. I would like to thank Ed Konn, Melinda Hightower and all the other users who patiently helped me figure out what the problem was and pointed me in the right direction. You guys rock!

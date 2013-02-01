@@ -1,4 +1,5 @@
-﻿var SlimStatAdmin = {
+﻿if (typeof SlimStatParams == 'undefined') SlimStatParams = {'filters_string': '', 'async_load': 'no'};
+var SlimStatAdmin = {
 	data: [],
 	ticks: [],
 	options: [],
@@ -21,15 +22,15 @@
 			xaxis: {
 				tickSize: 1,
 				tickDecimals: 0,
-				ticks: (SlimStatAdmin.options['interval'] > 0 && SlimStatAdmin.ticks.length > 20) ? [] : SlimStatAdmin.ticks,
+				ticks: (SlimStatAdmin.options.interval > 0 && SlimStatAdmin.ticks.length > 20) ? [] : SlimStatAdmin.ticks,
 				zoomRange: [5, SlimStatAdmin.ticks.length],
 				panRange: [0, SlimStatAdmin.ticks.length]
 			},
 			yaxis: {
 				tickDecimals: 0,
-				max: SlimStatAdmin.options['max_yaxis']+1,
-				zoomRange: [5, SlimStatAdmin.options['max_yaxis']+1],
-				panRange:[0, SlimStatAdmin.options['max_yaxis']+1]
+				max: SlimStatAdmin.options.max_yaxis+1,
+				zoomRange: [5, SlimStatAdmin.options.max_yaxis+1],
+				panRange:[0, SlimStatAdmin.options.max_yaxis+1]
 			},
 			grid: {
 				backgroundColor: '#ffffff',
@@ -69,11 +70,11 @@
 
 		SlimStatAdmin._placeholder.bind('plotclick', function(event, pos, item){
 			if (item && typeof item.series.label != 'undefined'){
-				if (item.seriesIndex == 1 && typeof SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options['rtl_filler_previous']][2] != 'undefined'){
-					document.location.href = SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options['rtl_filler_previous']][2].replace(/&amp;/gi,'&');
+				if (item.seriesIndex == 1 && typeof SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_previous][2] != 'undefined'){
+					document.location.href = SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_previous][2].replace(/&amp;/gi,'&');
 				}
-				if (item.seriesIndex != 1 && typeof SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options['rtl_filler_current']][2] != 'undefined'){
-					document.location.href = SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options['rtl_filler_current']][2].replace(/&amp;/gi,'&');
+				if (item.seriesIndex != 1 && typeof SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_current][2] != 'undefined'){
+					document.location.href = SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_current][2].replace(/&amp;/gi,'&');
 				}
 			}
 		});
@@ -87,6 +88,33 @@
 
 		SlimStatAdmin._placeholder.bind('plotpan', SlimStatAdmin.chart_color_weekends);
 	},
+	
+	load_ajax_data : function(box_id, data){
+		jQuery.post(ajaxurl, data, function(response){
+			jQuery(box_id + ' .inside').html(response);
+			if (box_id.indexOf('_01') > 0) SlimStatAdmin.chart_init();
+			SlimStatAdmin.expand_row_details(box_id);
+			SlimStatAdmin.enable_inline_help(box_id);
+		});
+	},
+	
+	expand_row_details : function(box_id){
+		jQuery(box_id+' .inside p:not(.header)').hover(
+			function(){
+				if (this.title.length){
+					this.savetitle = this.title;
+					jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
+					this.title = '';
+				}
+			},
+			function(){
+				if (jQuery('#wp-element-details').is('*')){
+					this.title = this.savetitle;
+					jQuery('#wp-element-details').remove();
+				}
+			}
+		);
+	},
 
 	show_tooltip : function(x, y, content, class_label, minus){
 		var class_attribute = class_label ? ' class="'+class_label+'"':'';
@@ -96,6 +124,21 @@
 			top:y+10,
 			left:minus?x-jQuery("#jquery-tooltip").width()-10:x+10,
 		}).fadeIn(200);
+	},
+	
+	enable_inline_help : function(box_id){
+		if (box_id.length > 0) box_id += ' ';
+		jQuery(box_id + '.inline-help').hover(
+				function(event){
+					this.savetitle = this.title;
+					SlimStatAdmin.show_tooltip(event.pageX, event.pageY, this.title, 'tooltip-fixed-width');
+					this.title = '';
+				},
+				function(){
+					this.title = this.savetitle;
+					jQuery('#jquery-tooltip').remove();
+				}
+		);
 	},
 
 	chart_tick_format : function(n){
@@ -111,8 +154,8 @@
 	},
 	
 	chart_color_weekends: function(){
-		if (SlimStatAdmin.options['daily_chart']) jQuery(".xAxis .tickLabel").each(function(i){
-			myDate = new Date(SlimStatAdmin.options['current_year'], SlimStatAdmin.options['current_month']-1, parseInt(jQuery(this).html()), 3, 30, 0);
+		if (SlimStatAdmin.options.daily_chart) jQuery(".xAxis .tickLabel").each(function(i){
+			myDate = new Date(SlimStatAdmin.options.current_year, SlimStatAdmin.options.current_month-1, parseInt(jQuery(this).html()), 3, 30, 0);
 			if(myDate.getDay()%6 == 0) jQuery(this).css('color','#ccc');
 		});
 	},
@@ -126,8 +169,6 @@
 	}
 };
 jQuery(function(){
-	if (jQuery("#chart-placeholder").length) SlimStatAdmin.chart_init();
-
 	jQuery('.box-help').hover(
 			function(event){
 				element_class = (this.id.length)?'tooltip-'+this.id:'tooltip-fixed-width';
@@ -141,59 +182,29 @@ jQuery(function(){
 			}
 	);
 
-	jQuery('.inline-help').hover(
-			function(event){
-				this.savetitle = this.title;
-				SlimStatAdmin.show_tooltip(event.pageX, event.pageY, this.title, 'tooltip-fixed-width');
-				this.title = '';
-			},
-			function(){
-				this.title = this.savetitle;
-				jQuery('#jquery-tooltip').remove();
-			}
-	);
-
-	jQuery('.inside p:not(.header)').hover(
-		function(){
-			if (this.title.length){
-				this.savetitle = this.title;
-				jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
-				SlimStatAdmin.attach_whois_modal();
-				this.title = '';
-			}
-		},
-		function(){
-			if (jQuery('#wp-element-details').is('*')){
-				this.title = this.savetitle;
-				jQuery('#wp-element-details').remove();
-			}
+	jQuery('div[id^=slim_]').each(function(){
+		var box_id = '#'+jQuery(this).attr('id');
+		if (typeof SlimStatParams.async_load != 'undefined' && SlimStatParams.async_load == 'yes'){
+			var data = {action: 'slimstat_load_report', fs: SlimStatParams.filters_string, box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
+			SlimStatAdmin.load_ajax_data(box_id, data);
 		}
-	);
+		else{
+			SlimStatAdmin.expand_row_details(box_id);
+		}
+	});
+	
+	if ((typeof SlimStatParams.async_load == 'undefined' || SlimStatParams.async_load != 'yes') && jQuery('#chart-placeholder').length > 0){
+		SlimStatAdmin.chart_init();
+		SlimStatAdmin.enable_inline_help('');
+	}
 
 	jQuery('input.hide-postbox-tog[id^=slim_]').bind('click.postboxes', function (){
 		var box_id = '#'+jQuery(this).val();
-		if (typeof SlimStatAdmin.options['filters_string'] == 'undefined') SlimStatAdmin.options['filters_string'] = '';
-		jQuery(box_id+' .inside').html('<p class="nodata loading"></p>');
-		var data = {action: 'slimstat_load_report', fs: SlimStatAdmin.options['filters_string'], box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
+		var data = {action: 'slimstat_load_report', fs: SlimStatParams.filters_string, box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
+		jQuery(box_id+' .inside').html('<p class="loading"></p>');
+
 		if (jQuery(this).prop("checked") && jQuery('#'+jQuery(this).val()).length){
-			jQuery.post(ajaxurl, data, function(response){
-				jQuery(box_id+' .inside').html(response);
-				jQuery(box_id+' .inside p:not(.header)').hover(
-					function(){
-						if (this.title.length){
-							this.savetitle = this.title;
-							jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
-							this.title = '';
-						}
-					},
-					function(){
-						if (jQuery('#wp-element-details').is('*')){
-							this.title = this.savetitle;
-							jQuery('#wp-element-details').remove();
-						}
-					}
-				);
-			});
+			SlimStatAdmin.load_ajax_data(box_id, data);
 		}
 	});
 

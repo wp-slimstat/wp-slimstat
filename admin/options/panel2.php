@@ -4,6 +4,7 @@ if (!function_exists('add_action')) exit(0);
 
 $options_on_this_page = array(
 	'convert_ip_addresses' => array('description' => __('Convert IP Addresses','wp-slimstat-options'), 'type' => 'yesno', 'long_description' => __('View hostnames instead of IP addresses. It slows down the rendering of your metrics.','wp-slimstat-options')),
+	'async_load' => array('description' => __('Asynchronous Views','wp-slimstat-options'), 'type' => 'yesno', 'long_description' => __('Use Ajax to load all the stats at runtime. It makes the panels show up faster, but it increases the load on your server.','wp-slimstat-options')),
 	'use_european_separators' => array('description' => __('Number Format','wp-slimstat-options'), 'type' => 'yesno', 'long_description' => __('Choose what number format you want to use, European or American.','wp-slimstat-options'), 'custom_label_yes' => '1.234,56', 'custom_label_no' => '1,234.56'),
 	'rows_to_show' => array('description' => __('Limit Results to','wp-slimstat-options'), 'type' => 'integer', 'long_description' => __('Specify the number of results to return for each module. Please use a <strong>positive</strong> value.','wp-slimstat-options')),
 	'number_results_raw_data' => array('description' => __('Right Now','wp-slimstat-options'), 'type' => 'integer', 'long_description' => __('Specify the number of rows per page to show in the Right Now screen. Please use a <strong>positive</strong> value.','wp-slimstat-options') ),

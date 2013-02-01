@@ -50,6 +50,7 @@ if ($count_results == 0){
 }
 
 $visit_id = -1;
+$visit_ip = 0;
 for($i=0;$i<$count_results;$i++){
 	$results[$i]['ip'] = long2ip($results[$i]['ip']);
 	if (wp_slimstat::$options['convert_ip_addresses'] == 'yes'){
@@ -58,10 +59,10 @@ for($i=0;$i<$count_results;$i++){
 	else{
 		$host_by_ip = $results[$i]['ip'];
 	}
-	$results[$i]['dt'] = date_i18n(wp_slimstat_db::$formats['date_time_format'], $results[$i]['dt']);
+	$results[$i]['dt'] = date_i18n(wp_slimstat_db::$formats['date_time_format'], $results[$i]['dt'], true);
 
-	if ($visit_id != $results[$i]['visit_id'] || $results[$i]['visit_id'] == 0){
-		$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':((!empty($results[$i]['visit_id']) && $results[$i]['type'] != 1)?' is-direct':'');
+	if (($visit_id != $results[$i]['visit_id'] || $results[$i]['visit_id'] == 0) && $visit_ip != $results[$i]['ip']){
+		$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(($results[$i]['type'] != 1)?' is-direct':'');
 		
 		// IP Address and user
 		if (empty($results[$i]['user'])){
@@ -115,11 +116,10 @@ for($i=0;$i<$count_results;$i++){
 		}
 		if ($using_screenres) $plugins .= '&nbsp;&nbsp;<a title="'.htmlentities(sprintf(__('Filter results where screen resolution equals %s','wp-slimstat-view'), $results[$i]['resolution']), ENT_QUOTES, 'UTF-8').'" href="'.wp_slimstat_boxes::fs_url('resolution', $results[$i]['resolution']).'">'.$results[$i]['resolution'].'</a>';
 
-		echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} {$results[$i]['browser']} {$results[$i]['platform']} $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span>";
-		if (!empty($function_to_use) && $function_to_use != 'get_details_recent_visits' && $function_to_use != 'get_recent_known_visitors')	echo "<span class='widecolumn'>{$results[$i]['dt']}</span>";
-		echo "</p>";
-		$visit_id = $results[$i]['visit_id'];
+		echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} {$results[$i]['browser']} {$results[$i]['platform']} $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span></p>";
 	}
+	$visit_id = $results[$i]['visit_id'];
+	$visit_ip = $results[$i]['ip'];
 
 	echo "<p>";
 	$results[$i]['referer'] = (strpos($results[$i]['referer'], '://') === false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'];

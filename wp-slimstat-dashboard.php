@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat Dashboard Widgets
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: Monitor your visitors from your Wordpress dashboard.
-Version: 2.9.1
+Version: 2.9.2
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
@@ -34,6 +34,7 @@ class wp_slimstat_dashboard{
 		wp_enqueue_script('slimstat_flot', plugins_url('/admin/js/jquery.flot.min.js', __FILE__), array('jquery'), '0.7');
 		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/js/jquery.flot.navigate.min.js', __FILE__), array('jquery','slimstat_flot'), '0.7');
 		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', __FILE__));
+		wp_localize_script('slimstat_admin', 'SlimStatParams', array('async_load' => wp_slimstat::$options['async_load']));
 	}
 	// end wp_slimstat_stylesheet
 
@@ -59,6 +60,7 @@ class wp_slimstat_dashboard{
 		wp_slimstat_boxes::show_chart('slim_p1_01', wp_slimstat_db::extract_data_for_chart('COUNT(t1.ip)', 'COUNT(DISTINCT(t1.ip))'), array(__('Pageviews','wp-slimstat-view'), __('Unique IPs','wp-slimstat-view')));
 	}	
 	public static function slim_p1_02(){
+		
 		wp_slimstat_boxes::show_about_wpslimstat('slim_p1_02');
 	}
 	public static function slim_p1_03(){
