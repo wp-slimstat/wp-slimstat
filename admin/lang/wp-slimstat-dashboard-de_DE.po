@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP SlimStat Dashboard\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-07-19 14:10-0500\n"
+"PO-Revision-Date: 2012-07-19 14:10-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: due chiacchiere <info@duechiacchiere.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Italian\n"
+"X-Poedit-Country: ITALY\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: wp-slimstat-dashboard.php:58
+#: wp-slimstat-dashboard.php:65
+msgid "Pageviews"
+msgstr "Seitenzugriffe"
+
+#: wp-slimstat-dashboard.php:58
+#: wp-slimstat-dashboard.php:65
+msgid "Unique IPs"
+msgstr "eindeutige IP-Adressen"
+
+#~ msgid "No data to display"
+#~ msgstr "keine Daten vorhanden"
+
+#~ msgid "Open %s in a new window"
+#~ msgstr "%s in einem neuen Fenster &ouml;ffnen"
+
+#~ msgid "c-"
+#~ msgstr "c-"
+
+#~ msgid "Direct visit to"
+#~ msgstr "Direkter Besuch von"
+
+#~ msgid "Avg Pageviews"
+#~ msgstr "Durchschn. Seitenzugriffe"
+
+#~ msgid "On"
+#~ msgstr "am"
+
+#~ msgid "Last Month"
+#~ msgstr "Letzter Monat"
+
+#~ msgid "User Agents"
+#~ msgstr "Browser"
+
+#~ msgid "Recent Keywords"
+#~ msgstr "Letzte verwendete Suchbegriffe"
+
+#~ msgid "Total Hits"
+#~ msgstr "Summe Seitenzugriffe"
+
+#~ msgid "Data Size"
+#~ msgstr "Datenbankgr&ouml;sse"
+
+#~ msgid "Tracking Active"
+#~ msgstr "Verfolgung aktiv"
+
+#~ msgid "Auto purge"
+#~ msgstr "autom. Bereinigung"
+
+#~ msgid "Open referer in a new window"
+#~ msgstr "Herkunft in neuem Fenster &ouml;ffnen"
+
+#~ msgid "Top 5 pages"
+#~ msgstr "Top 5 Seiten"
+
+#~ msgid "Pathstats"
+#~ msgstr "Verlauf"
+
+#~ msgid "About"
+#~ msgstr "&Uuml;ber"
+
+#~ msgid "Summary of pageviews"
+#~ msgstr "Zusammenfassung der Seitenzugriffe"
+
+#~ msgid "Traffic Sources"
+#~ msgstr "Traffic-Ursprung"
+
+#~ msgid "Recent Keywords &raquo; Pages"
+#~ msgstr "Letzte Suchbegriffe &raquo; Seiten"
+
+#~ msgid "Analytics"
+#~ msgstr "Auswertungen"
+
+#~ msgid "Options"
+#~ msgstr "Optionen"
