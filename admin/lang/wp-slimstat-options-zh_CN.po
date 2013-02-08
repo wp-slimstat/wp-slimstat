@@ -1,0 +1,841 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Slim Stat 2.4\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-01-08 09:29-0500\n"
+"PO-Revision-Date: 2013-01-08 09:29-0500\n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: 沐熙工作室 <admin@muxi.me>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s;\n"
+"Language: zh_CN\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-SearchPath-0: ../options\n"
+
+#: ../options/index.php:10
+msgid "General"
+msgstr "一般"
+
+#: ../options/index.php:11
+msgid "Views"
+msgstr "视图"
+
+#: ../options/index.php:12
+msgid "Filters"
+msgstr "筛选器"
+
+#: ../options/index.php:13
+msgid "Permissions"
+msgstr "权限"
+
+#: ../options/index.php:14
+msgid "Advanced"
+msgstr ""
+
+#: ../options/index.php:15
+msgid "Maintenance"
+msgstr "维护"
+
+#: ../options/index.php:16
+msgid "Support"
+msgstr "支持"
+
+#: ../options/index.php:26
+msgid "Your settings have been successfully updated."
+msgstr "您的设置已成功更新。"
+
+#: ../options/index.php:29
+msgid "There was an error updating the following fields:"
+msgstr "有一个错误，更新一下字段："
+
+#: ../options/panel1.php:8
+msgid "Activate tracking"
+msgstr "启用跟踪"
+
+#: ../options/panel1.php:9
+#: ../options/panel1.php:39
+msgid "Javascript Mode"
+msgstr ""
+
+#: ../options/panel1.php:10
+#: ../options/panel1.php:47
+msgid "Custom path"
+msgstr "自定义插件路径"
+
+#: ../options/panel1.php:11
+msgid "Auto purge"
+msgstr "自动清除"
+
+#: ../options/panel1.php:12
+#: ../options/panel1.php:62
+#, fuzzy
+msgid "Add Column to Posts"
+msgstr "添加文章的列"
+
+#: ../options/panel1.php:13
+#: ../options/panel1.php:70
+msgid "Use separate menu"
+msgstr "使用单独的菜单"
+
+#: ../options/panel1.php:31
+#, fuzzy
+msgid "Enable tracking"
+msgstr "启用JS跟踪"
+
+#: ../options/panel1.php:33
+#: ../options/panel1.php:41
+#: ../options/panel1.php:64
+#: ../options/panel1.php:72
+#: ../options/panel2.php:25
+#: ../options/panel2.php:69
+#: ../options/panel3.php:62
+#: ../options/panel3.php:70
+#: ../options/panel3.php:78
+#: ../options/panel3.php:86
+#: ../options/panel5.php:31
+#: ../options/panel5.php:46
+#: ../options/panel5.php:54
+#: ../options/panel6.php:9
+msgid "Yes"
+msgstr "是"
+
+#: ../options/panel1.php:34
+#: ../options/panel1.php:42
+#: ../options/panel1.php:65
+#: ../options/panel1.php:73
+#: ../options/panel2.php:26
+#: ../options/panel2.php:70
+#: ../options/panel3.php:63
+#: ../options/panel3.php:71
+#: ../options/panel3.php:79
+#: ../options/panel3.php:87
+#: ../options/panel5.php:32
+#: ../options/panel5.php:47
+#: ../options/panel5.php:55
+#: ../options/panel6.php:9
+msgid "No"
+msgstr "否"
+
+#: ../options/panel1.php:35
+#, fuzzy
+msgid "You may want to prevent WP SlimStat from tracking users, but still be able to access your stats."
+msgstr "您可能需要停止WP SlimStat一段时间跟踪用户，停止后仍然可以访问您的数据。"
+
+#: ../options/panel1.php:43
+msgid "Turn this feature on if you are using a caching plugin (W3 Total Cache and friends). WP SlimStat will behave pretty much like Google Analytics, and visitors whose browser does not support Javascript will be ignored. A nice side effect is that spammers, search engines and other crawlers will be ignored."
+msgstr ""
+
+#: ../options/panel1.php:50
+msgid "If you moved <code>wp-slimstat-js.php</code> out of its default folder, specify the new path here. Default:"
+msgstr "如果你移动到<code>wp-slimstat-js.php</code>的默认文件夹，在这里指定新的路径。默认值："
+
+#: ../options/panel1.php:54
+msgid "Autopurge"
+msgstr "自动清除"
+
+#: ../options/panel1.php:56
+msgid "days"
+msgstr "天"
+
+#: ../options/panel1.php:57
+msgid "Next clean-up on"
+msgstr "下一次清理"
+
+#: ../options/panel1.php:57
+#, php-format
+msgid "Entries recorded on or before %s will be permanently deleted."
+msgstr "%s 之前的记录将永久删除"
+
+#: ../options/panel1.php:58
+msgid "Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature."
+msgstr "自动删除<strong>X</strong>天以上浏览量（使用WordPress的cron工作）。0禁用此功能"
+
+#: ../options/panel1.php:66
+#, fuzzy
+msgid "Adds a new column to the Edit Posts screen, with the number of hits per post (may slow down page rendering)"
+msgstr "用新的一列显示文章页面，点击每帖的数量（可能会减慢页面渲染）"
+
+#: ../options/panel1.php:74
+msgid "Lets you decide if you want to have a separate admin menu for WP SlimStat or not."
+msgstr "设置使用单独的WP SlimStat的管理菜单。"
+
+#: ../options/panel1.php:79
+#: ../options/panel2.php:81
+#: ../options/panel3.php:121
+#: ../options/panel4.php:63
+#: ../options/panel5.php:61
+msgid "Save Changes"
+msgstr "保存更改"
+
+#: ../options/panel2.php:8
+#: ../options/panel2.php:23
+msgid "Convert IP addresses"
+msgstr "转换IP地址"
+
+#: ../options/panel2.php:9
+#: ../options/panel2.php:31
+msgid "Number format"
+msgstr "数字格式"
+
+#: ../options/panel2.php:10
+#: ../options/panel2.php:39
+msgid "Limit results to"
+msgstr "限制结果"
+
+#: ../options/panel2.php:11
+#: ../options/panel2.php:46
+msgid "Right now"
+msgstr "当前"
+
+#: ../options/panel2.php:12
+#: ../options/panel2.php:53
+msgid "IP Lookup"
+msgstr "IP地址查询"
+
+#: ../options/panel2.php:13
+#: ../options/panel2.php:60
+msgid "Refresh every"
+msgstr "刷新频率"
+
+#: ../options/panel2.php:14
+#: ../options/panel2.php:76
+msgid "Chart Annotations"
+msgstr ""
+
+#: ../options/panel2.php:15
+#: ../options/panel2.php:67
+msgid "Hide Stats Link"
+msgstr ""
+
+#: ../options/panel2.php:27
+msgid "View hostnames instead of IP addresses. It slows down the rendering of your metrics."
+msgstr "查看解析Ip的主机名地址，它会减慢渲染您的数据。"
+
+#: ../options/panel2.php:35
+msgid "Choose what number format you want to use, European or American."
+msgstr "选择您要使用的数字格式，欧洲或美国。"
+
+#: ../options/panel2.php:41
+#: ../options/panel2.php:48
+msgid "rows"
+msgstr "行"
+
+#: ../options/panel2.php:42
+msgid "Specify the number of results to return for each module. Please use a <strong>positive</strong> value."
+msgstr "指定每个模块返回结果最大数量，请使用一个<strong>正数</strong>值。"
+
+#: ../options/panel2.php:49
+msgid "Specify the number of rows per page to show in the Right Now screen. Please use a <strong>positive</strong> value."
+msgstr "指定每页显示的行数，请使用一个<strong>正数</strong>值。"
+
+#: ../options/panel2.php:56
+msgid "Customize the IP lookup service URL."
+msgstr "自定义IP查询服务URL。"
+
+#: ../options/panel2.php:62
+#: ../options/panel5.php:39
+msgid "seconds"
+msgstr "秒"
+
+#: ../options/panel2.php:63
+msgid "Refresh the Right Now screen every X seconds. Zero disables this feature."
+msgstr "现在屏幕刷新每x秒钟。0禁用此功能。"
+
+#: ../options/panel2.php:71
+msgid "Enable this option if your users are confused by the Stats link associate to each post in the Edit Posts page."
+msgstr ""
+
+#: ../options/panel2.php:77
+msgid "Add <em>markings</em> to each chart by specifying a date and its description in the field below. Useful to keep track of special events and correlate them to your analytics. Please use the following format:<code>YYYY MM DD HH:mm=Description 1,YYYY MM DD HH:mm=Description 2</code>. For example: 2012 12 31 23:55=New Year's Eve."
+msgstr ""
+
+#: ../options/panel3.php:8
+#: ../options/panel3.php:60
+msgid "Track users"
+msgstr "跟踪用户"
+
+#: ../options/panel3.php:9
+msgid "Ignore bots"
+msgstr "忽略爬虫"
+
+#: ../options/panel3.php:10
+#: ../options/panel3.php:68
+msgid "Ignore Spammers"
+msgstr "忽略垃圾邮件发送者"
+
+#: ../options/panel3.php:11
+#: ../options/panel3.php:76
+msgid "Anonymize IP Addresses"
+msgstr "匿名IP地址"
+
+#: ../options/panel3.php:12
+#: ../options/panel3.php:84
+msgid "Ignore Prefetch"
+msgstr "忽略预读取"
+
+#: ../options/panel3.php:13
+msgid "Ignore IPs"
+msgstr "忽略IP地址"
+
+#: ../options/panel3.php:14
+msgid "Ignore Countries"
+msgstr "忽略国家"
+
+#: ../options/panel3.php:15
+msgid "Ignore resources"
+msgstr "忽略资源"
+
+#: ../options/panel3.php:16
+msgid "Ignore referers"
+msgstr "忽略referers"
+
+#: ../options/panel3.php:17
+msgid "Ignore browsers"
+msgstr "忽略浏览器"
+
+#: ../options/panel3.php:23
+msgid "Ignore users"
+msgstr "忽略用户"
+
+#: ../options/panel3.php:26
+#, fuzzy
+msgid "Ignore users: username not found"
+msgstr "忽略用户（用户名不存在）"
+
+#: ../options/panel3.php:45
+#: ../options/panel3.php:117
+#, fuzzy
+msgid "Users by capability"
+msgstr "角色和功能"
+
+#: ../options/panel3.php:48
+msgid "Invalid capability. Please check <a href=\"http://codex.wordpress.org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
+msgstr ""
+
+#: ../options/panel3.php:64
+#, fuzzy
+msgid "Select YES if you want to track logged in users, adding their login to the resource they requested"
+msgstr "跟踪登录用户,添加到他们所要求的资源"
+
+#: ../options/panel3.php:72
+msgid "Select YES if you don't want to track visits from users identified as spammers by a third-party tool (i.e. Akismet). Visits from people whose comments are later marked as spam by you, will also be removed from the database."
+msgstr ""
+
+#: ../options/panel3.php:80
+#, fuzzy
+msgid "This option masks the last octet of your visitors' IP addresses to comply with European Privacy Laws"
+msgstr "屏蔽符合欧洲的隐私法访问者的IP地址的最后一个字节"
+
+#: ../options/panel3.php:88
+#, fuzzy
+msgid "Select YES if you don't want to track visits generated by Firefox's <a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>Link Prefetching functionality</a>"
+msgstr "不要跟踪访问的Firefox生成的<a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>链接预取功能</a>"
+
+#: ../options/panel3.php:93
+msgid "IP addresses"
+msgstr "IP地址"
+
+#: ../options/panel3.php:94
+msgid "List all the IP addresses you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.0.0/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly."
+msgstr "列出所有你不想跟踪的ip地址，以逗号分隔。每个网络<strong>必须</ strong>被定义使用<a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR 符号</a>(例如 <em>192.168.0.0/24</em>)如果格式不正确，WP SlimStat可能无法正常跟踪浏览量。"
+
+#: ../options/panel3.php:97
+msgid "Pages and posts"
+msgstr "文章和页面"
+
+#: ../options/panel3.php:98
+msgid "List all the URLs you don't want to track, separated by commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>/abou*</code> will match /about and /abound, <code>/abo*t</code> will match /aboundant and /about, <code>/abo!t</code> will match /about and /abort. Strings are case-insensitive."
+msgstr "列出所有你不希望跟踪的URL，以逗号分隔。不包括域名：<em>/about, ?p=1</em>等等。通配符：<code>*</code>意思是“任何字符串，包括空字符串”，<code>!</code> 是指“任何字符”。例如，<code>/abou*</code> 将匹配/about 和/abound, <code>/abo*t</code>将匹配 /aboundant 和 /about,<code>/abo!t</code>将匹配 /about 和 /abort. 字符串是不区分大小写的。"
+
+#: ../options/panel3.php:101
+msgid "Countries"
+msgstr "国家"
+
+#: ../options/panel3.php:102
+msgid "List all the Country codes (i.e.: <code>en-us, it, es</code>) you don't want to track, separated by commas."
+msgstr "列出你不想跟踪的所有国家代码，如（<code>en-us, it, es</code>）以逗号分隔。"
+
+#: ../options/panel3.php:105
+msgid "User agents"
+msgstr "用户代理"
+
+#: ../options/panel3.php:106
+msgid "Enter a list of browsers (user agents) you don't want to track, separated by commas. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. For example, <code>Chr*</code> will match Chrome and Chromium, <code>IE/!.0</code> will match IE/7.0 and IE/8.0. Strings are case-insensitive."
+msgstr "列出所有你不想跟踪的浏览器，以逗号分隔。您可以指定浏览器的版本的名称后加上斜线 (例如 <em>Firefox/3.6</em>)。通配符：<code>*</code>意思是“任何字符串，包括空字符串”，<code>!</code>意思是“任何字符”。例如，<code>Chr*</code>匹配Chrome和Chromium。<code>IE/!.0</code>匹配IE/7.0和IE/8.0，字符串不区分大小写。"
+
+#: ../options/panel3.php:109
+msgid "Referers"
+msgstr "引用者"
+
+#: ../options/panel3.php:110
+msgid "Enter a list of referring URL's you don't want to track, separated by commas: <code>mysite.com, /ignore-me-please</code>, etc. Wildcards: <code>*</code> means 'any string, including the empty string', <code>!</code> means 'any character'. Strings are case-insensitive."
+msgstr "列出你不想跟踪的URL清单，以逗号分隔：<code>mysite.com, /ignore-me-please</code>。通配符：<code>*</code>意思是“任何字符串，包括空字符串”，<code>!</code>意思是“任何字符”。字符串不区分大小写。"
+
+#: ../options/panel3.php:113
+msgid "Users"
+msgstr "用户"
+
+#: ../options/panel3.php:114
+msgid "Enter a list of Wordpress users you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored and that usernames are case-insensitive."
+msgstr "列出你不想跟踪的WordPress用户清单，以逗号分隔。请注意格式<em>not</em>，用户名是区分大小写的。"
+
+#: ../options/panel3.php:118
+msgid "Users having at least one of the <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capabilities</a> listed here below will not be tracked. Capabilities are case-insensitive."
+msgstr ""
+
+#: ../options/panel4.php:13
+#: ../options/panel4.php:52
+msgid "Read access"
+msgstr ""
+
+#: ../options/panel4.php:16
+#, fuzzy
+msgid "Read access: username not found"
+msgstr "忽略用户（用户名不存在）"
+
+#: ../options/panel4.php:25
+#: ../options/panel4.php:56
+msgid "Minimum capability"
+msgstr ""
+
+#: ../options/panel4.php:28
+msgid "Invalid minimum capability. Please check <a href=\"http://codex.wordpress.org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
+msgstr ""
+
+#: ../options/panel4.php:40
+#: ../options/panel4.php:60
+msgid "Config access"
+msgstr ""
+
+#: ../options/panel4.php:43
+#, fuzzy
+msgid "Config access: username not found"
+msgstr "忽略用户（用户名不存在）"
+
+#: ../options/panel4.php:53
+#, fuzzy
+msgid "List all the users who can view WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all your users</strong> are granted access. Usernames are case-insensitive."
+msgstr "列出可以访问WP SlimStat报表的用户清单，用逗号分隔。管理员默认允许，所以你不用在这里列出它们。如果该字段为空，<strong>所有</strong>所有用户都可以访问报表，用户名不区分大小写。"
+
+#: ../options/panel4.php:57
+#, fuzzy
+msgid "Define the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to view the reports (default: <code>read</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here above. In this case, the list has precedence over the capability."
+msgstr "定义最低 <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>容量</a> 用户需要为了访问的所有统计数据(<code>read</code>是默认值)。如果该字段为空，<strong>所有</strong>所有用户都可以访问报表。"
+
+#: ../options/panel4.php:61
+#, fuzzy
+msgid "List all the users who can edit these options, separated by commas. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all your users</strong> (except <em>Subscribers</em>) will be granted access. Users listed here automatically inherit 'Read access' to the reports. Usernames are case-insensitive."
+msgstr "列出可以编辑这些选项的用户清单，请注意管理员默认允许。如果该字段为空，<strong>所有</strong>所有用户都可以访问选项面板，用户名不区分大小写。"
+
+#: ../options/panel5.php:8
+msgid "Enable JS Tracking"
+msgstr "启用JS跟踪"
+
+#: ../options/panel5.php:9
+#: ../options/panel5.php:37
+msgid "Session Duration"
+msgstr ""
+
+#: ../options/panel5.php:10
+#: ../options/panel5.php:44
+msgid "Extend Session"
+msgstr ""
+
+#: ../options/panel5.php:11
+#: ../options/panel5.php:52
+msgid "Enable CDN"
+msgstr ""
+
+#: ../options/panel5.php:29
+msgid "Track Browser Capabilities"
+msgstr ""
+
+#: ../options/panel5.php:33
+msgid "Enables a client-side tracking code to collect data about screen resolutions, outbound links, downloads and other relevant information. If Javascript Mode is enabled, this option is ignored."
+msgstr ""
+
+#: ../options/panel5.php:40
+msgid "Defines how many seconds a visit should last. Google Analytics sets its duration to 1800 seconds."
+msgstr ""
+
+#: ../options/panel5.php:48
+msgid "Extends the duration of a session each time the user visits a new page, by the number of seconds set here above."
+msgstr ""
+
+#: ../options/panel5.php:56
+msgid "Enables <a href=\"http://www.jsdelivr.com/\" target=\"_blank\">JSDelivr</a>'s CDN, by serving WP SlimStat's Javascript tracker from their fast and reliable network of servers."
+msgstr ""
+
+#: ../options/panel6.php:9
+msgid "Are you sure you want to remove all the information about your hits and visits?"
+msgstr "你确定要删除所有的信息，你的点击率和访问吗？"
+
+#: ../options/panel6.php:13
+msgid "Your WP SlimStat table has been successfully emptied."
+msgstr "你的WP SlimStat表已成功清空。"
+
+#: ../options/panel6.php:18
+msgid "Your Geolocation data has been successfully updated."
+msgstr "您的地理位置数据已成功更新。"
+
+#: ../options/panel6.php:21
+msgid "ERROR: Your Geolocation source file is not readable."
+msgstr "错误：您的地理位置源文件无法读取。"
+
+#: ../options/panel6.php:31
+msgid "Your WP SlimStat table has been successfully reset."
+msgstr "你的WP SlimStat表已成功重置。"
+
+#: ../options/panel6.php:33
+msgid "ERROR: Your Slimstat table could not be initialized."
+msgstr "错误：您的Slimstat表不能被初始化。"
+
+#: ../options/panel6.php:43
+msgid "Your WP SlimStat table has been successfully optimized."
+msgstr "你的WP SlimStat表已成功优化。"
+
+#: ../options/panel6.php:56
+msgid "Your WP SlimStat tables have been successfully converted to InnoDB."
+msgstr "您的的WP SlimStat表已成功转换为InnoDB。"
+
+#: ../options/panel6.php:65
+msgid "Your WP SlimStat indexes have been successfully created."
+msgstr "您的的WP SlimStat索引已成功创建。"
+
+#: ../options/panel6.php:73
+msgid "Your WP SlimStat indexes have been successfully removed."
+msgstr "您的的WP SlimStat索引成功删除。"
+
+#: ../options/panel6.php:113
+msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
+msgstr "你的WP SlimStat表已被成功清除。受影响的行："
+
+#: ../options/panel6.php:129
+msgid "Database Information"
+msgstr "数据库信息"
+
+#: ../options/panel6.php:130
+msgid "Engine"
+msgstr "引擎"
+
+#: ../options/panel6.php:132
+msgid ", it may take some time and exceed PHP's maximum execution time"
+msgstr "，它可能要花一些时间超过PHP的最大执行时间"
+
+#: ../options/panel6.php:133
+msgid "switch to InnoDB"
+msgstr "切换到InnoDB"
+
+#: ../options/panel6.php:153
+msgid "Size"
+msgstr "大小"
+
+#: ../options/panel6.php:153
+msgid "Records"
+msgstr "记录"
+
+#: ../options/panel6.php:153
+msgid "Average Record Length"
+msgstr "平均记录长度"
+
+#: ../options/panel6.php:153
+msgid "Created on"
+msgstr "创建于"
+
+#: ../options/panel6.php:155
+msgid "Approximate Overhead"
+msgstr "大约开销"
+
+#: ../options/panel6.php:159
+msgid "Optimize tables"
+msgstr "优化表"
+
+#: ../options/panel6.php:163
+msgid "Purge Data"
+msgstr "清除数据"
+
+#: ../options/panel6.php:166
+msgid "Delete rows where"
+msgstr "删除行"
+
+#: ../options/panel6.php:168
+msgid "Country Code"
+msgstr "国家代码"
+
+#: ../options/panel6.php:169
+msgid "IP Address"
+msgstr "IP地址"
+
+#: ../options/panel6.php:170
+msgid "Language Code"
+msgstr "语言代码"
+
+#: ../options/panel6.php:171
+msgid "Permalink"
+msgstr "固定链接"
+
+#: ../options/panel6.php:172
+msgid "Search Terms"
+msgstr "搜索词"
+
+#: ../options/panel6.php:175
+msgid "Is equal to"
+msgstr "等于"
+
+#: ../options/panel6.php:176
+msgid "Contains"
+msgstr "包含"
+
+#: ../options/panel6.php:177
+msgid "Does not contain"
+msgstr "不包含"
+
+#: ../options/panel6.php:178
+msgid "Starts with"
+msgstr "开始的"
+
+#: ../options/panel6.php:179
+msgid "Ends with"
+msgstr "结束的"
+
+#: ../options/panel6.php:180
+msgid "Does not start with"
+msgstr "没有开始"
+
+#: ../options/panel6.php:181
+msgid "Does not end with"
+msgstr "没有结束"
+
+#: ../options/panel6.php:185
+msgid "DELETE"
+msgstr "删除"
+
+#: ../options/panel6.php:186
+msgid "Are you sure you want to PERMANENTLY delete these rows from your database?"
+msgstr "您确定要从您的数据库永久删除这些行吗？"
+
+#: ../options/panel6.php:193
+msgid "Activate Indexes"
+msgstr "启用索引"
+
+#: ../options/panel6.php:194
+msgid "Use this feature if you want to improve the overall performance of your stats. You will need about 30% more DB space, to store the extra information required."
+msgstr "启用此功能，如果你想提高你的整体统计性能。您将需要约30％以上的数据库空间，用来存储额外的信息。"
+
+#: ../options/panel6.php:198
+msgid "Remove Indexes"
+msgstr "删除索引"
+
+#: ../options/panel6.php:199
+msgid "Use this feature if you want to save some DB space, while slightly degrading WP SlimStat overall performances."
+msgstr "启用此功能，如果你想节省一些DB空间，将降低WP SlimStat的整体性能。"
+
+#: ../options/panel6.php:203
+msgid "Factory Reset"
+msgstr "恢复出厂设置"
+
+#: ../options/panel6.php:204
+msgid "Select this option if you want to empty your WP SlimStat database (does not reset your settings)."
+msgstr "如果要清空你的的WP SlimStat数据库（不重置您的设置），选择此选项。"
+
+#: ../options/panel6.php:208
+msgid "Update Geolocation DB"
+msgstr "更新地理定位数据库"
+
+#: ../options/panel6.php:209
+msgid "Select this option if you want to load the new geolocation data into your database."
+msgstr "如果你想加载新的地理定位数据到你的数据库中，选择此选项。"
+
+#: ../options/panel6.php:215
+msgid "RESET STATS"
+msgstr "RESET统计"
+
+#: ../options/panel6.php:216
+msgid "It looks like you need to update the structure of one of the tables used by this plugin. Please click the button here above to reset your table (all the data will be lost, sorry), then deactivate/reactivate WP SlimStat to complete the installation process."
+msgstr "你需要更新一个表的结构来使用这个插件。请点击上面的按钮，重新设置您的表（所有的数据都将丢失）然后停用，激活WP SlimStat完成安装过程。"
+
+#: ../options/panel7.php:24
+msgid "How valuable is monitoring your visitors for your site? WP SlimStat is and will always be free, but consider supporting the author if this plugin made your web site better, especially if you are making money out of it. Any donation received will be reinvested in the development of WP SlimStat, and to buy some food for my hungry family."
+msgstr "如果为您的网站监视有价值的访问者吗？WP SlimStat是，而且将永远是免费的，但考虑支持这个插件的作者，如果你的网站更好的，特别是如果你赚钱的。收到的捐款将用于再投资在WP SlimStat的发展。"
+
+#: ../options/panel7.php:30
+msgid "Need help?"
+msgstr ""
+
+#: ../options/panel7.php:31
+msgid "Please visit our official <a href='http://wordpress.org/support/plugin/wp-slimstat' target='_blank'>support forum</a> to see if your question has already been answered. If not, feel free to post your request there, I'll do my best to address your concerns as soon as possible."
+msgstr ""
+
+#: ../options/panel7.php:34
+msgid "Recent messages from the support forum"
+msgstr ""
+
+#: ../options/panel7.php:42
+msgid "Don't want or cannot donate?"
+msgstr "不想或不能捐赠吗？"
+
+#: ../options/panel7.php:43
+#, fuzzy
+msgid "If you cannot donate money, please consider blogging about WP SlimStat, your visitors may not know you're using it! You can also contribute by donating some of your spare time: send me bug reports, localization files and ideas on how to improve WP SlimStat."
+msgstr "如果你不捐钱，请考虑关于WP SlimStat的博客，你的访问者不知道，你正在使用WP SlimStat的！您也可以作出贡献，捐出你的空余时间给我发送错误报告，本地化文件和想法，关于如何提高WP SlimStat。"
+
+#: ../options/panel7.php:45
+msgid "Show your appreciation"
+msgstr "表达你的谢意"
+
+#: ../options/panel7.php:46
+msgid "Tell other people if WP SlimStat works for you and how good it is. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on its Plugin Directory page."
+msgstr "告诉其他的人，如果WP SlimStat的工作，你和它是多么好。<a href=\"http://wordpress.org/extend/plugins/wp-slimstat/?rate=5&topic_id=14104\"> se Tarifa </ a> 的插件目录页。"
+
+#~ msgid ""
+#~ "Adds a javascript code to your pages to track visits, screen resolutions, "
+#~ "outbound links, downloads and more"
+#~ msgstr ""
+#~ "将JavaScript代码添加到您的网页，用于统计，屏幕分辨率，出站链接，下载等。"
+
+#~ msgid "Add Posts column"
+#~ msgstr "添加文章栏"
+
+#~ msgid "Ignore interval"
+#~ msgstr "忽略间隔时间"
+
+#~ msgid "General settings"
+#~ msgstr "常规设置"
+
+#~ msgid ""
+#~ "Do not track visits from crawlers, search engine spiders and other bots"
+#~ msgstr "不跟踪访问的爬虫，搜索引擎蜘蛛和其他机器人"
+
+#~ msgid ""
+#~ "Do not track visits from users identified as spammers by a third-party "
+#~ "tool (i.e. Akismet)"
+#~ msgstr "不跟踪通过第三方工具标识为垃圾邮件发送者访问用户(比如Akismet)"
+
+#~ msgid "Latency"
+#~ msgstr "延迟"
+
+#~ msgid ""
+#~ "Do not track visits identical to an existing one recorded less than "
+#~ "<strong>X</strong> seconds ago. Zero disables this feature."
+#~ msgstr "不跟踪一个小于<strong>X</strong>秒前相同的访问记录，0禁用此功能。"
+
+#~ msgid "Users who can access the reports"
+#~ msgstr "用户可访问的报表"
+
+#~ msgid "Users who can access the reports (username not found)"
+#~ msgstr "用户可访问的报表（用户名不存在）"
+
+#~ msgid "Users who can configure WP SlimStat"
+#~ msgstr "用户可以配置WP SlimStat"
+
+#~ msgid "Users who can configure WP SlimStat (username not found)"
+#~ msgstr "用户可以配置WP SlimStat（用户名不存在）"
+
+#~ msgid "Domain"
+#~ msgstr "域名"
+
+#, fuzzy
+#~ msgid "Autoupdate DB"
+#~ msgstr "AutoActualizar Base de Datos de Navegadores"
+
+#~ msgid ""
+#~ "Enables Browscap's autoupdate feature. Please make sure your <code>cache</"
+#~ "code> subfolder is writable."
+#~ msgstr ""
+#~ "Activar AutoActualización de capas del navegador.  Por favor asegurate  "
+#~ "de que la carpeta <code>cache</code> tiene permisos de escritura."
+
+#~ msgid "Next purge is scheduled on"
+#~ msgstr "Próxima purga programada para"
+
+#, fuzzy
+#~ msgid ""
+#~ "Enter a list of permalinks you don't want to track, separated by commas. "
+#~ "You should omit the domain name from these resources: <em>/about, ?p=1</"
+#~ "em>, etc. WP SlimStat will ignore all the pageviews whose permalink "
+#~ "<strong>contains</strong> at least one of them."
+#~ msgstr ""
+#~ "Introduzca una lista de enlaces permanentes que no desea realizar un "
+#~ "seguimiento, separados por comas. Usted debe omitir el nombre de dominio "
+#~ "de estos recursos:? <em> / Sobre, p = 1, etc WP SlimStat hará caso de "
+#~ "todas las páginas vistas que permalink <strong> comienza </ strong> con "
+#~ "cualquiera de ellos."
+
+#~ msgid ""
+#~ "Your WP SlimStat table has been successfully reset. Now go to your "
+#~ "Plugins panel and deactivate/reactivate WP SlimStat."
+#~ msgstr ""
+#~ "Tu tabla ha sido reseteada correctamente. Ahora reactiva el plugin "
+#~ "desactivandolo y activandolo"
+
+#, fuzzy
+#~ msgid "Are you sure you want to empty the ip-to-countries table?"
+#~ msgstr "Estas seguro que quieres guardar las ip de los paises en la tabla?"
+
+#~ msgid ""
+#~ "Your IP-to-countries table has been successfully emptied. Now go to your "
+#~ "Plugins panel and deactivate/reactivate WP SlimStat to load the new data."
+#~ msgstr ""
+#~ "Tu tabla de  Ips de Paises se ha borrado correctamente. Ahora ves a "
+#~ "Plugins y desactiva y reactiva el plugin para cargar los nuevos datos."
+
+#, fuzzy
+#~ msgid "Reset Countries"
+#~ msgstr "Reiniciar Ips por paises"
+
+#~ msgid "Please note that these commands cannot be undone!"
+#~ msgstr ""
+#~ "Tenga en cuenta que <strong>estos comandos</strong> no se puede deshacer!"
+
+#~ msgid "Current Status"
+#~ msgstr "Estado Actual"
+
+#~ msgid "Clean database"
+#~ msgstr "Limpiar Base de Datos"
+
+#, fuzzy
+#~ msgid "Delete Records"
+#~ msgstr "Registros"
+
+#~ msgid "Show footer link"
+#~ msgstr "Mostrar enlace en pie de pagina"
+
+#~ msgid ""
+#~ "If an unwanted link to WP SlimStat is showing up in your template's "
+#~ "footer, select NO here below. Otherwise, I'd really appreciate if you "
+#~ "could leave this enabled."
+#~ msgstr ""
+#~ "Si un enlace no deseado a WP SlimStat está apareciendo en el pie de su "
+#~ "plantilla, seleccione la opción NO a continuación. De lo contrario, me "
+#~ "gustaría mucho agradecería que deje este habilitado."
+
+#~ msgid "IP addresses to ignore"
+#~ msgstr "Direcciones IP a ignorar"
+
+#~ msgid "Users to ignore"
+#~ msgstr "Usuarios a ignorar"
+
+#~ msgid "Thank you"
+#~ msgstr "Gracias"
+
+#~ msgid "Who can manage these options"
+#~ msgstr "Quie puede cambiar opciones"
+
+#~ msgid "Browsers to ignore"
+#~ msgstr "Navegadores a ignorar"
+
+#~ msgid "Empty database"
+#~ msgstr "Vaciar Base de Datos"
+
+#~ msgid "DELETE STATS"
+#~ msgstr "Eliminar Estadísticas"
+
+#~ msgid "EMPTY IP-TO-COUNTRIES"
+#~ msgstr "Eliminar IPs por paises"
+
+#~ msgid "Old table detected"
+#~ msgstr "Tabla antigua detectada"

@@ -1,0 +1,26 @@
+.slimstat .inside{height:216px;margin:0;overflow-y:auto;padding:0}
+.slimstat p{border-top:1px solid #ddd;overflow:auto;margin:0;overflow:hidden;padding:5px 10px;text-overflow:ellipsis}
+.slimstat p:first-child{border:0}
+.slimstat p.nodata{border:0;color:#999;padding-top:90px;text-align:center}
+.inside p.loading{background:transparent url(../images/spinning_wheel.gif) 50% 90% no-repeat scroll;margin-top:30px;}
+.slimstat p span{float:right;margin-left:10px}
+.slimstat #wp-element-details{display:block;font-size:.8em;font-weight:400;line-height:1.4em;overflow:hidden;padding:5px 0 0;text-overflow:ellipsis}
+
+.slimstat p.header{background-color:#eee;border-top:1px solid #ddd}
+.slimstat p.is-search-engine,.legend span.is-search-engine{background-color:#C1E751;color:#444}
+.slimstat p.is-search-engine a{color:#222}
+.slimstat p.is-direct,.legend span.is-direct{background-color:#D0E0EB;color:#111}
+.slimstat p.is-direct a{color:#333}
+.slimstat p.is-known-user,.legend span.is-known-user{background-color:#EFFD8C}
+.slimstat p.is-spam,.legend span.is-spam{background-color:#AAB3AB;color:#222}
+.slimstat p.is-spam a{color:#fff}
+
+#chart-placeholder{height:170px;width:auto;margin:10px 5px 0}
+#chart-legend{font-size:.95em;margin-top:5px}
+#chart-legend table{margin:5px auto}
+#chart-legend td.legendLabel{padding-right:25px}
+
+#jquery-tooltip{background-color:#ffe;border:1px solid #aab;display:none;opacity:0.95;position:absolute;padding:5px}
+#jquery-tooltip.tooltip-fixed-width{width:200px}
+#jquery-tooltip ul{margin-top:5px}
+#jquery-tooltip li{list-style-type:circle;margin-left:20px}
