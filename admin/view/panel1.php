@@ -49,8 +49,6 @@ if ($count_results == 0){
 	echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 }
 
-$visit_id = -1;
-$visit_ip = 0;
 for($i=0;$i<$count_results;$i++){
 	$results[$i]['ip'] = long2ip($results[$i]['ip']);
 	if (wp_slimstat::$options['convert_ip_addresses'] == 'yes'){
@@ -61,7 +59,7 @@ for($i=0;$i<$count_results;$i++){
 	}
 	$results[$i]['dt'] = date_i18n(wp_slimstat_db::$formats['date_time_format'], $results[$i]['dt'], true);
 
-	if (($visit_id != $results[$i]['visit_id'] || $results[$i]['visit_id'] == 0) && $visit_ip != $results[$i]['ip']){
+	if ($i == 0 || $results[$i-1]['visit_id'] != $results[$i]['visit_id'] || ($results[$i]['visit_id'] == 0 && ($results[$i-1]['ip'] != $results[$i]['ip'] || $results[$i-1]['browser'] != $results[$i]['browser'] || $results[$i-1]['platform'] != $results[$i]['platform']))){
 		$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(($results[$i]['type'] != 1)?' is-direct':'');
 		
 		// IP Address and user
@@ -79,7 +77,7 @@ for($i=0;$i<$count_results;$i++){
 			$results[$i]['other_ip'] = long2ip($results[$i]['other_ip']);
 			$other_ip_address = "<a class='text-filter' title='".htmlentities(sprintf(__('Filter results where ther user\'s real IP equals %s','wp-slimstat-view'), $results[$i]['other_ip']), ENT_QUOTES, 'UTF-8')."' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('other_ip', $results[$i]['other_ip'])."'>(".__('Originating IP','wp-slimstat-view').": {$results[$i]['other_ip']})</a>";
 		}
-		
+
 		// Country
 		$results[$i]['country'] = "<a class='image first' href='".wp_slimstat_boxes::fs_url('country', $results[$i]['country'])."'><img src='".wp_slimstat_boxes::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat-view').': '.__('c-'.$results[$i]['country'],'countries-languages')."' width='16' height='16'/></a>";
 
@@ -91,7 +89,7 @@ for($i=0;$i<$count_results;$i++){
 		else{
 			$browser_icon = "<img src='".wp_slimstat_boxes::$plugin_url."/images/browsers/other-browsers-and-os.png' title='".__('Browser','wp-slimstat-view').": {$results[$i]['browser']} {$results[$i]['version']}' width='16' height='16'/>";
 		}
-		$results[$i]['browser'] = "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('browser', $results[$i]['browser'])."'>$browser_icon</a>";
+		$browser_filtered = "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('browser', $results[$i]['browser'])."'>$browser_icon</a>";
 
 		// Platform
 		if (in_array(strtolower($results[$i]['platform']), $supported_os_icons)){
@@ -100,7 +98,7 @@ for($i=0;$i<$count_results;$i++){
 		else{
 			$platform_icon = "<img src='".wp_slimstat_boxes::$plugin_url."/images/browsers/other-browsers-and-os.png' title='".__('Platform','wp-slimstat-view').': '.__($results[$i]['platform'],'countries-languages')."' width='16' height='16'/>";
 		}
-		$results[$i]['platform'] = "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('platform', $results[$i]['platform'])."'>$platform_icon</a>";
+		$platform_filtered = "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('platform', $results[$i]['platform'])."'>$platform_icon</a>";
 		
 		// Browser Type
 		//$results[$i]['type'] = ($results[$i]['type'] != 0)?"<a class='browser-type-{$results[$i]['type']} image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('type', $results[$i]['type'])."' title='".__('Browser Type','wp-slimstat-view').": {$results[$i]['type']}'></a>":'';
@@ -116,10 +114,8 @@ for($i=0;$i<$count_results;$i++){
 		}
 		if ($using_screenres) $plugins .= '&nbsp;&nbsp;<a title="'.htmlentities(sprintf(__('Filter results where screen resolution equals %s','wp-slimstat-view'), $results[$i]['resolution']), ENT_QUOTES, 'UTF-8').'" href="'.wp_slimstat_boxes::fs_url('resolution', $results[$i]['resolution']).'">'.$results[$i]['resolution'].'</a>';
 
-		echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} {$results[$i]['browser']} {$results[$i]['platform']} $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span></p>";
+		echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} $browser_filtered $platform_filtered $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span></p>";
 	}
-	$visit_id = $results[$i]['visit_id'];
-	$visit_ip = $results[$i]['ip'];
 
 	echo "<p>";
 	$results[$i]['referer'] = (strpos($results[$i]['referer'], '://') === false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'];

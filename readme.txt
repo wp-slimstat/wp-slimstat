@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.5
-Stable tag: 2.9.2
+Stable tag: 2.9.3
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -334,8 +334,13 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 
 == Changelog ==
 
+= 2.9.3 =
+* Updated: SQL optimizations have been implemented, your stats should now load a little faster
+* Fixed: minor bugs in the core tracking functionality, affecting the way tags associated to posts were recorded (thank you, [Neil](http://wordpress.org/support/topic/categories-vs-tags) and [Davide](http://www.davidetomasello.it/))
+* Updated: ip geolocation database (February 2013). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
+
 = 2.9.2 =
-* Added: asynchronous views, to make your stats load faster (even on your Wordpress Dashboard). Enable it under Settings > Views
+* Added: asynchronous views, to make your stats load faster (even on your Wordpress Dashboard). Enable them under Settings > Views
 * Added: posts and pages' IDs are now being tracked as well, so that you can keep analyzing your traffic even if your permalink structure changes (thank you, [Clifford Paulick](http://wordpress.org/support/topic/current-posts-stats))
 
 = 2.9.1 =

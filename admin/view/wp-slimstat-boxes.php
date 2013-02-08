@@ -137,7 +137,7 @@ class wp_slimstat_boxes{
 			self::$all_boxes = get_user_option("meta-box-order_{$page_location}_page_wp-slimstat-".self::$current_screen, $user->ID);
 			self::$all_boxes = (self::$all_boxes === false)?get_user_option("meta-box-order_{$page_location}_page_wp-slimstat", $user->ID):self::$all_boxes; // backward compatible with old settings
 		}
-		self::$all_boxes = (empty(self::$all_boxes))?array():explode(',', self::$all_boxes[0]);
+		self::$all_boxes = (empty(self::$all_boxes) || empty(self::$all_boxes[0]))?array():explode(',', self::$all_boxes[0]);
 
 		// Use default values, if the corresponding option hasn't been initialized
 		$old_ids = array_intersect(array('p1_01','p2_01','p3_01','p4_01'), self::$all_boxes);

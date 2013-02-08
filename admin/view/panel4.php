@@ -80,7 +80,7 @@ foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 			break;
 		case 'slim_p4_15':
 			wp_slimstat_boxes::box_header('slim_p4_15', '', 'medium', true);
-			wp_slimstat_boxes::show_results('recent', 'slim_p4_15', 'resource', array('custom_where' => '(tci.content_type = "category" OR tci.content_type = "tag")', 'join_tables' => 'tci.*'));
+			wp_slimstat_boxes::show_results('recent', 'slim_p4_15', 'resource', array('custom_where' => '(tci.content_type = "category" OR tci.content_type = "tag")'));
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p4_16':

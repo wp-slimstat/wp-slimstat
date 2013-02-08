@@ -192,7 +192,7 @@ class wp_slimstat_db {
 					self::$filters['sql_from']['browsers'] = 'INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_browsers tb ON t1.browser_id = tb.browser_id';
 					break;
 				case 'tss.':
-					self::$filters['sql_from']['screenres'] = 'INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_screenres tss ON t1.screenres_id = tss.screenres_id';
+					self::$filters['sql_from']['screenres'] = 'LEFT JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_screenres tss ON t1.screenres_id = tss.screenres_id';
 					break;
 				case 'tci.':
 					self::$filters['sql_from']['content_info'] = 'INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_content_info tci ON t1.content_info_id = tci.content_info_id';
@@ -268,19 +268,19 @@ class wp_slimstat_db {
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT($column) count
-				FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_tables_to_join).'
-				WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').' '.($_use_date_filters?self::$filters['date_sql_where']:'')));
+			FROM ".$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_tables_to_join).'
+			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').' '.($_use_date_filters?self::$filters['date_sql_where']:'')));
 	}
 
 	public static function count_records_having($_where_clause = '1=1', $_column = 't1.ip', $_having_clause = ''){
 		return intval($GLOBALS['wpdb']->get_var("
 			SELECT COUNT(*) FROM (
-					SELECT $_column
-					FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_where_clause)."
-					WHERE $_where_clause ".self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
-					GROUP BY $_column
-					".(!empty($_having_clause)?"HAVING $_having_clause":'').')
-				AS ts1'));
+				SELECT $_column
+				FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_where_clause)."
+				WHERE $_where_clause ".self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
+				GROUP BY $_column
+				".(!empty($_having_clause)?"HAVING $_having_clause":'').')
+			AS ts1'));
 	}
 
 	public static function get_data_size(){
@@ -301,31 +301,31 @@ class wp_slimstat_db {
 	public static function get_max_and_average_pages_per_visit(){
 		return $GLOBALS['wpdb']->get_row('
 			SELECT AVG(ts1.count) avg, MAX(ts1.count) max FROM (
-					SELECT count(ip) count, visit_id
-					FROM '.self::$filters['sql_from']['all'].'
-					WHERE visit_id > 0 '.self::$filters['sql_where'].' '.self::$filters['date_sql_where'].'
-					GROUP BY visit_id
-				) AS ts1', ARRAY_A);
+				SELECT count(ip) count, visit_id
+				FROM '.self::$filters['sql_from']['all'].'
+				WHERE visit_id > 0 '.self::$filters['sql_where'].' '.self::$filters['date_sql_where'].'
+				GROUP BY visit_id
+			) AS ts1', ARRAY_A);
 	}
 
 	public static function get_oldest_visit($_order = 'ASC'){
 		return $GLOBALS['wpdb']->get_var('
 			SELECT t1.dt
-				FROM '.$GLOBALS['wpdb']->prefix."slim_stats t1
-				ORDER BY t1.dt $_order
-				LIMIT 0,1");
+			FROM '.$GLOBALS['wpdb']->prefix."slim_stats t1
+			ORDER BY t1.dt $_order
+			LIMIT 0,1");
 	}
 
 	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = ''){
-		return $GLOBALS['wpdb']->get_results('
-			SELECT t1.*'.(!empty($_join_tables)?", $_join_tables":'')."
+		return $GLOBALS['wpdb']->get_results('SELECT t1.*, '.(!empty($_join_tables)?$_join_tables:'ts1.*')."
 				FROM (
 					SELECT $_column, MAX(t1.id) maxid
 					FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
 					WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 					GROUP BY $_column $_having_clause
-				) AS ts1 INNER JOIN ".$GLOBALS['wpdb']->prefix.'slim_stats t1 ON ts1.maxid = t1.id '.self::_add_filters_to_sql_from($_join_tables, true)."
-				ORDER BY ".(empty($_order_by)?'t1.dt '.self::$filters['parsed']['direction'][1]:$_order_by).'
+				) AS ts1 INNER JOIN ".$GLOBALS['wpdb']->prefix.'slim_stats t1 ON ts1.maxid = t1.id '.
+				(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
+				ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters['parsed']['direction'][1]:$_order_by).'
 				LIMIT '.self::$filters['parsed']['starting'][1].', '.self::$filters['parsed']['limit_results'][1], ARRAY_A);
 	}
 
@@ -339,14 +339,15 @@ class wp_slimstat_db {
 	}
 
 	public static function get_popular_complete($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = ''){
-		return $GLOBALS['wpdb']->get_results('
-			SELECT t1.*'.(!empty($_join_tables)?", $_join_tables":'').", ts1.count
+		return $GLOBALS['wpdb']->get_results("
+			SELECT t1.*, ts1.*, ts1.count
 				FROM (
 					SELECT $_column, MAX(t1.id) maxid, COUNT(*) count
 					FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
 					WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 					GROUP BY $_column $_having_clause
-				) AS ts1 JOIN ".$GLOBALS['wpdb']->prefix.'slim_stats t1 ON ts1.maxid = t1.id '.self::_add_filters_to_sql_from($_join_tables, true).'
+				) AS ts1 JOIN ".$GLOBALS['wpdb']->prefix.'slim_stats t1 ON ts1.maxid = t1.id '.
+				(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
 				ORDER BY ts1.count '.self::$filters['parsed']['direction'][1]."
 				LIMIT ".self::$filters['parsed']['starting'][1].', '.self::$filters['parsed']['limit_results'][1], ARRAY_A);
 	}
@@ -507,27 +508,15 @@ class wp_slimstat_db {
 				}
 			}
 
-			//if (($j == $day_idx_previous - 1) || self::$timeframes['current_day']['d']['selected'] || !empty(self::$filters['parsed']['interval'][1])){
-				//if (empty(self::$filters['parsed']['interval'][1])){
 			if (date_i18n($datestamp['group'], $datestamp['timestamp_previous']) == date_i18n($datestamp['group'], self::$timeframes['previous_utime_start'], true) && empty(self::$filters['parsed']['interval'][1])){
 				if (!empty($data[0][$datestamp['previous']])){
 					$result['previous']['data'] .= "[$i,{$data[0][$datestamp['previous']]}{$datestamp['filter_previous']}],";
 					$result['previous']['total'] += $data[0][$datestamp['previous']];
-
-
-
-					//if ((substr($datestamp['current'], 0, $datestamp['marking_substr']), $markings)) $result['markings'] .= "[$i,'gino']";
 				}
 				elseif($datestamp['timestamp_previous'] <= date_i18n('U')){
 					$result['previous']['data'] .= "[$i,0],";
 				}
-				//}
-				//else{
-				//	$date_label = date('d/m', mktime(0, 0, 0, self::$current_date['m'], self::$current_date['d']+$i, self::$current_date['y']));
-				//	$result->ticks .= "[$i, \"$date_label\"],";
-				//}
 			}
-			//}
 			
 			if (!empty(self::$filters['parsed']['interval'][1])){
 				$result['ticks'] .= "[$i, '".((self::$formats['decimal'] == '.')?date_i18n('m/d', $datestamp['timestamp_current']):date_i18n('d/m', $datestamp['timestamp_current']))."'],";

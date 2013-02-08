@@ -66,17 +66,17 @@ foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
 			break;
 		case 'slim_p2_14':
 			wp_slimstat_boxes::box_header('slim_p2_14', htmlspecialchars(__('This report shows the most recent screen resolutions used by your visitors. Knowing the most popular screen resolution of your visitors will help you create content optimized for that resolution or you may opt for resolution-independence.','wp-slimstat-view'), ENT_QUOTES), '', true);
-			wp_slimstat_boxes::show_results('recent', 'slim_p2_14', 'resolution', array('join_tables' => 'tss.*'));
+			wp_slimstat_boxes::show_results('recent', 'slim_p2_14', 'resolution');
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p2_15':
 			wp_slimstat_boxes::box_header('slim_p2_15', htmlspecialchars(__('Which operating systems do your visitors use? Optimizing your site for the appropriate technical capabilities helps make your site more engaging and usable and can result in higher conversion rates and more sales.','wp-slimstat-view'), ENT_QUOTES), '', true);
-			wp_slimstat_boxes::show_results('recent', 'slim_p2_15', 'platform', array('join_tables' => 'tb.*'));
+			wp_slimstat_boxes::show_results('recent', 'slim_p2_15', 'platform');
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p2_16':
 			wp_slimstat_boxes::box_header('slim_p2_16', htmlspecialchars(__('A user agent is a generic term for any program used for accessing a website. This includes browsers (such as Chrome), robots and spiders, and any other software program that retrieves information from a website.<br><br>You can ignore any given user agent by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat-view'), ENT_QUOTES), '', true);
-			wp_slimstat_boxes::show_results('recent', 'slim_p2_16', 'browser', array('join_tables' => 'tb.*'));
+			wp_slimstat_boxes::show_results('recent', 'slim_p2_16', 'browser');
 			wp_slimstat_boxes::box_footer();
 			break;
 		case 'slim_p2_17':

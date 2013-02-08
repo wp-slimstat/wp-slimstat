@@ -1,4 +1,4 @@
-﻿if (typeof SlimStatParams == 'undefined') SlimStatParams = {'filters_string': '', 'async_load': 'no'};
+﻿if (typeof SlimStatParams == 'undefined') SlimStatParams = {'filters_string': '', 'async_load': 'no', 'refresh_interval': 0};
 var SlimStatAdmin = {
 	data: [],
 	ticks: [],
@@ -196,6 +196,11 @@ jQuery(function(){
 	if ((typeof SlimStatParams.async_load == 'undefined' || SlimStatParams.async_load != 'yes') && jQuery('#chart-placeholder').length > 0){
 		SlimStatAdmin.chart_init();
 		SlimStatAdmin.enable_inline_help('');
+	}
+	
+	// Refresh page every X seconds
+	if (SlimStatParams.refresh_interval > 0){
+		window.setTimeout('location.reload()', SlimStatParams.refresh_interval*1000);
 	}
 
 	jQuery('input.hide-postbox-tog[id^=slim_]').bind('click.postboxes', function (){

@@ -156,7 +156,7 @@ var SlimStat = {
 	},
 
 	send_to_server : function (data_to_send, async) {
-		if (typeof SlimStatParams.ajaxurl == 'undefined' || typeof  SlimStatParams.blog_id == 'undefined' || typeof data_to_send == 'undefined'){
+		if (typeof SlimStatParams.ajaxurl == 'undefined' || typeof data_to_send == 'undefined'){
 			return false;
 		}
 
@@ -173,7 +173,7 @@ var SlimStat = {
 			return false;
 		}
 		if (request) {
-			var data = "action=slimtrack_js&nonce="+SlimStatParams.nonce+"&data="+SlimStat._base64_encode("bid="+ SlimStatParams.blog_id+"&"+data_to_send);
+			var data = "action=slimtrack_js&nonce="+SlimStatParams.nonce+"&data="+SlimStat._base64_encode(data_to_send);
 
 			if (typeof  SlimStatParams.id == 'undefined'){
 				request.onreadystatechange = function () {
