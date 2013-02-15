@@ -41,8 +41,9 @@ if ($count_results == 0){
 	_e('No records found', 'wp-slimstat-view');
 }
 else {
-	echo sprintf(__('Records: %d - %d of %d. Direction: %s', 'wp-slimstat-view'), wp_slimstat_db::$filters['parsed']['starting'][1], $ending_point, $count_raw_data, wp_slimstat_db::$filters['parsed']['direction'][1]); 
-} 
+	echo sprintf(__('Records: %d - %d of %d', 'wp-slimstat-view'), wp_slimstat_db::$filters['parsed']['starting'][1], $ending_point, $count_raw_data); 
+}
+if (wp_slimstat::$options['refresh_interval'] > 0) echo ' <span>['.__('refreshing in','wp-slimstat-view').' <span class="refresh-timer"></span>]</span>';
 echo '</h3><div class="inside">';
 				
 if ($count_results == 0){
@@ -99,10 +100,7 @@ for($i=0;$i<$count_results;$i++){
 			$platform_icon = "<img src='".wp_slimstat_boxes::$plugin_url."/images/browsers/other-browsers-and-os.png' title='".__('Platform','wp-slimstat-view').': '.__($results[$i]['platform'],'countries-languages')."' width='16' height='16'/>";
 		}
 		$platform_filtered = "<a class='image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('platform', $results[$i]['platform'])."'>$platform_icon</a>";
-		
-		// Browser Type
-		//$results[$i]['type'] = ($results[$i]['type'] != 0)?"<a class='browser-type-{$results[$i]['type']} image' href='".wp_slimstat_boxes::$current_screen_url.'&amp;fs='.wp_slimstat_boxes::replace_query_arg('type', $results[$i]['type'])."' title='".__('Browser Type','wp-slimstat-view').": {$results[$i]['type']}'></a>":'';
-		
+	
 		// Plugins
 		$plugins = '';
 		if (!empty($results[$i]['plugins'])){

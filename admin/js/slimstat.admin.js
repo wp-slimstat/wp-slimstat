@@ -5,6 +5,7 @@ var SlimStatAdmin = {
 	options: [],
 	_placeholder: null,
 	_chart_options: [],
+	_refresh_timer: [0, 0],
 
 	chart_init: function() {
 		SlimStatAdmin._placeholder = jQuery("#chart-placeholder");
@@ -166,8 +167,25 @@ var SlimStatAdmin = {
 			jQuery('#modal-dialog').html('<h3>Geolocation Information</h3><iframe src="'+jQuery(this).attr('href')+'" width="100%" height="92%"></iframe>');
 			jQuery('#modal-dialog').dialog('open');
 		});
+	},
+	
+	refresh_countdown: function(){
+		SlimStatAdmin._refresh_timer[1]--;
+		if (SlimStatAdmin._refresh_timer[1] == -1){
+			SlimStatAdmin._refresh_timer[1] = 59;
+			SlimStatAdmin._refresh_timer[0] = SlimStatAdmin._refresh_timer[0]-1;
+		}
+		jQuery('.refresh-timer').html(SlimStatAdmin._refresh_timer[0]+':'+((SlimStatAdmin._refresh_timer[1]<10)?'0':'')+SlimStatAdmin._refresh_timer[1]);
+		if (SlimStatAdmin._refresh_timer[0] > 0 || SlimStatAdmin._refresh_timer[1] > 0){
+			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
+		}
+		else{
+			window.clearTimeout(refresh_handle);
+			document.location.href = '?page=wp-slimstat&fs='+SlimStatParams.filters_string;
+		}
 	}
-};
+}
+
 jQuery(function(){
 	jQuery('.box-help').hover(
 			function(event){
@@ -200,7 +218,9 @@ jQuery(function(){
 	
 	// Refresh page every X seconds
 	if (SlimStatParams.refresh_interval > 0){
-		window.setTimeout('location.reload()', SlimStatParams.refresh_interval*1000);
+		SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatParams.refresh_interval/60);
+		SlimStatAdmin._refresh_timer[1] = SlimStatParams.refresh_interval%60;
+		refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 	}
 
 	jQuery('input.hide-postbox-tog[id^=slim_]').bind('click.postboxes', function (){

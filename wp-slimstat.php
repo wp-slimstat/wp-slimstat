@@ -3,14 +3,14 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 2.9.3
+version: 2.9.4
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
 
 if (!empty(wp_slimstat::$options)) return true;
 class wp_slimstat{
-	public static $version = '2.9.3';
+	public static $version = '2.9.4';
 	public static $options = array();
 	
 	protected static $data_js = array('id' => -1);
@@ -47,27 +47,27 @@ class wp_slimstat{
 	 */
 	public static function slimtrack_js(){
 		$data_string = base64_decode($_REQUEST['data']);
-		$nonce = $_REQUEST['nonce'];
-
 		if ($data_string === false){
-			exit('-101 : invalid data format');
+			exit('-101.0');
 		}
 
 		// Parse the information we received
 		parse_str($data_string, self::$data_js);
 
 		if (empty(self::$data_js['ci']) && empty(self::$data_js['id'])){
-			exit('-102 : invalid data format');
+			exit('-102.0');
 		}
 
 		if (!empty(self::$data_js['ci'])){
+			list(self::$data_js['ci'], $nonce) = explode('.', self::$data_js['ci']);
 			if ($nonce != md5(self::$data_js['ci'].self::$options['secret'])){
-				exit('-103 : invalid security signature');
+				exit('-103.0');
 			}
 		}
 		else{
+			list(self::$data_js['id'], $nonce) = explode('.', self::$data_js['id']);
 			if ($nonce != md5(self::$data_js['id'].self::$options['secret'])){
-				exit('-104 : invalid security signature');
+				exit('-104.0');
 			}
 			self::$stat['id'] = self::$data_js['id'];
 
@@ -91,7 +91,7 @@ class wp_slimstat{
 				$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
 					INSERT IGNORE INTO {$GLOBALS['wpdb']->prefix}slim_outbound (".implode(', ', array_keys(self::$stat)).')
 					VALUES ('.substr(str_repeat('%s,', count(self::$stat)), 0, -1).')', self::$stat));
-				exit(self::$stat['id'].' : success');
+				exit(self::$stat['id'].'.'.md5(self::$stat['id'].self::$options['secret']));
 			}
 		}
 
@@ -137,11 +137,11 @@ class wp_slimstat{
 
 		// Was this pageview tracked?
 		if (self::$stat['id'] < 0){
-			exit(self::$stat['id'].' : visit not tracked');
+			exit(self::$stat['id'].'.0');
 		}
 
 		// Send the ID back to Javascript to track future interactions
-		exit(self::$stat['id'].' : success');
+		exit(self::$stat['id'].'.'.md5(self::$stat['id'].self::$options['secret']));
 	}
 
 	/**
@@ -1016,12 +1016,11 @@ class wp_slimstat{
 		);
 
 		if (self::$options['javascript_mode'] != 'yes' && !empty(self::$stat['id']) && intval(self::$stat['id']) >= 0){
-			$params['id'] = intval(self::$stat['id']);
-			$params['nonce'] = md5($params['id'].self::$options['secret']);
+			$params['id'] = self::$stat['id'].'.'.md5(self::$stat['id'].self::$options['secret']);
 		}
 		if (self::$options['javascript_mode'] == 'yes'){
-			$params['ci'] = base64_encode(serialize(self::_get_content_info()));
-			$params['nonce'] = md5($params['ci'].self::$options['secret']);
+			$encoded_ci = base64_encode(serialize(self::_get_content_info()));
+			$params['ci'] = $encoded_ci.'.'.md5($encoded_ci.self::$options['secret']);
 		}
 		if (self::$options['enable_outbound_tracking'] == 'no'){
 			$params['disable_outbound_tracking'] = 'true';

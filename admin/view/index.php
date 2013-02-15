@@ -13,13 +13,6 @@ $array_screens = array(
 	__('Custom Reports','wp-slimstat-view')
 );
 
-// Pass some information to Javascript, to be used when hidden modules are activated
-echo '<script type="text/javascript">';
-echo 'SlimStatParams.filters_string = "'.htmlentities(urldecode(wp_slimstat_boxes::$filters_string), ENT_QUOTES, 'UTF-8').'"; ';
-echo 'SlimStatParams.async_load = "'.wp_slimstat::$options['async_load'].'"; ';
-if ((wp_slimstat::$options['refresh_interval'] > 0) && (wp_slimstat_boxes::$current_tab == 1)) echo 'SlimStatParams.refresh_interval = '.intval(wp_slimstat::$options['refresh_interval']).'; ';
-echo '</script>';
-
 ?>
 
 <div class="wrap">

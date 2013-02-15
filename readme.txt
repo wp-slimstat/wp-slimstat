@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732JS7KQ6RRL&lc=US&item_name=WP%20SlimStat&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
-Tested up to: 3.5
-Stable tag: 2.9.3
+Tested up to: 3.5.1
+Stable tag: 2.9.4
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -334,9 +334,14 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 
 == Changelog ==
 
+= 2.9.4 =
+* Fixed: a bug was preventing those users who were using the Refresh Interval feature from visualizing the stats
+* Fixed: a bug affecting the filter on browsers and operating system in the Right Now tab (thank you, Davide)
+* Updated: some new SQL optimizations have been implemented
+
 = 2.9.3 =
-* Updated: SQL optimizations have been implemented, your stats should now load a little faster
 * Fixed: minor bugs in the core tracking functionality, affecting the way tags associated to posts were recorded (thank you, [Neil](http://wordpress.org/support/topic/categories-vs-tags) and [Davide](http://www.davidetomasello.it/))
+* Updated: SQL optimizations have been implemented, your stats should now load a little faster
 * Updated: ip geolocation database (February 2013). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
 
 = 2.9.2 =
@@ -423,7 +428,7 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 [Andrea Pinti](http://andreapinti.com/), [Bluewave Blog](http://blog.bluewaveweb.co.uk/), [Caigo](http://www.blumannaro.net/), 
 [Dennis Kowallek](http://www.adopt-a-plant.com), [Damian](http://wipeoutmedia.com/), Giacomo Persichini,
 [Hans Schantz](http://www.aetherczar.com/), Hajrudin Mulabecirovic, [Herman Peet](http://www.hermanpeet.nl/), John Montano, 
-[La casetta delle pesche](http://www.lacasettadellepesche.it/), [Mobilize Mail](http://blog.mobilizemail.com/),
+[La casetta delle pesche](http://www.lacasettadellepesche.it/), [Laszlo Mihalka](http://7times77.com), [Mobilize Mail](http://blog.mobilizemail.com/),
 Mora Systems, Neil Robinson, [Ovidiu](http://pacura.ru/), [Sahin Eksioglu](http://www.alternatifblog.com/), [Saill White](http://saillwhite.com),
 [Sharon Villines](http://sociocracy.info), [SpenceDesign](http://spencedesign.com/), Stephane Sinclair, [The Parson's Rant](http://www.howardparsons.info), Wayne Liebman
 

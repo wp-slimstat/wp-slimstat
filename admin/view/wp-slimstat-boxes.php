@@ -466,7 +466,7 @@ class wp_slimstat_boxes{
 	public static function show_spy_view($_id = 'p0', $_type = 'undefined'){
 		if ($_id != 'p0' && (in_array($_id, self::$hidden_boxes) || wp_slimstat::$options['async_load'] == 'yes')) return;
 
-		$results = !is_int($_type)?wp_slimstat_db::get_recent('t1.id', '(t1.visit_id > 0 AND tb.type <> 1)', '', '', 't1.visit_id DESC'):wp_slimstat_db::get_recent_outbound($_type);
+		$results = !is_int($_type)?wp_slimstat_db::get_recent('t1.id', '(t1.visit_id > 0 AND tb.type <> 1)', 'tb.*'):wp_slimstat_db::get_recent_outbound($_type);
 
 		if (count($results) == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat-view').'</p>';
 

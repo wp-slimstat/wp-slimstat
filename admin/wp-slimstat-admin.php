@@ -601,6 +601,14 @@ class wp_slimstat_admin{
 		wp_enqueue_script('slimstat_flot', plugins_url('/admin/js/jquery.flot.min.js', dirname(__FILE__)), array('jquery'), '0.7');
 		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/js/jquery.flot.navigate.min.js', dirname(__FILE__)), array('jquery','slimstat_flot'), '0.7');
 		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), '1.0');
+		
+		// Pass some information to Javascript
+		$params = array(
+			'filters_string' => htmlentities(urldecode(wp_slimstat_boxes::$filters_string), ENT_QUOTES, 'UTF-8'),
+			'async_load' => wp_slimstat::$options['async_load'],
+			'refresh_interval' => (wp_slimstat_boxes::$current_screen == 1)?intval(wp_slimstat::$options['refresh_interval']):0
+		);
+		wp_localize_script('slimstat_admin', 'SlimStatParams', $params);
 	}
 
 	/**

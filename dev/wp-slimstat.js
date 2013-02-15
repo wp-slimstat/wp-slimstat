@@ -1,12 +1,11 @@
 var SlimStat = {
 	// Private Properties
-	_id : -1,
+	_id : '-1.0',
 	_base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
 	_plugins : {
 		acrobat: { substrings: [ "Adobe", "Acrobat" ], active_x_strings: [ "AcroPDF.PDF", "PDF.PDFCtrl.5" ] },
 		director: { substrings: [ "Shockwave", "Director" ], active_x_strings: [ "SWCtl.SWCtl" ] },
 		flash: { substrings: [ "Shockwave", "Flash" ], active_x_strings: [ "ShockwaveFlash.ShockwaveFlash" ] },
-		java: { substrings: [ "Java" ], active_x_strings: [ "JavaWebStart.isInstalled" ] },
 		mediaplayer: { substrings: [ "Windows Media" ], active_x_strings: [ "WMPlayer.OCX" ] },
 		quicktime: { substrings: [ "QuickTime" ], active_x_strings: [ "QuickTime.QuickTime" ] },
 		real: { substrings: [ "RealPlayer" ], active_x_strings: [ "rmocx.RealPlayer G2 Control", "RealPlayer.RealPlayer(tm) ActiveX Control (32-bit)", "RealVideo.RealVideo(tm) ActiveX Control (32-bit)" ] },
@@ -173,7 +172,11 @@ var SlimStat = {
 			return false;
 		}
 		if (request) {
-			var data = "action=slimtrack_js&nonce="+SlimStatParams.nonce+"&data="+SlimStat._base64_encode(data_to_send);
+			var data = "action=slimtrack_js&data="+SlimStat._base64_encode(data_to_send);
+
+			request.open('POST', SlimStatParams.ajaxurl, async);
+			request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			request.send(data);
 
 			if (typeof  SlimStatParams.id == 'undefined'){
 				request.onreadystatechange = function () {
@@ -186,10 +189,6 @@ var SlimStat = {
 			else
 				SlimStat._id =  SlimStatParams.id;
 
-			request.open('POST', SlimStatParams.ajaxurl, async);
-			request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-			request.send(data);
-
 			return true;
 		}
 		return false;
@@ -197,7 +196,8 @@ var SlimStat = {
 
 	ss_track : function (e, c, note) {
 		// Do nothing if we don't have a valid SlimStat._id
-		if (SlimStat._id < 0) return true;
+		parsed_id = parseInt(SlimStat._id);
+		if (isNaN(parsed_id) || parsed_id <= 0) return true;
 
 		// Check function params
 		if (typeof e == 'undefined') var e = window.event;
