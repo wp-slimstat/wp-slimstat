@@ -3,14 +3,14 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 2.9.4
+version: 2.9.5
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
 
 if (!empty(wp_slimstat::$options)) return true;
 class wp_slimstat{
-	public static $version = '2.9.4';
+	public static $version = '2.9.5';
 	public static $options = array();
 	
 	protected static $data_js = array('id' => -1);
@@ -271,9 +271,13 @@ class wp_slimstat{
 
 		// We want to record both hits and searches (performed through the site search form)
 		if (is_array(self::$data_js) && isset(self::$data_js['res'])){
+			$parsed_permalink = parse_url(base64_decode(self::$data_js['res']));
 			self::$stat['searchterms'] = self::_get_search_terms($referer);
 
-			$parsed_permalink = parse_url(base64_decode(self::$data_js['res']));
+			// Was this an internal search?
+			if (empty(self::$stat['searchterms']))
+				self::$stat['searchterms'] = self::_get_search_terms($parsed_permalink);
+
 			self::$stat['resource'] = !is_array($parsed_permalink)?self::$data_js['res']:$parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
 		}
 		elseif (empty($_REQUEST['s'])){
@@ -502,7 +506,7 @@ class wp_slimstat{
 	 * Sniffs out referrals from search engines and tries to determine the query string
 	 */
 	protected static function _get_search_terms($_url = array()){
-		if(!is_array($_url) || !isset($_url['host']) || !isset($_url['query'])) return '';
+		if (empty($_url) || !isset($_url['host']) || !isset($_url['query'])) return '';
 
 		$query_formats = array('daum' => 'q', 'eniro' => 'search_word', 'naver' => 'query', 'google' => 'q', 'www.google' => 'as_q', 'yahoo' => 'p', 'msn' => 'q', 'bing' => 'q', 'aol' => 'query', 'lycos' => 'q', 'ask' => 'q', 'cnn' => 'query', 'about' => 'q', 'mamma' => 'q', 'voila' => 'rdata', 'virgilio' => 'qs', 'baidu' => 'wd', 'yandex' => 'text', 'najdi' => 'q', 'seznam' => 'q', 'search' => 'q', 'onet' => 'qt', 'yam' => 'k', 'pchome' => 'q', 'kvasir' => 'q', 'mynet' => 'q', 'nova_rambler' => 'words');
 		$charsets = array('baidu' => 'EUC-CN');

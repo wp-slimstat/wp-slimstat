@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Z732J
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.5.1
-Stable tag: 2.9.4
+Stable tag: 2.9.5
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress.
@@ -333,6 +333,9 @@ You can get more information about this technique on [Wikipedia](http://en.wikip
 5. Access your stats from within Wordpress for iOS
 
 == Changelog ==
+
+= 2.9.5 =
+* Fixed: vulnerability that would allow visitors to inject javascript code into the admin, under specific circumstances (thank you, [mikes88](http://wordpress.org/support/topic/sanitize-the-plugin))
 
 = 2.9.4 =
 * Fixed: a bug was preventing those users who were using the Refresh Interval feature from visualizing the stats

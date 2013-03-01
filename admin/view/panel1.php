@@ -120,7 +120,7 @@ for($i=0;$i<$count_results;$i++){
 	
 	// Permalink: find post title, if available
 	if (!empty($results[$i]['resource'])){
-		$results[$i]['resource'] = "<a class='url' target='_blank' title='".htmlentities(__('Open this page in a new window','wp-slimstat-view'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['resource']}'></a> <a title='".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat-view'), $results[$i]['resource']), ENT_QUOTES, 'UTF-8')."' href='".wp_slimstat_boxes::fs_url('resource', $results[$i]['resource'])."'>".wp_slimstat_boxes::get_resource_title($results[$i]['resource']).'</a>';
+		$results[$i]['resource'] = "<a class='url' target='_blank' title='".htmlentities(__('Open this page in a new window','wp-slimstat-view'), ENT_QUOTES, 'UTF-8')."' href='".htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8')."'></a> <a title='".sprintf(__('Filter results where resource equals %s','wp-slimstat-view'), htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8'))."' href='".wp_slimstat_boxes::fs_url('resource', $results[$i]['resource'])."'>".wp_slimstat_boxes::get_resource_title($results[$i]['resource']).'</a>';
 	}
 	else{
 		$results[$i]['resource'] = __('Local search results page','wp-slimstat-view');

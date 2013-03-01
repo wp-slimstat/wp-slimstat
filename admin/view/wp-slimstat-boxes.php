@@ -295,7 +295,7 @@ class wp_slimstat_boxes{
 		if ($post_id > 0){
 			return get_the_title($post_id);
 		}
-		return urldecode($_resource);
+		return htmlentities(urldecode($_resource), ENT_QUOTES, 'UTF-8');
 	}
 	
 	public static function chart_title($_title = ''){
@@ -351,7 +351,7 @@ class wp_slimstat_boxes{
 			// Some columns require a special pre-treatment
 			switch ($_column){
 				case 'browser':
-					$element_value = $results[$i]['browser'].((intval($results[$i]['version']) != 0)?' '.$results[$i]['version']:'');
+					$element_value = $results[$i]['browser'].((isset($results[$i]['version']) && intval($results[$i]['version']) != 0)?' '.$results[$i]['version']:'');
 					break;
 				case 'category':
 					$element_title .= '<br>'.__('Category ID','wp-slimstat-view').": {$results[$i]['category']}";
@@ -392,11 +392,11 @@ class wp_slimstat_boxes{
 				case 'resource':
 					$post_id = url_to_postid(strtok($results[$i]['resource'], '?'));
 					if ($post_id > 0){
-						$element_title = "<br>{$results[$i]['resource']}";
+						$element_title = '<br>'.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8');
 						$element_value = get_the_title($post_id);
 					}
 					else{
-						$element_value = rawurldecode($results[$i]['resource']);
+						$element_value = htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8');
 					}
 					break;
 				case 'searchterms':
@@ -517,7 +517,7 @@ class wp_slimstat_boxes{
 					$permalink = parse_url($results[$i]['referer']);
 					$results[$i]['notes'] = str_replace('|ET:click', '', $results[$i]['notes']);
 					$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?self::$home_url.$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
-					$element_title = " title='".__('Source','wp-slimstat-view').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat-view')."\" href=\"$element_url\"></a><a title=\"".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat-view'), $permalink['path']), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url('resource', $permalink['path'])."\">{$permalink['path']}</a>";
+					$element_title = " title='".__('Source','wp-slimstat-view').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat-view')."\" href=\"$element_url\"></a><a title=\"".htmlentities(htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat-view'), $permalink['path']), ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url('resource', $permalink['path'])."\">{$permalink['path']}</a>";
 					$element_title .= !empty($results[$i]['notes'])?'<br>Link Details: '.htmlentities($results[$i]['notes'], ENT_QUOTES, 'UTF-8'):'';
 					$element_title .= "'";
 				}
