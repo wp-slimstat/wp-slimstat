@@ -9,7 +9,7 @@ Stable tag: 3.0
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.duechiacchiere.it) for more information.
 
-** Please note: WP SlimStat Dashboard Widgets is not part of this package anymore. If you notice any 'fatal error' related to that plugin, please [reinstall it](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets/) from the repository! **
+**Please note: WP SlimStat Dashboard Widgets is not part of this package anymore. If you notice any 'fatal error' related to that plugin, please [reinstall it](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets/) from the repository!**
 
 = Main Features =
 * Real-time web analytics reports
