@@ -742,11 +742,12 @@ class wp_slimstat_admin{
 			return $_links;
 
 		if (empty(wp_slimstat::$options['can_admin']) || strpos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false){
-			//load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/lang', '/wp-slimstat/lang');
-			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options'))
-				$_links['wp-slimstat'] = '<a href="admin.php?page=wp-slimstat/admin/options/index.php">'.__('Settings','wp-slimstat').'</a>';
-			else
-				$_links['wp-slimstat'] = '<a href="options-general.php?page=wp-slimstat/admin/options/index.php">'.__('Settings','wp-slimstat').'</a>';
+			if (wp_slimstat::$options['use_separate_menu'] == 'yes' || !current_user_can('manage_options')){
+				$_links['wp-slimstat'] = '<a href="admin.php?page=wp-slim-config">'.__('Settings','wp-slimstat').'</a>';
+			}
+			else{
+				$_links['wp-slimstat'] = '<a href="options-general.php?page=wp-slim-config">'.__('Settings','wp-slimstat').'</a>';
+			}
 		}
 		return $_links;
 	}
