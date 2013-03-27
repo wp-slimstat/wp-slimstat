@@ -161,6 +161,9 @@ msgstr "Windows CE"
 msgid "symbianos"
 msgstr "Symbian OS"
 
+msgid "blackberry os"
+msgstr "BlackBerry OS"
+
 msgid "webos"
 msgstr "WebOS"
 
