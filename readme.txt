@@ -292,10 +292,6 @@ foreach ($results...`
 
 == Changelog ==
 
-= 3.0.1 =
-* Fixed: some minor bugs related to the new filter API (thank you, [StephenKorsman](http://wordpress.org/support/topic/upgraded-no-stats-per-post))
-* Fixed: the link to the Settings page from Plugins > SlimStat was not working (thank you, [zircle](http://wordpress.org/support/topic/updated-to-30-and-permissions-problem))
-
 = 3.0 =
 * Added: a brand new client-side tracker, which replaces the previous one after 3 years of honorable duty. The new engine implements Wordpress Core Developers' guidelines on leveraging WP's built-in Ajax functionality, thus eliminating the need for custom hacks and non-standard implementations
 * Added: SERP positions are now displayed also under the Overview tab (thank you, Richie)
