@@ -589,9 +589,9 @@ class wp_slimstat{
 		}
 
 		// If a meaningful match was found, let's define some keys
-		if ($search[5] != 'Default Browser' && $search[5] != 'unknown' & intval($search[6]) != 0){
+		if ($search[5] != 'Default Browser' && $search[5] != 'unknown'){
 			$browser['browser'] = $search[5];
-			$browser['version'] = $search[6];
+			$browser['version'] = intval($search[6]);
 			$browser['platform'] = strtolower($search[9]);
 			$browser['css_version'] = $search[28];
 
