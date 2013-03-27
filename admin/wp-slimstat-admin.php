@@ -780,10 +780,10 @@ class wp_slimstat_admin{
 	 */
 	public static function add_post_column($_column_name, $_post_id){
 		if ('wp-slimstat' != $_column_name) return;
-		$parsed_permalink = parse_url( get_permalink($_post->ID) );
+		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
 		$count = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE resource = %s", $parsed_permalink));
-		echo '<a href="'.self::$view_url.'1&amp;fs[]=resource+contains+'.urlencode( $parsed_permalink ).'">'.$count.'</a>';
+		echo '<a href="'.self::$view_url.'1&amp;fs[resource]=contains+'.urlencode( $parsed_permalink ).'">'.$count.'</a>';
 	}
 	// end add_column
 
