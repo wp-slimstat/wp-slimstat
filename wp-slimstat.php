@@ -388,11 +388,10 @@ class wp_slimstat{
 		for ($depth = 31; $depth >= 0; --$depth) {
 			if (fseek($handle, 6 * $offset, SEEK_SET) != 0) return 'xx';
 			$buf = fread($handle, 6);
-
 			$x = array(0,0);
 			for ($i = 0; $i < 2; ++$i) {
 				for ($j = 0; $j < 3; ++$j) {
-					$x[$i] += ord($buf[3 * $i + $j]) << ($j * 8);
+					$x[$i] += ord(substr($buf, 3 * $i + $j, 1)) << ($j * 8);
 				}
 			}
 
