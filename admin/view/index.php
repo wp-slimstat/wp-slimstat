@@ -351,7 +351,7 @@ foreach ( array(
 				<script type="text/javascript">
 				AmCharts.ready(function(){
 					var dataProvider = {
-						mapVar: AmCharts.maps.worldHigh,
+						mapVar: AmCharts.maps.worldLow,
 						getAreasFromMap:true,
 						areas:[<?php echo implode(',', $data_areas) ?>]
 					}; 
@@ -367,7 +367,7 @@ foreach ( array(
 						outlineColor: "#666666",
 						selectedColor: "#ffb739"
 					};
-					map.backgroundAlpha = 1;
+					map.backgroundAlpha = .9;
 					map.backgroundColor = "#7adafd";
 					map.backgroundZoomsToTop = true;
 					map.balloon.color = "#000000";

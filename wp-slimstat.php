@@ -3,14 +3,14 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.0
+version: 3.1
 Author: Camu
 Author URI: http://www.duechiacchiere.it/
 */
 
 if (!empty(wp_slimstat::$options)) return true;
 class wp_slimstat{
-	public static $version = '3.0';
+	public static $version = '3.1';
 	public static $options = array();
 	
 	protected static $data_js = array('id' => -1);
@@ -218,7 +218,7 @@ class wp_slimstat{
 		self::$stat['ip'] = sprintf("%u", $long_user_ip);
 		if (!empty($long_other_ip)) self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
 		self::$stat['language'] = self::_get_language();
-		self::$stat['country'] = self::_get_country(self::$stat['ip']);
+		self::$stat['country'] = self::_get_country($long_user_ip);
 
 		// Country table not initialized
 		if (self::$stat['country'] === false){
@@ -380,20 +380,37 @@ class wp_slimstat{
 	/**
 	 * Searches for country associated to a given IP address
 	 */
-	protected static function _get_country($_ip = ''){
-		$sql = "SELECT country_code
-					FROM {$GLOBALS['wpdb']->base_prefix}slim_countries
-					WHERE ip_from <= $_ip AND ip_to >= $_ip
-					LIMIT 1";
+	protected static function _get_country($_ipnum = ''){
+		$country_codes = array("","ap","eu","ad","ae","af","ag","ai","al","am","cw","ao","aq","ar","as","at","au","aw","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","fi","fj","fk","fm","fo","fr","sx","ga","gb","gd","ge","gf","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","in","io","iq","ir","is","it","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","st","sv","sy","sz","tc","td","tf","tg","th","tj","tk","tm","tn","to","tl","tr","tt","tv","tw","tz","ua","ug","um","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","rs","za","zm","me","zw","a1","a2","o1","ax","gg","im","je","bl","mf","bq","ss","o1");
+		if (!$handle = fopen(WP_PLUGIN_DIR."/wp-slimstat/mapping/maxmind.dat", "rb")) return 'xx';
 
-		$country_code = $GLOBALS['wpdb']->get_var($sql, 0 , 0);
+		$offset = 0;
+		for ($depth = 31; $depth >= 0; --$depth) {
+			if (fseek($handle, 6 * $offset, SEEK_SET) != 0) return 'xx';
+			$buf = fread($handle, 6);
 
-		// Error handling
-		$error = mysql_error();
-		if (!empty($error)) return false;
+			$x = array(0,0);
+			for ($i = 0; $i < 2; ++$i) {
+				for ($j = 0; $j < 3; ++$j) {
+					$x[$i] += ord($buf[3 * $i + $j]) << ($j * 8);
+				}
+			}
 
-		if (!empty($country_code)) return $country_code;
-
+			if ($_ipnum & (1 << $depth)) {
+				if ($x[1] >= 16776960 && !empty($country_codes[$x[1] - 16776960])) {
+					fclose($handle);
+					return $country_codes[$x[1] - 16776960];
+				}
+				$offset = $x[1];
+			} else {
+				if ($x[0] >= 16776960 && !empty($country_codes[$x[0] - 16776960])) {
+					fclose($handle);
+					return $country_codes[$x[0] - 16776960];
+				}
+				$offset = $x[0];
+			}
+		}
+		fclose($handle);
 		return 'xx';
 	}
 	// end _get_country
@@ -449,7 +466,7 @@ class wp_slimstat{
 	 * Sniffs out referrals from search engines and tries to determine the query string
 	 */
 	protected static function _get_search_terms($_url = array()){
-		if (empty($_url) || !isset($_url['host']) || !isset($_url['query'])) return '';
+		if (empty($_url) || !isset($_url['host']) || !isset($_url['query']) || strpos($_url['host'], 'facebook') !== false) return '';
 
 		$query_formats = array('daum' => 'q', 'eniro' => 'search_word', 'naver' => 'query', 'google' => 'q', 'www.google' => 'as_q', 'yahoo' => 'p', 'msn' => 'q', 'bing' => 'q', 'aol' => 'query', 'lycos' => 'q', 'ask' => 'q', 'cnn' => 'query', 'about' => 'q', 'mamma' => 'q', 'voila' => 'rdata', 'virgilio' => 'qs', 'baidu' => 'wd', 'yandex' => 'text', 'najdi' => 'q', 'seznam' => 'q', 'search' => 'q', 'onet' => 'qt', 'yam' => 'k', 'pchome' => 'q', 'kvasir' => 'q', 'mynet' => 'q', 'nova_rambler' => 'words');
 		$charsets = array('baidu' => 'EUC-CN');
@@ -572,9 +589,11 @@ class wp_slimstat{
 	 */
 	protected static function _get_browser(){
 		// Load cache
-		include_once(WP_PLUGIN_DIR.'/wp-slimstat/browscap/cache.php');
-
+		@include_once(plugin_dir_path( __FILE__ ).'mapping/browscap.php');
+		
 		$browser = array('browser' => 'Default Browser', 'version' => '1', 'platform' => 'unknown', 'css_version' => 1, 'type' => 1);
+		if (!is_array($slimstat_patterns)) return $browser;
+
 		$user_agent = isset($_SERVER['HTTP_USER_AGENT'])?$_SERVER['HTTP_USER_AGENT']:'';
 		$search = array();
 		foreach ($slimstat_patterns as $key => $pattern){
@@ -1015,8 +1034,16 @@ class wp_slimstat{
 		self::$options['capability_can_view'] = empty(self::$options['capability_can_view'])?'read':self::$options['capability_can_view'];
 
 		if (empty(self::$options['can_view']) || strpos(self::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
-			$slimstat_view_url = (self::$options['use_separate_menu'] != 'yes')?'index.php':'admin.php';
+			if (self::$options['use_separate_menu'] != 'yes'){
+				$slimstat_view_url = 'index.php';
+				$slimstat_config_url = 'options-general.php';
+			}
+			else{
+				$slimstat_view_url = $slimstat_config_url = 'admin.php';
+			}
 			$slimstat_view_url = get_site_url($GLOBALS['blog_id'], "/wp-admin/$slimstat_view_url?page=wp-slim-view-");
+			$slimstat_config_url = get_site_url($GLOBALS['blog_id'], "/wp-admin/$slimstat_config_url?page=wp-slim-config");
+			
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-header', 'title' => 'SlimStat', 'href' => ''));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel1', 'href' => "{$slimstat_view_url}1", 'parent' => 'slimstat-header', 'title' => __('Right Now', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel2', 'href' => "{$slimstat_view_url}2", 'parent' => 'slimstat-header', 'title' => __('Overview', 'wp-slimstat')));
@@ -1024,6 +1051,10 @@ class wp_slimstat{
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel4', 'href' => "{$slimstat_view_url}4", 'parent' => 'slimstat-header', 'title' => __('Content', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel5', 'href' => "{$slimstat_view_url}5", 'parent' => 'slimstat-header', 'title' => __('Traffic Sources', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel6', 'href' => "{$slimstat_view_url}6", 'parent' => 'slimstat-header', 'title' => __('World Map', 'wp-slimstat')));
+			
+			if (empty(wp_slimstat::$options['can_admin']) || strpos(wp_slimstat::$options['can_admin'], $GLOBALS['current_user']->user_login) !== false || $GLOBALS['current_user']->user_login == 'slimstatadmin'){
+				$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-config', 'href' => $slimstat_config_url, 'parent' => 'slimstat-header', 'title' => __('Settings', 'wp-slimstat')));
+			}
 		}
 	}
 	// end wp_slimstat_adminbar

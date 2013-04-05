@@ -229,10 +229,10 @@ class wp_slimstat_boxes{
 		foreach(array_merge(self::$filters, $_keys) as $a_key => $a_filter){
 			if ($a_key == 'no-filter-selected-1') continue;
 			if (isset($_keys[$a_key])){
-				if (!empty($_keys[$a_key])) $filtered_url .= "&amp;fs[$a_key]=".urlencode($_keys[$a_key]);
+				if (!empty($_keys[$a_key])) $filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($_keys[$a_key]);
 			}
 			else{
-				$filtered_url .= "&amp;fs[$a_key]=".urlencode(self::$filters[$a_key]);
+				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode(self::$filters[$a_key]);
 			}
 		}
 
@@ -560,7 +560,7 @@ class wp_slimstat_boxes{
 		<p><?php _e('Tracking Browser Caps', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['enable_javascript']), 'wp-slimstat') ?></span></p>
 		<p><?php _e('Auto purge', 'wp-slimstat') ?> <span><?php echo (wp_slimstat::$options['auto_purge'] > 0)?wp_slimstat::$options['auto_purge'].' '.__('days','wp-slimstat'):__('No','wp-slimstat') ?></span></p>
 		<p><?php _e('Oldest pageview', 'wp-slimstat') ?> <span><?php $dt = wp_slimstat_db::get_oldest_visit(); echo ($dt == null)?__('No visits','wp-slimstat'):date_i18n(get_option('date_format'), $dt) ?></span></p>
-		<p>Geo IP <span><?php echo date_i18n(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/geoip.csv')) ?></span></p><?php
+		<p>Geo IP <span><?php echo date_i18n(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/mapping/maxmind.dat')) ?></span></p><?php
 	}
 
 	public static function show_overview_summary($_id = 'p0', $_current_pageviews = 0, $_chart_data = array()){

@@ -27,7 +27,7 @@ switch ($current_tab){
 			'javascript_mode' => array( 'description' => __('Javascript Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Turn this feature on if you are using a caching plugin (W3 Total Cache and friends). WP SlimStat will behave pretty much like Google Analytics, and visitors whose browser does not support Javascript will be ignored. A nice side effect is that <strong>most</strong> spammers, search engines and other crawlers will not be tracked.','wp-slimstat') ),
 			'auto_purge' => array( 'description' => __('Store Data For','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Automatically deletes pageviews older than <strong>X</strong> days (uses Wordpress cron jobs). Zero disables this feature.','wp-slimstat').(wp_get_schedule('wp_slimstat_purge')?' <br> '.__('Next clean-up on','wp-slimstat').' '.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'. '.sprintf(__('Entries recorded on or before %s will be permanently deleted.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$options['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') ),
 			'add_posts_column' => array( 'description' => __('Add Column to Posts','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Adds a new column to the Edit Posts screen, with the number of hits per post (may slow down page rendering).','wp-slimstat') ),
-			'use_separate_menu' => array( 'description' => __('Use standalone menu','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Lets you decide if you want to have a standalone admin menu for WP SlimStat or not.','wp-slimstat') )
+			'use_separate_menu' => array( 'description' => __('Menu Position','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Lets you decide if you want to have a standalone admin menu for WP SlimStat or a drop down in the admin bar.','wp-slimstat'), 'custom_label_yes' => __('Side Menu','wp-slimstat'), 'custom_label_no' => __('Admin Bar','wp-slimstat') )
 		);
 
 		// If autopurge = 0, we can unschedule our cron job. If autopurge > 0 and the hook was not scheduled, we schedule it
@@ -126,7 +126,7 @@ switch ($current_tab){
 				// Make sure all the users exist in the system 
 				$user_array = wp_slimstat::string_to_array($_POST['options']['can_view']);
 				$sql_user_list = "'".implode("' COLLATE utf8_bin,'", $user_array)."' COLLATE utf8_bin";
-				if ($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array)){
+				if ($GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_list)") == count($user_array)){
 					if (!wp_slimstat_admin::update_option('can_view', $_POST['options']['can_view'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Read access','wp-slimstat');
 				}
 				else{
@@ -153,7 +153,7 @@ switch ($current_tab){
 				// Make sure all the users exist in the system 
 				$user_array = wp_slimstat::string_to_array($_POST['options']['can_admin']);
 				$sql_user_list = "'".implode("' COLLATE utf8_bin,'", $user_array)."' COLLATE utf8_bin";
-				if ($wpdb->get_var("SELECT COUNT(*) FROM $wpdb->users WHERE user_login IN ($sql_user_list)") == count($user_array)){
+				if ($GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_list)") == count($user_array)){
 					if (!wp_slimstat_admin::update_option('can_admin', $_POST['options']['can_admin'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Config access','wp-slimstat');
 				}
 				else{

@@ -4,22 +4,13 @@ if (!function_exists('add_action')) exit(0);
 
 wp_slimstat_admin::check_screenres();
 
-if (isset($_GET['ds']) || isset($_GET['di2c'])){
+if (isset($_GET['ds'])){
 	if (isset($_GET['ds']) && $_GET['ds']=='yes'){
 		wp_slimstat_admin::show_alert_message(__('Are you sure you want to remove all the information about your hits and visits?','wp-slimstat').'&nbsp;&nbsp;&nbsp;<a class="button-secondary" href="?page=wp-slim-config&ds=confirm&tab='.$current_tab.'">'.__('Yes','wp-slimstat').'</a> <a class="button-secondary" href="?page=wp-slim-config&tab='.$current_tab.'">'.__('No','wp-slimstat').'</a>', 'updated highlight below-h2');
 	}
 	if (isset($_GET['ds']) && $_GET['ds']=='confirm'){
 		$GLOBALS['wpdb']->query("TRUNCATE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
 		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully emptied.','wp-slimstat'), 'updated below-h2');
-	}
-	if (isset($_GET['di2c']) && $_GET['di2c']=='confirm'){
-		$GLOBALS['wpdb']->query("TRUNCATE TABLE {$GLOBALS['wpdb']->prefix}slim_countries");
-		if (wp_slimstat_admin::import_countries()){
-			wp_slimstat_admin::show_alert_message(__('Your Geolocation data has been successfully updated.','wp-slimstat'), 'updated below-h2');
-		}
-		else{
-			wp_slimstat_admin::show_alert_message(__('ERROR: Your Geolocation source file is not readable.','wp-slimstat'), 'error below-h2');
-		}
 	}
 }
 if (isset($_GET['rbo'])){
@@ -36,7 +27,6 @@ if (isset($_GET['rbo'])){
 if (isset($_GET['rs']) && $_GET['rs']=='yes'){
 	// Delete the two tables created by WP SlimStat 0.9.2
 	$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
-	$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_countries");
 
 	if (wp_slimstat_admin::activate_single())
 		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully reset.','wp-slimstat'), 'updated below-h2');
@@ -45,7 +35,6 @@ if (isset($_GET['rs']) && $_GET['rs']=='yes'){
 }
 if (isset($_GET['ot']) && $_GET['ot']=='yes'){
 	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers");
-	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_countries");
 	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info");
 	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres");
 	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_outbound");
@@ -60,7 +49,6 @@ if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
 	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ENGINE = InnoDB");
 	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ENGINE = InnoDB");
 	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ENGINE = InnoDB");
-	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_countries ENGINE = InnoDB");
 	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ENGINE = InnoDB");
 	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ENGINE = InnoDB");
 	
@@ -134,7 +122,6 @@ $details_wp_slim_tables = array_merge(
 	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'", ARRAY_A),
 	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_outbound'", ARRAY_A),
 	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_browsers'", ARRAY_A),
-	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_countries'", ARRAY_A),
 	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_screenres'", ARRAY_A),
 	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_content_info'", ARRAY_A)
 );
@@ -211,10 +198,6 @@ if (empty($check_index)): ?>
 		<td><?php _e('Use this feature if you want to save some DB space, while slightly degrading WP SlimStat overall performances.','wp-slimstat') ?></td>
 	</tr>
 <?php endif ?>
-	<tr>
-		<th scope="row"><a class="button-secondary" href="?page=wp-slim-config&di2c=confirm&tab=<?php echo $current_tab ?>"><?php _e('Update Geolocation DB','wp-slimstat'); ?></a></th>
-		<td><?php _e('This button loads the new ip2location data.','wp-slimstat') ?></td>
-	</tr>
 	<tr>
 		<th scope="row"><a class="button-secondary" href="?page=wp-slim-config&rbo=confirm&tab=<?php echo $current_tab ?>"><?php _e('Reset Tabs','wp-slimstat'); ?></a></th>
 		<td><?php _e("Reset SlimStat's box order settings if one or more tabs are empty (no reports shown) or metrics are missing.",'wp-slimstat') ?></td>

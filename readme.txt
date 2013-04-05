@@ -4,12 +4,12 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.5.1
-Stable tag: 3.0
+Stable tag: 3.1
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.duechiacchiere.it) for more information.
 
-**Please note: WP SlimStat Dashboard Widgets is not part of this package anymore. If you notice a `fatal error` or a fopen warning message related to that plugin, upon upgrading to version 3.0, please [reinstall it](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets/) from the repository!**
+**Please note: WP SlimStat Dashboard Widgets is not part of this package anymore. If you notice a `fatal error` or a warning message related to that plugin, upon upgrading to version 3.0, please [reinstall it](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets/) from the repository!**
 
 = Main Features =
 * Real-time web analytics reports
@@ -54,6 +54,7 @@ WP SlimStat uses the HTML5 Canvas element and SVG graphics to display its charts
 
 == Installation ==
 
+0. **If you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available**
 1. Go to Plugins > Add New
 2. Search for WP SlimStat
 3. Click on Install Now under WP SlimStat
@@ -292,6 +293,18 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.1 =
+* Updated: if you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available
+* Updated: Goodbye Countries table, hello GeoIP.dat. Yes, after more than 3 years, I've decided to replace the ip2country table with the corresponding DAT file provided by MaxMind. This will improve the tracker's performance, eliminate custom tables from the database and make everybody happy!
+* Updated: swapped hi-res World Map with low-res version, to benefit performances on Firefox browsers (thank you, [zircle and carbeck](http://wordpress.org/support/topic/worldmaps-slow))
+* Fixed: some minor bugs related to the new filter API (thank you, [StephenKorsman](http://wordpress.org/support/topic/upgraded-no-stats-per-post))
+* Fixed: improved browser detection accuracy by removing an old bug (thank you, psn)
+* Fixed: the link to the Settings page from Plugins > SlimStat was not working (thank you, [zircle](http://wordpress.org/support/topic/updated-to-30-and-permissions-problem))
+* Fixed: some users were having problems with the new URL filter format (which uses square brackes, thank you omniamediahrc)
+* Fixed: Facebook uses the s parameter in its query string, but it's not a search term (thank you, Giacomo Persichini)
+* Fixed: some strings were missing from the localization files (thank you, psn)
+* Fixed: permission issues were preventing some users from saving their settings
+
 = 3.0 =
 * Added: a brand new client-side tracker, which replaces the previous one after 3 years of honorable duty. The new engine implements Wordpress Core Developers' guidelines on leveraging WP's built-in Ajax functionality, thus eliminating the need for custom hacks and non-standard implementations
 * Added: SERP positions are now displayed also under the Overview tab (thank you, Richie)
@@ -331,57 +344,36 @@ foreach ($results...`
 * Fixed: minor bugs in the core tracking functionality, affecting the way tags associated to posts were recorded (thank you, [Neil](http://wordpress.org/support/topic/categories-vs-tags) and [Davide](http://www.davidetomasello.it/))
 * Updated: ip geolocation database (February 2013). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
 
-= 2.9.2 =
-* Added: asynchronous views, to make your stats load faster (even on your Wordpress Dashboard). Enable it under Settings > Views
-* Added: posts and pages' IDs are now being tracked as well, so that you can keep analyzing your traffic even if your permalink structure changes (thank you, [Clifford Paulick](http://wordpress.org/support/topic/current-posts-stats))
-
-= 2.9.1 =
-* Fixed: a few issues arose after the release of version 2.9, related to the new JavaScript Mode option introduced in that version. I would like to thank Ed Konn, Melinda Hightower and all the other users who patiently helped me figure out what the problem was and pointed me in the right direction. You guys rock!
-* Fixed: cleaned up the plugin's stylesheet
-
-= 2.9 =
-* Added: you've been asking for it and here you have it: Javascript-based tracking functionality (a-la Google Analytics). Go the plugin's settings page to activate it. A nice side effect is that the option to ignore bots is now even more effective, check it out! (thank you, [Drew](http://wordpress.org/support/topic/feature-request-for-next-release))
-* Added: the next generation of WP SlimStat's cornerstone has been set. A new Wordpress action 'slimstat_track_pageview' and three filters (one for the pageview, one for the content type and one for the browser tracker) are now called right before the data is stored into the database, thus allowing third-party tools to manipulate that information and tweak the tracker as they like
-* Added: option to disable the Stats link associated to each post in the Edit Posts screen (thank you, [Andrzej](http://wordpress.org/support/topic/plugin-wp-slimstat-editquick-edittrashstats))
-* Added: option to disable outbound/external link tracking (thank you, emrys)
-* Added: outbound link tracking now records your links' TITLE attribute (thank you, emrys)
-* Added: have you moved/renamed your wp-config.php and WP SlimStat is complaining about it? Not anymore: create a new file called wp-slimstat-config.php inside your wp-content to point my plugin to your wp-config
-* Added: option to restrict authors to see only stats for their own content (thank you, [Zeb](http://wordpress.org/support/topic/includes-2))
-* Added: Chinese localization (thank you, meme)
-* Fixed: bug in generating the link to view stats for a specific post from the Edit Posts page (thank you, [dgunn](http://wordpress.org/support/topic/post-column-contains-incorrect-filters))
-* Fixed: bug that prevented outbound clicks to be properly tracked (thank you, emrys)
-* Fixed: conflict with Ajax event calendar plugin (thank you [saill](http://wordpress.org/support/topic/overview-and-visitors-graphs-contain-no-data))
-* Fixed: bug in pagination under Right Now
-* Fixed: Dashboard widgets were frozen if chart box was collapsed (thank you, [Nicole Parks](http://wordpress.org/support/topic/wp-slimstat-dashboard-widgets-frozen)) for your patience!)
-* Fixed: RTL support has been updated and improved
-
 == Donors ==
 [7times77](http://7times77.com),
-[Andrea Pinti](http://andreapinti.com/),
-[Bluewave Blog](http://blog.bluewaveweb.co.uk/),
-[Caigo](http://www.blumannaro.net/), 
+[Andrea Pinti](http://andreapinti.com),
+[Bluewave Blog](http://blog.bluewaveweb.co.uk),
+[Caigo](http://www.blumannaro.net),
+[Christian Coppini](http://www.coppini.me),
 [Dennis Kowallek](http://www.adopt-a-plant.com),
-[Damian](http://wipeoutmedia.com/),
-[Edward Koon](http://www.fidosysop.org/),
-[Gabriela Lungu](http://www.cosmeticebio.org/),
+[Damian](http://wipeoutmedia.com),
+[Edward Koon](http://www.fidosysop.org),
+[Gabriela Lungu](http://www.cosmeticebio.org),
 Gary Swarer,
 Giacomo Persichini,
 Hal Smith,
-[Hans Schantz](http://www.aetherczar.com/),
+[Hans Schantz](http://www.aetherczar.com),
 Hajrudin Mulabecirovic,
-[Herman Peet](http://www.hermanpeet.nl/),
+[Herman Peet](http://www.hermanpeet.nl),
 John Montano, 
-[La casetta delle pesche](http://www.lacasettadellepesche.it/),
-[Mobilize Mail](http://blog.mobilizemail.com/),
+[La casetta delle pesche](http://www.lacasettadellepesche.it),
+[Mobilize Mail](http://blog.mobilizemail.com),
 Mora Systems,
 Neil Robinson,
 [Ovidiu](http://pacura.ru/),
-[Sahin Eksioglu](http://www.alternatifblog.com/),
+[Sahin Eksioglu](http://www.alternatifblog.com),
 [Saill White](http://saillwhite.com),
-[Sarah Parks](http://drawingsecretsrevealed.com/),
+[Sarah Parks](http://drawingsecretsrevealed.com),
+Sebastian Peschties,
 [Sharon Villines](http://sociocracy.info), 
-[SpenceDesign](http://spencedesign.com/),
+[SpenceDesign](http://spencedesign.com),
 Stephane Sinclair,
+[Stephen Korsman](http://blog.theotokos.co.za),
 [The Parson's Rant](http://www.howardparsons.info),
 Wayne Liebman
 

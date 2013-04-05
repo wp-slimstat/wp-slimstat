@@ -4,7 +4,6 @@ if (!defined('WP_UNINSTALL_PLUGIN')) exit;
 
 global $wpdb;
 
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_countries");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_browsers");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_screenres");
 
