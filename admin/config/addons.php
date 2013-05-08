@@ -11,14 +11,17 @@ if (!empty($_POST['licenses'])){
 echo '<div class="wrap"><h2>WP SlimStat Add-ons</h2>';
 echo '<p>'.__('The following premium add-ons are available to extend the functionality of WP SlimStat. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version is available, please enter the license key you received after purchasing the add-on.','wp-slimstat').'</p>';
 
-$response = wp_remote_get('http://slimstat.getused.to.it/update-checker/', array('headers' => array('referer' => get_site_url())));
-if(is_wp_error($response) || $response['response']['code'] != 200){
-	$error_message = is_wp_error($response)?$response->get_error_message():$response['response']['code'].' '. $response['response']['message'];
-	echo '<p>'.__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message:','wp-slimstat').' '.$error_message.'</p></div>';
-	return;
+if (false === ($response = get_transient('wp_slimstat_addon_list'))){
+	$response = wp_remote_get('http://slimstat.getused.to.it/update-checker/', array('headers' => array('referer' => get_site_url())));
+	if(is_wp_error($response) || $response['response']['code'] != 200){
+		$error_message = is_wp_error($response)?$response->get_error_message():$response['response']['code'].' '. $response['response']['message'];
+		echo '<p>'.__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message:','wp-slimstat').' '.$error_message.'</p></div>';
+		return;
+	}
+	set_transient('wp_slimstat_addon_list', $response, 3600);
 }
 
-$list_addons = unserialize($response['body']);
+$list_addons = maybe_unserialize($response['body']);
 if (!is_array($list_addons)){
 	echo '<p>'.__('There was an error decoding the add-ons list from the server. Please try again later.','wp-slimstat').'</p></div>';
 	return;
