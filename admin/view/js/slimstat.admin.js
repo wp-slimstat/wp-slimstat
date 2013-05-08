@@ -1,4 +1,4 @@
-﻿if (typeof SlimStatParams == 'undefined') SlimStatParams = {'filters': '', 'async_load': 'no', 'refresh_interval': 0, 'expand_details':'yes'};
+﻿if (typeof SlimStatParams == 'undefined') SlimStatParams = {'filters': '', 'current_tab': 1, 'async_load': 'no', 'refresh_interval': 0, 'expand_details':'yes'};
 var SlimStatAdmin = {
 	data: [],
 	ticks: [],
@@ -90,11 +90,15 @@ var SlimStatAdmin = {
 	},
 	
 	load_ajax_data : function(box_id, data){
+		data['current_tab'] = SlimStatParams.current_tab;
 		jQuery.post(ajaxurl+'?slimstat=1'+SlimStatParams.filters, data, function(response){
 			jQuery(box_id + ' .inside').html(response);
 			if (box_id.indexOf('_01') > 0) SlimStatAdmin.chart_init();
 			SlimStatAdmin.expand_row_details(box_id);
 			SlimStatAdmin.enable_inline_help(box_id);
+			jQuery(box_id + ' .whois,' + box_id + ' .whois16').bind("click", function(event) {
+				SlimStatAdmin.attach_whois_modal(jQuery(this), event);
+			});
 		});
 	},
 	
@@ -115,6 +119,9 @@ var SlimStatAdmin = {
 						this.savetitle = this.title;
 						jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
 						this.title = '';
+						jQuery('#wp-element-details .whois').bind("click", function(event) {
+							SlimStatAdmin.attach_whois_modal(jQuery(this), event);
+						});
 					}
 				},
 				function(){
@@ -171,12 +178,24 @@ var SlimStatAdmin = {
 		});
 	},
 	
-	attach_whois_modal: function(){
-		jQuery('.whois,.whois16').click(function(event) {
-			if(event.preventDefault){event.preventDefault();} else {event.returnValue = false;}
-			jQuery('#modal-dialog').html('<h3>Geolocation Information</h3><iframe src="'+jQuery(this).attr('href')+'" width="100%" height="92%"></iframe>');
-			jQuery('#modal-dialog').dialog('open');
-		});
+	attach_whois_modal: function(element, event){
+		event.preventDefault();
+
+		jQuery('#modal-dialog').html('<h3>Geolocation Information</h3><a class="close-dialog" href="#"></a><iframe id="ip2location" src="'+element.attr('href')+'" width="100%" height="92%"></iframe>');
+		//jQuery('#modal-dialog').html('<h3>Visitor Information</h3><a class="close-dialog" href="#"></a><iframe id="ip2location" src="http://multisite.dev/ip2location.html" width="49%" height="90%"></iframe>');
+		//jQuery('<div id="visitor-details"><p class="loading"></p></div>').insertAfter('#ip2location');
+		//var data = {action: 'slimstat_visitor_information', ip_url: element.attr('href'), security: jQuery('#meta-box-order-nonce').val()}
+		//jQuery.post(ajaxurl+'?slimstat=1'+SlimStatParams.filters, data, function(response){
+		//	jQuery('#visitor-details').html(response);
+		//});
+		jQuery('#modal-dialog').dialog('open');
+		SlimStatAdmin.set_overlay_dimensions();
+	},
+
+	set_overlay_dimensions: function(){
+		jQuery('.ui-widget-overlay').width(jQuery(window).width());
+		jQuery('.ui-widget-overlay').height(jQuery(document).height());
+		jQuery('.ui-widget-content').width(jQuery(window).width() * 0.9);
 	},
 	
 	refresh_countdown: function(){
@@ -198,22 +217,31 @@ var SlimStatAdmin = {
 
 jQuery(function(){
 	jQuery('.box-help').hover(
-			function(event){
-				element_class = (this.id.length)?'tooltip-'+this.id:'tooltip-fixed-width';
-				this.savetitle = this.title;
-				SlimStatAdmin.show_tooltip(event.pageX, event.pageY, this.title, element_class, 'yes');
-				this.title = '';
-			},
-			function(){
-				this.title = this.savetitle;
-				jQuery('#jquery-tooltip').remove();
-			}
+		function(event){
+			element_class = (this.id.length)?'tooltip-'+this.id:'tooltip-fixed-width';
+			this.savetitle = this.title;
+			SlimStatAdmin.show_tooltip(event.pageX, event.pageY, this.title, element_class, 'yes');
+			this.title = '';
+		},
+		function(){
+			this.title = this.savetitle;
+			jQuery('#jquery-tooltip').remove();
+		}
+	);
+
+	jQuery('.box-refresh').click(
+		function(){
+			box_id = '#'+jQuery(this).parent().attr('id');
+			data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
+			jQuery(box_id+' .inside').html('<p class="loading"></p>');
+			SlimStatAdmin.load_ajax_data(box_id, data);
+		}
 	);
 
 	jQuery('div[id^=slim_]').each(function(){
-		var box_id = '#'+jQuery(this).attr('id');
+		box_id = '#'+jQuery(this).attr('id');
 		if (typeof SlimStatParams.async_load != 'undefined' && SlimStatParams.async_load == 'yes'){
-			var data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
+			data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
 			SlimStatAdmin.load_ajax_data(box_id, data);
 		}
 		else{
@@ -250,24 +278,34 @@ jQuery(function(){
 	if (typeof jQuery('#modal-dialog').dialog == 'function'){
 		/* WHOIS and the 'more' [+] button open a modal window */
 		jQuery('#modal-dialog').dialog({
-			modal : true,
 			autoOpen : false,
 			closeOnEscape : true,
-			draggable : false,
+			draggable : true,
+			height : 415,
+			modal : true,
 			open: function(){
 				jQuery('.ui-widget-overlay').bind('click',function(){
 					jQuery('#modal-dialog').dialog('close');
+				});
+				jQuery('.close-dialog').bind('click',function(){
+					jQuery('#modal-dialog').dialog('close');
 				})
 			},
+			position : { my: "top center" },
 			resizable : false,
-			width : jQuery(window).width() * 0.9,
-			height : jQuery(window).height() * 0.7
+			width : jQuery(window).width() * 0.9
 		});
 		jQuery('.more-modal-window').click(function(event) {
 			if(event.preventDefault){event.preventDefault();} else {event.returnValue = false;}
 			jQuery('#modal-dialog').html('<h3>'+jQuery(this).attr('title')+'</h3>blah');
 			jQuery('#modal-dialog').dialog('open');
 		});
-		SlimStatAdmin.attach_whois_modal();
+		jQuery('.whois,.whois16').bind("click", function(event) {
+			SlimStatAdmin.attach_whois_modal(jQuery(this), event);
+		});
 	}
+	
+	jQuery(window).resize(function(){
+        SlimStatAdmin.set_overlay_dimensions();
+    });
 });

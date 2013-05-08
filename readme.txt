@@ -3,39 +3,25 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
-Tested up to: 3.5.1
-Stable tag: 3.1
+Tested up to: 3.6
+Stable tag: 3.2
 
 == Description ==
-A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.duechiacchiere.it) for more information.
-
-**Please note: WP SlimStat Dashboard Widgets is not part of this package anymore. If you notice a `fatal error` or a warning message related to that plugin, upon upgrading to version 3.0, please [reinstall it](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets/) from the repository!**
+A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
 
 = Main Features =
 * Real-time web analytics reports
-* Compatible with W3 Total Cache and friends
+* Compatible with W3 Total Cache, WP SuperCache and friends
 * Modern, easy to use and customizable interface (yep, you can move boxes around and hide the ones you don't need)
-* Complies with European Privacy Laws (IP Anonymizer)
-* The most accurate ip geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://tempdownloads.browserscap.com/))
-* Comb through your data with advanced filters (IP addresses, browsers, search terms, users and much more)
-* View and admin access can be restricted to specific users
-* Pan-and-zoom JavaScript World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
+* The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://tempdownloads.browserscap.com/))
+* Advanced filtering
+* World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = What are people saying about WP SlimStat? =
 * One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
 * Thanks you for such an excellent plugin. I am using it to kick Jetpack out of all the wordpress installations that I manage for myself and others - [robertwagnervt](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
 * I like SlimStat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
-* With JetPack, my page views are between zero or 20 on the average [..] With WP SlimStat I saw page views went up to an average of 200 per day for five days now and unique visitors are on the rise as well - [h2ofilters](http://wordpress.org/support/topic/plugin-wp-slimstat-why-does-is-data-different-from-jetpack-or-wpstats#post-2831769)
 * Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own
-
-= Available analytics =
-* Right Now: a detailed view of the most recent activity on your site (Username, Public IP, Private IP, Browser, Referring URL, Visit Session, Resources accessed, and much more)
-* Overview: Daily/Hourly Pageviews (chart), Currently Connected, Spy View, Recent Known Visitors, Traffic Sources Overview, Recent Search Terms, Popular Posts, Recent Countries, Recent/Top Languages
-* Visitors: Daily/Hourly Human Visits, Visit Duration, Bots, Top User Agents, Top Operating Systems, Top IP Addresses, Top Screen Resolutions, Colordepths, Browser Plugins (Flash, Acrobat, etc), Top Countries
-* Content: Daily/Hourly Average Pageviews per visit, Outbound Links, Recent Events, Recent URLs, Recent Bounce Pages, Recent Feeds, Recent 404 URLs, Recent Internal Searches, Top Categories
-* Traffic Sources: Daily/Hourly Traffic Sources, Top Search Terms, Top Traffic Sources, Top Search Engines, Top Sites, Correlation between search terms and pages, Unique Referrers
-* World Map: pan and zoom to get detailed visual information about your visitors
-* Custom Reports: bring your own report!
 
 = Requirements =
 * Wordpress 3.1 or higher (it may not work on large multisite environments; some users have reported problems in accessing the configuration page under Wordpress 3.3.x or earlier)
@@ -71,14 +57,11 @@ clicks and the events they trigger.
 
 One of the files responsible for taking care of this is `admin-ajax.php`, usually located inside your */wp-admin/* folder.
 Point your browser to that file directly: if you see an error 404 or 500, then you will need to fix that problem, to allow WP SlimStat to do its job.
-If you see the number zero, then you're fine.
+If you see the number zero, then the problem could be related to a conflict with another plugin (caching, javascript minimizers, etc).
 
 = I am using W3 Total Cache/WP Super Cache, and it looks like your plugin is not tracking all of my visitors. Can you help me? =
-Simply go to Settings > SlimStat and enable the option Javascript Mode. WP SlimStat will only track human visitors (just like Google Analytics does, pretty much), but its accuracy will dramatically improve.
+Simply go to Settings > SlimStat and enable Javascript Mode. WP SlimStat will only track human visitors (just like Google Analytics does, pretty much), but its accuracy will dramatically improve.
 Don't forget to invalidate/clear your plugin's cache, to let SlimStat add its tracking code to all the newly cached pages.
-
-= I am using W3 Total Cache and after upgrading WP SlimStat, no visit are being tracked. How so? =
-Please clear your plugin's cache, in order for WP SlimStat to add the new tracking code to all the pages.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
 Try [to increase the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. If that doesn't help,
@@ -89,17 +72,6 @@ You were playing with the plugin's permission settings, weren't you? But don't w
 
 = I am using WP Touch, and mobile visitors are not tracked by your plugin. How can I fix this problem? =
 WP Touch has an advanced option that they call Restricted Mode, which attempts to fix issues where other plugins load scripts which interfere with WPtouch CSS and JavaScript. If you enable this feature, it will prevent WP SlimStat from running the tracking script (thank you, [Per](http://wordpress.org/support/topic/known-users-not-logged)).
-
-= Why do I see discrepancies between Google Analytics, Jetpack Stats and Slimstat? =
-Both Jetpack and GA use Javascript to track visitors. All the other pageviews are ignored, because search engines and other crawlers don't execute that client-side code.
-
-WP SlimStat, on the other side, has a server-based tracking engine, which can capture *all* of your visitors, both 'humans' and 'bots'. That's the main reason why you may see more (some times much more) traffic recorded by WP SlimStat. 
-
-= I noticed that the file `view.css` contains numerous base64 encoded strings, which I find kind of alarming. Is this normal? =
-I'm particularly serious when it comes to data integrity and safety, and I always try to put the best of my knowledge to make sure WP SlimStat is secure and doesn't carry any vulnerability.
-What you found in the CSS is a common technique used by experienced web developers to optimize site performances by 'embedding' small images (mainly icons)
-directly into the CSS, thus avoiding extra requests to the server to download all the media elements referenced by the page.
-You can get more information about this technique on [Wikipedia](http://en.wikipedia.org/wiki/Data_URI_scheme).
 
 = How can I change the colors associated to color-coded pageviews (known user, known visitors, search engines, etc)? =
 Go to Settings > SlimStat > View tab and paste your custom CSS into the corresponding field. Use the following code as a reference:
@@ -122,7 +94,7 @@ Go to Settings > SlimStat > View tab and paste your custom CSS into the correspo
 = Can I track clicks and other events happening on the page? =
 Yes, you can. This plugin includes a Javascript handler that can be attached to any event: click, mouseover, focus, keypress, etc. Here's the syntax:
 
-`ss_track(e, c, n)`
+`SlimStat.ss_track(e, c, n)`
 
 Where:
 
@@ -132,12 +104,12 @@ Where:
 
 Examples:
 
-* `onclick="if(typeof ss_track == 'function') ss_track(event, 5, 'clicked on first link');"`
-* `onkeypress="if(typeof ss_track == 'function') ss_track(event, 20);"`
-* To make your life easier, a *Google Plus One* callback function is included as well: `<g:plusone callback="slimstat_plusone"></g:plusone>`. Clicks on your Google+ button will be identified by the note 'google-plus-on/off'. Pleae refer to the [official documentation](https://developers.google.com/+/plugins/+1button/) for more information.
+* `onclick="if(typeof SlimStat.ss_track == 'function') SlimStat.ss_track(event, 5, 'clicked on first link');"`
+* `onkeypress="if(typeof SlimStat.ss_track == 'function') SlimStat.ss_track(event, 20);"`
+* To make your life easier, a *Google Plus One* callback function is included as well: `<g:plusone callback="SlimStat.slimstat_plusone"></g:plusone>`. Clicks on your Google+ button will be identified by the note 'google-plus-on/off'. Pleae refer to the [official documentation](https://developers.google.com/+/plugins/+1button/) for more information.
 
 = How do I use all those filters in the dropdown menu? =
-Here's a brief description of their meaning. Please remember that you can access the same information directly from within the admin, by 'pulling' the Help tab that should appear in the top right hand corner.
+Here's a brief description of what they mean. Please remember that you can access the same information directly from within the admin, by 'pulling' the Help tab that should appear in the top right hand corner.
 
 Basic filters:
 
@@ -293,6 +265,17 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.2 =
+* Added: we released the first few premium add-ons for WP SlimStat. You can now enhance its geolocation interface by getting more in-depth details about your visitors, or see what your registered users are doing on your site. (Check them out)[http://slimstat.getused.to.it]!
+* Added: new option to disable the detection of your visitors' browsers anti-aliasing support (thank you, [masspamak](http://wordpress.org/support/topic/remove-the-html5-canvas-element))
+* Added: you can now refresh single reports, instead of reloading the entire page
+* Updated: SlimStat's event tracking functionality has been updated to include [Sarah's feedback](http://wordpress.org/support/topic/event-tracking-page-page-load-not-working) on jQuery events
+* Updated: the size of the 'country' column in the database has been increased to 16 characters (to record information about regions and US States, with the corresponding add-on)
+* Fixed: a bug affecting the way Downloads were being tracked (thank you, [carbeck](http://wordpress.org/support/topic/input-format-of-tracking-downloads))
+* Fixed: a bug related to the Asynchronous Mode and filters
+* Fixed: a bug causing a permission error to be displayed in some cases (thank you, [cvoive874](http://wordpress.org/support/topic/update-authors-can-not-see-stats) and [Patrick.T](http://wordpress.org/support/topic/user-role-collaborator-dont-see-the-statistics))
+* Fixed: if the visitor's originating IP is the same as his public ip, the former won't be recorded (thank you, [trekkerz](http://wordpress.org/support/topic/wp-slimstat-disappeared-from-admin-settings))
+
 = 3.1 =
 * Updated: if you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available
 * Updated: Goodbye Countries table, hello GeoIP.dat. Yes, after more than 3 years, I've decided to replace the ip2country table with the corresponding DAT file provided by MaxMind. This will improve the tracker's performance, eliminate custom tables from the database and make everybody happy!
@@ -313,7 +296,7 @@ foreach ($results...`
 * Added: two new powerful filters to leverage [MySQL Regular Expressions' power](http://dev.mysql.com/doc/refman/5.1/en/regexp.html): matches and does_not_match. Try for example to filter your stats where browser matches fire|chro ;) (thank you, [carbeck](http://wordpress.org/support/topic/feature-request-regex-in-show-records-where…-filters))
 * Added: you can now filter your metrics by post ID, for those who change their permalinks every now and then
 * Added: a few new metrics (Top Tags, Recent Downloads, Top Downloads). You may need to reset your Tabs in order to see the new boxes (go to Settings > Maintenance > Reset Tabs)
-* Added: a brand-new set of hooks for your actions and filters. Take a look at the [Documentation](http://slimstat.duechiacchiere.it/documentation/) for more information, or see [how you can use them](http://wordpress.org/support/topic/plugin-wp-slimstat-possible-to-suppress-cookies#post-4016035) to customize WP SlimStat's behavior
+* Added: a brand-new set of hooks for your actions and filters. Take a look at the [Documentation](http://slimstat.getused.to.it/documentation/) for more information, or see [how you can use them](http://wordpress.org/support/topic/plugin-wp-slimstat-possible-to-suppress-cookies#post-4016035) to customize WP SlimStat's behavior
 * Added: new option to expand each row's details by default (thank you, [pedjas](http://wordpress.org/support/topic/can-we-get-absolute-count-numbers-in-stats))
 * Updated: a brand new JavaScript-based World Map replaces the existing Flash map, so that your mobile device can be happy now
 * Updated: admin menus have been consolidated and simplified (bye bye link under Dashboard, hello dropdown menu in the admin bar)
@@ -328,7 +311,7 @@ foreach ($results...`
 * Fixed: chart is using the correct max Y-axis when using intervals (thank you, [MGmirkin](http://wordpress.org/support/topic/feature-request-scale-graph-of-specific-date-range-by-views-during-that-range))
 * Fixed: bug that made all the stats disappear after activating the standalone menu (thank you, [Davide](http://www.davidetomasello.it/))
 * Fixed: bug in filtering Top Pages (thank you, [TechnoViel](http://wordpress.org/support/topic/slimstat-showing-old-hits-in-current-month-day-but-not-when-filtering-by-page))
-* Launched: [WP SlimStat](http://slimstat.duechiacchiere.it/) official website is now live (and growing)
+* Launched: [WP SlimStat](http://slimstat.getused.to.it/) official website is now live (and growing)
 
 = 2.9.5 =
 * Fixed: vulnerability that would allow visitors to inject javascript code into the admin, under specific circumstances (thank you, [mikes88](http://wordpress.org/support/topic/sanitize-the-plugin))

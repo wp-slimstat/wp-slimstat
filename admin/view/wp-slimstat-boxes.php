@@ -7,10 +7,10 @@ class wp_slimstat_boxes{
 	// Variables used to generate the HTML code for the metaboxes
 	public static $current_tab = 1;
 	public static $current_tab_url = '';
-	public static $ip_lookup_url = 'http://www.infosniper.net/?ip_address=';
 	public static $plugin_url = '';
 	public static $home_url = '';
 	public static $home_url_parsed = '';
+	public static $ip_lookup_url = 'http://www.infosniper.net/?ip_address=';
 	public static $meta_box_order_nonce = '';
 	public static $translations = array();
 
@@ -283,16 +283,13 @@ class wp_slimstat_boxes{
 				$filters_html .= "<span class='filter-item'><a class='remove-filter' title='".htmlentities(__('Remove filter for','wp-slimstat'), ENT_QUOTES, 'UTF-8').' '.self::$translations[$a_filter_label]."' href='".self::fs_url($a_filter_label)."'></a> <code>".self::$translations[$a_filter_label].' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat')." $a_filter_value_no_slashes</code> </span> ";
 			}
 		}
-		else{
-			$filters_html = '<h3>'.ucfirst(date_i18n('F Y')).'</h3>  ';
-		}
 		
 		return ($filters_html != "<span class='filters-title'>".__('Current filters:','wp-slimstat').'</span> ')?$filters_html:'';
 	}
 
 	public static function box_header($_id = 'p0', $_tooltip = '', $_postbox_class = '', $_more = false, $_inside_class = '', $_title = ''){
 		if (!empty($_postbox_class)) $_postbox_class .= ' ';
-		echo "<div class='postbox {$_postbox_class}slimstat' id='$_id'".(in_array($_id, self::$hidden_boxes)?' style="display:none"':'').'>';
+		echo "<div class='postbox {$_postbox_class}slimstat' id='$_id'".(in_array($_id, self::$hidden_boxes)?' style="display:none"':'').'><span class="box-refresh" title="'.__('Refresh','wp-slimstat').'"></span>';
 		if (!empty($_tooltip)) echo "<span class='box-help' title='$_tooltip'></span>";
 		// if ($_more) echo '<a class="more-modal-window" href="javascript:;" title="'.(!empty($_title)?$_title:self::$all_boxes_titles[$_id]).'"></a>';
 		echo "<h3 class='hndle'>".(!empty($_title)?$_title:self::$all_boxes_titles[$_id])."</h3><div class='inside $_inside_class'>";
@@ -543,7 +540,8 @@ class wp_slimstat_boxes{
 					$results[$i]['notes'] = str_replace('|ET:click', '', $results[$i]['notes']);
 					$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?self::$home_url.$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
 					$element_title = " title='".__('Source','wp-slimstat').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat')."\" href=\"$element_url\"></a><a title=\"".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat'), $permalink['path']), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url(array('resource' => 'equals '.$permalink['path']))."\">{$permalink['path']}</a>";
-					$element_title .= !empty($results[$i]['notes'])?'<br>Link Details: '.htmlentities($results[$i]['notes'], ENT_QUOTES, 'UTF-8'):'';
+					$element_title .= !empty($results[$i]['notes'])?'<br><strong>Link Details</strong>: '.htmlentities($results[$i]['notes'], ENT_QUOTES, 'UTF-8'):'';
+					$element_title .= ($_type == -1)?' <strong>Type</strong>: '.$results[$i]['type']:'';
 					$element_title .= "'";
 				}
 			}
@@ -559,7 +557,7 @@ class wp_slimstat_boxes{
 		<p><?php _e('Javascript Mode', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['javascript_mode']), 'wp-slimstat') ?></span></p>
 		<p><?php _e('Tracking Browser Caps', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['enable_javascript']), 'wp-slimstat') ?></span></p>
 		<p><?php _e('Auto purge', 'wp-slimstat') ?> <span><?php echo (wp_slimstat::$options['auto_purge'] > 0)?wp_slimstat::$options['auto_purge'].' '.__('days','wp-slimstat'):__('No','wp-slimstat') ?></span></p>
-		<p><?php _e('Oldest pageview', 'wp-slimstat') ?> <span><?php $dt = wp_slimstat_db::get_oldest_visit(); echo ($dt == null)?__('No visits','wp-slimstat'):date_i18n(get_option('date_format'), $dt) ?></span></p>
+		<p><?php _e('Oldest pageview', 'wp-slimstat') ?> <span><?php $dt = wp_slimstat_db::get_oldest_visit('1=1', false); echo ($dt == null)?__('No visits','wp-slimstat'):date_i18n(get_option('date_format'), $dt) ?></span></p>
 		<p>Geo IP <span><?php echo date_i18n(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/mapping/maxmind.dat')) ?></span></p><?php
 	}
 
@@ -696,12 +694,12 @@ class wp_slimstat_boxes{
 	}
 	
 	public static function show_report_wrapper($_box_id = 'p0'){
-
 		$box_id = ''; $is_ajax = true;
 		if (!empty($_POST['box_id'])){
 			// Let's make sure the request is coming from the right place
 			check_ajax_referer('meta-box-order', 'security');
 			$box_id = $_POST['box_id'];
+			self::$current_tab_url = wp_slimstat_admin::$view_url.intval($_POST['current_tab']);
 			$ajax_box_id = 'p0';
 		}
 		else if (!empty($_box_id)){

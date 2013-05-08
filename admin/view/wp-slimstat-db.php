@@ -17,12 +17,14 @@ class wp_slimstat_db {
 		date_default_timezone_set('UTC');
 
 		// Reset filters
-		self::$filters = array(
-			'parsed' => array('direction' => array('equals', 'desc'), 'limit_results' => array('equals', 0), 'starting' => array('equals', 0)),
-			'date_sql_where' => '',
-			'sql_from' => array('browsers' => '', 'screenres' => '', 'content_info' => '', 'outbound' => ''),
-			'sql_where' => ''
-		);
+		if (empty(self::$filters['parsed'])){
+			self::$filters = array(
+				'parsed' => array('direction' => array('equals', 'desc'), 'limit_results' => array('equals', 0), 'starting' => array('equals', 0)),
+				'date_sql_where' => '',
+				'sql_from' => array('browsers' => '', 'screenres' => '', 'content_info' => '', 'outbound' => ''),
+				'sql_where' => ''
+			);
+		}
 
 		// Decimal and thousand separators
 		if (wp_slimstat::$options['use_european_separators'] == 'no'){
@@ -318,12 +320,13 @@ class wp_slimstat_db {
 			) AS ts1', ARRAY_A);
 	}
 
-	public static function get_oldest_visit(){
+	public static function get_oldest_visit($_where_clause = '1=1', $_use_filters = true){
 		return $GLOBALS['wpdb']->get_var('
 			SELECT t1.dt
-			FROM '.$GLOBALS['wpdb']->prefix."slim_stats t1
-			ORDER BY t1.dt ASC
-			LIMIT 0,1");
+			FROM '.$GLOBALS['wpdb']->prefix.'slim_stats t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
+			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').'
+			ORDER BY dt ASC
+			LIMIT 0,1');
 	}
 
 	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = ''){
@@ -637,8 +640,6 @@ class wp_slimstat_db {
 				default:
 			}
 		}
-
-		self::$filters = apply_filters('slimstat_reporting_filters', self::$filters);
 	}	
 
 	protected function _format_value($_value = 0, $_link = ''){

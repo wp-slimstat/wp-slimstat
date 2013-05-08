@@ -13,8 +13,8 @@ class wp_slimstat_admin{
 		if (!empty($_POST['options']['use_separate_menu']))
 			self::update_option('use_separate_menu', $_POST['options']['use_separate_menu'], 'yesno');
 
-		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'index.php').'?page=wp-slim-view-';
-		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options-general.php').'?page=wp-slim-config&amp;tab=';
+		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-';
+		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-config&amp;tab=';
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 		// If a localization does not exist, use English
 		if (!isset($l10n['dynamic-strings'])){
@@ -131,7 +131,7 @@ class wp_slimstat_admin{
 				other_ip INT UNSIGNED DEFAULT 0,
 				user VARCHAR(255) DEFAULT '',
 				language VARCHAR(5) DEFAULT '',
-				country VARCHAR(2) DEFAULT '',
+				country VARCHAR(16) DEFAULT '',
 				domain VARCHAR(255) DEFAULT '',
 				referer VARCHAR(2048) DEFAULT '',
 				searchterms VARCHAR(2048) DEFAULT '',
@@ -326,6 +326,15 @@ class wp_slimstat_admin{
 		// --- Updates for version 3.1 ---
 		$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_countries");
 		// --- END: Updates for version 3.1 ---
+		
+		// --- Updates for version 3.2 ---
+		if (!isset(wp_slimstat::$options['detect_smoothing'])){
+			self::update_option('detect_smoothing', 'yes', 'yesno');
+		}
+		if (version_compare(wp_slimstat::$options['version'], '3.2', '<')){
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats MODIFY country VARCHAR(16) DEFAULT ''");
+		}
+		// --- END: Updates for version 3.2 ---
 
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
@@ -340,9 +349,9 @@ class wp_slimstat_admin{
 	 * Updates the array of options and stores the new values in the database
 	 */
 	public static function update_option($_option = 'undefined', $_value = '', $_type = 'text'){
-		// Is there anything we need to update?
-
+		// Is there anything that we need to update?
 		if (isset(wp_slimstat::$options[$_option]) && wp_slimstat::$options[$_option] == $_value) return true;
+
 		switch($_type){
 			case 'yesno':
 				if ($_value=='yes' || $_value=='no')
@@ -350,6 +359,9 @@ class wp_slimstat_admin{
 				break;
 			case 'integer':
 				wp_slimstat::$options[$_option] = abs(intval($_value));
+				break;
+			case 'array':
+				wp_slimstat::$options[$_option] = $_value;
 				break;
 			default:
 				wp_slimstat::$options[$_option] = strip_tags($_value);
@@ -395,6 +407,7 @@ class wp_slimstat_admin{
 		// Pass some information to Javascript
 		$params = array(
 			'filters' => htmlentities(str_replace('&amp;', '&', wp_slimstat_boxes::fs_url(array(), '')), ENT_QUOTES, 'UTF-8'),
+			'current_tab' => wp_slimstat_boxes::$current_tab,
 			'async_load' => wp_slimstat::$options['async_load'],
 			'refresh_interval' => (wp_slimstat_boxes::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:1
@@ -430,23 +443,26 @@ class wp_slimstat_admin{
 				$new_entry[] = add_submenu_page('wp-slim-view-1', __('Content','wp-slimstat'), __('Content','wp-slimstat'), $minimum_capability, 'wp-slim-view-4', array(__CLASS__, 'wp_slimstat_include_view'));
 				$new_entry[] = add_submenu_page('wp-slim-view-1', __('Traffic Sources','wp-slimstat'), __('Traffic Sources','wp-slimstat'), $minimum_capability, 'wp-slim-view-5', array(__CLASS__, 'wp_slimstat_include_view'));
 				$new_entry[] = add_submenu_page('wp-slim-view-1', __('World Map','wp-slimstat'), __('World Map','wp-slimstat'), $minimum_capability, 'wp-slim-view-6', array(__CLASS__, 'wp_slimstat_include_view'));
-				$new_entry[] = add_submenu_page('wp-slim-view-1', __('Custom Reports','wp-slimstat'), __('Custom Reports','wp-slimstat'), $minimum_capability, 'wp-slim-view-7', array(__CLASS__, 'wp_slimstat_include_view'));
+				if (has_action('wp_slimstat_custom_report')) $new_entry[] = add_submenu_page('wp-slim-view-1', __('Custom Reports','wp-slimstat'), __('Custom Reports','wp-slimstat'), $minimum_capability, 'wp-slim-view-7', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('wp-slim-view-1', __('Add-ons','wp-slimstat'), __('Add-ons','wp-slimstat'), $minimum_capability, 'wp-slim-view-addons', array(__CLASS__, 'wp_slimstat_include_addons'));
 			}
 			else{
+				//var_dump(is_admin_bar_showing()); exit;
 				if (!is_admin_bar_showing()){
 					$new_entry[] = add_submenu_page('index.php', 'SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 				}
 				else{
-					$new_entry[] = add_submenu_page(null, 'SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
+					$new_entry[] = add_submenu_page('options.php', 'SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 				}
 
-				// Let's tell WordPress that these page exist, without showing them (null value)
-				$new_entry[] = add_submenu_page(null, __('Overview','wp-slimstat'), __('Overview','wp-slimstat'), $minimum_capability, 'wp-slim-view-2', array(__CLASS__, 'wp_slimstat_include_view'));
-				$new_entry[] = add_submenu_page(null, __('Visitors','wp-slimstat'), __('Visitors','wp-slimstat'), $minimum_capability, 'wp-slim-view-3', array(__CLASS__, 'wp_slimstat_include_view'));
-				$new_entry[] = add_submenu_page(null, __('Content','wp-slimstat'), __('Content','wp-slimstat'), $minimum_capability, 'wp-slim-view-4', array(__CLASS__, 'wp_slimstat_include_view'));
-				$new_entry[] = add_submenu_page(null, __('Traffic Sources','wp-slimstat'), __('Traffic Sources','wp-slimstat'), $minimum_capability, 'wp-slim-view-5', array(__CLASS__, 'wp_slimstat_include_view'));
-				$new_entry[] = add_submenu_page(null, __('World Map','wp-slimstat'), __('World Map','wp-slimstat'), $minimum_capability, 'wp-slim-view-6', array(__CLASS__, 'wp_slimstat_include_view'));
-				$new_entry[] = add_submenu_page(null, __('Custom Reports','wp-slimstat'), __('Custom Reports','wp-slimstat'), $minimum_capability, 'wp-slim-view-7', array(__CLASS__, 'wp_slimstat_include_view'));
+				// Let's tell WordPress that these page exist, without showing them
+				$new_entry[] = add_submenu_page('options.php', __('Overview','wp-slimstat'), __('Overview','wp-slimstat'), $minimum_capability, 'wp-slim-view-2', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('options.php', __('Visitors','wp-slimstat'), __('Visitors','wp-slimstat'), $minimum_capability, 'wp-slim-view-3', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('options.php', __('Content','wp-slimstat'), __('Content','wp-slimstat'), $minimum_capability, 'wp-slim-view-4', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('options.php', __('Traffic Sources','wp-slimstat'), __('Traffic Sources','wp-slimstat'), $minimum_capability, 'wp-slim-view-5', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('options.php', __('World Map','wp-slimstat'), __('World Map','wp-slimstat'), $minimum_capability, 'wp-slim-view-6', array(__CLASS__, 'wp_slimstat_include_view'));
+				if (has_action('wp_slimstat_custom_report')) $new_entry[] = add_submenu_page('options.php', __('Custom Reports','wp-slimstat'), __('Custom Reports','wp-slimstat'), $minimum_capability, 'wp-slim-view-7', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('options.php', __('Add-ons','wp-slimstat'), __('Add-ons','wp-slimstat'), $minimum_capability, 'wp-slim-view-addons', array(__CLASS__, 'wp_slimstat_include_addons'));
 			}
 
 			// Load styles and Javascript needed to make the reports look nice and interactive
@@ -489,7 +505,15 @@ class wp_slimstat_admin{
 		include(dirname(__FILE__).'/view/index.php');
 	}
 	// end wp_slimstat_include_view
-	
+
+	/**
+	 * Includes the screen to manage add-ons
+	 */
+	public static function wp_slimstat_include_addons(){
+		include(dirname(__FILE__).'/config/addons.php');
+	}
+	// end wp_slimstat_include_addons
+
 	/**
 	 * Includes the appropriate panel to configure WP SlimStat
 	 */
