@@ -266,7 +266,7 @@ foreach ($results...`
 == Changelog ==
 
 = 3.2 =
-* Added: we released the first few premium add-ons for WP SlimStat. You can now enhance its geolocation interface by getting more in-depth details about your visitors, or see what your registered users are doing on your site. (Check them out)[http://slimstat.getused.to.it]!
+* Added: we released the first few premium add-ons for WP SlimStat. You can now enhance its geolocation interface by getting more in-depth details about your visitors, or see what your registered users are doing on your site. [Check them out](http://slimstat.getused.to.it)!
 * Added: new option to disable the detection of your visitors' browsers anti-aliasing support (thank you, [masspamak](http://wordpress.org/support/topic/remove-the-html5-canvas-element))
 * Added: you can now refresh single reports, instead of reloading the entire page
 * Updated: SlimStat's event tracking functionality has been updated to include [Sarah's feedback](http://wordpress.org/support/topic/event-tracking-page-page-load-not-working) on jQuery events
