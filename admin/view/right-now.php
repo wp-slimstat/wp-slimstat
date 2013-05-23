@@ -36,7 +36,8 @@ if ($ending_point + wp_slimstat_db::$filters['parsed']['limit_results'][1] < $co
 }
 
 // Display results
-echo "<div class='postbox tall slimstat'><div class='previous-next'>$previous_next</div><h3 class='hndle'>";
+$header_buttons = apply_filters('slimstat_box_header_buttons', "<span class='previous-next'>$previous_next</span>", 'slim_p7_01');
+echo "<div class='postbox tall slimstat' id='slim_p7_01'>$header_buttons<h3 class='hndle'>";
 if ($count_results == 0){
 	_e('No records found', 'wp-slimstat');
 }

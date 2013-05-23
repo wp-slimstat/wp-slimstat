@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.6
-Stable tag: 3.2
+Stable tag: 3.2.1
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
@@ -265,67 +265,37 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.2.1 =
+* [Note] [JSDelivr](http://www.jsdelivr.com/network.php), our CDN partners, have upgraded their network, which is now faster and more reliable than ever
+* [Note] You've been asking for it! The Export premium add-on is coming, stay tuned...
+* [Update] Reinforced the plugin's controls on the database structure, and improved error handling for some rare issues that could arise (thank you, Vera)
+* [Update] Improved the new Add-ons screens, by listing both premium and free extensions, and by consolidating Add-ons settings under one single page
+* [Fix] We addressed a bug that was resetting all the settings on deactivation/reactivation (thank you, [Jeremy](http://wordpress.org/support/topic/deactivatereactivate-plugin-resets-its-settings))
+* [Fix] Resolved a permission issue on the new Add-ons page
+* [Fix] Positions of report boxes were not being saved, if WP SlimStat menu was displayed in the admin bar
+
 = 3.2 =
-* Added: we released the first few premium add-ons for WP SlimStat. You can now enhance its geolocation interface by getting more in-depth details about your visitors, or see what your registered users are doing on your site. [Check them out](http://slimstat.getused.to.it)!
-* Added: new option to disable the detection of your visitors' browsers anti-aliasing support (thank you, [masspamak](http://wordpress.org/support/topic/remove-the-html5-canvas-element))
-* Added: you can now refresh single reports, instead of reloading the entire page
-* Updated: SlimStat's event tracking functionality has been updated to include [Sarah's feedback](http://wordpress.org/support/topic/event-tracking-page-page-load-not-working) on jQuery events
-* Updated: the size of the 'country' column in the database has been increased to 16 characters (to record information about regions and US States, with the corresponding add-on)
-* Fixed: a bug affecting the way Downloads were being tracked (thank you, [carbeck](http://wordpress.org/support/topic/input-format-of-tracking-downloads))
-* Fixed: a bug related to the Asynchronous Mode and filters
-* Fixed: a bug causing a permission error to be displayed in some cases (thank you, [cvoive874](http://wordpress.org/support/topic/update-authors-can-not-see-stats) and [Patrick.T](http://wordpress.org/support/topic/user-role-collaborator-dont-see-the-statistics))
-* Fixed: if the visitor's originating IP is the same as his public ip, the former won't be recorded (thank you, [trekkerz](http://wordpress.org/support/topic/wp-slimstat-disappeared-from-admin-settings))
+* [New] We released the first few premium add-ons for WP SlimStat. You can now enhance its geolocation interface by getting more in-depth details about your visitors, or see what your registered users are doing on your site. [Check them out](http://slimstat.getused.to.it)!
+* [New] Option to disable the detection of your visitors' browsers anti-aliasing support (thank you, [masspamak](http://wordpress.org/support/topic/remove-the-html5-canvas-element))
+* [New] You can now refresh single reports, instead of reloading the entire page
+* [Update] SlimStat's event tracking functionality has been updated to include [Sarah's feedback](http://wordpress.org/support/topic/event-tracking-page-page-load-not-working) on jQuery events
+* [Update] The country column's size has been increased to 16 characters (to record information about regions and US States)
+* [Fix] Bug affecting the way Downloads were being tracked (thank you, [carbeck](http://wordpress.org/support/topic/input-format-of-tracking-downloads))
+* [Fix] Bug related to the Asynchronous Mode and filters
+* [Fix] Bug causing a permission error to be displayed in some cases (thank you, [cvoive874](http://wordpress.org/support/topic/update-authors-can-not-see-stats) and [Patrick.T](http://wordpress.org/support/topic/user-role-collaborator-dont-see-the-statistics))
+* [Fix] If the visitor's originating IP is the same as his public ip, the former won't be recorded (thank you, [trekkerz](http://wordpress.org/support/topic/wp-slimstat-disappeared-from-admin-settings))
 
 = 3.1 =
-* Updated: if you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available
-* Updated: Goodbye Countries table, hello GeoIP.dat. Yes, after more than 3 years, I've decided to replace the ip2country table with the corresponding DAT file provided by MaxMind. This will improve the tracker's performance, eliminate custom tables from the database and make everybody happy!
-* Updated: swapped hi-res World Map with low-res version, to benefit performances on Firefox browsers (thank you, [zircle and carbeck](http://wordpress.org/support/topic/worldmaps-slow))
-* Fixed: some minor bugs related to the new filter API (thank you, [StephenKorsman](http://wordpress.org/support/topic/upgraded-no-stats-per-post))
-* Fixed: improved browser detection accuracy by removing an old bug (thank you, psn)
-* Fixed: the link to the Settings page from Plugins > SlimStat was not working (thank you, [zircle](http://wordpress.org/support/topic/updated-to-30-and-permissions-problem))
-* Fixed: some users were having problems with the new URL filter format (which uses square brackes, thank you omniamediahrc)
-* Fixed: Facebook uses the s parameter in its query string, but it's not a search term (thank you, Giacomo Persichini)
-* Fixed: some strings were missing from the localization files (thank you, psn)
-* Fixed: permission issues were preventing some users from saving their settings
-
-= 3.0 =
-* Added: a brand new client-side tracker, which replaces the previous one after 3 years of honorable duty. The new engine implements Wordpress Core Developers' guidelines on leveraging WP's built-in Ajax functionality, thus eliminating the need for custom hacks and non-standard implementations
-* Added: SERP positions are now displayed also under the Overview tab (thank you, Richie)
-* Added: you can finally customize those ugly colors associated to known users, search engines, etc. Check the FAQs to learn how.
-* Added: login page (wp-login.php) is now tracked
-* Added: two new powerful filters to leverage [MySQL Regular Expressions' power](http://dev.mysql.com/doc/refman/5.1/en/regexp.html): matches and does_not_match. Try for example to filter your stats where browser matches fire|chro ;) (thank you, [carbeck](http://wordpress.org/support/topic/feature-request-regex-in-show-records-where…-filters))
-* Added: you can now filter your metrics by post ID, for those who change their permalinks every now and then
-* Added: a few new metrics (Top Tags, Recent Downloads, Top Downloads). You may need to reset your Tabs in order to see the new boxes (go to Settings > Maintenance > Reset Tabs)
-* Added: a brand-new set of hooks for your actions and filters. Take a look at the [Documentation](http://slimstat.getused.to.it/documentation/) for more information, or see [how you can use them](http://wordpress.org/support/topic/plugin-wp-slimstat-possible-to-suppress-cookies#post-4016035) to customize WP SlimStat's behavior
-* Added: new option to expand each row's details by default (thank you, [pedjas](http://wordpress.org/support/topic/can-we-get-absolute-count-numbers-in-stats))
-* Updated: a brand new JavaScript-based World Map replaces the existing Flash map, so that your mobile device can be happy now
-* Updated: admin menus have been consolidated and simplified (bye bye link under Dashboard, hello dropdown menu in the admin bar)
-* Updated: plugin files have been consolidated as well, making the structure much easier to manage and more flexible
-* Updated: viewer API has been partially rewritten and code optimizations have been implemented (which should make your stats appear faster)
-* Updated: after the nth complaint from a user who had deleted WP SlimStat by mistake, the Dashboard Widgets add-on is now available as a [separate plugin on the repository](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets/)
-* Updated: world map has been updated (thank you, [intrepidkarthi](http://wordpress.org/support/topic/indian-border-is-shown-wrongly-in-the-world-map-stats))
-* Updated: search terms detection is now more accurate when JavaScript Mode is turned on
-* Updated: localization files have been consolidated and are now easier to maintain
-* Updated: browscap.ini (browser database), v5018 - February 2013
-* Fixed: minor bugs affecting the tracker
-* Fixed: chart is using the correct max Y-axis when using intervals (thank you, [MGmirkin](http://wordpress.org/support/topic/feature-request-scale-graph-of-specific-date-range-by-views-during-that-range))
-* Fixed: bug that made all the stats disappear after activating the standalone menu (thank you, [Davide](http://www.davidetomasello.it/))
-* Fixed: bug in filtering Top Pages (thank you, [TechnoViel](http://wordpress.org/support/topic/slimstat-showing-old-hits-in-current-month-day-but-not-when-filtering-by-page))
-* Launched: [WP SlimStat](http://slimstat.getused.to.it/) official website is now live (and growing)
-
-= 2.9.5 =
-* Fixed: vulnerability that would allow visitors to inject javascript code into the admin, under specific circumstances (thank you, [mikes88](http://wordpress.org/support/topic/sanitize-the-plugin))
-
-= 2.9.4 =
-* Fixed: bug that prevented the 'Limit Results' option from working properly (thank you, Romain Petges)
-* Fixed: a bug was preventing those users who were using the Refresh Interval feature from visualizing the stats
-* Fixed: a bug affecting the filter on browsers and operating system in the Right Now tab (thank you, Davide)
-* Updated: some new SQL optimizations have been implemented
-
-= 2.9.3 =
-* Updated: SQL optimizations have been implemented in the core DB APIs, your stats should now load a little faster
-* Fixed: minor bugs in the core tracking functionality, affecting the way tags associated to posts were recorded (thank you, [Neil](http://wordpress.org/support/topic/categories-vs-tags) and [Davide](http://www.davidetomasello.it/))
-* Updated: ip geolocation database (February 2013). Go to Settings > SlimStat > Maintenance tab > Update Geolocation DB to load the new data.
+* [Note] If you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available
+* [Update] Goodbye Countries table, hello GeoIP.dat. Yes, after more than 3 years, I've decided to replace the ip2country table with the corresponding DAT file provided by MaxMind. This will improve the tracker's performance, eliminate custom tables from the database and make everybody happy!
+* [Update] Swapped hi-res World Map with low-res version, to benefit performances on Firefox browsers (thank you, [zircle and carbeck](http://wordpress.org/support/topic/worldmaps-slow))
+* [Fix] Addressed some minor bugs related to the new filter API (thank you, [StephenKorsman](http://wordpress.org/support/topic/upgraded-no-stats-per-post))
+* [Fix] Improved browser detection accuracy by removing an old bug (thank you, psn)
+* [Fix] Link to the Settings page from Plugins > SlimStat was not working (thank you, [zircle](http://wordpress.org/support/topic/updated-to-30-and-permissions-problem))
+* [Fix] Some users were having problems with the new URL filter format (which uses square brackes, thank you omniamediahrc)
+* [Fix] Facebook uses the s parameter in its query string, but it's not a search term (thank you, Giacomo Persichini)
+* [Fix] Some strings were missing from the localization files (thank you, psn)
+* [Fix] Permission issues were preventing some users from saving their settings
 
 == Donors ==
 [7times77](http://7times77.com),
@@ -352,7 +322,7 @@ Neil Robinson,
 [Sahin Eksioglu](http://www.alternatifblog.com),
 [Saill White](http://saillwhite.com),
 [Sarah Parks](http://drawingsecretsrevealed.com),
-Sebastian Peschties,
+[Sebastian Peschties](http://www.spitl.de),
 [Sharon Villines](http://sociocracy.info), 
 [SpenceDesign](http://spencedesign.com),
 Stephane Sinclair,

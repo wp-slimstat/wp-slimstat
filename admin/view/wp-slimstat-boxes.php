@@ -74,7 +74,7 @@ class wp_slimstat_boxes{
 
 		// Retrieve the order of this tab's panels and which ones are hidden
 		$user = wp_get_current_user();
-		$page_location = (wp_slimstat::$options['use_separate_menu'] == 'yes')?'slimstat':'dashboard';
+		$page_location = (wp_slimstat::$options['use_separate_menu'] == 'yes')?'slimstat':'admin';
 
 		self::$all_boxes_titles = array(
 			'slim_p1_01' => __('Pageviews (chart)','wp-slimstat'),
@@ -289,10 +289,12 @@ class wp_slimstat_boxes{
 
 	public static function box_header($_id = 'p0', $_tooltip = '', $_postbox_class = '', $_more = false, $_inside_class = '', $_title = ''){
 		if (!empty($_postbox_class)) $_postbox_class .= ' ';
-		echo "<div class='postbox {$_postbox_class}slimstat' id='$_id'".(in_array($_id, self::$hidden_boxes)?' style="display:none"':'').'><span class="box-refresh" title="'.__('Refresh','wp-slimstat').'"></span>';
-		if (!empty($_tooltip)) echo "<span class='box-help' title='$_tooltip'></span>";
-		// if ($_more) echo '<a class="more-modal-window" href="javascript:;" title="'.(!empty($_title)?$_title:self::$all_boxes_titles[$_id]).'"></a>';
-		echo "<h3 class='hndle'>".(!empty($_title)?$_title:self::$all_boxes_titles[$_id])."</h3><div class='inside $_inside_class'>";
+		
+		$header_buttons = '<span class="box-refresh box-header-button" title="'.__('Refresh','wp-slimstat').'"></span>';
+		if (!empty($_tooltip)) $header_buttons .= "<span class='box-help box-header-button' title='$_tooltip'></span>";
+		$header_buttons = apply_filters('slimstat_box_header_buttons', $header_buttons, $_id);
+
+		echo "<div class='postbox {$_postbox_class}slimstat' id='$_id'".(in_array($_id, self::$hidden_boxes)?' style="display:none"':'').">$header_buttons<h3 class='hndle'>".(!empty($_title)?$_title:self::$all_boxes_titles[$_id])."</h3><div class='inside $_inside_class'>";
 		if (wp_slimstat::$options['async_load'] == 'yes') echo '<p class="loading"></p>';
 	}
 

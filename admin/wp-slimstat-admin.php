@@ -98,6 +98,7 @@ class wp_slimstat_admin{
 			wp_slimstat::$options = get_option('slimstat_options', array());
 		}
 		else{
+			wp_slimstat::$options = get_option('slimstat_options', array());
 			self::init_environment(true);
 		}
 	}
@@ -204,7 +205,7 @@ class wp_slimstat_admin{
 		self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats');
 
 		// Schedule the autopurge hook
-		if (!wp_next_scheduled('wp_slimstat_purge'))
+		if (false === wp_next_scheduled('wp_slimstat_purge'))
 			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
 
 		// If this function hasn't been called during the upgrade process, make sure to init and update all the options

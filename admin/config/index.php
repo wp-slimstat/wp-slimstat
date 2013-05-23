@@ -6,15 +6,15 @@ if (!function_exists('add_action')) exit(0);
 // Define the tabs
 $slimtabs = '';
 $current_tab = empty($_GET['tab'])?1:intval($_GET['tab']);
-$config_tabs = apply_filters('slimstat_config_tabs', array(__('General','wp-slimstat'),__('Views','wp-slimstat'),__('Filters','wp-slimstat'),__('Permissions','wp-slimstat'),__('Advanced','wp-slimstat'),__('Maintenance','wp-slimstat'),__('Support','wp-slimstat')));
+$config_tabs = apply_filters('slimstat_config_tabs', array(__('General','wp-slimstat'),__('Views','wp-slimstat'),__('Filters','wp-slimstat'),__('Permissions','wp-slimstat'),__('Advanced','wp-slimstat'),has_filter('slimstat_options_on_page')?__('Add-ons','wp-slimstat'):'none',__('Maintenance','wp-slimstat'),__('Support','wp-slimstat')));
 foreach ($config_tabs as $a_tab_id => $a_tab_name){
-	$slimtabs .= "<a class='nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."' href='".wp_slimstat_admin::$config_url.($a_tab_id+1)."'>$a_tab_name</a>";
+	if ($a_tab_name != 'none') $slimtabs .= "<a class='nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."' href='".wp_slimstat_admin::$config_url.($a_tab_id+1)."'>$a_tab_name</a>";
 }
 
 echo '<div class="wrap"><!-- div id="analytics-icon" class="icon32 '.$GLOBALS['wp_locale']->text_direction.'"></div --><h2>WP SlimStat</h2><p class="nav-tabs">'.$slimtabs.'</p>';
 
-switch ($current_tab){
-	case 1:
+switch ($config_tabs[$current_tab-1]){
+	case __('General','wp-slimstat'):
 		$options_on_this_page = array(
 			'is_tracking' => array( 'description' => __('Activate tracking','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('You may want to prevent WP SlimStat from tracking users, but still be able to access your stats.','wp-slimstat') ),
 			'javascript_mode' => array( 'description' => __('Javascript Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Turn this feature on if you are using a caching plugin (W3 Total Cache and friends). WP SlimStat will behave pretty much like Google Analytics, and visitors whose browser does not support Javascript will be ignored. A nice side effect is that <strong>most</strong> spammers, search engines and other crawlers will not be tracked.','wp-slimstat') ),
@@ -33,7 +33,7 @@ switch ($current_tab){
 			}
 		}
 		break;
-	case 2:
+	case __('Views','wp-slimstat'):
 		$options_on_this_page = array(
 			'convert_ip_addresses' => array('description' => __('Convert IP Addresses','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Display hostnames instead of IP addresses. It slows down the rendering of your metrics.','wp-slimstat')),
 			'async_load' => array('description' => __('Asynchronous Views','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enables Ajax to load all the stats at runtime. It makes the panels render faster, but it increases the load on your server.','wp-slimstat')),
@@ -49,7 +49,7 @@ switch ($current_tab){
 
 		);
 		break;
-	case 3:
+	case __('Filters','wp-slimstat'):
 		$options_on_this_page = array(
 			'track_users' => array('description' => __('Track users','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Select YES if you want to track logged in users.','wp-slimstat')),
 			'ignore_spammers' => array('description' => __('Ignore Spammers','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Enable this option if you don't want to track visits from users identified as spammers by a third-party tool (i.e. Akismet). Visits from people whose comments are later marked as spam by you, will also be removed from the database.",'wp-slimstat')),
@@ -104,7 +104,7 @@ switch ($current_tab){
 			}
 		}
 		break;
-	case 4:
+	case __('Permissions','wp-slimstat'):
 		$options_on_this_page = array(
 			'restrict_authors_view' => array('description' => __('Restrict Authors','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option if you want your authours to only see stats related to their own content.','wp-slimstat')),
 			'capability_can_view' => array('description' => __('Minimum capability','wp-slimstat'), 'type' => 'text', 'long_description' => __("Define the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to view the reports (default: <code>read</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here above. In this case, the list has precedence over the capability.",'wp-slimstat')),
@@ -157,7 +157,7 @@ switch ($current_tab){
 			}
 		}
 		break;
-	case 5:
+	case __('Advanced','wp-slimstat'):
 		$options_on_this_page = array(
 			'enable_javascript' => array('description' => __('Track Browser Capabilities','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enables a client-side tracking code to collect data about screen resolutions, outbound links, downloads and other relevant information. If Javascript Mode is enabled, browers capabilities will be tracked regardless of which value you set for this option.','wp-slimstat')),
 			'detect_smoothing' => array('description' => __('Detect Smoothing','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Activates a client-side function to detect if the visitor's browser supports anti-aliasing (font smoothing). If Browser Capabilities are not tracked, this setting is ignored.",'wp-slimstat')),
@@ -168,18 +168,21 @@ switch ($current_tab){
 			'extensions_to_track' => array('description' => __('Extensions to Track','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("The following file extensions (to be listed as comma separated values) will be tracked as Downloads by WP SlimStat. Please note that links pointing to external resources (i.e. PDFs on a different website) are considered Downloads and not Outbound Links (and tracked as such), if their extension matches one of the ones listed here below.",'wp-slimstat'))
 		);
 		break;
-	case 6:
+	case __('Maintenance','wp-slimstat'):
 		include_once(dirname(__FILE__).'/maintenance.php');
 		break;
-	case 7:
+	case __('Support','wp-slimstat'):
 		include_once(dirname(__FILE__).'/support.php');
 		break;
-	default:
+	case __('Add-ons','wp-slimstat'):
 		$options_on_this_page = array();
+		break;
+	default:
+		break;
 }
 
 if (isset($options_on_this_page)){
-	$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page, $current_tab);
+	if (has_filter('slimstat_options_on_page') && $config_tabs[$current_tab-1] == __('Add-ons','wp-slimstat')) $options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page);
 	wp_slimstat_admin::update_options($options_on_this_page); 
 	wp_slimstat_admin::display_options($options_on_this_page, $current_tab); 
 }

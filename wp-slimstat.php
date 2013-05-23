@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.2
+version: 3.2.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.2';
+	public static $version = '3.2.1';
 	public static $options = array();
 	
 	protected static $data_js = array('id' => -1);
@@ -39,8 +39,6 @@ class wp_slimstat{
 				add_action('wp', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
 				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
 			}
-
-			// Add the ajax action to handle dynamic report updates
 		}
 
 		// Add a dropdown menu to the admin bar
@@ -137,7 +135,7 @@ class wp_slimstat{
 		}
 
 		// Was this pageview tracked?
-		if (self::$stat['id'] < 0){
+		if (self::$stat['id'] <= 0){
 			$abs_error_code = abs(self::$stat['id']);
 			switch ($abs_error_code){
 				case '212':
@@ -370,6 +368,12 @@ class wp_slimstat{
 		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id');
 		self::$stat['browser_id'] = self::maybe_insert_row(self::$browser, $GLOBALS['wpdb']->base_prefix.'slim_browsers', 'browser_id');
 		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
+
+		// Something went wrong during the insert
+		if (empty(self::$stat['id'])){
+			self::$stat['id'] = -214;
+			return $_argument;
+		}
 
 		// Is this a new visitor?
 		$is_set_cookie = apply_filters('slimstat_set_visit_cookie', true);
@@ -912,7 +916,7 @@ class wp_slimstat{
 			INSERT IGNORE INTO $_table (".implode(", ", array_keys($_data)).') 
 			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).')', $_data));
 
-		return $GLOBALS['wpdb']->insert_id;
+		return intval($GLOBALS['wpdb']->insert_id);
 	}
 	// end insert_row
 
@@ -987,19 +991,19 @@ class wp_slimstat{
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_enqueue_tracking_script(){
+		//if (self::$options['javascript_mode'] != 'yes' && self::$stat['id'] <= 0) return 0;
+
 		if (self::$options['enable_cdn'] == 'yes')
 			wp_register_script('wp_slimstat', 'http://cdn.jsdelivr.net/wp-slimstat/'.self::$options['version'].'/wp-slimstat.js', array(), null, true);
 		else
 			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), null, true);
-
-		wp_enqueue_script('wp_slimstat');
 
 		// Pass some information to Javascript
 		$params = array(
 			'ajaxurl' => admin_url('admin-ajax.php')
 		);
 
-		if (self::$options['javascript_mode'] != 'yes' && !empty(self::$stat['id']) && intval(self::$stat['id']) >= 0){
+		if (self::$options['javascript_mode'] != 'yes' && !empty(self::$stat['id'])){
 			$params['id'] = self::$stat['id'].'.'.md5(self::$stat['id'].self::$options['secret']);
 		}
 		if (self::$options['javascript_mode'] == 'yes'){
@@ -1015,9 +1019,9 @@ class wp_slimstat{
 		if (self::$options['enable_javascript'] == 'yes' && self::$options['detect_smoothing'] == 'no'){
 			$params['detect_smoothing'] = 'false';
 		}
-
 		$params = apply_filters('slimstat_js_params', $params);
 
+		wp_enqueue_script('wp_slimstat');
 		wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
 	}
 	// end wp_slimstat_enqueue_tracking_script
