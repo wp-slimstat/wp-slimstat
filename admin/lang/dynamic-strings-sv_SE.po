@@ -1,0 +1,1246 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP SlimStat\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Per Söderman <info@mesas.se>\n"
+"Language-Team: Per Soderman <per.soderman@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.5\n"
+"Language: Swedish\n"
+
+msgid "yes"
+msgstr "Ja"
+
+msgid "no"
+msgstr "Nej"
+
+msgid "xx"
+msgstr "xx"
+
+msgid "unknown"
+msgstr "Okänd"
+
+msgid "win7"
+msgstr "Windows 7"
+
+msgid "winvista"
+msgstr "Windows Vista"
+
+msgid "win2003"
+msgstr "Windows 2003"
+
+msgid "winxp"
+msgstr "Windows XP"
+
+msgid "winnt"
+msgstr "Windows NT"
+
+msgid "win2000"
+msgstr "Windows 2000"
+
+msgid "winme"
+msgstr "Windows ME"
+
+msgid "win98"
+msgstr "Windows 98"
+
+msgid "win95"
+msgstr "Windows 95"
+
+msgid "win31"
+msgstr "Windows 3.1"
+
+msgid "win32"
+msgstr "Windows 32-bit"
+
+msgid "win16"
+msgstr "Windows 16-bit"
+
+msgid "mac68k"
+msgstr "Mac 68k"
+
+msgid "macosx"
+msgstr "Mac OS X"
+
+msgid "macppc"
+msgstr "Mac PowerPC"
+
+msgid "mac"
+msgstr "Mac"
+
+msgid "os/2"
+msgstr "IBM OS/2"
+
+msgid "sunos"
+msgstr "Sun OS"
+
+msgid "solaris"
+msgstr "Solaris"
+
+msgid "unix"
+msgstr "Unix"
+
+msgid "irix"
+msgstr "IRIX"
+
+msgid "hp-ux"
+msgstr "HP-UX"
+
+msgid "aix"
+msgstr "IBM AIX"
+
+msgid "beos"
+msgstr "BeOS"
+
+msgid "cygwin"
+msgstr "Cygwin"
+
+msgid "darwin"
+msgstr "Darwin"
+
+msgid "digital unix"
+msgstr "Digital Unix"
+
+msgid "risc os"
+msgstr "Risc OS"
+
+msgid "dec alpha"
+msgstr "DEC Alpha"
+
+msgid "vax"
+msgstr "VAX"
+
+msgid "openvms"
+msgstr "OpenVMS"
+
+msgid "linux"
+msgstr "Linux"
+
+msgid "freebsd"
+msgstr "FreeBSD"
+
+msgid "openbsd"
+msgstr "OpenBSD"
+
+msgid "netbsd"
+msgstr "NetBSD"
+
+msgid "debian"
+msgstr "Debian"
+
+msgid "amiga"
+msgstr "Amiga"
+
+msgid "android"
+msgstr "Android"
+
+msgid "wyderos"
+msgstr "WyderOS"
+
+msgid "iphone osx"
+msgstr "iPhone OS X"
+
+msgid "palm"
+msgstr "Palm"
+
+msgid "wap"
+msgstr "WAP"
+
+msgid "java"
+msgstr "Java"
+
+msgid "wince"
+msgstr "Windows CE"
+
+msgid "symbianos"
+msgstr "Symbian OS"
+
+msgid "webos"
+msgstr "WebOS"
+
+msgid "powertv"
+msgstr "PowerTV"
+
+# 	Afar
+msgid "l-aa"
+msgstr "Afar"
+
+# 	Abkhazian
+msgid "l-ab"
+msgstr "Abchazien"
+
+# 	Avestan
+msgid "l-ae"
+msgstr "Avestiska"
+
+# 	Afrikaans
+msgid "l-af"
+msgstr "Afrikaans"
+
+# 	Akan
+msgid "l-ak"
+msgstr "Akan"
+
+# 	Amharic
+msgid "l-am"
+msgstr "Amhariska (Etiopien)"
+
+# 	Aragonese
+msgid "l-an"
+msgstr "Aragonese"
+
+# 	Arabic
+msgid "l-ar"
+msgstr "Arabiska"
+
+# 	Assamese
+msgid "l-as"
+msgstr "Assamesiska (Indien)"
+
+# 	Avaric
+msgid "l-av"
+msgstr "Avariska"
+
+# 	Aymara
+msgid "l-ay"
+msgstr "Aymara"
+
+# 	Azerbaijani
+msgid "l-az"
+msgstr "Azerbajdzjanska"
+
+# 	Bashkir
+msgid "l-ba"
+msgstr "Basjkiriska (Ryssland)"
+
+# 	Belarusian
+msgid "l-be"
+msgstr "Vitryska, Ryska"
+
+# 	Bulgarian
+msgid "l-bg"
+msgstr "Bulgariska"
+
+# 	Bihari languages
+msgid "l-bh"
+msgstr "Bihari sprÃ¥ken (Indien)"
+
+# 	Bislama
+msgid "l-bi"
+msgstr "Bislama"
+
+# 	Bambara
+msgid "l-bm"
+msgstr "Bambara"
+
+# 	Bengali
+msgid "l-bn"
+msgstr "Bengali"
+
+# 	Tibetan
+msgid "l-bo"
+msgstr "Tibetanska"
+
+# 	Breton
+msgid "l-br"
+msgstr "Bretonska"
+
+# 	Bosnian
+msgid "l-bs"
+msgstr "Bosniska"
+
+# 	Catalan; Valencian
+msgid "l-ca"
+msgstr "Katalanska; Valencianska"
+
+# 	Chechen
+msgid "l-ce"
+msgstr "Tjetjenska"
+
+# 	Chamorro
+msgid "l-ch"
+msgstr "Chamorro"
+
+# 	Corsican
+msgid "l-co"
+msgstr "Korsikanska"
+
+# 	Cree
+msgid "l-cr"
+msgstr "Cree"
+
+# 	Czech
+msgid "l-cs"
+msgstr "Tjeckiska"
+
+# 	Church Slavic; Church Slavonic
+msgid "l-cu"
+msgstr "Fornkyrkoslaviska"
+
+# 	Chuvash
+msgid "l-cv"
+msgstr "Tjuvasjiska"
+
+# 	Welsh
+msgid "l-cy"
+msgstr "Welsh"
+
+# 	Danish
+msgid "l-da"
+msgstr "Danska"
+
+# 	German
+msgid "l-de"
+msgstr "Tyska"
+
+# 	Dhivehi; Divehi; Maldivian
+msgid "l-dv"
+msgstr "Divehi (Maldiverna)"
+
+# 	Dzongkha
+msgid "l-dz"
+msgstr "Dzongkha"
+
+# 	Ewe
+msgid "l-ee"
+msgstr "Ewe"
+
+# 	Modern Greek (1453-)
+msgid "l-el"
+msgstr "Modern Grekiska (1453-)"
+
+# 	English
+msgid "l-en"
+msgstr "Engelska"
+
+# 	Esperanto
+msgid "l-eo"
+msgstr "Esperanto"
+
+# 	Spanish; Castilian
+msgid "l-es"
+msgstr "Spanska; Kastilianska"
+
+# 	Estonian
+msgid "l-et"
+msgstr "Estniska"
+
+# 	Basque
+msgid "l-eu"
+msgstr "Baskiska"
+
+# 	Persian
+msgid "l-fa"
+msgstr "Persiska"
+
+# 	Fulah
+msgid "l-ff"
+msgstr "Fula"
+
+# 	Finnish
+msgid "l-fi"
+msgstr "Finska"
+
+# 	Fijian
+msgid "l-fj"
+msgstr "Fijiska"
+
+# 	Faroese
+msgid "l-fo"
+msgstr "Frisiska"
+
+# 	French
+msgid "l-fr"
+msgstr "Franska"
+
+# 	Western Frisian
+msgid "l-fy"
+msgstr "Västern Frisiska"
+
+# 	Irish
+msgid "l-ga"
+msgstr "Irländska"
+
+# 	Scottish Gaelic; Gaelic
+msgid "l-gd"
+msgstr "Skotsk Gaeliska (Storbritanien)"
+
+# 	Galician
+msgid "l-gl"
+msgstr "Galiciska"
+
+# 	Guarani
+msgid "l-gn"
+msgstr "Guarani"
+
+# 	Gujarati
+msgid "l-gu"
+msgstr "Gujarati (Indien)"
+
+# 	Manx
+msgid "l-gv"
+msgstr "Manx"
+
+# 	Hausa
+msgid "l-ha"
+msgstr "Haussa (latiskt, Nigeria)"
+
+# 	Hebrew
+msgid "l-he"
+msgstr "Hebreiska"
+
+# 	Hindi
+msgid "l-hi"
+msgstr "Hindi"
+
+# 	Hiri Motu
+msgid "l-ho"
+msgstr "Hiri Motu (Papua Nya Guinea)"
+
+# 	Croatian
+msgid "l-hr"
+msgstr "Kroatiska"
+
+# 	Haitian; Haitian Creole
+msgid "l-ht"
+msgstr "Haitiska; Haitisk kreol"
+
+# 	Hungarian
+msgid "l-hu"
+msgstr "Ungerska"
+
+# 	Armenian
+msgid "l-hy"
+msgstr "Armeniska"
+
+# 	Herero
+msgid "l-hz"
+msgstr "Herero (Namibia)"
+
+# 	Interlingua (International Auxiliary Language Association)
+msgid "l-ia"
+msgstr "Interlingua (International hjälpspråk)"
+
+# 	Indonesian
+msgid "l-id"
+msgstr "Indonesiska"
+
+# 	Interlingue; Occidental
+msgid "l-ie"
+msgstr "Interlingue; Occidental (hjälpspråk)"
+
+# 	Igbo
+msgid "l-ig"
+msgstr "Igbo"
+
+# 	Sichuan Yi; Nuosu
+msgid "l-ii"
+msgstr "Sichuan Yi; Nuosu (Kina)"
+
+# 	Inupiaq
+msgid "l-ik"
+msgstr "Inupiaq"
+
+# 	Indonesian
+msgid "l-in"
+msgstr "Indonesiska"
+
+# 	Ido
+msgid "l-io"
+msgstr "Ido"
+
+# 	Icelandic
+msgid "l-is"
+msgstr "Isländska"
+
+# 	Italian
+msgid "l-it"
+msgstr "Italienska"
+
+# 	Inuktitut
+msgid "l-iu"
+msgstr "Inuktitut (latinskt, Kanada)"
+
+# 	Hebrew
+msgid "l-iw"
+msgstr "Hebreiska"
+
+# 	Japanese
+msgid "l-ja"
+msgstr "Japanska"
+
+# 	Yiddish
+msgid "l-ji"
+msgstr "Jiddish"
+
+# 	Javanese
+msgid "l-jv"
+msgstr "Javanesiska"
+
+# 	Javanese
+msgid "l-jw"
+msgstr "Javanesiska"
+
+# 	Georgian
+msgid "l-ka"
+msgstr "Georgiska"
+
+# 	Kongo
+msgid "l-kg"
+msgstr "Kongolesiska"
+
+# 	Kikuyu; Gikuyu
+msgid "l-ki"
+msgstr "Kikuyu; Gikuyu"
+
+# 	Kuanyama; Kwanyama
+msgid "l-kj"
+msgstr "Kuanyama; Kwanyama (Angola)"
+
+# 	Kazakh
+msgid "l-kk"
+msgstr "Kazakiska"
+
+# 	Kalaallisut; Greenlandic
+msgid "l-kl"
+msgstr "Kalaallisut; Grönländska"
+
+# 	Central Khmer
+msgid "l-km"
+msgstr "Khmer"
+
+# 	Kannada
+msgid "l-kn"
+msgstr "Kannada (Indien)"
+
+# 	Korean
+msgid "l-ko"
+msgstr "Koreanska"
+
+# 	Kanuri
+msgid "l-kr"
+msgstr "Kanuri"
+
+# 	Kashmiri
+msgid "l-ks"
+msgstr "Kashmiri"
+
+# 	Kurdish
+msgid "l-ku"
+msgstr "Kurdiska"
+
+# 	Komi
+msgid "l-kv"
+msgstr "Komi-syrjänska"
+
+# 	Cornish
+msgid "l-kw"
+msgstr "Korniska"
+
+# 	Kirghiz; Kyrgyz
+msgid "l-ky"
+msgstr "Kirgiziska; Kyrgyz"
+
+# 	Latin
+msgid "l-la"
+msgstr "Latin"
+
+# 	Luxembourgish; Letzeburgesch
+msgid "l-lb"
+msgstr "Luxemburgiska; Letzeburgesch"
+
+# 	Ganda
+msgid "l-lg"
+msgstr "Ganda"
+
+# 	Limburgan; Limburge; Limburgish
+msgid "l-li"
+msgstr "Limburgan; Limburge; Limburgish"
+
+# 	Lingala
+msgid "l-ln"
+msgstr "Lingala"
+
+# 	Lao
+msgid "l-lo"
+msgstr "Lao"
+
+# 	Lithuanian
+msgid "l-lt"
+msgstr "Litauiska"
+
+# 	Luba-Katanga
+msgid "l-lu"
+msgstr "Luba-Katanga"
+
+# 	Latvian
+msgid "l-lv"
+msgstr "Lettiska; Latvija"
+
+# 	Malagasy
+msgid "l-mg"
+msgstr "Malajiska (Brunei Darussalam/ Malaysia)"
+
+# 	Marshallese
+msgid "l-mh"
+msgstr "Marshallesiska"
+
+# 	Maori
+msgid "l-mi"
+msgstr "Maori (Nya Zeeland)"
+
+# 	Macedonian
+msgid "l-mk"
+msgstr "Makedonska"
+
+# 	Malayalam
+msgid "l-ml"
+msgstr "Malayalam (Indien)"
+
+# 	Mongolian
+msgid "l-mn"
+msgstr "Mongoliska"
+
+# 	Moldavian; Moldovan
+msgid "l-mo"
+msgstr "Moldaviska; Moldovan"
+
+# 	Marathi
+msgid "l-mr"
+msgstr "Marathi (Indien)"
+
+# 	Malay
+msgid "l-ms"
+msgstr "malajiska (Filipinerna)"
+
+# 	Maltese
+msgid "l-mt"
+msgstr "Maltesiska"
+
+# 	Burmese
+msgid "l-my"
+msgstr "Burmesiska"
+
+# 	Nauru
+msgid "l-na"
+msgstr "Nauriska"
+
+# 	Norwegian BokmÃ¥l
+msgid "l-nb"
+msgstr "Norska Bokmål"
+
+# 	North Ndebele
+msgid "l-nd"
+msgstr "North Ndebele"
+
+# 	Nepali
+msgid "l-ne"
+msgstr "Nepali"
+
+# 	Ndonga
+msgid "l-ng"
+msgstr "Ndonga; Oshivambo"
+
+# 	Dutch; Flemish
+msgid "l-nl"
+msgstr "Nederländska; Flemish"
+
+# 	Norwegian Nynorsk
+msgid "l-nn"
+msgstr "Norska Nynorsk"
+
+# 	Norwegian
+msgid "l-no"
+msgstr "Norska"
+
+# 	South Ndebele
+msgid "l-nr"
+msgstr "Syd Ndebele"
+
+# 	Navajo; Navaho
+msgid "l-nv"
+msgstr "Navajo; Navaho"
+
+# 	Nyanja; Chewa; Chichewa
+msgid "l-ny"
+msgstr "Nyanja; Chewa; Chichewa"
+
+# 	Occitan (post 1500)
+msgid "l-oc"
+msgstr "Occitanska (post 1500 - Frankrike)"
+
+# 	Ojibwa
+msgid "l-oj"
+msgstr "Ojibwa"
+
+# 	Oromo
+msgid "l-om"
+msgstr "Oromo"
+
+# 	Oriya
+msgid "l-or"
+msgstr "Oriya (Indien)"
+
+# 	Ossetian; Ossetic
+msgid "l-os"
+msgstr "Ossetiska; Ossetic"
+
+# 	Panjabi; Punjabi
+msgid "l-pa"
+msgstr "Punjabi (Indien)"
+
+# 	Pali
+msgid "l-pi"
+msgstr "Pali"
+
+# 	Polish
+msgid "l-pl"
+msgstr "Poliska"
+
+# 	Pushto; Pashto
+msgid "l-ps"
+msgstr "Pashto (Afghanistan)"
+
+# 	Portuguese
+msgid "l-pt"
+msgstr "Portugisiska"
+
+# 	Quechua
+msgid "l-qu"
+msgstr "Quechua"
+
+# 	Romansh
+msgid "l-rm"
+msgstr "Romänska"
+
+# 	Rundi
+msgid "l-rn"
+msgstr "Rundi"
+
+# 	Romanian; Moldavian; Moldovan
+msgid "l-ro"
+msgstr "Romänska; Moldaviska; Moldovan"
+
+# 	Russian
+msgid "l-ru"
+msgstr "Ryska"
+
+# 	Kinyarwanda
+msgid "l-rw"
+msgstr "Rwanda; Kinyarwanda"
+
+# 	Sanskrit
+msgid "l-sa"
+msgstr "Sanskrit (Indien)"
+
+# 	Sardinian
+msgid "l-sc"
+msgstr "Sardiska"
+
+# 	Sindhi
+msgid "l-sd"
+msgstr "Sindhi"
+
+# 	Northern Sami
+msgid "l-se"
+msgstr "Nordisk Sami"
+
+# 	Sango
+msgid "l-sg"
+msgstr "Sango"
+
+# 	Serbo-Croatian
+msgid "l-sh"
+msgstr "Serbo-Kroatiska"
+
+# 	Sinhala; Sinhalese
+msgid "l-si"
+msgstr "Sinhala; Sinhalese"
+
+# 	Slovak
+msgid "l-sk"
+msgstr "Slovakiska"
+
+# 	Slovenian
+msgid "l-sl"
+msgstr "Slovenska"
+
+# 	Samoan
+msgid "l-sm"
+msgstr "Samoanska"
+
+# 	Shona
+msgid "l-sn"
+msgstr "Shona"
+
+# 	Somali
+msgid "l-so"
+msgstr "Somaliska"
+
+# 	Albanian
+msgid "l-sq"
+msgstr "Albanska"
+
+# 	Serbian
+msgid "l-sr"
+msgstr "Serbiska"
+
+# 	Swati
+msgid "l-ss"
+msgstr "SiSwati"
+
+# 	Southern Sotho
+msgid "l-st"
+msgstr "Southern Sotho"
+
+# 	Sundanese
+msgid "l-su"
+msgstr "Sundanesiska"
+
+# 	Swedish
+msgid "l-sv"
+msgstr "Svenka"
+
+# 	Swahili
+msgid "l-sw"
+msgstr "Swahili"
+
+# 	Tamil
+msgid "l-ta"
+msgstr "Tamil (Indien)"
+
+# 	Telugu
+msgid "l-te"
+msgstr "Telugu (Indien)"
+
+# 	Tajik
+msgid "l-tg"
+msgstr "Tadzjikiska; Tajik (kyrilliskt)"
+
+# 	Thai
+msgid "l-th"
+msgstr "Thailändska"
+
+# 	Tigrinya
+msgid "l-ti"
+msgstr "Tigrinya (Eritrea)"
+
+# 	Turkmen
+msgid "l-tk"
+msgstr "Turkmeniska"
+
+# 	Tagalog
+msgid "l-tl"
+msgstr "Tagalog"
+
+# 	Tswana
+msgid "l-tn"
+msgstr "Tswana (Sydafrika)"
+
+# 	Tonga (Tonga Islands)
+msgid "l-to"
+msgstr "Tonganska (Tongaöarna)"
+
+# 	Turkish
+msgid "l-tr"
+msgstr "Turkiska"
+
+# 	Tsonga
+msgid "l-ts"
+msgstr "Tsonga"
+
+# 	Tatar
+msgid "l-tt"
+msgstr "Tatariska"
+
+# 	Twi
+msgid "l-tw"
+msgstr "Twi; Akan (Ghana)"
+
+# 	Tahitian
+msgid "l-ty"
+msgstr "Tahitiska"
+
+# 	Uighur; Uyghur
+msgid "l-ug"
+msgstr "Uighuriska; Uyghur (Kina)"
+
+# 	Ukrainian
+msgid "l-uk"
+msgstr "Ukrainska"
+
+# 	Urdu
+msgid "l-ur"
+msgstr "Urdu"
+
+# 	Uzbek
+msgid "l-uz"
+msgstr "Uzbekiska"
+
+# 	Venda
+msgid "l-ve"
+msgstr "Venda (Sydafrika)"
+
+# 	Vietnamese
+msgid "l-vi"
+msgstr "Vietnamesiska"
+
+# 	VolapÃ¼k
+msgid "l-vo"
+msgstr "Volapäk"
+
+# 	Walloon
+msgid "l-wa"
+msgstr "Walesiska"
+
+# 	Wolof
+msgid "l-wo"
+msgstr "Wolof (Senegal)"
+
+# 	Xhosa
+msgid "l-xh"
+msgstr "Xhosa (Sydafrika)"
+
+# 	Yiddish
+msgid "l-yi"
+msgstr "Jiddish"
+
+# 	Yoruba
+msgid "l-yo"
+msgstr "Yoruba (Nigeria)"
+
+# 	Zhuang; Chuang
+msgid "l-za"
+msgstr "Zhuang; Chuang (Kina)"
+
+# 	Chinese
+msgid "l-zh"
+msgstr "Kinesiska"
+
+# 	Zulu
+msgid "l-zu"
+msgstr "Zulu (Sydafrika)"
+
+# Arabic (Saudi Arabia)
+msgid "l-ar-sa"
+msgstr "Arabic (Saudi Arabien)"
+
+# Arabic (Iraq)
+msgid "l-ar-iq"
+msgstr "Arabic (Iraq)"
+
+# Arabic (Egypt)
+msgid "l-ar-eg"
+msgstr "Arabiska (Egypten)"
+
+# Arabic (Libya)
+msgid "l-ar-ly"
+msgstr "Arabiska (Libyen)"
+
+# Arabic (Algeria)
+msgid "l-ar-dz"
+msgstr "Arabiska (Algeriet)"
+
+# Arabic (Morocco)
+msgid "l-ar-ma"
+msgstr "Arabiska (Morocko)"
+
+# Arabic (Tunisia)
+msgid "l-ar-tn"
+msgstr "Arabiska (Tunisien)"
+
+# Arabic (Oman)
+msgid "l-ar-om"
+msgstr "Arabiska (Oman)"
+
+# Arabic (Yemen)
+msgid "l-ar-ye"
+msgstr "Arabiska (Jemen)"
+
+# Arabic (Syria)
+msgid "l-ar-sy"
+msgstr "Arabiska (Syrien)"
+
+# Arabic (Jordan)
+msgid "l-ar-jo"
+msgstr "Arabiska (Jordanien)"
+
+# Arabic (Lebanon)
+msgid "l-ar-lb"
+msgstr "Arabiska (Libanon)"
+
+# Arabic (Kuwait)
+msgid "l-ar-kw"
+msgstr "Arabiska (Kuwait)"
+
+# Arabic (United Arab Emirates)
+msgid "l-ar-ae"
+msgstr "Arabiska (Förenade Arabemiraten)"
+
+# Arabic (Bahrain)
+msgid "l-ar-bh"
+msgstr "Arabiska (Bahrain)"
+
+# Arabic (Qatar)
+msgid "l-ar-qa"
+msgstr "Arabiska (Qatar)"
+
+# Chinese (China)
+msgid "l-zh-cn"
+msgstr "Kinesiska (Kina)"
+
+# Chinese (Taiwan)
+msgid "l-zh-tw"
+msgstr "Kinesiska (Taiwan)"
+
+# Chinese (Hong Kong)
+msgid "l-zh-hk"
+msgstr "Kinesiska (Hong Kong)"
+
+# Chinese (Singapore)
+msgid "l-zh-sg"
+msgstr "Kinesiska (Singapore)"
+
+# Dutch (Netherlands)
+msgid "l-nl-nl"
+msgstr "Nederländska (Nederländerna)"
+
+# Dutch (Belgium)
+msgid "l-nl-be"
+msgstr "Nederländska (Belgien)"
+
+# English (United Kingdom)
+msgid "l-en-gb"
+msgstr "Engelska (Storbritanien)"
+
+# English (United States)
+msgid "l-en-us"
+msgstr "Engelska (Amerika)"
+
+# English (Australia)
+msgid "l-en-au"
+msgstr "Engelska (Australien)"
+
+# English (Canada)
+msgid "l-en-ca"
+msgstr "Engelska (Kanada)"
+
+# English (New Zealand)
+msgid "l-en-nz"
+msgstr "Engelska (Nya Zeeland)"
+
+# English (Ireland)
+msgid "l-en-ie"
+msgstr "Engelska (Irland)"
+
+# English (South Africa)
+msgid "l-en-za"
+msgstr "Engelska (Sydafrika)"
+
+# English (Jamaica)
+msgid "l-en-jm"
+msgstr "Engelska (Jamaica)"
+
+# English (Belize)
+msgid "l-en-bz"
+msgstr "Engelska (Belize)"
+
+# English (Trinidad)
+msgid "l-en-tt"
+msgstr "Engelska (Trinidad)"
+
+# French (Belgium)
+msgid "l-fr-be"
+msgstr "Franska (Belgien)"
+
+# French (France)
+msgid "l-fr-fr"
+msgstr "Franska (Frankrike)"
+
+# French (Switzerland)
+msgid "l-fr-ch"
+msgstr "Franska (Schweiz)"
+
+# French (Canada)
+msgid "l-fr-ca"
+msgstr "Franska (Kanada)"
+
+# French (Luxembourg)
+msgid "l-fr-lu"
+msgstr "Franska (Luxembourg)"
+
+# German (Austria)
+msgid "l-de-at"
+msgstr "Tyska (Ã–sterrike)"
+
+# German (Germany)
+msgid "l-de-de"
+msgstr "Tyska (Tyskland)"
+
+# German (Switzerland)
+msgid "l-de-ch"
+msgstr "Tyska (Schweiz)"
+
+# German (Luxembourg)
+msgid "l-de-lu"
+msgstr "Tyska (Luxembourg)"
+
+# German (Liechtenstein)
+msgid "l-de-li"
+msgstr "Tyska (Liechtenstein)"
+
+# Greek (Greece)
+msgid "l-el-gr"
+msgstr "Grekiska (Grekland)"
+
+# Spanish (Dominican Republic)
+msgid "l-es-do"
+msgstr "Spanska (Dominikanska republiken)"
+
+# Spanish (Argentina)
+msgid "l-es-ar"
+msgstr "Spanska (Argentina)"
+
+# Spanish (Colombia)
+msgid "l-es-co"
+msgstr "Spanska (Colombia)"
+
+# Spanish (Mexico)
+msgid "l-es-mx"
+msgstr "Spanska (Mexico)"
+
+# Spanish (Spain)
+msgid "l-es-es"
+msgstr "Spanska (Spanien)"
+
+# Spanish (Guatemala)
+msgid "l-es-gt"
+msgstr "Spanska (Guatemala)"
+
+# Spanish (Costa Rica)
+msgid "l-es-cr"
+msgstr "Spanska (Costa Rica)"
+
+# Spanish (Panama)
+msgid "l-es-pa"
+msgstr "Spanska (Panama)"
+
+# Spanish (Venezuela)
+msgid "l-es-ve"
+msgstr "Spanska (Venezuela)"
+
+# Spanish (Peru)
+msgid "l-es-pe"
+msgstr "Spanska (Peru)"
+
+# Spanish (Ecuador)
+msgid "l-es-ec"
+msgstr "Spanska (Ecuador)"
+
+# Spanish (Chile)
+msgid "l-es-cl"
+msgstr "Spanska (Chile)"
+
+# Spanish (Uruguay)
+msgid "l-es-uy"
+msgstr "Spanska (Uruguay)"
+
+# Spanish (Paraguay)
+msgid "l-es-py"
+msgstr "Spanska (Paraguay)"
+
+# Spanish (Bolivia)
+msgid "l-es-bo"
+msgstr "Spanska (Bolivia)"
+
+# Spanish (El Salvador)
+msgid "l-es-sv"
+msgstr "Spanska (El Salvador)"
+
+# Spanish (Honduras)
+msgid "l-es-hn"
+msgstr "Spanska (Honduras)"
+
+# Spanish (Nicaragua)
+msgid "l-es-ni"
+msgstr "Spanska (Nicaragua)"
+
+# Spanish (Puerto Rico)
+msgid "l-es-pr"
+msgstr "Spanska (Puerto Rico)"
+
+# Hebrew (Israel)
+msgid "l-he-il"
+msgstr "Hebreiska (Israel)"
+
+# Hungarian (Hungary)
+msgid "l-hu-hu"
+msgstr "Ungerska (Ungern)"
+
+# Internet Explorer Easter Egg
+msgid "l-ie-ee"
+msgstr "Internet Explorer Påskägg"
+
+# Italian (Italia)
+msgid "l-it-it"
+msgstr "Italienska (Italien)"
+
+# Italian (Switzerland)
+msgid "l-it-ch"
+msgstr "Italienska (Schweiz)"
+
+# Korean (Republic of Korea)
+msgid "l-ko-kr"
+msgstr "Koreanska (Korea republik)"
+
+# Korean (Democratic People's Republic of Korea)
+msgid "l-ko-kp"
+msgstr "Koreanska (Folkrepubliken Korea)"
+
+# Portuguese (Brazil)
+msgid "l-pt-br"
+msgstr "Portugisiska (Brasilien)"
+
+# Romanian (Moldava)
+msgid "l-ro-md"
+msgstr "Romänska (Moldavien)"
+
+# Russian (Russia)
+msgid "l-ru-ru"
+msgstr "Ryska (Ryssland)"
+
+# Russian (Moldava)
+msgid "l-ru-md"
+msgstr "Ryska (Moldavien)"
+
+# Swedish (Sweden)
+msgid "l-sv-se"
+msgstr "Svenska (Sverige)"
+
+# Swedish (Finland)
+msgid "l-sv-fi"
+msgstr "Svenska (Finland)"
+
+# Japanes
+msgid "l-ja-jp"
+msgstr "Japanska"
+
+# Turkish
+msgid "l-tr-tr"
+msgstr "Turkiska"
+
+# Unknown
+msgid "l-"
+msgstr "Okänd"
+
+# Unknown
+msgid "l-empty"
+msgstr "Okänd"
+
+# Unknown
+msgid "l-xx"
+msgstr "Okänd"
+
