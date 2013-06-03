@@ -209,8 +209,15 @@ var SlimStatAdmin = {
 			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
 		else{
+			box_id = '#slim_p7_02';
+			data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
+			jQuery(box_id+' .inside').html('<p class="loading"></p>');
+			SlimStatAdmin.load_ajax_data(box_id, data);
+
 			window.clearTimeout(refresh_handle);
-			document.location.href = '?page=wp-slim-view-1'+SlimStatParams.filters;
+			SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatParams.refresh_interval/60);
+			SlimStatAdmin._refresh_timer[1] = SlimStatParams.refresh_interval%60;
+			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
 	}
 }
@@ -235,6 +242,13 @@ jQuery(function(){
 			data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
 			jQuery(box_id+' .inside').html('<p class="loading"></p>');
 			SlimStatAdmin.load_ajax_data(box_id, data);
+			
+			if (typeof refresh_handle != 'undefined'){
+				window.clearTimeout(refresh_handle);
+				SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatParams.refresh_interval/60);
+				SlimStatAdmin._refresh_timer[1] = SlimStatParams.refresh_interval%60;
+				refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
+			}
 		}
 	);
 

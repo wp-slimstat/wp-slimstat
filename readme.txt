@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.6
-Stable tag: 3.2.1
+Stable tag: 3.2.2
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
@@ -33,6 +33,9 @@ A powerful real-time web analytics plugin for Wordpress. Visit the [official sit
 
 = Browser Compatibility =
 WP SlimStat uses the HTML5 Canvas element and SVG graphics to display its charts and the world map. Unfortunately Internet Explorer 8 and older versions don't support them, so you're encouraged to upgrade your browser.
+
+= Premium Add-ons =
+Please visit [our website](http://slimstat.getused.to.it/addons/) for an updated list of extensions.
 
 = Free Add-ons =
 * [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) allows you to share your reports with your readers
@@ -265,9 +268,16 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.2.2 =
+* [Note] The new Export add-on has been released!
+* [New] You can now refresh the Right Now panel without reloading the entire page
+* [Update] Minor cosmetic changes in the CSS
+* [Fix] A bug was affecting the display of the 'Right Now' panel when Async Mode was enabled (thank you, [psn](http://wordpress.org/support/topic/right-now-stat-dissapear))
+* [Fix] Improved filters' behavior (thank you, [GermanKiwi](http://wordpress.org/support/topic/filtering-user-agents-and-tracking-downloads))
+
 = 3.2.1 =
 * [Note] [JSDelivr](http://www.jsdelivr.com/network.php), our CDN partners, have upgraded their network, which is now faster and more reliable than ever
-* [Note] You've been asking for it! The Export premium add-on is coming, stay tuned...
+* [Note] You've been asking for it, and we've listened! The Export premium add-on is coming, stay tuned...
 * [Update] Reinforced the plugin's controls on the database structure, and improved error handling for some rare issues that could arise (thank you, Vera)
 * [Update] Improved the new Add-ons screens, by listing both premium and free extensions, and by consolidating Add-ons settings under one single page
 * [Fix] We addressed a bug that was resetting all the settings on deactivation/reactivation (thank you, [Jeremy](http://wordpress.org/support/topic/deactivatereactivate-plugin-resets-its-settings))

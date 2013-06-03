@@ -884,6 +884,9 @@ class wp_slimstat_boxes{
 			case '#slim_p4_20':
 				self::show_spy_view($ajax_box_id, 1);
 				break;
+			case '#slim_p7_02':
+				include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/right-now.php");
+				break;
 			default:
 		}
 		if (!empty($_POST['box_id'])) die();
