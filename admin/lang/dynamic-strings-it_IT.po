@@ -1,0 +1,720 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP SlimStat - Dynamic Strings (not hardcoded)\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Language-Team: camu <info@duechiacchiere.it>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.5\n"
+"Language: Italian\n"
+
+msgid "xx"
+msgstr "Sconosciuto"
+
+msgid "unknown"
+msgstr "Sconosciuto"
+
+msgid "win7"
+msgstr "Windows 7"
+
+msgid "win8"
+msgstr "Windows 8"
+
+msgid "winphone7"
+msgstr "Windows Phone"
+
+msgid "winvista"
+msgstr "Windows Vista"
+
+msgid "win2003"
+msgstr "Windows 2003"
+
+msgid "winxp"
+msgstr "Windows XP"
+
+msgid "winnt"
+msgstr "Windows NT"
+
+msgid "win2000"
+msgstr "Windows 2000"
+
+msgid "winme"
+msgstr "Windows ME"
+
+msgid "win98"
+msgstr "Windows 98"
+
+msgid "win95"
+msgstr "Windows 95"
+
+msgid "win31"
+msgstr "Windows 3.1"
+
+msgid "win32"
+msgstr "Windows generico"
+
+msgid "win16"
+msgstr "Windows generico"
+
+msgid "win"
+msgstr "Windows generico"
+
+msgid "mac68k"
+msgstr "Mac 68k"
+
+msgid "macosx"
+msgstr "Mac OsX"
+
+msgid "macppc"
+msgstr "Mac PPC"
+
+msgid "mac"
+msgstr "Mac generico"
+
+msgid "os/2"
+msgstr "OS/2"
+
+msgid "sunos"
+msgstr "Sun OS"
+
+msgid "solaris"
+msgstr "Solaris"
+
+msgid "unix"
+msgstr "Unix"
+
+msgid "irix"
+msgstr "Unix Irix"
+
+msgid "hp-ux"
+msgstr "HP Unix"
+
+msgid "aix"
+msgstr "Aix"
+
+msgid "beos"
+msgstr "BeOS"
+
+msgid "cygwin"
+msgstr "Cyg Win"
+
+msgid "darwin"
+msgstr "Darwin"
+
+msgid "digital unix"
+msgstr "Digital Unix"
+
+msgid "risc os"
+msgstr "Risc OS"
+
+msgid "dec alpha"
+msgstr "Dec Alpha"
+
+msgid "vax"
+msgstr "Vax"
+
+msgid "openvms"
+msgstr "Open VMS"
+
+msgid "linux"
+msgstr "Linux"
+
+msgid "freebsd"
+msgstr "Free BSD"
+
+msgid "openbsd"
+msgstr "Open BSD"
+
+msgid "netbsd"
+msgstr "Net BSD"
+
+msgid "debian"
+msgstr "Debian Linux"
+
+msgid "amiga"
+msgstr "Amiga"
+
+msgid "android"
+msgstr "Android"
+
+msgid "wyderos"
+msgstr "Wyder OS"
+
+msgid "iphone osx"
+msgstr "iPhone"
+
+msgid "palm"
+msgstr "Palm OS"
+
+msgid "wap"
+msgstr "Mobile Device"
+
+msgid "java"
+msgstr "Mobile Device - Java"
+
+msgid "wince"
+msgstr "Windows CE"
+
+msgid "symbianos"
+msgstr "Symbian OS"
+
+msgid "webos"
+msgstr "WebOS"
+
+msgid "powertv"
+msgstr "Power TV"
+
+# Afrikaans
+msgid "l-af"
+msgstr "Afrikaans"
+
+# Arabic/Saudi Arabia
+msgid "l-ar-sa"
+msgstr "Arabo"
+
+# Arabic/Iraq
+msgid "l-ar-iq"
+msgstr "Arabo/Iraq"
+
+# Arabic/Egypt
+msgid "l-ar-eg"
+msgstr "Arabo/Egitto"
+
+# Arabic/Libya
+msgid "l-ar-ly"
+msgstr "Arabo/Libia"
+
+# Arabic/Algeria
+msgid "l-ar-dz"
+msgstr "Arabo/Algeria"
+
+# Arabic/Morocco
+msgid "l-ar-ma"
+msgstr "Arabo/Marocco"
+
+# Arabic/Tunisia
+msgid "l-ar-tn"
+msgstr "Arabo/Tunisia"
+
+# Arabic/Oman
+msgid "l-ar-om"
+msgstr "Arabo/Oman"
+
+# Arabic/Yemen
+msgid "l-ar-ye"
+msgstr "Arabo/Yemen"
+
+# Arabic/Syria
+msgid "l-ar-sy"
+msgstr "Arabo/Siria"
+
+# Arabic/Jordan
+msgid "l-ar-jo"
+msgstr "Arabo/Giordania"
+
+# Arabic/Lebanon
+msgid "l-ar-lb"
+msgstr "Arabo/Libano"
+
+# Arabic/Kuwait
+msgid "l-ar-kw"
+msgstr "Arabo/Kuwait"
+
+# Arabic/Iraq
+msgid "l-ar-ae"
+msgstr "Arabo/Emirati"
+
+# Arabic/Bahrain
+msgid "l-ar-bh"
+msgstr "Arabo/Bahrain"
+
+# Arabic/Qatar
+msgid "l-ar-qa"
+msgstr "Arabo/Qatar"
+
+# Basque
+msgid "l-eu"
+msgstr "Basco"
+
+# Bulgarian
+msgid "l-bg"
+msgstr "Bulgaro"
+
+# Belarusian
+msgid "l-be"
+msgstr "Bielorusso"
+
+# Catalan
+msgid "l-ca"
+msgstr "Catalano"
+
+# Chinese
+msgid "l-zh"
+msgstr "Cinese"
+
+# Chinese/China
+msgid "l-zh-cn"
+msgstr "Cinese/Cina"
+
+# Chinese/Taiwan
+msgid "l-zh-tw"
+msgstr "Cinese/Taiwan"
+
+# Chinese/Hong Kong
+msgid "l-zh-hk"
+msgstr "Cinese/Hong Kong"
+
+# Chinese/singapore
+msgid "l-zh-sg"
+msgstr "Cinese/Singapore"
+
+# Croatian
+msgid "l-hr"
+msgstr "Croato"
+
+# Czech
+msgid "l-cs"
+msgstr "Ceco"
+
+# Danish
+msgid "l-da"
+msgstr "Danese"
+
+# Danish
+msgid "l-da-dk"
+msgstr "Danese"
+
+# Dutch
+msgid "l-nl"
+msgstr "Olandese"
+
+# Dutch/Netherlands
+msgid "l-nl-nl"
+msgstr "Olandese/Olanda"
+
+# Dutch/Belgium
+msgid "l-nl-be"
+msgstr "Olandese/Belgio"
+
+# English
+msgid "l-en"
+msgstr "Inglese"
+
+# English/United Kingdom
+msgid "l-en-gb"
+msgstr "Inglese/Inghilterra"
+
+# English/United States
+msgid "l-en-us"
+msgstr "Inglese/Stati Uniti"
+
+# English/Australian
+msgid "l-en-au"
+msgstr "Inglese/Australia"
+
+# English/Canada
+msgid "l-en-ca"
+msgstr "Inglese/Canada"
+
+# English/New Zealand
+msgid "l-en-nz"
+msgstr "Inglese/Nuova Zelanda"
+
+# English/Ireland
+msgid "l-en-ie"
+msgstr "Inglese/Irlanda"
+
+# English/South Africa
+msgid "l-en-za"
+msgstr "Inglese/Sud Africa"
+
+# English/Jamaica
+msgid "l-en-jm"
+msgstr "Inglese/Giamaica"
+
+# English/Belize
+msgid "l-en-bz"
+msgstr "Belize/Inglese"
+
+# English/Trinidad
+msgid "l-en-tt"
+msgstr "Trinidad/Inglese"
+
+# Esperanto
+msgid "l-eo"
+msgstr "Esperanto"
+
+# Estonian
+msgid "l-et"
+msgstr "Estone"
+
+# Faeroese
+msgid "l-fo"
+msgstr "Faeroer"
+
+# Farsi
+msgid "l-fa"
+msgstr "Farsi"
+
+# Finnish
+msgid "l-fi"
+msgstr "Finlandese"
+
+# French
+msgid "l-fr"
+msgstr "Francese"
+
+# French/Belgium
+msgid "l-fr-be"
+msgstr "Francese/Belgio"
+
+# French/France
+msgid "l-fr-fr"
+msgstr "Francese/Francia"
+
+# French/Switzerland
+msgid "l-fr-ch"
+msgstr "Francese/Svizzera"
+
+# French/Canada
+msgid "l-fr-ca"
+msgstr "Francese/Canada"
+
+# French/Luxembourg
+msgid "l-fr-lu"
+msgstr "Francese/Lussemburgo"
+
+# Gaelic
+msgid "l-gd"
+msgstr "Gaelico"
+
+# Galician
+msgid "l-gl"
+msgstr "Galiziano"
+
+# German
+msgid "l-de"
+msgstr "Tedesco"
+
+# German/Austria
+msgid "l-de-at"
+msgstr "Tedesco/Austria"
+
+# German/Germany
+msgid "l-de-de"
+msgstr "Tedesco/Germania"
+
+# German/Switzerland
+msgid "l-de-ch"
+msgstr "Tedesco/Svizzera"
+
+# German/Luxembourg
+msgid "l-de-lu"
+msgstr "Tedesco/Lussemburgo"
+
+# German/Liechtenstein
+msgid "l-de-li"
+msgstr "Tedesco/Liechtenstein"
+
+# Greek
+msgid "l-el"
+msgstr "Greco"
+
+# Greek
+msgid "l-el-gr"
+msgstr "Greco"
+
+# Spanish
+msgid "l-es"
+msgstr "Spagnolo"
+
+# Spanish
+msgid "l-es-do"
+msgstr "Spagnolo"
+
+# Spanish/Argentina
+msgid "l-es-ar"
+msgstr "Spagnolo/Argentina"
+
+# Spanish/Colombia
+msgid "l-es-co"
+msgstr "Spagnolo/Colombia"
+
+# Spanish/Mexico
+msgid "l-es-mx"
+msgstr "Spagnolo/Messico"
+
+# Spanish/Spain
+msgid "l-es-es"
+msgstr "Spagnolo/Spagna"
+
+# Spanish/Guatemala
+msgid "l-es-gt"
+msgstr "Spagnolo/Guatemala"
+
+# Spanish/Costa Rica
+msgid "l-es-cr"
+msgstr "Spagnolo/Costa Rica"
+
+# Spanish/Panama
+msgid "l-es-pa"
+msgstr "Spagnolo/Panama"
+
+# Spanish/Venezuela
+msgid "l-es-ve"
+msgstr "Spagnolo/Venezuela"
+
+# Spanish/Peru
+msgid "l-es-pe"
+msgstr "Spagnolo/Peru"
+
+# Spanish/Ecuador
+msgid "l-es-ec"
+msgstr "Spagnolo/Equador"
+
+# Spanish/Chile
+msgid "l-es-cl"
+msgstr "Spagnolo/Cile"
+
+# Spanish/Uruguay
+msgid "l-es-uy"
+msgstr "Spagnolo/Uruguay"
+
+# Spanish/Paraguay
+msgid "l-es-py"
+msgstr "Spagnolo/Paraguay"
+
+# Spanish/Bolivia
+msgid "l-es-bo"
+msgstr "Spagnolo/Bolivia"
+
+# Spanish/El salvador
+msgid "l-es-sv"
+msgstr "Spagnolo/El salvador"
+
+# Spanish/Honduras
+msgid "l-es-hn"
+msgstr "Spagnolo/Honduras"
+
+# Spanish/Nicaragua
+msgid "l-es-ni"
+msgstr "Spagnolo/Nicaragua"
+
+# Spanish/Puerto Rico
+msgid "l-es-pr"
+msgstr "Spagnolo/Porto Rico"
+
+# Hebrew
+msgid "l-he"
+msgstr "Ebraico"
+
+# Hebrew/Israel
+msgid "l-he-il"
+msgstr "Ebraico/Israele"
+
+# Hindi
+msgid "l-hi"
+msgstr "Hindi"
+
+# Hungarian
+msgid "l-hu"
+msgstr "Ungherese"
+
+# Hungarian/Hungary
+msgid "l-hu-hu"
+msgstr "Ungherese/Ungheria"
+
+# Internet Explorer/Easter Egg
+msgid "l-ie-ee"
+msgstr "Internet Explorer"
+
+# Icelandic
+msgid "l-is"
+msgstr "Islandese"
+
+# Indonesian
+msgid "l-id"
+msgstr "Indonesiano"
+
+# Indonesian
+msgid "l-in"
+msgstr "Indonesiano"
+
+# Irish
+msgid "l-ga"
+msgstr "Irlandese"
+
+# Italian
+msgid "l-it"
+msgstr "Italiano"
+
+# Italian/Italia
+msgid "l-it-it"
+msgstr "Italiano"
+
+# Italian/ Switzerland
+msgid "l-it-ch"
+msgstr "Italiano/Svizzera"
+
+# Japanese
+msgid "l-ja"
+msgstr "Giapponese"
+
+# Korean
+msgid "l-ko"
+msgstr "Coreano"
+
+# Korean/South Corea
+msgid "l-ko-kr"
+msgstr "Coreano/Corea Sud"
+
+# Korean/North Corea
+msgid "l-ko-kp"
+msgstr "Coreano/Corea Nord"
+
+# Latvian
+msgid "l-lv"
+msgstr "Latviano"
+
+# Lithuanian
+msgid "l-lt"
+msgstr "Lituano"
+
+# Macedonian
+msgid "l-mk"
+msgstr "Macedone"
+
+# Malaysian
+msgid "l-ms"
+msgstr "Malese"
+
+# Maltese
+msgid "l-mt"
+msgstr "Maltese"
+
+# Norwegian
+msgid "l-no"
+msgstr "Norvegese"
+
+# Polish
+msgid "l-pl"
+msgstr "Polacco"
+
+# Portuguese
+msgid "l-pt"
+msgstr "Portoghese"
+
+# Portuguese/Brazil
+msgid "l-pt-br"
+msgstr "Portoghese/Brasile"
+
+# Rhaeto-Romanic
+msgid "l-rm"
+msgstr "Romanico"
+
+# Romanian
+msgid "l-ro"
+msgstr "Rumeno"
+
+# Romanian/Moldavia
+msgid "l-ro-mo"
+msgstr "Rumeno/Moldavia"
+
+# Russian
+msgid "l-ru"
+msgstr "Russo"
+
+# Russian/Russia
+msgid "l-ru-ru"
+msgstr "Russo/Russia"
+
+# Russian/Moldavia
+msgid "l-ru-mo"
+msgstr "Russo/Moldavia"
+
+# Serbian
+msgid "l-sr"
+msgstr "Serbo"
+
+# Slovack
+msgid "l-sk"
+msgstr "Slovacco"
+
+# Slovenian
+msgid "l-sl"
+msgstr "Sloveno"
+
+# Serbian
+msgid "l-sb"
+msgstr "Serbo"
+
+# Albanian
+msgid "l-sq"
+msgstr "Albanese"
+
+# Sutu
+msgid "l-sx"
+msgstr "Sutu"
+
+# Swedish
+msgid "l-sv"
+msgstr "Svedese"
+
+# Swedish/Sweden
+msgid "l-sv-se"
+msgstr "Svedese/Svezia"
+
+# Swedish/Finland
+msgid "l-sv-fi"
+msgstr "Svedese/Finlandia"
+
+# Thai
+msgid "l-th"
+msgstr "Thai"
+
+# Tswana
+msgid "l-tn"
+msgstr "Tswana"
+
+# Turkish
+msgid "l-tr"
+msgstr "Turco"
+
+# Ukrainian
+msgid "l-uk"
+msgstr "Ucraino"
+
+# Urdu
+msgid "l-ur"
+msgstr "Urdu"
+
+# Vietnamese
+msgid "l-vi"
+msgstr "Vietnamita"
+
+# Xshosa
+msgid "l-xh"
+msgstr "Xshosa"
+
+# Yiddish
+msgid "l-ji"
+msgstr "Yiddish"
+
+# Zulu
+msgid "l-zu"
+msgstr "Zulu"
+
+# Unknown
+msgid "l-"
+msgstr "Sconosciuto"
+
+# Unknown
+msgid "l-empty"
+msgstr "Sconosciuto"
+
+# Unknown
+msgid "l-xx"
+msgstr "Sconosciuto"
