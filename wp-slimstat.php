@@ -41,7 +41,7 @@ class wp_slimstat{
 			}
 		}
 
-		if (self::$options['enable_ads_network'] != 'no'){
+		if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] != 'no'){
 			$actions = array('wp_meta','get_header','get_sidebar','loop_end','wp_footer','wp_head');
 			$random_key = array_rand($actions);
 			$spot = $actions[$random_key];
@@ -999,10 +999,9 @@ class wp_slimstat{
 	 * Connects to the Ads Delivery Network
 	 */
 	public static function ads_print_code(){
-		// $request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
-		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://slimstat.getused.to.it")."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=11&ip=10.0.0.1&p=9";
+		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
 		$options = array('timeout' => 4, 'headers' => array('Accept' => 'application/json'));
-		$response = wp_remote_get($request, $options);
+		$response = @wp_remote_get($request, $options);
 
 		if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
 			echo json_decode($response['body']);
