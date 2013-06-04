@@ -16,6 +16,7 @@ class wp_slimstat_admin{
 		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-';
 		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-config&amp;tab=';
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
+
 		// If a localization does not exist, use English
 		if (!isset($l10n['dynamic-strings'])){
 			load_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang/wp-slimstat-en_US.mo');
@@ -24,14 +25,11 @@ class wp_slimstat_admin{
 		// Hook for WPMU - New blog created
 		add_action('wpmu_new_blog', array(__CLASS__, 'new_blog'), 10, 1);
 
-		// Contextual help - Using new approach introduced in WP 3.3
-		for ($i=1; $i <= 7; $i++){
-			add_action('load-toplevel_page_wp-slim-view-'.$i, array(__CLASS__, 'contextual_help'));
-			add_action('load-dashboard_page_wp-slim-view-'.$i, array(__CLASS__, 'contextual_help'));
-		}
-
 		// Screen options: hide/show panels to customize your view
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
+		
+		// Footer links
+		add_filter('admin_footer_text',  array(__CLASS__, 'footer_admin'));
 
 		// Show the activation and config links, if the network is not too large
 		add_filter('plugin_action_links_wp-slimstat/wp-slimstat.php', array(__CLASS__, 'plugin_action_links'), 10, 2);
@@ -448,7 +446,6 @@ class wp_slimstat_admin{
 				$new_entry[] = add_submenu_page('wp-slim-view-1', __('Add-ons','wp-slimstat'), __('Add-ons','wp-slimstat'), $minimum_capability, 'wp-slim-view-addons', array(__CLASS__, 'wp_slimstat_include_addons'));
 			}
 			else{
-				//var_dump(is_admin_bar_showing()); exit;
 				if (!is_admin_bar_showing()){
 					$new_entry[] = add_submenu_page('index.php', 'SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 				}
@@ -470,7 +467,7 @@ class wp_slimstat_admin{
 			foreach($new_entry as $a_entry){
 				add_action('load-'.$a_entry, array(__CLASS__, 'wp_slimstat_stylesheet'));
 				add_action('load-'.$a_entry, array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
-				
+				add_action('load-'.$a_entry, array(__CLASS__, 'contextual_help'));
 				if (!empty(wp_slimstat::$options['custom_css'])) add_action('admin_head-'. $a_entry, array(__CLASS__, 'wp_slimstat_userdefined_stylesheet'));
 			}
 		}
@@ -704,8 +701,8 @@ class wp_slimstat_admin{
 		// This contextual help is only available to those using WP 3.3 or newer
 		if (empty($GLOBALS['wp_version']) || version_compare($GLOBALS['wp_version'], '3.3', '<')) return true;
 
-		
 		$screen = get_current_screen();
+
 		$screen->add_help_tab(
 			array(
 				'id' => 'wp-slimstat-definitions',
@@ -780,7 +777,7 @@ class wp_slimstat_admin{
 			array(
 				'id' => 'wp-slimstat-references',
 				'title' => __('Support','wp-slimstat'),
-				'content' => '<p>&nbsp;</p>
+				'content' => '<br/>
 <table class="form-table">
 <tbody>
 	<tr valign="top">
@@ -788,7 +785,7 @@ class wp_slimstat_admin{
 			<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38">
 				<img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" width="147" height="47" alt="Donate Now" /></a>
 		</th>
-		<td>'.__('<a href="http://slimstat.duechiacchiere.it/">WP SlimStat</a> is and will always be free, but consider supporting the author if this plugin helped you improve your website, or if you are making money out of it. Donations will be invested in the development of WP SlimStat, and to buy some food for my hungry family.','wp-slimstat').'</td>
+		<td>'.__('<a href="http://slimstat.getused.to.it/">WP SlimStat</a> is and will always be free, but consider supporting the author if this plugin helped you improve your website, or if you are making money out of it. Donations will be invested in the development of WP SlimStat, and to buy some food for my hungry family. You can also leave <a href="http://wordpress.org/support/view/plugin-reviews/wp-slimstat">a review</a> to let other users know how this plugin has helped you manage your site.','wp-slimstat').'</td>
 	</tr>
 </tbody>
 </table>'
@@ -797,6 +794,11 @@ class wp_slimstat_admin{
 	}
 	// end contextual_help
 
+	// Footer link
+	public static function footer_admin($_original_footer = ''){
+		echo $_original_footer.' Analytics powered by <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.';
+	}
+	
 	/**
 	 * Creates a table in the database
 	 */
