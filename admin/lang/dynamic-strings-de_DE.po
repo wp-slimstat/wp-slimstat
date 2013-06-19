@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: WP SlimStat Dynamic String (not hardcoded)\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: due chiacchiere <info@duechiacchiere.it>\n"
+"Last-Translator: get used to it <support@getused.to.it>\n"
 "Language-Team: camu <info@duechiacchiere.it>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=iso-8859-1\n"
@@ -166,6 +166,39 @@ msgstr "WebOS"
 
 msgid "powertv"
 msgstr "PowerTV"
+
+msgid "p-and"
+msgstr "Android"
+
+msgid "p-bla"
+msgstr "BlackBerry"
+
+msgid "p-chr"
+msgstr "Chrome OS"
+
+msgid "p-fre"
+msgstr "Linux FreeBSD"
+
+msgid "p-ios"
+msgstr "Apple iOS"
+
+msgid "p-jav"
+msgstr "Java-based OS"
+
+msgid "p-lin"
+msgstr "Linux"
+
+msgid "p-mac"
+msgstr "Apple"
+
+msgid "p-sym"
+msgstr "Symbian OS"
+
+msgid "p-unk"
+msgstr "Unknown"
+
+msgid "p-win"
+msgstr "Microsoft"
 
 msgid "acrobat"
 msgstr "Acrobat Reader"

@@ -212,6 +212,12 @@ foreach ( array(
 						case 'slim_p2_17':
 							wp_slimstat_boxes::box_header('slim_p2_17', htmlspecialchars(__('This report shows you what languages your users have installed on their computers.','wp-slimstat'), ENT_QUOTES), '', true);
 							break;
+						case 'slim_p2_18':
+							wp_slimstat_boxes::box_header('slim_p2_18', htmlspecialchars(__('This report shows you what user agent families (no version considered) are popular among your visitors.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_19':
+							wp_slimstat_boxes::box_header('slim_p2_19', htmlspecialchars(__('This report shows you what operating system families (no version considered) are popular among your visitors.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
 						default:
 					}
 					wp_slimstat_boxes::show_report_wrapper($a_box_id);
@@ -359,6 +365,11 @@ foreach ( array(
 
 					// Create AmMap object
 					var map = new AmCharts.AmMap();
+					var legend = new AmCharts.ValueLegend();
+					legend.height = 20;
+					legend.minValue = "min";
+					legend.maxValue = "max";
+					legend.showAsGradient = true;
 
 					// Configuration
 					map.areasSettings = {
@@ -375,10 +386,11 @@ foreach ( array(
 					map.colorSteps = 20;
 					map.mouseWheelZoomEnabled = true;
 					map.pathToImages = "<?php echo plugins_url('/view/js/ammap/images/', dirname(__FILE__)) ?>";
-
+					map.valueLegend = legend;
+					
 					// Init Data
 					map.dataProvider = dataProvider;
-
+console.log(map);
 					// Display Map
 					map.write("slimstat-world-map");
 				});

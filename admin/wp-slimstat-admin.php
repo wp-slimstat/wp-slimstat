@@ -796,7 +796,7 @@ class wp_slimstat_admin{
 
 	// Footer link
 	public static function footer_admin($_original_footer = ''){
-		echo $_original_footer.' Analytics powered by <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.';
+		return $_original_footer.' Analytics powered by <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.';
 	}
 	
 	/**

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.6
-Stable tag: 3.2.2
+Stable tag: 3.2.3
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
@@ -24,7 +24,7 @@ A powerful real-time web analytics plugin for Wordpress. Visit the [official sit
 * Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own
 
 = Requirements =
-* Wordpress 3.1 or higher (it may not work on large multisite environments; some users have reported problems in accessing the configuration page under Wordpress 3.3.x or earlier)
+* Wordpress 3.1 or higher (it may not work on *large* multisite environments; some users have reported problems in accessing the configuration page under Wordpress 3.3.x or earlier)
 * PHP 5.1 or higher
 * MySQL 5.0.3 or higher
 * At least 5 MB of free web space
@@ -268,6 +268,17 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.2.3 =
+* [New] Added color legend bar to World Map (thank you, [grutti](http://wordpress.org/support/topic/legend-of-world-map))
+* [New] French/Canadian localizations updated (thank you, Fred Bailly)
+* [New] Two new reports added: Browser Families and OS Families (thank you, Romain)
+* [Update] Brazilian localization has been updated (thank you, Raphael Suzuki)
+* [Update] [AmMap](http://www.ammap.com/download/) (Javascript-based World Map) has been updated to version 3.3.1
+* [Update] MaxMind database updated to June 2013
+* [Fix] Footer links in the admin were being printed instead of being returned (thank you, [Ov3rfly](http://wordpress.org/support/topic/bug-admin_footer_text-filter-prints-text-instead-of-returning-it))
+* [Fix] Setting to filter users by capabilities was not working (thank you, [clausbroch](http://wordpress.org/support/topic/filter-users-by-capabilities-not-saved))
+* [Fix] Duplicate error code was being returned when database was not accessible (thank you, Fabio)
+
 = 3.2.2 =
 * [Note] The new Export add-on has been released!
 * [New] You can now refresh the Right Now panel without reloading the entire page
@@ -316,6 +327,7 @@ foreach ($results...`
 [Dennis Kowallek](http://www.adopt-a-plant.com),
 [Damian](http://wipeoutmedia.com),
 [Edward Koon](http://www.fidosysop.org),
+Fabio Mascagna,
 [Gabriela Lungu](http://www.cosmeticebio.org),
 Gary Swarer,
 Giacomo Persichini,
