@@ -58,7 +58,7 @@ $license_key_field = false;
 				<div class="plugin-description"><p><?php echo $a_addon['description'] ?></p></div>
 				<?php if ((is_plugin_active($a_addon['slug'].'/index.php') || is_plugin_active($a_addon['slug'].'/'.$a_addon['slug'].'.php')) && intval($a_addon['price']) > 0): $license_key_field = true; ?>
 				<div class="active second">
-					License Key: <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo wp_slimstat::$options['addon_licenses'][$a_addon['slug']] ?>" size="50"/>
+					License Key: <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty(wp_slimstat::$options['addon_licenses'][$a_addon['slug']])?wp_slimstat::$options['addon_licenses'][$a_addon['slug']]:'' ?>" size="50"/>
 				</div>
 				<?php endif ?>
 			</td>

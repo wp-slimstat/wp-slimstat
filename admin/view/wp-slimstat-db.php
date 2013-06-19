@@ -572,7 +572,7 @@ class wp_slimstat_db {
 		return $result;
 	}
 
-	protected function _init_filters($_filters = array()){
+	protected static function _init_filters($_filters = array()){
 		if (!is_array($_filters)){
 			if (substr($_filters, -1) != '|') $_filters .= '|';
 			preg_match_all('/([^\s|]+)\s([^\s|]+).((?:[^|]+)?)/', urldecode($_filters), $matches);
