@@ -390,8 +390,8 @@ class wp_slimstat_db {
 	public static function extract_data_for_chart($_data1, $_data2, $_custom_where_clause = '', $_sql_from_where = ''){
 		// Avoid PHP warnings in strict mode
 		$result = array(
-			'current' => array('non_zero_count' => 0, 'data1' => '', 'data2' => '', 'total1' => 0, 'total2' => 0),
-			'previous' => array('non_zero_count' => 0, 'data' => '', 'total' => 0),
+			'current' => array('non_zero_count' => 0, 'data1' => '', 'data2' => ''),
+			'previous' => array('non_zero_count' => 0, 'data' => ''),
 			'max_yaxis' => 0,
 			'ticks' => '', 'markings' => ''
 		);
@@ -518,7 +518,6 @@ class wp_slimstat_db {
 			if (date_i18n($datestamp['group'], $datestamp['timestamp_current']) == date_i18n($datestamp['group'], self::$timeframes['current_utime_start'], true) || !empty(self::$filters['parsed']['interval'][1])){
 				if (!empty($data[0][$datestamp['current']])){
 					$result['current']['data1'] .= "[$i,{$data[0][$datestamp['current']]}{$datestamp['filter_current']}],";
-					$result['current']['total1'] += $data[0][$datestamp['current']];
 					$result['current']['non_zero_count']++;
 				}	
 				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
@@ -527,7 +526,6 @@ class wp_slimstat_db {
 
 				if (!empty($data[1][$datestamp['current']])){
 					$result['current']['data2'] .= "[$i,{$data[1][$datestamp['current']]}{$datestamp['filter_current']}],";
-					$result['current']['total2'] += $data[1][$datestamp['current']];
 				}
 				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
 					$result['current']['data2'] .= "[$i,0],";
@@ -537,7 +535,6 @@ class wp_slimstat_db {
 			if (date_i18n($datestamp['group'], $datestamp['timestamp_previous']) == date_i18n($datestamp['group'], self::$timeframes['previous_utime_start'], true) && empty(self::$filters['parsed']['interval'][1])){
 				if (!empty($data[0][$datestamp['previous']])){
 					$result['previous']['data'] .= "[$i,{$data[0][$datestamp['previous']]}{$datestamp['filter_previous']}],";
-					$result['previous']['total'] += $data[0][$datestamp['previous']];
 				}
 				elseif($datestamp['timestamp_previous'] <= date_i18n('U')){
 					$result['previous']['data'] .= "[$i,0],";
@@ -642,7 +639,7 @@ class wp_slimstat_db {
 		}
 	}	
 
-	protected function _format_value($_value = 0, $_link = ''){
+	protected static function _format_value($_value = 0, $_link = ''){
 		if ($_value == 0) return '<set/>';
 		if (empty($_link)){
 			return (intval($_value)==$_value)?"<set value='$_value'/>":sprintf("<set value='%01.2f'/>", $_value);
@@ -652,7 +649,7 @@ class wp_slimstat_db {
 		}
 	}
 	
-	protected function _add_filters_to_sql_from($_sql_tables = '', $_ignore_empty = false){
+	protected static function _add_filters_to_sql_from($_sql_tables = '', $_ignore_empty = false){
 		$sql_from = '';
 		if (($_ignore_empty || empty(self::$filters['sql_from']['browsers'])) && strpos($_sql_tables, 'tb.') !== false)
 			$sql_from .= ' INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_browsers tb ON t1.browser_id = tb.browser_id';
@@ -669,7 +666,7 @@ class wp_slimstat_db {
 		return $sql_from;
 	}
 	
-	protected function _generate_ticks($_count = 0, $_offset = 0){
+	protected static function _generate_ticks($_count = 0, $_offset = 0){
 		$ticks = '';
 		if ($_offset < 0) return $ticks;
 
