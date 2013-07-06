@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.2.4
+version: 3.2.5
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.2.4';
+	public static $version = '3.2.5';
 	public static $options = array();
 	
 	protected static $data_js = array('id' => -1);
@@ -1004,7 +1004,8 @@ class wp_slimstat{
 		$response = @wp_remote_get($request, $options);
 
 		if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
-			echo json_decode($response['body']);
+			$ad_response = @json_decode($response['body']);
+			if (!is_null($ad_response) && !empty($ad_response->content)) echo $ad_response->content;
 		}
 		return 0;
 	}

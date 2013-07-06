@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.6
-Stable tag: 3.2.4
+Stable tag: 3.2.5
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
@@ -267,6 +267,9 @@ foreach ($results...`
 5. Access your stats from within Wordpress for iOS
 
 == Changelog ==
+
+= 3.2.5 =
+* [Fix] Addressed a PHP warning thrown by the tracker (thank you, [daviesda](http://wordpress.org/support/topic/object-of-class-stdclass-could-not-be-converted-to-string-error))
 
 = 3.2.4 =
 * [Fix] Bug affecting some metrics (thank you, [internet.se](http://wordpress.org/support/topic/human-visits-includes-bots-or-query-error))
