@@ -4,6 +4,8 @@ class wp_slimstat_admin{
 	public static $view_url = '';
 	public static $config_url = '';
 	public static $faulty_fields = array();
+	
+	protected static $admin_notice = 'We just passed the 500,000 downloads mark! Thank you for <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38">supporting our project</a>. Stay tuned for exciting news, <a href="http://slimstat.getused.to.it/addons/">new add-ons</a> and much more.';
 
 	/**
 	 * Init -- Sets things up.
@@ -38,6 +40,12 @@ class wp_slimstat_admin{
 		if (wp_slimstat::$options['hide_stats_link_edit_posts'] == 'no'){
 			add_filter('post_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
 			add_filter('page_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
+		}
+
+		// Display a notice that hightlights this version's features
+		if (empty(wp_slimstat::$options['show_admin_notice']) || wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$options['version']){
+			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
+			self::update_option('show_admin_notice', wp_slimstat::$options['version'], 'text');
 		}
 
 		// Remove spammers from the database
@@ -154,6 +162,7 @@ class wp_slimstat_admin{
 				platform VARCHAR(15) DEFAULT '',
 				css_version VARCHAR(5) DEFAULT '',
 				type TINYINT UNSIGNED DEFAULT 0,
+				user_agent VARCHAR(2048) DEFAULT '',
 				PRIMARY KEY (browser_id),
 				UNIQUE KEY unique_browser (browser, version, platform, css_version, type)
 			) COLLATE utf8_general_ci $use_innodb";
@@ -295,7 +304,7 @@ class wp_slimstat_admin{
 		}
 
 		$content_id_exists = false;
-		$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->prefix}slim_content_info", ARRAY_A);
+		$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info", ARRAY_A);
 
 		foreach($table_structure as $a_row){
 			if ($a_row['Field'] == 'content_id'){
@@ -323,7 +332,7 @@ class wp_slimstat_admin{
 		// --- END: Updates for version 3.0 ---
 		
 		// --- Updates for version 3.1 ---
-		$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_countries");
+		$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_countries");
 		// --- END: Updates for version 3.1 ---
 		
 		// --- Updates for version 3.2 ---
@@ -335,6 +344,25 @@ class wp_slimstat_admin{
 		}
 		// --- END: Updates for version 3.2 ---
 
+		// --- Updates for version 3.2.6 ---
+		$user_agent_exists = false;
+		$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers", ARRAY_A);
+
+		foreach($table_structure as $a_row){
+			if ($a_row['Field'] == 'user_agent'){
+				$user_agent_exists = true;
+				break;
+			}
+		}
+		if (!$user_agent_exists){
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD COLUMN user_agent VARCHAR(2048) DEFAULT '' AFTER type");
+		}
+		
+		if (!isset(wp_slimstat::$options['show_admin_notices'])){
+			self::update_option('show_admin_notices', '0', 'integer');
+		}
+		// --- END: Updates for version 3.2.6 ---
+		
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
 			self::update_option('version', wp_slimstat::$version, 'text');
@@ -399,9 +427,9 @@ class wp_slimstat_admin{
 
 	public static function wp_slimstat_enqueue_scripts(){
 		wp_enqueue_script('dashboard');
-		wp_enqueue_script('slimstat_flot', plugins_url('/admin/view/js/jquery.flot.min.js', dirname(__FILE__)), array('jquery'), '0.7');
-		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/view/js/jquery.flot.navigate.min.js', dirname(__FILE__)), array('jquery','slimstat_flot'), '0.7');
-		wp_enqueue_script('slimstat_admin', plugins_url('/admin/view/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), '1.0');
+		wp_enqueue_script('slimstat_flot', plugins_url('/admin/js/jquery.flot.min.js', dirname(__FILE__)), array('jquery'), '0.7');
+		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/js/jquery.flot.navigate.min.js', dirname(__FILE__)), array('jquery','slimstat_flot'), '0.7');
+		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), '1.0');
 
 		// Pass some information to Javascript
 		$params = array(
@@ -415,7 +443,7 @@ class wp_slimstat_admin{
 	}
 	
 	public static function wp_slimstat_enqueue_config_scripts(){
-		wp_enqueue_script('slimstat_config_admin', plugins_url('/admin/view/js/slimstat.config.admin.js', dirname(__FILE__)));
+		wp_enqueue_script('slimstat_config_admin', plugins_url('/admin/js/slimstat.config.admin.js', dirname(__FILE__)));
 	}
 
 	/**
@@ -601,6 +629,13 @@ class wp_slimstat_admin{
 	 */
 	public static function show_alert_message($_message = '', $_type = 'update'){
 		echo "<div id='wp-slimstat-message' class='$_type'><p>$_message</p></div>";
+	}
+	
+	/**
+	 * Displays a message related to the current version of WP SlimStat
+	 */
+	public static function show_admin_notice(){
+		echo '<div class="updated highlight" style="padding:10px">'.self::$admin_notice.' <a class="remove-filter" style="float:right" href="javascript:;" onclick="jQuery(this).parent().fadeOut(500);"></a></div>';
 	}
 	
 	/*

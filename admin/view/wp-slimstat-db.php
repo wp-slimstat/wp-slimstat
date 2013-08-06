@@ -127,12 +127,25 @@ class wp_slimstat_db {
 			}
 		}
 		else{
-			self::$timeframes['current_utime_start'] = self::$timeframes['current_day']['utime'];
-			self::$timeframes['current_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.self::$timeframes['current_day']['m'].'-'.self::$timeframes['current_day']['d'].' 00:00 +'.self::$filters['parsed']['interval'][1].' days')-1;
-			self::$timeframes['previous_utime_start'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'] - 1, self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
-			self::$timeframes['previous_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.(self::$timeframes['current_day']['m'] - 1).'-'.self::$timeframes['current_day']['d'].' 00:00 +'.self::$filters['parsed']['interval'][1].' days')-1;
-			self::$timeframes['label_current'] = '';
-			self::$timeframes['label_previous'] = '';
+			if (self::$filters['parsed']['interval'][1] > 0){
+				self::$timeframes['current_utime_start'] = self::$timeframes['current_day']['utime'];
+				self::$timeframes['current_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.self::$timeframes['current_day']['m'].'-'.self::$timeframes['current_day']['d'].' 00:00 +'.self::$filters['parsed']['interval'][1].' days')-1;
+				self::$timeframes['previous_utime_start'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'] - 1, self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
+				//self::$timeframes['previous_utime_end'] = strtotime(self::$timeframes['current_day']['y'].'-'.(self::$timeframes['current_day']['m'] - 1).'-'.self::$timeframes['current_day']['d'].' 00:00 +'.self::$filters['parsed']['interval'][1].' days')-1;
+				self::$timeframes['label_current'] = '';
+				//self::$timeframes['label_previous'] = '';
+			}
+			else{
+				self::$timeframes['current_utime_start'] = strtotime(self::$timeframes['current_day']['y'].'-'.self::$timeframes['current_day']['m'].'-'.self::$timeframes['current_day']['d'].' 00:00 -'.abs(self::$filters['parsed']['interval'][1]).' days');
+				self::$timeframes['current_utime_end'] = self::$timeframes['current_day']['utime'];
+				self::$timeframes['current_day']['d'] = date_i18n('d', self::$timeframes['current_utime_start']);
+				self::$timeframes['current_day']['m'] = date_i18n('m', self::$timeframes['current_utime_start']);
+				self::$timeframes['current_day']['y'] = date_i18n('Y', self::$timeframes['current_utime_start']);
+				self::$timeframes['previous_utime_start'] = strtotime(self::$timeframes['current_day']['y'].'-'.(self::$timeframes['current_day']['m'] - 1).'-'.self::$timeframes['current_day']['d'].' 00:00 -'.abs(self::$filters['parsed']['interval'][1]).' days');
+			//	self::$timeframes['previous_utime_end'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'] - 1, self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y'])+3599;
+				self::$timeframes['label_current'] = '';
+			//	self::$timeframes['label_previous'] = '';
+			}
 		}
 		self::$filters['date_sql_where'] = ' AND t1.dt BETWEEN '.self::$timeframes['current_utime_start'].' AND '.self::$timeframes['current_utime_end'];
 
@@ -226,6 +239,7 @@ class wp_slimstat_db {
 			case 'css_version':
 			case 'type':
 			case 'platform':
+			case 'user_agent':
 				return 'tb.';
 				break;
 			case 'resolution':
@@ -432,7 +446,7 @@ class wp_slimstat_db {
 			$time_constraints = '(dt BETWEEN '.self::$timeframes['current_utime_start'].' AND '.self::$timeframes['current_utime_end'].')';
 			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d 00:00') datestamp, $_data1 data1, $_data2 data2";
 			$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%m'), DATE_FORMAT(FROM_UNIXTIME(dt), '%d') ORDER BY datestamp ASC";
-			$data['end_value'] = self::$filters['parsed']['interval'][1];
+			$data['end_value'] = abs(self::$filters['parsed']['interval'][1]);
 			$data['count_offset'] = -1; // skip ticks generation
 		}
 
@@ -447,7 +461,6 @@ class wp_slimstat_db {
 			$sql .= $sql_no_placeholders;
 		}
 		$sql .= ' '.$group_and_order;
-
 		$array_results = $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
 
 		if (!is_array($array_results) || empty($array_results))
@@ -599,7 +612,7 @@ class wp_slimstat_db {
 					self::$filters['parsed']['year'] = array('equals', date_i18n('Y', $custom_date));
 					break;
 				case 'interval':
-					if (intval($matches[3][$idx]) > 0) self::$filters['parsed']['interval'] = array('equals', intval($matches[3][$idx]));
+					self::$filters['parsed']['interval'] = array('equals', intval($matches[3][$idx]));
 					break;
 				case 'direction':
 				case 'limit_results':
@@ -617,6 +630,7 @@ class wp_slimstat_db {
 				case 'plugins':
 				case 'version':
 				case 'type':
+				case 'user_agent':
 				case 'colordepth':
 				case 'css_version':
 				case 'notes':
@@ -632,7 +646,7 @@ class wp_slimstat_db {
 				case 'day':
 				case 'month':
 				case 'year':
-					self::$filters['parsed'][$a_match] = array(isset($matches[2][$idx])?$matches[2][$idx]:'equals', isset($matches[3][$idx])?$GLOBALS['wpdb']->escape(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx]))):'');
+					self::$filters['parsed'][$a_match] = array(isset($matches[2][$idx])?$matches[2][$idx]:'equals', isset($matches[3][$idx])?esc_sql(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx]))):'');
 					break;
 				default:
 			}

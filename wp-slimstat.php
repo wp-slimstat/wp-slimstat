@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.2.5
+version: 3.3
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,12 +11,14 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.2.5';
+	public static $version = '3.3';
 	public static $options = array();
+	
+	public static $tables = array();
+	public static $wpdb = '';
 	
 	protected static $data_js = array('id' => -1);
 	protected static $stat = array();
-	protected static $browser = array();
 
 	/**
 	 * Initializes variables and actions
@@ -26,6 +28,19 @@ class wp_slimstat{
 		self::$options = get_option('slimstat_options', array());
 		self::$options = apply_filters('slimstat_init_options', self::$options);
 		if (empty(self::$options)) self::init_options();
+		
+		// Allow third-party tools to use different tables or database for WP SlimStat
+		self::$wpdb = $GLOBALS['wpdb'];
+		self::$wpdb = apply_filters('slimstat_custom_wpdb', self::$wpdb);
+
+		self::$tables = array(
+			'stats' => $GLOBALS['wpdb']->prefix."slim_stats",
+			'outbound' => $GLOBALS['wpdb']->prefix."slim_outbound",
+			'browsers' => $GLOBALS['wpdb']->base_prefix."slim_browsers",
+			'screenres' => $GLOBALS['wpdb']->base_prefix."slim_screenres",
+			'content_info' => $GLOBALS['wpdb']->base_prefix."slim_content_info"
+		);
+		self::$tables = apply_filters('slimstat_custom_table_names', self::$tables);
 
 		if (!is_admin()){
 			// Is server-side tracking active?
@@ -109,7 +124,7 @@ class wp_slimstat{
 				if (!empty($timezone)) date_default_timezone_set('UTC');
 				self::$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
 
-				self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_outbound');
+				self::insert_row(self::$stat, self::$tables['outbound']);
 
 				do_action('slimstat_track_success_outbound', self::$stat);
 				exit(self::$stat['id'].'.'.md5(self::$stat['id'].self::$options['secret']));
@@ -125,7 +140,7 @@ class wp_slimstat{
 		$screenres = apply_filters('slimstat_filter_pageview_screenres', $screenres, self::$stat);
 
 		// Now we insert the new screen resolution in the lookup table, if it doesn't exist
-		self::$stat['screenres_id'] = self::maybe_insert_row($screenres, $GLOBALS['wpdb']->base_prefix.'slim_screenres', 'screenres_id');
+		self::$stat['screenres_id'] = self::maybe_insert_row($screenres, self::$tables['screenres'], 'screenres_id');
 		self::$stat['plugins'] = !empty(self::$data_js['pl'])?substr(str_replace('|', ',', self::$data_js['pl']), 0, -1):'';
 
 		// If Javascript mode is enabled, record this pageview
@@ -135,8 +150,8 @@ class wp_slimstat{
 		else{
 			self::_set_visit_id(true);
 			
-			$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
-				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
+			self::$wpdb->query(self::$wpdb->prepare("
+				UPDATE ".self::$tables['stats']."
 				SET screenres_id = %s, plugins = %s
 				WHERE id = %d", self::$stat['screenres_id'], self::$stat['plugins'], self::$stat['id']));
 		}
@@ -146,7 +161,7 @@ class wp_slimstat{
 			$abs_error_code = abs(self::$stat['id']);
 			switch ($abs_error_code){
 				case '212':
-					do_action('slimstat_track_exit_'.$abs_error_code, self::$stat, self::$browser);
+					do_action('slimstat_track_exit_'.$abs_error_code, self::$stat, $browser);
 					break;
 				default:
 					do_action('slimstat_track_exit_'.$abs_error_code, self::$stat);
@@ -193,7 +208,7 @@ class wp_slimstat{
 		}
 		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
 			// Is this a spammer?
-			$spam_comment = $GLOBALS['wpdb']->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
+			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
 			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
 				if (self::$options['ignore_spammers'] == 'yes'){
 					self::$stat['id'] = -202;
@@ -339,10 +354,10 @@ class wp_slimstat{
 		if (!is_array($content_info)) $content_info = array('content_type' => 'unknown');
 
 		// Detect user agent
-		self::$browser = self::_get_browser();
+		$browser = self::_get_browser();
 
 		// Are we ignoring bots?
-		if (self::$options['javascript_mode'] == 'yes' && self::$browser['type']%2 != 0){
+		if (self::$options['javascript_mode'] == 'yes' && $browser['type']%2 != 0){
 			self::$stat['id'] = -211;
 			return $_argument;
 		}
@@ -350,7 +365,7 @@ class wp_slimstat{
 		// Is this browser blacklisted?
 		foreach(self::string_to_array(self::$options['ignore_browsers']) as $a_filter){
 			$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-			if (preg_match("~^$pattern$~i", self::$browser['browser'].'/'.self::$browser['version']) || (preg_match("~^$pattern$~i", self::$browser['browser']))){
+			if (preg_match("~^$pattern$~i", $browser['browser'].'/'.$browser['version']) || preg_match("~^$pattern$~i", $browser['browser']) || preg_match("~^$pattern$~i", $browser['user_agent'])){
 				self::$stat['id'] = -212;
 				return $_argument;
 			}
@@ -360,10 +375,10 @@ class wp_slimstat{
 		$cookie_has_been_set = self::_set_visit_id(false);
 
 		// Allow third-party tools to modify all the data we've gathered so far
-		self::$stat = apply_filters('slimstat_filter_pageview_stat', self::$stat, self::$browser, $content_info);
-		self::$browser = apply_filters('slimstat_filter_pageview_browser', self::$browser, self::$stat, $content_info);
-		$content_info = apply_filters('slimstat_filter_pageview_content_info', $content_info, self::$stat, self::$browser);
-		do_action('slimstat_track_pageview', self::$stat, self::$browser, $content_info);
+		self::$stat = apply_filters('slimstat_filter_pageview_stat', self::$stat, $browser, $content_info);
+		$browser = apply_filters('slimstat_filter_pageview_browser', $browser, self::$stat, $content_info);
+		$content_info = apply_filters('slimstat_filter_pageview_content_info', $content_info, self::$stat, $browser);
+		do_action('slimstat_track_pageview', self::$stat, $browser, $content_info);
 
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if (empty(self::$stat) || empty(self::$stat['dt'])){
@@ -372,9 +387,9 @@ class wp_slimstat{
 		}
 
 		// Now let's save this information in the database
-		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id');
-		self::$stat['browser_id'] = self::maybe_insert_row(self::$browser, $GLOBALS['wpdb']->base_prefix.'slim_browsers', 'browser_id');
-		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
+		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, self::$tables['content_info'], 'content_info_id');
+		self::$stat['browser_id'] = self::maybe_insert_row($browser, self::$tables['browsers'], 'browser_id');
+		self::$stat['id'] = self::insert_row(self::$stat, self::$tables['stats']);
 
 		// Something went wrong during the insert
 		if (empty(self::$stat['id'])){
@@ -632,6 +647,7 @@ class wp_slimstat{
 			$browser['version'] = intval($search[6]);
 			$browser['platform'] = strtolower($search[9]);
 			$browser['css_version'] = $search[28];
+			$browser['user_agent'] = $user_agent;
 
 			// browser Types:
 			//		0: regular
@@ -642,7 +658,7 @@ class wp_slimstat{
 			elseif ($search[26] == 'true') $browser['type'] = 3;
 			elseif ($search[27] != 'true') $browser['type'] = 0;
 
-			return $browser;
+			if ($browser['version'] != 0 || $browser['type'] != 0) return $browser;
 		}
 
 		// Let's try with the heuristic approach
@@ -740,7 +756,8 @@ class wp_slimstat{
 		// Google Chrome browser on all platforms with or without language string
 		} elseif (preg_match('#^Mozilla/\d+\.\d+\s(?:[A-Za-z0-9\./]+\s)?\((?:([A-Za-z0-9/\.]+);(?:\sU;)?\s?)?([^;]*)(?:;\s[A-Za-z]{3}64)?;?\s?([a-z]{2}(?:\-[A-Za-z]{2})?)?\)\sAppleWebKit/[0-9\.]+\+?\s\((?:KHTML,\s)?like\sGecko\)(?:\s([A-Za-z0-9_\-]+[^i])/([A-Za-z0-9\.]+)){1,3}(?:\sSafari/[0-9\.]+)?$#', $user_agent, $match)>0){
 			$browser['browser'] = $match[4];
-			$browser['version'] = $match[5];
+			$browser['version'] = intval($match[5]);
+
 			if (empty($match[2]))
 				$os = $match[1];
 			else
@@ -866,7 +883,7 @@ class wp_slimstat{
 
 			self::$stat['visit_id'] = get_option('slimstat_visit_id', -1);
 			if (self::$stat['visit_id'] == -1){
-				self::$stat['visit_id'] = intval($GLOBALS['wpdb']->get_var("SELECT MAX(visit_id) FROM {$GLOBALS['wpdb']->prefix}slim_stats"));
+				self::$stat['visit_id'] = intval(self::$wpdb->get_var("SELECT MAX(visit_id) FROM ".self::$tables['slim_stats']));
 			}
 			self::$stat['visit_id']++;
 			update_option('slimstat_visit_id', self::$stat['visit_id']);
@@ -880,8 +897,8 @@ class wp_slimstat{
 		}
 
 		if ($is_new_session && $identifier > 0){
-			$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
-				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
+			self::$wpdb->query(self::$wpdb->prepare("
+				UPDATE ".self::$tables['stats']."
 				SET visit_id = %d
 				WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier));
 		}
@@ -897,16 +914,16 @@ class wp_slimstat{
 
 		$select_sql = "SELECT $_id_column FROM $_table WHERE ";
 		foreach ($_data as $a_key => $a_value) $select_sql .= "$a_key = %s AND ";
-		$select_sql = $GLOBALS['wpdb']->prepare(substr($select_sql, 0, -5), $_data);
+		$select_sql = self::$wpdb->prepare(substr($select_sql, 0, -5), $_data);
 
 		// Let's see if this row is already in our lookup table
-		$id = $GLOBALS['wpdb']->get_var($select_sql);
+		$id = self::$wpdb->get_var($select_sql);
 
 		if (empty($id)){
 			$id = self::insert_row($_data, $_table);
 
 			// This may happen if the new content type was added just before performing the INSERT here above
-			if (empty($id)) $id = $GLOBALS['wpdb']->get_var($select_sql);
+			if (empty($id)) $id = self::$wpdb->get_var($select_sql);
 		}
 
 		return $id;
@@ -919,11 +936,11 @@ class wp_slimstat{
 	public static function insert_row($_data = array(), $_table = ''){
 		if (empty($_data) || empty($_table)) return -1;
 
-		$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("
+		self::$wpdb->query(self::$wpdb->prepare("
 			INSERT IGNORE INTO $_table (".implode(", ", array_keys($_data)).') 
 			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).')', $_data));
 
-		return intval($GLOBALS['wpdb']->insert_id);
+		return intval(self::$wpdb->insert_id);
 	}
 	// end insert_row
 
@@ -945,6 +962,8 @@ class wp_slimstat{
 		self::$options = array(
 			'version' => 0,
 			'secret' => get_option('slimstat_secret', md5(time())),
+			'show_admin_notice' => 0,
+			
 			'is_tracking' => get_option('slimstat_is_tracking', 'yes'),
 			'javascript_mode' => 'no',
 			'auto_purge' => get_option('slimstat_auto_purge', '120'),
@@ -1057,10 +1076,10 @@ class wp_slimstat{
 		if (($autopurge_interval = intval(self::$options['auto_purge'])) <= 0) return;
 
 		// Delete old entries
-		$GLOBALS['wpdb']->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
+		self::$wpdb->query('DELETE ts FROM '.self::$tables['stats'].' ts WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))');
 
 		// Optimize table
-		$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
+		self::$wpdb->query('OPTIMIZE TABLE '.self::$tables['stats']);
 	}
 	// end wp_slimstat_purge
 

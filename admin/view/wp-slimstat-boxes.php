@@ -54,6 +54,7 @@ class wp_slimstat_boxes{
 			'plugins' => strtolower(__('Browser Capabilities','wp-slimstat')),
 			'version' => strtolower(__('Browser Version','wp-slimstat')),
 			'type' => strtolower(__('Browser Type','wp-slimstat')),
+			'user_agent' => strtolower(__('User Agent','wp-slimstat')),
 			'colordepth' => strtolower(__('Color Depth','wp-slimstat')),
 			'css_version' => strtolower(__('CSS Version','wp-slimstat')),
 			'notes' => strtolower(__('Pageview Attributes','wp-slimstat')),
@@ -94,7 +95,7 @@ class wp_slimstat_boxes{
 			'slim_p2_01' => __('Human Visits (chart)','wp-slimstat'),
 			'slim_p2_02' => __('Summary','wp-slimstat'),
 			'slim_p2_03' => __('Top Languages','wp-slimstat'),
-			'slim_p2_04' => __('Top User Agents','wp-slimstat'),
+			'slim_p2_04' => __('Top Browsers','wp-slimstat'),
 			'slim_p2_05' => __('Top Service Providers','wp-slimstat'),
 			'slim_p2_06' => __('Top Operating Systems','wp-slimstat'),
 			'slim_p2_07' => __('Top Screen Resolutions','wp-slimstat'),
@@ -104,9 +105,9 @@ class wp_slimstat_boxes{
 			'slim_p2_13' => __('Recent Countries','wp-slimstat'),
 			'slim_p2_14' => __('Recent Screen Resolutions','wp-slimstat'),
 			'slim_p2_15' => __('Recent Operating Systems','wp-slimstat'),
-			'slim_p2_16' => __('Recent User Agents','wp-slimstat'),
+			'slim_p2_16' => __('Recent Browsers','wp-slimstat'),
 			'slim_p2_17' => __('Recent Languages','wp-slimstat'),
-			'slim_p2_18' => __('Top User Agent Families','wp-slimstat'),
+			'slim_p2_18' => __('Top Browser Families','wp-slimstat'),
 			'slim_p2_19' => __('Top OS Families','wp-slimstat'),
 			'slim_p3_01' => __('Traffic Sources (chart)','wp-slimstat'),
 			'slim_p3_02' => __('Summary','wp-slimstat'),
@@ -331,8 +332,12 @@ class wp_slimstat_boxes{
 		}
 	}
 	
-	public static function inline_help($_text = ''){
-		echo "<span class='inline-help' title='$_text'></span>";
+	public static function inline_help($_text = '', $_echo = true){
+		$wrapped_text = "<span class='inline-help' title='$_text'></span>";
+		if ($_echo)
+			echo $wrapped_text;
+		else
+			return $wrapped_text;
 	}
 
 	public static function show_results($_type = 'recent', $_id = 'p0', $_column = 'id', $_args = array()){
@@ -363,6 +368,7 @@ class wp_slimstat_boxes{
 
 		for($i=0;$i<count($results);$i++){
 			$element_title = $percentage = '';
+			$element_pre_value = '';
 			$element_value = $results[$i][$_column];
 
 			// Convert the IP address
@@ -371,6 +377,7 @@ class wp_slimstat_boxes{
 			// Some columns require a special pre-treatment
 			switch ($_column){
 				case 'browser':
+					if (!empty($results[$i]['user_agent'])) $element_pre_value = self::inline_help($results[$i]['user_agent'], false);
 					$element_value = $results[$i]['browser'].((isset($results[$i]['version']) && intval($results[$i]['version']) != 0)?' '.$results[$i]['version']:'');
 					break;
 				case 'category':
@@ -447,7 +454,7 @@ class wp_slimstat_boxes{
 			if (!empty($results[$i]['ip']))
 				$element_title .= '<br><a title="WHOIS: '.$results[$i]['ip'].'" class="whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a> IP: <a title="'.htmlentities(sprintf(__('Filter results where IP equals %s','wp-slimstat'), $results[$i]['ip']), ENT_QUOTES, 'UTF-8').'" href="'.self::fs_url(array('ip' => 'equals '.$results[$i]['ip'])).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
 
-			echo "<p title='$element_title'>$element_value$percentage</p>";
+			echo "<p title='$element_title'>$element_pre_value$element_value$percentage</p>";
 		}
 	}
 
@@ -799,7 +806,7 @@ class wp_slimstat_boxes{
 				self::show_results('popular', $ajax_box_id, 'language', array('total_for_percentage' => $current_pageviews));
 				break;
 			case '#slim_p2_04':
-				self::show_results('popular', $ajax_box_id, 'browser', array('total_for_percentage' => $current_pageviews, 'more_columns' => ',tb.version'));
+				self::show_results('popular', $ajax_box_id, 'browser', array('total_for_percentage' => $current_pageviews, 'more_columns' => ',tb.version,tb.user_agent'));
 				break;
 			case '#slim_p2_05':
 				self::show_results('popular', $ajax_box_id, 'ip', array('total_for_percentage' =>$current_pageviews));
@@ -893,6 +900,7 @@ class wp_slimstat_boxes{
 				self::show_spy_view($ajax_box_id, 1);
 				break;
 			case '#slim_p7_02':
+				$using_screenres = wp_slimstat_admin::check_screenres();
 				include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/right-now.php");
 				break;
 			default:

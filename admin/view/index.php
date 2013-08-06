@@ -48,6 +48,7 @@ foreach ( array(
 					<option value="plugins"><?php _e('Browser Capabilities','wp-slimstat') ?></option>
 					<option value="version"><?php _e('Browser Version','wp-slimstat') ?></option>
 					<option value="type"><?php _e('Browser Type','wp-slimstat') ?></option>
+					<option value="user_agent"><?php _e('User Agent','wp-slimstat') ?></option>
 					<option value="colordepth"><?php _e('Color Depth','wp-slimstat') ?></option>
 					<option value="css_version"><?php _e('CSS Version','wp-slimstat') ?></option>
 					<option value="notes"><?php _e('Pageview Attributes','wp-slimstat') ?></option>
@@ -353,8 +354,8 @@ foreach ( array(
 						<p class="nodata"><?php _e('No data to display','wp-slimstat') ?></p>
 					</div>
 				</div>
-				<script src="<?php echo plugins_url('/view/js/ammap/ammap.js', dirname(__FILE__)) ?>" type="text/javascript"></script>
-				<script src="<?php echo plugins_url('/view/js/ammap/world.js', dirname(__FILE__)) ?>" type="text/javascript"></script>
+				<script src="<?php echo plugins_url('/js/ammap/ammap.js', dirname(__FILE__)) ?>" type="text/javascript"></script>
+				<script src="<?php echo plugins_url('/js/ammap/world.js', dirname(__FILE__)) ?>" type="text/javascript"></script>
 				<script type="text/javascript">
 				AmCharts.ready(function(){
 					var dataProvider = {
@@ -385,12 +386,12 @@ foreach ( array(
 					map.balloon.color = "#000000";
 					map.colorSteps = 20;
 					map.mouseWheelZoomEnabled = true;
-					map.pathToImages = "<?php echo plugins_url('/view/js/ammap/images/', dirname(__FILE__)) ?>";
+					map.pathToImages = "<?php echo plugins_url('/js/ammap/images/', dirname(__FILE__)) ?>";
 					map.valueLegend = legend;
 					
 					// Init Data
 					map.dataProvider = dataProvider;
-console.log(map);
+
 					// Display Map
 					map.write("slimstat-world-map");
 				});

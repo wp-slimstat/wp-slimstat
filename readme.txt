@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.6
-Stable tag: 3.2.5
+Stable tag: 3.3
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
@@ -267,6 +267,18 @@ foreach ($results...`
 5. Access your stats from within Wordpress for iOS
 
 == Changelog ==
+
+= 3.3 =
+* [Note] We've just reached the 500,000 downloads mark! Thank you to all those who believe in this project.
+* [Note] We're testing WP SlimStat with [MP6](http://wordpress.org/plugins/mp6/) and aside from a few tweaks, it seems to work pretty well with that custom admin theme
+* [New] New filters allow you to use a separate database (or custom table names) for WP SlimStat. The add-on to leverage this feature is coming soon!
+* [New] The actual User Agent string is now recorded into the database (not retroactively, sorry) and can be searched and filtered
+* [New] Now you can use negative intervals in date filters (thank you, [helices](http://wordpress.org/support/topic/view-3-months-or-1-year))
+* [Update] Browscap hasn't been updated in a while and is starting to be less reliable. Our heuristic browser detector has been improved to overcome this
+* [Update] MaxMind / Geolocation database updated to July 2013
+* [Update] [AmMap](http://www.ammap.com/) (World Map) has been updated to version 3.3.3
+* [Fix] Filters on user agents are now matched against the original UA, not the one returned by Browscap (thank you, [GermanKiwi](http://wordpress.org/support/topic/default-browser-user-agent-reported-by-slimstat))
+* [Fix] Bug on uninstall affecting one of the tables used by WP SlimStat (thank you, [mkilian](http://wordpress.org/support/topic/small-confusion-of-base_prefix-vs-prefix-visible-when-using-multisite))
 
 = 3.2.5 =
 * [Fix] Addressed a PHP warning thrown by the tracker (thank you, [daviesda](http://wordpress.org/support/topic/object-of-class-stdclass-could-not-be-converted-to-string-error))

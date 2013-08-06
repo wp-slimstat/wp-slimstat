@@ -6,6 +6,7 @@ global $wpdb;
 
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_browsers");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_screenres");
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->base_prefix}slim_content_info");
 
 function uninstall(){
 	global $wpdb;
@@ -13,7 +14,6 @@ function uninstall(){
 	// Goodbye data...
 	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_stats");
 	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_outbound");
-	$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}slim_content_info");
 
 	// Goodbye options...
 	delete_option('slimstat_options');
