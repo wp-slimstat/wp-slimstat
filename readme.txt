@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.6
-Stable tag: 3.3
+Stable tag: 3.3.1
 
 == Description ==
 A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
@@ -268,10 +268,20 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.3.1 =
+* [Note] If you are upgrading from WP SlimStat 2.9.2 or earlier, you MUST first install version 3.0 and then the latest version available
+* [New] Two new reports added to the Visitors tab: Recent and Top (registered) Users. If you don't see them, go to Settings > Maintenance and click on Reset Tabs
+* [Update] The new feature to use a separate database has been improved and will be available soon as an add-on on [our store](http://slimstat.getused.to.it/)
+* [Update] The information about your visitors' type (mobile, desktop, crawler) has been reintroduced in the form of an icon next to the operating system under Right Now (thank you, [consensus](http://wordpress.org/support/topic/modality))
+* [Update] [Flot](http://www.flotcharts.org/), the library we use to draw our charts, has been updated to version 0.8.1 
+* [Fix] A bug introduced in 3.3 was preventing the autopurge functionality from working as expected (thank you, [Inposure](http://wordpress.org/support/topic/database-error-115))
+* [Fix] The new 'user agent' column was creating a conflict in the database (unique key). We solved the issue and also enabled the updating of old entries in the database
+* [Fix] A bug was affecting the pagination under Right Now in some rare circumstances
+
 = 3.3 =
 * [Note] We've just reached the 500,000 downloads mark! Thank you to all those who believe in this project.
 * [Note] We're testing WP SlimStat with [MP6](http://wordpress.org/plugins/mp6/) and aside from a few tweaks, it seems to work pretty well with that custom admin theme
-* [New] New filters allow you to use a separate database (or custom table names) for WP SlimStat. The add-on to leverage this feature is coming soon!
+* [New] New filters allow you to use a separate database for WP SlimStat. The add-on to leverage this feature is coming soon!
 * [New] The actual User Agent string is now recorded into the database (not retroactively, sorry) and can be searched and filtered
 * [New] Now you can use negative intervals in date filters (thank you, [helices](http://wordpress.org/support/topic/view-3-months-or-1-year))
 * [Update] Browscap hasn't been updated in a while and is starting to be less reliable. Our heuristic browser detector has been improved to overcome this

@@ -109,6 +109,8 @@ class wp_slimstat_boxes{
 			'slim_p2_17' => __('Recent Languages','wp-slimstat'),
 			'slim_p2_18' => __('Top Browser Families','wp-slimstat'),
 			'slim_p2_19' => __('Top OS Families','wp-slimstat'),
+			'slim_p2_20' => __('Recent Users','wp-slimstat'),
+			'slim_p2_21' => __('Top Users','wp-slimstat'),
 			'slim_p3_01' => __('Traffic Sources (chart)','wp-slimstat'),
 			'slim_p3_02' => __('Summary','wp-slimstat'),
 			'slim_p3_03' => __('Top Search Terms','wp-slimstat'),
@@ -155,7 +157,7 @@ class wp_slimstat_boxes{
 					self::$all_boxes = array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_05','slim_p1_06','slim_p1_07','slim_p1_08','slim_p1_09','slim_p1_10','slim_p1_11','slim_p1_12','slim_p1_13','slim_p1_14');
 					break;
 				case 3:
-					self::$all_boxes = array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_05','slim_p2_06','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19');
+					self::$all_boxes = array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_05','slim_p2_06','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19','slim_p2_20','slim_p2_21');
 					break;
 				case 4:
 					self::$all_boxes = array('slim_p4_01','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20');
@@ -840,6 +842,12 @@ class wp_slimstat_boxes{
 				break;
 			case '#slim_p2_19':
 				self::show_results('popular', $ajax_box_id, 'CONCAT("p-", SUBSTRING(tb.platform, 1, 3))', array('total_for_percentage' => $current_pageviews, 'as_column' => 'platform'));
+				break;
+			case '#slim_p2_20':
+				self::show_results('recent', $ajax_box_id, 'user', array('custom_where' => 'notes LIKE "%[user:%"'));
+				break;
+			case '#slim_p2_21':
+				self::show_results('popular', $ajax_box_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%[user:%"'), 'custom_where' => 'notes LIKE "%[user:%"'));
 				break;
 			case '#slim_p3_02':
 				self::show_traffic_sources_summary($ajax_box_id, $current_pageviews);

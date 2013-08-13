@@ -5,7 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = 'We just passed the 500,000 downloads mark! Thank you for <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38">supporting our project</a>. Stay tuned for exciting news, <a href="http://slimstat.getused.to.it/addons/">new add-ons</a> and much more.';
+	protected static $admin_notice = 'Thank you for all the feedback on the previous version. We addressed some of the glitches and introduced a new feature that will soon allow you to use a separate database for WP SlimStat.';
 
 	/**
 	 * Init -- Sets things up.
@@ -255,70 +255,6 @@ class wp_slimstat_admin{
 		// Create initial structure or missing tables
 		if (!$_activate) self::init_environment(false);
 
-		// WP_SLIM_CONTENT_INFO
-		$count_content_info = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info");
-		if ($count_content_info == 0){
-			$GLOBALS['wpdb']->query("INSERT INTO {$GLOBALS['wpdb']->base_prefix}slim_content_info (author) VALUES ('admin')");
-			$GLOBALS['wpdb']->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET content_info_id = 1 WHERE content_info_id = 0");
-		}
-		// END: WP_SLIM_CONTENT_INFO
-
-		// --- Updates for version 2.8.5 ---
-		// Tables are explicitly assigned the UTF-8 collation
-		if (version_compare(wp_slimstat::$options['version'], '2.8.5', '<')){
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info CONVERT to CHARACTER SET utf8 COLLATE utf8_general_ci");
-		}
-		// --- END: Updates for version 2.8.5 ---
-
-		// --- Updates for version 2.8.7 ---
-		if (!isset(wp_slimstat::$options['session_duration'])){
-			self::update_option('session_duration', '1800', 'integer');
-		}
-		if (!isset(wp_slimstat::$options['extend_session'])){
-			self::update_option('extend_session', 'no', 'yesno');
-		}
-		// --- END: Updates for version 2.8.7 ---
-
-		// --- Updates for version 2.9 ---
-		if (!isset(wp_slimstat::$options['javascript_mode'])){
-			self::update_option('javascript_mode', 'yes', 'yesno');
-		}
-		if (!isset(wp_slimstat::$options['hide_stats_link_edit_posts'])){
-			self::update_option('hide_stats_link_edit_posts', 'no', 'yesno');
-		}
-		if (!isset(wp_slimstat::$options['enable_outbound_tracking'])){
-			self::update_option('enable_outbound_tracking', 'yes', 'yesno');
-		}
-		if (!isset(wp_slimstat::$options['restrict_authors_view'])){
-			self::update_option('restrict_authors_view', 'no', 'yesno');
-		}
-		// --- END: Updates for version 2.9 ---
-
-		// --- Updates for version 2.9.2 ---
-		if (!isset(wp_slimstat::$options['async_load'])){
-			self::update_option('async_load', 'no', 'yesno');
-		}
-
-		$content_id_exists = false;
-		$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info", ARRAY_A);
-
-		foreach($table_structure as $a_row){
-			if ($a_row['Field'] == 'content_id'){
-				$content_id_exists = true;
-				break;
-			}
-		}
-		if (!$content_id_exists){
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD COLUMN content_id BIGINT(20) UNSIGNED DEFAULT 0 AFTER author");
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info DROP KEY unique_content_info");
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ADD UNIQUE KEY unique_content_info (content_type(30), category(30), author(30), content_id)");
-		}
-		// --- END: Updates for version 2.9.2 ---
-		
 		// --- Updates for version 3.0 ---
 		if (!isset(wp_slimstat::$options['expand_details'])){
 			self::update_option('expand_details', 'no', 'yesno');
@@ -344,7 +280,7 @@ class wp_slimstat_admin{
 		}
 		// --- END: Updates for version 3.2 ---
 
-		// --- Updates for version 3.2.6 ---
+		// --- Updates for version 3.3 ---
 		$user_agent_exists = false;
 		$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers", ARRAY_A);
 
@@ -361,8 +297,8 @@ class wp_slimstat_admin{
 		if (!isset(wp_slimstat::$options['show_admin_notices'])){
 			self::update_option('show_admin_notices', '0', 'integer');
 		}
-		// --- END: Updates for version 3.2.6 ---
-		
+		// --- END: Updates for version 3.3 ---
+
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
 			self::update_option('version', wp_slimstat::$version, 'text');
@@ -403,7 +339,7 @@ class wp_slimstat_admin{
 	 */
 	public static function remove_spam($_new_status = '', $_old_status = '', $_comment = ''){
 		if ($_new_status == 'spam'){
-			$GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE user = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
+			wp_slimstat::$wpdb->query(wp_slimstat::$wpdb->prepare("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE user = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
 		}
 	}
 	// end remove_spam
@@ -596,7 +532,7 @@ class wp_slimstat_admin{
 		if ('wp-slimstat' != $_column_name) return;
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		$count = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE resource = %s", $parsed_permalink));
+		$count = wp_slimstat::$wpdb->get_var(wp_slimstat::$wpdb->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE resource = %s", $parsed_permalink));
 		echo '<a href="'.self::$view_url.'1&amp;fs%5Bresource%5D=contains+'.urlencode( $parsed_permalink ).'">'.$count.'</a>';
 	}
 	// end add_column
@@ -678,6 +614,7 @@ class wp_slimstat_admin{
 
 	protected static function settings_table_row($_option_name = '', $_option_details = array()){
 		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
+		if (!isset(wp_slimstat::$options[$_option_name])) wp_slimstat::$options[$_option_name] = ''; 
 
 		switch($_option_details['type']){
 			case 'yesno': ?>
@@ -705,7 +642,8 @@ class wp_slimstat_admin{
 	}
 
 	protected static function settings_textarea($_option_name = '', $_option_details = array('description' =>'', 'type' => '', 'long_description' => '')){
-		if ($_option_details['type'] != 'textarea') return; ?>
+		if ($_option_details['type'] != 'textarea') return; 
+		if (!isset(wp_slimstat::$options[$_option_name])) wp_slimstat::$options[$_option_name] = ''; ?>
 		
 		<h3><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></h3>
 		<p><?php echo $_option_details['long_description'] ?></p>
@@ -717,9 +655,9 @@ class wp_slimstat_admin{
 	 */
 	public static function check_screenres(){
 		if (wp_slimstat::$options['enable_javascript'] == 'yes'){
-			$count_humans = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE visit_id > 0");
+			$count_humans = wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE visit_id > 0");
 			if ($count_humans > 0){
-				$count_screenres = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_screenres");
+				$count_screenres = wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->base_prefix}slim_screenres");
 				if ($count_screenres == 0){
 					self::show_alert_message(__('WARNING: a misconfigured setting and/or server environment is preventing WP SlimStat from properly tracking your visitors. Please <a target="_blank" href="http://wordpress.org/extend/plugins/wp-slimstat/faq/">check the FAQs</a> for more information.','wp-slimstat'), 'error below-h2');
 					return false;
@@ -851,7 +789,7 @@ class wp_slimstat_admin{
 // end of class declaration
 
 if (function_exists('add_action')){
-	add_action('plugins_loaded', array('wp_slimstat_admin', 'init'), 8);
+	add_action('plugins_loaded', array('wp_slimstat_admin', 'init'), 15);
 	register_activation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'activate'));
 	register_deactivation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'deactivate'));
 }

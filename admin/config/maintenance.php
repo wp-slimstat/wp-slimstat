@@ -9,7 +9,7 @@ if (isset($_GET['ds'])){
 		wp_slimstat_admin::show_alert_message(__('Are you sure you want to remove all the information about your hits and visits?','wp-slimstat').'&nbsp;&nbsp;&nbsp;<a class="button-secondary" href="?page=wp-slim-config&ds=confirm&tab='.$current_tab.'">'.__('Yes','wp-slimstat').'</a> <a class="button-secondary" href="?page=wp-slim-config&tab='.$current_tab.'">'.__('No','wp-slimstat').'</a>', 'updated highlight below-h2');
 	}
 	if (isset($_GET['ds']) && $_GET['ds']=='confirm'){
-		$GLOBALS['wpdb']->query("TRUNCATE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
+		wp_slimstat::$wpdb->query("TRUNCATE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
 		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully emptied.','wp-slimstat'), 'updated below-h2');
 	}
 }
@@ -26,7 +26,7 @@ if (isset($_GET['rbo'])){
 }
 if (isset($_GET['rs']) && $_GET['rs']=='yes'){
 	// Delete the two tables created by WP SlimStat 0.9.2
-	$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
+	wp_slimstat::$wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
 
 	if (wp_slimstat_admin::activate_single())
 		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully reset.','wp-slimstat'), 'updated below-h2');
@@ -34,40 +34,40 @@ if (isset($_GET['rs']) && $_GET['rs']=='yes'){
 		wp_slimstat_admin::show_alert_message(__('ERROR: Your Slimstat table could not be initialized.','wp-slimstat'), 'error below-h2');
 }
 if (isset($_GET['ot']) && $_GET['ot']=='yes'){
-	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers");
-	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info");
-	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres");
-	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_outbound");
-	$GLOBALS['wpdb']->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
+	wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers");
+	wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info");
+	wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres");
+	wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_outbound");
+	wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
 
 	wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully optimized.','wp-slimstat'), 'updated below-h2');
 }
 if (isset($_GET['engine']) && $_GET['engine']=='innodb'){
-	$have_innodb = $GLOBALS['wpdb']->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
+	$have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 	if ($have_innodb[0]['Value'] != 'YES') return;
 	
-	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ENGINE = InnoDB");
-	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ENGINE = InnoDB");
-	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ENGINE = InnoDB");
-	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ENGINE = InnoDB");
-	$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ENGINE = InnoDB");
+	wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ENGINE = InnoDB");
+	wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ENGINE = InnoDB");
+	wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ENGINE = InnoDB");
+	wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ENGINE = InnoDB");
+	wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ENGINE = InnoDB");
 	
 	wp_slimstat_admin::show_alert_message(__('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat'), 'updated below-h2');
 }
 if (isset($_GET['ssidx'])){
 	if($_GET['ssidx']=='create'){
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX resource_idx(resource(20))");
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD INDEX all_idx(browser,version,platform,css_version,type)");
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD INDEX all_idx(resolution,colordepth,antialias)");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX resource_idx(resource(20))");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD INDEX all_idx(browser,version,platform,css_version,type)");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD INDEX all_idx(resolution,colordepth,antialias)");
 
 		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat indexes have been successfully created.','wp-slimstat'), 'updated below-h2');
 	}
 	if($_GET['ssidx']=='remove'){
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX resource_idx");
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX browser_idx");
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers DROP INDEX all_idx");
-		$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres DROP INDEX all_idx");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX resource_idx");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX browser_idx");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers DROP INDEX all_idx");
+		wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres DROP INDEX all_idx");
 
 		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat indexes have been successfully removed.','wp-slimstat'), 'updated below-h2');
 	}
@@ -82,7 +82,7 @@ if (isset($_POST['options'])){
 			$_POST['options']['conditional_delete_field'] == 'language' ||
 			$_POST['options']['conditional_delete_field'] == 'resource' ||
 			$_POST['options']['conditional_delete_field'] == 'searchterms')){
-			$escaped_value = $GLOBALS['wpdb']->escape($_POST['options']['conditional_delete_value']);
+			$escaped_value = wp_slimstat::$wpdb->escape($_POST['options']['conditional_delete_value']);
 		switch($_POST['options']['conditional_delete_operator']){
 			case 'equal':
 				$delete_sql = "{$_POST['options']['conditional_delete_field']} = '$escaped_value'";
@@ -106,7 +106,8 @@ if (isset($_POST['options'])){
 				$delete_sql = "{$_POST['options']['conditional_delete_field']} NOT LIKE '%$escaped_value'";
 				break;
 		}
-		$rows_affected = $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE $delete_sql");
+		$rows_affected = 
+		wp_slimstat::$wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE $delete_sql");
 		if (empty($rows_affected)) $rows_affected = 0;
 
 		wp_slimstat_admin::show_alert_message(__('Your WP SlimStat table has been successfully cleaned. Rows affected:','wp-slimstat').' '.intval($rows_affected), 'updated below-h2');
@@ -119,15 +120,15 @@ if (isset($_POST['options'])){
 <tbody>
 <?php
 $details_wp_slim_tables = array_merge(
-	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'", ARRAY_A),
-	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_outbound'", ARRAY_A),
-	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_browsers'", ARRAY_A),
-	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_screenres'", ARRAY_A),
-	$GLOBALS['wpdb']->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_content_info'", ARRAY_A)
+	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'", ARRAY_A),
+	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_outbound'", ARRAY_A),
+	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_browsers'", ARRAY_A),
+	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_screenres'", ARRAY_A),
+	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_content_info'", ARRAY_A)
 );
 echo '<tr><th scope="row">'.__('Database Information','wp-slimstat').'</th>';
 echo '<td>'.__('Engine','wp-slimstat').": {$details_wp_slim_tables[0]['Engine']} ";
-$have_innodb = $GLOBALS['wpdb']->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
+$have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 $note_too_many_rows = ($details_wp_slim_tables[0]['Rows'] > 200000)?__(", it may take some time and exceed PHP's maximum execution time",'wp-slimstat'):'';
 if ($have_innodb[0]['Value'] == 'YES' && $details_wp_slim_tables[0]['Engine'] == 'MyISAM') echo '[<a href="?page=wp-slim-config&engine=innodb&tab=6">'.__('switch to InnoDB','wp-slimstat')."</a> $note_too_many_rows]<br/>";
 
@@ -186,7 +187,7 @@ echo '</td></tr>';
 		</td>
 	</tr>
 <?php
-$check_index = $GLOBALS['wpdb']->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'resource_idx'");
+$check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'resource_idx'");
 if (empty($check_index)): ?>
 	<tr>
 		<th scope="row"><a class="button-secondary" href="?page=wp-slim-config&ssidx=create&tab=<?php echo $current_tab ?>"><?php _e('Activate Indexes','wp-slimstat'); ?></a></th>

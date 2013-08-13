@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.3
+version: 3.3.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,12 +11,11 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.3';
+	public static $version = '3.3.1';
 	public static $options = array();
 	
-	public static $tables = array();
 	public static $wpdb = '';
-	
+
 	protected static $data_js = array('id' => -1);
 	protected static $stat = array();
 
@@ -26,21 +25,12 @@ class wp_slimstat{
 	public static function init(){
 		// Load all the settings
 		self::$options = get_option('slimstat_options', array());
-		self::$options = apply_filters('slimstat_init_options', self::$options);
 		if (empty(self::$options)) self::init_options();
-		
-		// Allow third-party tools to use different tables or database for WP SlimStat
-		self::$wpdb = $GLOBALS['wpdb'];
-		self::$wpdb = apply_filters('slimstat_custom_wpdb', self::$wpdb);
 
-		self::$tables = array(
-			'stats' => $GLOBALS['wpdb']->prefix."slim_stats",
-			'outbound' => $GLOBALS['wpdb']->prefix."slim_outbound",
-			'browsers' => $GLOBALS['wpdb']->base_prefix."slim_browsers",
-			'screenres' => $GLOBALS['wpdb']->base_prefix."slim_screenres",
-			'content_info' => $GLOBALS['wpdb']->base_prefix."slim_content_info"
-		);
-		self::$tables = apply_filters('slimstat_custom_table_names', self::$tables);
+		self::$options = apply_filters('slimstat_init_options', self::$options);
+
+		// Allows third-party tools to use different tables or database for WP SlimStat
+		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
 		if (!is_admin()){
 			// Is server-side tracking active?
@@ -124,7 +114,7 @@ class wp_slimstat{
 				if (!empty($timezone)) date_default_timezone_set('UTC');
 				self::$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
 
-				self::insert_row(self::$stat, self::$tables['outbound']);
+				self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_outbound');
 
 				do_action('slimstat_track_success_outbound', self::$stat);
 				exit(self::$stat['id'].'.'.md5(self::$stat['id'].self::$options['secret']));
@@ -140,7 +130,7 @@ class wp_slimstat{
 		$screenres = apply_filters('slimstat_filter_pageview_screenres', $screenres, self::$stat);
 
 		// Now we insert the new screen resolution in the lookup table, if it doesn't exist
-		self::$stat['screenres_id'] = self::maybe_insert_row($screenres, self::$tables['screenres'], 'screenres_id');
+		self::$stat['screenres_id'] = self::maybe_insert_row($screenres, $GLOBALS['wpdb']->base_prefix.'slim_screenres', 'screenres_id');
 		self::$stat['plugins'] = !empty(self::$data_js['pl'])?substr(str_replace('|', ',', self::$data_js['pl']), 0, -1):'';
 
 		// If Javascript mode is enabled, record this pageview
@@ -151,7 +141,7 @@ class wp_slimstat{
 			self::_set_visit_id(true);
 			
 			self::$wpdb->query(self::$wpdb->prepare("
-				UPDATE ".self::$tables['stats']."
+				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
 				SET screenres_id = %s, plugins = %s
 				WHERE id = %d", self::$stat['screenres_id'], self::$stat['plugins'], self::$stat['id']));
 		}
@@ -387,9 +377,9 @@ class wp_slimstat{
 		}
 
 		// Now let's save this information in the database
-		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, self::$tables['content_info'], 'content_info_id');
-		self::$stat['browser_id'] = self::maybe_insert_row($browser, self::$tables['browsers'], 'browser_id');
-		self::$stat['id'] = self::insert_row(self::$stat, self::$tables['stats']);
+		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id');
+		self::$stat['browser_id'] = self::maybe_insert_row($browser, $GLOBALS['wpdb']->base_prefix.'slim_browsers', 'browser_id');
+		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
 
 		// Something went wrong during the insert
 		if (empty(self::$stat['id'])){
@@ -657,7 +647,6 @@ class wp_slimstat{
 			if ($search[25] == 'true') $browser['type'] = 2;
 			elseif ($search[26] == 'true') $browser['type'] = 3;
 			elseif ($search[27] != 'true') $browser['type'] = 0;
-
 			if ($browser['version'] != 0 || $browser['type'] != 0) return $browser;
 		}
 
@@ -883,7 +872,7 @@ class wp_slimstat{
 
 			self::$stat['visit_id'] = get_option('slimstat_visit_id', -1);
 			if (self::$stat['visit_id'] == -1){
-				self::$stat['visit_id'] = intval(self::$wpdb->get_var("SELECT MAX(visit_id) FROM ".self::$tables['slim_stats']));
+				self::$stat['visit_id'] = intval(self::$wpdb->get_var("SELECT MAX(visit_id) FROM {$GLOBALS['wpdb']->prefix}slim_stats"));
 			}
 			self::$stat['visit_id']++;
 			update_option('slimstat_visit_id', self::$stat['visit_id']);
@@ -898,7 +887,7 @@ class wp_slimstat{
 
 		if ($is_new_session && $identifier > 0){
 			self::$wpdb->query(self::$wpdb->prepare("
-				UPDATE ".self::$tables['stats']."
+				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
 				SET visit_id = %d
 				WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier));
 		}
@@ -935,10 +924,15 @@ class wp_slimstat{
 	 */
 	public static function insert_row($_data = array(), $_table = ''){
 		if (empty($_data) || empty($_table)) return -1;
+		
+		$update_on_duplicate = array();
+		foreach (array_keys($_data) as $a_key){
+			$update_on_duplicate[] .= "$a_key = %s";
+		}
 
 		self::$wpdb->query(self::$wpdb->prepare("
 			INSERT IGNORE INTO $_table (".implode(", ", array_keys($_data)).') 
-			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).')', $_data));
+			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).') ON DUPLICATE KEY UPDATE '.implode(',', $update_on_duplicate), array_merge($_data, array_values($_data))));
 
 		return intval(self::$wpdb->insert_id);
 	}
@@ -992,7 +986,7 @@ class wp_slimstat{
 			'ignore_browsers' => get_option('slimstat_ignore_browsers', ''),
 			'ignore_referers' => get_option('slimstat_ignore_referers', ''),
 			'ignore_users' => get_option('slimstat_ignore_users', ''),
-			'ignore_users_by_capability' => '',
+			'ignore_capabilities' => '',
 
 			'restrict_authors_view' => 'no',
 			'capability_can_view' => get_option('slimstat_capability_can_view', 'read'),
@@ -1076,10 +1070,10 @@ class wp_slimstat{
 		if (($autopurge_interval = intval(self::$options['auto_purge'])) <= 0) return;
 
 		// Delete old entries
-		self::$wpdb->query('DELETE ts FROM '.self::$tables['stats'].' ts WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))');
+		self::$wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
 
 		// Optimize table
-		self::$wpdb->query('OPTIMIZE TABLE '.self::$tables['stats']);
+		self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
 	}
 	// end wp_slimstat_purge
 
@@ -1130,7 +1124,7 @@ if (function_exists('add_action')){
 	}
 
 	// Add the appropriate actions
-	add_action('plugins_loaded', array('wp_slimstat', 'init'), 5);
+	add_action('plugins_loaded', array('wp_slimstat', 'init'), 10);
 
 	// Load the admin API, if needed
 	if (is_admin()) include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');

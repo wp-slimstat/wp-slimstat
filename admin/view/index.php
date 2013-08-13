@@ -127,7 +127,7 @@ foreach ( array(
 							wp_slimstat_boxes::box_header('slim_p1_03', '', '', false, 'noscroll');
 							break;
 						case 'slim_p1_04':
-							wp_slimstat_boxes::box_header('slim_p1_04', htmlspecialchars(__('When visitors leave a comment on your blog, Wordpress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors.','wp-slimstat'), ENT_QUOTES, 'UTF-8'));
+							wp_slimstat_boxes::box_header('slim_p1_04', htmlspecialchars(__('When visitors leave a comment on your blog, WordPress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors. Please note that visitors also include registered users.','wp-slimstat'), ENT_QUOTES, 'UTF-8'));
 							break;
 						case 'slim_p1_05':
 							wp_slimstat_boxes::box_header('slim_p1_05', htmlspecialchars(__('Take a sneak peek at what human visitors are doing on your website','wp-slimstat'), ENT_QUOTES, 'UTF-8').'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</strong><p class="legend"><span class="little-color-box is-search-engine" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('From a search result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-visitor" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Visitor','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p>', 'medium', true);
@@ -218,6 +218,12 @@ foreach ( array(
 							break;
 						case 'slim_p2_19':
 							wp_slimstat_boxes::box_header('slim_p2_19', htmlspecialchars(__('This report shows you what operating system families (no version considered) are popular among your visitors.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_20':
+							wp_slimstat_boxes::box_header('slim_p2_20', htmlspecialchars(__('List of registered users who recently visited your website.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_21':
+							wp_slimstat_boxes::box_header('slim_p2_21', htmlspecialchars(__('This report lists your most active registered users.','wp-slimstat'), ENT_QUOTES), '', true);
 							break;
 						default:
 					}

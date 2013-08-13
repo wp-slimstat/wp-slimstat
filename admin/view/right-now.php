@@ -14,14 +14,14 @@ if ($using_screenres) $tables_to_join .= ',tss.*';
 $results = wp_slimstat_db::get_recent('t1.id', '', $tables_to_join);
 
 // Pagination
-$count_raw_data = wp_slimstat_db::count_records('1=1', '*', true, $tables_to_join);
+$count_raw_data = wp_slimstat_db::count_records('1=1', '*', true, true, $tables_to_join);
 $count_results = count($results);
 $ending_point = min($count_raw_data, wp_slimstat_db::$filters['parsed']['starting'][1] + wp_slimstat_db::$filters['parsed']['limit_results'][1]);
 $previous_next = '';
 
 if ($ending_point + wp_slimstat_db::$filters['parsed']['limit_results'][1] < $count_raw_data && $count_results > 0){
 	$new_starting = $count_raw_data - $count_raw_data%wp_slimstat_db::$filters['parsed']['limit_results'][1];
-	$previous_next .= '<a class="box-header-button last" href="'.wp_slimstat_boxes::fs_url(array('starting' => 'equals '.$new_starting)).'"></a> ';
+	$previous_next .= '<a class="box-header-button last-page" href="'.wp_slimstat_boxes::fs_url(array('starting' => 'equals '.$new_starting)).'"></a> ';
 }
 if ($ending_point < $count_raw_data && $count_results > 0){
 	$new_starting = wp_slimstat_db::$filters['parsed']['starting'][1] + wp_slimstat_db::$filters['parsed']['limit_results'][1];
@@ -32,7 +32,7 @@ if (wp_slimstat_db::$filters['parsed']['starting'][1] > 0){
 	$previous_next .= '<a class="box-header-button previous" href="'.wp_slimstat_boxes::fs_url(array('starting' => 'equals '.$new_starting)).'"></a> ';
 }
 if (wp_slimstat_db::$filters['parsed']['starting'][1] - wp_slimstat_db::$filters['parsed']['limit_results'][1] > 0){
-	$previous_next .= '<a class="box-header-button first" href="'.wp_slimstat_boxes::fs_url(array('starting' => 'equals 0')).'"></a> ';
+	$previous_next .= '<a class="box-header-button first-page" href="'.wp_slimstat_boxes::fs_url(array('starting' => 'equals 0')).'"></a> ';
 }
 $previous_next .= '<span class="box-refresh box-header-button" title="'.__('Refresh','wp-slimstat').'"></span>';
 
@@ -115,9 +115,18 @@ if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['box_id'])){
 					$plugins .= "<a class='image' href='".wp_slimstat_boxes::fs_url(array('plugins' => 'contains '.$a_plugin))."'><img src='".wp_slimstat_boxes::$plugin_url."/images/plugins/$a_plugin.png' title='".__($a_plugin,'dynamic-strings')."' width='16' height='16'/></a>";
 				}
 			}
+
+			// Browser Type
+			$type_icon = ($results[$i]['type'] == 1)?"<img src='".wp_slimstat_boxes::$plugin_url."/images/browsers/crawler.png' title='".__('Crawler','wp-slimstat')."' width='16' height='16'/>":(($results[$i]['type'] == 2)?"<img src='".wp_slimstat_boxes::$plugin_url."/images/browsers/mobile.png' title='".__('Mobile Device','wp-slimstat')."' width='16' height='16'/>":'');
+			if (!empty($type_icon)){
+				$results[$i]['type'] = "<a title='".htmlentities(sprintf(__('Filter results where browser type equals %s','wp-slimstat'), $results[$i]['type']), ENT_QUOTES, 'UTF-8')."' class='image' href='".wp_slimstat_boxes::fs_url(array('type' => 'equals '.$results[$i]['type']))."'>$type_icon</a>";
+			}
+			else
+				$results[$i]['type'] = '';
+
 			if ($using_screenres) $plugins .= '&nbsp;&nbsp;<a title="'.htmlentities(sprintf(__('Filter results where screen resolution equals %s','wp-slimstat'), $results[$i]['resolution']), ENT_QUOTES, 'UTF-8').'" href="'.wp_slimstat_boxes::fs_url(array('resolution' => 'equals '.$results[$i]['resolution'])).'">'.$results[$i]['resolution'].'</a>';
 
-			echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} $browser_filtered $platform_filtered $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span></p>";
+			echo "<p class='header$highlight_row'><em class='user-details'>{$results[$i]['country']} $browser_filtered $platform_filtered {$results[$i]['type']} $ip_address $other_ip_address</em> <span class='plugins'>$plugins</span></p>";
 		}
 
 		echo "<p>";
