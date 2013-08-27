@@ -48,7 +48,7 @@
 .postbox p.nodata{border:0;color:#999;padding-top:75px;text-align:center}
 
 /* Inline help */
-#jquery-tooltip{background-color:#ffe;border:1px solid #aab;display:none;max-width:200px;opacity:0.95;position:absolute;padding:5px}
+#jquery-tooltip{background-color:#222;border:1px solid #aab;border-radius:4px;color:#fff;display:none;max-width:200px;opacity:0.9;padding:5px;position:absolute}
 #jquery-tooltip ul{margin-top:5px}
 #jquery-tooltip li{list-style-type:circle;margin-left:20px}
 

@@ -4,10 +4,10 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.1
 Tested up to: 3.6
-Stable tag: 3.3.1
+Stable tag: 3.3.2
 
 == Description ==
-A powerful real-time web analytics plugin for Wordpress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
+A powerful real-time web analytics plugin for WordPress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
 
 = Main Features =
 * Real-time web analytics reports
@@ -24,8 +24,8 @@ A powerful real-time web analytics plugin for Wordpress. Visit the [official sit
 * Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own
 
 = Requirements =
-* Wordpress 3.1 or higher (it may not work on *large* multisite environments; some users have reported problems in accessing the configuration page under Wordpress 3.3.x or earlier)
-* PHP 5.1 or higher
+* WordPress 3.1 or higher (it may not work on *large* multisite environments; some users have reported problems in accessing the configuration page under Wordpress 3.3.x or earlier)
+* PHP 5.3 or higher
 * MySQL 5.0.3 or higher
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
@@ -125,7 +125,7 @@ Basic filters:
 * `operating system`: accepts identifiers like win7, win98, macosx, ...; please refer to [this manual page](http://php.net/manual/en/function.get-browser.php) for more information about these codes
 * `permalink`: URL accessed on your site
 * `referer`: complete URL of the referrer page
-* `visitor's name`: visitor's name according to the cookie set by Wordpress after leaving a comment
+* `visitor's name`: visitor's name according to the cookie set by WordPress after leaving a comment
 
 Advanced filters:
 
@@ -264,9 +264,15 @@ foreach ($results...`
 2. All the information at your fingertips
 3. Configuration panels offer flexibility and plenty of options
 4. Mobile view, to keep an eye on your stats on the go
-5. Access your stats from within Wordpress for iOS
+5. Access your stats from within WordPress for iOS
 
 == Changelog ==
+
+= 3.3.2 =
+* [New] Option that allows you to choose if you want to see the user agent string or the user friendly browser nane (thank you, [GermanKiwi](http://wordpress.org/support/topic/default-browser-user-agent-reported-by-slimstat))
+* [Update] Minor CSS tweaks
+* [Fix] A bug was affecting some URLs for multisite installs using subfolders (thank you, [meldean](http://wordpress.org/support/topic/top-pages-links-not-working))
+* [Fix] The entire suite of add-ons has been updated to include some crucial code optimizations
 
 = 3.3.1 =
 * [Note] If you are upgrading from WP SlimStat 2.9.2 or earlier, you MUST first install version 3.0 and then the latest version available

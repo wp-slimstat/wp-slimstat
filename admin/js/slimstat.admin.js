@@ -55,7 +55,7 @@ var SlimStatAdmin = {
 					if (previous_point != item.dataIndex){
 						previous_point = item.dataIndex;
 						jQuery("#jquery-tooltip").remove();
-						SlimStatAdmin.show_tooltip(item.pageX, item.pageY, item.series.label+': <b>'+SlimStatAdmin.ticks[item.datapoint[0]][1]+'</b> = '+SlimStatAdmin.chart_tick_format(item.datapoint[1]));
+						SlimStatAdmin.show_tooltip(item.pageX, item.pageY, SlimStatAdmin.chart_tick_format(item.datapoint[1]));
 					}
 				}
 				else{
@@ -146,7 +146,7 @@ var SlimStatAdmin = {
 	
 	enable_inline_help : function(box_id){
 		if (box_id.length > 0) box_id += ' ';
-		jQuery(box_id + '.inline-help').hover(
+		jQuery(box_id + '.inline-help, ' + box_id + '.img-inline-help').hover(
 				function(event){
 					this.savetitle = this.title;
 					SlimStatAdmin.show_tooltip(event.pageX, event.pageY, this.title, 'tooltip-fixed-width');
@@ -263,8 +263,10 @@ jQuery(function(){
 		}
 	});
 	
-	if ((typeof SlimStatParams.async_load == 'undefined' || SlimStatParams.async_load != 'yes') && jQuery('#chart-placeholder').length > 0){
+	if (jQuery('#chart-placeholder').length > 0){
 		SlimStatAdmin.chart_init();
+	}
+	if (typeof SlimStatParams.async_load == 'undefined' || SlimStatParams.async_load != 'yes'){
 		SlimStatAdmin.enable_inline_help('');
 	}
 	

@@ -9,7 +9,6 @@ class wp_slimstat_boxes{
 	public static $current_tab_url = '';
 	public static $plugin_url = '';
 	public static $home_url = '';
-	public static $home_url_parsed = '';
 	public static $ip_lookup_url = 'http://www.infosniper.net/?ip_address=';
 	public static $meta_box_order_nonce = '';
 	public static $translations = array();
@@ -38,7 +37,6 @@ class wp_slimstat_boxes{
 		if (!empty(wp_slimstat::$options['ip_lookup_service'])) self::$ip_lookup_url = wp_slimstat::$options['ip_lookup_service'];
 		self::$plugin_url = plugins_url('', dirname(__FILE__));
 		self::$home_url = home_url();
-		self::$home_url_parsed = parse_url(self::$home_url);
 		self::$meta_box_order_nonce = wp_create_nonce('meta-box-order');
 		self::$translations = array(
 			'browser' => strtolower(__('Browser','wp-slimstat')),
@@ -379,7 +377,7 @@ class wp_slimstat_boxes{
 			// Some columns require a special pre-treatment
 			switch ($_column){
 				case 'browser':
-					if (!empty($results[$i]['user_agent'])) $element_pre_value = self::inline_help($results[$i]['user_agent'], false);
+					if (!empty($results[$i]['user_agent']) && wp_slimstat::$options['show_complete_user_agent_tooltip'] == 'yes') $element_pre_value = self::inline_help($results[$i]['user_agent'], false);
 					$element_value = $results[$i]['browser'].((isset($results[$i]['version']) && intval($results[$i]['version']) != 0)?' '.$results[$i]['version']:'');
 					break;
 				case 'category':
@@ -447,7 +445,7 @@ class wp_slimstat_boxes{
 
 			// Some columns require a special post-treatment
 			if ($_column == 'resource' && strpos($_args['custom_where'], '404') === false){
-				$element_value = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.self::$home_url.$results[$i]['resource'].'"></a>'.$element_value;
+				$element_value = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$results[$i]['resource'].'"></a>'.$element_value;
 			}
 			if ($_column == 'domain'){
 				$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
@@ -525,8 +523,8 @@ class wp_slimstat_boxes{
 					$host_by_ip = "<a class='highlight-user' href='".self::fs_url(array('user' => 'equals '.$results[$i]['user']))."'>{$results[$i]['user']}</a>";
 					$highlight_row = (strpos( $results[$i]['notes'], '[user]') !== false)?' is-known-user':' is-known-visitor';
 				}
-				$host_by_ip = "<a class='whois' href='".self::$ip_lookup_url."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
-				$results[$i]['country'] = "<a class='image first' href='".self::fs_url(array('country' => 'equals '.$results[$i]['country']))."'><img src='".wp_slimstat_boxes::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat').': '.__('c-'.$results[$i]['country'],'wp-slimstat')."' width='16' height='16'/></a>";
+				$host_by_ip = "<a class='whois img-inline-help' href='".self::$ip_lookup_url."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
+				$results[$i]['country'] = "<a class='image first' href='".self::fs_url(array('country' => 'equals '.$results[$i]['country']))."'><img class='img-inline-help' src='".wp_slimstat_boxes::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat').': '.__('c-'.$results[$i]['country'],'wp-slimstat')."' width='16' height='16'/></a>";
 				$results[$i]['other_ip'] = !empty($results[$i]['other_ip'])?" <a href='".self::fs_url(array('other_ip' => 'equals '.$results[$i]['other_ip']))."'>".long2ip($results[$i]['other_ip']).'</a>&nbsp;&nbsp;':'';
 		
 				echo "<p class='header$highlight_row'>{$results[$i]['country']} $host_by_ip <span class='date-and-other'><em>{$results[$i]['other_ip']} {$results[$i]['dt']}</em></span></p>";
@@ -551,7 +549,7 @@ class wp_slimstat_boxes{
 				else{
 					$permalink = parse_url($results[$i]['referer']);
 					$results[$i]['notes'] = str_replace('|ET:click', '', $results[$i]['notes']);
-					$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?self::$home_url.$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
+					$element_url = htmlentities((strpos($results[$i]['referer'], '://') === false)?self::$home_url.$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
 					$element_title = " title='".__('Source','wp-slimstat').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat')."\" href=\"$element_url\"></a><a title=\"".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat'), $permalink['path']), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url(array('resource' => 'equals '.$permalink['path']))."\">{$permalink['path']}</a>";
 					$element_title .= !empty($results[$i]['notes'])?'<br><strong>Link Details</strong>: '.htmlentities($results[$i]['notes'], ENT_QUOTES, 'UTF-8'):'';
 					$element_title .= ($_type == -1)?' <strong>Type</strong>: '.$results[$i]['type']:'';

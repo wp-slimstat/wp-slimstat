@@ -5,8 +5,10 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = 'Thank you for all the feedback on the previous version. We addressed some of the glitches and introduced a new feature that will soon allow you to use a separate database for WP SlimStat.';
-
+	protected static $admin_notice = 'Would you spare 30 seconds of your time and <a href="http://wordpress.org/support/view/plugin-reviews/wp-slimstat" target="_blank">review</a> our plugin? What about reaching 500 5 stars by the end of 2013?';
+	// 3.3.3 - Do you want to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
+	// 3.3.4 - Did you know? WP SlimStat is one of the <a target="_blank" href="https://www.cite.soton.ac.uk/the-top-15-wordpress-plugins-for-academia/">top 15 WordPress plugins</a> for education and academia. How cool is that?
+	
 	/**
 	 * Init -- Sets things up.
 	 */

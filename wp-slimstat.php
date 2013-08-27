@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.3.1
+version: 3.3.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.3.1';
+	public static $version = '3.3.2';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -25,7 +25,15 @@ class wp_slimstat{
 	public static function init(){
 		// Load all the settings
 		self::$options = get_option('slimstat_options', array());
-		if (empty(self::$options)) self::init_options();
+		if (empty(self::$options)){
+			self::$options = self::init_options();
+			
+			// Save these options in the database
+			add_option('slimstat_options', self::$options, '', 'no');
+		}
+		else{
+			self::$options = array_merge(self::init_options(), self::$options);
+		}
 
 		self::$options = apply_filters('slimstat_init_options', self::$options);
 
@@ -953,7 +961,7 @@ class wp_slimstat{
 	 * Imports all the 'old' options into the new array, and saves them
 	 */
 	public static function init_options(){
-		self::$options = array(
+		$options = array(
 			'version' => 0,
 			'secret' => get_option('slimstat_secret', md5(time())),
 			'show_admin_notice' => 0,
@@ -973,6 +981,7 @@ class wp_slimstat{
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'refresh_interval' => get_option('slimstat_refresh_interval', '0'),
 			'hide_stats_link_edit_posts' => 'no',
+			'show_complete_user_agent_tooltip' => 'no',
 			'custom_css' => '',
 			'markings' => '',
 
@@ -1003,8 +1012,7 @@ class wp_slimstat{
 			'enable_ads_network' => 'yes'
 		);
 
-		// Save these options in the database
-		add_option('slimstat_options', self::$options, '', 'no');
+		return $options;
 	}
 	// end init_options
 

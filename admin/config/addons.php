@@ -9,7 +9,7 @@ if (!empty($_POST['licenses'])){
 }
 
 echo '<div class="wrap"><h2>WP SlimStat Add-ons</h2>';
-echo '<p>'.__('Add-ons extend the functionality of WP SlimStat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the license key you received when you purchased it.','wp-slimstat').'</p>';
+echo '<p>'.__('Add-ons extend the functionality of WP SlimStat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.','wp-slimstat').'</p>';
 
 if (false === ($response = get_transient('wp_slimstat_addon_list'))){
 	$response = wp_remote_get('http://slimstat.getused.to.it/update-checker/', array('headers' => array('referer' => get_site_url())));
@@ -46,12 +46,11 @@ $license_key_field = false;
 				<strong><a target="_blank" href="<?php echo $a_addon['download_url'] ?>"><?php echo $a_addon['name'] ?></a></strong>
 				<div class="row-actions-visible"><?php 
 					if (is_plugin_active($a_addon['slug'].'/index.php') || is_plugin_active($a_addon['slug'].'/'.$a_addon['slug'].'.php')){
-						echo 'Installed and Activated';
+						echo 'Installed and Active';
 					}
 					else{
-						echo 'Version '.$a_addon['version'];
-					}
-					echo '<br/>Price: $'.$a_addon['price']; ?>
+						echo 'Version '.$a_addon['version'].'<br/>Price: '.$a_addon['price'];
+					}  ?>
 				</div>
 			</td>
 			<td class="column-description desc">
