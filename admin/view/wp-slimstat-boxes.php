@@ -430,6 +430,13 @@ class wp_slimstat_boxes{
 						$element_value = htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
 					}
 					break;
+				case 'user':
+					$element_value = $results[$i]['user'];
+					if (wp_slimstat::$options['show_display_name'] == 'yes' && strpos($results[$i]['notes'], '[user:') !== false){
+						$element_custom_value = get_user_by('login', $results[$i]['user']);
+						if (is_object($element_custom_value)) $element_value = $element_custom_value->display_name;
+					}
+					break;
 				default:
 			}
 			
@@ -520,7 +527,12 @@ class wp_slimstat_boxes{
 					$host_by_ip = "<a href='".self::fs_url(array('ip' => 'equals '.$results[$i]['ip']))."'>$host_by_ip</a>";
 				}
 				else{
-					$host_by_ip = "<a class='highlight-user' href='".self::fs_url(array('user' => 'equals '.$results[$i]['user']))."'>{$results[$i]['user']}</a>";
+					$display_user_name = $results[$i]['user'];
+					if (wp_slimstat::$options['show_display_name'] == 'yes' && strpos($results[$i]['notes'], '[user:') !== false){
+						$display_real_name = get_user_by('login', $results[$i]['user']);
+						if (is_object($display_real_name)) $display_user_name = $display_real_name->display_name;
+					}
+					$host_by_ip = "<a class='highlight-user' href='".self::fs_url(array('user' => 'equals '.$results[$i]['user']))."'>{$display_user_name}</a>";
 					$highlight_row = (strpos( $results[$i]['notes'], '[user]') !== false)?' is-known-user':' is-known-visitor';
 				}
 				$host_by_ip = "<a class='whois img-inline-help' href='".self::$ip_lookup_url."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
@@ -781,10 +793,12 @@ class wp_slimstat_boxes{
 				break;
 			case '#slim_p1_10':
 			case '#slim_p3_05':
-				self::show_results('popular_complete', $ajax_box_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""')));
+				$self_domain = parse_url(site_url());
+				$self_domain = $self_domain['host'];
+				self::show_results('popular_complete', $ajax_box_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""'), 'custom_where' => 't1.domain <> "'.$self_domain.'" AND t1.domain <> ""'));
 				break;
 			case '#slim_p1_11':
-				self::show_results('popular', $ajax_box_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('t1.user <> ""')));
+				self::show_results('popular_complete', $ajax_box_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('t1.user <> ""')));
 				break;
 			case '#slim_p1_12':
 			case '#slim_p3_03':
@@ -845,7 +859,7 @@ class wp_slimstat_boxes{
 				self::show_results('recent', $ajax_box_id, 'user', array('custom_where' => 'notes LIKE "%[user:%"'));
 				break;
 			case '#slim_p2_21':
-				self::show_results('popular', $ajax_box_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%[user:%"'), 'custom_where' => 'notes LIKE "%[user:%"'));
+				self::show_results('popular_complete', $ajax_box_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%[user:%"'), 'custom_where' => 'notes LIKE "%[user:%"'));
 				break;
 			case '#slim_p3_02':
 				self::show_traffic_sources_summary($ajax_box_id, $current_pageviews);

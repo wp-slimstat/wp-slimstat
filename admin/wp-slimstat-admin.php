@@ -5,9 +5,11 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = 'Would you spare 30 seconds of your time and <a href="http://wordpress.org/support/view/plugin-reviews/wp-slimstat" target="_blank">review</a> our plugin? What about reaching 500 5 stars by the end of 2013?';
-	// 3.3.3 - Do you want to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
-	// 3.3.4 - Did you know? WP SlimStat is one of the <a target="_blank" href="https://www.cite.soton.ac.uk/the-top-15-wordpress-plugins-for-academia/">top 15 WordPress plugins</a> for education and academia. How cool is that?
+	protected static $admin_notice = 'Wouldn\'t it be cool to be able to store WP SlimStat\'s information in an external database? Now you can, with our Custom DB add-on. <a href="http://slimstat.getused.to.it/addons/" target="_blank">Check it out</a>!';
+	// Did you know? WP SlimStat is one of the <a target="_blank" href="https://www.cite.soton.ac.uk/the-top-15-wordpress-plugins-for-academia/">top 15 WordPress plugins</a> for education and academia. How cool is that?
+	// 
+	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
+	// Would you like to translate WP SlimStat in your language? <a href="http://slimstat.getused.to.it/contact-us/" target="_blank">Contact us</a> for more information. 
 	
 	/**
 	 * Init -- Sets things up.
@@ -113,7 +115,7 @@ class wp_slimstat_admin{
 	// end activate
 
 	/**
-	 * Support for WP MU network activations (experimental)
+	 * Support for WP MU network activations
 	 */
 	public static function new_blog($_blog_id){
 		switch_to_blog($_blog_id);
@@ -125,11 +127,29 @@ class wp_slimstat_admin{
 	// end new_blog
 
 	/**
-	 * Creates and populates tables, if they aren't already there.
+	 * Creates tables, initializes options and schedules purge cron
 	 */
 	public static function init_environment($_activate = true){
+		self::init_tables($GLOBALS['wpdb']);
+
+		// Schedule the autopurge hook
+		if (false === wp_next_scheduled('wp_slimstat_purge'))
+			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
+
+		// If this function hasn't been called during the upgrade process, make sure to init and update all the options
+		if (empty(wp_slimstat::$options)) wp_slimstat::init_options();
+		if ($_activate) self::update_tables_and_options(true);
+
+		return true;
+	}
+	// end init_environment
+
+	/**
+	 * Creates and populates tables, if they aren't already there.
+	 */
+	public static function init_tables($_wpdb = ''){
 		// Is InnoDB available?
-		$have_innodb = $GLOBALS['wpdb']->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
+		$have_innodb = $_wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 		$use_innodb = ($have_innodb[0]['Value'] == 'YES')?'ENGINE=InnoDB':'';
 
 		// Table that stores the actual data about visits
@@ -145,9 +165,9 @@ class wp_slimstat_admin{
 				referer VARCHAR(2048) DEFAULT '',
 				searchterms VARCHAR(2048) DEFAULT '',
 				resource VARCHAR(2048) DEFAULT '',
-				browser_id SMALLINT UNSIGNED NOT NULL DEFAULT 1,
-				screenres_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 1,
-				content_info_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 1,
+				browser_id SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+				screenres_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+				content_info_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
 				plugins VARCHAR(255) DEFAULT '',
 				notes VARCHAR(2048) DEFAULT '',
 				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
@@ -207,23 +227,13 @@ class wp_slimstat_admin{
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// Ok, let's create the table structure
-		self::_create_table($browsers_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_browsers');
-		self::_create_table($screen_res_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_screenres');
-		self::_create_table($content_info_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_content_info');
-		self::_create_table($outbound_table_sql, $GLOBALS['wpdb']->prefix.'slim_outbound');
-		self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats');
-
-		// Schedule the autopurge hook
-		if (false === wp_next_scheduled('wp_slimstat_purge'))
-			wp_schedule_event('1262311200', 'daily', 'wp_slimstat_purge');
-
-		// If this function hasn't been called during the upgrade process, make sure to init and update all the options
-		if (empty(wp_slimstat::$options)) wp_slimstat::init_options();
-		if ($_activate) self::update_tables_and_options(true);
-
-		return true;
+		self::_create_table($browsers_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_browsers', $_wpdb);
+		self::_create_table($screen_res_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_screenres', $_wpdb);
+		self::_create_table($content_info_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_content_info', $_wpdb);
+		self::_create_table($outbound_table_sql, $GLOBALS['wpdb']->prefix.'slim_outbound', $_wpdb);
+		self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats', $_wpdb);
 	}
-	// end init_environment
+	// end init_tables
 
 	/**
 	 * Performs some clean-up maintenance (disable cron job).
@@ -257,50 +267,41 @@ class wp_slimstat_admin{
 		// Create initial structure or missing tables
 		if (!$_activate) self::init_environment(false);
 
-		// --- Updates for version 3.0 ---
-		if (!isset(wp_slimstat::$options['expand_details'])){
-			self::update_option('expand_details', 'no', 'yesno');
-		}
-		if (!isset(wp_slimstat::$options['extensions_to_track'])){
-			self::update_option('extensions_to_track', '', 'text');
-		}
-		if (!isset(wp_slimstat::$options['custom_css'])){
-			self::update_option('custom_css', '', 'text');
-		}
-		// --- END: Updates for version 3.0 ---
-		
 		// --- Updates for version 3.1 ---
-		$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_countries");
+		if (version_compare(wp_slimstat::$options['version'], '3.1', '<')){
+			$GLOBALS['wpdb']->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_countries");
+		}
 		// --- END: Updates for version 3.1 ---
 		
 		// --- Updates for version 3.2 ---
-		if (!isset(wp_slimstat::$options['detect_smoothing'])){
-			self::update_option('detect_smoothing', 'yes', 'yesno');
-		}
 		if (version_compare(wp_slimstat::$options['version'], '3.2', '<')){
 			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats MODIFY country VARCHAR(16) DEFAULT ''");
 		}
 		// --- END: Updates for version 3.2 ---
 
 		// --- Updates for version 3.3 ---
-		$user_agent_exists = false;
-		$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers", ARRAY_A);
+		if (version_compare(wp_slimstat::$options['version'], '3.3', '<')){
+			$user_agent_exists = false;
+			$table_structure = $GLOBALS['wpdb']->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers", ARRAY_A);
 
-		foreach($table_structure as $a_row){
-			if ($a_row['Field'] == 'user_agent'){
-				$user_agent_exists = true;
-				break;
+			foreach($table_structure as $a_row){
+				if ($a_row['Field'] == 'user_agent'){
+					$user_agent_exists = true;
+					break;
+				}
 			}
-		}
-		if (!$user_agent_exists){
-			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD COLUMN user_agent VARCHAR(2048) DEFAULT '' AFTER type");
-		}
-		
-		if (!isset(wp_slimstat::$options['show_admin_notices'])){
-			self::update_option('show_admin_notices', '0', 'integer');
+			if (!$user_agent_exists){
+				$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD COLUMN user_agent VARCHAR(2048) DEFAULT '' AFTER type");
+			}
 		}
 		// --- END: Updates for version 3.3 ---
 
+		// --- Updates for version 3.3.3 ---
+		if (version_compare(wp_slimstat::$options['version'], '3.3.3', '<')){
+			$GLOBALS['wpdb']->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_stats MODIFY browser_id SMALLINT UNSIGNED NOT NULL DEFAULT 0, MODIFY screenres_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0, MODIFY content_info_id MEDIUMINT UNSIGNED NOT NULL DEFAULT 0");
+		}
+		// --- END: Updates for version 3.3.3 ---
+		
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
 			self::update_option('version', wp_slimstat::$version, 'text');
@@ -771,17 +772,17 @@ class wp_slimstat_admin{
 
 	// Footer link
 	public static function footer_admin($_original_footer = ''){
-		return $_original_footer.' Analytics powered by <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.';
+		return $_original_footer.' And for keeping an eye on your visitors with <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.';
 	}
 	
 	/**
 	 * Creates a table in the database
 	 */
-	protected static function _create_table($_sql = '', $_tablename = ''){
-		$GLOBALS['wpdb']->query($_sql);
+	protected static function _create_table($_sql = '', $_tablename = '', $_wpdb = ''){
+		$_wpdb->query($_sql);
 
 		// Let's make sure this table was actually created
-		foreach ($GLOBALS['wpdb']->get_col("SHOW TABLES LIKE '$_tablename'", 0) as $a_table)
+		foreach ($_wpdb->get_col("SHOW TABLES LIKE '$_tablename'", 0) as $a_table)
 			if ($a_table == $_tablename) return true;
 
 		return false;
@@ -789,9 +790,3 @@ class wp_slimstat_admin{
 	// end _create_table
 }
 // end of class declaration
-
-if (function_exists('add_action')){
-	add_action('plugins_loaded', array('wp_slimstat_admin', 'init'), 15);
-	register_activation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'activate'));
-	register_deactivation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'deactivate'));
-}

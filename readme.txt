@@ -2,12 +2,12 @@
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
-Requires at least: 3.1
+Requires at least: 3.2
 Tested up to: 3.6
-Stable tag: 3.3.2
+Stable tag: 3.3.3
 
 == Description ==
-A powerful real-time web analytics plugin for WordPress. Visit the [official site](http://slimstat.getused.to.it/) for more information.
+A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
 
 = Main Features =
 * Real-time web analytics reports
@@ -24,9 +24,9 @@ A powerful real-time web analytics plugin for WordPress. Visit the [official sit
 * Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own
 
 = Requirements =
-* WordPress 3.1 or higher (it may not work on *large* multisite environments; some users have reported problems in accessing the configuration page under Wordpress 3.3.x or earlier)
-* PHP 5.3 or higher
-* MySQL 5.0.3 or higher
+* WordPress 3.2+ (it may not work on *large* multisite environments)
+* PHP 5.3+
+* MySQL 5.0.3+
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
 * At least 5 Mb of free memory for the tracker
@@ -44,11 +44,11 @@ Please visit [our website](http://slimstat.getused.to.it/addons/) for an updated
 == Installation ==
 
 0. **If you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available**
-1. Go to Plugins > Add New
+1. In your WP admin, go to Plugins > Add New
 2. Search for WP SlimStat
 3. Click on Install Now under WP SlimStat
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-5. To customize all the plugin's options, go to Settings > Slimstat
+5. To customize all the plugin's options, go to Slimstat > Settings
 6. If your wp-admin folder is not publicly accessible, please make sure to check the [FAQs](http://wordpress.org/extend/plugins/wp-slimstat/faq/) to see if there's anything else you need to do
 
 == Frequently Asked Questions ==
@@ -63,12 +63,12 @@ Point your browser to that file directly: if you see an error 404 or 500, then y
 If you see the number zero, then the problem could be related to a conflict with another plugin (caching, javascript minimizers, etc).
 
 = I am using W3 Total Cache/WP Super Cache, and it looks like your plugin is not tracking all of my visitors. Can you help me? =
-Simply go to Settings > SlimStat and enable Javascript Mode. WP SlimStat will only track human visitors (just like Google Analytics does, pretty much), but its accuracy will dramatically improve.
+Simply go to SlimStat > Settings > General tab, and enable Javascript Mode. WP SlimStat will only track human visitors (just like Google Analytics does, pretty much), but its accuracy will dramatically improve.
 Don't forget to invalidate/clear your plugin's cache, to let SlimStat add its tracking code to all the newly cached pages.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
 Try [to increase the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. If that doesn't help,
-go to Settings > SlimStat > Maintenance and click on the Reset Tabs button.
+go to SlimStat > Settings > Maintenance and click on the Reset Tabs button.
 
 = When trying to access any of options screens, I get the following error: You do not have sufficient permissions to access this page. =
 You were playing with the plugin's permission settings, weren't you? But don't worry, there's a secret passage that will allow you to unlock your access. Create a new user `slimstatadmin`, and assign him the Administrator role. Then log into your WordPress admin area with the new user and... voila: you can now access WP SlimStat's settings again. Update your users' permissions and then get rid of this newly created user.
@@ -77,7 +77,7 @@ You were playing with the plugin's permission settings, weren't you? But don't w
 WP Touch has an advanced option that they call Restricted Mode, which attempts to fix issues where other plugins load scripts which interfere with WPtouch CSS and JavaScript. If you enable this feature, it will prevent WP SlimStat from running the tracking script (thank you, [Per](http://wordpress.org/support/topic/known-users-not-logged)).
 
 = How can I change the colors associated to color-coded pageviews (known user, known visitors, search engines, etc)? =
-Go to Settings > SlimStat > View tab and paste your custom CSS into the corresponding field. Use the following code as a reference:
+Go to SlimStat > Settings > Advanced tab and paste your custom CSS into the corresponding field. Use the following code as a reference:
 
 `.postbox p.is-search-engine,
 .legend span.is-search-engine{background-color:#C1E751;color:#444}
@@ -187,23 +187,23 @@ Change it to:
 
 `<a href="/wp-slimstat" class="noslimstat">Open Image in LightBox</a>`
 
-You can also use the corresponding setting in the Options > Advanced page to disable outbound link tracking for *all* the external links in your site.
+You can also use the corresponding setting under Options > Advanced, and disable outbound link tracking for *all* the external links in your site.
 
 = Why does WP SlimStat show more page views than actual pages clicked by a user? =
 "Phantom" page views can occur when a user's browser does automatic feed retrieval,
 [link pre-fetching](https://developer.mozilla.org/en/Link_prefetching_FAQ), or a page refresh. WP SlimStat tracks these because they are valid
 requests from that user's browser and are indistinguishable from user link clicks. You can ignore these visits setting the corresponding option
-in Settings > SlimStat > Filters
+in SlimStat > Settings > Filters
 
 = Why can't WP SlimStat track visitors using IPv6? =
 IPv6 support, as of today, is still really limited both in PHP and MySQL. There are a few workarounds that could be implemented, but this
 would make the DB structure less optimized, add overhead for tracking regular requests, and you would have a half-baked product.
 
 = How do I stop WP SlimStat from tracking spammers? =
-Go to Settings > SlimStat > Filters and set "Ignore Spammers" to YES.
+Go to SlimStat > Settings > Filters and set "Ignore Spammers" to YES.
 
 = How do I stop WP SlimStat from recording new visits on my site? =
-Go to Settings > SlimStat > General and set "Activate tracking" to NO.
+Go to SlimStat > Settings > General and set "Activate tracking" to NO.
 
 = Can I add/show reports on my website? =
 Yes, you can. WP SlimStat offers two ways of displaying its reports on your website.
@@ -268,15 +268,25 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.3.3 =
+* [Note] Two new add-ons join the team: Custom DB (to use external DBs to store SlimStat's data) and Label Your IP Addresses. [Check them out](http://slimstat.getused.to.it/addons/)!
+* [New] Option that allows you to choose if you want to see your users' Display Name or their actual username (thank you, [psn](http://wordpress.org/support/topic/show-user-name-1))
+* [New] More WordPress hooks (filters) were added to the tracking engine, documentation coming soon...
+* [New] Outbound links are now shown under Right Now, to give you an even more detailed view of what a visitor did on your site (thank you, [Tommk](http://wordpress.org/support/topic/question-about-outbound-links))
+* [Update] Your own domain is not counted among the referring sites anymore (thank you, [Ovidiu and Ursula](http://wordpress.org/support/topic/a-much-requested-feature))
+* [Update] Added code to enable a 'network view' of the reports via add-on (coming soon)
+* [Update] MaxMind / Geolocation database updated to September 2013
+* [Fix] A screen resolution was being associated to search engines and other bots
+
 = 3.3.2 =
-* [New] Option that allows you to choose if you want to see the user agent string or the user friendly browser nane (thank you, [GermanKiwi](http://wordpress.org/support/topic/default-browser-user-agent-reported-by-slimstat))
+* [New] Option that allows you to choose if you want to see the user agent string or the user friendly browser name (thank you, [GermanKiwi](http://wordpress.org/support/topic/default-browser-user-agent-reported-by-slimstat))
 * [Update] Minor CSS tweaks
 * [Fix] A bug was affecting some URLs for multisite installs using subfolders (thank you, [meldean](http://wordpress.org/support/topic/top-pages-links-not-working))
 * [Fix] The entire suite of add-ons has been updated to include some crucial code optimizations
 
 = 3.3.1 =
 * [Note] If you are upgrading from WP SlimStat 2.9.2 or earlier, you MUST first install version 3.0 and then the latest version available
-* [New] Two new reports added to the Visitors tab: Recent and Top (registered) Users. If you don't see them, go to Settings > Maintenance and click on Reset Tabs
+* [New] Two new reports added to the Visitors tab: Recent and Top (registered) Users. If you don't see them, go to SlimStat > Settings > Maintenance and click on Reset Tabs
 * [Update] The new feature to use a separate database has been improved and will be available soon as an add-on on [our store](http://slimstat.getused.to.it/)
 * [Update] The information about your visitors' type (mobile, desktop, crawler) has been reintroduced in the form of an icon next to the operating system under Right Now (thank you, [consensus](http://wordpress.org/support/topic/modality))
 * [Update] [Flot](http://www.flotcharts.org/), the library we use to draw our charts, has been updated to version 0.8.1 
@@ -341,18 +351,6 @@ foreach ($results...`
 * [Fix] Bug related to the Asynchronous Mode and filters
 * [Fix] Bug causing a permission error to be displayed in some cases (thank you, [cvoive874](http://wordpress.org/support/topic/update-authors-can-not-see-stats) and [Patrick.T](http://wordpress.org/support/topic/user-role-collaborator-dont-see-the-statistics))
 * [Fix] If the visitor's originating IP is the same as his public ip, the former won't be recorded (thank you, [trekkerz](http://wordpress.org/support/topic/wp-slimstat-disappeared-from-admin-settings))
-
-= 3.1 =
-* [Note] If you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available
-* [Update] Goodbye Countries table, hello GeoIP.dat. Yes, after more than 3 years, I've decided to replace the ip2country table with the corresponding DAT file provided by MaxMind. This will improve the tracker's performance, eliminate custom tables from the database and make everybody happy!
-* [Update] Swapped hi-res World Map with low-res version, to benefit performances on Firefox browsers (thank you, [zircle and carbeck](http://wordpress.org/support/topic/worldmaps-slow))
-* [Fix] Addressed some minor bugs related to the new filter API (thank you, [StephenKorsman](http://wordpress.org/support/topic/upgraded-no-stats-per-post))
-* [Fix] Improved browser detection accuracy by removing an old bug (thank you, psn)
-* [Fix] Link to the Settings page from Plugins > SlimStat was not working (thank you, [zircle](http://wordpress.org/support/topic/updated-to-30-and-permissions-problem))
-* [Fix] Some users were having problems with the new URL filter format (which uses square brackes, thank you omniamediahrc)
-* [Fix] Facebook uses the s parameter in its query string, but it's not a search term (thank you, Giacomo Persichini)
-* [Fix] Some strings were missing from the localization files (thank you, psn)
-* [Fix] Permission issues were preventing some users from saving their settings
 
 == Donors ==
 [7times77](http://7times77.com),

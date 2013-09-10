@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.3.2
+version: 3.3.3
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.3.2';
+	public static $version = '3.3.3';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -28,7 +28,7 @@ class wp_slimstat{
 		if (empty(self::$options)){
 			self::$options = self::init_options();
 			
-			// Save these options in the database
+			// Save SlimStat's options in the database
 			add_option('slimstat_options', self::$options, '', 'no');
 		}
 		else{
@@ -37,22 +37,8 @@ class wp_slimstat{
 
 		self::$options = apply_filters('slimstat_init_options', self::$options);
 
-		// Allows third-party tools to use different tables or database for WP SlimStat
+		// Allow third-party tools to use a custom database for WP SlimStat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
-
-		if (!is_admin()){
-			// Is server-side tracking active?
-			if (self::$options['is_tracking'] == 'yes' && self::$options['javascript_mode'] != 'yes'){
-				add_action('wp', array(__CLASS__, 'slimtrack'), 5);
-				if (self::$options['track_users'] == 'yes') add_action('login_init', array(__CLASS__, 'slimtrack'), 10);
-			}
-
-			// WP SlimStat tracks screen resolutions, outbound links and other client-side information using javascript
-			if ((self::$options['enable_javascript'] == 'yes' || self::$options['javascript_mode'] == 'yes') && self::$options['is_tracking'] == 'yes'){
-				add_action('wp', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
-				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
-			}
-		}
 
 		if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] != 'no'){
 			$actions = array('wp_meta','get_header','get_sidebar','loop_end','wp_footer','wp_head');
@@ -61,20 +47,39 @@ class wp_slimstat{
 			add_action($spot, array(__CLASS__, 'ads_print_code'));
 		}
 
-		// Add a dropdown menu to the admin bar
+		// Add a menu to the admin bar
 		if (self::$options['use_separate_menu'] != 'yes' && is_admin_bar_showing()){
 			add_action('admin_bar_menu', array(__CLASS__, 'wp_slimstat_adminbar'), 100);
 		}
 
-		// Create a hook to use with the daily cron job
+		// Hook a DB clean-up routine to the daily cronjob
 		add_action('wp_slimstat_purge', array(__CLASS__, 'wp_slimstat_purge'));
+
+		// Enable the tracker (both server- and client-side)
+		if (!is_admin()){
+			// Allow add-ons to turn off the tracker based on other conditions
+			$is_tracking_filter = apply_filters('slimstat_filter_pre_tracking', true);
+			$is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
+
+			// Is server-side tracking active?
+			if (self::$options['javascript_mode'] != 'yes' && self::$options['is_tracking'] == 'yes' && $is_tracking_filter){
+				add_action('wp', array(__CLASS__, 'slimtrack'), 5);
+				if (self::$options['track_users'] == 'yes') add_action('login_init', array(__CLASS__, 'slimtrack'), 10);
+			}
+
+			// WP SlimStat tracks screen resolutions, outbound links and other client-side information using javascript
+			if ((self::$options['enable_javascript'] == 'yes' || self::$options['javascript_mode'] == 'yes') && self::$options['is_tracking'] == 'yes' && $is_tracking_filter_js){
+				add_action('wp', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
+				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
+			}
+		}
 	}
 	// end init
 
 	/**
-	 * Ajax Tracking
+	 * Ajax Tracking (client-side, javascript)
 	 */
-	public static function slimtrack_js(){
+	public static function slimtrack_js(){	
 		$data_string = base64_decode($_REQUEST['data']);
 		if ($data_string === false){
 			do_action('slimstat_track_exit_101');
@@ -130,15 +135,17 @@ class wp_slimstat{
 		}
 
 		// Track client-side information (screen resolution, plugins, etc)
-		$screenres = array(
-			'resolution' => (!empty(self::$data_js['sw']) && !empty(self::$data_js['sh']))?self::$data_js['sw'].'x'.self::$data_js['sh']:'',
-			'colordepth' => !empty(self::$data_js['cd'])?self::$data_js['cd']:'',
-			'antialias' => !empty(self::$data_js['aa'])?intval(self::$data_js['aa']):0
-		);
-		$screenres = apply_filters('slimstat_filter_pageview_screenres', $screenres, self::$stat);
+		if (!empty(self::$data_js['sw']) && !empty(self::$data_js['sh'])){
+			$screenres = array(
+				'resolution' => self::$data_js['sw'].'x'.self::$data_js['sh'],
+				'colordepth' => !empty(self::$data_js['cd'])?self::$data_js['cd']:'',
+				'antialias' => !empty(self::$data_js['aa'])?intval(self::$data_js['aa']):0
+			);
+			$screenres = apply_filters('slimstat_filter_pageview_screenres', $screenres, self::$stat);
 
-		// Now we insert the new screen resolution in the lookup table, if it doesn't exist
-		self::$stat['screenres_id'] = self::maybe_insert_row($screenres, $GLOBALS['wpdb']->base_prefix.'slim_screenres', 'screenres_id');
+			// Now we insert the new screen resolution in the lookup table, if it doesn't exist
+			self::$stat['screenres_id'] = self::maybe_insert_row($screenres, $GLOBALS['wpdb']->base_prefix.'slim_screenres', 'screenres_id');
+		}
 		self::$stat['plugins'] = !empty(self::$data_js['pl'])?substr(str_replace('|', ',', self::$data_js['pl']), 0, -1):'';
 
 		// If Javascript mode is enabled, record this pageview
@@ -148,10 +155,12 @@ class wp_slimstat{
 		else{
 			self::_set_visit_id(true);
 			
-			self::$wpdb->query(self::$wpdb->prepare("
-				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
-				SET screenres_id = %s, plugins = %s
-				WHERE id = %d", self::$stat['screenres_id'], self::$stat['plugins'], self::$stat['id']));
+			if (!empty(self::$stat['screenres_id'])){
+				self::$wpdb->query(self::$wpdb->prepare("
+					UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
+					SET screenres_id = %d, plugins = %s
+					WHERE id = %d", self::$stat['screenres_id'], self::$stat['plugins'], self::$stat['id']));
+			}
 		}
 
 		// Was this pageview tracked?
@@ -230,8 +239,11 @@ class wp_slimstat{
 
 		// Should we ignore this IP address?
 		foreach(self::string_to_array(self::$options['ignore_ip']) as $a_ip_range){
-			list ($ip_to_ignore, $mask) = @explode("/", trim($a_ip_range));
-			if (empty($mask)) $mask = 32;
+			$ip_to_ignore = $a_ip_range;
+			if (strpos($ip_to_ignore, '/') !== false){
+				list($ip_to_ignore, $mask) = @explode('/', trim($ip_to_ignore));
+			}
+			if (empty($mask) || !is_numeric($mask)) $mask = 32;
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
 			$long_masked_user_ip = $long_user_ip & $long_mask;
@@ -975,6 +987,7 @@ class wp_slimstat{
 			'convert_ip_addresses' => get_option('slimstat_convert_ip_addresses', 'no'),
 			'async_load' => 'no',
 			'use_european_separators' => get_option('slimstat_use_european_separators', 'yes'),
+			'show_display_name' => 'no',
 			'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
 			'expand_details' => 'no',
 			'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
@@ -1135,5 +1148,10 @@ if (function_exists('add_action')){
 	add_action('plugins_loaded', array('wp_slimstat', 'init'), 10);
 
 	// Load the admin API, if needed
-	if (is_admin()) include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
+	if (is_admin()){
+		include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
+		add_action('plugins_loaded', array('wp_slimstat_admin', 'init'), 15);
+		register_activation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'activate'));
+		register_deactivation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'deactivate'));
+	}
 }
