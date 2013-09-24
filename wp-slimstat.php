@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.3.3
+version: 3.3.4
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.3.3';
+	public static $version = '3.3.4';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -56,20 +56,21 @@ class wp_slimstat{
 		add_action('wp_slimstat_purge', array(__CLASS__, 'wp_slimstat_purge'));
 
 		// Enable the tracker (both server- and client-side)
-		if (!is_admin()){
+		if (!is_admin() || self::$options['track_admin_pages'] == 'yes'){
 			// Allow add-ons to turn off the tracker based on other conditions
 			$is_tracking_filter = apply_filters('slimstat_filter_pre_tracking', true);
 			$is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
+			$action_to_hook = is_admin()?'admin_init':'wp';
 
 			// Is server-side tracking active?
 			if (self::$options['javascript_mode'] != 'yes' && self::$options['is_tracking'] == 'yes' && $is_tracking_filter){
-				add_action('wp', array(__CLASS__, 'slimtrack'), 5);
+				add_action($action_to_hook, array(__CLASS__, 'slimtrack'), 5);
 				if (self::$options['track_users'] == 'yes') add_action('login_init', array(__CLASS__, 'slimtrack'), 10);
 			}
 
 			// WP SlimStat tracks screen resolutions, outbound links and other client-side information using javascript
 			if ((self::$options['enable_javascript'] == 'yes' || self::$options['javascript_mode'] == 'yes') && self::$options['is_tracking'] == 'yes' && $is_tracking_filter_js){
-				add_action('wp', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
+				add_action($action_to_hook, array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
 				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
 			}
 		}
@@ -185,91 +186,9 @@ class wp_slimstat{
 	 * Core tracking functionality
 	 */
 	public static function slimtrack($_argument = ''){
+		// Don't track 
 		self::$stat['dt'] = date_i18n('U');
 		self::$stat['notes'] = '';
-
-		// Should we ignore this user?
-		if (!empty($GLOBALS['current_user']->ID)){
-			// Don't track logged-in users, if the corresponding option is enabled
-			if (self::$options['track_users'] == 'no'){
-				self::$stat['id'] = -214;
-				return $_argument;
-			}
-
-			// Don't track users with given capabilities
-			foreach(self::string_to_array(self::$options['ignore_capabilities']) as $a_capability){
-				if (array_key_exists(strtolower($a_capability), $GLOBALS['current_user']->allcaps)){
-					self::$stat['id'] = -200;
-					return $_argument;
-				}
-			}
-
-			if (strpos(self::$options['ignore_users'], $GLOBALS['current_user']->data->user_login) !== false){
-				self::$stat['id'] = -201;
-				return $_argument;
-			}
-
-			self::$stat['user'] = $GLOBALS['current_user']->data->user_login;
-			self::$stat['notes'] .= '[user:'.$GLOBALS['current_user']->data->ID.']';
-			$not_spam = true;
-		}
-		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
-			// Is this a spammer?
-			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
-			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
-				if (self::$options['ignore_spammers'] == 'yes'){
-					self::$stat['id'] = -202;
-					return $_argument;
-				}
-				else{
-					self::$stat['notes'] .= '[spam]';
-					self::$stat['user'] = $spam_comment['comment_author'];
-				}
-			}
-			else
-				self::$stat['user'] = $_COOKIE['comment_author_'.COOKIEHASH];
-		}
-
-		// User's IP address
-		list($long_user_ip, $long_other_ip) = self::_get_ip2long_remote_ip();
-		if ($long_user_ip == 0){
-			self::$stat['id'] = -203;
-			return $_argument;
-		}
-
-		// Should we ignore this IP address?
-		foreach(self::string_to_array(self::$options['ignore_ip']) as $a_ip_range){
-			$ip_to_ignore = $a_ip_range;
-			if (strpos($ip_to_ignore, '/') !== false){
-				list($ip_to_ignore, $mask) = @explode('/', trim($ip_to_ignore));
-			}
-			if (empty($mask) || !is_numeric($mask)) $mask = 32;
-			$long_ip_to_ignore = ip2long($ip_to_ignore);
-			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
-			$long_masked_user_ip = $long_user_ip & $long_mask;
-			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
-			if ($long_masked_user_ip == $long_masked_ip_to_ignore){
-				self::$stat['id'] = -204;
-				return $_argument;
-			}
-		}
-
-		if (self::$options['anonymize_ip'] == 'yes'){
-			$long_user_ip = $long_user_ip&4294967040;
-			$long_other_ip = $long_other_ip&4294967040;
-		}
-		self::$stat['ip'] = sprintf("%u", $long_user_ip);
-		if (!empty($long_other_ip) && $long_other_ip != $long_user_ip) self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
-
-		// Country and Language
-		self::$stat['language'] = self::_get_language();
-		self::$stat['country'] = self::_get_country($long_user_ip);
-
-		// Is this country blacklisted?
-		if (stripos(self::$options['ignore_countries'], self::$stat['country']) !== false){
-			self::$stat['id'] = -206;
-			return $_argument;
-		}
 
 		$referer = array();
 		if ((self::$options['javascript_mode'] != 'yes' && !empty($_SERVER['HTTP_REFERER'])) || !empty(self::$data_js['ref'])){
@@ -334,8 +253,10 @@ class wp_slimstat{
 			self::$stat['searchterms'] = str_replace('\\', '', $_REQUEST['s']);
 			self::$stat['resource'] = ''; // Mark the resource to remember that this is a 'local search'
 		}
-		//self::$stat['resource'] = htmlentities(self::$stat['resource'], ENT_QUOTES, 'UTF-8');
-
+		if (strpos(self::$stat['resource'], 'wp-admin/admin-ajax.php')!==false || (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-')!==false)){
+			return $_argument;
+		}
+		
 		// Is this resource blacklisted?
 		if (!empty(self::$stat['resource'])){
 			foreach(self::string_to_array(self::$options['ignore_resources']) as $a_filter){
@@ -345,6 +266,89 @@ class wp_slimstat{
 					return $_argument;
 				}
 			}
+		}
+		
+		// Should we ignore this user?
+		if (!empty($GLOBALS['current_user']->ID)){
+			// Don't track logged-in users, if the corresponding option is enabled
+			if (self::$options['track_users'] == 'no'){
+				self::$stat['id'] = -214;
+				return $_argument;
+			}
+
+			// Don't track users with given capabilities
+			foreach(self::string_to_array(self::$options['ignore_capabilities']) as $a_capability){
+				if (array_key_exists(strtolower($a_capability), $GLOBALS['current_user']->allcaps)){
+					self::$stat['id'] = -200;
+					return $_argument;
+				}
+			}
+
+			if (is_string(self::$options['ignore_users']) && strpos(self::$options['ignore_users'], $GLOBALS['current_user']->data->user_login) !== false){
+				self::$stat['id'] = -201;
+				return $_argument;
+			}
+
+			self::$stat['user'] = $GLOBALS['current_user']->data->user_login;
+			self::$stat['notes'] .= '[user:'.$GLOBALS['current_user']->data->ID.']';
+			$not_spam = true;
+		}
+		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
+			// Is this a spammer?
+			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
+			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
+				if (self::$options['ignore_spammers'] == 'yes'){
+					self::$stat['id'] = -202;
+					return $_argument;
+				}
+				else{
+					self::$stat['notes'] .= '[spam]';
+					self::$stat['user'] = $spam_comment['comment_author'];
+				}
+			}
+			else
+				self::$stat['user'] = $_COOKIE['comment_author_'.COOKIEHASH];
+		}
+
+		// User's IP address
+		list($long_user_ip, $long_other_ip) = self::_get_ip2long_remote_ip();
+		if ($long_user_ip == 0){
+			self::$stat['id'] = -203;
+			return $_argument;
+		}
+
+		// Should we ignore this IP address?
+		foreach(self::string_to_array(self::$options['ignore_ip']) as $a_ip_range){
+			$ip_to_ignore = $a_ip_range;
+			if (strpos($ip_to_ignore, '/') !== false){
+				list($ip_to_ignore, $mask) = @explode('/', trim($ip_to_ignore));
+			}
+			if (empty($mask) || !is_numeric($mask)) $mask = 32;
+			$long_ip_to_ignore = ip2long($ip_to_ignore);
+			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
+			$long_masked_user_ip = $long_user_ip & $long_mask;
+			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
+			if ($long_masked_user_ip == $long_masked_ip_to_ignore){
+				self::$stat['id'] = -204;
+				return $_argument;
+			}
+		}
+
+		if (self::$options['anonymize_ip'] == 'yes'){
+			$long_user_ip = $long_user_ip&4294967040;
+			$long_other_ip = $long_other_ip&4294967040;
+		}
+		self::$stat['ip'] = sprintf("%u", $long_user_ip);
+		if (!empty($long_other_ip) && $long_other_ip != $long_user_ip) self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
+
+		// Country and Language
+		self::$stat['language'] = self::_get_language();
+		self::$stat['country'] = self::_get_country($long_user_ip);
+
+		// Is this country blacklisted?
+		if (stripos(self::$options['ignore_countries'], self::$stat['country']) !== false){
+			self::$stat['id'] = -206;
+			return $_argument;
 		}
 
 		// Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
@@ -613,6 +617,9 @@ class wp_slimstat{
 		}
 		elseif (in_array($GLOBALS['pagenow'], array('wp-login.php', 'wp-register.php'))){
 			$content_info['content_type'] = 'login';
+		}
+		elseif (is_admin()){
+			$content_info['content_type'] = 'admin';
 		}
 
 		if (is_paged()){
@@ -979,6 +986,7 @@ class wp_slimstat{
 			'show_admin_notice' => 0,
 			
 			'is_tracking' => get_option('slimstat_is_tracking', 'yes'),
+			'track_admin_pages' => 'no',
 			'javascript_mode' => 'no',
 			'auto_purge' => get_option('slimstat_auto_purge', '120'),
 			'add_posts_column' => get_option('slimstat_add_posts_column', 'no'),
@@ -991,6 +999,7 @@ class wp_slimstat{
 			'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
 			'expand_details' => 'no',
 			'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
+			'include_outbound_links_right_now' => 'yes',
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'refresh_interval' => get_option('slimstat_refresh_interval', '0'),
 			'hide_stats_link_edit_posts' => 'no',

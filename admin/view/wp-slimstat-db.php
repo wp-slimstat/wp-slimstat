@@ -500,24 +500,24 @@ class wp_slimstat_db {
 				elseif (self::$timeframes['current_day']['day_selected']){
 					$datestamp['timestamp_current'] = mktime($j, 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d'], self::$timeframes['current_day']['y']);
 					$datestamp['timestamp_previous'] = mktime($j, 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d']-1, self::$timeframes['current_day']['y']);
-					$datestamp['filter_current'] = ',"'.wp_slimstat_boxes::fs_url(array('hour' => 'equals '.$j, 'day' => 'equals '.self::$timeframes['current_day']['d'], 'month' => 'equals '.self::$timeframes['current_day']['m'], 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
-					$datestamp['filter_previous'] = ',"'.wp_slimstat_boxes::fs_url(array('hour' => 'equals '.$j, 'day' => 'equals '.date_i18n('d', $datestamp['timestamp_previous']), 'month' => 'equals '.date_i18n('m', $datestamp['timestamp_previous']), 'year' => 'equals '.date_i18n('Y', $datestamp['timestamp_previous']))).'"';
+					$datestamp['filter_current'] = ',"'.wp_slimstat_reports::fs_url(array('hour' => 'equals '.$j, 'day' => 'equals '.self::$timeframes['current_day']['d'], 'month' => 'equals '.self::$timeframes['current_day']['m'], 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
+					$datestamp['filter_previous'] = ',"'.wp_slimstat_reports::fs_url(array('hour' => 'equals '.$j, 'day' => 'equals '.date_i18n('d', $datestamp['timestamp_previous']), 'month' => 'equals '.date_i18n('m', $datestamp['timestamp_previous']), 'year' => 'equals '.date_i18n('Y', $datestamp['timestamp_previous']))).'"';
 					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.self::$timeframes['current_day']['d'].' '.sprintf('%02d', $j);
 					$datestamp['group'] = 'd';
 				}
 				elseif (self::$timeframes['current_day']['year_selected'] && !self::$timeframes['current_day']['month_selected']){
 					$datestamp['timestamp_current'] = mktime(0, 0, 0, $j+1, 1, self::$timeframes['current_day']['y']);
 					$datestamp['timestamp_previous'] = mktime(0, 0, 0, $j+1, 1, self::$timeframes['current_day']['y']-1);
-					$datestamp['filter_current'] = ',"'.wp_slimstat_boxes::fs_url(array('month' => 'equals '.($j+1), 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
-					$datestamp['filter_previous'] = ',"'.wp_slimstat_boxes::fs_url(array('month' => 'equals '.($j+1), 'year' => 'equals '.(self::$timeframes['current_day']['y']-1))).'"';
+					$datestamp['filter_current'] = ',"'.wp_slimstat_reports::fs_url(array('month' => 'equals '.($j+1), 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
+					$datestamp['filter_previous'] = ',"'.wp_slimstat_reports::fs_url(array('month' => 'equals '.($j+1), 'year' => 'equals '.(self::$timeframes['current_day']['y']-1))).'"';
 					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.sprintf('%02d', $j+1);
 					$datestamp['group'] = 'Y';
 				}
 				else{
 					$datestamp['timestamp_current'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'], $j+1, self::$timeframes['current_day']['y']);
 					$datestamp['timestamp_previous'] = mktime(0, 0, 0, self::$timeframes['current_day']['m']-1, $j+1, self::$timeframes['current_day']['y']);
-					$datestamp['filter_current'] =  ',"'.wp_slimstat_boxes::fs_url(array('day' => 'equals '.($j+1), 'month' => 'equals '.self::$timeframes['current_day']['m'], 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
-					$datestamp['filter_previous'] =  ',"'.wp_slimstat_boxes::fs_url(array('day' => 'equals '.($j+1), 'month' => 'equals '.date_i18n('m', $datestamp['timestamp_previous']), 'year' => 'equals '.date_i18n('Y', $datestamp['timestamp_previous']))).'"';
+					$datestamp['filter_current'] =  ',"'.wp_slimstat_reports::fs_url(array('day' => 'equals '.($j+1), 'month' => 'equals '.self::$timeframes['current_day']['m'], 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
+					$datestamp['filter_previous'] =  ',"'.wp_slimstat_reports::fs_url(array('day' => 'equals '.($j+1), 'month' => 'equals '.date_i18n('m', $datestamp['timestamp_previous']), 'year' => 'equals '.date_i18n('Y', $datestamp['timestamp_previous']))).'"';
 					$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.sprintf('%02d', $j+1);
 					$datestamp['group'] = 'm';
 				}
@@ -525,8 +525,8 @@ class wp_slimstat_db {
 			else{
 				$datestamp['timestamp_current'] = mktime(0, 0, 0, self::$timeframes['current_day']['m'], self::$timeframes['current_day']['d']+$j, self::$timeframes['current_day']['y']);
 				$datestamp['timestamp_previous'] = mktime(0, 0, 0, self::$timeframes['current_day']['m']-1, self::$timeframes['current_day']['d']+$j, self::$timeframes['current_day']['y']);
-				$datestamp['filter_current'] =  ',"'.wp_slimstat_boxes::fs_url(array('day' => 'equals '.(self::$timeframes['current_day']['d']+$j), 'month' => 'equals '.self::$timeframes['current_day']['m'], 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
-				$datestamp['filter_previous'] =  ',"'.wp_slimstat_boxes::fs_url(array('day' => 'equals '.(self::$timeframes['current_day']['d']+$j), 'month' => 'equals '.date_i18n('m', $datestamp['timestamp_previous']), 'year' => 'equals '.date_i18n('Y', $datestamp['timestamp_previous']))).'"';
+				$datestamp['filter_current'] =  ',"'.wp_slimstat_reports::fs_url(array('day' => 'equals '.(self::$timeframes['current_day']['d']+$j), 'month' => 'equals '.self::$timeframes['current_day']['m'], 'year' => 'equals '.self::$timeframes['current_day']['y'])).'"';
+				$datestamp['filter_previous'] =  ',"'.wp_slimstat_reports::fs_url(array('day' => 'equals '.(self::$timeframes['current_day']['d']+$j), 'month' => 'equals '.date_i18n('m', $datestamp['timestamp_previous']), 'year' => 'equals '.date_i18n('Y', $datestamp['timestamp_previous']))).'"';
 				$datestamp['marking_signature'] = self::$timeframes['current_day']['y'].' '.self::$timeframes['current_day']['m'].' '.sprintf('%02d', self::$timeframes['current_day']['d']+$j);
 				$datestamp['group'] = 'm';
 			}

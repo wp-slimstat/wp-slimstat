@@ -49,7 +49,7 @@ $license_key_field = false;
 						echo 'Installed and Active';
 					}
 					else{
-						echo 'Version '.$a_addon['version'].'<br/>Price: '.$a_addon['price'];
+						echo 'Version '.$a_addon['version'].'<br/>Price: '.(is_numeric($a_addon['price'])?'$'.$a_addon['price']:$a_addon['price']);
 					}  ?>
 				</div>
 			</td>

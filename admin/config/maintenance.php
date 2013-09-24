@@ -1,6 +1,6 @@
 <?php
 // Avoid direct access to this piece of code
-if (!function_exists('add_action')) exit(0);
+if (!function_exists('add_action') || (!empty($_POST) && !check_admin_referer('maintenance_wp_slimstat','maintenance_wp_slimstat_nonce'))) exit(0);
 
 wp_slimstat_admin::check_screenres();
 
@@ -82,7 +82,7 @@ if (isset($_POST['options'])){
 			$_POST['options']['conditional_delete_field'] == 'language' ||
 			$_POST['options']['conditional_delete_field'] == 'resource' ||
 			$_POST['options']['conditional_delete_field'] == 'searchterms')){
-			$escaped_value = wp_slimstat::$wpdb->escape($_POST['options']['conditional_delete_value']);
+			$escaped_value = esc_sql($_POST['options']['conditional_delete_value']);
 		switch($_POST['options']['conditional_delete_operator']){
 			case 'equal':
 				$delete_sql = "{$_POST['options']['conditional_delete_field']} = '$escaped_value'";
@@ -116,6 +116,7 @@ if (isset($_POST['options'])){
 ?>
 
 <form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
+<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 <table class="form-table <?php echo $GLOBALS['wp_locale']->text_direction ?>">
 <tbody>
 <?php

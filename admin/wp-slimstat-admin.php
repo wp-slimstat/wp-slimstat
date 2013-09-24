@@ -5,9 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = 'Wouldn\'t it be cool to be able to store WP SlimStat\'s information in an external database? Now you can, with our Custom DB add-on. <a href="http://slimstat.getused.to.it/addons/" target="_blank">Check it out</a>!';
-	// Did you know? WP SlimStat is one of the <a target="_blank" href="https://www.cite.soton.ac.uk/the-top-15-wordpress-plugins-for-academia/">top 15 WordPress plugins</a> for education and academia. How cool is that?
-	// 
+	protected static $admin_notice = 'Did you know? WP SlimStat is one of the <a target="_blank" href="https://www.cite.soton.ac.uk/the-top-15-wordpress-plugins-for-academia/">top 15 WordPress plugins</a> for education and academia. How cool is that?';
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	// Would you like to translate WP SlimStat in your language? <a href="http://slimstat.getused.to.it/contact-us/" target="_blank">Contact us</a> for more information. 
 	
@@ -78,11 +76,12 @@ class wp_slimstat_admin{
 		// Load the library of functions to generate the reports
 		if ((!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false) || (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report')){
 	
-			include_once(dirname(__FILE__)."/view/wp-slimstat-boxes.php");
-			wp_slimstat_boxes::init();
+			include_once(dirname(__FILE__)."/view/wp-slimstat-reports.php");
+			wp_slimstat_reports::init();
 
 			// Add the ajax action to handle dynamic report updates
-			if (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report') add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_boxes', 'show_report_wrapper'));
+			if (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report')
+				add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'show_report_wrapper'));
 		}
 	}
 	// end init
@@ -372,10 +371,10 @@ class wp_slimstat_admin{
 
 		// Pass some information to Javascript
 		$params = array(
-			'filters' => htmlentities(str_replace('&amp;', '&', wp_slimstat_boxes::fs_url(array(), '')), ENT_QUOTES, 'UTF-8'),
-			'current_tab' => wp_slimstat_boxes::$current_tab,
+			'filters' => htmlentities(str_replace('&amp;', '&', wp_slimstat_reports::fs_url(array(), '')), ENT_QUOTES, 'UTF-8'),
+			'current_tab' => wp_slimstat_reports::$current_tab,
 			'async_load' => wp_slimstat::$options['async_load'],
-			'refresh_interval' => (wp_slimstat_boxes::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
+			'refresh_interval' => (wp_slimstat_reports::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:1
 		);
 		wp_localize_script('slimstat_admin', 'SlimStatParams', $params);
@@ -546,13 +545,13 @@ class wp_slimstat_admin{
 	public static function screen_settings($_current, $_screen){
 		if (strpos($_screen->id, 'page_wp-slim-view') == false) return $_current;
 
-		// By the time this function is invoked, wp_slimstat_boxes has been already loaded
+		// By the time this function is invoked, wp_slimstat_reports has been already loaded
 
 		$current = '<form id="adv-settings" action="" method="post"><h5>'.__('Show on screen','wp-slimstat').'</h5><div class="metabox-prefs">';
 
-		if (isset(wp_slimstat_boxes::$all_boxes)){
-			foreach(wp_slimstat_boxes::$all_boxes as $a_box_id)
-				$current .= "<label for='$a_box_id-hide'><input class='hide-postbox-tog' name='$a_box_id-hide' type='checkbox' id='$a_box_id-hide' value='$a_box_id'".(!in_array($a_box_id, wp_slimstat_boxes::$hidden_boxes)?' checked="checked"':'')." />".wp_slimstat_boxes::$all_boxes_titles[$a_box_id]."</label>";
+		if (isset(wp_slimstat_reports::$all_reports)){
+			foreach(wp_slimstat_reports::$all_reports as $a_box_id)
+				$current .= "<label for='$a_box_id-hide'><input class='hide-postbox-tog' name='$a_box_id-hide' type='checkbox' id='$a_box_id-hide' value='$a_box_id'".(!in_array($a_box_id, wp_slimstat_reports::$hidden_reports)?' checked="checked"':'')." />".wp_slimstat_reports::$all_reports_titles[$a_box_id]."</label>";
 		}
 		$current .= wp_nonce_field('closedpostboxes', 'closedpostboxesnonce', true, false)."</div></form>";
 		

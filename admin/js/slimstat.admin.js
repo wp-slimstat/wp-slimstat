@@ -89,22 +89,22 @@ var SlimStatAdmin = {
 		SlimStatAdmin._placeholder.bind('plotpan', SlimStatAdmin.chart_color_weekends);
 	},
 	
-	load_ajax_data : function(box_id, data){
+	load_ajax_data : function(report_id, data){
 		data['current_tab'] = SlimStatParams.current_tab;
 		jQuery.post(ajaxurl+'?slimstat=1'+SlimStatParams.filters, data, function(response){
-			jQuery(box_id + ' .inside').html(response);
-			if (box_id.indexOf('_01') > 0) SlimStatAdmin.chart_init();
-			SlimStatAdmin.expand_row_details(box_id);
-			SlimStatAdmin.enable_inline_help(box_id);
-			jQuery(box_id + ' .whois,' + box_id + ' .whois16').bind("click", function(event) {
+			jQuery(report_id + ' .inside').html(response);
+			if (report_id.indexOf('_01') > 0) SlimStatAdmin.chart_init();
+			SlimStatAdmin.expand_row_details(report_id);
+			SlimStatAdmin.enable_inline_help(report_id);
+			jQuery(report_id + ' .whois,' + report_id + ' .whois16').bind("click", function(event) {
 				SlimStatAdmin.attach_whois_modal(jQuery(this), event);
 			});
 		});
 	},
 	
-	expand_row_details : function(box_id){
+	expand_row_details : function(report_id){
 		if (SlimStatParams.expand_details == 'yes'){
-			jQuery(box_id+' .inside p:not(.header)').each(function(){
+			jQuery(report_id+' .inside p:not(.header)').each(function(){
 				if (this.title.length){
 					this.savetitle = this.title;
 					jQuery(this).append('<b id="wp-element-details">'+this.title+'</b>');
@@ -113,7 +113,7 @@ var SlimStatAdmin = {
 			});
 		}
 		else{
-			jQuery(box_id+' .inside p:not(.header)').hover(
+			jQuery(report_id+' .inside p:not(.header)').hover(
 				function(){
 					if (this.title.length){
 						this.savetitle = this.title;
@@ -144,9 +144,9 @@ var SlimStatAdmin = {
 		}).fadeIn(200);
 	},
 	
-	enable_inline_help : function(box_id){
-		if (box_id.length > 0) box_id += ' ';
-		jQuery(box_id + '.inline-help, ' + box_id + '.img-inline-help').hover(
+	enable_inline_help : function(report_id){
+		if (report_id.length > 0) report_id += ' ';
+		jQuery(report_id + '.inline-help, ' + report_id + '.img-inline-help').hover(
 				function(event){
 					this.savetitle = this.title;
 					SlimStatAdmin.show_tooltip(event.pageX, event.pageY, this.title, 'tooltip-fixed-width');
@@ -209,10 +209,10 @@ var SlimStatAdmin = {
 			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
 		else{
-			box_id = '#slim_p7_02';
-			data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
-			jQuery(box_id+' .inside').html('<p class="loading"></p>');
-			SlimStatAdmin.load_ajax_data(box_id, data);
+			report_id = '#slim_p7_02';
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
+			jQuery(report_id+' .inside').html('<p class="loading"></p>');
+			SlimStatAdmin.load_ajax_data(report_id, data);
 
 			window.clearTimeout(refresh_handle);
 			SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatParams.refresh_interval/60);
@@ -238,10 +238,10 @@ jQuery(function(){
 
 	jQuery('.box-refresh').click(
 		function(){
-			box_id = '#'+jQuery(this).parent().attr('id');
-			data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
-			jQuery(box_id+' .inside').html('<p class="loading"></p>');
-			SlimStatAdmin.load_ajax_data(box_id, data);
+			report_id = '#'+jQuery(this).parent().attr('id');
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
+			jQuery(report_id+' .inside').html('<p class="loading"></p>');
+			SlimStatAdmin.load_ajax_data(report_id, data);
 			
 			if (typeof refresh_handle != 'undefined'){
 				window.clearTimeout(refresh_handle);
@@ -253,13 +253,13 @@ jQuery(function(){
 	);
 
 	jQuery('div[id^=slim_]').each(function(){
-		box_id = '#'+jQuery(this).attr('id');
+		report_id = '#'+jQuery(this).attr('id');
 		if (typeof SlimStatParams.async_load != 'undefined' && SlimStatParams.async_load == 'yes'){
-			data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
-			SlimStatAdmin.load_ajax_data(box_id, data);
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
+			SlimStatAdmin.load_ajax_data(report_id, data);
 		}
 		else{
-			SlimStatAdmin.expand_row_details(box_id);
+			SlimStatAdmin.expand_row_details(report_id);
 		}
 	});
 	
@@ -278,12 +278,12 @@ jQuery(function(){
 	}
 
 	jQuery('input.hide-postbox-tog[id^=slim_]').bind('click.postboxes', function (){
-		var box_id = '#'+jQuery(this).val();
-		var data = {action: 'slimstat_load_report', box_id: box_id, security: jQuery('#meta-box-order-nonce').val()}
-		jQuery(box_id+' .inside').html('<p class="loading"></p>');
+		var report_id = '#'+jQuery(this).val();
+		var data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
+		jQuery(report_id+' .inside').html('<p class="loading"></p>');
 
 		if (jQuery(this).prop("checked") && jQuery('#'+jQuery(this).val()).length){
-			SlimStatAdmin.load_ajax_data(box_id, data);
+			SlimStatAdmin.load_ajax_data(report_id, data);
 		}
 	});
 
