@@ -411,7 +411,7 @@ class wp_slimstat_db {
 		// Avoid PHP warnings in strict mode
 		$result = array(
 			'current' => array('non_zero_count' => 0, 'data1' => '', 'data2' => ''),
-			'previous' => array('non_zero_count' => 0, 'data' => ''),
+			'previous' => array('non_zero_count' => 0, 'data1' => '', 'data2' => ''),
 			'max_yaxis' => 0,
 			'ticks' => '', 'markings' => ''
 		);
@@ -470,7 +470,7 @@ class wp_slimstat_db {
 		$array_results = wp_slimstat::$wpdb->get_results($sql, ARRAY_A);
 
 		if (!is_array($array_results) || empty($array_results))
-			$array_results = array_fill(0, $data['end_value']*2, array('datestamp' => 0, 'data1' => 0, 'data2' => 0, ));
+			$array_results = array_fill(0, $data['end_value']*2, array('datestamp' => 0, 'data1' => 0, 'data2' => 0));
 
 		// Reorganize the data and then format it for Flot
 		foreach ($array_results as $a_result){
@@ -553,10 +553,18 @@ class wp_slimstat_db {
 
 			if (date_i18n($datestamp['group'], $datestamp['timestamp_previous']) == date_i18n($datestamp['group'], self::$timeframes['previous_utime_start'], true) && empty(self::$filters['parsed']['interval'][1])){
 				if (!empty($data[0][$datestamp['previous']])){
-					$result['previous']['data'] .= "[$i,{$data[0][$datestamp['previous']]}{$datestamp['filter_previous']}],";
+					$result['previous']['data1'] .= "[$i,{$data[0][$datestamp['previous']]}{$datestamp['filter_previous']}],";
+					$result['previous']['non_zero_count']++;
 				}
 				elseif($datestamp['timestamp_previous'] <= date_i18n('U')){
-					$result['previous']['data'] .= "[$i,0],";
+					$result['previous']['data1'] .= "[$i,0],";
+				}
+				
+				if (!empty($data[1][$datestamp['previous']])){
+					$result['previous']['data2'] .= "[$i,{$data[1][$datestamp['previous']]}{$datestamp['filter_current']}],";
+				}
+				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
+					$result['previous']['data2'] .= "[$i,0],";
 				}
 			}
 			
@@ -581,7 +589,8 @@ class wp_slimstat_db {
 
 		$result['current']['data1'] = substr($result['current']['data1'], 0, -1);
 		$result['current']['data2'] = substr($result['current']['data2'], 0, -1);
-		$result['previous']['data'] = substr($result['previous']['data'], 0, -1);
+		$result['previous']['data1'] = substr($result['previous']['data1'], 0, -1);
+		$result['previous']['data2'] = substr($result['previous']['data2'], 0, -1);
 		$result['ticks'] = substr($result['ticks'], 0, -1);
 		$result['markings'] = substr($result['markings'], 0, -1);
 

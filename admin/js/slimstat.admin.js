@@ -1,4 +1,4 @@
-﻿if (typeof SlimStatParams == 'undefined') SlimStatParams = {'filters': '', 'current_tab': 1, 'async_load': 'no', 'refresh_interval': 0, 'expand_details':'yes'};
+﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {'filters': '', 'current_tab': 1, 'async_load': 'no', 'refresh_interval': 0, 'expand_details':'yes'};
 var SlimStatAdmin = {
 	data: [],
 	ticks: [],
@@ -18,7 +18,7 @@ var SlimStatAdmin = {
 				colors: [ { opacity: 0.85 } ],
 				shadowSize: 5
 			},
-			colors: ['#bbcc44', '#ccc', '#21759B', '#02c907'],
+			colors: ['#bbcc44', '#ccc', '#999', '#21759B', '#02c907'],
 			shadowSize: 0,
 			xaxis: {
 				tickSize: 1,
@@ -90,8 +90,8 @@ var SlimStatAdmin = {
 	},
 	
 	load_ajax_data : function(report_id, data){
-		data['current_tab'] = SlimStatParams.current_tab;
-		jQuery.post(ajaxurl+'?slimstat=1'+SlimStatParams.filters, data, function(response){
+		data['current_tab'] = SlimStatAdminParams.current_tab;
+		jQuery.post(ajaxurl+'?slimstat=1'+SlimStatAdminParams.filters, data, function(response){
 			jQuery(report_id + ' .inside').html(response);
 			if (report_id.indexOf('_01') > 0) SlimStatAdmin.chart_init();
 			SlimStatAdmin.expand_row_details(report_id);
@@ -103,7 +103,7 @@ var SlimStatAdmin = {
 	},
 	
 	expand_row_details : function(report_id){
-		if (SlimStatParams.expand_details == 'yes'){
+		if (SlimStatAdminParams.expand_details == 'yes'){
 			jQuery(report_id+' .inside p:not(.header)').each(function(){
 				if (this.title.length){
 					this.savetitle = this.title;
@@ -185,7 +185,7 @@ var SlimStatAdmin = {
 		//jQuery('#modal-dialog').html('<h3>Visitor Information</h3><a class="close-dialog" href="#"></a><iframe id="ip2location" src="http://multisite.dev/ip2location.html" width="49%" height="90%"></iframe>');
 		//jQuery('<div id="visitor-details"><p class="loading"></p></div>').insertAfter('#ip2location');
 		//var data = {action: 'slimstat_visitor_information', ip_url: element.attr('href'), security: jQuery('#meta-box-order-nonce').val()}
-		//jQuery.post(ajaxurl+'?slimstat=1'+SlimStatParams.filters, data, function(response){
+		//jQuery.post(ajaxurl+'?slimstat=1'+SlimStatAdminParams.filters, data, function(response){
 		//	jQuery('#visitor-details').html(response);
 		//});
 		jQuery('#modal-dialog').dialog('open');
@@ -215,8 +215,8 @@ var SlimStatAdmin = {
 			SlimStatAdmin.load_ajax_data(report_id, data);
 
 			window.clearTimeout(refresh_handle);
-			SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatParams.refresh_interval/60);
-			SlimStatAdmin._refresh_timer[1] = SlimStatParams.refresh_interval%60;
+			SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
+			SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
 			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
 	}
@@ -245,8 +245,8 @@ jQuery(function(){
 			
 			if (typeof refresh_handle != 'undefined'){
 				window.clearTimeout(refresh_handle);
-				SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatParams.refresh_interval/60);
-				SlimStatAdmin._refresh_timer[1] = SlimStatParams.refresh_interval%60;
+				SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
+				SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
 				refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 			}
 		}
@@ -254,7 +254,7 @@ jQuery(function(){
 
 	jQuery('div[id^=slim_]').each(function(){
 		report_id = '#'+jQuery(this).attr('id');
-		if (typeof SlimStatParams.async_load != 'undefined' && SlimStatParams.async_load == 'yes'){
+		if (typeof SlimStatAdminParams.async_load != 'undefined' && SlimStatAdminParams.async_load == 'yes'){
 			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
 			SlimStatAdmin.load_ajax_data(report_id, data);
 		}
@@ -266,14 +266,14 @@ jQuery(function(){
 	if (jQuery('#chart-placeholder').length > 0){
 		SlimStatAdmin.chart_init();
 	}
-	if (typeof SlimStatParams.async_load == 'undefined' || SlimStatParams.async_load != 'yes'){
+	if (typeof SlimStatAdminParams.async_load == 'undefined' || SlimStatAdminParams.async_load != 'yes'){
 		SlimStatAdmin.enable_inline_help('');
 	}
 	
 	// Refresh page every X seconds
-	if (SlimStatParams.refresh_interval > 0){
-		SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatParams.refresh_interval/60);
-		SlimStatAdmin._refresh_timer[1] = SlimStatParams.refresh_interval%60;
+	if (SlimStatAdminParams.refresh_interval > 0){
+		SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
+		SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
 		refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 	}
 

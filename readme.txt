@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.2
 Tested up to: 3.6
-Stable tag: 3.3.4
+Stable tag: 3.3.5
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
@@ -29,7 +29,7 @@ A powerful real-time web analytics plugin for WordPress. Visit our [official sit
 * MySQL 5.0.3+
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
-* At least 5 Mb of free memory for the tracker
+* At least 10 Mb of free memory for the tracker
 
 = Browser Compatibility =
 WP SlimStat uses the HTML5 Canvas element and SVG graphics to display its charts and the world map. Unfortunately Internet Explorer 8 and older versions don't support them, so you're encouraged to upgrade your browser.
@@ -161,14 +161,14 @@ Just write a function that gets the results and displays them, making sure to us
 	$sql = "SELECT ...";
 	$results = $wpdb->get_results($sql, ARRAY_A);
 
-	// Boxes come in three sizes: wide, medium, normal (default).
-	wp_slimstat_boxes:box_header('my_custom_box_id', 'My Custom Box Inline Help', 'medium', false, '', 'My cool report');
+	// Reports come in three sizes: wide, medium, normal (default).
+	wp_slimstat_reports:report_header('my_custom_report_id', 'My Custom Report Inline Help', 'medium', false, '', 'My cool report');
 
 	foreach($results as $a_result){
 		echo "<p>{$a_result['resource']} <span>{$a_result['countresults']}</span></p>";
 	}
 	
-	wp_slimstat_boxes:box_footer(); // closes the DIV's open by box_header
+	wp_slimstat_reports:report_footer();
 }`
 
 Then let WP SlimStat know about it:
@@ -267,6 +267,12 @@ foreach ($results...`
 5. Access your stats from within WordPress for iOS
 
 == Changelog ==
+
+= 3.3.5 =
+* [Note] Our add-on [Export To Excel](http://slimstat.getused.to.it/addons/wp-slimstat-export-to-excel/) can now export the tabular data that makes up the charts (thank you, [consensus](http://wordpress.org/support/topic/graph-export))
+* [New] Now all the charts include comparison data for both metrics
+* [Fix] A javascript variable name conflict introduced in version 3.3.4 was affecting some advanced functionality (thank you, [Nanowisdoms](http://wordpress.org/support/topic/expand-details-option-not-working-in-334))
+* [Fix] A pretty unique combination of settings was affecting the way the Spy View data was being listed (thank you, [Nanowisdoms](http://wordpress.org/support/topic/live-visitor-as-in-currently-still-on-the-site-view))
 
 = 3.3.4 =
 * [Note] Now you can export the data from your User Overview custom report, with the Export to Excel add-on!

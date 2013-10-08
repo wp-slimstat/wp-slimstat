@@ -488,7 +488,8 @@ class wp_slimstat_reports{
 			SlimStatAdmin.ticks = [<?php echo $_chart_data['ticks'] ?>];
 			SlimStatAdmin.data = [];
 			SlimStatAdmin.data.push({<?php echo !empty($_chart_data['markings'])?"data:[{$_chart_data['markings']}],bars:{show:true,radius:1,barWidth:0.2,lineWidth:1,align:'center',fill:true,fillColor:'#bbff44',},lines:{show:false}":''; ?>});
-			SlimStatAdmin.data.push({<?php echo !empty($_chart_data['previous']['data'])?"label:'{$_chart_labels[0]} ".wp_slimstat_db::$timeframes['label_previous']."',data:[{$_chart_data['previous']['data']}],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}":''; ?>});
+			SlimStatAdmin.data.push({<?php echo !empty($_chart_data['previous']['data2'])?"label:'{$_chart_labels[1]} ".wp_slimstat_db::$timeframes['label_previous']."',data:[{$_chart_data['previous']['data2']}],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}":''; ?>});
+			SlimStatAdmin.data.push({<?php echo !empty($_chart_data['previous']['data1'])?"label:'{$_chart_labels[0]} ".wp_slimstat_db::$timeframes['label_previous']."',data:[{$_chart_data['previous']['data1']}],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}":''; ?>});
 			SlimStatAdmin.data.push({label:'<?php echo $_chart_labels[1].' '.wp_slimstat_db::$timeframes['label_current'] ?>',data:[<?php echo $_chart_data['current']['data2'] ?>],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}});
 			SlimStatAdmin.data.push({label:'<?php echo $_chart_labels[0].' '.wp_slimstat_db::$timeframes['label_current'] ?>',data:[<?php echo $_chart_data['current']['data1'] ?>],points:{show:true,symbol:function(ctx, x, y, radius, shadow){ctx.arc(x, y, 2, 0, Math.PI * 2, false)}}});
 		</script>
@@ -498,7 +499,7 @@ class wp_slimstat_reports{
 	public static function show_spy_view($_id = 'p0', $_type = 'undefined'){
 		if ($_id != 'p0' && (in_array($_id, self::$hidden_reports) || wp_slimstat::$options['async_load'] == 'yes')) return;
 
-		$results = !is_int($_type)?wp_slimstat_db::get_recent('t1.id', '(t1.visit_id > 0 AND tb.type <> 1)', 'tb.*'):wp_slimstat_db::get_recent_outbound($_type);
+		$results = !is_int($_type)?wp_slimstat_db::get_recent('t1.id', '(t1.visit_id > 0 AND tb.type <> 1)', 'tb.*', '', 't1.visit_id DESC'):wp_slimstat_db::get_recent_outbound($_type);
 
 		if (count($results) == 0) echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
 

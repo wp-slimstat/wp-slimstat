@@ -5,7 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = 'Did you know? WP SlimStat is one of the <a target="_blank" href="https://www.cite.soton.ac.uk/the-top-15-wordpress-plugins-for-academia/">top 15 WordPress plugins</a> for education and academia. How cool is that?';
+	protected static $admin_notice = 'Is our plugin helping your business grow? Please <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38" target="_blank">consider donating</a> a cup of coffee (which helps us concentrate when we code!)';
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	// Would you like to translate WP SlimStat in your language? <a href="http://slimstat.getused.to.it/contact-us/" target="_blank">Contact us</a> for more information. 
 	
@@ -377,7 +377,7 @@ class wp_slimstat_admin{
 			'refresh_interval' => (wp_slimstat_reports::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:1
 		);
-		wp_localize_script('slimstat_admin', 'SlimStatParams', $params);
+		wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 	}
 	
 	public static function wp_slimstat_enqueue_config_scripts(){
