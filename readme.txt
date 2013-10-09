@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.2
 Tested up to: 3.6
-Stable tag: 3.3.5
+Stable tag: 3.3.6
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
@@ -267,6 +267,11 @@ foreach ($results...`
 5. Access your stats from within WordPress for iOS
 
 == Changelog ==
+
+= 3.3.6 =
+* [New] Since you've asked, we added a datepicker to the filters
+* [Update] MaxMind / Geolocation database updated to October 2013
+* [Fix] We had some issues with our repository, which made WP SlimStat unavailable for a while. Sorry for the inconvenience.
 
 = 3.3.5 =
 * [Note] Our add-on [Export To Excel](http://slimstat.getused.to.it/addons/wp-slimstat-export-to-excel/) can now export the tabular data that makes up the charts (thank you, [consensus](http://wordpress.org/support/topic/graph-export))

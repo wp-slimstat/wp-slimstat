@@ -10,11 +10,26 @@
 
 /* Filters */
 #slimstat-filters .nowrap,#slimstat-filters input.button-primary{float:left;margin-bottom:1em;margin-right:5px;white-space:nowrap}
-
 #slimstat_interval_block{display:none}
 .current-filters{clear:both;overflow:hidden}
 .current-filters code{padding:2px 3px}
 .current-filters a{vertical-align:middle}
+
+/* Datepicker */
+.ui-datepicker {
+	background-color: #fff;
+	border: 1px solid #aaa;
+	border-radius: 5px;
+	display: none;
+	padding: .2em .2em 0;
+	width: 17em;
+}
+.ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next{width:1em}
+.ui-datepicker .ui-datepicker-prev{left:15px}
+.ui-datepicker .ui-datepicker-next{right:7px}
+.ui-datepicker-trigger{float:left;padding-right:10px}
+.ui-datepicker td span, .ui-datepicker td a{text-align:center}
+.ui-state-highlight {background-color: #777;color: #eee}
 
 /* Chart */
 #chart-placeholder{height:175px;margin:10px 5px 0;width:98%}

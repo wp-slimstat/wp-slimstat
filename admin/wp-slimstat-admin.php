@@ -5,9 +5,8 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = 'Is our plugin helping your business grow? Please <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38" target="_blank">consider donating</a> a cup of coffee (which helps us concentrate when we code!)';
+	protected static $admin_notice = 'Would you like to translate WP SlimStat in your language? <a href="http://slimstat.getused.to.it/contact-us/" target="_blank">Contact us</a> and, as a token of appreciation, you\'ll get your add-on of choice free of charge!';
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
-	// Would you like to translate WP SlimStat in your language? <a href="http://slimstat.getused.to.it/contact-us/" target="_blank">Contact us</a> for more information. 
 	
 	/**
 	 * Init -- Sets things up.
@@ -350,7 +349,9 @@ class wp_slimstat_admin{
 	 * Loads a custom stylesheet file for the administration panels
 	 */
 	public static function wp_slimstat_stylesheet(){
-		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)));
+		wp_register_style('jquery-ui-css', plugins_url('/admin/css/jquery.ui.datepicker.css', dirname(__FILE__)));
+		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)), array('jquery-ui-css'));
+		wp_enqueue_style('jquery-ui-css');
 		wp_enqueue_style('wp-slimstat');
 	}
 	// end wp_slimstat_stylesheet
@@ -365,17 +366,19 @@ class wp_slimstat_admin{
 
 	public static function wp_slimstat_enqueue_scripts(){
 		wp_enqueue_script('dashboard');
+		wp_enqueue_script('jquery-ui-datepicker');
 		wp_enqueue_script('slimstat_flot', plugins_url('/admin/js/jquery.flot.min.js', dirname(__FILE__)), array('jquery'), '0.7');
 		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/js/jquery.flot.navigate.min.js', dirname(__FILE__)), array('jquery','slimstat_flot'), '0.7');
 		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), '1.0');
 
 		// Pass some information to Javascript
 		$params = array(
-			'filters' => htmlentities(str_replace('&amp;', '&', wp_slimstat_reports::fs_url(array(), '')), ENT_QUOTES, 'UTF-8'),
-			'current_tab' => wp_slimstat_reports::$current_tab,
 			'async_load' => wp_slimstat::$options['async_load'],
+			'datepicker_image' => plugins_url('/admin/images/datepicker.png', dirname(__FILE__)),
+			'current_tab' => wp_slimstat_reports::$current_tab,
+			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:1,
+			'filters' => htmlentities(str_replace('&amp;', '&', wp_slimstat_reports::fs_url(array(), '')), ENT_QUOTES, 'UTF-8'),
 			'refresh_interval' => (wp_slimstat_reports::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
-			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:1
 		);
 		wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 	}

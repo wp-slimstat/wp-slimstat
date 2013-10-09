@@ -1,4 +1,4 @@
-﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {'filters': '', 'current_tab': 1, 'async_load': 'no', 'refresh_interval': 0, 'expand_details':'yes'};
+﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {'filters': '', 'current_tab': 1, 'async_load': 'no', 'refresh_interval': 0, 'expand_details':'yes', 'datepicker_image':''};
 var SlimStatAdmin = {
 	data: [],
 	ticks: [],
@@ -284,6 +284,27 @@ jQuery(function(){
 
 		if (jQuery(this).prop("checked") && jQuery('#'+jQuery(this).val()).length){
 			SlimStatAdmin.load_ajax_data(report_id, data);
+		}
+	});
+	
+	// Datepicker
+	jQuery('.slimstat-filter-date').datepicker({
+		buttonImage: SlimStatAdminParams.datepicker_image,
+		buttonImageOnly: true,
+		changeMonth: true,
+		changeYear: true,
+		dateFormat: 'yy-m-d',
+		nextText: '&raquo;',
+		prevText: '&laquo;',
+		showOn: 'both',
+		
+		onClose: function(dateText, inst) {
+			jQuery('#slimstat_filter_day').val( dateText.split('-')[2] );
+			jQuery('#slimstat_filter_month').val( dateText.split('-')[1] );
+			jQuery('#slimstat_filter_year').val( dateText.split('-')[0] );
+			if (!jQuery('#slimstat_interval_block').is(':visible')) {
+				jQuery('#slimstat_interval_block').fadeIn();
+			}
 		}
 	});
 

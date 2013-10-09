@@ -81,6 +81,7 @@ foreach ( array(
 			<span class="nowrap">
 				<span class='inline-help' style='float:left;margin:8px 5px 8px 0' title='<?php _e('Select a day to make the interval field appear.','wp-slimstat') ?>'></span>
 				<?php _e('Filter by date','wp-slimstat') ?>
+				
 				<select name="day" id="slimstat_filter_day" onchange="if(this.value>0){document.getElementById('slimstat_interval_block').style.display='inline'}else{document.getElementById('slimstat_interval_block').style.display='none'}">
 					<option value="0"><?php _e('Day','wp-slimstat') ?></option><?php
 					for($i=1;$i<=31;$i++){
@@ -101,8 +102,10 @@ foreach ( array(
 					?></select>
 				<input type="text" name="year" id="slimstat_filter_year" size="4" onfocus="if(this.value == '<?php _e('Year','wp-slimstat') ?>') this.value = '';" onblur="if(this.value == '') this.value = '<?php _e('Year','wp-slimstat') ?>';"
 					value="<?php echo !empty(wp_slimstat_db::$filters['parsed']['year'][1])?wp_slimstat_db::$filters['parsed']['year'][1]:__('Year','wp-slimstat') ?>">
+				
 				<span id="slimstat_interval_block"<?php if (!empty(wp_slimstat_db::$filters['parsed']['day'][1])) echo ' style="display:inline"' ?>>+ <input type="text" name="interval"  id="slimstat_filter_interval" size="4" value="<?php _e('days', 'wp-slimstat') ?>" onfocus="if(this.value == '<?php _e('days','wp-slimstat') ?>') this.value = '';" onblur="if(this.value == '') this.value = '<?php _e('days','wp-slimstat') ?>';"> &nbsp;&nbsp;&nbsp;</span>
 			</span>
+			<input type="hidden" class="slimstat-filter-date" name="filter_date" value=""/>
 			<input type="submit" value="<?php _e('Go','wp-slimstat') ?>" class="button-primary">
 		</p>
 	</form>
