@@ -38,9 +38,6 @@ class wp_slimstat_db {
 		// Use WordPress' settings for date and time format
 		self::$formats['date_time_format'] = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
 
-		// Custom Tables
-		self::$tables = apply_filters('slimstat_custom_tables', array('stats' => $GLOBALS['wpdb']->prefix.'slim_stats', 'outbound' => $GLOBALS['wpdb']->prefix.'slim_outbound'));
-		
 		// Parse all the filters
 		if (!empty($_filters)) self::_init_filters($_filters);
 		if (!empty($_system_filters)) self::_init_filters($_system_filters);
@@ -225,13 +222,13 @@ class wp_slimstat_db {
 					self::$filters['sql_from']['screenres'] = "LEFT JOIN {$GLOBALS['wpdb']->base_prefix}slim_screenres tss ON t1.screenres_id = tss.screenres_id";
 					break;
 				case 'tob.':
-					self::$filters['sql_from']['outbound'] = 'LEFT JOIN '.self::$tables['outbound'].' tob ON t1.id = tob.id';
+					self::$filters['sql_from']['outbound'] = "LEFT JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id";
 					break;
 				default:
 			}
 		}
 		self::$filters['sql_from']['all_others'] = trim(self::$filters['sql_from']['browsers'].' '.self::$filters['sql_from']['screenres'].' '.self::$filters['sql_from']['content_info'].' '.self::$filters['sql_from']['outbound']);
-		self::$filters['sql_from']['all'] = self::$tables['stats'].' t1 '.self::$filters['sql_from']['all_others'];
+		self::$filters['sql_from']['all'] = "{$GLOBALS['wpdb']->prefix}slim_stats t1 ".self::$filters['sql_from']['all_others'];
 	}
 	// end init
 
@@ -300,7 +297,7 @@ class wp_slimstat_db {
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
 		return intval(wp_slimstat::$wpdb->get_var("
 			SELECT COUNT($column) count
-			FROM ".self::$tables['stats'].' t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_join_tables).'
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 ".($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_join_tables).'
 			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').' '.($_use_date_filters?self::$filters['date_sql_where']:'')));
 	}
 
@@ -341,9 +338,9 @@ class wp_slimstat_db {
 	}
 
 	public static function get_oldest_visit($_where_clause = '1=1', $_use_filters = true){
-		return wp_slimstat::$wpdb->get_var('
+		return wp_slimstat::$wpdb->get_var("
 			SELECT t1.dt
-			FROM '.self::$tables['stats'].' t1 '.($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 ".($_use_filters?self::$filters['sql_from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
 			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$filters['sql_where']:'').'
 			ORDER BY dt ASC
 			LIMIT 0,1');
@@ -367,7 +364,7 @@ class wp_slimstat_db {
 					FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
 					WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 					GROUP BY $_column $_having_clause
-				) AS ts1 INNER JOIN ".self::$tables['stats'].' t1 ON ts1.maxid = t1.id '.
+				) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 				(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
 				ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters['parsed']['direction'][1]:$_order_by).'
 				LIMIT '.self::$filters['parsed']['starting'][1].', '.self::$filters['parsed']['limit_results'][1], ARRAY_A);
@@ -375,9 +372,9 @@ class wp_slimstat_db {
 	}
 
 	public static function get_recent_outbound($_type = -1){
-		return wp_slimstat::$wpdb->get_results('
-			SELECT tob.outbound_id as visit_id, tob.outbound_domain, tob.outbound_resource as resource, tob.type, tob.notes, t1.ip, t1.other_ip, t1.user, "local" as domain, t1.resource as referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
-			FROM  '.self::$tables['stats'].' t1 INNER JOIN '.self::$tables['outbound'].' tob ON tob.id = t1.id INNER JOIN '.$GLOBALS['wpdb']->base_prefix.'slim_browsers tb on t1.browser_id = tb.browser_id '.self::$filters['sql_from']['screenres'].' '.self::$filters['sql_from']['content_info'].'
+		return wp_slimstat::$wpdb->get_results("
+			SELECT tob.outbound_id as visit_id, tob.outbound_domain, tob.outbound_resource as resource, tob.type, tob.notes, t1.ip, t1.other_ip, t1.user, 'local' as domain, t1.resource as referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON tob.id = t1.id INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers tb on t1.browser_id = tb.browser_id ".self::$filters['sql_from']['screenres'].' '.self::$filters['sql_from']['content_info'].'
 			WHERE '.(($_type != -1)?"tob.type = $_type":'tob.type > 1').' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where'].'
 			ORDER BY tob.dt '.self::$filters['parsed']['direction'][1].'
 			LIMIT '.self::$filters['parsed']['starting'][1].','.self::$filters['parsed']['limit_results'][1], ARRAY_A);
@@ -391,7 +388,7 @@ class wp_slimstat_db {
 				FROM ".self::$filters['sql_from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
 				WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$filters['sql_where'].' '.self::$filters['date_sql_where']."
 				GROUP BY $_column $_having_clause
-			) AS ts1 JOIN ".self::$tables['stats'].' t1 ON ts1.maxid = t1.id '.
+			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 			(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
 			ORDER BY ts1.count '.self::$filters['parsed']['direction'][1]."
 			LIMIT ".self::$filters['parsed']['starting'][1].', '.self::$filters['parsed']['limit_results'][1], ARRAY_A);
@@ -687,7 +684,7 @@ class wp_slimstat_db {
 			$sql_from .=  " INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info tci ON t1.content_info_id = tci.content_info_id";
 
 		if (($_ignore_empty || empty(self::$filters['sql_from']['outbound'])) && strpos($_sql_tables, 'tob.') !== false)
-			$sql_from .=  ' LEFT JOIN '.self::$tables['outbound'].' tob ON t1.id = tob.id';
+			$sql_from .=  " LEFT JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id";
 
 		if (($_ignore_empty || empty(self::$filters['sql_from']['screenres'])) && strpos($_sql_tables, 'tss.') !== false)
 			$sql_from .=  " LEFT JOIN {$GLOBALS['wpdb']->base_prefix}slim_screenres tss ON t1.screenres_id = tss.screenres_id";

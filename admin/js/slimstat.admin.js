@@ -210,7 +210,7 @@ var SlimStatAdmin = {
 		}
 		else{
 			report_id = '#slim_p7_02';
-			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()};
 			jQuery(report_id+' .inside').html('<p class="loading"></p>');
 			SlimStatAdmin.load_ajax_data(report_id, data);
 
@@ -270,6 +270,9 @@ jQuery(function(){
 		SlimStatAdmin.enable_inline_help('');
 	}
 	
+	// Remove click on report title
+	jQuery('h3.hndle').on('click', function(){ jQuery(this).parent().toggleClass('closed') });
+	
 	// Refresh page every X seconds
 	if (SlimStatAdminParams.refresh_interval > 0){
 		SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
@@ -287,26 +290,70 @@ jQuery(function(){
 		}
 	});
 	
-	// Datepicker
-	jQuery('.slimstat-filter-date').datepicker({
-		buttonImage: SlimStatAdminParams.datepicker_image,
-		buttonImageOnly: true,
-		changeMonth: true,
-		changeYear: true,
-		dateFormat: 'yy-m-d',
-		nextText: '&raquo;',
-		prevText: '&laquo;',
-		showOn: 'both',
-		
-		onClose: function(dateText, inst) {
-			jQuery('#slimstat_filter_day').val( dateText.split('-')[2] );
-			jQuery('#slimstat_filter_month').val( dateText.split('-')[1] );
-			jQuery('#slimstat_filter_year').val( dateText.split('-')[0] );
-			if (!jQuery('#slimstat_interval_block').is(':visible')) {
-				jQuery('#slimstat_interval_block').fadeIn();
-			}
+	// Send new filters as post requests
+	jQuery(document).on('click', '.slimstat-filter-link', function(e){
+		e.preventDefault();
+		filters_to_add = jQuery(this).attr('href').split('&');
+
+		jQuery('#slimstat-filters').attr('action', filters_to_add[0]);
+		for (i in filters_to_add){
+			if (filters_to_add[i].indexOf('fs\%5B') != 0) continue;
+			
+			filter_components = filters_to_add[i].split('=');
+
+			filter_components[0] = decodeURIComponent(filter_components[0]);
+			jQuery('input[name="'+filter_components[0]+'"]').remove();
+			
+			if (filter_components[0].indexOf('[day]') > 0) jQuery('#slimstat_filter_day').val(0);
+			if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat_filter_month').val(0);
+			if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat_filter_year').val('');
+				
+			jQuery('<input>').attr('type', 'hidden').attr('name', filter_components[0]).val(filter_components[1].replace('+', ' ')).appendTo('#slimstat-filters');
+			
 		}
+		jQuery('#slimstat-filters').submit();
+		return false;
 	});
+	jQuery('a.remove-filter').click(function(e){
+		filter_to_remove = decodeURIComponent(jQuery(this).attr('href')).split('&');
+		jQuery('#slimstat-filters').attr('action', filter_to_remove[0]);
+		if (filter_to_remove[1].length == 0) return true;
+		
+		e.preventDefault();
+		filter_components = filter_to_remove[1].split('=');
+		jQuery('input[name="'+filter_components[0].replace('[', '\\[').replace(']', '\\]')+'"]').remove();
+		
+		// Reset dropdowns, if needed
+		if (filter_components[0].indexOf('[day]') > 0) jQuery('#slimstat_filter_day').val(0);
+		if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat_filter_month').val(0);
+		if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat_filter_year').val('');
+		jQuery('#slimstat-filters').submit();
+		return false;
+	});
+	
+	// Datepicker
+	if (typeof jQuery('.slimstat-filter-date').datepicker == 'function'){
+		jQuery('.slimstat-filter-date').datepicker({
+			buttonImage: SlimStatAdminParams.datepicker_image,
+			buttonImageOnly: true,
+			changeMonth: true,
+			changeYear: true,
+			dateFormat: 'yy-m-d',
+			nextText: '&raquo;',
+			prevText: '&laquo;',
+			showOn: 'both',
+			
+			onClose: function(dateText, inst) {
+				if (!dateText.length) return true;
+				jQuery('#slimstat_filter_day').val( dateText.split('-')[2] );
+				jQuery('#slimstat_filter_month').val( dateText.split('-')[1] );
+				jQuery('#slimstat_filter_year').val( dateText.split('-')[0] );
+				if (!jQuery('#slimstat_interval_block').is(':visible')) {
+					jQuery('#slimstat_interval_block').fadeIn();
+				}
+			}
+		});
+	}
 
 	// Slimstat Dashboard CSS Tweaks
 	jQuery('#dashboard-widgets-wrap div[id^=slim_]').addClass('slimstat');

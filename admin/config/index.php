@@ -113,9 +113,11 @@ switch ($config_tabs[$current_tab-1]){
 	case __('Permissions','wp-slimstat'):
 		$options_on_this_page = array(
 			'restrict_authors_view' => array('description' => __('Restrict Authors','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option if you want your authours to only see stats related to their own content.','wp-slimstat')),
-			'capability_can_view' => array('description' => __('Minimum capability','wp-slimstat'), 'type' => 'text', 'long_description' => __("Define the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to view the reports (default: <code>read</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here above. In this case, the list has precedence over the capability.",'wp-slimstat')),
+			'capability_can_view' => array('description' => __('Capability to View','wp-slimstat'), 'type' => 'text', 'long_description' => __("Define the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to view the reports (default: <code>read</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here below. In this case, the list has precedence over the capability.",'wp-slimstat')),
+			'capability_can_admin' => array('description' => __('Capability to Admin','wp-slimstat'), 'type' => 'text', 'long_description' => __("Define the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> required to access these option scrrens (default: <code>activate_plugins</code>). The whitelist here below can be used to override this option for specific users.",'wp-slimstat')),
 			'can_view' => array('description' => __('Read access','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the users who can view WP SlimStat reports, separated by commas. Admins are implicitly allowed, so you don't need to list them in here. If this field is empty, <strong>all your users</strong> are granted access. Usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true),
 			'can_admin' => array('description' => __('Config access','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the users who can edit these options, separated by commas. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! If this field is empty, <strong>all your users</strong> (except <em>Subscribers</em>) will be granted access. Users listed here automatically inherit 'Read access' to the reports. Usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true)
+			
 		);
 
 		// Some options need a special treatment
@@ -141,7 +143,7 @@ switch ($config_tabs[$current_tab-1]){
 
 			if (!empty($_POST['options']['capability_can_view'])){
 				if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_view'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
-					if (!wp_slimstat_admin::update_option('capability_can_view', $_POST['options']['capability_can_view'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Minimum capability','wp-slimstat');
+					if (!wp_slimstat_admin::update_option('capability_can_view', $_POST['options']['capability_can_view'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Capability to Read','wp-slimstat');
 				}
 				else{
 					wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
@@ -169,6 +171,18 @@ switch ($config_tabs[$current_tab-1]){
 			else{
 				wp_slimstat_admin::update_option('can_admin', '', 'text');
 			}
+			
+			if (!empty($_POST['options']['capability_can_admin'])){
+				if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_admin'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
+					if (!wp_slimstat_admin::update_option('capability_can_admin', $_POST['options']['capability_can_admin'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Capability to Admin','wp-slimstat');
+				}
+				else{
+					wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
+				}
+			}
+			else{
+				wp_slimstat_admin::update_option('capability_can_admin', '', 'text');
+			}
 		}
 		break;
 	case __('Advanced','wp-slimstat'):
@@ -182,7 +196,7 @@ switch ($config_tabs[$current_tab-1]){
 			'extensions_to_track' => array('description' => __('Extensions to Track','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("The following file extensions (to be listed as comma separated values) will be tracked as Downloads by WP SlimStat. Please note that links pointing to external resources (i.e. PDFs on a different website) are considered Downloads and not Outbound Links (and tracked as such), if their extension matches one of the ones listed here below.",'wp-slimstat')),
 			'custom_css' => array('description' => __('Custom CSS','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("Paste here your custom stylesheet definitions, to personalize the way your reports look, including color-coded pageviews, font sizes, etc.",'wp-slimstat')),
 			'markings' => array('description' => __('Chart Annotations','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("Add <em>markings</em> to each chart by specifying a date and its description in the field below. Useful to keep track of special events and correlate them to your analytics. Please use the following format:<code>YYYY MM DD HH:mm=Description 1,YYYY MM DD HH:mm=Description 2</code>. For example: 2012 12 31 23:55=New Year's Eve.",'wp-slimstat')),
-			'enable_ads_network' => array('description' => __('Enable ADN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Activates our partner's sponsorship network. It allows us to keep this plugin free and offer premium functionality at no added cost to you.",'wp-slimstat'))
+			'enable_ads_network' => array('description' => __('Enable UAN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Collect data about unknown user agents, and send it anonymously to our server for analysis. This allows us to contribute to the <a href='http://browscap.co/' target='_blank'>BrowsCap opensource project</a>, and improve the accuracy of SlimStat's browser detection functionality.",'wp-slimstat'))
 		);
 		break;
 	case __('Maintenance','wp-slimstat'):

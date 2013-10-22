@@ -3,19 +3,32 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.2
-Tested up to: 3.6
-Stable tag: 3.3.6
+Tested up to: 3.7
+Stable tag: 3.4
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
 
-= Main Features =
+= Key Features =
 * Real-time web analytics reports
 * Compatible with W3 Total Cache, WP SuperCache, HyperCache and friends
 * Modern, easy to use and customizable interface (yep, you can move reports around and hide the ones you don't need)
 * The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://tempdownloads.browserscap.com/))
 * Advanced filtering
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
+
+= Available in multiple languages =
+* English
+* Chinese
+* Farsi
+* French
+* German
+* Italian
+* Portuguese
+* Russian
+* Spanish
+* Swedish
+* Your language is missing or incomplete? [Contact Us](http://slimstat.getused.to.it/contact-us/) to share your localization!
 
 = What are people saying about WP SlimStat? =
 * One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
@@ -267,6 +280,16 @@ foreach ($results...`
 5. Access your stats from within WordPress for iOS
 
 == Changelog ==
+
+= 3.4 =
+* [Note] We can't believe we're already crossing the 600,000 downloads mark! To celebrate this accomplishment, we're working on a brand new website! Stay tuned.
+* [New] Local IP Addresses are now marked as such (thank you, [Thorsten](http://wordpress.org/support/topic/wrong-geolocation-for-rfc-1918-private-ip-ranges))
+* [Update] SlimStat's filters have been reimplemented to use HTTP POST requests, in order to avoid issues with very long URIs (thank you, John)
+* [Update] You can now restrict access to the configuration screens by specifying the minimum capability required (default: activate_plugins)
+* [Update] Localization files have consolidated and are now easier to manage. Send us your localization!
+* [Fix] Clicking on report titles doesn't collapse the box anymore (thank you, psn)
+* [Fix] Minor fixes to the Javascript used on admin pages
+* [Fix] Restored compatibility with the plugin Dashboard Widgets
 
 = 3.3.6 =
 * [New] Since you've asked, we added a datepicker to the filters

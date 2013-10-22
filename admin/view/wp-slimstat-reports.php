@@ -25,11 +25,9 @@ class wp_slimstat_reports{
 	 * Initalizes class properties
 	 */
 	public static function init(){
-		// Load localization files
-		load_plugin_textdomain('dynamic-strings', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 		// If a localization does not exist, use English
-		if (!isset($l10n['dynamic-strings'])){
-			load_textdomain('dynamic-strings', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang/dynamic-strings-en_US.mo');
+		if (!isset($l10n['wp-slimstat'])){
+			load_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang/wp-slimstat-en_US.mo');
 		}
 
 		if (!empty($_GET['page'])) self::$current_tab = intval(str_replace('wp-slim-view-', '', $_GET['page']));
@@ -226,18 +224,27 @@ class wp_slimstat_reports{
 	}
 	// end init
 
-	public static function fs_url($_keys = array(), $_url = 'none'){
+	public static function fs_url($_keys = array(), $_url = 'none', $_all = false){
 		$filtered_url = ($_url == 'none')?self::$current_tab_url:$_url;
-		if (!is_array($_keys)) $_keys = array($_keys => '');
 
-		foreach(array_merge(self::$filters, $_keys) as $a_key => $a_filter){
+		if (!is_array($_keys)){
+			if (!empty($_keys))
+				$_keys = array($_keys => '');
+			else
+				$_keys = array();
+		}
+		
+		if ($_all) $_keys = self::$filters;
+
+		foreach($_keys as $a_key => $a_filter){
 			if ($a_key == 'no-filter-selected-1') continue;
-			if (isset($_keys[$a_key])){
-				if (!empty($_keys[$a_key])) $filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($_keys[$a_key]);
-			}
-			else{
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode(self::$filters[$a_key]);
-			}
+			//if (isset($_keys[$a_key])){
+				//if (!empty($_keys[$a_key])) 
+					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($_keys[$a_key]);
+			//}
+			//else{
+				//$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode(self::$filters[$a_key]);
+			//}
 		}
 
 		return $filtered_url;
@@ -257,10 +264,10 @@ class wp_slimstat_reports{
 
 		if (!empty($_searchterms)){		
 			if (!empty($matches) && !empty($query_formats[$matches[1]])){
-				$search_terms_info = "<a class='url' target='_blank' title='".htmlentities(__('Go to the corresponding search engine result page','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='http://$_domain/".$query_formats[$matches[1]].'='.urlencode($_searchterms)."'></a> ".htmlentities($_searchterms, ENT_QUOTES, 'UTF-8');
+				$search_terms_info = '<a class="url" target="_blank" title="'.htmlentities(__('Go to the corresponding search engine result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'" href="http://'.$_domain.'/'.$query_formats[$matches[1]].'='.urlencode($_searchterms).'"></a> '.htmlentities($_searchterms, ENT_QUOTES, 'UTF-8');
 			}
 			else{
-				$search_terms_info = "<a class='url' target='_blank' title='".htmlentities(__('Go to the referring page','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='$_referer'></a> ".htmlentities($_searchterms, ENT_QUOTES, 'UTF-8');
+				$search_terms_info = '<a class="url" target="_blank" title="'.htmlentities(__('Go to the referring page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'" href="'.$_referer.'"></a> '.htmlentities($_searchterms, ENT_QUOTES, 'UTF-8');
 			}
 			$search_terms_info = "$search_terms_info $query_details";
 		}
@@ -411,11 +418,11 @@ class wp_slimstat_reports{
 					break;
 				case 'language':
 					$element_title = '<br>'.__('Language Code','wp-slimstat').": {$results[$i]['language']}";
-					$element_value = __('l-'.$results[$i]['language'], 'dynamic-strings');
+					$element_value = __('l-'.$results[$i]['language'], 'wp-slimstat');
 					break;
 				case 'platform':
 					$element_title = '<br>'.__('OS Code','wp-slimstat').": {$results[$i]['platform']}";
-					$element_value = __($results[$i]['platform'], 'dynamic-strings');
+					$element_value = __($results[$i]['platform'], 'wp-slimstat');
 					break;
 				case 'resource':
 					$post_id = url_to_postid(strtok($results[$i]['resource'], '?'));
@@ -441,7 +448,7 @@ class wp_slimstat_reports{
 				default:
 			}
 			
-			$element_value = "<a title=\"".htmlentities(sprintf(__('Filter results where %s %s %s','wp-slimstat'), __(self::$translations[$_column],'wp-slimstat'), __($_args['filter_op'],'wp-slimstat'), $results[$i][$_column]), ENT_QUOTES, 'UTF-8')."\" href='".self::fs_url(array($_column => $_args['filter_op'].' '.$results[$i][$_column]))."'>$element_value</a>";
+			$element_value = "<a class='slimstat-filter-link' title=\"".htmlentities(sprintf(__('Filter results where %s %s %s','wp-slimstat'), __(self::$translations[$_column],'wp-slimstat'), __($_args['filter_op'],'wp-slimstat'), $results[$i][$_column]), ENT_QUOTES, 'UTF-8')."\" href='".self::fs_url(array($_column => $_args['filter_op'].' '.$results[$i][$_column]))."'>$element_value</a>";
 
 			if ($_type == 'recent'){
 				$element_title = date_i18n(wp_slimstat_db::$formats['date_time_format'], $results[$i]['dt'], true).$element_title;
@@ -460,7 +467,7 @@ class wp_slimstat_reports{
 				$element_value = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a>'.$element_value;
 			}
 			if (!empty($results[$i]['ip']))
-				$element_title .= '<br><a title="WHOIS: '.$results[$i]['ip'].'" class="whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a> IP: <a title="'.htmlentities(sprintf(__('Filter results where IP equals %s','wp-slimstat'), $results[$i]['ip']), ENT_QUOTES, 'UTF-8').'" href="'.self::fs_url(array('ip' => 'equals '.$results[$i]['ip'])).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
+				$element_title .= '<br><a title="WHOIS: '.$results[$i]['ip'].'" class="whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a> IP: <a class="slimstat-filter-link" title="'.htmlentities(sprintf(__('Filter results where IP equals %s','wp-slimstat'), $results[$i]['ip']), ENT_QUOTES, 'UTF-8').'" href="'.self::fs_url(array('ip' => 'equals '.$results[$i]['ip'])).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
 
 			echo "<p title='$element_title'>$element_pre_value$element_value$percentage</p>";
 		}
@@ -526,7 +533,7 @@ class wp_slimstat_reports{
 			if ($visit_id != $results[$i]['visit_id']){
 				$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':' is-direct';
 				if (empty($results[$i]['user'])){
-					$host_by_ip = "<a href='".self::fs_url(array('ip' => 'equals '.$results[$i]['ip']))."'>$host_by_ip</a>";
+					$host_by_ip = "<a class='slimstat-filter-link' href='".self::fs_url(array('ip' => 'equals '.$results[$i]['ip']))."'>$host_by_ip</a>";
 				}
 				else{
 					$display_user_name = $results[$i]['user'];
@@ -534,12 +541,12 @@ class wp_slimstat_reports{
 						$display_real_name = get_user_by('login', $results[$i]['user']);
 						if (is_object($display_real_name)) $display_user_name = $display_real_name->display_name;
 					}
-					$host_by_ip = "<a class='highlight-user' href='".self::fs_url(array('user' => 'equals '.$results[$i]['user']))."'>{$display_user_name}</a>";
+					$host_by_ip = "<a class='slimstat-filter-link' class='highlight-user' href='".self::fs_url(array('user' => 'equals '.$results[$i]['user']))."'>{$display_user_name}</a>";
 					$highlight_row = (strpos( $results[$i]['notes'], '[user]') !== false)?' is-known-user':' is-known-visitor';
 				}
 				$host_by_ip = "<a class='whois img-inline-help' href='".self::$ip_lookup_url."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
-				$results[$i]['country'] = "<a class='image first' href='".self::fs_url(array('country' => 'equals '.$results[$i]['country']))."'><img class='img-inline-help' src='".wp_slimstat_reports::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat').': '.__('c-'.$results[$i]['country'],'wp-slimstat')."' width='16' height='16'/></a>";
-				$results[$i]['other_ip'] = !empty($results[$i]['other_ip'])?" <a href='".self::fs_url(array('other_ip' => 'equals '.$results[$i]['other_ip']))."'>".long2ip($results[$i]['other_ip']).'</a>&nbsp;&nbsp;':'';
+				$results[$i]['country'] = "<a class='slimstat-filter-link image first' href='".self::fs_url(array('country' => 'equals '.$results[$i]['country']))."'><img class='img-inline-help' src='".wp_slimstat_reports::$plugin_url."/images/flags/{$results[$i]['country']}.png' title='".__('Country','wp-slimstat').': '.__('c-'.$results[$i]['country'],'wp-slimstat')."' width='16' height='16'/></a>";
+				$results[$i]['other_ip'] = !empty($results[$i]['other_ip'])?" <a class='slimstat-filter-link' href='".self::fs_url(array('other_ip' => 'equals '.$results[$i]['other_ip']))."'>".long2ip($results[$i]['other_ip']).'</a>&nbsp;&nbsp;':'';
 		
 				echo "<p class='header$highlight_row'>{$results[$i]['country']} $host_by_ip <span class='date-and-other'><em>{$results[$i]['other_ip']} {$results[$i]['dt']}</em></span></p>";
 				$visit_id = $results[$i]['visit_id'];
@@ -548,10 +555,10 @@ class wp_slimstat_reports{
 			if (!empty($results[$i]['domain'])){
 				if (!is_int($_type)){
 					$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
-					$element_title = " title='".__('Source','wp-slimstat').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat')."\" href=\"$element_url\"></a><a title=\"".sprintf(__('Filter results where domain equals %s','wp-slimstat'), $results[$i]['domain'])."\" href=\"".self::fs_url(array('domain' => 'equals '.$results[$i]['domain']))."\">{$results[$i]['domain']}</a>";
+					$element_title = " title='".__('Source','wp-slimstat').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat')."\" href=\"$element_url\"></a><a class=\"slimstat-filter-link\" title=\"".sprintf(__('Filter results where domain equals %s','wp-slimstat'), $results[$i]['domain'])."\" href=\"".self::fs_url(array('domain' => 'equals '.$results[$i]['domain']))."\">{$results[$i]['domain']}</a>";
 					if (!empty($results[$i]['searchterms'])){
 						$element_title .= "<br>".__('Keywords','wp-slimstat').": ";
-						$element_title .= "<a title=\"".sprintf(__('Filter results where searchterm equals %s','wp-slimstat'), htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8'))."\" ";
+						$element_title .= "<a class=\"slimstat-filter-link\" title=\"".sprintf(__('Filter results where searchterm equals %s','wp-slimstat'), htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8'))."\" ";
 						$element_title .= "href=\"".self::fs_url(array('searchterms' => 'equals '.$results[$i]['searchterms']))."\">";
 						$element_title .= htmlentities(self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['domain'], $results[$i]['referer'], true), ENT_QUOTES, 'UTF-8');
 						$element_title .= "</a>'";
@@ -564,7 +571,7 @@ class wp_slimstat_reports{
 					$permalink = parse_url($results[$i]['referer']);
 					$results[$i]['notes'] = str_replace('|ET:click', '', $results[$i]['notes']);
 					$element_url = htmlentities((strpos($results[$i]['referer'], '://') === false)?self::$home_url.$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
-					$element_title = " title='".__('Source','wp-slimstat').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat')."\" href=\"$element_url\"></a><a title=\"".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat'), $permalink['path']), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url(array('resource' => 'equals '.$permalink['path']))."\">{$permalink['path']}</a>";
+					$element_title = " title='".__('Source','wp-slimstat').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat')."\" href=\"$element_url\"></a><a class=\"slimstat-filter-link\" title=\"".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat'), $permalink['path']), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url(array('resource' => 'equals '.$permalink['path']))."\">{$permalink['path']}</a>";
 					$element_title .= !empty($results[$i]['notes'])?'<br><strong>Link Details</strong>: '.htmlentities($results[$i]['notes'], ENT_QUOTES, 'UTF-8'):'';
 					$element_title .= ($_type == -1)?' <strong>Type</strong>: '.$results[$i]['type']:'';
 					$element_title .= "'";
@@ -603,8 +610,8 @@ class wp_slimstat_reports{
 				_e('Last 5 minutes', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt > '.(date_i18n('U')-300), '*', true, '', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 			<p><?php self::inline_help(htmlentities(__('This counter is based on any user activity in the last 30 minutes.','wp-slimstat'), ENT_QUOTES, 'UTF-8'));
 				_e('Last 30 minutes', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt > '.(date_i18n('U')-1800), '*', true, '', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
-			<p><a title="<?php _e('Filter results where date equals today','wp-slimstat') ?>" href="<?php echo self::fs_url(array('day' => 'equals '.date_i18n('d'))) ?>"><?php _e('Today', 'wp-slimstat'); ?></a> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt > '.(date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y')))), '*', true, '', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
-			<p><a title="<?php _e('Filter results where date equals yesterday','wp-slimstat') ?>" href="<?php echo self::fs_url(array('day' => 'equals '.date_i18n('d',mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y'))))) ?>"><?php _e('Yesterday', 'wp-slimstat'); ?></a> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt BETWEEN '.(date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y')))).' AND '.(date_i18n('U', mktime(23, 59, 59, date_i18n('m'), date_i18n('d')-1, date_i18n('Y')))), '*', true, '', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+			<p><a class="slimstat-filter-link" title="<?php _e('Filter results where date equals today','wp-slimstat') ?>" href="<?php echo self::fs_url(array('day' => 'equals '.date_i18n('d'))) ?>"><?php _e('Today', 'wp-slimstat'); ?></a> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt > '.(date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y')))), '*', true, '', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+			<p><a class="slimstat-filter-link" title="<?php _e('Filter results where date equals yesterday','wp-slimstat') ?>" href="<?php echo self::fs_url(array('day' => 'equals '.date_i18n('d',mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y'))))) ?>"><?php _e('Yesterday', 'wp-slimstat'); ?></a> <span><?php echo number_format(wp_slimstat_db::count_records('t1.dt BETWEEN '.(date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y')))).' AND '.(date_i18n('U', mktime(23, 59, 59, date_i18n('m'), date_i18n('d')-1, date_i18n('Y')))), '*', true, '', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 			<p><?php self::inline_help(htmlentities(__('How many pages have been visited on average during the current period.','wp-slimstat'), ENT_QUOTES, 'UTF-8'));
 				_e('Avg Pageviews', 'wp-slimstat') ?> <span><?php echo number_format(($_chart_data['current']['non_zero_count'] > 0)?intval($_current_pageviews/$_chart_data['current']['non_zero_count']):0, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 			<p><?php self::inline_help(htmlentities(__('Visitors who landed on your site after searching for a keyword on Google, Yahoo, etc.','wp-slimstat'), ENT_QUOTES, 'UTF-8'));

@@ -17,7 +17,7 @@ foreach ( array(
 	__('World Map','wp-slimstat'), 
 	has_action('wp_slimstat_custom_report')?__('Custom Reports','wp-slimstat'):'none'
 ) as $a_tab_id => $a_tab_name){
-	if ($a_tab_name != 'none') $slimtabs .= "<a class='nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."' href='".wp_slimstat_reports::fs_url('starting', wp_slimstat_admin::$view_url.($a_tab_id+1))."'>$a_tab_name</a>";
+	if ($a_tab_name != 'none') $slimtabs .= "<a class='slimstat-filter-link nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."' href='".wp_slimstat_reports::fs_url('', wp_slimstat_admin::$view_url.($a_tab_id+1))."'>$a_tab_name</a>";
 }
 
 ?>
@@ -106,6 +106,9 @@ foreach ( array(
 				<span id="slimstat_interval_block"<?php if (!empty(wp_slimstat_db::$filters['parsed']['day'][1])) echo ' style="display:inline"' ?>>+ <input type="text" name="interval"  id="slimstat_filter_interval" size="4" value="<?php _e('days', 'wp-slimstat') ?>" onfocus="if(this.value == '<?php _e('days','wp-slimstat') ?>') this.value = '';" onblur="if(this.value == '') this.value = '<?php _e('days','wp-slimstat') ?>';"> &nbsp;&nbsp;&nbsp;</span>
 			</span>
 			<input type="hidden" class="slimstat-filter-date" name="filter_date" value=""/>
+			<?php foreach(wp_slimstat_db::$filters['parsed'] as $a_key => $a_details): ?>
+			<input type="hidden" name="fs[<?php echo $a_key ?>]" value="<?php echo $a_details[0].' '.$a_details[1] ?>"/>
+			<?php endforeach ?>
 			<input type="submit" value="<?php _e('Go','wp-slimstat') ?>" class="button-primary">
 		</p>
 	</form>
