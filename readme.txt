@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.2
 Tested up to: 3.7
-Stable tag: 3.4
+Stable tag: 3.4.1
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
@@ -232,11 +232,13 @@ You will need to edit your template and add something like this where you want y
 `// Load WP SlimStat DB, the API library exposing all the reports
 require_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/view/wp-slimstat-db.php');
 
-// Initialize the API. You can pass a filter in the options, i.e. show only hits by people who where using Firefox, any version
-wp_slimstat_db::init('browser contains Firefox');
+// Initialize the API. You can pass a filter in the options, i.e. show only hits by people who where using Firefox (any version) *and* visiting 'posts':
+wp_slimstat_db::init('browser contains Firefox|content_type equals post');
 
 // Use the appropriate method to display your stats
 echo wp_slimstat_db::count_records('1=1', '*', false);`
+
+You can list more than one filter by using the pipe char | to separate them (which is evaluated as AND among the filters).
 
 *Available methods*
 
@@ -261,7 +263,7 @@ echo wp_slimstat_db::count_records('1=1', '*', false);`
 
 Recent Posts: 
 
-`wp_slimstat_db::init('content_type equals post');
+`wp_slimstat_db::init('content_type equals post|visit_id');
 $results = wp_slimstat_db::get_recent('t1.resource');
 foreach ($results...`
 
@@ -280,6 +282,20 @@ foreach ($results...`
 5. Access your stats from within WordPress for iOS
 
 == Changelog ==
+
+= 3.4.1 =
+* [New] Report to visualize top Outbound Links and Downloads (thank you, [bobinoz](http://wordpress.org/support/topic/tracking-outbound-links-1))
+* [New] Purge data by user agent (thank you, [GermanKiwi](http://wordpress.org/support/topic/purge-data-based-on-user-agent))
+* [New] Import/Export all your settings in a text file. Go to Settings > Maintenance and give it a try! (thank you, [Mike](http://wordpress.org/support/topic/feature-request-save-out-settings))
+* [Update] Cosmetic updates to the interface
+* [Update] Right Now Extended is now set to 'No' by default
+* [Fix] Filters were not being reset if API was invoked more than once on the same page (thank you, [PV-Patrick](http://wordpress.org/support/topic/api-calls-in-the_loop))
+* [Fix] Compatibility issues with User Overview (thank you, Thorsten)
+* [Fix] Bug affecting the data recorded when URLs were using non-ASCII characters (thank you, [dimitrios1988](http://wordpress.org/support/topic/stats-now-showing-in-non-ascii-characters))
+* [Fix] Compatibility issues with Export to Excel
+* [Fix] Bug related to the new HTTP POST-based Filtering system
+* [Fix] Issue with French localization encoding (thank you [whoaloic](http://wordpress.org/support/topic/foreign-language-encoding-issue))
+* [Fix] Elaborated on how to use multiple filters with the API (thank you, [Statistiker](http://wordpress.org/support/topic/filter-most-popular-posts))
 
 = 3.4 =
 * [Note] We can't believe we're already crossing the 600,000 downloads mark! To celebrate this accomplishment, we're working on a brand new website! Stay tuned.

@@ -4,8 +4,7 @@
 if (!function_exists('add_action')) exit(0);
 
 // Define the tabs
-$slimtabs = '';
-$current_tab = empty($_GET['page'])?1:intval(str_replace('wp-slim-view-', '', $_GET['page']));
+$slimtabs_html = '';
 $is_date_filters_set = (count(array_intersect(array_keys(wp_slimstat_db::$filters['parsed']), array('day','month','year'))) > 0);
 
 foreach ( array(
@@ -17,15 +16,14 @@ foreach ( array(
 	__('World Map','wp-slimstat'), 
 	has_action('wp_slimstat_custom_report')?__('Custom Reports','wp-slimstat'):'none'
 ) as $a_tab_id => $a_tab_name){
-	if ($a_tab_name != 'none') $slimtabs .= "<a class='slimstat-filter-link nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."' href='".wp_slimstat_reports::fs_url('', wp_slimstat_admin::$view_url.($a_tab_id+1))."'>$a_tab_name</a>";
+	if ($a_tab_name != 'none') $slimtabs_html .= "<a class='slimstat-filter-link nav-tab nav-tab".((wp_slimstat_reports::$current_tab == $a_tab_id+1)?'-active':'-inactive')."' href='".wp_slimstat_reports::fs_url('', wp_slimstat_admin::$view_url.($a_tab_id+1))."'>$a_tab_name</a>";
 }
 
 ?>
 
 <div class="wrap">
-	<!-- div id="analytics-icon" class="icon32"></div -->
 	<h2>WP SlimStat	<?php if (!$is_date_filters_set) echo ' - '.ucfirst(date_i18n('F Y')); ?></h2>
-	<p class="nav-tabs"><?php echo $slimtabs; $using_screenres = wp_slimstat_admin::check_screenres(); ?></p>
+	<p class="nav-tabs"><?php echo $slimtabs_html; $using_screenres = wp_slimstat_admin::check_screenres(); ?></p>
 	
 	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" name="setslimstatfilters" id="slimstat-filters"
 		onsubmit="if (this.year.value == '<?php _e('Year','wp-slimstat') ?>') this.year.value = ''; if(this.year.value == '<?php _e('days','wp-slimstat') ?>') this.interval.value = '';">
@@ -116,232 +114,9 @@ foreach ( array(
 	<div class="meta-box-sortables">
 		<form style="display:none" method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_slimstat_reports::$meta_report_order_nonce ?>" /></form><?php
 
-		switch($current_tab){
+		switch(wp_slimstat_reports::$current_tab){
 			case 1:
 				include_once(dirname(__FILE__).'/right-now.php');
-				break;
-			case 2:
-				foreach(wp_slimstat_reports::$all_reports as $a_box_id){
-					switch($a_box_id){
-						case 'slim_p1_01':
-							wp_slimstat_reports::report_header('slim_p1_01', wp_slimstat_reports::$chart_tooltip, 'wide chart', false, 'noscroll', wp_slimstat_reports::chart_title(__('Pageviews', 'wp-slimstat')));
-							break;
-						case 'slim_p1_02':
-							wp_slimstat_reports::report_header('slim_p1_02', '', '', false, 'noscroll');
-							break;
-						case 'slim_p1_03':
-							wp_slimstat_reports::report_header('slim_p1_03', '', '', false, 'noscroll');
-							break;
-						case 'slim_p1_04':
-							wp_slimstat_reports::report_header('slim_p1_04', htmlspecialchars(__('When visitors leave a comment on your blog, WordPress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors. Please note that visitors also include registered users.','wp-slimstat'), ENT_QUOTES, 'UTF-8'));
-							break;
-						case 'slim_p1_05':
-							wp_slimstat_reports::report_header('slim_p1_05', htmlspecialchars(__('Take a sneak peek at what human visitors are doing on your website','wp-slimstat'), ENT_QUOTES, 'UTF-8').'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</strong><p class="legend"><span class="little-color-box is-search-engine" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('From a search result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-visitor" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Visitor','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p>', 'medium', true);
-							break;
-						case 'slim_p1_06':
-							wp_slimstat_reports::report_header('slim_p1_06', htmlspecialchars(__('Keywords used by your visitors to find your website on a search engine','wp-slimstat'), ENT_QUOTES, 'UTF-8'), '', true);
-							break;
-						case 'slim_p1_07':
-							wp_slimstat_reports::report_header('slim_p1_07', htmlspecialchars(__('Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session.','wp-slimstat'), ENT_QUOTES, 'UTF-8'), '', true);
-							break;
-						case 'slim_p1_08':
-							wp_slimstat_reports::report_header('slim_p1_08', '', 'medium', true);
-							break;
-						case 'slim_p1_09':
-							wp_slimstat_reports::report_header('slim_p1_09', '', '', true);
-							break;
-						case 'slim_p1_10':
-							wp_slimstat_reports::report_header('slim_p1_10', '', '', true);
-							break;
-						case 'slim_p1_11':
-							wp_slimstat_reports::report_header('slim_p1_11', '', '', true);
-							break;
-						case 'slim_p1_12':
-							wp_slimstat_reports::report_header('slim_p1_12', '', '', true);
-							break;
-						case 'slim_p1_13':
-							wp_slimstat_reports::report_header('slim_p1_13', '', '', true);
-							break;
-						case 'slim_p1_14':
-							wp_slimstat_reports::report_header('slim_p1_14', '', 'medium', true);
-							break;
-						default:
-					}
-					wp_slimstat_reports::show_report_wrapper($a_box_id);
-					wp_slimstat_reports::report_footer();
-				}
-				break;
-			case 3:
-				foreach(wp_slimstat_reports::$all_reports as $a_box_id){
-					switch($a_box_id){
-						case 'slim_p2_01':
-							wp_slimstat_reports::report_header('slim_p2_01', wp_slimstat_reports::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_reports::chart_title(__('Human Visits', 'wp-slimstat')));
-							break;
-						case 'slim_p2_02': 
-							wp_slimstat_reports::report_header('slim_p2_02', '', '', false, 'noscroll');
-							break;
-						case 'slim_p2_03':
-							wp_slimstat_reports::report_header('slim_p2_03', htmlspecialchars(__('This report shows you what languages your users have installed on their computers.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_04':
-							wp_slimstat_reports::report_header('slim_p2_04', htmlspecialchars(__('A user agent is a generic term for any program used for accessing a website. This includes browsers (such as Chrome), robots and spiders, and any other software program that retrieves information from a website.<br><br>You can ignore any given user agent by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_05':
-							wp_slimstat_reports::report_header('slim_p2_05', htmlspecialchars(__('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), 'medium', true);
-							break;
-						case 'slim_p2_06':
-							wp_slimstat_reports::report_header('slim_p2_06', htmlspecialchars(__('Which operating systems do your visitors use? Optimizing your site for the appropriate technical capabilities helps make your site more engaging and usable and can result in higher conversion rates and more sales.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_07':
-							wp_slimstat_reports::report_header('slim_p2_07', htmlspecialchars(__('This report shows the most common screen resolutions used by your visitors. Knowing the most popular screen resolution of your visitors will help you create content optimized for that resolution or you may opt for resolution-independence.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_09':
-							wp_slimstat_reports::report_header('slim_p2_09', htmlspecialchars(__("Which versions of Flash do your visitors have installed? Is Java supported on your visitors' platforms?",'wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_10':
-							wp_slimstat_reports::report_header('slim_p2_10', htmlspecialchars(__('You can configure WP SlimStat to ignore a specific Country by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_12':
-							wp_slimstat_reports::report_header('slim_p2_12');
-							break;
-						case 'slim_p2_13':
-							wp_slimstat_reports::report_header('slim_p2_13', htmlspecialchars(__('You can ignore any specific Country by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_14':
-							wp_slimstat_reports::report_header('slim_p2_14', htmlspecialchars(__('This report shows the most recent screen resolutions used by your visitors. Knowing the most popular screen resolution of your visitors will help you create content optimized for that resolution or you may opt for resolution-independence.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_15':
-							wp_slimstat_reports::report_header('slim_p2_15', htmlspecialchars(__('Which operating systems do your visitors use? Optimizing your site for the appropriate technical capabilities helps make your site more engaging and usable and can result in higher conversion rates and more sales.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_16':
-							wp_slimstat_reports::report_header('slim_p2_16', htmlspecialchars(__('A user agent is a generic term for any program used for accessing a website. This includes browsers (such as Chrome), robots and spiders, and any other software program that retrieves information from a website.<br><br>You can ignore any given user agent by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_17':
-							wp_slimstat_reports::report_header('slim_p2_17', htmlspecialchars(__('This report shows you what languages your users have installed on their computers.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_18':
-							wp_slimstat_reports::report_header('slim_p2_18', htmlspecialchars(__('This report shows you what user agent families (no version considered) are popular among your visitors.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_19':
-							wp_slimstat_reports::report_header('slim_p2_19', htmlspecialchars(__('This report shows you what operating system families (no version considered) are popular among your visitors.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_20':
-							wp_slimstat_reports::report_header('slim_p2_20', htmlspecialchars(__('List of registered users who recently visited your website.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p2_21':
-							wp_slimstat_reports::report_header('slim_p2_21', htmlspecialchars(__('This report lists your most active registered users.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						default:
-					}
-					wp_slimstat_reports::show_report_wrapper($a_box_id);
-					wp_slimstat_reports::report_footer();
-				}
-				break;
-			case 4:
-				foreach(wp_slimstat_reports::$all_reports as $a_box_id){
-					switch($a_box_id){
-						case 'slim_p4_01':
-							wp_slimstat_reports::report_header('slim_p4_01', wp_slimstat_reports::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_reports::chart_title(__('Average Pageviews per Visit', 'wp-slimstat')));
-							break;
-						case 'slim_p4_02':
-							wp_slimstat_reports::report_header('slim_p4_02', htmlspecialchars(__("This report lists the most recent posts viewed on your site, by title.",'wp-slimstat'), ENT_QUOTES), 'medium');
-							break;
-						case 'slim_p4_03':
-							wp_slimstat_reports::report_header('slim_p4_03', htmlspecialchars(__('A <em>bounce page</em> is a single-page visit, or visit in which the person left your site from the entrance (landing) page.','wp-slimstat'), ENT_QUOTES), 'medium');
-							break;
-						case 'slim_p4_04':
-							wp_slimstat_reports::report_header('slim_p4_04', '', 'medium');
-							break;
-						case 'slim_p4_05':
-							wp_slimstat_reports::report_header('slim_p4_05', htmlspecialchars(__('The 404 or Not Found error message is a HTTP standard response code indicating that the client was able to communicate with the server, but the server could not find what was requested.<br><br>This report can be useful to detect attack attempts, by looking at patterns in 404 URLs.','wp-slimstat'), ENT_QUOTES));
-							break;
-						case 'slim_p4_06':
-							wp_slimstat_reports::report_header('slim_p4_06', htmlspecialchars(__("Searches performed using Wordpress' built-in search functionality.",'wp-slimstat'), ENT_QUOTES));
-							break;
-						case 'slim_p4_07':
-							wp_slimstat_reports::report_header('slim_p4_07', htmlspecialchars(__("Categories provide a helpful way to group related posts together, and to quickly tell readers what a post is about. Categories also make it easier for people to find your content.",'wp-slimstat'), ENT_QUOTES));
-							break;
-						case 'slim_p4_08':
-							wp_slimstat_reports::report_header('slim_p4_08', htmlspecialchars(__("<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding link has an ID attribute associated to it.",'wp-slimstat'), ENT_QUOTES).'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES).'</strong><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES).'</p>', 'medium');
-							break;
-						case 'slim_p4_10':
-							wp_slimstat_reports::report_header('slim_p4_10', htmlspecialchars(__("This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to leverage this functionality.",'wp-slimstat'), ENT_QUOTES).'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES).'</strong><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES).'</p>', 'medium');
-							break;
-						case 'slim_p4_11':
-							wp_slimstat_reports::report_header('slim_p4_11', htmlspecialchars(__("This report lists the most popular posts on your site, by title.",'wp-slimstat'), ENT_QUOTES), 'medium', true);
-							break;
-						case 'slim_p4_12':
-							wp_slimstat_reports::report_header('slim_p4_12', '', 'medium', true);
-							break;
-						case 'slim_p4_13':
-							wp_slimstat_reports::report_header('slim_p4_13', '', '', true);
-							break;
-						case 'slim_p4_14':
-							wp_slimstat_reports::report_header('slim_p4_14', '', '', true);
-							break;
-						case 'slim_p4_15':
-							wp_slimstat_reports::report_header('slim_p4_15', '', 'medium', true);
-							break;
-						case 'slim_p4_16':
-							wp_slimstat_reports::report_header('slim_p4_16', '', '', true);
-							break;
-						case 'slim_p4_17':
-							wp_slimstat_reports::report_header('slim_p4_17', '', 'medium', true);
-							break;
-						case 'slim_p4_18':
-							wp_slimstat_reports::report_header('slim_p4_18', '', '', true);
-							break;
-						case 'slim_p4_19':
-							wp_slimstat_reports::report_header('slim_p4_19', '', '', true);
-							break;
-						case 'slim_p4_20':
-							wp_slimstat_reports::report_header('slim_p4_20', htmlspecialchars(__("<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding link has an ID attribute associated to it.",'wp-slimstat'), ENT_QUOTES).'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES).'</strong><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES).'</p>', 'medium');
-							break;
-						default:
-							break;
-					}
-					wp_slimstat_reports::show_report_wrapper($a_box_id);
-					wp_slimstat_reports::report_footer();
-				}
-				break;
-			case 5:
-				foreach(wp_slimstat_reports::$all_reports as $a_box_id){
-					switch($a_box_id){
-						case 'slim_p3_01':
-							wp_slimstat_reports::report_header('slim_p3_01', wp_slimstat_reports::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_reports::chart_title(__('Traffic Sources', 'wp-slimstat')));
-							break;
-						case 'slim_p3_02':
-							wp_slimstat_reports::report_header('slim_p3_02', '', '', false, 'noscroll');
-							break;
-						case 'slim_p3_03':
-							wp_slimstat_reports::report_header('slim_p3_03', '', '', true);
-							break;
-						case 'slim_p3_04':
-							wp_slimstat_reports::report_header('slim_p3_04', htmlspecialchars(__('You can configure WP SlimStat to ignore a specific Country by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
-							break;
-						case 'slim_p3_05':
-							wp_slimstat_reports::report_header('slim_p3_05', '', '', true);
-							break;
-						case 'slim_p3_06':
-							wp_slimstat_reports::report_header('slim_p3_06', '', 'medium', true);
-							break;
-						case 'slim_p3_08':
-							wp_slimstat_reports::report_header('slim_p3_08', htmlspecialchars(__('Take a sneak peek at what human visitors are doing on your website','wp-slimstat'), ENT_QUOTES, 'UTF-8').'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</strong><p class="legend"><span class="little-color-box is-search-engine" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('From a search result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-visitor" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Visitor','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p>', 'medium', true);
-							break;
-						case 'slim_p3_09':
-							wp_slimstat_reports::report_header('slim_p3_09', htmlspecialchars(__('Keywords used by your visitors to find your website on a search engine','wp-slimstat'), ENT_QUOTES), 'medium', true);
-							break;
-						case 'slim_p3_10':
-							wp_slimstat_reports::report_header('slim_p3_10', '', '', true);
-							break;
-						case 'slim_p3_11':
-							wp_slimstat_reports::report_header('slim_p3_11', '', 'medium', true);
-						default:
-							break;
-					}
-					wp_slimstat_reports::show_report_wrapper($a_box_id);
-					wp_slimstat_reports::report_footer();
-				}
 				break;
 			case 6:
 				// Unset any limits
@@ -426,6 +201,156 @@ foreach ( array(
 				}
 				break;
 			default:
+				foreach(wp_slimstat_reports::$all_reports as $a_box_id){
+					switch($a_box_id){
+						case 'slim_p1_01':
+							wp_slimstat_reports::report_header($a_box_id, wp_slimstat_reports::$chart_tooltip, 'wide chart', false, 'noscroll', wp_slimstat_reports::chart_title(__('Pageviews', 'wp-slimstat')));
+							break;
+						case 'slim_p1_04':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('When visitors leave a comment on your blog, WordPress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors. Please note that visitors also include registered users.','wp-slimstat'), ENT_QUOTES, 'UTF-8'));
+							break;
+						case 'slim_p1_05':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Take a sneak peek at what human visitors are doing on your website','wp-slimstat'), ENT_QUOTES, 'UTF-8').'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</strong><p class="legend"><span class="little-color-box is-search-engine" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('From a search result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-visitor" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Visitor','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p>', 'medium', true);
+							break;
+						case 'slim_p1_06':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Keywords used by your visitors to find your website on a search engine','wp-slimstat'), ENT_QUOTES, 'UTF-8'), '', true);
+							break;
+						case 'slim_p1_07':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Unique sessions initiated by your visitors. If a user is inactive on your site for 30 minutes or more, any future activity will be attributed to a new session. Users that leave your site and return within 30 minutes will be counted as part of the original session.','wp-slimstat'), ENT_QUOTES, 'UTF-8'), '', true);
+							break;
+						case 'slim_p2_01':
+							wp_slimstat_reports::report_header($a_box_id, wp_slimstat_reports::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_reports::chart_title(__('Human Visits', 'wp-slimstat')));
+							break;
+						case 'slim_p2_03':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('This report shows you what languages your users have installed on their computers.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_04':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('A user agent is a generic term for any program used for accessing a website. This includes browsers (such as Chrome), robots and spiders, and any other software program that retrieves information from a website.<br><br>You can ignore any given user agent by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_05':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), 'medium', true);
+							break;
+						case 'slim_p2_06':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Which operating systems do your visitors use? Optimizing your site for the appropriate technical capabilities helps make your site more engaging and usable and can result in higher conversion rates and more sales.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_07':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('This report shows the most common screen resolutions used by your visitors. Knowing the most popular screen resolution of your visitors will help you create content optimized for that resolution or you may opt for resolution-independence.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_09':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("Which versions of Flash do your visitors have installed? Is Java supported on your visitors' platforms?",'wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_10':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('You can configure WP SlimStat to ignore a specific Country by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_13':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('You can ignore any specific Country by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_14':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('This report shows the most recent screen resolutions used by your visitors. Knowing the most popular screen resolution of your visitors will help you create content optimized for that resolution or you may opt for resolution-independence.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_15':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Which operating systems do your visitors use? Optimizing your site for the appropriate technical capabilities helps make your site more engaging and usable and can result in higher conversion rates and more sales.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_16':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('A user agent is a generic term for any program used for accessing a website. This includes browsers (such as Chrome), robots and spiders, and any other software program that retrieves information from a website.<br><br>You can ignore any given user agent by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_17':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('This report shows you what languages your users have installed on their computers.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_18':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('This report shows you what user agent families (no version considered) are popular among your visitors.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_19':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('This report shows you what operating system families (no version considered) are popular among your visitors.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_20':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('List of registered users who recently visited your website.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p2_21':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('This report lists your most active registered users.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p3_01':
+							wp_slimstat_reports::report_header($a_box_id, wp_slimstat_reports::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_reports::chart_title(__('Traffic Sources', 'wp-slimstat')));
+							break;
+						case 'slim_p3_04':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('You can configure WP SlimStat to ignore a specific Country by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'), ENT_QUOTES), '', true);
+							break;
+						case 'slim_p3_08':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Take a sneak peek at what human visitors are doing on your website','wp-slimstat'), ENT_QUOTES, 'UTF-8').'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</strong><p class="legend"><span class="little-color-box is-search-engine" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('From a search result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-visitor" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Visitor','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span> '.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES, 'UTF-8').'</p>', 'medium', true);
+							break;
+						case 'slim_p3_09':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('Keywords used by your visitors to find your website on a search engine','wp-slimstat'), ENT_QUOTES), 'medium', true);
+							break;
+						case 'slim_p4_01':
+							wp_slimstat_reports::report_header($a_box_id, wp_slimstat_reports::$chart_tooltip, 'wide', false, 'noscroll', wp_slimstat_reports::chart_title(__('Average Pageviews per Visit', 'wp-slimstat')));
+							break;
+						case 'slim_p4_02':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("This report lists the most recent posts viewed on your site, by title.",'wp-slimstat'), ENT_QUOTES), 'medium');
+							break;
+						case 'slim_p4_03':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('A <em>bounce page</em> is a single-page visit, or visit in which the person left your site from the entrance (landing) page.','wp-slimstat'), ENT_QUOTES), 'medium');
+							break;
+						case 'slim_p4_05':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__('The 404 or Not Found error message is a HTTP standard response code indicating that the client was able to communicate with the server, but the server could not find what was requested.<br><br>This report can be useful to detect attack attempts, by looking at patterns in 404 URLs.','wp-slimstat'), ENT_QUOTES));
+							break;
+						case 'slim_p4_06':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("Searches performed using Wordpress' built-in search functionality.",'wp-slimstat'), ENT_QUOTES));
+							break;
+						case 'slim_p4_07':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("Categories provide a helpful way to group related posts together, and to quickly tell readers what a post is about. Categories also make it easier for people to find your content.",'wp-slimstat'), ENT_QUOTES));
+							break;
+						case 'slim_p4_08':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding link has an ID attribute associated to it.",'wp-slimstat'), ENT_QUOTES).'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES).'</strong><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES).'</p>', 'medium');
+							break;
+						case 'slim_p4_10':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to leverage this functionality.",'wp-slimstat'), ENT_QUOTES).'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES).'</strong><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES).'</p>', 'medium');
+							break;
+						case 'slim_p4_11':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("This report lists the most popular posts on your site, by title.",'wp-slimstat'), ENT_QUOTES), 'medium', true);
+							break;
+						case 'slim_p4_20':
+							wp_slimstat_reports::report_header($a_box_id, htmlspecialchars(__("<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding link has an ID attribute associated to it.",'wp-slimstat'), ENT_QUOTES).'<br><br><strong>'.htmlspecialchars(__('Color codes','wp-slimstat'), ENT_QUOTES).'</strong><p class="legend"><span class="little-color-box is-known-user" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Known Users','wp-slimstat'), ENT_QUOTES).'</p><p class="legend"><span class="little-color-box is-direct" style="padding:0 5px">&nbsp;&nbsp;</span>'.htmlspecialchars(__('Other Humans','wp-slimstat'), ENT_QUOTES).'</p>', 'medium');
+							break;
+						case 'slim_p1_09':
+						case 'slim_p1_10':
+						case 'slim_p1_11':
+						case 'slim_p1_12':
+						case 'slim_p1_13':
+						case 'slim_p2_12':
+						case 'slim_p3_03':
+						case 'slim_p3_05':
+						case 'slim_p3_10':
+						case 'slim_p4_13':
+						case 'slim_p4_14':
+						case 'slim_p4_16':
+						case 'slim_p4_18':
+						case 'slim_p4_19':
+							wp_slimstat_reports::report_header($a_box_id);
+							break;
+						case 'slim_p1_08':
+						case 'slim_p1_14':
+						case 'slim_p3_06':
+						case 'slim_p3_11':
+						case 'slim_p4_04':
+						case 'slim_p4_12':
+						case 'slim_p4_15':
+						case 'slim_p4_17':
+						case 'slim_p4_21':
+							wp_slimstat_reports::report_header($a_box_id, '', 'medium');
+							break;
+						case 'slim_p1_02':
+						case 'slim_p1_03':
+						case 'slim_p2_02': 
+						case 'slim_p3_02':
+							wp_slimstat_reports::report_header($a_box_id, '', '', false, 'noscroll');
+							break;
+						default:
+							break;
+					}
+					wp_slimstat_reports::show_report_wrapper($a_box_id);
+					wp_slimstat_reports::report_footer();
+				}
+				break;
 		}
 	?></div>
 </div>

@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.4
+version: 3.4.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.4';
+	public static $version = '3.4.1';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -240,7 +240,7 @@ class wp_slimstat{
 		elseif (empty($_REQUEST['s'])){
 			self::$stat['searchterms'] = self::_get_search_terms($referer);
 			if (isset($_SERVER['REQUEST_URI'])){
-				self::$stat['resource'] = $_SERVER['REQUEST_URI'];
+				self::$stat['resource'] = urldecode($_SERVER['REQUEST_URI']);
 			}
 			elseif (isset($_SERVER['SCRIPT_NAME'])){
 				self::$stat['resource'] = isset($_SERVER['QUERY_STRING'])?$_SERVER['SCRIPT_NAME']."?".$_SERVER['QUERY_STRING']:$_SERVER['SCRIPT_NAME'];
@@ -256,7 +256,7 @@ class wp_slimstat{
 		if (strpos(self::$stat['resource'], 'wp-admin/admin-ajax.php')!==false || (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-')!==false)){
 			return $_argument;
 		}
-		
+
 		// Is this resource blacklisted?
 		if (!empty(self::$stat['resource'])){
 			foreach(self::string_to_array(self::$options['ignore_resources']) as $a_filter){
@@ -290,7 +290,7 @@ class wp_slimstat{
 			}
 
 			self::$stat['user'] = $GLOBALS['current_user']->data->user_login;
-			self::$stat['notes'] .= '[user:'.$GLOBALS['current_user']->data->ID.']';
+			self::$stat['notes'] .= 'user:'.$GLOBALS['current_user']->data->ID.';';
 			$not_spam = true;
 		}
 		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
@@ -302,7 +302,7 @@ class wp_slimstat{
 					return $_argument;
 				}
 				else{
-					self::$stat['notes'] .= '[spam]';
+					self::$stat['notes'] .= 'spam:yes;';
 					self::$stat['user'] = $spam_comment['comment_author'];
 				}
 			}
@@ -359,7 +359,7 @@ class wp_slimstat{
 				return $_argument;
 			}
 			else{
-				self::$stat['notes'] .= '[pre]';
+				self::$stat['notes'] .= 'pre:yes;';
 			}
 		}
 
@@ -1005,7 +1005,7 @@ class wp_slimstat{
 			'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
 			'expand_details' => 'no',
 			'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
-			'include_outbound_links_right_now' => 'yes',
+			'include_outbound_links_right_now' => 'no',
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'refresh_interval' => get_option('slimstat_refresh_interval', '0'),
 			'hide_stats_link_edit_posts' => 'no',

@@ -296,6 +296,7 @@ jQuery(function(){
 		filters_to_add = jQuery(this).attr('href').split('&');
 
 		jQuery('#slimstat-filters').attr('action', filters_to_add[0]);
+		jQuery('.slimstat-new-filter').remove();
 		for (i in filters_to_add){
 			if (filters_to_add[i].indexOf('fs\%5B') != 0) continue;
 			
@@ -308,7 +309,7 @@ jQuery(function(){
 			if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat_filter_month').val(0);
 			if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat_filter_year').val('');
 				
-			jQuery('<input>').attr('type', 'hidden').attr('name', filter_components[0]).val(filter_components[1].replace('+', ' ')).appendTo('#slimstat-filters');
+			jQuery('<input>').attr('type', 'hidden').attr('name', filter_components[0]).attr('class', 'slimstat-new-filter').val(filter_components[1].replace('+', ' ')).appendTo('#slimstat-filters');
 			
 		}
 		jQuery('#slimstat-filters').submit();
@@ -317,6 +318,8 @@ jQuery(function(){
 	jQuery('a.remove-filter').click(function(e){
 		filter_to_remove = decodeURIComponent(jQuery(this).attr('href')).split('&');
 		jQuery('#slimstat-filters').attr('action', filter_to_remove[0]);
+		jQuery('.slimstat-new-filter').remove();
+
 		if (filter_to_remove[1].length == 0) return true;
 		
 		e.preventDefault();

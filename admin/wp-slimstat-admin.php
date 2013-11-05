@@ -24,7 +24,7 @@ class wp_slimstat_admin{
 		if (!isset($l10n['wp-slimstat'])){
 			load_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang/wp-slimstat-en_US.mo');
 		}
-
+		
 		// Hook for WPMU - New blog created
 		add_action('wpmu_new_blog', array(__CLASS__, 'new_blog'), 10, 1);
 
@@ -567,8 +567,10 @@ class wp_slimstat_admin{
 		$current = '<form id="adv-settings" action="" method="post"><h5>'.__('Show on screen','wp-slimstat').'</h5><div class="metabox-prefs">';
 
 		if (isset(wp_slimstat_reports::$all_reports)){
-			foreach(wp_slimstat_reports::$all_reports as $a_box_id)
-				$current .= "<label for='$a_box_id-hide'><input class='hide-postbox-tog' name='$a_box_id-hide' type='checkbox' id='$a_box_id-hide' value='$a_box_id'".(!in_array($a_box_id, wp_slimstat_reports::$hidden_reports)?' checked="checked"':'')." />".wp_slimstat_reports::$all_reports_titles[$a_box_id]."</label>";
+			foreach(wp_slimstat_reports::$all_reports as $a_box_id){
+				if (!empty($a_box_id))
+					$current .= "<label for='$a_box_id-hide'><input class='hide-postbox-tog' name='$a_box_id-hide' type='checkbox' id='$a_box_id-hide' value='$a_box_id'".(!in_array($a_box_id, wp_slimstat_reports::$hidden_reports)?' checked="checked"':'')." />".wp_slimstat_reports::$all_reports_titles[$a_box_id]."</label>";
+			}
 		}
 		$current .= wp_nonce_field('closedpostboxes', 'closedpostboxesnonce', true, false)."</div></form>";
 		

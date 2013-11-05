@@ -136,8 +136,10 @@ class wp_slimstat_reports{
 			'slim_p4_18' => __('Top Authors','wp-slimstat'),
 			'slim_p4_19' => __('Top Tags','wp-slimstat'),
 			'slim_p4_20' => __('Recent Downloads','wp-slimstat'),
+			'slim_p4_21' => __('Top Outbound Links and Downloads','wp-slimstat'),
 			'slim_p7_02' => __('Right Now','wp-slimstat')
 		);
+		self::$all_reports_titles = apply_filters('slimstat_report_titles', self::$all_reports_titles);
 
 		if (self::$current_tab != 1){
 			self::$all_reports = get_user_option("meta-box-order_{$page_location}_page_wp-slim-view-".self::$current_tab, $user->ID);
@@ -157,7 +159,7 @@ class wp_slimstat_reports{
 					self::$all_reports = array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_05','slim_p2_06','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19','slim_p2_20','slim_p2_21');
 					break;
 				case 4:
-					self::$all_reports = array('slim_p4_01','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20');
+					self::$all_reports = array('slim_p4_01','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20','slim_p4_21');
 					break;
 				case 5:
 					self::$all_reports = array('slim_p3_01','slim_p3_02','slim_p3_03','slim_p3_04','slim_p3_06','slim_p3_05','slim_p3_08','slim_p3_10','slim_p3_09','slim_p3_11');
@@ -204,8 +206,11 @@ class wp_slimstat_reports{
 		if (!empty($_POST['year'])) self::$filters['year'] = "equals {$_POST['year']}";
 		if (!empty($_POST['interval']) && intval($_POST['interval']) != 0) self::$filters['interval'] = "equals {$_POST['interval']}";
 
-		// The 'starting' filter only applies to the 'Right Now' screen
-		if (self::$current_tab != 1) self::$filters['starting'] = '';
+		// Some filters only apply to the Right Now and Custom Reports tabs
+		if (self::$current_tab != 1 && self::$current_tab != 7){
+			self::$filters['starting'] = '';
+			self::$filters['direction'] = '';
+		}
 
 		// System filters are used to restrict access to the stats based on some settings
 		if (wp_slimstat::$options['restrict_authors_view'] == 'yes' && !current_user_can('manage_options')) self::$system_filters['author'] = 'contains '.$GLOBALS['current_user']->user_login;
@@ -281,7 +286,7 @@ class wp_slimstat_reports{
 		$filters_html = '';
 
 		// Don't display direction and limit results
-		$filters_dropdown = array_diff_key($_filters_array, array('direction' => 'asc', 'limit_results' => 20, 'starting' => 0));
+		$filters_dropdown = array_diff_key($_filters_array, array('direction' => 'asc', 'limit_results' => 20, 'starting' => 0, 'orderby' => 0, 'no-filter-selected-1' => 0));
 
 		if (!empty($filters_dropdown)){
 			$filters_html = "<span class='filters-title'>";
@@ -366,6 +371,9 @@ class wp_slimstat_reports{
 			case 'popular_complete':
 				$results = wp_slimstat_db::get_popular_complete($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause']);
 				break;
+			case 'popular_outbound':
+				$results = wp_slimstat_db::get_popular_outbound();
+				break;
 			default:
 		}
 
@@ -394,10 +402,11 @@ class wp_slimstat_reports{
 					if (!empty($cat_ids)){
 						$element_value = '';
 						foreach ($cat_ids as $a_cat_id){
+							if (empty($a_cat_id)) continue;
 							$cat_name = get_cat_name($a_cat_id);
 							if (empty($cat_name)) {
 								$tag = get_term($a_cat_id, 'post_tag');
-								if (!empty($tag)) $cat_name = $tag->name;
+								if (!empty($tag->name)) $cat_name = $tag->name;
 							}
 							$element_value .= ', '.(!empty($cat_name)?$cat_name:$a_cat_id);
 						}
@@ -926,6 +935,9 @@ class wp_slimstat_reports{
 				break;
 			case '#slim_p4_20':
 				self::show_spy_view($ajax_report_id, 1);
+				break;
+			case '#slim_p4_21':
+				self::show_results('popular_outbound', $ajax_report_id, 'resource', array('total_for_percentage' => wp_slimstat_db::count_outbound()));
 				break;
 			case '#slim_p7_02':
 				$using_screenres = wp_slimstat_admin::check_screenres();

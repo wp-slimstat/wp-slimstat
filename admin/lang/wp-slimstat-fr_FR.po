@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: WP SlimStat\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-10-21 21:46-0500\n"
-"PO-Revision-Date: 2013-10-21 21:48-0500\n"
+"PO-Revision-Date: 2013-10-28 22:40-0500\n"
 "Last-Translator: get used to it <support@getused.to.it>\n"
 "Language-Team: Michael Bastin\n"
 "Language: fr_FR\n"
@@ -1955,7 +1955,7 @@ msgstr "Aymara"
 # 	Azerbaijani
 #: ../../admin/lang/dynamic_strings.php:85
 msgid "l-az"
-msgstr "AzÃ©ri"
+msgstr "Azéri"
 
 # 	Bashkir
 #: ../../admin/lang/dynamic_strings.php:86
@@ -1965,7 +1965,7 @@ msgstr "Bachkir"
 # 	Belarusian
 #: ../../admin/lang/dynamic_strings.php:87
 msgid "l-be"
-msgstr "BiÃ©lorusse"
+msgstr "Biélorusse"
 
 # 	Bulgarian
 #: ../../admin/lang/dynamic_strings.php:88
@@ -1990,12 +1990,12 @@ msgstr "Bambara"
 # 	Bengali
 #: ../../admin/lang/dynamic_strings.php:92
 msgid "l-bn"
-msgstr "BengalÃ®"
+msgstr "Bengali"
 
 # 	Tibetan
 #: ../../admin/lang/dynamic_strings.php:93
 msgid "l-bo"
-msgstr "TibÃ©tain"
+msgstr "Tibétain"
 
 # 	Breton
 #: ../../admin/lang/dynamic_strings.php:94
@@ -2015,7 +2015,7 @@ msgstr "Catalan; Valencien"
 # 	Chechen
 #: ../../admin/lang/dynamic_strings.php:97
 msgid "l-ce"
-msgstr "TchÃ©tchÃ¨ne"
+msgstr "Tchétchène"
 
 # 	Chamorro
 #: ../../admin/lang/dynamic_strings.php:98
@@ -2035,7 +2035,7 @@ msgstr "Cri"
 # 	Czech
 #: ../../admin/lang/dynamic_strings.php:101
 msgid "l-cs"
-msgstr "TchÃ¨que"
+msgstr "Tchèque"
 
 # 	Church Slavic; Church Slavonic
 #: ../../admin/lang/dynamic_strings.php:102
@@ -2090,7 +2090,7 @@ msgstr "Anglais"
 # 	Esperanto
 #: ../../admin/lang/dynamic_strings.php:112
 msgid "l-eo"
-msgstr "EspÃ©ranto"
+msgstr "Espéranto"
 
 # 	Spanish; Castilian
 #: ../../admin/lang/dynamic_strings.php:113
@@ -2130,12 +2130,12 @@ msgstr "Fidjien"
 # 	Faroese
 #: ../../admin/lang/dynamic_strings.php:120
 msgid "l-fo"
-msgstr "FÃ©ringien"
+msgstr "Féroïen"
 
 # 	French
 #: ../../admin/lang/dynamic_strings.php:121
 msgid "l-fr"
-msgstr "FranÃ§ais"
+msgstr "Français"
 
 # 	Western Frisian
 #: ../../admin/lang/dynamic_strings.php:122
@@ -2150,7 +2150,7 @@ msgstr "Irlandais"
 # 	Scottish Gaelic; Gaelic
 #: ../../admin/lang/dynamic_strings.php:124
 msgid "l-gd"
-msgstr "Ã‰cossais"
+msgstr "Gaélique"
 
 # 	Galician
 #: ../../admin/lang/dynamic_strings.php:125
@@ -2165,7 +2165,7 @@ msgstr "Guarani"
 # 	Gujarati
 #: ../../admin/lang/dynamic_strings.php:127
 msgid "l-gu"
-msgstr "GujarÃ¢tÃ®"
+msgstr "Goudjrati"
 
 # 	Manx
 #: ../../admin/lang/dynamic_strings.php:128
@@ -2180,12 +2180,12 @@ msgstr "Haoussa"
 # 	Hebrew
 #: ../../admin/lang/dynamic_strings.php:130
 msgid "l-he"
-msgstr "HÃ©breu"
+msgstr "Hébreu"
 
 # 	Hindi
 #: ../../admin/lang/dynamic_strings.php:131
 msgid "l-hi"
-msgstr "HindÃ®"
+msgstr "Hindi"
 
 # 	Hiri Motu
 #: ../../admin/lang/dynamic_strings.php:132
@@ -2200,7 +2200,7 @@ msgstr "Croate"
 # 	Haitian; Haitian Creole
 #: ../../admin/lang/dynamic_strings.php:134
 msgid "l-ht"
-msgstr "HaÃ¯tien; CrÃ©ole haÃ¯tien"
+msgstr "Haïtien"
 
 # 	Hungarian
 #: ../../admin/lang/dynamic_strings.php:135
@@ -2210,7 +2210,7 @@ msgstr "Hongrois"
 # 	Armenian
 #: ../../admin/lang/dynamic_strings.php:136
 msgid "l-hy"
-msgstr "ArmÃ©nien"
+msgstr "Arménien"
 
 # 	Herero
 #: ../../admin/lang/dynamic_strings.php:137
@@ -2225,7 +2225,7 @@ msgstr "Interlingua (International Auxiliary Language Association)"
 # 	Indonesian
 #: ../../admin/lang/dynamic_strings.php:139
 msgid "l-id"
-msgstr "IndonÃ©sien"
+msgstr "Indonésien"
 
 # 	Interlingue; Occidental
 #: ../../admin/lang/dynamic_strings.php:140
@@ -2250,7 +2250,7 @@ msgstr "Inupiaq"
 # 	Indonesian
 #: ../../admin/lang/dynamic_strings.php:144
 msgid "l-in"
-msgstr "IndonÃ©sien"
+msgstr "Indonésien"
 
 # 	Ido
 #: ../../admin/lang/dynamic_strings.php:145
@@ -2275,7 +2275,7 @@ msgstr "Inuktitut"
 # 	Hebrew
 #: ../../admin/lang/dynamic_strings.php:149
 msgid "l-iw"
-msgstr "HÃ©breu"
+msgstr "Hébreu"
 
 # 	Japanese
 #: ../../admin/lang/dynamic_strings.php:150
@@ -2300,7 +2300,7 @@ msgstr "Javanais"
 # 	Georgian
 #: ../../admin/lang/dynamic_strings.php:154
 msgid "l-ka"
-msgstr "GÃ©orgien"
+msgstr "Géorgien"
 
 # 	Kongo
 #: ../../admin/lang/dynamic_strings.php:155
@@ -2340,7 +2340,7 @@ msgstr "kannada"
 # 	Korean
 #: ../../admin/lang/dynamic_strings.php:162
 msgid "l-ko"
-msgstr "CorÃ©en"
+msgstr "Coréen"
 
 # 	Kanuri
 #: ../../admin/lang/dynamic_strings.php:163
@@ -2430,12 +2430,12 @@ msgstr "Marshallais"
 # 	Maori
 #: ../../admin/lang/dynamic_strings.php:180
 msgid "l-mi"
-msgstr "MÄori"
+msgstr "Maori"
 
 # 	Macedonian
 #: ../../admin/lang/dynamic_strings.php:181
 msgid "l-mk"
-msgstr "MacÃ©donien"
+msgstr "Macédonien"
 
 # 	Malayalam
 #: ../../admin/lang/dynamic_strings.php:182
@@ -2455,7 +2455,7 @@ msgstr "Moldave"
 # 	Marathi
 #: ../../admin/lang/dynamic_strings.php:185
 msgid "l-mr"
-msgstr "MarÃ¢thÃ®"
+msgstr "Marathe"
 
 # 	Malay
 #: ../../admin/lang/dynamic_strings.php:186
@@ -2480,17 +2480,17 @@ msgstr "Nauruan"
 # 	Norwegian BokmÃ¥l
 #: ../../admin/lang/dynamic_strings.php:190
 msgid "l-nb"
-msgstr "NorvÃ©gien BokmÃ¥l"
+msgstr "Norvégien Bokmål"
 
 # 	North Ndebele
 #: ../../admin/lang/dynamic_strings.php:191
 msgid "l-nd"
-msgstr "NdÃ©bÃ©lÃ© du Nord"
+msgstr "Ndébélé du Nord"
 
 # 	Nepali
 #: ../../admin/lang/dynamic_strings.php:192
 msgid "l-ne"
-msgstr "NÃ©palais"
+msgstr "Népalais"
 
 # 	Ndonga
 #: ../../admin/lang/dynamic_strings.php:193
@@ -2500,22 +2500,22 @@ msgstr "Ndonga"
 # 	Dutch; Flemish
 #: ../../admin/lang/dynamic_strings.php:194
 msgid "l-nl"
-msgstr "NÃ©erlandais; Flamand"
+msgstr "Néerlandais"
 
 # 	Norwegian Nynorsk
 #: ../../admin/lang/dynamic_strings.php:195
 msgid "l-nn"
-msgstr "NorvÃ©gien Nynorsk"
+msgstr "Norvégien Nynorsk"
 
 # 	Norwegian
 #: ../../admin/lang/dynamic_strings.php:196
 msgid "l-no"
-msgstr "NorvÃ©gien"
+msgstr "Norvégien"
 
 # 	South Ndebele
 #: ../../admin/lang/dynamic_strings.php:197
 msgid "l-nr"
-msgstr "NdÃ©bÃ©lÃ© du Sud"
+msgstr "Ndébélé du Sud"
 
 # 	Navajo; Navaho
 #: ../../admin/lang/dynamic_strings.php:198
@@ -2535,7 +2535,7 @@ msgstr "Occitan"
 # 	Ojibwa
 #: ../../admin/lang/dynamic_strings.php:201
 msgid "l-oj"
-msgstr "OjibwÃ©"
+msgstr "Ojibwa"
 
 # 	Oromo
 #: ../../admin/lang/dynamic_strings.php:202
@@ -2550,17 +2550,17 @@ msgstr "Oriya"
 # 	Ossetian; Ossetic
 #: ../../admin/lang/dynamic_strings.php:204
 msgid "l-os"
-msgstr "OssÃ¨te"
+msgstr "Ossète"
 
 # 	Panjabi; Punjabi
 #: ../../admin/lang/dynamic_strings.php:205
 msgid "l-pa"
-msgstr "PanjÃ¢bÃ®"
+msgstr "Pendjabi"
 
 # 	Pali
 #: ../../admin/lang/dynamic_strings.php:206
 msgid "l-pi"
-msgstr "PÃ¢li"
+msgstr "Pali"
 
 # 	Polish
 #: ../../admin/lang/dynamic_strings.php:207
@@ -2660,7 +2660,7 @@ msgstr "Slovaque"
 # 	Slovenian
 #: ../../admin/lang/dynamic_strings.php:226
 msgid "l-sl"
-msgstr "SlovÃ¨ne"
+msgstr "Slovène"
 
 # 	Samoan
 #: ../../admin/lang/dynamic_strings.php:227
@@ -2705,7 +2705,7 @@ msgstr "Sundanais"
 # 	Swedish
 #: ../../admin/lang/dynamic_strings.php:235
 msgid "l-sv"
-msgstr "SuÃ©dois"
+msgstr "Suédois"
 
 # 	Swahili
 #: ../../admin/lang/dynamic_strings.php:236
@@ -2720,7 +2720,7 @@ msgstr "Tamoul"
 # 	Telugu
 #: ../../admin/lang/dynamic_strings.php:238
 msgid "l-te"
-msgstr "TÃ©lougou"
+msgstr "Télougou"
 
 # 	Tajik
 #: ../../admin/lang/dynamic_strings.php:239
@@ -2730,7 +2730,7 @@ msgstr "Tadjik"
 # 	Thai
 #: ../../admin/lang/dynamic_strings.php:240
 msgid "l-th"
-msgstr "ThaÃ¯"
+msgstr "Thaï"
 
 # 	Thai
 #: ../../admin/lang/dynamic_strings.php:241
@@ -2745,7 +2745,7 @@ msgstr "Tigrinya"
 # 	Turkmen
 #: ../../admin/lang/dynamic_strings.php:243
 msgid "l-tk"
-msgstr "TurkmÃ¨ne"
+msgstr "Turkmène"
 
 # 	Tagalog
 #: ../../admin/lang/dynamic_strings.php:244
@@ -2790,7 +2790,7 @@ msgstr "Tahitien"
 # 	Uighur; Uyghur
 #: ../../admin/lang/dynamic_strings.php:252
 msgid "l-ug"
-msgstr "OuÃ¯ghour"
+msgstr "Ouïgour"
 
 # 	Ukrainian
 #: ../../admin/lang/dynamic_strings.php:253
@@ -2825,7 +2825,7 @@ msgstr "Vietnamien"
 # 	VolapÃ¼k
 #: ../../admin/lang/dynamic_strings.php:259
 msgid "l-vo"
-msgstr "VolapÃ¼k"
+msgstr "Volapük"
 
 # 	Walloon
 #: ../../admin/lang/dynamic_strings.php:260
@@ -2880,7 +2880,7 @@ msgstr "Arabe (Irak)"
 # Arabic (Egypt)
 #: ../../admin/lang/dynamic_strings.php:270
 msgid "l-ar-eg"
-msgstr "Arabe (Ã‰gypte)"
+msgstr "Arabe (égyptien)"
 
 # Arabic (Libya)
 #: ../../admin/lang/dynamic_strings.php:271
@@ -2890,7 +2890,7 @@ msgstr "Arabe (Libye)"
 # Arabic (Algeria)
 #: ../../admin/lang/dynamic_strings.php:272
 msgid "l-ar-dz"
-msgstr "Arabe (AlgÃ©rie)"
+msgstr "Arabe"
 
 # Arabic (Morocco)
 #: ../../admin/lang/dynamic_strings.php:273
@@ -2910,7 +2910,7 @@ msgstr "Arabe (Oman)"
 # Arabic (Yemen)
 #: ../../admin/lang/dynamic_strings.php:276
 msgid "l-ar-ye"
-msgstr "Arabe (YÃ©men)"
+msgstr "Arabe (Yémen)"
 
 # Arabic (Syria)
 #: ../../admin/lang/dynamic_strings.php:277
@@ -2930,17 +2930,17 @@ msgstr "Arabe (Liban)"
 # Arabic (Kuwait)
 #: ../../admin/lang/dynamic_strings.php:280
 msgid "l-ar-kw"
-msgstr "Arabe (KoweÃ¯t)"
+msgstr "Arabe"
 
 # Arabic (United Arab Emirates)
 #: ../../admin/lang/dynamic_strings.php:281
 msgid "l-ar-ae"
-msgstr "Arabe (Ã‰mirats arabes unis)"
+msgstr "Arabe (Emirats arabes unis)"
 
 # Arabic (Bahrain)
 #: ../../admin/lang/dynamic_strings.php:282
 msgid "l-ar-bh"
-msgstr "Arabe (BahreÃ¯n)"
+msgstr "Arabe (Baharein)"
 
 # Arabic (Qatar)
 #: ../../admin/lang/dynamic_strings.php:283
@@ -2955,7 +2955,7 @@ msgstr "Chinois (Chine)"
 # Chinese (Taiwan)
 #: ../../admin/lang/dynamic_strings.php:285
 msgid "l-zh-tw"
-msgstr "Chinois (TaÃ¯wan)"
+msgstr "Chinois"
 
 # Chinese (Hong Kong)
 #: ../../admin/lang/dynamic_strings.php:286
@@ -2970,12 +2970,12 @@ msgstr "Chinois (Singapour)"
 # Dutch (Netherlands)
 #: ../../admin/lang/dynamic_strings.php:288
 msgid "l-nl-nl"
-msgstr "NÃ©erlandais (Pays-bas)"
+msgstr "Néerlandais (Pays-bas)"
 
 # Dutch (Belgium)
 #: ../../admin/lang/dynamic_strings.php:289
 msgid "l-nl-be"
-msgstr "NÃ©erlandais (Belgique)"
+msgstr "Néerlandais (Belgique)"
 
 # English (United Kingdom)
 #: ../../admin/lang/dynamic_strings.php:290
@@ -2985,7 +2985,7 @@ msgstr "Anglais (Royaume-Uni)"
 # English (United States)
 #: ../../admin/lang/dynamic_strings.php:291
 msgid "l-en-us"
-msgstr "Anglais (Ã‰tats-Unis)"
+msgstr "Anglais (USA)"
 
 # English (Australia)
 #: ../../admin/lang/dynamic_strings.php:292
@@ -3000,7 +3000,7 @@ msgstr "Anglais (Canada)"
 # English (New Zealand)
 #: ../../admin/lang/dynamic_strings.php:294
 msgid "l-en-nz"
-msgstr "Anglais (Nouvelle-ZÃ©lande)"
+msgstr "Anglais (Nouvelle-Zélande)"
 
 # English (Ireland)
 #: ../../admin/lang/dynamic_strings.php:295
@@ -3015,7 +3015,7 @@ msgstr "Anglais (Afrique du Sud)"
 # English (Jamaica)
 #: ../../admin/lang/dynamic_strings.php:297
 msgid "l-en-jm"
-msgstr "Anglais (JamaÃ¯que)"
+msgstr "Anglais (Jamaique)"
 
 # English (Belize)
 #: ../../admin/lang/dynamic_strings.php:298
@@ -3025,32 +3025,32 @@ msgstr "Anglais (Belize)"
 # English (Trinidad)
 #: ../../admin/lang/dynamic_strings.php:299
 msgid "l-en-tt"
-msgstr "Anglais (TrinitÃ©)"
+msgstr "Anglais (Trinité)"
 
 # French (Belgium)
 #: ../../admin/lang/dynamic_strings.php:300
 msgid "l-fr-be"
-msgstr "FranÃ§ais (Belgique)"
+msgstr "Français (Belgique)"
 
 # French (France)
 #: ../../admin/lang/dynamic_strings.php:301
 msgid "l-fr-fr"
-msgstr "FranÃ§ais (France)"
+msgstr "Français (France)"
 
 # French (Switzerland)
 #: ../../admin/lang/dynamic_strings.php:302
 msgid "l-fr-ch"
-msgstr "FranÃ§ais (Suisse)"
+msgstr "Français (Suisse)"
 
 # French (Canada)
 #: ../../admin/lang/dynamic_strings.php:303
 msgid "l-fr-ca"
-msgstr "FranÃ§ais (Canada)"
+msgstr "Français (Canada)"
 
 # French (Luxembourg)
 #: ../../admin/lang/dynamic_strings.php:304
 msgid "l-fr-lu"
-msgstr "FranÃ§ais (Luxembourg)"
+msgstr "Français (Luxembourg)"
 
 # German (Austria)
 #: ../../admin/lang/dynamic_strings.php:305
@@ -3080,12 +3080,12 @@ msgstr "Allemand (Liechtenstein)"
 # Greek (Greece)
 #: ../../admin/lang/dynamic_strings.php:310
 msgid "l-el-gr"
-msgstr "Grec moderne (GrÃ¨ce)"
+msgstr "Grec moderne"
 
 # Spanish (Dominican Republic)
 #: ../../admin/lang/dynamic_strings.php:311
 msgid "l-es-do"
-msgstr "Espagnol (RÃ©publique dominicaine)"
+msgstr "Espagnol (République dominicaine)"
 
 # Spanish (Argentina)
 #: ../../admin/lang/dynamic_strings.php:312
@@ -3130,12 +3130,12 @@ msgstr "Espagnol (Venezuela)"
 # Spanish (Peru)
 #: ../../admin/lang/dynamic_strings.php:320
 msgid "l-es-pe"
-msgstr "Espagnol (PÃ©rou)"
+msgstr "Espagnol (Pérou)"
 
 # Spanish (Ecuador)
 #: ../../admin/lang/dynamic_strings.php:321
 msgid "l-es-ec"
-msgstr "Espagnol (Ã‰quateur)"
+msgstr "Espagnol"
 
 # Spanish (Chile)
 #: ../../admin/lang/dynamic_strings.php:322
@@ -3180,7 +3180,7 @@ msgstr "Espagnol (Porto Rico)"
 # Hebrew (Israel)
 #: ../../admin/lang/dynamic_strings.php:330
 msgid "l-he-il"
-msgstr "HÃ©breu (IsraÃ«l)"
+msgstr "Hébreu"
 
 # Hungarian (Hungary)
 #: ../../admin/lang/dynamic_strings.php:331
@@ -3205,17 +3205,17 @@ msgstr "Italien (Suisse)"
 # Korean (Republic of Korea)
 #: ../../admin/lang/dynamic_strings.php:335
 msgid "l-ko-kr"
-msgstr "CorÃ©en (RÃ©publique de CorÃ©e)"
+msgstr "Coréen"
 
 # Korean (Democratic People's Republic of Korea)
 #: ../../admin/lang/dynamic_strings.php:336
 msgid "l-ko-kp"
-msgstr "CorÃ©en (RÃ©publique populaire dÃ©mocratique de CorÃ©e)"
+msgstr "Coeéen"
 
 # Portuguese (Brazil)
 #: ../../admin/lang/dynamic_strings.php:337
 msgid "l-pt-br"
-msgstr "Portugais (BrÃ©sil)"
+msgstr "Portugais (Brésil)"
 
 # Romanian (Moldava)
 #: ../../admin/lang/dynamic_strings.php:338
@@ -3225,7 +3225,7 @@ msgstr "Roumain (Moldova)"
 # Russian (Russia)
 #: ../../admin/lang/dynamic_strings.php:339
 msgid "l-ru-ru"
-msgstr "Russe (FÃ©dÃ©ration de Russie)"
+msgstr "Russe"
 
 # Russian (Moldava)
 #: ../../admin/lang/dynamic_strings.php:340
@@ -3235,12 +3235,12 @@ msgstr "Russe (Moldova)"
 # Swedish (Sweden)
 #: ../../admin/lang/dynamic_strings.php:341
 msgid "l-sv-se"
-msgstr "SuÃ©dois (SuÃ¨de)"
+msgstr "Suédois"
 
 # Swedish (Finland)
 #: ../../admin/lang/dynamic_strings.php:342
 msgid "l-sv-fi"
-msgstr "SuÃ©dois (Finlande)"
+msgstr "Suédois (Finlande)"
 
 # 	Japanese
 #: ../../admin/lang/dynamic_strings.php:343
