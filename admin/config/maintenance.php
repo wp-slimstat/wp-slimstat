@@ -19,7 +19,7 @@ if (!empty($_POST['import-slimstat-settings'])){
 	$new_options = array_intersect_key($new_options, wp_slimstat::$options);
 	if (!empty($new_options)){
 		foreach ($new_options as $a_option_name => $a_option_value){
-			wp_slimstat_admin::update_option($a_option_name, $a_option_value);
+			wp_slimstat::$options[$a_option_name] = $a_option_value;
 		}
 	}
 }

@@ -5,7 +5,7 @@ if (!function_exists('add_action')) exit(0);
 
 // Update license keys, if needed
 if (!empty($_POST['licenses'])){
-	wp_slimstat_admin::update_option('addon_licenses', $_POST['licenses'], 'array');
+	wp_slimstat::$options['addon_licenses'] = $_POST['licenses'];
 }
 
 echo '<div class="wrap"><h2>WP SlimStat Add-ons</h2>';

@@ -76,7 +76,7 @@ switch ($config_tabs[$current_tab-1]){
 				if (is_array($user_array) && !empty($post_data)){
 					$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
 					if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
-						if (!wp_slimstat_admin::update_option('ignore_users', $_POST['options']['ignore_users'], 'textarea')) wp_slimstat_admin::$faulty_fields[] = __('Ignore users','wp-slimstat');
+						wp_slimstat::$options['ignore_users'] = $_POST['options']['ignore_users'];
 					}
 					else{
 						wp_slimstat_admin::$faulty_fields[] = __('Ignore users (username not found)','wp-slimstat');
@@ -84,7 +84,7 @@ switch ($config_tabs[$current_tab-1]){
 				}
 			}
 			else{
-				wp_slimstat_admin::update_option('ignore_users', '', 'text');
+				wp_slimstat::$options['ignore_users'] = '';
 			}
 
 			if (!empty($_POST['options']['ignore_capabilities'])){
@@ -99,14 +99,14 @@ switch ($config_tabs[$current_tab-1]){
 				}
 				
 				if (!$capability_not_found){		
-					if (!wp_slimstat_admin::update_option('ignore_capabilities', $_POST['options']['ignore_capabilities'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Users by capability','wp-slimstat');
+					wp_slimstat::$options['ignore_capabilities'] = $_POST['options']['ignore_capabilities'];
 				}
 				else{
 					wp_slimstat_admin::$faulty_fields[] = __('Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
 				}
 			}
 			else{
-				wp_slimstat_admin::update_option('ignore_capabilities', '', 'text');
+				wp_slimstat::$options['ignore_capabilities'] = '';
 			}
 		}
 		break;
@@ -130,7 +130,7 @@ switch ($config_tabs[$current_tab-1]){
 				if (is_array($user_array) && !empty($post_data)){
 					$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
 					if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
-						if (!wp_slimstat_admin::update_option('can_view', $_POST['options']['can_view'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Read access','wp-slimstat');
+						wp_slimstat::$options['can_view'] = $_POST['options']['can_view'];
 					}
 					else{
 						wp_slimstat_admin::$faulty_fields[] = __('Read access: username not found','wp-slimstat');
@@ -138,19 +138,19 @@ switch ($config_tabs[$current_tab-1]){
 				}
 			}
 			else{
-				wp_slimstat_admin::update_option('can_view', '', 'text');
+				wp_slimstat::$options['can_view'] = '';
 			}
 
 			if (!empty($_POST['options']['capability_can_view'])){
 				if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_view'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
-					if (!wp_slimstat_admin::update_option('capability_can_view', $_POST['options']['capability_can_view'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Capability to Read','wp-slimstat');
+					wp_slimstat::$options['capability_can_view'] = $_POST['options']['capability_can_view'];
 				}
 				else{
 					wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
 				}
 			}
 			else{
-				wp_slimstat_admin::update_option('capability_can_view', '', 'text');
+				wp_slimstat::$options['capability_can_view'] = '';
 			}
 
 			if (!empty($_POST['options']['can_admin'])){
@@ -161,7 +161,7 @@ switch ($config_tabs[$current_tab-1]){
 				if (is_array($user_array) && !empty($post_data)){
 					$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
 					if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
-						if (!wp_slimstat_admin::update_option('can_admin', $_POST['options']['can_admin'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Config access','wp-slimstat');
+						wp_slimstat::$options['can_admin'] = $_POST['options']['can_admin'];
 					}
 					else{
 						wp_slimstat_admin::$faulty_fields[] = __('Config access: username not found','wp-slimstat');
@@ -169,19 +169,19 @@ switch ($config_tabs[$current_tab-1]){
 				}
 			}
 			else{
-				wp_slimstat_admin::update_option('can_admin', '', 'text');
+				wp_slimstat::$options['can_admin'] = '';
 			}
 			
 			if (!empty($_POST['options']['capability_can_admin'])){
 				if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_admin'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
-					if (!wp_slimstat_admin::update_option('capability_can_admin', $_POST['options']['capability_can_admin'], 'text')) wp_slimstat_admin::$faulty_fields[] = __('Capability to Admin','wp-slimstat');
+					wp_slimstat::$options['capability_can_admin'] = $_POST['options']['capability_can_admin'];
 				}
 				else{
 					wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
 				}
 			}
 			else{
-				wp_slimstat_admin::update_option('capability_can_admin', '', 'text');
+				wp_slimstat::$options['capability_can_admin'] = '';
 			}
 		}
 		break;

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.2
 Tested up to: 3.7
-Stable tag: 3.4.1
+Stable tag: 3.4.2
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
@@ -283,6 +283,20 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.4.2 =
+* [New] Three new reports give you detailed information about your rankings (Google, Facebook, Alexa), your content and your site's security.
+* [Update] Complete Russian Localization (thank you, Vitaly!)
+* [Update] Top Browsers now groups browsers by name, if the user agent string is not enabled/displayed (thank you, Vitaly)
+* [Update] Much improved language detection and localization (thank you, Vitaly)
+* [Update] By default only admins can now see the stats (minimum capability to view: activate_plugins). 
+* [Update] Removed unused languages from the dictionary (who is using operating systems in Herero, Igbo, Hiri Motu, Church Slavic anyway?) 
+* [Update] Optimized code to manage the plugin's options (removed unnecessary db interactions)
+* [Update] World Map ([AmMap](http://www.ammap.com/download/)) updated to version 3.7
+* [Update] MaxMind / Geolocation database updated to November 2013
+* [Update] Consolidated reports and improved performance on Overview tab
+* [Fix] Bug in converting some IP addresses to long integers (thank you, [tkleinsteuber](http://wordpress.org/support/topic/wrong-geolocation-for-rfc-1918-private-ip-ranges))
+* [Fix] Some PHP warnings about undefined variables
+
 = 3.4.1 =
 * [New] Report to visualize top Outbound Links and Downloads (thank you, [bobinoz](http://wordpress.org/support/topic/tracking-outbound-links-1))
 * [New] Purge data by user agent (thank you, [GermanKiwi](http://wordpress.org/support/topic/purge-data-based-on-user-agent))
@@ -318,56 +332,6 @@ foreach ($results...`
 * [Fix] A javascript variable name conflict introduced in version 3.3.4 was affecting some advanced functionality (thank you, [Nanowisdoms](http://wordpress.org/support/topic/expand-details-option-not-working-in-334))
 * [Fix] A pretty unique combination of settings was affecting the way the Spy View data was being listed (thank you, [Nanowisdoms](http://wordpress.org/support/topic/live-visitor-as-in-currently-still-on-the-site-view))
 
-= 3.3.4 =
-* [Note] Now you can export the data from your User Overview custom report, with the Export to Excel add-on!
-* [New] Option that allows you to choose if you want to disable outbound links under Right Now (thank you, [STONE5572](http://wordpress.org/support/topic/right-now-tab-not-working-since-update-to-333))
-* [New] 'Today' and 'Yesterday' one-click filters added to the Summary report (thank you, [Nanowisdoms](http://wordpress.org/support/topic/dashboard-and-other-widgets-set-default-date-ranges))
-* [New] You can finally track admin pages in WP SlimStat, and see what your users do in your admin. Go to SlimStat > Settings > General to enable this feature (thank you, [Nanowisdoms](http://wordpress.org/support/topic/30-50-of-visitors-and-pageviews-not-being-recorded?replies=1))
-* [Update] *Please Note* The API/class to render the data was renamed from wp_slimstat_boxes to wp_slimstat_reports. Make sure to update your custom code accordingly!
-* [Update] WP SlimStat Dashboard Widgets has been updated to reflect the renaming here above
-* [Update] The icon to highlight outbound links under Right Now has been updated to differentiate it even more from the one associated to inbound links (thank you, [Nanowisdoms](http://wordpress.org/support/topic/question-about-outbound-links))
-* [Fix] An SQL injection vulnerability (exploitable only if the admin was logged in) was discovered and patched (thank you, maty)
-* [Fix] PHP Warning if users has still old format for options (thank you, [troy7890](http://wordpress.org/support/topic/php-error-warning-stripos-expects-parameter-1-to-be-string-array))
-* [Fix] PHP Warning under Top Known Visitors (thank you, [Focus3D](http://wordpress.org/support/topic/undefined-index-total-in-wp-slimstat-boxesphp-line-612))
-
-= 3.3.3 =
-* [Note] Two new add-ons join the team: Custom DB (to use external DBs to store SlimStat's data) and Label Your IP Addresses. [Check them out](http://slimstat.getused.to.it/addons/)!
-* [New] Option that allows you to choose if you want to see your users' Display Name or their actual username (thank you, [psn](http://wordpress.org/support/topic/show-user-name-1))
-* [New] More WordPress hooks (filters) were added to the tracking engine, documentation coming soon...
-* [New] Outbound links are now shown under Right Now, to give you an even more detailed view of what a visitor did on your site (thank you, [Tommk](http://wordpress.org/support/topic/question-about-outbound-links))
-* [Update] Your own domain is not counted among the referring sites anymore (thank you, [Ovidiu and Ursula](http://wordpress.org/support/topic/a-much-requested-feature))
-* [Update] Added code to enable a 'network view' of the reports via add-on (coming soon)
-* [Update] MaxMind / Geolocation database updated to September 2013
-* [Fix] A screen resolution was being associated to search engines and other bots
-
-= 3.3.2 =
-* [New] Option that allows you to choose if you want to see the user agent string or the user friendly browser name (thank you, [GermanKiwi](http://wordpress.org/support/topic/default-browser-user-agent-reported-by-slimstat))
-* [Update] Minor CSS tweaks
-* [Fix] A bug was affecting some URLs for multisite installs using subfolders (thank you, [meldean](http://wordpress.org/support/topic/top-pages-links-not-working))
-* [Fix] The entire suite of add-ons has been updated to include some crucial code optimizations
-
-= 3.3.1 =
-* [Note] If you are upgrading from WP SlimStat 2.9.2 or earlier, you MUST first install version 3.0 and then the latest version available
-* [New] Two new reports added to the Visitors tab: Recent and Top (registered) Users. If you don't see them, go to SlimStat > Settings > Maintenance and click on Reset Tabs
-* [Update] The new feature to use a separate database has been improved and will be available soon as an add-on on [our store](http://slimstat.getused.to.it/)
-* [Update] The information about your visitors' type (mobile, desktop, crawler) has been reintroduced in the form of an icon next to the operating system under Right Now (thank you, [consensus](http://wordpress.org/support/topic/modality))
-* [Update] [Flot](http://www.flotcharts.org/), the library we use to draw our charts, has been updated to version 0.8.1 
-* [Fix] A bug introduced in 3.3 was preventing the autopurge functionality from working as expected (thank you, [Inposure](http://wordpress.org/support/topic/database-error-115))
-* [Fix] The new 'user agent' column was creating a conflict in the database (unique key). We solved the issue and also enabled the updating of old entries in the database
-* [Fix] A bug was affecting the pagination under Right Now in some rare circumstances
-
-= 3.3 =
-* [Note] We've just reached the 500,000 downloads mark! Thank you to all those who believe in this project.
-* [Note] We're testing WP SlimStat with [MP6](http://wordpress.org/plugins/mp6/) and aside from a few tweaks, it seems to work pretty well with that custom admin theme
-* [New] New filters allow you to use a separate database for WP SlimStat. The add-on to leverage this feature is coming soon!
-* [New] The actual User Agent string is now recorded into the database (not retroactively, sorry) and can be searched and filtered
-* [New] Now you can use negative intervals in date filters (thank you, [helices](http://wordpress.org/support/topic/view-3-months-or-1-year))
-* [Update] Browscap hasn't been updated in a while and is starting to be less reliable. Our heuristic browser detector has been improved to overcome this
-* [Update] MaxMind / Geolocation database updated to July 2013
-* [Update] [AmMap](http://www.ammap.com/) (World Map) has been updated to version 3.3.3
-* [Fix] Filters on user agents are now matched against the original UA, not the one returned by Browscap (thank you, [GermanKiwi](http://wordpress.org/support/topic/default-browser-user-agent-reported-by-slimstat))
-* [Fix] Bug on uninstall affecting one of the tables used by WP SlimStat (thank you, [mkilian](http://wordpress.org/support/topic/small-confusion-of-base_prefix-vs-prefix-visible-when-using-multisite))
-
 == Donors ==
 [7times77](http://7times77.com),
 [Andrea Pinti](http://andreapinti.com),
@@ -388,6 +352,7 @@ Hajrudin Mulabecirovic,
 [Herman Peet](http://www.hermanpeet.nl),
 John Montano, 
 [La casetta delle pesche](http://www.lacasettadellepesche.it),
+Mobile Lingo Inc,
 [Mobilize Mail](http://blog.mobilizemail.com),
 Mora Systems,
 Neil Robinson,

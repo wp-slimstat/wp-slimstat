@@ -219,6 +219,12 @@ var SlimStatAdmin = {
 			SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
 			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
+	},
+	
+	hacker_ninja_show_result: function(id){
+		return function(response){
+			jQuery(id).removeClass('blink').html(response);
+		}
 	}
 }
 
@@ -239,7 +245,7 @@ jQuery(function(){
 	jQuery('.box-refresh').click(
 		function(){
 			report_id = '#'+jQuery(this).parent().attr('id');
-			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()};
 			jQuery(report_id+' .inside').html('<p class="loading"></p>');
 			SlimStatAdmin.load_ajax_data(report_id, data);
 			
@@ -251,6 +257,30 @@ jQuery(function(){
 			}
 		}
 	);
+	
+	jQuery(document).on('click', '.button-hacker-ninja', function(){
+		var data = {action: 'slimstat_load_report', report_id: '#slim_p1_16', security: jQuery('#meta-box-order-nonce').val(), 'run_scan': '00'};
+		jQuery('#slim_p1_16 .inside').html('<p class="loading"></p>');
+		jQuery.ajax({
+			url: ajaxurl,
+			type: 'post',
+			async: false,
+			data: data
+		}).done(function(response){
+			jQuery('#slim_p1_16 .inside').html(response);
+		});
+
+		jQuery('#slim_p1_16 .blink').each(function(){			
+			data['run_scan'] = jQuery(this).attr('id');
+			jQuery.ajax({
+				url: ajaxurl,
+				type: 'post',
+				async: true,
+				data: data,
+				success: SlimStatAdmin.hacker_ninja_show_result('#'+data['run_scan'])
+			});
+		});
+	});
 
 	jQuery('div[id^=slim_]').each(function(){
 		report_id = '#'+jQuery(this).attr('id');

@@ -146,6 +146,49 @@ a.image.first{margin-left:0}
 /* Options */
 .form-table .description{clear:both;display:block;margin-bottom:10px}
 
+.blink {
+    -webkit-animation: blink 1.4s linear infinite;
+    -moz-animation: blink 1.4s linear infinite;
+    -ms-animation: blink 1.4s linear infinite;
+    -o-animation: blink 1.4s linear infinite;
+    animation: blink 1.4s linear infinite;
+}
+
+@-webkit-keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 1; }
+    50.01% { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+@-moz-keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 1; }
+    50.01% { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+@-ms-keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 1; }
+    50.01% { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+@-o-keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 1; }
+    50.01% { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 1; }
+    50.01% { opacity: 0; }
+    100% { opacity: 0; }
+}
+
 /* Mobile */
 @media screen and (max-width: 790px){
 a.nav-tab{font-size:.7em;margin:0 3px -1px 0;padding:10px 5px}

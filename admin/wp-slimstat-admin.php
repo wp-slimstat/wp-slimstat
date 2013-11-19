@@ -5,7 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = 'Celebrate 600,000 SlimStat downloads with us. Use ILOVESLIMSTAT at checkout on <a href="http://slimstat.getused.to.it/addons/" target="_blank">our store</a> to get 60% off your purchase. Hurry, offer expires on November 15!';
+	protected static $admin_notice = "Three new reports give you detailed information about your rankings (Google, Facebook, Alexa), your content and your site's security. Check them out!";
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	
 	/**
@@ -14,7 +14,7 @@ class wp_slimstat_admin{
 	public static function init(){
 		// This option requires a special treatment
 		if (!empty($_POST['options']['use_separate_menu']))
-			self::update_option('use_separate_menu', $_POST['options']['use_separate_menu'], 'yesno');
+			wp_slimstat::$options['use_separate_menu'] = in_array($_POST['options']['use_separate_menu'], array('yes','no'))?$_POST['options']['use_separate_menu']:'';
 
 		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-';
 		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-config&amp;tab=';
@@ -44,9 +44,10 @@ class wp_slimstat_admin{
 		}
 
 		// Display a notice that hightlights this version's features
-		if (empty(wp_slimstat::$options['show_admin_notice']) || wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$options['version']){
+		$admin_filemtime = @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
+		if (($admin_filemtime > date('U') - 300) || empty(wp_slimstat::$options['show_admin_notice']) || wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$options['version']){
 			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
-			self::update_option('show_admin_notice', wp_slimstat::$options['version'], 'text');
+			wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$options['version'];
 		}
 
 		// Remove spammers from the database
@@ -71,9 +72,8 @@ class wp_slimstat_admin{
 				self::update_tables_and_options(false);
 			}
 			else{
-				$filemtime = @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
-				if ($filemtime < date('U') - 864000){
-					self::update_option('enable_ads_network', 'yes', 'yesno');
+				if (($admin_filemtime < date('U') - 864000) && wp_slimstat::$options['enable_ads_network'] == 'null'){
+					wp_slimstat::$options['enable_ads_network'] = 'yes';
 				}
 			}
 		}
@@ -308,38 +308,12 @@ class wp_slimstat_admin{
 		
 		// New option 'version' added in version 2.8 - Keep it up-to-date
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
-			self::update_option('version', wp_slimstat::$version, 'text');
+			wp_slimstat::$options['version'] = wp_slimstat::$version;
 		}
 
 		return true;
 	}
 	// end update_tables_and_options
-
-	/**
-	 * Updates the array of options and stores the new values in the database
-	 */
-	public static function update_option($_option = 'undefined', $_value = '', $_type = 'text'){
-		// Is there anything that we need to update?
-		if (isset(wp_slimstat::$options[$_option]) && wp_slimstat::$options[$_option] == $_value) return true;
-
-		switch($_type){
-			case 'yesno':
-				if ($_value=='yes' || $_value=='no')
-					wp_slimstat::$options[$_option] = $_value;
-				break;
-			case 'integer':
-				wp_slimstat::$options[$_option] = abs(intval($_value));
-				break;
-			case 'array':
-				wp_slimstat::$options[$_option] = $_value;
-				break;
-			default:
-				wp_slimstat::$options[$_option] = strip_tags($_value);
-				break;
-		}
-		return update_option('slimstat_options', wp_slimstat::$options);
-	}
-	// end update_option
 
 	/**
 	 * Removes 'spammers' from the database when the corresponding comments are marked as spam
@@ -463,7 +437,6 @@ class wp_slimstat_admin{
 			$minimum_capability = 'read';
 		}
 
-		//load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
 			$new_entry = add_submenu_page('wp-slim-view-1', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
 		}
@@ -592,7 +565,7 @@ class wp_slimstat_admin{
 	 * Displays a message related to the current version of WP SlimStat
 	 */
 	public static function show_admin_notice(){
-		echo '<div class="updated highlight" style="padding:10px">'.self::$admin_notice.' <a class="remove-filter" style="float:right" href="javascript:;" onclick="jQuery(this).parent().fadeOut(500);"></a></div>';
+		echo '<div class="updated highlight" style="padding:10px">'.self::$admin_notice.'</div>';
 	}
 	
 	/*
@@ -603,10 +576,11 @@ class wp_slimstat_admin{
 		
 		foreach($_options as $_option_name => $_option_details){
 			// Some options require a special treatment and are updated somewhere else
-			if (isset($_option_details['skip_update'])) continue;
+			if (isset($_option_details['skip_update']))
+				continue;
 
-			if (isset($_POST['options'][$_option_name]) && !self::update_option($_option_name, $_POST['options'][$_option_name], $_option_details['type']))
-				self::$faulty_fields[] = $_option_details['description'];
+			if (isset($_POST['options'][$_option_name]))
+				wp_slimstat::$options[$_option_name] = $_POST['options'][$_option_name];
 		}
 
 		if (!empty(self::$faulty_fields)){

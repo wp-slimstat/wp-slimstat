@@ -80,14 +80,13 @@ class wp_slimstat_reports{
 			'slim_p1_04' => __('Recent Known Visitors','wp-slimstat'),
 			'slim_p1_05' => __('Spy View','wp-slimstat'),
 			'slim_p1_06' => __('Recent Search Terms','wp-slimstat'),
-			'slim_p1_07' => __('Top Languages - Just Visitors','wp-slimstat'),
 			'slim_p1_08' => __('Top Pages','wp-slimstat'),
-			'slim_p1_09' => __('Recent Countries','wp-slimstat'),
 			'slim_p1_10' => __('Top Traffic Sources','wp-slimstat'),
 			'slim_p1_11' => __('Top Known Visitors','wp-slimstat'),
 			'slim_p1_12' => __('Top Search Terms','wp-slimstat'),
 			'slim_p1_13' => __('Top Countries','wp-slimstat'),
-			'slim_p1_14' => __('Top Downloads','wp-slimstat'),
+			'slim_p1_15' => __('Rankings','wp-slimstat'),
+			'slim_p1_16' => __('Security Scan','wp-slimstat'),
 			'slim_p2_01' => __('Human Visits (chart)','wp-slimstat'),
 			'slim_p2_02' => __('Summary','wp-slimstat'),
 			'slim_p2_03' => __('Top Languages','wp-slimstat'),
@@ -137,6 +136,7 @@ class wp_slimstat_reports{
 			'slim_p4_19' => __('Top Tags','wp-slimstat'),
 			'slim_p4_20' => __('Recent Downloads','wp-slimstat'),
 			'slim_p4_21' => __('Top Outbound Links and Downloads','wp-slimstat'),
+			'slim_p4_22' => __('Your Website','wp-slimstat'),
 			'slim_p7_02' => __('Right Now','wp-slimstat')
 		);
 		self::$all_reports_titles = apply_filters('slimstat_report_titles', self::$all_reports_titles);
@@ -153,13 +153,13 @@ class wp_slimstat_reports{
 		if (empty(self::$all_reports) || !empty($old_ids)){
 			switch(self::$current_tab){
 				case 2:
-					self::$all_reports = array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_05','slim_p1_06','slim_p1_07','slim_p1_08','slim_p1_09','slim_p1_10','slim_p1_11','slim_p1_12','slim_p1_13','slim_p1_14');
+					self::$all_reports = array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_11','slim_p1_12','slim_p1_05','slim_p1_08','slim_p1_10','slim_p1_13','slim_p1_15','slim_p1_16');
 					break;
 				case 3:
 					self::$all_reports = array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_05','slim_p2_06','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19','slim_p2_20','slim_p2_21');
 					break;
 				case 4:
-					self::$all_reports = array('slim_p4_01','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20','slim_p4_21');
+					self::$all_reports = array('slim_p4_01','slim_p4_22','slim_p1_06','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20','slim_p4_21');
 					break;
 				case 5:
 					self::$all_reports = array('slim_p3_01','slim_p3_02','slim_p3_03','slim_p3_04','slim_p3_06','slim_p3_05','slim_p3_08','slim_p3_10','slim_p3_09','slim_p3_11');
@@ -181,7 +181,7 @@ class wp_slimstat_reports{
 		if (self::$hidden_reports === false || !empty($old_ids)){
 			switch(self::$current_tab){
 				case 2:
-					self::$hidden_reports = array('slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_14');
+					self::$hidden_reports = array('slim_p1_11', 'slim_p1_12', 'slim_p1_13');
 					break;
 				case 3:
 					self::$hidden_reports= array('slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17');
@@ -243,13 +243,7 @@ class wp_slimstat_reports{
 
 		foreach($_keys as $a_key => $a_filter){
 			if ($a_key == 'no-filter-selected-1') continue;
-			//if (isset($_keys[$a_key])){
-				//if (!empty($_keys[$a_key])) 
-					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($_keys[$a_key]);
-			//}
-			//else{
-				//$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode(self::$filters[$a_key]);
-			//}
+			$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($_keys[$a_key]);
 		}
 
 		return $filtered_url;
@@ -733,6 +727,155 @@ class wp_slimstat_reports{
 			<?php _e('Currently from search engines', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records("t1.searchterms <> '' AND t1.domain <> '{$_SERVER['SERVER_NAME']}' AND t1.domain <> '' AND t1.dt > UNIX_TIMESTAMP()-300", 't1.id', false), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p><?php
 	}
 	
+	public static function show_rankings($_id = 'p0'){
+		if (($_id != 'p0' && (in_array($_id, self::$hidden_reports) || wp_slimstat::$options['async_load'] == 'yes')) || !function_exists('json_decode')) return; 
+		
+		$options = array('timeout' => 1, 'headers' => array('Accept' => 'application/json'));
+		$site_url_array = parse_url(home_url());
+		
+		// Check if we have a valied transient
+		if (false === ($rankings = get_transient( 'slimstat_ranking_values' ))){
+			$rankings = array('google_index' => 0, 'google_backlinks' => 0, 'facebook_likes' => 0, 'facebook_shares' => 0, 'facebook_clicks' => 0, 'alexa_world_rank' => 0, 'alexa_country_rank' => 0, 'alexa_popularity' => 0);
+
+			// Google Index
+			$response = @wp_remote_get('https://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=site:'.$site_url_array['host'], $options);
+			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
+				$response = @json_decode($response['body']);
+				if (is_object($response) && !empty($response->responseData->cursor->resultCount)){
+					$rankings['google_index'] = $response->responseData->cursor->resultCount;
+				}
+			}
+			
+			// Google Backlinks
+			$response = @wp_remote_get('https://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=link:'.$site_url_array['host'], $options);
+			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
+				$response = @json_decode($response['body']);
+				if (is_object($response) && !empty($response->responseData->cursor->resultCount)){
+					$rankings['google_backlinks'] = $response->responseData->cursor->resultCount;
+				}
+			}
+			
+			// Facebook
+			$options['headers']['Accept'] = 'text/xml';
+			$response = @wp_remote_get("https://api.facebook.com/method/fql.query?query=select%20%20like_count,%20total_count,%20share_count,%20click_count%20from%20link_stat%20where%20url='".$site_url_array['host']."'", $options);
+			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
+				$response = new SimpleXMLElement($response['body']);
+				if (is_object($response) && is_object($response->link_stat) && !empty($response->link_stat->like_count)){
+					$rankings['facebook_likes'] = (string)$response->link_stat->like_count;
+					$rankings['facebook_shares'] = (string)$response->link_stat->share_count;
+					$rankings['facebook_clicks'] = (string)$response->link_stat->click_count;
+				}
+			}
+
+			// Alexa
+			$response = @wp_remote_get("http://data.alexa.com/data?cli=10&dat=snbamz&url=".$site_url_array['host'], $options);
+			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
+				$response = new SimpleXMLElement($response['body']);
+				if (is_object($response) && is_object($response->SD[1]->POPULARITY)){
+					$attributes = $response->SD[1]->POPULARITY->attributes();
+					$rankings['alexa_popularity'] = (string)$attributes['TEXT'];
+					
+					$attributes = $response->SD[1]->REACH->attributes();
+					$rankings['alexa_world_rank'] = (string)$attributes['RANK'];
+					
+					$attributes = $response->SD[1]->COUNTRY->attributes();
+					$rankings['alexa_country_rank'] = (string)$attributes['RANK'];
+				}
+			}
+
+			// Store rankings as transients for 12 hours
+			set_transient('slimstat_ranking_values', $rankings, 43200);
+		}
+		?>
+		
+		<p><?php self::inline_help(htmlentities(__("Number of pages in your site included in Google's index.",'wp-slimstat'), ENT_QUOTES, 'UTF-8')) ?>
+			<?php _e('Google Index', 'wp-slimstat') ?> <span><?php echo number_format($rankings['google_index'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php self::inline_help(htmlentities(__("Number of pages, according to Google, that link back to your site.",'wp-slimstat'), ENT_QUOTES, 'UTF-8')) ?>
+			<?php _e('Google Backlinks', 'wp-slimstat') ?> <span><?php echo number_format($rankings['google_backlinks'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php self::inline_help(htmlentities(__("How many times the Facebook Like button has been approximately clicked on your site.",'wp-slimstat'), ENT_QUOTES, 'UTF-8')) ?>
+			<?php _e('Facebook Likes', 'wp-slimstat') ?> <span><?php echo number_format($rankings['facebook_likes'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php self::inline_help(htmlentities(__("How many times your site has been shared by someone on the social network.",'wp-slimstat'), ENT_QUOTES, 'UTF-8')) ?>
+			<?php _e('Facebook Shares', 'wp-slimstat') ?> <span><?php echo number_format($rankings['facebook_shares'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php self::inline_help(htmlentities(__("How many times links to your website have been clicked on Facebook.",'wp-slimstat'), ENT_QUOTES, 'UTF-8')) ?>
+			<?php _e('Facebook Clicks', 'wp-slimstat') ?> <span><?php echo number_format($rankings['facebook_clicks'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php self::inline_help(htmlentities(__("Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data.",'wp-slimstat'), ENT_QUOTES, 'UTF-8')) ?>
+			<?php _e('Alexa World Rank', 'wp-slimstat') ?> <span><?php echo number_format($rankings['alexa_world_rank'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php _e('Alexa Country Rank', 'wp-slimstat') ?> <span><?php echo number_format($rankings['alexa_country_rank'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php _e('Alexa Popularity', 'wp-slimstat') ?> <span><?php echo number_format($rankings['alexa_popularity'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p><?php
+	}
+
+	public static function show_hacker_ninja($_id = 'p0'){
+		if ($_id != 'p0' && (in_array($_id, self::$hidden_reports) || wp_slimstat::$options['async_load'] == 'yes')) return;
+		
+		$hn_urls = array('hn01' => 'http://www.hackerninja.com/scanner/crawler/launcher_bing_bot.php', 'hn02' => 'http://www.hackerninja.com/scanner/crawler/launcher_clamav_scanner.php', 'hn03' => 'http://www.hackerninja.com/scanner/crawler/launcher_google_bot.php', 'hn04' => 'http://www.hackerninja.com/scanner/crawler/launcher_hostile_strings.php', 'hn05' => 'http://www.hackerninja.com/scanner/crawler/launcher_vanilla_bot.php', 'hn06' => 'http://www.hackerninja.com/scanner/crawler/scan_google_malware_list.php', 'hn07' => 'http://www.hackerninja.com/scanner/crawler/scan_external_links.php');
+		$parsed_url = parse_url(home_url());
+		switch($_POST['run_scan']){
+			case '00': ?>
+				<p><?php _e('It might take a while to complete all the tests. Please be patient.', 'wp-slimstat') ?></p>
+				<p><?php _e('Bing Test', 'wp-slimstat') ?> <span id="hn01" class="blink">Loading</span></p>
+				<p><?php _e('AntiVirus Scan', 'wp-slimstat') ?> <span id="hn02" class="blink">Loading</span></p>
+				<p><?php _e('Google Bot Test', 'wp-slimstat') ?> <span id="hn03" class="blink">Loading</span></p>
+				<p><?php _e('Scan for Hostile Strings', 'wp-slimstat') ?> <span id="hn04" class="blink">Loading</span></p>
+				<p><?php _e('Generic Web Bot test', 'wp-slimstat') ?> <span id="hn05" class="blink">Loading</span></p>
+				<p><?php _e('Google Safe Browsing List', 'wp-slimstat') ?> <span id="hn06" class="blink">Loading</span></p>
+				<p><?php _e('Hostile External Links', 'wp-slimstat') ?> <span id="hn07" class="blink">Loading</span></p><?php
+				break;
+			case 'hn01':
+			case 'hn02':
+			case 'hn03':
+			case 'hn04':
+			case 'hn05':
+			case 'hn06':
+			case 'hn07':
+				$options = array('timeout' => 30);
+				$response = @wp_remote_get($hn_urls[$_POST['run_scan']], $options);
+				if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
+					echo '<a target="_blank" href="http://www.hackerninja.com/free-scan/?website='.$parsed_url['host'].'">'.((stripos($response['body'],'passed') !== false)?__('Passed','wp-slimstat'):__('At Risk','wp-slimstat')).'</a>';
+				}
+				else{
+					echo __('Timed Out','wp-slimstat');
+				}
+				break;
+			default:
+				echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Start Scan</a></p>';
+				break;
+		}
+	}
+	
+	public static function show_your_blog($_id = 'p0'){
+		if ($_id != 'p0' && (in_array($_id, self::$hidden_reports) || wp_slimstat::$options['async_load'] == 'yes')) return; 
+		
+		if (false === ($your_content = get_transient( 'slimstat_your_content' ))){
+			$your_content = array();
+			$your_content['content_items'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type != 'revision' AND post_status != 'auto-draft'");
+			$your_content['posts'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'post'");
+			$your_content['comments'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments}");
+			$your_content['pingbacks'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments} WHERE comment_type = 'pingback'");
+			$your_content['trackbacks'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments} WHERE comment_type = 'trackback'");
+			$your_content['longest_post_id'] = $GLOBALS['wpdb']->get_var("SELECT ID FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'post' ORDER BY LENGTH(post_content) DESC LIMIT 0,1");
+			$your_content['longest_comment_id'] = $GLOBALS['wpdb']->get_var("SELECT comment_ID FROM {$GLOBALS['wpdb']->comments}");
+			$your_content['avg_comments_per_post'] = !empty($your_content['posts'])?$your_content['comments']/$your_content['posts']:0;
+
+			$days_in_interval = floor((wp_slimstat_db::$timeframes['current_utime_end']-wp_slimstat_db::$timeframes['current_utime_start'])/86400);
+			$your_content['avg_posts_per_day'] = $your_content['posts']/$days_in_interval;
+
+			// Store values as transients for 30 minutes
+			set_transient('slimstat_your_content', $your_content, 1800);
+		}
+		
+		?>
+		
+		<p><?php self::inline_help(htmlentities(__("This value includes not only posts, but also custom post types, regardless of their status",'wp-slimstat'), ENT_QUOTES, 'UTF-8')) ?>
+			<?php _e('Content Items', 'wp-slimstat') ?> <span><?php echo number_format($your_content['content_items'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php _e('Total Comments', 'wp-slimstat') ?> <span><?php echo number_format($your_content['comments'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php _e('Pingbacks', 'wp-slimstat') ?> <span><?php echo number_format($your_content['pingbacks'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php _e('Trackbacks', 'wp-slimstat') ?> <span><?php echo number_format($your_content['trackbacks'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php _e('Longest Post (ID)', 'wp-slimstat') ?> <span><?php echo '<a href="post.php?action=edit&post='.$your_content['longest_post_id'].'">'.$your_content['longest_post_id'].'</a>' ?></span></p>
+		<p><?php _e('Longest Comment (ID)', 'wp-slimstat') ?> <span><?php echo '<a href="comment.php?action=editcomment&c='.$your_content['longest_comment_id'].'">'.$your_content['longest_comment_id'].'</a>' ?></span></p>
+		<p><?php _e('Avg Comments Per Post', 'wp-slimstat') ?> <span><?php echo number_format($your_content['avg_comments_per_post'], 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+		<p><?php _e('Avg Posts Per Day', 'wp-slimstat') ?> <span><?php echo number_format($your_content['avg_posts_per_day'], 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p><?php
+	}
+
 	public static function show_report_wrapper($_report_id = 'p0'){
 		$report_id = ''; $is_ajax = true;
 		if (!empty($_POST['report_id'])){
@@ -797,13 +940,9 @@ class wp_slimstat_reports{
 			case '#slim_p3_09':
 				self::show_results('recent', $ajax_report_id, 'searchterms');
 				break;
-			case '#slim_p1_07':
-				self::show_results('popular', $ajax_report_id, 'language', array('total_for_percentage' => wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1'), 'custom_where' => 't1.visit_id > 0 AND tb.type <> 1'));
-				break;
 			case '#slim_p1_08':
 				self::show_results('popular', $ajax_report_id, 'SUBSTRING_INDEX(t1.resource, "?", 1)', array('total_for_percentage' => $current_pageviews, 'as_column' => 'resource', 'filter_op' => 'contains'));
 				break;
-			case '#slim_p1_09':
 			case '#slim_p2_13':
 			case '#slim_p3_10':
 				self::show_results('recent', $ajax_report_id, 'country');
@@ -827,8 +966,11 @@ class wp_slimstat_reports{
 			case '#slim_p3_04':
 				self::show_results('popular', $ajax_report_id, 'country', array('total_for_percentage' => $current_pageviews));
 				break;
-			case '#slim_p1_14':
-				self::show_results('popular', $ajax_report_id, 'outbound_resource', array('total_for_percentage' => wp_slimstat_db::count_records('tob.outbound_resource <> "" AND tob.type = 1'), 'custom_where' => 'tob.type = 1'));
+			case '#slim_p1_15':
+				self::show_rankings($ajax_report_id);
+				break;
+			case '#slim_p1_16':
+				self::show_hacker_ninja($ajax_report_id);
 				break;
 			case '#slim_p2_02':
 				self::show_visitors_summary($ajax_report_id, wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1'), wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1', 'visit_id'));
@@ -837,7 +979,7 @@ class wp_slimstat_reports{
 				self::show_results('popular', $ajax_report_id, 'language', array('total_for_percentage' => $current_pageviews));
 				break;
 			case '#slim_p2_04':
-				self::show_results('popular', $ajax_report_id, 'browser', array('total_for_percentage' => $current_pageviews, 'more_columns' => ',tb.version,tb.user_agent'));
+				self::show_results('popular', $ajax_report_id, 'browser', array('total_for_percentage' => $current_pageviews, 'more_columns' => ',tb.version'.((wp_slimstat::$options['show_complete_user_agent_tooltip']=='yes')?',tb.user_agent':'')));
 				break;
 			case '#slim_p2_05':
 				self::show_results('popular', $ajax_report_id, 'ip', array('total_for_percentage' =>$current_pageviews));
@@ -939,6 +1081,10 @@ class wp_slimstat_reports{
 			case '#slim_p4_21':
 				self::show_results('popular_outbound', $ajax_report_id, 'resource', array('total_for_percentage' => wp_slimstat_db::count_outbound()));
 				break;
+			case '#slim_p4_22':
+				self::show_your_blog($ajax_report_id);
+				break;
+
 			case '#slim_p7_02':
 				$using_screenres = wp_slimstat_admin::check_screenres();
 				include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/right-now.php");
