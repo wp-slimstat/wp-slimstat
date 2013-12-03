@@ -742,7 +742,7 @@ class wp_slimstat_reports{
 			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
 				$response = @json_decode($response['body']);
 				if (is_object($response) && !empty($response->responseData->cursor->resultCount)){
-					$rankings['google_index'] = $response->responseData->cursor->resultCount;
+					$rankings['google_index'] = (int)$response->responseData->cursor->resultCount;
 				}
 			}
 			
@@ -751,7 +751,7 @@ class wp_slimstat_reports{
 			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
 				$response = @json_decode($response['body']);
 				if (is_object($response) && !empty($response->responseData->cursor->resultCount)){
-					$rankings['google_backlinks'] = $response->responseData->cursor->resultCount;
+					$rankings['google_backlinks'] = (int)$response->responseData->cursor->resultCount;
 				}
 			}
 			
@@ -761,9 +761,9 @@ class wp_slimstat_reports{
 			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
 				$response = new SimpleXMLElement($response['body']);
 				if (is_object($response) && is_object($response->link_stat) && !empty($response->link_stat->like_count)){
-					$rankings['facebook_likes'] = (string)$response->link_stat->like_count;
-					$rankings['facebook_shares'] = (string)$response->link_stat->share_count;
-					$rankings['facebook_clicks'] = (string)$response->link_stat->click_count;
+					$rankings['facebook_likes'] = (int)$response->link_stat->like_count;
+					$rankings['facebook_shares'] = (int)$response->link_stat->share_count;
+					$rankings['facebook_clicks'] = (int)$response->link_stat->click_count;
 				}
 			}
 
@@ -772,14 +772,20 @@ class wp_slimstat_reports{
 			if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
 				$response = new SimpleXMLElement($response['body']);
 				if (is_object($response) && is_object($response->SD[1]->POPULARITY)){
-					$attributes = $response->SD[1]->POPULARITY->attributes();
-					$rankings['alexa_popularity'] = (string)$attributes['TEXT'];
-					
-					$attributes = $response->SD[1]->REACH->attributes();
-					$rankings['alexa_world_rank'] = (string)$attributes['RANK'];
-					
-					$attributes = $response->SD[1]->COUNTRY->attributes();
-					$rankings['alexa_country_rank'] = (string)$attributes['RANK'];
+					if ($response->SD[1]->POPULARITY && $response->SD[1]->POPULARITY->attributes()){
+						$attributes = $response->SD[1]->POPULARITY->attributes();
+						$rankings['alexa_popularity'] = (int)$attributes['TEXT'];
+					}
+
+					if ($response->SD[1]->REACH && $response->SD[1]->REACH->attributes()){
+						$attributes = $response->SD[1]->REACH->attributes();
+						$rankings['alexa_world_rank'] = (int)$attributes['RANK'];
+					}
+
+					if ($response->SD[1]->COUNTRY && $response->SD[1]->COUNTRY->attributes()){
+						$attributes = $response->SD[1]->COUNTRY->attributes();
+						$rankings['alexa_country_rank'] = (int)$attributes['RANK'];
+					}
 				}
 			}
 
@@ -809,36 +815,41 @@ class wp_slimstat_reports{
 		
 		$hn_urls = array('hn01' => 'http://www.hackerninja.com/scanner/crawler/launcher_bing_bot.php', 'hn02' => 'http://www.hackerninja.com/scanner/crawler/launcher_clamav_scanner.php', 'hn03' => 'http://www.hackerninja.com/scanner/crawler/launcher_google_bot.php', 'hn04' => 'http://www.hackerninja.com/scanner/crawler/launcher_hostile_strings.php', 'hn05' => 'http://www.hackerninja.com/scanner/crawler/launcher_vanilla_bot.php', 'hn06' => 'http://www.hackerninja.com/scanner/crawler/scan_google_malware_list.php', 'hn07' => 'http://www.hackerninja.com/scanner/crawler/scan_external_links.php');
 		$parsed_url = parse_url(home_url());
-		switch($_POST['run_scan']){
-			case '00': ?>
-				<p><?php _e('It might take a while to complete all the tests. Please be patient.', 'wp-slimstat') ?></p>
-				<p><?php _e('Bing Test', 'wp-slimstat') ?> <span id="hn01" class="blink">Loading</span></p>
-				<p><?php _e('AntiVirus Scan', 'wp-slimstat') ?> <span id="hn02" class="blink">Loading</span></p>
-				<p><?php _e('Google Bot Test', 'wp-slimstat') ?> <span id="hn03" class="blink">Loading</span></p>
-				<p><?php _e('Scan for Hostile Strings', 'wp-slimstat') ?> <span id="hn04" class="blink">Loading</span></p>
-				<p><?php _e('Generic Web Bot test', 'wp-slimstat') ?> <span id="hn05" class="blink">Loading</span></p>
-				<p><?php _e('Google Safe Browsing List', 'wp-slimstat') ?> <span id="hn06" class="blink">Loading</span></p>
-				<p><?php _e('Hostile External Links', 'wp-slimstat') ?> <span id="hn07" class="blink">Loading</span></p><?php
-				break;
-			case 'hn01':
-			case 'hn02':
-			case 'hn03':
-			case 'hn04':
-			case 'hn05':
-			case 'hn06':
-			case 'hn07':
-				$options = array('timeout' => 30);
-				$response = @wp_remote_get($hn_urls[$_POST['run_scan']], $options);
-				if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
-					echo '<a target="_blank" href="http://www.hackerninja.com/free-scan/?website='.$parsed_url['host'].'">'.((stripos($response['body'],'passed') !== false)?__('Passed','wp-slimstat'):__('At Risk','wp-slimstat')).'</a>';
-				}
-				else{
-					echo __('Timed Out','wp-slimstat');
-				}
-				break;
-			default:
-				echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Start Scan</a></p>';
-				break;
+		if (!isset($_POST['run_scan'])){
+			echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Start Scan</a></p>';
+		}
+		else{
+			switch($_POST['run_scan']){
+				case '00': ?>
+					<p><?php _e('It might take a while to complete all the tests. Please be patient.', 'wp-slimstat') ?></p>
+					<p><?php _e('Bing Test', 'wp-slimstat') ?> <span id="hn01" class="blink">Loading</span></p>
+					<p><?php _e('AntiVirus Scan', 'wp-slimstat') ?> <span id="hn02" class="blink">Loading</span></p>
+					<p><?php _e('Google Bot Test', 'wp-slimstat') ?> <span id="hn03" class="blink">Loading</span></p>
+					<p><?php _e('Scan for Hostile Strings', 'wp-slimstat') ?> <span id="hn04" class="blink">Loading</span></p>
+					<p><?php _e('Generic Web Bot test', 'wp-slimstat') ?> <span id="hn05" class="blink">Loading</span></p>
+					<p><?php _e('Google Safe Browsing List', 'wp-slimstat') ?> <span id="hn06" class="blink">Loading</span></p>
+					<p><?php _e('Hostile External Links', 'wp-slimstat') ?> <span id="hn07" class="blink">Loading</span></p><?php
+					break;
+				case 'hn01':
+				case 'hn02':
+				case 'hn03':
+				case 'hn04':
+				case 'hn05':
+				case 'hn06':
+				case 'hn07':
+					$options = array('timeout' => 30);
+					$response = @wp_remote_get($hn_urls[$_POST['run_scan']], $options);
+					if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
+						echo '<a target="_blank" href="http://www.hackerninja.com/free-scan/?website='.$parsed_url['host'].'">'.((stripos($response['body'],'passed') !== false)?__('Passed','wp-slimstat'):__('At Risk','wp-slimstat')).'</a>';
+					}
+					else{
+						echo __('Timed Out','wp-slimstat');
+					}
+					break;
+				default:
+					echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Start Scan</a></p>';
+					break;
+			}
 		}
 	}
 	

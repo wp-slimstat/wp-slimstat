@@ -5,8 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "Three new reports give you detailed information about your rankings (Google, Facebook, Alexa), your content and your site's security. Check them out!";
-	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
+	protected static $admin_notice = "We're still hoping to reach 500 5-star reviews by the end of 2013. <a href='http://wordpress.org/support/view/plugin-reviews/wp-slimstat' target='_blank'>Follow this link</a> if you want to thank our team for their hard work!";
 	
 	/**
 	 * Init -- Sets things up.

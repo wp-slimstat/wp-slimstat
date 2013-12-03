@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.2
-Tested up to: 3.7
-Stable tag: 3.4.2
+Tested up to: 3.7.1
+Stable tag: 3.4.3
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
@@ -282,6 +282,11 @@ foreach ($results...`
 5. Access your stats from within WordPress for iOS
 
 == Changelog ==
+
+= 3.4.3 =
+* [Fix] Bug in parsing the data returned by Alexa (new Rankings report) was causing some reports to disappear (thank you, [pepe](http://wordpress.org/support/topic/php-warnings-in-rankings-box))
+* [Fix] A few PHP notices (thank you, [supriyos](http://wordpress.org/support/topic/errors-after-upgrading-to-342))
+* [Fix] Bug in masking local IP addresses (thank you, [carbeck](http://wordpress.org/support/topic/1272552550-1))
 
 = 3.4.2 =
 * [New] Three new reports give you detailed information about your rankings (Google, Facebook, Alexa), your content and your site's security.

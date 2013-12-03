@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.4.2
+version: 3.4.3
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.4.2';
+	public static $version = '3.4.3';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -351,11 +351,11 @@ class wp_slimstat{
 		self::$stat['country'] = self::_get_country(self::$stat['ip']);
 
 		// Anonymize IP Address?
-		if (self::$options['anonymize_ip'] == 'yes'){
+		if (self::$options['anonymize_ip'] == 'yes' && self::$stat['country'] != 'xy'){
 			self::$stat['ip'] = self::$stat['ip']&4294967040;
 			if (!empty(self::$stat['other_ip'])) self::$stat['other_ip'] = self::$stat['other_ip']&4294967040;
 		}
-		
+
 		// Is this country blacklisted?
 		if (stripos(self::$options['ignore_countries'], self::$stat['country']) !== false){
 			self::$stat['id'] = -206;
