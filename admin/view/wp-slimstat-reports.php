@@ -528,14 +528,14 @@ class wp_slimstat_reports{
 
 			// Some columns require a special post-treatment
 			if ($_column == 'resource' && strpos($_args['custom_where'], '404') === false){
-				$element_value = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$results[$i]['resource'].'"></a> '.$element_value;
+				$element_value = '<a target="_blank" class="inline-icon url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$results[$i]['resource'].'"></a> '.$element_value;
 			}
 			if ($_column == 'domain'){
 				$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
-				$element_value = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
+				$element_value = '<a target="_blank" class="inline-icon url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 			}
 			if (!empty($results[$i]['ip']))
-				$row_details .= '<br><a title="WHOIS: '.$results[$i]['ip'].'" class="whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a> IP: <a class="slimstat-filter-link" href="'.self::fs_url(array('ip' => 'equals '.$results[$i]['ip'])).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
+				$row_details .= '<br><a title="WHOIS: '.$results[$i]['ip'].'" class="inline-icon whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a> IP: <a class="slimstat-filter-link" href="'.self::fs_url(array('ip' => 'equals '.$results[$i]['ip'])).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
 
 			echo "<p>$element_pre_value$element_value$percentage <b class='slimstat-row-details'>$row_details</b></p>";
 		}
@@ -611,7 +611,7 @@ class wp_slimstat_reports{
 					$host_by_ip = "<a class='slimstat-filter-link' class='highlight-user' href='".self::fs_url(array('user' => 'equals '.$results[$i]['user']))."'>{$display_user_name}</a>";
 					$highlight_row = (strpos( $results[$i]['notes'], '[user]') !== false)?' is-known-user':' is-known-visitor';
 				}
-				$host_by_ip = "<a class='whois' href='".self::$ip_lookup_url."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
+				$host_by_ip = "<a class='inline-icon whois' href='".self::$ip_lookup_url."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
 				$results[$i]['country'] = "<a class='slimstat-filter-link' href='".self::fs_url(array('country' => 'equals '.$results[$i]['country']))."'><img class='slimstat-tooltip-trigger' src='".wp_slimstat_reports::$plugin_url."/images/flags/{$results[$i]['country']}.png' width='16' height='16'/><span class='slimstat-tooltip-content'>".__('c-'.$results[$i]['country'],'wp-slimstat').'</span></a>';
 				$results[$i]['other_ip'] = !empty($results[$i]['other_ip'])?" <a class='slimstat-filter-link' href='".self::fs_url(array('other_ip' => 'equals '.$results[$i]['other_ip']))."'>".long2ip($results[$i]['other_ip']).'</a>&nbsp;&nbsp;':'';
 		
