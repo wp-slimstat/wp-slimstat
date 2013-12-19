@@ -395,3 +395,12 @@ Stephane Sinclair,
 Thomas Weiss,
 Wayne Liebman,
 Willow Ridge Press
+
+== Tools of the trade, in alphabetical order ==
+* [Duri.Me](http://duri.me/
+* [Filezilla](https://filezilla-project.org/)
+* [Gimp](http://www.gimp.org/)
+* [Google Chrome](https://www.google.com/intl/en/chrome/browser/)
+* [Notepad++](http://notepad-plus-plus.org/)
+* [Tortoise SVN](http://tortoisesvn.net/)
+* [WAMP Server](http://www.wampserver.com/en/)
