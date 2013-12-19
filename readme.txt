@@ -355,8 +355,8 @@ foreach ($results...`
 
 == Distinguished Users ==
 
-* [Vitaly](http://www.visbiz.org/) for all the QA and testing, and for providing the complete Russian localization
-* [Davide Tomasello](http://www.davidetomasello.it/), for all the great feedback he sent me and the time spent looking for bugs and inconsistencies
+* [Vitaly](http://www.visbiz.org/) - Volunteered quite a lot of time for QA and testing, and provided the complete Russian localization
+* [Davide Tomasello](http://www.davidetomasello.it/) - Gave us great feedback and plenty of ideas to take this plugin to the next level
 
 == Supporters ==
 [7times77](http://7times77.com),
