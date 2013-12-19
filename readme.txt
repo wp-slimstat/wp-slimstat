@@ -397,7 +397,7 @@ Wayne Liebman,
 Willow Ridge Press
 
 == Tools of the trade, in alphabetical order ==
-* [Duri.Me](http://duri.me/
+* [Duri.Me](http://duri.me/)
 * [Filezilla](https://filezilla-project.org/)
 * [Gimp](http://www.gimp.org/)
 * [Google Chrome](https://www.google.com/intl/en/chrome/browser/)
