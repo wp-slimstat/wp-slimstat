@@ -274,10 +274,10 @@ foreach ($results...`
 
 == Screenshots ==
 
-1. Overview: your website traffic at a glance
-2. Right Now: a real time view of your visitors' whereabouts 
-3. Settings: plenty of options to customize the plugin's behavior around your needs
-4. Responsive layout: keep an eye on your reports on the go
+1. **Overview** - Your website traffic at a glance
+2. **Right Now** - A real-time view of your visitors' whereabouts 
+3. **Settings** - Plenty of options to customize the plugin's behavior
+4. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
 
