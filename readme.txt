@@ -283,7 +283,7 @@ foreach ($results...`
 
 = 3.5 =
 * [Note] Please make sure to clear your browser cache, if your reports look all messy and broken!
-* [New] A polished and fully responsive interface, optimized for the new WordPress 3.8 admin layout. If you're still using WP 3.7 or earlier, you may want to stick with version 3.4.3. 
+* [New] A polished and fully responsive interface, optimized for the new WordPress 3.8 admin layout. If you're still using WP 3.7 or earlier, you may want to stick to version 3.4.3. 
 * [New] Implemented *Slim*Scroll (what else? hehe) by [Piotr Rochala](http://rocha.la).
 * [New] Added qTip 2 to handle tooltips and contextual help.
 * [New] Added two new reports: who's currently online (registered users), and top language families (thank you, Vitaly)
@@ -296,6 +296,7 @@ foreach ($results...`
 * [Update] The plugin's source code is being consolidated and reorganized. You reports will now load faster than ever!
 * [Update] By default, Javascript Mode (or Tracking Mode, in v3.5) is now enabled
 * [Update] Added new icon for Windows 8.1
+* [Update] MaxMind / Geolocation database updated to December 2013
 * [Fix] Bug on masking IP Addresses on 32-bit systems (thank you, Per)
 
 3.4.3
@@ -352,7 +353,12 @@ foreach ($results...`
 * [Fix] A javascript variable name conflict introduced in version 3.3.4 was affecting some advanced functionality (thank you, [Nanowisdoms](http://wordpress.org/support/topic/expand-details-option-not-working-in-334))
 * [Fix] A pretty unique combination of settings was affecting the way the Spy View data was being listed (thank you, [Nanowisdoms](http://wordpress.org/support/topic/live-visitor-as-in-currently-still-on-the-site-view))
 
-== Donors ==
+== Distinguished Users ==
+
+* [Vitaly](http://www.visbiz.org/) for all the QA and testing, and for providing the complete Russian localization
+* [Davide Tomasello](http://www.davidetomasello.it/), for all the great feedback he sent me and the time spent looking for bugs and inconsistencies
+
+== Supporters ==
 [7times77](http://7times77.com),
 [Andrea Pinti](http://andreapinti.com),
 [Bluewave Blog](http://blog.bluewaveweb.co.uk),
@@ -389,8 +395,3 @@ Stephane Sinclair,
 Thomas Weiss,
 Wayne Liebman,
 Willow Ridge Press
-
-== Special Thanks To ==
-
-* [Davide Tomasello](http://www.davidetomasello.it/), for all the great feedback he sent me and the time spent looking for bugs and inconsistencies
-* [Thomas Nielsen](http://www.bogt.dk/), for his generous donation and for helping with the new icon set.
