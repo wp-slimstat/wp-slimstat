@@ -401,6 +401,7 @@ Willow Ridge Press
 * [Filezilla](https://filezilla-project.org/)
 * [Gimp](http://www.gimp.org/)
 * [Google Chrome](https://www.google.com/intl/en/chrome/browser/)
+* [poEdit](http://www.poedit.net/)
 * [Notepad++](http://notepad-plus-plus.org/)
 * [Tortoise SVN](http://tortoisesvn.net/)
 * [WAMP Server](http://www.wampserver.com/en/)
