@@ -56,17 +56,17 @@ var SlimStatAdmin = {
 				if (typeof item.series.label != 'undefined'){
 					if (previous_point != item.dataIndex){
 						previous_point = item.dataIndex;
-						jQuery("#jquery-tooltip").remove();
-						SlimStatAdmin.show_tooltip(item.pageX, item.pageY, SlimStatAdmin.chart_tick_format(item.datapoint[1]));
+						//jQuery("#jquery-tooltip").remove();
+						//SlimStatAdmin.show_tooltip(item.pageX, item.pageY, SlimStatAdmin.chart_tick_format(item.datapoint[1]));
 					}
 				}
-				else{
-					SlimStatAdmin.show_tooltip(item.pageX, item.pageY, SlimStatAdmin.data[0].data[item.dataIndex][2]);
-				}
+				//else{
+				//	SlimStatAdmin.show_tooltip(item.pageX, item.pageY, SlimStatAdmin.data[0].data[item.dataIndex][2]);
+				//}
 			}
 			else{
-				if (jQuery('#jquery-tooltip').length) jQuery('#jquery-tooltip').remove();
-				previous_point = null;            
+				//if (jQuery('#jquery-tooltip').length) jQuery('#jquery-tooltip').remove();
+				//previous_point = null;            
 			}
 		});
 
@@ -118,14 +118,17 @@ var SlimStatAdmin = {
 		jQuery('#'+report_id+' .inside').fadeOut(100, function(){
 			jQuery(this).html('<p class="loading"></p>').fadeIn(100);
 		});
+
 		jQuery.post(ajaxurl, data, function(response){
-			jQuery('#'+report_id + ' .inside').fadeOut(500, function(){
-				jQuery(this).html(response).fadeIn(500);
-			});
-			if (report_id.indexOf('_01') > 0) SlimStatAdmin.chart_init();
-			//jQuery('#'+report_id + ' .whois,' + report_id + ' .whois16').bind("click", function(event) {
-			//	SlimStatAdmin.attach_whois_modal(jQuery(this), event);
-			//});
+			if (report_id.indexOf('_01') > 0){
+				jQuery('#'+report_id + ' .inside').html(response);
+				SlimStatAdmin.chart_init();
+			}
+			else{
+				jQuery('#'+report_id + ' .inside').fadeOut(500, function(){
+					jQuery(this).html(response).fadeIn(500);
+				});
+			}
 		});
 
 		// Remove filters set by other Ajax buttons
