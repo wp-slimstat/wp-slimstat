@@ -299,7 +299,7 @@ foreach ($results...`
 * [Update] MaxMind / Geolocation database updated to December 2013
 * [Fix] Bug on masking IP Addresses on 32-bit systems (thank you, Per)
 
-3.4.3
+= 3.4.3 =
 * [Fix] Bug in parsing the data returned by Alexa (new Rankings report) was causing some reports to disappear (thank you, [pepe](http://wordpress.org/support/topic/php-warnings-in-rankings-box))
 * [Fix] A few PHP notices (thank you, [supriyos](http://wordpress.org/support/topic/errors-after-upgrading-to-342))
 * [Fix] Bug in masking local IP addresses (thank you, [carbeck](http://wordpress.org/support/topic/1272552550-1))
