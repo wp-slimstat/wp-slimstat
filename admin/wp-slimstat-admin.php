@@ -5,7 +5,10 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "We're still hoping to reach 500 5-star reviews by the end of 2013. <a href='http://wordpress.org/support/view/plugin-reviews/wp-slimstat' target='_blank'>Follow this link</a> if you want to thank our team for their hard work!";
+	protected static $admin_notice = "You're awesome! We're flattered by <a target='_blank' href='http://wordpress.org/support/view/plugin-reviews/wp-slimstat'>your reviews</a> and words of appreciation for our work (even if disgruntled user <a target='_blank' href='https://twitter.com/kybunnies/status/408222223376596992'>KYbunnies</a> thinks our support <a target='_blank' href='http://wordpress.org/support/topic/nice-463#post-4955211'>is not worth a load of cow manure</a> and a couple of other people were so annoyed by these messages that they gave us 1 star). To thank our community, and to celebrate WordPress' new admin, we're streamlining WP SlimStat's interface. A fresher layout, new intuitive reports, and much more. Stay tuned!";
+	// We are streamlining WP SlimStat's interface to celebrate the new admin design introduced with WordPress 3.8. More to come in the next few weeks!
+	// You can now easily identify a report's type by its header color. Plus, enlarged containers give more room to your data. 
+	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	
 	/**
 	 * Init -- Sets things up.
@@ -23,13 +26,16 @@ class wp_slimstat_admin{
 		if (!isset($l10n['wp-slimstat'])){
 			load_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang/wp-slimstat-en_US.mo');
 		}
-		
+
 		// Hook for WPMU - New blog created
 		add_action('wpmu_new_blog', array(__CLASS__, 'new_blog'), 10, 1);
 
 		// Screen options: hide/show panels to customize your view
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
-		
+
+		// Sidebar icon (uses DashIcons introduced in WP 3.8)
+		add_action('admin_head', array(__CLASS__, 'add_side_navigation_icon'));
+
 		// Footer links
 		add_filter('admin_footer_text',  array(__CLASS__, 'footer_admin'));
 
@@ -44,9 +50,8 @@ class wp_slimstat_admin{
 
 		// Display a notice that hightlights this version's features
 		$admin_filemtime = @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
-		if (($admin_filemtime > date('U') - 300) || empty(wp_slimstat::$options['show_admin_notice']) || wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$options['version']){
+		if (($admin_filemtime > date('U') - 300) && !empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false){
 			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
-			wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$options['version'];
 		}
 
 		// Remove spammers from the database
@@ -63,7 +68,7 @@ class wp_slimstat_admin{
 			if (wp_slimstat::$options['add_posts_column'] == 'yes'){
 				add_filter('manage_posts_columns', array(__CLASS__, 'add_column_header'));
 				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
-				add_action('admin_print_styles-edit.php', array(__CLASS__, 'wp_slimstat_stylesheet'), 20);
+				add_action('admin_print_styles-edit.php', array(__CLASS__, 'wp_slimstat_stylesheet'));
 			}
 
 			// Update the table structure and options, if needed
@@ -328,9 +333,7 @@ class wp_slimstat_admin{
 	 * Loads a custom stylesheet file for the administration panels
 	 */
 	public static function wp_slimstat_stylesheet(){
-		wp_register_style('jquery-ui-css', plugins_url('/admin/css/jquery.ui.datepicker.css', dirname(__FILE__)));
-		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)), array('jquery-ui-css'));
-		wp_enqueue_style('jquery-ui-css');
+		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)));
 		wp_enqueue_style('wp-slimstat');
 	}
 	// end wp_slimstat_stylesheet
@@ -355,8 +358,7 @@ class wp_slimstat_admin{
 			'async_load' => wp_slimstat::$options['async_load'],
 			'datepicker_image' => plugins_url('/admin/images/datepicker.png', dirname(__FILE__)),
 			'current_tab' => wp_slimstat_reports::$current_tab,
-			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:1,
-			'filters' => htmlentities(str_replace('&amp;', '&', wp_slimstat_reports::fs_url(array(), '', true)), ENT_QUOTES, 'UTF-8'),
+			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
 			'refresh_interval' => (wp_slimstat_reports::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
 		);
 		wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
@@ -382,7 +384,7 @@ class wp_slimstat_admin{
 
 		$new_entry = array();
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
-			$new_entry[] = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'), plugins_url('/admin/images/wp-slimstat-menu.png', dirname(__FILE__)));
+			$new_entry[] = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Right Now','wp-slimstat'), __('Right Now','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Overview','wp-slimstat'), __('Overview','wp-slimstat'), $minimum_capability, 'wp-slim-view-2', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Visitors','wp-slimstat'), __('Visitors','wp-slimstat'), $minimum_capability, 'wp-slim-view-3', array(__CLASS__, 'wp_slimstat_include_view'));
@@ -564,7 +566,7 @@ class wp_slimstat_admin{
 	 * Displays a message related to the current version of WP SlimStat
 	 */
 	public static function show_admin_notice(){
-		echo '<div class="updated highlight" style="padding:10px">'.self::$admin_notice.'</div>';
+		echo '<div class="updated" style="padding:10px"><strong>WP SlimStat News</strong>: '.self::$admin_notice.'</div>';
 	}
 	
 	/*
@@ -595,53 +597,69 @@ class wp_slimstat_admin{
 	 */
 	public static function display_options($_options = array(), $_current_tab = 1){ ?>
 		<form action="<?php echo self::$config_url.$_current_tab ?>" method="post" id="form-slimstat-options-tab-<?php echo $_current_tab ?>">
-			<table class="form-table <?php echo $GLOBALS['wp_locale']->text_direction ?>">
-			<tbody>
-				<?php foreach($_options as $_option_name => $_option_details) self::settings_table_row($_option_name, $_option_details); ?>
-			</tbody>
+			<table class="form-table widefat <?php echo $GLOBALS['wp_locale']->text_direction ?>">
+			<tbody><?php
+				$i = 0;
+				foreach($_options as $_option_name => $_option_details){
+					$i++;
+					if ($_option_details['type'] != 'textarea'){
+						self::settings_table_row($_option_name, $_option_details, $i%2==0);
+					}
+					else{
+						self::settings_textarea($_option_name, $_option_details, $i%2==0);
+					}
+				}
+			?></tbody>
 			</table>
-			
-			<?php foreach($_options as $_option_name => $_option_details) self::settings_textarea($_option_name, $_option_details); ?>
 			<p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p>	
 		</form><?php
 	}
 
-	protected static function settings_table_row($_option_name = '', $_option_details = array()){
+	protected static function settings_table_row($_option_name = '', $_option_details = array(), $_alternate = false){
 		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
-		if (!isset(wp_slimstat::$options[$_option_name])) wp_slimstat::$options[$_option_name] = ''; 
+		
+		if (!isset(wp_slimstat::$options[$_option_name])){
+			wp_slimstat::$options[$_option_name] = ''; 
+		}
 
+		echo '<tr'.($_alternate?' class="alternate"':'').'>';
 		switch($_option_details['type']){
+			case 'section_header': ?>
+				<td colspan="2" class="slimstat-options-section-header"><?php echo $_option_details['description'] ?></td><?php
+				break;
 			case 'yesno': ?>
-				<tr>
-					<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-					<td>
-						<span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-						<span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
-						<span class="description"><?php echo $_option_details['long_description'] ?></span>
-					</td>
-				</tr><?php
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+					<span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
 				break;
 			case 'text':
 			case 'integer': ?>
-				<tr>
-					<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-					<td>
-						<span class="block-element"><?php echo $_option_details['before_input_field'] ?><input type="<?php echo ($_option_details['type'] == 'integer')?'number':'text' ?>" class="<?php echo ($_option_details['type'] == 'integer')?'small-text':'regular-text' ?>" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="<?php echo wp_slimstat::$options[$_option_name] ?>"> <?php echo $_option_details['after_input_field'] ?></span>
-						<span class="description"><?php echo $_option_details['long_description'] ?></span>
-					</td>
-				</tr><?php
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element"><?php echo $_option_details['before_input_field'] ?><input type="<?php echo ($_option_details['type'] == 'integer')?'number':'text' ?>" class="<?php echo ($_option_details['type'] == 'integer')?'small-text':'regular-text' ?>" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="<?php echo wp_slimstat::$options[$_option_name] ?>"> <?php echo $_option_details['after_input_field'] ?></span>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
 				break;
 			default:
 		}
+		echo '</tr>';
 	}
 
-	protected static function settings_textarea($_option_name = '', $_option_details = array('description' =>'', 'type' => '', 'long_description' => '')){
-		if ($_option_details['type'] != 'textarea') return; 
-		if (!isset(wp_slimstat::$options[$_option_name])) wp_slimstat::$options[$_option_name] = ''; ?>
-		
-		<h3><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></h3>
-		<p><?php echo $_option_details['long_description'] ?></p>
-		<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo !empty(wp_slimstat::$options[$_option_name])?stripslashes(wp_slimstat::$options[$_option_name]):'' ?></textarea></p><?php
+	protected static function settings_textarea($_option_name = '', $_option_details = array('description' =>'', 'type' => '', 'long_description' => ''), $_alternate = false){
+		if (!isset(wp_slimstat::$options[$_option_name])){
+			wp_slimstat::$options[$_option_name] = '';
+		} ?>
+
+		<tr<?php echo ($_alternate?' class="alternate"':''); ?>>
+			<td colspan="2">
+				<h3><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></h3>
+				<p><?php echo $_option_details['long_description'] ?></p>
+				<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo !empty(wp_slimstat::$options[$_option_name])?stripslashes(wp_slimstat::$options[$_option_name]):'' ?></textarea></p>
+			</td>
+		</tr><?php
 	}
 
 	/**
@@ -731,41 +749,26 @@ class wp_slimstat_admin{
 </ul>'
 			)
 		);
-/*
-		$screen->add_help_tab(
-			array(
-				'id' => 'wp-slimstat-events',
-				'title' => __('Event Tracking','wp-slimstat'),
-				'content' => '<p>'.__('Blah blah','wp-slimstat').'</p>'
-			)
-		);
-*/
-		$screen->add_help_tab(
-			array(
-				'id' => 'wp-slimstat-references',
-				'title' => __('Support','wp-slimstat'),
-				'content' => '<br/>
-<table class="form-table">
-<tbody>
-	<tr valign="top">
-		<th scope="row">
-			<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38">
-				<img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" width="147" height="47" alt="Donate Now" /></a>
-		</th>
-		<td>'.__('<a href="http://slimstat.getused.to.it/">WP SlimStat</a> is and will always be free, but consider supporting the author if this plugin helped you improve your website, or if you are making money out of it. Donations will be invested in the development of WP SlimStat, and to buy some food for my hungry family. You can also leave <a href="http://wordpress.org/support/view/plugin-reviews/wp-slimstat">a review</a> to let other users know how this plugin has helped you manage your site.','wp-slimstat').'</td>
-	</tr>
-</tbody>
-</table>'
-			)
-		);
 	}
 	// end contextual_help
 
 	// Footer link
 	public static function footer_admin($_original_footer = ''){
-		return $_original_footer.' And for keeping an eye on your visitors with <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.';
+		return $_original_footer.__(' And for keeping an eye on your visitors with <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.','wp-slimstat');
 	}
-	
+
+	/**
+	 * Adds some inline style to customize the icon associated to SlimStat in the side navigation
+	 */
+	public static function add_side_navigation_icon() {
+	   echo "<style type='text/css' media='screen'>
+			   #adminmenu #toplevel_page_wp-slim-view-1 .wp-menu-image:before {
+					content: '\\f239';
+					margin-top: -2px;
+				}
+			 </style>";
+	}
+
 	/**
 	 * Creates a table in the database
 	 */

@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: chart, analytics, visitors, users, spy, shortstat, tracking, reports, seo, referers, analyze, wassup, geolocation, online users, spider, tracker, pageviews, world map, stats, maxmind, flot, stalker, statistics, google+, monitor, seo
 Requires at least: 3.2
-Tested up to: 3.7.1
-Stable tag: 3.4.3
+Tested up to: 3.8
+Stable tag: 3.5
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
@@ -28,7 +28,7 @@ A powerful real-time web analytics plugin for WordPress. Visit our [official sit
 * Russian
 * Spanish
 * Swedish
-* Your language is missing or incomplete? [Contact Us](http://slimstat.getused.to.it/contact-us/) to share your localization!
+* Your language is missing or incomplete? [Contact Us](http://slimstat.getused.to.it/contact-us/) if you would like to share your localization!
 
 = What are people saying about WP SlimStat? =
 * One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
@@ -45,24 +45,23 @@ A powerful real-time web analytics plugin for WordPress. Visit our [official sit
 * At least 10 Mb of free memory for the tracker
 
 = Browser Compatibility =
-WP SlimStat uses the HTML5 Canvas element and SVG graphics to display its charts and the world map. Unfortunately Internet Explorer 8 and older versions don't support them, so you're encouraged to upgrade your browser.
+WP SlimStat uses the HTML5. Unfortunately IE8 and older versions don't support it. Please upgrade your browser to take full advantage of this plugin.
 
 = Premium Add-ons =
-Please visit [our website](http://slimstat.getused.to.it/addons/) for an updated list of extensions.
+Visit [our website](http://slimstat.getused.to.it/addons/) for an updated list of available extensions.
 
 = Free Add-ons =
+* [WP SlimStat Dashboard Widgets](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets) adds the most important reports right on your WordPress Dashboard
 * [WP SlimStat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) allows you to share your reports with your readers
-* [WP SlimStat Dashboard Widgets](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets) adds the most important reports to your WordPress Dashboard
 
 == Installation ==
 
 0. **If you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available**
-1. In your WP admin, go to Plugins > Add New
+1. In your WordPress admin, go to Plugins > Add New
 2. Search for WP SlimStat
-3. Click on Install Now under WP SlimStat
+3. Click on **Install Now** under WP SlimStat
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-5. To customize all the plugin's options, go to Slimstat > Settings
-6. If your wp-admin folder is not publicly accessible, please make sure to check the [FAQs](http://wordpress.org/extend/plugins/wp-slimstat/faq/) to see if there's anything else you need to do
+5. If your `wp-admin` folder is not publicly accessible, make sure to check the [FAQs](http://wordpress.org/extend/plugins/wp-slimstat/faq/) to see if there's anything else you need to do
 
 == Frequently Asked Questions ==
 
@@ -75,9 +74,9 @@ One of the files responsible for taking care of this is `admin-ajax.php`, usuall
 Point your browser to that file directly: if you see an error 404 or 500, then you will need to fix that problem, to allow WP SlimStat to do its job.
 If you see the number zero, then the problem could be related to a conflict with another plugin (caching, javascript minimizers, etc).
 
-= I am using W3 Total Cache/WP Super Cache/HyperCache/etc, and it looks like your plugin is not tracking all of my visitors. Can you help me? =
-Simply go to SlimStat > Settings > General tab, and enable Javascript Mode. WP SlimStat will only track human visitors (just like Google Analytics does, pretty much), but its accuracy will dramatically improve.
-Don't forget to invalidate/clear your plugin's cache, to let SlimStat add its tracking code to all the newly cached pages.
+= I am using W3 Total Cache/WP Super Cache/HyperCache/etc, and it looks like WP SlimStat is not tracking all of my visitors. Can you help me? =
+Go to SlimStat > Settings > General and enable Javascript Mode. Don't forget to invalidate/clear your plugin's cache, to let SlimStat add its tracking code to all the newly cached pages.
+Also, if you're using W3 Total Cache, make sure to exclude wp-slimstat.js from the minifier: our code is already minified, and it looks like W3TC breaks something when it tries to minify it again.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
 Try [to increase the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP. If that doesn't help,
@@ -275,15 +274,31 @@ foreach ($results...`
 
 == Screenshots ==
 
-1. What's happening right now on your site
-2. All the information at your fingertips
-3. Configuration panels offer flexibility and plenty of options
-4. Mobile view, to keep an eye on your stats on the go
-5. Access your stats from within WordPress for iOS
+1. Overview: your website traffic at a glance
+2. Right Now: a real time view of your visitors' whereabouts 
+3. Settings: plenty of options to customize the plugin's behavior around your needs
+4. Responsive layout: keep an eye on your reports on the go
 
 == Changelog ==
 
-= 3.4.3 =
+= 3.5 =
+* [Note] Please make sure to clear your browser cache, if your reports look all messy and broken!
+* [New] A polished and fully responsive interface, optimized for the new WordPress 3.8 admin layout. If you're still using WP 3.7 or earlier, you may want to stick with version 3.4.3. 
+* [New] Implemented *Slim*Scroll (what else? hehe) by [Piotr Rochala](http://rocha.la).
+* [New] Added qTip 2 to handle tooltips and contextual help.
+* [New] Added two new reports: who's currently online (registered users), and top language families (thank you, Vitaly)
+* [New] Now you can track 'fake' pageviews (if events are not enough for you)
+* [New] Pagination has been added to most reports: now you will not miss anything!
+* [Update] The 'Latest News' ribbon is now only displayed within the report screens, and it disappears automatically after 5 minutes.
+* [Update] [Browscap](http://browscap.co/) has been updated to version 5021-b9, released on Dec 8, 2013
+* [Updade] Most add-ons have been updated to use the new look and feel, icons, etc.
+* [Update] All the Settings screens have been reorganized and redesigned (and are now fully responsive!). We replaced the old "for geeks only" descriptions with new ones, easier to understand.
+* [Update] The plugin's source code is being consolidated and reorganized. You reports will now load faster than ever!
+* [Update] By default, Javascript Mode (or Tracking Mode, in v3.5) is now enabled
+* [Update] Added new icon for Windows 8.1
+* [Fix] Bug on masking IP Addresses on 32-bit systems (thank you, Per)
+
+3.4.3
 * [Fix] Bug in parsing the data returned by Alexa (new Rankings report) was causing some reports to disappear (thank you, [pepe](http://wordpress.org/support/topic/php-warnings-in-rankings-box))
 * [Fix] A few PHP notices (thank you, [supriyos](http://wordpress.org/support/topic/errors-after-upgrading-to-342))
 * [Fix] Bug in masking local IP addresses (thank you, [carbeck](http://wordpress.org/support/topic/1272552550-1))

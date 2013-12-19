@@ -11,7 +11,11 @@ class wp_slimstat_db {
 	// Filters
 	public static $filters = array();
 
+	/*
+	 * Initializes the environment, sets the filters
+	 */
 	public static function init($_filters = array(), $_system_filters = array()){
+
 		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
 		wp_slimstat::$wpdb->query("SET @@session.time_zone = '+00:00'");
 		date_default_timezone_set('UTC');
@@ -31,7 +35,9 @@ class wp_slimstat_db {
 		}
 
 		// Use WordPress' settings for date and time format
-		self::$formats['date_time_format'] = get_option('date_format', 'd-m-Y').' '.get_option('time_format', 'g:i a');
+		self::$formats['date_format'] = get_option('date_format', 'd-m-Y');
+		self::$formats['time_format'] = get_option('time_format', 'd-m-Y');
+		self::$formats['date_time_format'] = self::$formats['date_format'].' '.self::$formats['time_format'];
 
 		// Parse all the filters
 		if (!empty($_filters)) self::_init_filters($_filters);
@@ -48,14 +54,16 @@ class wp_slimstat_db {
 		else{
 			self::$timeframes['current_day']['h'] = date_i18n('H');
 		}
+
 		if (!empty(self::$filters['parsed']['day'])){
 			self::$timeframes['current_day']['d'] = sprintf('%02d', self::$filters['parsed']['day'][1]);
 			self::$timeframes['current_day']['day_selected'] = true;
 		}
 		else{
 			self::$timeframes['current_day']['d'] = date_i18n('d');
-			if (isset(self::$filters['parsed']['interval'])) unset(self::$filters['parsed']['interval']);
+			// if (isset(self::$filters['parsed']['interval'])) unset(self::$filters['parsed']['interval']);
 		}
+
 		if (!empty(self::$filters['parsed']['month'])){
 			self::$timeframes['current_day']['m'] = sprintf('%02d', self::$filters['parsed']['month'][1]);
 			self::$timeframes['current_day']['month_selected'] = true;
@@ -63,6 +71,7 @@ class wp_slimstat_db {
 		else{
 			self::$timeframes['current_day']['m'] = date_i18n('m');
 		}
+
 		if (!empty(self::$filters['parsed']['year'])){
 			self::$timeframes['current_day']['y'] = sprintf('%04d', self::$filters['parsed']['year'][1]);
 			self::$timeframes['current_day']['year_selected'] = true;
@@ -638,7 +647,8 @@ class wp_slimstat_db {
 					self::$filters['parsed']['year'] = array('equals', date_i18n('Y', $custom_date));
 					break;
 				case 'interval':
-					self::$filters['parsed']['interval'] = array('equals', intval($matches[3][$idx]));
+				case 'year':
+					if (intval($matches[3][$idx]) != 0) self::$filters['parsed'][$a_match] = array('equals', intval($matches[3][$idx]));
 					break;
 				default:
 					self::$filters['parsed'][$a_match] = array(isset($matches[2][$idx])?$matches[2][$idx]:'equals', isset($matches[3][$idx])?esc_sql(str_replace('\\', '', htmlspecialchars_decode($matches[3][$idx]))):'');

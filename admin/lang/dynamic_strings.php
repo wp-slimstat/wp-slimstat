@@ -70,246 +70,233 @@ __('quicktime','wp-slimstat'), // QuickTime
 __('real','wp-slimstat'), // Real Player
 __('silverlight','wp-slimstat'), // Microsoft Silverlight
 __('l-af','wp-slimstat'), // Afrikaans
-__('l-af-ZA','wp-slimstat'), // Afrikaans (South Africa)
+__('l-af-za','wp-slimstat'), // Afrikaans (South Africa)
 __('l-ar','wp-slimstat'), // Arabic
-__('l-ar-AE','wp-slimstat'), // Arabic (U.A.E.)
-__('l-ar-BH','wp-slimstat'), // Arabic (Bahrain)
-__('l-ar-DZ','wp-slimstat'), // Arabic (Algeria)
-__('l-ar-EG','wp-slimstat'), // Arabic (Egypt)
-__('l-ar-IQ','wp-slimstat'), // Arabic (Iraq)
-__('l-ar-JO','wp-slimstat'), // Arabic (Jordan)
-__('l-ar-KW','wp-slimstat'), // Arabic (Kuwait)
-__('l-ar-LB','wp-slimstat'), // Arabic (Lebanon)
-__('l-ar-LY','wp-slimstat'), // Arabic (Libya)
-__('l-ar-MA','wp-slimstat'), // Arabic (Morocco)
-__('l-ar-OM','wp-slimstat'), // Arabic (Oman)
-__('l-ar-QA','wp-slimstat'), // Arabic (Qatar)
-__('l-ar-SA','wp-slimstat'), // Arabic (Saudi Arabia)
-__('l-ar-SY','wp-slimstat'), // Arabic (Syria)
-__('l-ar-TN','wp-slimstat'), // Arabic (Tunisia)
-__('l-ar-YE','wp-slimstat'), // Arabic (Yemen)
+__('l-ar-ae','wp-slimstat'), // Arabic (U.A.E.)
+__('l-ar-bh','wp-slimstat'), // Arabic (Bahrain)
+__('l-ar-dz','wp-slimstat'), // Arabic (Algeria)
+__('l-ar-eg','wp-slimstat'), // Arabic (Egypt)
+__('l-ar-iq','wp-slimstat'), // Arabic (Iraq)
+__('l-ar-jo','wp-slimstat'), // Arabic (Jordan)
+__('l-ar-kw','wp-slimstat'), // Arabic (Kuwait)
+__('l-ar-lb','wp-slimstat'), // Arabic (Lebanon)
+__('l-ar-ly','wp-slimstat'), // Arabic (Libya)
+__('l-ar-ma','wp-slimstat'), // Arabic (Morocco)
+__('l-ar-om','wp-slimstat'), // Arabic (Oman)
+__('l-ar-qa','wp-slimstat'), // Arabic (Qatar)
+__('l-ar-sa','wp-slimstat'), // Arabic (Saudi Arabia)
+__('l-ar-sy','wp-slimstat'), // Arabic (Syria)
+__('l-ar-tn','wp-slimstat'), // Arabic (Tunisia)
+__('l-ar-ye','wp-slimstat'), // Arabic (Yemen)
 __('l-az','wp-slimstat'), // Azeri (Latin)
-__('l-az-AZ','wp-slimstat'), // Azeri (Latin) (Azerbaijan)
-__('l-az-AZ','wp-slimstat'), // Azeri (Cyrillic) (Azerbaijan)
+__('l-az-az','wp-slimstat'), // Azeri (Latin) (Azerbaijan)
 __('l-be','wp-slimstat'), // Belarusian
-__('l-be-BY','wp-slimstat'), // Belarusian (Belarus)
+__('l-be-by','wp-slimstat'), // Belarusian (Belarus)
 __('l-bg','wp-slimstat'), // Bulgarian
-__('l-bg-BG','wp-slimstat'), // Bulgarian (Bulgaria)
-__('l-bs-BA','wp-slimstat'), // Bosnian (Bosnia and Herzegovina)
+__('l-bg-bg','wp-slimstat'), // Bulgarian (Bulgaria)
+__('l-bs-ba','wp-slimstat'), // Bosnian (Bosnia and Herzegovina)
 __('l-ca','wp-slimstat'), // Catalan
-__('l-ca-ES','wp-slimstat'), // Catalan (Spain)
+__('l-ca-es','wp-slimstat'), // Catalan (Spain)
 __('l-cs','wp-slimstat'), // Czech
-__('l-cs-CZ','wp-slimstat'), // Czech (Czech Republic)
+__('l-cs-cz','wp-slimstat'), // Czech (Czech Republic)
 __('l-cy','wp-slimstat'), // Welsh
-__('l-cy-GB','wp-slimstat'), // Welsh (United Kingdom)
+__('l-cy-gb','wp-slimstat'), // Welsh (United Kingdom)
 __('l-da','wp-slimstat'), // Danish
-__('l-da-DK','wp-slimstat'), // Danish (Denmark)
+__('l-da-dk','wp-slimstat'), // Danish (Denmark)
 __('l-de','wp-slimstat'), // German
-__('l-de-AT','wp-slimstat'), // German (Austria)
-__('l-de-CH','wp-slimstat'), // German (Switzerland)
-__('l-de-DE','wp-slimstat'), // German (Germany)
-__('l-de-LI','wp-slimstat'), // German (Liechtenstein)
-__('l-de-LU','wp-slimstat'), // German (Luxembourg)
+__('l-de-at','wp-slimstat'), // German (Austria)
+__('l-de-ch','wp-slimstat'), // German (Switzerland)
+__('l-de-de','wp-slimstat'), // German (Germany)
+__('l-de-li','wp-slimstat'), // German (Liechtenstein)
+__('l-de-lu','wp-slimstat'), // German (Luxembourg)
 __('l-dv','wp-slimstat'), // Divehi
-__('l-dv-MV','wp-slimstat'), // Divehi (Maldives)
+__('l-dv-mv','wp-slimstat'), // Divehi (Maldives)
 __('l-el','wp-slimstat'), // Greek
-__('l-el-GR','wp-slimstat'), // Greek (Greece)
+__('l-el-gr','wp-slimstat'), // Greek (Greece)
 __('l-en','wp-slimstat'), // English
-__('l-en-AU','wp-slimstat'), // English (Australia)
-__('l-en-BZ','wp-slimstat'), // English (Belize)
-__('l-en-CA','wp-slimstat'), // English (Canada)
-__('l-en-CB','wp-slimstat'), // English (Caribbean)
-__('l-en-GB','wp-slimstat'), // English (United Kingdom)
-__('l-en-IE','wp-slimstat'), // English (Ireland)
-__('l-en-JM','wp-slimstat'), // English (Jamaica)
-__('l-en-NZ','wp-slimstat'), // English (New Zealand)
-__('l-en-PH','wp-slimstat'), // English (Republic of the Philippines)
-__('l-en-TT','wp-slimstat'), // English (Trinidad and Tobago)
-__('l-en-US','wp-slimstat'), // English (United States)
-__('l-en-ZA','wp-slimstat'), // English (South Africa)
-__('l-en-ZW','wp-slimstat'), // English (Zimbabwe)
+__('l-en-au','wp-slimstat'), // English (Australia)
+__('l-en-bz','wp-slimstat'), // English (Belize)
+__('l-en-ca','wp-slimstat'), // English (Canada)
+__('l-en-cb','wp-slimstat'), // English (Caribbean)
+__('l-en-gb','wp-slimstat'), // English (United Kingdom)
+__('l-en-ie','wp-slimstat'), // English (Ireland)
+__('l-en-jm','wp-slimstat'), // English (Jamaica)
+__('l-en-nz','wp-slimstat'), // English (New Zealand)
+__('l-en-ph','wp-slimstat'), // English (Republic of the Philippines)
+__('l-en-tt','wp-slimstat'), // English (Trinidad and Tobago)
+__('l-en-us','wp-slimstat'), // English (United States)
+__('l-en-za','wp-slimstat'), // English (South Africa)
+__('l-en-zw','wp-slimstat'), // English (Zimbabwe)
 __('l-eo','wp-slimstat'), // Esperanto
 __('l-es','wp-slimstat'), // Spanish
-__('l-es-AR','wp-slimstat'), // Spanish (Argentina)
-__('l-es-BO','wp-slimstat'), // Spanish (Bolivia)
-__('l-es-CL','wp-slimstat'), // Spanish (Chile)
-__('l-es-CO','wp-slimstat'), // Spanish (Colombia)
-__('l-es-CR','wp-slimstat'), // Spanish (Costa Rica)
-__('l-es-DO','wp-slimstat'), // Spanish (Dominican Republic)
-__('l-es-EC','wp-slimstat'), // Spanish (Ecuador)
-__('l-es-ES','wp-slimstat'), // Spanish (Castilian)
-__('l-es-ES','wp-slimstat'), // Spanish (Spain)
-__('l-es-GT','wp-slimstat'), // Spanish (Guatemala)
-__('l-es-HN','wp-slimstat'), // Spanish (Honduras)
-__('l-es-MX','wp-slimstat'), // Spanish (Mexico)
-__('l-es-NI','wp-slimstat'), // Spanish (Nicaragua)
-__('l-es-PA','wp-slimstat'), // Spanish (Panama)
-__('l-es-PE','wp-slimstat'), // Spanish (Peru)
-__('l-es-PR','wp-slimstat'), // Spanish (Puerto Rico)
-__('l-es-PY','wp-slimstat'), // Spanish (Paraguay)
-__('l-es-SV','wp-slimstat'), // Spanish (El Salvador)
-__('l-es-UY','wp-slimstat'), // Spanish (Uruguay)
-__('l-es-VE','wp-slimstat'), // Spanish (Venezuela)
+__('l-es-ar','wp-slimstat'), // Spanish (Argentina)
+__('l-es-bo','wp-slimstat'), // Spanish (Bolivia)
+__('l-es-cl','wp-slimstat'), // Spanish (Chile)
+__('l-es-co','wp-slimstat'), // Spanish (Colombia)
+__('l-es-cr','wp-slimstat'), // Spanish (Costa Rica)
+__('l-es-do','wp-slimstat'), // Spanish (Dominican Republic)
+__('l-es-ec','wp-slimstat'), // Spanish (Ecuador)
+__('l-es-es','wp-slimstat'), // Spanish (Spain)
+__('l-es-gt','wp-slimstat'), // Spanish (Guatemala)
+__('l-es-hn','wp-slimstat'), // Spanish (Honduras)
+__('l-es-mx','wp-slimstat'), // Spanish (Mexico)
+__('l-es-ni','wp-slimstat'), // Spanish (Nicaragua)
+__('l-es-pa','wp-slimstat'), // Spanish (Panama)
+__('l-es-pe','wp-slimstat'), // Spanish (Peru)
+__('l-es-pr','wp-slimstat'), // Spanish (Puerto Rico)
+__('l-es-py','wp-slimstat'), // Spanish (Paraguay)
+__('l-es-sv','wp-slimstat'), // Spanish (El Salvador)
+__('l-es-uy','wp-slimstat'), // Spanish (Uruguay)
+__('l-es-ve','wp-slimstat'), // Spanish (Venezuela)
 __('l-et','wp-slimstat'), // Estonian
-__('l-et-EE','wp-slimstat'), // Estonian (Estonia)
+__('l-et-ee','wp-slimstat'), // Estonian (Estonia)
 __('l-eu','wp-slimstat'), // Basque
-__('l-eu-ES','wp-slimstat'), // Basque (Spain)
+__('l-eu-es','wp-slimstat'), // Basque (Spain)
 __('l-fa','wp-slimstat'), // Farsi
-__('l-fa-IR','wp-slimstat'), // Farsi (Iran)
+__('l-fa-ir','wp-slimstat'), // Farsi (Iran)
 __('l-fi','wp-slimstat'), // Finnish
-__('l-fi-FI','wp-slimstat'), // Finnish (Finland)
+__('l-fi-fi','wp-slimstat'), // Finnish (Finland)
 __('l-fo','wp-slimstat'), // Faroese
-__('l-fo-FO','wp-slimstat'), // Faroese (Faroe Islands)
+__('l-fo-fo','wp-slimstat'), // Faroese (Faroe Islands)
 __('l-fr','wp-slimstat'), // French
-__('l-fr-BE','wp-slimstat'), // French (Belgium)
-__('l-fr-CA','wp-slimstat'), // French (Canada)
-__('l-fr-CH','wp-slimstat'), // French (Switzerland)
-__('l-fr-FR','wp-slimstat'), // French (France)
-__('l-fr-LU','wp-slimstat'), // French (Luxembourg)
-__('l-fr-MC','wp-slimstat'), // French (Principality of Monaco)
+__('l-fr-be','wp-slimstat'), // French (Belgium)
+__('l-fr-ca','wp-slimstat'), // French (Canada)
+__('l-fr-ch','wp-slimstat'), // French (Switzerland)
+__('l-fr-fr','wp-slimstat'), // French (France)
+__('l-fr-lu','wp-slimstat'), // French (Luxembourg)
+__('l-fr-mc','wp-slimstat'), // French (Principality of Monaco)
 __('l-gl','wp-slimstat'), // Galician
-__('l-gl-ES','wp-slimstat'), // Galician (Spain)
+__('l-gl-es','wp-slimstat'), // Galician (Spain)
 __('l-gu','wp-slimstat'), // Gujarati
-__('l-gu-IN','wp-slimstat'), // Gujarati (India)
+__('l-gu-in','wp-slimstat'), // Gujarati (India)
 __('l-he','wp-slimstat'), // Hebrew
-__('l-he-IL','wp-slimstat'), // Hebrew (Israel)
+__('l-he-il','wp-slimstat'), // Hebrew (Israel)
 __('l-hi','wp-slimstat'), // Hindi
-__('l-hi-IN','wp-slimstat'), // Hindi (India)
+__('l-hi-in','wp-slimstat'), // Hindi (India)
 __('l-hr','wp-slimstat'), // Croatian
-__('l-hr-BA','wp-slimstat'), // Croatian (Bosnia and Herzegovina)
-__('l-hr-HR','wp-slimstat'), // Croatian (Croatia)
+__('l-hr-ba','wp-slimstat'), // Croatian (Bosnia and Herzegovina)
+__('l-hr-hr','wp-slimstat'), // Croatian (Croatia)
 __('l-hu','wp-slimstat'), // Hungarian
-__('l-hu-HU','wp-slimstat'), // Hungarian (Hungary)
+__('l-hu-hu','wp-slimstat'), // Hungarian (Hungary)
 __('l-hy','wp-slimstat'), // Armenian
-__('l-hy-AM','wp-slimstat'), // Armenian (Armenia)
+__('l-hy-am','wp-slimstat'), // Armenian (Armenia)
 __('l-id','wp-slimstat'), // Indonesian
-__('l-id-ID','wp-slimstat'), // Indonesian (Indonesia)
+__('l-id-id','wp-slimstat'), // Indonesian (Indonesia)
 __('l-is','wp-slimstat'), // Icelandic
-__('l-is-IS','wp-slimstat'), // Icelandic (Iceland)
+__('l-is-is','wp-slimstat'), // Icelandic (Iceland)
 __('l-it','wp-slimstat'), // Italian
-__('l-it-CH','wp-slimstat'), // Italian (Switzerland)
-__('l-it-IT','wp-slimstat'), // Italian (Italy)
+__('l-it-ch','wp-slimstat'), // Italian (Switzerland)
+__('l-it-it','wp-slimstat'), // Italian (Italy)
 __('l-ja','wp-slimstat'), // Japanese
-__('l-ja-JP','wp-slimstat'), // Japanese (Japan)
+__('l-ja-jp','wp-slimstat'), // Japanese (Japan)
 __('l-ka','wp-slimstat'), // Georgian
-__('l-ka-GE','wp-slimstat'), // Georgian (Georgia)
+__('l-ka-ge','wp-slimstat'), // Georgian (Georgia)
 __('l-kk','wp-slimstat'), // Kazakh
-__('l-kk-KZ','wp-slimstat'), // Kazakh (Kazakhstan)
+__('l-kk-kz','wp-slimstat'), // Kazakh (Kazakhstan)
 __('l-kn','wp-slimstat'), // Kannada
-__('l-kn-IN','wp-slimstat'), // Kannada (India)
+__('l-kn-in','wp-slimstat'), // Kannada (India)
 __('l-ko','wp-slimstat'), // Korean
-__('l-ko-KR','wp-slimstat'), // Korean (Korea)
+__('l-ko-kr','wp-slimstat'), // Korean (Korea)
 __('l-kok','wp-slimstat'), // Konkani
-__('l-kok-IN','wp-slimstat'), // Konkani (India)
+__('l-kok-in','wp-slimstat'), // Konkani (India)
 __('l-ky','wp-slimstat'), // Kyrgyz
-__('l-ky-KG','wp-slimstat'), // Kyrgyz (Kyrgyzstan)
+__('l-ky-kg','wp-slimstat'), // Kyrgyz (Kyrgyzstan)
 __('l-lt','wp-slimstat'), // Lithuanian
-__('l-lt-LT','wp-slimstat'), // Lithuanian (Lithuania)
+__('l-lt-lt','wp-slimstat'), // Lithuanian (Lithuania)
 __('l-lv','wp-slimstat'), // Latvian
-__('l-lv-LV','wp-slimstat'), // Latvian (Latvia)
+__('l-lv-lv','wp-slimstat'), // Latvian (Latvia)
 __('l-mi','wp-slimstat'), // Maori
-__('l-mi-NZ','wp-slimstat'), // Maori (New Zealand)
+__('l-mi-nz','wp-slimstat'), // Maori (New Zealand)
 __('l-mk','wp-slimstat'), // FYRO Macedonian
-__('l-mk-MK','wp-slimstat'), // FYRO Macedonian (Former Yugoslav Republic of Macedonia)
+__('l-mk-ml','wp-slimstat'), // FYRO Macedonian (Former Yugoslav Republic of Macedonia)
 __('l-mn','wp-slimstat'), // Mongolian
-__('l-mn-MN','wp-slimstat'), // Mongolian (Mongolia)
+__('l-mn-mn','wp-slimstat'), // Mongolian (Mongolia)
 __('l-mr','wp-slimstat'), // Marathi
-__('l-mr-IN','wp-slimstat'), // Marathi (India)
+__('l-mr-in','wp-slimstat'), // Marathi (India)
 __('l-ms','wp-slimstat'), // Malay
-__('l-ms-BN','wp-slimstat'), // Malay (Brunei Darussalam)
-__('l-ms-MY','wp-slimstat'), // Malay (Malaysia)
+__('l-ms-bn','wp-slimstat'), // Malay (Brunei Darussalam)
+__('l-ms-my','wp-slimstat'), // Malay (Malaysia)
 __('l-mt','wp-slimstat'), // Maltese
-__('l-mt-MT','wp-slimstat'), // Maltese (Malta)
+__('l-mt-mt','wp-slimstat'), // Maltese (Malta)
 __('l-nb','wp-slimstat'), // Norwegian (Bokm?l)
-__('l-nb-NO','wp-slimstat'), // Norwegian (Bokm?l) (Norway)
+__('l-nb-no','wp-slimstat'), // Norwegian (Bokm?l) (Norway)
 __('l-nl','wp-slimstat'), // Dutch
-__('l-nl-BE','wp-slimstat'), // Dutch (Belgium)
-__('l-nl-NL','wp-slimstat'), // Dutch (Netherlands)
-__('l-nn-NO','wp-slimstat'), // Norwegian (Nynorsk) (Norway)
+__('l-nl-be','wp-slimstat'), // Dutch (Belgium)
+__('l-nl-nl','wp-slimstat'), // Dutch (Netherlands)
+__('l-nn-no','wp-slimstat'), // Norwegian (Nynorsk) (Norway)
 __('l-ns','wp-slimstat'), // Northern Sotho
-__('l-ns-ZA','wp-slimstat'), // Northern Sotho (South Africa)
+__('l-ns-za','wp-slimstat'), // Northern Sotho (South Africa)
 __('l-pa','wp-slimstat'), // Punjabi
-__('l-pa-IN','wp-slimstat'), // Punjabi (India)
+__('l-pa-in','wp-slimstat'), // Punjabi (India)
 __('l-pl','wp-slimstat'), // Polish
-__('l-pl-PL','wp-slimstat'), // Polish (Poland)
+__('l-pl-pl','wp-slimstat'), // Polish (Poland)
 __('l-ps','wp-slimstat'), // Pashto
-__('l-ps-AR','wp-slimstat'), // Pashto (Afghanistan)
+__('l-ps-ar','wp-slimstat'), // Pashto (Afghanistan)
 __('l-pt','wp-slimstat'), // Portuguese
-__('l-pt-BR','wp-slimstat'), // Portuguese (Brazil)
-__('l-pt-PT','wp-slimstat'), // Portuguese (Portugal)
+__('l-pt-br','wp-slimstat'), // Portuguese (Brazil)
+__('l-pt-pt','wp-slimstat'), // Portuguese (Portugal)
 __('l-qu','wp-slimstat'), // Quechua
-__('l-qu-BO','wp-slimstat'), // Quechua (Bolivia)
-__('l-qu-EC','wp-slimstat'), // Quechua (Ecuador)
-__('l-qu-PE','wp-slimstat'), // Quechua (Peru)
+__('l-qu-bo','wp-slimstat'), // Quechua (Bolivia)
+__('l-qu-ec','wp-slimstat'), // Quechua (Ecuador)
+__('l-qu-pe','wp-slimstat'), // Quechua (Peru)
 __('l-ro','wp-slimstat'), // Romanian
-__('l-ro-RO','wp-slimstat'), // Romanian (Romania)
+__('l-ro-ro','wp-slimstat'), // Romanian (Romania)
 __('l-ru','wp-slimstat'), // Russian
-__('l-ru-RU','wp-slimstat'), // Russian (Russia)
+__('l-ru-ru','wp-slimstat'), // Russian (Russia)
 __('l-sa','wp-slimstat'), // Sanskrit
-__('l-sa-IN','wp-slimstat'), // Sanskrit (India)
+__('l-sa-in','wp-slimstat'), // Sanskrit (India)
 __('l-se','wp-slimstat'), // Sami (Northern)
-__('l-se-FI','wp-slimstat'), // Sami (Northern) (Finland)
-__('l-se-FI','wp-slimstat'), // Sami (Skolt) (Finland)
-__('l-se-FI','wp-slimstat'), // Sami (Inari) (Finland)
-__('l-se-NO','wp-slimstat'), // Sami (Northern) (Norway)
-__('l-se-NO','wp-slimstat'), // Sami (Lule) (Norway)
-__('l-se-NO','wp-slimstat'), // Sami (Southern) (Norway)
-__('l-se-SE','wp-slimstat'), // Sami (Northern) (Sweden)
-__('l-se-SE','wp-slimstat'), // Sami (Lule) (Sweden)
-__('l-se-SE','wp-slimstat'), // Sami (Southern) (Sweden)
+__('l-se-fi','wp-slimstat'), // Sami (Northern) (Finland)
+__('l-se-no','wp-slimstat'), // Sami (Northern) (Norway)
+__('l-se-se','wp-slimstat'), // Sami (Northern) (Sweden)
 __('l-sk','wp-slimstat'), // Slovak
-__('l-sk-SK','wp-slimstat'), // Slovak (Slovakia)
+__('l-sk-sk','wp-slimstat'), // Slovak (Slovakia)
 __('l-sl','wp-slimstat'), // Slovenian
-__('l-sl-SI','wp-slimstat'), // Slovenian (Slovenia)
+__('l-sl-si','wp-slimstat'), // Slovenian (Slovenia)
 __('l-sq','wp-slimstat'), // Albanian
-__('l-sq-AL','wp-slimstat'), // Albanian (Albania)
-__('l-sr-BA','wp-slimstat'), // Serbian (Latin) (Bosnia and Herzegovina)
-__('l-sr-BA','wp-slimstat'), // Serbian (Cyrillic) (Bosnia and Herzegovina)
-__('l-sr-SP','wp-slimstat'), // Serbian (Latin) (Serbia and Montenegro)
-__('l-sr-SP','wp-slimstat'), // Serbian (Cyrillic) (Serbia and Montenegro)
+__('l-sq-al','wp-slimstat'), // Albanian (Albania)
+__('l-sr-ba','wp-slimstat'), // Serbian (Latin) (Bosnia and Herzegovina)
+__('l-sr-sp','wp-slimstat'), // Serbian (Latin) (Serbia and Montenegro)
 __('l-sv','wp-slimstat'), // Swedish
-__('l-sv-FI','wp-slimstat'), // Swedish (Finland)
-__('l-sv-SE','wp-slimstat'), // Swedish (Sweden)
+__('l-sv-fi','wp-slimstat'), // Swedish (Finland)
+__('l-sv-se','wp-slimstat'), // Swedish (Sweden)
 __('l-sw','wp-slimstat'), // Swahili
-__('l-sw-KE','wp-slimstat'), // Swahili (Kenya)
-__('l-syr','wp-slimstat'), // Syriac
-__('l-syr-SY','wp-slimstat'), // Syriac (Syria)
+__('l-sw-ke','wp-slimstat'), // Swahili (Kenya)
 __('l-ta','wp-slimstat'), // Tamil
-__('l-ta-IN','wp-slimstat'), // Tamil (India)
+__('l-ta-in','wp-slimstat'), // Tamil (India)
 __('l-te','wp-slimstat'), // Telugu
-__('l-te-IN','wp-slimstat'), // Telugu (India)
+__('l-te-in','wp-slimstat'), // Telugu (India)
 __('l-th','wp-slimstat'), // Thai
-__('l-th-TH','wp-slimstat'), // Thai (Thailand)
+__('l-th-th','wp-slimstat'), // Thai (Thailand)
 __('l-tl','wp-slimstat'), // Tagalog
-__('l-tl-PH','wp-slimstat'), // Tagalog (Philippines)
+__('l-tl-ph','wp-slimstat'), // Tagalog (Philippines)
 __('l-tn','wp-slimstat'), // Tswana
-__('l-tn-ZA','wp-slimstat'), // Tswana (South Africa)
+__('l-tn-za','wp-slimstat'), // Tswana (South Africa)
 __('l-tr','wp-slimstat'), // Turkish
-__('l-tr-TR','wp-slimstat'), // Turkish (Turkey)
+__('l-tr-tr','wp-slimstat'), // Turkish (Turkey)
 __('l-tt','wp-slimstat'), // Tatar
-__('l-tt-RU','wp-slimstat'), // Tatar (Russia)
+__('l-tt-ru','wp-slimstat'), // Tatar (Russia)
 __('l-ts','wp-slimstat'), // Tsonga
 __('l-uk','wp-slimstat'), // Ukrainian
-__('l-uk-UA','wp-slimstat'), // Ukrainian (Ukraine)
+__('l-uk-ua','wp-slimstat'), // Ukrainian (Ukraine)
 __('l-ur','wp-slimstat'), // Urdu
-__('l-ur-PK','wp-slimstat'), // Urdu (Islamic Republic of Pakistan)
+__('l-ur-pk','wp-slimstat'), // Urdu (Islamic Republic of Pakistan)
 __('l-uz','wp-slimstat'), // Uzbek (Latin)
-__('l-uz-UZ','wp-slimstat'), // Uzbek (Latin) (Uzbekistan)
-__('l-uz-UZ','wp-slimstat'), // Uzbek (Cyrillic) (Uzbekistan)
+__('l-uz-uz','wp-slimstat'), // Uzbek (Cyrillic) (Uzbekistan)
 __('l-vi','wp-slimstat'), // Vietnamese
-__('l-vi-VN','wp-slimstat'), // Vietnamese (Viet Nam)
+__('l-vi-vn','wp-slimstat'), // Vietnamese (Viet Nam)
 __('l-xh','wp-slimstat'), // Xhosa
-__('l-xh-ZA','wp-slimstat'), // Xhosa (South Africa)
+__('l-xh-za','wp-slimstat'), // Xhosa (South Africa)
 __('l-zh','wp-slimstat'), // Chinese
-__('l-zh-CN','wp-slimstat'), // Chinese (S)
-__('l-zh-HK','wp-slimstat'), // Chinese (Hong Kong)
-__('l-zh-MO','wp-slimstat'), // Chinese (Macau)
-__('l-zh-SG','wp-slimstat'), // Chinese (Singapore)
-__('l-zh-TW','wp-slimstat'), // Chinese (T)
+__('l-zh-cn','wp-slimstat'), // Chinese (S)
+__('l-zh-hk','wp-slimstat'), // Chinese (Hong Kong)
+__('l-zh-mo','wp-slimstat'), // Chinese (Macau)
+__('l-zh-sg','wp-slimstat'), // Chinese (Singapore)
+__('l-zh-tw','wp-slimstat'), // Chinese (T)
 __('l-zu','wp-slimstat'), // Zulu
-__('l-zu-ZA','wp-slimstat') // Zulu (South Africa)
+__('l-zu-za','wp-slimstat'), // Zulu (South Africa)
 __('l-','wp-slimstat'), // Unknown
 __('l-empty','wp-slimstat'), // Unknown
-__('l-xx','wp-slimstat') // Unknown
-__('c-xy','wp-slimstat'), // Local IP Address
+__('l-xx','wp-slimstat'), // Unknown
+__('c-xy','wp-slimstat') // Local IP Address
 );

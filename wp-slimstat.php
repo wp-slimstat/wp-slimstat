@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.4.3
+version: 3.5
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.4.3';
+	public static $version = '3.5';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -158,7 +158,7 @@ class wp_slimstat{
 		self::$stat['plugins'] = !empty(self::$data_js['pl'])?substr(str_replace('|', ',', self::$data_js['pl']), 0, -1):'';
 
 		// If Javascript mode is enabled, record this pageview
-		if (self::$options['javascript_mode'] == 'yes'){
+		if (self::$options['javascript_mode'] == 'yes' || !empty(self::$data_js['ci'])){
 			self::slimtrack();
 		}
 		else{
@@ -310,7 +310,7 @@ class wp_slimstat{
 		}
 		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
 			// Is this a spammer?
-			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '".self::$stat['ip']."' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
+			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '".sprintf("%u", self::$stat['ip'])."' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
 			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
 				if (self::$options['ignore_spammers'] == 'yes'){
 					self::$stat['id'] = -202;
@@ -342,8 +342,10 @@ class wp_slimstat{
 			}
 		}
 
+		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter of sprintf()
+		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
 		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
-			self::$stat['other_ip'] = $long_other_ip;
+			self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
 		}
 
 		// Country and Language
@@ -487,24 +489,24 @@ class wp_slimstat{
 		$long_ip = array(0, 0);
 
 		if (isset($_SERVER["REMOTE_ADDR"]) && long2ip($ip2long = ip2long($_SERVER["REMOTE_ADDR"])) == $_SERVER["REMOTE_ADDR"])
-			$long_ip[0] = sprintf("%u", $ip2long);
+			$long_ip[0] = $ip2long;
 
-		if (isset($_SERVER["HTTP_CLIENT_IP"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_CLIENT_IP"]))) == $_SERVER["HTTP_CLIENT_IP"])
+		if (isset($_SERVER["HTTP_CLIENT_IP"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_CLIENT_IP"])) == $_SERVER["HTTP_CLIENT_IP"])
 			return $long_ip;
 
 		if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]))
 			foreach (explode(",",$_SERVER["HTTP_X_FORWARDED_FOR"]) as $a_ip){
-				if (long2ip($long_ip[1] = sprintf("%u", ip2long($a_ip))) == $a_ip)
+				if (long2ip($long_ip[1] = ip2long($a_ip)) == $a_ip)
 					return $long_ip;
 			}
 
-		if (isset($_SERVER["HTTP_X_FORWARDED"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_X_FORWARDED"]))) == $_SERVER["HTTP_X_FORWARDED"])
+		if (isset($_SERVER["HTTP_X_FORWARDED"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_X_FORWARDED"])) == $_SERVER["HTTP_X_FORWARDED"])
 			return $long_ip;
 
-		if (isset($_SERVER["HTTP_FORWARDED_FOR"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_FORWARDED_FOR"]))) == $_SERVER["HTTP_FORWARDED_FOR"])
+		if (isset($_SERVER["HTTP_FORWARDED_FOR"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED_FOR"])) == $_SERVER["HTTP_FORWARDED_FOR"])
 			return $long_ip;
 
-		if (isset($_SERVER["HTTP_FORWARDED"]) && long2ip($long_ip[1] = sprintf("%u", ip2long($_SERVER["HTTP_FORWARDED"]))) == $_SERVER["HTTP_FORWARDED"])
+		if (isset($_SERVER["HTTP_FORWARDED"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED"])) == $_SERVER["HTTP_FORWARDED"])
 			return $long_ip;
 
 		return $long_ip;
@@ -1002,53 +1004,59 @@ class wp_slimstat{
 			'secret' => get_option('slimstat_secret', md5(time())),
 			'show_admin_notice' => 0,
 			
+			// General
 			'is_tracking' => get_option('slimstat_is_tracking', 'yes'),
 			'track_admin_pages' => 'no',
-			'javascript_mode' => 'no',
-			'auto_purge' => get_option('slimstat_auto_purge', '120'),
+			'enable_javascript' => 'yes',
+			'javascript_mode' => 'yes',
 			'add_posts_column' => get_option('slimstat_add_posts_column', 'no'),
 			'use_separate_menu' => get_option('slimstat_use_separate_menu', 'yes'),
+			'hide_stats_link_edit_posts' => 'yes',
+			'auto_purge' => get_option('slimstat_auto_purge', '120'),
 
+			// Views
 			'convert_ip_addresses' => get_option('slimstat_convert_ip_addresses', 'no'),
-			'async_load' => 'no',
 			'use_european_separators' => get_option('slimstat_use_european_separators', 'yes'),
 			'show_display_name' => 'no',
-			'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
+			'show_complete_user_agent_tooltip' => 'no',
+			'convert_resource_urls_to_titles' => 'yes',
+			'async_load' => 'no',
 			'expand_details' => 'no',
+			'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
+			'refresh_interval' => get_option('slimstat_refresh_interval', '60'),
 			'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
 			'include_outbound_links_right_now' => 'no',
-			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
-			'refresh_interval' => get_option('slimstat_refresh_interval', '0'),
-			'hide_stats_link_edit_posts' => 'no',
-			'show_complete_user_agent_tooltip' => 'no',
-			'custom_css' => '',
-			'markings' => '',
 
+			// Filters
 			'track_users' => get_option('slimstat_track_users', 'yes'),
-			'ignore_spammers' => get_option('slimstat_ignore_spammers', 'no'),
-			'anonymize_ip' => 'no',
-			'ignore_prefetch' => get_option('slimstat_ignore_prefetch', 'no'),
+			'ignore_users' => get_option('slimstat_ignore_users', ''),
 			'ignore_ip' => get_option('slimstat_ignore_ip', ''),
+			'ignore_capabilities' => '',
+			'ignore_spammers' => get_option('slimstat_ignore_spammers', 'yes'),
 			'ignore_resources' => get_option('slimstat_ignore_resources', ''),
 			'ignore_countries' => get_option('slimstat_ignore_countries', ''),
 			'ignore_browsers' => get_option('slimstat_ignore_browsers', ''),
 			'ignore_referers' => get_option('slimstat_ignore_referers', ''),
-			'ignore_users' => get_option('slimstat_ignore_users', ''),
-			'ignore_capabilities' => '',
+			'anonymize_ip' => 'no',
+			'ignore_prefetch' => get_option('slimstat_ignore_prefetch', 'no'),
 
-			'restrict_authors_view' => 'no',
+			// Permissions
+			'restrict_authors_view' => 'yes',
 			'capability_can_view' => get_option('slimstat_capability_can_view', 'activate_plugins'),
-			'capability_can_admin' => 'activate_plugins',
 			'can_view' => get_option('slimstat_can_view', ''),
+			'capability_can_admin' => 'activate_plugins',
 			'can_admin' => get_option('slimstat_can_admin', ''),
-			
-			'enable_javascript' => 'yes',
+
+			// Advanced
 			'detect_smoothing' => 'yes',
 			'enable_outbound_tracking' => 'yes',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
-			'enable_cdn' => 'no',
-			'extensions_to_track' => '',
+			'enable_cdn' => 'yes',
+			'extensions_to_track' => 'pdf,doc,xls,zip',
+			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
+			'custom_css' => '',
+			'markings' => '',
 			'enable_ads_network' => 'null'
 		);
 
