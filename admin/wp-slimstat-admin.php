@@ -6,7 +6,6 @@ class wp_slimstat_admin{
 	public static $faulty_fields = array();
 	
 	protected static $admin_notice = "You're awesome! We're flattered by <a target='_blank' href='http://wordpress.org/support/view/plugin-reviews/wp-slimstat'>your reviews</a> and words of appreciation for our work (even if disgruntled user <a target='_blank' href='https://twitter.com/kybunnies/status/408222223376596992'>KYbunnies</a> thinks our support <a target='_blank' href='http://wordpress.org/support/topic/nice-463#post-4955211'>is not worth a load of cow manure</a> and a couple of other people were so annoyed by these messages that they gave us 1 star). To thank our community, and to celebrate WordPress' new admin, we're streamlining WP SlimStat's interface. A fresher layout, new intuitive reports, and much more. Stay tuned!";
-	// We are streamlining WP SlimStat's interface to celebrate the new admin design introduced with WordPress 3.8. More to come in the next few weeks!
 	// You can now easily identify a report's type by its header color. Plus, enlarged containers give more room to your data. 
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	
