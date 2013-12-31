@@ -12,7 +12,7 @@ A powerful real-time web analytics plugin for WordPress. Visit our [official sit
 = Key Features =
 * Real-time reports
 * Compatible with W3 Total Cache, WP SuperCache and HyperCache
-* The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://tempdownloads.browserscap.com/))
+* The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
 * Advanced filtering
 * Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin), German (TechnoViel), Italian, Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish, Swedish (Per Soderman). Is your language is missing or incomplete? [Contact Us](http://slimstat.getused.to.it/contact-us/) if you would like to share your localization)
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
@@ -48,7 +48,7 @@ Visit [our website](http://slimstat.getused.to.it/addons/) for an updated list o
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 5. If your `wp-admin` folder is not publicly accessible, make sure to check the [FAQs](http://wordpress.org/extend/plugins/wp-slimstat/faq/) to see if there's anything else you need to do
 
-Please note: if you decide to WP SlimStat, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
+Please note: if you decide to uninstall WP SlimStat, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
 
 == Frequently Asked Questions ==
 
