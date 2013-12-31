@@ -157,10 +157,14 @@ class wp_slimstat_db {
 		self::$filters['date_sql_where'] = ' AND t1.dt BETWEEN '.self::$timeframes['current_utime_start'].' AND '.self::$timeframes['current_utime_end'];
 
 		// Now let's translate these filters into pieces of SQL to be used later
-		$filters_for_sql = array_intersect_key(self::$filters['parsed'], 
-			array('ip' => 1, 'other_ip' => 1, 'user' => 1, 'language' => 1, 'country' => 0, 'domain' => 1, 'referer' => 1, 'searchterms' => 1, 'resource' => 1, 'plugins' => 1, 'notes' => 1, 'visit_id' => 1, 'browser' => 1, 'version' => 1, 'platform' => 1, 'css_version' => 1, 'type' => 1, 'user_agent' => 1, 'content_type' => 1, 'category' => 1, 'resolution' => 1, 'colordepth' => 1, 'antialias' => 1, 'outbound_domain' => 1, 'outbound_resource' => 1, 'position' => 1)
-		);
+
+		$filters_for_sql = array_intersect_key(self::$filters['parsed'], wp_slimstat_reports::$dropdown_filter_names);
+
 		foreach ($filters_for_sql as $a_filter_label => $a_filter_details){
+			if (strpos($a_filter_label, 'no-filter-') === 0){
+				continue;
+			}
+
 			$a_filter_column = self::get_table_identifier($a_filter_label).$a_filter_label;
 			$a_filter_value = $a_filter_details[1];
 			$a_filter_empty = '0';

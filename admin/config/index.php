@@ -11,7 +11,7 @@ foreach ($config_tabs as $a_tab_id => $a_tab_name){
 	if ($a_tab_name != 'none') $slimtabs .= "<li class='nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."'><a href='".wp_slimstat_admin::$config_url.($a_tab_id+1)."'>$a_tab_name</a></li>";
 }
 
-echo '<div class="wrap"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$slimtabs.'</ul>';
+echo '<div class="wrap slimstat"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$slimtabs.'</ul>';
 
 switch ($config_tabs[$current_tab-1]){
 	case __('General','wp-slimstat'):
@@ -23,9 +23,8 @@ switch ($config_tabs[$current_tab-1]){
 			'javascript_mode' => array( 'description' => __('Tracking Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Select <strong>Javascript</strong> if you are using a caching plugin (W3 Total Cache, WP SuperCache, HyperCache, etc). WP SlimStat will behave pretty much like Google Analytics, and visitors whose browser does not support Javascript will be ignored. A nice side effect is that <strong>most spammers, search engines and other crawlers</strong> will not be tracked.','wp-slimstat'), 'custom_label_yes' => __('Javascript','wp-slimstat'), 'custom_label_no' => __('Server-side','wp-slimstat') ),
 
 			'general_integration_header' => array('description' => __('WordPress Integration','wp-slimstat'), 'type' => 'section_header'),
-			'add_posts_column' => array( 'description' => __('Add Column to Posts','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Add a new column to the Edit Posts screen, with the number of hits per post (may slow down page rendering).','wp-slimstat') ),
 			'use_separate_menu' => array( 'description' => __('Menu Position','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose between a standalone admin menu for WP SlimStat or a drop down in the admin bar (if visible).','wp-slimstat'), 'custom_label_yes' => __('Side Menu','wp-slimstat'), 'custom_label_no' => __('Admin Bar','wp-slimstat') ),
-			'hide_stats_link_edit_posts' => array('description' => __('Hide Stats Link','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option if your users are confused by the Stats link associate to each post in the Edit Posts page.','wp-slimstat')),
+			'add_posts_column' => array( 'description' => __('Add Stats to Posts','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Add a new column to the Edit Posts screen, with the number of hits per post.','wp-slimstat') ),
 
 			'general_database_header' => array('description' => __('Database','wp-slimstat'), 'type' => 'section_header'),
 			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Delete log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').(wp_get_schedule('wp_slimstat_purge')?' <br> '.__('Next clean-up on','wp-slimstat').' '.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'. '.sprintf(__('Entries logged on or before %s will be permanently deleted.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$options['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') )
@@ -65,7 +64,7 @@ switch ($config_tabs[$current_tab-1]){
 		$options_on_this_page = array(
 			'filters_users_header' => array('description' => __('Visitors and Known Users','wp-slimstat'), 'type' => 'section_header'),
 			'track_users' => array('description' => __('Track Registered Users','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option to track logged in users.','wp-slimstat')),
-			'ignore_users' => array('description' => __('Blacklist','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the usernames you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored and that usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true),
+			'ignore_users' => array('description' => __('Blacklist by Username','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the usernames you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored and that usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true),
 			'ignore_ip' => array('description' => __('Blacklist by IP Address','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the IP addresses you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.0.0/24</em>). If the format is incorrect, WP SlimStat may not track pageviews properly.",'wp-slimstat')),
 			'ignore_capabilities' => array('description' => __('Blacklist by Capability','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("Users having at least one of the <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capabilities</a> listed here below will not be tracked. Capabilities are case-insensitive.",'wp-slimstat'), 'skip_update' => true),
 
@@ -226,10 +225,11 @@ switch ($config_tabs[$current_tab-1]){
 		break;
 }
 
+if (has_filter('slimstat_options_on_page') && $config_tabs[$current_tab-1] == __('Add-ons','wp-slimstat')){
+	$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page);
+}
+
 if (isset($options_on_this_page)){
-	if (has_filter('slimstat_options_on_page') && $config_tabs[$current_tab-1] == __('Add-ons','wp-slimstat')){
-		$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page);
-	}
 	wp_slimstat_admin::update_options($options_on_this_page); 
 	wp_slimstat_admin::display_options($options_on_this_page, $current_tab); 
 }

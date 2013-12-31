@@ -5,8 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "You're awesome! We're flattered by <a target='_blank' href='http://wordpress.org/support/view/plugin-reviews/wp-slimstat'>your reviews</a> and words of appreciation for our work (even if disgruntled user <a target='_blank' href='https://twitter.com/kybunnies/status/408222223376596992'>KYbunnies</a> thinks our support <a target='_blank' href='http://wordpress.org/support/topic/nice-463#post-4955211'>is not worth a load of cow manure</a> and a couple of other people were so annoyed by these messages that they gave us 1 star). To thank our community, and to celebrate WordPress' new admin, we're streamlining WP SlimStat's interface. A fresher layout, new intuitive reports, and much more. Stay tuned!";
-	// You can now easily identify a report's type by its header color. Plus, enlarged containers give more room to your data. 
+	protected static $admin_notice = "The new interface was welcomed with mixed feelings by our user community, but we thank you all for letting us know. We've worked hard to tone it down a notch, and make it more seamlessly integrated with the admin color schemes introduced by WordPress 3.8. We wish you and your loved ones a Happy New Year!";
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	
 	/**
@@ -32,20 +31,11 @@ class wp_slimstat_admin{
 		// Screen options: hide/show panels to customize your view
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
 
-		// Sidebar icon (uses DashIcons introduced in WP 3.8)
-		add_action('admin_head', array(__CLASS__, 'add_side_navigation_icon'));
-
 		// Footer links
 		add_filter('admin_footer_text',  array(__CLASS__, 'footer_admin'));
 
 		// Show the activation and config links, if the network is not too large
 		add_filter('plugin_action_links_wp-slimstat/wp-slimstat.php', array(__CLASS__, 'plugin_action_links'), 10, 2);
-
-		// Add a link to view stats to each post
-		if (wp_slimstat::$options['hide_stats_link_edit_posts'] == 'no'){
-			add_filter('post_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
-			add_filter('page_row_actions', array(__CLASS__, 'post_row_actions'), 15, 2);
-		}
 
 		// Display a notice that hightlights this version's features
 		$admin_filemtime = @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
@@ -66,9 +56,14 @@ class wp_slimstat_admin{
 			// Display the column in the Edit Posts screen
 			if (wp_slimstat::$options['add_posts_column'] == 'yes'){
 				add_filter('manage_posts_columns', array(__CLASS__, 'add_column_header'));
+				add_filter('manage_pages_columns', array(__CLASS__, 'add_column_header'));
 				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
+				add_action('manage_pages_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
 				add_action('admin_print_styles-edit.php', array(__CLASS__, 'wp_slimstat_stylesheet'));
 			}
+			
+			// Inline CSS to customize the icon associated to SlimStat in the sidebar
+			add_action('admin_print_styles', array(__CLASS__, 'wp_slimstat_stylesheet_icon'));
 
 			// Update the table structure and options, if needed
 			if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
@@ -334,8 +329,24 @@ class wp_slimstat_admin{
 	public static function wp_slimstat_stylesheet(){
 		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)));
 		wp_enqueue_style('wp-slimstat');
+
+	   	if (!empty(wp_slimstat::$options['custom_css'])){
+	   		wp_add_inline_style('wp-slimstat', wp_slimstat::$options['custom_css']);
+	   	}
 	}
 	// end wp_slimstat_stylesheet
+	
+	/**
+	 * Customizes the icon associated to WP SlimStat in the sidebar
+	 */
+	public static function wp_slimstat_stylesheet_icon(){
+		if (!array_key_exists('dashicons', $GLOBALS['wp_styles']->registered)){
+			return true;
+		}
+
+		wp_add_inline_style('dashicons', "#adminmenu #toplevel_page_wp-slim-view-1 .wp-menu-image:before { content: '\\f239'; margin-top: -2px; }");
+	}
+	// end wp_slimstat_stylesheet_icon
 
 	/**
 	 * Loads user-defined stylesheet code
@@ -348,9 +359,7 @@ class wp_slimstat_admin{
 	public static function wp_slimstat_enqueue_scripts(){
 		wp_enqueue_script('dashboard');
 		wp_enqueue_script('jquery-ui-datepicker');
-		wp_enqueue_script('slimstat_flot', plugins_url('/admin/js/jquery.flot.min.js', dirname(__FILE__)), array('jquery'), null);
-		wp_enqueue_script('slimstat_flot_navigate', plugins_url('/admin/js/jquery.flot.navigate.min.js', dirname(__FILE__)), array('slimstat_flot'), null);
-		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('slimstat_flot', 'jquery-ui-dialog'), null);
+		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), null);
 
 		// Pass some information to Javascript
 		$params = array(
@@ -383,7 +392,7 @@ class wp_slimstat_admin{
 
 		$new_entry = array();
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
-			$new_entry[] = add_menu_page('SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
+			$new_entry[] = add_menu_page(__('SlimStat','wp-slimstat'), __('SlimStat','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Right Now','wp-slimstat'), __('Right Now','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Overview','wp-slimstat'), __('Overview','wp-slimstat'), $minimum_capability, 'wp-slim-view-2', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Visitors','wp-slimstat'), __('Visitors','wp-slimstat'), $minimum_capability, 'wp-slim-view-3', array(__CLASS__, 'wp_slimstat_include_view'));
@@ -395,10 +404,10 @@ class wp_slimstat_admin{
 		}
 		else{
 			if (!is_admin_bar_showing()){
-				$new_entry[] = add_submenu_page('index.php', 'SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('index.php', __('SlimStat','wp-slimstat'), __('SlimStat','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			}
 			else{
-				$new_entry[] = add_submenu_page('options.php', 'SlimStat', 'SlimStat', $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
+				$new_entry[] = add_submenu_page('options.php', __('SlimStat','wp-slimstat'), __('SlimStat','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			}
 
 			// Let's tell WordPress that these page exist, without showing them
@@ -416,7 +425,6 @@ class wp_slimstat_admin{
 			add_action('load-'.$a_entry, array(__CLASS__, 'wp_slimstat_stylesheet'));
 			add_action('load-'.$a_entry, array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
 			add_action('load-'.$a_entry, array(__CLASS__, 'contextual_help'));
-			if (!empty(wp_slimstat::$options['custom_css'])) add_action('admin_head-'. $a_entry, array(__CLASS__, 'wp_slimstat_userdefined_stylesheet'));
 		}
 
 		return $_s;
@@ -496,23 +504,13 @@ class wp_slimstat_admin{
 	// end plugin_action_links
 
 	/**
-	 * Add a link to each post in fosts, to go directly to the stats with the corresponding filter set
-	 */
-	public static function post_row_actions($_actions, $_post){
-		if ((strpos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) === false && !current_user_can(wp_slimstat::$options['capability_can_view'])) || wp_slimstat::$options['add_posts_column'] == 'yes')
-			return $_actions;
-
-		$parsed_permalink = parse_url( get_permalink($_post->ID) );
-		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		return array_merge($_actions, array('wp-slimstat' => "<a href='".self::$view_url."1&amp;fs%5Bresource%5D=contains+{$parsed_permalink}'>".__('Stats','wp-slimstat')."</a>"));
-	}
-	// end post_row_actions
-
-	/**
 	 * Adds a new column header to the Posts panel (to show the number of pageviews for each post)
 	 */
 	public static function add_column_header($_columns){
-		$_columns['wp-slimstat'] = "<img src='".plugins_url('/admin/images/wp-slimstat-menu.png', dirname(__FILE__))."' width='16' height='16' alt='SlimStat' />";
+		include_once(dirname(__FILE__)."/view/wp-slimstat-reports.php");
+		wp_slimstat_reports::init();
+
+		$_columns['wp-slimstat'] = '<span class="slimstat-icon" title="'.__('Pageviews in the last 365 days','wp-slimstat').'"></span>';
 		return $_columns;
 	}
 	// end add_comment_column_header
@@ -524,8 +522,9 @@ class wp_slimstat_admin{
 		if ('wp-slimstat' != $_column_name) return;
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		$count = wp_slimstat::$wpdb->get_var(wp_slimstat::$wpdb->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE resource = %s", $parsed_permalink));
-		echo '<a href="'.self::$view_url.'1&amp;fs%5Bresource%5D=contains+'.urlencode( $parsed_permalink ).'">'.$count.'</a>';
+		wp_slimstat_db::init(array('resource' => 'contains '.$parsed_permalink, 'interval' => 'equals -365'));
+		$count = wp_slimstat_db::count_records();
+		echo '<a href="'.wp_slimstat_reports::fs_url(array('resource' => "contains $parsed_permalink", 'interval' => 'equals -365')).'">'.$count.'</a>';
 	}
 	// end add_column
 
@@ -535,10 +534,7 @@ class wp_slimstat_admin{
 	public static function screen_settings($_current, $_screen){
 		if (strpos($_screen->id, 'page_wp-slim-view') == false) return $_current;
 
-		// By the time this function is invoked, wp_slimstat_reports has been already loaded
-
 		$current = '<form id="adv-settings" action="" method="post"><h5>'.__('Show on screen','wp-slimstat').'</h5><div class="metabox-prefs">';
-
 		if (isset(wp_slimstat_reports::$all_reports)){
 			foreach(wp_slimstat_reports::$all_reports as $a_box_id){
 				if (!empty($a_box_id))
@@ -546,26 +542,27 @@ class wp_slimstat_admin{
 			}
 		}
 		$current .= wp_nonce_field('closedpostboxes', 'closedpostboxesnonce', true, false)."</div></form>";
-		
+
 		// Some panels don't have any screen options
-		if (strpos($current, 'label') == false) 
+		if (strpos($current, 'label') == false){
 			return $_current;
-		else
-			return $current;
+		}
+
+		return $current;
 	}
 
 	/**
 	 * Displays an alert message
 	 */
 	public static function show_alert_message($_message = '', $_type = 'update'){
-		echo "<div id='wp-slimstat-message' class='$_type'><p>$_message</p></div>";
+		echo "<div id='slimstat-message' class='wp-ui-highlight'><p>$_message</p></div>";
 	}
-	
+
 	/**
 	 * Displays a message related to the current version of WP SlimStat
 	 */
 	public static function show_admin_notice(){
-		echo '<div class="updated" style="padding:10px"><strong>WP SlimStat News</strong>: '.self::$admin_notice.'</div>';
+		echo '<div class="updated" style="padding:10px">'.self::$admin_notice.'</div>';
 	}
 	
 	/*
@@ -654,8 +651,8 @@ class wp_slimstat_admin{
 
 		<tr<?php echo ($_alternate?' class="alternate"':''); ?>>
 			<td colspan="2">
-				<h3><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></h3>
-				<p><?php echo $_option_details['long_description'] ?></p>
+				<label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label>
+				<p class="description"><?php echo $_option_details['long_description'] ?></p>
 				<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo !empty(wp_slimstat::$options[$_option_name])?stripslashes(wp_slimstat::$options[$_option_name]):'' ?></textarea></p>
 			</td>
 		</tr><?php
@@ -754,18 +751,6 @@ class wp_slimstat_admin{
 	// Footer link
 	public static function footer_admin($_original_footer = ''){
 		return $_original_footer.__(' And for keeping an eye on your visitors with <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.','wp-slimstat');
-	}
-
-	/**
-	 * Adds some inline style to customize the icon associated to SlimStat in the side navigation
-	 */
-	public static function add_side_navigation_icon() {
-	   echo "<style type='text/css' media='screen'>
-			   #adminmenu #toplevel_page_wp-slim-view-1 .wp-menu-image:before {
-					content: '\\f239';
-					margin-top: -2px;
-				}
-			 </style>";
 	}
 
 	/**

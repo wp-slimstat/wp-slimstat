@@ -38,17 +38,17 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat_admin::show_alert_message(__('Your reports were successfully restored to their default arrangement.','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'activate-indexes':
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX resource_idx(resource(20))");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX browser_idx(browser_id)");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD INDEX all_idx(browser,version,platform,css_version,type)");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD INDEX all_idx(resolution,colordepth,antialias)");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX stats_resource_idx(resource(20))");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX stats_browser_idx(browser_id)");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD INDEX browser_all_idx(browser,version,platform,css_version,type)");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD INDEX screenres_all_idx(resolution,colordepth,antialias)");
 			wp_slimstat_admin::show_alert_message(__('Congrats! WP SlimStat is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'deactivate-indexes':
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX resource_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX browser_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers DROP INDEX all_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres DROP INDEX all_idx");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_resource_idx");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_browser_idx");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers DROP INDEX browser_all_idx");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres DROP INDEX screenres_all_idx");
 			wp_slimstat_admin::show_alert_message(__('Indexing has been successfully disabled. Enjoy the extra database space you just gained!','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'import-settings':

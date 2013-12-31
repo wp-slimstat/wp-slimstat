@@ -3,15 +3,15 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.5
+version: 3.5.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
-
+ 
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.5';
+	public static $version = '3.5.1';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -88,7 +88,7 @@ class wp_slimstat{
 	/**
 	 * Ajax Tracking (client-side, javascript)
 	 */
-	public static function slimtrack_js(){	
+	public static function slimtrack_js(){
 		$data_string = base64_decode($_REQUEST['data']);
 		if ($data_string === false){
 			do_action('slimstat_track_exit_101');
@@ -278,7 +278,7 @@ class wp_slimstat{
 
 		// User's IP address
 		list(self::$stat['ip'], $long_other_ip) = self::_get_ip2long_remote_ip();
-		if (self::$stat['ip'] == 0){
+		if (empty(self::$stat['ip'])){
 			self::$stat['id'] = -203;
 			return $_argument;
 		}
@@ -342,20 +342,20 @@ class wp_slimstat{
 			}
 		}
 
-		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter of sprintf()
-		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
-		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
-			self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
-		}
-
 		// Country and Language
 		self::$stat['language'] = self::_get_language();
 		self::$stat['country'] = self::_get_country(self::$stat['ip']);
 
 		// Anonymize IP Address?
-		if (self::$options['anonymize_ip'] == 'yes' && self::$stat['country'] != 'xy'){
+		if (self::$options['anonymize_ip'] == 'yes'){
 			self::$stat['ip'] = self::$stat['ip']&4294967040;
 			if (!empty(self::$stat['other_ip'])) self::$stat['other_ip'] = self::$stat['other_ip']&4294967040;
+		}
+
+		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter of sprintf()
+		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
+		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
+			self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
 		}
 
 		// Is this country blacklisted?
@@ -442,15 +442,21 @@ class wp_slimstat{
 	/**
 	 * Searches for country associated to a given IP address
 	 */
-	protected static function _get_country($_ipnum = ''){
+	protected static function _get_country($_ipnum = 0){
+		$float_ipnum = (float)sprintf("%u", $_ipnum);
+
 		// Is this a RFC1918 (local) IP?
-		if ($_ipnum == 2130706433 ||
-			($_ipnum >= 167772160 && $_ipnum <= 184549375) ||
-			($_ipnum >= 2886729728 && $_ipnum <= 2887778303) ||
-			($_ipnum >= 3232235520 && $_ipnum <= 3232301055)) return 'xy';
+		if ($float_ipnum == 2130706433 || // 127.0.0.1
+			($float_ipnum >= 167772160 && $float_ipnum <= 184549375) || // 10.0.0.1 - 10.255.255.255
+			($float_ipnum >= 2886729728 && $float_ipnum <= 2887778303) || // 172.16.0.1 - 172.31.255.255
+			($float_ipnum >= 3232235521 && $float_ipnum <= 3232301055) ){ // 192.168.0.1 - 192.168.255.255
+				return 'xy';
+		}
 		
 		$country_codes = array("","ap","eu","ad","ae","af","ag","ai","al","am","cw","ao","aq","ar","as","at","au","aw","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","fi","fj","fk","fm","fo","fr","sx","ga","gb","gd","ge","gf","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","in","io","iq","ir","is","it","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","st","sv","sy","sz","tc","td","tf","tg","th","tj","tk","tm","tn","to","tl","tr","tt","tv","tw","tz","ua","ug","um","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","rs","za","zm","me","zw","a1","a2","o1","ax","gg","im","je","bl","mf","bq","ss","o1");
-		if (!$handle = fopen(WP_PLUGIN_DIR."/wp-slimstat/databases/maxmind.dat", "rb")) return 'xx';
+		if (!$handle = fopen(WP_PLUGIN_DIR."/wp-slimstat/databases/maxmind.dat", "rb")){
+			return 'xx';
+		}
 
 		$offset = 0;
 		for ($depth = 31; $depth >= 0; --$depth) {
@@ -488,26 +494,30 @@ class wp_slimstat{
 	protected static function _get_ip2long_remote_ip(){
 		$long_ip = array(0, 0);
 
-		if (isset($_SERVER["REMOTE_ADDR"]) && long2ip($ip2long = ip2long($_SERVER["REMOTE_ADDR"])) == $_SERVER["REMOTE_ADDR"])
-			$long_ip[0] = $ip2long;
+		if (isset($_SERVER["REMOTE_ADDR"]) && filter_var($_SERVER["REMOTE_ADDR"], FILTER_VALIDATE_IP) !== false){
+			$long_ip[0] = ip2long($_SERVER["REMOTE_ADDR"]);
+		}
 
-		if (isset($_SERVER["HTTP_CLIENT_IP"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_CLIENT_IP"])) == $_SERVER["HTTP_CLIENT_IP"])
-			return $long_ip;
+		if (isset($_SERVER["HTTP_CLIENT_IP"]) && filter_var($_SERVER["HTTP_CLIENT_IP"], FILTER_VALIDATE_IP) !== false){
+			$long_ip[1] = ip2long($_SERVER["HTTP_CLIENT_IP"]);
+		}
 
-		if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]))
+		if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])){
 			foreach (explode(",",$_SERVER["HTTP_X_FORWARDED_FOR"]) as $a_ip){
-				if (long2ip($long_ip[1] = ip2long($a_ip)) == $a_ip)
+				if (filter_var($a_ip, FILTER_VALIDATE_IP) !== false){
+					$long_ip[1] = ip2long($a_ip);
 					return $long_ip;
+				}
 			}
+		}
 
-		if (isset($_SERVER["HTTP_X_FORWARDED"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_X_FORWARDED"])) == $_SERVER["HTTP_X_FORWARDED"])
-			return $long_ip;
+		if (isset($_SERVER["HTTP_FORWARDED"]) && filter_var($_SERVER["HTTP_FORWARDED"], FILTER_VALIDATE_IP) !== false){
+			$long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED"]);
+		}
 
-		if (isset($_SERVER["HTTP_FORWARDED_FOR"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED_FOR"])) == $_SERVER["HTTP_FORWARDED_FOR"])
-			return $long_ip;
-
-		if (isset($_SERVER["HTTP_FORWARDED"]) && long2ip($long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED"])) == $_SERVER["HTTP_FORWARDED"])
-			return $long_ip;
+		if (isset($_SERVER["HTTP_X_FORWARDED"]) && filter_var($_SERVER["HTTP_X_FORWARDED"], FILTER_VALIDATE_IP) !== false){
+			$long_ip[1] = ip2long($_SERVER["HTTP_X_FORWARDED"]);
+		}
 
 		return $long_ip;
 	}
@@ -660,9 +670,9 @@ class wp_slimstat{
 	protected static function _get_browser(){
 		// Load cache
 		@include_once(plugin_dir_path( __FILE__ ).'databases/browscap.php');
-		
+
 		$browser = array('browser' => 'Default Browser', 'version' => '1', 'platform' => 'unknown', 'css_version' => 1, 'type' => 1);
-		if (!is_array($slimstat_patterns)) return $browser;
+		if (empty($slimstat_patterns) || !is_array($slimstat_patterns)) return $browser;
 
 		$user_agent = isset($_SERVER['HTTP_USER_AGENT'])?$_SERVER['HTTP_USER_AGENT']:'';
 		$search = array();
@@ -1011,7 +1021,6 @@ class wp_slimstat{
 			'javascript_mode' => 'yes',
 			'add_posts_column' => get_option('slimstat_add_posts_column', 'no'),
 			'use_separate_menu' => get_option('slimstat_use_separate_menu', 'yes'),
-			'hide_stats_link_edit_posts' => 'yes',
 			'auto_purge' => get_option('slimstat_auto_purge', '120'),
 
 			// Views

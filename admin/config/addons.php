@@ -25,7 +25,7 @@ if (!is_array($list_addons)){
 }
 ?>
 
-<div class="wrap">
+<div class="wrap slimstat">
 <h2><?php _e('Add-ons','wp-slimstat') ?></h2>
 <p><?php _e('Add-ons extend the functionality of WP SlimStat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.','wp-slimstat') ?></p>
 
