@@ -1072,7 +1072,7 @@ class wp_slimstat_reports{
 				$last_five_minutes = date_i18n('U')-300;
 				$temp_date_sql_filters = wp_slimstat_db::$filters['date_sql_where'];
 				wp_slimstat_db::$filters['date_sql_where'] = '';
-				self::show_results('recent', $_report_id, 'user', array('custom_where' => 't1.dt > '.$last_five_minutes));
+				self::show_results('recent', $_report_id, 'user', array('custom_where' => 't1.user <> "" AND t1.dt > '.$last_five_minutes));
 				wp_slimstat_db::$filters['date_sql_where'] = $temp_date_sql_filters;
 				break;
 			case 'slim_p1_05':
