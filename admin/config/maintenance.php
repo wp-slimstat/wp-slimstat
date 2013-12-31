@@ -60,15 +60,6 @@ if (!empty($_REQUEST['action'])){
 				}
 			}
 			break;
-		case 'export-settings':
-			ob_clean();
-			$output = fopen('php://output', 'w');
-			header('Content-Type: text/plain; charset=utf-8');
-			header('Content-Disposition: attachment; filename=wp-slimstat-config.ini');
-			fputs($output, serialize(wp_slimstat::$options));
-			fclose($output);
-			die();
-			break;
 		default:
 	}
 }
@@ -184,14 +175,13 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 	</tr>
 	<tr>
 		<td colspan="2">
-			<strong><?php _e("Paste your export file's content and click on the button below, to import your settings.",'wp-slimstat') ?></strong>
+			<strong><?php _e("Here below you can find the current configuration string for WP SlimStat. You can update your settings by pasting a new string here below and clicking on Import.",'wp-slimstat') ?></strong>
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />
-				<textarea name="import-slimstat-settings" style="width:100%" rows="5"></textarea><br/>
+				<textarea name="import-slimstat-settings" style="width:100%" rows="5" onClick="this.select();"><?php echo serialize(wp_slimstat::$options) ?></textarea><br/>
 				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-primary"
 					onclick="return(confirm('<?php _e('Are you sure you want to OVERWRITE your current settings?','wp-slimstat'); ?>'))">
-				<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=export-settings"><?php _e('Export Settings','wp-slimstat'); ?></a>
 			</form>
 		</td>
 	</tr>
