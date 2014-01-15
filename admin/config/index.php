@@ -13,6 +13,7 @@ foreach ($config_tabs as $a_tab_id => $a_tab_name){
 
 echo '<div class="wrap slimstat"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$slimtabs.'</ul>';
 
+$options_on_this_page = array();
 switch ($config_tabs[$current_tab-1]){
 	case __('General','wp-slimstat'):
 		$options_on_this_page = array(
@@ -224,7 +225,6 @@ switch ($config_tabs[$current_tab-1]){
 		break;
 }
 
-$options_on_this_page = array();
 if (has_filter('slimstat_options_on_page') && $config_tabs[$current_tab-1] == __('Add-ons','wp-slimstat')){
 	$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page);
 }
