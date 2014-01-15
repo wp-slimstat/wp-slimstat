@@ -224,6 +224,7 @@ switch ($config_tabs[$current_tab-1]){
 		break;
 }
 
+$options_on_this_page = array();
 if (has_filter('slimstat_options_on_page') && $config_tabs[$current_tab-1] == __('Add-ons','wp-slimstat')){
 	$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page);
 }
