@@ -1,13 +1,13 @@
-﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {current_tab: 1, async_load: 'no', refresh_interval: 0, expand_details: 'no', datepicker_image: ''};
+﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {current_tab: 1, async_load: 'no', refresh_interval: 0, expand_details: 'no', datepicker_image: '', text_direction: ''};
 var SlimStatAdmin = {
 	// Public variables
 	chart_data: [],
-	options: [],
+	chart_info: [],
 	ticks: [],
 
 	// Private variables
 	_chart_options: {
-		colors: ['#bbcc44', '#ccc', '#999', '#21759B', '#02c907'],
+		colors: ['#bbcc44', '#21759b', '#ccc', '#999', '#02c907'],
 		grid: {
 			backgroundColor: '#ffffff',
 			borderWidth: 0,
@@ -56,12 +56,12 @@ var SlimStatAdmin = {
 	},
 
 	chart_color_weekends: function(){
-		if (!SlimStatAdmin.options.daily_chart){
+		if (!SlimStatAdmin.chart_info.daily_chart){
 			return true;
 		}
 
 		jQuery(".xAxis .tickLabel").each(function(i){
-			myDate = new Date(SlimStatAdmin.options.current_year, SlimStatAdmin.options.current_month-1, parseInt(jQuery(this).html()), 3, 30, 0);
+			myDate = new Date(SlimStatAdmin.chart_info.current_year, SlimStatAdmin.chart_info.current_month-1, parseInt(jQuery(this).html()), 3, 30, 0);
 			if(myDate.getDay()%6 == 0){
 				jQuery(this).css('color','#ccc');
 			}
@@ -76,24 +76,40 @@ var SlimStatAdmin = {
 			return true;
 		}
 
+		max_y_axis = 0;
+		for (i in SlimStatAdmin.chart_data){
+			max = SlimStatAdmin.chart_data[i].data.reduce(function(max, arr){ 
+				return Math.max(max, arr[1]); 
+			}, -Infinity)+1;
+			if (max > max_y_axis) max_y_axis = max;
+		}
+
 		// Calculate the remaining options
 		SlimStatAdmin._chart_options.xaxis = {
-			ticks: (SlimStatAdmin.options.interval && SlimStatAdmin.ticks.length > 16) ? [] : SlimStatAdmin.ticks,
+			ticks: (SlimStatAdmin.ticks[0][1].indexOf('/') > 0 && SlimStatAdmin.ticks.length > 16) ? [] : SlimStatAdmin.ticks,
 			tickDecimals: 0,
 			tickLength: 0,
 			tickSize: 1,
-			panRange: [0, SlimStatAdmin.ticks.length],
-			zoomRange: [5, SlimStatAdmin.ticks.length]
+			panRange: [0, SlimStatAdmin.chart_data[0].data.length-1],
+			zoomRange: [5, SlimStatAdmin.chart_data[0].data.length-1],
 		};
+		if (SlimStatAdminParams.text_direction == 'rtl'){
+			SlimStatAdmin._chart_options.xaxis.transform = function(v) {
+				return -v;
+			};
+			SlimStatAdmin._chart_options.xaxis.inverseTransform = function(v) {
+				return -v;
+			};
+		}
+
 		SlimStatAdmin._chart_options.yaxis = {
 			tickDecimals: 0,
-			max: SlimStatAdmin.options.max_yaxis+1,
-			zoomRange: [5, SlimStatAdmin.options.max_yaxis+1],
-			panRange:[0, SlimStatAdmin.options.max_yaxis+1]
+			zoomRange: [5, max_y_axis],
+			panRange:[0, max_y_axis]
 		};
 
 		// Draw the chart
-		jQuery.plot(SlimStatAdmin._placeholder, SlimStatAdmin.data, SlimStatAdmin._chart_options);
+		jQuery.plot(SlimStatAdmin._placeholder, SlimStatAdmin.chart_data, SlimStatAdmin._chart_options);
 		SlimStatAdmin.chart_color_weekends();
 		
 		// Enable tooltips
@@ -145,17 +161,17 @@ var SlimStatAdmin = {
 
 		SlimStatAdmin._placeholder.bind('plotclick', function(event, pos, item){
 			if (item && typeof item.series.label != 'undefined'){
-				if (item.seriesIndex == 1 && typeof SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_previous][2] != 'undefined'){
-					document.location.href = SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_previous][2].replace(/&amp;/gi,'&');
+				if (item.seriesIndex == 1 && typeof SlimStatAdmin.chart_data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.chart_info.rtl_filler_previous][2] != 'undefined'){
+					document.location.href = SlimStatAdmin.chart_data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.chart_info.rtl_filler_previous][2].replace(/&amp;/gi,'&');
 				}
-				if (item.seriesIndex != 1 && typeof SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_current][2] != 'undefined'){
-					document.location.href = SlimStatAdmin.data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.options.rtl_filler_current][2].replace(/&amp;/gi,'&');
+				if (item.seriesIndex != 1 && typeof SlimStatAdmin.chart_data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.chart_info.rtl_filler_current][2] != 'undefined'){
+					document.location.href = SlimStatAdmin.chart_data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.chart_info.rtl_filler_current][2].replace(/&amp;/gi,'&');
 				}
 			}
 		});
 
 		SlimStatAdmin._placeholder.bind('dblclick', function(event){
-			jQuery.plot(SlimStatAdmin._placeholder, SlimStatAdmin.data, SlimStatAdmin._chart_options);
+			jQuery.plot(SlimStatAdmin._placeholder, SlimStatAdmin.chart_data, SlimStatAdmin._chart_options);
 			SlimStatAdmin.chart_color_weekends();
 		});
 
@@ -357,11 +373,11 @@ jQuery(function(){
 			filters_parsed = SlimStatAdmin.add_post_filters(report_id, jQuery(this).attr('href'));
 
 			// Remember the new filter for when the report is refreshed
-			if (typeof filters_parsed['fs[starting]'] != 'undefined' && jQuery('#'+report_id+' .refresh').length){
+			if (typeof filters_parsed['fs[start_from]'] != 'undefined' && jQuery('#'+report_id+' .refresh').length){
 				href = jQuery('#'+report_id+' .refresh').attr('href');
-				href_clean = href.substring(0, href.indexOf('&fs%5Bstarting'));
+				href_clean = href.substring(0, href.indexOf('&fs%5Bstart_from'));
 				if (href_clean != '') href = href_clean;
-				jQuery('#'+report_id+' .refresh').attr('href', href+'&fs%5Bstarting%5D='+filters_parsed['fs[starting]']);
+				jQuery('#'+report_id+' .refresh').attr('href', href+'&fs%5Bstart_from%5D='+filters_parsed['fs[start_from]']);
 			}
 		}
 
@@ -401,7 +417,7 @@ jQuery(function(){
 			jQuery('#slim_p1_16 .inside').html(response);
 		});
 
-		jQuery('#slim_p1_16 .blink').each(function(){			
+		/* jQuery('#slim_p1_16 .blink').each(function(){			
 			data['run_scan'] = jQuery(this).attr('id');
 			jQuery.ajax({
 				url: ajaxurl,
@@ -410,7 +426,7 @@ jQuery(function(){
 				data: data,
 				success: SlimStatAdmin.hacker_ninja_show_result('#'+data['run_scan'])
 			});
-		});
+		}); */
 	});
 
 	// SlimScroll init

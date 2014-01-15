@@ -9,7 +9,7 @@ $supported_browser_types = array(__('Human','wp-slimstat'),__('Bot/Crawler','wp-
 
 // Set the filters
 $tables_to_join = 'tb.*,tci.*';
-wp_slimstat_db::$filters['parsed']['limit_results'][1] = wp_slimstat::$options['number_results_raw_data'];
+wp_slimstat_db::$filters_normalized['misc']['limit_results'] = wp_slimstat::$options['number_results_raw_data'];
 if (wp_slimstat::$options['include_outbound_links_right_now'] == 'yes'){
 	$tables_to_join .= ',tob.outbound_domain,tob.outbound_resource';
 }

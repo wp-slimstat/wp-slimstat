@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.5.1
+version: 3.5.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.5.1';
+	public static $version = '3.5.2';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -79,7 +79,7 @@ class wp_slimstat{
 				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
 			}
 		}
-		
+
 		// Update the options before shutting down
 		add_action('shutdown', array(__CLASS__, 'slimstat_save_options'));
 	}
@@ -213,7 +213,7 @@ class wp_slimstat{
 				self::$stat['id'] = -208;
 				return $_argument;
 			}
-			
+
 			if (isset($referer['host'])){
 				self::$stat['domain'] = $referer['host'];
 
@@ -359,7 +359,7 @@ class wp_slimstat{
 		}
 
 		// Is this country blacklisted?
-		if (stripos(self::$options['ignore_countries'], self::$stat['country']) !== false){
+		if (is_string(self::$options['ignore_countries']) && stripos(self::$options['ignore_countries'], self::$stat['country']) !== false){
 			self::$stat['id'] = -206;
 			return $_argument;
 		}
@@ -1047,7 +1047,7 @@ class wp_slimstat{
 			'ignore_browsers' => get_option('slimstat_ignore_browsers', ''),
 			'ignore_referers' => get_option('slimstat_ignore_referers', ''),
 			'anonymize_ip' => 'no',
-			'ignore_prefetch' => get_option('slimstat_ignore_prefetch', 'no'),
+			'ignore_prefetch' => get_option('slimstat_ignore_prefetch', 'yes'),
 
 			// Permissions
 			'restrict_authors_view' => 'yes',
@@ -1065,8 +1065,10 @@ class wp_slimstat{
 			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'custom_css' => '',
-			'markings' => '',
-			'enable_ads_network' => 'null'
+			'enable_ads_network' => 'null',
+			
+			// Misc
+			'enable_hacker_ninja' => 'no'
 		);
 
 		return $options;
@@ -1162,12 +1164,11 @@ class wp_slimstat{
 		self::$options['capability_can_view'] = empty(self::$options['capability_can_view'])?'read':self::$options['capability_can_view'];
 
 		if (empty(self::$options['can_view']) || strpos(self::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
+			$slimstat_view_url = $slimstat_config_url = 'admin.php';
 			if (self::$options['use_separate_menu'] != 'yes'){
 				$slimstat_view_url = $slimstat_config_url = 'options.php';
 			}
-			else{
-				$slimstat_view_url = $slimstat_config_url = 'admin.php';
-			}
+
 			$slimstat_view_url = get_site_url($GLOBALS['blog_id'], "/wp-admin/$slimstat_view_url?page=wp-slim-view-");
 			$slimstat_config_url = get_site_url($GLOBALS['blog_id'], "/wp-admin/$slimstat_config_url?page=wp-slim-config");
 			

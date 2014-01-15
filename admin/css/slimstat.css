@@ -21,7 +21,7 @@
 	right: 5px;
 	top: 5px;
 }
-#slimstat-date-filters a{
+#slimstat-date-filters>a{
 	color: #fff;
 }
 #slimstat-date-filters>a:after{
@@ -45,9 +45,8 @@
 	width: 300px;
 	z-index: 120;
 }
-#slimstat-date-filters span a{
+#slimstat-date-filters span a.slimstat-date-choice{
 	background-color: #eee;
-	color: #000;
 	display: block;
 	float: left;
 	margin: 0 5px 5px 0;
@@ -531,7 +530,7 @@
 	}
 	.wrap.slimstat .postbox p{
 		font-size: 1.1em;
-		line-height: 1.5em;
+		line-height: 1.4em;
 	}
 
 	/* Settings */

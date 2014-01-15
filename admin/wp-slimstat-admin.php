@@ -5,7 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "The new interface was welcomed with mixed feelings by our user community, but we thank you all for letting us know. We've worked hard to tone it down a notch, and make it more seamlessly integrated with the admin color schemes introduced by WordPress 3.8. We wish you and your loved ones a Happy New Year!";
+	protected static $admin_notice = "We've rewritten the DB API, which is now faster and easier to maintain. Please report any issues you may notice with filters and/or inconsistencies in your data.";
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	
 	/**
@@ -152,7 +152,7 @@ class wp_slimstat_admin{
 	public static function init_tables($_wpdb = ''){
 		// Is InnoDB available?
 		$have_innodb = $_wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
-		$use_innodb = ($have_innodb[0]['Value'] == 'YES')?'ENGINE=InnoDB':'';
+		$use_innodb = (!empty($have_innodb[0]) && $have_innodb[0]['Value'] == 'YES')?'ENGINE=InnoDB':'';
 
 		// Table that stores the actual data about visits
 		$stats_table_sql =
@@ -368,6 +368,7 @@ class wp_slimstat_admin{
 			'current_tab' => wp_slimstat_reports::$current_tab,
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
 			'refresh_interval' => (wp_slimstat_reports::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
+			'text_direction' => $GLOBALS['wp_locale']->text_direction
 		);
 		wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 	}
@@ -522,7 +523,7 @@ class wp_slimstat_admin{
 		if ('wp-slimstat' != $_column_name) return;
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		wp_slimstat_db::init(array('resource' => 'contains '.$parsed_permalink, 'interval' => 'equals -365'));
+		wp_slimstat_db::init('resource contains '.$parsed_permalink.'|interval equals -365');
 		$count = wp_slimstat_db::count_records();
 		echo '<a href="'.wp_slimstat_reports::fs_url(array('resource' => "contains $parsed_permalink", 'interval' => 'equals -365')).'">'.$count.'</a>';
 	}

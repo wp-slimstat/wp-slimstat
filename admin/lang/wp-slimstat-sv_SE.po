@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: WP Slim Stat\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-12-30 15:07-0500\n"
-"PO-Revision-Date: 2013-12-30 15:07-0500\n"
+"PO-Revision-Date: 2013-12-30 22:38-0500\n"
 "Last-Translator: get used to it <support@getused.to.it>\n"
 "Language-Team: Per Soderman <per.soderman@gmail.com>\n"
 "Language: sv_SE\n"
@@ -77,9 +77,8 @@ msgstr "Inställningar"
 # @ wp-slimstat-view
 #: ../../admin/wp-slimstat-admin.php:395 ../../admin/wp-slimstat-admin.php:407
 #: ../../admin/wp-slimstat-admin.php:410
-#, fuzzy
 msgid "SlimStat"
-msgstr "Om WP SlimStat"
+msgstr "SlimStat"
 
 #: ../../admin/wp-slimstat-admin.php:513
 msgid "Pageviews in the last 365 days"
