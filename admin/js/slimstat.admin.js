@@ -133,7 +133,6 @@ var SlimStatAdmin = {
 				classes: 'qtip-dark'
 			}
 		});
-
 		SlimStatAdmin._placeholder.bind("plothover", function (event, coords, item) {
 			// Grab the API reference
 			var api = jQuery(this).qtip();
@@ -158,7 +157,7 @@ var SlimStatAdmin = {
 				api.show(item);
 			}
 		});
-
+/*
 		SlimStatAdmin._placeholder.bind('plotclick', function(event, pos, item){
 			if (item && typeof item.series.label != 'undefined'){
 				if (item.seriesIndex == 1 && typeof SlimStatAdmin.chart_data[item.seriesIndex].data[item.datapoint[0]-SlimStatAdmin.chart_info.rtl_filler_previous][2] != 'undefined'){
@@ -169,7 +168,7 @@ var SlimStatAdmin = {
 				}
 			}
 		});
-
+*/
 		SlimStatAdmin._placeholder.bind('dblclick', function(event){
 			jQuery.plot(SlimStatAdmin._placeholder, SlimStatAdmin.chart_data, SlimStatAdmin._chart_options);
 			SlimStatAdmin.chart_color_weekends();
@@ -177,18 +176,6 @@ var SlimStatAdmin = {
 
 		SlimStatAdmin._placeholder.bind('plotzoom', SlimStatAdmin.chart_color_weekends);
 		SlimStatAdmin._placeholder.bind('plotpan', SlimStatAdmin.chart_color_weekends);
-	},
-
-	chart_tick_format : function(n){
-		n += '';
-		x = n.split('.');
-		x1 = x[0];
-		x2 = x.length > 1 ? decimalPoint + x[1] : '';
-		var rgx = /(\d+)(\d{3})/;
-		while (rgx.test(x1)) {
-			x1 = x1.replace(rgx, '$1' + thousandsSeparator + '$2');
-		}
-		return x1 + x2;
 	},
 
 	load_ajax_data : function(report_id, data){
@@ -358,6 +345,7 @@ jQuery(function(){
 		}
 
 		jQuery('.slimstat-new-filter').remove();
+		jQuery('.empty-on-submit').val(0);
 
 		SlimStatAdmin.add_post_filters('p0', jQuery(this).attr('href'));
 		jQuery('#slimstat-filters-form').submit();
