@@ -52,7 +52,7 @@
 				<a class="slimstat-filter-link slimstat-date-choice" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals '.date_i18n('d'), 'month' => 'equals '.date_i18n('m'), 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals -90')) ?>"><?php _e('Last 90 Days','wp-slimstat') ?></a>
 				<a class="slimstat-filter-link slimstat-date-choice" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals 0', 'month' => 'equals 0', 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals 0')) ?>"><?php _e('This Year','wp-slimstat') ?></a>
 				<strong><?php _e('Date Range','wp-slimstat') ?></strong>
-				<select name="day" id="slimstat-filter-day">
+				<select name="day" id="slimstat-filter-day" class="empty-on-submit">
 					<option value="0"><?php _e('Day','wp-slimstat') ?></option><?php
 					for($i=1;$i<=31;$i++){
 						if(wp_slimstat_db::$filters_normalized['selected']['day'] && wp_slimstat_db::$filters_normalized['date']['day'] == $i)
@@ -62,8 +62,8 @@
 					} 
 					?>
 				</select> 
-				<select name="month" id="slimstat-filter-month">
-					<option value=""><?php _e('Month','wp-slimstat') ?></option><?php
+				<select name="month" id="slimstat-filter-month" class="empty-on-submit">
+					<option value="0"><?php _e('Month','wp-slimstat') ?></option><?php
 					for($i=1;$i<=12;$i++){
 						if(wp_slimstat_db::$filters_normalized['selected']['month'] && wp_slimstat_db::$filters_normalized['date']['month'] == $i)
 							echo "<option value='$i' selected='selected'>{$GLOBALS['month'][zeroise($i, 2)]}</option>";
@@ -72,9 +72,9 @@
 					} 
 					?>
 				</select>
-				<input type="text" name="year" id="slimstat-filter-year" class="empty-on-focus" value="<?php echo wp_slimstat_db::$filters_normalized['selected']['year']?wp_slimstat_db::$filters_normalized['date']['year']:__('Year','wp-slimstat') ?>">
+				<input type="text" name="year" id="slimstat-filter-year" class="empty-on-focus empty-on-submit" value="<?php echo wp_slimstat_db::$filters_normalized['selected']['year']?wp_slimstat_db::$filters_normalized['date']['year']:__('Year','wp-slimstat') ?>">
 				<input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
-				<br/>+ <input type="text" name="interval" id="slimstat-filter-interval" class="empty-on-focus" value="<?php echo wp_slimstat_db::$filters_normalized['selected']['interval']?wp_slimstat_db::$filters_normalized['date']['interval']:__('days', 'wp-slimstat') ?>">
+				<br/>+ <input type="text" name="interval" id="slimstat-filter-interval" class="empty-on-focus empty-on-submit" value="<?php echo wp_slimstat_db::$filters_normalized['selected']['interval']?wp_slimstat_db::$filters_normalized['date']['interval']:__('days', 'wp-slimstat') ?>">
 				<input type="submit" value="<?php _e('Apply','wp-slimstat') ?>" class="button-secondary">
 				<?php if (wp_slimstat_db::$filters_normalized['selected']['day'] || wp_slimstat_db::$filters_normalized['selected']['month'] || wp_slimstat_db::$filters_normalized['selected']['year']): ?>
 				<a class="slimstat-filter-link button-secondary" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals 0', 'month' => 'equals 0', 'year' => 'equals 0', 'interval' => 'equals 0')) ?>"><?php _e('Reset Filters','wp-slimstat') ?></a>

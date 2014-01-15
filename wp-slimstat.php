@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: WP SlimStat
-Plugin URI: http://wordpress.org/extend/plugins/wp-slimstat/
+Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
 version: 3.5.2
 Author: Camu
