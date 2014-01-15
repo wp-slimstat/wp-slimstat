@@ -7,7 +7,7 @@ Tested up to: 3.8
 Stable tag: 3.5.2
 
 == Description ==
-A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information.
+A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat).
 
 = Key Features =
 * Real-time reports
