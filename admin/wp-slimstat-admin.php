@@ -5,7 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "We've rewritten the DB API, which is now faster and easier to maintain. Please report any issues you may notice with filters and/or inconsistencies in your data.";
+	protected static $admin_notice = "Our team is testing a <a href='http://support.getused.to.it/' target='_blank'>new ticket system</a>, which will allows our users to keep track of their support requests. Oh, by the way, if you don't want to see this notice again (until the next update), you can finally get rid of it by clicking the little x on the right!";
 	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
 	
 	/**
@@ -13,8 +13,9 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		// This option requires a special treatment
-		if (!empty($_POST['options']['use_separate_menu']))
+		if (!empty($_POST['options']['use_separate_menu'])){
 			wp_slimstat::$options['use_separate_menu'] = in_array($_POST['options']['use_separate_menu'], array('yes','no'))?$_POST['options']['use_separate_menu']:'';
+		}
 
 		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-';
 		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-config&amp;tab=';
@@ -39,7 +40,7 @@ class wp_slimstat_admin{
 
 		// Display a notice that hightlights this version's features
 		$admin_filemtime = @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
-		if (($admin_filemtime > date('U') - 300) && !empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false){
+		if (wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version && !empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false) {
 			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
 		}
 
@@ -59,11 +60,11 @@ class wp_slimstat_admin{
 				add_filter('manage_pages_columns', array(__CLASS__, 'add_column_header'));
 				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
 				add_action('manage_pages_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
-				add_action('admin_print_styles-edit.php', array(__CLASS__, 'wp_slimstat_stylesheet'));
+				add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
 			}
 			
 			// Inline CSS to customize the icon associated to SlimStat in the sidebar
-			add_action('admin_print_styles', array(__CLASS__, 'wp_slimstat_stylesheet_icon'));
+			add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet_icon'));
 
 			// Update the table structure and options, if needed
 			if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
@@ -78,13 +79,14 @@ class wp_slimstat_admin{
 
 		// Load the library of functions to generate the reports
 		if ((!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false) || (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report')){
-	
 			include_once(dirname(__FILE__)."/view/wp-slimstat-reports.php");
 			wp_slimstat_reports::init();
-
-			// Add the ajax action to handle dynamic report updates
-			if (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report')
-				add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'show_report_wrapper'));
+		}
+		
+		// AJAX Handlers
+		if (defined('DOING_AJAX') && DOING_AJAX){
+			add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'show_report_wrapper'));
+			add_action('wp_ajax_slimstat_hide_admin_notice', array(__CLASS__, 'hide_admin_notice'));
 		}
 	}
 	// end init
@@ -326,7 +328,10 @@ class wp_slimstat_admin{
 	/**
 	 * Loads a custom stylesheet file for the administration panels
 	 */
-	public static function wp_slimstat_stylesheet(){
+	public static function wp_slimstat_stylesheet($_hook = ''){
+		if (strpos($_GET['page'], 'wp-slim') === false && $_hook != 'edit.php'){
+			return;
+		}
 		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)));
 		wp_enqueue_style('wp-slimstat');
 
@@ -523,9 +528,9 @@ class wp_slimstat_admin{
 		if ('wp-slimstat' != $_column_name) return;
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		wp_slimstat_db::init('resource contains '.$parsed_permalink.'|interval equals -365');
+		wp_slimstat_db::init('resource contains '.$parsed_permalink.'|day equals '.date_i18n('d').'|month equals '.date_i18n('m').'|year equals '.date_i18n('Y').'|interval equals -365');
 		$count = wp_slimstat_db::count_records();
-		echo '<a href="'.wp_slimstat_reports::fs_url(array('resource' => "contains $parsed_permalink", 'interval' => 'equals -365')).'">'.$count.'</a>';
+		echo '<a href="'.wp_slimstat_reports::fs_url(array('resource' => "contains $parsed_permalink", 'day' => 'equals '.date_i18n('d'), 'month' => 'equals '.date_i18n('m'), 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals -365')).'">'.$count.'</a>';
 	}
 	// end add_column
 
@@ -563,7 +568,15 @@ class wp_slimstat_admin{
 	 * Displays a message related to the current version of WP SlimStat
 	 */
 	public static function show_admin_notice(){
-		echo '<div class="updated" style="padding:10px">'.self::$admin_notice.'</div>';
+		echo '<div class="updated slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span> <a id="slimstat-hide-admin-notice" class="slimstat-font-cancel" title="'.__('Hide this notice','wp-slimstat').'" href="#"></a></div>';
+	}
+	
+	/**
+	 * Handles the Ajax request to hide the admin notice
+	 */
+	public static function hide_admin_notice(){
+		wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$version;
+		die();
 	}
 	
 	/*

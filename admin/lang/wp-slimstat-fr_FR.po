@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP SlimStat\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-01-13 22:24-0500\n"
-"PO-Revision-Date: 2014-01-13 22:29-0500\n"
+"POT-Creation-Date: 2014-01-15 12:43-0500\n"
+"PO-Revision-Date: 2014-01-15 12:43-0500\n"
 "Last-Translator: Get Used To IT <support@getused.to.it>\n"
 "Language-Team: Michael Bastin\n"
 "Language: fr_FR\n"
@@ -61,14 +61,14 @@ msgstr "Rapports personnalisés"
 
 #: ../../wp-slimstat.php:1183 ../../admin/wp-slimstat-admin.php:404
 #: ../../admin/wp-slimstat-admin.php:421 ../../admin/config/addons.php:29
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:227
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:228
 msgid "Add-ons"
 msgstr "Add-ons"
 
 #: ../../wp-slimstat.php:1186 ../../admin/wp-slimstat-admin.php:450
 #: ../../admin/wp-slimstat-admin.php:453 ../../admin/wp-slimstat-admin.php:497
 #: ../../admin/wp-slimstat-admin.php:500 ../../admin/config/index.php:14
-#: ../../admin/config/index.php:134
+#: ../../admin/config/index.php:135
 msgid "Settings"
 msgstr "Réglages"
 
@@ -571,40 +571,40 @@ msgstr "Add-on"
 msgid "Description"
 msgstr "Description"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:17
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:18
 msgid "General"
 msgstr "Général"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:43
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:44
 msgid "Views"
 msgstr "Vues"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:63
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:64
 msgid "Filters"
 msgstr "Filtres"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:127
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:128
 msgid "Permissions"
 msgstr "Permissions"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:204
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:205
 msgid "Advanced"
 msgstr "Avancé"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:220
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:221
 msgid "Maintenance"
 msgstr "Maintenance"
 
-#: ../../admin/config/index.php:19 ../../admin/config/index.php:206
+#: ../../admin/config/index.php:20 ../../admin/config/index.php:207
 msgid "Tracker"
 msgstr "Traçage"
 
-#: ../../admin/config/index.php:20
+#: ../../admin/config/index.php:21
 #, fuzzy
 msgid "Enable Tracking"
 msgstr "Activez le traçage"
 
-#: ../../admin/config/index.php:20
+#: ../../admin/config/index.php:21
 msgid ""
 "Turn the tracker on or off, but keep the reports accessible (which you would "
 "not have, if you just disabled the plugin)."
@@ -612,23 +612,23 @@ msgstr ""
 "Activez ou désactivez le Traceur, mais conservez le rapport accessible (Ce "
 "que vous n'auriez pas si vous désactiviez le plugin.)"
 
-#: ../../admin/config/index.php:21
+#: ../../admin/config/index.php:22
 #, fuzzy
 msgid "Monitor Admin Pages"
 msgstr "Tracer Pages d'administrateur"
 
-#: ../../admin/config/index.php:21
+#: ../../admin/config/index.php:22
 #, fuzzy
 msgid "Enable this option to track your users' activity within the admin."
 msgstr ""
 "Activez cette option si vous voulez suivre l'activité de vos utilisateurs "
 "dans l'admin."
 
-#: ../../admin/config/index.php:22
+#: ../../admin/config/index.php:23
 msgid "Enable Spy Mode"
 msgstr "Activer le mode espion"
 
-#: ../../admin/config/index.php:22
+#: ../../admin/config/index.php:23
 #, fuzzy
 msgid ""
 "Collect information about screen resolutions, outbound links, downloads, "
@@ -641,12 +641,12 @@ msgstr ""
 "des navigateurs seront suivis indépendamment de la valeur que vous "
 "définissez pour cette option."
 
-#: ../../admin/config/index.php:23
+#: ../../admin/config/index.php:24
 #, fuzzy
 msgid "Tracking Mode"
 msgstr "Traçage actif"
 
-#: ../../admin/config/index.php:23
+#: ../../admin/config/index.php:24
 #, fuzzy
 msgid ""
 "Select <strong>Javascript</strong> if you are using a caching plugin (W3 "
@@ -661,24 +661,24 @@ msgstr ""
 "ignorés. Un second effet fera que <strong>la plupart</strong> des spammeurs, "
 "moteurs de recherche et autres robots ne seront pas suivis."
 
-#: ../../admin/config/index.php:23
+#: ../../admin/config/index.php:24
 #, fuzzy
 msgid "Javascript"
 msgstr "Mode Javascript"
 
-#: ../../admin/config/index.php:23
+#: ../../admin/config/index.php:24
 msgid "Server-side"
 msgstr "Côté serveur"
 
-#: ../../admin/config/index.php:25
+#: ../../admin/config/index.php:26
 msgid "WordPress Integration"
 msgstr "Intégration WordPress"
 
-#: ../../admin/config/index.php:26
+#: ../../admin/config/index.php:27
 msgid "Menu Position"
 msgstr "Position du Menu"
 
-#: ../../admin/config/index.php:26
+#: ../../admin/config/index.php:27
 #, fuzzy
 msgid ""
 "Choose between a standalone admin menu for WP SlimStat or a drop down in the "
@@ -688,20 +688,20 @@ msgstr ""
 "autonome pour WP SlimStat ou un menu déroulant dans la barre "
 "d'administrateur."
 
-#: ../../admin/config/index.php:26
+#: ../../admin/config/index.php:27
 msgid "Side Menu"
 msgstr "Menu latéral"
 
-#: ../../admin/config/index.php:26
+#: ../../admin/config/index.php:27
 msgid "Admin Bar"
 msgstr "Barre d'Administration"
 
-#: ../../admin/config/index.php:27
+#: ../../admin/config/index.php:28
 #, fuzzy
 msgid "Add Stats to Posts"
 msgstr "Ajouter une colonne aux Articles"
 
-#: ../../admin/config/index.php:27
+#: ../../admin/config/index.php:28
 #, fuzzy
 msgid ""
 "Add a new column to the Edit Posts screen, with the number of hits per post."
@@ -709,15 +709,15 @@ msgstr ""
 "Ajoute une nouvelle colonne à l'écran d'édition des articles, en indiquant "
 "le nombre de visites par article (peut ralentir le rendu des pages)."
 
-#: ../../admin/config/index.php:29
+#: ../../admin/config/index.php:30
 msgid "Database"
 msgstr "Base de données"
 
-#: ../../admin/config/index.php:30
+#: ../../admin/config/index.php:31
 msgid "Retain data for"
 msgstr "Conserver les données pour"
 
-#: ../../admin/config/index.php:30
+#: ../../admin/config/index.php:31
 msgid ""
 "Delete log entries older than the number of days specified here above. Enter "
 "<strong>0</strong> (number zero) if you want to preserve your data "
@@ -727,40 +727,40 @@ msgstr ""
 "ci-dessus. Entrer <strong>0</strong> (number zero) si vous souhaitez "
 "conserver toutes vos données sans limites de durée."
 
-#: ../../admin/config/index.php:30
+#: ../../admin/config/index.php:31
 msgid "Next clean-up on"
 msgstr "Prochain nettoyage le"
 
-#: ../../admin/config/index.php:30
+#: ../../admin/config/index.php:31
 #, fuzzy, php-format
 msgid "Entries logged on or before %s will be permanently deleted."
 msgstr ""
 "Les données enregistrées le ou avant le %s seront détruites définitivement. "
 
-#: ../../admin/config/index.php:30 ../../admin/view/index.php:77
+#: ../../admin/config/index.php:31 ../../admin/view/index.php:77
 #: ../../admin/view/wp-slimstat-db.php:90
 #: ../../admin/view/wp-slimstat-reports.php:742
 msgid "days"
 msgstr "jours"
 
-#: ../../admin/config/index.php:45
+#: ../../admin/config/index.php:46
 #, fuzzy
 msgid "Data and Formats"
 msgstr "Date et heure"
 
-#: ../../admin/config/index.php:46
+#: ../../admin/config/index.php:47
 msgid "Convert IP Addresses"
 msgstr "Convertir les adresses IP"
 
-#: ../../admin/config/index.php:46
+#: ../../admin/config/index.php:47
 msgid "Display provider names instead of IP addresses."
 msgstr "Afficher le nom du fournisseur d'accès au lieu de l'adresse IP."
 
-#: ../../admin/config/index.php:47
+#: ../../admin/config/index.php:48
 msgid "Number Format"
 msgstr "Format des nombres"
 
-#: ../../admin/config/index.php:47
+#: ../../admin/config/index.php:48
 #, fuzzy
 msgid ""
 "Choose the number format you want to use for your reports, European or "
@@ -769,11 +769,11 @@ msgstr ""
 "Choisissez ce format numérique que vous souhaitez utiliser, européen ou "
 "américain."
 
-#: ../../admin/config/index.php:48
+#: ../../admin/config/index.php:49
 msgid "Show Display Name"
 msgstr "Voir Nom d'affichage"
 
-#: ../../admin/config/index.php:48
+#: ../../admin/config/index.php:49
 #, fuzzy
 msgid ""
 "By default, users are listed by their usernames. Use this option to "
@@ -782,11 +782,11 @@ msgstr ""
 "Par défaut, les utilisateurs sont affichés par Nom d'utilisateur. Utilisez "
 "cette option pour basculer au Nom d'affichage."
 
-#: ../../admin/config/index.php:49
+#: ../../admin/config/index.php:50
 msgid "Show User Agent"
 msgstr "Voir User Agent"
 
-#: ../../admin/config/index.php:49
+#: ../../admin/config/index.php:50
 msgid ""
 "Choose if you want to see the browser name or a complete user agent string "
 "when hovering on browser icons."
@@ -794,11 +794,11 @@ msgstr ""
 "Choisissez si vous voulez voir le nom du navigateur ou une chaîne complete "
 "de user agent lorsque vous survolez les icônes du navigateur."
 
-#: ../../admin/config/index.php:50
+#: ../../admin/config/index.php:51
 msgid "Show Titles"
 msgstr "Afficher les titres"
 
-#: ../../admin/config/index.php:50
+#: ../../admin/config/index.php:51
 msgid ""
 "WP SlimStat converts your permalinks into post and page titles. Disable this "
 "feature if you need to see the URL in your reports."
@@ -807,15 +807,15 @@ msgstr ""
 "Désactivez cette fonction si vous souhaitez conserver l'URL dans de vos "
 "rapports."
 
-#: ../../admin/config/index.php:52
+#: ../../admin/config/index.php:53
 msgid "Functionality"
 msgstr "Fonctionnalité"
 
-#: ../../admin/config/index.php:53
+#: ../../admin/config/index.php:54
 msgid "Asynchronous Views"
 msgstr "Vues asynchrones"
 
-#: ../../admin/config/index.php:53
+#: ../../admin/config/index.php:54
 #, fuzzy
 msgid ""
 "Load all the reports dynamically. It makes the reports render faster, but it "
@@ -825,35 +825,35 @@ msgstr ""
 "apparaitre les panneaux plus rapidement, mais augmente la charge sur votre "
 "serveur."
 
-#: ../../admin/config/index.php:54
+#: ../../admin/config/index.php:55
 msgid "Expand Details"
 msgstr "Développez les détails"
 
-#: ../../admin/config/index.php:54
+#: ../../admin/config/index.php:55
 msgid "Expand each row's details by default, insted of on mousehover."
 msgstr ""
 "Développe les détails de chaque ligne par défaut, plutôt que sur survol de "
 "souris."
 
-#: ../../admin/config/index.php:55 ../../admin/config/index.php:59
+#: ../../admin/config/index.php:56 ../../admin/config/index.php:60
 #, fuzzy
 msgid "Rows to Display"
 msgstr "Aucune donnée à afficher"
 
-#: ../../admin/config/index.php:55
+#: ../../admin/config/index.php:56
 msgid "Specify the number of items in each report."
 msgstr "Spécifier le nombre d'articles dans chacun de vos rapports."
 
-#: ../../admin/config/index.php:57
+#: ../../admin/config/index.php:58
 #, fuzzy
 msgid "Right Now Screen"
 msgstr "Maintenant"
 
-#: ../../admin/config/index.php:58
+#: ../../admin/config/index.php:59
 msgid "Live Stream"
 msgstr "Flux en temps réel (Flux live)"
 
-#: ../../admin/config/index.php:58
+#: ../../admin/config/index.php:59
 #, fuzzy
 msgid ""
 "Enable the Live view, which refreshes the Right Now screen every X seconds. "
@@ -862,20 +862,20 @@ msgstr ""
 "Actualisez la vue 'Maintenant' toutes les X secondes. Zéro désactive cette "
 "fonctionnalité."
 
-#: ../../admin/config/index.php:58 ../../admin/config/index.php:209
+#: ../../admin/config/index.php:59 ../../admin/config/index.php:210
 msgid "seconds"
 msgstr "secondes"
 
-#: ../../admin/config/index.php:59
+#: ../../admin/config/index.php:60
 msgid "Specify the number of items in Right Now."
 msgstr ""
 
-#: ../../admin/config/index.php:60
+#: ../../admin/config/index.php:61
 #, fuzzy
 msgid "Right Now Extended"
 msgstr "Maintenant"
 
-#: ../../admin/config/index.php:60
+#: ../../admin/config/index.php:61
 #, fuzzy
 msgid ""
 "Choose if you want to see outbound links listed under Right Now. It might "
@@ -885,27 +885,27 @@ msgstr ""
 "Maintenant. Cela ralentit l'affichage du rapport ou donne des erreurs sur "
 "les systèmes plus lents."
 
-#: ../../admin/config/index.php:65
+#: ../../admin/config/index.php:66
 #, fuzzy
 msgid "Visitors and Known Users"
 msgstr "Utilisateurs connus"
 
-#: ../../admin/config/index.php:66
+#: ../../admin/config/index.php:67
 #, fuzzy
 msgid "Track Registered Users"
 msgstr "Tracer les utilisateurs"
 
-#: ../../admin/config/index.php:66
+#: ../../admin/config/index.php:67
 #, fuzzy
 msgid "Enable this option to track logged in users."
 msgstr "Sélectionnez OUI si vous voulez suivre les utilisateurs connectés."
 
-#: ../../admin/config/index.php:67
+#: ../../admin/config/index.php:68
 #, fuzzy
 msgid "Blacklist by Username"
 msgstr "Adresse IP"
 
-#: ../../admin/config/index.php:67
+#: ../../admin/config/index.php:68
 #, fuzzy
 msgid ""
 "List all the usernames you don't want to track, separated by commas. Please "
@@ -916,12 +916,12 @@ msgstr ""
 "séparés par des virgules. Veuillez noter que les espaces <em>ne sont  pas</"
 "em> ignorés et que les noms d'utilisateurs sont sensibles à la casse."
 
-#: ../../admin/config/index.php:68
+#: ../../admin/config/index.php:69
 #, fuzzy
 msgid "Blacklist by IP Address"
 msgstr "Adresse IP"
 
-#: ../../admin/config/index.php:68
+#: ../../admin/config/index.php:69
 #, fuzzy
 msgid ""
 "List all the IP addresses you don't want to track, separated by commas. Each "
@@ -937,12 +937,12 @@ msgstr ""
 "<em>192.168.0.0/24</em>). Si le format est incorrect, WP SlimStat ne peut "
 "pas suivre correctement les pages vues."
 
-#: ../../admin/config/index.php:69
+#: ../../admin/config/index.php:70
 #, fuzzy
 msgid "Blacklist by Capability"
 msgstr "Utilisateurs par Capacité"
 
-#: ../../admin/config/index.php:69
+#: ../../admin/config/index.php:70
 msgid ""
 "Users having at least one of the <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>capabilities</a> listed here below "
@@ -952,15 +952,15 @@ msgstr ""
 "Roles_and_Capabilities' target='_new'>capacités</a> listées ci-dessous ne "
 "seront pas suivis. Les capacités sont insensibles à la casse."
 
-#: ../../admin/config/index.php:71
+#: ../../admin/config/index.php:72
 msgid "Profiling"
 msgstr "Profiling"
 
-#: ../../admin/config/index.php:72
+#: ../../admin/config/index.php:73
 msgid "Ignore Spammers"
 msgstr "Ignorer les spammeurs"
 
-#: ../../admin/config/index.php:72
+#: ../../admin/config/index.php:73
 #, fuzzy
 msgid ""
 "Enable this option if you don't want to track visits from users identified "
@@ -973,11 +973,11 @@ msgstr ""
 "Akismet). Les visites de personnes dont les commentaires sont ensuite marqué "
 "comme spam par vous, seront également supprimées de la base."
 
-#: ../../admin/config/index.php:73
+#: ../../admin/config/index.php:74
 msgid "Permalinks"
 msgstr "Rermaliens"
 
-#: ../../admin/config/index.php:73
+#: ../../admin/config/index.php:74
 #, fuzzy
 msgid ""
 "List all the URLs on your website that you don't want to track, separated by "
@@ -996,11 +996,11 @@ msgstr ""
 "<code>/abo*t</code> correspondra /aboundant et /about, <code>/abo!t </code > "
 "correspondra /about et /abort. Les chaînes sont insensibles à la casse."
 
-#: ../../admin/config/index.php:74
+#: ../../admin/config/index.php:75
 msgid "Countries"
 msgstr "Pays"
 
-#: ../../admin/config/index.php:74
+#: ../../admin/config/index.php:75
 msgid ""
 "Country codes (i.e.: <code>en-us, it, es</code>) that you don't want to "
 "track, separated by commas."
@@ -1008,11 +1008,11 @@ msgstr ""
 "Listez tous les codes de pays (p. ex.: <code>en-us, it, es </code>) que vous "
 "ne voulez pas suivre, séparées par des virgules."
 
-#: ../../admin/config/index.php:75
+#: ../../admin/config/index.php:76
 msgid "User Agents"
 msgstr "User Agents"
 
-#: ../../admin/config/index.php:75
+#: ../../admin/config/index.php:76
 #, fuzzy
 msgid ""
 "Browsers (user agents) you don't want to track, separated by commas. You can "
@@ -1031,11 +1031,11 @@ msgstr ""
 "correspondra à Chrome et Chromium, <code>IE/!.0</Code> correspondra IE/7.0 "
 "et IE/8.0. Les chaînes sont insensibles à la casse."
 
-#: ../../admin/config/index.php:76
+#: ../../admin/config/index.php:77
 msgid "Referring Sites"
 msgstr "Sites référents"
 
-#: ../../admin/config/index.php:76
+#: ../../admin/config/index.php:77
 #, fuzzy
 msgid ""
 "Referring URLs that you don't want to track, separated by commas: "
@@ -1053,26 +1053,26 @@ msgstr ""
 "soit un caractère générique ou le protocole que vous voulez filtrer "
 "(http://, https://)."
 
-#: ../../admin/config/index.php:78 ../../admin/config/index.php:214
+#: ../../admin/config/index.php:79 ../../admin/config/index.php:215
 msgid "Miscellaneous"
 msgstr "Divers"
 
-#: ../../admin/config/index.php:79
+#: ../../admin/config/index.php:80
 msgid "Enable Privacy Mode"
 msgstr "Activer le mode privé"
 
-#: ../../admin/config/index.php:79
+#: ../../admin/config/index.php:80
 #, fuzzy
 msgid "Mask your visitors' IP addresses to comply with European Privacy Laws."
 msgstr ""
 "Cette option masque le dernier octet de l'adresse IP de vos visiteurs afin "
 "de se conformer aux lois de confidentialité européennes."
 
-#: ../../admin/config/index.php:80
+#: ../../admin/config/index.php:81
 msgid "Ignore Prefetch Requests"
 msgstr ""
 
-#: ../../admin/config/index.php:80
+#: ../../admin/config/index.php:81
 #, fuzzy
 msgid ""
 "Prevent WP SlimStat from tracking pageviews generated by Firefox's <a "
@@ -1083,11 +1083,11 @@ msgstr ""
 "vues générées par Firefox <a href='https://developer.mozilla.org/en/"
 "Link_prefetching_FAQ' target='_blank'>Link Prefetching functionality</a>."
 
-#: ../../admin/config/index.php:96
+#: ../../admin/config/index.php:97
 msgid "Ignore users (username not found)"
 msgstr "Utilisateur inconnu (nom d'utilisateur non trouvé)"
 
-#: ../../admin/config/index.php:119
+#: ../../admin/config/index.php:120
 msgid ""
 "Invalid capability. Please check <a href=\"http://codex.wordpress.org/"
 "Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
@@ -1096,16 +1096,16 @@ msgstr ""
 "Roles_and_Capabilities\" target=\"_new\">cette page</a> pour plus "
 "d'informations"
 
-#: ../../admin/config/index.php:129
+#: ../../admin/config/index.php:130
 #, fuzzy
 msgid "Reports"
 msgstr "Rapports personnalisés"
 
-#: ../../admin/config/index.php:130
+#: ../../admin/config/index.php:131
 msgid "Restrict Authors"
 msgstr "Restriction Auteurs"
 
-#: ../../admin/config/index.php:130
+#: ../../admin/config/index.php:131
 msgid ""
 "Enable this option if you want your authours to only see stats related to "
 "their own content."
@@ -1113,12 +1113,12 @@ msgstr ""
 "Activez cette option si vous voulez que vos auteurs ne voient que les "
 "statistiques relatives à leur propre contenu."
 
-#: ../../admin/config/index.php:131 ../../admin/config/index.php:135
+#: ../../admin/config/index.php:132 ../../admin/config/index.php:136
 #, fuzzy
 msgid "Capability"
 msgstr "Capacité de voir"
 
-#: ../../admin/config/index.php:131
+#: ../../admin/config/index.php:132
 #, fuzzy
 msgid ""
 "Specify the minimum <a href='http://codex.wordpress.org/"
@@ -1135,11 +1135,11 @@ msgstr ""
 "sauf un \"Accès en lecture\" de la liste blanche a été précisé ci-dessus. "
 "Dans ce cas, la liste a la priorité sur la capacité."
 
-#: ../../admin/config/index.php:132 ../../admin/config/index.php:136
+#: ../../admin/config/index.php:133 ../../admin/config/index.php:137
 msgid "Whitelist"
 msgstr "Liste blanche"
 
-#: ../../admin/config/index.php:132
+#: ../../admin/config/index.php:133
 #, fuzzy
 msgid ""
 "List all the users who should have access to the reports, separated by "
@@ -1152,7 +1152,7 @@ msgstr ""
 "vide, <strong>tous vos utilisateurs</strong> sont autorisés à accéder. Les "
 "noms d'utilisateurs sont sensibles à la casse."
 
-#: ../../admin/config/index.php:135
+#: ../../admin/config/index.php:136
 #, fuzzy
 msgid ""
 "Specify the minimum <a href='http://codex.wordpress.org/"
@@ -1167,7 +1167,7 @@ msgstr ""
 "sauf un \"Accès en lecture\" de la liste blanche a été précisé ci-dessus. "
 "Dans ce cas, la liste a la priorité sur la capacité."
 
-#: ../../admin/config/index.php:136
+#: ../../admin/config/index.php:137
 #, fuzzy
 msgid ""
 "List all the users who can edit these options, separated by commas. Please "
@@ -1182,11 +1182,11 @@ msgstr ""
 "héritent automatiquement de l '\"Accès en lecture \"pour les rapports. Les "
 "noms d'utilisateurs sont sensibles à la casse."
 
-#: ../../admin/config/index.php:152
+#: ../../admin/config/index.php:153
 msgid "Read access: username not found"
 msgstr "Accès lecture : username inéxistant"
 
-#: ../../admin/config/index.php:165 ../../admin/config/index.php:196
+#: ../../admin/config/index.php:166 ../../admin/config/index.php:197
 msgid ""
 "Invalid minimum capability. Please check <a href=\"http://codex.wordpress."
 "org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more "
@@ -1196,15 +1196,15 @@ msgstr ""
 "org/Roles_and_Capabilities\" target=\"_new\">cette page</a> pour plus "
 "d'informations"
 
-#: ../../admin/config/index.php:183
+#: ../../admin/config/index.php:184
 msgid "Config access: username not found"
 msgstr "Accès configuration : username inéxistant"
 
-#: ../../admin/config/index.php:207
+#: ../../admin/config/index.php:208
 msgid "Detect Smoothing"
 msgstr "Détecter Lissage"
 
-#: ../../admin/config/index.php:207
+#: ../../admin/config/index.php:208
 #, fuzzy
 msgid ""
 "Detect if your visitors' browsers support anti-aliasing (font smoothing). "
@@ -1214,11 +1214,11 @@ msgstr ""
 "supporte l'anti-crénelage (lissage des polices). Si les Capacités du "
 "navigateur ne sont pas tracées, ce paramètre est ignoré."
 
-#: ../../admin/config/index.php:208
+#: ../../admin/config/index.php:209
 msgid "Track Outbound Clicks"
 msgstr "Tracer les liens sortants"
 
-#: ../../admin/config/index.php:208
+#: ../../admin/config/index.php:209
 msgid ""
 "Track when your visitors click on link to external websites. This option "
 "required Spy Mode to be enabled."
@@ -1226,11 +1226,11 @@ msgstr ""
 "Détectez vos visiteurs cliquant sur des liens pointant sur des sites "
 "externes. Cette fonctionnalité nécéssite que le Mode Espion soit activé."
 
-#: ../../admin/config/index.php:209
+#: ../../admin/config/index.php:210
 msgid "Session Duration"
 msgstr "Durée session"
 
-#: ../../admin/config/index.php:209
+#: ../../admin/config/index.php:210
 #, fuzzy
 msgid ""
 "How many seconds should a human session last? Google Analytics sets it to "
@@ -1239,22 +1239,22 @@ msgstr ""
 "Définit le nombre de secondes qu'une visite devrait durer. Google Analytics "
 "fixe cette durée à 1800 secondes."
 
-#: ../../admin/config/index.php:210
+#: ../../admin/config/index.php:211
 msgid "Extend Session"
 msgstr "Etendre la session"
 
-#: ../../admin/config/index.php:210
+#: ../../admin/config/index.php:211
 #, fuzzy
 msgid "Extend the duration of a session each time the user visits a new page."
 msgstr ""
 "Prolonge la durée d'une session à chaque fois que l'utilisateur visite une "
 "page, par le nombre de secondes défini ci-dessus."
 
-#: ../../admin/config/index.php:211
+#: ../../admin/config/index.php:212
 msgid "Enable CDN"
 msgstr "Activer CDN"
 
-#: ../../admin/config/index.php:211
+#: ../../admin/config/index.php:212
 #, fuzzy
 msgid ""
 "Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, "
@@ -1265,11 +1265,11 @@ msgstr ""
 "CDN, en servant le traqueur Javascript WP SlimStat à partir de leur réseau "
 "rapide et fiable."
 
-#: ../../admin/config/index.php:212
+#: ../../admin/config/index.php:213
 msgid "Extensions to Track"
 msgstr "Extensions du traçage"
 
-#: ../../admin/config/index.php:212
+#: ../../admin/config/index.php:213
 #, fuzzy
 msgid ""
 "List all the file extensions that you want to be treated as Downloads. "
@@ -1285,20 +1285,20 @@ msgstr ""
 "comme liens sortants (et suivis en tant que tel), si leur extension "
 "correspond à l'une de celles qui sont énumérées ci-dessous."
 
-#: ../../admin/config/index.php:215
+#: ../../admin/config/index.php:216
 msgid "IP Lookup"
 msgstr "Recherche d'IP"
 
-#: ../../admin/config/index.php:215
+#: ../../admin/config/index.php:216
 msgid "Customize the Geolocation service to be used in the reports."
 msgstr ""
 "Personnaliser le service de Géolocalisation à utiliser dans les rapports."
 
-#: ../../admin/config/index.php:216
+#: ../../admin/config/index.php:217
 msgid "Custom CSS"
 msgstr "Personnaliser le style CSS"
 
-#: ../../admin/config/index.php:216
+#: ../../admin/config/index.php:217
 msgid ""
 "Paste here your custom stylesheet to personalize the way your reports look. "
 "<a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
@@ -1310,11 +1310,11 @@ msgstr ""
 "target='_blank'>Consultez les FAQs</a> pour plus d'informations sur la façon "
 "d'utiliser cette fonctionnalité."
 
-#: ../../admin/config/index.php:217
+#: ../../admin/config/index.php:218
 msgid "Enable UAN"
 msgstr "Activer UAN"
 
-#: ../../admin/config/index.php:217
+#: ../../admin/config/index.php:218
 msgid ""
 "Send anonymous data about unknown user agents to our server for analysis. "
 "This allows us to contribute to the <a href='http://browscap.org/' "

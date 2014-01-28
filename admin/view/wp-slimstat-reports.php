@@ -259,10 +259,10 @@ class wp_slimstat_reports{
 
 		if (!empty($_searchterms)){		
 			if (!empty($matches) && !empty($query_formats[$matches[1]])){
-				$search_terms_info = '<a class="url" target="_blank" title="'.htmlentities(__('Go to the corresponding search engine result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'" href="http://'.$_domain.'/'.$query_formats[$matches[1]].'='.urlencode($_searchterms).'"></a> '.htmlentities($_searchterms, ENT_QUOTES, 'UTF-8');
+				$search_terms_info = htmlentities($_searchterms, ENT_QUOTES, 'UTF-8').'<a class="slimstat-font-logout" target="_blank" title="'.htmlentities(__('Go to the corresponding search engine result page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'" href="http://'.$_domain.'/'.$query_formats[$matches[1]].'='.urlencode($_searchterms).'"></a>';
 			}
 			else{
-				$search_terms_info = '<a class="url" target="_blank" title="'.htmlentities(__('Go to the referring page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'" href="'.$_referer.'"></a> '.htmlentities($_searchterms, ENT_QUOTES, 'UTF-8');
+				$search_terms_info = htmlentities($_searchterms, ENT_QUOTES, 'UTF-8').'<a class="slimstat-font-logout" target="_blank" title="'.htmlentities(__('Go to the referring page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'" href="'.$_referer.'"></a>';
 			}
 			$search_terms_info = "$search_terms_info $query_details";
 		}
@@ -390,40 +390,37 @@ class wp_slimstat_reports{
 		$column = !empty($_args['as_column'])?$_column:wp_slimstat_db::get_table_identifier($_column).$_column;
 
 		// Get ALL the results
-		//$starting = wp_slimstat_db::$filters_normalized['misc']['start_from'];
-		//$limit_results = wp_slimstat_db::$filters_normalized['misc']['limit_results'];
-		
-		//wp_slimstat_db::$filters_normalized['misc']['start_from'] = 0;
-		//wp_slimstat_db::$filters_normalized['misc']['limit_results'] = 99999;
-		$count_all_results = wp_slimstat_db::count_records();
+		$temp_starting = wp_slimstat_db::$filters_normalized['misc']['start_from'];
+		$temp_limit_results = wp_slimstat_db::$filters_normalized['misc']['limit_results'];
+		wp_slimstat_db::$filters_normalized['misc']['start_from'] = 0;
+		wp_slimstat_db::$filters_normalized['misc']['limit_results'] = 9999;
+
+		//$count_all_results = wp_slimstat_db::count_records();
 		switch($_type){
 			case 'recent':
-				$results = wp_slimstat_db::get_recent($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause'], $_args['order_by'], $_args['use_date_filters'], false);
-				$count_all_results = wp_slimstat_db::get_recent($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause'], $_args['order_by'], $_args['use_date_filters'], true);
+				$all_results = wp_slimstat_db::get_recent($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause'], $_args['order_by'], $_args['use_date_filters']);
 				break;
 			case 'popular':
-				$results = wp_slimstat_db::get_popular($column, $_args['custom_where'], $_args['more_columns'], $_args['having_clause'], $_args['as_column'], false);
-				$count_all_results = wp_slimstat_db::get_popular($column, $_args['custom_where'], $_args['more_columns'], $_args['having_clause'], $_args['as_column'], true);
+				$all_results = wp_slimstat_db::get_popular($column, $_args['custom_where'], $_args['more_columns'], $_args['having_clause'], $_args['as_column']);
 				break;
 			case 'popular_complete':
-				$results = wp_slimstat_db::get_popular_complete($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause'], false);
-				$count_all_results = wp_slimstat_db::get_popular_complete($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause'], true);
+				$all_results = wp_slimstat_db::get_popular_complete($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause']);
 				break;
 			case 'popular_outbound':
-				$results = wp_slimstat_db::get_popular_outbound(false);
-				$count_all_results = wp_slimstat_db::get_popular_outbound(true);
+				$all_results = wp_slimstat_db::get_popular_outbound();
 				break;
 			default:
 		}
 
 		// Restore the filter
-		//wp_slimstat_db::$filters_normalized['misc']['start_from'] = $starting;
-		//wp_slimstat_db::$filters_normalized['misc']['limit_results'] = $limit_results;
+		wp_slimstat_db::$filters_normalized['misc']['start_from'] = $temp_starting;
+		wp_slimstat_db::$filters_normalized['misc']['limit_results'] = $temp_limit_results;
 
 		// Slice the array
-		//$results = array_slice($all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'], wp_slimstat_db::$filters_normalized['misc']['limit_results']);
+		$results = array_slice($all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'], wp_slimstat_db::$filters_normalized['misc']['limit_results']);
 
 		$count_page_results = count($results);
+		
 		if ($count_page_results == 0){
 			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
 			return true;
@@ -434,7 +431,7 @@ class wp_slimstat_reports{
 			$_column = trim(str_replace('AS', '', $_args['as_column']));
 		}
 
-		self::report_pagination($_id, $count_page_results, $count_all_results);
+		self::report_pagination($_id, $count_page_results, count($all_results));
 		$is_expanded = (wp_slimstat::$options['expand_details'] == 'yes')?' expanded':'';
 
 		for($i=0;$i<$count_page_results;$i++){
@@ -524,16 +521,20 @@ class wp_slimstat_reports{
 
 			// Some columns require a special post-treatment
 			if ($_column == 'resource' && strpos($_args['custom_where'], '404') === false){
-				$element_value = '<a target="_blank" class="inline-icon url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$results[$i]['resource'].'"></a> '.$element_value;
+				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$results[$i]['resource'].'"></a> '.$element_value;
 			}
 			if ($_column == 'domain'){
 				$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
-				$element_value = '<a target="_blank" class="inline-icon url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
+				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 			}
-			if (!empty($results[$i]['ip']))
-				$row_details .= '<br><a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a> IP: <a class="slimstat-filter-link" href="'.self::fs_url(array('ip' => 'equals '.$results[$i]['ip'])).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'');
+			if (!empty($results[$i]['ip']) && $_column != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
+				$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url(array('ip' => 'equals '.$results[$i]['ip'])).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.self::$ip_lookup_url.$results[$i]['ip'].'"></a>';
+			}
+			if (!empty($row_details)){
+				$row_details = "<b class='slimstat-row-details$is_expanded'>$row_details</b>";
+			}
 
-			echo "<p>$element_pre_value$element_value$percentage <b class='slimstat-row-details$is_expanded'>$row_details</b></p>";
+			echo "<p>$element_pre_value$element_value$percentage $row_details</p>";
 		}
 	}
 
@@ -717,7 +718,7 @@ class wp_slimstat_reports{
 					$row_details = __('Source','wp-slimstat').": <a class='slimstat-filter-link' href='".self::fs_url(array('domain' => 'equals '.$results[$i]['domain']))."'>{$results[$i]['domain']}</a>";
 					if (!empty($results[$i]['searchterms'])){
 						$row_details .= "<br>".__('Keywords','wp-slimstat').": ";
-						$row_details .= "<a class='slimstat-filter-link' href='".self::fs_url(array('searchterms' => 'equals '.$results[$i]['searchterms']))."'>".htmlentities(self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['domain'], $results[$i]['referer'], true), ENT_QUOTES, 'UTF-8')."</a>";
+						$row_details .= self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['domain'], $results[$i]['referer'], true);
 					}
 				}
 				else{
@@ -729,7 +730,11 @@ class wp_slimstat_reports{
 					$row_details .= ($_type == -1)?' <strong>Type</strong>: '.$results[$i]['type']:'';
 				}
 			}
-			echo "<p>{$results[$i]['resource']} <b class='slimstat-row-details'>$row_details</b></p>";
+			if (!empty($row_details)){
+				$is_expanded = (wp_slimstat::$options['expand_details'] == 'yes')?' expanded':'';
+				$row_details = "<b class='slimstat-row-details$is_expanded'>$row_details</b>";
+			}
+			echo "<p>{$results[$i]['resource']} $row_details</p>";
 		}
 	}
 	
@@ -955,7 +960,7 @@ class wp_slimstat_reports{
 		$hn_urls = array('hn01' => 'http://www.hackerninja.com/scanner/crawler/launcher_bing_bot.php', 'hn02' => 'http://www.hackerninja.com/scanner/crawler/launcher_clamav_scanner.php', 'hn03' => 'http://www.hackerninja.com/scanner/crawler/launcher_google_bot.php', 'hn04' => 'http://www.hackerninja.com/scanner/crawler/launcher_hostile_strings.php', 'hn05' => 'http://www.hackerninja.com/scanner/crawler/launcher_vanilla_bot.php', 'hn06' => 'http://www.hackerninja.com/scanner/crawler/scan_google_malware_list.php', 'hn07' => 'http://www.hackerninja.com/scanner/crawler/scan_external_links.php', 'hn08' => 'http://www.hackerninja.com/scanner/crawler/scan_external_links.php');
 
 		if (!isset($_POST['run_scan']) && wp_slimstat::$options['enable_hacker_ninja'] != 'yes'){
-			echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Enable Free Scan</a><br/><br/><a target="_blank" href="http://www.hackerninja.com/wp-slimstat-hackerninja/">Get instant email notifications of malware,<br/> infections and hostile attacks</a></p>';
+			echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Enable Free Scan</a><br><br><a target="_blank" href="http://www.hackerninja.com/wp-slimstat-hackerninja/">Get instant email notifications of malware,<br> infections and hostile attacks</a></p>';
 		}
 		else{
 			if (wp_slimstat::$options['enable_hacker_ninja'] != 'yes'){
@@ -1005,7 +1010,7 @@ class wp_slimstat_reports{
 					}
 					break;
 				default:
-					echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Enable Free Scan</a><br/><br/><a target="_blank" href="http://www.hackerninja.com/wp-slimstat-hackerninja/">Get instant email notifications of malware,<br/> infections and hostile attacks</a></p>';
+					echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Enable Free Scan</a><br><br><a target="_blank" href="http://www.hackerninja.com/wp-slimstat-hackerninja/">Get instant email notifications of malware,<br> infections and hostile attacks</a></p>';
 					break;
 			}
 		}

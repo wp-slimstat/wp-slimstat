@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: A powerful real-time web analytics plugin for Wordpress.
-version: 3.5.2
+Version: 3.5.3
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.5.2';
+	public static $version = '3.5.3';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -1105,12 +1105,13 @@ class wp_slimstat{
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_enqueue_tracking_script(){
-		//if (self::$options['javascript_mode'] != 'yes' && self::$stat['id'] <= 0) return 0;
-
-		if (self::$options['enable_cdn'] == 'yes')
-			wp_register_script('wp_slimstat', 'http://cdn.jsdelivr.net/wp-slimstat/'.self::$options['version'].'/wp-slimstat.js', array(), null, true);
-		else
+		if (self::$options['enable_cdn'] == 'yes'){
+			$schema = is_ssl()?'https':'http';
+			wp_register_script('wp_slimstat', $schema.'://cdn.jsdelivr.net/wp-slimstat/'.self::$options['version'].'/wp-slimstat.js', array(), null, true);
+		}
+		else{
 			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), null, true);
+		}
 
 		// Pass some information to Javascript
 		$params = array(

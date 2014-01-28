@@ -50,7 +50,7 @@
 				<a class="slimstat-filter-link slimstat-date-choice" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals '.date_i18n('d'), 'month' => 'equals '.date_i18n('m'), 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals -7')) ?>"><?php _e('Last 7 Days','wp-slimstat') ?></a>
 				<a class="slimstat-filter-link slimstat-date-choice" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals '.date_i18n('d'), 'month' => 'equals '.date_i18n('m'), 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals -60')) ?>"><?php _e('Last 60 Days','wp-slimstat') ?></a>
 				<a class="slimstat-filter-link slimstat-date-choice" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals '.date_i18n('d'), 'month' => 'equals '.date_i18n('m'), 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals -90')) ?>"><?php _e('Last 90 Days','wp-slimstat') ?></a>
-				<a class="slimstat-filter-link slimstat-date-choice" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals 0', 'month' => 'equals 0', 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals 0')) ?>"><?php _e('This Year','wp-slimstat') ?></a>
+				<a class="slimstat-filter-link slimstat-date-choice" href="<?php echo wp_slimstat_reports::fs_url(array('day' => 'equals 0', 'month' => 'equals 0', 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals 0')) ?>"><?php _e('This Year So Far','wp-slimstat') ?></a>
 				<strong><?php _e('Date Range','wp-slimstat') ?></strong>
 				<select name="day" id="slimstat-filter-day" class="empty-on-submit">
 					<option value="0"><?php _e('Day','wp-slimstat') ?></option><?php

@@ -24,8 +24,8 @@ if (!empty($_REQUEST['action'])){
 			if (key_exists($_POST['f'], wp_slimstat_reports::$dropdown_filter_names)){
 				$rows_affected = wp_slimstat::$wpdb->query('
 					DELETE t1.* 
-					FROM '.wp_slimstat_db::$filters['sql_from']['all'].'
-					WHERE 1=1 '.wp_slimstat_db::$filters['sql_where']);
+					FROM '.wp_slimstat_db::$sql_filters['from']['all_tables'].'
+					WHERE 1=1 '.wp_slimstat_db::$sql_filters['where']);
 			}
 			wp_slimstat_admin::show_alert_message(intval($rows_affected).' '.__('records deleted from your database.','wp-slimstat'), 'updated below-h2');
 			break;
@@ -180,7 +180,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />
 				<textarea name="import-slimstat-settings" style="width:100%" rows="5" onClick="this.select();"><?php echo serialize(wp_slimstat::$options) ?></textarea><br/>
-				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-primary"
+				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-secondary"
 					onclick="return(confirm('<?php _e('Are you sure you want to OVERWRITE your current settings?','wp-slimstat'); ?>'))">
 			</form>
 		</td>
