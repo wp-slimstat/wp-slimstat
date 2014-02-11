@@ -5,14 +5,10 @@ class wp_slimstat_db {
 	// Filters
 	public static $filter_names = array();
 	public static $filters_normalized = array();
-	
-	// Kept for backward compatibility, but not used -- TO BE REMOVED
-	public static $filters = array();
-	public static $timeframes = array();
 
 	// Number and date formats
 	public static $formats = array('decimal' => ',', 'thousand' => '.');
-	
+
 	// Filters as SQL clauses
 	public static $sql_filters = array(
 		'from' => array(
@@ -53,7 +49,7 @@ class wp_slimstat_db {
 
 		// List of supported filters and their friendly names
 		self::$filter_names = array(
-			'no-filter-selected-1' => '&nbsp;',
+			'no_filter_selected_1' => '&nbsp;',
 			'browser' => __('Browser','wp-slimstat'),
 			'country' => __('Country Code','wp-slimstat'),
 			'ip' => __('IP Address','wp-slimstat'),
@@ -64,8 +60,8 @@ class wp_slimstat_db {
 			'domain' => __('Domain','wp-slimstat'),
 			'referer' => __('Referer','wp-slimstat'),
 			'user' => __('Visitor\'s Name','wp-slimstat'),
-			'no-filter-selected-2' => '&nbsp;',
-			'no-filter-selected-3' => __('-- Advanced filters --','wp-slimstat'),
+			'no_filter_selected_2' => '&nbsp;',
+			'no_filter_selected_3' => __('-- Advanced filters --','wp-slimstat'),
 			'plugins' => __('Browser Capabilities','wp-slimstat'),
 			'version' => __('Browser Version','wp-slimstat'),
 			'type' => __('Browser Type','wp-slimstat'),
@@ -97,91 +93,127 @@ class wp_slimstat_db {
 			'strtotime' => 0
 		);
 
-		self::reset_filters();
+		// Apply pre filters
 		self::$filters_normalized = apply_filters('slimstat_pre_filters_normalized', self::$filters_normalized);
 
 		// Normalize the input (filters)
-		if (!empty($_filters)){
-			$matches = explode('|', $_filters);
+		self::$filters_normalized = self::parse_filters($_filters);
 
-			foreach($matches as $idx => $a_match){
-				preg_match('/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode($a_match), $a_filter);
-
-				if (empty($a_filter) || !array_key_exists($a_filter[1], self::$filter_names) || strpos($a_filter[1], 'no-filter-selected') !== false){
-					continue;
-				}
-
-				switch($a_filter[1]){
-					case 'strtotime': // TODO - TO BE REMOVED - add support for strtotime to right side of expression
-						$custom_date = strtotime($matches[3][$idx]);
-						self::$filters_normalized['date']['day'] = date_i18n('j', $a_filter[3]);
-						self::$filters_normalized['date']['month'] = date_i18n('n', $a_filter[3]);
-						self::$filters_normalized['date']['year'] = date_i18n('Y', $a_filter[3]);
-						break;
-					case 'hour':
-					case 'day':
-					case 'month':
-					case 'year':
-					case 'interval':
-						if (intval($a_filter[3]) != 0){
-							self::$filters_normalized['date'][$a_filter[1]] = intval($a_filter[3]);
-							self::$filters_normalized['selected'][$a_filter[1]] = true;
-						}
-						break;
-					case 'direction':
-					case 'limit_results':
-					case 'start_from':
-						self::$filters_normalized['misc'][$a_filter[1]] = str_replace('\\', '', htmlspecialchars_decode($a_filter[3]));
-						break;
-					default:
-						self::$filters_normalized['columns'][$a_filter[1]] = array($a_filter[2], isset($a_filter[3])?str_replace('\\', '', htmlspecialchars_decode($a_filter[3])):'');
-						break;
-				}
-			}
-		}
+		// Apply post filters
 		self::$filters_normalized = apply_filters('slimstat_post_filters_normalized', self::$filters_normalized);
 
-		// Convert date filters into time ranges to be used in the SQL query
-		self::$filters_normalized['time_ranges']['current_start'] = mktime(self::$filters_normalized['date']['hour'], 0, 0, self::$filters_normalized['date']['month'], self::$filters_normalized['date']['day'], self::$filters_normalized['date']['year']);
-		
-		if (!self::$filters_normalized['selected']['interval']){
-			if (self::$filters_normalized['selected']['hour']){
-				self::$filters_normalized['time_ranges']['current_end'] = self::$filters_normalized['time_ranges']['current_start'] + 3599;
-				self::$filters_normalized['time_ranges']['type'] = 'H';
+		if (empty(self::$filters_normalized['date']['interval'])){
+			if (!empty(self::$filters_normalized['date']['hour'])){
+				self::$filters_normalized['utime']['start'] = mktime(
+					self::$filters_normalized['date']['hour'],
+					0,
+					0,
+					!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'),
+					!empty(self::$filters_normalized['date']['day'])?self::$filters_normalized['date']['day']:date_i18n('j'),
+					!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')
+				);
+				self::$filters_normalized['utime']['end'] = self::$filters_normalized['utime']['start'] + 3599;
+				self::$filters_normalized['utime']['type'] = 'H';
 			}
-			else if (self::$filters_normalized['selected']['day']){
-				self::$filters_normalized['time_ranges']['current_end'] = self::$filters_normalized['time_ranges']['current_start'] + 86399;
-				self::$filters_normalized['time_ranges']['type'] = 'd';
+			else if (!empty(self::$filters_normalized['date']['day'])){
+				self::$filters_normalized['utime']['start'] = mktime(
+					0,
+					0,
+					0,
+					!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'),
+					self::$filters_normalized['date']['day'],
+					!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')
+				);
+				self::$filters_normalized['utime']['end'] = self::$filters_normalized['utime']['start'] + 86399;
+				self::$filters_normalized['utime']['type'] = 'd';
 			}
-			else if (self::$filters_normalized['selected']['year'] && !self::$filters_normalized['selected']['month']){
-				self::$filters_normalized['time_ranges']['current_end'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']+1)-1;
-				self::$filters_normalized['time_ranges']['type'] = 'Y';
+			else if(!empty(self::$filters_normalized['date']['year'])){
+				self::$filters_normalized['utime']['start'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']);
+				self::$filters_normalized['utime']['end'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']+1)-1;
+				self::$filters_normalized['utime']['type'] = 'Y';
 			}
 			else{
-				self::$filters_normalized['time_ranges']['current_end'] = strtotime(self::$filters_normalized['date']['year'].'-'.self::$filters_normalized['date']['month'].'-01 00:00 +1 month')-1;
-				self::$filters_normalized['time_ranges']['type'] = 'm';
+				self::$filters_normalized['utime']['start'] = mktime(
+					0,
+					0,
+					0,
+					!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'),
+					1,
+					!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')
+				);
+
+				self::$filters_normalized['utime']['end'] = strtotime(
+					(!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')).'-'.
+					(!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n')).
+					'-01 00:00 +1 month UTC'
+				)-1;
+				self::$filters_normalized['utime']['type'] = 'm';
 			}
 		}
 		else{
-			self::$filters_normalized['time_ranges']['type'] = 'interval';
+			self::$filters_normalized['utime']['type'] = 'interval';
 			if (self::$filters_normalized['date']['interval'] > 0){
-				self::$filters_normalized['time_ranges']['current_end'] = strtotime(self::$filters_normalized['date']['year'].'-'.self::$filters_normalized['date']['month'].'-'.self::$filters_normalized['date']['day'].' 00:00:00 +'.self::$filters_normalized['date']['interval'].' days')-1;
+				self::$filters_normalized['utime']['start'] = mktime(
+					0,
+					0,
+					0,
+					!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'),
+					!empty(self::$filters_normalized['date']['day'])?self::$filters_normalized['date']['day']:date_i18n('j'),
+					!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')
+				);
+				self::$filters_normalized['utime']['end'] = strtotime(
+					(!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')).'-'.
+					(!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n')).'-'.
+					(!empty(self::$filters_normalized['date']['day'])?self::$filters_normalized['date']['day']:date_i18n('j')).' 00:00:00 +'.
+					self::$filters_normalized['date']['interval'].' days UTC'
+				)-1;
 			}
 			else{
 				// Swap boundaries, if interval is negative
-				self::$filters_normalized['time_ranges']['current_end'] = mktime(23, 59, 59, self::$filters_normalized['date']['month'], self::$filters_normalized['date']['day'], self::$filters_normalized['date']['year']);
-				self::$filters_normalized['time_ranges']['current_start'] = strtotime(self::$filters_normalized['date']['year'].'-'.self::$filters_normalized['date']['month'].'-'.self::$filters_normalized['date']['day'].' 00:00:00 '.(self::$filters_normalized['date']['interval']+1).' days');
+				self::$filters_normalized['utime']['start'] = strtotime(
+					(!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')).'-'.
+					(!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n')).'-'.
+					(!empty(self::$filters_normalized['date']['day'])?self::$filters_normalized['date']['day']:date_i18n('j')).' 00:00:00 '.
+					(self::$filters_normalized['date']['interval']+1).' days UTC'
+				);
+				self::$filters_normalized['utime']['end'] = mktime(
+					23,
+					59,
+					59,
+					!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'),
+					!empty(self::$filters_normalized['date']['day'])?self::$filters_normalized['date']['day']:date_i18n('j'),
+					!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')
+				);
 			}
 		}
-		
+
 		// If end is in the future, set it to now
-		$now = date_i18n('U');
-		if (self::$filters_normalized['time_ranges']['current_end'] > $now) self::$filters_normalized['time_ranges']['current_end'] = $now;
+		if (self::$filters_normalized['utime']['end'] > date_i18n('U')){
+			self::$filters_normalized['utime']['end'] = date_i18n('U');
+		}
+		
+		// If start is after end, set it to first of month
+		if (self::$filters_normalized['utime']['start'] > self::$filters_normalized['utime']['end']){
+			self::$filters_normalized['utime']['start'] = mktime(
+				0,
+				0,
+				0,
+				date_i18n('n', self::$filters_normalized['utime']['end']),
+				1,
+				date_i18n('Y', self::$filters_normalized['utime']['end'])
+			);
+			self::$filters_normalized['date']['hour'] = self::$filters_normalized['date']['day'] = self::$filters_normalized['date']['month'] = self::$filters_normalized['date']['year'] = 0;
+		}
 
 		// Now let's translate our filters into SQL clauses
-		self::$sql_filters['where_time_range'] = ' AND (t1.dt BETWEEN '.self::$filters_normalized['time_ranges']['current_start'].' AND '.self::$filters_normalized['time_ranges']['current_end'].')';
+		self::$sql_filters['where_time_range'] = ' AND (t1.dt BETWEEN '.self::$filters_normalized['utime']['start'].' AND '.self::$filters_normalized['utime']['end'].')';
 		foreach (self::$filters_normalized['columns'] as $a_filter_column => $a_filter_data){
 			$a_filter_empty = '0';
+			
+			// Add-ons can set their own custom filters, which are ignored here
+			if (strpos($a_filter_column, 'addon_') !== false){
+				continue;
+			}
 
 			// Some columns are in separate tables, so we need to join them
 			switch (self::get_table_identifier($a_filter_column)){
@@ -380,27 +412,27 @@ class wp_slimstat_db {
 	}
 
 	public static function get_popular($_column = 't1.id', $_custom_where = '', $_more_columns = '', $_having_clause = '', $_as_column = ''){
-		return wp_slimstat::$wpdb->get_results("
+		return self::_get_results("
 			SELECT $_column ".(!empty($_as_column)?'AS '.$_as_column:'')." $_more_columns, COUNT(*) count
 			FROM ".self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_column.$_custom_where.$_more_columns).'
 			WHERE '.(empty($_custom_where)?"$_column <> '' AND  $_column <> '__l_s__'":$_custom_where).' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range']."
 			GROUP BY $_column $_more_columns $_having_clause
 			ORDER BY count ".self::$filters_normalized['misc']['direction']."
-			LIMIT ".self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], ARRAY_A);
+			LIMIT ".self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
 	}
 
 	public static function get_popular_outbound(){
-		return wp_slimstat::$wpdb->get_results("
+		return self::_get_results("
 			SELECT tob.outbound_resource as resource, COUNT(*) count
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id ".self::$sql_filters['from']['browsers'].' '.self::$sql_filters['from']['screenres'].' '.self::$sql_filters['from']['content_info']."
 			WHERE 1=1 ".self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
 			GROUP BY tob.outbound_resource 
 			ORDER BY count '.self::$filters_normalized['misc']['direction'].'
-			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], ARRAY_A);
+			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
 	}
 
 	public static function get_popular_complete($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = ''){
-		return wp_slimstat::$wpdb->get_results("
+		return self::_get_results("
 			SELECT t1.*, ts1.maxid, ts1.count
 			FROM (
 				SELECT $_column, MAX(t1.id) maxid, COUNT(*) count
@@ -410,21 +442,21 @@ class wp_slimstat_db {
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 			(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').
 			'ORDER BY ts1.count '.self::$filters_normalized['misc']['direction'].'
-			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], ARRAY_A);
+			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
 	}
 
 	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = '', $_use_date_filters = true){
 		if ($_column == 't1.id'){
-			return wp_slimstat::$wpdb->get_results('
+			return self::_get_results('
 				SELECT t1.*'.(!empty($_join_tables)?', '.$_join_tables:'').'
 				FROM '.self::$sql_filters['from']['all_tables'].' '.(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
 				WHERE '.(empty($_custom_where)?"$_column <> 0 ":$_custom_where).' '.self::$sql_filters['where'].' '.($_use_date_filters?self::$sql_filters['where_time_range']:'').
 				'ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by).'
-				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], ARRAY_A);
+				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
 			
 		}
 		else{
-			return wp_slimstat::$wpdb->get_results('
+			return self::_get_results('
 				SELECT t1.*, '.(!empty($_join_tables)?$_join_tables:'ts1.maxid')."
 				FROM (
 					SELECT $_column, MAX(t1.id) maxid
@@ -434,34 +466,34 @@ class wp_slimstat_db {
 				) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 				(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').
 				'ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by).'
-				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], ARRAY_A);
+				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
 		}
 	}
 
 	public static function get_recent_outbound($_type = -1){
-		return wp_slimstat::$wpdb->get_results("
+		return self::_get_results("
 			SELECT tob.outbound_id as visit_id, tob.outbound_domain, tob.outbound_resource as resource, tob.type, tob.notes, t1.ip, t1.other_ip, t1.user, 'local' as domain, t1.resource as referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON tob.id = t1.id INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers tb on t1.browser_id = tb.browser_id ".self::$sql_filters['from']['screenres'].' '.self::$sql_filters['from']['content_info'].'
 			WHERE '.(($_type != -1)?"tob.type = $_type":'tob.type > 1').' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].
 			'ORDER BY tob.dt '.self::$filters_normalized['misc']['direction'].'
-			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], ARRAY_A);
+			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
 	}
 
 	public static function get_data_for_chart($_data1, $_data2, $_custom_where_clause = '', $_sql_from_where = ''){
-		$previous = array('end' => self::$filters_normalized['time_ranges']['current_start'] - 1);
+		$previous = array('end' => self::$filters_normalized['utime']['start'] - 1);
 		$label_date_format = '';
 		$output = array();
 
 		// Each type has its own parameters
-		switch (self::$filters_normalized['time_ranges']['type']){
+		switch (self::$filters_normalized['utime']['type']){
 			case 'H':
-				$previous['start'] = self::$filters_normalized['time_ranges']['current_start'] - 3600;
+				$previous['start'] = self::$filters_normalized['utime']['start'] - 3600;
 				$label_date_format = get_option('time_format', 'g:i a');
 				$group_by = array('HOUR', 'MINUTE', 'i');
 				$values_in_interval = array(60, 60, 0); 
 				break;
 			case 'd':
-				$previous['start'] = self::$filters_normalized['time_ranges']['current_start'] - 86400;
+				$previous['start'] = self::$filters_normalized['utime']['start'] - 86400;
 				$label_date_format = (self::$formats['decimal'] == '.')?'m/d':'d/m';
 				$group_by = array('DAY', 'HOUR', 'G');
 				$values_in_interval = array(24, 24, 0);
@@ -477,18 +509,17 @@ class wp_slimstat_db {
 				$values_in_interval = array(abs(self::$filters_normalized['date']['interval']), abs(self::$filters_normalized['date']['interval']), 0);
 				break;
 			default:
-				$previous['start'] = mktime(0, 0, 0, self::$filters_normalized['date']['month']-1, 1, self::$filters_normalized['date']['year']);
+				$previous['start'] = mktime(0, 0, 0, (!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'))-1, 1, !empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y'));
 				$label_date_format = 'm/Y';
 				$group_by = array('MONTH', 'DAY', 'j');
-				$values_in_interval = array(date('t', $previous['start']), date('t', self::$filters_normalized['time_ranges']['current_start']), 1);
+				$values_in_interval = array(date('t', $previous['start']), date('t', self::$filters_normalized['utime']['start']), 1);
 				break;
 		}
-		
 
 		// Custom intervals don't have a comparison chart ('previous' range)
 		$time_range = self::$sql_filters['where_time_range'];
-		if (!self::$filters_normalized['selected']['interval']){
-			$time_range = 'AND (t1.dt BETWEEN '.$previous['start'].' AND '.$previous['end'].' OR t1.dt BETWEEN '.self::$filters_normalized['time_ranges']['current_start'].' AND '.self::$filters_normalized['time_ranges']['current_end'].')';
+		if (empty(self::$filters_normalized['date']['interval'])){
+			$time_range = 'AND (t1.dt BETWEEN '.$previous['start'].' AND '.$previous['end'].' OR t1.dt BETWEEN '.self::$filters_normalized['utime']['start'].' AND '.self::$filters_normalized['utime']['end'].')';
 		}
 
 		// Build the SQL query
@@ -507,13 +538,13 @@ class wp_slimstat_db {
 		$sql .= " GROUP BY {$group_by[0]}(FROM_UNIXTIME(dt)), {$group_by[1]}(FROM_UNIXTIME(dt))";
 
 		// Get the data
-		$results = wp_slimstat::$wpdb->get_results($sql, ARRAY_A);
+		$results = self::_get_results($sql);
 
 		// Fill the output array
 		$output['current']['label'] = '';
 		if (!empty($label_date_format)){
-			$output['current']['label'] = date_i18n($label_date_format, self::$filters_normalized['time_ranges']['current_start']);
-			$output['previous']['label'] = date_i18n($label_date_format, $previous['start']);
+			$output['current']['label'] = gmdate($label_date_format, self::$filters_normalized['utime']['start']);
+			$output['previous']['label'] = gmdate($label_date_format, $previous['start']);
 		}
 
 		$output['previous']['first_metric'] = array_fill($values_in_interval[2], $values_in_interval[0], 0);
@@ -521,8 +552,9 @@ class wp_slimstat_db {
 
 		for ($i = $values_in_interval[2]; $i < $values_in_interval[0]; $i++){
 			// Do not include dates in the future
-			if ((!self::$filters_normalized['selected']['interval'] || date_i18n('Ymd', wp_slimstat_db::$filters_normalized['time_ranges']['current_start'] + ( $i * 86400)) > date_i18n('Ymd')) && 
-				(self::$filters_normalized['selected']['interval'] || $i > date_i18n($group_by[2]))){
+
+			if ((empty(self::$filters_normalized['date']['interval']) || date('Ymd', wp_slimstat_db::$filters_normalized['utime']['start'] + ( $i * 86400)) > date_i18n('Ymd')) && 
+				(!empty(self::$filters_normalized['date']['interval']) || $i > date_i18n($group_by[2]))){
 				continue;
 			}
 			$output['current']['first_metric'][$i] = 0;
@@ -536,245 +568,100 @@ class wp_slimstat_db {
 
 		// Rearrange the data and then format it for Flot
 		foreach ($results as $i => $a_result){
-			$unix_datestamp = strtotime($a_result['datestamp']);
-			$index = (self::$filters_normalized['selected']['interval'])?floor(($unix_datestamp - wp_slimstat_db::$filters_normalized['time_ranges']['current_start'])/86400):date_i18n($group_by[2], $unix_datestamp);
+			$unix_datestamp = strtotime($a_result['datestamp'].' UTC');
+			$index = (!empty(self::$filters_normalized['date']['interval']))?floor(($unix_datestamp - wp_slimstat_db::$filters_normalized['utime']['start'])/86400):gmdate($group_by[2], $unix_datestamp);
 			
-			if (!self::$filters_normalized['selected']['interval'] && date_i18n(self::$filters_normalized['time_ranges']['type'], $unix_datestamp) == date_i18n(self::$filters_normalized['time_ranges']['type'], $previous['start'], true)){
+			if (empty(self::$filters_normalized['date']['interval']) && gmdate(self::$filters_normalized['utime']['type'], $unix_datestamp) == gmdate(self::$filters_normalized['utime']['type'], $previous['start'])){
 				$output['previous']['first_metric'][$index] = $a_result['first_metric'];
 				$output['previous']['second_metric'][$index] = $a_result['second_metric'];
 			}
-			if (self::$filters_normalized['selected']['interval'] || date_i18n(self::$filters_normalized['time_ranges']['type'], $unix_datestamp) == date_i18n(self::$filters_normalized['time_ranges']['type'], self::$filters_normalized['time_ranges']['current_start'], true)){
+			if (!empty(self::$filters_normalized['date']['interval']) || gmdate(self::$filters_normalized['utime']['type'], $unix_datestamp) == gmdate(self::$filters_normalized['utime']['type'], self::$filters_normalized['utime']['start'])){
 				$output['current']['first_metric'][$index] = $a_result['first_metric'];
 				$output['current']['second_metric'][$index] = $a_result['second_metric'];
 			}
 		}
 
-		//var_dump($output);
 		return ($output);
-
-/* 		BYE BYE OLD CODE!
-
-
-
-		// Avoid PHP warnings in strict mode
-		$result = array(
-			'current' => array('non_zero_count' => 0, 'data1' => '', 'data2' => ''),
-			'previous' => array('non_zero_count' => 0, 'data1' => '', 'data2' => ''),
-			'max_yaxis' => 0,
-			'ticks' => ''
-		);
-		$data = array();
-
-		
-
-		$data['count_offset'] = 0;
-		if (!self::$filters_normalized['selected']['interval']){
-			
-			if (self::$filters_normalized['selected']['hour']){
-				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d %H:%i') datestamp, $_data1 data1, $_data2 data2";
-				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%H'), DATE_FORMAT(FROM_UNIXTIME(dt), '%i') ORDER BY datestamp ASC";
-				$data['end_value'] = 60;
-				$data['count_offset'] = 1;
-			}
-			elseif (self::$filters_normalized['selected']['day']){
-				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d %H:00') datestamp, $_data1 data1, $_data2 data2";
-				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%d'), DATE_FORMAT(FROM_UNIXTIME(dt), '%H') ORDER BY datestamp ASC";
-				$data['end_value'] = 24;
-				$data['count_offset'] = 1;
-			}
-			elseif (self::$filters_normalized['selected']['year'] && !self::$filters_normalized['selected']['month']){
-				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m 01 00:00') datestamp, $_data1 data1, $_data2 data2";
-				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%Y'), DATE_FORMAT(FROM_UNIXTIME(dt), '%m') ORDER BY datestamp ASC";
-				$data['end_value'] = 12;
-
-			}
-			else{
-				$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d 00:00') datestamp, $_data1 data1, $_data2 data2";
-				$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%m'), DATE_FORMAT(FROM_UNIXTIME(dt), '%d') ORDER BY datestamp ASC";
-				$data['end_value'] = 31;
-			}
-		}
-		else{
-			$time_range = self::$sql_filters['where_time_range'];
-			$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y %m %d 00:00') datestamp, $_data1 data1, $_data2 data2";
-			$group_and_order = "GROUP BY DATE_FORMAT(FROM_UNIXTIME(dt), '%m'), DATE_FORMAT(FROM_UNIXTIME(dt), '%d') ORDER BY datestamp ASC";
-			$data['end_value'] = abs(self::$filters_normalized['date']['interval']);
-			$data['count_offset'] = -1; // skip ticks generation
-		}
-
-		// Panel 4 has a slightly different structure
-		if(empty($_sql_from_where)){
-			$sql .= '	FROM '.self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause)."
-						WHERE 1=1 $time_range ".self::$sql_filters['where'].' '.$_custom_where_clause;
-		}
-		else{
-			$sql_no_placeholders = str_replace('[from_tables]', self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause), $_sql_from_where);
-			$sql_no_placeholders = str_replace('[where_clause]', $time_range.' '.self::$sql_filters['where'].' '.$_custom_where_clause, $sql_no_placeholders);
-			$sql .= $sql_no_placeholders;
-		}
-		$sql .= ' '.$group_and_order;
-		$array_results = wp_slimstat::$wpdb->get_results($sql, ARRAY_A);
-
-		if (!is_array($array_results) || empty($array_results))
-			$array_results = array_fill(0, $data['end_value']*2, array('datestamp' => 0, 'data1' => 0, 'data2' => 0));
-
-		// Reorganize the data and then format it for Flot
-		foreach ($array_results as $a_result){
-			$data[0][$a_result['datestamp']] = $a_result['data1'];
-			$data[1][$a_result['datestamp']] = $a_result['data2'];
-		}
-
-		$result['max_yaxis'] = max(max($data[0]), max($data[1]));
-		$result['ticks'] = self::_generate_ticks($data['end_value'], $data['count_offset']);
-
-		// Reverse the chart, if needed
-		$k = ($GLOBALS['wp_locale']->text_direction == 'rtl')?1-$data['end_value']:0;
-
-		for ($i=0;$i<$data['end_value'];$i++){
-			$j = abs($k+$i);
-			if (!self::$filters_normalized['selected']['interval']){
-				if (self::$filters_normalized['selected']['hour']){
-					$datestamp['timestamp_current'] = mktime(self::$filters_normalized['date']['hour'], $j, 0, self::$filters_normalized['date']['month'], self::$filters_normalized['date']['day'], self::$filters_normalized['date']['year']);
-					$datestamp['timestamp_previous'] = mktime(self::$filters_normalized['date']['hour'] - 1, $j, 0, self::$filters_normalized['date']['month'], self::$filters_normalized['date']['day'], self::$filters_normalized['date']['year']);
-					$datestamp['filter_current'] =  '';
-					$datestamp['filter_previous'] =  '';
-					//$datestamp['marking_signature'] = self::$filters_normalized['date']['year'].' '.self::$filters_normalized['date']['month'].' '.self::$filters_normalized['date']['day'].' '.self::$filters_normalized['date']['hour'].':'.sprintf('%02d', $j);
-					$datestamp['group'] = 'h';
-				}
-				elseif (self::$filters_normalized['selected']['day']){
-					$datestamp['timestamp_current'] = mktime($j, 0, 0, self::$filters_normalized['date']['month'], self::$filters_normalized['date']['day'], self::$filters_normalized['date']['year']);
-					$datestamp['timestamp_previous'] = mktime($j, 0, 0, self::$filters_normalized['date']['month'], self::$filters_normalized['date']['day']-1, self::$filters_normalized['date']['year']);
-					$datestamp['filter_current'] = ',"'.$_view_url.'&amp;fs%5Bhour%5D='.urlencode('equals '.$j).'&amp;fs%5Bday%5D='.urlencode('equals '.self::$filters_normalized['date']['day']).'&amp;fs%5Bmonth%5D='.urlencode('equals '.self::$filters_normalized['date']['month']).'&amp;fs%5Byear%5D='.urlencode('equals '.self::$filters_normalized['date']['year']).'"';
-					$datestamp['filter_previous'] = ',"'.$_view_url.'&amp;fs%5Bhour%5D='.urlencode('equals '.$j).'&amp;fs%5Bday%5D='.urlencode('equals '.date_i18n('d', $datestamp['timestamp_previous'])).'&amp;fs%5Bmonth%5D='.urlencode('equals '.date_i18n('m', $datestamp['timestamp_previous'])).'&amp;fs%5Byear%5D='.urlencode('equals '.date_i18n('Y', $datestamp['timestamp_previous'])).'"';
-					//$datestamp['marking_signature'] = self::$filters_normalized['date']['year'].' '.self::$filters_normalized['date']['month'].' '.self::$filters_normalized['date']['day'].' '.sprintf('%02d', $j);
-					$datestamp['group'] = 'd';
-				}
-				elseif (self::$filters_normalized['selected']['year'] && !self::$filters_normalized['selected']['month']){
-					$datestamp['timestamp_current'] = mktime(0, 0, 0, $j+1, 1, self::$filters_normalized['date']['year']);
-					$datestamp['timestamp_previous'] = mktime(0, 0, 0, $j+1, 1, self::$filters_normalized['date']['year']-1);
-					$datestamp['filter_current'] = ',"'.$_view_url.'&amp;fs%5Bmonth%5D='.urlencode('equals '.($j+1)).'&amp;fs%5Byear%5D='.urlencode('equals '.self::$filters_normalized['date']['year']).'"';
-					$datestamp['filter_previous'] = ',"'.$_view_url.'&amp;fs%5Bmonth%5D='.urlencode('equals '.($j+1)).'&amp;fs%5Byear%5D='.urlencode('equals '.(self::$filters_normalized['date']['year']-1)).'"';
-					//$datestamp['marking_signature'] = self::$filters_normalized['date']['year'].' '.sprintf('%02d', $j+1);
-					$datestamp['group'] = 'Y';
-				}
-				else{
-					$datestamp['timestamp_current'] = mktime(0, 0, 0, self::$filters_normalized['date']['month'], $j+1, self::$filters_normalized['date']['year']);
-					$datestamp['timestamp_previous'] = mktime(0, 0, 0, self::$filters_normalized['date']['month']-1, $j+1, self::$filters_normalized['date']['year']);
-					$datestamp['filter_current'] =  ',"'.$_view_url.'&amp;fs%5Bday%5D='.urlencode('equals '.($j+1)).'&amp;fs%5Bmonth%5D='.urlencode('equals '.self::$filters_normalized['date']['month']).'&amp;fs%5Byear%5D='.urlencode('equals '.self::$filters_normalized['date']['year']).'"';
-					$datestamp['filter_previous'] =  ',"'.$_view_url.'&amp;fs%5Bday%5D='.urlencode('equals '.($j+1)).'&amp;fs%5Bmonth%5D='.urlencode('equals '.date_i18n('m', $datestamp['timestamp_previous'])).'&amp;fs%5Byear%5D='.urlencode('equals '.date_i18n('Y', $datestamp['timestamp_previous'])).'"';
-					//$datestamp['marking_signature'] = self::$filters_normalized['date']['year'].' '.self::$filters_normalized['date']['month'].' '.sprintf('%02d', $j+1);
-					$datestamp['group'] = 'm';
-				}
-			}
-			else{
-				$datestamp['timestamp_current'] = mktime(0, 0, 0, self::$filters_normalized['date']['month'], self::$filters_normalized['date']['day']+$j, self::$filters_normalized['date']['year']);
-				$datestamp['timestamp_previous'] = mktime(0, 0, 0, self::$filters_normalized['date']['month']-1, self::$filters_normalized['date']['day']+$j, self::$filters_normalized['date']['year']);
-				$datestamp['filter_current'] =  ',"'.$_view_url.'&amp;fs%5Bday%5D='.urlencode('equals '.(self::$filters_normalized['date']['day']+$j)).'&amp;fs%5Bmonth%5D='.urlencode('equals '.self::$filters_normalized['date']['month']).'&amp;fs%5Byear%5D='.urlencode('equals '.self::$filters_normalized['date']['year']).'"';
-				$datestamp['filter_previous'] =  ',"'.$_view_url.'&amp;fs%5Bday%5D='.urlencode('equals '.(self::$filters_normalized['date']['day']+$j)).'&amp;fs%5Bmonth%5D='.urlencode('equals '.date_i18n('m', $datestamp['timestamp_previous'])).'&amp;fs%5Byear%5D='.urlencode('equals '.date_i18n('Y', $datestamp['timestamp_previous'])).'"';
-				//$datestamp['marking_signature'] = self::$filters_normalized['date']['year'].' '.self::$filters_normalized['date']['month'].' '.sprintf('%02d', self::$filters_normalized['date']['day']+$j);
-				$datestamp['group'] = 'm';
-			}
-
-
-			$datestamp['current'] = date_i18n('Y m d H:i', $datestamp['timestamp_current']);
-			$datestamp['previous'] = date_i18n('Y m d H:i', $datestamp['timestamp_previous']);
-
-			if (date_i18n($datestamp['group'], $datestamp['timestamp_current']) == date_i18n($datestamp['group'], self::$filters_normalized['time_ranges']['current_start'], true) || self::$filters_normalized['selected']['interval']){
-				if (!empty($data[0][$datestamp['current']])){
-					$result['current']['data1'] .= "[$i,{$data[0][$datestamp['current']]}{$datestamp['filter_current']}],";
-					$result['current']['non_zero_count']++;
-				}	
-				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
-					$result['current']['data1'] .= "[$i,0],";
-				}
-
-				if (!empty($data[1][$datestamp['current']])){
-					$result['current']['data2'] .= "[$i,{$data[1][$datestamp['current']]}{$datestamp['filter_current']}],";
-				}
-				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
-					$result['current']['data2'] .= "[$i,0],";
-				}
-			}
-
-			if (date_i18n($datestamp['group'], $datestamp['timestamp_previous']) == date_i18n($datestamp['group'], self::$filters_normalized['time_ranges']['previous_start'], true) && !self::$filters_normalized['selected']['interval']){
-				if (!empty($data[0][$datestamp['previous']])){
-					$result['previous']['data1'] .= "[$i,{$data[0][$datestamp['previous']]}{$datestamp['filter_previous']}],";
-					$result['previous']['non_zero_count']++;
-				}
-				elseif($datestamp['timestamp_previous'] <= date_i18n('U')){
-					$result['previous']['data1'] .= "[$i,0],";
-				}
-				
-				if (!empty($data[1][$datestamp['previous']])){
-					$result['previous']['data2'] .= "[$i,{$data[1][$datestamp['previous']]}{$datestamp['filter_current']}],";
-				}
-				elseif($datestamp['timestamp_current'] <= date_i18n('U')){
-					$result['previous']['data2'] .= "[$i,0],";
-				}
-			}
-			
-			if (self::$filters_normalized['selected']['interval']){
-				$result['ticks'] .= "[$i, '".((self::$formats['decimal'] == '.')?date_i18n('m/d', $datestamp['timestamp_current']):date_i18n('d/m', $datestamp['timestamp_current']))."'],";
-			}
-		}
-
-		date_default_timezone_set($reset_timezone);
-
-		$result['current']['data1'] = substr($result['current']['data1'], 0, -1);
-		$result['current']['data2'] = substr($result['current']['data2'], 0, -1);
-		$result['previous']['data1'] = substr($result['previous']['data1'], 0, -1);
-		$result['previous']['data2'] = substr($result['previous']['data2'], 0, -1);
-		$result['ticks'] = substr($result['ticks'], 0, -1);
-
-		return $result;
-*/
 	}
 
-	public static function reset_filters(){
-		self::$filters_normalized = array(
+	public static function parse_filters($_filters = '', $_init_misc = true){
+		$filters_normalized = array(
 			'columns' => array(),
-			'date' => array(
-				'hour' => 0,
-				'day' => 1,
-				'month' => date_i18n('m'),
-				'year' => date_i18n('Y'),
-				'interval' => 0,
-			),
-			'selected' => array(
-				'hour' => false,
-				'day' => false,
-				'month' => false,
-				'year' => false,'interval' => false
-			),
-			'misc' => array(
+			'date' => array(),
+			'misc' => $_init_misc?array(
 				'direction' => 'desc',
 				'limit_results' => wp_slimstat::$options['rows_to_show'],
 				'start_from' => 0
-			),
-			'time_ranges' => array(
-				'current_start' => mktime(0, 0, 0, date_i18n('m'), 1, date_i18n('Y')),
-				'current_end' => strtotime(date_i18n('Y').'-'.date_i18n('m').'-01 00:00 +1 month')-1,
-				'type' => 'month'
-				//'current_label' => date_i18n('m/Y', mktime(0, 0, 0, date_i18n('m'), 1, date_i18n('Y'))),
-				//'previous_start' => 0,
-				//'previous_end' => 0,
-				//'previous_label' => '',
+			):array(),
+			'utime' => array(
+				'start' => 0,
+				'end' => 0,
+				'type' => 'm'
 			)
 		);
-		
-		self::$sql_filters = array(
-			'from' => array(
-				'browsers' => '',
-				'screenres' => '',
-				'content_info' => '',
-				'outbound' => '',
-				'all_tables' => '',
-				'all_other_tables' => ''
-			),
-			'where' => '',
-			'where_time_range' => ''
-		);
+
+		if (!empty($_filters)){
+			$matches = explode('&&&', $_filters);
+
+			foreach($matches as $idx => $a_match){
+				preg_match('/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode($a_match), $a_filter);
+
+				if ((empty($a_filter) || !array_key_exists($a_filter[1], self::$filter_names) || strpos($a_filter[1], 'no_filter') !== false) && strpos($a_filter[1], 'addon_') === false){
+					continue;
+				}
+
+				switch($a_filter[1]){
+					case 'strtotime': // TODO - TO BE REMOVED - add support for strtotime to right side of expression
+						$custom_date = strtotime($a_filter[3].' UTC');
+						$filters_normalized['date']['day'] = gmdate('j', $custom_date);
+						$filters_normalized['date']['month'] = gmdate('n', $custom_date);
+						$filters_normalized['date']['year'] = gmdate('Y', $custom_date);
+						break;
+					case 'hour':
+					case 'day':
+					case 'month':
+					case 'year':
+					case 'interval':
+						$filters_normalized['date'][$a_filter[1]] = intval($a_filter[3]);
+						break;
+					case 'direction':
+					case 'limit_results':
+					case 'start_from':
+						$filters_normalized['misc'][$a_filter[1]] = str_replace('\\', '', htmlspecialchars_decode($a_filter[3]));
+						break;
+					default:
+						$filters_normalized['columns'][$a_filter[1]] = array($a_filter[2], isset($a_filter[3])?str_replace('\\', '', htmlspecialchars_decode($a_filter[3])):'');
+						break;
+				}
+			}
+		}
+
+		return $filters_normalized;
 	}
+
+/*
+	public static function datetime_offset_chart_filter($_index = 0){
+		// Each type has its own parameters
+		switch (self::$filters_normalized['utime']['type']){
+			case 'H':
+				return '';
+				break;
+			case 'd':
+				return 'fs%hour%5D=equals+'.date('H', self::$filters_normalized['utime']['current_start'] + $_index * 3600);
+				break;
+			case 'Y':
+				$previous['start'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']-1);
+				$label_date_format = 'Y';
+				$group_by = array('YEAR', 'MONTH', 'n');
+				$values_in_interval = array(12, 12, 1);
+				break;
+			default:
+				return 'fs%day%5D=equals+'.date('d', self::$filters_normalized['utime']['current_start'] + $_index * 86400).;
+				break;
+		}
+
+	}
+*/
 
 	protected static function _add_filters_to_sql_from($_sql_tables = '', $_ignore_empty = false){
 		$sql_from = '';
@@ -792,22 +679,15 @@ class wp_slimstat_db {
 		
 		return $sql_from;
 	}
-/*
-	protected static function _generate_ticks($_count = 0, $_offset = 0){
-		$ticks = '';
-		if ($_offset < 0) return $ticks;
 
-		if ($GLOBALS['wp_locale']->text_direction == 'rtl'){
-			for ($i = 0; $i < $_count; $i++){
-				$ticks .= '['.$i.',"'.($_count - $i - $_offset).'"],';
-			}
-		}
-		else{
-			for ($i = 0; $i < $_count; $i++){
-				$ticks .= '['.$i.',"'.($i - $_offset + 1).'"],';
-			}
-		}
-		return $ticks;
+	protected static function _show_debug($_message = ''){
+		echo "<p class='debug'>$_message</p>";
 	}
-*/
+
+	protected static function _get_results($_sql = ''){
+		if (wp_slimstat::$options['show_sql_debug'] == 'yes'){
+			self::_show_debug($_sql);
+		}
+		return wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+	}
 }

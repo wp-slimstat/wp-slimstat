@@ -17,6 +17,9 @@
 }
 
 /* Filters */
+#slimstat-filters-post{
+	display: none;
+}
 #slimstat-filters-form{
 	background-color: #e0e0e0;
 	margin-top: 10px;
@@ -102,7 +105,7 @@
 #slimstat-remove-all-filters{
 	position: absolute;
 	right: 5px;
-	top: 5px;
+	top: 4px;
 }
 
 /* Reports: Container */
@@ -237,6 +240,12 @@
 	display: none;
 }
 
+/* Single Report: Debug Message */
+.slimstat .debug{
+	background-color: #555;
+	color: #eee;
+}
+
 /* Single Report: Color Coded Entries */
 [id^=slim_] .header.is-search-engine, .is-search-engine{
 	background-color:#c1e751;
@@ -299,27 +308,45 @@
 	z-index: 100 !important;
 }
 .ui-dialog.slimstat{
+	border: 0;
+	border-radius: 0;
+	padding: 0;
 	width: 80% !important;
 	z-index: 105 !important;
 }
 .ui-dialog.slimstat .ui-dialog-titlebar{
-	background-color: #4b8df8;
-	border-bottom: 0;
+	background: #4b8df8;
+	border: 0;
+	border-radius: 0;
 	color: #fff;
+	font-family: 'Open Sans', sans-serif;
 	font-size: 1.3em;
 	font-weight: normal;
 	height: 22px;
 	line-height: 1.3em;
 	margin: 0;
-	padding: 7px 10px 5px;
+	padding: 5px 10px;
 }
 .ui-dialog.slimstat .ui-dialog-titlebar-close{
-	display: none;
+	background-color: transparent;
+	border: 0;
+	color: #fff;
+	float: right;
+	line-height: 1em;
+	padding: 0;
+}
+.ui-dialog.slimstat .ui-dialog-titlebar-close:before{
+	content:'\e803';
+	font-family: slimstat;
+}
+.ui-dialog .ui-dialog-content{
+	clear: both;
 }
 #slimstat-modal-dialog{
 	background-color: #fff;
 	display: none;
-	width: 70%;
+	padding: 0;
+	width: auto;
 }
 
 /* Single Report: Right Now */

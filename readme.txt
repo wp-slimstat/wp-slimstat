@@ -4,10 +4,10 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 3.8
-Stable tag: 3.5.3
+Stable tag: 3.5.4
 
 == Description ==
-A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat).
+A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
 
 = Key Features =
 * Real-time reports
@@ -29,11 +29,11 @@ A powerful real-time web analytics plugin for WordPress. Visit our [official sit
 * MySQL 5.0.3+
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
-* At least 10 Mb of free memory for the tracker
-* IE9+ or any browser supporting HTML5
+* At least 25 Mb of free PHP memory for the tracker
+* IE9+ or any browser supporting HTML5, to access the reports
 
 = Premium Add-ons =
-Visit [our website](http://slimstat.getused.to.it/addons/) for an updated list of available extensions.
+Visit [our website](http://slimstat.getused.to.it/addons/) for a list of available extensions.
 
 = Free Add-ons =
 * [WP SlimStat Dashboard Widgets](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets) adds the most important reports right on your WordPress Dashboard
@@ -270,6 +270,20 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.5.4 =
+* [Note] Update your free and premium add-ons to the latest version available!
+* [New] When Convert IP Addresses is enabled, hostnames are shown along with IP addresses, not instead of (thank you, Simas)
+* [New] Added a new switch to turn 'Debug Mode' on (under Settings > Advanced) 
+* [New] Consolidated report functions to use the new DB API filter format
+* [Update] [Browscap](http://browscap.org/) has been updated to version 5023, released on Feb 2, 2014
+* [Fix] Various bugs related to date filters
+* [Fix] Layout of our modal window (ip lookup) was being overwritten by other plugins (thank you, [charlieusa](http://wordpress.org/support/topic/infosniper-popup-displays-map-in-narrow-panel))
+* [Fix] Compatibility issue with WP SlimStat Shortcodes and 'strtotime' filter (our DB API is growing!)
+* [Fix] Close button had disappeared from modal window (ip lookup service)
+* [Fix] Added Seychelles to the list of known Countries
+* [Fix] Bug in displaying the correct time range with some timezones
+* [Fix] Removed 'Save Options' button on Maintenance page
+
 = 3.5.3 =
 * [New] You can finally hide our notices whenever you want and never see them again... until the next update!
 * [Update] Rolled back change that made the DB API use more SQL queries and less memory, since users were complaining about performance
@@ -372,17 +386,6 @@ foreach ($results...`
 * [Fix] Minor fixes to the Javascript used on admin pages
 * [Fix] Restored compatibility with the plugin Dashboard Widgets
 
-= 3.3.6 =
-* [New] Since you've asked, we added a datepicker to the filters
-* [Update] MaxMind / Geolocation database updated to October 2013
-* [Fix] We had some issues with our repository, which made WP SlimStat unavailable for a while. Sorry for the inconvenience.
-
-= 3.3.5 =
-* [Note] Our add-on [Export To Excel](http://slimstat.getused.to.it/addons/wp-slimstat-export-to-excel/) can now export the tabular data that makes up the charts (thank you, [consensus](http://wordpress.org/support/topic/graph-export))
-* [New] Now all the charts include comparison data for both metrics
-* [Fix] A javascript variable name conflict introduced in version 3.3.4 was affecting some advanced functionality (thank you, [Nanowisdoms](http://wordpress.org/support/topic/expand-details-option-not-working-in-334))
-* [Fix] A pretty unique combination of settings was affecting the way the Spy View data was being listed (thank you, [Nanowisdoms](http://wordpress.org/support/topic/live-visitor-as-in-currently-still-on-the-site-view))
-
 == Distinguished Users ==
 
 * [Vitaly](http://www.visbiz.org/) - Volunteered quite a lot of time for QA and testing, and provided the complete Russian localization
@@ -397,6 +400,7 @@ Beauzartes,
 [Caigo](http://www.blumannaro.net),
 [Christian Coppini](http://www.coppini.me),
 Dave Johnson,
+[David Leudolph](https://flattr.com/profile/daevu),
 [Dennis Kowallek](http://www.adopt-a-plant.com),
 [Damian](http://wipeoutmedia.com),
 [Edward Koon](http://www.fidosysop.org),
@@ -409,7 +413,8 @@ Hal Smith,
 [Hans Schantz](http://www.aetherczar.com),
 Hajrudin Mulabecirovic,
 [Herman Peet](http://www.hermanpeet.nl),
-John Montano, 
+John Montano,
+Kitty Cooper,
 [La casetta delle pesche](http://www.lacasettadellepesche.it),
 Mobile Lingo Inc,
 [Mobilize Mail](http://blog.mobilizemail.com),
@@ -417,6 +422,7 @@ Mora Systems,
 Motionart Inc,
 Neil Robinson,
 [Ovidiu](http://pacura.ru/),
+Rocco Ammon,
 [Sahin Eksioglu](http://www.alternatifblog.com),
 [Saill White](http://saillwhite.com),
 [Sarah Parks](http://drawingsecretsrevealed.com),

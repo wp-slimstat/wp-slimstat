@@ -7,7 +7,6 @@ var SlimStatAdmin = {
 
 	// Private variables
 	_chart_options: {
-		colors: ['#bbcc44', '#21759b', '#ccc', '#999', '#02c907'],
 		grid: {
 			backgroundColor: '#ffffff',
 			borderWidth: 0,
@@ -35,7 +34,7 @@ var SlimStatAdmin = {
 	add_post_filters: function(report_id, href){
 		filters_parsed = [];
 		filters_to_add = href.split('&');
-		jQuery('#slimstat-filters-form').attr('action', filters_to_add[0]);
+		jQuery('#slimstat-filters-form-hidden').attr('action', filters_to_add[0]);
 
 		for (i in filters_to_add){
 			if (filters_to_add[i].indexOf('fs\%5B') != 0) continue;
@@ -48,8 +47,9 @@ var SlimStatAdmin = {
 			if (filter_components[0].indexOf('[day]') > 0) jQuery('#slimstat-filter-day').val(0);
 			if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat-filter-month').val(0);
 			if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat-filter-year').val('');
+			if (filter_components[0].indexOf('[interval]') > 0) jQuery('#slimstat-filter-interval').val('');
 				
-			jQuery('<input>').attr('type', 'hidden').attr('name', filter_components[0]).attr('class', 'slimstat-post-filter slimstat-new-filter '+report_id).val(filter_components[1].replace('+', ' ')).appendTo('#slimstat-filters-form');
+			jQuery('<input>').attr('type', 'hidden').attr('name', filter_components[0]).attr('class', 'slimstat-post-filter slimstat-new-filter '+report_id).val(filter_components[1].replace('+', ' ')).appendTo('#slimstat-filters-form-hidden');
 			filters_parsed[filter_components[0]] = filter_components[1];
 		}
 		return filters_parsed;
@@ -85,6 +85,7 @@ var SlimStatAdmin = {
 		}
 
 		// Calculate the remaining options
+		SlimStatAdmin._chart_options.colors = (SlimStatAdmin.chart_data.length == 4)?['#ccc', '#999', '#bbcc44', '#21759b', '#02c907']:['#bbcc44', '#21759b', '#02c907'],
 		SlimStatAdmin._chart_options.xaxis = {
 			ticks: (SlimStatAdmin.ticks[0][1].indexOf('/') > 0 && SlimStatAdmin.ticks.length > 16) ? [] : SlimStatAdmin.ticks,
 			tickDecimals: 0,
@@ -251,21 +252,24 @@ jQuery(function(){
 	
 	
 	jQuery('a.slimstat-remove-filter').click(function(e){
-		filter_to_remove = decodeURIComponent(jQuery(this).attr('href')).split('&');
-		jQuery('#slimstat-filters-form').attr('action', filter_to_remove[0]);
+		e.preventDefault();
+
+		filters_to_remove = decodeURIComponent(jQuery(this).attr('href')).split('&');
+		jQuery('#slimstat-filters-form-hidden').attr('action', filters_to_remove[0]);
 		jQuery('.slimstat-new-filter').remove();
 
-		if (filter_to_remove[1].length == 0) return true;
-		
-		e.preventDefault();
-		filter_components = filter_to_remove[1].split('=');
-		jQuery('input[name="'+filter_components[0].replace('[', '\\[').replace(']', '\\]')+'"]').remove();
-		
-		// Reset dropdowns, if needed
-		if (filter_components[0].indexOf('[day]') > 0) jQuery('#slimstat-filter-day').val(0);
-		if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat-filter-month').val(0);
-		if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat-filter-year').val('');
-		jQuery('#slimstat-filters-form').submit();
+		for (i in filters_to_remove){
+			filter_components = filters_to_remove[i].split('=');
+			jQuery('input[name="'+filter_components[0].replace('[', '\\[').replace(']', '\\]')+'"]').remove();
+			
+			// Reset dropdowns, if needed
+			if (filter_components[0].indexOf('[day]') > 0) jQuery('#slimstat-filter-day').val(0);
+			if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat-filter-month').val(0);
+			if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat-filter-year').val('');
+			if (filter_components[0].indexOf('[interval]') > 0) jQuery('#slimstat-filter-interval').val('');
+		}
+	
+		jQuery('#slimstat-filters-form-hidden').submit();
 		return false;
 	});
 
@@ -284,9 +288,13 @@ jQuery(function(){
 
 // New stuff
 jQuery(function(){
-	// Filters: add form if not defined (Dashboard Widgets)
-	if (!jQuery('#slimstat-filters-form').length){
-		jQuery('<form/>').attr('method', 'post').attr('id', 'slimstat-filters-form').appendTo('body');
+	// Filters: add hidden form
+	if (!jQuery('#slimstat-filters-form-hidden').length){
+		jQuery('<form id="slimstat-filters-form-hidden" method="post"/>').appendTo('body');
+		jQuery('.slimstat-post-filter').each(function(){
+			console.log(jQuery(this).clone());
+			jQuery(this).clone().appendTo('#slimstat-filters-form-hidden');
+		});
 	}
 
 	// Filters: Lock value input field based on operator drop down selection
@@ -340,7 +348,7 @@ jQuery(function(){
 	// Send filters as post requests
 	jQuery(document).on('click', '.slimstat-filter-link, #toplevel_page_wp-slim-view-1 li a, #wp-admin-bar-slimstat-header li a', function(e){
 		e.preventDefault();
-		if (!jQuery('#slimstat-filters-form').length){
+		if (!jQuery('#slimstat-filters-form-hidden').length){
 			return true;
 		}
 
@@ -348,7 +356,7 @@ jQuery(function(){
 		jQuery('.empty-on-submit').val(0);
 
 		SlimStatAdmin.add_post_filters('p0', jQuery(this).attr('href'));
-		jQuery('#slimstat-filters-form').submit();
+		jQuery('#slimstat-filters-form-hidden').submit();
 		return false;
 	});
 
@@ -480,6 +488,7 @@ jQuery(function(){
 		jQuery('#slimstat-modal-dialog').dialog({
 			autoOpen: false,
 			closeOnEscape: true,
+			closeText: '',
 			draggable: true,
 			height: 415,
 			modal: true,
@@ -496,7 +505,10 @@ jQuery(function(){
 	// Modal Window / Overlay: Whois
 	jQuery(document).on('click', '.whois', function(e){
 		e.preventDefault();
-		jQuery('#slimstat-modal-dialog').dialog('option', 'title', jQuery(this).attr('title')).html('<iframe id="ip2location" src="'+jQuery(this).attr('href')+'" width="100%" height="92%"></iframe>').parent().addClass('slimstat');
+		jQuery('#slimstat-modal-dialog').dialog({
+			dialogClass: 'slimstat',
+			title: jQuery(this).attr('title')
+		}).html('<iframe id="ip2location" src="'+jQuery(this).attr('href')+'" width="100%" height="92%"></iframe>');
 		jQuery('#slimstat-modal-dialog').dialog('open');
 	});
 

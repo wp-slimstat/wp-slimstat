@@ -1,12 +1,12 @@
 <?php
 
 class wp_slimstat_admin{
-	public static $view_url = '';
+
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "Our team is testing a <a href='http://support.getused.to.it/' target='_blank'>new ticket system</a>, which will allows our users to keep track of their support requests. Oh, by the way, if you don't want to see this notice again (until the next update), you can finally get rid of it by clicking the little x on the right!";
-	// Would you like to promote your own free/premium extension for WP SlimStat? Let us know and we will list it on our <a href="http://slimstat.getused.to.it/addons/" target="_blank">Add-ons store</a>
+	protected static $admin_notice = "Would you like to promote your own free/premium add-on for WP SlimStat? Let us know and we will list it <a href='http://slimstat.getused.to.it/' target='_blank'>on our website</a>.";
+	// 
 	
 	/**
 	 * Init -- Sets things up.
@@ -17,7 +17,6 @@ class wp_slimstat_admin{
 			wp_slimstat::$options['use_separate_menu'] = in_array($_POST['options']['use_separate_menu'], array('yes','no'))?$_POST['options']['use_separate_menu']:'';
 		}
 
-		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-';
 		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-config&amp;tab=';
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 
@@ -329,7 +328,7 @@ class wp_slimstat_admin{
 	 * Loads a custom stylesheet file for the administration panels
 	 */
 	public static function wp_slimstat_stylesheet($_hook = ''){
-		if (strpos($_GET['page'], 'wp-slim') === false && $_hook != 'edit.php'){
+		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') === false && $_hook != 'edit.php'){
 			return;
 		}
 		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)));
@@ -530,7 +529,7 @@ class wp_slimstat_admin{
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
 		wp_slimstat_db::init('resource contains '.$parsed_permalink.'|day equals '.date_i18n('d').'|month equals '.date_i18n('m').'|year equals '.date_i18n('Y').'|interval equals -365');
 		$count = wp_slimstat_db::count_records();
-		echo '<a href="'.wp_slimstat_reports::fs_url(array('resource' => "contains $parsed_permalink", 'day' => 'equals '.date_i18n('d'), 'month' => 'equals '.date_i18n('m'), 'year' => 'equals '.date_i18n('Y'), 'interval' => 'equals -365')).'">'.$count.'</a>';
+		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365').'">'.$count.'</a>';
 	}
 	// end add_column
 
@@ -621,7 +620,7 @@ class wp_slimstat_admin{
 				}
 			?></tbody>
 			</table>
-			<p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p>	
+			<?php if ($_current_tab != 7): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
 		</form><?php
 	}
 
