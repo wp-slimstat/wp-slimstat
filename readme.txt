@@ -270,6 +270,7 @@ foreach ($results...`
 
 == Changelog ==
 
+
 = 3.5.4 =
 * [Note] Update your free and premium add-ons to the latest version available!
 * [New] When Convert IP Addresses is enabled, hostnames are shown along with IP addresses, not instead of (thank you, Simas)
