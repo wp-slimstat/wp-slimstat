@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
-Tested up to: 3.8
-Stable tag: 3.5.4
+Tested up to: 3.8.1
+Stable tag: 3.5.5
 
 == Description ==
 A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
@@ -270,6 +270,9 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.5.5 =
+* [Fix] Pageviews in the Edit Posts panel were not being properly calculated (thank you, [Aljoscha](http://wordpress.org/support/topic/updated-to-354-no-statistics))
+* [Fix] The Add-Ons page was not working as expected.
 
 = 3.5.4 =
 * [Note] Update your free and premium add-ons to the latest version available!

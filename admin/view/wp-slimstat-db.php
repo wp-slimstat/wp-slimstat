@@ -613,9 +613,9 @@ class wp_slimstat_db {
 				switch($a_filter[1]){
 					case 'strtotime': // TODO - TO BE REMOVED - add support for strtotime to right side of expression
 						$custom_date = strtotime($a_filter[3].' UTC');
-						$filters_normalized['date']['day'] = gmdate('j', $custom_date);
-						$filters_normalized['date']['month'] = gmdate('n', $custom_date);
-						$filters_normalized['date']['year'] = gmdate('Y', $custom_date);
+						$filters_normalized['date']['day'] = date('j', $custom_date);
+						$filters_normalized['date']['month'] = date('n', $custom_date);
+						$filters_normalized['date']['year'] = date('Y', $custom_date);
 						break;
 					case 'hour':
 					case 'day':
