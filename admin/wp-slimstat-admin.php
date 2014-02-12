@@ -527,7 +527,7 @@ class wp_slimstat_admin{
 		if ('wp-slimstat' != $_column_name) return;
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		wp_slimstat_db::init('resource contains '.$parsed_permalink.'&&&hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365');
+		wp_slimstat_db::init('resource contains '.$parsed_permalink.'|day equals '.date_i18n('d').'|month equals '.date_i18n('m').'|year equals '.date_i18n('Y').'|interval equals -365');
 		$count = wp_slimstat_db::count_records();
 		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365').'">'.$count.'</a>';
 	}
