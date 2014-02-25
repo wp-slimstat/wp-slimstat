@@ -55,10 +55,10 @@ switch ($config_tabs[$current_tab-1]){
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
 			
-			'views_right_now_header' => array('description' => __('Right Now Screen','wp-slimstat'), 'type' => 'section_header'),
-			'refresh_interval' => array('description' => __('Live Stream','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enable the Live view, which refreshes the Right Now screen every X seconds. Enter <strong>0</strong> (number zero) to disable this functionality.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
-			'number_results_raw_data' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in Right Now.','wp-slimstat')),
-			'include_outbound_links_right_now' => array('description' => __('Right Now Extended','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see outbound links listed under Right Now. It might slow down the rendering of this report.','wp-slimstat'))
+			'views_right_now_header' => array('description' => __('Activity Log','wp-slimstat'), 'type' => 'section_header'),
+			'refresh_interval' => array('description' => __('Live Stream','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enable the Live view, which refreshes the Activity Log every X seconds. Enter <strong>0</strong> (number zero) to disable this functionality.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
+			'number_results_raw_data' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in the Activity Log.','wp-slimstat')),
+			'include_outbound_links_right_now' => array('description' => __('Activity Log Extended','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see outbound links listed in the Activity Log. It might slow down the rendering of this report.','wp-slimstat'))
 		);
 		break;
 	case __('Filters','wp-slimstat'):

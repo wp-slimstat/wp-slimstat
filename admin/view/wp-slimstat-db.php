@@ -10,18 +10,7 @@ class wp_slimstat_db {
 	public static $formats = array('decimal' => ',', 'thousand' => '.');
 
 	// Filters as SQL clauses
-	public static $sql_filters = array(
-		'from' => array(
-			'browsers' => '',
-			'screenres' => '',
-			'content_info' => '',
-			'outbound' => '',
-			'all_tables' => '',
-			'all_other_tables' => ''
-		),
-		'where' => '',
-		'where_time_range' => ''
-	);
+	public static $sql_filters = array();
 
 	/*
 	 * Initializes the environment, sets the filters
@@ -93,14 +82,14 @@ class wp_slimstat_db {
 			'strtotime' => 0
 		);
 
-		// Apply pre filters
-		self::$filters_normalized = apply_filters('slimstat_pre_filters_normalized', self::$filters_normalized);
+		// Filter the... filters
+		$_filters = apply_filters('slimstat_db_pre_filters', $_filters);
 
 		// Normalize the input (filters)
 		self::$filters_normalized = self::parse_filters($_filters);
 
-		// Apply post filters
-		self::$filters_normalized = apply_filters('slimstat_post_filters_normalized', self::$filters_normalized);
+		// Filter the array of normalized filters
+		self::$filters_normalized = apply_filters('slimstat_db_filters_normalized', self::$filters_normalized, $_filters);
 
 		if (empty(self::$filters_normalized['date']['interval'])){
 			if (!empty(self::$filters_normalized['date']['hour'])){
@@ -127,7 +116,7 @@ class wp_slimstat_db {
 				self::$filters_normalized['utime']['end'] = self::$filters_normalized['utime']['start'] + 86399;
 				self::$filters_normalized['utime']['type'] = 'd';
 			}
-			else if(!empty(self::$filters_normalized['date']['year'])){
+			else if(!empty(self::$filters_normalized['date']['year']) && empty(self::$filters_normalized['date']['month'])){
 				self::$filters_normalized['utime']['start'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']);
 				self::$filters_normalized['utime']['end'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']+1)-1;
 				self::$filters_normalized['utime']['type'] = 'Y';
@@ -206,7 +195,19 @@ class wp_slimstat_db {
 		}
 
 		// Now let's translate our filters into SQL clauses
-		self::$sql_filters['where_time_range'] = ' AND (t1.dt BETWEEN '.self::$filters_normalized['utime']['start'].' AND '.self::$filters_normalized['utime']['end'].')';
+		self::$sql_filters = array(
+			'from' => array(
+				'browsers' => '',
+				'screenres' => '',
+				'content_info' => '',
+				'outbound' => '',
+				'all_tables' => '',
+				'all_other_tables' => ''
+			),
+			'where' => '',
+			'where_time_range' => ' AND (t1.dt BETWEEN '.self::$filters_normalized['utime']['start'].' AND '.self::$filters_normalized['utime']['end'].')'
+		);
+
 		foreach (self::$filters_normalized['columns'] as $a_filter_column => $a_filter_data){
 			$a_filter_empty = '0';
 			
@@ -611,16 +612,42 @@ class wp_slimstat_db {
 				}
 
 				switch($a_filter[1]){
-					case 'strtotime': // TODO - TO BE REMOVED - add support for strtotime to right side of expression
+					case 'strtotime':
 						$custom_date = strtotime($a_filter[3].' UTC');
-						$filters_normalized['date']['day'] = gmdate('j', $custom_date);
-						$filters_normalized['date']['month'] = gmdate('n', $custom_date);
-						$filters_normalized['date']['year'] = gmdate('Y', $custom_date);
+						$filters_normalized['date']['day'] = date('j', $custom_date);
+						$filters_normalized['date']['month'] = date('n', $custom_date);
+						$filters_normalized['date']['year'] = date('Y', $custom_date);
 						break;
 					case 'hour':
 					case 'day':
 					case 'month':
 					case 'year':
+						if (is_numeric($a_filter[3])){
+							$filters_normalized['date'][$a_filter[1]] = intval($a_filter[3]);
+						}
+						else{
+							// Try to apply strtotime to value
+							switch($a_filter[1]){
+								case 'hour':
+									$filters_normalized['date'][$a_filter[1]] = date('H', strtotime($a_filter[3]));
+									break;
+								case 'day':
+									$filters_normalized['date'][$a_filter[1]] = date('j', strtotime($a_filter[3]));
+									break;
+								case 'month':
+									$filters_normalized['date'][$a_filter[1]] = date('n', strtotime($a_filter[3]));
+									break;
+								case 'year':
+									$filters_normalized['date'][$a_filter[1]] = date('Y', strtotime($a_filter[3]));
+									break;
+								default:
+									break;
+							}
+							if ($filters_normalized['date'][$a_filter[1]] === false){
+								unset($filters_normalized['date'][$a_filter[1]]);
+							}
+						}
+						break;
 					case 'interval':
 						$filters_normalized['date'][$a_filter[1]] = intval($a_filter[3]);
 						break;

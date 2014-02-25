@@ -25,7 +25,7 @@ class wp_slimstat_reports{
 	 */
 	public static function init(){
 		self::$screen_names = array(
-			1 => __('Right Now','wp-slimstat'),
+			1 => __('Activity Log','wp-slimstat'),
 			2 => __('Overview','wp-slimstat'),
 			3 => __('Visitors','wp-slimstat'),
 			4 => __('Content','wp-slimstat'),
@@ -47,7 +47,6 @@ class wp_slimstat_reports{
 			'slim_p1_12' => __('Top Search Terms','wp-slimstat'),
 			'slim_p1_13' => __('Top Countries','wp-slimstat'),
 			'slim_p1_15' => __('Rankings','wp-slimstat'),
-			'slim_p1_16' => __('Security Scan','wp-slimstat'),
 			'slim_p1_17' => __('Top Language Families','wp-slimstat'),
 			'slim_p2_01' => __('Human Visits (chart)','wp-slimstat'),
 			'slim_p2_02' => __('At a Glance','wp-slimstat'),
@@ -100,12 +99,15 @@ class wp_slimstat_reports{
 			'slim_p4_21' => __('Top Outbound Links and Downloads','wp-slimstat'),
 			'slim_p4_22' => __('Your Website','wp-slimstat'),
 			'slim_p6_01' => __('World Map','wp-slimstat'),
-			'slim_p7_02' => __('Activity Log','wp-slimstat')
+			'slim_p7_02' => __('At A Glance','wp-slimstat')
 		);
 
 		
 		if (!empty($_GET['page'])){
 			self::$current_tab = intval(str_replace('wp-slim-view-', '', $_GET['page']));
+		}
+		else if (!empty($_POST['current_tab'])){
+			self::$current_tab = intval($_POST['current_tab']);
 		}
 		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-'.self::$current_tab;
 
@@ -124,32 +126,29 @@ class wp_slimstat_reports{
 		}
 		self::$all_reports = (empty(self::$all_reports) || empty(self::$all_reports[0]))?array():explode(',', self::$all_reports[0]);
 
-		// Use default values, if the corresponding option hasn't been initialized
-		$old_ids = array_intersect(array('p1_01','p2_01','p3_01','p4_01'), self::$all_reports);
-
-		if (empty(self::$all_reports) || !empty($old_ids)){
-			switch(self::$current_tab){
-				case 2:
-					self::$all_reports = array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_11','slim_p1_12','slim_p1_05','slim_p1_08','slim_p1_10','slim_p1_13','slim_p1_15','slim_p1_16','slim_p1_17');
-					break;
-				case 3:
-					self::$all_reports = array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_06','slim_p2_05','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19','slim_p2_20','slim_p2_21');
-					break;
-				case 4:
-					self::$all_reports = array('slim_p4_01','slim_p4_22','slim_p1_06','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20','slim_p4_21');
-					break;
-				case 5:
-					self::$all_reports = array('slim_p3_01','slim_p3_02','slim_p3_03','slim_p3_04','slim_p3_06','slim_p3_05','slim_p3_08','slim_p3_10','slim_p3_09','slim_p3_11');
-					break;
-				default:
-			}
-		}
+		$all_existing_reports = array(
+			1 => array('slim_p7_02'),
+			2 => array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_11','slim_p1_12','slim_p1_05','slim_p1_08','slim_p1_10','slim_p1_13','slim_p1_15','slim_p1_17'),
+			3 => array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_06','slim_p2_05','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19','slim_p2_20','slim_p2_21'),
+			4 => array('slim_p4_01','slim_p4_22','slim_p1_06','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20','slim_p4_21'),
+			5 => array('slim_p3_01','slim_p3_02','slim_p3_03','slim_p3_04','slim_p3_06','slim_p3_05','slim_p3_08','slim_p3_10','slim_p3_09','slim_p3_11'),
+			6 => array('slim_p6_01'),
+			7 => array()
+		);
 
 		// Some boxes are hidden by default
-		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view-') !== false)
+		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view-') !== false){
 			self::$hidden_reports = get_user_option("metaboxhidden_{$page_location}_page_wp-slim-view-".self::$current_tab, $user->ID);
-		else // the script is being called from the dashboard widgets plugin
+			if (empty(self::$all_reports)){
+				self::$all_reports = $all_existing_reports[self::$current_tab];
+			}
+			else{
+				self::$all_reports = array_intersect(self::$all_reports, $all_existing_reports[self::$current_tab]);
+			}
+		}
+		else{ // the script is being called from the dashboard widgets plugin
 			self::$hidden_reports = get_user_option("metaboxhidden_{$page_location}", $user->ID);
+		}
 		
 		// Default values
 		if (self::$hidden_reports === false){
@@ -294,7 +293,7 @@ class wp_slimstat_reports{
 
 		if (!empty($filters_dropdown)){
 			foreach($filters_dropdown as $a_filter_label => $a_filter_details){
-				if (strpos($a_filter_label, 'no-filter-selected')){
+				if (!array_key_exists($a_filter_label, wp_slimstat_db::$filter_names) || strpos($a_filter_label, 'no_filter') !== false){
 					continue;
 				}
 
@@ -971,66 +970,6 @@ class wp_slimstat_reports{
 		<p><?php _e('Alexa Popularity', 'wp-slimstat') ?> <span><?php echo number_format($rankings['alexa_popularity'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p><?php
 	}
 
-	public static function show_hacker_ninja($_id = 'p0'){
-		$hn_urls = array('hn01' => 'http://www.hackerninja.com/scanner/crawler/launcher_bing_bot.php', 'hn02' => 'http://www.hackerninja.com/scanner/crawler/launcher_clamav_scanner.php', 'hn03' => 'http://www.hackerninja.com/scanner/crawler/launcher_google_bot.php', 'hn04' => 'http://www.hackerninja.com/scanner/crawler/launcher_hostile_strings.php', 'hn05' => 'http://www.hackerninja.com/scanner/crawler/launcher_vanilla_bot.php', 'hn06' => 'http://www.hackerninja.com/scanner/crawler/scan_google_malware_list.php', 'hn07' => 'http://www.hackerninja.com/scanner/crawler/scan_external_links.php', 'hn08' => 'http://www.hackerninja.com/scanner/crawler/scan_external_links.php');
-
-		if (!isset($_POST['run_scan']) && wp_slimstat::$options['enable_hacker_ninja'] != 'yes'){
-			echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Enable Free Scan</a><br><br><a target="_blank" href="http://www.hackerninja.com/wp-slimstat-hackerninja/">Get instant email notifications of malware,<br> infections and hostile attacks</a></p>';
-		}
-		else{
-			if (wp_slimstat::$options['enable_hacker_ninja'] != 'yes'){
-				wp_slimstat::$options['enable_hacker_ninja'] = 'yes';
-			}
-			$run_scan = !empty($_POST['run_scan'])?$_POST['run_scan']:'00';
-
-			switch($run_scan){
-				case '00': ?>
-					<p><?php _e('Bing Test', 'wp-slimstat') ?> <span id="hn01" class="blink">Loading</span></p>
-					<p><?php _e('AntiVirus Scan', 'wp-slimstat') ?> <span id="hn02" class="blink">Loading</span></p>
-					<p><?php _e('Google Bot Test', 'wp-slimstat') ?> <span id="hn03" class="blink">Loading</span></p>
-					<p><?php _e('Scan for Hostile Strings', 'wp-slimstat') ?> <span id="hn04" class="blink">Loading</span></p>
-					<p><?php _e('Generic Web Bot test', 'wp-slimstat') ?> <span id="hn05" class="blink">Loading</span></p>
-					<p><?php _e('Google Safe Browsing List', 'wp-slimstat') ?> <span id="hn06" class="blink">Loading</span></p>
-					<p><?php _e('Hostile External Links', 'wp-slimstat') ?> <span id="hn07" class="blink">Loading</span></p>
-					<p><?php _e('Other Treats', 'wp-slimstat') ?> <span id="hn08" class="blink">Loading</span></p>
-					<script type="text/javascript">
-						var data = {action: 'slimstat_load_report', report_id: 'slim_p1_16', security: jQuery('#meta-box-order-nonce').val(), 'run_scan': '00'};
-						jQuery('#slim_p1_16 .blink').each(function(){			
-							data['run_scan'] = jQuery(this).attr('id');
-							jQuery.ajax({
-								url: ajaxurl,
-								type: 'post',
-								async: true,
-								data: data,
-								success: SlimStatAdmin.hacker_ninja_show_result('#'+data['run_scan'])
-							});
-						});
-					</script><?php
-					break;
-				case 'hn01':
-				case 'hn02':
-				case 'hn03':
-				case 'hn04':
-				case 'hn05':
-				case 'hn06':
-				case 'hn07':
-				case 'hn08':
-					$options = array('timeout' => 30);
-					$response = @wp_remote_get($hn_urls[$run_scan].'?website='.site_url(), $options);
-					if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
-						echo '<a target="_blank" href="http://www.hackerninja.com/wp-slimstat-hackerninja-special-offer/">'.((stripos($response['body'],'passed') !== false)?__('Passed','wp-slimstat'):__('At Risk','wp-slimstat')).'</a>';
-					}
-					else{
-						echo __('Timed Out','wp-slimstat');
-					}
-					break;
-				default:
-					echo '<p class="nodata"><a class="button-hacker-ninja button-secondary" href="#">Enable Free Scan</a><br><br><a target="_blank" href="http://www.hackerninja.com/wp-slimstat-hackerninja/">Get instant email notifications of malware,<br> infections and hostile attacks</a></p>';
-					break;
-			}
-		}
-	}
-
 	public static function show_world_map($_id = 'p0'){
 		wp_slimstat_db::$filters_normalized['misc']['limit_results'] = 9999;
 		$countries = wp_slimstat_db::get_popular('t1.country');
@@ -1223,14 +1162,11 @@ class wp_slimstat_reports{
 			case 'slim_p1_15':
 				self::show_rankings($_report_id);
 				break;
-			case 'slim_p1_16':
-				self::show_hacker_ninja($_report_id);
-				break;
 			case 'slim_p1_17':
 				self::show_results('popular', $_report_id, 'SUBSTRING(t1.language, 1, 2)', array('total_for_percentage' => $current_pageviews, 'as_column' => 'language', 'filter_op' => 'contains'));
 				break;
 			case 'slim_p2_02':
-				self::show_visitors_summary($_report_id, wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1'), wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1', 'visit_id'));
+				self::show_visitors_summary($_report_id,  wp_slimstat_db::count_records_having('visit_id > 0', 'ip'), wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1', 'visit_id'));
 				break;
 			case 'slim_p2_03':
 				self::show_results('popular', $_report_id, 'language', array('total_for_percentage' => $current_pageviews));

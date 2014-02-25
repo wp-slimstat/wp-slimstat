@@ -223,12 +223,6 @@ var SlimStatAdmin = {
 			SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
 			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
-	},
-
-	hacker_ninja_show_result: function(id){
-		return function(response){
-			jQuery(id).removeClass('blink').html(response);
-		}
 	}
 }
 
@@ -332,6 +326,7 @@ jQuery(function(){
 			changeMonth: true,
 			changeYear: true,
 			dateFormat: 'yy-m-d',
+			maxDate: new Date,
 			nextText: '&raquo;',
 			prevText: '&laquo;',
 			showOn: 'both',
@@ -410,32 +405,6 @@ jQuery(function(){
 			async: true,
 			data: data
 		});
-	});
-
-	// HackerNinja.com
-	jQuery(document).on('click', '.button-hacker-ninja', function(e){
-		e.preventDefault();
-		data = {action: 'slimstat_load_report', report_id: 'slim_p1_16', security: jQuery('#meta-box-order-nonce').val(), 'run_scan': '00'};
-		jQuery('#slim_p1_16 .inside').html('<p class="loading"></p>');
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: false,
-			data: data
-		}).done(function(response){
-			jQuery('#slim_p1_16 .inside').html(response);
-		});
-
-		/* jQuery('#slim_p1_16 .blink').each(function(){			
-			data['run_scan'] = jQuery(this).attr('id');
-			jQuery.ajax({
-				url: ajaxurl,
-				type: 'post',
-				async: true,
-				data: data,
-				success: SlimStatAdmin.hacker_ninja_show_result('#'+data['run_scan'])
-			});
-		}); */
 	});
 
 	// SlimScroll init

@@ -89,6 +89,10 @@
 		<?php foreach(wp_slimstat_db::$filters_normalized['date'] as $a_key => $a_value): if (!empty($a_value) && !empty(wp_slimstat_db::$filters_normalized['date'][$a_key])): ?>
 		<input type="hidden" name="fs[<?php echo $a_key ?>]" class="slimstat-post-filter" value="equals <?php echo $a_value ?>"/>
 		<?php endif; endforeach; ?>
+		
+		<?php foreach(wp_slimstat_db::$filters_normalized['misc'] as $a_key => $a_value): if (!empty($a_value) && !empty(wp_slimstat_db::$filters_normalized['misc'][$a_key])): ?>
+		<input type="hidden" name="fs[<?php echo $a_key ?>]" class="slimstat-post-filter" value="equals <?php echo $a_value ?>"/>
+		<?php endif; endforeach; ?>
 	</form>
 
 	<?php
@@ -145,9 +149,6 @@
 							break;
 						case 'slim_p1_15':
 							wp_slimstat_reports::report_header($a_box_id, 'normal', __("WP SlimStat retrieves live information from Alexa, Facebook and Google, to measures your site's rankings. Values are updated every 12 hours. Filters set above don't apply to this report.",'wp-slimstat'));
-							break;
-						case 'slim_p1_16':
-							wp_slimstat_reports::report_header($a_box_id, 'normal', __("We have teamed up with HackerNinja.com to offer you a free website security scan. By clicking on Start Free Scan, your website will be analyzed to detect viruses and other treats. Please note that no confidential information is being sent to HackerNinja.",'wp-slimstat'));
 							break;
 						case 'slim_p2_01':
 							wp_slimstat_reports::report_header($a_box_id, 'wide chart', wp_slimstat_reports::$chart_tooltip, wp_slimstat_reports::chart_title(__('Human Visits', 'wp-slimstat')));

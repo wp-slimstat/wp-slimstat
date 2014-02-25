@@ -5,8 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "Would you like to promote your own free/premium add-on for WP SlimStat? Let us know and we will list it <a href='http://slimstat.getused.to.it/' target='_blank'>on our website</a>.";
-	// 
+	protected static $admin_notice = ".";
 	
 	/**
 	 * Init -- Sets things up.
@@ -39,9 +38,9 @@ class wp_slimstat_admin{
 
 		// Display a notice that hightlights this version's features
 		$admin_filemtime = @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
-		if (wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version && !empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false) {
-			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
-		}
+		// if (wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version && !empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false) {
+		//	add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
+		// }
 
 		// Remove spammers from the database
 		if (wp_slimstat::$options['ignore_spammers'] == 'yes'){
@@ -398,7 +397,7 @@ class wp_slimstat_admin{
 		$new_entry = array();
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
 			$new_entry[] = add_menu_page(__('SlimStat','wp-slimstat'), __('SlimStat','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
-			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Right Now','wp-slimstat'), __('Right Now','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
+			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Activity Log','wp-slimstat'), __('Activity Log','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Overview','wp-slimstat'), __('Overview','wp-slimstat'), $minimum_capability, 'wp-slim-view-2', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Visitors','wp-slimstat'), __('Visitors','wp-slimstat'), $minimum_capability, 'wp-slim-view-3', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Content','wp-slimstat'), __('Content','wp-slimstat'), $minimum_capability, 'wp-slim-view-4', array(__CLASS__, 'wp_slimstat_include_view'));
@@ -527,7 +526,7 @@ class wp_slimstat_admin{
 		if ('wp-slimstat' != $_column_name) return;
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		wp_slimstat_db::init('resource contains '.$parsed_permalink.'|day equals '.date_i18n('d').'|month equals '.date_i18n('m').'|year equals '.date_i18n('Y').'|interval equals -365');
+		wp_slimstat_db::init('resource contains '.$parsed_permalink.'&&&hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365');
 		$count = wp_slimstat_db::count_records();
 		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365').'">'.$count.'</a>';
 	}
@@ -597,7 +596,7 @@ class wp_slimstat_admin{
 			self::show_alert_message(__('There was an error updating the following options:','wp-slimstat').' '.implode(', ', self::$faulty_fields), 'updated below-h2');
 		}
 		else{
-			self::show_alert_message(__('Your settings have been successfully updated.','wp-slimstat'), 'updated below-h2');
+			self::show_alert_message(__('Your changes have been saved.','wp-slimstat'), 'updated below-h2');
 		}
 	}
 

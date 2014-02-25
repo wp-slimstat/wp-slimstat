@@ -3,11 +3,11 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
-Tested up to: 3.8
-Stable tag: 3.5.4
+Tested up to: 3.8.1
+Stable tag: 3.5.5
 
 == Description ==
-A powerful real-time web analytics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
+The most accurate real-time statistics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
 
 = Key Features =
 * Real-time reports
@@ -66,8 +66,11 @@ Go to SlimStat > Settings > General and set Tracking Mode to Javascript. Don't f
 Also, if you're using W3 Total Cache, make sure to exclude wp-slimstat.js from the minifier: our code is already minified, and it looks like W3TC breaks something when it tries to minify it again.
 
 = My screen goes blank when trying to access the reports / after installing WP SlimStat =
-Go to SlimStat > Settings > Maintenance and click on the No Panic Button. If that doesn't help,
+Go to SlimStat > Settings > Maintenance and click the NO PANIC Button. If that doesn't help,
 [increase the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP.
+
+= Reports look all messy and not styled =
+Go to SlimStat > Settings > Maintenance and click the NO PANIC Button. If that doesn't help, make sure you don't have AdBlock installed and active in your browser. For some reason, that plugin doesn't like WP SlimStat.
 
 = When trying to access any of options screens, I get the following error: You do not have sufficient permissions to access this page. =
 You were playing with the plugin's permission settings, weren't you? But don't worry, there's a secret passage that will allow you to unlock your access. Create a new WordPress admin user named `slimstatadmin`. Then log into your WordPress admin area with the new user and... voila: you can now access WP SlimStat's settings again. Update your users' permissions and then get rid of this newly created user.
@@ -263,13 +266,22 @@ foreach ($results...`
 == Screenshots ==
 
 1. **Overview** - Your website traffic at a glance
-2. **Right Now** - A real-time view of your visitors' whereabouts 
+2. **Activity Log** - A real-time view of your visitors' whereabouts 
 3. **Settings** - Plenty of options to customize the plugin's behavior
 4. **Interactive World Map** - See where your visitors are coming from
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
 
+= 3.5.5 =
+* [Note] Our partnership with HackerNinja.com ended a few days ago, we wish them all the best for their business!
+* [New] The new DB API supports natural language dates: day equals today, year equals this year, etc. This brings the [Shortcodes](http://wordpress.org/plugins/wp-slimstat-shortcodes/) add-on to a whole new level of flexibility!
+* [Update] Right Now has been renamed Activity Log
+* [Fix] We can't believe nobody had noticed a bug in calculating the bounce rate value. Numbers were way off! (thank you, Rob)
+* [Fix] User Overview add-on had some problems with sorting by certain columns
+* [Fix] Filters were not being reset when multiple shortcodes were being used on the same page (thank you, [joachimcarrein](http://wordpress.org/support/topic/filters-remembered))
+* [Fix] Pageviews in the Edit Posts panel were not being properly calculated (thank you, [Aljoscha](http://wordpress.org/support/topic/updated-to-354-no-statistics))
+* [Fix] The Add-Ons page was not working as expected.
 
 = 3.5.4 =
 * [Note] Update your free and premium add-ons to the latest version available!
@@ -343,49 +355,6 @@ foreach ($results...`
 * [Update] Added new icon for Windows 8.1
 * [Update] MaxMind / Geolocation database updated to December 2013
 * [Fix] Bug on masking IP Addresses on 32-bit systems (thank you, Per)
-
-= 3.4.3 =
-* [Fix] Bug in parsing the data returned by Alexa (new Rankings report) was causing some reports to disappear (thank you, [pepe](http://wordpress.org/support/topic/php-warnings-in-rankings-box))
-* [Fix] A few PHP notices (thank you, [supriyos](http://wordpress.org/support/topic/errors-after-upgrading-to-342))
-* [Fix] Bug in masking local IP addresses (thank you, [carbeck](http://wordpress.org/support/topic/1272552550-1))
-
-= 3.4.2 =
-* [New] Three new reports give you detailed information about your rankings (Google, Facebook, Alexa), your content and your site's security.
-* [Update] Complete Russian Localization (thank you, Vitaly!)
-* [Update] Top Browsers now groups browsers by name, if the user agent string is not enabled/displayed (thank you, Vitaly)
-* [Update] Much improved language detection and localization (thank you, Vitaly)
-* [Update] By default only admins can now see the stats (minimum capability to view: activate_plugins). 
-* [Update] Removed unused languages from the dictionary (who is using operating systems in Herero, Igbo, Hiri Motu, Church Slavic anyway?) 
-* [Update] Optimized code to manage the plugin's options (removed unnecessary db interactions)
-* [Update] World Map ([AmMap](http://www.ammap.com/download/)) updated to version 3.7
-* [Update] MaxMind / Geolocation database updated to November 2013
-* [Update] Consolidated reports and improved performance on Overview tab
-* [Fix] Bug in converting some IP addresses to long integers (thank you, [tkleinsteuber](http://wordpress.org/support/topic/wrong-geolocation-for-rfc-1918-private-ip-ranges))
-* [Fix] Some PHP warnings about undefined variables
-
-= 3.4.1 =
-* [New] Report to visualize top Outbound Links and Downloads (thank you, [bobinoz](http://wordpress.org/support/topic/tracking-outbound-links-1))
-* [New] Purge data by user agent (thank you, [GermanKiwi](http://wordpress.org/support/topic/purge-data-based-on-user-agent))
-* [New] Import/Export all your settings in a text file. Go to Settings > Maintenance and give it a try! (thank you, [Mike](http://wordpress.org/support/topic/feature-request-save-out-settings))
-* [Update] Cosmetic updates to the interface
-* [Update] Right Now Extended is now set to 'No' by default
-* [Fix] Filters were not being reset if API was invoked more than once on the same page (thank you, [PV-Patrick](http://wordpress.org/support/topic/api-calls-in-the_loop))
-* [Fix] Compatibility issues with User Overview (thank you, Thorsten)
-* [Fix] Bug affecting the data recorded when URLs were using non-ASCII characters (thank you, [dimitrios1988](http://wordpress.org/support/topic/stats-now-showing-in-non-ascii-characters))
-* [Fix] Compatibility issues with Export to Excel
-* [Fix] Bug related to the new HTTP POST-based Filtering system
-* [Fix] Issue with French localization encoding (thank you [whoaloic](http://wordpress.org/support/topic/foreign-language-encoding-issue))
-* [Fix] Elaborated on how to use multiple filters with the API (thank you, [Statistiker](http://wordpress.org/support/topic/filter-most-popular-posts))
-
-= 3.4 =
-* [Note] We can't believe we're already crossing the 600,000 downloads mark! To celebrate this accomplishment, we're working on a brand new website! Stay tuned.
-* [New] Local IP Addresses are now marked as such (thank you, [Thorsten](http://wordpress.org/support/topic/wrong-geolocation-for-rfc-1918-private-ip-ranges))
-* [Update] SlimStat's filters have been reimplemented to use HTTP POST requests, in order to avoid issues with very long URIs (thank you, John)
-* [Update] You can now restrict access to the configuration screens by specifying the minimum capability required (default: activate_plugins)
-* [Update] Localization files have consolidated and are now easier to manage. Send us your localization!
-* [Fix] Clicking on report titles doesn't collapse the box anymore (thank you, psn)
-* [Fix] Minor fixes to the Javascript used on admin pages
-* [Fix] Restored compatibility with the plugin Dashboard Widgets
 
 == Distinguished Users ==
 
