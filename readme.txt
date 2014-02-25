@@ -223,7 +223,7 @@ You will need to edit your template and add something like this where you want y
 require_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/view/wp-slimstat-db.php');
 
 // Initialize the API. You can pass a filter in the options, i.e. show only hits by people who where using Firefox (any version) *and* visiting 'posts':
-wp_slimstat_db::init('browser contains Firefox|content_type equals post');
+wp_slimstat_db::init('browser contains Firefox&&&content_type equals post');
 
 // Use the appropriate method to display your stats
 echo wp_slimstat_db::count_records('1=1', '*', false);`
