@@ -228,7 +228,7 @@ wp_slimstat_db::init('browser contains Firefox|content_type equals post');
 // Use the appropriate method to display your stats
 echo wp_slimstat_db::count_records('1=1', '*', false);`
 
-You can list more than one filter by using the pipe char | to separate them (which is evaluated as AND among the filters).
+You can list more than one filter by using &&& to separate them (which is evaluated as AND among the filters). Please read [these FAQs](http://wordpress.org/plugins/wp-slimstat-shortcodes/faq/) for more information on how to combine filters.
 
 *Available methods*
 
@@ -253,13 +253,13 @@ You can list more than one filter by using the pipe char | to separate them (whi
 
 Recent Posts: 
 
-`wp_slimstat_db::init('content_type equals post|visit_id');
+`wp_slimstat_db::init('content_type equals post');
 $results = wp_slimstat_db::get_recent('t1.resource');
 foreach ($results...`
 
 Top Languages last month:
 
-`wp_slimstat_db::init('month equals '.date('n', strtotime('-1 month')));
+`wp_slimstat_db::init('month equals last month');
 $results = wp_slimstat_db::get_popular('t1.language');
 foreach ($results...`
 
@@ -285,6 +285,7 @@ foreach ($results...`
 
 = 3.5.4 =
 * [Note] Update your free and premium add-ons to the latest version available!
+* [New] If you're using the APIs, our filter separator changed from | to &&& (three ampersand chars). Please update your code accordingly.
 * [New] When Convert IP Addresses is enabled, hostnames are shown along with IP addresses, not instead of (thank you, Simas)
 * [New] Added a new switch to turn 'Debug Mode' on (under Settings > Advanced) 
 * [New] Consolidated report functions to use the new DB API filter format
