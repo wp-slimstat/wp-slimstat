@@ -317,7 +317,7 @@ class wp_slimstat_admin{
 	 * Removes 'spammers' from the database when the corresponding comments are marked as spam
 	 */
 	public static function remove_spam($_new_status = '', $_old_status = '', $_comment = ''){
-		if ($_new_status == 'spam'){
+		if ($_new_status == 'spam'  && !empty($_comment->comment_author) && !empty($_comment->comment_author_IP)){
 			wp_slimstat::$wpdb->query(wp_slimstat::$wpdb->prepare("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE user = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
 		}
 	}
