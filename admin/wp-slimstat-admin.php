@@ -147,7 +147,6 @@ class wp_slimstat_admin{
 		}
 
 		// If this function hasn't been called during the upgrade process, make sure to init and update all the options
-		wp_slimstat::$options = wp_slimstat::init_options();
 		if ($_activate){
 			self::update_tables_and_options(true);
 		}
