@@ -127,6 +127,7 @@ class wp_slimstat_reports{
 		self::$all_reports = (empty(self::$all_reports) || empty(self::$all_reports[0]))?array():explode(',', self::$all_reports[0]);
 
 		$all_existing_reports = array(
+			0 => array(),
 			1 => array('slim_p7_02'),
 			2 => array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_11','slim_p1_12','slim_p1_05','slim_p1_08','slim_p1_10','slim_p1_13','slim_p1_15','slim_p1_17'),
 			3 => array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_06','slim_p2_05','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19','slim_p2_20','slim_p2_21'),
@@ -534,7 +535,7 @@ class wp_slimstat_reports{
 
 			// Some columns require a special post-treatment
 			if ($_column == 'resource' && strpos($_args['custom_where'], '404') === false){
-				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$results[$i]['resource'].'"></a> '.$element_value;
+				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$element_value;
 			}
 			if ($_column == 'domain'){
 				$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
@@ -701,7 +702,7 @@ class wp_slimstat_reports{
 				$results[$i]['resource'] = __('Search for','wp-slimstat').': '.htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
 			}
 			if (!empty($results[$i]['resource']) && $_type == 0){
-				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$results[$i]['resource'].'"></a> '.self::get_resource_title($results[$i]['resource']);
+				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.self::get_resource_title($results[$i]['resource']);
 			}
 
 			if ($visit_id != $results[$i]['visit_id']){

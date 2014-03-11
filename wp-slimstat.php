@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.5.5
+Version: 3.5.6
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.5.5';
+	public static $version = '3.5.6';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -335,8 +335,9 @@ class wp_slimstat{
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
 			$long_masked_user_ip = self::$stat['ip'] & $long_mask;
+			$long_masked_other_ip = $long_other_ip & $long_mask;
 			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
-			if ($long_masked_user_ip == $long_masked_ip_to_ignore){
+			if ($long_masked_user_ip == $long_masked_ip_to_ignore || $long_masked_other_ip == $long_masked_ip_to_ignore){
 				self::$stat['id'] = -204;
 				return $_argument;
 			}
@@ -349,10 +350,10 @@ class wp_slimstat{
 		// Anonymize IP Address?
 		if (self::$options['anonymize_ip'] == 'yes'){
 			self::$stat['ip'] = self::$stat['ip']&4294967040;
-			if (!empty(self::$stat['other_ip'])) self::$stat['other_ip'] = self::$stat['other_ip']&4294967040;
+			$long_other_ip = $long_other_ip&4294967040;
 		}
 
-		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter of sprintf()
+		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter
 		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
 		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
 			self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
@@ -421,6 +422,11 @@ class wp_slimstat{
 		// Something went wrong during the insert
 		if (empty(self::$stat['id'])){
 			self::$stat['id'] = -215;
+			
+			// Attempt to init the environment (new blog in a MU network?)
+			include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
+			wp_slimstat_admin::init_environment(true);
+			
 			return $_argument;
 		}
 
@@ -506,7 +512,7 @@ class wp_slimstat{
 			foreach (explode(",",$_SERVER["HTTP_X_FORWARDED_FOR"]) as $a_ip){
 				if (filter_var($a_ip, FILTER_VALIDATE_IP) !== false){
 					$long_ip[1] = ip2long($a_ip);
-					return $long_ip;
+					break;
 				}
 			}
 		}
@@ -1010,7 +1016,7 @@ class wp_slimstat{
 	 */
 	public static function init_options(){
 		$options = array(
-			'version' => 0,
+			'version' => self::$version,
 			'secret' => get_option('slimstat_secret', md5(time())),
 			'show_admin_notice' => 0,
 			
@@ -1034,7 +1040,7 @@ class wp_slimstat{
 			'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
 			'refresh_interval' => get_option('slimstat_refresh_interval', '60'),
 			'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
-			'include_outbound_links_right_now' => 'no',
+			'include_outbound_links_right_now' => 'yes',
 
 			// Filters
 			'track_users' => get_option('slimstat_track_users', 'yes'),
@@ -1149,7 +1155,8 @@ class wp_slimstat{
 		if (($autopurge_interval = intval(self::$options['auto_purge'])) <= 0) return;
 
 		// Delete old entries
-		self::$wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.dt < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL $autopurge_interval DAY))");
+		$days_ago = strtotime(date_i18n('Y-m-d H:i:s')." -$autopurge_interval days");
+		self::$wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.dt < $days_ago");
 
 		// Optimize table
 		self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");

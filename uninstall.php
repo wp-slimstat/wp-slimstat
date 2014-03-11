@@ -34,8 +34,8 @@ else{
 
 function slimstat_uninstall($_wpdb = ''){
 	// Goodbye data...
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_outbound");
+	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
 
 	// Goodbye options...
 	delete_option('slimstat_options');
