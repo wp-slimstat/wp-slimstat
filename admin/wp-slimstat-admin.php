@@ -260,6 +260,7 @@ class wp_slimstat_admin{
 		$count_posts = wp_count_posts();
 		$count_posts = $count_posts->publish + $count_posts->draft + $count_posts->future;
 		$count_pages = wp_count_posts('page');
+		$count_pages = $count_pages->publish + $count_pages->draft;
 		$total = $my_wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
 		
 		@wp_remote_get("http://slimstat.getused.to.it/browscap.php?po=$count_posts&pa=$count_pages&t=$total&a=".wp_slimstat::$options['enable_ads_network'], array('timeout'=>2,'blocking'=>false,'sslverify'=>false));
