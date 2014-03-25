@@ -30,7 +30,8 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat_admin::show_alert_message(intval($rows_affected).' '.__('records deleted from your database.','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'truncate-table':
-			wp_slimstat::$wpdb->query("TRUNCATE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
+			wp_slimstat::$wpdb->query("DELETE tob FROM {$GLOBALS['wpdb']->prefix}slim_outbound tob");
+			wp_slimstat::$wpdb->query("DELETE t1 FROM {$GLOBALS['wpdb']->prefix}slim_stats t1");
 			wp_slimstat_admin::show_alert_message(__('All the records were successfully deleted.','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'restore-views':

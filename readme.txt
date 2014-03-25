@@ -3,17 +3,17 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
-Tested up to: 3.8.1
-Stable tag: 3.5.6
+Tested up to: 3.9
+Stable tag: 3.5.7
 
 == Description ==
 The most accurate real-time statistics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
 
 = Key Features =
-* Real-time reports
+* Real-time activity log
+* Integrates with WooCommerce and other e-commerce plugins
 * Compatible with W3 Total Cache, WP SuperCache and HyperCache
 * The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
-* Advanced filtering
 * Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet), German (TechnoViel), Italian, Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish, Swedish (Per Soderman). Is your language is missing or incomplete? [Contact Us](http://slimstat.getused.to.it/contact-us/) if you would like to share your localization.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
@@ -29,7 +29,7 @@ The most accurate real-time statistics plugin for WordPress. Visit our [official
 * MySQL 5.0.3+
 * At least 5 MB of free web space
 * At least 5 MB of free DB space
-* At least 25 Mb of free PHP memory for the tracker
+* At least 4 Mb of free PHP memory for the tracker (peak memory usage)
 * IE9+ or any browser supporting HTML5, to access the reports
 
 = Premium Add-ons =
@@ -271,6 +271,14 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.5.7 =
+* [Note] Browscap, the third party database we use to detect user agents, has more than doubled its size in the last few months (which is great: it means the project is actively maintained). In some cases, this was causing WP SlimStat to exceed the maximum amount of memory assigned to PHP. By breaking the database into multiple files, we were able to lower the plugin's peak memory usage from 20 to 2 MB. Enjoy!
+* [Update] [Browscap](http://browscap.org/) has been updated to version 5025, released on March 23, 2014
+* [Update] The GeoLite Database (courtesy of [MaxMind](http://browscap.org/)) has been updated to the version released on March 5, 2014
+* [Fix] Delete ALL data under Maintenance tab was not working (thank you, [Ronan](http://wordpress.org/support/topic/maintence-question))
+* [Fix] No more PHP memory issues (thank you, [Roquefort](http://wordpress.org/support/topic/slimstat-causes-consistent-404s-on-my-site))
+* [Fix] Visitors had some empty reports (thank you, [psn](http://wordpress.org/support/topic/some-empty-report-in-visitors-page))
+
 = 3.5.6 =
 * [Note] Do you have WP MU and would like to get reports for your entire (small) network? We're finally working on something that might make you happy :)
 * [Update] Purge functionality now works with different timezones 
@@ -328,12 +336,16 @@ foreach ($results...`
 * [Fix] Is Empty filter was not working as expected
 * [Fix] Bug on Maintenance > Delete Pageviews Where
 
-== Distinguished Users ==
+== Special Thanks To ==
 
 * [Vitaly](http://www.visbiz.org/) - Volunteered quite a lot of time for QA and testing, and provided the complete Russian localization
 * [Davide Tomasello](http://www.davidetomasello.it/) - Gave us great feedback and plenty of ideas to take this plugin to the next level
 
 == Supporters ==
+WP SlimStat is an Open Source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
+is for those who want to donate money - be it once, be it regularly, be it a small or a big amount. Everything is set up for an easy donation process.
+Try it out, you'll be amazed how good it feels! If you're on a tight budget, [a review](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) for WP SlimStat is still a nice way to say thank you!
+
 [7times77](http://7times77.com),
 [Andrea Pinti](http://andreapinti.com),
 Beauzartes,
@@ -379,12 +391,12 @@ Wayne Liebman,
 Willow Ridge Press
 
 == Tools of the trade, in alphabetical order ==
-* [Duri.Me](http://duri.me/)
-* [Filezilla](https://filezilla-project.org/)
-* [Fontello](http://fontello.com/)
-* [Gimp](http://www.gimp.org/)
-* [Google Chrome](https://www.google.com/intl/en/chrome/browser/)
-* [poEdit](http://www.poedit.net/)
-* [Notepad++](http://notepad-plus-plus.org/)
-* [Tortoise SVN](http://tortoisesvn.net/)
-* [WAMP Server](http://www.wampserver.com/en/)
+[Duri.Me](http://duri.me/),
+[Filezilla](https://filezilla-project.org/),
+[Fontello](http://fontello.com/),
+[Gimp](http://www.gimp.org/),
+[Google Chrome](https://www.google.com/intl/en/chrome/browser/),
+[poEdit](http://www.poedit.net/),
+[Notepad++](http://notepad-plus-plus.org/),
+[Tortoise SVN](http://tortoisesvn.net/),
+[WAMP Server](http://www.wampserver.com/en/)

@@ -712,7 +712,7 @@ class wp_slimstat_reports{
 				}
 				else{
 					$display_user_name = $results[$i]['user'];
-					if (wp_slimstat::$options['show_display_name'] == 'yes' && strpos($results[$i]['notes'], '[user:') !== false){
+					if (wp_slimstat::$options['show_display_name'] == 'yes' && strpos($results[$i]['notes'], 'user:') !== false){
 						$display_real_name = get_user_by('login', $results[$i]['user']);
 						if (is_object($display_real_name)) $display_user_name = $display_real_name->display_name;
 					}
@@ -1213,10 +1213,10 @@ class wp_slimstat_reports{
 				self::show_results('popular', $_report_id, 'CONCAT("p-", SUBSTRING(tb.platform, 1, 3))', array('total_for_percentage' => $current_pageviews, 'as_column' => 'platform'));
 				break;
 			case 'slim_p2_20':
-				self::show_results('recent', $_report_id, 'user', array('custom_where' => 'notes LIKE "%[user:%"'));
+				self::show_results('recent', $_report_id, 'user', array('custom_where' => 'notes LIKE "%user:%"'));
 				break;
 			case 'slim_p2_21':
-				self::show_results('popular_complete', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%[user:%"'), 'custom_where' => 'notes LIKE "%[user:%"'));
+				self::show_results('popular_complete', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%user:%"'), 'custom_where' => 'notes LIKE "%user:%"'));
 				break;
 			case 'slim_p3_02':
 				self::show_traffic_sources_summary($_report_id, $current_pageviews);

@@ -419,7 +419,8 @@ class wp_slimstat_db {
 			WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range']."
 			GROUP BY $_column $_more_columns $_having_clause
 			ORDER BY count ".self::$filters_normalized['misc']['direction']."
-			LIMIT ".self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
+			LIMIT ".self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], 
+			"$_column $_more_columns $_having_clause", 'count '.self::$filters_normalized['misc']['direction']);
 	}
 
 	public static function get_popular_outbound(){
@@ -429,7 +430,8 @@ class wp_slimstat_db {
 			WHERE 1=1 ".self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
 			GROUP BY tob.outbound_resource 
 			ORDER BY count '.self::$filters_normalized['misc']['direction'].'
-			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
+			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
+			tob.outbound_resource, 'count '.self::$filters_normalized['misc']['direction']);
 	}
 
 	public static function get_popular_complete($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = ''){
@@ -443,7 +445,9 @@ class wp_slimstat_db {
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 			(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
 			ORDER BY ts1.count '.self::$filters_normalized['misc']['direction'].'
-			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
+			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
+			'',
+			'count '.self::$filters_normalized['misc']['direction']);
 	}
 
 	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = '', $_use_date_filters = true){
@@ -453,7 +457,9 @@ class wp_slimstat_db {
 				FROM '.self::$sql_filters['from']['all_tables'].' '.(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
 				WHERE '.(empty($_custom_where)?"$_column <> 0 ":$_custom_where).' '.self::$sql_filters['where'].' '.($_use_date_filters?self::$sql_filters['where_time_range']:'').'
 				ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by).'
-				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], '', 'dt DESC');
+				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
+				'',
+				empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by);
 			
 		}
 		else{
@@ -467,7 +473,9 @@ class wp_slimstat_db {
 				) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 				(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
 				ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by).'
-				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
+				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
+				'',
+				empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by);
 		}
 	}
 
@@ -477,7 +485,9 @@ class wp_slimstat_db {
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON tob.id = t1.id INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers tb on t1.browser_id = tb.browser_id ".self::$sql_filters['from']['screenres'].' '.self::$sql_filters['from']['content_info'].'
 			WHERE '.(($_type != -1)?"tob.type = $_type":'tob.type > 1').' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
 			ORDER BY tob.dt '.self::$filters_normalized['misc']['direction'].'
-			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results']);
+			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
+			'',
+			'dt '.self::$filters_normalized['misc']['direction']);
 	}
 
 	public static function get_data_for_chart($_data1, $_data2, $_custom_where_clause = '', $_sql_from_where = ''){
@@ -524,7 +534,7 @@ class wp_slimstat_db {
 		}
 
 		// Build the SQL query
-		$sql = "SELECT DATE_FORMAT(FROM_UNIXTIME(dt), '%Y-%m-%d %H:%i') datestamp, $_data1 first_metric, $_data2 second_metric";
+		$sql = "SELECT dt, DATE_FORMAT(FROM_UNIXTIME(dt), '%Y-%m-%d %H:%i') datestamp, $_data1 first_metric, $_data2 second_metric";
 
 		// Panel 4 has a slightly different structure
 		if(empty($_sql_from_where)){
@@ -536,10 +546,12 @@ class wp_slimstat_db {
 			$sql_no_placeholders = str_replace('[where_clause]', '1=1 '.$time_range.' '.self::$sql_filters['where'].' '.$_custom_where_clause, $sql_no_placeholders);
 			$sql .= $sql_no_placeholders;
 		}
-		$sql .= " GROUP BY {$group_by[0]}(FROM_UNIXTIME(dt)), {$group_by[1]}(FROM_UNIXTIME(dt))";
+
+		$group_by = "{$group_by[0]}(FROM_UNIXTIME(dt)), {$group_by[1]}(FROM_UNIXTIME(dt))";
+		$sql .= "GROUP BY $group_by";
 
 		// Get the data
-		$results = self::_get_results($sql);
+		$results = self::_get_results($sql, $group_by);
 
 		// Fill the output array
 		$output['current']['label'] = '';

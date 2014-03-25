@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.5.6
+Version: 3.5.7
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.5.6';
+	public static $version = '3.5.7';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -153,7 +153,7 @@ class wp_slimstat{
 			$screenres = apply_filters('slimstat_filter_pageview_screenres', $screenres, self::$stat);
 
 			// Now we insert the new screen resolution in the lookup table, if it doesn't exist
-			self::$stat['screenres_id'] = self::maybe_insert_row($screenres, $GLOBALS['wpdb']->base_prefix.'slim_screenres', 'screenres_id');
+			self::$stat['screenres_id'] = self::maybe_insert_row($screenres, $GLOBALS['wpdb']->base_prefix.'slim_screenres', 'screenres_id', array());
 		}
 		self::$stat['plugins'] = !empty(self::$data_js['pl'])?substr(str_replace('|', ',', self::$data_js['pl']), 0, -1):'';
 
@@ -415,8 +415,8 @@ class wp_slimstat{
 		}
 
 		// Now let's save this information in the database
-		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id');
-		self::$stat['browser_id'] = self::maybe_insert_row($browser, $GLOBALS['wpdb']->base_prefix.'slim_browsers', 'browser_id');
+		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id', array());
+		self::$stat['browser_id'] = self::maybe_insert_row($browser, $GLOBALS['wpdb']->base_prefix.'slim_browsers', 'browser_id', array('user_agent' => $browser['user_agent']));
 		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
 
 		// Something went wrong during the insert
@@ -674,42 +674,83 @@ class wp_slimstat{
 	 * Retrieves some information about the user agent; relies on browscap.php database (included)
 	 */
 	protected static function _get_browser(){
-		// Load cache
-		@include_once(plugin_dir_path( __FILE__ ).'databases/browscap.php');
-
-		$browser = array('browser' => 'Default Browser', 'version' => '1', 'platform' => 'unknown', 'css_version' => 1, 'type' => 1);
-		if (empty($slimstat_patterns) || !is_array($slimstat_patterns)) return $browser;
-
-		$user_agent = isset($_SERVER['HTTP_USER_AGENT'])?$_SERVER['HTTP_USER_AGENT']:'';
+		$browser = array('browser' => 'Default Browser', 'version' => '', 'platform' => 'unknown', 'css_version' => 1, 'type' => 1);
 		$search = array();
-		foreach ($slimstat_patterns as $key => $pattern){
-			if (preg_match($pattern . 'i', $user_agent)){
-				$search = $value = $search + $slimstat_browsers[$key];
-				while (array_key_exists(3, $value) && $value[3]) {
-					$value = $slimstat_browsers[$value[3]];
-					$search += $value;
-				}
-				break;
+
+		for($idx_cache = 1; $idx_cache <= 5; $idx_cache++){
+			@include(plugin_dir_path( __FILE__ )."databases/browscap-$idx_cache.php");
+
+			// Automatically detect the useragent
+			if (!isset($_SERVER['HTTP_USER_AGENT'])){
+				return $browser;
 			}
-		}
 
-		// If a meaningful match was found, let's define some keys
-		if ($search[5] != 'Default Browser' && $search[5] != 'unknown'){
-			$browser['browser'] = $search[5];
-			$browser['version'] = intval($search[6]);
-			$browser['platform'] = strtolower($search[9]);
-			$browser['css_version'] = $search[28];
-			$browser['user_agent'] = $user_agent;
+			foreach ($browscap_patterns as $pattern => $pattern_data){
+				if (preg_match($pattern . 'i', $_SERVER['HTTP_USER_AGENT'], $matches)){
+					if (1 == count($matches)) {
+						$key = $pattern_data;
+						$simple_match = true;
 
-			// browser Types:
-			//		0: regular
-			//		1: crawler
-			//		2: mobile
-			//		3: syndication reader
-			if ($search[25] == 'true') $browser['type'] = 2;
-			elseif ($search[26] == 'true') $browser['type'] = 3;
-			elseif ($search[27] != 'true') $browser['type'] = 0;
-			if ($browser['version'] != 0 || $browser['type'] != 0) return $browser;
+					}
+					else{
+						$pattern_data = unserialize($pattern_data);
+						array_shift($matches);
+						
+						$match_string = '@' . implode('|', $matches);
+
+						if (!isset($pattern_data[$match_string])){
+							continue;
+						}
+
+						$key = $pattern_data[$match_string];
+
+						$simple_match = false;
+					}
+
+					$search = array(
+						$_SERVER['HTTP_USER_AGENT'],
+						trim(strtolower($pattern), '@'),
+						self::_preg_unquote($pattern, $simple_match ? false : $matches)
+					);
+
+					$search = $value = $search + unserialize($browscap_browsers[$key]);
+
+					while (array_key_exists(3, $value)) {
+						$value = unserialize($browscap_browsers[$value[3]]);
+						$search += $value;
+					}
+
+					if (!empty($search[3])) {
+						$search[3] = $browscap_userAgents[$search[3]];
+					}
+
+					break;
+				}
+			}
+			unset($browscap_browsers);
+			unset($browscap_userAgents);
+			unset($browscap_patterns);
+ 
+			if (!empty($search) && $search[5] != 'Default Browser' && $search[5] != 'unknown'){
+				$browser['browser'] = $search[5];
+				$browser['version'] = intval($search[6]);
+				$browser['platform'] = strtolower($search[9]);
+				$browser['css_version'] = $search[28];
+				$browser['user_agent'] =  $search[0];
+
+				// browser Types:
+				//		0: regular
+				//		1: crawler
+				//		2: mobile
+				//		3: syndication reader
+				if ($search[25] == 'true') $browser['type'] = 2;
+				elseif ($search[26] == 'true') $browser['type'] = 3;
+				elseif ($search[27] != 'true') $browser['type'] = 0;
+
+				if ($browser['version'] != 0 || $browser['type'] != 0){
+					return $browser;
+				}
+			}
 		}
 
 		// Let's try with the heuristic approach
@@ -832,6 +873,25 @@ class wp_slimstat{
 		return $browser;
 	}
 	// end _get_browser
+
+	/**
+	 * Helper function for get_browser [courtesy of: GaretJax/PHPBrowsCap]
+	 */
+	protected static function _preg_unquote($pattern, $matches){
+		$search = array('\\@', '\\.', '\\\\', '\\+', '\\[', '\\^', '\\]', '\\$', '\\(', '\\)', '\\{', '\\}', '\\=', '\\!', '\\<', '\\>', '\\|', '\\:', '\\-', '.*', '.', '\\?');
+		$replace = array('@', '\\?', '\\', '+', '[', '^', ']', '$', '(', ')', '{', '}', '=', '!', '<', '>', '|', ':', '-', '*', '?', '.');
+
+		$result = substr(str_replace($search, $replace, $pattern), 2, -2);
+
+		if (!empty($matches)){
+			foreach ($matches as $one_match){
+				$num_pos = strpos($result, '(\d)');
+				$result = substr_replace($result, $one_match, $num_pos, 4);
+			}
+		}
+
+		return $result;
+	}
 
 	/**
 	 * Parses the UserAgent string to get the operating system code
@@ -960,16 +1020,18 @@ class wp_slimstat{
 	/** 
 	 * Stores the information (array) in the appropriate table (if needed) and returns the corresponding ID
 	 */
-	public static function maybe_insert_row($_data = array(), $_table = '', $_id_column = ''){
+	public static function maybe_insert_row($_data = array(), $_table = '', $_id_column = '', $_not_unique = array()){
 		if (empty($_data) || empty($_id_column) || empty($_table)) return -1;
 
 		$select_sql = "SELECT $_id_column FROM $_table WHERE ";
-		foreach ($_data as $a_key => $a_value) $select_sql .= "$a_key = %s AND ";
-		$select_sql = self::$wpdb->prepare(substr($select_sql, 0, -5), $_data);
+		$data = array_diff($_data, $_not_unique);
+		foreach ($data as $a_key => $a_value){
+			$select_sql .= "$a_key = %s AND ";
+		}
+		$select_sql = self::$wpdb->prepare(substr($select_sql, 0, -5), $data);
 
 		// Let's see if this row is already in our lookup table
 		$id = self::$wpdb->get_var($select_sql);
-
 		if (empty($id)){
 			$id = self::insert_row($_data, $_table);
 
@@ -986,15 +1048,10 @@ class wp_slimstat{
 	 */
 	public static function insert_row($_data = array(), $_table = ''){
 		if (empty($_data) || empty($_table)) return -1;
-		
-		$update_on_duplicate = array();
-		foreach (array_keys($_data) as $a_key){
-			$update_on_duplicate[] .= "$a_key = %s";
-		}
 
 		self::$wpdb->query(self::$wpdb->prepare("
 			INSERT IGNORE INTO $_table (".implode(", ", array_keys($_data)).') 
-			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).') ON DUPLICATE KEY UPDATE '.implode(',', $update_on_duplicate), array_merge($_data, array_values($_data))));
+			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).")", $_data));
 
 		return intval(self::$wpdb->insert_id);
 	}
