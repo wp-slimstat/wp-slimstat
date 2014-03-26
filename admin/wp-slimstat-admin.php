@@ -257,14 +257,6 @@ class wp_slimstat_admin{
 	public static function update_tables_and_options($_activate = true){
 		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 		
-		$count_posts = wp_count_posts();
-		$count_posts = $count_posts->publish + $count_posts->draft + $count_posts->future;
-		$count_pages = wp_count_posts('page');
-		$count_pages = $count_pages->publish + $count_pages->draft;
-		$total = $my_wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
-		
-		@wp_remote_get("http://slimstat.getused.to.it/browscap.php?po=$count_posts&pa=$count_pages&t=$total&a=".wp_slimstat::$options['enable_ads_network'], array('timeout'=>2,'blocking'=>false,'sslverify'=>false));
-		
 		// Create initial structure or missing tables
 		if (!$_activate) self::init_environment(false);
 
@@ -317,6 +309,16 @@ class wp_slimstat_admin{
 		}
 		// --- END: Updates for version 3.5.7 ---
 		
+		if (isset(wp_slimstat::$options['version']) && version_compare(wp_slimstat::$options['version'], '3.5.7', '<')){
+			$count_posts = wp_count_posts();
+			$count_posts = $count_posts->publish + $count_posts->draft + $count_posts->future;
+			$count_pages = wp_count_posts('page');
+			$count_pages = $count_pages->publish + $count_pages->draft;
+			$total = $my_wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
+			
+			@wp_remote_get("http://slimstat.getused.to.it/browscap.php?po=$count_posts&pa=$count_pages&t=$total&a=".wp_slimstat::$options['enable_ads_network'], array('timeout'=>2,'blocking'=>false,'sslverify'=>false));
+		}
+	
 		// Now we can update the version stored in the database
 		if (!isset(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){
 			wp_slimstat::$options['version'] = wp_slimstat::$version;
