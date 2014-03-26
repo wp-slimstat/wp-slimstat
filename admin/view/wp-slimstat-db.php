@@ -547,11 +547,11 @@ class wp_slimstat_db {
 			$sql .= $sql_no_placeholders;
 		}
 
-		$group_by = "{$group_by[0]}(FROM_UNIXTIME(dt)), {$group_by[1]}(FROM_UNIXTIME(dt))";
-		$sql .= "GROUP BY $group_by";
+		$group_by_string = "{$group_by[0]}(FROM_UNIXTIME(dt)), {$group_by[1]}(FROM_UNIXTIME(dt))";
+		$sql .= " GROUP BY $group_by_string";
 
 		// Get the data
-		$results = self::_get_results($sql, $group_by);
+		$results = self::_get_results($sql, $group_by_string);
 
 		// Fill the output array
 		$output['current']['label'] = '';
