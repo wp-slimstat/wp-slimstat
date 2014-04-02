@@ -1206,7 +1206,7 @@ class wp_slimstat{
 	public static function wp_slimstat_enqueue_tracking_script(){
 		if (self::$options['enable_cdn'] == 'yes'){
 			$schema = is_ssl()?'https':'http';
-			wp_register_script('wp_slimstat', $schema.'://cdn.jsdelivr.net/wp-slimstat/'.self::$options['version'].'/wp-slimstat.js', array(), null, true);
+			wp_register_script('wp_slimstat', $schema.'://cdn.jsdelivr.net/wp-slimstat/'.self::$version.'/wp-slimstat.js', array(), null, true);
 		}
 		else{
 			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), null, true);
