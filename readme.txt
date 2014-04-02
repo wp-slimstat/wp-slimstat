@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 3.9
-Stable tag: 3.5.7
+Stable tag: 3.5.8
 
 == Description ==
 The most accurate real-time statistics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
@@ -270,6 +270,15 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.5.8 =
+* [New] Added support for network-wide settings, premium add-on coming soon!
+* [New] New filter `slimstat_footer_thank_you` allows you to remove the thank you note in the admin footer (thank you, [luenez](http://wordpress.org/support/topic/how-to-remove-slimstat-from-dashboard-footer))
+* [Update] Swedish language files have been updated (thank you, Per)
+* [Fix] A bug was affecting the way the chart was being displayed
+* [Fix] For some reason we're still investigating, the update procedure was not triggered in certain specific cases
+* [Fix] Oldest/Longest post report is now making sure that post_type = post (thank you, [psn](http://wordpress.org/support/topic/longest-postcomments-id))
+* [Fix] Bug affecting the Top Outbound Links and Downloads
 
 = 3.5.7 =
 * [Note] Browscap, the third party database we use to detect user agents, has more than doubled its size in the last few months (which is great: it means the project is actively maintained). In some cases, this was causing WP SlimStat to exceed the maximum amount of memory assigned to PHP. By breaking the database into multiple files, we were able to lower the plugin's peak memory usage from 20 to 2 MB. Enjoy!

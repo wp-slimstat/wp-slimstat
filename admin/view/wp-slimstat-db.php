@@ -420,7 +420,8 @@ class wp_slimstat_db {
 			GROUP BY $_column $_more_columns $_having_clause
 			ORDER BY count ".self::$filters_normalized['misc']['direction']."
 			LIMIT ".self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], 
-			"$_column $_more_columns $_having_clause", 'count '.self::$filters_normalized['misc']['direction']);
+			"$_column $_more_columns $_having_clause",
+			'count '.self::$filters_normalized['misc']['direction']);
 	}
 
 	public static function get_popular_outbound(){
@@ -431,7 +432,8 @@ class wp_slimstat_db {
 			GROUP BY tob.outbound_resource 
 			ORDER BY count '.self::$filters_normalized['misc']['direction'].'
 			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
-			tob.outbound_resource, 'count '.self::$filters_normalized['misc']['direction']);
+			'tob.outbound_resource',
+			'count '.self::$filters_normalized['misc']['direction']);
 	}
 
 	public static function get_popular_complete($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = ''){

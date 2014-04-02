@@ -286,7 +286,6 @@ jQuery(function(){
 	if (!jQuery('#slimstat-filters-form-hidden').length){
 		jQuery('<form id="slimstat-filters-form-hidden" method="post"/>').appendTo('body');
 		jQuery('.slimstat-post-filter').each(function(){
-			console.log(jQuery(this).clone());
 			jQuery(this).clone().appendTo('#slimstat-filters-form-hidden');
 		});
 	}

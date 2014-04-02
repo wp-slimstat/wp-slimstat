@@ -1051,8 +1051,8 @@ class wp_slimstat_reports{
 			$your_content['comments'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments}");
 			$your_content['pingbacks'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments} WHERE comment_type = 'pingback'");
 			$your_content['trackbacks'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments} WHERE comment_type = 'trackback'");
-			$your_content['longest_post_id'] = $GLOBALS['wpdb']->get_var("SELECT ID FROM {$GLOBALS['wpdb']->posts} WHERE post_status = 'publish' ORDER BY LENGTH(post_content) DESC LIMIT 0,1");
-			$your_content['oldest_post_timestamp'] = $GLOBALS['wpdb']->get_var("SELECT UNIX_TIMESTAMP(post_date) FROM {$GLOBALS['wpdb']->posts} WHERE post_status = 'publish' ORDER BY post_date ASC LIMIT 0,1");
+			$your_content['longest_post_id'] = $GLOBALS['wpdb']->get_var("SELECT ID FROM {$GLOBALS['wpdb']->posts} WHERE post_status = 'publish' AND post_type = 'post' ORDER BY LENGTH(post_content) DESC LIMIT 0,1");
+			$your_content['oldest_post_timestamp'] = $GLOBALS['wpdb']->get_var("SELECT UNIX_TIMESTAMP(post_date) FROM {$GLOBALS['wpdb']->posts} WHERE post_status = 'publish' AND post_type = 'post' ORDER BY post_date ASC LIMIT 0,1");
 			$your_content['longest_comment_id'] = $GLOBALS['wpdb']->get_var("SELECT comment_ID FROM {$GLOBALS['wpdb']->comments}");
 			$your_content['avg_comments_per_post'] = !empty($your_content['posts'])?$your_content['comments']/$your_content['posts']:0;
 
