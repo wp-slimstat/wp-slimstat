@@ -82,13 +82,13 @@ class wp_slimstat_db {
 			'strtotime' => 0
 		);
 
-		// Filter the... filters
+		// Hook for the... filters
 		$_filters = apply_filters('slimstat_db_pre_filters', $_filters);
 
 		// Normalize the input (filters)
 		self::$filters_normalized = self::parse_filters($_filters);
 
-		// Filter the array of normalized filters
+		// Hook for the array of normalized filters
 		self::$filters_normalized = apply_filters('slimstat_db_filters_normalized', self::$filters_normalized, $_filters);
 
 		if (empty(self::$filters_normalized['date']['interval'])){

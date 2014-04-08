@@ -31,30 +31,6 @@ var SlimStatAdmin = {
 	_refresh_timer: [0, 0],
 	_tooltip: {},
 
-	add_post_filters: function(report_id, href){
-		filters_parsed = [];
-		filters_to_add = href.split('&');
-		jQuery('#slimstat-filters-form-hidden').attr('action', filters_to_add[0]);
-
-		for (i in filters_to_add){
-			if (filters_to_add[i].indexOf('fs\%5B') != 0) continue;
-			
-			filter_components = filters_to_add[i].split('=');
-
-			filter_components[0] = decodeURIComponent(filter_components[0]);
-			jQuery('input[name="'+filter_components[0]+'"]').remove();
-			
-			if (filter_components[0].indexOf('[day]') > 0) jQuery('#slimstat-filter-day').val(0);
-			if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat-filter-month').val(0);
-			if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat-filter-year').val('');
-			if (filter_components[0].indexOf('[interval]') > 0) jQuery('#slimstat-filter-interval').val('');
-				
-			jQuery('<input>').attr('type', 'hidden').attr('name', filter_components[0]).attr('class', 'slimstat-post-filter slimstat-new-filter '+report_id).val(filter_components[1].replace('+', ' ')).appendTo('#slimstat-filters-form-hidden');
-			filters_parsed[filter_components[0]] = filter_components[1];
-		}
-		return filters_parsed;
-	},
-
 	chart_color_weekends: function(){
 		if (!SlimStatAdmin.chart_info.daily_chart){
 			return true;
@@ -179,27 +155,41 @@ var SlimStatAdmin = {
 		SlimStatAdmin._placeholder.bind('plotpan', SlimStatAdmin.chart_color_weekends);
 	},
 
-	load_ajax_data : function(report_id, data){
-		data['current_tab'] = SlimStatAdminParams.current_tab;
-		jQuery('.slimstat-post-filter').each(function(){
-			data[jQuery(this).attr('name')] = jQuery(this).attr('value');
-		});
-		jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin1 animate-spin"></i></p>');
+	parse_url_filters: function(report_id, href){
+		filters_parsed = [];
+		filters_to_add = href.split('&');
+		jQuery('#slimstat-filters-form').attr('action', filters_to_add[0]);
 
-		jQuery.post(ajaxurl, data, function(response){
-			if (report_id.indexOf('_01') > 0){
-				jQuery('#'+report_id + ' .inside').html(response);
-				SlimStatAdmin.chart_init();
+		for (i in filters_to_add){
+			if (filters_to_add[i].indexOf('fs\%5B') != 0) continue;
+			
+			filter_components = filters_to_add[i].split('=');
+
+			filter_components[0] = decodeURIComponent(filter_components[0]);
+			jQuery('input[name="'+filter_components[0]+'"]').remove();
+
+			filters_parsed[filter_components[0]] = [report_id, filter_components[1].replace('+', ' ')];
+		}
+		return filters_parsed;
+	},
+
+	add_filters_to_form: function(filters_parsed){
+		for (i in filters_parsed){
+			if (jQuery.inArray(i, ['fs[day]','fs[month]','fs[year]','fs[interval]']) == -1){
+				jQuery('<input>').attr('type', 'hidden').attr('name', i).attr('class', 'slimstat-post-filter slimstat-temp-filter '+filters_parsed[i][0]).val(filters_parsed[i][1]).appendTo('#slimstat-filters-form');
 			}
 			else{
-				jQuery('#'+report_id + ' .inside').fadeOut(700, function(){
-					jQuery(this).html(response).fadeIn(700);
-				});
+				field_id = i.replace('fs[', '#slimstat-filter-').replace(']', '');
+				field_val = filters_parsed[i][1].split(' ');
+				jQuery(field_id).val(field_val[1]);
 			}
-		});
-
-		// Remove filters set by other Ajax buttons
-		jQuery('.slimstat-new-filter').remove();
+		}
+	},
+	
+	remove_filters_from_form: function(filters_parsed){
+		for (i in filters_parsed){
+			jQuery('input[name="'+i.replace('[', '\\[').replace(']', '\\]')+'"]').remove();
+		}
 	},
 
 	refresh_countdown: function(){
@@ -216,13 +206,38 @@ var SlimStatAdmin = {
 			report_id = 'slim_p7_02';
 			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()};
 			jQuery('#'+report_id+' .inside').html('<p class="loading"></p>');
-			SlimStatAdmin.load_ajax_data(report_id, data);
+			SlimStatAdmin.refresh_report(report_id, data);
 
 			window.clearTimeout(refresh_handle);
 			SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
 			SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
 			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
+	},
+	
+	refresh_report: function(report_id, data){
+		// Get the data from the hidden form
+		filters_input = jQuery('#slimstat-filters-form .slimstat-post-filter').toArray();
+		for (i in filters_input){
+			data[filters_input[i]['name']] = filters_input[i]['value'];
+		}
+
+		jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin1 animate-spin"></i></p>');
+
+		jQuery.post(ajaxurl, data, function(response){
+			if (report_id.indexOf('_01') > 0){
+				jQuery('#'+report_id + ' .inside').html(response);
+				SlimStatAdmin.chart_init();
+			}
+			else{
+				jQuery('#'+report_id + ' .inside').fadeOut(700, function(){
+					jQuery(this).html(response).fadeIn(700);
+				});
+			}
+		});
+
+		// Remove filters set by other Ajax buttons
+		jQuery('.slimstat-temp-filter').remove();
 	}
 }
 
@@ -234,60 +249,20 @@ jQuery(function(){
 		refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 	}
 
+	// Refresh report if (re)activated via the checkbox under Screen Options
 	jQuery('input.hide-postbox-tog[id^=slim_]').bind('click.postboxes', function (){
 		var report_id = jQuery(this).val();
 		var data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
 		jQuery('#'+report_id+' .inside').html('<p class="loading"></p>');
 
 		if (jQuery(this).prop("checked") && jQuery('#'+jQuery(this).val()).length){
-			SlimStatAdmin.load_ajax_data(report_id, data);
+			SlimStatAdmin.refresh_report(report_id, data);
 		}
 	});
 	
-	
-	jQuery('a.slimstat-remove-filter').click(function(e){
-		e.preventDefault();
-
-		filters_to_remove = decodeURIComponent(jQuery(this).attr('href')).split('&');
-		jQuery('#slimstat-filters-form-hidden').attr('action', filters_to_remove[0]);
-		jQuery('.slimstat-new-filter').remove();
-
-		for (i in filters_to_remove){
-			filter_components = filters_to_remove[i].split('=');
-			jQuery('input[name="'+filter_components[0].replace('[', '\\[').replace(']', '\\]')+'"]').remove();
-			
-			// Reset dropdowns, if needed
-			if (filter_components[0].indexOf('[day]') > 0) jQuery('#slimstat-filter-day').val(0);
-			if (filter_components[0].indexOf('[month]') > 0) jQuery('#slimstat-filter-month').val(0);
-			if (filter_components[0].indexOf('[year]') > 0) jQuery('#slimstat-filter-year').val('');
-			if (filter_components[0].indexOf('[interval]') > 0) jQuery('#slimstat-filter-interval').val('');
-		}
-	
-		jQuery('#slimstat-filters-form-hidden').submit();
-		return false;
-	});
-
-	
-});
-
-
-
-
-
-
-
-
-
-
-
-// New stuff
-jQuery(function(){
-	// Filters: add hidden form
-	if (!jQuery('#slimstat-filters-form-hidden').length){
-		jQuery('<form id="slimstat-filters-form-hidden" method="post"/>').appendTo('body');
-		jQuery('.slimstat-post-filter').each(function(){
-			jQuery(this).clone().appendTo('#slimstat-filters-form-hidden');
-		});
+	// Filters: add form if not available (Dashboard)
+	if (!jQuery('#slimstat-filters-form').length){
+		jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo('body');
 	}
 
 	// Filters: Lock value input field based on operator drop down selection
@@ -339,18 +314,31 @@ jQuery(function(){
 		});
 	}
 
+	// Filters: Remove selected when X is clicked
+	jQuery('a.slimstat-remove-filter').click(function(e){
+		e.preventDefault();
+
+		filters_to_remove = SlimStatAdmin.parse_url_filters('p0', jQuery(this).attr('href'));
+		SlimStatAdmin.remove_filters_from_form(filters_to_remove);
+
+		jQuery('#slimstat-filters-form').submit();
+		jQuery('.slimstat-temp-filter').remove();
+		return false;
+	});
+
 	// Send filters as post requests
 	jQuery(document).on('click', '.slimstat-filter-link, #toplevel_page_wp-slim-view-1 li a, #wp-admin-bar-slimstat-header li a', function(e){
 		e.preventDefault();
-		if (!jQuery('#slimstat-filters-form-hidden').length){
+
+		if (!jQuery('#slimstat-filters-form').length){
 			return true;
 		}
 
-		jQuery('.slimstat-new-filter').remove();
-		jQuery('.empty-on-submit').val(0);
+		filters_parsed = SlimStatAdmin.parse_url_filters('p0', jQuery(this).attr('href'));
+		SlimStatAdmin.add_filters_to_form(filters_parsed);
 
-		SlimStatAdmin.add_post_filters('p0', jQuery(this).attr('href'));
-		jQuery('#slimstat-filters-form-hidden').submit();
+		jQuery('#slimstat-filters-form').submit();
+		jQuery('.slimstat-temp-filter').remove();
 		return false;
 	});
 
@@ -360,7 +348,8 @@ jQuery(function(){
 		report_id = jQuery(this).parents('.postbox').attr('id');
 
 		if (typeof jQuery(this).attr('href') != 'undefined'){
-			filters_parsed = SlimStatAdmin.add_post_filters(report_id, jQuery(this).attr('href'));
+			filters_parsed = SlimStatAdmin.parse_url_filters(report_id, jQuery(this).attr('href'));
+			SlimStatAdmin.add_filters_to_form(filters_parsed);
 
 			// Remember the new filter for when the report is refreshed
 			if (typeof filters_parsed['fs[start_from]'] != 'undefined' && jQuery('#'+report_id+' .refresh').length){
@@ -372,7 +361,7 @@ jQuery(function(){
 		}
 
 		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()};
-		SlimStatAdmin.load_ajax_data(report_id, data);
+		SlimStatAdmin.refresh_report(report_id, data);
 		
 		jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
 		
@@ -389,7 +378,7 @@ jQuery(function(){
 		jQuery('div[id^=slim_]').each(function(){
 			report_id = jQuery(this).attr('id');
 			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
-			SlimStatAdmin.load_ajax_data(report_id, data);
+			SlimStatAdmin.refresh_report(report_id, data);
 		});
 	}
 

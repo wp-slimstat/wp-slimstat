@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.5.8
+Version: 3.5.9
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.5.8';
+	public static $version = '3.5.9';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -134,7 +134,6 @@ class wp_slimstat{
 				$lt = localtime();
 				if (!empty($timezone)) date_default_timezone_set('UTC');
 				self::$stat['dt'] = mktime($lt[2], $lt[1], $lt[0], $lt[4]+1, $lt[3], $lt[5]+1900);
-
 				self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_outbound');
 
 				do_action('slimstat_track_success_outbound', self::$stat);

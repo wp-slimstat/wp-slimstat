@@ -5,7 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "Version 3.5.7 shipped with a bug that was affecting the rendering of most charts. This update fixes this and other glitched. Please contact our <a href='http://support.getused.to.it/' target='_blank'>support team</a>, if you have any questions.";
+	protected static $admin_notice = ''; // "Version 3.5.7 shipped with a bug that was affecting the rendering of most charts. This update fixes this and other glitched. Please contact our <a href='http://support.getused.to.it/' target='_blank'>support team</a>, if you have any questions.";
 	
 	/**
 	 * Init -- Sets things up.
@@ -43,7 +43,7 @@ class wp_slimstat_admin{
 		add_filter('plugin_action_links_wp-slimstat/wp-slimstat.php', array(__CLASS__, 'plugin_action_links'), 10, 2);
 
 		// Display a notice that hightlights this version's features
-		if (wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version && !empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false) {
+		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
 			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
 		}
 
@@ -184,8 +184,8 @@ class wp_slimstat_admin{
 				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
 				PRIMARY KEY id (id),
-				FOREIGN KEY fk_browser_id (browser_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_browsers(browser_id),
-				FOREIGN KEY fk_content_info_id (content_info_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_content_info(content_info_id),
+				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}browser_id FOREIGN KEY (browser_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_browsers(browser_id),
+				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}content_info_id FOREIGN KEY (content_info_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_content_info(content_info_id),
 				INDEX dt_idx(dt)
 			) COLLATE utf8_general_ci $use_innodb";
 
@@ -238,7 +238,7 @@ class wp_slimstat_admin{
 				id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
 				PRIMARY KEY (outbound_id),
-				FOREIGN KEY fk_id (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE,
+				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE,
 				INDEX odt_idx(dt)
 			) COLLATE utf8_general_ci $use_innodb";
 
@@ -292,22 +292,46 @@ class wp_slimstat_admin{
 		// --- Updates for version 3.5.6 ---
 		if (version_compare(wp_slimstat::$options['version'], '3.5.6', '<')){
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX dt_idx (dt)");
-			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats MODIFY content_info_id INT UNSIGNED NOT NULL DEFAULT 1");
-			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info MODIFY content_info_id INT UNSIGNED");
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ADD INDEX odt_idx (dt)");
 			$my_wpdb->query("DELETE tso FROM {$GLOBALS['wpdb']->prefix}slim_outbound tso LEFT JOIN {$GLOBALS['wpdb']->prefix}slim_stats ts ON tso.id = ts.id WHERE ts.id IS NULL");
-			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ADD CONSTRAINT fk_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats (id) ON UPDATE CASCADE ON DELETE CASCADE");
-			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD CONSTRAINT fk_browser_id FOREIGN KEY (browser_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_browsers (browser_id)");
-			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD CONSTRAINT fk_content_info_id FOREIGN KEY (content_info_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_content_info (content_info_id)");
 		}
 		// --- END: Updates for version 3.5.6 ---
-		
-		// --- Updates for version 3.5.7 ---
-		if (version_compare(wp_slimstat::$options['version'], '3.5.7', '<')){
-			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers MODIFY browser_id SMALLINT UNSIGNED");
-			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD CONSTRAINT fk_browser_id FOREIGN KEY (browser_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_browsers (browser_id)");
+	
+		// --- Updates for version 3.5.9 ---
+		if (version_compare(wp_slimstat::$options['version'], '3.5.9', '<')){
+			// slim_browsers
+			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE browser_id <= 0");
+			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers WHERE browser_id <= 0");
+			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_stats DROP FOREIGN KEY fk_browser_id");
+			
+			// Check if slim_browsers needs to be updated
+			$temp_column = $my_wpdb->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers LIKE 'browser_id'", ARRAY_A);
+			if ($temp_column[0]['Extra'] != 'auto_increment' || stripos($temp_column[0]['Type'], 'smallint') === false){
+				$my_wpdb->query("SET FOREIGN_KEY_CHECKS=0");
+				$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers MODIFY browser_id SMALLINT UNSIGNED NOT NULL auto_increment");
+				$my_wpdb->query("SET FOREIGN_KEY_CHECKS=1");
+			}
+			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}browser_id FOREIGN KEY (browser_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_browsers (browser_id)");
+
+			// slim_content_info
+			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE content_info_id <= 0");
+			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info WHERE content_info_id <= 0");
+			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_stats DROP FOREIGN KEY fk_content_info_id");
+			
+			// Check if slim_content_info needs to be updated
+			$temp_column = $my_wpdb->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info LIKE 'content_info_id'", ARRAY_A);
+			if ($temp_column[0]['Extra'] != 'auto_increment' || stripos($temp_column[0]['Type'], 'int') === false){
+				$my_wpdb->query("SET FOREIGN_KEY_CHECKS=0");
+				$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info MODIFY content_info_id INT UNSIGNED NOT NULL auto_increment");
+				$my_wpdb->query("SET FOREIGN_KEY_CHECKS=1");
+			}			
+			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}content_info_id FOREIGN KEY (content_info_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_content_info (content_info_id)");
+
+			// slim_outbound
+			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound DROP FOREIGN KEY fk_id");
+			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ADD CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats (id) ON UPDATE CASCADE ON DELETE CASCADE");
 		}
-		// --- END: Updates for version 3.5.7 ---
+		// --- END: Updates for version 3.5.9 ---
 	
 		// Now we can update the version stored in the database
 		if (empty(wp_slimstat::$options['version']) || wp_slimstat::$options['version'] != wp_slimstat::$version){

@@ -4,10 +4,10 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 3.9
-Stable tag: 3.5.8
+Stable tag: 3.5.9
 
 == Description ==
-The most accurate real time statistics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
+The most accurate real-time statistics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
 
 = Key Features =
 * Real-time activity log
@@ -271,6 +271,13 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.5.9 =
+* [Fix] New user agents were not being recorded correctly in some cases (thank you, [fberzau](http://wordpress.org/support/topic/browser-and-os-stats-not-working))
+* [Fix] Bug affecting the plugin in MU environments (thank you, [27pchrisl](https://github.com/getusedtoit/wp-slimstat/commit/00e389aaa4fc425b8b8ba829a9f6c66f5ba268c8))
+* [Fix] Filters have a more consistent behavior and are now easier to extend via third party add-ons
+* [Fix] Date filters were being set to January 1, 1970 under certain circumstances (thank you, Russell and [uewinfo_frm](http://wordpress.org/support/topic/a-problem-for-mouse-hover-on-google-chrome))
+* [Fix] Our premium Export to Excel add-on was only returning the first 20 records of each report
+
 = 3.5.8 =
 * [New] Added support for network-wide settings, premium add-on coming soon!
 * [New] New filter `slimstat_footer_thank_you` allows you to remove the thank you note in the admin footer (thank you, [luenez](http://wordpress.org/support/topic/how-to-remove-slimstat-from-dashboard-footer))
@@ -305,45 +312,6 @@ foreach ($results...`
 * [Fix] Bug in displaying more days than necessary for some months, in the chart
 * [Fix] Filtering by IP Address was not working with our Firewall Fix add-on
 * [Fix] Natural language date ranges were being calculated based on UTC, not the blog's timezone (thank you, [haheute](http://wordpress.org/support/topic/pageviews-per-day-not-working))
-
-= 3.5.5 =
-* [Note] Our partnership with HackerNinja.com ended a few days ago, we wish them all the best for their business!
-* [New] The new DB API supports natural language dates: day equals today, year equals this year, etc. This brings the [Shortcodes](http://wordpress.org/plugins/wp-slimstat-shortcodes/) add-on to a whole new level of flexibility!
-* [Update] Right Now has been renamed Activity Log
-* [Fix] We can't believe nobody had noticed a bug in calculating the bounce rate value. Numbers were way off! (thank you, Rob)
-* [Fix] User Overview add-on had some problems with sorting by certain columns
-* [Fix] Filters were not being reset when multiple shortcodes were being used on the same page (thank you, [joachimcarrein](http://wordpress.org/support/topic/filters-remembered))
-* [Fix] Pageviews in the Edit Posts panel were not being properly calculated (thank you, [Aljoscha](http://wordpress.org/support/topic/updated-to-354-no-statistics))
-* [Fix] The Add-Ons page was not working as expected.
-
-= 3.5.4 =
-* [Note] Update your free and premium add-ons to the latest version available!
-* [New] When Convert IP Addresses is enabled, hostnames are shown along with IP addresses, not instead of (thank you, Simas)
-* [New] Added a new switch to turn 'Debug Mode' on (under Settings > Advanced) 
-* [New] Consolidated report functions to use the new DB API filter format
-* [Update] [Browscap](http://browscap.org/) has been updated to version 5023, released on Feb 2, 2014
-* [Fix] Various bugs related to date filters
-* [Fix] Layout of our modal window (ip lookup) was being overwritten by other plugins (thank you, [charlieusa](http://wordpress.org/support/topic/infosniper-popup-displays-map-in-narrow-panel))
-* [Fix] Compatibility issue with WP SlimStat Shortcodes and 'strtotime' filter (our DB API is growing!)
-* [Fix] Close button had disappeared from modal window (ip lookup service)
-* [Fix] Added Seychelles to the list of known Countries
-* [Fix] Bug in displaying the correct time range with some timezones
-* [Fix] Removed 'Save Options' button on Maintenance page
-
-= 3.5.3 =
-* [New] You can finally hide our notices whenever you want and never see them again... until the next update!
-* [Update] Rolled back change that made the DB API use more SQL queries and less memory, since users were complaining about performance
-* [Update] [Browscap](http://browscap.org/) has been updated to version 5022 stable, released on Jan 24, 2014
-* [Update] [SlimScroll](https://github.com/rochal/jQuery-slimScroll) has been updated to version 1.3.2, released on Dec 26, 2013
-* [Update] More Font Icons replaced those ugly PNGs
-* [Fix] CDN Schema changed to HTTPS if site is served over HTTPS (thank you, [samatva](http://wordpress.org/support/topic/installed-tracked-nothing))
-* [Fix] Bug on counter displayed in Edit Posts screen (thank you, [kirksylvester](http://wordpress.org/support/topic/pageviews-column-stats-on-wp-admin-posts-showing-zeros))
-* [Fix] Bug on expanded details not honored by Spy View
-* [Fix] Bug on filtering by IP Address (thank you, [rodak](http://wordpress.org/support/topic/can%C2%B4t-filter-by-ip))
-* [Fix] Bug on filtering Browsers (the new API is still in its infancy, please be kind with the baby!)
-* [Fix] Date range does not include 'future' dates anymore, since it was confusing some users
-* [Fix] Is Empty filter was not working as expected
-* [Fix] Bug on Maintenance > Delete Pageviews Where
 
 == Special Thanks To ==
 
