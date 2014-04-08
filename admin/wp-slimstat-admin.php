@@ -298,7 +298,7 @@ class wp_slimstat_admin{
 		// --- END: Updates for version 3.5.6 ---
 	
 		// --- Updates for version 3.5.9 ---
-		if (version_compare(wp_slimstat::$options['version'], '3.5.9', '<')){
+		/*if (version_compare(wp_slimstat::$options['version'], '3.5.9', '<')){
 			// slim_browsers
 			// $my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE browser_id <= 0");
 			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers WHERE browser_id <= 0");
@@ -330,7 +330,7 @@ class wp_slimstat_admin{
 			// slim_outbound
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound DROP FOREIGN KEY fk_id");
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_outbound ADD CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats (id) ON UPDATE CASCADE ON DELETE CASCADE");
-		}
+		}*/
 		// --- END: Updates for version 3.5.9 ---
 	
 		// Now we can update the version stored in the database
