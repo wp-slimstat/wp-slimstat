@@ -314,7 +314,7 @@ class wp_slimstat_admin{
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}browser_id FOREIGN KEY (browser_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_browsers (browser_id)");
 
 			// slim_content_info
-			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE content_info_id <= 0");
+			// $my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE content_info_id <= 0");
 			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info WHERE content_info_id <= 0");
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_stats DROP FOREIGN KEY fk_content_info_id");
 			
