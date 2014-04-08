@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP SlimStat\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-03-02 22:46-0500\n"
-"PO-Revision-Date: 2014-03-02 22:47-0500\n"
+"POT-Creation-Date: 2014-04-07 21:32-0500\n"
+"PO-Revision-Date: 2014-04-07 21:32-0500\n"
 "Last-Translator: Get Used To IT <support@getused.to.it>\n"
 "Language-Team: \n"
 "Language: es_ES\n"
@@ -16,103 +16,103 @@ msgstr ""
 "X-Generator: Poedit 1.6.3\n"
 "X-Poedit-SearchPath-0: ../..\n"
 
-#: ../../wp-slimstat.php:1179 ../../admin/wp-slimstat-admin.php:411
+#: ../../wp-slimstat.php:1276 ../../admin/wp-slimstat-admin.php:438
 #: ../../admin/config/index.php:58 ../../admin/view/wp-slimstat-reports.php:28
 msgid "Activity Log"
 msgstr "Bitácora de actividades"
 
-#: ../../wp-slimstat.php:1180 ../../admin/wp-slimstat-admin.php:412
-#: ../../admin/wp-slimstat-admin.php:429
+#: ../../wp-slimstat.php:1277 ../../admin/wp-slimstat-admin.php:439
+#: ../../admin/wp-slimstat-admin.php:456
 #: ../../admin/view/wp-slimstat-reports.php:29
 msgid "Overview"
 msgstr "Visión general"
 
-#: ../../wp-slimstat.php:1181 ../../admin/wp-slimstat-admin.php:413
-#: ../../admin/wp-slimstat-admin.php:430
+#: ../../wp-slimstat.php:1278 ../../admin/wp-slimstat-admin.php:440
+#: ../../admin/wp-slimstat-admin.php:457
 #: ../../admin/view/wp-slimstat-reports.php:30
 msgid "Visitors"
 msgstr "Visitantes"
 
-#: ../../wp-slimstat.php:1182 ../../admin/wp-slimstat-admin.php:414
-#: ../../admin/wp-slimstat-admin.php:431
+#: ../../wp-slimstat.php:1279 ../../admin/wp-slimstat-admin.php:441
+#: ../../admin/wp-slimstat-admin.php:458
 #: ../../admin/view/wp-slimstat-reports.php:31
 msgid "Content"
 msgstr "Contenido"
 
-#: ../../wp-slimstat.php:1183 ../../admin/wp-slimstat-admin.php:415
-#: ../../admin/wp-slimstat-admin.php:432 ../../admin/view/index.php:169
+#: ../../wp-slimstat.php:1280 ../../admin/wp-slimstat-admin.php:442
+#: ../../admin/wp-slimstat-admin.php:459 ../../admin/view/index.php:169
 #: ../../admin/view/wp-slimstat-reports.php:32
 msgid "Traffic Sources"
 msgstr "Origen del Tráfico"
 
-#: ../../wp-slimstat.php:1184 ../../admin/wp-slimstat-admin.php:416
-#: ../../admin/wp-slimstat-admin.php:433
+#: ../../wp-slimstat.php:1281 ../../admin/wp-slimstat-admin.php:443
+#: ../../admin/wp-slimstat-admin.php:460
 #: ../../admin/view/wp-slimstat-reports.php:33
 #: ../../admin/view/wp-slimstat-reports.php:101
 msgid "World Map"
 msgstr "Mapa del Mundo"
 
-#: ../../wp-slimstat.php:1185 ../../admin/wp-slimstat-admin.php:417
-#: ../../admin/wp-slimstat-admin.php:434
+#: ../../wp-slimstat.php:1282 ../../admin/wp-slimstat-admin.php:444
+#: ../../admin/wp-slimstat-admin.php:461
 #: ../../admin/view/wp-slimstat-reports.php:34
 msgid "Custom Reports"
 msgstr "Informes Personalizados"
 
-#: ../../wp-slimstat.php:1186 ../../admin/wp-slimstat-admin.php:418
-#: ../../admin/wp-slimstat-admin.php:435 ../../admin/config/addons.php:29
+#: ../../wp-slimstat.php:1283 ../../admin/wp-slimstat-admin.php:445
+#: ../../admin/wp-slimstat-admin.php:462 ../../admin/config/addons.php:29
 #: ../../admin/config/index.php:9 ../../admin/config/index.php:229
 msgid "Add-ons"
 msgstr "Añadidos"
 
-#: ../../wp-slimstat.php:1189 ../../admin/wp-slimstat-admin.php:464
-#: ../../admin/wp-slimstat-admin.php:467 ../../admin/wp-slimstat-admin.php:511
-#: ../../admin/wp-slimstat-admin.php:514 ../../admin/config/index.php:14
+#: ../../wp-slimstat.php:1286 ../../admin/wp-slimstat-admin.php:491
+#: ../../admin/wp-slimstat-admin.php:494 ../../admin/wp-slimstat-admin.php:538
+#: ../../admin/wp-slimstat-admin.php:541 ../../admin/config/index.php:14
 #: ../../admin/config/index.php:135
 #, fuzzy
 msgid "Settings"
 msgstr "Seleccionar orden"
 
-#: ../../admin/wp-slimstat-admin.php:410 ../../admin/wp-slimstat-admin.php:422
-#: ../../admin/wp-slimstat-admin.php:425
+#: ../../admin/wp-slimstat-admin.php:437 ../../admin/wp-slimstat-admin.php:449
+#: ../../admin/wp-slimstat-admin.php:452
 #, fuzzy
 msgid "SlimStat"
 msgstr "Acerca de  WP-SlimStat"
 
-#: ../../admin/wp-slimstat-admin.php:528
+#: ../../admin/wp-slimstat-admin.php:555
 msgid "Pageviews in the last 365 days"
 msgstr "Visitas a la página en los últimos 365 días"
 
-#: ../../admin/wp-slimstat-admin.php:552
+#: ../../admin/wp-slimstat-admin.php:579
 msgid "Show on screen"
 msgstr "Mostrar en pantalla"
 
-#: ../../admin/wp-slimstat-admin.php:580
+#: ../../admin/wp-slimstat-admin.php:607
 msgid "Hide this notice"
 msgstr "Esconder esta notificación"
 
-#: ../../admin/wp-slimstat-admin.php:607
+#: ../../admin/wp-slimstat-admin.php:634
 msgid "There was an error updating the following options:"
 msgstr "Hubo un error al actualizar las siguientes opciones:"
 
-#: ../../admin/wp-slimstat-admin.php:610
+#: ../../admin/wp-slimstat-admin.php:637
 #, fuzzy
 msgid "Your changes have been saved."
 msgstr "Sus ajustes se han actualizado correctamente."
 
-#: ../../admin/wp-slimstat-admin.php:633
+#: ../../admin/wp-slimstat-admin.php:660
 msgid "Save Changes"
 msgstr "Guardar los cambios"
 
-#: ../../admin/wp-slimstat-admin.php:652
+#: ../../admin/wp-slimstat-admin.php:681
 msgid "Yes"
 msgstr "Si"
 
-#: ../../admin/wp-slimstat-admin.php:653
+#: ../../admin/wp-slimstat-admin.php:682
 #: ../../admin/view/wp-slimstat-reports.php:762
 msgid "No"
 msgstr "No"
 
-#: ../../admin/wp-slimstat-admin.php:693
+#: ../../admin/wp-slimstat-admin.php:722
 msgid ""
 "WARNING: a misconfigured setting and/or server environment is preventing WP "
 "SlimStat from properly tracking your visitors. Please <a target=\"_blank\" "
@@ -124,16 +124,16 @@ msgstr ""
 "Por favor, <a target=\"_blank\" href=\"http://wordpress.org/extend/plugins/"
 "wp-slimstat/faq/\">revise las FAQs</a> para obtener más información."
 
-#: ../../admin/wp-slimstat-admin.php:713
+#: ../../admin/wp-slimstat-admin.php:742
 msgid "Definitions"
 msgstr "Definiciones"
 
-#: ../../admin/wp-slimstat-admin.php:716
+#: ../../admin/wp-slimstat-admin.php:745
 #, fuzzy
 msgid "Pageview"
 msgstr "Paginas visitadas"
 
-#: ../../admin/wp-slimstat-admin.php:716
+#: ../../admin/wp-slimstat-admin.php:745
 msgid ""
 "A request to load a single HTML file (\"page\"). This should be contrasted "
 "with a \"hit\", which refers to a request for any file from a web server. WP "
@@ -144,12 +144,12 @@ msgstr ""
 "archivo desde un servidor web. WP SLIMStat registra una visita de página "
 "cada vez que el código de seguimiento se ejecuta"
 
-#: ../../admin/wp-slimstat-admin.php:717
+#: ../../admin/wp-slimstat-admin.php:746
 #, fuzzy
 msgid "(Human) Visit"
 msgstr "Visitas humanas"
 
-#: ../../admin/wp-slimstat-admin.php:717
+#: ../../admin/wp-slimstat-admin.php:746
 msgid ""
 "A period of interaction between a visitor's browser and your website, ending "
 "when the browser is closed or when the user has been inactive on that site "
@@ -159,13 +159,13 @@ msgstr ""
 "termina cuando se cierra el navegador o cuando el usuario ha estado inactivo "
 "en ese sitio durante 30 minutos"
 
-#: ../../admin/wp-slimstat-admin.php:718 ../../admin/view/index.php:144
+#: ../../admin/wp-slimstat-admin.php:747 ../../admin/view/index.php:144
 #: ../../admin/view/right-now.php:151
 #, fuzzy
 msgid "Known Visitor"
 msgstr "Palabras clave recientes"
 
-#: ../../admin/wp-slimstat-admin.php:718
+#: ../../admin/wp-slimstat-admin.php:747
 msgid ""
 "Any user who has left a comment on your blog, and is thus identified by "
 "Wordpress as a returning visitor"
@@ -173,12 +173,12 @@ msgstr ""
 "Todo usuario que haya dejado un comentario en su blog, por lo que es "
 "identificado por Wordpress como un visitante que regresó"
 
-#: ../../admin/wp-slimstat-admin.php:719
+#: ../../admin/wp-slimstat-admin.php:748
 #, fuzzy
 msgid "Unique IP"
 msgstr "IPs Unicas"
 
-#: ../../admin/wp-slimstat-admin.php:719
+#: ../../admin/wp-slimstat-admin.php:748
 msgid ""
 "Used to differentiate between multiple requests to download a file from one "
 "internet address (IP) and requests originating from many distinct addresses; "
@@ -191,12 +191,12 @@ msgstr ""
 "dirección de Internet de donde vino una visita de página, es útil, pero no "
 "es perfecta"
 
-#: ../../admin/wp-slimstat-admin.php:720 ../../admin/wp-slimstat-admin.php:762
+#: ../../admin/wp-slimstat-admin.php:749 ../../admin/wp-slimstat-admin.php:791
 #: ../../admin/view/right-now.php:101 ../../admin/view/wp-slimstat-db.php:64
 msgid "Originating IP"
 msgstr "IP de Origen"
 
-#: ../../admin/wp-slimstat-admin.php:720
+#: ../../admin/wp-slimstat-admin.php:749
 msgid ""
 "the originating IP address of a client connecting to a web server through an "
 "HTTP proxy or load balancer"
@@ -204,12 +204,12 @@ msgstr ""
 "dirección IP de origen de un cliente que se conecta a un servidor web a "
 "través de un proxy HTTP o equilibrador de carga"
 
-#: ../../admin/wp-slimstat-admin.php:721
+#: ../../admin/wp-slimstat-admin.php:750
 #, fuzzy
 msgid "Direct Traffic"
 msgstr "Visita Directa"
 
-#: ../../admin/wp-slimstat-admin.php:721
+#: ../../admin/wp-slimstat-admin.php:750
 msgid ""
 "All those people showing up to your Web site by typing in the URL of your "
 "Web site coming or from a bookmark; some people also call this \"default "
@@ -219,12 +219,12 @@ msgstr ""
 "URL de su sitio web o que vienen de un favorito, algunas personas también "
 "llaman a esto \"tráfico por defecto\" o \"tráfico ambiente\""
 
-#: ../../admin/wp-slimstat-admin.php:722
+#: ../../admin/wp-slimstat-admin.php:751
 #, fuzzy
 msgid "Search Engine"
 msgstr "Motores de Búsqueda"
 
-#: ../../admin/wp-slimstat-admin.php:722
+#: ../../admin/wp-slimstat-admin.php:751
 msgid ""
 "Google, Yahoo, MSN, Ask, others; this bucket will include both your organic "
 "as well as your paid (PPC/SEM) traffic, so be aware of that"
@@ -232,23 +232,23 @@ msgstr ""
 "Google, Yahoo, MSN, Ask, otros; este cubo incluirá tanto su tráfico "
 "orgánico, así como por pago (PPC / SEM), así que tenga cuidado de que"
 
-#: ../../admin/wp-slimstat-admin.php:723 ../../admin/wp-slimstat-admin.php:739
+#: ../../admin/wp-slimstat-admin.php:752 ../../admin/wp-slimstat-admin.php:768
 #: ../../admin/view/right-now.php:130 ../../admin/view/wp-slimstat-db.php:45
 #, fuzzy
 msgid "Search Terms"
 msgstr "Principales Recursos"
 
-#: ../../admin/wp-slimstat-admin.php:723 ../../admin/wp-slimstat-admin.php:739
+#: ../../admin/wp-slimstat-admin.php:752 ../../admin/wp-slimstat-admin.php:768
 msgid "Keywords used by your visitors to find your website on a search engine"
 msgstr ""
 "Las palabras clave utilizadas por los visitantes para encontrar su sitio web "
 "en un buscador"
 
-#: ../../admin/wp-slimstat-admin.php:724
+#: ../../admin/wp-slimstat-admin.php:753
 msgid "SERP"
 msgstr "SERP"
 
-#: ../../admin/wp-slimstat-admin.php:724
+#: ../../admin/wp-slimstat-admin.php:753
 msgid ""
 "Short for search engine results page, the Web page that a search engine "
 "returns with the results of its search. The value shown represents your rank "
@@ -259,13 +259,13 @@ msgstr ""
 "que se muestra representa su rango (o posición) dentro de esa lista de los "
 "resultados"
 
-#: ../../admin/wp-slimstat-admin.php:725
+#: ../../admin/wp-slimstat-admin.php:754
 #: ../../admin/view/wp-slimstat-db.php:57
 #, fuzzy
 msgid "User Agent"
 msgstr "Buscadores"
 
-#: ../../admin/wp-slimstat-admin.php:725
+#: ../../admin/wp-slimstat-admin.php:754
 msgid ""
 "Any program used for accessing a website; this includes browsers, robots, "
 "spiders and any other program that was used to retrieve information from the "
@@ -275,13 +275,13 @@ msgstr ""
 "navegadores, robots, arañas y cualquier otro programa que se utiliza para "
 "recuperar información del sitio"
 
-#: ../../admin/wp-slimstat-admin.php:726
+#: ../../admin/wp-slimstat-admin.php:755
 #: ../../admin/view/wp-slimstat-db.php:61
 #, fuzzy
 msgid "Outbound Link"
 msgstr "Enlaces Salientes Recientes"
 
-#: ../../admin/wp-slimstat-admin.php:726
+#: ../../admin/wp-slimstat-admin.php:755
 msgid ""
 "A link from one domain to another is said to be outbound from its source "
 "anchor and inbound to its target. This report lists all the links to other "
@@ -291,44 +291,44 @@ msgstr ""
 "de anclaje y de entrada a su objetivo. Este informe muestra todos los "
 "enlaces a otros sitios web, seguidos por sus visitantes."
 
-#: ../../admin/wp-slimstat-admin.php:733
+#: ../../admin/wp-slimstat-admin.php:762
 msgid "Basic Filters"
 msgstr "Filtros básicos"
 
-#: ../../admin/wp-slimstat-admin.php:736
+#: ../../admin/wp-slimstat-admin.php:765
 #: ../../admin/view/wp-slimstat-db.php:42
 msgid "Browser"
 msgstr "Navegador"
 
-#: ../../admin/wp-slimstat-admin.php:736
+#: ../../admin/wp-slimstat-admin.php:765
 msgid "User agent (Firefox, Chrome, ...)"
 msgstr "Agente usuario(Firefox, Chrome, ...)"
 
-#: ../../admin/wp-slimstat-admin.php:737
+#: ../../admin/wp-slimstat-admin.php:766
 #: ../../admin/view/wp-slimstat-db.php:43
 #: ../../admin/view/wp-slimstat-reports.php:483
 msgid "Country Code"
 msgstr "Código de Pais"
 
-#: ../../admin/wp-slimstat-admin.php:737
+#: ../../admin/wp-slimstat-admin.php:766
 msgid "2-letter code (us, ru, de, it, ...)"
 msgstr "código de 2 letras (eu, ru, de, it, ...)"
 
-#: ../../admin/wp-slimstat-admin.php:738
+#: ../../admin/wp-slimstat-admin.php:767
 msgid "IP"
 msgstr "IP"
 
-#: ../../admin/wp-slimstat-admin.php:738
+#: ../../admin/wp-slimstat-admin.php:767
 msgid "Visitor's public IP address"
 msgstr "Dirección IP pública del visitante"
 
-#: ../../admin/wp-slimstat-admin.php:740
+#: ../../admin/wp-slimstat-admin.php:769
 #: ../../admin/view/wp-slimstat-db.php:46
 #: ../../admin/view/wp-slimstat-reports.php:495
 msgid "Language Code"
 msgstr "Código de Idioma"
 
-#: ../../admin/wp-slimstat-admin.php:740
+#: ../../admin/wp-slimstat-admin.php:769
 msgid ""
 "Please refer to this <a target=\"_blank\" href=\"http://msdn.microsoft.com/"
 "en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first "
@@ -338,12 +338,12 @@ msgstr ""
 "en-us/library/ee825488(v=cs.20).aspx\">págna de cultura del lenguaje</a> "
 "(primera columna) para más información"
 
-#: ../../admin/wp-slimstat-admin.php:741
+#: ../../admin/wp-slimstat-admin.php:770
 #: ../../admin/view/wp-slimstat-db.php:47
 msgid "Operating System"
 msgstr "Sistema Operativo"
 
-#: ../../admin/wp-slimstat-admin.php:741
+#: ../../admin/wp-slimstat-admin.php:770
 msgid ""
 "Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="
 "\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">this "
@@ -353,31 +353,31 @@ msgstr ""
 "target=\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php"
 "\">esta página del manual</a> para obtener más información"
 
-#: ../../admin/wp-slimstat-admin.php:742
+#: ../../admin/wp-slimstat-admin.php:771
 #: ../../admin/view/wp-slimstat-db.php:48
 msgid "Permalink"
 msgstr "Enlace Permanente"
 
-#: ../../admin/wp-slimstat-admin.php:742
+#: ../../admin/wp-slimstat-admin.php:771
 msgid "URL accessed on your site"
 msgstr "URL visitada en su sitio"
 
-#: ../../admin/wp-slimstat-admin.php:743
+#: ../../admin/wp-slimstat-admin.php:772
 #: ../../admin/view/wp-slimstat-db.php:50
 msgid "Referer"
 msgstr "Referido"
 
-#: ../../admin/wp-slimstat-admin.php:743
+#: ../../admin/wp-slimstat-admin.php:772
 msgid "Complete address of the referrer page"
 msgstr "Dirección completa de la página que refiere"
 
-#: ../../admin/wp-slimstat-admin.php:744
+#: ../../admin/wp-slimstat-admin.php:773
 #: ../../admin/view/wp-slimstat-db.php:51
 #, fuzzy
 msgid "Visitor's Name"
 msgstr "Visitantes"
 
-#: ../../admin/wp-slimstat-admin.php:744
+#: ../../admin/wp-slimstat-admin.php:773
 msgid ""
 "Visitors' names according to the cookie set by Wordpress after they leave a "
 "comment"
@@ -385,27 +385,27 @@ msgstr ""
 "Nombres de visitantes según la cookie establecida por Wordpress después de "
 "dejar un comentario"
 
-#: ../../admin/wp-slimstat-admin.php:752
+#: ../../admin/wp-slimstat-admin.php:781
 msgid "Advanced Filters"
 msgstr "Filtros avanzados"
 
-#: ../../admin/wp-slimstat-admin.php:755
+#: ../../admin/wp-slimstat-admin.php:784
 #: ../../admin/view/wp-slimstat-db.php:55
 #, fuzzy
 msgid "Browser Version"
 msgstr "Versión del Navegador"
 
-#: ../../admin/wp-slimstat-admin.php:755
+#: ../../admin/wp-slimstat-admin.php:784
 msgid "user agent version (9.0, 11, ...)"
 msgstr "versión del agente de usuario (9,0, 11, ...)"
 
-#: ../../admin/wp-slimstat-admin.php:756
+#: ../../admin/wp-slimstat-admin.php:785
 #: ../../admin/view/wp-slimstat-db.php:56
 #, fuzzy
 msgid "Browser Type"
 msgstr "Navegador"
 
-#: ../../admin/wp-slimstat-admin.php:756
+#: ../../admin/wp-slimstat-admin.php:785
 msgid ""
 "1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = "
 "all others"
@@ -413,22 +413,22 @@ msgstr ""
 "1 = oruga del motor de búsqueda, 2 = dispositivo móvil, 3 = lector de "
 "sindicación, 0 =a todos los demás"
 
-#: ../../admin/wp-slimstat-admin.php:757
+#: ../../admin/wp-slimstat-admin.php:786
 #: ../../admin/view/wp-slimstat-db.php:58
 msgid "Color Depth"
 msgstr "Profundidad de color"
 
-#: ../../admin/wp-slimstat-admin.php:757
+#: ../../admin/wp-slimstat-admin.php:786
 msgid "visitor's screen's color depth (8, 16, 24, ...)"
 msgstr "profundidad de colorde pantalla de visitante (8, 16, 24, ...)"
 
-#: ../../admin/wp-slimstat-admin.php:758
+#: ../../admin/wp-slimstat-admin.php:787
 #: ../../admin/view/wp-slimstat-db.php:59
 #, fuzzy
 msgid "CSS Version"
 msgstr "Versión de CSS"
 
-#: ../../admin/wp-slimstat-admin.php:758
+#: ../../admin/wp-slimstat-admin.php:787
 msgid ""
 "what CSS standard was supported by that browser (1, 2, 3 and other integer "
 "values)"
@@ -436,13 +436,13 @@ msgstr ""
 "cuál estándar CSS era soportado por ese navegador (1, 2, 3 y otros valores "
 "enteros)"
 
-#: ../../admin/wp-slimstat-admin.php:759
+#: ../../admin/wp-slimstat-admin.php:788
 #: ../../admin/view/wp-slimstat-db.php:60
 #, fuzzy
 msgid "Pageview Attributes"
 msgstr "Paginas visitadas"
 
-#: ../../admin/wp-slimstat-admin.php:759
+#: ../../admin/wp-slimstat-admin.php:788
 msgid ""
 "this field is set to <em>[pre]</em> if the resource has been accessed "
 "through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
@@ -452,36 +452,36 @@ msgstr ""
 "través de <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
 "Link_prefetching_FAQ\">Preecaptura de Enlaces</a> o técnicas similares"
 
-#: ../../admin/wp-slimstat-admin.php:760
+#: ../../admin/wp-slimstat-admin.php:789
 #: ../../admin/view/wp-slimstat-db.php:62
 msgid "Post Author"
 msgstr "Autor de la entrada(sección)"
 
-#: ../../admin/wp-slimstat-admin.php:760
+#: ../../admin/wp-slimstat-admin.php:789
 msgid "author associated to that post/page when the resource was accessed"
 msgstr "autor asociado a esa publicación/página cuando se accedió al recurso"
 
-#: ../../admin/wp-slimstat-admin.php:761
+#: ../../admin/wp-slimstat-admin.php:790
 #: ../../admin/view/wp-slimstat-db.php:63
 msgid "Post Category ID"
 msgstr "ID de la entrada(sección) de la Categoria"
 
-#: ../../admin/wp-slimstat-admin.php:761
+#: ../../admin/wp-slimstat-admin.php:790
 msgid "ID of the category/term associated to the resource, when available"
 msgstr ""
 "ID de la categoría / término asociado al recurso, cuando esté disponible"
 
-#: ../../admin/wp-slimstat-admin.php:762
+#: ../../admin/wp-slimstat-admin.php:791
 msgid "visitor's originating IP address, if available"
 msgstr "dirección IP de origen del visitante, si está disponible"
 
-#: ../../admin/wp-slimstat-admin.php:763
+#: ../../admin/wp-slimstat-admin.php:792
 #: ../../admin/view/wp-slimstat-db.php:65
 #, fuzzy
 msgid "Resource Content Type"
 msgstr "Contenidos Recientes"
 
-#: ../../admin/wp-slimstat-admin.php:763
+#: ../../admin/wp-slimstat-admin.php:792
 msgid ""
 "post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
 "post_type_archive, tag, taxonomy, category, date, author, archive, search, "
@@ -495,22 +495,22 @@ msgstr ""
 "wordpress.org/Conditional_Tags\">Etiquetas condicionales</a> página del "
 "manual para más información"
 
-#: ../../admin/wp-slimstat-admin.php:764
+#: ../../admin/wp-slimstat-admin.php:793
 #: ../../admin/view/wp-slimstat-db.php:67
 msgid "Screen Resolution"
 msgstr "Resolución de Pantalla"
 
-#: ../../admin/wp-slimstat-admin.php:764
+#: ../../admin/wp-slimstat-admin.php:793
 msgid "viewport width and height (1024x768, 800x600, ...)"
 msgstr "ancho de vista y altura (1024x768, 800x600 , ...)"
 
-#: ../../admin/wp-slimstat-admin.php:765
+#: ../../admin/wp-slimstat-admin.php:794
 #: ../../admin/view/wp-slimstat-db.php:68
 #, fuzzy
 msgid "Visit ID"
 msgstr "Visitas"
 
-#: ../../admin/wp-slimstat-admin.php:765
+#: ../../admin/wp-slimstat-admin.php:794
 msgid ""
 "generally used in conjunction with <em>is not empty</em>, identifies human "
 "visitors"
@@ -518,11 +518,11 @@ msgstr ""
 "se utiliza generalmente en conjunción con <em> no está vacío </em>, "
 "identifica los visitantes humanos"
 
-#: ../../admin/wp-slimstat-admin.php:766
+#: ../../admin/wp-slimstat-admin.php:795
 msgid "Date Filters"
 msgstr "Filtros de fecha"
 
-#: ../../admin/wp-slimstat-admin.php:766
+#: ../../admin/wp-slimstat-admin.php:795
 msgid ""
 "you can specify the timeframe by entering a number in the <em>interval</em> "
 "field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, "
@@ -533,11 +533,11 @@ msgstr ""
 "(es decir, día=1, mes=1, año=blank, intervalo=-1 establecerá un filtro de "
 "año a la fecha)"
 
-#: ../../admin/wp-slimstat-admin.php:767
+#: ../../admin/wp-slimstat-admin.php:796
 msgid "SERP Position"
 msgstr "Posición SERP"
 
-#: ../../admin/wp-slimstat-admin.php:767
+#: ../../admin/wp-slimstat-admin.php:796
 msgid ""
 "set the filter to Referer contains cd=N&, where N is the position you are "
 "looking for"
@@ -545,9 +545,10 @@ msgstr ""
 "configurar el filtro para Referer contiene cd=N&, donde N es la posición que "
 "usted está buscando"
 
-#: ../../admin/wp-slimstat-admin.php:776
+#: ../../admin/wp-slimstat-admin.php:805
+#, fuzzy
 msgid ""
-" And for keeping an eye on your visitors with <a href=\"http://slimstat."
+"And for keeping an eye on your visitors with <a href=\"http://slimstat."
 "getused.to.it/\">WP SlimStat</a>."
 msgstr ""
 "Y para mantener un ojo en sus visitantes con <a href=\"http://slimstat."
@@ -628,9 +629,8 @@ msgid "Enable Tracking"
 msgstr "Activar Seguimiento"
 
 #: ../../admin/config/index.php:21
-msgid ""
-"Turn the tracker on or off, but keep the reports accessible (which you would "
-"not have, if you just disabled the plugin)."
+#, fuzzy
+msgid "Turn the tracker on or off, but keep the reports accessible."
 msgstr ""
 "Activar el rastreador de encendido o apagado, pero conserve los informes "
 "accesibles (que no tendría, si desactivó el plugin)."
@@ -928,12 +928,13 @@ msgid "Blacklist by IP Address"
 msgstr "Direcciones IP Blacklist"
 
 #: ../../admin/config/index.php:69
+#, fuzzy
 msgid ""
 "List all the IP addresses you don't want to track, separated by commas. Each "
 "network <strong>must</strong> be defined using the <a href='http://en."
 "wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR "
-"notation</a> (i.e. <em>192.168.0.0/24</em>). If the format is incorrect, WP "
-"SlimStat may not track pageviews properly."
+"notation</a> (i.e. <em>192.168.0.0/24</em>). This filter applies both to the "
+"public IP and the originating IP, if available."
 msgstr ""
 "Enlistar todas las direcciones IP que no desea seguir, separadas por comas. "
 "Cada red <strong> debe </strong> ser definida usando el <a href='http://en."
@@ -1338,17 +1339,17 @@ msgstr "Sus tablas WP SLIMStat han sido convertidas correctamente a. InnoDB"
 msgid "records deleted from your database."
 msgstr "Registros eliminados de la base de datos."
 
-#: ../../admin/config/maintenance.php:34
+#: ../../admin/config/maintenance.php:35
 msgid "All the records were successfully deleted."
 msgstr "Todos los registros se han eliminado con éxito."
 
-#: ../../admin/config/maintenance.php:38
+#: ../../admin/config/maintenance.php:39
 msgid "Your reports were successfully restored to their default arrangement."
 msgstr ""
 "Sus informes fueron restaurados con éxito a su disposición de forma "
 "predeterminada."
 
-#: ../../admin/config/maintenance.php:45
+#: ../../admin/config/maintenance.php:46
 msgid ""
 "Congrats! WP SlimStat is now optimized for <a href=\"http://www.youtube.com/"
 "watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
@@ -1356,7 +1357,7 @@ msgstr ""
 "¡Felicidades! WP SLIMStat está ahora optimizado para <a href=\"http://www."
 "youtube.com/watch?v=ygE01sOhzz0\" target=\"_blank\"> velocidad ridícula </a>."
 
-#: ../../admin/config/maintenance.php:52
+#: ../../admin/config/maintenance.php:53
 msgid ""
 "Indexing has been successfully disabled. Enjoy the extra database space you "
 "just gained!"
@@ -1364,107 +1365,107 @@ msgstr ""
 "Indexación se ha desactivado con éxito. Disfrute del espacio de base de "
 "datos adicional ¡que acaba de ganar!"
 
-#: ../../admin/config/maintenance.php:83
+#: ../../admin/config/maintenance.php:84
 msgid "Database Information"
 msgstr "Información Base de datos"
 
-#: ../../admin/config/maintenance.php:86
+#: ../../admin/config/maintenance.php:87
 #, fuzzy
 msgid "Engine"
 msgstr "Motores de Búsqueda"
 
-#: ../../admin/config/maintenance.php:90
+#: ../../admin/config/maintenance.php:91
 msgid "switch to InnoDB"
 msgstr "cambiar a InnoDB"
 
-#: ../../admin/config/maintenance.php:101
+#: ../../admin/config/maintenance.php:102
 #, fuzzy
 msgid "records"
 msgstr "Palabras clave"
 
-#: ../../admin/config/maintenance.php:106
+#: ../../admin/config/maintenance.php:107
 msgid "Data Maintenance"
 msgstr "Mantenimiento de Datos"
 
-#: ../../admin/config/maintenance.php:109
+#: ../../admin/config/maintenance.php:110
 #, fuzzy
 msgid "Delete pageviews where"
 msgstr "Filtrar páginas visitadas dondé:"
 
-#: ../../admin/config/maintenance.php:123 ../../admin/view/index.php:17
+#: ../../admin/config/maintenance.php:124 ../../admin/view/index.php:17
 msgid "equals"
 msgstr "es igual a"
 
-#: ../../admin/config/maintenance.php:124 ../../admin/view/index.php:18
+#: ../../admin/config/maintenance.php:125 ../../admin/view/index.php:18
 msgid "is not equal to"
 msgstr "no es igual a"
 
-#: ../../admin/config/maintenance.php:125 ../../admin/view/index.php:19
+#: ../../admin/config/maintenance.php:126 ../../admin/view/index.php:19
 #, fuzzy
 msgid "contains"
 msgstr "Contiene"
 
-#: ../../admin/config/maintenance.php:126 ../../admin/view/index.php:20
+#: ../../admin/config/maintenance.php:127 ../../admin/view/index.php:20
 #, fuzzy
 msgid "does not contain"
 msgstr "No contiene"
 
-#: ../../admin/config/maintenance.php:127 ../../admin/view/index.php:21
+#: ../../admin/config/maintenance.php:128 ../../admin/view/index.php:21
 #, fuzzy
 msgid "starts with"
 msgstr "Empieza por"
 
-#: ../../admin/config/maintenance.php:128 ../../admin/view/index.php:22
+#: ../../admin/config/maintenance.php:129 ../../admin/view/index.php:22
 #, fuzzy
 msgid "ends with"
 msgstr "Acaba en"
 
-#: ../../admin/config/maintenance.php:129 ../../admin/view/index.php:23
+#: ../../admin/config/maintenance.php:130 ../../admin/view/index.php:23
 msgid "sounds like"
 msgstr "suena como"
 
-#: ../../admin/config/maintenance.php:130 ../../admin/view/index.php:24
+#: ../../admin/config/maintenance.php:131 ../../admin/view/index.php:24
 msgid "is greater than"
 msgstr "es mayor que"
 
-#: ../../admin/config/maintenance.php:131 ../../admin/view/index.php:25
+#: ../../admin/config/maintenance.php:132 ../../admin/view/index.php:25
 msgid "is less than"
 msgstr "es menor que"
 
-#: ../../admin/config/maintenance.php:132 ../../admin/view/index.php:26
+#: ../../admin/config/maintenance.php:133 ../../admin/view/index.php:26
 msgid "matches"
 msgstr "coincide"
 
-#: ../../admin/config/maintenance.php:133 ../../admin/view/index.php:27
+#: ../../admin/config/maintenance.php:134 ../../admin/view/index.php:27
 #, fuzzy
 msgid "does not match"
 msgstr "No contiene"
 
-#: ../../admin/config/maintenance.php:134 ../../admin/view/index.php:28
+#: ../../admin/config/maintenance.php:135 ../../admin/view/index.php:28
 msgid "is empty"
 msgstr "está vacío"
 
-#: ../../admin/config/maintenance.php:135 ../../admin/view/index.php:29
+#: ../../admin/config/maintenance.php:136 ../../admin/view/index.php:29
 msgid "is not empty"
 msgstr "no está vacío"
 
-#: ../../admin/config/maintenance.php:138 ../../admin/view/index.php:32
+#: ../../admin/config/maintenance.php:139 ../../admin/view/index.php:32
 #: ../../admin/view/index.php:78
 msgid "Apply"
 msgstr "Aplicar"
 
-#: ../../admin/config/maintenance.php:139
+#: ../../admin/config/maintenance.php:140
 msgid ""
 "Are you sure you want to PERMANENTLY delete these records from your database?"
 msgstr ""
 "¿Está seguro que desea eliminar PERMANENTEMENTE estos registros de su base "
 "de datos?"
 
-#: ../../admin/config/maintenance.php:144
+#: ../../admin/config/maintenance.php:145
 msgid "Empty Database"
 msgstr "Base de datos vacía"
 
-#: ../../admin/config/maintenance.php:147
+#: ../../admin/config/maintenance.php:148
 msgid ""
 "Are you sure you want to PERMANENTLY DELETE ALL the records from your "
 "database?"
@@ -1472,12 +1473,12 @@ msgstr ""
 "¿Está seguro que quiere BORRAR PERMANENTEMENTE TODOS los registros de su "
 "base de datos?"
 
-#: ../../admin/config/maintenance.php:147
+#: ../../admin/config/maintenance.php:148
 #, fuzzy
 msgid "Delete All Pageviews"
 msgstr "Paginas visitadas"
 
-#: ../../admin/config/maintenance.php:148
+#: ../../admin/config/maintenance.php:149
 msgid ""
 "Erase all the information collected so far by WP SlimStat. This operation "
 "<strong>does not</strong> reset your settings."
@@ -1485,23 +1486,23 @@ msgstr ""
 "Borrar toda la información recopilada hasta el momento por WP SLIMStat. Esta "
 "<strong> operación no </strong> restablece la configuración."
 
-#: ../../admin/config/maintenance.php:152
+#: ../../admin/config/maintenance.php:153
 #, fuzzy
 msgid "Reset Reports"
 msgstr "Informes Personalizados"
 
-#: ../../admin/config/maintenance.php:155
+#: ../../admin/config/maintenance.php:156
 msgid ""
 "Are you sure you want to restore the default arrangement of your reports?"
 msgstr ""
 "¿Está seguro de que desea restaurar la disposición por defecto de sus "
 "informes?"
 
-#: ../../admin/config/maintenance.php:155
+#: ../../admin/config/maintenance.php:156
 msgid "No Panic Button"
 msgstr "Botón No Pánico"
 
-#: ../../admin/config/maintenance.php:156
+#: ../../admin/config/maintenance.php:157
 msgid ""
 "Reset the default arrangement of your reports. Helpful when, for some "
 "reason, reports disappear from your panels."
@@ -1509,15 +1510,15 @@ msgstr ""
 "Cambiar la disposición por defecto de sus informes. Útil cuando, por alguna "
 "razón, los informes desaparecen de sus paneles."
 
-#: ../../admin/config/maintenance.php:160
+#: ../../admin/config/maintenance.php:161
 msgid "Performance"
 msgstr "Rendimiento"
 
-#: ../../admin/config/maintenance.php:163
+#: ../../admin/config/maintenance.php:164
 msgid "Improve Performance"
 msgstr "Mejorar el rendimiento"
 
-#: ../../admin/config/maintenance.php:164
+#: ../../admin/config/maintenance.php:165
 msgid ""
 "Please note that you will need about 30% more DB space to store the extra "
 "information required."
@@ -1525,11 +1526,11 @@ msgstr ""
 "Por favor, tenga en cuenta que necesitará un 30% más de espacio BD para "
 "almacenar la información adicional que se requiere."
 
-#: ../../admin/config/maintenance.php:168
+#: ../../admin/config/maintenance.php:169
 msgid "Save DB Space"
 msgstr "Guardar Espacio BD"
 
-#: ../../admin/config/maintenance.php:169
+#: ../../admin/config/maintenance.php:170
 msgid ""
 "Please note that by removing table indexes, WP SlimStat's performance will "
 "be affected."
@@ -1537,11 +1538,11 @@ msgstr ""
 "Tenga en cuenta que al eliminar los índices de tabla, el rendimiento de WP "
 "SLIMStat se verá afectado."
 
-#: ../../admin/config/maintenance.php:174
+#: ../../admin/config/maintenance.php:175
 msgid "Import and Export"
 msgstr "Importar y Exportar"
 
-#: ../../admin/config/maintenance.php:178
+#: ../../admin/config/maintenance.php:179
 msgid ""
 "Here below you can find the current configuration string for WP SlimStat. "
 "You can update your settings by pasting a new string here below and clicking "
@@ -1551,11 +1552,11 @@ msgstr ""
 "SlimStat. Puede actualizar su configuración pegando una nueva cadena aquí "
 "abajo y haciendo clic en Importar."
 
-#: ../../admin/config/maintenance.php:183
+#: ../../admin/config/maintenance.php:184
 msgid "Import"
 msgstr "Importar"
 
-#: ../../admin/config/maintenance.php:184
+#: ../../admin/config/maintenance.php:185
 msgid "Are you sure you want to OVERWRITE your current settings?"
 msgstr "¿Seguro de que desea sobrescribir la configuración actual?"
 
@@ -5264,6 +5265,7 @@ msgid "Trackbacks"
 msgstr "Trackbacks"
 
 #: ../../admin/view/wp-slimstat-reports.php:1073
+#, fuzzy
 msgid "Longest Post (ID)"
 msgstr "Visita más larga"
 
