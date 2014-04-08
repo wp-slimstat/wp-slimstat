@@ -1,0 +1,596 @@
+/* Links */
+.wrap.slimstat a{
+	outline: none;
+	text-decoration: none;
+}
+
+/* Admin Notice */
+.slimstat-notice{
+	overflow: hidden;
+}
+.slimstat-notice span{
+	float: left;
+	width: 95%;
+}
+#slimstat-hide-admin-notice{
+	float: right;
+}
+
+/* Filters */
+#slimstat-filters-post{
+	display: none;
+}
+#slimstat-filters-form{
+	background-color: #e0e0e0;
+	margin-top: 10px;
+	padding: 5px;
+	position: relative;
+}
+#slimstat-filters input.text, #slimstat-filters select{
+	vertical-align: initial;
+	width: 15%;
+}
+#slimstat-date-filters{
+	padding: 5px 5px 5px 10px;
+	position: absolute;
+	right: 5px;
+	top: 5px;
+}
+#slimstat-date-filters>a{
+	color: #fff;
+}
+#slimstat-date-filters>a:after{
+	content: "\f140";
+	font: normal 20px/1 'dashicons';
+	float: right;
+	vertical-align: bottom;
+}
+#slimstat-date-filters>a.open:after{
+	content: "\f142";
+}
+#slimstat-date-filters span{
+	background-color: #fff;
+	box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+	color: #222;
+	display: none;
+	padding: 5px 0 5px 5px;
+	position: absolute;
+	right: 0;
+	top: 30px;
+	width: 300px;
+	z-index: 120;
+}
+#slimstat-date-filters span a.slimstat-date-choice{
+	background-color: #eee;
+	display: block;
+	float: left;
+	margin: 0 5px 5px 0;
+	padding: 5px;
+	width: 135px;
+}
+#slimstat-date-filters span strong{
+	clear: both;
+	display: block;
+	font-weight: normal;
+	padding: 10px 5px 5px 0;
+	text-transform: uppercase;
+}
+#slimstat-date-filters span select, #slimstat-date-filters span input{
+	margin-bottom: 5px;
+	width: 28%;
+}
+#slimstat-date-filters span .ui-datepicker-trigger{
+	float: right;
+	margin: 2px 5px 0 0;
+}
+#slimstat-current-filters{
+	background-color: #c0c0c0;
+	color: #fff;
+	font-size: 1.1em;
+	padding: 10px 5px 8px;
+	position: relative;
+}
+#slimstat-current-filters .slimstat-remove-filter{
+	color: #fff;
+}
+#slimstat-current-filters .slimstat-filter-list{
+	margin: 0;
+	padding: 0 75px 0 0;
+}
+#slimstat-current-filters .slimstat-filter-list li{
+	display: inline;
+	margin-right: 20px;
+	text-transform: lowercase;
+}
+#slimstat-remove-all-filters{
+	position: absolute;
+	right: 5px;
+	top: 4px;
+}
+
+/* Reports: Container */
+.wrap.slimstat .meta-box-sortables{
+	margin-top: 20px;
+}
+
+/* Single Report */
+.wrap.slimstat .postbox{
+	float: left;
+	height: 285px;
+	margin-right: .5%;
+	min-width: 32.5%;
+	overflow: hidden;
+	width: 32.5%;
+}
+.wrap.slimstat .postbox.wide{
+	width:65.8%
+}
+.wrap.slimstat .postbox.tall{
+	height:661px;
+	width:100%;
+}
+
+/* Single Report: Header and Header Buttons */
+.wrap.slimstat .postbox .hndle{
+	font-size: 1.2em;
+	margin: 0;
+	padding: 5px 10px;
+}
+.wrap.slimstat .postbox.tall .hndle{
+	cursor:auto;
+}
+.slimstat-header-buttons{
+	float: right;
+	padding: 10px 10px 0;
+}
+.slimstat-tooltip-trigger.corner{
+	background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAABkSURBVHjaYpw1a9YUBgaGbCD+AsR/GRCACYg/sACJXCBWBGIvBkzAC1L1H4i9gXgRFgUfmZA48UC8EF0FExo/AYgXIPH/MWExNhGI50PZnNgUgEASEG8FYg5cCkDAB4gnAAQYAGBCD4bcPf1fAAAAAElFTkSuQmCC) 0 0 no-repeat scroll;
+	cursor: help;
+	display: block;
+	height: 7px;
+	position: absolute;
+	top: 0;
+	width: 7px;
+}
+.slimstat-tooltip-content{
+	display: none;
+}
+.wrap.slimstat .hndle .slimstat-tooltip-trigger.corner{
+	right: 0;
+}
+
+/* Single Report: Header and Header Buttons - Pagination */
+[id^=slim_] p.pagination{
+	background-color: #c0c0c0;
+	color: #fff;
+}
+[id^=slim_] p.pagination a{
+	color: #fff;
+	float: right;
+}
+[id^=slim_] p.pagination a:hover{
+	text-shadow: 0 0 3px #000;
+}
+
+/* Single Report: Inside */
+[id^=slim_] .inside{
+	height: 250px;
+	margin: 0 !important;
+	overflow: auto;
+	padding: 0 !important;
+}
+.wrap.slimstat .postbox.tall .inside{
+	height: 630px;
+}
+[id^=slim_] p{
+	border-bottom: 1px solid #ddd;
+	font-weight: 300;
+	margin: 0;
+	min-height: 20px;
+	overflow: auto;
+	padding: 5px 10px;
+	position: relative;
+	word-wrap: break-word;
+}
+[id^=slim_] p:last-child{
+	border-bottom:0;
+}
+[id^=slim_] p .slimstat-tooltip-trigger.corner{
+	-moz-transform: scaleX(-1);
+	-o-transform: scaleX(-1);
+	-webkit-transform: scaleX(-1);
+	transform: scaleX(-1);
+	filter: FlipH;
+	-ms-filter: "FlipH";
+	left: 0;
+}
+[id^=slim_] p.header{
+	background-color:#eee;
+	border-color:#a6a6a6;
+}
+[id^=slim_] p span{
+	float: right;
+}
+[id^=slim_] a:hover{
+	text-shadow: 0 0 2px #bbb;
+}
+[id^=slim_] .slimstat-row-details{
+	font-size: .9em;
+	font-weight: 300;
+	display: none;
+	margin-top: 5px;
+}
+[id^=slim_] .slimstat-row-details.expanded{
+	display: block;
+}
+[id^=slim_] .inline-icon{
+	background-color: transparent;
+	background-position: 0 0;
+	background-repeat: no-repeat;
+	display: inline-block;
+	height: 16px;
+	margin-right: 5px;
+	vertical-align: top;
+	width: 16px;
+}
+[id^=slim_] .spaced{
+	margin-left:15px;
+}
+#dashboard-widgets-wrap .whois{
+	display: none;
+}
+
+/* Single Report: Debug Message */
+.slimstat .debug{
+	background-color: #000;
+	color: #fff;
+	font-family: monospace;
+	opacity: .7;
+	position: absolute;
+	z-index: 5;
+}
+
+/* Single Report: Color Coded Entries */
+[id^=slim_] .header.is-search-engine, .is-search-engine{
+	background-color:#c1e751;
+	color:#444;
+}
+[id^=slim_] .header.is-direct, .is-direct{
+	background-color:#d0e0eb;
+	color:#111;
+}
+[id^=slim_] .header.is-known-user,.is-known-user{
+	background-color:#F1CF90;
+}
+[id^=slim_] .header.is-known-visitor,.is-known-visitor{
+	background-color:#EFFD8C;
+}
+[id^=slim_] .header.is-spam,.is-spam{
+	background-color:#AAB3AB;
+	color:#222;
+}
+[id^=slim_] p.loading{
+	font-size: 30px;
+	line-height: 4em;
+	margin-top: 40px;
+	text-align: center;
+}
+[id^=slim_] p.nodata{
+	border: 0;
+	color: #999;
+	padding-top: 75px;
+	text-align: center;
+}
+
+/* Single Report: Chart */
+#chart-legend{
+	float: right;
+	font-size: .95em;
+	margin-top: 5px;
+}
+#chart-legend td{
+	padding-top: 3px;
+	vertical-align: top;
+}
+#chart-legend td.legendLabel{
+	padding:0 5px;
+}
+#chart-placeholder{
+	height: 210px;
+	margin: 10px 1% 0;
+}
+
+/* Single Report: Modal Window */
+.ui-widget-overlay{
+	background-color: #222;
+	filter: alpha(opacity=60);
+	height: 100%;
+	opacity: .6;
+	position: fixed;
+	top: 0;
+	width: 100%;
+	z-index: 100 !important;
+}
+.ui-dialog.slimstat{
+	border: 0;
+	border-radius: 0;
+	padding: 0;
+	width: 80% !important;
+	z-index: 105 !important;
+}
+.ui-dialog.slimstat .ui-dialog-titlebar{
+	background: #4b8df8;
+	border: 0;
+	border-radius: 0;
+	color: #fff;
+	font-family: 'Open Sans', sans-serif;
+	font-size: 1.3em;
+	font-weight: normal;
+	height: 22px;
+	line-height: 1.3em;
+	margin: 0;
+	padding: 5px 10px;
+}
+.ui-dialog.slimstat .ui-dialog-titlebar-close{
+	background-color: transparent;
+	border: 0;
+	color: #fff;
+	float: right;
+	line-height: 1em;
+	padding: 0;
+}
+.ui-dialog.slimstat .ui-dialog-titlebar-close:before{
+	content:'\e803';
+	font-family: slimstat;
+}
+.ui-dialog .ui-dialog-content{
+	clear: both;
+}
+#slimstat-modal-dialog{
+	background-color: #fff;
+	display: none;
+	padding: 0;
+	width: auto;
+}
+
+/* Single Report: Right Now */
+.legend-title{float:left;padding:3px 5px 0}
+.little-color-box{border:1px solid #ccc;display:block;float:left;margin-right:5px;padding:2px 5px}
+
+/* Add-on: WP SlimStat - Dashboard Widgets */
+.wrap.slimstat #chart-legend{
+	font-size: .8em;
+	margin-top: 5px;
+	overflow: visible;
+}
+.closed .slimScrollDiv{
+	height: 0 !important;
+}
+
+/* Settings */
+#slimstat-message{
+	border: 1px solid #ccc;
+	margin: 0;
+	padding: 0 10px;
+}
+#slimstat-message p:before{
+	content: "\f339";
+	font-family: 'dashicons';
+	margin-right: 10px;
+	vertical-align: bottom;
+}
+#slimstat-message p{
+	font-size: 16px;
+	line-height: .8em;
+}
+#slimstat-message a{
+	color: #fc0;
+}
+.nav-tabs{
+	margin: 20px 0 0;
+}
+.nav-tab{
+	border-width: 1px 1px 0 !important;
+	font-size: 14px;
+	margin: 0 5px 0 0;
+	padding: 10px;
+}
+.nav-tab.nav-tab-active{
+	background-color: #fff !important;
+}
+.nav-tab a{
+	color: #444;
+	display: block;
+	text-decoration: none;
+}
+.form-table{
+	margin-top: -1px;
+}
+.form-table th{
+	padding: 15px 10px;
+}
+.form-table td.slimstat-options-section-header{
+	background-color: #c0c0c0;
+	color: #fff;
+	font-size: 16px;
+	margin-bottom: 0;
+	padding: 10px;
+}
+.form-table h3{
+	margin-top: 0;
+}
+.form-table td label{
+	font-weight: 600;
+}
+.form-table .description{
+	color: #999;
+	display: block;
+	font-style: normal;
+	margin-top: 5px;
+}
+.form-table #slimstat-filter-name, .form-table #slimstat-filter-operator, .form-table #slimstat-filter-value{
+	width: 20%;
+}
+
+/* Add-ons Page */
+.wp-list-table.slimstat-addons{
+	margin-bottom: 20px;
+}
+.wp-list-table.slimstat-addons tbody th{
+	border-left: 5px solid #ccc;
+}
+.wp-list-table.slimstat-addons th,.wp-list-table.slimstat-addons td{
+	border-bottom: 1px solid #ccc;
+}
+.wp-list-table.slimstat-addons .active th{
+	border-color: #10a062;
+	border-style: solid;
+	border-width: 0 0 0 5px;	
+}
+.wp-list-table.slimstat-addons .active td{
+	border: 0;
+}
+
+/* Edit Posts Page */
+.column-wp-slimstat{
+	text-align: center !important;
+	width: 3em;
+}
+.slimstat-icon:before{
+	content: '\f239';
+	font-family: dashicons;
+}
+
+/* RTL Support */
+.rtl #slimstat-current-filters .slimstat-filter-list{
+	padding: 0 0 0 75px;
+}
+.rtl #slimstat-current-filters .slimstat-filter-list li{
+	margin-left: 20px;
+	margin-right: 0;
+}
+.rtl #slimstat-remove-all-filters{
+	left: 5px;
+	right: inherit;
+}
+.rtl #slimstat-date-filters{
+	left: 5px;
+	right: inherit;
+}
+.rtl #slimstat-date-filters span{
+	left: 0;
+	right: inherit;
+}
+.rtl .wrap.slimstat .postbox{
+	float: right;
+}
+.rtl .slimScrollBar{
+	left: 2px !important;
+	right: inherit !important;
+}
+.rtl .slimstat-header-buttons{
+	float: left;
+}
+.rtl [id^=slim_] p.pagination a{
+	float: left;
+}
+.rtl [id^=slim_] p span{
+	float: left;
+}
+.rtl .qtip-content{
+	text-align: right;
+}
+
+/* Responsive */
+@media screen and (min-width: 1440px){
+	.wrap.slimstat .postbox{
+		min-width: 24.125%;
+		width: 24.125%;
+
+	}
+	.wrap.slimstat .postbox.wide{
+		width: 49%;
+	}
+}
+@media screen and (max-width: 1200px){
+	.wrap.slimstat .postbox .hndle{
+		font-size: 1em;
+		line-height: 1.5em;
+	}
+	.wrap.slimstat .postbox p{
+		font-size: 1em;
+		line-height: 1.7em;
+	}
+}
+
+@media screen and (max-width: 1080px){
+	.wrap.slimstat .postbox{
+		width: 49.125%;
+	}
+	.wrap.slimstat .postbox.wide{
+		width: 99%;
+	}
+}
+@media screen and (max-width: 800px){
+	.slimstat-notice span{
+		width: 90%;
+	}
+	#slimstat-filters input.text, #slimstat-filters select{
+		margin: 0 .5% 0 0;
+		width: 26%;
+	}
+	.wp-core-ui .button-secondary{
+		height: 35px;
+	}
+	#slimstat-date-filters{
+		margin-top: 5px;
+		position: relative;
+		right: inherit;
+		top: inherit;
+	}
+	.wrap.slimstat .postbox, .wrap.slimstat .postbox.wide{
+		margin: 0 0 10px;
+		width: 99.5%;
+	}
+	.wrap.slimstat .postbox  .hndle{
+		font-size: 1.4em;
+		line-height: 1em;
+	}
+	.wrap.slimstat .postbox p{
+		font-size: 1.1em;
+		line-height: 1.4em;
+	}
+
+	/* Settings */
+	.nav-tab{
+		display: block;
+		margin: 0;
+	}
+	.form-table th{
+		font-size: 1.4em;
+	}
+	 .form-table th label{
+		font-size: 1em;
+	 }
+	.form-table td{
+		padding: 10px;
+	}
+	.form-table .button-primary,.form-table .button-secondary{
+		height: 30px;
+		margin-bottom: 5px;
+		text-align: center;
+		width: 100%;
+	}
+	.form-table #slimstat-filter-name, .form-table #slimstat-filter-operator, .form-table #slimstat-filter-value{
+		width: 100%;
+	}
+}
+
+/* qTip2 v2.2.0 basic | http://qtip2.com */
+.qtip{position:absolute;left:-28000px;top:-28000px;display:none;max-width:250px;min-width:10px;line-height:1.5em;direction:ltr; box-shadow:0 0 1px 1px rgba(0, 0, 0, 0.3);padding:0}.qtip-content{position:relative;padding:5px 9px;overflow:hidden;text-align:left;word-wrap:break-word}.qtip-titlebar{position:relative;padding:5px 35px 5px 10px;overflow:hidden;border-width:0 0 1px;font-weight:700}.qtip-titlebar+.qtip-content{border-top-width:0!important}.qtip-close{position:absolute;right:-9px;top:-9px;cursor:pointer;outline:medium none;border-width:1px;border-style:solid;border-color:transparent}.qtip-titlebar .qtip-close{right:4px;top:50%;margin-top:-9px}* html .qtip-titlebar .qtip-close{top:16px}.qtip-titlebar .ui-icon,.qtip-icon .ui-icon{display:block;text-indent:-1000em;direction:ltr}.qtip-icon,.qtip-icon .ui-icon{-moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;text-decoration:none}.qtip-icon .ui-icon{width:18px;height:14px;line-height:14px;text-align:center;text-indent:0;font:400 bold 10px/13px Tahoma,sans-serif;color:inherit;background:transparent none no-repeat -100em -100em}.qtip-focus{}.qtip-hover{}.qtip-default{border-width:1px;border-style:solid;border-color:#F1D031;background-color:#FFFFA3;color:#555}.qtip-default .qtip-titlebar{background-color:#FFEF93}.qtip-default .qtip-icon{border-color:#CCC;background:#F1F1F1;color:#777}.qtip-default .qtip-titlebar .qtip-close{border-color:#AAA;color:#111} .qtip-light{background-color:#fff;border-color:#E2E2E2;color:#454545}.qtip-light .qtip-titlebar{background-color:#f1f1f1} .qtip-dark{background-color:#505050;border-color:#303030;color:#f3f3f3}.qtip-dark .qtip-titlebar{background-color:#404040}.qtip-dark .qtip-icon{border-color:#444}.qtip-dark .qtip-titlebar .ui-state-hover{border-color:#303030} .qtip-cream{background-color:#FBF7AA;border-color:#F9E98E;color:#A27D35}.qtip-cream .qtip-titlebar{background-color:#F0DE7D}.qtip-cream .qtip-close .qtip-icon{background-position:-82px 0} .qtip-red{background-color:#F78B83;border-color:#D95252;color:#912323}.qtip-red .qtip-titlebar{background-color:#F06D65}.qtip-red .qtip-close .qtip-icon{background-position:-102px 0}.qtip-red .qtip-icon{border-color:#D95252}.qtip-red .qtip-titlebar .ui-state-hover{border-color:#D95252} .qtip-green{background-color:#CAED9E;border-color:#90D93F;color:#3F6219}.qtip-green .qtip-titlebar{background-color:#B0DE78}.qtip-green .qtip-close .qtip-icon{background-position:-42px 0} .qtip-blue{background-color:#E5F6FE;border-color:#ADD9ED;color:#5E99BD}.qtip-blue .qtip-titlebar{background-color:#D0E9F5}.qtip-blue .qtip-close .qtip-icon{background-position:-2px 0}
+
+/*! jQuery UI - v1.10.3 | http://jqueryui.com */
+#ui-datepicker-div{display:none;}.ui-datepicker{background-color:#fff;border:1px solid #ccc;width:17em;padding:.2em .2em 0;display:none;}.ui-datepicker .ui-datepicker-header{position:relative;padding:.2em 0}.ui-datepicker .ui-datepicker-prev,.ui-datepicker .ui-datepicker-next{position:absolute;top:2px;width:1.8em;height:1.8em}.ui-datepicker .ui-datepicker-prev-hover,.ui-datepicker .ui-datepicker-next-hover{top:1px}.ui-datepicker .ui-datepicker-prev{left:2px}.ui-datepicker .ui-datepicker-next{right:2px}.ui-datepicker .ui-datepicker-prev-hover{left:1px}.ui-datepicker .ui-datepicker-next-hover{right:1px}.ui-datepicker .ui-datepicker-prev span,.ui-datepicker .ui-datepicker-next span{display:block;position:absolute;left:50%;margin-left:-8px;top:50%;margin-top:-8px}.ui-datepicker .ui-datepicker-title{margin:0 2.3em;line-height:1.8em;text-align:center}.ui-datepicker .ui-datepicker-title select{font-size:1em;margin:1px 0}.ui-datepicker select.ui-datepicker-month-year{width:100%}.ui-datepicker select.ui-datepicker-month,.ui-datepicker select.ui-datepicker-year{width:49%}.ui-datepicker table{width:100%;font-size:.9em;border-collapse:collapse;margin:0 0 .4em}.ui-datepicker th{padding:.7em .3em;text-align:center;font-weight:700;border:0}.ui-datepicker td{border:0;padding:1px}.ui-datepicker td span,.ui-datepicker td a{display:block;padding:.2em;text-align:right;text-decoration:none}.ui-datepicker .ui-datepicker-buttonpane{background-image:none;margin:.7em 0 0;padding:0 .2em;border-left:0;border-right:0;border-bottom:0}.ui-datepicker .ui-datepicker-buttonpane button{float:right;margin:.5em .2em .4em;cursor:pointer;padding:.2em .6em .3em;width:auto;overflow:visible}.ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current{float:left}.ui-datepicker.ui-datepicker-multi{width:auto}.ui-datepicker-multi .ui-datepicker-group{float:left}.ui-datepicker-multi .ui-datepicker-group table{width:95%;margin:0 auto .4em}.ui-datepicker-multi-2 .ui-datepicker-group{width:50%}.ui-datepicker-multi-3 .ui-datepicker-group{width:33.3%}.ui-datepicker-multi-4 .ui-datepicker-group{width:25%}.ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header,.ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header{border-left-width:0}.ui-datepicker-multi .ui-datepicker-buttonpane{clear:left}.ui-datepicker-row-break{clear:both;width:100%;font-size:0}.ui-datepicker-rtl{direction:rtl}.ui-datepicker-rtl .ui-datepicker-prev{right:2px;left:auto}.ui-datepicker-rtl .ui-datepicker-next{left:2px;right:auto}.ui-datepicker-rtl .ui-datepicker-prev:hover{right:1px;left:auto}.ui-datepicker-rtl .ui-datepicker-next:hover{left:1px;right:auto}.ui-datepicker-rtl .ui-datepicker-buttonpane{clear:right}.ui-datepicker-rtl .ui-datepicker-buttonpane button{float:left}.ui-datepicker-rtl .ui-datepicker-buttonpane button.ui-datepicker-current,.ui-datepicker-rtl .ui-datepicker-group{float:right}.ui-datepicker-rtl .ui-datepicker-group-last .ui-datepicker-header,.ui-datepicker-rtl .ui-datepicker-group-middle .ui-datepicker-header{border-right-width:0;border-left-width:1px}
+
+/* Fontello - Custom Icon Fonts for SlimStat | Uses Fontelico (C) 2012 by Fontello project, Elusive (C) 2013 by Aristeides Stathopoulos, Font Awesome (C) 2012 by Dave Gandy | http://www.fontello.com */
+@font-face{font-family:slimstat;src:url(fontello.eot),url(fontello.eot#iefix) format('embedded-opentype'),url(fontello.svg#fontello) format('svg'),url(fontello.woff) format('woff'),url(fontello.ttf) format('truetype');font-weight:400;font-style:normal}[class*=" slimstat-font-"]:before,[class^=slimstat-font-]:before{font-family:slimstat;font-style:normal;font-weight:400;speak:none;display:inline-block;text-decoration:inherit;width:1em;margin-right:.2em;text-align:center;font-variant:normal;text-transform:none;line-height:1em;margin-left:.2em;}.slimstat-font-spin1:before{content:'\e800'}.slimstat-font-clock:before{content:'\e812'}.slimstat-font-search:before{content:'\e802'}.slimstat-font-cancel:before{content:'\e803'}.slimstat-font-download:before{content:'\e804'}.slimstat-font-upload:before{content:'\e805'}.slimstat-font-download-cloud:before{content:'\e806'}.slimstat-font-upload-cloud:before{content:'\e807'}.slimstat-font-location-1:before{content:'\e808'}.slimstat-font-arrows-cw-1:before{content:'\e801'}.slimstat-font-login:before{content:'\e80a'}.slimstat-font-logout:before{content:'\e80b'}.slimstat-font-angle-left:before{content:'\e80c'}.slimstat-font-angle-right:before{content:'\e80d'}.slimstat-font-angle-double-left:before{content:'\e80e'}.slimstat-font-angle-double-right:before{content:'\e80f'}.slimstat-font-arrows-cw:before{content:'\e810'}.slimstat-font-doc:before{content:'\e811'}.slimstat-font-spin3:before{content:'\e809'}.animate-spin{-moz-animation:spin 3s infinite linear;-o-animation:spin 3s infinite linear;-webkit-animation:spin 3s infinite linear;animation:spin 3s infinite linear;display:inline-block}@-moz-keyframes spin{0%{-moz-transform:rotate(0deg);-o-transform:rotate(0deg);-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-moz-transform:rotate(359deg);-o-transform:rotate(359deg);-webkit-transform:rotate(359deg);transform:rotate(359deg)}}@-webkit-keyframes spin{0%{-moz-transform:rotate(0deg);-o-transform:rotate(0deg);-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-moz-transform:rotate(359deg);-o-transform:rotate(359deg);-webkit-transform:rotate(359deg);transform:rotate(359deg)}}@-o-keyframes spin{0%{-moz-transform:rotate(0deg);-o-transform:rotate(0deg);-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-moz-transform:rotate(359deg);-o-transform:rotate(359deg);-webkit-transform:rotate(359deg);transform:rotate(359deg)}}@-ms-keyframes spin{0%{-moz-transform:rotate(0deg);-o-transform:rotate(0deg);-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-moz-transform:rotate(359deg);-o-transform:rotate(359deg);-webkit-transform:rotate(359deg);transform:rotate(359deg)}}@keyframes spin{0%{-moz-transform:rotate(0deg);-o-transform:rotate(0deg);-webkit-transform:rotate(0deg);transform:rotate(0deg)}100%{-moz-transform:rotate(359deg);-o-transform:rotate(359deg);-webkit-transform:rotate(359deg);transform:rotate(359deg)}}
