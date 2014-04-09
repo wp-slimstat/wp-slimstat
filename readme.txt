@@ -1,4 +1,4 @@
-=== WP SlimStat ===
+﻿=== WP SlimStat ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
@@ -14,7 +14,7 @@ The most accurate real-time statistics plugin for WordPress. Visit our [official
 * Integrates with WooCommerce and other e-commerce plugins
 * Compatible with W3 Total Cache, WP SuperCache and HyperCache
 * The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
-* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet), German (TechnoViel), Italian, Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish, Swedish (Per Soderman). Is your language is missing or incomplete? [Contact Us](http://slimstat.getused.to.it/contact-us/) if you would like to share your localization.
+* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard), German (TechnoViel), Italian, Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language is missing or incomplete? [Contact Us](http://slimstat.getused.to.it/contact-us/) if you would like to share your localization.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = What are people saying about WP SlimStat? =

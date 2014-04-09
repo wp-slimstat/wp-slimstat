@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: WP SlimStat\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-03-02 22:44-0500\n"
-"PO-Revision-Date: 2014-03-02 22:44-0500\n"
+"PO-Revision-Date: 2014-04-07 21:31-0500\n"
 "Last-Translator: Get Used To IT <support@getused.to.it>\n"
 "Language-Team: Michael Bastin\n"
 "Language: fr_FR\n"
@@ -74,8 +74,9 @@ msgstr "Réglages"
 
 #: ../../admin/wp-slimstat-admin.php:410 ../../admin/wp-slimstat-admin.php:422
 #: ../../admin/wp-slimstat-admin.php:425
+#, fuzzy
 msgid "SlimStat"
-msgstr "SlimStat"
+msgstr "À propos de WP-SlimStat"
 
 #: ../../admin/wp-slimstat-admin.php:528
 msgid "Pageviews in the last 365 days"
@@ -138,7 +139,7 @@ msgid ""
 "SlimStat logs a pageview each time the tracking code is executed"
 msgstr ""
 "Une demande de chargement d'un simple fichier HTML (\"une page\"). À "
-"distinguer d'un \"hit\", qui se réfère à une requête d'un quelconquefichier "
+"distinguer d'un \"hit\", qui se réfère à une requête d'un quelconque fichier "
 "d'un serveur Web. WP SlimStat enregistre une page vue chaque fois que le "
 "code de traçage est exécuté"
 
@@ -358,7 +359,7 @@ msgstr "Référent"
 
 #: ../../admin/wp-slimstat-admin.php:743
 msgid "Complete address of the referrer page"
-msgstr "Adresse complète dune lpage référente"
+msgstr "Adresse complète de la page référente"
 
 #: ../../admin/wp-slimstat-admin.php:744
 #: ../../admin/view/wp-slimstat-db.php:51
@@ -617,13 +618,12 @@ msgstr ""
 
 #: ../../admin/config/index.php:22
 msgid "Monitor Admin Pages"
-msgstr "Traçage Pages administrateur"
+msgstr "Tracer les pages Administrateur"
 
 #: ../../admin/config/index.php:22
 msgid "Enable this option to track your users' activity within the admin."
 msgstr ""
-"Activez cette option si vous souhaitez suivre l'activité de vos utilisateurs "
-"dans l'admin."
+"Activez cette option pour suivre l'activité de vos utilisateurs dans l'admin."
 
 #: ../../admin/config/index.php:23
 msgid "Enable Spy Mode"
@@ -635,10 +635,10 @@ msgid ""
 "etc. If Tracking Mode is set to Javascript, this data will be tracked "
 "regardless of which value you set for this option."
 msgstr ""
-"Permet de recueillir des données sur les résolutions d'écran, les liens "
-"sortants, les téléchargements et autres informations pertinentes. Si le mode "
-"Javascript est activé, ces informations seront suivies indépendamment de la "
-"valeur que vous définissez pour cette option."
+"Collecte des données sur les résolutions d'écran, les liens sortants, les "
+"téléchargements et autres informations pertinentes. Si le mode Javascript "
+"est activé, ces informations seront suivies indépendamment de la valeur "
+"définie pour cette option."
 
 #: ../../admin/config/index.php:24
 msgid "Tracking Mode"
@@ -655,8 +655,8 @@ msgstr ""
 "Activez cette fonction si vous utilisez un plugin de mise en cache (W3 Total "
 "Cache et autres). WP SlimStat va se comporter un peu comme Google Analytics, "
 "et les visiteurs dont le navigateur ne supporte pas le Javascript seront "
-"ignorés. D'autant plus qu'ainsi, <strong>la plupart</strong> des spammeurs, "
-"moteurs de recherche et autres robots ne seront pas suivis."
+"ignorés. En outre, <strong>la plupart</strong> des spammeurs, moteurs de "
+"recherche et autres robots ne seront pas suivis."
 
 #: ../../admin/config/index.php:24
 msgid "Javascript"
@@ -680,7 +680,7 @@ msgid ""
 "admin bar (if visible)."
 msgstr ""
 "Choisir entre un menu d'administration dans la barre latérale de WordPress "
-"ou un menu déroulant dans la barre d'administrateur."
+"ou un menu déroulant dans la barre supérieure (si elle est affichée)."
 
 #: ../../admin/config/index.php:27
 msgid "Side Menu"
@@ -692,14 +692,14 @@ msgstr "Barre d'Administration"
 
 #: ../../admin/config/index.php:28
 msgid "Add Stats to Posts"
-msgstr "Etendre les Stats aux Posts"
+msgstr "Etendre les Stats aux articles"
 
 #: ../../admin/config/index.php:28
 msgid ""
 "Add a new column to the Edit Posts screen, with the number of hits per post."
 msgstr ""
-"Ajoute une nouvelle colonne à l'écran d'édition des posts, en indiquant le "
-"nombre de visites par Post (peut ralentir le rendu des pages)."
+"Ajoute une colonne à l'écran d'édition des articles, en indiquant le nombre "
+"de visites par article (peut ralentir le rendu des pages)."
 
 #: ../../admin/config/index.php:30
 msgid "Database"
@@ -809,9 +809,9 @@ msgid ""
 "Load all the reports dynamically. It makes the reports render faster, but it "
 "increases the load on your server."
 msgstr ""
-"Utiliser Ajax pour charger toutes les statistiques dynamiquement. Fait "
-"apparaitre les rapports plus rapidement, mais consomme plus de ressources "
-"sur votre serveur."
+"Utiliser Ajax pour charger dynamiquement les statistiques. Fait apparaitre "
+"les rapports plus rapidement, mais consomme plus de ressources sur le "
+"serveur."
 
 #: ../../admin/config/index.php:55
 msgid "Expand Details"
@@ -1154,7 +1154,7 @@ msgstr ""
 
 #: ../../admin/config/index.php:153
 msgid "Read access: username not found"
-msgstr "Accès lecture : username inéxistant"
+msgstr "Accès lecture : username inexistant"
 
 #: ../../admin/config/index.php:166 ../../admin/config/index.php:197
 msgid ""
@@ -1168,7 +1168,7 @@ msgstr ""
 
 #: ../../admin/config/index.php:184
 msgid "Config access: username not found"
-msgstr "Accès configuration : username inéxistant"
+msgstr "Accès configuration : username inexistant"
 
 #: ../../admin/config/index.php:208
 msgid "Detect Smoothing"
@@ -1854,22 +1854,22 @@ msgstr "Arabe"
 # Arabic (United Arab Emirates)
 #: ../../admin/lang/dynamic_strings.php:75
 msgid "l-ar-ae"
-msgstr "Arabe (Ã‰mirats arabes unis)"
+msgstr "Arabe (Émirats arabes unis)"
 
 # Arabic (Bahrain)
 #: ../../admin/lang/dynamic_strings.php:76
 msgid "l-ar-bh"
-msgstr "Arabe (BahreÃ¯n)"
+msgstr "Arabe (Bahreïn)"
 
 # Arabic (Algeria)
 #: ../../admin/lang/dynamic_strings.php:77
 msgid "l-ar-dz"
-msgstr "Arabe (AlgÃ©rie)"
+msgstr "Arabe (Algérie)"
 
 # Arabic (Egypt)
 #: ../../admin/lang/dynamic_strings.php:78
 msgid "l-ar-eg"
-msgstr "Arabe (Ã‰gypte)"
+msgstr "Arabe (Égypte)"
 
 # Arabic (Iraq)
 #: ../../admin/lang/dynamic_strings.php:79
@@ -1884,7 +1884,7 @@ msgstr "Arabe (Jordanie)"
 # Arabic (Kuwait)
 #: ../../admin/lang/dynamic_strings.php:81
 msgid "l-ar-kw"
-msgstr "Arabe (KoweÃ¯t)"
+msgstr "Arabe (Koweït)"
 
 # Arabic (Lebanon)
 #: ../../admin/lang/dynamic_strings.php:82
@@ -1929,23 +1929,23 @@ msgstr "Arabe (Tunisie)"
 # Arabic (Yemen)
 #: ../../admin/lang/dynamic_strings.php:90
 msgid "l-ar-ye"
-msgstr "Arabe (YÃ©men)"
+msgstr "Arabe (Yémen)"
 
 # 	Azerbaijani
 #: ../../admin/lang/dynamic_strings.php:91
 msgid "l-az"
-msgstr "AzÃ©ri"
+msgstr "Azéri"
 
 # 	Azerbaijani
 #: ../../admin/lang/dynamic_strings.php:92
 #, fuzzy
 msgid "l-az-az"
-msgstr "AzÃ©ri"
+msgstr "Azéri"
 
 # 	Belarusian
 #: ../../admin/lang/dynamic_strings.php:93
 msgid "l-be"
-msgstr "BiÃ©lorusse"
+msgstr "Biélorusse"
 
 # 	Belarusian
 #: ../../admin/lang/dynamic_strings.php:94
@@ -1982,7 +1982,7 @@ msgstr "Catalan; Valencien"
 # 	Czech
 #: ../../admin/lang/dynamic_strings.php:100
 msgid "l-cs"
-msgstr "TchÃ¨que"
+msgstr "Tchèque"
 
 # 	Czech
 #: ../../admin/lang/dynamic_strings.php:101
@@ -2060,7 +2060,7 @@ msgstr "Grec moderne"
 # Greek (Greece)
 #: ../../admin/lang/dynamic_strings.php:115
 msgid "l-el-gr"
-msgstr "Grec moderne (GrÃ¨ce)"
+msgstr "Grec moderne (Grèce)"
 
 # 	English
 #: ../../admin/lang/dynamic_strings.php:116
@@ -2101,12 +2101,12 @@ msgstr "Anglais (Irlande)"
 # English (Jamaica)
 #: ../../admin/lang/dynamic_strings.php:123
 msgid "l-en-jm"
-msgstr "Anglais (JamaÃ¯que)"
+msgstr "Anglais (Jamaïque)"
 
 # English (New Zealand)
 #: ../../admin/lang/dynamic_strings.php:124
 msgid "l-en-nz"
-msgstr "Anglais (Nouvelle-ZÃ©lande)"
+msgstr "Anglais (Nouvelle-Zélande)"
 
 # 	English
 #: ../../admin/lang/dynamic_strings.php:125
@@ -2117,12 +2117,12 @@ msgstr "Anglais"
 # English (Trinidad)
 #: ../../admin/lang/dynamic_strings.php:126
 msgid "l-en-tt"
-msgstr "Anglais (TrinitÃ©)"
+msgstr "Anglais (Trinité)"
 
 # English (United States)
 #: ../../admin/lang/dynamic_strings.php:127
 msgid "l-en-us"
-msgstr "Anglais (Ã‰tats-Unis)"
+msgstr "Anglais (États-Unis)"
 
 # English (South Africa)
 #: ../../admin/lang/dynamic_strings.php:128
@@ -2138,7 +2138,7 @@ msgstr "Anglais (Afrique du Sud)"
 # 	Esperanto
 #: ../../admin/lang/dynamic_strings.php:130
 msgid "l-eo"
-msgstr "EspÃ©ranto"
+msgstr "Espéranto"
 
 # 	Spanish; Castilian
 #: ../../admin/lang/dynamic_strings.php:131
@@ -2173,12 +2173,12 @@ msgstr "Espagnol (Costa Rica)"
 # Spanish (Dominican Republic)
 #: ../../admin/lang/dynamic_strings.php:137
 msgid "l-es-do"
-msgstr "Espagnol (RÃ©publique dominicaine)"
+msgstr "Espagnol (République dominicaine)"
 
 # Spanish (Ecuador)
 #: ../../admin/lang/dynamic_strings.php:138
 msgid "l-es-ec"
-msgstr "Espagnol (Ã‰quateur)"
+msgstr "Espagnol (Équateur)"
 
 # Spanish (Spain)
 #: ../../admin/lang/dynamic_strings.php:139
@@ -2213,7 +2213,7 @@ msgstr "Espagnol (Panama)"
 # Spanish (Peru)
 #: ../../admin/lang/dynamic_strings.php:145
 msgid "l-es-pe"
-msgstr "Espagnol (PÃ©rou)"
+msgstr "Espagnol (Pérou)"
 
 # Spanish (Puerto Rico)
 #: ../../admin/lang/dynamic_strings.php:146
@@ -2287,49 +2287,49 @@ msgstr "Finnois"
 # 	Faroese
 #: ../../admin/lang/dynamic_strings.php:159
 msgid "l-fo"
-msgstr "FÃ©ringien"
+msgstr "Féringien"
 
 # 	Faroese
 #: ../../admin/lang/dynamic_strings.php:160
 #, fuzzy
 msgid "l-fo-fo"
-msgstr "FÃ©ringien"
+msgstr "Féringien"
 
 # 	French
 #: ../../admin/lang/dynamic_strings.php:161
 msgid "l-fr"
-msgstr "FranÃ§ais"
+msgstr "Français"
 
 # French (Belgium)
 #: ../../admin/lang/dynamic_strings.php:162
 msgid "l-fr-be"
-msgstr "FranÃ§ais (Belgique)"
+msgstr "Français (Belgique)"
 
 # French (Canada)
 #: ../../admin/lang/dynamic_strings.php:163
 msgid "l-fr-ca"
-msgstr "FranÃ§ais (Canada)"
+msgstr "Français (Canada)"
 
 # French (Switzerland)
 #: ../../admin/lang/dynamic_strings.php:164
 msgid "l-fr-ch"
-msgstr "FranÃ§ais (Suisse)"
+msgstr "Français (Suisse)"
 
 # French (France)
 #: ../../admin/lang/dynamic_strings.php:165
 msgid "l-fr-fr"
-msgstr "FranÃ§ais (France)"
+msgstr "Français (France)"
 
 # French (Luxembourg)
 #: ../../admin/lang/dynamic_strings.php:166
 msgid "l-fr-lu"
-msgstr "FranÃ§ais (Luxembourg)"
+msgstr "Français (Luxembourg)"
 
 # French (Switzerland)
 #: ../../admin/lang/dynamic_strings.php:167
 #, fuzzy
 msgid "l-fr-mc"
-msgstr "FranÃ§ais (Suisse)"
+msgstr "Français (Suisse)"
 
 # 	Galician
 #: ../../admin/lang/dynamic_strings.php:168
@@ -2344,34 +2344,34 @@ msgstr "Espagnol ; Castillan"
 # 	Gujarati
 #: ../../admin/lang/dynamic_strings.php:170
 msgid "l-gu"
-msgstr "GujarÃ¢tÃ®"
+msgstr "Gujarati"
 
 # 	Gujarati
 #: ../../admin/lang/dynamic_strings.php:171
 #, fuzzy
 msgid "l-gu-in"
-msgstr "GujarÃ¢tÃ®"
+msgstr "Gujarati"
 
 # 	Hebrew
 #: ../../admin/lang/dynamic_strings.php:172
 msgid "l-he"
-msgstr "HÃ©breu"
+msgstr "Hébreu"
 
 # Hebrew (Israel)
 #: ../../admin/lang/dynamic_strings.php:173
 msgid "l-he-il"
-msgstr "HÃ©breu (IsraÃ«l)"
+msgstr "Hébreu (Israël)"
 
 # 	Hindi
 #: ../../admin/lang/dynamic_strings.php:174
 msgid "l-hi"
-msgstr "HindÃ®"
+msgstr "Hindi"
 
 # 	Hindi
 #: ../../admin/lang/dynamic_strings.php:175
 #, fuzzy
 msgid "l-hi-in"
-msgstr "HindÃ®"
+msgstr "Hindi"
 
 # 	Croatian
 #: ../../admin/lang/dynamic_strings.php:176
@@ -2403,24 +2403,24 @@ msgstr "Hongrois (Hongrie)"
 # 	Armenian
 #: ../../admin/lang/dynamic_strings.php:181
 msgid "l-hy"
-msgstr "ArmÃ©nien"
+msgstr "Arménien"
 
 # 	Armenian
 #: ../../admin/lang/dynamic_strings.php:182
 #, fuzzy
 msgid "l-hy-am"
-msgstr "ArmÃ©nien"
+msgstr "Arménien"
 
 # 	Indonesian
 #: ../../admin/lang/dynamic_strings.php:183
 msgid "l-id"
-msgstr "IndonÃ©sien"
+msgstr "Indonésien"
 
 # 	Indonesian
 #: ../../admin/lang/dynamic_strings.php:184
 #, fuzzy
 msgid "l-id-id"
-msgstr "IndonÃ©sien"
+msgstr "Indonésien"
 
 # 	Icelandic
 #: ../../admin/lang/dynamic_strings.php:185
@@ -2461,13 +2461,13 @@ msgstr "Japonais"
 # 	Georgian
 #: ../../admin/lang/dynamic_strings.php:192
 msgid "l-ka"
-msgstr "GÃ©orgien"
+msgstr "Géorgien"
 
 # 	Georgian
 #: ../../admin/lang/dynamic_strings.php:193
 #, fuzzy
 msgid "l-ka-ge"
-msgstr "GÃ©orgien"
+msgstr "Géorgien"
 
 # 	Kazakh
 #: ../../admin/lang/dynamic_strings.php:194
@@ -2494,24 +2494,24 @@ msgstr "kannada"
 # 	Korean
 #: ../../admin/lang/dynamic_strings.php:198
 msgid "l-ko"
-msgstr "CorÃ©en"
+msgstr "Coréen"
 
 # Korean (Republic of Korea)
 #: ../../admin/lang/dynamic_strings.php:199
 msgid "l-ko-kr"
-msgstr "CorÃ©en (RÃ©publique de CorÃ©e)"
+msgstr "Coréen (République de Corée)"
 
 # 	Korean
 #: ../../admin/lang/dynamic_strings.php:200
 #, fuzzy
 msgid "l-kok"
-msgstr "CorÃ©en"
+msgstr "Coréen"
 
 # 	Korean
 #: ../../admin/lang/dynamic_strings.php:201
 #, fuzzy
 msgid "l-kok-in"
-msgstr "CorÃ©en"
+msgstr "Coréen"
 
 # 	Kirghiz; Kyrgyz
 #: ../../admin/lang/dynamic_strings.php:202
@@ -2548,24 +2548,24 @@ msgstr "Letton"
 # 	Maori
 #: ../../admin/lang/dynamic_strings.php:208
 msgid "l-mi"
-msgstr "MÄori"
+msgstr "Maori"
 
 # 	Maori
 #: ../../admin/lang/dynamic_strings.php:209
 #, fuzzy
 msgid "l-mi-nz"
-msgstr "MÄori"
+msgstr "Maori"
 
 # 	Macedonian
 #: ../../admin/lang/dynamic_strings.php:210
 msgid "l-mk"
-msgstr "MacÃ©donien"
+msgstr "Macédonien"
 
 # 	Macedonian
 #: ../../admin/lang/dynamic_strings.php:211
 #, fuzzy
 msgid "l-mk-ml"
-msgstr "MacÃ©donien"
+msgstr "Macédonien"
 
 # 	Mongolian
 #: ../../admin/lang/dynamic_strings.php:212
@@ -2581,13 +2581,13 @@ msgstr "Mongol"
 # 	Marathi
 #: ../../admin/lang/dynamic_strings.php:214
 msgid "l-mr"
-msgstr "MarÃ¢thÃ®"
+msgstr "Marathi"
 
 # 	Marathi
 #: ../../admin/lang/dynamic_strings.php:215
 #, fuzzy
 msgid "l-mr-in"
-msgstr "MarÃ¢thÃ®"
+msgstr "Marathi"
 
 # 	Malay
 #: ../../admin/lang/dynamic_strings.php:216
@@ -2617,37 +2617,37 @@ msgstr "Maltais"
 msgid "l-mt-mt"
 msgstr "Maltais"
 
-# 	Norwegian BokmÃ¥l
+# 	Norwegian Bokmål
 #: ../../admin/lang/dynamic_strings.php:221
 msgid "l-nb"
-msgstr "NorvÃ©gien BokmÃ¥l"
+msgstr "Norvégien Bokmål"
 
-# 	Norwegian BokmÃ¥l
+# 	Norwegian Bokmål
 #: ../../admin/lang/dynamic_strings.php:222
 #, fuzzy
 msgid "l-nb-no"
-msgstr "NorvÃ©gien BokmÃ¥l"
+msgstr "Norvégien Bokmål"
 
 # 	Dutch; Flemish
 #: ../../admin/lang/dynamic_strings.php:223
 msgid "l-nl"
-msgstr "NÃ©erlandais; Flamand"
+msgstr "Néerlandais; Flamand"
 
 # Dutch (Belgium)
 #: ../../admin/lang/dynamic_strings.php:224
 msgid "l-nl-be"
-msgstr "NÃ©erlandais (Belgique)"
+msgstr "Néerlandais (Belgique)"
 
 # Dutch (Netherlands)
 #: ../../admin/lang/dynamic_strings.php:225
 msgid "l-nl-nl"
-msgstr "NÃ©erlandais (Pays-bas)"
+msgstr "Néerlandais (Pays-bas)"
 
 # 	Norwegian Nynorsk
 #: ../../admin/lang/dynamic_strings.php:226
 #, fuzzy
 msgid "l-nn-no"
-msgstr "NorvÃ©gien Nynorsk"
+msgstr "Norvégien Nynorsk"
 
 #: ../../admin/lang/dynamic_strings.php:227
 msgid "l-ns"
@@ -2660,13 +2660,13 @@ msgstr "l-ns-za"
 # 	Panjabi; Punjabi
 #: ../../admin/lang/dynamic_strings.php:229
 msgid "l-pa"
-msgstr "PanjÃ¢bÃ®"
+msgstr "Panjabi"
 
 # 	Panjabi; Punjabi
 #: ../../admin/lang/dynamic_strings.php:230
 #, fuzzy
 msgid "l-pa-in"
-msgstr "PanjÃ¢bÃ®"
+msgstr "Panjabi"
 
 # 	Polish
 #: ../../admin/lang/dynamic_strings.php:231
@@ -2697,7 +2697,7 @@ msgstr "Portugais"
 # Portuguese (Brazil)
 #: ../../admin/lang/dynamic_strings.php:236
 msgid "l-pt-br"
-msgstr "Portugais (BrÃ©sil)"
+msgstr "Portugais (Brésil)"
 
 # 	Portuguese
 #: ../../admin/lang/dynamic_strings.php:237
@@ -2745,7 +2745,7 @@ msgstr "Russe"
 # Russian (Russia)
 #: ../../admin/lang/dynamic_strings.php:245
 msgid "l-ru-ru"
-msgstr "Russe (FÃ©dÃ©ration de Russie)"
+msgstr "Russe (Fédération de Russie)"
 
 # 	Sanskrit
 #: ../../admin/lang/dynamic_strings.php:246
@@ -2795,13 +2795,13 @@ msgstr "Slovaque"
 # 	Slovenian
 #: ../../admin/lang/dynamic_strings.php:254
 msgid "l-sl"
-msgstr "SlovÃ¨ne"
+msgstr "Slovène"
 
 # 	Slovenian
 #: ../../admin/lang/dynamic_strings.php:255
 #, fuzzy
 msgid "l-sl-si"
-msgstr "SlovÃ¨ne"
+msgstr "Slovène"
 
 # 	Albanian
 #: ../../admin/lang/dynamic_strings.php:256
@@ -2829,17 +2829,17 @@ msgstr "Serbe"
 # 	Swedish
 #: ../../admin/lang/dynamic_strings.php:260
 msgid "l-sv"
-msgstr "SuÃ©dois"
+msgstr "Suédois"
 
 # Swedish (Finland)
 #: ../../admin/lang/dynamic_strings.php:261
 msgid "l-sv-fi"
-msgstr "SuÃ©dois (Finlande)"
+msgstr "Suédois (Finlande)"
 
 # Swedish (Sweden)
 #: ../../admin/lang/dynamic_strings.php:262
 msgid "l-sv-se"
-msgstr "SuÃ©dois (SuÃ¨de)"
+msgstr "Suédois (Suède)"
 
 # 	Swahili
 #: ../../admin/lang/dynamic_strings.php:263
@@ -2866,18 +2866,18 @@ msgstr "Tamoul"
 # 	Telugu
 #: ../../admin/lang/dynamic_strings.php:267
 msgid "l-te"
-msgstr "TÃ©lougou"
+msgstr "Télougou"
 
 # 	Telugu
 #: ../../admin/lang/dynamic_strings.php:268
 #, fuzzy
 msgid "l-te-in"
-msgstr "TÃ©lougou"
+msgstr "Télougou"
 
 # 	Thai
 #: ../../admin/lang/dynamic_strings.php:269
 msgid "l-th"
-msgstr "ThaÃ¯"
+msgstr "Thaï"
 
 # 	Thai
 #: ../../admin/lang/dynamic_strings.php:270
@@ -3013,7 +3013,7 @@ msgstr "Chinois (Singapour)"
 # Chinese (Taiwan)
 #: ../../admin/lang/dynamic_strings.php:295
 msgid "l-zh-tw"
-msgstr "Chinois (TaÃ¯wan)"
+msgstr "Chinois (Taïwan)"
 
 # 	Zulu
 #: ../../admin/lang/dynamic_strings.php:296
@@ -5663,12 +5663,12 @@ msgstr "Moyenne des pages vues"
 # 	Azerbaijani
 #, fuzzy
 #~ msgid "l-az-AZ"
-#~ msgstr "AzÃ©ri"
+#~ msgstr "Azéri"
 
 # 	Belarusian
 #, fuzzy
 #~ msgid "l-be-BY"
-#~ msgstr "BiÃ©lorusse"
+#~ msgstr "Biélorusse"
 
 # 	Bulgarian
 #, fuzzy
@@ -5683,7 +5683,7 @@ msgstr "Moyenne des pages vues"
 # 	Czech
 #, fuzzy
 #~ msgid "l-cs-CZ"
-#~ msgstr "TchÃ¨que"
+#~ msgstr "Tchèque"
 
 # 	Welsh
 #, fuzzy
@@ -5913,37 +5913,37 @@ msgstr "Moyenne des pages vues"
 # 	Faroese
 #, fuzzy
 #~ msgid "l-fo-FO"
-#~ msgstr "FÃ©ringien"
+#~ msgstr "Féringien"
 
 # 	French
 #, fuzzy
 #~ msgid "l-fr-BE"
-#~ msgstr "FranÃ§ais"
+#~ msgstr "Français"
 
 # 	French
 #, fuzzy
 #~ msgid "l-fr-CA"
-#~ msgstr "FranÃ§ais"
+#~ msgstr "Français"
 
 # 	French
 #, fuzzy
 #~ msgid "l-fr-CH"
-#~ msgstr "FranÃ§ais"
+#~ msgstr "Français"
 
 # 	French
 #, fuzzy
 #~ msgid "l-fr-FR"
-#~ msgstr "FranÃ§ais"
+#~ msgstr "Français"
 
 # 	French
 #, fuzzy
 #~ msgid "l-fr-LU"
-#~ msgstr "FranÃ§ais"
+#~ msgstr "Français"
 
 # 	French
 #, fuzzy
 #~ msgid "l-fr-MC"
-#~ msgstr "FranÃ§ais"
+#~ msgstr "Français"
 
 # 	Galician
 #, fuzzy
@@ -5953,17 +5953,17 @@ msgstr "Moyenne des pages vues"
 # 	Gujarati
 #, fuzzy
 #~ msgid "l-gu-IN"
-#~ msgstr "GujarÃ¢tÃ®"
+#~ msgstr "Gujarati"
 
 # 	Hebrew
 #, fuzzy
 #~ msgid "l-he-IL"
-#~ msgstr "HÃ©breu"
+#~ msgstr "Hébreu"
 
 # 	Hindi
 #, fuzzy
 #~ msgid "l-hi-IN"
-#~ msgstr "HindÃ®"
+#~ msgstr "Hindi"
 
 # 	Croatian
 #, fuzzy
@@ -5983,12 +5983,12 @@ msgstr "Moyenne des pages vues"
 # 	Armenian
 #, fuzzy
 #~ msgid "l-hy-AM"
-#~ msgstr "ArmÃ©nien"
+#~ msgstr "Arménien"
 
 # 	Indonesian
 #, fuzzy
 #~ msgid "l-id-ID"
-#~ msgstr "IndonÃ©sien"
+#~ msgstr "Indonésien"
 
 # 	Icelandic
 #, fuzzy
@@ -6013,7 +6013,7 @@ msgstr "Moyenne des pages vues"
 # 	Georgian
 #, fuzzy
 #~ msgid "l-ka-GE"
-#~ msgstr "GÃ©orgien"
+#~ msgstr "Géorgien"
 
 # 	Kazakh
 #, fuzzy
@@ -6028,12 +6028,12 @@ msgstr "Moyenne des pages vues"
 # 	Korean
 #, fuzzy
 #~ msgid "l-ko-KR"
-#~ msgstr "CorÃ©en"
+#~ msgstr "Coréen"
 
 # 	Korean
 #, fuzzy
 #~ msgid "l-kok-IN"
-#~ msgstr "CorÃ©en"
+#~ msgstr "Coréen"
 
 # 	Kirghiz; Kyrgyz
 #, fuzzy
@@ -6053,12 +6053,12 @@ msgstr "Moyenne des pages vues"
 # 	Maori
 #, fuzzy
 #~ msgid "l-mi-NZ"
-#~ msgstr "MÄori"
+#~ msgstr "Maori"
 
 # 	Macedonian
 #, fuzzy
 #~ msgid "l-mk-MK"
-#~ msgstr "MacÃ©donien"
+#~ msgstr "Macédonien"
 
 # 	Mongolian
 #, fuzzy
@@ -6068,7 +6068,7 @@ msgstr "Moyenne des pages vues"
 # 	Marathi
 #, fuzzy
 #~ msgid "l-mr-IN"
-#~ msgstr "MarÃ¢thÃ®"
+#~ msgstr "Marathi"
 
 # 	Malay
 #, fuzzy
@@ -6085,25 +6085,25 @@ msgstr "Moyenne des pages vues"
 #~ msgid "l-mt-MT"
 #~ msgstr "Maltais"
 
-# 	Norwegian BokmÃ¥l
+# 	Norwegian Bokmål
 #, fuzzy
 #~ msgid "l-nb-NO"
-#~ msgstr "NorvÃ©gien BokmÃ¥l"
+#~ msgstr "Norvégien Bokmål"
 
 # 	Dutch; Flemish
 #, fuzzy
 #~ msgid "l-nl-BE"
-#~ msgstr "NÃ©erlandais; Flamand"
+#~ msgstr "Néerlandais; Flamand"
 
 # 	Dutch; Flemish
 #, fuzzy
 #~ msgid "l-nl-NL"
-#~ msgstr "NÃ©erlandais; Flamand"
+#~ msgstr "Néerlandais; Flamand"
 
 # 	Panjabi; Punjabi
 #, fuzzy
 #~ msgid "l-pa-IN"
-#~ msgstr "PanjÃ¢bÃ®"
+#~ msgstr "Panjabi"
 
 # 	Polish
 #, fuzzy
@@ -6178,7 +6178,7 @@ msgstr "Moyenne des pages vues"
 # 	Slovenian
 #, fuzzy
 #~ msgid "l-sl-SI"
-#~ msgstr "SlovÃ¨ne"
+#~ msgstr "Slovène"
 
 # 	Albanian
 #, fuzzy
@@ -6193,12 +6193,12 @@ msgstr "Moyenne des pages vues"
 # 	Swedish
 #, fuzzy
 #~ msgid "l-sv-FI"
-#~ msgstr "SuÃ©dois"
+#~ msgstr "Suédois"
 
 # 	Swedish
 #, fuzzy
 #~ msgid "l-sv-SE"
-#~ msgstr "SuÃ©dois"
+#~ msgstr "Suédois"
 
 # 	Swahili
 #, fuzzy
@@ -6213,12 +6213,12 @@ msgstr "Moyenne des pages vues"
 # 	Telugu
 #, fuzzy
 #~ msgid "l-te-IN"
-#~ msgstr "TÃ©lougou"
+#~ msgstr "Télougou"
 
 # 	Thai
 #, fuzzy
 #~ msgid "l-th-TH"
-#~ msgstr "ThaÃ¯"
+#~ msgstr "Thaï"
 
 # 	Tagalog
 #, fuzzy
@@ -6542,11 +6542,11 @@ msgstr "Moyenne des pages vues"
 
 # 	Bengali
 #~ msgid "l-bn"
-#~ msgstr "BengalÃ®"
+#~ msgstr "Bengali"
 
 # 	Tibetan
 #~ msgid "l-bo"
-#~ msgstr "TibÃ©tain"
+#~ msgstr "Tibétain"
 
 # 	Breton
 #~ msgid "l-br"
@@ -6554,7 +6554,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Chechen
 #~ msgid "l-ce"
-#~ msgstr "TchÃ©tchÃ¨ne"
+#~ msgstr "Tchétchène"
 
 # 	Corsican
 #~ msgid "l-co"
@@ -6590,7 +6590,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Scottish Gaelic; Gaelic
 #~ msgid "l-gd"
-#~ msgstr "Ã‰cossais"
+#~ msgstr "Écossais"
 
 # 	Guarani
 #~ msgid "l-gn"
@@ -6606,7 +6606,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Haitian; Haitian Creole
 #~ msgid "l-ht"
-#~ msgstr "HaÃ¯tien; CrÃ©ole haÃ¯tien"
+#~ msgstr "Haïtien; Créole haïtien"
 
 # 	Interlingua (International Auxiliary Language Association)
 #~ msgid "l-ia"
@@ -6626,7 +6626,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Indonesian
 #~ msgid "l-in"
-#~ msgstr "IndonÃ©sien"
+#~ msgstr "Indonésien"
 
 # 	Ido
 #~ msgid "l-io"
@@ -6634,7 +6634,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Hebrew
 #~ msgid "l-iw"
-#~ msgstr "HÃ©breu"
+#~ msgstr "Hébreu"
 
 # 	Yiddish
 #~ msgid "l-ji"
@@ -6742,11 +6742,11 @@ msgstr "Moyenne des pages vues"
 
 # 	North Ndebele
 #~ msgid "l-nd"
-#~ msgstr "NdÃ©bÃ©lÃ© du Nord"
+#~ msgstr "Ndébélé du Nord"
 
 # 	Nepali
 #~ msgid "l-ne"
-#~ msgstr "NÃ©palais"
+#~ msgstr "Népalais"
 
 # 	Ndonga
 #~ msgid "l-ng"
@@ -6754,7 +6754,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Norwegian
 #~ msgid "l-no"
-#~ msgstr "NorvÃ©gien"
+#~ msgstr "Norvégien"
 
 # 	Navajo; Navaho
 #~ msgid "l-nv"
@@ -6770,7 +6770,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Ojibwa
 #~ msgid "l-oj"
-#~ msgstr "OjibwÃ©"
+#~ msgstr "Ojibwé"
 
 # 	Oromo
 #~ msgid "l-om"
@@ -6782,11 +6782,11 @@ msgstr "Moyenne des pages vues"
 
 # 	Ossetian; Ossetic
 #~ msgid "l-os"
-#~ msgstr "OssÃ¨te"
+#~ msgstr "Ossète"
 
 # 	Pali
 #~ msgid "l-pi"
-#~ msgstr "PÃ¢li"
+#~ msgstr "Pali"
 
 # 	Romansh
 #~ msgid "l-rm"
@@ -6854,7 +6854,7 @@ msgstr "Moyenne des pages vues"
 
 # 	Turkmen
 #~ msgid "l-tk"
-#~ msgstr "TurkmÃ¨ne"
+#~ msgstr "Turkmène"
 
 # 	Tonga (Tonga Islands)
 #~ msgid "l-to"
@@ -6866,15 +6866,15 @@ msgstr "Moyenne des pages vues"
 
 # 	Uighur; Uyghur
 #~ msgid "l-ug"
-#~ msgstr "OuÃ¯ghour"
+#~ msgstr "Ouïghour"
 
 # 	Venda
 #~ msgid "l-ve"
 #~ msgstr "Venda"
 
-# 	VolapÃ¼k
+# 	Volapük
 #~ msgid "l-vo"
-#~ msgstr "VolapÃ¼k"
+#~ msgstr "Volapük"
 
 # 	Wolof
 #~ msgid "l-wo"
@@ -6898,7 +6898,7 @@ msgstr "Moyenne des pages vues"
 
 # Korean (Democratic People's Republic of Korea)
 #~ msgid "l-ko-kp"
-#~ msgstr "CorÃ©en (RÃ©publique populaire dÃ©mocratique de CorÃ©e)"
+#~ msgstr "Coréen (République populaire démocratique de Corée)"
 
 # Romanian (Moldava)
 #~ msgid "l-ro-md"
@@ -6985,7 +6985,7 @@ msgstr "Moyenne des pages vues"
 
 # 	South Ndebele
 #~ msgid "l-nr"
-#~ msgstr "NdÃ©bÃ©lÃ© du Sud"
+#~ msgstr "Ndébélé du Sud"
 
 # 	Twi
 #~ msgid "l-tw"
