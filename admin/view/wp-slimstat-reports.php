@@ -417,9 +417,9 @@ class wp_slimstat_reports{
 			case 'popular':
 				$all_results = wp_slimstat_db::get_popular($column, $_args['custom_where'], $_args['more_columns'], $_args['having_clause'], $_args['as_column']);
 				break;
-			case 'popular_complete':
-				$all_results = wp_slimstat_db::get_popular_complete($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause']);
-				break;
+			//case 'popular_complete':
+			//	$all_results = wp_slimstat_db::get_popular_complete($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause']);
+			//	break;
 			case 'popular_outbound':
 				$all_results = wp_slimstat_db::get_popular_outbound();
 				break;
@@ -529,16 +529,21 @@ class wp_slimstat_reports{
 				$row_details = date_i18n(wp_slimstat_db::$formats['date_time_format'], $results[$i]['dt'], true).$row_details;
 			}
 			else{
-				$percentage = '<span>'.(($_args['total_for_percentage'] > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['count']/$_args['total_for_percentage'])), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0).'%</span>';
-				$row_details = __('Hits','wp-slimstat').': '.number_format($results[$i]['count'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']).$row_details;
+				$percentage = '<span>'.(($_args['total_for_percentage'] > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['counthits']/$_args['total_for_percentage'])), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0).'%</span>';
+				$row_details = __('Hits','wp-slimstat').': '.number_format($results[$i]['counthits'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']).$row_details;
 			}
 
 			// Some columns require a special post-treatment
 			if ($_column == 'resource' && strpos($_args['custom_where'], '404') === false){
-				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$element_value;
+				$base_url = '';
+				if (isset($results[$i]['blog_id'])){
+					$base_url = parse_url(get_site_url($results[$i]['blog_id']));
+					$base_url = $base_url['scheme'].'://'.$base_url['host'];
+				}
+				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
 			}
-			if ($_column == 'domain'){
-				$element_url = htmlentities((strpos($results[$i]['referer'], '://') == false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
+			if ($_column == 'referer'){
+				$element_url = htmlentities($results[$i]['referer'], ENT_QUOTES, 'UTF-8');
 				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 			}
 			if (!empty($results[$i]['ip']) && $_column != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
@@ -679,7 +684,7 @@ class wp_slimstat_reports{
 	}
 	
 	public static function show_spy_view($_id = 'p0', $_type = 'undefined'){
-		$results = !is_int($_type)?wp_slimstat_db::get_recent('t1.id', '(t1.visit_id > 0 AND tb.type <> 1)', 'tb.*', '', 't1.visit_id DESC'):wp_slimstat_db::get_recent_outbound($_type);
+		$results = !is_int($_type)?wp_slimstat_db::get_recent('t1.id', '(t1.visit_id > 0 AND tb.type <> 1)', 'tb.browser, tb.version, tb.platform, tb.type, tb.user_agent', '', 't1.visit_id DESC'):wp_slimstat_db::get_recent_outbound($_type);
 
 		if (count($results) == 0){
 			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
@@ -702,7 +707,12 @@ class wp_slimstat_reports{
 				$results[$i]['resource'] = __('Search for','wp-slimstat').': '.htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
 			}
 			if (!empty($results[$i]['resource']) && $_type == 0){
-				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.self::get_resource_title($results[$i]['resource']);
+				$base_url = '';
+				if (!empty($results[$i]['blog_id'])){
+					$base_url = parse_url(get_site_url($results[$i]['blog_id']));
+					$base_url = $base_url['scheme'].'://'.$base_url['host'];
+				}
+				$results[$i]['resource'] = '<a target="_blank" class="url" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.self::get_resource_title($results[$i]['resource']);
 			}
 
 			if ($visit_id != $results[$i]['visit_id']){
@@ -800,8 +810,8 @@ class wp_slimstat_reports{
 			<p><?php self::inline_help(__('Human users who visited your site only once.','wp-slimstat')) ?>
 				<?php _e('New visitors', 'wp-slimstat') ?> <span><?php echo number_format($new_visitors, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 			<p><?php _e('Bots', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('tb.type = 1'), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
-			<p><?php _e('Pages per visit', 'wp-slimstat') ?> <span><?php echo number_format($metrics_per_visit['avg'], 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
-			<p><?php _e('Longest visit', 'wp-slimstat') ?> <span><?php echo number_format($metrics_per_visit['max'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']).' '.__('hits','wp-slimstat') ?></span></p><?php
+			<p><?php _e('Pages per visit', 'wp-slimstat') ?> <span><?php echo number_format($metrics_per_visit[0]['avghits'], 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
+			<p><?php _e('Longest visit', 'wp-slimstat') ?> <span><?php echo number_format($metrics_per_visit[0]['maxhits'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']).' '.__('hits','wp-slimstat') ?></span></p><?php
 	}
 
 	public static function show_plugins($_id = 'p0', $_total_human_hits = 0){
@@ -982,7 +992,7 @@ class wp_slimstat_reports{
 		foreach($countries as $a_country){
 			if (!array_key_exists($a_country['country'], $data_areas)) continue;
 
-			$percentage = sprintf("%01.2f", (100*$a_country['count']/$total_count));
+			$percentage = sprintf("%01.2f", (100*$a_country['counthits']/$total_count));
 			$percentage_format = ($total_count > 0)?number_format($percentage, 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0;
 			$balloon_text = __('c-'.$a_country['country'], 'wp-slimstat').': '.$percentage_format.'% ('.number_format($a_country['count'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']).')';
 			$data_areas[$a_country['country']] = '{id:"'.strtoupper($a_country['country']).'",balloonText:"'.$balloon_text.'",value:'.$percentage.'}';
@@ -1107,8 +1117,8 @@ class wp_slimstat_reports{
 				$chart_labels = array(__('Domains','wp-slimstat'), __('Unique IPs','wp-slimstat'));
 				break;
 			case 'slim_p4_01':
-				$sql_from_where = " FROM (SELECT t1.visit_id, count(t1.ip) count, MAX(t1.dt) dt FROM [from_tables] WHERE [where_clause] GROUP BY t1.visit_id) AS ts1";
-				$chart_data = wp_slimstat_db::get_data_for_chart('ROUND(AVG(ts1.count),2)', 'MAX(ts1.count)', 'AND t1.visit_id > 0', $sql_from_where);
+				$sql_from_where = " FROM (SELECT t1.visit_id, count(t1.ip) counthits, MAX(t1.dt) dt FROM [from_tables] WHERE [where_clause] GROUP BY t1.visit_id) AS ts1";
+				$chart_data = wp_slimstat_db::get_data_for_chart('ROUND(AVG(ts1.counthits),2)', 'MAX(ts1.counthits)', 'AND t1.visit_id > 0', $sql_from_where);
 				$chart_labels = array(__('Avg Pageviews','wp-slimstat'), __('Longest visit','wp-slimstat'));
 				break;
 			default:
@@ -1145,10 +1155,12 @@ class wp_slimstat_reports{
 			case 'slim_p3_05':
 				$self_domain = parse_url(site_url());
 				$self_domain = $self_domain['host'];
-				self::show_results('popular_complete', $_report_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""'), 'custom_where' => 't1.domain <> "'.$self_domain.'" AND t1.domain <> ""'));
+				//self::show_results('popular_complete', $_report_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""'), 'custom_where' => 't1.domain <> "'.$self_domain.'" AND t1.domain <> ""'));
+				self::show_results('popular', $_report_id, 'referer', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""'), 'custom_where' => 't1.domain <> "'.$self_domain.'" AND t1.domain <> ""'));
 				break;
 			case 'slim_p1_11':
-				self::show_results('popular_complete', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('t1.user <> ""')));
+				// self::show_results('popular_complete', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('t1.user <> ""')));
+				self::show_results('popular', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('t1.user <> ""')));
 				break;
 			case 'slim_p1_12':
 			case 'slim_p3_03':
@@ -1216,13 +1228,15 @@ class wp_slimstat_reports{
 				self::show_results('recent', $_report_id, 'user', array('custom_where' => 'notes LIKE "%user:%"'));
 				break;
 			case 'slim_p2_21':
-				self::show_results('popular_complete', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%user:%"'), 'custom_where' => 'notes LIKE "%user:%"'));
+				// self::show_results('popular_complete', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%user:%"'), 'custom_where' => 'notes LIKE "%user:%"'));
+				self::show_results('popular', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('notes LIKE "%user:%"'), 'custom_where' => 'notes LIKE "%user:%"'));
 				break;
 			case 'slim_p3_02':
 				self::show_traffic_sources_summary($_report_id, $current_pageviews);
 				break;
 			case 'slim_p3_06':
-				self::show_results('popular_complete', $_report_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records("t1.searchterms <> '' AND t1.domain <> '{$_SERVER['SERVER_NAME']}' AND t1.domain <> ''", 't1.id'), 'custom_where' => "t1.searchterms <> '' AND t1.domain <> '{$_SERVER['SERVER_NAME']}'"));
+				//self::show_results('popular_complete', $_report_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records("t1.searchterms <> '' AND t1.domain <> '{$_SERVER['SERVER_NAME']}' AND t1.domain <> ''", 't1.id'), 'custom_where' => "t1.searchterms <> '' AND t1.domain <> '{$_SERVER['SERVER_NAME']}'"));
+				self::show_results('popular', $_report_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records("t1.searchterms <> '' AND t1.domain <> '{$_SERVER['SERVER_NAME']}' AND t1.domain <> ''", 't1.id'), 'custom_where' => "t1.searchterms <> '' AND t1.domain <> '{$_SERVER['SERVER_NAME']}'"));
 				break;
 			case 'slim_p3_11':
 			case 'slim_p4_17':

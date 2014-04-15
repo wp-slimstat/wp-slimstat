@@ -5,7 +5,7 @@ class wp_slimstat_admin{
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = ''; // "Version 3.5.7 shipped with a bug that was affecting the rendering of most charts. This update fixes this and other glitched. Please contact our <a href='http://support.getused.to.it/' target='_blank'>support team</a>, if you have any questions.";
+	protected static $admin_notice = "We are honored to see that WP SlimStat is being pirated and sold for $90 a pop as Keyword Swarm. It means that our product is not <a href='http://wordpress.org/support/topic/overrated-1' target='_blank'>as bad as someone claims it to be</a>. But please save your money and keep using the original free product you've been enjoying <a href='http://www.bloggingpro.com/archives/2006/05/23/slimstat-and-wp-slimstat/' target='_blank'>for 8 years now</a>. And if your know people who have purchased the knock off, tell them to go get their refund!";
 	
 	/**
 	 * Init -- Sets things up.
@@ -35,9 +35,6 @@ class wp_slimstat_admin{
 
 		// Screen options: hide/show panels to customize your view
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
-
-		// Footer links
-		add_filter('admin_footer_text',  array(__CLASS__, 'footer_admin'));
 
 		// Show the activation and config links, if the network is not too large
 		add_filter('plugin_action_links_wp-slimstat/wp-slimstat.php', array(__CLASS__, 'plugin_action_links'), 10, 2);
@@ -300,7 +297,7 @@ class wp_slimstat_admin{
 		// --- Updates for version 3.5.9 ---
 		if (version_compare(wp_slimstat::$options['version'], '3.5.9', '<')){
 			// slim_browsers
-			// $my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE browser_id <= 0");
+			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE browser_id <= 0");
 			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->base_prefix}slim_browsers WHERE browser_id <= 0");
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_stats DROP FOREIGN KEY fk_browser_id");
 			
@@ -314,7 +311,7 @@ class wp_slimstat_admin{
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}browser_id FOREIGN KEY (browser_id) REFERENCES {$GLOBALS['wpdb']->base_prefix}slim_browsers (browser_id)");
 
 			// slim_content_info
-			// $my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE content_info_id <= 0");
+			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE content_info_id <= 0");
 			$my_wpdb->query("DELETE FROM {$GLOBALS['wpdb']->base_prefix}slim_content_info WHERE content_info_id <= 0");
 			$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_stats DROP FOREIGN KEY fk_content_info_id");
 			
@@ -799,12 +796,6 @@ class wp_slimstat_admin{
 		);
 	}
 	// end contextual_help
-
-	// Footer link
-	public static function footer_admin($_original_footer = ''){
-		$thank_you_footer = apply_filters('slimstat_footer_thank_you', __('And for keeping an eye on your visitors with <a href="http://slimstat.getused.to.it/">WP SlimStat</a>.','wp-slimstat'));
-		return $_original_footer.' '.$thank_you_footer;
-	}
 
 	/**
 	 * Creates a table in the database

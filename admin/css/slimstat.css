@@ -245,9 +245,9 @@
 	background-color: #000;
 	color: #fff;
 	font-family: monospace;
-	opacity: .7;
-	position: absolute;
-	z-index: 5;
+	opacity: .8;
+	padding: 20px;
+	position: relative;
 }
 
 /* Single Report: Color Coded Entries */

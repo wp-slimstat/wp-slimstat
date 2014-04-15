@@ -119,7 +119,12 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 		
 		// Permalink: find post title, if available
 		if (!empty($results[$i]['resource'])){
-			$results[$i]['resource'] = "<a class='slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this URL in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='".htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8')."'></a> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('resource equals '.$results[$i]['resource'])."'>".wp_slimstat_reports::get_resource_title($results[$i]['resource']).'</a>';
+			$base_url = '';
+			if (!empty($results[$i]['blog_id'])){
+				$base_url = parse_url(get_site_url($results[$i]['blog_id']));
+				$base_url = $base_url['scheme'].'://'.$base_url['host'];
+			}
+			$results[$i]['resource'] = "<a class='slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this URL in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='".$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8')."'></a> $base_url<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('resource equals '.$results[$i]['resource'])."'>".wp_slimstat_reports::get_resource_title($results[$i]['resource']).'</a>';
 		}
 		else{
 			$results[$i]['resource'] = __('Local search results page','wp-slimstat');

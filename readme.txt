@@ -1,10 +1,10 @@
-﻿=== WP SlimStat ===
+=== WP SlimStat ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 3.9
-Stable tag: 3.5.9
+Stable tag: 3.6
 
 == Description ==
 The most accurate real-time statistics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
@@ -270,6 +270,16 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.6 =
+* [Note] We'll go back to our biweekly release schedule after this release - we just wanted to get our latest feature to our users as soon as possible
+* [New] Support for network-wide reports is now complete
+* [New] Support for network-wide settings is being tested and will be added soon
+* [Update] MaxMind's IP Database has been updated to the latest version (2014-04-02)
+* [Update] French localization had some encoding issues (thank you, Yves Pouplard)
+* [Update] Swedish localization has been updated (thank you, Per Soderman)
+* [Fix] User Overview add-on is now compatible with network-wide reports
+* [Fix] Author filters were not working under certain circumstances (thank you, [tbetzold](http://wordpress.org/support/topic/authors-not-able-to-see-their-own-stats))
 
 = 3.5.9 =
 * [Fix] New user agents were not being recorded correctly in some cases (thank you, [fberzau](http://wordpress.org/support/topic/browser-and-os-stats-not-working))
