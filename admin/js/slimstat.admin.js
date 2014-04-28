@@ -360,7 +360,7 @@ jQuery(function(){
 			}
 		}
 
-		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()};
+		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), current_tab: SlimStatAdminParams.current_tab};
 		SlimStatAdmin.refresh_report(report_id, data);
 		
 		jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
@@ -377,7 +377,7 @@ jQuery(function(){
 	if (SlimStatAdminParams.async_load == 'yes'){
 		jQuery('div[id^=slim_]').each(function(){
 			report_id = jQuery(this).attr('id');
-			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()}
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), current_tab: SlimStatAdminParams.current_tab}
 			SlimStatAdmin.refresh_report(report_id, data);
 		});
 	}

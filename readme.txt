@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 3.9
-Stable tag: 3.6
+Stable tag: 3.6.1
 
 == Description ==
 The most accurate real-time statistics plugin for WordPress. Visit our [official site](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
@@ -270,6 +270,16 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.6.1 =
+* [Update] Streamlined DB initialization / update procedures (thank you, [PyroSteveJr](http://wordpress.org/support/topic/not-capturing-anything))
+* [Update] [AmMap](http://www.amcharts.com/javascript-maps/) has been updated to version 3.8.13
+* [Fix] Uninstall procedure was not removing all the tables as expected (thank you, [scruffy1](http://wordpress.org/support/topic/how-to-delete-slim-stat))
+* [Fix] Bug in retrieving the ID of the longest comment
+* [Fix] Inconsistent table records were being removed without alerting the admin
+* [Fix] Bug in calculating the CIDR mask for some IP-based filters (thank you, Alan)
+* [Fix] Current tab was not remembered when clicking on a report's link to filter the data
+* [Fix] Sorting was not available in Asynchronous Mode for certain reports (thank you, [psn](http://wordpress.org/support/topic/order-to-show-user-overview))
 
 = 3.6 =
 * [Note] We'll go back to our biweekly release schedule after this release - we just wanted to get our latest feature to our users as soon as possible

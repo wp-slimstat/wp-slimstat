@@ -1,6 +1,6 @@
 <?php
 
-class wp_slimstat_reports{
+class wp_slimstat_reports extends wp_slimstat_admin{
 	// Hidden filters are not displayed to the user, but are applied to the reports
 	public static $hidden_filters = array('hour' => 1, 'day' => 1, 'month' => 1, 'year' => 1, 'interval' => 1, 'direction' => 1, 'limit_results' => 1, 'start_from' => 1);
 
@@ -8,8 +8,6 @@ class wp_slimstat_reports{
 	public static $dropdown_filter_names = array();
 	
 	// Variables used to generate the HTML code for the metaboxes
-	public static $current_tab = 1;
-	public static $view_url = '';
 	public static $meta_report_order_nonce = '';
 
 	// Tab panels drag-and-drop functionality
@@ -101,15 +99,6 @@ class wp_slimstat_reports{
 			'slim_p6_01' => __('World Map','wp-slimstat'),
 			'slim_p7_02' => __('At A Glance','wp-slimstat')
 		);
-
-		
-		if (!empty($_GET['page'])){
-			self::$current_tab = intval(str_replace('wp-slim-view-', '', $_GET['page']));
-		}
-		else if (!empty($_POST['current_tab'])){
-			self::$current_tab = intval($_POST['current_tab']);
-		}
-		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-'.self::$current_tab;
 
 		// TO BE REVIEWED AND CLEANED UP
 		self::$meta_report_order_nonce = wp_create_nonce('meta-box-order');
@@ -209,8 +198,8 @@ class wp_slimstat_reports{
 			$filters = implode('&&&', $filters);
 		}
 
-		// Import and initialize the API to interact with the database
-		include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/wp-slimstat-db.php");
+		// Include and initialize the API to interact with the database
+		include_once(dirname(__FILE__).'/wp-slimstat-db.php');
 		wp_slimstat_db::init($filters);
 
 		// Some of the filters supported by the API do not appear in the dropdown
@@ -221,43 +210,6 @@ class wp_slimstat_reports{
 		self::$chart_tooltip .= empty(wp_slimstat_db::$filters_normalized['date']['day'])?'<li>'.__('Click on a data point to display the activity chart for each hour of that day','wp-slimstat').'</li>':'';
 	}
 	// end init
-
-	public static function fs_url($_filters = '', $_view_url = ''){
-		$filtered_url = !empty($_view_url)?$_view_url:self::$view_url;
-
-		// Backward compatibility
-		if (is_array($_filters)){
-			$flat_filters = array();
-			foreach($_filters as $a_key => $a_filter_data){
-				$flat_filters[] = "$a_key $a_filter_data";
-			}
-			$_filters = implode('&&&', $flat_filters);
-		}
-
-		// Columns
-		$filters_normalized = wp_slimstat_db::parse_filters($_filters, false);
-		if (!empty($filters_normalized['columns'])){
-			foreach($filters_normalized['columns'] as $a_key => $a_filter){
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);
-			}
-		}
-
-		// Date ranges
-		if (!empty($filters_normalized['date'])){
-			foreach($filters_normalized['date'] as $a_key => $a_filter){
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
-			}
-		}
-
-		// Misc filters
-		if (!empty($filters_normalized['misc'])){
-			foreach($filters_normalized['misc'] as $a_key => $a_filter){
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
-			}
-		}
-
-		return $filtered_url;
-	}
 	
 	public static function get_search_terms_info($_searchterms = '', $_domain = '', $_referer = '', $_serp_only = false){
 		$query_details = '';
@@ -515,7 +467,7 @@ class wp_slimstat_reports{
 					break;
 				case 'user':
 					$element_value = $results[$i]['user'];
-					if (wp_slimstat::$options['show_display_name'] == 'yes' && strpos($results[$i]['notes'], 'user:') !== false){
+					if (wp_slimstat::$options['show_display_name'] == 'yes'){
 						$element_custom_value = get_user_by('login', $results[$i]['user']);
 						if (is_object($element_custom_value)) $element_value = $element_custom_value->display_name;
 					}
@@ -1063,7 +1015,7 @@ class wp_slimstat_reports{
 			$your_content['trackbacks'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments} WHERE comment_type = 'trackback'");
 			$your_content['longest_post_id'] = $GLOBALS['wpdb']->get_var("SELECT ID FROM {$GLOBALS['wpdb']->posts} WHERE post_status = 'publish' AND post_type = 'post' ORDER BY LENGTH(post_content) DESC LIMIT 0,1");
 			$your_content['oldest_post_timestamp'] = $GLOBALS['wpdb']->get_var("SELECT UNIX_TIMESTAMP(post_date) FROM {$GLOBALS['wpdb']->posts} WHERE post_status = 'publish' AND post_type = 'post' ORDER BY post_date ASC LIMIT 0,1");
-			$your_content['longest_comment_id'] = $GLOBALS['wpdb']->get_var("SELECT comment_ID FROM {$GLOBALS['wpdb']->comments}");
+			$your_content['longest_comment_id'] = $GLOBALS['wpdb']->get_var("SELECT comment_ID FROM {$GLOBALS['wpdb']->comments} ORDER BY LENGTH(comment_content) DESC LIMIT 0,1");
 			$your_content['avg_comments_per_post'] = !empty($your_content['posts'])?$your_content['comments']/$your_content['posts']:0;
 
 			$days_in_interval = floor((date_i18n('U')-$your_content['oldest_post_timestamp'])/86400);
@@ -1096,7 +1048,7 @@ class wp_slimstat_reports{
 		}
 
 		if (!$is_ajax && (in_array($_report_id, self::$hidden_reports) || wp_slimstat::$options['async_load'] == 'yes')) return; 
-		
+
 		// Some boxes need extra information
 		if (in_array($_report_id, array('slim_p1_03', 'slim_p1_08', 'slim_p1_13', 'slim_p1_17', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_18', 'slim_p2_19', 'slim_p2_10', 'slim_p3_02', 'slim_p3_04'))){
 			$current_pageviews = wp_slimstat_db::count_records();
@@ -1149,7 +1101,7 @@ class wp_slimstat_reports{
 				self::show_results('recent', $_report_id, 'searchterms');
 				break;
 			case 'slim_p1_08':
-				self::show_results('popular', $_report_id, 'SUBSTRING_INDEX(t1.resource, "?", 1)', array('total_for_percentage' => $current_pageviews, 'as_column' => 'resource', 'filter_op' => 'contains'));
+				self::show_results('popular', $_report_id, 'resource', array('total_for_percentage' => $current_pageviews));
 				break;
 			case 'slim_p1_10':
 			case 'slim_p3_05':
@@ -1300,7 +1252,6 @@ class wp_slimstat_reports{
 				self::show_world_map($_report_id);
 				break;
 			case 'slim_p7_02':
-				$using_screenres = wp_slimstat_admin::check_screenres();
 				include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/view/right-now.php");
 				break;
 			default:

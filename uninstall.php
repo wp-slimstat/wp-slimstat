@@ -10,10 +10,6 @@ else {
 	$slimstat_wpdb = $GLOBALS['wpdb'];
 }
 
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_browsers");
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_screenres");
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_content_info");
-
 if (function_exists('is_multisite') && is_multisite()) {
 	$blogids = $GLOBALS['wpdb']->get_col($GLOBALS['wpdb']->prepare("
 		SELECT blog_id
@@ -31,6 +27,10 @@ if (function_exists('is_multisite') && is_multisite()) {
 else{
 	slimstat_uninstall($slimstat_wpdb);
 }
+
+$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_browsers");
+$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_screenres");
+$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_content_info");
 
 function slimstat_uninstall($_wpdb = ''){
 	// Goodbye data...
