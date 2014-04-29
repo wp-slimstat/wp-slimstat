@@ -7,7 +7,7 @@ class wp_slimstat_admin{
 	public static $current_tab = 1;
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "We are honored to see that WP SlimStat is being pirated and sold at $90 a pop as Keyword Swarm. It means that our product is not <a href='http://wordpress.org/support/topic/overrated-1' target='_blank'>as bad as someone claims it to be</a>. But please save your money and keep using the original free product you've been enjoying <a href='http://www.bloggingpro.com/archives/2006/05/23/slimstat-and-wp-slimstat/' target='_blank'>for 8 years now</a>. And if your know people who have purchased the knock off, tell them to go get their refund!";
+	protected static $admin_notice = "Network-wide reports? <a href='http://slimstat.getused.to.it/addons/network-view/' target='_blank'>YES, please!</a> You asked for it, you got it. We're now working on network-wide settings, stay tuned!";
 	
 	/**
 	 * Init -- Sets things up.
@@ -51,9 +51,9 @@ class wp_slimstat_admin{
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
 
 		// Display a notice that hightlights this version's features
-		//if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
-		//	add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
-		//}
+		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
+			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
+		}
 
 		// Remove spammers from the database
 		if (wp_slimstat::$options['ignore_spammers'] == 'yes'){
