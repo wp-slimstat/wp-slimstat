@@ -407,7 +407,8 @@ class wp_slimstat_admin{
 			'current_tab' => self::$current_tab,
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
 			'refresh_interval' => (self::$current_tab == 1)?intval(wp_slimstat::$options['refresh_interval']):0,
-			'text_direction' => $GLOBALS['wp_locale']->text_direction
+			'text_direction' => $GLOBALS['wp_locale']->text_direction,
+			'use_slimscroll' => isset(wp_slimstat::$options['use_slimscroll'])?wp_slimstat::$options['use_slimscroll']:'yes'
 		);
 		wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 	}
@@ -691,6 +692,9 @@ class wp_slimstat_admin{
 			case 'section_header': ?>
 				<td colspan="2" class="slimstat-options-section-header"><?php echo $_option_details['description'] ?></td><?php
 				break;
+			case 'static': ?>
+				<td colspan="2"><?php echo $_option_details['description'] ?> <textarea rows="7" class="large-text code" disabled><?php echo $_option_details['long_description'] ?></textarea></td><?php
+				break;
 			case 'yesno': ?>
 				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
 				<td>
@@ -713,6 +717,8 @@ class wp_slimstat_admin{
 	}
 
 	protected static function settings_textarea($_option_name = '', $_option_details = array('description' =>'', 'type' => '', 'long_description' => ''), $_alternate = false){
+		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
+		
 		if (!isset(wp_slimstat::$options[$_option_name])){
 			wp_slimstat::$options[$_option_name] = '';
 		} ?>
@@ -721,7 +727,7 @@ class wp_slimstat_admin{
 			<td colspan="2">
 				<label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label>
 				<p class="description"><?php echo $_option_details['long_description'] ?></p>
-				<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo !empty(wp_slimstat::$options[$_option_name])?stripslashes(wp_slimstat::$options[$_option_name]):'' ?></textarea></p>
+				<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo !empty(wp_slimstat::$options[$_option_name])?stripslashes(wp_slimstat::$options[$_option_name]):'' ?></textarea> <span class="description"><?php echo $_option_details['after_input_field'] ?></span></p>
 			</td>
 		</tr><?php
 	}

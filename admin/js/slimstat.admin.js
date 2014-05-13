@@ -1,4 +1,4 @@
-﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {current_tab: 1, async_load: 'no', refresh_interval: 0, expand_details: 'no', datepicker_image: '', text_direction: ''};
+﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {current_tab: 1, async_load: 'no', refresh_interval: 0, expand_details: 'no', datepicker_image: '', text_direction: '', use_slimscroll: 'yes'};
 var SlimStatAdmin = {
 	// Public variables
 	chart_data: [],
@@ -363,7 +363,9 @@ jQuery(function(){
 		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), current_tab: SlimStatAdminParams.current_tab};
 		SlimStatAdmin.refresh_report(report_id, data);
 		
-		jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
+		if (SlimStatAdminParams.use_slimscroll == 'yes'){
+			jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
+		}
 		
 		if (typeof refresh_handle != 'undefined'){
 			window.clearTimeout(refresh_handle);
@@ -396,20 +398,21 @@ jQuery(function(){
 	});
 
 	// SlimScroll init
-	jQuery('[id^=slim_]:not(.tall) .inside').slimScroll({
-		distance: '2px',
-		opacity: '0.15',
-		size: '5px',
-		wheelStep: 10
-	});
-	jQuery('[id^=slim_].tall .inside').slimScroll({
-		distance: '2px',
-		height: '630px',
-		opacity: '0.15',
-		size: '5px',
-		wheelStep: 10
-	});
-
+	if (SlimStatAdminParams.use_slimscroll == 'yes'){
+		jQuery('[id^=slim_]:not(.tall) .inside').slimScroll({
+			distance: '2px',
+			opacity: '0.15',
+			size: '5px',
+			wheelStep: 10
+		});
+		jQuery('[id^=slim_].tall .inside').slimScroll({
+			distance: '2px',
+			height: '630px',
+			opacity: '0.15',
+			size: '5px',
+			wheelStep: 10
+		});
+	}
 	// ToolTips
 	jQuery(document).on('mouseover', '.slimstat-tooltip-trigger', function(e){
 		jQuery(this).qtip({

