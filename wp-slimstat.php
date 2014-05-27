@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.6.2
+Version: 3.6.3
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6.2';
+	public static $version = '3.6.3';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -48,9 +48,9 @@ class wp_slimstat{
 		// Allow third-party tools to use a custom database for WP SlimStat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
-		//if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] == 'yes'){
-		//	add_filter('the_content', array(__CLASS__, 'ads_print_code'));
-		//}
+		if (empty(self::$options['enable_ads_network']) || self::$options['enable_ads_network'] == 'yes'){
+			add_filter('the_content', array(__CLASS__, 'ads_print_code'));
+		}
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
 		if (self::$options['use_separate_menu'] != 'yes' && is_admin_bar_showing()){
@@ -760,23 +760,23 @@ class wp_slimstat{
 		$browser['type'] = 1;
 
 		// Googlebot 
-		if (preg_match("#^Mozilla/\d\.\d\s\(compatible;\sGooglebot/(\d\.\d);[\s\+]+http\://www\.google\.com/bot\.html\)$#i", $user_agent, $match)>0){
+		if (preg_match("#^Mozilla/\d\.\d\s\(compatible;\sGooglebot/(\d\.\d);[\s\+]+http\://www\.google\.com/bot\.html\)$#i", $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = "Googlebot";
 			$browser['version'] = $match[1];
 
 		// Yahoo!Slurp
-		} elseif (preg_match('#^Mozilla/\d\.\d\s\(compatible;\s(Yahoo\!\s([A-Z]{2})?\s?Slurp)/?(\d\.\d)?;\shttp\://help\.yahoo\.com/.*\)$#i', $user_agent, $match)>0){
+		} elseif (preg_match('#^Mozilla/\d\.\d\s\(compatible;\s(Yahoo\!\s([A-Z]{2})?\s?Slurp)/?(\d\.\d)?;\shttp\://help\.yahoo\.com/.*\)$#i', $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = $match[1];
 			if (!empty($match[3])) $browser['version'] = $match[3];
 
 		// BingBot
-		} elseif (preg_match('#^Mozilla/\d\.\d\s\(compatible;\sbingbot/(\d\.\d)[^a-z0-9]+http\://www\.bing\.com/bingbot\.htm.$#', $user_agent, $match)>0){
+		} elseif (preg_match('#^Mozilla/\d\.\d\s\(compatible;\sbingbot/(\d\.\d)[^a-z0-9]+http\://www\.bing\.com/bingbot\.htm.$#', $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = 'BingBot';
 			if (!empty($match[1])) $browser['browser'] .= $match[1];
 			if (!empty($match[2])) $browser['version'] = $match[2];
 
 		// IE 8|7|6 on Windows7|2008|Vista|XP|2003|2000
-		} elseif (preg_match('#^Mozilla/\d\.\d\s\(compatible;\sMSIE\s(\d+)(?:\.\d+)+;\s(Windows\sNT\s\d\.\d(?:;\sW[inOW]{2}64)?)(?:;\sx64)?;?(?:\sSLCC1;?|\sSV1;?|\sGTB\d;|\sTrident/\d\.\d;|\sFunWebProducts;?|\s\.NET\sCLR\s[0-9\.]+;?|\s(Media\sCenter\sPC|Tablet\sPC)\s\d\.\d;?|\sInfoPath\.\d;?)*\)$#', $user_agent, $match)>0){
+		} elseif (preg_match('#^Mozilla/\d\.\d\s\(compatible;\sMSIE\s(\d+)(?:\.\d+)+;\s(Windows\sNT\s\d\.\d(?:;\sW[inOW]{2}64)?)(?:;\sx64)?;?(?:\sSLCC1;?|\sSV1;?|\sGTB\d;|\sTrident/\d\.\d;|\sFunWebProducts;?|\s\.NET\sCLR\s[0-9\.]+;?|\s(Media\sCenter\sPC|Tablet\sPC)\s\d\.\d;?|\sInfoPath\.\d;?)*\)$#', $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = 'IE';
 			$browser['version'] = $match[1];
 			$browser['type'] = 0;
@@ -785,7 +785,7 @@ class wp_slimstat{
 			self::_get_os_version($match[2], $browser);
 
 		// Firefox and other Mozilla browsers on Windows
-		} elseif (preg_match('#^Mozilla/\d\.\d\s\(Windows;\sU;\s(.+);\s([a-z]{2}(?:\-[A-Za-z]{2})?);\srv\:\d(?:\.\d+)+\)\sGecko/\d+\s([A-Za-z\-0-9]+)/(\d+(?:\.\d+)+)(?:\s\(.*\))?$#', $user_agent, $match)>0){
+		} elseif (preg_match('#^Mozilla/\d\.\d\s\(Windows;\sU;\s(.+);\s([a-z]{2}(?:\-[A-Za-z]{2})?);\srv\:\d(?:\.\d+)+\)\sGecko/\d+\s([A-Za-z\-0-9]+)/(\d+(?:\.\d+)+)(?:\s\(.*\))?$#', $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = $match[3];
 			$browser['version'] = $match[4];
 			$browser['type'] = 0;
@@ -793,7 +793,7 @@ class wp_slimstat{
 			self::_get_os_version($match[1], $browser);
 
 		// Firefox and Gecko browsers on Mac|*nix|OS/2
-		} elseif (preg_match('#^Mozilla/\d\.\d\s\((Macintosh|X11|OS/2);\sU;\s(.+);\s([a-z]{2}(?:\-[A-Za-z]{2})?)(?:-mac)?;\srv\:\d(?:.\d+)+\)\sGecko/\d+\s([A-Za-z\-0-9]+)/(\d+(?:\.[0-9a-z\-\.]+))+(?:(\s\(.*\))(?:\s([A-Za-z\-0-9]+)/(\d+(?:\.\d+)+)))?$#', $user_agent, $match)>0){
+		} elseif (preg_match('#^Mozilla/\d\.\d\s\((Macintosh|X11|OS/2);\sU;\s(.+);\s([a-z]{2}(?:\-[A-Za-z]{2})?)(?:-mac)?;\srv\:\d(?:.\d+)+\)\sGecko/\d+\s([A-Za-z\-0-9]+)/(\d+(?:\.[0-9a-z\-\.]+))+(?:(\s\(.*\))(?:\s([A-Za-z\-0-9]+)/(\d+(?:\.\d+)+)))?$#', $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = $match[4];
 			$browser['version'] = $match[5];
 			$os = $match[2];
@@ -808,7 +808,7 @@ class wp_slimstat{
 			self::_get_os_version($os, $browser);
 
 		// Safari and Webkit-based browsers on all platforms
-		} elseif (preg_match('#^Mozilla/\d\.\d\s\(([A-Za-z0-9/\.]+);\sU;?\s?(.*);\s?([a-z]{2}(?:\-[A-Za-z]{2})?)?\)\sAppleWebKit/[0-9\.]+\+?\s\((?:KHTML,\s)?like\sGecko\)(?:\s([a-zA-Z0-9\./]+(?:\sMobile)?)/?[A-Z0-9]*)?\sSafari/([0-9\.]+)$#', $user_agent, $match)>0){
+		} elseif (preg_match('#^Mozilla/\d\.\d\s\(([A-Za-z0-9/\.]+);\sU;?\s?(.*);\s?([a-z]{2}(?:\-[A-Za-z]{2})?)?\)\sAppleWebKit/[0-9\.]+\+?\s\((?:KHTML,\s)?like\sGecko\)(?:\s([a-zA-Z0-9\./]+(?:\sMobile)?)/?[A-Z0-9]*)?\sSafari/([0-9\.]+)$#', $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = 'Safari';
 
 			// version detection
@@ -849,7 +849,7 @@ class wp_slimstat{
 			self::_get_os_version($os, $browser);
 
 		// Google Chrome browser on all platforms with or without language string
-		} elseif (preg_match('#^Mozilla/\d+\.\d+\s(?:[A-Za-z0-9\./]+\s)?\((?:([A-Za-z0-9/\.]+);(?:\sU;)?\s?)?([^;]*)(?:;\s[A-Za-z]{3}64)?;?\s?([a-z]{2}(?:\-[A-Za-z]{2})?)?\)\sAppleWebKit/[0-9\.]+\+?\s\((?:KHTML,\s)?like\sGecko\)(?:\s([A-Za-z0-9_\-]+[^i])/([A-Za-z0-9\.]+)){1,3}(?:\sSafari/[0-9\.]+)?$#', $user_agent, $match)>0){
+		} elseif (preg_match('#^Mozilla/\d+\.\d+\s(?:[A-Za-z0-9\./]+\s)?\((?:([A-Za-z0-9/\.]+);(?:\sU;)?\s?)?([^;]*)(?:;\s[A-Za-z]{3}64)?;?\s?([a-z]{2}(?:\-[A-Za-z]{2})?)?\)\sAppleWebKit/[0-9\.]+\+?\s\((?:KHTML,\s)?like\sGecko\)(?:\s([A-Za-z0-9_\-]+[^i])/([A-Za-z0-9\.]+)){1,3}(?:\sSafari/[0-9\.]+)?$#', $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = $match[4];
 			$browser['version'] = intval($match[5]);
 
@@ -862,7 +862,7 @@ class wp_slimstat{
 		}
 
 		// Simple alphanumeric strings usually identify a crawler
-		elseif (preg_match("#^([a-z]+[\s_]?[a-z]*)[\-/]?([0-9\.]+)*$#", $user_agent, $match)>0){
+		elseif (preg_match("#^([a-z]+[\s_]?[a-z]*)[\-/]?([0-9\.]+)*$#", $_SERVER['HTTP_USER_AGENT'], $match)>0){
 			$browser['browser'] = trim($match[1]);
 			if (!empty($match[2]))
 				$browser['version'] = $match[2];
