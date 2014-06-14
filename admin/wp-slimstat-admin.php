@@ -7,7 +7,7 @@ class wp_slimstat_admin{
 	public static $current_tab = 1;
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "WP SlimStat has become a very powerful tool over the past 8 years, with more than 25k active users around the world. In order to maintain this level of quality, and to keep offering our PREMIUM support service to our community, we've decided to make it available, starting from version 4.0, only as a <strong>paid</strong> product. More information will be available in the next few weeks. Stay tuned.";
+	protected static $admin_notice = "WP SlimStat has become a very powerful tool over the past 8 years, with more than 25k active users around the world. In order to maintain this level of quality, and to keep offering our PREMIUM support service to our community, we've decided to convert it into a <strong>paid</strong> product. More information will be available in the next few weeks. Stay tuned.";
 	
 	/**
 	 * Init -- Sets things up.
