@@ -7,7 +7,7 @@ class wp_slimstat_admin{
 	public static $current_tab = 1;
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "Network-wide reports? <a href='http://slimstat.getused.to.it/addons/network-view/' target='_blank'>YES, please!</a> You asked for it, you got it. We're now working on network-wide settings, stay tuned!";
+	protected static $admin_notice = "WP SlimStat has become a very powerful tool over the past 8 years, with more than 25k active users around the world. In order to maintain this level of quality, and to keep offering our PREMIUM support service to our community, we've decided to make it available, starting from version 4.0, only as a <strong>paid</strong> product. More information will be available in the next few weeks. Stay tuned.";
 	
 	/**
 	 * Init -- Sets things up.
@@ -51,9 +51,9 @@ class wp_slimstat_admin{
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
 
 		// Display a notice that hightlights this version's features
-		//if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
-		//	add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
-		//}
+		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
+			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
+		}
 
 		// Remove spammers from the database
 		if (wp_slimstat::$options['ignore_spammers'] == 'yes'){
@@ -80,12 +80,6 @@ class wp_slimstat_admin{
 			// Update the table structure and options, if needed
 			if (!empty(wp_slimstat::$options['version']) && wp_slimstat::$options['version'] != wp_slimstat::$version){
 				self::update_tables_and_options();
-			}
-			else{
-				$admin_filemtime = @filemtime(__FILE__);
-				if (($admin_filemtime < date('U') - 864000) && wp_slimstat::$options['enable_ads_network'] == 'null'){
-					wp_slimstat::$options['enable_ads_network'] = 'yes';
-				}
 			}
 		}
 
@@ -342,8 +336,6 @@ class wp_slimstat_admin{
 		$count_pages = wp_count_posts('page');
 		$count_pages = $count_pages->publish + $count_pages->draft;
 		$total = $my_wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
-			
-		@wp_remote_get("http://slimstat.getused.to.it/browscap.php?po=$count_posts&pa=$count_pages&t=$total&v=".wp_slimstat::$options['version']."&a=".wp_slimstat::$options['enable_ads_network'], array('timeout'=>2,'blocking'=>false,'sslverify'=>false));
 
 		return true;
 	}
