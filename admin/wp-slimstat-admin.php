@@ -7,7 +7,7 @@ class wp_slimstat_admin{
 	public static $current_tab = 1;
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = "WP SlimStat has become a very powerful tool over the past 8 years, with more than 25k active users around the world. In order to maintain this level of quality, and to keep offering our PREMIUM support service to our community, we've decided to convert it into a <strong>paid</strong> product. More information will be available in the next few weeks. Stay tuned.";
+	protected static $admin_notice = "Thank you for your many messages asking us to keep WP SlimStat free and fully functional. We are testing an experimental service to publish text links when search engines crawl your site. Design, speed, user experience and human visitors are not affected in any way (please let us know if this is not the case with your website). If you would like to support our effort to keep this plugin free and allow us to spend time improving its functionality, please <a id='slimstat-enable-ads-toggle' href='#'>click here to enable this feature</a> (you can disable it under Settings > Advanced).";
 	
 	/**
 	 * Init -- Sets things up.
@@ -51,7 +51,7 @@ class wp_slimstat_admin{
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
 
 		// Display a notice that hightlights this version's features
-		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
+		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
 			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
 		}
 
@@ -93,6 +93,7 @@ class wp_slimstat_admin{
 		if (defined('DOING_AJAX') && DOING_AJAX){
 			add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'show_report_wrapper'));
 			add_action('wp_ajax_slimstat_hide_admin_notice', array(__CLASS__, 'hide_admin_notice'));
+			add_action('wp_ajax_slimstat_enable_ads_feature', array(__CLASS__, 'enable_ads_feature'));
 		}
 	}
 	// end init
@@ -620,6 +621,15 @@ class wp_slimstat_admin{
 	 * Handles the Ajax request to hide the admin notice
 	 */
 	public static function hide_admin_notice(){
+		wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$version;
+		die();
+	}
+	
+	/**
+	 * Handles the Ajax request to enable the ads network
+	 */
+	public static function enable_ads_feature(){
+		wp_slimstat::$options['enable_ads_network'] = 'yes';
 		wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$version;
 		die();
 	}

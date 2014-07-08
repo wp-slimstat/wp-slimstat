@@ -387,8 +387,21 @@ jQuery(function(){
 	// Hide Admin Notice
 	jQuery(document).on('click', '#slimstat-hide-admin-notice', function(e){
 		e.preventDefault();
-		jQuery('.updated').slideUp(1000);
+		jQuery('.updated.slimstat-notice').slideUp(1000);
 		data = {action: 'slimstat_hide_admin_notice', security: jQuery('#meta-box-order-nonce').val()};
+		jQuery.ajax({
+			url: ajaxurl,
+			type: 'post',
+			async: true,
+			data: data
+		});
+	});
+	
+	// Enable ads on click
+	jQuery(document).on('click', '#slimstat-enable-ads-toggle', function(e){
+		e.preventDefault();
+		jQuery('.updated.slimstat-notice').slideUp(1000);
+		data = {action: 'slimstat_enable_ads_feature', security: jQuery('#meta-box-order-nonce').val()};
 		jQuery.ajax({
 			url: ajaxurl,
 			type: 'post',

