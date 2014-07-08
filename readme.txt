@@ -272,6 +272,7 @@ foreach ($results...`
 == Changelog ==
 
 = 3.6.5 =
+* [Update] MaxMind's IP Database has been updated to the latest version (2014-07-01)
 * [Fix] Bug in tracking visits when the CDN option is enabled
 * [Fix] Number format description was sort of misleading (thank you, [Shonu](http://wordpress.org/support/topic/number-format-label))
 
