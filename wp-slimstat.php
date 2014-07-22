@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.6.6
+Version: 3.6.7
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6.6';
+	public static $version = '3.6.7';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -688,7 +688,7 @@ class wp_slimstat{
 				return $browser;
 			}
 
-			foreach ($browscap_patterns as $pattern => $pattern_data){
+			foreach ($patterns as $pattern => $pattern_data){
 				if (preg_match($pattern . 'i', $_SERVER['HTTP_USER_AGENT'], $matches)){
 					if (1 == count($matches)) {
 						$key = $pattern_data;
@@ -716,23 +716,23 @@ class wp_slimstat{
 						self::_preg_unquote($pattern, $simple_match ? false : $matches)
 					);
 
-					$search = $value = $search + unserialize($browscap_browsers[$key]);
+					$search = $value = $search + unserialize($browsers[$key]);
 
 					while (array_key_exists(3, $value)) {
-						$value = unserialize($browscap_browsers[$value[3]]);
+						$value = unserialize($browsers[$value[3]]);
 						$search += $value;
 					}
 
 					if (!empty($search[3])) {
-						$search[3] = $browscap_userAgents[$search[3]];
+						$search[3] = $userAgents[$search[3]];
 					}
 
 					break;
 				}
 			}
-			unset($browscap_browsers);
-			unset($browscap_userAgents);
-			unset($browscap_patterns);
+			unset($browsers);
+			unset($userAgents);
+			unset($patterns);
  
 			if (!empty($search) && $search[5] != 'Default Browser' && $search[5] != 'unknown'){
 				$browser['browser'] = $search[5];

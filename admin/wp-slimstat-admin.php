@@ -7,9 +7,20 @@ class wp_slimstat_admin{
 	public static $current_tab = 1;
 	public static $faulty_fields = array();
 	
-	protected static $admin_notice = <<<EOF
-		<div class="fixed-height">
-			<p>In order to protect our intellectual property rights (<a href="http://www.youtube.com/watch?v=OeU-RrjolCw" target="_blank">Keyword Swarm</a>, anyone?), we are asking you to review the following terms of use.</p>
+	protected static $admin_notice = '';
+	
+	/**
+	 * Init -- Sets things up.
+	 */
+	public static function init(){
+		// This option requires a special treatment
+		if (!empty($_POST['options']['use_separate_menu'])){
+			wp_slimstat::$options['use_separate_menu'] = in_array($_POST['options']['use_separate_menu'], array('yes','no'))?$_POST['options']['use_separate_menu']:'';
+		}
+
+		self::$admin_notice = "
+		<div class=\"fixed-height\">
+			<p>In order to protect our intellectual property rights (<a href=\"http://www.youtube.com/watch?v=OeU-RrjolCw\" target=\"_blank\">Keyword Swarm</a>, anyone?), we are asking you to review the following terms of use.</p>
 			<p><strong>GNU General Public License v2</strong></p>
 			<ol>
 				<li>You may copy and distribute verbatim copies of WP SlimStat's source code as you receive it, in any medium, provided that you conspicuously and appropriately publish on each copy an appropriate copyright notice and disclaimer of warranty; keep intact all the notices that refer to this License and to the absence of any warranty; and give any other recipients of WP SlimStat a copy of this License along with WP SlimStat. You may charge a fee for the physical act of transferring a copy, and you may at your option offer warranty protection in exchange for a fee.</li>
@@ -41,27 +52,17 @@ class wp_slimstat_admin{
 				<li>The Free Software Foundation may publish revised and/or new versions of the General Public License from time to time. Such new versions will be similar in spirit to the present version, but may differ in detail to address new problems or concerns.
 					Each version is given a distinguishing version number.</li>
 				<li>If you wish to incorporate parts of WP SlimStat into other free programs whose distribution conditions are different, <strong>write to the author to ask for permission</strong>. For software which is copyrighted by the Free Software Foundation, write to the Free Software Foundation; we sometimes make exceptions for this. Our decision will be guided by the two goals of preserving the free status of all derivatives of our free software and of promoting the sharing and reuse of software generally.</li>
-				<li><strong>NO WARRANTY</strong> - BECAUSE WP SLIMSTAT IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR WP SLIMSTAT, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE WP SLIMSTAT "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF WP SLIMSTAT IS WITH YOU. SHOULD WP SLIMSTAT PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.</li>
+				<li><strong>NO WARRANTY</strong> - BECAUSE WP SLIMSTAT IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR WP SLIMSTAT, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE WP SLIMSTAT \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF WP SLIMSTAT IS WITH YOU. SHOULD WP SLIMSTAT PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.</li>
 				<li>IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR REDISTRIBUTE WP SLIMSTAT AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE WP SLIMSTAT (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF WP SLIMSTAT TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</li>
 			</ol>
 			
 			<p><strong>Third Party Text Links</strong></p>
 			<p>Third party text networks supply text for display in WP SlimStat. These networks may collect your IP addresses, in native or hashed forms, for purposes of controlling the distribution of text links. WP SlimStat collects anonymous aggregated usage statistics.</p>
-			<p>By clicking the link here below ("I acknowledge that I have read and agree to the above Terms and Conditions") you agree to the terms and conditions and give permission to place text links on your website when search engine crawlers access it. Your website's layout, performance and interaction with human visitors should not be altered or affected in any way. Please note that this feature can be deactivated at any time under Setting > Advanced > UAN Netword, without impact on any other feature available in WP SlimStat.</p>
+			<p>By clicking the link here below (\"I acknowledge that I have read and agree to the above Terms and Conditions\") you agree to the terms and conditions and give permission to place text links on your website when search engine crawlers access it. Your website's layout, performance and interaction with human visitors should not be altered or affected in any way. Please note that this feature can be deactivated at any time under Setting > Advanced > UAN Netword, without impact on any other feature available in WP SlimStat.</p>
 			<p>Copyright &copy; 2014 Get Used to IT.</p>
 		</div>
 		
-		<div><a id='slimstat-enable-ads-toggle' href='#'>I acknowledge that I have read and agree to the above Terms and Conditions</a></div>
-EOF;
-	
-	/**
-	 * Init -- Sets things up.
-	 */
-	public static function init(){
-		// This option requires a special treatment
-		if (!empty($_POST['options']['use_separate_menu'])){
-			wp_slimstat::$options['use_separate_menu'] = in_array($_POST['options']['use_separate_menu'], array('yes','no'))?$_POST['options']['use_separate_menu']:'';
-		}
+		<div><a id='slimstat-enable-ads-toggle' href='#'>I acknowledge that I have read and agree to the above Terms and Conditions</a></div>";
 
 		// Current screen
 		if (!empty($_GET['page'])){

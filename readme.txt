@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
-Tested up to: 3.9
-Stable tag: 3.6.6
+Tested up to: 4.0
+Stable tag: 3.6.7
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
@@ -270,6 +270,9 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.6.7 =
+* [Fix] Foreach warning was being displayed, related to the latest browscap update. Sorry for the inconvenience, folks!
 
 = 3.6.6 =
 * [New] Top Traffic Sources is now showing the percentage of direct pageviews (thank you, [uewinfo_frm](http://wordpress.org/support/topic/top-traffic-sources-to-add-direct-access))
