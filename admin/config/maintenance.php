@@ -66,7 +66,7 @@ if (!empty($_REQUEST['action'])){
 }
 
 // Retrieve some information about the tables used by WP SlimStat
-$check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'resource_idx'");
+$check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'stats_resource_idx'");
 $details_wp_slim_tables = array_merge(
 	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'", ARRAY_A),
 	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_outbound'", ARRAY_A),

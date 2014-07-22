@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 3.9
-Stable tag: 3.6.5
+Stable tag: 3.6.6
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
@@ -270,6 +270,13 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.6.6 =
+* [New] Top Traffic Sources is now showing the percentage of direct pageviews (thank you, [uewinfo_frm](http://wordpress.org/support/topic/top-traffic-sources-to-add-direct-access))
+* [Update] [Browscap](http://browscap.org/) has been updated to version 5031, released on July 2, 2014
+* [Fix] Index name was not properly handled (thank you, [bretweinraub](https://github.com/getusedtoit/wp-slimstat/pull/8))
+* [Fix] Patched XSS Vulnerability (thank you, Yogendra Sharma)
+* [Fix] Code for tracking external pages could not be selected in Firefox (thank you, [KSteinmann](http://wordpress.org/support/topic/cant-select-slimstat-external-pages-tracking-script)) 
 
 = 3.6.5 =
 * [Update] MaxMind's IP Database has been updated to the latest version (2014-07-01)

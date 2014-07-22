@@ -25,7 +25,7 @@ switch ($config_tabs[$current_tab-1]){
 
 			'general_integration_header' => array('description' => __('WordPress Integration','wp-slimstat'), 'type' => 'section_header'),
 			'use_separate_menu' => array( 'description' => __('Menu Position','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose between a standalone admin menu for WP SlimStat or a drop down in the admin bar (if visible).','wp-slimstat'), 'custom_label_yes' => __('Side Menu','wp-slimstat'), 'custom_label_no' => __('Admin Bar','wp-slimstat') ),
-			'add_posts_column' => array( 'description' => __('Add Stats to Posts','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Add a new column to the Edit Posts screen, with the number of hits per post.','wp-slimstat') ),
+			'add_posts_column' => array( 'description' => __('Add Stats to Posts and Pages','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Add a new column to the Edit Posts/Pages screens, with the number of hits per post.','wp-slimstat') ),
 
 			'general_database_header' => array('description' => __('Database','wp-slimstat'), 'type' => 'section_header'),
 			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Delete log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').(wp_get_schedule('wp_slimstat_purge')?' <br> '.__('Next clean-up on','wp-slimstat').' '.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'. '.sprintf(__('Entries logged on or before %s will be permanently deleted.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$options['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') )
@@ -218,7 +218,7 @@ switch ($config_tabs[$current_tab-1]){
 			'extensions_to_track' => array('description' => __('Extensions to Track','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the file extensions that you want to be treated as Downloads. Please note that links pointing to external resources (i.e. PDFs on a different website) are considered Downloads and not Outbound Links (and tracked as such), if their extension matches one of the ones listed here below.",'wp-slimstat')),
 
 			'advanced_external_pages_header' => array('description' => __('External Pages','wp-slimstat'), 'type' => 'section_header'),
-			'external_pages_script' => array('type' => 'static', 'description' => __('Add the following code to all the non-WP pages you want to track','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
+			'external_pages_script' => array('type' => 'static', 'skip_update' => 'yes', 'description' => __('Add the following code to all the non-WP pages you want to track','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
 /* &lt;![CDATA[ */
 var SlimStatParams = {
 	ajaxurl: "'.admin_url('admin-ajax.php').'",

@@ -10,10 +10,16 @@
 }
 .slimstat-notice span{
 	float: left;
-	width: 95%;
+	width: 98%;
 }
 #slimstat-hide-admin-notice{
 	float: right;
+}
+.slimstat-notice .fixed-height {
+	height: 120px;
+	margin-bottom: 20px;
+	overflow: auto;
+	padding: 0 20px 0 0;
 }
 
 /* Filters */

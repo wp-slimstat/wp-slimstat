@@ -400,6 +400,14 @@ class wp_slimstat_reports extends wp_slimstat_admin{
 		self::report_pagination($_id, $count_page_results, count($all_results));
 		$is_expanded = (wp_slimstat::$options['expand_details'] == 'yes')?' expanded':'';
 
+		// Traffic sources: display pageviews with no referrer
+		if ($_column == 'referer'){
+			$count_all = wp_slimstat_db::count_records();
+			$count_no_referer = wp_slimstat_db::count_records('(t1.referer IS NULL OR t1.referer = "")');
+			$percentage = number_format(sprintf("%01.2f", (100*$count_no_referer/$count_all)), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']);
+			echo "<p>Direct Access <span>$percentage%</span> <b class='slimstat-row-details$is_expanded'>Hits: $count_no_referer</b></p>";
+		}
+
 		for($i=0;$i<$count_page_results;$i++){
 			$row_details = $percentage = '';
 			$element_pre_value = '';
@@ -1050,7 +1058,7 @@ class wp_slimstat_reports extends wp_slimstat_admin{
 		if (!$is_ajax && (in_array($_report_id, self::$hidden_reports) || wp_slimstat::$options['async_load'] == 'yes')) return; 
 
 		// Some boxes need extra information
-		if (in_array($_report_id, array('slim_p1_03', 'slim_p1_08', 'slim_p1_13', 'slim_p1_17', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_18', 'slim_p2_19', 'slim_p2_10', 'slim_p3_02', 'slim_p3_04'))){
+		if (in_array($_report_id, array('slim_p1_03', 'slim_p1_08', 'slim_p1_10', 'slim_p1_13', 'slim_p1_17', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_18', 'slim_p2_19', 'slim_p2_10', 'slim_p3_02', 'slim_p3_04', 'slim_p3_05'))){
 			$current_pageviews = wp_slimstat_db::count_records();
 		}
 
@@ -1108,7 +1116,7 @@ class wp_slimstat_reports extends wp_slimstat_admin{
 				$self_domain = parse_url(site_url());
 				$self_domain = $self_domain['host'];
 				//self::show_results('popular_complete', $_report_id, 'domain', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""'), 'custom_where' => 't1.domain <> "'.$self_domain.'" AND t1.domain <> ""'));
-				self::show_results('popular', $_report_id, 'referer', array('total_for_percentage' => wp_slimstat_db::count_records('t1.referer <> ""'), 'custom_where' => 't1.domain <> "'.$self_domain.'" AND t1.domain <> ""'));
+				self::show_results('popular', $_report_id, 'referer', array('total_for_percentage' => $current_pageviews, 'custom_where' => 't1.domain <> "'.$self_domain.'" AND t1.domain <> ""'));
 				break;
 			case 'slim_p1_11':
 				// self::show_results('popular_complete', $_report_id, 'user', array('total_for_percentage' => wp_slimstat_db::count_records('t1.user <> ""')));

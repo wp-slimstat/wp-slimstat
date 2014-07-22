@@ -709,7 +709,11 @@ class wp_slimstat_db {
 	
 	public static function get_var($_sql = '', $_aggregate_value = ''){
 		$_sql = apply_filters('slimstat_get_var_sql', $_sql, $_aggregate_value);
-		
+
+		if (wp_slimstat::$options['show_sql_debug'] == 'yes'){
+			self::_show_debug($_sql);
+		}
+
 		return wp_slimstat::$wpdb->get_var($_sql);
 	}
 
