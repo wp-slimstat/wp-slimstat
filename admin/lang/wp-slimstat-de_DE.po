@@ -1,0 +1,6891 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP SlimStat\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-02 22:43-0500\n"
+"PO-Revision-Date: 2014-03-02 22:43-0500\n"
+"Last-Translator: Get Used To IT <support@getused.to.it>\n"
+"Language-Team: TechnoViel <klaus@technoviel.de>\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: s;\n"
+"X-Generator: Poedit 1.6.3\n"
+"X-Poedit-SearchPath-0: ../..\n"
+
+#: ../../wp-slimstat.php:1179 ../../admin/wp-slimstat-admin.php:411
+#: ../../admin/config/index.php:58 ../../admin/view/wp-slimstat-reports.php:28
+msgid "Activity Log"
+msgstr ""
+
+#: ../../wp-slimstat.php:1180 ../../admin/wp-slimstat-admin.php:412
+#: ../../admin/wp-slimstat-admin.php:429
+#: ../../admin/view/wp-slimstat-reports.php:29
+msgid "Overview"
+msgstr "&Uuml;bersicht"
+
+#: ../../wp-slimstat.php:1181 ../../admin/wp-slimstat-admin.php:413
+#: ../../admin/wp-slimstat-admin.php:430
+#: ../../admin/view/wp-slimstat-reports.php:30
+msgid "Visitors"
+msgstr "Besucher"
+
+#: ../../wp-slimstat.php:1182 ../../admin/wp-slimstat-admin.php:414
+#: ../../admin/wp-slimstat-admin.php:431
+#: ../../admin/view/wp-slimstat-reports.php:31
+msgid "Content"
+msgstr "Inhalt"
+
+#: ../../wp-slimstat.php:1183 ../../admin/wp-slimstat-admin.php:415
+#: ../../admin/wp-slimstat-admin.php:432 ../../admin/view/index.php:169
+#: ../../admin/view/wp-slimstat-reports.php:32
+msgid "Traffic Sources"
+msgstr "Traffic-Ursprung"
+
+#: ../../wp-slimstat.php:1184 ../../admin/wp-slimstat-admin.php:416
+#: ../../admin/wp-slimstat-admin.php:433
+#: ../../admin/view/wp-slimstat-reports.php:33
+#: ../../admin/view/wp-slimstat-reports.php:101
+msgid "World Map"
+msgstr "Weltkarte"
+
+#: ../../wp-slimstat.php:1185 ../../admin/wp-slimstat-admin.php:417
+#: ../../admin/wp-slimstat-admin.php:434
+#: ../../admin/view/wp-slimstat-reports.php:34
+msgid "Custom Reports"
+msgstr "individuelle Auswertungen"
+
+#: ../../wp-slimstat.php:1186 ../../admin/wp-slimstat-admin.php:418
+#: ../../admin/wp-slimstat-admin.php:435 ../../admin/config/addons.php:29
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:229
+msgid "Add-ons"
+msgstr ""
+
+#: ../../wp-slimstat.php:1189 ../../admin/wp-slimstat-admin.php:464
+#: ../../admin/wp-slimstat-admin.php:467 ../../admin/wp-slimstat-admin.php:511
+#: ../../admin/wp-slimstat-admin.php:514 ../../admin/config/index.php:14
+#: ../../admin/config/index.php:135
+#, fuzzy
+msgid "Settings"
+msgstr "Sortierung w&auml;hlen"
+
+#: ../../admin/wp-slimstat-admin.php:410 ../../admin/wp-slimstat-admin.php:422
+#: ../../admin/wp-slimstat-admin.php:425
+#, fuzzy
+msgid "SlimStat"
+msgstr "&Uuml;ber WP SlimStat"
+
+#: ../../admin/wp-slimstat-admin.php:528
+msgid "Pageviews in the last 365 days"
+msgstr ""
+
+#: ../../admin/wp-slimstat-admin.php:552
+msgid "Show on screen"
+msgstr "Anzeigen"
+
+#: ../../admin/wp-slimstat-admin.php:580
+msgid "Hide this notice"
+msgstr ""
+
+#: ../../admin/wp-slimstat-admin.php:607
+msgid "There was an error updating the following options:"
+msgstr "Fehler beim Aktualisieren folgender Optionen:"
+
+#: ../../admin/wp-slimstat-admin.php:610
+#, fuzzy
+msgid "Your changes have been saved."
+msgstr "Optionen erfolgreich aktualisiert."
+
+#: ../../admin/wp-slimstat-admin.php:633
+msgid "Save Changes"
+msgstr "Änderungen speichern"
+
+#: ../../admin/wp-slimstat-admin.php:652
+msgid "Yes"
+msgstr "Ja"
+
+#: ../../admin/wp-slimstat-admin.php:653
+#: ../../admin/view/wp-slimstat-reports.php:762
+msgid "No"
+msgstr "Nein"
+
+#: ../../admin/wp-slimstat-admin.php:693
+msgid ""
+"WARNING: a misconfigured setting and/or server environment is preventing WP "
+"SlimStat from properly tracking your visitors. Please <a target=\"_blank\" "
+"href=\"http://wordpress.org/extend/plugins/wp-slimstat/faq/\">check the "
+"FAQs</a> for more information."
+msgstr ""
+"WARNUNG: Eine falsche Einstellung und/oder die Serverumgebung verhindern, "
+"dass WP SlimStat die Besucher korrekt erfasst. <a target=\"_blank\" href="
+"\"http://wordpress.org/extend/plugins/wp-slimstat/faq/\">In den  FAQs</a> "
+"gibt es mehr Informationen dazu."
+
+#: ../../admin/wp-slimstat-admin.php:713
+msgid "Definitions"
+msgstr "Definitionen"
+
+#: ../../admin/wp-slimstat-admin.php:716
+#, fuzzy
+msgid "Pageview"
+msgstr "Seitenaufrufe"
+
+#: ../../admin/wp-slimstat-admin.php:716
+#, fuzzy
+msgid ""
+"A request to load a single HTML file (\"page\"). This should be contrasted "
+"with a \"hit\", which refers to a request for any file from a web server. WP "
+"SlimStat logs a pageview each time the tracking code is executed"
+msgstr ""
+"Eine Anfrage eine einzelne HTML-Datei zu laden. WP SlimStat zeichnet "
+"jedesmal einen 'Seitenaufruf' auf wenn der Tracking-Code ausgef&uuml;hrt "
+"wird."
+
+#: ../../admin/wp-slimstat-admin.php:717
+#, fuzzy
+msgid "(Human) Visit"
+msgstr "Echte Besuche"
+
+#: ../../admin/wp-slimstat-admin.php:717
+msgid ""
+"A period of interaction between a visitor's browser and your website, ending "
+"when the browser is closed or when the user has been inactive on that site "
+"for 30 minutes"
+msgstr ""
+"Zeitraum der Interaktion des Browsers eines Besuchers mit Ihrer Website. "
+"Diese endet wenn der Browser geschlossen wird oder der Besucher 30 Minuten "
+"lang nicht auf der Website aktiv war"
+
+#: ../../admin/wp-slimstat-admin.php:718 ../../admin/view/index.php:144
+#: ../../admin/view/right-now.php:151
+#, fuzzy
+msgid "Known Visitor"
+msgstr "Bekannte Besucher"
+
+#: ../../admin/wp-slimstat-admin.php:718
+msgid ""
+"Any user who has left a comment on your blog, and is thus identified by "
+"Wordpress as a returning visitor"
+msgstr ""
+"Jeder Benutzer, der einen Kommentar auf Ihrer Website hinterlassen hat und "
+"damit als wiederkehrender Besucher erkannt wird."
+
+#: ../../admin/wp-slimstat-admin.php:719
+#, fuzzy
+msgid "Unique IP"
+msgstr "Eindeutige IPs"
+
+#: ../../admin/wp-slimstat-admin.php:719
+msgid ""
+"Used to differentiate between multiple requests to download a file from one "
+"internet address (IP) and requests originating from many distinct addresses; "
+"since this measurement looks only at the internet address a pageview came "
+"from, it is useful, but not perfect"
+msgstr ""
+"Wird genutzt um zwischen mehreren Requests einer IP Adresse und Requests von "
+"verschiedenen Adressen zu unterscheiden; da diese Messung nur auf die IP "
+"Adresse von der ein Seitenaufruf stammt achtet, ist es nützlich, aber nicht "
+"perfekt."
+
+#: ../../admin/wp-slimstat-admin.php:720 ../../admin/wp-slimstat-admin.php:762
+#: ../../admin/view/right-now.php:101 ../../admin/view/wp-slimstat-db.php:64
+msgid "Originating IP"
+msgstr "Ursprüngliche IP"
+
+#: ../../admin/wp-slimstat-admin.php:720
+msgid ""
+"the originating IP address of a client connecting to a web server through an "
+"HTTP proxy or load balancer"
+msgstr ""
+"Die ursprüngliche IP Adresse eines Clients, der sich durch einen HTTP Proxy "
+"oder Load Balancer mit dem Server verbunden hat."
+
+#: ../../admin/wp-slimstat-admin.php:721
+#, fuzzy
+msgid "Direct Traffic"
+msgstr "Direkter Besuch"
+
+#: ../../admin/wp-slimstat-admin.php:721
+msgid ""
+"All those people showing up to your Web site by typing in the URL of your "
+"Web site coming or from a bookmark; some people also call this \"default "
+"traffic\" or \"ambient traffic\""
+msgstr ""
+"Alle Besucher die Ihre Website durch Eingabe der Adresse Ihrer Seite (URL) "
+"oder ein Lesezeichen erreichen; auch \"default traffic\" oder \"ambient "
+"traffic\" genannt."
+
+#: ../../admin/wp-slimstat-admin.php:722
+#, fuzzy
+msgid "Search Engine"
+msgstr "Suchmaschinen"
+
+#: ../../admin/wp-slimstat-admin.php:722
+msgid ""
+"Google, Yahoo, MSN, Ask, others; this bucket will include both your organic "
+"as well as your paid (PPC/SEM) traffic, so be aware of that"
+msgstr ""
+"Google, Yahoo, MSN, Ask usw.; hiwer ist sowohl organischer als auch "
+"bezahlter (PPC/SEM) Traffic enthalten."
+
+#: ../../admin/wp-slimstat-admin.php:723 ../../admin/wp-slimstat-admin.php:739
+#: ../../admin/view/right-now.php:130 ../../admin/view/wp-slimstat-db.php:45
+msgid "Search Terms"
+msgstr "Suchbegriffe"
+
+#: ../../admin/wp-slimstat-admin.php:723 ../../admin/wp-slimstat-admin.php:739
+msgid "Keywords used by your visitors to find your website on a search engine"
+msgstr "Begriffe welche von Besuchern in Suchmaschinen verwendet wurden"
+
+#: ../../admin/wp-slimstat-admin.php:724
+msgid "SERP"
+msgstr "SERP"
+
+#: ../../admin/wp-slimstat-admin.php:724
+msgid ""
+"Short for search engine results page, the Web page that a search engine "
+"returns with the results of its search. The value shown represents your rank "
+"(or position) within that list of results"
+msgstr ""
+"\"Search Engine Result Pages\" - Suchmaschinenranking. Der Wert "
+"repräsentiert Ihren Rang (die Postition) in den Suchergebnissen."
+
+#: ../../admin/wp-slimstat-admin.php:725
+#: ../../admin/view/wp-slimstat-db.php:57
+#, fuzzy
+msgid "User Agent"
+msgstr "Top Browser"
+
+#: ../../admin/wp-slimstat-admin.php:725
+msgid ""
+"Any program used for accessing a website; this includes browsers, robots, "
+"spiders and any other program that was used to retrieve information from the "
+"site"
+msgstr ""
+"Generische Kennung jedes zugreifenden Programmes, wie z.B. Browser (Firefox "
+"usw.), 'Robots' und 'Spider' sowie jedes andere Programm welches "
+"Informationen von einer Website abruft."
+
+#: ../../admin/wp-slimstat-admin.php:726
+#: ../../admin/view/wp-slimstat-db.php:61
+#, fuzzy
+msgid "Outbound Link"
+msgstr "Letzte ausgehende Links"
+
+#: ../../admin/wp-slimstat-admin.php:726
+msgid ""
+"A link from one domain to another is said to be outbound from its source "
+"anchor and inbound to its target. This report lists all the links to other "
+"websites followed by your visitors."
+msgstr ""
+"Ausgehende Links sind links zu einer anderen Domain. Dieser Report zeigt "
+"alle Links zu anderen Websites die Ihre Besucher verfolgt haben."
+
+#: ../../admin/wp-slimstat-admin.php:733
+msgid "Basic Filters"
+msgstr "Einfache Filter"
+
+#: ../../admin/wp-slimstat-admin.php:736
+#: ../../admin/view/wp-slimstat-db.php:42
+msgid "Browser"
+msgstr "Browser"
+
+#: ../../admin/wp-slimstat-admin.php:736
+msgid "User agent (Firefox, Chrome, ...)"
+msgstr "Browser (Firefox, Chrome ...)"
+
+#: ../../admin/wp-slimstat-admin.php:737
+#: ../../admin/view/wp-slimstat-db.php:43
+#: ../../admin/view/wp-slimstat-reports.php:483
+msgid "Country Code"
+msgstr "L&auml;nder-Code"
+
+#: ../../admin/wp-slimstat-admin.php:737
+msgid "2-letter code (us, ru, de, it, ...)"
+msgstr ""
+
+#: ../../admin/wp-slimstat-admin.php:738
+msgid "IP"
+msgstr "IP"
+
+#: ../../admin/wp-slimstat-admin.php:738
+msgid "Visitor's public IP address"
+msgstr "&Ouml;ffentliche IP Adresse des Besuchers"
+
+#: ../../admin/wp-slimstat-admin.php:740
+#: ../../admin/view/wp-slimstat-db.php:46
+#: ../../admin/view/wp-slimstat-reports.php:495
+msgid "Language Code"
+msgstr "Sprach-Kodierung"
+
+#: ../../admin/wp-slimstat-admin.php:740
+msgid ""
+"Please refer to this <a target=\"_blank\" href=\"http://msdn.microsoft.com/"
+"en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first "
+"column) for more information"
+msgstr ""
+"Siehe  <a target=\"_blank\" href=\"http://msdn.microsoft.com/en-us/library/"
+"ee825488(v=cs.20).aspx\">Tabelle von Sprach-Kodierungen</a> "
+
+#: ../../admin/wp-slimstat-admin.php:741
+#: ../../admin/view/wp-slimstat-db.php:47
+msgid "Operating System"
+msgstr "Betriebssystem"
+
+#: ../../admin/wp-slimstat-admin.php:741
+msgid ""
+"Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="
+"\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">this "
+"manual page</a> for more information"
+msgstr ""
+"Akzeptiert Bezeichner wie win7, win98, macosx usw.; weitere Informationen "
+"gibt es auf <a href=\"http://php.net/manual/de/function.get-browser.php\" "
+"target=\"_blank\">dieser Seite</a>"
+
+#: ../../admin/wp-slimstat-admin.php:742
+#: ../../admin/view/wp-slimstat-db.php:48
+msgid "Permalink"
+msgstr "Permalink"
+
+#: ../../admin/wp-slimstat-admin.php:742
+msgid "URL accessed on your site"
+msgstr "URL, die auf Ihrer Seite besucht wurde"
+
+#: ../../admin/wp-slimstat-admin.php:743
+#: ../../admin/view/wp-slimstat-db.php:50
+msgid "Referer"
+msgstr "Herkunft"
+
+#: ../../admin/wp-slimstat-admin.php:743
+#, fuzzy
+msgid "Complete address of the referrer page"
+msgstr "Verweisende Seite &ouml;ffnen"
+
+#: ../../admin/wp-slimstat-admin.php:744
+#: ../../admin/view/wp-slimstat-db.php:51
+msgid "Visitor's Name"
+msgstr "Besuchername"
+
+#: ../../admin/wp-slimstat-admin.php:744
+msgid ""
+"Visitors' names according to the cookie set by Wordpress after they leave a "
+"comment"
+msgstr ""
+"Besuchername laut Cookie, welches Wordpress beim hinterlassen eines "
+"Kommentars anlegt"
+
+#: ../../admin/wp-slimstat-admin.php:752
+#, fuzzy
+msgid "Advanced Filters"
+msgstr "-- Erweiterte Filter --"
+
+#: ../../admin/wp-slimstat-admin.php:755
+#: ../../admin/view/wp-slimstat-db.php:55
+msgid "Browser Version"
+msgstr "Browser-Version"
+
+#: ../../admin/wp-slimstat-admin.php:755
+msgid "user agent version (9.0, 11, ...)"
+msgstr "Browser-Version (9.0, 11, ...)"
+
+#: ../../admin/wp-slimstat-admin.php:756
+#: ../../admin/view/wp-slimstat-db.php:56
+msgid "Browser Type"
+msgstr "Browser-Typ"
+
+#: ../../admin/wp-slimstat-admin.php:756
+msgid ""
+"1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = "
+"all others"
+msgstr ""
+"1 = Suchmaschinen Crawler, 2 = Mobiles Gerät, 3 = Feed-Reader, 0 = alle "
+"anderen"
+
+#: ../../admin/wp-slimstat-admin.php:757
+#: ../../admin/view/wp-slimstat-db.php:58
+msgid "Color Depth"
+msgstr "Farbtiefe"
+
+#: ../../admin/wp-slimstat-admin.php:757
+msgid "visitor's screen's color depth (8, 16, 24, ...)"
+msgstr "Farbtiefe des Monitors des Besuchers (8, 16, 24, ...)"
+
+#: ../../admin/wp-slimstat-admin.php:758
+#: ../../admin/view/wp-slimstat-db.php:59
+msgid "CSS Version"
+msgstr "CSS Version"
+
+#: ../../admin/wp-slimstat-admin.php:758
+msgid ""
+"what CSS standard was supported by that browser (1, 2, 3 and other integer "
+"values)"
+msgstr ""
+"Vom Browser unterstützter CSS standard (1, 2, 3 und andere ganze Zahlen)"
+
+#: ../../admin/wp-slimstat-admin.php:759
+#: ../../admin/view/wp-slimstat-db.php:60
+msgid "Pageview Attributes"
+msgstr "Eigenschaften Seitenaufrufe"
+
+#: ../../admin/wp-slimstat-admin.php:759
+msgid ""
+"this field is set to <em>[pre]</em> if the resource has been accessed "
+"through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
+"Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
+msgstr ""
+"Dieses Feld enth&auml;lt <em>[pre]</em> wenn der Zugriff von through <a "
+"target=\"_blank\" href=\"https://developer.mozilla.org/en/"
+"Link_prefetching_FAQ\">Link Prefetching</a> oder eine &auml;hnliche "
+
+#: ../../admin/wp-slimstat-admin.php:760
+#: ../../admin/view/wp-slimstat-db.php:62
+msgid "Post Author"
+msgstr "Autor der Seiten"
+
+#: ../../admin/wp-slimstat-admin.php:760
+msgid "author associated to that post/page when the resource was accessed"
+msgstr "Der dem Artikel / der Seite zugeordnete Autor"
+
+#: ../../admin/wp-slimstat-admin.php:761
+#: ../../admin/view/wp-slimstat-db.php:63
+msgid "Post Category ID"
+msgstr "Kategorie-ID der Seite"
+
+#: ../../admin/wp-slimstat-admin.php:761
+msgid "ID of the category/term associated to the resource, when available"
+msgstr "ID der zugeordneten Kategorie, falls vorhanden"
+
+#: ../../admin/wp-slimstat-admin.php:762
+msgid "visitor's originating IP address, if available"
+msgstr "IP Adresse des Besuchers, falls bekannt"
+
+#: ../../admin/wp-slimstat-admin.php:763
+#: ../../admin/view/wp-slimstat-db.php:65
+msgid "Resource Content Type"
+msgstr "Inhalt der Ressource"
+
+#: ../../admin/wp-slimstat-admin.php:763
+msgid ""
+"post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
+"post_type_archive, tag, taxonomy, category, date, author, archive, search, "
+"feed, home; please refer to the <a target=\"_blank\" href=\"http://codex."
+"wordpress.org/Conditional_Tags\">Conditional Tags</a> manual page for more "
+"information"
+msgstr ""
+"post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
+"post_type_archive, tag, taxonomy, category, date, author, archive, search, "
+"feed, home; F&uuml;r mehr Infos s.  <a target=\"_blank\" href=\"http://codex."
+"wordpress.org/Conditional_Tags\">Conditional Tags</a>."
+
+#: ../../admin/wp-slimstat-admin.php:764
+#: ../../admin/view/wp-slimstat-db.php:67
+msgid "Screen Resolution"
+msgstr "Bildschirm-Aufl&ouml;sung"
+
+#: ../../admin/wp-slimstat-admin.php:764
+msgid "viewport width and height (1024x768, 800x600, ...)"
+msgstr "Breite und H&ouml;he des sichtbaren Bereiches"
+
+#: ../../admin/wp-slimstat-admin.php:765
+#: ../../admin/view/wp-slimstat-db.php:68
+msgid "Visit ID"
+msgstr "Besuchs-ID"
+
+#: ../../admin/wp-slimstat-admin.php:765
+msgid ""
+"generally used in conjunction with <em>is not empty</em>, identifies human "
+"visitors"
+msgstr ""
+"Meist im Zusammenhang mit <em>nicht leer</em> verwendet, kennzeichnet echte "
+"Besucher"
+
+#: ../../admin/wp-slimstat-admin.php:766
+msgid "Date Filters"
+msgstr "Datumsfilter"
+
+#: ../../admin/wp-slimstat-admin.php:766
+msgid ""
+"you can specify the timeframe by entering a number in the <em>interval</em> "
+"field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, "
+"year=blank, interval=-1 will set a year-to-date filter)"
+msgstr ""
+"Sie können einen Zeitraum angeben, in dem Sie bei 'Tage' eine Zahl angeben. "
+"-1 erzeugt ein Intervall seit Beginn des Jahres / Monats, z.B. Tag=1, "
+"Monat=1, Jahr leer, Intervall=-1 erzeugt einen 'seit Jahresbeginn' Filter."
+
+#: ../../admin/wp-slimstat-admin.php:767
+msgid "SERP Position"
+msgstr "Suchmaschinenrang"
+
+#: ../../admin/wp-slimstat-admin.php:767
+msgid ""
+"set the filter to Referer contains cd=N&, where N is the position you are "
+"looking for"
+msgstr ""
+
+#: ../../admin/wp-slimstat-admin.php:776
+msgid ""
+" And for keeping an eye on your visitors with <a href=\"http://slimstat."
+"getused.to.it/\">WP SlimStat</a>."
+msgstr ""
+
+#: ../../admin/config/addons.php:14
+msgid ""
+"There was an error retrieving the add-ons list from the server. Please try "
+"again later. Error Message:"
+msgstr ""
+
+#: ../../admin/config/addons.php:23
+msgid ""
+"There was an error decoding the add-ons list from the server. Please try "
+"again later."
+msgstr ""
+
+#: ../../admin/config/addons.php:30
+msgid ""
+"Add-ons extend the functionality of WP SlimStat in many interesting ways. We "
+"offer both free and premium (paid) extensions. Each add-on can be installed "
+"as a separate plugin, which will receive regular updates via the WordPress "
+"Plugins panel. In order to be notified when a new version of a premium add-"
+"on is available, please enter the <strong>license key</strong> you received "
+"when you purchased it."
+msgstr ""
+
+#: ../../admin/config/addons.php:36
+msgid "Add-on"
+msgstr ""
+
+#: ../../admin/config/addons.php:36
+#, fuzzy
+msgid "Description"
+msgstr "Definitionen"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:18
+msgid "General"
+msgstr "Allgemein"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:44
+#, fuzzy
+msgid "Views"
+msgstr "Spy View"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:64
+msgid "Filters"
+msgstr "Filter"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:128
+#, fuzzy
+msgid "Permissions"
+msgstr "Berechtigungen"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:205
+msgid "Advanced"
+msgstr "Erweitert"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:222
+msgid "Maintenance"
+msgstr "Wartung"
+
+#: ../../admin/config/index.php:20 ../../admin/config/index.php:207
+#, fuzzy
+msgid "Tracker"
+msgstr "Benutzer tracken"
+
+#: ../../admin/config/index.php:21
+#, fuzzy
+msgid "Enable Tracking"
+msgstr "Tracking per JavaScript"
+
+#: ../../admin/config/index.php:21
+msgid ""
+"Turn the tracker on or off, but keep the reports accessible (which you would "
+"not have, if you just disabled the plugin)."
+msgstr ""
+
+#: ../../admin/config/index.php:22
+#, fuzzy
+msgid "Monitor Admin Pages"
+msgstr "Top Einstiegs-Seiten"
+
+#: ../../admin/config/index.php:22
+msgid "Enable this option to track your users' activity within the admin."
+msgstr ""
+
+#: ../../admin/config/index.php:23
+msgid "Enable Spy Mode"
+msgstr ""
+
+#: ../../admin/config/index.php:23
+msgid ""
+"Collect information about screen resolutions, outbound links, downloads, "
+"etc. If Tracking Mode is set to Javascript, this data will be tracked "
+"regardless of which value you set for this option."
+msgstr ""
+
+#: ../../admin/config/index.php:24
+#, fuzzy
+msgid "Tracking Mode"
+msgstr "Tracking aktiv"
+
+#: ../../admin/config/index.php:24
+#, fuzzy
+msgid ""
+"Select <strong>Javascript</strong> if you are using a caching plugin (W3 "
+"Total Cache, WP SuperCache, HyperCache, etc). WP SlimStat will behave pretty "
+"much like Google Analytics, and visitors whose browser does not support "
+"Javascript will be ignored. A nice side effect is that <strong>most "
+"spammers, search engines and other crawlers</strong> will not be tracked."
+msgstr ""
+"Schalten Sie diese Funktion ein, wenn ein Caching Plugin wie z.B. W3 Total "
+"Cache verwendet wird. WP SlimStat wird sich &auml;hnlich wie Google "
+"Analytics verhalten und Besucher deren Browser kein Javascript unterst&uuml;"
+"tzt ignorieren. Ein netter Nebeneffekt: Die meisten Spammer, Suchmaschinen "
+"und andere Crawler werden so nicht mehr getrackt."
+
+#: ../../admin/config/index.php:24
+#, fuzzy
+msgid "Javascript"
+msgstr "Tracking per JavaScript"
+
+#: ../../admin/config/index.php:24
+msgid "Server-side"
+msgstr ""
+
+#: ../../admin/config/index.php:26
+msgid "WordPress Integration"
+msgstr ""
+
+#: ../../admin/config/index.php:27
+#, fuzzy
+msgid "Menu Position"
+msgstr "Suchmaschinenrang"
+
+#: ../../admin/config/index.php:27
+#, fuzzy
+msgid ""
+"Choose between a standalone admin menu for WP SlimStat or a drop down in the "
+"admin bar (if visible)."
+msgstr ""
+"Das Dashboard-Men&uuml; kann um ein eigenes WP SlimStat Men&uuml; erg&auml;"
+"nzt werden."
+
+#: ../../admin/config/index.php:27
+msgid "Side Menu"
+msgstr ""
+
+#: ../../admin/config/index.php:27
+msgid "Admin Bar"
+msgstr ""
+
+#: ../../admin/config/index.php:28
+#, fuzzy
+msgid "Add Stats to Posts"
+msgstr "Spalte bei Beitr&auml;gen hinzuf&uuml;gen"
+
+#: ../../admin/config/index.php:28
+#, fuzzy
+msgid ""
+"Add a new column to the Edit Posts screen, with the number of hits per post."
+msgstr ""
+"F&uuml;gt eine Spalte in der Beitrags&uuml;bersicht ein, welche die Anzahl "
+"der Zugriffe pro Beitrag anzeigt."
+
+#: ../../admin/config/index.php:30
+msgid "Database"
+msgstr ""
+
+#: ../../admin/config/index.php:31
+msgid "Retain data for"
+msgstr ""
+
+#: ../../admin/config/index.php:31
+msgid ""
+"Delete log entries older than the number of days specified here above. Enter "
+"<strong>0</strong> (number zero) if you want to preserve your data "
+"regardless of its age."
+msgstr ""
+
+#: ../../admin/config/index.php:31
+msgid "Next clean-up on"
+msgstr "N&auml;chste Bereinigung "
+
+#: ../../admin/config/index.php:31
+#, fuzzy, php-format
+msgid "Entries logged on or before %s will be permanently deleted."
+msgstr ""
+"Eintr&auml;ge, die vor dem %s erfasst wurden werden unwiderruflich gel&ouml;"
+"scht."
+
+#: ../../admin/config/index.php:31 ../../admin/view/index.php:77
+#: ../../admin/view/wp-slimstat-db.php:75
+#: ../../admin/view/wp-slimstat-reports.php:762
+msgid "days"
+msgstr "Tage"
+
+#: ../../admin/config/index.php:46
+#, fuzzy
+msgid "Data and Formats"
+msgstr "Datum und Uhrzeit"
+
+#: ../../admin/config/index.php:47
+msgid "Convert IP Addresses"
+msgstr "IP Adressen umwandeln"
+
+#: ../../admin/config/index.php:47
+msgid "Display provider names instead of IP addresses."
+msgstr ""
+
+#: ../../admin/config/index.php:48
+msgid "Number Format"
+msgstr "Zahlenformat"
+
+#: ../../admin/config/index.php:48
+#, fuzzy
+msgid ""
+"Choose the number format you want to use for your reports, European or "
+"American."
+msgstr "Das zu verwendente Zahlenformat ausw&auml;hlen (metrisch o. imperial)."
+
+#: ../../admin/config/index.php:49
+msgid "Show Display Name"
+msgstr ""
+
+#: ../../admin/config/index.php:49
+msgid ""
+"By default, users are listed by their usernames. Use this option to "
+"visualize their display names instead."
+msgstr ""
+
+#: ../../admin/config/index.php:50
+#, fuzzy
+msgid "Show User Agent"
+msgstr "Top Browser"
+
+#: ../../admin/config/index.php:50
+msgid ""
+"Choose if you want to see the browser name or a complete user agent string "
+"when hovering on browser icons."
+msgstr ""
+
+#: ../../admin/config/index.php:51
+msgid "Show Titles"
+msgstr ""
+
+#: ../../admin/config/index.php:51
+msgid ""
+"WP SlimStat converts your permalinks into post and page titles. Disable this "
+"feature if you need to see the URL in your reports."
+msgstr ""
+
+#: ../../admin/config/index.php:53
+msgid "Functionality"
+msgstr ""
+
+#: ../../admin/config/index.php:54
+msgid "Asynchronous Views"
+msgstr "Asynchrone Anzeige"
+
+#: ../../admin/config/index.php:54
+#, fuzzy
+msgid ""
+"Load all the reports dynamically. It makes the reports render faster, but it "
+"increases the load on your server."
+msgstr ""
+"Benutze Ajax um die Statistiken nachzuladen. Dadurch erscheinen die Seiten "
+"schneller, er erzeugt aber mehr Last auf dem Server."
+
+#: ../../admin/config/index.php:55
+#, fuzzy
+msgid "Expand Details"
+msgstr "Details anzeigen"
+
+#: ../../admin/config/index.php:55
+#, fuzzy
+msgid "Expand each row's details by default, insted of on mousehover."
+msgstr "Zeigt in allen Zeilen die Detaisl und nicht nur beim Mouse-Over"
+
+#: ../../admin/config/index.php:56 ../../admin/config/index.php:60
+#, fuzzy
+msgid "Rows to Display"
+msgstr "keine Daten vorhanden"
+
+#: ../../admin/config/index.php:56
+msgid "Specify the number of items in each report."
+msgstr ""
+
+#: ../../admin/config/index.php:59
+msgid "Live Stream"
+msgstr ""
+
+#: ../../admin/config/index.php:59
+#, fuzzy
+msgid ""
+"Enable the Live view, which refreshes the Activity Log every X seconds. "
+"Enter <strong>0</strong> (number zero) to disable this functionality."
+msgstr ""
+"Anzeige der aktuell aktiven Besucher alle X Sekunden aktualisieren. Null "
+"deaktiviert diese Funktion."
+
+#: ../../admin/config/index.php:59 ../../admin/config/index.php:210
+msgid "seconds"
+msgstr "Sekunden"
+
+#: ../../admin/config/index.php:60
+msgid "Specify the number of items in the Activity Log."
+msgstr ""
+
+#: ../../admin/config/index.php:61
+#, fuzzy
+msgid "Activity Log Extended"
+msgstr "Aktuell"
+
+#: ../../admin/config/index.php:61
+msgid ""
+"Choose if you want to see outbound links listed in the Activity Log. It "
+"might slow down the rendering of this report."
+msgstr ""
+
+#: ../../admin/config/index.php:66
+#, fuzzy
+msgid "Visitors and Known Users"
+msgstr "Bekannte Benutzer"
+
+#: ../../admin/config/index.php:67
+#, fuzzy
+msgid "Track Registered Users"
+msgstr "Benutzer tracken"
+
+#: ../../admin/config/index.php:67
+#, fuzzy
+msgid "Enable this option to track logged in users."
+msgstr "Ja falls eingeloggte Benutzer getrackt werden sollen."
+
+#: ../../admin/config/index.php:68
+#, fuzzy
+msgid "Blacklist by Username"
+msgstr "&Ouml;ffentliche IP Adresse des Besuchers"
+
+#: ../../admin/config/index.php:68
+msgid ""
+"List all the usernames you don't want to track, separated by commas. Please "
+"be aware that spaces are <em>not</em> ignored and that usernames are case "
+"sensitive."
+msgstr ""
+
+#: ../../admin/config/index.php:69
+#, fuzzy
+msgid "Blacklist by IP Address"
+msgstr "&Ouml;ffentliche IP Adresse des Besuchers"
+
+#: ../../admin/config/index.php:69
+#, fuzzy
+msgid ""
+"List all the IP addresses you don't want to track, separated by commas. Each "
+"network <strong>must</strong> be defined using the <a href='http://en."
+"wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR "
+"notation</a> (i.e. <em>192.168.0.0/24</em>). If the format is incorrect, WP "
+"SlimStat may not track pageviews properly."
+msgstr ""
+"Komma-spearierte Liste aller IP Adressen, die nicht getrackt werdeb sollen. "
+"Jedes Netzwerk <strong>muss</strong> mit der <a href='http://en.wikipedia."
+"org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR Notation</a> "
+"(z.B. <em>192.168.0.0/24</em>) definiert werden. Bei inkorrektem Format kann "
+"WP SlimStat evtl. nicht die Pageviews korrekt tracken."
+
+#: ../../admin/config/index.php:70
+#, fuzzy
+msgid "Blacklist by Capability"
+msgstr "Browser-F&auml;higkeiten"
+
+#: ../../admin/config/index.php:70
+msgid ""
+"Users having at least one of the <a href='http://codex.wordpress.org/"
+"Roles_and_Capabilities' target='_new'>capabilities</a> listed here below "
+"will not be tracked. Capabilities are case-insensitive."
+msgstr ""
+
+#: ../../admin/config/index.php:72
+msgid "Profiling"
+msgstr ""
+
+#: ../../admin/config/index.php:73
+msgid "Ignore Spammers"
+msgstr "Spammer ignorieren"
+
+#: ../../admin/config/index.php:73
+#, fuzzy
+msgid ""
+"Enable this option if you don't want to track visits from users identified "
+"as spammers by third-party tools like Akismet. Pageviews generated by users "
+"whose comments are later marked as spam, will also be removed from the "
+"database."
+msgstr ""
+"Aktivieren Sie dies, um Besucher die von anderen Tools (z.B. Akismet) als "
+"Spammer identifiziert wurden nicht zu tracken. Visits von Besuchern deren "
+"Kommentare später von Ihnen als Spam markiert werden, werden ebenso aus der "
+"Datenbank entfernt."
+
+#: ../../admin/config/index.php:74
+#, fuzzy
+msgid "Permalinks"
+msgstr "Permalink"
+
+#: ../../admin/config/index.php:74
+#, fuzzy
+msgid ""
+"List all the URLs on your website that you don't want to track, separated by "
+"commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. "
+"Wildcards: <code>*</code> matches 'any string, including the empty string', "
+"<code>!</code> matches 'any character'. For example, <code>/abou*</code> "
+"will match /about and /abound, <code>/abo*t</code> will match /aboundant "
+"and /about, <code>/abo!t</code> will match /about and /abort. Strings are "
+"case-insensitive."
+msgstr ""
+"Eine Komma-separierte Liste von URLs,  deren Zugriffe WP SlimStat ignorieren "
+"soll. Den Domain-Namen nicht verwenden: /about, ?p=1, etc. Szchmasken: "
+"<code>*</code> steht für einen beliebigen Text, einschl. eines leeren "
+"Textes. <code>!</code> steht für ein beliebiges Zeichen. Zum Beispiel "
+"erfasst <code>/abou*</code> Folgendes: /about und /abound, <code>/abo*t</"
+"code> erfasst /aboundant und /about, <code>/abo!t</code> erfasst /about und /"
+"abort. Groß- / Kleinschreibung wird dabei nicht beachtet."
+
+#: ../../admin/config/index.php:75
+#, fuzzy
+msgid "Countries"
+msgstr "L&auml;nder"
+
+#: ../../admin/config/index.php:75
+#, fuzzy
+msgid ""
+"Country codes (i.e.: <code>en-us, it, es</code>) that you don't want to "
+"track, separated by commas."
+msgstr ""
+"Liste der L&auml;dercodes (z.B.: <code>en-us, de, it, es</code>), die nicht "
+"mit erfasst werden sollen, getrennt durch Kommata."
+
+#: ../../admin/config/index.php:76
+#, fuzzy
+msgid "User Agents"
+msgstr "Browser"
+
+#: ../../admin/config/index.php:76
+#, fuzzy
+msgid ""
+"Browsers (user agents) you don't want to track, separated by commas. You can "
+"specify the browser's version adding a slash after the name  (i.e. "
+"<em>Firefox/3.6</em>). Wildcards: <code>*</code> matches 'any string, "
+"including the empty string', <code>!</code> matches 'any character'. For "
+"example, <code>Chr*</code> will match Chrome and Chromium, <code>IE/!.0</"
+"code> will match IE/7.0 and IE/8.0. Strings are case-insensitive."
+msgstr ""
+"Eine Komma-separierte Liste von URLs,  deren Zugriffe WP SlimStat ignorieren "
+"soll. Den Domain-Namen nicht verwenden: /about, ?p=1, etc. Szchmasken: "
+"<code>*</code> steht für einen beliebigen Text, einschl. eines leeren "
+"Textes. <code>!</code> steht für ein beliebiges Zeichen. Zum Beispiel "
+"erfasst <code>/abou*</code> Folgendes: /about und /abound, <code>/abo*t</"
+"code> erfasst /aboundant und /about, <code>/abo!t</code> erfasst /about und /"
+"abort. Groß- / Kleinschreibung wird dabei nicht beachtet."
+
+#: ../../admin/config/index.php:77
+#, fuzzy
+msgid "Referring Sites"
+msgstr "Verweisende Dom&auml;ne"
+
+#: ../../admin/config/index.php:77
+#, fuzzy
+msgid ""
+"Referring URLs that you don't want to track, separated by commas: "
+"<code>http://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. "
+"Wildcards: <code>*</code> matches 'any string, including the empty string', "
+"<code>!</code> matches 'any character'. Strings are case-insensitive. Please "
+"include either a wildcard or the protocol you want to filter (http://, "
+"https://)."
+msgstr ""
+"Eine Komma-separierte Liste von URLs,  deren Zugriffe WP SlimStat ignorieren "
+"soll. Den Domain-Namen nicht verwenden: /about, ?p=1, etc. Szchmasken: "
+"<code>*</code> steht für einen beliebigen Text, einschl. eines leeren "
+"Textes. <code>!</code> steht für ein beliebiges Zeichen. Zum Beispiel "
+"erfasst <code>/abou*</code> Folgendes: /about und /abound, <code>/abo*t</"
+"code> erfasst /aboundant und /about, <code>/abo!t</code> erfasst /about und /"
+"abort. Groß- / Kleinschreibung wird dabei nicht beachtet."
+
+#: ../../admin/config/index.php:79 ../../admin/config/index.php:215
+msgid "Miscellaneous"
+msgstr ""
+
+#: ../../admin/config/index.php:80
+msgid "Enable Privacy Mode"
+msgstr ""
+
+#: ../../admin/config/index.php:80
+#, fuzzy
+msgid "Mask your visitors' IP addresses to comply with European Privacy Laws."
+msgstr ""
+"Diese Option maskiert das letzte Byte der IP-Adressen Ihrere Besucher um die "
+"Europ&auml;ischen Datenschutzgesetze zur erf&uuml;llen."
+
+#: ../../admin/config/index.php:81
+msgid "Ignore Prefetch Requests"
+msgstr ""
+
+#: ../../admin/config/index.php:81
+#, fuzzy
+msgid ""
+"Prevent WP SlimStat from tracking pageviews generated by Firefox's <a "
+"href='https://developer.mozilla.org/en/Link_prefetching_FAQ' "
+"target='_blank'>Link Prefetching functionality</a>."
+msgstr ""
+"Verhindert, dass WP SlimStat Pageviews trackt, die durch die <a "
+"href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>"
+
+#: ../../admin/config/index.php:97
+msgid "Ignore users (username not found)"
+msgstr ""
+
+#: ../../admin/config/index.php:120
+msgid ""
+"Invalid capability. Please check <a href=\"http://codex.wordpress.org/"
+"Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
+msgstr ""
+
+#: ../../admin/config/index.php:130
+#, fuzzy
+msgid "Reports"
+msgstr "individuelle Auswertungen"
+
+#: ../../admin/config/index.php:131
+#, fuzzy
+msgid "Restrict Authors"
+msgstr "Autor der Seiten"
+
+#: ../../admin/config/index.php:131
+msgid ""
+"Enable this option if you want your authours to only see stats related to "
+"their own content."
+msgstr ""
+
+#: ../../admin/config/index.php:132 ../../admin/config/index.php:136
+#, fuzzy
+msgid "Capability"
+msgstr "Browser-F&auml;higkeiten"
+
+#: ../../admin/config/index.php:132
+msgid ""
+"Specify the minimum <a href='http://codex.wordpress.org/"
+"Roles_and_Capabilities' target='_new'>capability</a> needed to access the "
+"reports (default: <code>activate_plugins</code>). If this field is empty, "
+"<strong>all your users</strong> (including subscribers) will have access to "
+"the reports, unless a 'Read access' whitelist has been specified here below. "
+"In this case, the list has precedence over the capability."
+msgstr ""
+
+#: ../../admin/config/index.php:133 ../../admin/config/index.php:137
+msgid "Whitelist"
+msgstr ""
+
+#: ../../admin/config/index.php:133
+msgid ""
+"List all the users who should have access to the reports, separated by "
+"commas. Administrators are implicitly allowed, so you don't need to list "
+"them in here. Usernames are case sensitive."
+msgstr ""
+
+#: ../../admin/config/index.php:136
+msgid ""
+"Specify the minimum <a href='http://codex.wordpress.org/"
+"Roles_and_Capabilities' target='_new'>capability</a> required to configure "
+"WP SlimStat (default: <code>activate_plugins</code>). The whitelist here "
+"below can be used to override this option for specific users."
+msgstr ""
+
+#: ../../admin/config/index.php:137
+msgid ""
+"List all the users who can edit these options, separated by commas. Please "
+"be advised that admins <strong>are not</strong> implicitly allowed, so do "
+"not forget to include yourself! Usernames are case sensitive."
+msgstr ""
+
+#: ../../admin/config/index.php:153
+msgid "Read access: username not found"
+msgstr ""
+
+#: ../../admin/config/index.php:166 ../../admin/config/index.php:197
+msgid ""
+"Invalid minimum capability. Please check <a href=\"http://codex.wordpress."
+"org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more "
+"information"
+msgstr ""
+
+#: ../../admin/config/index.php:184
+msgid "Config access: username not found"
+msgstr ""
+
+#: ../../admin/config/index.php:208
+msgid "Detect Smoothing"
+msgstr ""
+
+#: ../../admin/config/index.php:208
+msgid ""
+"Detect if your visitors' browsers support anti-aliasing (font smoothing). "
+"This option required Spy Mode to be enabled."
+msgstr ""
+
+#: ../../admin/config/index.php:209
+#, fuzzy
+msgid "Track Outbound Clicks"
+msgstr "Letzte ausgehende Links"
+
+#: ../../admin/config/index.php:209
+msgid ""
+"Track when your visitors click on link to external websites. This option "
+"required Spy Mode to be enabled."
+msgstr ""
+
+#: ../../admin/config/index.php:210
+#, fuzzy
+msgid "Session Duration"
+msgstr "Besuchsdauer"
+
+#: ../../admin/config/index.php:210
+msgid ""
+"How many seconds should a human session last? Google Analytics sets it to "
+"1800 seconds."
+msgstr ""
+
+#: ../../admin/config/index.php:211
+msgid "Extend Session"
+msgstr ""
+
+#: ../../admin/config/index.php:211
+msgid "Extend the duration of a session each time the user visits a new page."
+msgstr ""
+
+#: ../../admin/config/index.php:212
+msgid "Enable CDN"
+msgstr ""
+
+#: ../../admin/config/index.php:212
+msgid ""
+"Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, "
+"by serving our tracking code from their fast and reliable network (free "
+"service)."
+msgstr ""
+
+#: ../../admin/config/index.php:213
+msgid "Extensions to Track"
+msgstr ""
+
+#: ../../admin/config/index.php:213
+msgid ""
+"List all the file extensions that you want to be treated as Downloads. "
+"Please note that links pointing to external resources (i.e. PDFs on a "
+"different website) are considered Downloads and not Outbound Links (and "
+"tracked as such), if their extension matches one of the ones listed here "
+"below."
+msgstr ""
+
+#: ../../admin/config/index.php:216
+msgid "Debug Mode"
+msgstr ""
+
+#: ../../admin/config/index.php:216
+msgid "Display the SQL queries used to retrieve the data."
+msgstr ""
+
+#: ../../admin/config/index.php:217
+msgid "IP Lookup"
+msgstr "IP Suche"
+
+#: ../../admin/config/index.php:217
+msgid "Customize the Geolocation service to be used in the reports."
+msgstr ""
+
+#: ../../admin/config/index.php:218
+msgid "Custom CSS"
+msgstr ""
+
+#: ../../admin/config/index.php:218
+msgid ""
+"Paste here your custom stylesheet to personalize the way your reports look. "
+"<a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
+"target='_blank'>Check the FAQ</a> for more information on how to use this "
+"setting."
+msgstr ""
+
+#: ../../admin/config/index.php:219
+msgid "Enable UAN"
+msgstr ""
+
+#: ../../admin/config/index.php:219
+msgid ""
+"Send anonymous data about unknown user agents to our server for analysis. "
+"This allows us to contribute to the <a href='http://browscap.org/' "
+"target='_blank'>BrowsCap opensource project</a>, and improve the accuracy of "
+"WP SlimStat's browser detection functionality."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:20
+msgid "Your WP SlimStat tables have been successfully converted to InnoDB."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:30
+msgid "records deleted from your database."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:34
+msgid "All the records were successfully deleted."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:38
+msgid "Your reports were successfully restored to their default arrangement."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:45
+msgid ""
+"Congrats! WP SlimStat is now optimized for <a href=\"http://www.youtube.com/"
+"watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:52
+msgid ""
+"Indexing has been successfully disabled. Enjoy the extra database space you "
+"just gained!"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:83
+msgid "Database Information"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:86
+#, fuzzy
+msgid "Engine"
+msgstr "Suchmaschinen"
+
+#: ../../admin/config/maintenance.php:90
+msgid "switch to InnoDB"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:101
+#, fuzzy
+msgid "records"
+msgstr "Suchbegriffe"
+
+#: ../../admin/config/maintenance.php:106
+#, fuzzy
+msgid "Data Maintenance"
+msgstr "Wartung"
+
+#: ../../admin/config/maintenance.php:109
+#, fuzzy
+msgid "Delete pageviews where"
+msgstr "Zeige Seitenaufrufe wo"
+
+#: ../../admin/config/maintenance.php:123 ../../admin/view/index.php:17
+msgid "equals"
+msgstr "entspricht"
+
+#: ../../admin/config/maintenance.php:124 ../../admin/view/index.php:18
+msgid "is not equal to"
+msgstr "ist ungleich zu"
+
+#: ../../admin/config/maintenance.php:125 ../../admin/view/index.php:19
+msgid "contains"
+msgstr "enth&auml;lt"
+
+#: ../../admin/config/maintenance.php:126 ../../admin/view/index.php:20
+msgid "does not contain"
+msgstr "enth&auml;lt nicht"
+
+#: ../../admin/config/maintenance.php:127 ../../admin/view/index.php:21
+msgid "starts with"
+msgstr "beginnt mit"
+
+#: ../../admin/config/maintenance.php:128 ../../admin/view/index.php:22
+msgid "ends with"
+msgstr "endet mit"
+
+#: ../../admin/config/maintenance.php:129 ../../admin/view/index.php:23
+msgid "sounds like"
+msgstr "&auml;hnelt"
+
+#: ../../admin/config/maintenance.php:130 ../../admin/view/index.php:24
+msgid "is greater than"
+msgstr "ist gr&ouml;sser als"
+
+#: ../../admin/config/maintenance.php:131 ../../admin/view/index.php:25
+msgid "is less than"
+msgstr "ist kleiner als"
+
+#: ../../admin/config/maintenance.php:132 ../../admin/view/index.php:26
+msgid "matches"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:133 ../../admin/view/index.php:27
+#, fuzzy
+msgid "does not match"
+msgstr "enth&auml;lt nicht"
+
+#: ../../admin/config/maintenance.php:134 ../../admin/view/index.php:28
+msgid "is empty"
+msgstr "ist leer"
+
+#: ../../admin/config/maintenance.php:135 ../../admin/view/index.php:29
+msgid "is not empty"
+msgstr "ist nicht leer"
+
+#: ../../admin/config/maintenance.php:138 ../../admin/view/index.php:32
+#: ../../admin/view/index.php:78
+msgid "Apply"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:139
+msgid ""
+"Are you sure you want to PERMANENTLY delete these records from your database?"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:144
+msgid "Empty Database"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:147
+msgid ""
+"Are you sure you want to PERMANENTLY DELETE ALL the records from your "
+"database?"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:147
+#, fuzzy
+msgid "Delete All Pageviews"
+msgstr "Direkte Seitenaufrufe"
+
+#: ../../admin/config/maintenance.php:148
+msgid ""
+"Erase all the information collected so far by WP SlimStat. This operation "
+"<strong>does not</strong> reset your settings."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:152
+#, fuzzy
+msgid "Reset Reports"
+msgstr "individuelle Auswertungen"
+
+#: ../../admin/config/maintenance.php:155
+msgid ""
+"Are you sure you want to restore the default arrangement of your reports?"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:155
+msgid "No Panic Button"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:156
+msgid ""
+"Reset the default arrangement of your reports. Helpful when, for some "
+"reason, reports disappear from your panels."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:160
+msgid "Performance"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:163
+msgid "Improve Performance"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:164
+msgid ""
+"Please note that you will need about 30% more DB space to store the extra "
+"information required."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:168
+msgid "Save DB Space"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:169
+msgid ""
+"Please note that by removing table indexes, WP SlimStat's performance will "
+"be affected."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:174
+msgid "Import and Export"
+msgstr ""
+
+#: ../../admin/config/maintenance.php:178
+msgid ""
+"Here below you can find the current configuration string for WP SlimStat. "
+"You can update your settings by pasting a new string here below and clicking "
+"on Import."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:183
+#, fuzzy
+msgid "Import"
+msgstr "Support"
+
+#: ../../admin/config/maintenance.php:184
+msgid "Are you sure you want to OVERWRITE your current settings?"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:3
+msgid "xx"
+msgstr "xx"
+
+#: ../../admin/lang/dynamic_strings.php:4
+msgid "unknown"
+msgstr "Unknown"
+
+#: ../../admin/lang/dynamic_strings.php:5
+#, fuzzy
+msgid "win8.1"
+msgstr "Windows 8"
+
+#: ../../admin/lang/dynamic_strings.php:6
+msgid "win8"
+msgstr "Windows 8"
+
+#: ../../admin/lang/dynamic_strings.php:7
+msgid "win7"
+msgstr "Windows 7"
+
+#: ../../admin/lang/dynamic_strings.php:8
+msgid "winvista"
+msgstr "Windows Vista"
+
+#: ../../admin/lang/dynamic_strings.php:9
+msgid "win2003"
+msgstr "Windows 2003"
+
+#: ../../admin/lang/dynamic_strings.php:10
+msgid "winxp"
+msgstr "Windows XP"
+
+#: ../../admin/lang/dynamic_strings.php:11
+msgid "winnt"
+msgstr "Windows NT"
+
+#: ../../admin/lang/dynamic_strings.php:12
+msgid "win2000"
+msgstr "Windows 2000"
+
+#: ../../admin/lang/dynamic_strings.php:13
+msgid "winme"
+msgstr "Windows ME"
+
+#: ../../admin/lang/dynamic_strings.php:14
+msgid "win98"
+msgstr "Windows 98"
+
+#: ../../admin/lang/dynamic_strings.php:15
+msgid "win95"
+msgstr "Windows 95"
+
+#: ../../admin/lang/dynamic_strings.php:16
+msgid "win31"
+msgstr "Windows 3.1"
+
+#: ../../admin/lang/dynamic_strings.php:17
+msgid "win32"
+msgstr "Windows 32-bit"
+
+#: ../../admin/lang/dynamic_strings.php:18
+msgid "win16"
+msgstr "Windows 16-bit"
+
+#: ../../admin/lang/dynamic_strings.php:19
+msgid "mac68k"
+msgstr "Mac 68k"
+
+#: ../../admin/lang/dynamic_strings.php:20
+msgid "macosx"
+msgstr "Mac OS X"
+
+#: ../../admin/lang/dynamic_strings.php:21
+msgid "macppc"
+msgstr "Mac PowerPC"
+
+#: ../../admin/lang/dynamic_strings.php:22
+msgid "mac"
+msgstr "Mac"
+
+#: ../../admin/lang/dynamic_strings.php:23
+msgid "os/2"
+msgstr "IBM OS/2"
+
+#: ../../admin/lang/dynamic_strings.php:24
+msgid "sunos"
+msgstr "Sun OS"
+
+#: ../../admin/lang/dynamic_strings.php:25
+msgid "solaris"
+msgstr "Solaris"
+
+#: ../../admin/lang/dynamic_strings.php:26
+msgid "unix"
+msgstr "Unix"
+
+#: ../../admin/lang/dynamic_strings.php:27
+msgid "irix"
+msgstr "IRIX"
+
+#: ../../admin/lang/dynamic_strings.php:28
+msgid "hp-ux"
+msgstr "HP-UX"
+
+#: ../../admin/lang/dynamic_strings.php:29
+msgid "aix"
+msgstr "IBM AIX"
+
+#: ../../admin/lang/dynamic_strings.php:30
+msgid "beos"
+msgstr "BeOS"
+
+#: ../../admin/lang/dynamic_strings.php:31
+msgid "cygwin"
+msgstr "Cygwin"
+
+#: ../../admin/lang/dynamic_strings.php:32
+msgid "digital unix"
+msgstr "Digital Unix"
+
+#: ../../admin/lang/dynamic_strings.php:33
+msgid "risc os"
+msgstr "Risc OS"
+
+#: ../../admin/lang/dynamic_strings.php:34
+msgid "openvms"
+msgstr "OpenVMS"
+
+#: ../../admin/lang/dynamic_strings.php:35
+msgid "linux"
+msgstr "Linux"
+
+#: ../../admin/lang/dynamic_strings.php:36
+msgid "freebsd"
+msgstr "FreeBSD"
+
+#: ../../admin/lang/dynamic_strings.php:37
+msgid "openbsd"
+msgstr "OpenBSD"
+
+#: ../../admin/lang/dynamic_strings.php:38
+msgid "netbsd"
+msgstr "NetBSD"
+
+#: ../../admin/lang/dynamic_strings.php:39
+msgid "debian"
+msgstr "Debian"
+
+#: ../../admin/lang/dynamic_strings.php:40
+msgid "amiga"
+msgstr "Amiga"
+
+#: ../../admin/lang/dynamic_strings.php:41
+msgid "android"
+msgstr "Android"
+
+#: ../../admin/lang/dynamic_strings.php:42
+msgid "wyderos"
+msgstr "WyderOS"
+
+#: ../../admin/lang/dynamic_strings.php:43
+msgid "iphone osx"
+msgstr "iPhone OS X"
+
+#: ../../admin/lang/dynamic_strings.php:44
+msgid "ios"
+msgstr "iPhone OS X"
+
+#: ../../admin/lang/dynamic_strings.php:45
+msgid "palm"
+msgstr "Palm"
+
+#: ../../admin/lang/dynamic_strings.php:46
+msgid "wap"
+msgstr "WAP"
+
+#: ../../admin/lang/dynamic_strings.php:47
+msgid "java"
+msgstr "Java"
+
+#: ../../admin/lang/dynamic_strings.php:48
+msgid "winphone7"
+msgstr "Windows Phone"
+
+#: ../../admin/lang/dynamic_strings.php:49
+msgid "wince"
+msgstr "Windows CE"
+
+#: ../../admin/lang/dynamic_strings.php:50
+msgid "symbianos"
+msgstr "Symbian OS"
+
+#: ../../admin/lang/dynamic_strings.php:51
+msgid "blackberry os"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:52
+msgid "webos"
+msgstr "WebOS"
+
+#: ../../admin/lang/dynamic_strings.php:53
+msgid "p-and"
+msgstr "Android"
+
+#: ../../admin/lang/dynamic_strings.php:54
+msgid "p-bla"
+msgstr "BlackBerry"
+
+#: ../../admin/lang/dynamic_strings.php:55
+msgid "p-chr"
+msgstr "Chrome OS"
+
+#: ../../admin/lang/dynamic_strings.php:56
+msgid "p-fre"
+msgstr "Linux FreeBSD"
+
+#: ../../admin/lang/dynamic_strings.php:57
+msgid "p-ios"
+msgstr "Apple iOS"
+
+#: ../../admin/lang/dynamic_strings.php:58
+msgid "p-jav"
+msgstr "Java-based OS"
+
+#: ../../admin/lang/dynamic_strings.php:59
+msgid "p-lin"
+msgstr "Linux"
+
+#: ../../admin/lang/dynamic_strings.php:60
+msgid "p-mac"
+msgstr "Apple"
+
+#: ../../admin/lang/dynamic_strings.php:61
+msgid "p-sym"
+msgstr "Symbian OS"
+
+#: ../../admin/lang/dynamic_strings.php:62
+msgid "p-unk"
+msgstr "Unknown"
+
+#: ../../admin/lang/dynamic_strings.php:63
+msgid "p-win"
+msgstr "Microsoft"
+
+#: ../../admin/lang/dynamic_strings.php:64
+msgid "powertv"
+msgstr "PowerTV"
+
+#: ../../admin/lang/dynamic_strings.php:65
+msgid "acrobat"
+msgstr "Acrobat Reader"
+
+#: ../../admin/lang/dynamic_strings.php:66
+msgid "director"
+msgstr "Macromedia Director"
+
+#: ../../admin/lang/dynamic_strings.php:67
+msgid "flash"
+msgstr "Adobe Flash Player"
+
+#: ../../admin/lang/dynamic_strings.php:68
+msgid "mediaplayer"
+msgstr "Microsoft Media Player"
+
+#: ../../admin/lang/dynamic_strings.php:69
+msgid "quicktime"
+msgstr "QuickTime"
+
+#: ../../admin/lang/dynamic_strings.php:70
+msgid "real"
+msgstr "Real Player"
+
+#: ../../admin/lang/dynamic_strings.php:71
+msgid "silverlight"
+msgstr "Microsoft Silverlight"
+
+# 	Afrikaans
+#: ../../admin/lang/dynamic_strings.php:72
+msgid "l-af"
+msgstr "Afrikaans"
+
+# 	Afrikaans
+#: ../../admin/lang/dynamic_strings.php:73
+#, fuzzy
+msgid "l-af-za"
+msgstr "Afrikaans"
+
+# 	Arabic
+#: ../../admin/lang/dynamic_strings.php:74
+msgid "l-ar"
+msgstr "Arabic"
+
+# Arabic (United Arab Emirates)
+#: ../../admin/lang/dynamic_strings.php:75
+msgid "l-ar-ae"
+msgstr "Arabic (United Arab Emirates)"
+
+# Arabic (Bahrain)
+#: ../../admin/lang/dynamic_strings.php:76
+msgid "l-ar-bh"
+msgstr "Arabic (Bahrain)"
+
+# Arabic (Algeria)
+#: ../../admin/lang/dynamic_strings.php:77
+msgid "l-ar-dz"
+msgstr "Arabic (Algeria)"
+
+# Arabic (Egypt)
+#: ../../admin/lang/dynamic_strings.php:78
+msgid "l-ar-eg"
+msgstr "Arabic (Egypt)"
+
+# Arabic (Iraq)
+#: ../../admin/lang/dynamic_strings.php:79
+msgid "l-ar-iq"
+msgstr "Arabic (Iraq)"
+
+# Arabic (Jordan)
+#: ../../admin/lang/dynamic_strings.php:80
+msgid "l-ar-jo"
+msgstr "Arabic (Jordan)"
+
+# Arabic (Kuwait)
+#: ../../admin/lang/dynamic_strings.php:81
+msgid "l-ar-kw"
+msgstr "Arabic (Kuwait)"
+
+# Arabic (Lebanon)
+#: ../../admin/lang/dynamic_strings.php:82
+msgid "l-ar-lb"
+msgstr "Arabic (Lebanon)"
+
+# Arabic (Libya)
+#: ../../admin/lang/dynamic_strings.php:83
+msgid "l-ar-ly"
+msgstr "Arabic (Libya)"
+
+# Arabic (Morocco)
+#: ../../admin/lang/dynamic_strings.php:84
+msgid "l-ar-ma"
+msgstr "Arabic (Morocco)"
+
+# Arabic (Oman)
+#: ../../admin/lang/dynamic_strings.php:85
+msgid "l-ar-om"
+msgstr "Arabic (Oman)"
+
+# Arabic (Qatar)
+#: ../../admin/lang/dynamic_strings.php:86
+msgid "l-ar-qa"
+msgstr "Arabic (Qatar)"
+
+# Arabic (Saudi Arabia)
+#: ../../admin/lang/dynamic_strings.php:87
+msgid "l-ar-sa"
+msgstr "Arabic (Saudi Arabia)"
+
+# Arabic (Syria)
+#: ../../admin/lang/dynamic_strings.php:88
+msgid "l-ar-sy"
+msgstr "Arabic (Syria)"
+
+# Arabic (Tunisia)
+#: ../../admin/lang/dynamic_strings.php:89
+msgid "l-ar-tn"
+msgstr "Arabic (Tunisia)"
+
+# Arabic (Yemen)
+#: ../../admin/lang/dynamic_strings.php:90
+msgid "l-ar-ye"
+msgstr "Arabic (Yemen)"
+
+# 	Azerbaijani
+#: ../../admin/lang/dynamic_strings.php:91
+msgid "l-az"
+msgstr "Azerbaijani"
+
+# 	Azerbaijani
+#: ../../admin/lang/dynamic_strings.php:92
+#, fuzzy
+msgid "l-az-az"
+msgstr "Azerbaijani"
+
+# 	Belarusian
+#: ../../admin/lang/dynamic_strings.php:93
+msgid "l-be"
+msgstr "Belarusian"
+
+# 	Belarusian
+#: ../../admin/lang/dynamic_strings.php:94
+#, fuzzy
+msgid "l-be-by"
+msgstr "Belarusian"
+
+# 	Bulgarian
+#: ../../admin/lang/dynamic_strings.php:95
+msgid "l-bg"
+msgstr "Bulgarian"
+
+# 	Bulgarian
+#: ../../admin/lang/dynamic_strings.php:96
+#, fuzzy
+msgid "l-bg-bg"
+msgstr "Bulgarian"
+
+# 	Bosnian
+#: ../../admin/lang/dynamic_strings.php:97
+#, fuzzy
+msgid "l-bs-ba"
+msgstr "Bosnian"
+
+# 	Catalan; Valencian
+#: ../../admin/lang/dynamic_strings.php:98
+msgid "l-ca"
+msgstr "Catalan; Valencian"
+
+# 	Catalan; Valencian
+#: ../../admin/lang/dynamic_strings.php:99
+#, fuzzy
+msgid "l-ca-es"
+msgstr "Catalan; Valencian"
+
+# 	Czech
+#: ../../admin/lang/dynamic_strings.php:100
+msgid "l-cs"
+msgstr "Czech"
+
+# 	Czech
+#: ../../admin/lang/dynamic_strings.php:101
+#, fuzzy
+msgid "l-cs-cz"
+msgstr "Czech"
+
+# 	Welsh
+#: ../../admin/lang/dynamic_strings.php:102
+msgid "l-cy"
+msgstr "Welsh"
+
+# 	Welsh
+#: ../../admin/lang/dynamic_strings.php:103
+#, fuzzy
+msgid "l-cy-gb"
+msgstr "Welsh"
+
+# 	Danish
+#: ../../admin/lang/dynamic_strings.php:104
+msgid "l-da"
+msgstr "Danish"
+
+# 	Danish
+#: ../../admin/lang/dynamic_strings.php:105
+#, fuzzy
+msgid "l-da-dk"
+msgstr "Danish"
+
+# 	German
+#: ../../admin/lang/dynamic_strings.php:106
+msgid "l-de"
+msgstr "German"
+
+# German (Austria)
+#: ../../admin/lang/dynamic_strings.php:107
+msgid "l-de-at"
+msgstr "German (Austria)"
+
+# German (Switzerland)
+#: ../../admin/lang/dynamic_strings.php:108
+msgid "l-de-ch"
+msgstr "German (Switzerland)"
+
+# German (Germany)
+#: ../../admin/lang/dynamic_strings.php:109
+msgid "l-de-de"
+msgstr "German (Germany)"
+
+# German (Liechtenstein)
+#: ../../admin/lang/dynamic_strings.php:110
+msgid "l-de-li"
+msgstr "German (Liechtenstein)"
+
+# German (Luxembourg)
+#: ../../admin/lang/dynamic_strings.php:111
+msgid "l-de-lu"
+msgstr "German (Luxembourg)"
+
+# 	Dhivehi; Divehi; Maldivian
+#: ../../admin/lang/dynamic_strings.php:112
+msgid "l-dv"
+msgstr "Dhivehi; Divehi; Maldivian"
+
+# 	Dhivehi; Divehi; Maldivian
+#: ../../admin/lang/dynamic_strings.php:113
+#, fuzzy
+msgid "l-dv-mv"
+msgstr "Dhivehi; Divehi; Maldivian"
+
+# 	Modern Greek (1453-)
+#: ../../admin/lang/dynamic_strings.php:114
+msgid "l-el"
+msgstr "Modern Greek (1453-)"
+
+# Greek (Greece)
+#: ../../admin/lang/dynamic_strings.php:115
+msgid "l-el-gr"
+msgstr "Greek (Greece)"
+
+# 	English
+#: ../../admin/lang/dynamic_strings.php:116
+msgid "l-en"
+msgstr "English"
+
+# English (Australia)
+#: ../../admin/lang/dynamic_strings.php:117
+msgid "l-en-au"
+msgstr "English (Australia)"
+
+# English (Belize)
+#: ../../admin/lang/dynamic_strings.php:118
+msgid "l-en-bz"
+msgstr "English (Belize)"
+
+# English (Canada)
+#: ../../admin/lang/dynamic_strings.php:119
+msgid "l-en-ca"
+msgstr "English (Canada)"
+
+# English (Canada)
+#: ../../admin/lang/dynamic_strings.php:120
+#, fuzzy
+msgid "l-en-cb"
+msgstr "English (Canada)"
+
+# English (United Kingdom)
+#: ../../admin/lang/dynamic_strings.php:121
+msgid "l-en-gb"
+msgstr "English (United Kingdom)"
+
+# English (Ireland)
+#: ../../admin/lang/dynamic_strings.php:122
+msgid "l-en-ie"
+msgstr "English (Ireland)"
+
+# English (Jamaica)
+#: ../../admin/lang/dynamic_strings.php:123
+msgid "l-en-jm"
+msgstr "English (Jamaica)"
+
+# English (New Zealand)
+#: ../../admin/lang/dynamic_strings.php:124
+msgid "l-en-nz"
+msgstr "English (New Zealand)"
+
+# 	English
+#: ../../admin/lang/dynamic_strings.php:125
+#, fuzzy
+msgid "l-en-ph"
+msgstr "English"
+
+# English (Trinidad)
+#: ../../admin/lang/dynamic_strings.php:126
+msgid "l-en-tt"
+msgstr "English (Trinidad)"
+
+# English (United States)
+#: ../../admin/lang/dynamic_strings.php:127
+msgid "l-en-us"
+msgstr "English (United States)"
+
+# English (South Africa)
+#: ../../admin/lang/dynamic_strings.php:128
+msgid "l-en-za"
+msgstr "English (South Africa)"
+
+# English (South Africa)
+#: ../../admin/lang/dynamic_strings.php:129
+#, fuzzy
+msgid "l-en-zw"
+msgstr "English (South Africa)"
+
+# 	Esperanto
+#: ../../admin/lang/dynamic_strings.php:130
+msgid "l-eo"
+msgstr "Esperanto"
+
+# 	Spanish; Castilian
+#: ../../admin/lang/dynamic_strings.php:131
+msgid "l-es"
+msgstr "Spanish; Castilian"
+
+# Spanish (Argentina)
+#: ../../admin/lang/dynamic_strings.php:132
+msgid "l-es-ar"
+msgstr "Spanish (Argentina)"
+
+# Spanish (Bolivia)
+#: ../../admin/lang/dynamic_strings.php:133
+msgid "l-es-bo"
+msgstr "Spanish (Bolivia)"
+
+# Spanish (Chile)
+#: ../../admin/lang/dynamic_strings.php:134
+msgid "l-es-cl"
+msgstr "Spanish (Chile)"
+
+# Spanish (Colombia)
+#: ../../admin/lang/dynamic_strings.php:135
+msgid "l-es-co"
+msgstr "Spanish (Colombia)"
+
+# Spanish (Costa Rica)
+#: ../../admin/lang/dynamic_strings.php:136
+msgid "l-es-cr"
+msgstr "Spanish (Costa Rica)"
+
+# Spanish (Dominican Republic)
+#: ../../admin/lang/dynamic_strings.php:137
+msgid "l-es-do"
+msgstr "Spanish (Dominican Republic)"
+
+# Spanish (Ecuador)
+#: ../../admin/lang/dynamic_strings.php:138
+msgid "l-es-ec"
+msgstr "Spanish (Ecuador)"
+
+# Spanish (Spain)
+#: ../../admin/lang/dynamic_strings.php:139
+msgid "l-es-es"
+msgstr "Spanish (Spain)"
+
+# Spanish (Guatemala)
+#: ../../admin/lang/dynamic_strings.php:140
+msgid "l-es-gt"
+msgstr "Spanish (Guatemala)"
+
+# Spanish (Honduras)
+#: ../../admin/lang/dynamic_strings.php:141
+msgid "l-es-hn"
+msgstr "Spanish (Honduras)"
+
+# Spanish (Mexico)
+#: ../../admin/lang/dynamic_strings.php:142
+msgid "l-es-mx"
+msgstr "Spanish (Mexico)"
+
+# Spanish (Nicaragua)
+#: ../../admin/lang/dynamic_strings.php:143
+msgid "l-es-ni"
+msgstr "Spanish (Nicaragua)"
+
+# Spanish (Panama)
+#: ../../admin/lang/dynamic_strings.php:144
+msgid "l-es-pa"
+msgstr "Spanish (Panama)"
+
+# Spanish (Peru)
+#: ../../admin/lang/dynamic_strings.php:145
+msgid "l-es-pe"
+msgstr "Spanish (Peru)"
+
+# Spanish (Puerto Rico)
+#: ../../admin/lang/dynamic_strings.php:146
+msgid "l-es-pr"
+msgstr "Spanish (Puerto Rico)"
+
+# Spanish (Paraguay)
+#: ../../admin/lang/dynamic_strings.php:147
+msgid "l-es-py"
+msgstr "Spanish (Paraguay)"
+
+# Spanish (El Salvador)
+#: ../../admin/lang/dynamic_strings.php:148
+msgid "l-es-sv"
+msgstr "Spanish (El Salvador)"
+
+# Spanish (Uruguay)
+#: ../../admin/lang/dynamic_strings.php:149
+msgid "l-es-uy"
+msgstr "Spanish (Uruguay)"
+
+# Spanish (Venezuela)
+#: ../../admin/lang/dynamic_strings.php:150
+msgid "l-es-ve"
+msgstr "Spanish (Venezuela)"
+
+# 	Estonian
+#: ../../admin/lang/dynamic_strings.php:151
+msgid "l-et"
+msgstr "Estonian"
+
+# 	Estonian
+#: ../../admin/lang/dynamic_strings.php:152
+#, fuzzy
+msgid "l-et-ee"
+msgstr "Estonian"
+
+# 	Basque
+#: ../../admin/lang/dynamic_strings.php:153
+msgid "l-eu"
+msgstr "Basque"
+
+# 	Basque
+#: ../../admin/lang/dynamic_strings.php:154
+#, fuzzy
+msgid "l-eu-es"
+msgstr "Basque"
+
+# 	Persian
+#: ../../admin/lang/dynamic_strings.php:155
+msgid "l-fa"
+msgstr "Persian"
+
+# 	Persian
+#: ../../admin/lang/dynamic_strings.php:156
+#, fuzzy
+msgid "l-fa-ir"
+msgstr "Persian"
+
+# 	Finnish
+#: ../../admin/lang/dynamic_strings.php:157
+msgid "l-fi"
+msgstr "Finnish"
+
+# 	Finnish
+#: ../../admin/lang/dynamic_strings.php:158
+#, fuzzy
+msgid "l-fi-fi"
+msgstr "Finnish"
+
+# 	Faroese
+#: ../../admin/lang/dynamic_strings.php:159
+msgid "l-fo"
+msgstr "Faroese"
+
+# 	Faroese
+#: ../../admin/lang/dynamic_strings.php:160
+#, fuzzy
+msgid "l-fo-fo"
+msgstr "Faroese"
+
+# 	French
+#: ../../admin/lang/dynamic_strings.php:161
+msgid "l-fr"
+msgstr "French"
+
+# French (Belgium)
+#: ../../admin/lang/dynamic_strings.php:162
+msgid "l-fr-be"
+msgstr "French (Belgium)"
+
+# French (Canada)
+#: ../../admin/lang/dynamic_strings.php:163
+msgid "l-fr-ca"
+msgstr "French (Canada)"
+
+# French (Switzerland)
+#: ../../admin/lang/dynamic_strings.php:164
+msgid "l-fr-ch"
+msgstr "French (Switzerland)"
+
+# French (France)
+#: ../../admin/lang/dynamic_strings.php:165
+msgid "l-fr-fr"
+msgstr "French (France)"
+
+# French (Luxembourg)
+#: ../../admin/lang/dynamic_strings.php:166
+msgid "l-fr-lu"
+msgstr "French (Luxembourg)"
+
+# French (Switzerland)
+#: ../../admin/lang/dynamic_strings.php:167
+#, fuzzy
+msgid "l-fr-mc"
+msgstr "French (Switzerland)"
+
+# 	Galician
+#: ../../admin/lang/dynamic_strings.php:168
+msgid "l-gl"
+msgstr "Galician"
+
+# 	Spanish; Castilian
+#: ../../admin/lang/dynamic_strings.php:169
+#, fuzzy
+msgid "l-gl-es"
+msgstr "Spanish; Castilian"
+
+# 	Gujarati
+#: ../../admin/lang/dynamic_strings.php:170
+msgid "l-gu"
+msgstr "Gujarati"
+
+# 	Gujarati
+#: ../../admin/lang/dynamic_strings.php:171
+#, fuzzy
+msgid "l-gu-in"
+msgstr "Gujarati"
+
+# 	Hebrew
+#: ../../admin/lang/dynamic_strings.php:172
+msgid "l-he"
+msgstr "Hebrew"
+
+# Hebrew (Israel)
+#: ../../admin/lang/dynamic_strings.php:173
+msgid "l-he-il"
+msgstr "Hebrew (Israel)"
+
+# 	Hindi
+#: ../../admin/lang/dynamic_strings.php:174
+msgid "l-hi"
+msgstr "Hindi"
+
+# 	Hindi
+#: ../../admin/lang/dynamic_strings.php:175
+#, fuzzy
+msgid "l-hi-in"
+msgstr "Hindi"
+
+# 	Croatian
+#: ../../admin/lang/dynamic_strings.php:176
+msgid "l-hr"
+msgstr "Croatian"
+
+# 	Croatian
+#: ../../admin/lang/dynamic_strings.php:177
+#, fuzzy
+msgid "l-hr-ba"
+msgstr "Croatian"
+
+# 	Croatian
+#: ../../admin/lang/dynamic_strings.php:178
+#, fuzzy
+msgid "l-hr-hr"
+msgstr "Croatian"
+
+# 	Hungarian
+#: ../../admin/lang/dynamic_strings.php:179
+msgid "l-hu"
+msgstr "Hungarian"
+
+# Hungarian (Hungary)
+#: ../../admin/lang/dynamic_strings.php:180
+msgid "l-hu-hu"
+msgstr "Hungarian (Hungary)"
+
+# 	Armenian
+#: ../../admin/lang/dynamic_strings.php:181
+msgid "l-hy"
+msgstr "Armenian"
+
+# 	Armenian
+#: ../../admin/lang/dynamic_strings.php:182
+#, fuzzy
+msgid "l-hy-am"
+msgstr "Armenian"
+
+# 	Indonesian
+#: ../../admin/lang/dynamic_strings.php:183
+msgid "l-id"
+msgstr "Indonesian"
+
+# 	Indonesian
+#: ../../admin/lang/dynamic_strings.php:184
+#, fuzzy
+msgid "l-id-id"
+msgstr "Indonesian"
+
+# 	Icelandic
+#: ../../admin/lang/dynamic_strings.php:185
+msgid "l-is"
+msgstr "Icelandic"
+
+# 	Icelandic
+#: ../../admin/lang/dynamic_strings.php:186
+#, fuzzy
+msgid "l-is-is"
+msgstr "Icelandic"
+
+# 	Italian
+#: ../../admin/lang/dynamic_strings.php:187
+msgid "l-it"
+msgstr "Italian"
+
+# Italian (Switzerland)
+#: ../../admin/lang/dynamic_strings.php:188
+msgid "l-it-ch"
+msgstr "Italian (Switzerland)"
+
+# Italian (Italia)
+#: ../../admin/lang/dynamic_strings.php:189
+msgid "l-it-it"
+msgstr "Italian (Italia)"
+
+# 	Japanese
+#: ../../admin/lang/dynamic_strings.php:190
+msgid "l-ja"
+msgstr "Japanese"
+
+# Japanes
+#: ../../admin/lang/dynamic_strings.php:191
+msgid "l-ja-jp"
+msgstr "Japanese"
+
+# 	Georgian
+#: ../../admin/lang/dynamic_strings.php:192
+msgid "l-ka"
+msgstr "Georgian"
+
+# 	Georgian
+#: ../../admin/lang/dynamic_strings.php:193
+#, fuzzy
+msgid "l-ka-ge"
+msgstr "Georgian"
+
+# 	Kazakh
+#: ../../admin/lang/dynamic_strings.php:194
+msgid "l-kk"
+msgstr "Kazakh"
+
+# 	Kazakh
+#: ../../admin/lang/dynamic_strings.php:195
+#, fuzzy
+msgid "l-kk-kz"
+msgstr "Kazakh"
+
+# 	Kannada
+#: ../../admin/lang/dynamic_strings.php:196
+msgid "l-kn"
+msgstr "Kannada"
+
+# 	Kannada
+#: ../../admin/lang/dynamic_strings.php:197
+#, fuzzy
+msgid "l-kn-in"
+msgstr "Kannada"
+
+# 	Korean
+#: ../../admin/lang/dynamic_strings.php:198
+msgid "l-ko"
+msgstr "Korean"
+
+# Korean (Republic of Korea)
+#: ../../admin/lang/dynamic_strings.php:199
+msgid "l-ko-kr"
+msgstr "Korean (Republic of Korea)"
+
+# 	Korean
+#: ../../admin/lang/dynamic_strings.php:200
+#, fuzzy
+msgid "l-kok"
+msgstr "Korean"
+
+# 	Korean
+#: ../../admin/lang/dynamic_strings.php:201
+#, fuzzy
+msgid "l-kok-in"
+msgstr "Korean"
+
+# 	Kirghiz; Kyrgyz
+#: ../../admin/lang/dynamic_strings.php:202
+msgid "l-ky"
+msgstr "Kirghiz; Kyrgyz"
+
+# 	Kirghiz; Kyrgyz
+#: ../../admin/lang/dynamic_strings.php:203
+#, fuzzy
+msgid "l-ky-kg"
+msgstr "Kirghiz; Kyrgyz"
+
+# 	Lithuanian
+#: ../../admin/lang/dynamic_strings.php:204
+msgid "l-lt"
+msgstr "Lithuanian"
+
+# 	Lithuanian
+#: ../../admin/lang/dynamic_strings.php:205
+#, fuzzy
+msgid "l-lt-lt"
+msgstr "Lithuanian"
+
+# 	Latvian
+#: ../../admin/lang/dynamic_strings.php:206
+msgid "l-lv"
+msgstr "Latvian"
+
+# 	Latvian
+#: ../../admin/lang/dynamic_strings.php:207
+#, fuzzy
+msgid "l-lv-lv"
+msgstr "Latvian"
+
+# 	Maori
+#: ../../admin/lang/dynamic_strings.php:208
+msgid "l-mi"
+msgstr "Maori"
+
+# 	Maori
+#: ../../admin/lang/dynamic_strings.php:209
+#, fuzzy
+msgid "l-mi-nz"
+msgstr "Maori"
+
+# 	Macedonian
+#: ../../admin/lang/dynamic_strings.php:210
+msgid "l-mk"
+msgstr "Macedonian"
+
+# 	Macedonian
+#: ../../admin/lang/dynamic_strings.php:211
+#, fuzzy
+msgid "l-mk-ml"
+msgstr "Macedonian"
+
+# 	Mongolian
+#: ../../admin/lang/dynamic_strings.php:212
+msgid "l-mn"
+msgstr "Mongolian"
+
+# 	Mongolian
+#: ../../admin/lang/dynamic_strings.php:213
+#, fuzzy
+msgid "l-mn-mn"
+msgstr "Mongolian"
+
+# 	Marathi
+#: ../../admin/lang/dynamic_strings.php:214
+msgid "l-mr"
+msgstr "Marathi"
+
+# 	Marathi
+#: ../../admin/lang/dynamic_strings.php:215
+#, fuzzy
+msgid "l-mr-in"
+msgstr "Marathi"
+
+# 	Malay
+#: ../../admin/lang/dynamic_strings.php:216
+msgid "l-ms"
+msgstr "Malay"
+
+# 	Malay
+#: ../../admin/lang/dynamic_strings.php:217
+#, fuzzy
+msgid "l-ms-bn"
+msgstr "Malay"
+
+# 	Malay
+#: ../../admin/lang/dynamic_strings.php:218
+#, fuzzy
+msgid "l-ms-my"
+msgstr "Malay"
+
+# 	Maltese
+#: ../../admin/lang/dynamic_strings.php:219
+msgid "l-mt"
+msgstr "Maltese"
+
+# 	Maltese
+#: ../../admin/lang/dynamic_strings.php:220
+#, fuzzy
+msgid "l-mt-mt"
+msgstr "Maltese"
+
+# 	Norwegian Bokmål
+#: ../../admin/lang/dynamic_strings.php:221
+msgid "l-nb"
+msgstr "Norwegian Bokmål"
+
+# 	Norwegian Bokmål
+#: ../../admin/lang/dynamic_strings.php:222
+#, fuzzy
+msgid "l-nb-no"
+msgstr "Norwegian Bokmål"
+
+# 	Dutch; Flemish
+#: ../../admin/lang/dynamic_strings.php:223
+msgid "l-nl"
+msgstr "Dutch; Flemish"
+
+# Dutch (Belgium)
+#: ../../admin/lang/dynamic_strings.php:224
+msgid "l-nl-be"
+msgstr "Dutch (Belgium)"
+
+# Dutch (Netherlands)
+#: ../../admin/lang/dynamic_strings.php:225
+msgid "l-nl-nl"
+msgstr "Dutch (Netherlands)"
+
+# 	Norwegian Nynorsk
+#: ../../admin/lang/dynamic_strings.php:226
+#, fuzzy
+msgid "l-nn-no"
+msgstr "Norwegian Nynorsk"
+
+#: ../../admin/lang/dynamic_strings.php:227
+msgid "l-ns"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:228
+msgid "l-ns-za"
+msgstr ""
+
+# 	Panjabi; Punjabi
+#: ../../admin/lang/dynamic_strings.php:229
+msgid "l-pa"
+msgstr "Panjabi; Punjabi"
+
+# 	Panjabi; Punjabi
+#: ../../admin/lang/dynamic_strings.php:230
+#, fuzzy
+msgid "l-pa-in"
+msgstr "Panjabi; Punjabi"
+
+# 	Polish
+#: ../../admin/lang/dynamic_strings.php:231
+msgid "l-pl"
+msgstr "Polish"
+
+# 	Polish
+#: ../../admin/lang/dynamic_strings.php:232
+msgid "l-pl-pl"
+msgstr "Polish (Poland)"
+
+# 	Pushto; Pashto
+#: ../../admin/lang/dynamic_strings.php:233
+msgid "l-ps"
+msgstr "Pushto; Pashto"
+
+# Spanish (Argentina)
+#: ../../admin/lang/dynamic_strings.php:234
+#, fuzzy
+msgid "l-ps-ar"
+msgstr "Spanish (Argentina)"
+
+# 	Portuguese
+#: ../../admin/lang/dynamic_strings.php:235
+msgid "l-pt"
+msgstr "Portuguese"
+
+# Portuguese (Brazil)
+#: ../../admin/lang/dynamic_strings.php:236
+msgid "l-pt-br"
+msgstr "Portuguese (Brazil)"
+
+# 	Portuguese
+#: ../../admin/lang/dynamic_strings.php:237
+msgid "l-pt-pt"
+msgstr "Portuguese (Portugal)"
+
+# 	Quechua
+#: ../../admin/lang/dynamic_strings.php:238
+msgid "l-qu"
+msgstr "Quechua"
+
+# 	Quechua
+#: ../../admin/lang/dynamic_strings.php:239
+#, fuzzy
+msgid "l-qu-bo"
+msgstr "Quechua"
+
+# 	Quechua
+#: ../../admin/lang/dynamic_strings.php:240
+#, fuzzy
+msgid "l-qu-ec"
+msgstr "Quechua"
+
+# 	Quechua
+#: ../../admin/lang/dynamic_strings.php:241
+#, fuzzy
+msgid "l-qu-pe"
+msgstr "Quechua"
+
+# 	Romanian; Moldavian; Moldovan
+#: ../../admin/lang/dynamic_strings.php:242
+msgid "l-ro"
+msgstr "Romanian; Moldavian; Moldovan"
+
+# 	Romanian; Moldavian; Moldovan
+#: ../../admin/lang/dynamic_strings.php:243
+#, fuzzy
+msgid "l-ro-ro"
+msgstr "Romanian; Moldavian; Moldovan"
+
+# 	Russian
+#: ../../admin/lang/dynamic_strings.php:244
+msgid "l-ru"
+msgstr "Russian"
+
+# Russian (Russia)
+#: ../../admin/lang/dynamic_strings.php:245
+msgid "l-ru-ru"
+msgstr "Russian (Russia)"
+
+# 	Sanskrit
+#: ../../admin/lang/dynamic_strings.php:246
+msgid "l-sa"
+msgstr "Sanskrit"
+
+# 	Sanskrit
+#: ../../admin/lang/dynamic_strings.php:247
+#, fuzzy
+msgid "l-sa-in"
+msgstr "Sanskrit"
+
+# 	Northern Sami
+#: ../../admin/lang/dynamic_strings.php:248
+msgid "l-se"
+msgstr "Northern Sami"
+
+# 	Northern Sami
+#: ../../admin/lang/dynamic_strings.php:249
+#, fuzzy
+msgid "l-se-fi"
+msgstr "Northern Sami"
+
+# 	Northern Sami
+#: ../../admin/lang/dynamic_strings.php:250
+#, fuzzy
+msgid "l-se-no"
+msgstr "Northern Sami"
+
+# 	Northern Sami
+#: ../../admin/lang/dynamic_strings.php:251
+#, fuzzy
+msgid "l-se-se"
+msgstr "Northern Sami"
+
+# 	Slovak
+#: ../../admin/lang/dynamic_strings.php:252
+msgid "l-sk"
+msgstr "Slovak"
+
+# 	Slovak
+#: ../../admin/lang/dynamic_strings.php:253
+#, fuzzy
+msgid "l-sk-sk"
+msgstr "Slovak"
+
+# 	Slovenian
+#: ../../admin/lang/dynamic_strings.php:254
+msgid "l-sl"
+msgstr "Slovenian"
+
+# 	Slovenian
+#: ../../admin/lang/dynamic_strings.php:255
+#, fuzzy
+msgid "l-sl-si"
+msgstr "Slovenian"
+
+# 	Albanian
+#: ../../admin/lang/dynamic_strings.php:256
+msgid "l-sq"
+msgstr "Albanian"
+
+# 	Albanian
+#: ../../admin/lang/dynamic_strings.php:257
+#, fuzzy
+msgid "l-sq-al"
+msgstr "Albanian"
+
+# 	Serbian
+#: ../../admin/lang/dynamic_strings.php:258
+#, fuzzy
+msgid "l-sr-ba"
+msgstr "Serbian"
+
+# 	Serbian
+#: ../../admin/lang/dynamic_strings.php:259
+#, fuzzy
+msgid "l-sr-sp"
+msgstr "Serbian"
+
+# 	Swedish
+#: ../../admin/lang/dynamic_strings.php:260
+msgid "l-sv"
+msgstr "Swedish"
+
+# Swedish (Finland)
+#: ../../admin/lang/dynamic_strings.php:261
+msgid "l-sv-fi"
+msgstr "Swedish (Finland)"
+
+# Swedish (Sweden)
+#: ../../admin/lang/dynamic_strings.php:262
+msgid "l-sv-se"
+msgstr "Swedish (Sweden)"
+
+# 	Swahili
+#: ../../admin/lang/dynamic_strings.php:263
+msgid "l-sw"
+msgstr "Swahili"
+
+# 	Swahili
+#: ../../admin/lang/dynamic_strings.php:264
+#, fuzzy
+msgid "l-sw-ke"
+msgstr "Swahili"
+
+# 	Tamil
+#: ../../admin/lang/dynamic_strings.php:265
+msgid "l-ta"
+msgstr "Tamil"
+
+# 	Tamil
+#: ../../admin/lang/dynamic_strings.php:266
+#, fuzzy
+msgid "l-ta-in"
+msgstr "Tamil"
+
+# 	Telugu
+#: ../../admin/lang/dynamic_strings.php:267
+msgid "l-te"
+msgstr "Telugu"
+
+# 	Telugu
+#: ../../admin/lang/dynamic_strings.php:268
+#, fuzzy
+msgid "l-te-in"
+msgstr "Telugu"
+
+# 	Thai
+#: ../../admin/lang/dynamic_strings.php:269
+msgid "l-th"
+msgstr "Thai"
+
+# 	Thai
+#: ../../admin/lang/dynamic_strings.php:270
+msgid "l-th-th"
+msgstr "Thai (Thailand)"
+
+# 	Tagalog
+#: ../../admin/lang/dynamic_strings.php:271
+msgid "l-tl"
+msgstr "Tagalog"
+
+# 	Tagalog
+#: ../../admin/lang/dynamic_strings.php:272
+#, fuzzy
+msgid "l-tl-ph"
+msgstr "Tagalog"
+
+# 	Tswana
+#: ../../admin/lang/dynamic_strings.php:273
+msgid "l-tn"
+msgstr "Tswana"
+
+# English (South Africa)
+#: ../../admin/lang/dynamic_strings.php:274
+#, fuzzy
+msgid "l-tn-za"
+msgstr "English (South Africa)"
+
+# 	Turkish
+#: ../../admin/lang/dynamic_strings.php:275
+msgid "l-tr"
+msgstr "Turkish"
+
+# Turkish
+#: ../../admin/lang/dynamic_strings.php:276
+msgid "l-tr-tr"
+msgstr "Turkish"
+
+# 	Tatar
+#: ../../admin/lang/dynamic_strings.php:277
+msgid "l-tt"
+msgstr "Tatar"
+
+# 	Tatar
+#: ../../admin/lang/dynamic_strings.php:278
+#, fuzzy
+msgid "l-tt-ru"
+msgstr "Tatar"
+
+# 	Tsonga
+#: ../../admin/lang/dynamic_strings.php:279
+msgid "l-ts"
+msgstr "Tsonga"
+
+# 	Ukrainian
+#: ../../admin/lang/dynamic_strings.php:280
+msgid "l-uk"
+msgstr "Ukrainian"
+
+# 	Ukrainian
+#: ../../admin/lang/dynamic_strings.php:281
+#, fuzzy
+msgid "l-uk-ua"
+msgstr "Ukrainian"
+
+# 	Urdu
+#: ../../admin/lang/dynamic_strings.php:282
+msgid "l-ur"
+msgstr "Urdu"
+
+# 	Urdu
+#: ../../admin/lang/dynamic_strings.php:283
+#, fuzzy
+msgid "l-ur-pk"
+msgstr "Urdu"
+
+# 	Uzbek
+#: ../../admin/lang/dynamic_strings.php:284
+msgid "l-uz"
+msgstr "Uzbek"
+
+# 	Uzbek
+#: ../../admin/lang/dynamic_strings.php:285
+#, fuzzy
+msgid "l-uz-uz"
+msgstr "Uzbek"
+
+# 	Vietnamese
+#: ../../admin/lang/dynamic_strings.php:286
+msgid "l-vi"
+msgstr "Vietnamese"
+
+# 	Vietnamese
+#: ../../admin/lang/dynamic_strings.php:287
+msgid "l-vi-vn"
+msgstr "Vietnamese (Vietnam)"
+
+# 	Xhosa
+#: ../../admin/lang/dynamic_strings.php:288
+msgid "l-xh"
+msgstr "Xhosa"
+
+# 	Xhosa
+#: ../../admin/lang/dynamic_strings.php:289
+#, fuzzy
+msgid "l-xh-za"
+msgstr "Xhosa"
+
+# 	Chinese
+#: ../../admin/lang/dynamic_strings.php:290
+msgid "l-zh"
+msgstr "Chinese"
+
+# Chinese (China)
+#: ../../admin/lang/dynamic_strings.php:291
+msgid "l-zh-cn"
+msgstr "Chinese (China)"
+
+# Chinese (Hong Kong)
+#: ../../admin/lang/dynamic_strings.php:292
+msgid "l-zh-hk"
+msgstr "Chinese (Hong Kong)"
+
+# 	Chinese
+#: ../../admin/lang/dynamic_strings.php:293
+#, fuzzy
+msgid "l-zh-mo"
+msgstr "Chinese"
+
+# Chinese (Singapore)
+#: ../../admin/lang/dynamic_strings.php:294
+msgid "l-zh-sg"
+msgstr "Chinese (Singapore)"
+
+# Chinese (Taiwan)
+#: ../../admin/lang/dynamic_strings.php:295
+msgid "l-zh-tw"
+msgstr "Taiwanese"
+
+# 	Zulu
+#: ../../admin/lang/dynamic_strings.php:296
+msgid "l-zu"
+msgstr "Zulu"
+
+# 	Zulu
+#: ../../admin/lang/dynamic_strings.php:297
+#, fuzzy
+msgid "l-zu-za"
+msgstr "Zulu"
+
+#: ../../admin/lang/dynamic_strings.php:298
+#: ../../admin/view/wp-slimstat-reports.php:496
+msgid "l-"
+msgstr "l-"
+
+# Unknown
+#: ../../admin/lang/dynamic_strings.php:299
+msgid "l-empty"
+msgstr "Unknown"
+
+# Unknown
+#: ../../admin/lang/dynamic_strings.php:300
+msgid "l-xx"
+msgstr "Unknown"
+
+#: ../../admin/lang/dynamic_strings.php:301
+msgid "c-xy"
+msgstr "Local IP"
+
+#: ../../admin/view/index.php:48 ../../admin/view/wp-slimstat-reports.php:783
+#, fuzzy
+msgid "Today"
+msgstr "Tage"
+
+#: ../../admin/view/index.php:49 ../../admin/view/wp-slimstat-reports.php:784
+msgid "Yesterday"
+msgstr ""
+
+#: ../../admin/view/index.php:50
+msgid "Last 7 Days"
+msgstr ""
+
+#: ../../admin/view/index.php:51
+#, fuzzy
+msgid "Last 60 Days"
+msgstr "Letzte 5 Minuten"
+
+#: ../../admin/view/index.php:52
+#, fuzzy
+msgid "Last 90 Days"
+msgstr "Letzte 5 Minuten"
+
+#: ../../admin/view/index.php:53
+#, fuzzy
+msgid "This Year So Far"
+msgstr "Jahr"
+
+#: ../../admin/view/index.php:54
+#, fuzzy
+msgid "Date Range"
+msgstr "Datum und Uhrzeit"
+
+#: ../../admin/view/index.php:56 ../../admin/view/wp-slimstat-db.php:72
+msgid "Day"
+msgstr "Tag"
+
+#: ../../admin/view/index.php:66 ../../admin/view/wp-slimstat-db.php:73
+msgid "Month"
+msgstr "Monat"
+
+#: ../../admin/view/index.php:75 ../../admin/view/wp-slimstat-db.php:74
+msgid "Year"
+msgstr "Jahr"
+
+#: ../../admin/view/index.php:80
+#, fuzzy
+msgid "Reset Filters"
+msgstr "Datumsfilter"
+
+#: ../../admin/view/index.php:121
+msgid "Your report here"
+msgstr "Deine Auswertung hier"
+
+#: ../../admin/view/index.php:123
+#, fuzzy
+msgid ""
+"Yes, you can! Create and view your personalized analytics for WP SlimStat. "
+"Just write a new plugin that retrieves the desired information from the "
+"database and then hook it to the action <code>wp_slimstat_custom_report</"
+"code>. For more information, visit my <a href=\"http://wordpress.org/tags/wp-"
+"slimstat?forum_id=10\" target=\"_blank\">support forum</a>."
+msgstr ""
+"Yes, you can! Erstellen Sie Ihre eigene Auswertung f&uuml;r WP SlimStat. Sie "
+"brauchen nur ein neues Plugin zu schreiben, dass die gew&uuml;nschten Daten "
+"aus der Datenbank liest. Ein kleines Demo-Plugin finden Sie in der "
+"Installationsdatei. Dieses zeigt Ihnen, wie Sie in 5 Minuten einen eigenen "
+"Report erstellen k&ouml;nnen. Sie finden es im Plugin-Verzeichnis: <code>wp-"
+"slimstat-custom-report-demo.php</code>. F&uuml;r weitere Informationen dazu "
+"besuchen Sie mein <a href=\"http://lab.duechiacchiere.it/\" title=\"WP "
+"SlimStat Support-Forum\" target=\"_blank\">Support-Forum</a>."
+
+#: ../../admin/view/index.php:137 ../../admin/view/wp-slimstat-reports.php:774
+#: ../../admin/view/wp-slimstat-reports.php:876
+#: ../../admin/view/wp-slimstat-reports.php:1099
+msgid "Pageviews"
+msgstr "Seitenaufrufe"
+
+#: ../../admin/view/index.php:140
+#, fuzzy
+msgid ""
+"When visitors leave a comment on your blog, WordPress assigns them a cookie. "
+"WP SlimStat leverages this information to identify returning visitors. "
+"Please note that visitors also include registered users."
+msgstr ""
+"Wenn Besucher einen Kommentar im Blog hinterlassen, weist WordPress diesen "
+"einen Cookie zu. WP SlimStat erweitert diese Information um die Erkennung "
+"zur&uuml;kkehrender Besucher."
+
+#: ../../admin/view/index.php:144
+#, fuzzy
+msgid "Take a sneak peek at what human visitors are doing on your website."
+msgstr ""
+"Erhalte einen Einblick von dem was echte Benutzer auf deiner Website machen"
+
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185 ../../admin/view/right-now.php:149
+msgid "Color codes"
+msgstr "Farb-Code"
+
+#: ../../admin/view/index.php:144
+msgid "From a search result page"
+msgstr "Von einer Suchergebnisseite"
+
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185
+msgid "Known Users"
+msgstr "Bekannte Benutzer"
+
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185
+msgid "Other Humans"
+msgstr "Andere echte Besucher"
+
+#: ../../admin/view/index.php:148
+#, fuzzy
+msgid "Keywords used by your visitors to find your website on a search engine."
+msgstr "Begriffe welche von Besuchern in Suchmaschinen verwendet wurden"
+
+#: ../../admin/view/index.php:151
+msgid ""
+"WP SlimStat retrieves live information from Alexa, Facebook and Google, to "
+"measures your site's rankings. Values are updated every 12 hours. Filters "
+"set above don't apply to this report."
+msgstr ""
+
+#: ../../admin/view/index.php:154
+#, fuzzy
+msgid "Human Visits"
+msgstr "Echte Besuche"
+
+#: ../../admin/view/index.php:157
+msgid ""
+"Internet Service Provider: a company which provides other companies or "
+"individuals with access to the Internet. Your DSL or cable internet service "
+"is provided to you by your ISP.<br><br>You can ignore specific IP addresses "
+"by setting the corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+"Internet Service Provider: eine Firma welche Individuen oder Firmen Zugriff "
+"auf das Internet gew&auml;hrt. Der Internet-Zugriff per DSL oder Kabel wird "
+"vom verwendeten ISP zur Verf&uuml;gung gestellt.<br><br>Um spezifische IP-"
+"Adressen generell zu ignorieren kann ein entsprechender Filter unter "
+"'Einstellungen > SlimStat > Filter' gesetzt werden."
+
+#: ../../admin/view/index.php:160
+msgid ""
+"You can configure WP SlimStat to ignore a specific Country by setting the "
+"corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+"Um ein spezifisches Land generell zu ignorieren kann ein entsprechender "
+"Filter unter 'Einstellungen > SlimStat > Filter' gesetzt werden."
+
+#: ../../admin/view/index.php:163
+msgid ""
+"This report shows you what user agent families (no version considered) are "
+"popular among your visitors."
+msgstr ""
+
+#: ../../admin/view/index.php:166
+msgid ""
+"This report shows you what operating system families (no version considered) "
+"are popular among your visitors."
+msgstr ""
+
+#: ../../admin/view/index.php:172
+#, fuzzy
+msgid "Average Pageviews per Visit"
+msgstr "Durchschnitt. Seitenaufrufe pro Besuch"
+
+#: ../../admin/view/index.php:175
+msgid ""
+"A <em>bounce page</em> is a single-page visit, or visit in which the person "
+"left your site from the entrance (landing) page."
+msgstr ""
+"Eine 'Absprung' Seite ist der Zugriff auf eine einzelne Seite oder wenn der "
+"Besucher die Website bereits auf der Einstiegs-Seite wieder verl&auml;sst."
+
+#: ../../admin/view/index.php:178
+msgid "Searches performed using Wordpress' built-in search functionality."
+msgstr ""
+"Suchen welche mit der WordPress eigenen Such-Funktion ausgef&uuml;hrt wurden."
+
+#: ../../admin/view/index.php:182
+msgid ""
+"<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in "
+"the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding "
+"link has an ID attribute associated to it."
+msgstr ""
+
+#: ../../admin/view/index.php:185
+msgid ""
+"This report lists any <em>event</em> occurred on your website. Please refer "
+"to the FAQ for more information on how to leverage this functionality."
+msgstr ""
+"Dieses Auswertung listet jedes <em>Ereignis</em> welches auf der Website "
+"stattgefunden hat. Bitte schlagen Sie in der FAQ für weitere Informationen "
+"zur Verwendung dieser Funktionalit&auml;t nach."
+
+#: ../../admin/view/index.php:188
+msgid ""
+"Your content at a glance: posts, comments, pingbacks, etc. Please note that "
+"this report is not affected by the filters set here above."
+msgstr ""
+
+#: ../../admin/view/right-now.php:8
+msgid "Human"
+msgstr ""
+
+#: ../../admin/view/right-now.php:8
+msgid "Bot/Crawler"
+msgstr ""
+
+#: ../../admin/view/right-now.php:8
+msgid "Mobile Device"
+msgstr ""
+
+#: ../../admin/view/right-now.php:8
+msgid "Syndication Reader"
+msgstr ""
+
+#: ../../admin/view/right-now.php:30
+#: ../../admin/view/wp-slimstat-reports.php:439
+#: ../../admin/view/wp-slimstat-reports.php:685
+msgid "No data to display"
+msgstr "keine Daten vorhanden"
+
+# Unknown
+#: ../../admin/view/right-now.php:56
+#: ../../admin/view/wp-slimstat-reports.php:484
+#: ../../admin/view/wp-slimstat-reports.php:723
+#: ../../admin/view/wp-slimstat-reports.php:987
+msgid "c-"
+msgstr "Unknown"
+
+#: ../../admin/view/right-now.php:122
+#: ../../admin/view/wp-slimstat-reports.php:538
+#: ../../admin/view/wp-slimstat-reports.php:542
+#: ../../admin/view/wp-slimstat-reports.php:705
+#: ../../admin/view/wp-slimstat-reports.php:743
+msgid "Open this URL in a new window"
+msgstr "Diese URL in einem neuen Fenster &ouml;ffnen"
+
+#: ../../admin/view/right-now.php:125
+msgid "Local search results page"
+msgstr "lokale Suchergebnisse"
+
+#: ../../admin/view/right-now.php:132
+#, fuzzy
+msgid "Open this referrer in a new window"
+msgstr "Verweisende Seite in einem neuen Fenster &ouml;ffnen"
+
+#: ../../admin/view/right-now.php:133
+#, fuzzy
+msgid "Open this outbound link in a new window"
+msgstr "Artikel in neuem Fenster &ouml;ffnen"
+
+#: ../../admin/view/right-now.php:134
+#, fuzzy
+msgid "Date and Time"
+msgstr "Datum/Zeit"
+
+#: ../../admin/view/right-now.php:135
+#, fuzzy
+msgid "Content Type"
+msgstr "Inhalt"
+
+#: ../../admin/view/right-now.php:150
+msgid "Visit with keywords"
+msgstr ""
+
+#: ../../admin/view/right-now.php:152
+#, fuzzy
+msgid "Known User"
+msgstr "Bekannte Benutzer"
+
+#: ../../admin/view/right-now.php:153
+#, fuzzy
+msgid "Human Visitor"
+msgstr "Echte Besuche"
+
+#: ../../admin/view/right-now.php:154
+msgid "Bot or Crawler"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-db.php:44
+msgid "IP Address"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-db.php:49
+msgid "Domain"
+msgstr "Dom&auml;ne"
+
+#: ../../admin/view/wp-slimstat-db.php:53
+msgid "-- Advanced filters --"
+msgstr "-- Erweiterte Filter --"
+
+#: ../../admin/view/wp-slimstat-db.php:54
+#: ../../admin/view/wp-slimstat-reports.php:58
+msgid "Browser Capabilities"
+msgstr "Browser-F&auml;higkeiten"
+
+#: ../../admin/view/wp-slimstat-db.php:66
+#, fuzzy
+msgid "Resource ID"
+msgstr "Top Ressourcen"
+
+#: ../../admin/view/wp-slimstat-db.php:71
+#, fuzzy
+msgid "Hour"
+msgstr "Seitenaufrufe pro Stunde"
+
+#: ../../admin/view/wp-slimstat-db.php:77
+#, fuzzy
+msgid "Order Direction"
+msgstr "Macromedia Director"
+
+#: ../../admin/view/wp-slimstat-db.php:78
+#, fuzzy
+msgid "Limit Results"
+msgstr "Max. Anzahl Ergebnisse"
+
+#: ../../admin/view/wp-slimstat-db.php:79
+msgid "Start From"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:38
+msgid "Pageviews (chart)"
+msgstr "Seitenaufrufe (Diagramm)"
+
+#: ../../admin/view/wp-slimstat-reports.php:39
+msgid "About WP SlimStat"
+msgstr "&Uuml;ber WP SlimStat"
+
+#: ../../admin/view/wp-slimstat-reports.php:40
+#: ../../admin/view/wp-slimstat-reports.php:52
+msgid "At a Glance"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:41
+#, fuzzy
+msgid "Currently Online"
+msgstr "Aktuelle Filter:"
+
+#: ../../admin/view/wp-slimstat-reports.php:42
+#: ../../admin/view/wp-slimstat-reports.php:76
+msgid "Spy View"
+msgstr "Spy View"
+
+#: ../../admin/view/wp-slimstat-reports.php:43
+#: ../../admin/view/wp-slimstat-reports.php:77
+msgid "Recent Search Terms"
+msgstr "Letzte interne Suchbegriffe"
+
+#: ../../admin/view/wp-slimstat-reports.php:44
+msgid "Top Pages"
+msgstr "Top Seiten"
+
+#: ../../admin/view/wp-slimstat-reports.php:45
+#: ../../admin/view/wp-slimstat-reports.php:74
+msgid "Top Traffic Sources"
+msgstr "Top Traffic Ursprung"
+
+#: ../../admin/view/wp-slimstat-reports.php:46
+msgid "Top Known Visitors"
+msgstr "Top bekannte Besucher"
+
+#: ../../admin/view/wp-slimstat-reports.php:47
+#: ../../admin/view/wp-slimstat-reports.php:72
+#: ../../admin/view/wp-slimstat-reports.php:92
+msgid "Top Search Terms"
+msgstr "Top Suchbegriffe"
+
+#: ../../admin/view/wp-slimstat-reports.php:48
+#: ../../admin/view/wp-slimstat-reports.php:59
+#: ../../admin/view/wp-slimstat-reports.php:73
+msgid "Top Countries"
+msgstr "Top L&auml;nder"
+
+#: ../../admin/view/wp-slimstat-reports.php:49
+msgid "Rankings"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:50
+#, fuzzy
+msgid "Top Language Families"
+msgstr "Top Sprachen"
+
+#: ../../admin/view/wp-slimstat-reports.php:51
+msgid "Human Visits (chart)"
+msgstr "Echte Besucher (Diagramm)"
+
+#: ../../admin/view/wp-slimstat-reports.php:53
+msgid "Top Languages"
+msgstr "Top Sprachen"
+
+#: ../../admin/view/wp-slimstat-reports.php:54
+#, fuzzy
+msgid "Top Browsers"
+msgstr "Browser"
+
+#: ../../admin/view/wp-slimstat-reports.php:55
+msgid "Top Service Providers"
+msgstr "Top Service Provider"
+
+#: ../../admin/view/wp-slimstat-reports.php:56
+msgid "Top Operating Systems"
+msgstr "Top Betriebssysteme"
+
+#: ../../admin/view/wp-slimstat-reports.php:57
+msgid "Top Screen Resolutions"
+msgstr "Top Bildschirm-Aufl&ouml;sungen"
+
+#: ../../admin/view/wp-slimstat-reports.php:60
+msgid "Visit Duration"
+msgstr "Besuchsdauer"
+
+#: ../../admin/view/wp-slimstat-reports.php:61
+#: ../../admin/view/wp-slimstat-reports.php:78
+msgid "Recent Countries"
+msgstr "Letzte L&auml;nder"
+
+#: ../../admin/view/wp-slimstat-reports.php:62
+msgid "Recent Screen Resolutions"
+msgstr "Letzte Bildschirm-Aufl&ouml;sungen"
+
+#: ../../admin/view/wp-slimstat-reports.php:63
+msgid "Recent Operating Systems"
+msgstr "Letzte Betriebssysteme"
+
+#: ../../admin/view/wp-slimstat-reports.php:64
+#, fuzzy
+msgid "Recent Browsers"
+msgstr "Letzte Artikel"
+
+#: ../../admin/view/wp-slimstat-reports.php:65
+msgid "Recent Languages"
+msgstr "Letzte Sprachen"
+
+#: ../../admin/view/wp-slimstat-reports.php:66
+#, fuzzy
+msgid "Top Browser Families"
+msgstr "Browser-F&auml;higkeiten"
+
+#: ../../admin/view/wp-slimstat-reports.php:67
+msgid "Top OS Families"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:68
+#, fuzzy
+msgid "Recent Users"
+msgstr "Letzte Browser"
+
+#: ../../admin/view/wp-slimstat-reports.php:69
+#, fuzzy
+msgid "Top Users"
+msgstr "Top Browser"
+
+#: ../../admin/view/wp-slimstat-reports.php:70
+msgid "Traffic Sources (chart)"
+msgstr "Traffic Ursprung (Diagramm)"
+
+#: ../../admin/view/wp-slimstat-reports.php:71
+msgid "Summary"
+msgstr "Zusammenfassung"
+
+#: ../../admin/view/wp-slimstat-reports.php:75
+msgid "Top Referring Search Engines"
+msgstr "Top verweisende Suchmaschinen"
+
+#: ../../admin/view/wp-slimstat-reports.php:79
+#: ../../admin/view/wp-slimstat-reports.php:95
+msgid "Top Landing Pages"
+msgstr "Top Einstiegs-Seiten"
+
+#: ../../admin/view/wp-slimstat-reports.php:80
+msgid "Average Pageviews per Visit (chart)"
+msgstr "Durchschnitt. Seitenaufrufe pro Besuch (Diagramm)"
+
+#: ../../admin/view/wp-slimstat-reports.php:81
+msgid "Recent Posts"
+msgstr "Letzte Artikel"
+
+#: ../../admin/view/wp-slimstat-reports.php:82
+msgid "Recent Bounce Pages"
+msgstr "Letzte Absprung-Seiten"
+
+#: ../../admin/view/wp-slimstat-reports.php:83
+msgid "Recent Feeds"
+msgstr "Letzte Feeds"
+
+#: ../../admin/view/wp-slimstat-reports.php:84
+msgid "Recent Pages Not Found"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:85
+msgid "Recent Internal Searches"
+msgstr "Letzte interne Suchbegriffe"
+
+#: ../../admin/view/wp-slimstat-reports.php:86
+msgid "Top Categories"
+msgstr "Top Kategorien"
+
+#: ../../admin/view/wp-slimstat-reports.php:87
+msgid "Recent Outbound Links"
+msgstr "Letzte ausgehende Links"
+
+#: ../../admin/view/wp-slimstat-reports.php:88
+msgid "Recent Events"
+msgstr "Letzte Ereignisse"
+
+#: ../../admin/view/wp-slimstat-reports.php:89
+msgid "Top Posts"
+msgstr "Top Artikel"
+
+#: ../../admin/view/wp-slimstat-reports.php:90
+msgid "Top Feeds"
+msgstr "Top Feeds"
+
+#: ../../admin/view/wp-slimstat-reports.php:91
+msgid "Top Internal Searches"
+msgstr "Top interne Suchbegriffe"
+
+#: ../../admin/view/wp-slimstat-reports.php:93
+msgid "Recent Categories"
+msgstr "Letzte Kategorien"
+
+#: ../../admin/view/wp-slimstat-reports.php:94
+#, fuzzy
+msgid "Top Pages Not Found"
+msgstr "Top Seiten"
+
+#: ../../admin/view/wp-slimstat-reports.php:96
+msgid "Top Authors"
+msgstr "Top Autoren"
+
+#: ../../admin/view/wp-slimstat-reports.php:97
+#, fuzzy
+msgid "Top Tags"
+msgstr "Top Seiten"
+
+#: ../../admin/view/wp-slimstat-reports.php:98
+msgid "Recent Downloads"
+msgstr "Letzte Downloads"
+
+#: ../../admin/view/wp-slimstat-reports.php:99
+msgid "Top Outbound Links and Downloads"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:100
+msgid "Your Website"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:102
+msgid "At A Glance"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "Chart controls"
+msgstr "Diagramm-Einstellungen"
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "Use your mouse wheel to zoom in and out"
+msgstr "Verwende das Mausrad zum Zoomen"
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "While zooming in, drag the chart to move to a different area"
+msgstr ""
+"W&;rend des Zooms das Diagramm schieben um zu einer anderen Position zu "
+"verschieben."
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "Double click on an empty region to reset the zoom level"
+msgstr ""
+"Doppel-Klick auf einen freien Bereich um den Zoom-Level zur&uuml;ckzusetzen"
+
+#: ../../admin/view/wp-slimstat-reports.php:221
+msgid ""
+"Click on a data point to display the activity chart for each hour of that day"
+msgstr ""
+"Auf ein Datum klicken um das Aktivit&auml;ts-Diagramm f&uuml;r jede Stunde "
+"des tages anzuzeigen"
+
+#: ../../admin/view/wp-slimstat-reports.php:270
+msgid "src"
+msgstr "src"
+
+#: ../../admin/view/wp-slimstat-reports.php:271
+msgid "serp"
+msgstr "serp"
+
+#: ../../admin/view/wp-slimstat-reports.php:276
+msgid "Go to the corresponding search engine result page"
+msgstr "Zugeh&ouml;rige Ergbnisseite der Suchmaschine &ouml;ffnen"
+
+#: ../../admin/view/wp-slimstat-reports.php:279
+msgid "Go to the referring page"
+msgstr "Verweisende Seite &ouml;ffnen"
+
+#: ../../admin/view/wp-slimstat-reports.php:302
+msgid "Remove filter for"
+msgstr "Entferne Filter f&uuml;r"
+
+#: ../../admin/view/wp-slimstat-reports.php:309
+msgid "Reset All"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:312
+msgid "Current filters:"
+msgstr "Aktuelle Filter:"
+
+#: ../../admin/view/wp-slimstat-reports.php:316
+#, fuzzy
+msgid "Refresh"
+msgstr "Anzeige aktualisieren"
+
+#: ../../admin/view/wp-slimstat-reports.php:353
+#, fuzzy, php-format
+msgid "Results %s - %s of %s"
+msgstr "Ergbnisse filtern wo %s ist gleich %s"
+
+#: ../../admin/view/wp-slimstat-reports.php:355
+#, fuzzy
+msgid "Refresh in"
+msgstr "Anzeige aktualisieren"
+
+#: ../../admin/view/wp-slimstat-reports.php:377
+#: ../../admin/view/wp-slimstat-reports.php:389
+#, fuzzy, php-format
+msgid "Daily %s"
+msgstr "Details"
+
+#: ../../admin/view/wp-slimstat-reports.php:380
+#, php-format
+msgid "%s Minute by Minute"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:383
+#, fuzzy, php-format
+msgid "Hourly %s"
+msgstr "Seitenaufrufe pro Stunde"
+
+#: ../../admin/view/wp-slimstat-reports.php:386
+#, fuzzy, php-format
+msgid "Monthly %s"
+msgstr "Monat"
+
+#: ../../admin/view/wp-slimstat-reports.php:466
+msgid "Category ID"
+msgstr "Kategorie-ID"
+
+#: ../../admin/view/wp-slimstat-reports.php:499
+msgid "OS Code"
+msgstr "OS Code"
+
+#: ../../admin/view/wp-slimstat-reports.php:509
+#, fuzzy
+msgid "Referrer"
+msgstr "Herkunft"
+
+#: ../../admin/view/wp-slimstat-reports.php:533
+#: ../../admin/view/wp-slimstat-reports.php:811
+#: ../../admin/view/wp-slimstat-reports.php:820
+#: ../../admin/view/wp-slimstat-reports.php:826
+#: ../../admin/view/wp-slimstat-reports.php:832
+#: ../../admin/view/wp-slimstat-reports.php:838
+#: ../../admin/view/wp-slimstat-reports.php:844
+#: ../../admin/view/wp-slimstat-reports.php:850
+#: ../../admin/view/wp-slimstat-reports.php:856
+msgid "Hits"
+msgstr "Zugriffe"
+
+#: ../../admin/view/wp-slimstat-reports.php:702
+msgid "Search for"
+msgstr "Suche nach"
+
+#: ../../admin/view/wp-slimstat-reports.php:733
+#: ../../admin/view/wp-slimstat-reports.php:743
+msgid "Source"
+msgstr "Ursprung"
+
+#: ../../admin/view/wp-slimstat-reports.php:735
+msgid "Keywords"
+msgstr "Suchbegriffe"
+
+#: ../../admin/view/wp-slimstat-reports.php:743
+#, php-format
+msgid "Filter results where resource equals %s"
+msgstr "Ergebnisse filtern wo Ressource ist gleich %s"
+
+#: ../../admin/view/wp-slimstat-reports.php:757
+msgid "Total Pageviews"
+msgstr "Gesamte Seitenaufrufe"
+
+#: ../../admin/view/wp-slimstat-reports.php:758
+msgid "DB Size"
+msgstr "Datenbank-Gr&ouml;sse"
+
+#: ../../admin/view/wp-slimstat-reports.php:759
+msgid "Tracking Active"
+msgstr "Tracking aktiv"
+
+#: ../../admin/view/wp-slimstat-reports.php:760
+#, fuzzy
+msgid "Javascript Mode"
+msgstr "Tracking per JavaScript"
+
+#: ../../admin/view/wp-slimstat-reports.php:761
+msgid "Tracking Browser Caps"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:762
+msgid "Auto purge"
+msgstr "autom. Datenbank-Reorg."
+
+#: ../../admin/view/wp-slimstat-reports.php:763
+#, fuzzy
+msgid "Oldest pageview"
+msgstr "&Auml;ltester Besuch"
+
+#: ../../admin/view/wp-slimstat-reports.php:763
+msgid "No visits"
+msgstr "Keine Besuche"
+
+#: ../../admin/view/wp-slimstat-reports.php:773
+#: ../../admin/view/wp-slimstat-reports.php:875
+msgid ""
+"A request to load a single HTML file. WP SlimStat logs a \"pageview\" each "
+"time the tracking code is executed."
+msgstr ""
+"Eine Anfrage eine einzelne HTML-Datei zu laden. WP SlimStat zeichnet "
+"jedesmal einen 'Seitenaufruf' auf wenn der Tracking-Code ausgef&uuml;hrt "
+"wird."
+
+#: ../../admin/view/wp-slimstat-reports.php:775
+msgid "How many pages have been visited on average during the current period."
+msgstr ""
+"Wieviele Seiten wurden w&auml;hrend der aktuellen Periode durchschnittlich "
+"besucht."
+
+#: ../../admin/view/wp-slimstat-reports.php:776
+#, fuzzy
+msgid "Average Pageviews"
+msgstr "Durchschnitt. Seitenaufrufe"
+
+#: ../../admin/view/wp-slimstat-reports.php:777
+msgid ""
+"Visitors who landed on your site after searching for a keyword on Google, "
+"Yahoo, etc."
+msgstr ""
+"Besucher welche nach einer Suche nach einem Suchbegriff auf Google oder Bing "
+"usw. auf die Website kamen."
+
+#: ../../admin/view/wp-slimstat-reports.php:778
+msgid "From Search Results"
+msgstr "Von Suchergebnissen"
+
+#: ../../admin/view/wp-slimstat-reports.php:779
+msgid ""
+"Used to differentiate between multiple requests to download a file from one "
+"internet address (IP) and requests originating from many distinct addresses"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:780
+#: ../../admin/view/wp-slimstat-reports.php:795
+#: ../../admin/view/wp-slimstat-reports.php:1099
+#: ../../admin/view/wp-slimstat-reports.php:1103
+#: ../../admin/view/wp-slimstat-reports.php:1107
+msgid "Unique IPs"
+msgstr "Eindeutige IPs"
+
+#: ../../admin/view/wp-slimstat-reports.php:781
+msgid "Last 5 minutes"
+msgstr "Letzte 5 Minuten"
+
+#: ../../admin/view/wp-slimstat-reports.php:782
+#, fuzzy
+msgid "Last 30 minutes"
+msgstr "Letzte 5 Minuten"
+
+#: ../../admin/view/wp-slimstat-reports.php:792
+msgid ""
+"A visit is a session of at most 30 minutes. Returning visitors are counted "
+"multiple times if they perform multiple visits."
+msgstr ""
+"Ein Besuch ist eine Session von max. 30 Minuten. Zur&;kkehrende Besucher "
+"werden bei mehrfachen Besuchen auch mehrfach gez&auml;hlt."
+
+#: ../../admin/view/wp-slimstat-reports.php:793
+msgid "Human visits"
+msgstr "Echte Besuche"
+
+#: ../../admin/view/wp-slimstat-reports.php:794
+msgid "It includes only traffic generated by human visitors."
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:796
+#: ../../admin/view/wp-slimstat-reports.php:887
+msgid ""
+"Percentage of single-page visits, i.e. visits in which the person left your "
+"site from the entrance page."
+msgstr ""
+"Prozentsatz von Besuchen einzelner Seiten, d.h. Besuche bei welchen der "
+"Besucher die Website auf der aufgerufenen Seite wieder verlassen hat."
+
+#: ../../admin/view/wp-slimstat-reports.php:797
+msgid "Bounce rate"
+msgstr "Absprung-Rate"
+
+#: ../../admin/view/wp-slimstat-reports.php:798
+msgid "Visitors who had previously left a comment on your blog."
+msgstr ""
+"Besucher welche fr&uuml;her bereits einen Kommentar hinterlassen haben."
+
+#: ../../admin/view/wp-slimstat-reports.php:799
+msgid "Known visitors"
+msgstr "Bekannte Besucher"
+
+#: ../../admin/view/wp-slimstat-reports.php:800
+msgid "Human users who visited your site only once."
+msgstr "Echte Besucher welche die Wesite nur einmal besucht haben."
+
+#: ../../admin/view/wp-slimstat-reports.php:801
+msgid "New visitors"
+msgstr "Neue Besucher"
+
+#: ../../admin/view/wp-slimstat-reports.php:802
+msgid "Bots"
+msgstr "Bots"
+
+#: ../../admin/view/wp-slimstat-reports.php:803
+msgid "Pages per visit"
+msgstr "Seiten pro Besuch"
+
+#: ../../admin/view/wp-slimstat-reports.php:804
+#: ../../admin/view/wp-slimstat-reports.php:1112
+msgid "Longest visit"
+msgstr "L&auml;ngster Besuch"
+
+#: ../../admin/view/wp-slimstat-reports.php:804
+msgid "hits"
+msgstr "Zugriff"
+
+#: ../../admin/view/wp-slimstat-reports.php:822
+msgid "0 - 30 seconds"
+msgstr "0-30 Sekunden"
+
+#: ../../admin/view/wp-slimstat-reports.php:828
+msgid "31 - 60 seconds"
+msgstr "31-60 Sekunden"
+
+#: ../../admin/view/wp-slimstat-reports.php:834
+msgid "1 - 3 minutes"
+msgstr "1-3 Minuten"
+
+#: ../../admin/view/wp-slimstat-reports.php:840
+msgid "3 - 5 minutes"
+msgstr "3-5 Minuten"
+
+#: ../../admin/view/wp-slimstat-reports.php:846
+msgid "5 - 7 minutes"
+msgstr "5-7 Minuten"
+
+#: ../../admin/view/wp-slimstat-reports.php:852
+msgid "7 - 10 minutes"
+msgstr "7-10 Minuten"
+
+#: ../../admin/view/wp-slimstat-reports.php:858
+#, fuzzy
+msgid "More than 10 minutes"
+msgstr "Mehr als 20 Minuten"
+
+#: ../../admin/view/wp-slimstat-reports.php:867
+#, fuzzy
+msgid "Average time on site"
+msgstr "Durchschnitt. Seitenaufrufe pro Besuch"
+
+#: ../../admin/view/wp-slimstat-reports.php:877
+msgid ""
+"A referrer (or referring site) is the site that a visitor previously visited "
+"before following a link to your site."
+msgstr ""
+"Eine Herkunft (verweisende Seite) ist die Webseite welche ein Besucher vor "
+"dem Besuch der eigenen Website besucht hat."
+
+#: ../../admin/view/wp-slimstat-reports.php:878
+msgid "Unique Referrers"
+msgstr "Eindeutige Herkunft"
+
+#: ../../admin/view/wp-slimstat-reports.php:879
+msgid ""
+"Visitors who visited the site by typing the URL directly into their browser. "
+"<em>Direct</em> can also refer to the visitors who clicked on the links from "
+"their bookmarks/favorites, untagged links within emails, or links from "
+"documents that don't include tracking variables."
+msgstr ""
+"Besucher welche die URL direkt aufgerufen haben. <em>Direkt</em> kann sich "
+"auch auf Besucher beziehen, welche Bookmarks/Favoriten verwendet haben oder "
+"Links in E-Mails bzw. Dokumenten gefolgt sind."
+
+#: ../../admin/view/wp-slimstat-reports.php:880
+msgid "Direct Pageviews"
+msgstr "Direkte Seitenaufrufe"
+
+#: ../../admin/view/wp-slimstat-reports.php:881
+msgid ""
+"Visitors who came to your site via searches on Google or some other search "
+"engine."
+msgstr ""
+"Besucher welche über eine Suche in Suchmaschinen auf die eigene Website "
+"gekommen sind."
+
+#: ../../admin/view/wp-slimstat-reports.php:882
+msgid "From a search result"
+msgstr "Von einem Suchresultat"
+
+#: ../../admin/view/wp-slimstat-reports.php:883
+msgid ""
+"The first page that a user views during a session. This is also known as the "
+"<em>entrance page</em>. For example, if they search for 'Brooklyn Office "
+"Space,' and they land on your home page, it gets counted (for that visit) as "
+"a landing page."
+msgstr ""
+"Die erste Seite welche ein Benutzer w&auml;hrend einer Sitzung besucht, die "
+"s.g. Einstiegs- oder Lande-Seite."
+
+#: ../../admin/view/wp-slimstat-reports.php:884
+msgid "Unique Landing Pages"
+msgstr "Eindeutige Einstiegs-Seiten"
+
+#: ../../admin/view/wp-slimstat-reports.php:885
+msgid "Number of single-page visits to your site over the selected period."
+msgstr ""
+"Anzahl der Besucher einer einzelnen Seite über die gew&auml;hlte Periode."
+
+#: ../../admin/view/wp-slimstat-reports.php:886
+msgid "Bounce Pages"
+msgstr "Absprung-Rate"
+
+#: ../../admin/view/wp-slimstat-reports.php:888
+#, fuzzy
+msgid "New Visitors Rate"
+msgstr "Neue Besucher"
+
+#: ../../admin/view/wp-slimstat-reports.php:889
+msgid ""
+"Visitors who visited the site in the last 5 minutes coming from a search "
+"engine."
+msgstr ""
+"Besucher welche innerhalb der letzten 5 Minuten von einer Suchmaschine "
+"gekommen sind."
+
+#: ../../admin/view/wp-slimstat-reports.php:890
+msgid "Currently from search engines"
+msgstr "Aktuell von Suchmaschinen"
+
+#: ../../admin/view/wp-slimstat-reports.php:958
+msgid "Number of pages in your site included in Google's index."
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:959
+msgid "Google Index"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:960
+msgid "Number of pages, according to Google, that link back to your site."
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:961
+msgid "Google Backlinks"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:962
+msgid ""
+"How many times the Facebook Like button has been approximately clicked on "
+"your site."
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:963
+msgid "Facebook Likes"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:964
+msgid ""
+"How many times your site has been shared by someone on the social network."
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:965
+msgid "Facebook Shares"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:966
+msgid "How many times links to your website have been clicked on Facebook."
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:967
+#, fuzzy
+msgid "Facebook Clicks"
+msgstr "Letzte ausgehende Links"
+
+#: ../../admin/view/wp-slimstat-reports.php:968
+msgid ""
+"Alexa is a subsidiary company of Amazon.com which provides commercial web "
+"traffic data."
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:969
+msgid "Alexa World Rank"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:970
+msgid "Alexa Country Rank"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:971
+msgid "Alexa Popularity"
+msgstr ""
+
+# Unknown
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-xx"
+msgstr "Unknown"
+
+# 	Afghanistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-af"
+msgstr "Afghanistan"
+
+# 	Åland Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ax"
+msgstr "Aland Islands"
+
+# 	Albania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-al"
+msgstr "Albania"
+
+# 	Algeria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dz"
+msgstr "Algeria"
+
+# 	Andorra
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ad"
+msgstr "Andorra"
+
+# 	Angola
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ao"
+msgstr "Angola"
+
+# 	Anguilla
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ai"
+msgstr "Anguilla"
+
+# 	Antigua and Barbuda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ag"
+msgstr "Antigua and Barbuda"
+
+# 	Argentina
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ar"
+msgstr "Argentina"
+
+# 	Armenia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-am"
+msgstr "Armenia"
+
+# 	Aruba
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-aw"
+msgstr "Aruba"
+
+# 	Australia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-au"
+msgstr "Australia"
+
+# 	Austria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-at"
+msgstr "Austria"
+
+# 	Azerbaijan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-az"
+msgstr "Azerbaijan"
+
+# 	Bahamas
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bs"
+msgstr "Bahamas"
+
+# 	Bahrain
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bh"
+msgstr "Bahrain"
+
+# 	Bangladesh
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bd"
+msgstr "Bangladesh"
+
+# 	Barbados
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bb"
+msgstr "Barbados"
+
+# 	Belarus
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-by"
+msgstr "Belarus"
+
+# 	Belgium
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-be"
+msgstr "Belgium"
+
+# 	Belize
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bz"
+msgstr "Belize"
+
+# 	Benin
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bj"
+msgstr "Benin"
+
+# 	Bermuda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bm"
+msgstr "Bermuda"
+
+# 	Bhutan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bt"
+msgstr "Bhutan"
+
+# 	Bolivia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bo"
+msgstr "Bolivia"
+
+# 	Bosnia and Herzegovina
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ba"
+msgstr "Bosnia and Herzegovina"
+
+# 	Botswana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bw"
+msgstr "Botswana"
+
+# 	Brazil
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-br"
+msgstr "Brazil"
+
+# 	Brunei Darussalam
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bn"
+msgstr "Brunei Darussalam"
+
+# 	Bulgaria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bg"
+msgstr "Bulgaria"
+
+# 	Burkina Faso
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bf"
+msgstr "Burkina Faso"
+
+# 	Burundi
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bi"
+msgstr "Burundi"
+
+# 	Cambodia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kh"
+msgstr "Cambodia"
+
+# 	Cameroon
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cm"
+msgstr "Cameroon"
+
+# 	Canada
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ca"
+msgstr "Canada"
+
+# 	Cape Verde
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cv"
+msgstr "Cape Verde"
+
+# 	Cayman Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ky"
+msgstr "Cayman Islands"
+
+# 	Central African Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cf"
+msgstr "Central African Republic"
+
+# 	Chad
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-td"
+msgstr "Chad"
+
+# 	Chile
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cl"
+msgstr "Chile"
+
+# 	China
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cn"
+msgstr "China"
+
+# 	Colombia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-co"
+msgstr "Colombia"
+
+# 	Comoros
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-km"
+msgstr "Comoros"
+
+# 	Congo
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cg"
+msgstr "Congo"
+
+# 	The Democratic Republic of the Congo
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cd"
+msgstr "The Democratic Republic of the Congo"
+
+# 	Costa Rica
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cr"
+msgstr "Costa Rica"
+
+# 	Côte d'Ivoire
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ci"
+msgstr "Côte d'Ivoire"
+
+# 	Croatia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hr"
+msgstr "Croatia"
+
+# 	Cuba
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cu"
+msgstr "Cuba"
+
+# 	Cyprus
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cy"
+msgstr "Cyprus"
+
+# 	Czech Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cz"
+msgstr "Czech Republic"
+
+# 	Denmark
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dk"
+msgstr "Denmark"
+
+# 	Djibouti
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dj"
+msgstr "Djibouti"
+
+# 	Dominica
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dm"
+msgstr "Dominica"
+
+# 	Dominican Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-do"
+msgstr "Dominican Republic"
+
+# 	Ecuador
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ec"
+msgstr "Ecuador"
+
+# 	Egypt
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-eg"
+msgstr "Egypt"
+
+# 	El Salvador
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sv"
+msgstr "El Salvador"
+
+# 	Equatorial Guinea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gq"
+msgstr "Equatorial Guinea"
+
+# 	Eritrea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-er"
+msgstr "Eritrea"
+
+# 	Estonia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ee"
+msgstr "Estonia"
+
+# 	Ethiopia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-et"
+msgstr "Ethiopia"
+
+# 	Faroe Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fo"
+msgstr "Faroe Islands"
+
+# 	Falkland Islands (Malvinas)
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fk"
+msgstr "Falkland Islands (Malvinas)"
+
+# 	Fiji
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fj"
+msgstr "Fiji"
+
+# 	Finland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fi"
+msgstr "Finland"
+
+# 	France
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fr"
+msgstr "France"
+
+# 	French Guiana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gf"
+msgstr "French Guiana"
+
+# 	Gabon
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ga"
+msgstr "Gabon"
+
+# 	Gambia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gm"
+msgstr "Gambia"
+
+# 	Georgia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ge"
+msgstr "Georgia"
+
+# 	Germany
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-de"
+msgstr "Germany"
+
+# 	Ghana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gh"
+msgstr "Ghana"
+
+# 	Greece
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gr"
+msgstr "Greece"
+
+# 	Greenland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gl"
+msgstr "Greenland"
+
+# 	Grenada
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gd"
+msgstr "Grenada"
+
+# 	Guadeloupe
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gp"
+msgstr "Guadeloupe"
+
+# 	Guatemala
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gt"
+msgstr "Guatemala"
+
+# 	Guinea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gn"
+msgstr "Guinea"
+
+# 	Guinea-Bissau
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gw"
+msgstr "Guinea-Bissau"
+
+# 	Guyana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gy"
+msgstr "Guyana"
+
+# 	Haiti
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ht"
+msgstr "Haiti"
+
+# 	Honduras
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hn"
+msgstr "Honduras"
+
+# 	Hong Kong
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hk"
+msgstr "Hong Kong"
+
+# 	Hungary
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hu"
+msgstr "Hungary"
+
+# 	Iceland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-is"
+msgstr "Iceland"
+
+# 	India
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-in"
+msgstr "India"
+
+# 	Indonesia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-id"
+msgstr "Indonesia"
+
+# 	Islamic Republic of Iran
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ir"
+msgstr "Islamic Republic of Iran"
+
+# 	Iraq
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-iq"
+msgstr "Iraq"
+
+# 	Ireland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ie"
+msgstr "Ireland"
+
+# 	Israel
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-il"
+msgstr "Israel"
+
+# 	Italy
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-it"
+msgstr "Italy"
+
+# 	Jamaica
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-jm"
+msgstr "Jamaica"
+
+# 	Japan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-jp"
+msgstr "Japan"
+
+# 	Jordan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-jo"
+msgstr "Jordan"
+
+# 	Kazakhstan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kz"
+msgstr "Kazakhstan"
+
+# 	Kenya
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ke"
+msgstr "Kenya"
+
+# 	Nauru
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nr"
+msgstr "Nauru"
+
+# 	Democratic People's Republic of Korea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kp"
+msgstr "Democratic People's Republic of Korea"
+
+# 	Republic of Korea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kr"
+msgstr "Republic of Korea"
+
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kv"
+msgstr ""
+
+# 	Kuwait
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kw"
+msgstr "Kuwait"
+
+# 	Kyrgyzstan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kg"
+msgstr "Kyrgyzstan"
+
+# 	Lao People's Democratic Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-la"
+msgstr "Lao People's Democratic Republic"
+
+# 	Latvia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lv"
+msgstr "Latvia"
+
+# 	Lebanon
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lb"
+msgstr "Lebanon"
+
+# 	Lesotho
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ls"
+msgstr "Lesotho"
+
+# 	Liberia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lr"
+msgstr "Liberia"
+
+# 	Libyan Arab Jamahiriya
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ly"
+msgstr "Libyan Arab Jamahiriya"
+
+# 	Liechtenstein
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-li"
+msgstr "Liechtenstein"
+
+# 	Lithuania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lt"
+msgstr "Lithuania"
+
+# 	Luxembourg
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lu"
+msgstr "Luxembourg"
+
+# 	The Former Yugoslav Republic of Macedonia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mk"
+msgstr "The Former Yugoslav Republic of Macedonia"
+
+# 	Madagascar
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mg"
+msgstr "Madagascar"
+
+# 	Malawi
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mw"
+msgstr "Malawi"
+
+# 	Malaysia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-my"
+msgstr "Malaysia"
+
+# 	Mali
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ml"
+msgstr "Mali"
+
+# 	Malta
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mt"
+msgstr "Malta"
+
+# 	Martinique
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mq"
+msgstr "Martinique"
+
+# 	Mauritania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mr"
+msgstr "Mauritania"
+
+# 	Mauritius
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mu"
+msgstr "Mauritius"
+
+# 	Mexico
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mx"
+msgstr "Mexico"
+
+# 	Moldova
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-md"
+msgstr "Moldova"
+
+# 	Mongolia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mn"
+msgstr "Mongolia"
+
+# 	Montenegro
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-me"
+msgstr "Montenegro"
+
+# 	Montserrat
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ms"
+msgstr "Montserrat"
+
+# 	Morocco
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ma"
+msgstr "Morocco"
+
+# 	Mozambique
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mz"
+msgstr "Mozambique"
+
+# 	Myanmar
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mm"
+msgstr "Myanmar"
+
+# 	Namibia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-na"
+msgstr "Namibia"
+
+# 	Nepal
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-np"
+msgstr "Nepal"
+
+# 	Netherlands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nl"
+msgstr "Netherlands"
+
+# 	New Caledonia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nc"
+msgstr "New Caledonia"
+
+# 	New Zealand
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nz"
+msgstr "New Zealand"
+
+# 	Nicaragua
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ni"
+msgstr "Nicaragua"
+
+# 	Niger
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ne"
+msgstr "Niger"
+
+# 	Nigeria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ng"
+msgstr "Nigeria"
+
+# 	Norway
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-no"
+msgstr "Norway"
+
+# 	Oman
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-om"
+msgstr "Oman"
+
+# 	Pakistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pk"
+msgstr "Pakistan"
+
+# 	Palau
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pw"
+msgstr "Palau"
+
+# 	Occupied Palestinian Territory
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ps"
+msgstr "Occupied Palestinian Territory"
+
+# 	Panama
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pa"
+msgstr "Panama"
+
+# 	Papua New Guinea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pg"
+msgstr "Papua New Guinea"
+
+# 	Paraguay
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-py"
+msgstr "Paraguay"
+
+# 	Peru
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pe"
+msgstr "Peru"
+
+# 	Philippines
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ph"
+msgstr "Philippines"
+
+# 	Poland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pl"
+msgstr "Poland"
+
+# 	Portugal
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pt"
+msgstr "Portugal"
+
+# 	Puerto Rico
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pr"
+msgstr "Puerto Rico"
+
+# 	Qatar
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-qa"
+msgstr "Qatar"
+
+# 	Réunion
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-re"
+msgstr "Réunion"
+
+# 	Romania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ro"
+msgstr "Romania"
+
+# 	Russian Federation
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ru"
+msgstr "Russian Federation"
+
+# 	Rwanda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-rw"
+msgstr "Rwanda"
+
+# 	Saint Kitts and Nevis
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kn"
+msgstr "Saint Kitts and Nevis"
+
+# 	Saint Lucia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lc"
+msgstr "Saint Lucia"
+
+# 	Saint Martin
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mf"
+msgstr "Saint Martin"
+
+# 	Saint Vincent and the Grenadines
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vc"
+msgstr "Saint Vincent and the Grenadines"
+
+# 	Samoa
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ws"
+msgstr "Samoa"
+
+# 	Sao Tome and Principe
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-st"
+msgstr "Sao Tome and Principe"
+
+# 	Saudi Arabia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sa"
+msgstr "Saudi Arabia"
+
+# 	Senegal
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sn"
+msgstr "Senegal"
+
+# 	Serbia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-rs"
+msgstr "Serbia"
+
+# 	Sierra Leone
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sl"
+msgstr "Sierra Leone"
+
+# 	Singapore
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sg"
+msgstr "Singapore"
+
+# 	Slovakia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sk"
+msgstr "Slovakia"
+
+# 	Slovenia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-si"
+msgstr "Slovenia"
+
+# 	Solomon Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sb"
+msgstr "Solomon Islands"
+
+# 	Somalia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-so"
+msgstr "Somalia"
+
+# 	South Africa
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-za"
+msgstr "South Africa"
+
+# 	South Georgia and the South Sandwich Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gs"
+msgstr "South Georgia and the South Sandwich Islands"
+
+# 	Spain
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-es"
+msgstr "Spain"
+
+# 	Sri Lanka
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lk"
+msgstr "Sri Lanka"
+
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sc"
+msgstr ""
+
+# 	Sudan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sd"
+msgstr "Sudan"
+
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ss"
+msgstr ""
+
+# 	Suriname
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sr"
+msgstr "Suriname"
+
+# 	Svalbard and Jan Mayen
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sj"
+msgstr "Svalbard and Jan Mayen"
+
+# 	Swaziland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sz"
+msgstr "Swaziland"
+
+# 	Sweden
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-se"
+msgstr "Sweden"
+
+# 	Switzerland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ch"
+msgstr "Switzerland"
+
+# 	Syrian Arab Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sy"
+msgstr "Syrian Arab Republic"
+
+# 	Taiwan, Province of China
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tw"
+msgstr "Taiwan"
+
+# 	Tajikistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tj"
+msgstr "Tajikistan"
+
+# 	United Republic of Tanzania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tz"
+msgstr "United Republic of Tanzania"
+
+# 	Thailand
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-th"
+msgstr "Thailand"
+
+# 	Timor-Leste
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tl"
+msgstr "Timor-Leste"
+
+# 	Togo
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tg"
+msgstr "Togo"
+
+# 	Tonga
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-to"
+msgstr "Tonga"
+
+# 	Trinidad and Tobago
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tt"
+msgstr "Trinidad and Tobago"
+
+# 	Tunisia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tn"
+msgstr "Tunisia"
+
+# 	Turkey
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tr"
+msgstr "Turkey"
+
+# 	Turkmenistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tm"
+msgstr "Turkmenistan"
+
+# 	Turks and Caicos Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tc"
+msgstr "Turks and Caicos Islands"
+
+# 	Uganda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ug"
+msgstr "Uganda"
+
+# 	Ukraine
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ua"
+msgstr "Ukraine"
+
+# 	United Arab Emirates
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ae"
+msgstr "United Arab Emirates"
+
+# 	United Kingdom
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gb"
+msgstr "United Kingdom"
+
+# 	United States
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-us"
+msgstr "United States"
+
+# 	Uruguay
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-uy"
+msgstr "Uruguay"
+
+# 	Uzbekistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-uz"
+msgstr "Uzbekistan"
+
+# 	Vanuatu
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vu"
+msgstr "Vanuatu"
+
+# 	Venezuela
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ve"
+msgstr "Venezuela"
+
+# 	Viet Nam
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vn"
+msgstr "Viet Nam"
+
+# 	British Virgin Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vg"
+msgstr "British Virgin Islands"
+
+# 	U.S. Virgin Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vi"
+msgstr "U.S. Virgin Islands"
+
+# 	Western Sahara
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-eh"
+msgstr "Western Sahara"
+
+# 	Yemen
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ye"
+msgstr "Yemen"
+
+# 	Zambia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-zm"
+msgstr "Zambia"
+
+# 	Zimbabwe
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-zw"
+msgstr "Zimbabwe"
+
+# 	Guernsey
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gg"
+msgstr "Guernsey"
+
+# 	Jersey
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-je"
+msgstr "Jersey"
+
+# 	Isle of Man
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-im"
+msgstr "Isle of Man"
+
+# 	Maldives
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mv"
+msgstr "Maldives"
+
+#: ../../admin/view/wp-slimstat-reports.php:979
+msgid "c-eu"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1068
+msgid ""
+"This value includes not only posts, but also custom post types, regardless "
+"of their status"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1069
+#, fuzzy
+msgid "Content Items"
+msgstr "Inhalt"
+
+#: ../../admin/view/wp-slimstat-reports.php:1070
+#, fuzzy
+msgid "Total Comments"
+msgstr "Gesamte Zugriffe"
+
+#: ../../admin/view/wp-slimstat-reports.php:1071
+msgid "Pingbacks"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1072
+msgid "Trackbacks"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1073
+#, fuzzy
+msgid "Longest Post (ID)"
+msgstr "L&auml;ngster Besuch"
+
+#: ../../admin/view/wp-slimstat-reports.php:1074
+msgid "Longest Comment (ID)"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1075
+#, fuzzy
+msgid "Avg Comments Per Post"
+msgstr "Spalte bei Beitr&auml;gen hinzuf&uuml;gen"
+
+#: ../../admin/view/wp-slimstat-reports.php:1076
+msgid "Avg Posts Per Day"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1103
+msgid "Visits"
+msgstr "Besuche"
+
+#: ../../admin/view/wp-slimstat-reports.php:1107
+msgid "Domains"
+msgstr "Dom&auml;nen"
+
+#: ../../admin/view/wp-slimstat-reports.php:1112
+msgid "Avg Pageviews"
+msgstr "Durchschnitt. Seitenaufrufe"
+
+#~ msgid "Right Now"
+#~ msgstr "Aktuell"
+
+#, fuzzy
+#~ msgid "Right Now Screen"
+#~ msgstr "Aktuell"
+
+#, fuzzy
+#~ msgid "Chart Annotations"
+#~ msgstr "Diagramm-Anmerkungen"
+
+#~ msgid ""
+#~ "Add <em>markings</em> to each chart by specifying a date and its "
+#~ "description in the field below. Useful to keep track of special events "
+#~ "and correlate them to your analytics. Please use the following format:"
+#~ "<code>YYYY MM DD HH:mm=Description 1,YYYY MM DD HH:mm=Description 2</"
+#~ "code>. For example: 2012 12 31 23:55=New Year's Eve."
+#~ msgstr ""
+#~ "Erstellen Sie Anmerkungen für jedes Diagram, indem Sie ein Datum und eine "
+#~ "Beschreibung eintragen. Die ist hilfreich um besondere Ereignisse zu "
+#~ "verfolgen und mit der Analye in Verbindung zu bringen. Format: <code>JJJJ "
+#~ "MM TT HH:mm=Anmerkung 1,JJJJ MM TT HH:mm=Anmerkung 2</code>. Z.B.: 2012 "
+#~ "12 31 23:55=Silvester."
+
+#, fuzzy
+#~ msgid "Other Treats"
+#~ msgstr "Andere echte Besucher"
+
+#, fuzzy
+#~ msgid "Export Settings"
+#~ msgstr "Sortierung w&auml;hlen"
+
+#~ msgid "Stats"
+#~ msgstr "Statistik"
+
+#~ msgid "Hide Stats Link"
+#~ msgstr "Statistik Link verstecken"
+
+#~ msgid ""
+#~ "Enable this option if your users are confused by the Stats link associate "
+#~ "to each post in the Edit Posts page."
+#~ msgstr ""
+#~ "Aktivieren Sie diese Funktion, falls der Link zu den Statistiken in der "
+#~ "Beitragsbearbeitung irritieren sollte."
+
+#~ msgid "This counter is based on any user activity in the last 5 minutes."
+#~ msgstr ""
+#~ "Dieser Z&auml;hler basiert auf allen Besucher-Aktivit&auml;ten der "
+#~ "letzten 5 Minuten."
+
+#, fuzzy
+#~ msgid "This counter is based on any user activity in the last 30 minutes."
+#~ msgstr ""
+#~ "Dieser Z&auml;hler basiert auf allen Besucher-Aktivit&auml;ten der "
+#~ "letzten 5 Minuten."
+
+#~ msgid "Support"
+#~ msgstr "Support"
+
+#, fuzzy
+#~ msgid ""
+#~ "<a href=\"http://slimstat.getused.to.it/\">WP SlimStat</a> is and will "
+#~ "always be free, but consider supporting the author if this plugin helped "
+#~ "you improve your website, or if you are making money out of it. Donations "
+#~ "will be invested in the development of WP SlimStat, and to buy some food "
+#~ "for my hungry family. You can also leave <a href=\"http://wordpress.org/"
+#~ "support/view/plugin-reviews/wp-slimstat\">a review</a> to let other users "
+#~ "know how this plugin has helped you manage your site."
+#~ msgstr ""
+#~ "WP SlimStat ist kostenlos und wird dies auch bleiben, aber bitte "
+#~ "unterst&uuml;tzen sie den Autor, falls dieses Plugin geholfen hat, Ihre "
+#~ "Website zu verbessern oder Sie Geld damit verdienen. Spenden werden in "
+#~ "die Entwicklung  von WP SlimStat investiert - und in Essen f&uuml;r meine "
+#~ "hungrige Familie."
+
+#~ msgid ""
+#~ "You may want to prevent WP SlimStat from tracking users, but still be "
+#~ "able to access your stats."
+#~ msgstr ""
+#~ "Sie können das Tracken der Besucher ausschalten, aber trotzdem noch auf "
+#~ "die Statistiken zugreifen."
+
+#~ msgid "Store Data For"
+#~ msgstr "Daten speichern"
+
+#~ msgid ""
+#~ "Automatically deletes pageviews older than <strong>X</strong> days (uses "
+#~ "Wordpress cron jobs). Zero disables this feature."
+#~ msgstr ""
+#~ "L&ouml;scht Seitenaufrufe die älter als <strong>X</strong> Tage sind "
+#~ "(verwendet WordPress Cron Jobs). Null deaktiviert dieses Funktion."
+
+#, fuzzy
+#~ msgid ""
+#~ "Display hostnames instead of IP addresses. It slows down the rendering of "
+#~ "your metrics."
+#~ msgstr ""
+#~ "Host-Namen anstelle von IP Adressen anzeigen. Die wird die Anzeige der "
+#~ "Statistiken verlangsamen"
+
+#~ msgid ""
+#~ "Specify the number of results to return for each module. Please use a "
+#~ "<strong>positive</strong> value."
+#~ msgstr ""
+#~ "Definiert die Anzahl der Datensätze, die im jeweiligen Modul angezeigt "
+#~ "werden sollen. Bitte verwenden Sie einen <strong>positiven</strong> Wert."
+
+#, fuzzy
+#~ msgid "Right Now Rows"
+#~ msgstr "Aktuell"
+
+#~ msgid "Customize the IP lookup service URL."
+#~ msgstr "URL zum aufl&ouml;sen von IP Adressen anpassen"
+
+#~ msgid "Refresh Every"
+#~ msgstr "Anzeige aktualisieren"
+
+#~ msgid "Anonymize IP Addresses"
+#~ msgstr "IP Adressen anonymisieren"
+
+#~ msgid "Filter Prefetch"
+#~ msgstr "Prefetch Filter"
+
+#, fuzzy
+#~ msgid "IP Addresses"
+#~ msgstr "IP Adressen und Domains"
+
+#, fuzzy
+#~ msgid "Users"
+#~ msgstr "Bekannte Benutzer"
+
+#, fuzzy
+#~ msgid "Track Browser Capabilities"
+#~ msgstr "Browser-F&auml;higkeiten"
+
+#, fuzzy
+#~ msgid "Size"
+#~ msgstr "Datenbank-Gr&ouml;sse"
+
+#, fuzzy
+#~ msgid "Is equal to"
+#~ msgstr "ist ungleich zu"
+
+#, fuzzy
+#~ msgid "Contains"
+#~ msgstr "enth&auml;lt"
+
+#, fuzzy
+#~ msgid "Does not contain"
+#~ msgstr "enth&auml;lt nicht"
+
+#, fuzzy
+#~ msgid "Starts with"
+#~ msgstr "beginnt mit"
+
+#, fuzzy
+#~ msgid "Ends with"
+#~ msgstr "endet mit"
+
+#, fuzzy
+#~ msgid "Does not start with"
+#~ msgstr "beginnt mit"
+
+#, fuzzy
+#~ msgid "Does not end with"
+#~ msgstr "endet mit"
+
+#, fuzzy
+#~ msgid "Import Settings"
+#~ msgstr "Sortierung w&auml;hlen"
+
+# 	Afrikaans
+#, fuzzy
+#~ msgid "l-af-ZA"
+#~ msgstr "Afrikaans"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-AE"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-BH"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-DZ"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-EG"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-IQ"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-JO"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-KW"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-LB"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-LY"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-MA"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-OM"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-QA"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-SA"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-SY"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-TN"
+#~ msgstr "Arabic"
+
+# 	Arabic
+#, fuzzy
+#~ msgid "l-ar-YE"
+#~ msgstr "Arabic"
+
+# 	Azerbaijani
+#, fuzzy
+#~ msgid "l-az-AZ"
+#~ msgstr "Azerbaijani"
+
+# 	Belarusian
+#, fuzzy
+#~ msgid "l-be-BY"
+#~ msgstr "Belarusian"
+
+# 	Bulgarian
+#, fuzzy
+#~ msgid "l-bg-BG"
+#~ msgstr "Bulgarian"
+
+# 	Catalan; Valencian
+#, fuzzy
+#~ msgid "l-ca-ES"
+#~ msgstr "Catalan; Valencian"
+
+# 	Czech
+#, fuzzy
+#~ msgid "l-cs-CZ"
+#~ msgstr "Czech"
+
+# 	Welsh
+#, fuzzy
+#~ msgid "l-cy-GB"
+#~ msgstr "Welsh"
+
+# 	Danish
+#, fuzzy
+#~ msgid "l-da-DK"
+#~ msgstr "Danish"
+
+# 	German
+#, fuzzy
+#~ msgid "l-de-AT"
+#~ msgstr "German"
+
+# 	German
+#, fuzzy
+#~ msgid "l-de-CH"
+#~ msgstr "German"
+
+# 	German
+#, fuzzy
+#~ msgid "l-de-DE"
+#~ msgstr "German"
+
+# 	German
+#, fuzzy
+#~ msgid "l-de-LI"
+#~ msgstr "German"
+
+# 	German
+#, fuzzy
+#~ msgid "l-de-LU"
+#~ msgstr "German"
+
+# 	Dhivehi; Divehi; Maldivian
+#, fuzzy
+#~ msgid "l-dv-MV"
+#~ msgstr "Dhivehi; Divehi; Maldivian"
+
+# 	Modern Greek (1453-)
+#, fuzzy
+#~ msgid "l-el-GR"
+#~ msgstr "Modern Greek (1453-)"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-AU"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-BZ"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-CA"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-CB"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-GB"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-IE"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-JM"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-NZ"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-PH"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-TT"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-US"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-ZA"
+#~ msgstr "English"
+
+# 	English
+#, fuzzy
+#~ msgid "l-en-ZW"
+#~ msgstr "English"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-AR"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-BO"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-CL"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-CO"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-CR"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-DO"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-EC"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-ES"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-GT"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-HN"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-MX"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-NI"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-PA"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-PE"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-PR"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-PY"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-SV"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-UY"
+#~ msgstr "Spanish; Castilian"
+
+# 	Spanish; Castilian
+#, fuzzy
+#~ msgid "l-es-VE"
+#~ msgstr "Spanish; Castilian"
+
+# 	Estonian
+#, fuzzy
+#~ msgid "l-et-EE"
+#~ msgstr "Estonian"
+
+# 	Basque
+#, fuzzy
+#~ msgid "l-eu-ES"
+#~ msgstr "Basque"
+
+# 	Persian
+#, fuzzy
+#~ msgid "l-fa-IR"
+#~ msgstr "Persian"
+
+# 	Finnish
+#, fuzzy
+#~ msgid "l-fi-FI"
+#~ msgstr "Finnish"
+
+# 	Faroese
+#, fuzzy
+#~ msgid "l-fo-FO"
+#~ msgstr "Faroese"
+
+# 	French
+#, fuzzy
+#~ msgid "l-fr-BE"
+#~ msgstr "French"
+
+# 	French
+#, fuzzy
+#~ msgid "l-fr-CA"
+#~ msgstr "French"
+
+# 	French
+#, fuzzy
+#~ msgid "l-fr-CH"
+#~ msgstr "French"
+
+# 	French
+#, fuzzy
+#~ msgid "l-fr-FR"
+#~ msgstr "French"
+
+# 	French
+#, fuzzy
+#~ msgid "l-fr-LU"
+#~ msgstr "French"
+
+# 	French
+#, fuzzy
+#~ msgid "l-fr-MC"
+#~ msgstr "French"
+
+# 	Galician
+#, fuzzy
+#~ msgid "l-gl-ES"
+#~ msgstr "Galician"
+
+# 	Gujarati
+#, fuzzy
+#~ msgid "l-gu-IN"
+#~ msgstr "Gujarati"
+
+# 	Hebrew
+#, fuzzy
+#~ msgid "l-he-IL"
+#~ msgstr "Hebrew"
+
+# 	Hindi
+#, fuzzy
+#~ msgid "l-hi-IN"
+#~ msgstr "Hindi"
+
+# 	Croatian
+#, fuzzy
+#~ msgid "l-hr-BA"
+#~ msgstr "Croatian"
+
+# 	Croatian
+#, fuzzy
+#~ msgid "l-hr-HR"
+#~ msgstr "Croatian"
+
+# 	Hungarian
+#, fuzzy
+#~ msgid "l-hu-HU"
+#~ msgstr "Hungarian"
+
+# 	Armenian
+#, fuzzy
+#~ msgid "l-hy-AM"
+#~ msgstr "Armenian"
+
+# 	Indonesian
+#, fuzzy
+#~ msgid "l-id-ID"
+#~ msgstr "Indonesian"
+
+# 	Icelandic
+#, fuzzy
+#~ msgid "l-is-IS"
+#~ msgstr "Icelandic"
+
+# 	Italian
+#, fuzzy
+#~ msgid "l-it-CH"
+#~ msgstr "Italian"
+
+# 	Italian
+#, fuzzy
+#~ msgid "l-it-IT"
+#~ msgstr "Italian"
+
+# 	Japanese
+#, fuzzy
+#~ msgid "l-ja-JP"
+#~ msgstr "Japanese"
+
+# 	Georgian
+#, fuzzy
+#~ msgid "l-ka-GE"
+#~ msgstr "Georgian"
+
+# 	Kazakh
+#, fuzzy
+#~ msgid "l-kk-KZ"
+#~ msgstr "Kazakh"
+
+# 	Kannada
+#, fuzzy
+#~ msgid "l-kn-IN"
+#~ msgstr "Kannada"
+
+# 	Korean
+#, fuzzy
+#~ msgid "l-ko-KR"
+#~ msgstr "Korean"
+
+# 	Korean
+#, fuzzy
+#~ msgid "l-kok-IN"
+#~ msgstr "Korean"
+
+# 	Kirghiz; Kyrgyz
+#, fuzzy
+#~ msgid "l-ky-KG"
+#~ msgstr "Kirghiz; Kyrgyz"
+
+# 	Lithuanian
+#, fuzzy
+#~ msgid "l-lt-LT"
+#~ msgstr "Lithuanian"
+
+# 	Latvian
+#, fuzzy
+#~ msgid "l-lv-LV"
+#~ msgstr "Latvian"
+
+# 	Maori
+#, fuzzy
+#~ msgid "l-mi-NZ"
+#~ msgstr "Maori"
+
+# 	Macedonian
+#, fuzzy
+#~ msgid "l-mk-MK"
+#~ msgstr "Macedonian"
+
+# 	Mongolian
+#, fuzzy
+#~ msgid "l-mn-MN"
+#~ msgstr "Mongolian"
+
+# 	Marathi
+#, fuzzy
+#~ msgid "l-mr-IN"
+#~ msgstr "Marathi"
+
+# 	Malay
+#, fuzzy
+#~ msgid "l-ms-BN"
+#~ msgstr "Malay"
+
+# 	Malay
+#, fuzzy
+#~ msgid "l-ms-MY"
+#~ msgstr "Malay"
+
+# 	Maltese
+#, fuzzy
+#~ msgid "l-mt-MT"
+#~ msgstr "Maltese"
+
+# 	Norwegian Bokmål
+#, fuzzy
+#~ msgid "l-nb-NO"
+#~ msgstr "Norwegian Bokmål"
+
+# 	Dutch; Flemish
+#, fuzzy
+#~ msgid "l-nl-BE"
+#~ msgstr "Dutch; Flemish"
+
+# 	Dutch; Flemish
+#, fuzzy
+#~ msgid "l-nl-NL"
+#~ msgstr "Dutch; Flemish"
+
+# 	Panjabi; Punjabi
+#, fuzzy
+#~ msgid "l-pa-IN"
+#~ msgstr "Panjabi; Punjabi"
+
+# 	Polish
+#, fuzzy
+#~ msgid "l-pl-PL"
+#~ msgstr "Polish"
+
+# 	Pushto; Pashto
+#, fuzzy
+#~ msgid "l-ps-AR"
+#~ msgstr "Pushto; Pashto"
+
+# 	Portuguese
+#, fuzzy
+#~ msgid "l-pt-BR"
+#~ msgstr "Portuguese"
+
+# 	Portuguese
+#, fuzzy
+#~ msgid "l-pt-PT"
+#~ msgstr "Portuguese"
+
+# 	Quechua
+#, fuzzy
+#~ msgid "l-qu-BO"
+#~ msgstr "Quechua"
+
+# 	Quechua
+#, fuzzy
+#~ msgid "l-qu-EC"
+#~ msgstr "Quechua"
+
+# 	Quechua
+#, fuzzy
+#~ msgid "l-qu-PE"
+#~ msgstr "Quechua"
+
+# 	Romanian; Moldavian; Moldovan
+#, fuzzy
+#~ msgid "l-ro-RO"
+#~ msgstr "Romanian; Moldavian; Moldovan"
+
+# 	Russian
+#, fuzzy
+#~ msgid "l-ru-RU"
+#~ msgstr "Russian"
+
+# 	Sanskrit
+#, fuzzy
+#~ msgid "l-sa-IN"
+#~ msgstr "Sanskrit"
+
+# 	Northern Sami
+#, fuzzy
+#~ msgid "l-se-FI"
+#~ msgstr "Northern Sami"
+
+# 	Northern Sami
+#, fuzzy
+#~ msgid "l-se-NO"
+#~ msgstr "Northern Sami"
+
+# 	Northern Sami
+#, fuzzy
+#~ msgid "l-se-SE"
+#~ msgstr "Northern Sami"
+
+# 	Slovak
+#, fuzzy
+#~ msgid "l-sk-SK"
+#~ msgstr "Slovak"
+
+# 	Slovenian
+#, fuzzy
+#~ msgid "l-sl-SI"
+#~ msgstr "Slovenian"
+
+# 	Albanian
+#, fuzzy
+#~ msgid "l-sq-AL"
+#~ msgstr "Albanian"
+
+# 	Serbian
+#, fuzzy
+#~ msgid "l-sr-SP"
+#~ msgstr "Serbian"
+
+# 	Swedish
+#, fuzzy
+#~ msgid "l-sv-FI"
+#~ msgstr "Swedish"
+
+# 	Swedish
+#, fuzzy
+#~ msgid "l-sv-SE"
+#~ msgstr "Swedish"
+
+# 	Swahili
+#, fuzzy
+#~ msgid "l-sw-KE"
+#~ msgstr "Swahili"
+
+# 	Tamil
+#, fuzzy
+#~ msgid "l-ta-IN"
+#~ msgstr "Tamil"
+
+# 	Telugu
+#, fuzzy
+#~ msgid "l-te-IN"
+#~ msgstr "Telugu"
+
+# 	Thai
+#, fuzzy
+#~ msgid "l-th-TH"
+#~ msgstr "Thai"
+
+# 	Tagalog
+#, fuzzy
+#~ msgid "l-tl-PH"
+#~ msgstr "Tagalog"
+
+# 	Tswana
+#, fuzzy
+#~ msgid "l-tn-ZA"
+#~ msgstr "Tswana"
+
+# 	Turkish
+#, fuzzy
+#~ msgid "l-tr-TR"
+#~ msgstr "Turkish"
+
+# 	Tatar
+#, fuzzy
+#~ msgid "l-tt-RU"
+#~ msgstr "Tatar"
+
+# 	Ukrainian
+#, fuzzy
+#~ msgid "l-uk-UA"
+#~ msgstr "Ukrainian"
+
+# 	Urdu
+#, fuzzy
+#~ msgid "l-ur-PK"
+#~ msgstr "Urdu"
+
+# 	Uzbek
+#, fuzzy
+#~ msgid "l-uz-UZ"
+#~ msgstr "Uzbek"
+
+# 	Vietnamese
+#, fuzzy
+#~ msgid "l-vi-VN"
+#~ msgstr "Vietnamese"
+
+# 	Xhosa
+#, fuzzy
+#~ msgid "l-xh-ZA"
+#~ msgstr "Xhosa"
+
+# 	Chinese
+#, fuzzy
+#~ msgid "l-zh-CN"
+#~ msgstr "Chinese"
+
+# 	Chinese
+#, fuzzy
+#~ msgid "l-zh-HK"
+#~ msgstr "Chinese"
+
+# 	Chinese
+#, fuzzy
+#~ msgid "l-zh-MO"
+#~ msgstr "Chinese"
+
+# 	Chinese
+#, fuzzy
+#~ msgid "l-zh-SG"
+#~ msgstr "Chinese"
+
+# 	Chinese
+#, fuzzy
+#~ msgid "l-zh-TW"
+#~ msgstr "Chinese"
+
+# 	Zulu
+#, fuzzy
+#~ msgid "l-zu-ZA"
+#~ msgstr "Zulu"
+
+#~ msgid "Details"
+#~ msgstr "Details"
+
+#~ msgid "Show records where"
+#~ msgstr "Zeige Datensätze wo"
+
+#~ msgid ""
+#~ "Please refer to the contextual help (available on WP 3.3+) for more "
+#~ "information on what these filters mean."
+#~ msgstr ""
+#~ "F&uuml; weitere Informationen zu den Filtern schlagen Sie in der "
+#~ "kontextsensitiven Hilfe (verf&uuml;gbar ab WP 3.3+) nach."
+
+#~ msgid "Filter by date"
+#~ msgstr "Datums-Filter"
+
+#~ msgid "Go"
+#~ msgstr "Los"
+
+#~ msgid ""
+#~ "This report shows you what languages your users have installed on their "
+#~ "computers."
+#~ msgstr ""
+#~ "Diese Auswertung zeigt die installierten Sprachen der Systeme Ihrer "
+#~ "Besucher."
+
+#~ msgid ""
+#~ "A user agent is a generic term for any program used for accessing a "
+#~ "website. This includes browsers (such as Chrome), robots and spiders, and "
+#~ "any other software program that retrieves information from a website."
+#~ "<br><br>You can ignore any given user agent by setting the corresponding "
+#~ "filter under Settings > SlimStat > Filters."
+#~ msgstr ""
+#~ "Der 'User Agent' ist eine generischer Kennung jedes zugreifenden "
+#~ "Programmes. Dies beinhaltet den Browser (wie z.B. Firefox), 'Robots' und "
+#~ "'Spider' sowie jedes andere Programm welches Informationen von einer "
+#~ "Website abruft.<br><br>Um diese generische Kennung generell zu ignorieren "
+#~ "kann ein entsprechender Filter unter 'Einstellungen > SlimStat > Filter' "
+#~ "gesetzt werden."
+
+#~ msgid ""
+#~ "Which operating systems do your visitors use? Optimizing your site for "
+#~ "the appropriate technical capabilities helps make your site more engaging "
+#~ "and usable and can result in higher conversion rates and more sales."
+#~ msgstr ""
+#~ "Welche Betriebssysteme verwenden die Besucher? Optimierungen an die "
+#~ "geeigneten technischen F&auml;higkeiten helfen f&uuml;hren zu einer "
+#~ "verbesserten Benutzbarkeit und k&ouml;nnen zu einer h&ouml;heren "
+#~ "Konversions-Rate und mehr Ums&auml;tzen f&uuml;hren."
+
+#~ msgid ""
+#~ "This report shows the most common screen resolutions used by your "
+#~ "visitors. Knowing the most popular screen resolution of your visitors "
+#~ "will help you create content optimized for that resolution or you may opt "
+#~ "for resolution-independence."
+#~ msgstr ""
+#~ "Diese Statitstik zeigt die g&auml;ngigen Aufl&ouml;sungen der von den "
+#~ "Besuchern verwendeten Systeme. Mit Hilfe dieser Informationen kann auf "
+#~ "diese Aufl&ouml;sungen optimierter oder aufl&ouml;sungsunabh&auml;giger "
+#~ "Inhalt erzeugt werden."
+
+#~ msgid ""
+#~ "Which versions of Flash do your visitors have installed? Is Java "
+#~ "supported on your visitors' platforms?"
+#~ msgstr ""
+#~ "Welche Flash-Version haben die Besucher installiert? Wird Java auf den "
+#~ "von Benutzern verwendeten Plattformen unterst&uuml;zt?"
+
+#~ msgid ""
+#~ "You can ignore any specific Country by setting the corresponding filter "
+#~ "under Settings > SlimStat > Filters."
+#~ msgstr ""
+#~ "Um spezifische L&auml;nder generell zu ignorieren kann ein entsprechender "
+#~ "Filter unter 'Einstellungen > SlimStat > Filter' gesetzt werden."
+
+#~ msgid ""
+#~ "This report shows the most recent screen resolutions used by your "
+#~ "visitors. Knowing the most popular screen resolution of your visitors "
+#~ "will help you create content optimized for that resolution or you may opt "
+#~ "for resolution-independence."
+#~ msgstr ""
+#~ "Diese Auswertung zeigt die letzten Aufl&ouml;sungen der von den Besuchern "
+#~ "verwendeten Systeme. Mit Hilfe dieser Informationen kann auf diese "
+#~ "Aufl&ouml;sungen optimierter oder aufl&ouml;sungsunabh&auml;giger Inhalt "
+#~ "erzeugt werden."
+
+#, fuzzy
+#~ msgid "This report lists your most active registered users."
+#~ msgstr "Diese Auswertung listet die letzten Artikel nach Titel."
+
+#~ msgid ""
+#~ "This report lists the most recent posts viewed on your site, by title."
+#~ msgstr "Diese Auswertung listet die letzten Artikel nach Titel."
+
+#~ msgid ""
+#~ "The 404 or Not Found error message is a HTTP standard response code "
+#~ "indicating that the client was able to communicate with the server, but "
+#~ "the server could not find what was requested.<br><br>This report can be "
+#~ "useful to detect attack attempts, by looking at patterns in 404 URLs."
+#~ msgstr ""
+#~ "Die Fehler-Meldung '404' bzw. 'Nicht gefunden' ist ein standardisierter "
+#~ "Antwort-Code des HTTP-Protokolls welcher darauf hinweist, dass der Client "
+#~ "mit dem Server kommunizieren konnte aber der angefragte Inhalt nicht "
+#~ "gefunden werden konnte.<br><br>Diese Statisitk kann hilfreich sein, um "
+#~ "Angriffsversuche anhand von Mustern in '404' URLs zu erkennen."
+
+#~ msgid ""
+#~ "Categories provide a helpful way to group related posts together, and to "
+#~ "quickly tell readers what a post is about. Categories also make it easier "
+#~ "for people to find your content."
+#~ msgstr ""
+#~ "Kategorien stellen ein Hilfsmittel zur Gruppierung zusammengeh&ouml;riger "
+#~ "Artikel zur Verf&uuml;gung und um dem Leser eine schnelle Information zum "
+#~ "Inhalt eines Artikels zu geben. Kategorien machen es für Leser auch "
+#~ "einfacher Inhalte zu finden."
+
+#~ msgid "This report lists the most popular posts on your site, by title."
+#~ msgstr "Dieses Statisitk listet die popul&;rsten Artikel nach Titel."
+
+#~ msgid "No records found"
+#~ msgstr "keine Datens&auml;tze gefunden"
+
+#~ msgid "Filter results where IP equals %s"
+#~ msgstr "Ergebnisse filtern nach IP %s"
+
+#~ msgid "Filter results where user equals %s"
+#~ msgstr "Ergebnisse filtern nach Besucher %s"
+
+#~ msgid "Filter results where ther user's real IP equals %s"
+#~ msgstr "Ergebnisse filtern nach Besucher %s"
+
+#~ msgid "Country"
+#~ msgstr "Land"
+
+#~ msgid "Platform"
+#~ msgstr "Plattform"
+
+#, fuzzy
+#~ msgid "Filter results where browser type equals %s"
+#~ msgstr "Ergebnisse filtern nach Inhalt %s"
+
+#, fuzzy
+#~ msgid "Filter results where screen resolution equals %s"
+#~ msgstr "Ergebnisse filtern wo Ressource ist gleich %s"
+
+#~ msgid "Filter results where content type equals %s"
+#~ msgstr "Ergebnisse filtern nach Inhalt %s"
+
+#~ msgid "Bots, Crawlers and others"
+#~ msgstr "Bots, Crawlers und andere"
+
+#~ msgid "Recent Known Visitors"
+#~ msgstr "Letzte bekannte Besucher"
+
+#~ msgid "Recent 404 URLs"
+#~ msgstr "Letzte 404 URLs"
+
+#~ msgid "Top 404 URLs"
+#~ msgstr "Top 404 URLs"
+
+#~ msgid "Remove all filters"
+#~ msgstr "Alle Filter entfernen"
+
+#~ msgid "Filter results where domain equals %s"
+#~ msgstr "Ergebnisse filtern wo die Dom&auml;ne ist gleich %s"
+
+#~ msgid "Filter results where searchterm equals %s"
+#~ msgstr "Ergebnisse filtern wo Suchbegriffe sind gleich %s"
+
+#, fuzzy
+#~ msgid "Filter results where date equals today"
+#~ msgstr "Ergebnisse filtern wo die Dom&auml;ne ist gleich %s"
+
+#, fuzzy
+#~ msgid "Filter results where date equals yesterday"
+#~ msgstr "Ergebnisse filtern wo die Dom&auml;ne ist gleich %s"
+
+#~ msgid "This number includes <strong>human visits</strong> only."
+#~ msgstr "Diese Anzahl beinhaltet nur <strong>echte Besuche</strong>."
+
+#~ msgid "10 - 20 minutes"
+#~ msgstr "10-20 Minuten"
+
+# 	Afar
+#~ msgid "l-aa"
+#~ msgstr "Afar"
+
+# 	Abkhazian
+#~ msgid "l-ab"
+#~ msgstr "Abkhazian"
+
+# 	Avestan
+#~ msgid "l-ae"
+#~ msgstr "Avestan"
+
+# 	Akan
+#~ msgid "l-ak"
+#~ msgstr "Akan"
+
+# 	Amharic
+#~ msgid "l-am"
+#~ msgstr "Amharic"
+
+# 	Assamese
+#~ msgid "l-as"
+#~ msgstr "Assamese"
+
+# 	Avaric
+#~ msgid "l-av"
+#~ msgstr "Avaric"
+
+# 	Aymara
+#~ msgid "l-ay"
+#~ msgstr "Aymara"
+
+# 	Bashkir
+#~ msgid "l-ba"
+#~ msgstr "Bashkir"
+
+# 	Bihari languages
+#~ msgid "l-bh"
+#~ msgstr "Bihari languages"
+
+# 	Bislama
+#~ msgid "l-bi"
+#~ msgstr "Bislama"
+
+# 	Bambara
+#~ msgid "l-bm"
+#~ msgstr "Bambara"
+
+# 	Bengali
+#~ msgid "l-bn"
+#~ msgstr "Bengali"
+
+# 	Tibetan
+#~ msgid "l-bo"
+#~ msgstr "Tibetan"
+
+# 	Breton
+#~ msgid "l-br"
+#~ msgstr "Breton"
+
+# 	Chechen
+#~ msgid "l-ce"
+#~ msgstr "Chechen"
+
+# 	Corsican
+#~ msgid "l-co"
+#~ msgstr "Corsican"
+
+# 	Cree
+#~ msgid "l-cr"
+#~ msgstr "Cree"
+
+# 	Chuvash
+#~ msgid "l-cv"
+#~ msgstr "Chuvash"
+
+# 	Dzongkha
+#~ msgid "l-dz"
+#~ msgstr "Dzongkha"
+
+# 	Ewe
+#~ msgid "l-ee"
+#~ msgstr "Ewe"
+
+# 	Fulah
+#~ msgid "l-ff"
+#~ msgstr "Fulah"
+
+# 	Fijian
+#~ msgid "l-fj"
+#~ msgstr "Fijian"
+
+# 	Irish
+#~ msgid "l-ga"
+#~ msgstr "Irish"
+
+# 	Scottish Gaelic; Gaelic
+#~ msgid "l-gd"
+#~ msgstr "Scottish Gaelic; Gaelic"
+
+# 	Guarani
+#~ msgid "l-gn"
+#~ msgstr "Guarani"
+
+# 	Manx
+#~ msgid "l-gv"
+#~ msgstr "Manx"
+
+# 	Hausa
+#~ msgid "l-ha"
+#~ msgstr "Hausa"
+
+# 	Haitian; Haitian Creole
+#~ msgid "l-ht"
+#~ msgstr "Haitian; Haitian Creole"
+
+# 	Interlingua (International Auxiliary Language Association)
+#~ msgid "l-ia"
+#~ msgstr "Interlingua (International Auxiliary Language Association)"
+
+# 	Interlingue; Occidental
+#~ msgid "l-ie"
+#~ msgstr "Interlingue; Occidental"
+
+# 	Sichuan Yi; Nuosu
+#~ msgid "l-ii"
+#~ msgstr "Sichuan Yi; Nuosu"
+
+# 	Inupiaq
+#~ msgid "l-ik"
+#~ msgstr "Inupiaq"
+
+# 	Indonesian
+#~ msgid "l-in"
+#~ msgstr "Indonesian"
+
+# 	Ido
+#~ msgid "l-io"
+#~ msgstr "Ido"
+
+# 	Hebrew
+#~ msgid "l-iw"
+#~ msgstr "Hebrew"
+
+# 	Yiddish
+#~ msgid "l-ji"
+#~ msgstr "Yiddish"
+
+# 	Javanese
+#~ msgid "l-jv"
+#~ msgstr "Javanese"
+
+# 	Javanese
+#~ msgid "l-jw"
+#~ msgstr "Javanese"
+
+# 	Kongo
+#~ msgid "l-kg"
+#~ msgstr "Kongo"
+
+# 	Kikuyu; Gikuyu
+#~ msgid "l-ki"
+#~ msgstr "Kikuyu; Gikuyu"
+
+# 	Kuanyama; Kwanyama
+#~ msgid "l-kj"
+#~ msgstr "Kuanyama; Kwanyama"
+
+# 	Kalaallisut; Greenlandic
+#~ msgid "l-kl"
+#~ msgstr "Kalaallisut; Greenlandic"
+
+# 	Central Khmer
+#~ msgid "l-km"
+#~ msgstr "Central Khmer"
+
+# 	Kanuri
+#~ msgid "l-kr"
+#~ msgstr "Kanuri"
+
+# 	Kashmiri
+#~ msgid "l-ks"
+#~ msgstr "Kashmiri"
+
+# 	Kurdish
+#~ msgid "l-ku"
+#~ msgstr "Kurdish"
+
+# 	Komi
+#~ msgid "l-kv"
+#~ msgstr "Komi"
+
+# 	Cornish
+#~ msgid "l-kw"
+#~ msgstr "Cornish"
+
+# 	Latin
+#~ msgid "l-la"
+#~ msgstr "Latin"
+
+# 	Luxembourgish; Letzeburgesch
+#~ msgid "l-lb"
+#~ msgstr "Luxembourgish; Letzeburgesch"
+
+# 	Ganda
+#~ msgid "l-lg"
+#~ msgstr "Ganda"
+
+# 	Limburgan; Limburge; Limburgish
+#~ msgid "l-li"
+#~ msgstr "Limburgan; Limburge; Limburgish"
+
+# 	Lingala
+#~ msgid "l-ln"
+#~ msgstr "Lingala"
+
+# 	Lao
+#~ msgid "l-lo"
+#~ msgstr "Lao"
+
+# 	Luba-Katanga
+#~ msgid "l-lu"
+#~ msgstr "Luba-Katanga"
+
+# 	Malagasy
+#~ msgid "l-mg"
+#~ msgstr "Malagasy"
+
+# 	Marshallese
+#~ msgid "l-mh"
+#~ msgstr "Marshallese"
+
+# 	Malayalam
+#~ msgid "l-ml"
+#~ msgstr "Malayalam"
+
+# 	Moldavian; Moldovan
+#~ msgid "l-mo"
+#~ msgstr "Moldavian; Moldovan"
+
+# 	Burmese
+#~ msgid "l-my"
+#~ msgstr "Burmese"
+
+# 	Nauru
+#~ msgid "l-na"
+#~ msgstr "Nauru"
+
+# 	North Ndebele
+#~ msgid "l-nd"
+#~ msgstr "North Ndebele"
+
+# 	Nepali
+#~ msgid "l-ne"
+#~ msgstr "Nepali"
+
+# 	Ndonga
+#~ msgid "l-ng"
+#~ msgstr "Ndonga"
+
+# 	Norwegian
+#~ msgid "l-no"
+#~ msgstr "Norwegian"
+
+# 	Navajo; Navaho
+#~ msgid "l-nv"
+#~ msgstr "Navajo; Navaho"
+
+# 	Nyanja; Chewa; Chichewa
+#~ msgid "l-ny"
+#~ msgstr "Nyanja; Chewa; Chichewa"
+
+# 	Occitan (post 1500)
+#~ msgid "l-oc"
+#~ msgstr "Occitan (post 1500)"
+
+# 	Ojibwa
+#~ msgid "l-oj"
+#~ msgstr "Ojibwa"
+
+# 	Oromo
+#~ msgid "l-om"
+#~ msgstr "Oromo"
+
+# 	Oriya
+#~ msgid "l-or"
+#~ msgstr "Oriya"
+
+# 	Ossetian; Ossetic
+#~ msgid "l-os"
+#~ msgstr "Ossetian; Ossetic"
+
+# 	Pali
+#~ msgid "l-pi"
+#~ msgstr "Pali"
+
+# 	Romansh
+#~ msgid "l-rm"
+#~ msgstr "Romansh"
+
+# 	Rundi
+#~ msgid "l-rn"
+#~ msgstr "Rundi"
+
+# 	Kinyarwanda
+#~ msgid "l-rw"
+#~ msgstr "Kinyarwanda"
+
+# 	Sardinian
+#~ msgid "l-sc"
+#~ msgstr "Sardinian"
+
+# 	Sindhi
+#~ msgid "l-sd"
+#~ msgstr "Sindhi"
+
+# 	Sango
+#~ msgid "l-sg"
+#~ msgstr "Sango"
+
+# 	Serbo-Croatian
+#~ msgid "l-sh"
+#~ msgstr "Serbo-Croatian"
+
+# 	Sinhala; Sinhalese
+#~ msgid "l-si"
+#~ msgstr "Sinhala; Sinhalese"
+
+# 	Samoan
+#~ msgid "l-sm"
+#~ msgstr "Samoan"
+
+# 	Shona
+#~ msgid "l-sn"
+#~ msgstr "Shona"
+
+# 	Somali
+#~ msgid "l-so"
+#~ msgstr "Somali"
+
+# 	Swati
+#~ msgid "l-ss"
+#~ msgstr "Swati"
+
+# 	Southern Sotho
+#~ msgid "l-st"
+#~ msgstr "Southern Sotho"
+
+# 	Sundanese
+#~ msgid "l-su"
+#~ msgstr "Sundanese"
+
+# 	Tajik
+#~ msgid "l-tg"
+#~ msgstr "Tajik"
+
+# 	Tigrinya
+#~ msgid "l-ti"
+#~ msgstr "Tigrinya"
+
+# 	Turkmen
+#~ msgid "l-tk"
+#~ msgstr "Turkmen"
+
+# 	Tonga (Tonga Islands)
+#~ msgid "l-to"
+#~ msgstr "Tonga (Tonga Islands)"
+
+# 	Tahitian
+#~ msgid "l-ty"
+#~ msgstr "Tahitian"
+
+# 	Uighur; Uyghur
+#~ msgid "l-ug"
+#~ msgstr "Uighur; Uyghur"
+
+# 	Venda
+#~ msgid "l-ve"
+#~ msgstr "Venda"
+
+# 	Volapük
+#~ msgid "l-vo"
+#~ msgstr "Volapük"
+
+# 	Wolof
+#~ msgid "l-wo"
+#~ msgstr "Wolof"
+
+# 	Yiddish
+#~ msgid "l-yi"
+#~ msgstr "Yiddish"
+
+# 	Yoruba
+#~ msgid "l-yo"
+#~ msgstr "Yoruba"
+
+# 	Zhuang; Chuang
+#~ msgid "l-za"
+#~ msgstr "Zhuang; Chuang"
+
+# Internet Explorer Easter Egg
+#~ msgid "l-ie-ee"
+#~ msgstr "Internet Explorer Easter Egg"
+
+# Korean (Democratic People's Republic of Korea)
+#~ msgid "l-ko-kp"
+#~ msgstr "Korean (Democratic People's Republic of Korea)"
+
+# Romanian (Moldava)
+#~ msgid "l-ro-md"
+#~ msgstr "Romanian (Moldava)"
+
+# Russian (Moldava)
+#~ msgid "l-ru-md"
+#~ msgstr "Russian (Moldava)"
+
+#, fuzzy
+#~ msgid "Your Content"
+#~ msgstr "Inhalt"
+
+#, fuzzy
+#~ msgid "Ignore users"
+#~ msgstr "Bekannte Benutzer"
+
+#, fuzzy
+#~ msgid "Users by capability"
+#~ msgstr "Browser-F&auml;higkeiten"
+
+#~ msgid ""
+#~ "Unique sessions initiated by your visitors. If a user is inactive on your "
+#~ "site for 30 minutes or more, any future activity will be attributed to a "
+#~ "new session. Users that leave your site and return within 30 minutes will "
+#~ "be counted as part of the original session."
+#~ msgstr ""
+#~ "Eindeutige Sessions er&ouml;ffnet von Besuchern. Wenn ein Benutzer mehr "
+#~ "als 30 Minuten inkativ ist, wird jede folgende Aktivit&auml;t als neue "
+#~ "Session gewertet. Benutzer welche die Seite verlassen und innerhalb von "
+#~ "30 Minuten wiederkehren, werden zur origin&auml;ren Session zugeh&ouml;"
+#~ "rig gez&auml;hlt."
+
+#~ msgid "Top Languages - Just Visitors"
+#~ msgstr "Top Sprachen - nur Besucher"
+
+#, fuzzy
+#~ msgid "Top Downloads"
+#~ msgstr "Letzte Downloads"
+
+#~ msgid "darwin"
+#~ msgstr "Darwin"
+
+#~ msgid "dec alpha"
+#~ msgstr "DEC Alpha"
+
+#~ msgid "vax"
+#~ msgstr "VAX"
+
+# 	Aragonese
+#~ msgid "l-an"
+#~ msgstr "Aragonese"
+
+# 	Chamorro
+#~ msgid "l-ch"
+#~ msgstr "Chamorro"
+
+# 	Church Slavic; Church Slavonic
+#~ msgid "l-cu"
+#~ msgstr "Church Slavic; Church Slavonic"
+
+# 	Western Frisian
+#~ msgid "l-fy"
+#~ msgstr "Western Frisian"
+
+# 	Hiri Motu
+#~ msgid "l-ho"
+#~ msgstr "Hiri Motu"
+
+# 	Herero
+#~ msgid "l-hz"
+#~ msgstr "Herero"
+
+# 	Igbo
+#~ msgid "l-ig"
+#~ msgstr "Igbo"
+
+# 	Inuktitut
+#~ msgid "l-iu"
+#~ msgstr "Inuktitut"
+
+# 	South Ndebele
+#~ msgid "l-nr"
+#~ msgstr "South Ndebele"
+
+# 	Twi
+#~ msgid "l-tw"
+#~ msgstr "Twi"
+
+# 	Walloon
+#~ msgid "l-wa"
+#~ msgstr "Walloon"
+
+#, fuzzy
+#~ msgid "Resources"
+#~ msgstr "Top Ressourcen"
+
+#, fuzzy
+#~ msgid "Records: %d - %d"
+#~ msgstr "Suchbegriffe"
+
+#~ msgid "Open this page in a new window"
+#~ msgstr "Seite in neuem Fenster &ouml;ffnen"
+
+#~ msgid "Open in a new window"
+#~ msgstr "In neuem Fenster &ouml;ffnen"
+
+#~ msgid "Use standalone menu"
+#~ msgstr "Eigenes Men&uuml; anzeigen"
+
+#, fuzzy
+#~ msgid "World Map - Click on a Country to enable the corresponding filter"
+#~ msgstr ""
+#~ "Weltkarte - Klicke auf aktive L&auml;nder um den entsprechenden Filter zu "
+#~ "aktivieren."
+
+#~ msgid "Reverse Order"
+#~ msgstr "Sortierung zur&uuml;cksetzen"
+
+#~ msgid "Daily Pageviews"
+#~ msgstr "T&auml;gliche Seitenaufrufe"
+
+#~ msgid "Daily Human Visits"
+#~ msgstr "T&auml;gliche echte Besucher"
+
+#~ msgid "Hourly Human Visits"
+#~ msgstr "Echte Besuche pro Stunde"
+
+#~ msgid "Hourly Average Pageviews per Visit"
+#~ msgstr "Durchschnitt. Seitenaufrufe pro Besuch und Stunde"
+
+#~ msgid "Daily Traffic Sources"
+#~ msgstr "T&auml;gliche Traffic Ursprung"
+
+#~ msgid "Hourly Traffic Sources"
+#~ msgstr "St&;ndliche Traffic Ursprung"
+
+#~ msgid "Latency"
+#~ msgstr "Latenz"
+
+#~ msgid "Off"
+#~ msgstr "Aus"
+
+#~ msgid ""
+#~ "A bot is a program that operates as an agent for a user or another "
+#~ "program or simulates a human activity. Browsers with Javascript disabled "
+#~ "(but whose user agent is legit) are not considered <em>bots</em>."
+#~ msgstr ""
+#~ "Ein 'Bot' ist ein automatisiertes Programm welches für einen Benutzer "
+#~ "oder ein anderes Programm menschliche Aktivit&auml;ten ausf&uuml;hrt. "
+#~ "Browser mit abgeschaltetem JavaScript (aber deren 'User Agent' g&uuml;"
+#~ "ltig ist) werden nicht als 'Bots' gez&auml;hlt."
+
+#~ msgid "On"
+#~ msgstr "am"
+
+#~ msgid "Last Month"
+#~ msgstr "letzter Monat"
+
+#~ msgid "Private IP"
+#~ msgstr "Private IP"
+
+#~ msgid "Filter results where private IP equals %s"
+#~ msgstr "Ergebnisse filtern nach privater IP %s"
+
+#~ msgid "Dashboard"
+#~ msgstr "&Uuml;bersicht"
+
+#~ msgid "Raw Data"
+#~ msgstr "Rohdaten"
+
+#, fuzzy
+#~ msgid "Reverse"
+#~ msgstr "Zur&uuml;cksetzen"
+
+#, fuzzy
+#~ msgid "Click on a day for hourly metrics"
+#~ msgstr "Klick auf einen Tag f&uuml;r Stunden-Auswertung"
+
+#~ msgid "More"
+#~ msgstr "mehr"
+
+#~ msgid "Direct visit to"
+#~ msgstr "Direkter Besuch von"
+
+#, fuzzy
+#~ msgid "Popular Resources"
+#~ msgstr "Popul&auml;re Seiten"
+
+#~ msgid "Traffic Sources Overview"
+#~ msgstr "&Uuml;berblick Traffic-Ursprung"
+
+#~ msgid "Screen Resolutions with colordepth"
+#~ msgstr "Bildschirm-Aufl&ouml;sung inkl. Farbtiefe"
+
+#~ msgid "Plugins"
+#~ msgstr "Plugins"
+
+#~ msgid "Browsers and Operating Systems"
+#~ msgstr "Browser und Betriebssysteme"
+
+#~ msgid "Direct Visits"
+#~ msgstr "Direkte Besuche"
+
+#~ msgid "Unique Pages Referred"
+#~ msgstr "Eindeutige Seitenverweise"
+
+#~ msgid "Unique Internal"
+#~ msgstr "Eindeutige interne Zugriffe"
+
+#, fuzzy
+#~ msgid "Sites"
+#~ msgstr "Sites"
+
+#, fuzzy
+#~ msgid "Recent Search Terms &raquo; Pages"
+#~ msgstr "Letzte Suchbegriffe  &raquo; Seiten"
+
+#~ msgid "Recent bouncing pages"
+#~ msgstr "Letzte Absprung-Seiten"
+
+#~ msgid "Recent Keywords"
+#~ msgstr "Letzte Suchbegriffe"
+
+#~ msgid "Order by"
+#~ msgstr "Sortiert nach"
+
+#~ msgid "Language"
+#~ msgstr "Sprache"
+
+#~ msgid "Ascending"
+#~ msgstr "Aufsteigend"
+
+#~ msgid "Descending"
+#~ msgstr "Absteigend"
+
+#~ msgid "Starting from record #"
+#~ msgstr "Beginne mit Datensatz #"
+
+#~ msgid "&laquo; Previous"
+#~ msgstr "&laquo; Zur&uuml;ck"
+
+#~ msgid "Next &raquo;"
+#~ msgstr "Weiter &raquo;"
+
+#, fuzzy
+#~ msgid "reverse"
+#~ msgstr "zur&uuml;cksetzen"
+
+#~ msgid "Pluggable custom reports"
+#~ msgstr "Eigene Auswertungen"
+
+#~ msgid "this period"
+#~ msgstr "dieser Zeitraum"
+
+#, fuzzy
+#~ msgid "Top Countries for"
+#~ msgstr "Top L&auml;nder f&uuml;r"
+
+#, fuzzy
+#~ msgid "Top Traffic Sources for"
+#~ msgstr "Top Traffic-Ursprung f&uuml;r"
+
+#~ msgid ""
+#~ "World Map - Values represent the percentage of hits coming from that "
+#~ "Country"
+#~ msgstr ""
+#~ "Weltkarte - Werte repr&auml;sentieren die Zugriffe in Prozent aus diesem "
+#~ "Land"
+
+#~ msgid "Human Visits by day - Click on a day for hourly metrics"
+#~ msgstr ""
+#~ "Echte Besuche pro Tag - Klick auf einen Tag zeigt eine Stunden-Auswertung"
+
+#~ msgid "Traffic Sources by day - Click on a day for hourly metrics"
+#~ msgstr ""
+#~ "Traffic-Ursprung pro Tag - Klick auf einen Tag zeigt Stunden-Auswertung"
+
+#~ msgid "Traffic Sources by hour"
+#~ msgstr "Traffic-Ursprung pro Stunde"
+
+#~ msgid ""
+#~ "Average pageviews per visit by day - Click on a day for hourly metrics"
+#~ msgstr ""
+#~ "Durchschnittliche Seitenaufrufe pro Besuch und Tag - Klick auf einen Tag "
+#~ "zeigtStunden-Auswertung"
+
+#~ msgid "reset"
+#~ msgstr "zur&uuml;cksetzen"
+
+#~ msgid "Popular pages of all time"
+#~ msgstr "Popul&auml;rste Seiten insgesamt"
+
+#~ msgid "One time visitors"
+#~ msgstr "Einmalige Besucher"
+
+#~ msgid "Flash"
+#~ msgstr "Adobe Flash"
+
+#~ msgid "Silverlight"
+#~ msgstr "MS Silverlight"
+
+#~ msgid "Acrobat"
+#~ msgstr "Adobe Acrobat"
+
+#~ msgid "Java"
+#~ msgstr "Oracle Java"
+
+#~ msgid "Media Player"
+#~ msgstr "MS MediaPlayer"
+
+#~ msgid "Real Player"
+#~ msgstr "RealPlayer"
+
+#~ msgid "Details about Recent Visits"
+#~ msgstr "Details &uuml;ber die letzten Besuche"
+
+#~ msgid "Countries for"
+#~ msgstr "L&auml;nder f&uuml;r"
+
+#~ msgid "N/A"
+#~ msgstr "n.v."
+
+#~ msgid "Unique Visits"
+#~ msgstr "Eindeutige Besuche"
