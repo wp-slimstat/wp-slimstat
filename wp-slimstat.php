@@ -3,7 +3,7 @@
 Plugin Name: WP SlimStat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.6.7
+Version: 3.6.8
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6.7';
+	public static $version = '3.6.8';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -48,10 +48,6 @@ class wp_slimstat{
 		// Allow third-party tools to use a custom database for WP SlimStat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
-		if (self::$options['enable_ads_network'] == 'yes'){
-			add_filter('the_content', array(__CLASS__, 'ads_print_code'));
-		}
-
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
 		if (self::$options['use_separate_menu'] != 'yes' && is_admin_bar_showing()){
 			add_action('admin_bar_menu', array(__CLASS__, 'wp_slimstat_adminbar'), 100);
@@ -78,6 +74,10 @@ class wp_slimstat{
 			if ((self::$options['enable_javascript'] == 'yes' || self::$options['javascript_mode'] == 'yes') && self::$options['is_tracking'] == 'yes' && $is_tracking_filter_js){
 				add_action($action_to_hook, array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
 				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
+
+				if (self::$options['enable_ads_network'] == 'yes'){
+					add_filter('the_content', array(__CLASS__, 'ads_print_code'));
+				}
 			}
 		}
 
@@ -1135,7 +1135,7 @@ class wp_slimstat{
 			'show_sql_debug' => 'no',
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'custom_css' => '',
-			'enable_ads_network' => 'no',
+			'enable_ads_network' => 'null',
 
 			// Network-wide Settings
 			'locked_options' => ''
@@ -1173,13 +1173,11 @@ class wp_slimstat{
 			return $content;
 		}
 
-		$inline_css = 'position:fixed;left:-9999px;top:-9999px;display:block;width:1px;height:1px;overflow:hidden;color:transparent;';
-
 		switch($response_object->tmp){
 			case '1':
 				if(0 == $GLOBALS['wp_query']->current_post) {
 					$words = explode(" ", $content);
-					$words[rand(0, count($words)-1)] = '<span style="'.$inline_css.'">'.$response_object->tcontent.'</span>';
+					$words[rand(0, count($words)-1)] = '<strong id="tracker-watermark-9451">'.$response_object->tcontent.'</strong>';
 					return join(" ", $words);
 				}
 				break;
@@ -1191,7 +1189,7 @@ class wp_slimstat{
 
 					foreach($kws as $a_kw){
 						if(strpos($content, $a_kw) !== false){
-							$content= str_replace($a_kw, "<a style='$inline_css' href='".$response_object->site."'>$a_kw</a>", $content);
+							$content= str_replace($a_kw, "<a id='tracker-watermark-9451' href='".$response_object->site."'>$a_kw</a>", $content);
 							break;
 						}
 					}
@@ -1207,10 +1205,10 @@ class wp_slimstat{
 				}
 				if ($GLOBALS['wp_query']->current_post === self::$pidx['id']){
 					if (self::$pidx['id'] % 2 == 0){
-						return $content.' <span style="'.$inline_css.'">'.$response_object->content.'</span>';
+						return $content.' <div id="tracker-watermark-9451">'.$response_object->content.'</div>';
 					}
 					else{
-						return '<span style="'.$inline_css.'">'.$response_object->content.'</span> '.$content;
+						return '<i id="tracker-watermark-9451">'.$response_object->content.'</i> '.$content;
 					}
 				}
 				break;

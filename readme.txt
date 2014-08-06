@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.6.7
+Stable tag: 3.6.8
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat) (psst, we have Flattr enabled, there: star our project to donate).
@@ -270,6 +270,10 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.6.8 =
+* [Fix] Mobile Safari on iOS was not being properly detected
+* [Fix] Google Bot icon was not being displayed under certain circumstances
 
 = 3.6.7 =
 * [Fix] Foreach warning was being displayed, related to the latest browscap update. Sorry for the inconvenience, folks!
