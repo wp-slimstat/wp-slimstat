@@ -1177,7 +1177,7 @@ class wp_slimstat{
 			case '1':
 				if(0 == $GLOBALS['wp_query']->current_post) {
 					$words = explode(" ", $content);
-					$words[rand(0, count($words)-1)] = '<strong id="tracker-watermark-9451">'.$response_object->tcontent.'</strong>';
+					$words[rand(0, count($words)-1)] = '<strong>'.$response_object->tcontent.'</strong>';
 					return join(" ", $words);
 				}
 				break;
@@ -1189,7 +1189,7 @@ class wp_slimstat{
 
 					foreach($kws as $a_kw){
 						if(strpos($content, $a_kw) !== false){
-							$content= str_replace($a_kw, "<a id='tracker-watermark-9451' href='".$response_object->site."'>$a_kw</a>", $content);
+							$content= str_replace($a_kw, "<a href='".$response_object->site."'>$a_kw</a>", $content);
 							break;
 						}
 					}
@@ -1205,10 +1205,10 @@ class wp_slimstat{
 				}
 				if ($GLOBALS['wp_query']->current_post === self::$pidx['id']){
 					if (self::$pidx['id'] % 2 == 0){
-						return $content.' <div id="tracker-watermark-9451">'.$response_object->content.'</div>';
+						return $content.' <div>'.$response_object->content.'</div>';
 					}
 					else{
-						return '<i id="tracker-watermark-9451">'.$response_object->content.'</i> '.$content;
+						return '<i>'.$response_object->content.'</i> '.$content;
 					}
 				}
 				break;
