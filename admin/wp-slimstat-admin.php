@@ -19,7 +19,7 @@ class wp_slimstat_admin{
 		}
 
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			self::$admin_notice = "Celebrate one million downloads with us: use code <code>onemillion</code> at checkout to get 25% off our <a href='http://slimstat.getused.to.it/add-ons/' target='_blank'>premium add-ons</a>. Hurry, offer ends soon.";
+			self::$admin_notice = "Celebrate one million downloads with us: use code <code>onemillion</code> at checkout to get 25% off our <a href='http://slimstat.getused.to.it/addons/' target='_blank'>premium add-ons</a>. Hurry, offer ends soon.";
 		}
 		else {
 			self::$admin_notice = "
