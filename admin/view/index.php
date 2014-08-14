@@ -120,7 +120,7 @@
 				<div class="postbox medium">
 					<h3 class="hndle"><?php _e('Your report here', 'wp-slimstat'); ?></h3>
 					<div class="container noscroll">
-						<p style="padding:10px;line-height:2em;white-space:normal"><?php _e( 'Yes, you can! Create and view your personalized analytics for WP SlimStat. Just write a new plugin that retrieves the desired information from the database and then hook it to the action <code>wp_slimstat_custom_report</code>. For more information, visit my <a href="http://wordpress.org/tags/wp-slimstat?forum_id=10" target="_blank">support forum</a>.', 'wp-slimstat' ); ?></p>
+						<p style="padding:10px;line-height:2em;white-space:normal"><?php _e( 'Yes, you can! Create and view your personalized analytics for Slimstat. Just write a new plugin that retrieves the desired information from the database and then hook it to the action <code>wp_slimstat_custom_report</code>. For more information, visit my <a href="http://wordpress.org/tags/wp-slimstat?forum_id=10" target="_blank">support forum</a>.', 'wp-slimstat' ); ?></p>
 					</div>
 				</div>
 
@@ -137,7 +137,7 @@
 							wp_slimstat_reports::report_header($a_box_id, 'wide chart', wp_slimstat_reports::$chart_tooltip, wp_slimstat_reports::chart_title(__('Pageviews', 'wp-slimstat')));
 							break;
 						case 'slim_p1_04':
-							wp_slimstat_reports::report_header($a_box_id, 'normal', __('When visitors leave a comment on your blog, WordPress assigns them a cookie. WP SlimStat leverages this information to identify returning visitors. Please note that visitors also include registered users.','wp-slimstat'));
+							wp_slimstat_reports::report_header($a_box_id, 'normal', __('When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.','wp-slimstat'));
 							break;
 						case 'slim_p1_05':
 						case 'slim_p3_08':
@@ -148,16 +148,16 @@
 							wp_slimstat_reports::report_header($a_box_id, 'normal', __('Keywords used by your visitors to find your website on a search engine.','wp-slimstat'));
 							break;
 						case 'slim_p1_15':
-							wp_slimstat_reports::report_header($a_box_id, 'normal', __("WP SlimStat retrieves live information from Alexa, Facebook and Google, to measures your site's rankings. Values are updated every 12 hours. Filters set above don't apply to this report.",'wp-slimstat'));
+							wp_slimstat_reports::report_header($a_box_id, 'normal', __("Slimstat retrieves live information from Alexa, Facebook and Google, to measures your site's rankings. Values are updated every 12 hours. Filters set above don't apply to this report.",'wp-slimstat'));
 							break;
 						case 'slim_p2_01':
 							wp_slimstat_reports::report_header($a_box_id, 'wide chart', wp_slimstat_reports::$chart_tooltip, wp_slimstat_reports::chart_title(__('Human Visits', 'wp-slimstat')));
 							break;
 						case 'slim_p2_05':
-							wp_slimstat_reports::report_header($a_box_id, 'wide', __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'));
+							wp_slimstat_reports::report_header($a_box_id, 'wide', __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.','wp-slimstat'));
 							break;
 						case 'slim_p2_10':
-							wp_slimstat_reports::report_header($a_box_id, 'normal', __('You can configure WP SlimStat to ignore a specific Country by setting the corresponding filter under Settings > SlimStat > Filters.','wp-slimstat'));
+							wp_slimstat_reports::report_header($a_box_id, 'normal', __('You can configure Slimstat to ignore a specific Country by setting the corresponding filter under Settings > Slimstat > Filters.','wp-slimstat'));
 							break;
 						case 'slim_p2_18':
 							wp_slimstat_reports::report_header($a_box_id, 'normal', __('This report shows you what user agent families (no version considered) are popular among your visitors.','wp-slimstat'));

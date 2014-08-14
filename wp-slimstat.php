@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: WP SlimStat
+Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.6.8
+Version: 3.6.9
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.6.8';
+	public static $version = '3.6.9';
 	public static $options = array();
 	
 	public static $wpdb = '';
@@ -32,7 +32,7 @@ class wp_slimstat{
 		if (empty(self::$options)){
 			self::$options = self::init_options();
 			
-			// Save SlimStat's options in the database
+			// Save Slimstat's options in the database
 			add_option('slimstat_options', self::$options, '', 'no');
 		}
 		else{
@@ -45,7 +45,7 @@ class wp_slimstat{
 		// Determine the options' signature: if it hasn't changed, there's no need to update/save them in the database
 		self::$options_signature = md5(serialize(self::$options));
 		
-		// Allow third-party tools to use a custom database for WP SlimStat
+		// Allow third-party tools to use a custom database for Slimstat
 		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
@@ -70,7 +70,7 @@ class wp_slimstat{
 				if (self::$options['track_users'] == 'yes') add_action('login_init', array(__CLASS__, 'slimtrack'), 10);
 			}
 
-			// WP SlimStat tracks screen resolutions, outbound links and other client-side information using javascript
+			// Slimstat tracks screen resolutions, outbound links and other client-side information using javascript
 			if ((self::$options['enable_javascript'] == 'yes' || self::$options['javascript_mode'] == 'yes') && self::$options['is_tracking'] == 'yes' && $is_tracking_filter_js){
 				add_action($action_to_hook, array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
 				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
@@ -194,7 +194,6 @@ class wp_slimstat{
 	 * Core tracking functionality
 	 */
 	public static function slimtrack($_argument = ''){
-		// Don't track 
 		self::$stat['dt'] = date_i18n('U');
 		self::$stat['notes'] = '';
 
@@ -738,7 +737,7 @@ class wp_slimstat{
 				$browser['browser'] = $search[5];
 				$browser['version'] = intval($search[6]);
 				$browser['platform'] = strtolower($search[9]);
-				$browser['css_version'] = $search[28];
+				$browser['css_version'] = $search[29];
 				$browser['user_agent'] =  $search[0];
 
 				// browser Types:
@@ -746,9 +745,9 @@ class wp_slimstat{
 				//		1: crawler
 				//		2: mobile
 				//		3: syndication reader
-				if ($search[25] == 'true') $browser['type'] = 2;
-				elseif ($search[26] == 'true') $browser['type'] = 3;
-				elseif ($search[27] != 'true') $browser['type'] = 0;
+				if ($search[25] == 'true' || $search[26] == 'true') $browser['type'] = 2;
+				elseif ($search[27] == 'true') $browser['type'] = 3;
+				elseif ($search[28] != 'true') $browser['type'] = 0;
 
 				if ($browser['version'] != 0 || $browser['type'] != 0){
 					return $browser;
@@ -1291,7 +1290,7 @@ class wp_slimstat{
 			$slimstat_view_url = get_site_url($GLOBALS['blog_id'], "/wp-admin/$slimstat_view_url?page=wp-slim-view-");
 			$slimstat_config_url = get_site_url($GLOBALS['blog_id'], "/wp-admin/$slimstat_config_url?page=wp-slim-config");
 			
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-header', 'title' => 'SlimStat', 'href' => "{$slimstat_view_url}1"));
+			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-header', 'title' => 'Slimstat', 'href' => "{$slimstat_view_url}1"));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel1', 'href' => "{$slimstat_view_url}1", 'parent' => 'slimstat-header', 'title' => __('Activity Log', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel2', 'href' => "{$slimstat_view_url}2", 'parent' => 'slimstat-header', 'title' => __('Overview', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel3', 'href' => "{$slimstat_view_url}3", 'parent' => 'slimstat-header', 'title' => __('Visitors', 'wp-slimstat')));

@@ -17,7 +17,7 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ENGINE = InnoDB");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ENGINE = InnoDB");
 			
-			wp_slimstat_admin::show_alert_message(__('Your WP SlimStat tables have been successfully converted to InnoDB.','wp-slimstat'), 'updated below-h2');
+			wp_slimstat_admin::show_alert_message(__('Your Slimstat tables have been successfully converted to InnoDB.','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'delete-records':
 			$rows_affected = 0;
@@ -43,7 +43,7 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX stats_browser_idx(browser_id)");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD INDEX browser_all_idx(browser,version,platform,css_version,type)");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD INDEX screenres_all_idx(resolution,colordepth,antialias)");
-			wp_slimstat_admin::show_alert_message(__('Congrats! WP SlimStat is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.','wp-slimstat'), 'updated below-h2');
+			wp_slimstat_admin::show_alert_message(__('Congrats! Slimstat is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'deactivate-indexes':
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_resource_idx");
@@ -65,7 +65,7 @@ if (!empty($_REQUEST['action'])){
 	}
 }
 
-// Retrieve some information about the tables used by WP SlimStat
+// Retrieve some information about the tables used by Slimstat
 $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'stats_resource_idx'");
 $details_wp_slim_tables = array_merge(
 	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'", ARRAY_A),
@@ -146,7 +146,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 		<td>
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=truncate-table"
 				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY DELETE ALL the records from your database?','wp-slimstat'); ?>'))"><?php _e('Delete All Pageviews','wp-slimstat'); ?></a>
-			<span class="description"><?php _e('Erase all the information collected so far by WP SlimStat. This operation <strong>does not</strong> reset your settings.','wp-slimstat') ?></span>
+			<span class="description"><?php _e('Erase all the information collected so far by Slimstat. This operation <strong>does not</strong> reset your settings.','wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr>
@@ -167,7 +167,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 		<?php else: ?>
 		<td>
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=deactivate-indexes"><?php _e('Save DB Space','wp-slimstat'); ?></a>
-			<span class="description"><?php _e("Please note that by removing table indexes, WP SlimStat's performance will be affected.",'wp-slimstat') ?></span>
+			<span class="description"><?php _e("Please note that by removing table indexes, Slimstat's performance will be affected.",'wp-slimstat') ?></span>
 		</td>
 		<?php endif ?>
 	</tr>
@@ -176,7 +176,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 	</tr>
 	<tr>
 		<td colspan="2">
-			<strong><?php _e("Here below you can find the current configuration string for WP SlimStat. You can update your settings by pasting a new string here below and clicking on Import.",'wp-slimstat') ?></strong>
+			<strong><?php _e("Here below you can find the current configuration string for Slimstat. You can update your settings by pasting a new string here below and clicking on Import.",'wp-slimstat') ?></strong>
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />

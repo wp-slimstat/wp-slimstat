@@ -23,18 +23,18 @@ class wp_slimstat_reports extends wp_slimstat_admin{
 	 */
 	public static function init(){
 		self::$screen_names = array(
-			1 => __('Activity Log','wp-slimstat'),
+			1 => __('Real-Time Log','wp-slimstat'),
 			2 => __('Overview','wp-slimstat'),
-			3 => __('Visitors','wp-slimstat'),
-			4 => __('Content','wp-slimstat'),
+			3 => __('Audience','wp-slimstat'),
+			4 => __('Site Analysis','wp-slimstat'),
 			5 => __('Traffic Sources','wp-slimstat'),
-			6 => __('World Map','wp-slimstat'),
+			6 => __('Map Overlay','wp-slimstat'),
 			7 => __('Custom Reports','wp-slimstat')
 		);
 
 		self::$all_reports_titles = array(
 			'slim_p1_01' => __('Pageviews (chart)','wp-slimstat'),
-			'slim_p1_02' => __('About WP SlimStat','wp-slimstat'),
+			'slim_p1_02' => __('About Slimstat','wp-slimstat'),
 			'slim_p1_03' => __('At a Glance','wp-slimstat'),
 			'slim_p1_04' => __('Currently Online','wp-slimstat'),
 			'slim_p1_05' => __('Spy View','wp-slimstat'),
@@ -94,7 +94,7 @@ class wp_slimstat_reports extends wp_slimstat_admin{
 			'slim_p4_18' => __('Top Authors','wp-slimstat'),
 			'slim_p4_19' => __('Top Tags','wp-slimstat'),
 			'slim_p4_20' => __('Recent Downloads','wp-slimstat'),
-			'slim_p4_21' => __('Top Outbound Links and Downloads','wp-slimstat'),
+			'slim_p4_21' => __('Top OutLinks and Downloads','wp-slimstat'),
 			'slim_p4_22' => __('Your Website','wp-slimstat'),
 			'slim_p6_01' => __('World Map','wp-slimstat'),
 			'slim_p7_02' => __('At A Glance','wp-slimstat')
@@ -740,7 +740,7 @@ class wp_slimstat_reports extends wp_slimstat_admin{
 		$count_non_zero = count(array_filter($_chart_data['current']['first_metric']));
 		?>
 
-		<p><?php self::inline_help(__('A request to load a single HTML file. WP SlimStat logs a "pageview" each time the tracking code is executed.','wp-slimstat'));
+		<p><?php self::inline_help(__('A request to load a single HTML file. Slimstat logs a "pageview" each time the tracking code is executed.','wp-slimstat'));
 			_e('Pageviews', 'wp-slimstat'); ?> <span><?php echo number_format($_current_pageviews, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 		<p><?php self::inline_help(__('How many pages have been visited on average during the current period.','wp-slimstat'));
 			_e('Average Pageviews', 'wp-slimstat') ?> <span><?php echo number_format(($count_non_zero > 0)?intval($_current_pageviews/$count_non_zero):0, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
@@ -842,7 +842,7 @@ class wp_slimstat_reports extends wp_slimstat_admin{
 		$new_visitors = wp_slimstat_db::count_records_having('visit_id > 0', 'ip', 'COUNT(visit_id) = 1');
 		$new_visitors_rate = ($total_human_hits > 0)?sprintf("%01.2f", (100*$new_visitors/$total_human_hits)):0;
 		if (intval($new_visitors_rate) > 99) $new_visitors_rate = '100'; ?>		
-		<p><?php self::inline_help(__('A request to load a single HTML file. WP SlimStat logs a "pageview" each time the tracking code is executed.','wp-slimstat')) ?>
+		<p><?php self::inline_help(__('A request to load a single HTML file. Slimstat logs a "pageview" each time the tracking code is executed.','wp-slimstat')) ?>
 			<?php _e('Pageviews', 'wp-slimstat') ?> <span><?php echo number_format($_current_pageviews, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 		<p><?php self::inline_help(__('A referrer (or referring site) is the site that a visitor previously visited before following a link to your site.','wp-slimstat')) ?>
 			<?php _e('Unique Referrers', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records("t1.domain <> '{$_SERVER['SERVER_NAME']}' AND t1.domain <> ''", 't1.domain'), 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
