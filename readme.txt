@@ -277,6 +277,7 @@ foreach ($results...`
 * [New] Added support for our Network Settings premium add-on
 * [Update] All the icons used in the admin are now optimized (thank you, [scruffy1](http://wordpress.org/support/topic/suggestion-79))
 * [Fix] Introduced some code optimizations (browser detection) that will solve the slow response time once and for all!
+* [Fix] Add-ons page was not accessible if menu was attached to the Admin Bar (thank you, h_a_l_f)
 
 = 3.6.9 =
 * [Note] Our new website is finally live, [check it out](http://slimstat.getused.to.it/)
