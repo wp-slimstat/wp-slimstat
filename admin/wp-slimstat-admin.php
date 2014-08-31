@@ -19,7 +19,7 @@ class wp_slimstat_admin{
 		}
 
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			self::$admin_notice = "Celebrate one million downloads with us: use code <code>onemillion</code> at checkout to get 25% off our <a href='http://slimstat.getused.to.it/addons/' target='_blank'>premium add-ons</a>. Hurry, offer ends soon.";
+			self::$admin_notice = "Network-wide settings are finally here. You can now use the same options for all the instances in your multisite environment. <a href='http://slimstat.getused.to.it/addons/' target='_blank'>Check it out</a>.";
 		}
 		else {
 			self::$admin_notice = "
@@ -78,8 +78,8 @@ class wp_slimstat_admin{
 		}
 
 		// Settings URL
-		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-config&amp;tab=';
-		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'yes')?'admin.php':'options.php').'?page=wp-slim-view-'.self::$current_tab;
+		self::$config_url = ((wp_slimstat::$options['use_separate_menu'] == 'no')?'options.php':'admin.php').'?page=wp-slim-config&amp;tab=';
+		self::$view_url = ((wp_slimstat::$options['use_separate_menu'] == 'no')?'options.php':'admin.php').'?page=wp-slim-view-'.self::$current_tab;
 
 		// Load language files
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
@@ -690,14 +690,16 @@ class wp_slimstat_admin{
 	 */
 	public static function update_options($_options = array()){
 		if (!isset($_POST['options']) || empty($_options)) return true;
-		
+
 		foreach($_options as $_option_name => $_option_details){
 			// Some options require a special treatment and are updated somewhere else
-			if (isset($_option_details['skip_update']))
+			if (isset($_option_details['skip_update'])){
 				continue;
+			}
 
-			if (isset($_POST['options'][$_option_name]))
+			if (isset($_POST['options'][$_option_name])){
 				wp_slimstat::$options[$_option_name] = $_POST['options'][$_option_name];
+			}
 		}
 
 		if (!empty(self::$faulty_fields)){
@@ -751,8 +753,9 @@ class wp_slimstat_admin{
 			case 'yesno': ?>
 				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
 				<td>
-					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?></span>
 					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
+					<?php if (is_network_admin()): ?><span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_null" value="null" <?php echo (wp_slimstat::$options[$_option_name] == 'null')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_null'])?$_option_details['custom_label_null']:__('Site Specific','wp-slimstat') ?></span><?php endif; ?>
 					<span class="description"><?php echo $_option_details['long_description'] ?></span>
 				</td><?php
 				break;

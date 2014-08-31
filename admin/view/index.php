@@ -4,31 +4,39 @@
 	<h2><?php echo wp_slimstat_reports::$screen_names[wp_slimstat_reports::$current_tab] ?></h2>
 	
 	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
-		<fieldset id="slimstat-filters">
-			<select name="f" id="slimstat-filter-name">
-				<?php
-					foreach (wp_slimstat_reports::$dropdown_filter_names as $a_filter_label => $a_filter_name){
-						echo "<option value='$a_filter_label'>$a_filter_name</option>";
-					}
-				?>
-			</select>
+		<fieldset id="slimstat-filters"><?php
+			$filter_name_html = '<select name="f" id="slimstat-filter-name">';
+			foreach (wp_slimstat_reports::$dropdown_filter_names as $a_filter_label => $a_filter_name){
+				$filter_name_html .= "<option value='$a_filter_label'>$a_filter_name</option>";
+			}
+			$filter_name_html .= '</select>';
 
-			<select name="o" id="slimstat-filter-operator">
-				<option value="equals"><?php _e('equals','wp-slimstat') ?></option>
-				<option value="is_not_equal_to"><?php _e('is not equal to','wp-slimstat') ?></option>
-				<option value="contains"><?php _e('contains','wp-slimstat') ?></option>
-				<option value="does_not_contain"><?php _e('does not contain','wp-slimstat') ?></option>
-				<option value="starts_with"><?php _e('starts with','wp-slimstat') ?></option>
-				<option value="ends_with"><?php _e('ends with','wp-slimstat') ?></option>
-				<option value="sounds_like"><?php _e('sounds like','wp-slimstat') ?></option>
-				<option value="is_greater_than"><?php _e('is greater than','wp-slimstat') ?></option>
-				<option value="is_less_than"><?php _e('is less than','wp-slimstat') ?></option>
-				<option value="matches"><?php _e('matches','wp-slimstat') ?></option>
-				<option value="does_not_match"><?php _e('does not match','wp-slimstat') ?></option>
-				<option value="is_empty"><?php _e('is empty','wp-slimstat') ?></option>
-				<option value="is_not_empty"><?php _e('is not empty','wp-slimstat') ?></option>
-			</select>
-			<input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">
+			$filter_operator_html = '<select name="o" id="slimstat-filter-operator">';
+			$filter_operator_html .= '<option value="equals">'.__('equals','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="is_not_equal_to">'.__('is not equal to','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="contains">'.__('contains','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="does_not_contain">'.__('does not contain','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="starts_with">'.__('starts with','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="ends_with">'.__('ends with','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="sounds_like">'.__('sounds like','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="is_greater_than">'.__('is greater than','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="is_less_than">'.__('is less than','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="matches">'.__('matches','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="does_not_match">'.__('does not match','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="is_empty">'.__('is empty','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="is_not_empty">'.__('is not empty','wp-slimstat').'</option>';
+			$filter_operator_html .= '</select>';
+			
+			$filter_value_html = '<input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">';
+			
+			if (wp_slimstat::$options['enable_sov'] == 'yes'){
+				echo $filter_value_html.$filter_operator_html.$filter_name_html;
+			}
+			else{
+				echo $filter_name_html.$filter_operator_html.$filter_value_html;
+			}
+			
+			?>
 			<input type="submit" value="<?php _e('Apply','wp-slimstat') ?>" class="button-secondary">
 		</fieldset><!-- slimstat-filters -->
 

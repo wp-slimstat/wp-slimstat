@@ -322,7 +322,7 @@
 	border-radius: 0;
 	padding: 0;
 	width: 80% !important;
-	z-index: 105 !important;
+	z-index: 1005 !important;
 }
 .ui-dialog.slimstat .ui-dialog-titlebar{
 	background: #4b8df8;
@@ -428,6 +428,9 @@
 .form-table td label{
 	font-weight: 600;
 }
+.form-table td span.block-element{
+	padding: 0 30px 0 0;
+}
 .form-table .description{
 	color: #999;
 	display: block;
@@ -505,6 +508,9 @@
 }
 .rtl .qtip-content{
 	text-align: right;
+}
+.rtl .form-table td span.block-element{
+	padding: 0 0 0 30px;
 }
 
 /* Responsive */
