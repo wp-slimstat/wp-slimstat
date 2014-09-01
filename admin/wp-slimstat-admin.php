@@ -681,8 +681,7 @@ class wp_slimstat_admin{
 	 */
 	public static function enable_ads_feature(){
 		wp_slimstat::$options['enable_ads_network'] = 'yes';
-		wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$version;
-		die();
+		self::hide_admin_notice();
 	}
 	
 	/*
