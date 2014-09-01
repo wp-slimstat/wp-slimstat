@@ -245,7 +245,7 @@ var SlimStatParams = {
 }
 
 if (has_filter('slimstat_options_on_page')){
-	$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page);
+	$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page, $current_tab);
 }
 
 if (isset($options_on_this_page)){
