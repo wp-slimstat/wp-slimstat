@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.7
+Version: 3.7.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.7';
+	public static $version = '3.7.1';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -30,7 +30,7 @@ class wp_slimstat{
 
 		// Load all the settings
 		self::$options = is_network_admin()?get_site_option('slimstat_options', array()):get_option('slimstat_options', array());
-		self::$options = array_merge(self::init_options(), array_filter(self::$options));
+		self::$options = array_merge(self::init_options(), self::$options);
 
 		// Allow third party tools to edit the options
 		self::$options = apply_filters('slimstat_init_options', self::$options);
@@ -1086,7 +1086,7 @@ class wp_slimstat{
 			'javascript_mode' => $val_yes,
 			'add_posts_column' => $val_no,
 			'use_separate_menu' => $val_yes,
-			'auto_purge' => '120',
+			'auto_purge' => ($val_yes == 'null')?'0':'120',
 
 			// Views
 			'convert_ip_addresses' => $val_no,
@@ -1098,9 +1098,9 @@ class wp_slimstat{
 			'async_load' => $val_no,
 			'use_slimscroll' => $val_yes,
 			'expand_details' => $val_no,
-			'rows_to_show' => '20',
-			'refresh_interval' => '60',
-			'number_results_raw_data' => '50',
+			'rows_to_show' => ($val_yes == 'null')?'0':'20',
+			'refresh_interval' => ($val_yes == 'null')?'0':'60',
+			'number_results_raw_data' => ($val_yes == 'null')?'0':'50',
 			'include_outbound_links_right_now' => $val_yes,
 
 			// Filters
@@ -1118,9 +1118,9 @@ class wp_slimstat{
 
 			// Permissions
 			'restrict_authors_view' => $val_yes,
-			'capability_can_view' => 'activate_plugins',
+			'capability_can_view' => ($val_yes == 'null')?'':'activate_plugins',
 			'can_view' => '',
-			'capability_can_admin' => 'activate_plugins',
+			'capability_can_admin' => ($val_yes == 'null')?'':'activate_plugins',
 			'can_admin' => '',
 
 			// Advanced

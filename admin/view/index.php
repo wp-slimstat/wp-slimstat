@@ -1,8 +1,8 @@
 <?php if (!function_exists('add_action')) exit(0); ?>
 
 <div class="wrap slimstat">
-	<h2><?php echo wp_slimstat_reports::$screen_names[wp_slimstat_reports::$current_tab] ?></h2>
-	
+	<h2><?php echo wp_slimstat_reports::$screen_names[wp_slimstat_admin::$current_tab] ?></h2>
+
 	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
 		<fieldset id="slimstat-filters"><?php
 			$filter_name_html = '<select name="f" id="slimstat-filter-name">';
@@ -113,7 +113,7 @@
 	<div class="meta-box-sortables">
 		<form style="display:none" method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_slimstat_reports::$meta_report_order_nonce ?>" /></form><?php
 
-		switch(wp_slimstat_reports::$current_tab){
+		switch(wp_slimstat_admin::$current_tab){
 			case 1:
 				include_once(dirname(__FILE__).'/right-now.php');
 				break;

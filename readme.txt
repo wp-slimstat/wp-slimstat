@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.7
+Stable tag: 3.7.1
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat).
@@ -270,6 +270,12 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.7.1 =
+* [Note] Our Reports API (wp-slimstat-reports.php) does not extend wp-slimstat-admin anymore, for extra flexibility in building third-party solutions
+* [New] Added support for generating email reports
+* [Update] MaxMind's IP Database has been updated to the latest version (2014-09-04)
+* [Fix] Some settings could not be turned off, because of the Network Settings functionality (thank you, [LeonardShelby](http://wordpress.org/support/topic/cannot-disable-live-stream))
 
 = 3.7 =
 * [New] Japanese localization added (thank you, [h_a_l_f](http://wordpress.org/support/topic/japanese-localization))
