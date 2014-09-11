@@ -583,8 +583,9 @@ class wp_slimstat_admin{
 	public static function add_post_column($_column_name, $_post_id){
 		if ('wp-slimstat' != $_column_name) return;
 
-		include_once(dirname(__FILE__).'/view/wp-slimstat-db.php');
-
+		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
+		wp_slimstat_reports::init();
+		
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
 		wp_slimstat_db::init('resource contains '.$parsed_permalink.'&&&hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365');

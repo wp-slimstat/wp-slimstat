@@ -21,6 +21,7 @@
 			$filter_operator_html .= '<option value="sounds_like">'.__('sounds like','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="is_greater_than">'.__('is greater than','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="is_less_than">'.__('is less than','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="between">'.__('is between (x,y)','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="matches">'.__('matches','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="does_not_match">'.__('does not match','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="is_empty">'.__('is empty','wp-slimstat').'</option>';

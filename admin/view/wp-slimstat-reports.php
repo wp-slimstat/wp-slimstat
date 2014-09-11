@@ -759,7 +759,7 @@ class wp_slimstat_reports {
 					$results[$i]['notes'] = str_replace('|ET:click', '', $results[$i]['notes']);
 					$element_url = htmlentities((strpos($results[$i]['referer'], '://') === false)?home_url().$results[$i]['referer']:$results[$i]['referer'], ENT_QUOTES, 'UTF-8');
 					$row_details = __('Source','wp-slimstat').": <a target=\"_blank\" class=\"url\" title=\"".__('Open this URL in a new window','wp-slimstat')."\" href=\"$element_url\"></a><a class=\"slimstat-filter-link\" title=\"".htmlentities(sprintf(__('Filter results where resource equals %s','wp-slimstat'), $permalink['path']), ENT_QUOTES, 'UTF-8')."\" href=\"".self::fs_url('resource equals '.$permalink['path'])."\">{$permalink['path']}</a>";
-					$row_details .= !empty($results[$i]['notes'])?'<br><strong>Link Details</strong>: '.htmlentities($results[$i]['notes'], ENT_QUOTES, 'UTF-8'):'';
+					$row_details .= !empty($results[$i]['notes'])?'<br><strong>'.__('Link Details','wp-slimstat').'</strong>: '.htmlentities($results[$i]['notes'], ENT_QUOTES, 'UTF-8'):'';
 					$row_details .= ($_type == -1)?' <strong>Type</strong>: '.$results[$i]['type']:'';
 				}
 			}

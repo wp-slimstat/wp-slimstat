@@ -276,6 +276,10 @@ class wp_slimstat_db {
 				case 'is_less_than':
 					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column < %s", $a_filter_data[1]);
 					break;
+				case 'between':
+					$range = explode(',', $a_filter_data[1]);
+					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column BETWEEN %s AND %s", $range[0], $range[1]);
+					break;
 				case 'matches':
 					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column REGEXP %s", $a_filter_data[1]);
 					break;

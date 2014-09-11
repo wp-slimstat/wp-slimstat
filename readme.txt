@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.7.1
+Stable tag: 3.7.2
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat).
@@ -270,6 +270,13 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.7.2 =
+* [New] Added operator BETWEEN, to express filters like "country code BETWEEN f,g" and get reports for France and Ghana but not for Portugal. Or something like "screen resolution BETWEEN 1000,1300" to get data for visitors whose screen *width* is at least 1000 px and no more than 1300 px. Separate the two values in the range with a comma.
+* [New] A premium add-on to track all the cookies associated with the domain
+* [New] Notes regarding a specific pageview are now accessible under the Real-Time Log (little note/pencil icon next to the list of browser extensions). This will allow you to know things like prefetch requests, user id, spam, etc. If you have the Track Cookies add-on, here you will also find all the information about each user's cookies
+* [Fix] Counter on Posts and Pages screens was not working as expected
+* [Fix] Color-coded visits in the Real-Time log were not displayed correctly (thank you, Vitaly)
 
 = 3.7.1 =
 * [Note] Our Reports API (wp-slimstat-reports.php) does not extend wp-slimstat-admin anymore, for extra flexibility in building third-party solutions
