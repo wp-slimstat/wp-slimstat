@@ -17,10 +17,9 @@ class wp_slimstat_reports {
 	
 	// Shared descriptions
 	public static $chart_tooltip = '';
-	
-	// Private variables
-	protected static $current_tab = 1;
-	protected static $view_url = '';
+
+	public static $current_tab = 1;
+	public static $view_url = '';
 
 	/**
 	 * Initalizes class properties
@@ -735,7 +734,7 @@ class wp_slimstat_reports {
 						if (is_object($display_real_name)) $display_user_name = $display_real_name->display_name;
 					}
 					$host_by_ip = "<a class='slimstat-filter-link highlight-user' href='".self::fs_url('user equals '.$results[$i]['user'])."'>{$display_user_name}</a>";
-					$highlight_row = (strpos( $results[$i]['notes'], '[user]') !== false)?' is-known-user':' is-known-visitor';
+					$highlight_row = (strpos( $results[$i]['notes'], 'user:') !== false)?' is-known-user':' is-known-visitor';
 				}
 				$host_by_ip = "<a class='slimstat-font-location-1 whois' href='".wp_slimstat::$options['ip_lookup_service']."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
 				$results[$i]['country'] = "<a class='slimstat-filter-link inline-icon' href='".self::fs_url('country equals '.$results[$i]['country'])."'><img class='slimstat-tooltip-trigger' src='".plugins_url('/images/flags/'.$results[$i]['country'].'.png', dirname(__FILE__))."' width='16' height='16'/><span class='slimstat-tooltip-content'>".__('c-'.$results[$i]['country'],'wp-slimstat').'</span></a>';
