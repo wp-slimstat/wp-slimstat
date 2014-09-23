@@ -29,7 +29,7 @@ class wp_slimstat{
 	public static function init(){
 
 		// Load all the settings
-		self::$options = is_network_admin()?get_site_option('slimstat_options', array()):get_option('slimstat_options', array());
+		self::$options = (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'wp-slim-view') === false))?get_site_option('slimstat_options', array()):get_option('slimstat_options', array());
 		self::$options = array_merge(self::init_options(), self::$options);
 
 		// Allow third party tools to edit the options
@@ -1070,7 +1070,7 @@ class wp_slimstat{
 	 */
 	public static function init_options(){
 		$val_yes = 'yes'; $val_no = 'no';
-		if (is_network_admin()){
+		if (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'wp-slim-view') === false)){
 			$val_yes = $val_no = 'null';
 		}
 

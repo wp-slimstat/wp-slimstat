@@ -217,7 +217,7 @@ class wp_slimstat_reports {
 
 		// Default text for the inline help associated to the chart
 		self::$chart_tooltip = '<strong>'.__('Chart controls','wp-slimstat').'</strong><ul><li>'.__('Use your mouse wheel to zoom in and out','wp-slimstat').'</li><li>'.__('While zooming in, drag the chart to move to a different area','wp-slimstat').'</li><li>'.__('Double click on an empty region to reset the zoom level','wp-slimstat').'</li>';
-		self::$chart_tooltip .= empty(wp_slimstat_db::$filters_normalized['date']['day'])?'<li>'.__('Click on a data point to display the activity chart for each hour of that day','wp-slimstat').'</li>':'';
+		// self::$chart_tooltip .= empty(wp_slimstat_db::$filters_normalized['date']['day'])?'<li>'.__('Click on a data point to display the activity chart for each hour of that day','wp-slimstat').'</li>':'';
 	}
 	// end init
 	
