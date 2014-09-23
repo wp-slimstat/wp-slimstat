@@ -7,7 +7,7 @@ Tested up to: 4.0
 Stable tag: 3.7.3
 
 == Description ==
-Visit our [website](http://slimstat.getused.to.it/) for more information, or find us on [GitHub](https://github.com/getusedtoit/wp-slimstat).
+Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
 
 = Key Features =
 * Real-time activity log
