@@ -29,7 +29,6 @@ class wp_slimstat_db {
 		// Use WordPress' settings for date and time format
 		self::$formats['date_format'] = get_option('date_format', 'd-m-Y');
 		self::$formats['time_format'] = get_option('time_format', 'd-m-Y');
-		self::$formats['date_time_format'] = self::$formats['date_format'].' '.self::$formats['time_format'];
 
 		// Filters are defined as: browser equals Chrome|country starts_with en
 		if (!is_string($_filters) || empty($_filters)){
@@ -49,6 +48,7 @@ class wp_slimstat_db {
 			'domain' => __('Domain','wp-slimstat'),
 			'referer' => __('Referer','wp-slimstat'),
 			'user' => __('Visitor\'s Name','wp-slimstat'),
+			'page_performance' => __('Page Speed','wp-slimstat'),
 			'no_filter_selected_2' => '&nbsp;',
 			'no_filter_selected_3' => __('-- Advanced filters --','wp-slimstat'),
 			'plugins' => __('Browser Capabilities','wp-slimstat'),
@@ -58,6 +58,7 @@ class wp_slimstat_db {
 			'colordepth' => __('Color Depth','wp-slimstat'),
 			'css_version' => __('CSS Version','wp-slimstat'),
 			'notes' => __('Pageview Attributes','wp-slimstat'),
+			'server_latency' => __('Server Latency','wp-slimstat'),
 			'outbound_resource' => __('Outbound Link','wp-slimstat'),
 			'author' => __('Post Author','wp-slimstat'),
 			'category' => __('Post Category ID','wp-slimstat'),

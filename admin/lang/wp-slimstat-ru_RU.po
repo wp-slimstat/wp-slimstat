@@ -1,11 +1,11 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP SlimStat 3.5.4\n"
+"Project-Id-Version: WP SlimStat 3.7.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-08-31 11:55-0500\n"
-"PO-Revision-Date: 2014-08-31 11:55-0500\n"
-"Last-Translator: Get Used To IT <support@getused.to.it>\n"
-"Language-Team: Виталий МакЛауд <http://www.visbiz.org/?page_id=324>\n"
+"POT-Creation-Date: 2014-08-31 11:28-0500\n"
+"PO-Revision-Date: 2014-09-13 08:12+0200\n"
+"Last-Translator: Виталий МакЛауд <http://www.visbiz.org/feedback/>\n"
+"Language-Team: Виталий МакЛауд <http://www.visbiz.org/feedback/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -14,80 +14,80 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Poedit 1.6.3\n"
+"X-Generator: Poedit 1.6.9\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-SearchPath-0: ../..\n"
 
-#: ../../wp-slimstat.php:1296 ../../admin/config/index.php:60
+#: ../../wp-slimstat.php:1295 ../../admin/config/index.php:59
 msgid "Activity Log"
 msgstr "Журнал активности"
 
-#: ../../wp-slimstat.php:1297 ../../admin/wp-slimstat-admin.php:482
+#: ../../wp-slimstat.php:1296 ../../admin/wp-slimstat-admin.php:482
 #: ../../admin/wp-slimstat-admin.php:499
 #: ../../admin/view/wp-slimstat-reports.php:27
 msgid "Overview"
 msgstr "Общий обзор"
 
-#: ../../wp-slimstat.php:1298
+#: ../../wp-slimstat.php:1297
 msgid "Visitors"
 msgstr "Посетители"
 
-#: ../../wp-slimstat.php:1299
+#: ../../wp-slimstat.php:1298
 msgid "Content"
 msgstr "Содержание сайта"
 
-#: ../../wp-slimstat.php:1300 ../../admin/wp-slimstat-admin.php:485
-#: ../../admin/wp-slimstat-admin.php:502 ../../admin/view/index.php:177
+#: ../../wp-slimstat.php:1299 ../../admin/wp-slimstat-admin.php:485
+#: ../../admin/wp-slimstat-admin.php:502 ../../admin/view/index.php:169
 #: ../../admin/view/wp-slimstat-reports.php:30
 msgid "Traffic Sources"
 msgstr "Источники трафика"
 
-#: ../../wp-slimstat.php:1301 ../../admin/view/wp-slimstat-reports.php:99
+#: ../../wp-slimstat.php:1300 ../../admin/view/wp-slimstat-reports.php:99
 msgid "World Map"
 msgstr "Карта мира"
 
-#: ../../wp-slimstat.php:1302 ../../admin/wp-slimstat-admin.php:487
+#: ../../wp-slimstat.php:1301 ../../admin/wp-slimstat-admin.php:487
 #: ../../admin/wp-slimstat-admin.php:504
 #: ../../admin/view/wp-slimstat-reports.php:32
 msgid "Custom Reports"
 msgstr "Пользовательский отчет"
 
-#: ../../wp-slimstat.php:1303 ../../admin/wp-slimstat-admin.php:488
+#: ../../wp-slimstat.php:1302 ../../admin/wp-slimstat-admin.php:488
 #: ../../admin/wp-slimstat-admin.php:505 ../../admin/config/addons.php:29
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:247
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:246
 msgid "Add-ons"
 msgstr "Дополнения"
 
-#: ../../wp-slimstat.php:1306 ../../admin/wp-slimstat-admin.php:534
+#: ../../wp-slimstat.php:1305 ../../admin/wp-slimstat-admin.php:534
 #: ../../admin/wp-slimstat-admin.php:537 ../../admin/config/index.php:14
-#: ../../admin/config/index.php:137
+#: ../../admin/config/index.php:136
 msgid "Settings"
 msgstr "Настройки"
 
 #: ../../admin/wp-slimstat-admin.php:480 ../../admin/wp-slimstat-admin.php:492
 #: ../../admin/wp-slimstat-admin.php:495
 msgid "SlimStat"
-msgstr "SlimStat"
+msgstr ""
 
 #: ../../admin/wp-slimstat-admin.php:481
 #: ../../admin/view/wp-slimstat-reports.php:26
 msgid "Real-Time Log"
-msgstr ""
+msgstr "Журнал реального времени"
 
 #: ../../admin/wp-slimstat-admin.php:483 ../../admin/wp-slimstat-admin.php:500
 #: ../../admin/view/wp-slimstat-reports.php:28
 msgid "Audience"
-msgstr ""
+msgstr "Аудитория"
 
 #: ../../admin/wp-slimstat-admin.php:484 ../../admin/wp-slimstat-admin.php:501
 #: ../../admin/view/wp-slimstat-reports.php:29
 msgid "Site Analysis"
-msgstr ""
+msgstr "Анализ сайта"
 
 #: ../../admin/wp-slimstat-admin.php:486 ../../admin/wp-slimstat-admin.php:503
 #: ../../admin/view/wp-slimstat-reports.php:31
 msgid "Map Overlay"
-msgstr ""
+msgstr "Данные на карте"
 
 #: ../../admin/wp-slimstat-admin.php:576
 msgid "Pageviews in the last 365 days"
@@ -107,7 +107,7 @@ msgstr "Возникла ошибка при обновлении следующ
 
 #: ../../admin/wp-slimstat-admin.php:707
 msgid "Your changes have been saved."
-msgstr "Ваши настройки были успешно обновлены."
+msgstr "Ваши изменения были сохранены."
 
 #: ../../admin/wp-slimstat-admin.php:730
 msgid "Save Changes"
@@ -131,7 +131,6 @@ msgid "Pageview"
 msgstr "Просмотр"
 
 #: ../../admin/wp-slimstat-admin.php:803
-#, fuzzy
 msgid ""
 "A request to load a single HTML file (\"page\"). This should be contrasted "
 "with a \"hit\", which refers to a request for any file from a web server. "
@@ -139,8 +138,8 @@ msgid ""
 msgstr ""
 "Запрос на загрузку одного файла HTML ('страницы'). Это должно быть "
 "противопоставлено просмотру, который ссылается с запросом на любой файл с "
-"сервера. WP SlimStat записывает просмотры страниц каждый раз, когда "
-"выполняется код отслеживания."
+"сервера. SlimStat записывает просмотры страниц каждый раз, когда выполняется "
+"код отслеживания."
 
 #: ../../admin/wp-slimstat-admin.php:804
 msgid "(Human) Visit"
@@ -156,7 +155,7 @@ msgstr ""
 "при закрытии его браузера или когда пользователь будет неактивен на этом "
 "сайте в течение 30 минут"
 
-#: ../../admin/wp-slimstat-admin.php:805 ../../admin/view/index.php:152
+#: ../../admin/wp-slimstat-admin.php:805 ../../admin/view/index.php:144
 #: ../../admin/view/right-now.php:156
 msgid "Known Visitor"
 msgstr "Зарегистрированный пользователь"
@@ -188,7 +187,7 @@ msgstr ""
 #: ../../admin/wp-slimstat-admin.php:807 ../../admin/wp-slimstat-admin.php:849
 #: ../../admin/view/right-now.php:101 ../../admin/view/wp-slimstat-db.php:64
 msgid "Originating IP"
-msgstr "Настоящий IP"
+msgstr "Исходный IP"
 
 #: ../../admin/wp-slimstat-admin.php:807
 msgid ""
@@ -541,7 +540,6 @@ msgstr ""
 "повторите попытку позже."
 
 #: ../../admin/config/addons.php:30
-#, fuzzy
 msgid ""
 "Add-ons extend the functionality of Slimstat in many interesting ways. We "
 "offer both free and premium (paid) extensions. Each add-on can be installed "
@@ -550,7 +548,7 @@ msgid ""
 "on is available, please enter the <strong>license key</strong> you received "
 "when you purchased it."
 msgstr ""
-"Дополнения расширяют функциональность WP SlimStat многими интересными "
+"Дополнения расширяют функциональность SlimStat многими интересными "
 "способами. Мы предлагаем как бесплатные, так и платные дополнения. Каждое "
 "дополнение может быть установлено в качестве отдельного плагина, который "
 "будет получать регулярные обновления через панель плагинов WordPress. Для "
@@ -574,23 +572,23 @@ msgstr "Общие"
 msgid "Views"
 msgstr "Просмотры"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:66
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:65
 msgid "Filters"
 msgstr "Фильтры"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:130
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:129
 msgid "Permissions"
 msgstr "Доступ"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:207
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:206
 msgid "Advanced"
 msgstr "Расширенные"
 
-#: ../../admin/config/index.php:9 ../../admin/config/index.php:240
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:239
 msgid "Maintenance"
 msgstr "Обслуживание"
 
-#: ../../admin/config/index.php:20 ../../admin/config/index.php:213
+#: ../../admin/config/index.php:20 ../../admin/config/index.php:212
 msgid "Tracker"
 msgstr "Отслеживание"
 
@@ -599,11 +597,9 @@ msgid "Enable Tracking"
 msgstr "Включить отслеживание"
 
 #: ../../admin/config/index.php:21
-#, fuzzy
 msgid "Turn the tracker on or off, but keep the reports accessible."
 msgstr ""
-"Включите или выключите режим отслеживания, но сохраните отчеты доступними "
-"(которых бы у вас не было, если просто отключить плагин)."
+"Включите или выключите режим отслеживания, но сохраните отчеты доступными."
 
 #: ../../admin/config/index.php:22
 msgid "Monitor Admin Pages"
@@ -634,7 +630,6 @@ msgid "Tracking Mode"
 msgstr "Режим отслеживания"
 
 #: ../../admin/config/index.php:24
-#, fuzzy
 msgid ""
 "Select <strong>Javascript</strong> if you are using a caching plugin (W3 "
 "Total Cache, WP SuperCache, HyperCache, etc). Slimstat will behave pretty "
@@ -643,7 +638,7 @@ msgid ""
 "spammers, search engines and other crawlers</strong> will not be tracked."
 msgstr ""
 "Включите <strong>JavaScript</strong>, если вы используете плагин кэширования "
-"(W3 Total Cache, WP SuperCache, HyperCache и т.п.). WP SlimStat будет вести "
+"(W3 Total Cache, WP SuperCache, HyperCache и т.п.). SlimStat будет вести "
 "себя в значительной степени как Google Analytics, и посетители, чьи браузеры "
 "не поддерживают JavaScript будут игнорироваться. Приятный побочный эффект в "
 "том, что <strong>большинство спамеров, поисковых систем и других сканеров</"
@@ -666,12 +661,11 @@ msgid "Menu Position"
 msgstr "Позиция меню"
 
 #: ../../admin/config/index.php:27
-#, fuzzy
 msgid ""
 "Choose between a standalone admin menu for Slimstat or a drop down in the "
 "admin bar (if visible)."
 msgstr ""
-"Выбор между автономным меню администратора для WP SlimStat или выпадающим в "
+"Выбор между автономным меню администратора для SlimStat или выпадающим в "
 "админ-панели (если она видна)."
 
 #: ../../admin/config/index.php:27
@@ -683,18 +677,16 @@ msgid "Admin Bar"
 msgstr "Панель администратора"
 
 #: ../../admin/config/index.php:28
-#, fuzzy
 msgid "Add Stats to Posts and Pages"
-msgstr "Добавить статистику к записям"
+msgstr "Добавить статистику к записям и страницам"
 
 #: ../../admin/config/index.php:28
-#, fuzzy
 msgid ""
 "Add a new column to the Edit Posts/Pages screens, with the number of hits "
 "per post."
 msgstr ""
-"Добавляет новый столбец к экрану редактирования сообщений с количеством "
-"просмотров записи."
+"Добавляет новый столбец к экранам редактирования сообщений/страниц с "
+"количеством просмотров записи."
 
 #: ../../admin/config/index.php:30
 msgid "Database"
@@ -723,7 +715,7 @@ msgstr "Следующая очистка"
 msgid "Entries logged on or before %s will be permanently deleted."
 msgstr "Значения, записанные в или до %s будут безвозвратно удалены."
 
-#: ../../admin/config/index.php:31 ../../admin/view/index.php:85
+#: ../../admin/config/index.php:31 ../../admin/view/index.php:77
 #: ../../admin/view/wp-slimstat-db.php:75
 #: ../../admin/view/wp-slimstat-reports.php:732
 msgid "days"
@@ -746,29 +738,14 @@ msgid "Number Format"
 msgstr "Формат чисел"
 
 #: ../../admin/config/index.php:48
-#, fuzzy
 msgid "Choose the number format you want to use for your reports."
-msgstr ""
-"Выберите, какой формат чисел вы хотите использовать в ваших отчетах, "
-"европейский или американский."
+msgstr "Выберите, какой формат чисел вы хотите использовать в ваших отчетах."
 
 #: ../../admin/config/index.php:49
-#, fuzzy
-msgid "Enable SOV"
-msgstr "Включить сеть доставки контента"
-
-#: ../../admin/config/index.php:49
-msgid ""
-"In linguistic typology, a subject-object-verb (SOV) language is one in which "
-"the subject, object, and verb of a sentence appear in that order, like in "
-"Japanese."
-msgstr ""
-
-#: ../../admin/config/index.php:50
 msgid "Show Display Name"
 msgstr "Показать имя пользователя"
 
-#: ../../admin/config/index.php:50
+#: ../../admin/config/index.php:49
 msgid ""
 "By default, users are listed by their usernames. Use this option to "
 "visualize their display names instead."
@@ -776,11 +753,11 @@ msgstr ""
 "По умолчанию пользователи перечисляются по их именам пользователей. "
 "Используйте эту опцию, чтобы вместо этого видеть их зарегистрированные имена."
 
-#: ../../admin/config/index.php:51
+#: ../../admin/config/index.php:50
 msgid "Show User Agent"
 msgstr "Показать клиентское приложение"
 
-#: ../../admin/config/index.php:51
+#: ../../admin/config/index.php:50
 msgid ""
 "Choose if you want to see the browser name or a complete user agent string "
 "when hovering on browser icons."
@@ -788,28 +765,27 @@ msgstr ""
 "Укажите, если хотите видеть название браузера или полную строку клиентского "
 "приложения при наведении курсора на иконку браузера."
 
-#: ../../admin/config/index.php:52
+#: ../../admin/config/index.php:51
 msgid "Show Titles"
 msgstr "Показать заголовки"
 
-#: ../../admin/config/index.php:52
-#, fuzzy
+#: ../../admin/config/index.php:51
 msgid ""
 "Slimstat converts your permalinks into post and page titles. Disable this "
 "feature if you need to see the URL in your reports."
 msgstr ""
-"WP SlimStat преобразует ваши постоянные ссылки в заголовках записей и "
-"страниц. Отключите эту функцию, если вам нужно видеть ссылки в отчетах."
+"SlimStat преобразует ваши постоянные ссылки в заголовках записей и страниц. "
+"Отключите эту функцию, если вам нужно видеть ссылки в отчетах."
 
-#: ../../admin/config/index.php:54
+#: ../../admin/config/index.php:53
 msgid "Functionality"
 msgstr "Функциональность"
 
-#: ../../admin/config/index.php:55
+#: ../../admin/config/index.php:54
 msgid "Asynchronous Views"
 msgstr "Асинхронный просмотр"
 
-#: ../../admin/config/index.php:55
+#: ../../admin/config/index.php:54
 msgid ""
 "Load all the reports dynamically. It makes the reports render faster, but it "
 "increases the load on your server."
@@ -817,87 +793,85 @@ msgstr ""
 "Загружает все отчеты динамически. Это делает визуализацию панелей быстрее, "
 "но увеличивает нагрузку на сервер."
 
-#: ../../admin/config/index.php:56
-#, fuzzy
+#: ../../admin/config/index.php:55
 msgid "SlimScroll"
-msgstr "Включить SlimScroll"
+msgstr "Узкая Прокрутка"
 
-#: ../../admin/config/index.php:56
+#: ../../admin/config/index.php:55
 msgid ""
 "Enable SlimScroll, a slick jQuery library that replaces the built-in browser "
 "scrollbar."
 msgstr ""
+"Включить Узкую Прокрутку, небольшую библиотеку JQuery, которая заменяет "
+"встроенную прокрутку браузера."
 
-#: ../../admin/config/index.php:57
+#: ../../admin/config/index.php:56
 msgid "Expand Details"
 msgstr "Показать детали"
 
-#: ../../admin/config/index.php:57
+#: ../../admin/config/index.php:56
 msgid "Expand each row's details by default, insted of on mousehover."
 msgstr "Развернуть, по умолчанию, каждую строку вместо наведения мышкой."
 
-#: ../../admin/config/index.php:58 ../../admin/config/index.php:62
+#: ../../admin/config/index.php:57 ../../admin/config/index.php:61
 msgid "Rows to Display"
 msgstr "Строки для отображения"
 
-#: ../../admin/config/index.php:58
+#: ../../admin/config/index.php:57
 msgid "Specify the number of items in each report."
 msgstr "Укажите количество элементов в каждом отчете."
 
-#: ../../admin/config/index.php:61
+#: ../../admin/config/index.php:60
 msgid "Live Stream"
 msgstr "Режим реального времени"
 
-#: ../../admin/config/index.php:61
-#, fuzzy
+#: ../../admin/config/index.php:60
 msgid ""
 "Enable the Live view, which refreshes the Activity Log every X seconds. "
 "Enter <strong>0</strong> (number zero) to disable this functionality."
 msgstr ""
-"Включает режим реального времени, который обновляет окно 'Активность' каждые "
-"X секунд. Введите <strong>0</strong> (ноль), чтобы отключить эту функцию."
+"Включает режим реального времени, который обновляет окно 'Журнал активности' "
+"каждые X секунд. Введите <strong>0</strong> (ноль), чтобы отключить эту "
+"функцию."
 
-#: ../../admin/config/index.php:61 ../../admin/config/index.php:216
+#: ../../admin/config/index.php:60 ../../admin/config/index.php:215
 msgid "seconds"
 msgstr "секунд"
 
-#: ../../admin/config/index.php:62
-#, fuzzy
+#: ../../admin/config/index.php:61
 msgid "Specify the number of items in the Activity Log."
-msgstr "Укажите количество элементов в панели 'Активность'."
+msgstr "Укажите количество элементов в журнале активности."
 
-#: ../../admin/config/index.php:63
-#, fuzzy
+#: ../../admin/config/index.php:62
 msgid "Activity Log Extended"
-msgstr "Журнал активности"
+msgstr "Расширенный журнал активности"
 
-#: ../../admin/config/index.php:63
-#, fuzzy
+#: ../../admin/config/index.php:62
 msgid ""
 "Choose if you want to see outbound links listed in the Activity Log. It "
 "might slow down the rendering of this report."
 msgstr ""
-"Укажите, если вы хотите видеть список исходящих ссылок в панели "
-"'Активность'. Это может замедлить визуализацию отчета."
+"Укажите, если вы хотите видеть список исходящих ссылок в журнале "
+"активности'. Это может замедлить визуализацию отчета."
 
-#: ../../admin/config/index.php:68
+#: ../../admin/config/index.php:67
 msgid "Visitors and Known Users"
 msgstr "Посетители и те, кто оставивил комментарии"
 
-#: ../../admin/config/index.php:69
+#: ../../admin/config/index.php:68
 msgid "Track Registered Users"
 msgstr "Отслеживать зарегистрированных пользователей"
 
-#: ../../admin/config/index.php:69
+#: ../../admin/config/index.php:68
 msgid "Enable this option to track logged in users."
 msgstr ""
 "Включите этот параметр, чтобы отслеживать зарегистрированных пользователей."
 
-#: ../../admin/config/index.php:70
+#: ../../admin/config/index.php:69
 msgid "Blacklist by Username"
 msgstr "Черный список по имени пользователя"
 
-#: ../../admin/config/index.php:70
+#: ../../admin/config/index.php:69
 msgid ""
 "List all the usernames you don't want to track, separated by commas. Please "
 "be aware that spaces are <em>not</em> ignored and that usernames are case "
@@ -907,12 +881,11 @@ msgstr ""
 "запятыми. Помните, что пробелы <em>не</em> игнорируются и имена "
 "пользователей чувствительны к регистру."
 
-#: ../../admin/config/index.php:71
+#: ../../admin/config/index.php:70
 msgid "Blacklist by IP Address"
 msgstr "Черный список по IP-адресу"
 
-#: ../../admin/config/index.php:71
-#, fuzzy
+#: ../../admin/config/index.php:70
 msgid ""
 "List all the IP addresses you don't want to track, separated by commas. Each "
 "network <strong>must</strong> be defined using the <a href='http://en."
@@ -926,14 +899,14 @@ msgstr ""
 "%D0%B0%D1%81%D1%81%D0%BE%D0%B2%D0%B0%D1%8F_"
 "%D0%B0%D0%B4%D1%80%D0%B5%D1%81%D0%B0%D1%86%D0%B8%D1%8F' "
 "target='_blank'>Бесклассовой адресации</a> (т.е. <em>192.168.0.0/24</em>). "
-"Если формат неправильный, WP SlimStat не сможет отслеживать просмотры "
-"страниц должным образом."
+"Этот фильтр относится как к публичным, так и к исходным IP, если таковые "
+"имеются."
 
-#: ../../admin/config/index.php:72
+#: ../../admin/config/index.php:71
 msgid "Blacklist by Capability"
 msgstr "Черный список по возможностям доступа"
 
-#: ../../admin/config/index.php:72
+#: ../../admin/config/index.php:71
 msgid ""
 "Users having at least one of the <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>capabilities</a> listed here below "
@@ -943,15 +916,15 @@ msgstr ""
 "wordpress.org/Roles_and_Capabilities' target='_new'>этих возможностей</a>, "
 "не будут отслеживаться. Эти возможности не чувствительны к регистру."
 
-#: ../../admin/config/index.php:74
+#: ../../admin/config/index.php:73
 msgid "Profiling"
 msgstr "Установка характеристик"
 
-#: ../../admin/config/index.php:75
+#: ../../admin/config/index.php:74
 msgid "Ignore Spammers"
 msgstr "Игнорировать спамеров"
 
-#: ../../admin/config/index.php:75
+#: ../../admin/config/index.php:74
 msgid ""
 "Enable this option if you don't want to track visits from users identified "
 "as spammers by third-party tools like Akismet. Pageviews generated by users "
@@ -963,11 +936,11 @@ msgstr ""
 "такими как Akismet. Посещения людей, чьи комментарии позже будут обозначены "
 "как спам также будут удалены из базы данных."
 
-#: ../../admin/config/index.php:76
+#: ../../admin/config/index.php:75
 msgid "Permalinks"
 msgstr "Постоянные ссылки"
 
-#: ../../admin/config/index.php:76
+#: ../../admin/config/index.php:75
 msgid ""
 "List all the URLs on your website that you don't want to track, separated by "
 "commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. "
@@ -985,11 +958,11 @@ msgstr ""
 "aboundant и /about, <code>/abo!t</code> будет соответствовать /about и /"
 "abort. Эти строки не чувствительны к регистру."
 
-#: ../../admin/config/index.php:77
+#: ../../admin/config/index.php:76
 msgid "Countries"
 msgstr "Страны"
 
-#: ../../admin/config/index.php:77
+#: ../../admin/config/index.php:76
 msgid ""
 "Country codes (i.e.: <code>en-us, it, es</code>) that you don't want to "
 "track, separated by commas."
@@ -997,11 +970,11 @@ msgstr ""
 "Коды стран (то есть: <code>en-us, it, ru</code>), которые вы не хотите "
 "отслеживать; разделяются запятыми."
 
-#: ../../admin/config/index.php:78
+#: ../../admin/config/index.php:77
 msgid "User Agents"
 msgstr "Клиентские приложения"
 
-#: ../../admin/config/index.php:78
+#: ../../admin/config/index.php:77
 msgid ""
 "Browsers (user agents) you don't want to track, separated by commas. You can "
 "specify the browser's version adding a slash after the name  (i.e. "
@@ -1018,11 +991,11 @@ msgstr ""
 "<code>IE/!.0</code> будет соответствовать IE/7.0 и IE/8.0. Эти строки не "
 "чувствительны к регистру."
 
-#: ../../admin/config/index.php:79
+#: ../../admin/config/index.php:78
 msgid "Referring Sites"
 msgstr "Ссылающиеся сайты"
 
-#: ../../admin/config/index.php:79
+#: ../../admin/config/index.php:78
 msgid ""
 "Referring URLs that you don't want to track, separated by commas: "
 "<code>http://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. "
@@ -1038,41 +1011,40 @@ msgstr ""
 "Пожалуйста, используйте либо символы, либо протокол, который хотите "
 "отфильтровать (http://, https://)."
 
-#: ../../admin/config/index.php:81 ../../admin/config/index.php:233
+#: ../../admin/config/index.php:80 ../../admin/config/index.php:232
 msgid "Miscellaneous"
 msgstr "Разное"
 
-#: ../../admin/config/index.php:82
+#: ../../admin/config/index.php:81
 msgid "Enable Privacy Mode"
 msgstr "Включить режим конфиденциальности"
 
-#: ../../admin/config/index.php:82
+#: ../../admin/config/index.php:81
 msgid "Mask your visitors' IP addresses to comply with European Privacy Laws."
 msgstr ""
 "Маскирует IP-адреса ваших посетителей в соответствии с европейскими законами "
 "о конфиденциальности."
 
-#: ../../admin/config/index.php:83
+#: ../../admin/config/index.php:82
 msgid "Ignore Prefetch Requests"
 msgstr "Игнорировать запросы предварительной выборки"
 
-#: ../../admin/config/index.php:83
-#, fuzzy
+#: ../../admin/config/index.php:82
 msgid ""
 "Prevent Slimstat from tracking pageviews generated by Firefox's <a "
 "href='https://developer.mozilla.org/en/Link_prefetching_FAQ' "
 "target='_blank'>Link Prefetching functionality</a>."
 msgstr ""
-"Не позволять WP SlimStat отслеживать просмотры страниц созданные "
-"фунциональностью Firefox, называемой <a href='https://developer.mozilla.org/"
+"Не позволять SlimStat отслеживать просмотры страниц созданных "
+"функциональностью Firefox, называемой <a href='https://developer.mozilla.org/"
 "en/Link_prefetching_FAQ' target='_blank'>предварительной выборкой для "
 "ссылок</a>."
 
-#: ../../admin/config/index.php:99
+#: ../../admin/config/index.php:98
 msgid "Ignore users (username not found)"
 msgstr "Игнорируемые пользователи (имя пользователя не найдено)"
 
-#: ../../admin/config/index.php:122
+#: ../../admin/config/index.php:121
 msgid ""
 "Invalid capability. Please check <a href=\"http://codex.wordpress.org/"
 "Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
@@ -1081,16 +1053,15 @@ msgstr ""
 "org/Roles_and_Capabilities\" target=\"_new\">эту страницу</a> для получения "
 "дополнительной информации."
 
-#: ../../admin/config/index.php:132
+#: ../../admin/config/index.php:131
 msgid "Reports"
 msgstr "Отчеты"
 
-#: ../../admin/config/index.php:133
+#: ../../admin/config/index.php:132
 msgid "Restrict Authors"
 msgstr "Запретить авторам"
 
-#: ../../admin/config/index.php:133
-#, fuzzy
+#: ../../admin/config/index.php:132
 msgid ""
 "Enable this option if you want your authors to only see stats related to "
 "their own content."
@@ -1098,11 +1069,11 @@ msgstr ""
 "Включите этот параметр, если хотите, чтобы ваши авторы видели только ту "
 "статистику, которая связана с их собственным содержанием."
 
-#: ../../admin/config/index.php:134 ../../admin/config/index.php:138
+#: ../../admin/config/index.php:133 ../../admin/config/index.php:137
 msgid "Capability"
 msgstr "Возможности"
 
-#: ../../admin/config/index.php:134
+#: ../../admin/config/index.php:133
 msgid ""
 "Specify the minimum <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>capability</a> needed to access the "
@@ -1119,11 +1090,11 @@ msgstr ""
 "списке, который указан ниже. В этом случае, список имеет приоритет над "
 "возможностями."
 
-#: ../../admin/config/index.php:135 ../../admin/config/index.php:139
+#: ../../admin/config/index.php:134 ../../admin/config/index.php:138
 msgid "Whitelist"
 msgstr "Белый список"
 
-#: ../../admin/config/index.php:135
+#: ../../admin/config/index.php:134
 msgid ""
 "List all the users who should have access to the reports, separated by "
 "commas. Administrators are implicitly allowed, so you don't need to list "
@@ -1133,8 +1104,7 @@ msgstr ""
 "запятыми. Администраторы разрешены автоматически, так что вам не нужно "
 "перечислить их здесь. Имена пользователей чувствительны к регистру."
 
-#: ../../admin/config/index.php:138
-#, fuzzy
+#: ../../admin/config/index.php:137
 msgid ""
 "Specify the minimum <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>capability</a> required to configure "
@@ -1143,11 +1113,11 @@ msgid ""
 msgstr ""
 "Определите минимальные <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>возможности</a>, необходимые для "
-"доступа к страницам настроек WP SlimStat (по умолчанию: "
-"<code>activate_plugins</code>). Белый список ниже может быть использован для "
-"обхода этой настройки определенными пользователями."
+"доступа к страницам настроек SlimStat (по умолчанию: <code>activate_plugins</"
+"code>). Белый список ниже может быть использован для обхода этой настройки "
+"определенными пользователями."
 
-#: ../../admin/config/index.php:139
+#: ../../admin/config/index.php:138
 msgid ""
 "List all the users who can edit these options, separated by commas. Please "
 "be advised that admins <strong>are not</strong> implicitly allowed, so do "
@@ -1158,11 +1128,11 @@ msgstr ""
 "разрешены автоматически, так что не забудьте включить себя! Имена "
 "пользователей чувствительны к регистру."
 
-#: ../../admin/config/index.php:155
+#: ../../admin/config/index.php:154
 msgid "Read access: username not found"
 msgstr "Доступ для чтения: имя пользователя не найдено"
 
-#: ../../admin/config/index.php:168 ../../admin/config/index.php:199
+#: ../../admin/config/index.php:167 ../../admin/config/index.php:198
 msgid ""
 "Invalid minimum capability. Please check <a href=\"http://codex.wordpress."
 "org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more "
@@ -1172,15 +1142,15 @@ msgstr ""
 "codex.wordpress.org/Roles_and_Capabilities\" target=\"_new\">эту страницу</"
 "a> для получения дополнительной информации."
 
-#: ../../admin/config/index.php:186
+#: ../../admin/config/index.php:185
 msgid "Config access: username not found"
 msgstr "Доступ для настройки: имя пользователя не найдено"
 
-#: ../../admin/config/index.php:214
+#: ../../admin/config/index.php:213
 msgid "Detect Smoothing"
 msgstr "Выявлять сглаживание шрифтов"
 
-#: ../../admin/config/index.php:214
+#: ../../admin/config/index.php:213
 msgid ""
 "Detect if your visitors' browsers support anti-aliasing (font smoothing). "
 "This option required Spy Mode to be enabled."
@@ -1188,11 +1158,11 @@ msgstr ""
 "Обнаруживать поддержку браузером антиалиасинга (сглаживание шрифтов). Эта "
 "опция требует включение шпионского режима."
 
-#: ../../admin/config/index.php:215
+#: ../../admin/config/index.php:214
 msgid "Track Outbound Clicks"
 msgstr "Отслеживать исходящие ссылки"
 
-#: ../../admin/config/index.php:215
+#: ../../admin/config/index.php:214
 msgid ""
 "Track when your visitors click on link to external websites. This option "
 "required Spy Mode to be enabled."
@@ -1200,11 +1170,11 @@ msgstr ""
 "Отслеживать нажатия ссылок на внешние веб-сайты. Эта опция требует включение "
 "шпионского режима."
 
-#: ../../admin/config/index.php:216
+#: ../../admin/config/index.php:215
 msgid "Session Duration"
 msgstr "Продолжительность сеанса"
 
-#: ../../admin/config/index.php:216
+#: ../../admin/config/index.php:215
 msgid ""
 "How many seconds should a human session last? Google Analytics sets it to "
 "1800 seconds."
@@ -1212,21 +1182,21 @@ msgstr ""
 "Сколько секунд должен длиться сеанс посещения сайта? Google Analytics "
 "устанавливает его продолжительность на 1800 секунд."
 
-#: ../../admin/config/index.php:217
+#: ../../admin/config/index.php:216
 msgid "Extend Session"
 msgstr "Продлить сеанс"
 
-#: ../../admin/config/index.php:217
+#: ../../admin/config/index.php:216
 msgid "Extend the duration of a session each time the user visits a new page."
 msgstr ""
 "Увеличить длительность сеанса каждый раз, когда пользователь посещает новую "
 "страницу."
 
-#: ../../admin/config/index.php:218
+#: ../../admin/config/index.php:217
 msgid "Enable CDN"
 msgstr "Включить сеть доставки контента"
 
-#: ../../admin/config/index.php:218
+#: ../../admin/config/index.php:217
 msgid ""
 "Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, "
 "by serving our tracking code from their fast and reliable network (free "
@@ -1236,11 +1206,11 @@ msgstr ""
 "target='_blank'>JSDelivr</a>, которая обслуживает наш код отслеживания с их "
 "быстрой и надежной сетью (бесплатная услуга)."
 
-#: ../../admin/config/index.php:219
+#: ../../admin/config/index.php:218
 msgid "Extensions to Track"
 msgstr "Отслеживать расширения"
 
-#: ../../admin/config/index.php:219
+#: ../../admin/config/index.php:218
 msgid ""
 "List all the file extensions that you want to be treated as Downloads. "
 "Please note that links pointing to external resources (i.e. PDFs on a "
@@ -1254,36 +1224,37 @@ msgstr ""
 "(и будут отслеживаться соответственно), если их расширение совпадет с одним "
 "из перечисленных здесь."
 
-#: ../../admin/config/index.php:221
-#, fuzzy
+#: ../../admin/config/index.php:220
 msgid "External Pages"
-msgstr "Всего просмотров"
+msgstr "Внешние страницы"
 
-#: ../../admin/config/index.php:222
+#: ../../admin/config/index.php:221
 msgid "Add the following code to all the non-WP pages you want to track"
 msgstr ""
+"Добавьте следующий код, чтобы отслеживать все страницы, не относящиеся к "
+"WordPress"
 
-#: ../../admin/config/index.php:234
+#: ../../admin/config/index.php:233
 msgid "Debug Mode"
-msgstr ""
+msgstr "Режим отладки"
+
+#: ../../admin/config/index.php:233
+msgid "Display the SQL queries used to retrieve the data."
+msgstr "Отображение запросов SQL, используемых для извлечения данных."
 
 #: ../../admin/config/index.php:234
-msgid "Display the SQL queries used to retrieve the data."
-msgstr ""
-
-#: ../../admin/config/index.php:235
 msgid "IP Lookup"
 msgstr "Поиск IP"
 
-#: ../../admin/config/index.php:235
+#: ../../admin/config/index.php:234
 msgid "Customize the Geolocation service to be used in the reports."
 msgstr "Настроить услугу геолокации, которая будет использоваться в отчетах."
 
-#: ../../admin/config/index.php:236
+#: ../../admin/config/index.php:235
 msgid "Custom CSS"
 msgstr "Настраиваемый CSS"
 
-#: ../../admin/config/index.php:236
+#: ../../admin/config/index.php:235
 msgid ""
 "Paste here your custom stylesheet to personalize the way your reports look. "
 "<a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
@@ -1295,12 +1266,11 @@ msgstr ""
 "target='_blank'>Проверьте справку</a> для получения дополнительной "
 "информации о том, как использовать эту функциональность."
 
-#: ../../admin/config/index.php:237
+#: ../../admin/config/index.php:236
 msgid "Enable UAN"
 msgstr "Включить сеть неизвестных клиентских приложений"
 
-#: ../../admin/config/index.php:237
-#, fuzzy
+#: ../../admin/config/index.php:236
 msgid ""
 "Send anonymous data about user agents to our server for analysis. This "
 "allows us to contribute to the <a href='http://browscap.org/' "
@@ -1311,13 +1281,13 @@ msgstr ""
 "Собирает данные о неизвестных клиентских приложениях и отправляет их "
 "анонимно на наш сервер для анализа. Это позволяет нам внести свой вклад в <a "
 "href='http://browscap.org//' target='_blank'>проект BrowsCap с открытым "
-"исходным кодом</a>, а также улучшает точность обнаружения функциональностей "
-"браузеров."
+"исходным кодом</a>, а также улучшает точность SlimStat обнаруживать "
+"функциональности браузеров. Это также включает нашу прозрачную рекламную "
+"сеть. Не беспокойтесь, в любом случае ваш сайт затронут не будет."
 
 #: ../../admin/config/maintenance.php:20
-#, fuzzy
 msgid "Your Slimstat tables have been successfully converted to InnoDB."
-msgstr "Ваши WP SlimStat таблицы были успешно преобразованы в InnoDB."
+msgstr "Ваши SlimStat таблицы были успешно преобразованы в InnoDB."
 
 #: ../../admin/config/maintenance.php:30
 msgid "records deleted from your database."
@@ -1332,14 +1302,12 @@ msgid "Your reports were successfully restored to their default arrangement."
 msgstr "Ваши отчеты были успешно возвращены в их первоначальное положение."
 
 #: ../../admin/config/maintenance.php:46
-#, fuzzy
 msgid ""
 "Congrats! Slimstat is now optimized for <a href=\"http://www.youtube.com/"
 "watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
 msgstr ""
-"Поздравляем! WP SlimStat теперь оптимизирован для <a href=\"http://www."
-"youtube.com/watch?v=ygE01sOhzz0\" target=\"_blank\">сверхсветовой скорости</"
-"a>."
+"Поздравляем! SlimStat теперь оптимизирован для <a href=\"http://www.youtube."
+"com/watch?v=ygE01sOhzz0\" target=\"_blank\">сверхсветовой скорости</a>."
 
 #: ../../admin/config/maintenance.php:53
 msgid ""
@@ -1373,60 +1341,60 @@ msgstr "Техническое обслуживание данных"
 msgid "Delete pageviews where"
 msgstr "Удалить просмотры, где"
 
-#: ../../admin/config/maintenance.php:124 ../../admin/view/index.php:15
+#: ../../admin/config/maintenance.php:124 ../../admin/view/index.php:17
 msgid "equals"
 msgstr "равен"
 
-#: ../../admin/config/maintenance.php:125 ../../admin/view/index.php:16
+#: ../../admin/config/maintenance.php:125 ../../admin/view/index.php:18
 msgid "is not equal to"
 msgstr "не равен"
 
-#: ../../admin/config/maintenance.php:126 ../../admin/view/index.php:17
+#: ../../admin/config/maintenance.php:126 ../../admin/view/index.php:19
 msgid "contains"
 msgstr "содержит"
 
-#: ../../admin/config/maintenance.php:127 ../../admin/view/index.php:18
+#: ../../admin/config/maintenance.php:127 ../../admin/view/index.php:20
 msgid "does not contain"
 msgstr "не содержит"
 
-#: ../../admin/config/maintenance.php:128 ../../admin/view/index.php:19
+#: ../../admin/config/maintenance.php:128 ../../admin/view/index.php:21
 msgid "starts with"
 msgstr "начинается с"
 
-#: ../../admin/config/maintenance.php:129 ../../admin/view/index.php:20
+#: ../../admin/config/maintenance.php:129 ../../admin/view/index.php:22
 msgid "ends with"
 msgstr "заканчивается на"
 
-#: ../../admin/config/maintenance.php:130 ../../admin/view/index.php:21
+#: ../../admin/config/maintenance.php:130 ../../admin/view/index.php:23
 msgid "sounds like"
 msgstr "похож на"
 
-#: ../../admin/config/maintenance.php:131 ../../admin/view/index.php:22
+#: ../../admin/config/maintenance.php:131 ../../admin/view/index.php:24
 msgid "is greater than"
 msgstr "больше, чем"
 
-#: ../../admin/config/maintenance.php:132 ../../admin/view/index.php:23
+#: ../../admin/config/maintenance.php:132 ../../admin/view/index.php:25
 msgid "is less than"
 msgstr "меньше, чем"
 
-#: ../../admin/config/maintenance.php:133 ../../admin/view/index.php:24
+#: ../../admin/config/maintenance.php:133 ../../admin/view/index.php:26
 msgid "matches"
 msgstr "соответствует"
 
-#: ../../admin/config/maintenance.php:134 ../../admin/view/index.php:25
+#: ../../admin/config/maintenance.php:134 ../../admin/view/index.php:27
 msgid "does not match"
 msgstr "не соответствует"
 
-#: ../../admin/config/maintenance.php:135 ../../admin/view/index.php:26
+#: ../../admin/config/maintenance.php:135 ../../admin/view/index.php:28
 msgid "is empty"
 msgstr "пустой"
 
-#: ../../admin/config/maintenance.php:136 ../../admin/view/index.php:27
+#: ../../admin/config/maintenance.php:136 ../../admin/view/index.php:29
 msgid "is not empty"
 msgstr "не пустой"
 
-#: ../../admin/config/maintenance.php:139 ../../admin/view/index.php:40
-#: ../../admin/view/index.php:86
+#: ../../admin/config/maintenance.php:139 ../../admin/view/index.php:32
+#: ../../admin/view/index.php:78
 msgid "Apply"
 msgstr "Применить"
 
@@ -1450,12 +1418,11 @@ msgid "Delete All Pageviews"
 msgstr "Удалить все просмотры"
 
 #: ../../admin/config/maintenance.php:149
-#, fuzzy
 msgid ""
 "Erase all the information collected so far by Slimstat. This operation "
 "<strong>does not</strong> reset your settings."
 msgstr ""
-"Стереть всю информацию, собранную до сих пор WP SlimStat. Это действие "
+"Стереть всю информацию, собранную SlimStat до сих пор. Это действие "
 "<strong>не</strong> затронет ваши настройки."
 
 #: ../../admin/config/maintenance.php:153
@@ -1500,27 +1467,25 @@ msgid "Save DB Space"
 msgstr "Сохранить пространство базы данных"
 
 #: ../../admin/config/maintenance.php:170
-#, fuzzy
 msgid ""
 "Please note that by removing table indexes, Slimstat's performance will be "
 "affected."
 msgstr ""
 "Обратите внимание, что из-за удаления индексов таблиц пострадает "
-"производительность WP SlimStat."
+"производительность SlimStat."
 
 #: ../../admin/config/maintenance.php:175
 msgid "Import and Export"
 msgstr "Импорт и экспорт"
 
 #: ../../admin/config/maintenance.php:179
-#, fuzzy
 msgid ""
 "Here below you can find the current configuration string for Slimstat. You "
 "can update your settings by pasting a new string here below and clicking on "
 "Import."
 msgstr ""
-"Здесь вы найдете текущие настройки WP SlimStat. Вы можете изменить их, "
-"вставив новое значение и нажав на импорт."
+"Здесь вы найдете текущие настройки SlimStat. Вы можете изменить их, вставив "
+"новое значение и нажав на импорт."
 
 #: ../../admin/config/maintenance.php:184
 msgid "Import"
@@ -1532,7 +1497,7 @@ msgstr "Вы уверены, что хотите ПЕРЕЗАПИСАТЬ тек
 
 #: ../../admin/lang/dynamic_strings.php:3
 msgid "xx"
-msgstr "xx"
+msgstr ""
 
 #: ../../admin/lang/dynamic_strings.php:4
 msgid "unknown"
@@ -2605,7 +2570,7 @@ msgstr "Польский"
 # 	Polish
 #: ../../admin/lang/dynamic_strings.php:232
 msgid "l-pl-pl"
-msgstr "Polish (Poland)"
+msgstr "Польский (Польша)"
 
 # 	Pushto; Pashto
 #: ../../admin/lang/dynamic_strings.php:233
@@ -2949,56 +2914,55 @@ msgstr "Не указан"
 msgid "c-xy"
 msgstr "Локальный IP-адрес"
 
-#: ../../admin/view/index.php:56 ../../admin/view/wp-slimstat-reports.php:753
+#: ../../admin/view/index.php:48 ../../admin/view/wp-slimstat-reports.php:753
 msgid "Today"
 msgstr "За сегодня"
 
-#: ../../admin/view/index.php:57 ../../admin/view/wp-slimstat-reports.php:754
+#: ../../admin/view/index.php:49 ../../admin/view/wp-slimstat-reports.php:754
 msgid "Yesterday"
 msgstr "За вчера"
 
-#: ../../admin/view/index.php:58
+#: ../../admin/view/index.php:50
 msgid "Last 7 Days"
 msgstr "За последние 7 дней"
 
-#: ../../admin/view/index.php:59
+#: ../../admin/view/index.php:51
 msgid "Last 60 Days"
 msgstr "За последние 60 дней"
 
-#: ../../admin/view/index.php:60
+#: ../../admin/view/index.php:52
 msgid "Last 90 Days"
 msgstr "За последние 90 дней"
 
-#: ../../admin/view/index.php:61
+#: ../../admin/view/index.php:53
 msgid "This Year So Far"
 msgstr "За этот год"
 
-#: ../../admin/view/index.php:62
+#: ../../admin/view/index.php:54
 msgid "Date Range"
 msgstr "Интервал дат"
 
-#: ../../admin/view/index.php:64 ../../admin/view/wp-slimstat-db.php:72
+#: ../../admin/view/index.php:56 ../../admin/view/wp-slimstat-db.php:72
 msgid "Day"
 msgstr "День"
 
-#: ../../admin/view/index.php:74 ../../admin/view/wp-slimstat-db.php:73
+#: ../../admin/view/index.php:66 ../../admin/view/wp-slimstat-db.php:73
 msgid "Month"
 msgstr "Месяц"
 
-#: ../../admin/view/index.php:83 ../../admin/view/wp-slimstat-db.php:74
+#: ../../admin/view/index.php:75 ../../admin/view/wp-slimstat-db.php:74
 msgid "Year"
 msgstr "Год"
 
-#: ../../admin/view/index.php:88
+#: ../../admin/view/index.php:80
 msgid "Reset Filters"
 msgstr "Сбросить фильтры"
 
-#: ../../admin/view/index.php:129
+#: ../../admin/view/index.php:121
 msgid "Your report here"
 msgstr "Ваш отчет"
 
-#: ../../admin/view/index.php:131
-#, fuzzy
+#: ../../admin/view/index.php:123
 msgid ""
 "Yes, you can! Create and view your personalized analytics for Slimstat. Just "
 "write a new plugin that retrieves the desired information from the database "
@@ -3006,77 +2970,74 @@ msgid ""
 "more information, visit my <a href=\"http://wordpress.org/tags/wp-slimstat?"
 "forum_id=10\" target=\"_blank\">support forum</a>."
 msgstr ""
-"Да, вы можете! Создание и просмотр персональной аналитики для WP SlimStat. "
+"Да, вы можете! Создание и просмотр персональной аналитики для SlimStat. "
 "Просто напишите новый плагин, который извлекает нужную информацию из базы "
 "данных, а затем подключите его вот так: <code>wp_slimstat_custom_report</"
 "code>. Для получения дополнительной информации, посетите мой <a href="
 "\"http://wordpress.org/tags/wp-slimstat?forum_id=10\" target=\"_blank"
 "\">форум поддержки</a>."
 
-#: ../../admin/view/index.php:145 ../../admin/view/wp-slimstat-reports.php:744
+#: ../../admin/view/index.php:137 ../../admin/view/wp-slimstat-reports.php:744
 #: ../../admin/view/wp-slimstat-reports.php:846
 #: ../../admin/view/wp-slimstat-reports.php:1069
 msgid "Pageviews"
 msgstr "Просмотры"
 
-#: ../../admin/view/index.php:148
-#, fuzzy
+#: ../../admin/view/index.php:140
 msgid ""
 "When visitors leave a comment on your blog, WordPress assigns them a cookie. "
 "Slimstat leverages this information to identify returning visitors. Please "
 "note that visitors also include registered users."
 msgstr ""
-"Когда пользователи комментируют записи в вашем блоге, WordPress присваивает "
-"им cookie. WP SlimStat использует эту информацию для выявления постоянных "
+"Когда пользователи комментируют записи на вашем блоге, WordPress присваивает "
+"им cookie. SlimStat использует эту информацию для выявления постоянных "
 "посетителей. Эти посетители также включают в себя зарегистрированных "
 "пользователей."
 
-#: ../../admin/view/index.php:152
+#: ../../admin/view/index.php:144
 msgid "Take a sneak peek at what human visitors are doing on your website."
 msgstr "Предварительный просмотр того, что посетители делают на вашем сайте."
 
-#: ../../admin/view/index.php:152 ../../admin/view/index.php:190
-#: ../../admin/view/index.php:193 ../../admin/view/right-now.php:154
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185 ../../admin/view/right-now.php:154
 msgid "Color codes"
 msgstr "Цветовые коды"
 
-#: ../../admin/view/index.php:152
+#: ../../admin/view/index.php:144
 msgid "From a search result page"
 msgstr "Со страницы результатов поиска"
 
-#: ../../admin/view/index.php:152 ../../admin/view/index.php:190
-#: ../../admin/view/index.php:193
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185
 msgid "Known Users"
 msgstr "Оставивший комментарий"
 
-#: ../../admin/view/index.php:152 ../../admin/view/index.php:190
-#: ../../admin/view/index.php:193
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185
 msgid "Other Humans"
 msgstr "Другие посетители"
 
-#: ../../admin/view/index.php:156
+#: ../../admin/view/index.php:148
 msgid "Keywords used by your visitors to find your website on a search engine."
 msgstr ""
 "Ключевые слова, которыми пользуются посетители, чтобы найти ваш сайт в "
 "поисковых системах."
 
-#: ../../admin/view/index.php:159
-#, fuzzy
+#: ../../admin/view/index.php:151
 msgid ""
 "Slimstat retrieves live information from Alexa, Facebook and Google, to "
 "measures your site's rankings. Values are updated every 12 hours. Filters "
 "set above don't apply to this report."
 msgstr ""
-"WP SlimStat извлекает информацию в реальном времени из Alexa, Facebook и "
-"Google для измерения рейтинга вашего сайта. Значения обновляются каждые 12 "
-"часов. Установленные выше фильтры не применяются к данному отчету."
+"SlimStat извлекает информацию в реальном времени из Alexa, Facebook и Google "
+"для измерения рейтинга вашего сайта. Значения обновляются каждые 12 часов. "
+"Установленные выше фильтры не применяются к данному отчету."
 
-#: ../../admin/view/index.php:162
+#: ../../admin/view/index.php:154
 msgid "Human Visits"
 msgstr "Посещение сайта человеком"
 
-#: ../../admin/view/index.php:165
-#, fuzzy
+#: ../../admin/view/index.php:157
 msgid ""
 "Internet Service Provider: a company which provides other companies or "
 "individuals with access to the Internet. Your DSL or cable internet service "
@@ -3089,16 +3050,15 @@ msgstr ""
 "IP-адреса, установив соответствующий фильтр в меню Настройки > SlimStat > "
 "Фильтры."
 
-#: ../../admin/view/index.php:168
-#, fuzzy
+#: ../../admin/view/index.php:160
 msgid ""
 "You can configure Slimstat to ignore a specific Country by setting the "
 "corresponding filter under Settings > Slimstat > Filters."
 msgstr ""
-"Вы можете настроить WP SlimStat для игнорирования конкретной страны, "
-"установив соответствующий фильтр в меню Настройки > SlimStat > Фильтры."
+"Вы можете настроить SlimStat для игнорирования конкретной страны, установив "
+"соответствующий фильтр в меню Настройки > SlimStat > Фильтры."
 
-#: ../../admin/view/index.php:171
+#: ../../admin/view/index.php:163
 msgid ""
 "This report shows you what user agent families (no version considered) are "
 "popular among your visitors."
@@ -3106,7 +3066,7 @@ msgstr ""
 "Этот отчет обобщает клиентские приложения (версии не рассматриваются), "
 "которые пользуются популярностью у посетителей."
 
-#: ../../admin/view/index.php:174
+#: ../../admin/view/index.php:166
 msgid ""
 "This report shows you what operating system families (no version considered) "
 "are popular among your visitors."
@@ -3114,11 +3074,11 @@ msgstr ""
 "Этот отчет обобщает операционные системы (версии не рассматриваются), "
 "которые пользуются популярностью у посетителей."
 
-#: ../../admin/view/index.php:180
+#: ../../admin/view/index.php:172
 msgid "Average Pageviews per Visit"
 msgstr "Среднее кол-во просмотров за посещение"
 
-#: ../../admin/view/index.php:183
+#: ../../admin/view/index.php:175
 msgid ""
 "A <em>bounce page</em> is a single-page visit, or visit in which the person "
 "left your site from the entrance (landing) page."
@@ -3126,11 +3086,11 @@ msgstr ""
 "<em>Страница отказа</em> - это одностраничное посещение, или посещение в "
 "котором пользователь покидает сайт со страницы входа."
 
-#: ../../admin/view/index.php:186
+#: ../../admin/view/index.php:178
 msgid "Searches performed using Wordpress' built-in search functionality."
 msgstr "Поиски, выполненные с помощью встроенного поиска Wordpress."
 
-#: ../../admin/view/index.php:190
+#: ../../admin/view/index.php:182
 msgid ""
 "<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in "
 "the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding "
@@ -3140,7 +3100,7 @@ msgstr ""
 "ссылка на странице была нажата.<br>- <em>ID:xx</em> показывает, когда "
 "соответствующая ссылка имеет связанный с ним атрибут ID."
 
-#: ../../admin/view/index.php:193
+#: ../../admin/view/index.php:185
 msgid ""
 "This report lists any <em>event</em> occurred on your website. Please refer "
 "to the FAQ for more information on how to leverage this functionality."
@@ -3149,7 +3109,7 @@ msgstr ""
 "сайте. Пожалуйста, посмотрите ЧаВо для получения дополнительной информации о "
 "том, как использовать эту функциональность."
 
-#: ../../admin/view/index.php:196
+#: ../../admin/view/index.php:188
 msgid ""
 "Your content at a glance: posts, comments, pingbacks, etc. Please note that "
 "this report is not affected by the filters set here above."
@@ -3273,9 +3233,8 @@ msgid "Pageviews (chart)"
 msgstr "Просмотры (диаграмма)"
 
 #: ../../admin/view/wp-slimstat-reports.php:37
-#, fuzzy
 msgid "About Slimstat"
-msgstr "О плагине WP-SlimStat"
+msgstr "О плагине SlimStat"
 
 #: ../../admin/view/wp-slimstat-reports.php:38
 #: ../../admin/view/wp-slimstat-reports.php:50
@@ -3480,7 +3439,6 @@ msgid "Recent Downloads"
 msgstr "Последние загрузки"
 
 #: ../../admin/view/wp-slimstat-reports.php:97
-#, fuzzy
 msgid "Top OutLinks and Downloads"
 msgstr "ТОП исходящих ссылок и загрузок"
 
@@ -3489,7 +3447,6 @@ msgid "Your Website"
 msgstr "Ваш сайт"
 
 #: ../../admin/view/wp-slimstat-reports.php:100
-#, fuzzy
 msgid "At A Glance"
 msgstr "Краткий обзор"
 
@@ -3654,12 +3611,11 @@ msgstr "Нет посетителей"
 
 #: ../../admin/view/wp-slimstat-reports.php:743
 #: ../../admin/view/wp-slimstat-reports.php:845
-#, fuzzy
 msgid ""
 "A request to load a single HTML file. Slimstat logs a \"pageview\" each time "
 "the tracking code is executed."
 msgstr ""
-"Запрос на загрузку одного файла HTML. WP SlimStat ведет запись просмотров "
+"Запрос на загрузку одного файла HTML. SlimStat ведет запись просмотров "
 "каждый раз, когда выполняется код отслеживания."
 
 #: ../../admin/view/wp-slimstat-reports.php:745
@@ -5101,307 +5057,3 @@ msgstr "Среднее кол-во просмотров"
 #~ msgstr ""
 #~ " И за приглядывание за вашими посетителями с помощью <a href=\"http://"
 #~ "slimstat.getused.to.it/\">WP SlimStat</a>."
-
-#~ msgid "Right Now"
-#~ msgstr "Активность"
-
-#~ msgid "Right Now Screen"
-#~ msgstr "Экран 'Активность'"
-
-#~ msgid "Right Now Extended"
-#~ msgstr "Видеть исходящие ссылки"
-
-#~ msgid ""
-#~ "We have teamed up with HackerNinja.com to offer you a free website "
-#~ "security scan. By clicking on Start Free Scan, your website will be "
-#~ "analyzed to detect viruses and other treats. Please note that no "
-#~ "confidential information is being sent to HackerNinja."
-#~ msgstr ""
-#~ "Мы объединились с HackerNinja.com, чтобы предложить вам бесплатное "
-#~ "сканирование вашего сайта на безопасность. Нажав на Start Free Scan, ваш "
-#~ "сайт будет проанализирован для выявления вирусов и других неполадок. "
-#~ "Примечание: только ваше доменное имя (адрес сайта) передается на "
-#~ "HackerNinja."
-
-#~ msgid "Security Scan"
-#~ msgstr "Проверка на безопасность"
-
-#~ msgid "Bing Test"
-#~ msgstr "Bing тест"
-
-#~ msgid "AntiVirus Scan"
-#~ msgstr "Антивирусное сканирование"
-
-#~ msgid "Google Bot Test"
-#~ msgstr "Google Бот тест"
-
-#~ msgid "Scan for Hostile Strings"
-#~ msgstr "Проверка на враждебные строки"
-
-#~ msgid "Generic Web Bot test"
-#~ msgstr "Общий Интернет Бот тест"
-
-#~ msgid "Google Safe Browsing List"
-#~ msgstr "Список безопасного просмота Google"
-
-#~ msgid "Hostile External Links"
-#~ msgstr "Враждебные внешние ссылки"
-
-#~ msgid "Other Treats"
-#~ msgstr "Другие посетители"
-
-#~ msgid "Passed"
-#~ msgstr "Прошел"
-
-#~ msgid "At Risk"
-#~ msgstr "Под угрозой"
-
-#~ msgid "Timed Out"
-#~ msgstr "Сбой проверки"
-
-#~ msgid "Chart Annotations"
-#~ msgstr "Примечания диаграммы"
-
-#~ msgid ""
-#~ "Add <em>markings</em> to each chart by specifying a date and its "
-#~ "description in the field below. Useful to keep track of special events "
-#~ "and correlate them to your analytics. Please use the following format:"
-#~ "<code>YYYY MM DD HH:mm=Description 1,YYYY MM DD HH:mm=Description 2</"
-#~ "code>. For example: 2012 12 31 23:55=New Year's Eve."
-#~ msgstr ""
-#~ "Добавьте <em>маркировку</em> на каждую диаграмму, указав дату и ее "
-#~ "описание в поле ниже. Это будет полезным для отслеживания специальных "
-#~ "мероприятий и соотносить их с веб-аналитикой. Пожалуйста, используйте "
-#~ "следующий формат: <code>ГГГГ ММ ДД ЧЧ:мм=Описание 1, YYYY MM DD HH:"
-#~ "мм=Описание 2</code>. Например: 2013 12 31 23:55 = Канун Нового Года."
-
-#~ msgid "Stats"
-#~ msgstr "Статистика"
-
-#~ msgid "Hide Stats Link"
-#~ msgstr "Скрыть ссылку на статистику"
-
-#~ msgid ""
-#~ "Enable this option if your users are confused by the Stats link associate "
-#~ "to each post in the Edit Posts page."
-#~ msgstr ""
-#~ "Включите этот параметр, если ваших пользователей смущает ссылка на "
-#~ "статистику, связанную с каждой записью на страницах редактирования."
-
-#~ msgid "Blacklist"
-#~ msgstr "Черный список"
-
-#~ msgid ""
-#~ "Paste your export file's content and click on the button below, to import "
-#~ "your settings."
-#~ msgstr ""
-#~ "Вставьте содержание файла экспорта и нажмите на кнопку ниже, чтобы "
-#~ "импортировать настройки."
-
-#~ msgid "Export Settings"
-#~ msgstr "Экспортировать настройки"
-
-#~ msgid ""
-#~ "SlimScroll adds a nice scrollbar to all the reports. Disable this feature "
-#~ "if your browser is not compatible with SlimScroll."
-#~ msgstr ""
-#~ "SlimScroll добавляет приятную полосу прокрутки на все панели отчетов. "
-#~ "Отключите эту функцию, если ваш браузер не совместим со SlimScroll."
-
-#~ msgid ""
-#~ "How valuable is monitoring your visitors for your site? WP SlimStat is "
-#~ "and will always be free, but consider supporting the author if this "
-#~ "plugin made your web site better, especially if you are making money out "
-#~ "of it. Any donation received will be reinvested in the development of WP "
-#~ "SlimStat, and to buy some food for my hungry family."
-#~ msgstr ""
-#~ "Насколько ценен мониторинг ваших посетителей? WP SlimStat является сейчас "
-#~ "и всегда будет бесплатным, но постоянно нуждается в поддержке автора, "
-#~ "если этот плагин сделал ваш сайт лучше, особенно если вы на нем "
-#~ "зарабатываете. Любые полученные пожертвования будут реинвестированы в "
-#~ "развитие WP SlimStat, а также на них будет куплено немного еды для моей "
-#~ "голодной семьи."
-
-#~ msgid "Need help?"
-#~ msgstr "Нужна помощь?"
-
-#~ msgid ""
-#~ "Please visit our official <a href='http://wordpress.org/support/plugin/wp-"
-#~ "slimstat' target='_blank'>support forum</a> to see if your question has "
-#~ "already been answered. If not, feel free to post your request there, I'll "
-#~ "do my best to address your concerns as soon as possible."
-#~ msgstr ""
-#~ "Пожалуйста, посетите наш официальный <a href='http://wordpress.org/"
-#~ "support/plugin/wp-slimstat' target='_blank'>форум поддержки</a>, чтобы "
-#~ "узнать, существует ли ответ на ваш вопрос. Если нет, то не стесняйтесь "
-#~ "задать свой вопрос, а я сделаю все возможное, чтобы решить ваши проблемы "
-#~ "как можно скорее."
-
-#~ msgid "Recent messages from the support forum"
-#~ msgstr "Последние сообщения с форума поддержки"
-
-#~ msgid "Don't want or cannot donate?"
-#~ msgstr "Не хотите или не можете сделать пожертвование?"
-
-#~ msgid ""
-#~ "If you cannot donate money, please consider blogging about WP SlimStat, "
-#~ "your visitors may not know you're using it! You can also contribute by "
-#~ "donating some of your spare time: send me bug reports, localization files "
-#~ "and ideas on how to improve WP SlimStat."
-#~ msgstr ""
-#~ "Если вы не можете пожертвовать деньги, тогда расскажите о плагине WP "
-#~ "SlimStat на своем сайте, потому что ваши посетители могут не знать, что "
-#~ "вы используете его! Вы также можете внести свой вклад свободного времени: "
-#~ "присылайте мне сообщения об ошибках, а также локализации на другие языки "
-#~ "и идеи о том, как улучшить WP SlimStat."
-
-#~ msgid "Show your appreciation"
-#~ msgstr "Покажите свою признательность"
-
-#~ msgid ""
-#~ "Tell other people if WP SlimStat works for you and how good it is. <a "
-#~ "href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on "
-#~ "its Plugin Directory page."
-#~ msgstr ""
-#~ "Расскажите другим о плагине WP SlimStat, как он работает и насколько он "
-#~ "хорош. <a href=\"http://wordpress.org/extend/plugins/wp-slimstat/"
-#~ "\">Оцените его</a> на официальной странице плагинов."
-
-#~ msgid "This counter is based on any user activity in the last 5 minutes."
-#~ msgstr ""
-#~ "Этот показатель основан на любой активности пользователей за последние 5 "
-#~ "минут."
-
-#~ msgid "This counter is based on any user activity in the last 30 minutes."
-#~ msgstr ""
-#~ "Этот показатель основан на любой активности пользователей за последние 30 "
-#~ "минут."
-
-#~ msgid "Track users"
-#~ msgstr "Отслеживать пользователей"
-
-#~ msgid "Anonymize IP Addresses"
-#~ msgstr "Скрыть IP-адреса"
-
-#~ msgid "Filter Prefetch"
-#~ msgstr "Фильтр предварительной выборки"
-
-#~ msgid "IP Addresses"
-#~ msgstr "IP-адреса"
-
-#~ msgid "Users"
-#~ msgstr "Пользователи"
-
-#~ msgid ""
-#~ "Are you sure you want to remove all the information about your hits and "
-#~ "visits?"
-#~ msgstr ""
-#~ "Вы уверены, что хотите удалить всю информацию о просмотрах и посещениях?"
-
-#~ msgid "Your WP SlimStat table has been successfully emptied."
-#~ msgstr "Ваша таблица WP SlimStat была успешно очищена."
-
-#~ msgid "Your WP SlimStat tabs have been successfully reset."
-#~ msgstr "Ваши панели WP SlimStat были успешно восстановлены."
-
-#~ msgid "Your WP SlimStat table has been successfully reset."
-#~ msgstr "Ваша таблица WP SlimStat была успешно восстановлена."
-
-#~ msgid "ERROR: Your Slimstat table could not be initialized."
-#~ msgstr "ОШИБКА: Вашей таблице SlimStat не удалось запуститься."
-
-#~ msgid "Your WP SlimStat table has been successfully optimized."
-#~ msgstr "Ваша таблица WP SlimStat была успешно оптимизирована."
-
-#~ msgid "Your WP SlimStat indexes have been successfully created."
-#~ msgstr "Ваши указатели WP SlimStat были успешно созданы."
-
-#~ msgid "Your WP SlimStat indexes have been successfully removed."
-#~ msgstr "Ваши указатели WP SlimStat были успешно удалены."
-
-#~ msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
-#~ msgstr ""
-#~ "Ваша таблица WP SlimStat была успешно очищена. Были затронуты строки:"
-
-#~ msgid "Size"
-#~ msgstr "Размер"
-
-#~ msgid "Approximate Overhead"
-#~ msgstr "Приблизительная переизбыток"
-
-#~ msgid "Is equal to"
-#~ msgstr "равен"
-
-#~ msgid "Contains"
-#~ msgstr "содержит"
-
-#~ msgid "Does not contain"
-#~ msgstr "не содержит"
-
-#~ msgid "Starts with"
-#~ msgstr "начинается с"
-
-#~ msgid "Ends with"
-#~ msgstr "заканчивается на"
-
-#~ msgid "Does not start with"
-#~ msgstr "не начинается с"
-
-#~ msgid "Does not end with"
-#~ msgstr "не заканчивается на"
-
-#~ msgid "Export your WP SlimStat settings in a text file."
-#~ msgstr "Экспорт настроек WP SlimStat в текстовый файл."
-
-#~ msgid "No records found"
-#~ msgstr "Записей не найдено"
-
-#~ msgid "Filter results where IP equals %s"
-#~ msgstr "Отфильтровать результаты, где IP равен %s"
-
-#~ msgid "Filter results where user equals %s"
-#~ msgstr "Отфильтровать результаты, где пользователь равен %s"
-
-#~ msgid "Filter results where ther user's real IP equals %s"
-#~ msgstr "Отфильтровать результаты, где настоящий IP пользователя равен %s"
-
-#~ msgid "Country"
-#~ msgstr "Страна"
-
-#~ msgid "Platform"
-#~ msgstr "Платформа"
-
-#~ msgid "Filter results where browser type equals %s"
-#~ msgstr "Отфильтровать результаты, где тип браузера равен %s"
-
-#~ msgid "Filter results where screen resolution equals %s"
-#~ msgstr "Отфильтровать результаты, где разрешение экрана равно %s"
-
-#~ msgid "Filter results where content type equals %s"
-#~ msgstr "Отфильтровать результаты, где тип содержания равен %s"
-
-#~ msgid "Bots, Crawlers and others"
-#~ msgstr "Боты, поисковые роботы и др."
-
-#~ msgid "Recent Known Visitors"
-#~ msgstr "Последние известные пользователи"
-
-#~ msgid "Filter results where %s %s %s"
-#~ msgstr "Отфильтровать результаты, где %s %s %s"
-
-#~ msgid "Filter results where domain equals %s"
-#~ msgstr "Отфильтровать результаты, где домен равен %s"
-
-#~ msgid "Filter results where searchterm equals %s"
-#~ msgstr "Отфильтровать результаты, где поисковый запрос равен %s"
-
-#~ msgid "This number includes <strong>human visits</strong> only."
-#~ msgstr "В это число входят только <strong>посещения человеком</strong>."
-
-#~ msgid "10 - 20 minutes"
-#~ msgstr "10-20 минут"
-
-#~ msgid "It might take a while to complete all the tests. Please be patient."
-#~ msgstr ""
-#~ "Это может занять некоторое время, чтобы завершить все тесты. Пожалуйста, "
-#~ "будьте терпеливы."

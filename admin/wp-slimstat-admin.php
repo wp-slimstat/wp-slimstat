@@ -17,8 +17,7 @@ class wp_slimstat_admin{
 		}
 
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			// self::$admin_notice = "We are putting the final touches on a new premium add-on to schedule email reports. If you would like to help us test it, please <a href='http://support.getused.to.it/' target='_blank'>contact us</a> to get your FREE copy today! Hurry, this offer is limited to the first 10 users.";
-			self::$admin_notice = "Do you sell tickets online? <a href='http://wordpress.org/plugins/opentickets-community-edition/' target='_blank'>OpenTickets Community Edition</a> is a free WordPress plugin I contribute to.  Get your FREE copy today!";
+			self::$admin_notice = "We are putting the final touches on a new premium add-on to schedule email reports. If you would like to help us test it, please <a href='http://support.getused.to.it/' target='_blank'>contact us</a> to get your FREE copy today! Hurry, this offer is limited to the first 10 users.";
 		}
 		else {
 			self::$admin_notice = "
@@ -62,7 +61,7 @@ class wp_slimstat_admin{
 				<p><strong>Third Party Text Links</strong></p>
 				<p>Third party text networks supply text for display in Slimstat. These networks may collect your IP addresses, in native or hashed forms, for purposes of controlling the distribution of text links. Slimstat collects anonymous aggregated usage statistics.</p>
 				<p>By clicking the link here below (\"I acknowledge that I have read and agree to the above Terms and Conditions\") you agree to the terms and conditions and give permission to place text links on your website when search engine crawlers access it. Your website's layout, performance and interaction with human visitors should not be altered or affected in any way. Please note that this feature can be deactivated at any time under Setting > Advanced > UAN Netword, without impact on any other feature available in Slimstat.</p>
-				<p>Copyright &copy; 2014 Get Used to IT.</p>
+				<p>WP Slimstat - Copyright &copy; 2014 Get Used to IT.</p>
 			</div>
 			
 			<div><a id='slimstat-enable-ads-toggle' href='#'>I acknowledge that I have read and agree to the above Terms and Conditions</a></div>";
@@ -225,6 +224,8 @@ class wp_slimstat_admin{
 				plugins VARCHAR(255) DEFAULT '',
 				notes VARCHAR(2048) DEFAULT '',
 				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
+				server_latency INT(10) UNSIGNED DEFAULT 0,
+				page_performance INT(10) UNSIGNED DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
 				CONSTRAINT PRIMARY KEY (id),
 				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stats_dt (dt),
@@ -374,10 +375,25 @@ class wp_slimstat_admin{
 		}
 		// --- END: Updates for version 3.5.9 ---
 
-		// --- Updates for version 3.6.1 ---
-		if (version_compare(wp_slimstat::$options['version'], '3.6.1', '<')){
-			
+		// --- Updates for version 3.7.3 ---
+		if (version_compare(wp_slimstat::$options['version'], '3.7.3', '<')){
+			$table_structure = $my_wpdb->get_results("SHOW COLUMNS FROM {$GLOBALS['wpdb']->prefix}slim_stats", ARRAY_A);
+			$columns_exist = array('server_latency' => false, 'page_performance' => false);
+
+			foreach($table_structure as $a_row){
+				if (in_array($a_row['Field'], array('server_latency', 'page_performance'))){
+					$columns_exist[$a_row['Field']] = true;
+				}
+			}
+
+			if (!$columns_exist['server_latency']){
+				$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN server_latency INT(10) UNSIGNED DEFAULT 0 AFTER visit_id");
+			}
+			if (!$columns_exist['page_performance']){
+				$my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN page_performance INT(10) UNSIGNED DEFAULT 0 AFTER server_latency");
+			}
 		}
+		// --- END: Updates for version 3.7.3 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$options['version'] = wp_slimstat::$version;

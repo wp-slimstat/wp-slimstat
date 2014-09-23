@@ -18,7 +18,7 @@ if (wp_slimstat::$options['include_outbound_links_right_now'] == 'yes'){
 
 // Report Header
 if (empty($_POST['report_id'])){
-	wp_slimstat_reports::report_header('slim_p7_02', 'tall');
+	wp_slimstat_reports::report_header('slim_p7_02', 'tall', __('Color codes','wp-slimstat').'</strong><p><span class="little-color-box is-search-engine"></span> '.__('From search result page','wp-slimstat').'</p><p><span class="little-color-box is-known-visitor"></span> '.__('Known Visitor','wp-slimstat').'</p><p><span class="little-color-box is-known-user"></span> '.__('Known Users','wp-slimstat').'</p><p><span class="little-color-box is-direct"></span> '.__('Other Humans','wp-slimstat').'</p><p><span class="little-color-box"></span> '.__('Bot or Crawler','wp-slimstat').'</p>');
 }
 
 // Get the data
@@ -44,7 +44,7 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 			if ($gethostbyaddr != $host_by_ip && !empty($gethostbyaddr)) $host_by_ip .= ', '.$gethostbyaddr;
 		}
 		
-		$results[$i]['dt'] = date_i18n(wp_slimstat_db::$formats['date_time_format'], $results[$i]['dt'], true);
+		$results[$i]['dt'] = date_i18n(wp_slimstat::$options['date_time_format'], $results[$i]['dt'], true);
 
 		// Print session header?
 		if ($i == 0 || $results[$i-1]['visit_id'] != $results[$i]['visit_id'] || ($results[$i]['visit_id'] == 0 && ($results[$i-1]['ip'] != $results[$i]['ip'] || $results[$i-1]['browser'] != $results[$i]['browser'] || $results[$i-1]['platform'] != $results[$i]['platform']))){
@@ -108,7 +108,7 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 				$results[$i]['other_ip'] = long2ip($results[$i]['other_ip']);
 				$other_ip_address = "<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('other_ip equals '.$results[$i]['other_ip'])."'>(".__('Originating IP','wp-slimstat').": {$results[$i]['other_ip']})</a>";
 			}
-			
+
 			// Plugins
 			$plugins = '';
 			if (!empty($results[$i]['plugins'])){
@@ -124,7 +124,12 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 
 		echo "<p>";
 		$results[$i]['referer'] = (strpos($results[$i]['referer'], '://') === false)?"http://{$results[$i]['domain']}{$results[$i]['referer']}":$results[$i]['referer'];
-		
+
+		$performance = '';
+		if (!empty($results[$i]['server_latency']) || !empty($results[$i]['page_performance'])){
+			$performance = "<i class='slimstat-font-gauge spaced' title='".__('Server Latency and Page Speed in milliseconds','wp-slimstat')."'></i> ".__('SL','wp-slimstat').": {$results[$i]['server_latency']} / ".__('PS','wp-slimstat').": {$results[$i]['page_performance']}";
+		}
+
 		// Permalink: find post title, if available
 		if (!empty($results[$i]['resource'])){
 			$base_url = '';
@@ -146,7 +151,7 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 		$results[$i]['outbound_domain'] = (!empty($results[$i]['outbound_domain']))?"<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this outbound link in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_domain']}":'';
 		$results[$i]['dt'] = "<i class='spaced slimstat-font-clock' title='".__('Date and Time','wp-slimstat')."'></i> {$results[$i]['dt']}";
 		$results[$i]['content_type'] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
-		echo "{$results[$i]['resource']} <span class='details'>{$results[$i]['searchterms']} {$results[$i]['domain']} {$results[$i]['outbound_domain']} {$results[$i]['content_type']} {$results[$i]['dt']}</span>";
+		echo "{$results[$i]['resource']} <span class='details'>{$results[$i]['searchterms']} {$results[$i]['domain']} {$results[$i]['outbound_domain']} {$results[$i]['content_type']} $performance {$results[$i]['dt']}</span>";
 		echo '</p>';
 	}
 	
@@ -159,11 +164,5 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 if (empty($_POST['report_id'])): ?>
 	</div>
 </div>
-<p style="clear:both" class="legend"><span class="legend-title"><?php _e('Color codes','wp-slimstat') ?>:</span>
-	<span class="little-color-box is-search-engine"><?php _e('Visit with keywords','wp-slimstat') ?></span>
-	<span class="little-color-box is-known-visitor"><?php _e('Known Visitor','wp-slimstat') ?></span>
-	<span class="little-color-box is-known-user"><?php _e('Known User','wp-slimstat') ?></span>
-	<span class="little-color-box is-direct"><?php _e('Human Visitor','wp-slimstat') ?></span>
-	<span class="little-color-box"><?php _e('Bot or Crawler','wp-slimstat') ?></span>
-</p><?php
+<?php
 endif; 
