@@ -1,0 +1,5215 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP SlimStat\n"
+"POT-Creation-Date: 2014-03-02 22:44-0500\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Get Used To IT <support@getused.to.it>\n"
+"Language-Team: Salman <salmanmp@gmail.com>\n"
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.6.3\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: ../..\n"
+
+#: ../../wp-slimstat.php:1179 ../../admin/wp-slimstat-admin.php:411
+#: ../../admin/config/index.php:58 ../../admin/view/wp-slimstat-reports.php:28
+msgid "Activity Log"
+msgstr "فهرست فعالیت ها"
+
+#: ../../wp-slimstat.php:1180 ../../admin/wp-slimstat-admin.php:412
+#: ../../admin/wp-slimstat-admin.php:429
+#: ../../admin/view/wp-slimstat-reports.php:29
+msgid "Overview"
+msgstr "مرور"
+
+#: ../../wp-slimstat.php:1181 ../../admin/wp-slimstat-admin.php:413
+#: ../../admin/wp-slimstat-admin.php:430
+#: ../../admin/view/wp-slimstat-reports.php:30
+msgid "Visitors"
+msgstr "بینندگان"
+
+#: ../../wp-slimstat.php:1182 ../../admin/wp-slimstat-admin.php:414
+#: ../../admin/wp-slimstat-admin.php:431
+#: ../../admin/view/wp-slimstat-reports.php:31
+msgid "Content"
+msgstr "محتوا"
+
+#: ../../wp-slimstat.php:1183 ../../admin/wp-slimstat-admin.php:415
+#: ../../admin/wp-slimstat-admin.php:432 ../../admin/view/index.php:169
+#: ../../admin/view/wp-slimstat-reports.php:32
+msgid "Traffic Sources"
+msgstr "منابع ترافیک"
+
+#: ../../wp-slimstat.php:1184 ../../admin/wp-slimstat-admin.php:416
+#: ../../admin/wp-slimstat-admin.php:433
+#: ../../admin/view/wp-slimstat-reports.php:33
+#: ../../admin/view/wp-slimstat-reports.php:101
+msgid "World Map"
+msgstr "نقشه جهان"
+
+#: ../../wp-slimstat.php:1185 ../../admin/wp-slimstat-admin.php:417
+#: ../../admin/wp-slimstat-admin.php:434
+#: ../../admin/view/wp-slimstat-reports.php:34
+msgid "Custom Reports"
+msgstr "گزارش دلخواه"
+
+#: ../../wp-slimstat.php:1186 ../../admin/wp-slimstat-admin.php:418
+#: ../../admin/wp-slimstat-admin.php:435 ../../admin/config/addons.php:29
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:229
+msgid "Add-ons"
+msgstr "افزونه ها"
+
+#: ../../wp-slimstat.php:1189 ../../admin/wp-slimstat-admin.php:464
+#: ../../admin/wp-slimstat-admin.php:467 ../../admin/wp-slimstat-admin.php:511
+#: ../../admin/wp-slimstat-admin.php:514 ../../admin/config/index.php:14
+#: ../../admin/config/index.php:135
+msgid "Settings"
+msgstr "تنظیمات"
+
+#: ../../admin/wp-slimstat-admin.php:410 ../../admin/wp-slimstat-admin.php:422
+#: ../../admin/wp-slimstat-admin.php:425
+msgid "SlimStat"
+msgstr "SlimStat"
+
+#: ../../admin/wp-slimstat-admin.php:528
+msgid "Pageviews in the last 365 days"
+msgstr ""
+
+#: ../../admin/wp-slimstat-admin.php:552
+msgid "Show on screen"
+msgstr "روی صفحه نشان بده"
+
+#: ../../admin/wp-slimstat-admin.php:580
+msgid "Hide this notice"
+msgstr ""
+
+#: ../../admin/wp-slimstat-admin.php:607
+msgid "There was an error updating the following options:"
+msgstr "خطایی در به‌روزرسانی این موارد رخ داد:"
+
+#: ../../admin/wp-slimstat-admin.php:610
+#, fuzzy
+msgid "Your changes have been saved."
+msgstr "تنظیمات شما با موفقیت به روز شد."
+
+#: ../../admin/wp-slimstat-admin.php:633
+msgid "Save Changes"
+msgstr "ذخیره‌ی تغییرات"
+
+#: ../../admin/wp-slimstat-admin.php:652
+msgid "Yes"
+msgstr "بلی"
+
+#: ../../admin/wp-slimstat-admin.php:653
+#: ../../admin/view/wp-slimstat-reports.php:762
+msgid "No"
+msgstr "خیر"
+
+#: ../../admin/wp-slimstat-admin.php:693
+msgid ""
+"WARNING: a misconfigured setting and/or server environment is preventing WP "
+"SlimStat from properly tracking your visitors. Please <a target=\"_blank\" "
+"href=\"http://wordpress.org/extend/plugins/wp-slimstat/faq/\">check the "
+"FAQs</a> for more information."
+msgstr ""
+"اخطار: تنظیمات اشتباه است و یا اینکه محیط دامنه از ردگیری بیننده جلوگیری "
+"میکند. لطفا برای اطلاع بیشتر به<a target=\"_blank\" href=\"http://wordpress."
+"org/extend/plugins/wp-slimstat/faq/\"> سوال و پاسخ ها</a> مراجعه کنید. "
+
+#: ../../admin/wp-slimstat-admin.php:713
+msgid "Definitions"
+msgstr "تعاریف"
+
+#: ../../admin/wp-slimstat-admin.php:716
+msgid "Pageview"
+msgstr "بازدید"
+
+#: ../../admin/wp-slimstat-admin.php:716
+msgid ""
+"A request to load a single HTML file (\"page\"). This should be contrasted "
+"with a \"hit\", which refers to a request for any file from a web server. WP "
+"SlimStat logs a pageview each time the tracking code is executed"
+msgstr ""
+"درخواست بارگیری یک پرونده HTML یا \"page\" با هر درخواست دیگر از دامنه یا "
+"\"hit\" تفاوت دارد. این برنامه هر بازدید را بعد از اجرای برنامه ردگیری ثبت "
+"میکند. "
+
+#: ../../admin/wp-slimstat-admin.php:717
+msgid "(Human) Visit"
+msgstr "بیننده (انسانی)"
+
+#: ../../admin/wp-slimstat-admin.php:717
+msgid ""
+"A period of interaction between a visitor's browser and your website, ending "
+"when the browser is closed or when the user has been inactive on that site "
+"for 30 minutes"
+msgstr ""
+"تراکنش بین مرورگر ردگیری و پایگاه شما به پایان رسید وقتی که مرورگر بسته شده "
+"و یا کاربر به مدت سی دقیقه غیر فعال شده است."
+
+#: ../../admin/wp-slimstat-admin.php:718 ../../admin/view/index.php:144
+#: ../../admin/view/right-now.php:151
+msgid "Known Visitor"
+msgstr "بیننده آشنا"
+
+#: ../../admin/wp-slimstat-admin.php:718
+msgid ""
+"Any user who has left a comment on your blog, and is thus identified by "
+"Wordpress as a returning visitor"
+msgstr ""
+"هر کاربری که در تارنامه شما نظر گذاشته توسط وردپرس به عنوان «بیننده دوباره» "
+"شناخته میشود"
+
+#: ../../admin/wp-slimstat-admin.php:719
+msgid "Unique IP"
+msgstr "آی‌پی یکتا"
+
+#: ../../admin/wp-slimstat-admin.php:719
+msgid ""
+"Used to differentiate between multiple requests to download a file from one "
+"internet address (IP) and requests originating from many distinct addresses; "
+"since this measurement looks only at the internet address a pageview came "
+"from, it is useful, but not perfect"
+msgstr ""
+" این برای تشخیص دادن چندین درخواست بارگیری پرونده از یک آی پی ادرس و یا "
+"درخواست از چند آی پی ادرس مختلف میباشد؛ چون این اندازه گیری فقط نشانگر آدرس "
+"هر بازدید است، مفید میباشد ولی دقیق نیست."
+
+#: ../../admin/wp-slimstat-admin.php:720 ../../admin/wp-slimstat-admin.php:762
+#: ../../admin/view/right-now.php:101 ../../admin/view/wp-slimstat-db.php:64
+msgid "Originating IP"
+msgstr "آی‌پی منشا"
+
+#: ../../admin/wp-slimstat-admin.php:720
+msgid ""
+"the originating IP address of a client connecting to a web server through an "
+"HTTP proxy or load balancer"
+msgstr ""
+"ای پی منشا که کاربر را از طریق HTTP proxy و یا load balancer مرتبط کرده"
+
+#: ../../admin/wp-slimstat-admin.php:721
+msgid "Direct Traffic"
+msgstr "ترافیک مستقیم"
+
+#: ../../admin/wp-slimstat-admin.php:721
+msgid ""
+"All those people showing up to your Web site by typing in the URL of your "
+"Web site coming or from a bookmark; some people also call this \"default "
+"traffic\" or \"ambient traffic\""
+msgstr ""
+" تمامی کاربرانی که با وارد کردن نشانی مستقیم تارنما و یا استفاده از بوک مارک "
+"از تارنما بازدید میکنند."
+
+#: ../../admin/wp-slimstat-admin.php:722
+msgid "Search Engine"
+msgstr "موتور جستجو"
+
+#: ../../admin/wp-slimstat-admin.php:722
+msgid ""
+"Google, Yahoo, MSN, Ask, others; this bucket will include both your organic "
+"as well as your paid (PPC/SEM) traffic, so be aware of that"
+msgstr ""
+"ترافیک مرتبط با نتایج موتور جستجو (organic) و همچنین ترافیک بدست آمده توسط "
+"تبلیغات در موتورهای جستجو اینجا درهم است"
+
+#: ../../admin/wp-slimstat-admin.php:723 ../../admin/wp-slimstat-admin.php:739
+#: ../../admin/view/right-now.php:130 ../../admin/view/wp-slimstat-db.php:45
+msgid "Search Terms"
+msgstr "عبارت‌های جستجو"
+
+#: ../../admin/wp-slimstat-admin.php:723 ../../admin/wp-slimstat-admin.php:739
+msgid "Keywords used by your visitors to find your website on a search engine"
+msgstr ""
+"کلمات کلیدی که کاربران شما به وسیله‌ی آن‌ها از موتورهای جستجو، پایگاه شما را "
+"یافته‌اند."
+
+#: ../../admin/wp-slimstat-admin.php:724
+msgid "SERP"
+msgstr ""
+
+#: ../../admin/wp-slimstat-admin.php:724
+msgid ""
+"Short for search engine results page, the Web page that a search engine "
+"returns with the results of its search. The value shown represents your rank "
+"(or position) within that list of results"
+msgstr " این مقدار نشان دهنده رتبه شما در فهرست نتایج موتور جستجو میباشد."
+
+#: ../../admin/wp-slimstat-admin.php:725
+#: ../../admin/view/wp-slimstat-db.php:57
+msgid "User Agent"
+msgstr "مرورگرهای کاربران"
+
+#: ../../admin/wp-slimstat-admin.php:725
+msgid ""
+"Any program used for accessing a website; this includes browsers, robots, "
+"spiders and any other program that was used to retrieve information from the "
+"site"
+msgstr ""
+"هر برنامه که به تارنما دسترسی پیدا کند مثل مرورگر، روبات، خزنده، وغیره."
+
+#: ../../admin/wp-slimstat-admin.php:726
+#: ../../admin/view/wp-slimstat-db.php:61
+msgid "Outbound Link"
+msgstr "پیوند بیرونی"
+
+#: ../../admin/wp-slimstat-admin.php:726
+msgid ""
+"A link from one domain to another is said to be outbound from its source "
+"anchor and inbound to its target. This report lists all the links to other "
+"websites followed by your visitors."
+msgstr ""
+"پیوند از این دامنه به دامنه دیگر پیوند بیرونی نامیده میشود و برای دامنه دیگر "
+"پیوند درونی محسوب میشود. این گزارش فهرستی از تمام پیوند ها به پایگاه های "
+"دیگر و کاربران است."
+
+#: ../../admin/wp-slimstat-admin.php:733
+msgid "Basic Filters"
+msgstr "پالایه های اولیه"
+
+#: ../../admin/wp-slimstat-admin.php:736
+#: ../../admin/view/wp-slimstat-db.php:42
+msgid "Browser"
+msgstr "مرورگر"
+
+#: ../../admin/wp-slimstat-admin.php:736
+msgid "User agent (Firefox, Chrome, ...)"
+msgstr "مرورگر کاربر (فایرفاکس، کروم و ...)"
+
+#: ../../admin/wp-slimstat-admin.php:737
+#: ../../admin/view/wp-slimstat-db.php:43
+#: ../../admin/view/wp-slimstat-reports.php:483
+msgid "Country Code"
+msgstr "علامت کشور"
+
+#: ../../admin/wp-slimstat-admin.php:737
+msgid "2-letter code (us, ru, de, it, ...)"
+msgstr "علامت دو حرفی (us، ir، ...)"
+
+#: ../../admin/wp-slimstat-admin.php:738
+msgid "IP"
+msgstr "آی‌پی"
+
+#: ../../admin/wp-slimstat-admin.php:738
+msgid "Visitor's public IP address"
+msgstr "نشانی‌های آی‌پی عمومی بازدیدکنندگان"
+
+#: ../../admin/wp-slimstat-admin.php:740
+#: ../../admin/view/wp-slimstat-db.php:46
+#: ../../admin/view/wp-slimstat-reports.php:495
+msgid "Language Code"
+msgstr "علامت زبان"
+
+#: ../../admin/wp-slimstat-admin.php:740
+msgid ""
+"Please refer to this <a target=\"_blank\" href=\"http://msdn.microsoft.com/"
+"en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first "
+"column) for more information"
+msgstr ""
+"لطفا به <a target=\"_blank\" href=\"http://msdn.microsoft.com/en-us/library/"
+"ee825488(v=cs.20).aspx\"> فرهنگ زبان </a> برای اطلاع بیشتر مراجعه کنید"
+
+#: ../../admin/wp-slimstat-admin.php:741
+#: ../../admin/view/wp-slimstat-db.php:47
+msgid "Operating System"
+msgstr "سامانه عامل"
+
+#: ../../admin/wp-slimstat-admin.php:741
+msgid ""
+"Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="
+"\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">this "
+"manual page</a> for more information"
+msgstr ""
+"شناسه هایی مانندmac، win7، win98, و ... لطفا برای اطلاع بیشتر به<a target="
+"\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\"> "
+"راهنما</a> مراجعه کنید"
+
+#: ../../admin/wp-slimstat-admin.php:742
+#: ../../admin/view/wp-slimstat-db.php:48
+msgid "Permalink"
+msgstr "پیوند یکتا"
+
+#: ../../admin/wp-slimstat-admin.php:742
+msgid "URL accessed on your site"
+msgstr "نشانی هایی که مورد بازدید قرار گرفته"
+
+#: ../../admin/wp-slimstat-admin.php:743
+#: ../../admin/view/wp-slimstat-db.php:50
+msgid "Referer"
+msgstr "ارجاع‌دهنده"
+
+#: ../../admin/wp-slimstat-admin.php:743
+msgid "Complete address of the referrer page"
+msgstr "نشانی کامل صفحه‌ی ارجاع ‌دهنده"
+
+#: ../../admin/wp-slimstat-admin.php:744
+#: ../../admin/view/wp-slimstat-db.php:51
+msgid "Visitor's Name"
+msgstr "نام بیننده"
+
+#: ../../admin/wp-slimstat-admin.php:744
+msgid ""
+"Visitors' names according to the cookie set by Wordpress after they leave a "
+"comment"
+msgstr ""
+"اسامی بیننده بر مبنای خوراکی که بعد از گذاشتن نظر توسط وردپرس اختصاص داده "
+"میشود."
+
+#: ../../admin/wp-slimstat-admin.php:752
+msgid "Advanced Filters"
+msgstr "فیلترهای پیش‌رفته"
+
+#: ../../admin/wp-slimstat-admin.php:755
+#: ../../admin/view/wp-slimstat-db.php:55
+msgid "Browser Version"
+msgstr "نسخه مرورگر"
+
+#: ../../admin/wp-slimstat-admin.php:755
+msgid "user agent version (9.0, 11, ...)"
+msgstr "نسخه مرورگر کاربر"
+
+#: ../../admin/wp-slimstat-admin.php:756
+#: ../../admin/view/wp-slimstat-db.php:56
+msgid "Browser Type"
+msgstr "نوع مرورگر"
+
+#: ../../admin/wp-slimstat-admin.php:756
+msgid ""
+"1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = "
+"all others"
+msgstr ""
+"۱=خزنده‌های موتورهای جستجو، ۲=دستگاه موبایل، ۳=خوراک‌خوان، ۰=همه‌ی چیزهای دیگر"
+
+#: ../../admin/wp-slimstat-admin.php:757
+#: ../../admin/view/wp-slimstat-db.php:58
+msgid "Color Depth"
+msgstr "عمق رنگ"
+
+#: ../../admin/wp-slimstat-admin.php:757
+msgid "visitor's screen's color depth (8, 16, 24, ...)"
+msgstr "عمق رنگ صفحه نمایش کاربر (۸، ۱۶، ۲۴، ...)"
+
+#: ../../admin/wp-slimstat-admin.php:758
+#: ../../admin/view/wp-slimstat-db.php:59
+msgid "CSS Version"
+msgstr "نسخه سی‌اس‌اس "
+
+#: ../../admin/wp-slimstat-admin.php:758
+msgid ""
+"what CSS standard was supported by that browser (1, 2, 3 and other integer "
+"values)"
+msgstr "چه معیار توسط مرورگر حمایت میشود؟ ۱، ۲، ۳ و دیگر مقدار ها ... "
+
+#: ../../admin/wp-slimstat-admin.php:759
+#: ../../admin/view/wp-slimstat-db.php:60
+msgid "Pageview Attributes"
+msgstr "خصوصیات بازدید"
+
+#: ../../admin/wp-slimstat-admin.php:759
+msgid ""
+"this field is set to <em>[pre]</em> if the resource has been accessed "
+"through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
+"Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
+msgstr ""
+"این ناحیه برای تنظیمات <a target=\"_blank\" href=\"https://developer.mozilla."
+"org/en/Link_prefetching_FAQ\"> صفحه‌بندی </a> و یا شیوه های مشابه است."
+
+#: ../../admin/wp-slimstat-admin.php:760
+#: ../../admin/view/wp-slimstat-db.php:62
+msgid "Post Author"
+msgstr "نویسنده مطلب"
+
+#: ../../admin/wp-slimstat-admin.php:760
+msgid "author associated to that post/page when the resource was accessed"
+msgstr "نویسنده مرتبط با این ارسال یا صفحه وقتی این ماخذ دسترسی شد"
+
+#: ../../admin/wp-slimstat-admin.php:761
+#: ../../admin/view/wp-slimstat-db.php:63
+msgid "Post Category ID"
+msgstr "شناسه دسته‌بندی مطلب"
+
+#: ../../admin/wp-slimstat-admin.php:761
+msgid "ID of the category/term associated to the resource, when available"
+msgstr "شناسه دسته یا عبارت که با منبع مرتبط است، اگر موجود باشد"
+
+#: ../../admin/wp-slimstat-admin.php:762
+msgid "visitor's originating IP address, if available"
+msgstr "آی پی منشا که بیننده از آن ‌عازم شده، در صورت موجود بودن"
+
+#: ../../admin/wp-slimstat-admin.php:763
+#: ../../admin/view/wp-slimstat-db.php:65
+msgid "Resource Content Type"
+msgstr "نوع محتوای منبع"
+
+#: ../../admin/wp-slimstat-admin.php:763
+msgid ""
+"post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
+"post_type_archive, tag, taxonomy, category, date, author, archive, search, "
+"feed, home; please refer to the <a target=\"_blank\" href=\"http://codex."
+"wordpress.org/Conditional_Tags\">Conditional Tags</a> manual page for more "
+"information"
+msgstr ""
+"ارسال، صفحه، cpt:<em>ارسال خاص</em> ضمیمه، نشانه، رده بندی، دسته بندی، "
+"تاریخ، نویسنده، آرشیو، جستجو، خوراکی، خانه؛ لطفا برای اطلاع بیشتر به<a "
+"target=\"_blank\" href=\"http://codex.wordpress.org/Conditional_Tags\"> "
+"نشانه های شرطی</a> در صفحه راهنما مراجعه کنید."
+
+#: ../../admin/wp-slimstat-admin.php:764
+#: ../../admin/view/wp-slimstat-db.php:67
+msgid "Screen Resolution"
+msgstr "ابعاد صفحه نمایش"
+
+#: ../../admin/wp-slimstat-admin.php:764
+msgid "viewport width and height (1024x768, 800x600, ...)"
+msgstr "ابعاد صفحه نمایش (۱۰۲۴x۷۶۸، ۸۰۰x۶۰۰، ...)"
+
+#: ../../admin/wp-slimstat-admin.php:765
+#: ../../admin/view/wp-slimstat-db.php:68
+msgid "Visit ID"
+msgstr "شناسه دیدن"
+
+#: ../../admin/wp-slimstat-admin.php:765
+msgid ""
+"generally used in conjunction with <em>is not empty</em>, identifies human "
+"visitors"
+msgstr ""
+"معولا با ترکیب <em>خالی نیست</em> استفاده میشود و بیننده ها (انسان) را تشخیص "
+"میدهد"
+
+#: ../../admin/wp-slimstat-admin.php:766
+msgid "Date Filters"
+msgstr "فیلترهای تاریخ"
+
+#: ../../admin/wp-slimstat-admin.php:766
+msgid ""
+"you can specify the timeframe by entering a number in the <em>interval</em> "
+"field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, "
+"year=blank, interval=-1 will set a year-to-date filter)"
+msgstr ""
+"با وارد کردن اعداد در این ناحیه میتوانید یک مدت زمانی تعیین کنید؛ برای محدود "
+"کردن سال به روز از -1 استفاده کنید."
+
+#: ../../admin/wp-slimstat-admin.php:767
+msgid "SERP Position"
+msgstr "مکان SERP"
+
+#: ../../admin/wp-slimstat-admin.php:767
+msgid ""
+"set the filter to Referer contains cd=N&, where N is the position you are "
+"looking for"
+msgstr ""
+"تعیین صافی برای ارجاعی هایی که شامل اِن میشوند، آنجا که اِن مکانی هست که به "
+"مشخص میکنید."
+
+#: ../../admin/wp-slimstat-admin.php:776
+msgid ""
+" And for keeping an eye on your visitors with <a href=\"http://slimstat."
+"getused.to.it/\">WP SlimStat</a>."
+msgstr ""
+"و برای نظارت بیننده ها با <a href=\"http://slimstat.getused.to.it/\">WP "
+"slimStat</a>."
+
+#: ../../admin/config/addons.php:14
+msgid ""
+"There was an error retrieving the add-ons list from the server. Please try "
+"again later. Error Message:"
+msgstr ""
+" بازیابی فهرست افزونه ها از دامنه با اشکال مواجه شد. لطفا دوباره آزمایش "
+"کنید. شمار خطا: "
+
+#: ../../admin/config/addons.php:23
+msgid ""
+"There was an error decoding the add-ons list from the server. Please try "
+"again later."
+msgstr ""
+"رمزگشایی فهرست افزونه ها از دامنه با اشکال مواجه شد. لطفا دوباره آزمایش کنید."
+
+#: ../../admin/config/addons.php:30
+msgid ""
+"Add-ons extend the functionality of WP SlimStat in many interesting ways. We "
+"offer both free and premium (paid) extensions. Each add-on can be installed "
+"as a separate plugin, which will receive regular updates via the WordPress "
+"Plugins panel. In order to be notified when a new version of a premium add-"
+"on is available, please enter the <strong>license key</strong> you received "
+"when you purchased it."
+msgstr ""
+"میتوانید با استفاده از افزونه ها کارکرد برنامه را گسترش دهید. افزونه های "
+"جذابی به صورت رایگان و پولی موجود است که هر یک به طور جداگانه قابل نصب و به "
+"روز رسانی میباشد. اگر دوست دارید است از نسخه جدید افزونه با خبر شوید لطفا "
+"شماره مجوز که در هنگام خرید دریافت کردید وارد کنید."
+
+#: ../../admin/config/addons.php:36
+msgid "Add-on"
+msgstr "افزونه"
+
+#: ../../admin/config/addons.php:36
+msgid "Description"
+msgstr "توضیحات"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:18
+msgid "General"
+msgstr "عمومی"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:44
+msgid "Views"
+msgstr "مشاهده ها"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:64
+msgid "Filters"
+msgstr "فیلترها"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:128
+msgid "Permissions"
+msgstr "مجوزها"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:205
+msgid "Advanced"
+msgstr "پیش‌رفته"
+
+#: ../../admin/config/index.php:9 ../../admin/config/index.php:222
+msgid "Maintenance"
+msgstr "نگهداری"
+
+#: ../../admin/config/index.php:20 ../../admin/config/index.php:207
+msgid "Tracker"
+msgstr "ره‌گیری"
+
+#: ../../admin/config/index.php:21
+msgid "Enable Tracking"
+msgstr "فعال‌سازی رد‌گیری"
+
+#: ../../admin/config/index.php:21
+msgid ""
+"Turn the tracker on or off, but keep the reports accessible (which you would "
+"not have, if you just disabled the plugin)."
+msgstr ""
+"رهگیری را روشن و یا خاموش میکند ولی گزارش ها در دسترس خواهد بود که در صورت "
+"غیر فعال کردن افزونه بدین گونه نخواهد بود."
+
+#: ../../admin/config/index.php:22
+msgid "Monitor Admin Pages"
+msgstr "نظارت صفحه مدیریت"
+
+#: ../../admin/config/index.php:22
+msgid "Enable this option to track your users' activity within the admin."
+msgstr "برای رهگیری کاربران در ناحیه مدیریتی ین گزینه را فعال کنید."
+
+#: ../../admin/config/index.php:23
+msgid "Enable Spy Mode"
+msgstr "فعال کردن دید دزدکی"
+
+#: ../../admin/config/index.php:23
+msgid ""
+"Collect information about screen resolutions, outbound links, downloads, "
+"etc. If Tracking Mode is set to Javascript, this data will be tracked "
+"regardless of which value you set for this option."
+msgstr ""
+"جمع آوری اطلاعات در مورد ابعاد صفحه بیننده، پیوند های بیرونی، بارگیری، و "
+"غیره. در صورت انتخاب حالت ردگیری به جاواسکریپت، این داده ها رهگیری میشود "
+"صرفنظر از مقداری که اینجا اختیار میکنید."
+
+#: ../../admin/config/index.php:24
+msgid "Tracking Mode"
+msgstr " حالت ردگیری"
+
+#: ../../admin/config/index.php:24
+msgid ""
+"Select <strong>Javascript</strong> if you are using a caching plugin (W3 "
+"Total Cache, WP SuperCache, HyperCache, etc). WP SlimStat will behave pretty "
+"much like Google Analytics, and visitors whose browser does not support "
+"Javascript will be ignored. A nice side effect is that <strong>most "
+"spammers, search engines and other crawlers</strong> will not be tracked."
+msgstr ""
+"اگر از یک افزونه یادگاهی (W3 Total Cache ،WP SuperCache ،HyperCache و غیره) "
+"استفاده میکنید<strong>Javascript</strong> را انتخاب کنید. این برنامه بسیار "
+"شبیه Google Anaylyti عمل میکند و مرورگر بینندگانی که جاواسکریپت نداشته باشند "
+"پذیرفته نمیشود. اثر جانبی این حالت این است که بیشتر هرز ها، موتورهای جستجو و "
+"دیگر خزنده ها نیز دیگر رهگیری نمیشوند."
+
+#: ../../admin/config/index.php:24
+msgid "Javascript"
+msgstr "جاوااسکریپت"
+
+#: ../../admin/config/index.php:24
+msgid "Server-side"
+msgstr "طرف دامنه"
+
+#: ../../admin/config/index.php:26
+msgid "WordPress Integration"
+msgstr "تلفیق کردن وردپرس"
+
+#: ../../admin/config/index.php:27
+msgid "Menu Position"
+msgstr "محل گزینگان"
+
+#: ../../admin/config/index.php:27
+msgid ""
+"Choose between a standalone admin menu for WP SlimStat or a drop down in the "
+"admin bar (if visible)."
+msgstr "بین گزینگان مدیریتی ثابت و یا گزینگان مدیریتی ابشاری انتخاب کنید."
+
+#: ../../admin/config/index.php:27
+msgid "Side Menu"
+msgstr "گزینگان کناره"
+
+#: ../../admin/config/index.php:27
+msgid "Admin Bar"
+msgstr " منوی مدیریت"
+
+#: ../../admin/config/index.php:28
+msgid "Add Stats to Posts"
+msgstr "یک ستون به نوشته‌ها اضافه کن"
+
+#: ../../admin/config/index.php:28
+msgid ""
+"Add a new column to the Edit Posts screen, with the number of hits per post."
+msgstr ""
+"یک ستون جدید به صفحه «ویرایش ارسال» اضافه می‌کند، که شامل تعداد بازدید برای "
+"هر ارسال میباشد (ممکن است مدت تحویل را زیاد کند)"
+
+#: ../../admin/config/index.php:30
+msgid "Database"
+msgstr "پایگاه داده"
+
+#: ../../admin/config/index.php:31
+msgid "Retain data for"
+msgstr "نگاه داشتن داده برای"
+
+#: ../../admin/config/index.php:31
+msgid ""
+"Delete log entries older than the number of days specified here above. Enter "
+"<strong>0</strong> (number zero) if you want to preserve your data "
+"regardless of its age."
+msgstr ""
+"ورودی هایی که از تعداد روزها زیر بیشتر باشد حذف میشوند. صفر وارد کنید اگر "
+"مایل به حفظ داده ها صرفنظر از تاریخ آن هستید."
+
+#: ../../admin/config/index.php:31
+msgid "Next clean-up on"
+msgstr "تمیزکاری بعدی در"
+
+#: ../../admin/config/index.php:31
+#, php-format
+msgid "Entries logged on or before %s will be permanently deleted."
+msgstr "ردیف‌های مربوط به روز %s و قبل از آن حذف خواهند شد."
+
+#: ../../admin/config/index.php:31 ../../admin/view/index.php:77
+#: ../../admin/view/wp-slimstat-db.php:75
+#: ../../admin/view/wp-slimstat-reports.php:762
+msgid "days"
+msgstr "روز"
+
+#: ../../admin/config/index.php:46
+msgid "Data and Formats"
+msgstr "داده و نگارش ها"
+
+#: ../../admin/config/index.php:47
+msgid "Convert IP Addresses"
+msgstr "تبدیل نشانی آی‌پی"
+
+#: ../../admin/config/index.php:47
+msgid "Display provider names instead of IP addresses."
+msgstr "نمایش خدمات دهنده ها به جای ای پی"
+
+#: ../../admin/config/index.php:48
+msgid "Number Format"
+msgstr "نگارش اعداد"
+
+#: ../../admin/config/index.php:48
+msgid ""
+"Choose the number format you want to use for your reports, European or "
+"American."
+msgstr ""
+"نگارش مناسب برای ملاحظه گزارش اعداد را نتخاب کنید، امریکایی یا اروپایی."
+
+#: ../../admin/config/index.php:49
+msgid "Show Display Name"
+msgstr "نمایش نام صفحه نمایش"
+
+#: ../../admin/config/index.php:49
+msgid ""
+"By default, users are listed by their usernames. Use this option to "
+"visualize their display names instead."
+msgstr ""
+"به طور پیش فرظ، کاربران با نام کاربری فهرست بندی میشوند. این گزینه کاربران "
+"را با نام فهرست بندی میکند."
+
+#: ../../admin/config/index.php:50
+msgid "Show User Agent"
+msgstr "نمایش عامل کاربر "
+
+#: ../../admin/config/index.php:50
+msgid ""
+"Choose if you want to see the browser name or a complete user agent string "
+"when hovering on browser icons."
+msgstr ""
+" این گزینه را انتخاب کنید اگر میخواهید اسم مرورگر یا نام کامل کاربر را با "
+"توقف اشاره گر بر روی نقشک ملاحظه کنید."
+
+#: ../../admin/config/index.php:51
+msgid "Show Titles"
+msgstr "نمایش عناوین"
+
+#: ../../admin/config/index.php:51
+msgid ""
+"WP SlimStat converts your permalinks into post and page titles. Disable this "
+"feature if you need to see the URL in your reports."
+msgstr ""
+" تمامی پیوندهای یکتا را به ارسال و صفحه تبدیل میکند. این ویژگی را غیرفعال "
+"کنید اگر در گزارش به نشانی نیاز دارید"
+
+#: ../../admin/config/index.php:53
+msgid "Functionality"
+msgstr "کاربردی"
+
+#: ../../admin/config/index.php:54
+msgid "Asynchronous Views"
+msgstr "دید غیرهم‌زمان(آسنکرون)"
+
+#: ../../admin/config/index.php:54
+msgid ""
+"Load all the reports dynamically. It makes the reports render faster, but it "
+"increases the load on your server."
+msgstr ""
+"بارگزاری همه گزارشها به صورت پویا که ارائه آن را تسریع میکند ولی فشار به "
+"دامنه را نیز افزایش میدهد.  "
+
+#: ../../admin/config/index.php:55
+msgid "Expand Details"
+msgstr "گسترش جزئیات"
+
+#: ../../admin/config/index.php:55
+msgid "Expand each row's details by default, insted of on mousehover."
+msgstr "گشترش جزئیات‌ هر سطر به طور پیش فرظ، به جای رویت با توقف اشاره گر"
+
+#: ../../admin/config/index.php:56 ../../admin/config/index.php:60
+msgid "Rows to Display"
+msgstr "نمایش ردیف ها"
+
+#: ../../admin/config/index.php:56
+msgid "Specify the number of items in each report."
+msgstr "تعداد موردها در هر گزارش را مشخص کنید."
+
+#: ../../admin/config/index.php:59
+msgid "Live Stream"
+msgstr "پخش زنده"
+
+#: ../../admin/config/index.php:59
+#, fuzzy
+msgid ""
+"Enable the Live view, which refreshes the Activity Log every X seconds. "
+"Enter <strong>0</strong> (number zero) to disable this functionality."
+msgstr ""
+"فعال کردن «نمای زنده» صفحه «همین حالا» را هر چند ثانیه تازه سازی میکند. برای "
+"فیرفعال کردن صفر وارد کنید."
+
+#: ../../admin/config/index.php:59 ../../admin/config/index.php:210
+msgid "seconds"
+msgstr "ثانیه"
+
+#: ../../admin/config/index.php:60
+#, fuzzy
+msgid "Specify the number of items in the Activity Log."
+msgstr " تعداد موردها در فهرست صفحه «همین حالا» را مشخص کنید"
+
+#: ../../admin/config/index.php:61
+#, fuzzy
+msgid "Activity Log Extended"
+msgstr "فهرست فعالیت ها"
+
+#: ../../admin/config/index.php:61
+#, fuzzy
+msgid ""
+"Choose if you want to see outbound links listed in the Activity Log. It "
+"might slow down the rendering of this report."
+msgstr ""
+"اگر مایل به رویت پیوندهای بیرونی در فهرست بخش همین حالا هستید انتخاب کنید. "
+"ممکن است به طول انجامیدن تحویل گزارش منجر شود."
+
+#: ../../admin/config/index.php:66
+msgid "Visitors and Known Users"
+msgstr "بیننده و کاربران آشنا"
+
+#: ../../admin/config/index.php:67
+msgid "Track Registered Users"
+msgstr "ره‌گیری کاربران ثبت شده"
+
+#: ../../admin/config/index.php:67
+msgid "Enable this option to track logged in users."
+msgstr "اگر می‌خواهید کاربران وارد شده را ره‌گیری کنید این گزینه را فعال کنید."
+
+#: ../../admin/config/index.php:68
+msgid "Blacklist by Username"
+msgstr " فهرست سیاه با نشانی آی‌پی"
+
+#: ../../admin/config/index.php:68
+msgid ""
+"List all the usernames you don't want to track, separated by commas. Please "
+"be aware that spaces are <em>not</em> ignored and that usernames are case "
+"sensitive."
+msgstr ""
+"فهرست نام کاربرانی که نمیخواهید رهگیری کنید، تفکیک شده با ویرگول. لطفا در "
+"نظر داشته باشید که فاصله ها و حروف کوچک و بزرگ نیز حساب میشود."
+
+#: ../../admin/config/index.php:69
+msgid "Blacklist by IP Address"
+msgstr " فهرست سیاه با نشانی آی‌پی"
+
+#: ../../admin/config/index.php:69
+msgid ""
+"List all the IP addresses you don't want to track, separated by commas. Each "
+"network <strong>must</strong> be defined using the <a href='http://en."
+"wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR "
+"notation</a> (i.e. <em>192.168.0.0/24</em>). If the format is incorrect, WP "
+"SlimStat may not track pageviews properly."
+msgstr ""
+"فهرست آی پی آدرس هایی که نمیخواهید رهگیری کنید، با ویرگول جدا شده است. هر "
+"شبکه باید با استفاده از علامتگذاری<a href='http://en.wikipedia.org/wiki/"
+"Classless_Inter-Domain_Routing' target='_blank'>CIDR</a> تعریف شود (مثل "
+"<em>192.168.0.0/24</em>) و اگر نگارش صحیح نباشد رهگیری به درستی انجام نمیشود."
+
+#: ../../admin/config/index.php:70
+msgid "Blacklist by Capability"
+msgstr "کاربران بر اساس توانایی"
+
+#: ../../admin/config/index.php:70
+msgid ""
+"Users having at least one of the <a href='http://codex.wordpress.org/"
+"Roles_and_Capabilities' target='_new'>capabilities</a> listed here below "
+"will not be tracked. Capabilities are case-insensitive."
+msgstr ""
+"کاربرانی که حداقل یکی از<a href='http://codex.wordpress.org/"
+"Roles_and_Capabilities' target='_new'> خواص</a> زیر را داشته باشند ردگیری "
+"نمیشوند (به بزرگ و کوچک بودن را دقت داشته باشید)."
+
+#: ../../admin/config/index.php:72
+msgid "Profiling"
+msgstr "نمایه"
+
+#: ../../admin/config/index.php:73
+msgid "Ignore Spammers"
+msgstr "نادیده گرفتن هرزها"
+
+#: ../../admin/config/index.php:73
+msgid ""
+"Enable this option if you don't want to track visits from users identified "
+"as spammers by third-party tools like Akismet. Pageviews generated by users "
+"whose comments are later marked as spam, will also be removed from the "
+"database."
+msgstr ""
+" اگر نمیخواهید بازدید کاربرانی که هرز شناخته شده اند (توسط برنامه هایی مثل "
+"Akismet) را رهگیری کنید این گزینه را فعال کنید. بازدید های کاربرانی که بعدا "
+"به صورت هرز شناخته شوند از پایگاه داده ها نیز حذف میشوند."
+
+#: ../../admin/config/index.php:74
+msgid "Permalinks"
+msgstr "پیوندهای یکتا"
+
+#: ../../admin/config/index.php:74
+msgid ""
+"List all the URLs on your website that you don't want to track, separated by "
+"commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. "
+"Wildcards: <code>*</code> matches 'any string, including the empty string', "
+"<code>!</code> matches 'any character'. For example, <code>/abou*</code> "
+"will match /about and /abound, <code>/abo*t</code> will match /aboundant "
+"and /about, <code>/abo!t</code> will match /about and /abort. Strings are "
+"case-insensitive."
+msgstr ""
+"فهرست تمامی نشانی هایی در تارنمای شما که نمیخواهید رهگیری کنید، تفکیک شده با "
+"ویرگول. نام دامنه را وارد نکنید. مثلا: <em>/about, ?p=1</em>, etc. "
+"Wildcards: <code>*</code> matches 'any string, including the empty string', "
+"<code>!</code> matches 'any character'. For example, <code>/abou*</code> "
+"will match /about and /abound, <code>/abo*t</code> will match /aboundant "
+"and /about, <code>/abo!t</code> will match /about and /abort. Strings are "
+"case-insensitive."
+
+#: ../../admin/config/index.php:75
+msgid "Countries"
+msgstr "کشورها"
+
+#: ../../admin/config/index.php:75
+msgid ""
+"Country codes (i.e.: <code>en-us, it, es</code>) that you don't want to "
+"track, separated by commas."
+msgstr ""
+"کد کشورهایی که مایل به رهگیری نیستید، تفکیک شده با ویرگول مثل <code>en-us, "
+"it, es</code>"
+
+#: ../../admin/config/index.php:76
+msgid "User Agents"
+msgstr "مرورگرهای کاربران"
+
+#: ../../admin/config/index.php:76
+msgid ""
+"Browsers (user agents) you don't want to track, separated by commas. You can "
+"specify the browser's version adding a slash after the name  (i.e. "
+"<em>Firefox/3.6</em>). Wildcards: <code>*</code> matches 'any string, "
+"including the empty string', <code>!</code> matches 'any character'. For "
+"example, <code>Chr*</code> will match Chrome and Chromium, <code>IE/!.0</"
+"code> will match IE/7.0 and IE/8.0. Strings are case-insensitive."
+msgstr ""
+" Wildcards: <code>*</code> matches 'any string, including the empty string', "
+"<code>!</code> matches 'any character'. For example, <code>Chr*</code> will "
+"match Chrome and Chromium, <code>IE/!.0</code> will match IE/7.0 and IE/8.0. "
+"Strings are case-insensitive.مرورگرهایی که نمیخواهید رهگیری کنید، تفکیک شده "
+"با ویرگول. میتوانید نسخه مرورگر را نیز مشخص کنید. مثلا <em>Firefox/3.6</em>. "
+
+#: ../../admin/config/index.php:77
+msgid "Referring Sites"
+msgstr "سایت ارجاع دهنده"
+
+#: ../../admin/config/index.php:77
+msgid ""
+"Referring URLs that you don't want to track, separated by commas: "
+"<code>http://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. "
+"Wildcards: <code>*</code> matches 'any string, including the empty string', "
+"<code>!</code> matches 'any character'. Strings are case-insensitive. Please "
+"include either a wildcard or the protocol you want to filter (http://, "
+"https://)."
+msgstr ""
+"نشانی های ارجاع کننده ای که مایل به رهگیری آنها نیستید، تفکیک شده با ویرگول. "
+"به عنوان مثال:<code>http://mysite.com*</code>, <code>*/ignore-me-please</"
+"code>, و غیره. Wildcards: <code>*</code> matches 'any string, including the "
+"empty string', <code>!</code> matches 'any character'. Strings are case-"
+"insensitive. Include either a wildcard or the protocol you want to filter "
+"(http://, https://)."
+
+#: ../../admin/config/index.php:79 ../../admin/config/index.php:215
+msgid "Miscellaneous"
+msgstr "متفرقه"
+
+#: ../../admin/config/index.php:80
+msgid "Enable Privacy Mode"
+msgstr "فعال کردن حالت حریم"
+
+#: ../../admin/config/index.php:80
+msgid "Mask your visitors' IP addresses to comply with European Privacy Laws."
+msgstr "این گزینه نشانی آی‌پی بیننده را طبق قوانین حریم خصوصی اروپا پنهان میکند"
+
+#: ../../admin/config/index.php:81
+msgid "Ignore Prefetch Requests"
+msgstr "نادیده گرفتن درخواست صفحه‌بندی"
+
+#: ../../admin/config/index.php:81
+msgid ""
+"Prevent WP SlimStat from tracking pageviews generated by Firefox's <a "
+"href='https://developer.mozilla.org/en/Link_prefetching_FAQ' "
+"target='_blank'>Link Prefetching functionality</a>."
+msgstr ""
+"جلوگیری کردن از ردگیری بازدیدهایی که توسط <a href='https://developer.mozilla."
+"org/en/Link_prefetching_FAQ' target='_blank'>صفحه‌بندی</a> برنامه Firefox "
+"صورت میگیرد."
+
+#: ../../admin/config/index.php:97
+msgid "Ignore users (username not found)"
+msgstr "نادیده گرفتن کاربر(شناسه کاربر یافت نشد)"
+
+#: ../../admin/config/index.php:120
+msgid ""
+"Invalid capability. Please check <a href=\"http://codex.wordpress.org/"
+"Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
+msgstr ""
+"توانایی صحیح نمیباشد. لطفا برای اطلاع بیشتر به صفحه<a href=\"http://codex."
+"wordpress.org/Roles_and_Capabilities\" target=\"_new\"> نقش و توانایی</a> "
+"مراجعه کنید."
+
+#: ../../admin/config/index.php:130
+msgid "Reports"
+msgstr "گزارش ها"
+
+#: ../../admin/config/index.php:131
+msgid "Restrict Authors"
+msgstr "محدود کردن نویسنده‌ها"
+
+#: ../../admin/config/index.php:131
+msgid ""
+"Enable this option if you want your authours to only see stats related to "
+"their own content."
+msgstr ""
+"اگر میخواهید نویسنده ها فقط آمار مربوط به محتوای خود را رویت کنند این گزینه "
+"را فعال کنید."
+
+#: ../../admin/config/index.php:132 ../../admin/config/index.php:136
+msgid "Capability"
+msgstr "کاربران بر اساس توانایی"
+
+#: ../../admin/config/index.php:132
+#, fuzzy
+msgid ""
+"Specify the minimum <a href='http://codex.wordpress.org/"
+"Roles_and_Capabilities' target='_new'>capability</a> needed to access the "
+"reports (default: <code>activate_plugins</code>). If this field is empty, "
+"<strong>all your users</strong> (including subscribers) will have access to "
+"the reports, unless a 'Read access' whitelist has been specified here below. "
+"In this case, the list has precedence over the capability."
+msgstr ""
+"حداقل<a href='http://codex.wordpress.org/Roles_and_Capabilities' "
+"target='_new'> توانایی</a> برای دسترسی به گزارش های را مشخص کنید. اگر این "
+"ناحیه خالی باشد همه کاربران (از جمله مشترکین) به گزارش ها دسترسی خواهند "
+"داشت، مگر اینکه اجازه فهرست سفید اینجا مشخص شود. در این صورت فهرست اولویت "
+"میگیرد بر قابلیت."
+
+#: ../../admin/config/index.php:133 ../../admin/config/index.php:137
+msgid "Whitelist"
+msgstr "فهرست سفید"
+
+#: ../../admin/config/index.php:133
+msgid ""
+"List all the users who should have access to the reports, separated by "
+"commas. Administrators are implicitly allowed, so you don't need to list "
+"them in here. Usernames are case sensitive."
+msgstr ""
+"فهرست کاربرانی که به گزارش ها دسترسی دارند، تفکیک شده با ویرگول. مدیرها به "
+"طور کامل دسترسی دارند و نیاز به وارد کردن اینجا نخواهند داشت. کوچک و بزرگ "
+"بودن حروف مهم است."
+
+#: ../../admin/config/index.php:136
+msgid ""
+"Specify the minimum <a href='http://codex.wordpress.org/"
+"Roles_and_Capabilities' target='_new'>capability</a> required to configure "
+"WP SlimStat (default: <code>activate_plugins</code>). The whitelist here "
+"below can be used to override this option for specific users."
+msgstr ""
+"حداقل<a href='http://codex.wordpress.org/Roles_and_Capabilities' "
+"target='_new'> توانایی</a> برای دسترسی برای تنظیمات را مشخص کنید. این فهرست "
+"سفید اختیارات کاربران خاص را لفو میکند."
+
+#: ../../admin/config/index.php:137
+msgid ""
+"List all the users who can edit these options, separated by commas. Please "
+"be advised that admins <strong>are not</strong> implicitly allowed, so do "
+"not forget to include yourself! Usernames are case sensitive."
+msgstr ""
+"فهرست کاربرانی که توانایی ویرایش این گزینه ها را دارند، تفکیک شده با ویرگول. "
+"از وارد کردن نام خود در این فهرست مطمئن شوید."
+
+#: ../../admin/config/index.php:153
+msgid "Read access: username not found"
+msgstr "دست‌رسی خواندن: شناسه کاربری یافت نشد"
+
+#: ../../admin/config/index.php:166 ../../admin/config/index.php:197
+msgid ""
+"Invalid minimum capability. Please check <a href=\"http://codex.wordpress."
+"org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more "
+"information"
+msgstr ""
+"حداقل توانایی صحیح نیست. لطفا برای اطلاع بیشتر به صفحه<a href=\"http://codex."
+"wordpress.org/Roles_and_Capabilities\" target=\"_new\"> نقش و توانایی</a> "
+"مراجعه کنید."
+
+#: ../../admin/config/index.php:184
+msgid "Config access: username not found"
+msgstr "دست‌رسی پیکربندی: شناسه کاربری یافت نشد"
+
+#: ../../admin/config/index.php:208
+msgid "Detect Smoothing"
+msgstr "یافتن اسموتینگ"
+
+#: ../../admin/config/index.php:208
+msgid ""
+"Detect if your visitors' browsers support anti-aliasing (font smoothing). "
+"This option required Spy Mode to be enabled."
+msgstr ""
+" تشخیص دادن مرورگرهایی که از ضد-بدنمایی (font smoothing) استفاده میکنند. این "
+"گزینه نیاز به فعال کردن «دید دزدکی» دارد."
+
+#: ../../admin/config/index.php:209
+msgid "Track Outbound Clicks"
+msgstr "ره‌گیری کلیک های بیرونی"
+
+#: ../../admin/config/index.php:209
+msgid ""
+"Track when your visitors click on link to external websites. This option "
+"required Spy Mode to be enabled."
+msgstr ""
+"پیوندهایی که بازدیدکننده را به خارج از پایگاه ها میبرد رهگیری کنید. این "
+"گزینه نیاز به فعال کردن دید دزدکی دارد."
+
+#: ../../admin/config/index.php:210
+msgid "Session Duration"
+msgstr "مدت جلسه"
+
+#: ../../admin/config/index.php:210
+#, fuzzy
+msgid ""
+"How many seconds should a human session last? Google Analytics sets it to "
+"1800 seconds."
+msgstr ""
+"چند ثانیه جلسه (انسان) در پایگاه به طول انجامد؟ گوگل آنالیتیک این مقدار را "
+"۱۸۰۰ ثانیه در نظر می‌گیرد."
+
+#: ../../admin/config/index.php:211
+msgid "Extend Session"
+msgstr "گسترش جلسه"
+
+#: ../../admin/config/index.php:211
+msgid "Extend the duration of a session each time the user visits a new page."
+msgstr ""
+"هر بار که کاربر یک صفحه جدید را دیدن می‌کند مدت جلسه را به این مقدار گسترش "
+"می‌دهد."
+
+#: ../../admin/config/index.php:212
+msgid "Enable CDN"
+msgstr "فعال‌سازی CDN"
+
+#: ../../admin/config/index.php:212
+msgid ""
+"Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, "
+"by serving our tracking code from their fast and reliable network (free "
+"service)."
+msgstr ""
+"از سی دی اِن <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a> "
+"استفاده کنید و از خدمات ردگیری ما در شبکه سریع و مطمئن بهره مند شوید "
+"(رایگان)."
+
+#: ../../admin/config/index.php:213
+msgid "Extensions to Track"
+msgstr "پسوندهایی که رهیابی شوند"
+
+#: ../../admin/config/index.php:213
+msgid ""
+"List all the file extensions that you want to be treated as Downloads. "
+"Please note that links pointing to external resources (i.e. PDFs on a "
+"different website) are considered Downloads and not Outbound Links (and "
+"tracked as such), if their extension matches one of the ones listed here "
+"below."
+msgstr ""
+"فهرست تمامی پسونده هایی که میخواهد مانند بارگیری حساب شود. لطفا در نظر داشته "
+"باشید که پیوندهای منابع خارجی (مثل پی دی اف در پایگاه دیگر) بارگیری محسوب "
+"میشود و نه پیوند بیرونی اگر پسوند آنها با این فهرست تطبیق داشته باشد."
+
+#: ../../admin/config/index.php:216
+msgid "Debug Mode"
+msgstr ""
+
+#: ../../admin/config/index.php:216
+msgid "Display the SQL queries used to retrieve the data."
+msgstr ""
+
+#: ../../admin/config/index.php:217
+msgid "IP Lookup"
+msgstr "ره‌گیری بر اساس نشانی آی‌پی"
+
+#: ../../admin/config/index.php:217
+msgid "Customize the Geolocation service to be used in the reports."
+msgstr "خدمات مکان-جفرافی برای گزارش ها را دلخواه کنید. "
+
+#: ../../admin/config/index.php:218
+msgid "Custom CSS"
+msgstr "سی‌اس‌اس دلخواه"
+
+#: ../../admin/config/index.php:218
+#, fuzzy
+msgid ""
+"Paste here your custom stylesheet to personalize the way your reports look. "
+"<a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
+"target='_blank'>Check the FAQ</a> for more information on how to use this "
+"setting."
+msgstr ""
+"سی‌اس‌اس دلخواه خود را اینجا وارد کنید و گزارش ها را شخصی کنید. برای اطلاع "
+"بیشتر به<a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
+"target='_blank'> سوالهای رایج</a> مراجعه کنید."
+
+#: ../../admin/config/index.php:219
+msgid "Enable UAN"
+msgstr "فعال‌سازی UAN"
+
+#: ../../admin/config/index.php:219
+#, fuzzy
+msgid ""
+"Send anonymous data about unknown user agents to our server for analysis. "
+"This allows us to contribute to the <a href='http://browscap.org/' "
+"target='_blank'>BrowsCap opensource project</a>, and improve the accuracy of "
+"WP SlimStat's browser detection functionality."
+msgstr ""
+" میتوانید اطلاعات کابر مشکوک را برای تحلیل به صورت ناشناس برای ما ارسال "
+"کنید. با کمک کردن به <a href='http://browscap.co/' target='_blank'>BrowsCap "
+"opensource project</a> توانایی برنامه برای شناختن مرورگرها را بیشتر میشود."
+
+#: ../../admin/config/maintenance.php:20
+msgid "Your WP SlimStat tables have been successfully converted to InnoDB."
+msgstr "جداول WP SlimStat با موفقیت به InnoDB تبدیل شد."
+
+#: ../../admin/config/maintenance.php:30
+msgid "records deleted from your database."
+msgstr "اطلاعات از پایگاه داده ها حذف شد."
+
+#: ../../admin/config/maintenance.php:34
+msgid "All the records were successfully deleted."
+msgstr "همه اطلاعات با موفقیت حذف شد."
+
+#: ../../admin/config/maintenance.php:38
+msgid "Your reports were successfully restored to their default arrangement."
+msgstr "گزارش ها با موفقیت به حالت پیش فرض بازنشانی شدند."
+
+#: ../../admin/config/maintenance.php:45
+msgid ""
+"Congrats! WP SlimStat is now optimized for <a href=\"http://www.youtube.com/"
+"watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
+msgstr ""
+"تبریک! برنامه اکنون برای<a href=\"http://www.youtube.com/watch?"
+"v=ygE01sOhzz0\" target=\"_blank\"> سرعت</a> بهینه شده است."
+
+#: ../../admin/config/maintenance.php:52
+msgid ""
+"Indexing has been successfully disabled. Enjoy the extra database space you "
+"just gained!"
+msgstr ""
+"اندیس گری با موفقیت غیر فعال شد. از فضای اضافه که پایگاه داده ها بدست آورید "
+"لذت ببرید! "
+
+#: ../../admin/config/maintenance.php:83
+msgid "Database Information"
+msgstr "اطلاعات پایگاه داده"
+
+#: ../../admin/config/maintenance.php:86
+msgid "Engine"
+msgstr "موتور"
+
+#: ../../admin/config/maintenance.php:90
+msgid "switch to InnoDB"
+msgstr "تغییر حالت به InnoDB"
+
+#: ../../admin/config/maintenance.php:101
+msgid "records"
+msgstr "اطلاعات"
+
+#: ../../admin/config/maintenance.php:106
+msgid "Data Maintenance"
+msgstr "تعمیر داده ها"
+
+#: ../../admin/config/maintenance.php:109
+msgid "Delete pageviews where"
+msgstr "حذف  بازدید‌ها وقتی"
+
+#: ../../admin/config/maintenance.php:123 ../../admin/view/index.php:17
+msgid "equals"
+msgstr "مساوی‌ست با"
+
+#: ../../admin/config/maintenance.php:124 ../../admin/view/index.php:18
+msgid "is not equal to"
+msgstr "مساوی نیست با"
+
+#: ../../admin/config/maintenance.php:125 ../../admin/view/index.php:19
+msgid "contains"
+msgstr "شامل"
+
+#: ../../admin/config/maintenance.php:126 ../../admin/view/index.php:20
+msgid "does not contain"
+msgstr "ناشامل"
+
+#: ../../admin/config/maintenance.php:127 ../../admin/view/index.php:21
+msgid "starts with"
+msgstr "شروع می‌شود با"
+
+#: ../../admin/config/maintenance.php:128 ../../admin/view/index.php:22
+msgid "ends with"
+msgstr "پایان می‌یابد با"
+
+#: ../../admin/config/maintenance.php:129 ../../admin/view/index.php:23
+msgid "sounds like"
+msgstr " شبیه به"
+
+#: ../../admin/config/maintenance.php:130 ../../admin/view/index.php:24
+msgid "is greater than"
+msgstr "بزرگ‌تر است از"
+
+#: ../../admin/config/maintenance.php:131 ../../admin/view/index.php:25
+msgid "is less than"
+msgstr "کوچک‌تر است از"
+
+#: ../../admin/config/maintenance.php:132 ../../admin/view/index.php:26
+msgid "matches"
+msgstr "مطابق است با"
+
+#: ../../admin/config/maintenance.php:133 ../../admin/view/index.php:27
+msgid "does not match"
+msgstr "مطابق نیست"
+
+#: ../../admin/config/maintenance.php:134 ../../admin/view/index.php:28
+msgid "is empty"
+msgstr "خالی‌ است"
+
+#: ../../admin/config/maintenance.php:135 ../../admin/view/index.php:29
+msgid "is not empty"
+msgstr "خالی نیست"
+
+#: ../../admin/config/maintenance.php:138 ../../admin/view/index.php:32
+#: ../../admin/view/index.php:78
+msgid "Apply"
+msgstr "انجام"
+
+#: ../../admin/config/maintenance.php:139
+msgid ""
+"Are you sure you want to PERMANENTLY delete these records from your database?"
+msgstr ""
+"آیا مطمئن هستید که می‌خواهید همه‌ی این اطلاعات را از پایگاه داده حذف کنید؟"
+
+#: ../../admin/config/maintenance.php:144
+msgid "Empty Database"
+msgstr "پایگاه داده خالی"
+
+#: ../../admin/config/maintenance.php:147
+msgid ""
+"Are you sure you want to PERMANENTLY DELETE ALL the records from your "
+"database?"
+msgstr ""
+"آیا مطمئن هستید که می‌خواهید همه‌ی این اطلاعات را از پایگاه داده حذف کنید؟"
+
+#: ../../admin/config/maintenance.php:147
+msgid "Delete All Pageviews"
+msgstr "حذف همه صفحات"
+
+#: ../../admin/config/maintenance.php:148
+msgid ""
+"Erase all the information collected so far by WP SlimStat. This operation "
+"<strong>does not</strong> reset your settings."
+msgstr ""
+"حذف همه اطلاعاتی که تا حال توسط WP SlimStat جمع آوری شده است. این عملیات "
+"تنظیمات را بازنشانی نمیکند."
+
+#: ../../admin/config/maintenance.php:152
+msgid "Reset Reports"
+msgstr "تنظیم مجدد گزارش ها"
+
+#: ../../admin/config/maintenance.php:155
+msgid ""
+"Are you sure you want to restore the default arrangement of your reports?"
+msgstr " آیا مطمئنید که می‌خواهید تنظیم پیش فرظ گزارش ها را بازنشانی کنید؟"
+
+#: ../../admin/config/maintenance.php:155
+msgid "No Panic Button"
+msgstr "دکمه خطر نباشد"
+
+#: ../../admin/config/maintenance.php:156
+msgid ""
+"Reset the default arrangement of your reports. Helpful when, for some "
+"reason, reports disappear from your panels."
+msgstr ""
+" آیا مطمئنید که می‌خواهید تنظیم پیش فرظ گزارش ها به حالت پیش فرض بازنشانی "
+"کنید. این در برطرف کردن ناپدید شدن گزارش ها مفید است."
+
+#: ../../admin/config/maintenance.php:160
+msgid "Performance"
+msgstr "عملکرد"
+
+#: ../../admin/config/maintenance.php:163
+msgid "Improve Performance"
+msgstr "بهبود عملکرد"
+
+#: ../../admin/config/maintenance.php:164
+msgid ""
+"Please note that you will need about 30% more DB space to store the extra "
+"information required."
+msgstr ""
+"در  نظر داشته باشید که زخیره کردن این اطلاعات ٪۳۰ درصد حجم بیشتر در پایگاه "
+"داده اشغال میکند."
+
+#: ../../admin/config/maintenance.php:168
+msgid "Save DB Space"
+msgstr "زخیره کردن پایگاه داده"
+
+#: ../../admin/config/maintenance.php:169
+msgid ""
+"Please note that by removing table indexes, WP SlimStat's performance will "
+"be affected."
+msgstr ""
+"در نظر داشته باشید که حذف کردن شاخص بر عملکرد WP SlimStat تاثیر میگذارد"
+
+#: ../../admin/config/maintenance.php:174
+msgid "Import and Export"
+msgstr "وارد و صادر"
+
+#: ../../admin/config/maintenance.php:178
+msgid ""
+"Here below you can find the current configuration string for WP SlimStat. "
+"You can update your settings by pasting a new string here below and clicking "
+"on Import."
+msgstr ""
+
+#: ../../admin/config/maintenance.php:183
+msgid "Import"
+msgstr "واردات"
+
+#: ../../admin/config/maintenance.php:184
+msgid "Are you sure you want to OVERWRITE your current settings?"
+msgstr "مطمئنید می‌خواهید تنظیمات را بازنشانی کنید؟"
+
+# Unknown
+#: ../../admin/lang/dynamic_strings.php:3
+msgid "xx"
+msgstr "xx"
+
+#: ../../admin/lang/dynamic_strings.php:4
+msgid "unknown"
+msgstr "مجهول"
+
+#: ../../admin/lang/dynamic_strings.php:5
+msgid "win8.1"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:6
+msgid "win8"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:7
+msgid "win7"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:8
+msgid "winvista"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:9
+msgid "win2003"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:10
+msgid "winxp"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:11
+msgid "winnt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:12
+msgid "win2000"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:13
+msgid "winme"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:14
+msgid "win98"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:15
+msgid "win95"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:16
+msgid "win31"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:17
+msgid "win32"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:18
+msgid "win16"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:19
+msgid "mac68k"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:20
+msgid "macosx"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:21
+msgid "macppc"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:22
+msgid "mac"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:23
+msgid "os/2"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:24
+msgid "sunos"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:25
+msgid "solaris"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:26
+msgid "unix"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:27
+msgid "irix"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:28
+msgid "hp-ux"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:29
+msgid "aix"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:30
+msgid "beos"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:31
+msgid "cygwin"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:32
+msgid "digital unix"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:33
+msgid "risc os"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:34
+msgid "openvms"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:35
+msgid "linux"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:36
+msgid "freebsd"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:37
+msgid "openbsd"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:38
+msgid "netbsd"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:39
+msgid "debian"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:40
+msgid "amiga"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:41
+msgid "android"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:42
+msgid "wyderos"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:43
+msgid "iphone osx"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:44
+msgid "ios"
+msgstr "ios"
+
+#: ../../admin/lang/dynamic_strings.php:45
+msgid "palm"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:46
+msgid "wap"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:47
+msgid "java"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:48
+msgid "winphone7"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:49
+msgid "wince"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:50
+msgid "symbianos"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:51
+msgid "blackberry os"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:52
+msgid "webos"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:53
+msgid "p-and"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:54
+msgid "p-bla"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:55
+msgid "p-chr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:56
+msgid "p-fre"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:57
+msgid "p-ios"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:58
+msgid "p-jav"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:59
+msgid "p-lin"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:60
+msgid "p-mac"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:61
+msgid "p-sym"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:62
+msgid "p-unk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:63
+msgid "p-win"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:64
+msgid "powertv"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:65
+msgid "acrobat"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:66
+msgid "director"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:67
+msgid "flash"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:68
+msgid "mediaplayer"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:69
+msgid "quicktime"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:70
+msgid "real"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:71
+msgid "silverlight"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:72
+msgid "l-af"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:73
+msgid "l-af-za"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:74
+msgid "l-ar"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:75
+msgid "l-ar-ae"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:76
+msgid "l-ar-bh"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:77
+msgid "l-ar-dz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:78
+msgid "l-ar-eg"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:79
+msgid "l-ar-iq"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:80
+msgid "l-ar-jo"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:81
+msgid "l-ar-kw"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:82
+msgid "l-ar-lb"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:83
+msgid "l-ar-ly"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:84
+msgid "l-ar-ma"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:85
+msgid "l-ar-om"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:86
+msgid "l-ar-qa"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:87
+msgid "l-ar-sa"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:88
+msgid "l-ar-sy"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:89
+msgid "l-ar-tn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:90
+msgid "l-ar-ye"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:91
+msgid "l-az"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:92
+msgid "l-az-az"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:93
+msgid "l-be"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:94
+msgid "l-be-by"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:95
+msgid "l-bg"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:96
+msgid "l-bg-bg"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:97
+msgid "l-bs-ba"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:98
+msgid "l-ca"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:99
+msgid "l-ca-es"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:100
+msgid "l-cs"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:101
+msgid "l-cs-cz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:102
+msgid "l-cy"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:103
+msgid "l-cy-gb"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:104
+msgid "l-da"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:105
+msgid "l-da-dk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:106
+msgid "l-de"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:107
+msgid "l-de-at"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:108
+msgid "l-de-ch"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:109
+msgid "l-de-de"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:110
+msgid "l-de-li"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:111
+msgid "l-de-lu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:112
+msgid "l-dv"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:113
+msgid "l-dv-mv"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:114
+msgid "l-el"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:115
+msgid "l-el-gr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:116
+msgid "l-en"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:117
+msgid "l-en-au"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:118
+msgid "l-en-bz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:119
+msgid "l-en-ca"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:120
+msgid "l-en-cb"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:121
+msgid "l-en-gb"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:122
+msgid "l-en-ie"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:123
+msgid "l-en-jm"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:124
+msgid "l-en-nz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:125
+msgid "l-en-ph"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:126
+msgid "l-en-tt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:127
+msgid "l-en-us"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:128
+msgid "l-en-za"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:129
+msgid "l-en-zw"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:130
+msgid "l-eo"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:131
+msgid "l-es"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:132
+msgid "l-es-ar"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:133
+msgid "l-es-bo"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:134
+msgid "l-es-cl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:135
+msgid "l-es-co"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:136
+msgid "l-es-cr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:137
+msgid "l-es-do"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:138
+msgid "l-es-ec"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:139
+msgid "l-es-es"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:140
+msgid "l-es-gt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:141
+msgid "l-es-hn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:142
+msgid "l-es-mx"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:143
+msgid "l-es-ni"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:144
+msgid "l-es-pa"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:145
+msgid "l-es-pe"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:146
+msgid "l-es-pr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:147
+msgid "l-es-py"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:148
+msgid "l-es-sv"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:149
+msgid "l-es-uy"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:150
+msgid "l-es-ve"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:151
+msgid "l-et"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:152
+msgid "l-et-ee"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:153
+msgid "l-eu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:154
+msgid "l-eu-es"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:155
+msgid "l-fa"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:156
+msgid "l-fa-ir"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:157
+msgid "l-fi"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:158
+msgid "l-fi-fi"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:159
+msgid "l-fo"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:160
+msgid "l-fo-fo"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:161
+msgid "l-fr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:162
+msgid "l-fr-be"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:163
+msgid "l-fr-ca"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:164
+msgid "l-fr-ch"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:165
+msgid "l-fr-fr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:166
+msgid "l-fr-lu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:167
+msgid "l-fr-mc"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:168
+msgid "l-gl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:169
+msgid "l-gl-es"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:170
+msgid "l-gu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:171
+msgid "l-gu-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:172
+msgid "l-he"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:173
+msgid "l-he-il"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:174
+msgid "l-hi"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:175
+msgid "l-hi-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:176
+msgid "l-hr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:177
+msgid "l-hr-ba"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:178
+msgid "l-hr-hr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:179
+msgid "l-hu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:180
+msgid "l-hu-hu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:181
+msgid "l-hy"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:182
+msgid "l-hy-am"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:183
+msgid "l-id"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:184
+msgid "l-id-id"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:185
+msgid "l-is"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:186
+msgid "l-is-is"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:187
+msgid "l-it"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:188
+msgid "l-it-ch"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:189
+msgid "l-it-it"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:190
+msgid "l-ja"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:191
+msgid "l-ja-jp"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:192
+msgid "l-ka"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:193
+msgid "l-ka-ge"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:194
+msgid "l-kk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:195
+msgid "l-kk-kz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:196
+msgid "l-kn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:197
+msgid "l-kn-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:198
+msgid "l-ko"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:199
+msgid "l-ko-kr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:200
+msgid "l-kok"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:201
+msgid "l-kok-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:202
+msgid "l-ky"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:203
+msgid "l-ky-kg"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:204
+msgid "l-lt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:205
+msgid "l-lt-lt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:206
+msgid "l-lv"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:207
+msgid "l-lv-lv"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:208
+msgid "l-mi"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:209
+msgid "l-mi-nz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:210
+msgid "l-mk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:211
+msgid "l-mk-ml"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:212
+msgid "l-mn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:213
+msgid "l-mn-mn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:214
+msgid "l-mr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:215
+msgid "l-mr-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:216
+msgid "l-ms"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:217
+msgid "l-ms-bn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:218
+msgid "l-ms-my"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:219
+msgid "l-mt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:220
+msgid "l-mt-mt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:221
+msgid "l-nb"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:222
+msgid "l-nb-no"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:223
+msgid "l-nl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:224
+msgid "l-nl-be"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:225
+msgid "l-nl-nl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:226
+msgid "l-nn-no"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:227
+msgid "l-ns"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:228
+msgid "l-ns-za"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:229
+msgid "l-pa"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:230
+msgid "l-pa-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:231
+msgid "l-pl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:232
+msgid "l-pl-pl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:233
+msgid "l-ps"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:234
+msgid "l-ps-ar"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:235
+msgid "l-pt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:236
+msgid "l-pt-br"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:237
+msgid "l-pt-pt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:238
+msgid "l-qu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:239
+msgid "l-qu-bo"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:240
+msgid "l-qu-ec"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:241
+msgid "l-qu-pe"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:242
+msgid "l-ro"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:243
+msgid "l-ro-ro"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:244
+msgid "l-ru"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:245
+msgid "l-ru-ru"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:246
+msgid "l-sa"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:247
+msgid "l-sa-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:248
+msgid "l-se"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:249
+msgid "l-se-fi"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:250
+msgid "l-se-no"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:251
+msgid "l-se-se"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:252
+msgid "l-sk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:253
+msgid "l-sk-sk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:254
+msgid "l-sl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:255
+msgid "l-sl-si"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:256
+msgid "l-sq"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:257
+msgid "l-sq-al"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:258
+msgid "l-sr-ba"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:259
+msgid "l-sr-sp"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:260
+msgid "l-sv"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:261
+msgid "l-sv-fi"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:262
+msgid "l-sv-se"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:263
+msgid "l-sw"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:264
+msgid "l-sw-ke"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:265
+msgid "l-ta"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:266
+msgid "l-ta-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:267
+msgid "l-te"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:268
+msgid "l-te-in"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:269
+msgid "l-th"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:270
+msgid "l-th-th"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:271
+msgid "l-tl"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:272
+msgid "l-tl-ph"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:273
+msgid "l-tn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:274
+msgid "l-tn-za"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:275
+msgid "l-tr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:276
+msgid "l-tr-tr"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:277
+msgid "l-tt"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:278
+msgid "l-tt-ru"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:279
+msgid "l-ts"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:280
+msgid "l-uk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:281
+msgid "l-uk-ua"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:282
+msgid "l-ur"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:283
+msgid "l-ur-pk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:284
+msgid "l-uz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:285
+msgid "l-uz-uz"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:286
+msgid "l-vi"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:287
+msgid "l-vi-vn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:288
+msgid "l-xh"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:289
+msgid "l-xh-za"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:290
+msgid "l-zh"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:291
+msgid "l-zh-cn"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:292
+msgid "l-zh-hk"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:293
+msgid "l-zh-mo"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:294
+msgid "l-zh-sg"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:295
+msgid "l-zh-tw"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:296
+msgid "l-zu"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:297
+msgid "l-zu-za"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:298
+#: ../../admin/view/wp-slimstat-reports.php:496
+msgid "l-"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:299
+msgid "l-empty"
+msgstr "ناشناخته"
+
+#: ../../admin/lang/dynamic_strings.php:300
+msgid "l-xx"
+msgstr ""
+
+#: ../../admin/lang/dynamic_strings.php:301
+msgid "c-xy"
+msgstr "آدرس محلی"
+
+#: ../../admin/view/index.php:48 ../../admin/view/wp-slimstat-reports.php:783
+msgid "Today"
+msgstr "امروز‍"
+
+#: ../../admin/view/index.php:49 ../../admin/view/wp-slimstat-reports.php:784
+msgid "Yesterday"
+msgstr "دیروز"
+
+#: ../../admin/view/index.php:50
+msgid "Last 7 Days"
+msgstr "۷ روز اخیر"
+
+#: ../../admin/view/index.php:51
+#, fuzzy
+msgid "Last 60 Days"
+msgstr "۳۰ روز اخیر"
+
+#: ../../admin/view/index.php:52
+msgid "Last 90 Days"
+msgstr "۹۰ روز اخیر"
+
+#: ../../admin/view/index.php:53
+#, fuzzy
+msgid "This Year So Far"
+msgstr "امسال"
+
+#: ../../admin/view/index.php:54
+msgid "Date Range"
+msgstr "محدوده زمانی"
+
+#: ../../admin/view/index.php:56 ../../admin/view/wp-slimstat-db.php:72
+msgid "Day"
+msgstr "روز"
+
+#: ../../admin/view/index.php:66 ../../admin/view/wp-slimstat-db.php:73
+msgid "Month"
+msgstr "ماه"
+
+#: ../../admin/view/index.php:75 ../../admin/view/wp-slimstat-db.php:74
+msgid "Year"
+msgstr "سال"
+
+#: ../../admin/view/index.php:80
+#, fuzzy
+msgid "Reset Filters"
+msgstr "فیلترهای تاریخ"
+
+#: ../../admin/view/index.php:121
+msgid "Your report here"
+msgstr "گزارش شما این‌جا"
+
+#: ../../admin/view/index.php:123
+msgid ""
+"Yes, you can! Create and view your personalized analytics for WP SlimStat. "
+"Just write a new plugin that retrieves the desired information from the "
+"database and then hook it to the action <code>wp_slimstat_custom_report</"
+"code>. For more information, visit my <a href=\"http://wordpress.org/tags/wp-"
+"slimstat?forum_id=10\" target=\"_blank\">support forum</a>."
+msgstr ""
+" شما میتوانید گزارش آمار شخصی ایجاد کنید. یک افزونه بنویسید که اطلاعات مورد "
+"نظر را از پایگاه داده را به <code>wp_slimstat_custom_report</code> گزارش "
+"قلاب میکند.برای اطلاع بیشتر به صفحه<a href=\"http://wordpress.org/tags/wp-"
+"slimstat?forum_id=10\" target=\"_blank\"> پشتیبانی </a>مراجعه کنید."
+
+#: ../../admin/view/index.php:137 ../../admin/view/wp-slimstat-reports.php:774
+#: ../../admin/view/wp-slimstat-reports.php:876
+#: ../../admin/view/wp-slimstat-reports.php:1099
+msgid "Pageviews"
+msgstr "مشاهدات صفحات"
+
+#: ../../admin/view/index.php:140
+msgid ""
+"When visitors leave a comment on your blog, WordPress assigns them a cookie. "
+"WP SlimStat leverages this information to identify returning visitors. "
+"Please note that visitors also include registered users."
+msgstr ""
+"وقتی کاربران در تارنامه نظر ثبت می‌کنند، وردپرس به آن‌ها یک کلوچک اختصاص می‌دهد."
+"WP SlimStat از این اطلاعات برای شناسایی «بیننده دوباره» استفاده میکند. در "
+"نظر داشته باشید که بیننده ها شامل کاربران ثبت شده نیز میباشد."
+
+#: ../../admin/view/index.php:144
+msgid "Take a sneak peek at what human visitors are doing on your website."
+msgstr "نظارت بر اینکه کاربران در پایگاه شما چه میکنند"
+
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185 ../../admin/view/right-now.php:149
+msgid "Color codes"
+msgstr "علامت رنگی"
+
+#: ../../admin/view/index.php:144
+msgid "From a search result page"
+msgstr "از صفحه نتایج جستجو"
+
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185
+msgid "Known Users"
+msgstr "کاربران آشنا"
+
+#: ../../admin/view/index.php:144 ../../admin/view/index.php:182
+#: ../../admin/view/index.php:185
+msgid "Other Humans"
+msgstr "دیگران"
+
+#: ../../admin/view/index.php:148
+msgid "Keywords used by your visitors to find your website on a search engine."
+msgstr "عبارات کلیدی در موتورهای جستجو که بیننده را به پایگاه شما را یافته‌اند."
+
+#: ../../admin/view/index.php:151
+msgid ""
+"WP SlimStat retrieves live information from Alexa, Facebook and Google, to "
+"measures your site's rankings. Values are updated every 12 hours. Filters "
+"set above don't apply to this report."
+msgstr ""
+"با کسب اطلاعات خود از Google، Facebook و یا Alexa، رتبه خود را محک بزنید. "
+"مقادیر هر ۱۲ ساعت به روز میشوند. صافی ها بالا در این گزارش کاربرد نمیشوند. "
+
+#: ../../admin/view/index.php:154
+msgid "Human Visits"
+msgstr "بازدیدهای انسانی"
+
+#: ../../admin/view/index.php:157
+msgid ""
+"Internet Service Provider: a company which provides other companies or "
+"individuals with access to the Internet. Your DSL or cable internet service "
+"is provided to you by your ISP.<br><br>You can ignore specific IP addresses "
+"by setting the corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+"اینترنت توسط یک شرکت خدماتی (ISP) برای شما فراهم میشود. میتوانید این نشانی "
+"ای پی را با وارد کردن صافی نادیده بگیرید."
+
+#: ../../admin/view/index.php:160
+msgid ""
+"You can configure WP SlimStat to ignore a specific Country by setting the "
+"corresponding filter under Settings > SlimStat > Filters."
+msgstr ""
+"میتوانید تنظیمات برنامه برای نادیده گرفتن بعضی کشورها را تغییر دهید:Settings "
+"> SlimStat > Filters"
+
+#: ../../admin/view/index.php:163
+msgid ""
+"This report shows you what user agent families (no version considered) are "
+"popular among your visitors."
+msgstr ""
+"این گزارش نشانگر عامل کابر (بدون در نظر گرفتن نسخه) که در میان بیننده ها "
+"محبوب تر هستند میباشد."
+
+#: ../../admin/view/index.php:166
+msgid ""
+"This report shows you what operating system families (no version considered) "
+"are popular among your visitors."
+msgstr ""
+"این گزارش نشانگر محیط عامل هایی (بدون در نظر گرفتن نسخه) که در میان بیننده "
+"ها محبوب تر هستند میباشد."
+
+#: ../../admin/view/index.php:172
+msgid "Average Pageviews per Visit"
+msgstr "میان‌گین مشاهده صفحات در هر بازدید"
+
+#: ../../admin/view/index.php:175
+msgid ""
+"A <em>bounce page</em> is a single-page visit, or visit in which the person "
+"left your site from the entrance (landing) page."
+msgstr ""
+" «صفحه وازده» یک «تک-صفحه» میباشد، یا آخرین صفحه ی دیده شده قبل از آنکه "
+"بیننده پایگاه را ترک کند. "
+
+#: ../../admin/view/index.php:178
+msgid "Searches performed using Wordpress' built-in search functionality."
+msgstr "جستجوهایی که توسط جستجوی داخلی Wordpress انجام میشوند."
+
+#: ../../admin/view/index.php:182
+msgid ""
+"<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in "
+"the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding "
+"link has an ID attribute associated to it."
+msgstr ""
+"جزئيات پیوند نشان میدهد که چندمین پیوند فشار داده شده است. <em>ID:xx</em> "
+"هنگامی نشان داده میشود که پیوند مرتبط شناسه داشته باشد."
+
+#: ../../admin/view/index.php:185
+msgid ""
+"This report lists any <em>event</em> occurred on your website. Please refer "
+"to the FAQ for more information on how to leverage this functionality."
+msgstr ""
+"این گزارش تمامی رویداد های پایگاه شما را فهرست میکند. لطفا برای کسب اطلاع "
+"بیشتر در این مورد به بخش پرسش و پاسخ مراجعه کنید."
+
+#: ../../admin/view/index.php:188
+msgid ""
+"Your content at a glance: posts, comments, pingbacks, etc. Please note that "
+"this report is not affected by the filters set here above."
+msgstr ""
+"محتوای شما در یک نگاه: ارسال ها، نظرها و غیره. این گزارش با صافی های بالا "
+"کاربرد نمیشود."
+
+#: ../../admin/view/right-now.php:8
+msgid "Human"
+msgstr "انسان"
+
+#: ../../admin/view/right-now.php:8
+msgid "Bot/Crawler"
+msgstr "روبات یا خزنده"
+
+#: ../../admin/view/right-now.php:8
+msgid "Mobile Device"
+msgstr "همراه"
+
+#: ../../admin/view/right-now.php:8
+msgid "Syndication Reader"
+msgstr "پیوند ریدر"
+
+#: ../../admin/view/right-now.php:30
+#: ../../admin/view/wp-slimstat-reports.php:439
+#: ../../admin/view/wp-slimstat-reports.php:685
+msgid "No data to display"
+msgstr "داده‌ای برای نمایش نیست"
+
+# Unknown
+#: ../../admin/view/right-now.php:56
+#: ../../admin/view/wp-slimstat-reports.php:484
+#: ../../admin/view/wp-slimstat-reports.php:723
+#: ../../admin/view/wp-slimstat-reports.php:987
+msgid "c-"
+msgstr "Unknown"
+
+#: ../../admin/view/right-now.php:122
+#: ../../admin/view/wp-slimstat-reports.php:538
+#: ../../admin/view/wp-slimstat-reports.php:542
+#: ../../admin/view/wp-slimstat-reports.php:705
+#: ../../admin/view/wp-slimstat-reports.php:743
+msgid "Open this URL in a new window"
+msgstr "نشانی را در پنجره جدید باز کن"
+
+#: ../../admin/view/right-now.php:125
+msgid "Local search results page"
+msgstr "صفحه نتایج جستجوی محلی"
+
+#: ../../admin/view/right-now.php:132
+msgid "Open this referrer in a new window"
+msgstr "این ارجاعی دهنده را در پنجره جدید باز کن"
+
+#: ../../admin/view/right-now.php:133
+msgid "Open this outbound link in a new window"
+msgstr " پیوندهای بیرونی را در پنجره جدید باز کن"
+
+#: ../../admin/view/right-now.php:134
+msgid "Date and Time"
+msgstr "روز و ساعت"
+
+#: ../../admin/view/right-now.php:135
+msgid "Content Type"
+msgstr " نوع محتوا"
+
+#: ../../admin/view/right-now.php:150
+msgid "Visit with keywords"
+msgstr "کلمات کلیدی (جدا شده با کاما):"
+
+#: ../../admin/view/right-now.php:152
+msgid "Known User"
+msgstr "کاربر آشنا"
+
+#: ../../admin/view/right-now.php:153
+msgid "Human Visitor"
+msgstr "بیننده انسانی"
+
+#: ../../admin/view/right-now.php:154
+msgid "Bot or Crawler"
+msgstr "روبات یا خزنده"
+
+#: ../../admin/view/wp-slimstat-db.php:44
+msgid "IP Address"
+msgstr "نشانی آی‌پی"
+
+#: ../../admin/view/wp-slimstat-db.php:49
+msgid "Domain"
+msgstr "دامنه"
+
+#: ../../admin/view/wp-slimstat-db.php:53
+msgid "-- Advanced filters --"
+msgstr "-- فیلترهای پیش‌رفته --"
+
+#: ../../admin/view/wp-slimstat-db.php:54
+#: ../../admin/view/wp-slimstat-reports.php:58
+msgid "Browser Capabilities"
+msgstr "قابلیت‌های مرورگر"
+
+#: ../../admin/view/wp-slimstat-db.php:66
+msgid "Resource ID"
+msgstr "شناسه منابع"
+
+#: ../../admin/view/wp-slimstat-db.php:71
+msgid "Hour"
+msgstr "ساعت"
+
+#: ../../admin/view/wp-slimstat-db.php:77
+msgid "Order Direction"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-db.php:78
+#, fuzzy
+msgid "Limit Results"
+msgstr "نتایج محدود به"
+
+#: ../../admin/view/wp-slimstat-db.php:79
+msgid "Start From"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:38
+msgid "Pageviews (chart)"
+msgstr "مشاهده صفحات (نمودار)"
+
+#: ../../admin/view/wp-slimstat-reports.php:39
+msgid "About WP SlimStat"
+msgstr "درباره WP SlimStat"
+
+#: ../../admin/view/wp-slimstat-reports.php:40
+#: ../../admin/view/wp-slimstat-reports.php:52
+msgid "At a Glance"
+msgstr "در یک نگاه"
+
+#: ../../admin/view/wp-slimstat-reports.php:41
+msgid "Currently Online"
+msgstr "حالا روی خط"
+
+#: ../../admin/view/wp-slimstat-reports.php:42
+#: ../../admin/view/wp-slimstat-reports.php:76
+msgid "Spy View"
+msgstr "دید دزدکی"
+
+#: ../../admin/view/wp-slimstat-reports.php:43
+#: ../../admin/view/wp-slimstat-reports.php:77
+msgid "Recent Search Terms"
+msgstr "عبارت‌های جستجو شده اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:44
+msgid "Top Pages"
+msgstr "برترین صفحات"
+
+#: ../../admin/view/wp-slimstat-reports.php:45
+#: ../../admin/view/wp-slimstat-reports.php:74
+msgid "Top Traffic Sources"
+msgstr "برترین منابع ترافیک"
+
+#: ../../admin/view/wp-slimstat-reports.php:46
+msgid "Top Known Visitors"
+msgstr "برترین بیننده های آشنا"
+
+#: ../../admin/view/wp-slimstat-reports.php:47
+#: ../../admin/view/wp-slimstat-reports.php:72
+#: ../../admin/view/wp-slimstat-reports.php:92
+msgid "Top Search Terms"
+msgstr "برترین عبارت های جستجو"
+
+#: ../../admin/view/wp-slimstat-reports.php:48
+#: ../../admin/view/wp-slimstat-reports.php:59
+#: ../../admin/view/wp-slimstat-reports.php:73
+msgid "Top Countries"
+msgstr "برترین کشورها"
+
+#: ../../admin/view/wp-slimstat-reports.php:49
+msgid "Rankings"
+msgstr "رتبه ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:50
+msgid "Top Language Families"
+msgstr "برترین زبان‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:51
+msgid "Human Visits (chart)"
+msgstr "مشاهدات انسانی (نمودار)"
+
+#: ../../admin/view/wp-slimstat-reports.php:53
+msgid "Top Languages"
+msgstr "بیش‌ترین زبان‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:54
+msgid "Top Browsers"
+msgstr "برترین مرورگرها"
+
+#: ../../admin/view/wp-slimstat-reports.php:55
+msgid "Top Service Providers"
+msgstr "برترین خدمات دهنده‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:56
+msgid "Top Operating Systems"
+msgstr "برترین محیط‌های عامل"
+
+#: ../../admin/view/wp-slimstat-reports.php:57
+msgid "Top Screen Resolutions"
+msgstr "برترین ابعاد صفحه نماش‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:60
+msgid "Visit Duration"
+msgstr "طول دوره بازدید"
+
+#: ../../admin/view/wp-slimstat-reports.php:61
+#: ../../admin/view/wp-slimstat-reports.php:78
+msgid "Recent Countries"
+msgstr "کشورهای اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:62
+msgid "Recent Screen Resolutions"
+msgstr "ابعاد نمایش‌گرهای اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:63
+msgid "Recent Operating Systems"
+msgstr "محیطهای عامل اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:64
+msgid "Recent Browsers"
+msgstr "مرورگرهای اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:65
+msgid "Recent Languages"
+msgstr "زبان‌های اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:66
+msgid "Top Browser Families"
+msgstr "برترین مرورگرها"
+
+#: ../../admin/view/wp-slimstat-reports.php:67
+msgid "Top OS Families"
+msgstr "برترین محیط عامل ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:68
+msgid "Recent Users"
+msgstr "کاربرهای اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:69
+msgid "Top Users"
+msgstr "برترین کاربرها"
+
+#: ../../admin/view/wp-slimstat-reports.php:70
+msgid "Traffic Sources (chart)"
+msgstr "منابع ترافیک (نمودار)"
+
+#: ../../admin/view/wp-slimstat-reports.php:71
+msgid "Summary"
+msgstr "خلاصه"
+
+#: ../../admin/view/wp-slimstat-reports.php:75
+msgid "Top Referring Search Engines"
+msgstr "برترین موتور جستجو های ارجاع‌دهنده"
+
+#: ../../admin/view/wp-slimstat-reports.php:79
+#: ../../admin/view/wp-slimstat-reports.php:95
+msgid "Top Landing Pages"
+msgstr "برترین صفحه های ورود"
+
+#: ../../admin/view/wp-slimstat-reports.php:80
+msgid "Average Pageviews per Visit (chart)"
+msgstr "میان‌گین مشاهده صفحات در بازدید(نمودار)"
+
+#: ../../admin/view/wp-slimstat-reports.php:81
+msgid "Recent Posts"
+msgstr "ارسال های اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:82
+msgid "Recent Bounce Pages"
+msgstr "صفحات وازده اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:83
+msgid "Recent Feeds"
+msgstr "خوراک‌های اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:84
+msgid "Recent Pages Not Found"
+msgstr "صفحه هایی پیدا نشده اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:85
+msgid "Recent Internal Searches"
+msgstr "جستجوهای داخلی اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:86
+msgid "Top Categories"
+msgstr "برترین دسته‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:87
+msgid "Recent Outbound Links"
+msgstr "پیوندهای بیرونی اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:88
+msgid "Recent Events"
+msgstr "اتفاقات اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:89
+msgid "Top Posts"
+msgstr "برترین ارسال ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:90
+msgid "Top Feeds"
+msgstr "برترین خوراک‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:91
+msgid "Top Internal Searches"
+msgstr "برترین جستجوهای داخلی"
+
+#: ../../admin/view/wp-slimstat-reports.php:93
+msgid "Recent Categories"
+msgstr "دسته‌های اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:94
+msgid "Top Pages Not Found"
+msgstr "برترین صفحاتی که پیدا نشد"
+
+#: ../../admin/view/wp-slimstat-reports.php:96
+msgid "Top Authors"
+msgstr "برترین نویسنده‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:97
+msgid "Top Tags"
+msgstr "برترین نشانه ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:98
+msgid "Recent Downloads"
+msgstr "بارگیری های اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:99
+msgid "Top Outbound Links and Downloads"
+msgstr "برترین پیوندهای بیرونی و بارگیری ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:100
+msgid "Your Website"
+msgstr "تارنمای شما"
+
+#: ../../admin/view/wp-slimstat-reports.php:102
+#, fuzzy
+msgid "At A Glance"
+msgstr "در یک نگاه"
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "Chart controls"
+msgstr "کنترل‌های نمودار"
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "Use your mouse wheel to zoom in and out"
+msgstr "از غلطانک موش‌واره برای بزرگ‌نمایی و کوچک‌نمایی استفاده کنید"
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "While zooming in, drag the chart to move to a different area"
+msgstr ""
+"زمانی‌که بزرگ‌نمایی می‌کنید، نمودار را می‌توانید بکشید و به نقاط دیگر بروید"
+
+#: ../../admin/view/wp-slimstat-reports.php:220
+msgid "Double click on an empty region to reset the zoom level"
+msgstr "بر یک ناحیه خالی دوبار کلیک کنید تا بزرگنمایی به حالت اولیه بازگردد"
+
+#: ../../admin/view/wp-slimstat-reports.php:221
+msgid ""
+"Click on a data point to display the activity chart for each hour of that day"
+msgstr "روی نقطه‌های داده کلیک کنید تا نمودار فعالیت آن ساعت را مشاهده کنید"
+
+#: ../../admin/view/wp-slimstat-reports.php:270
+msgid "src"
+msgstr "منبع"
+
+#: ../../admin/view/wp-slimstat-reports.php:271
+msgid "serp"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:276
+msgid "Go to the corresponding search engine result page"
+msgstr "برو به صفحه مرتبط با این جستجو"
+
+#: ../../admin/view/wp-slimstat-reports.php:279
+msgid "Go to the referring page"
+msgstr "برو به صفحه ارجاع‌دهنده"
+
+#: ../../admin/view/wp-slimstat-reports.php:302
+msgid "Remove filter for"
+msgstr "حذف فیلترها از"
+
+#: ../../admin/view/wp-slimstat-reports.php:309
+msgid "Reset All"
+msgstr "بازنشانی همه"
+
+#: ../../admin/view/wp-slimstat-reports.php:312
+msgid "Current filters:"
+msgstr "فیلترهای جاری:"
+
+#: ../../admin/view/wp-slimstat-reports.php:316
+msgid "Refresh"
+msgstr "تازه سازی"
+
+#: ../../admin/view/wp-slimstat-reports.php:353
+#, php-format
+msgid "Results %s - %s of %s"
+msgstr " نتایج  %s - %s از %s"
+
+#: ../../admin/view/wp-slimstat-reports.php:355
+msgid "Refresh in"
+msgstr "تازه سازی در"
+
+#: ../../admin/view/wp-slimstat-reports.php:377
+#: ../../admin/view/wp-slimstat-reports.php:389
+#, php-format
+msgid "Daily %s"
+msgstr "%s روزانه"
+
+#: ../../admin/view/wp-slimstat-reports.php:380
+#, php-format
+msgid "%s Minute by Minute"
+msgstr "%s دقیقه به دقیقه"
+
+#: ../../admin/view/wp-slimstat-reports.php:383
+#, php-format
+msgid "Hourly %s"
+msgstr "%s ساعتی"
+
+#: ../../admin/view/wp-slimstat-reports.php:386
+#, php-format
+msgid "Monthly %s"
+msgstr "%s ماهانه"
+
+#: ../../admin/view/wp-slimstat-reports.php:466
+msgid "Category ID"
+msgstr "شناسه دسته"
+
+#: ../../admin/view/wp-slimstat-reports.php:499
+msgid "OS Code"
+msgstr "کد محیط عامل"
+
+#: ../../admin/view/wp-slimstat-reports.php:509
+msgid "Referrer"
+msgstr "ارجاع دهنده"
+
+#: ../../admin/view/wp-slimstat-reports.php:533
+#: ../../admin/view/wp-slimstat-reports.php:811
+#: ../../admin/view/wp-slimstat-reports.php:820
+#: ../../admin/view/wp-slimstat-reports.php:826
+#: ../../admin/view/wp-slimstat-reports.php:832
+#: ../../admin/view/wp-slimstat-reports.php:838
+#: ../../admin/view/wp-slimstat-reports.php:844
+#: ../../admin/view/wp-slimstat-reports.php:850
+#: ../../admin/view/wp-slimstat-reports.php:856
+msgid "Hits"
+msgstr "بازدیدها"
+
+#: ../../admin/view/wp-slimstat-reports.php:702
+msgid "Search for"
+msgstr "جستجو به دنبال"
+
+#: ../../admin/view/wp-slimstat-reports.php:733
+#: ../../admin/view/wp-slimstat-reports.php:743
+msgid "Source"
+msgstr "منبع"
+
+#: ../../admin/view/wp-slimstat-reports.php:735
+msgid "Keywords"
+msgstr "کلمات کلیدی"
+
+#: ../../admin/view/wp-slimstat-reports.php:743
+#, php-format
+msgid "Filter results where resource equals %s"
+msgstr "نتایج را فیلتر کن وقتی منبع مساوی‌ست با %s"
+
+#: ../../admin/view/wp-slimstat-reports.php:757
+msgid "Total Pageviews"
+msgstr "همه مشاهدات صفحات"
+
+#: ../../admin/view/wp-slimstat-reports.php:758
+msgid "DB Size"
+msgstr "اندازه پایگاه داده"
+
+#: ../../admin/view/wp-slimstat-reports.php:759
+msgid "Tracking Active"
+msgstr "ردگیری فعال"
+
+#: ../../admin/view/wp-slimstat-reports.php:760
+msgid "Javascript Mode"
+msgstr "فعال سازی حالت جاوااسکریپت"
+
+#: ../../admin/view/wp-slimstat-reports.php:761
+msgid "Tracking Browser Caps"
+msgstr "ردگیری قابلیت‌های مرورگر"
+
+#: ../../admin/view/wp-slimstat-reports.php:762
+msgid "Auto purge"
+msgstr "پاک‌سازی خودکار"
+
+#: ../../admin/view/wp-slimstat-reports.php:763
+msgid "Oldest pageview"
+msgstr "قدیمی‌ترین بازدید"
+
+#: ../../admin/view/wp-slimstat-reports.php:763
+msgid "No visits"
+msgstr "بازدیدی نیست"
+
+#: ../../admin/view/wp-slimstat-reports.php:773
+#: ../../admin/view/wp-slimstat-reports.php:875
+msgid ""
+"A request to load a single HTML file. WP SlimStat logs a \"pageview\" each "
+"time the tracking code is executed."
+msgstr ""
+"درخواست بارگیری یک پرونده زنگام. هر اجرای ردگیری منجر به ثبت یک بازید میشود."
+
+#: ../../admin/view/wp-slimstat-reports.php:775
+msgid "How many pages have been visited on average during the current period."
+msgstr "چند صفحه به طور میانگین در "
+
+#: ../../admin/view/wp-slimstat-reports.php:776
+#, fuzzy
+msgid "Average Pageviews"
+msgstr "میان‌گین مشاهده صفحات"
+
+#: ../../admin/view/wp-slimstat-reports.php:777
+msgid ""
+"Visitors who landed on your site after searching for a keyword on Google, "
+"Yahoo, etc."
+msgstr "کاربرانی که بعد از جستجو در موتورهای جستجو به سایت شما رسیده‌اند."
+
+#: ../../admin/view/wp-slimstat-reports.php:778
+msgid "From Search Results"
+msgstr "از نتایج جستجو"
+
+#: ../../admin/view/wp-slimstat-reports.php:779
+msgid ""
+"Used to differentiate between multiple requests to download a file from one "
+"internet address (IP) and requests originating from many distinct addresses"
+msgstr ""
+" این برای تشخیص دادن چندین درخواست بارگیری پرونده از یک آی پی ادرس و یا "
+"درخواست از چند آی پی ادرس مختلف است."
+
+#: ../../admin/view/wp-slimstat-reports.php:780
+#: ../../admin/view/wp-slimstat-reports.php:795
+#: ../../admin/view/wp-slimstat-reports.php:1099
+#: ../../admin/view/wp-slimstat-reports.php:1103
+#: ../../admin/view/wp-slimstat-reports.php:1107
+msgid "Unique IPs"
+msgstr "آی‌پی‌های یکتا"
+
+#: ../../admin/view/wp-slimstat-reports.php:781
+msgid "Last 5 minutes"
+msgstr "۵ دقیقه اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:782
+msgid "Last 30 minutes"
+msgstr "۳۰ دقیقه اخیر"
+
+#: ../../admin/view/wp-slimstat-reports.php:792
+msgid ""
+"A visit is a session of at most 30 minutes. Returning visitors are counted "
+"multiple times if they perform multiple visits."
+msgstr ""
+"هر بازدید یک جلسه است که حداکثر ۳۰ دقیقه میباشد. «بیننده دوباره» چند بار "
+"شمارش میشود اگر چند بار بازدید کنند."
+
+#: ../../admin/view/wp-slimstat-reports.php:793
+msgid "Human visits"
+msgstr "بازدیدهای انسانی"
+
+#: ../../admin/view/wp-slimstat-reports.php:794
+msgid "It includes only traffic generated by human visitors."
+msgstr "فقط شامل ترافیک انسانی میشود"
+
+#: ../../admin/view/wp-slimstat-reports.php:796
+#: ../../admin/view/wp-slimstat-reports.php:887
+msgid ""
+"Percentage of single-page visits, i.e. visits in which the person left your "
+"site from the entrance page."
+msgstr "درصد بازدید «تک-صفحه» ها؛ یعنی بازدیدی که فقط «صفحه ورودی» بود."
+
+#: ../../admin/view/wp-slimstat-reports.php:797
+msgid "Bounce rate"
+msgstr "میزان وازده گی"
+
+#: ../../admin/view/wp-slimstat-reports.php:798
+msgid "Visitors who had previously left a comment on your blog."
+msgstr "بازدیدکنندگانی که قبلا در تارنامه نظر ثبت کرده‌اند"
+
+#: ../../admin/view/wp-slimstat-reports.php:799
+msgid "Known visitors"
+msgstr "بیننده های آشنا"
+
+#: ../../admin/view/wp-slimstat-reports.php:800
+msgid "Human users who visited your site only once."
+msgstr "کاربرانی که فقط یک بار پایگاه شما را دیده‌اند."
+
+#: ../../admin/view/wp-slimstat-reports.php:801
+msgid "New visitors"
+msgstr "بازدیدکنندگان جدید"
+
+#: ../../admin/view/wp-slimstat-reports.php:802
+msgid "Bots"
+msgstr "ربات‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:803
+msgid "Pages per visit"
+msgstr "صفحات در بازدید"
+
+#: ../../admin/view/wp-slimstat-reports.php:804
+#: ../../admin/view/wp-slimstat-reports.php:1112
+msgid "Longest visit"
+msgstr "طولانی‌ترین مشاهده صفحات"
+
+#: ../../admin/view/wp-slimstat-reports.php:804
+msgid "hits"
+msgstr "مشاهدات"
+
+#: ../../admin/view/wp-slimstat-reports.php:822
+msgid "0 - 30 seconds"
+msgstr "۰ تا ۳۰ ثانیه"
+
+#: ../../admin/view/wp-slimstat-reports.php:828
+msgid "31 - 60 seconds"
+msgstr "۳۱ تا ۶۰ ثانیه"
+
+#: ../../admin/view/wp-slimstat-reports.php:834
+msgid "1 - 3 minutes"
+msgstr "۱ تا ۳ دقیقه"
+
+#: ../../admin/view/wp-slimstat-reports.php:840
+msgid "3 - 5 minutes"
+msgstr "۳ تا ۵ دقیقه"
+
+#: ../../admin/view/wp-slimstat-reports.php:846
+msgid "5 - 7 minutes"
+msgstr "۵ تا ۷ دقیقه"
+
+#: ../../admin/view/wp-slimstat-reports.php:852
+msgid "7 - 10 minutes"
+msgstr "۷ تا ۱۰ دقیقه"
+
+#: ../../admin/view/wp-slimstat-reports.php:858
+msgid "More than 10 minutes"
+msgstr "بیش از ۱۰ دقیقه"
+
+#: ../../admin/view/wp-slimstat-reports.php:867
+msgid "Average time on site"
+msgstr " میان‌گین دیدن از پایگاه"
+
+#: ../../admin/view/wp-slimstat-reports.php:877
+msgid ""
+"A referrer (or referring site) is the site that a visitor previously visited "
+"before following a link to your site."
+msgstr ""
+"ارجاع دهنده (یا پایگاه ارجاع دهنده) که بیننده را به پایگاه شما پیوند زده است."
+
+#: ../../admin/view/wp-slimstat-reports.php:878
+msgid "Unique Referrers"
+msgstr "ارجاع‌دهنده‌های یکتا"
+
+#: ../../admin/view/wp-slimstat-reports.php:879
+msgid ""
+"Visitors who visited the site by typing the URL directly into their browser. "
+"<em>Direct</em> can also refer to the visitors who clicked on the links from "
+"their bookmarks/favorites, untagged links within emails, or links from "
+"documents that don't include tracking variables."
+msgstr ""
+"بیننده هایی که نشانی پایگاه را وارد مرورگر کرده اند. البته این میتواند شامل "
+"کاربرانی که با استفاده از bookmarks/favorites، و یا از پیوندهایی در نامک و "
+"مدارک که متغییر ردگیری ندارند نیز بشود."
+
+#: ../../admin/view/wp-slimstat-reports.php:880
+msgid "Direct Pageviews"
+msgstr "مشاهده صفحات بی‌واسطه"
+
+#: ../../admin/view/wp-slimstat-reports.php:881
+msgid ""
+"Visitors who came to your site via searches on Google or some other search "
+"engine."
+msgstr "کاربرانی که از گوگل یا سایر موتورهای جستجو به پایگاه شما آمده‌اند."
+
+#: ../../admin/view/wp-slimstat-reports.php:882
+msgid "From a search result"
+msgstr "از نتایج جستجو"
+
+#: ../../admin/view/wp-slimstat-reports.php:883
+msgid ""
+"The first page that a user views during a session. This is also known as the "
+"<em>entrance page</em>. For example, if they search for 'Brooklyn Office "
+"Space,' and they land on your home page, it gets counted (for that visit) as "
+"a landing page."
+msgstr ""
+"اولین صفحه ای که کاربر در جلسه دیدن میکند به «صفحه ورودی» نیز شناخته میشود. "
+"به عنوان مثال اگر کاربری برای «بستنی» جستجو کند و در صفحه اصلی شما هدایت "
+"شود، در آن جلسه به عنوان «صفحه ورودی» حساب میشود."
+
+#: ../../admin/view/wp-slimstat-reports.php:884
+msgid "Unique Landing Pages"
+msgstr "صفحات فرودی خاص"
+
+#: ../../admin/view/wp-slimstat-reports.php:885
+msgid "Number of single-page visits to your site over the selected period."
+msgstr "تعداد بازدید «تک-صفحه» به پایگاه شما در بازه زمانی انتخاب شده."
+
+#: ../../admin/view/wp-slimstat-reports.php:886
+msgid "Bounce Pages"
+msgstr "صفحات وازده"
+
+#: ../../admin/view/wp-slimstat-reports.php:888
+msgid "New Visitors Rate"
+msgstr "میزان بازدیدکنندگان جدید"
+
+#: ../../admin/view/wp-slimstat-reports.php:889
+msgid ""
+"Visitors who visited the site in the last 5 minutes coming from a search "
+"engine."
+msgstr "کاربرانی که در ۵ دقیقه گذشته از یک موتور جستجو به پایگاه شما آمده‌اند."
+
+#: ../../admin/view/wp-slimstat-reports.php:890
+msgid "Currently from search engines"
+msgstr "هم‌اکنون از موتورهای جستجو"
+
+#: ../../admin/view/wp-slimstat-reports.php:958
+msgid "Number of pages in your site included in Google's index."
+msgstr "تعداد صفحاتی که در فهرست گوگل شمرده شده است."
+
+#: ../../admin/view/wp-slimstat-reports.php:959
+msgid "Google Index"
+msgstr "اندیس گوگل"
+
+#: ../../admin/view/wp-slimstat-reports.php:960
+msgid "Number of pages, according to Google, that link back to your site."
+msgstr "تعداد صفحات که به گفته گوگل به پایگاه پیوند میدهند. "
+
+#: ../../admin/view/wp-slimstat-reports.php:961
+msgid "Google Backlinks"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:962
+msgid ""
+"How many times the Facebook Like button has been approximately clicked on "
+"your site."
+msgstr "چند بار Facebook Like در پایگاه شما کلیک شده است."
+
+#: ../../admin/view/wp-slimstat-reports.php:963
+msgid "Facebook Likes"
+msgstr "لایک های فیسبوک"
+
+#: ../../admin/view/wp-slimstat-reports.php:964
+msgid ""
+"How many times your site has been shared by someone on the social network."
+msgstr "چند بار پایگاه شما در شبکه های اجتماعی بخش شده است"
+
+#: ../../admin/view/wp-slimstat-reports.php:965
+msgid "Facebook Shares"
+msgstr "بخش های فیسبوک"
+
+#: ../../admin/view/wp-slimstat-reports.php:966
+msgid "How many times links to your website have been clicked on Facebook."
+msgstr "چند بار پایگاه شما در Facebook فشار داده شده است."
+
+#: ../../admin/view/wp-slimstat-reports.php:967
+msgid "Facebook Clicks"
+msgstr "Facebook Clicks"
+
+#: ../../admin/view/wp-slimstat-reports.php:968
+msgid ""
+"Alexa is a subsidiary company of Amazon.com which provides commercial web "
+"traffic data."
+msgstr ""
+"شرکت Alexa بخشی از Amazon.com میباشد که گزارش پایگاه های تبلیغاتی را انجام "
+"میدهد."
+
+#: ../../admin/view/wp-slimstat-reports.php:969
+msgid "Alexa World Rank"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:970
+msgid "Alexa Country Rank"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:971
+msgid "Alexa Popularity"
+msgstr ""
+
+# Unknown
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-xx"
+msgstr "Unknown"
+
+# 	Afghanistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-af"
+msgstr "Afghanistan"
+
+# 	Åland Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ax"
+msgstr "Aland Islands"
+
+# 	Albania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-al"
+msgstr "Albania"
+
+# 	Algeria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dz"
+msgstr "Algeria"
+
+# 	Andorra
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ad"
+msgstr "Andorra"
+
+# 	Angola
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ao"
+msgstr "Angola"
+
+# 	Anguilla
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ai"
+msgstr "Anguilla"
+
+# 	Antigua and Barbuda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ag"
+msgstr "Antigua and Barbuda"
+
+# 	Argentina
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ar"
+msgstr "Argentina"
+
+# 	Armenia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-am"
+msgstr "Armenia"
+
+# 	Aruba
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-aw"
+msgstr "Aruba"
+
+# 	Australia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-au"
+msgstr "Australia"
+
+# 	Austria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-at"
+msgstr "Austria"
+
+# 	Azerbaijan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-az"
+msgstr "Azerbaijan"
+
+# 	Bahamas
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bs"
+msgstr "Bahamas"
+
+# 	Bahrain
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bh"
+msgstr "Bahrain"
+
+# 	Bangladesh
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bd"
+msgstr "Bangladesh"
+
+# 	Barbados
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bb"
+msgstr "Barbados"
+
+# 	Belarus
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-by"
+msgstr "Belarus"
+
+# 	Belgium
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-be"
+msgstr "Belgium"
+
+# 	Belize
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bz"
+msgstr "Belize"
+
+# 	Benin
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bj"
+msgstr "Benin"
+
+# 	Bermuda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bm"
+msgstr "Bermuda"
+
+# 	Bhutan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bt"
+msgstr "Bhutan"
+
+# 	Bolivia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bo"
+msgstr "Bolivia"
+
+# 	Bosnia and Herzegovina
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ba"
+msgstr "Bosnia and Herzegovina"
+
+# 	Botswana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bw"
+msgstr "Botswana"
+
+# 	Brazil
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-br"
+msgstr "Brazil"
+
+# 	Brunei Darussalam
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bn"
+msgstr "Brunei Darussalam"
+
+# 	Bulgaria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bg"
+msgstr "Bulgaria"
+
+# 	Burkina Faso
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bf"
+msgstr "Burkina Faso"
+
+# 	Burundi
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-bi"
+msgstr "Burundi"
+
+# 	Cambodia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kh"
+msgstr "Cambodia"
+
+# 	Cameroon
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cm"
+msgstr "Cameroon"
+
+# 	Canada
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ca"
+msgstr "Canada"
+
+# 	Cape Verde
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cv"
+msgstr "Cape Verde"
+
+# 	Cayman Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ky"
+msgstr "Cayman Islands"
+
+# 	Central African Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cf"
+msgstr "Central African Republic"
+
+# 	Chad
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-td"
+msgstr "Chad"
+
+# 	Chile
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cl"
+msgstr "Chile"
+
+# 	China
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cn"
+msgstr "China"
+
+# 	Colombia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-co"
+msgstr "Colombia"
+
+# 	Comoros
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-km"
+msgstr "Comoros"
+
+# 	Congo
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cg"
+msgstr "Congo"
+
+# 	The Democratic Republic of the Congo
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cd"
+msgstr "The Democratic Republic of the Congo"
+
+# 	Costa Rica
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cr"
+msgstr "Costa Rica"
+
+# 	Côte d'Ivoire
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ci"
+msgstr "Côte d'Ivoire"
+
+# 	Croatia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hr"
+msgstr "Croatia"
+
+# 	Cuba
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cu"
+msgstr "Cuba"
+
+# 	Cyprus
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cy"
+msgstr "Cyprus"
+
+# 	Czech Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-cz"
+msgstr "Czech Republic"
+
+# 	Denmark
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dk"
+msgstr "Denmark"
+
+# 	Djibouti
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dj"
+msgstr "Djibouti"
+
+# 	Dominica
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-dm"
+msgstr "Dominica"
+
+# 	Dominican Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-do"
+msgstr "Dominican Republic"
+
+# 	Ecuador
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ec"
+msgstr "Ecuador"
+
+# 	Egypt
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-eg"
+msgstr "Egypt"
+
+# 	El Salvador
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sv"
+msgstr "El Salvador"
+
+# 	Equatorial Guinea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gq"
+msgstr "Equatorial Guinea"
+
+# 	Eritrea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-er"
+msgstr "Eritrea"
+
+# 	Estonia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ee"
+msgstr "Estonia"
+
+# 	Ethiopia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-et"
+msgstr "Ethiopia"
+
+# 	Faroe Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fo"
+msgstr "Faroe Islands"
+
+# 	Falkland Islands (Malvinas)
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fk"
+msgstr "Falkland Islands (Malvinas)"
+
+# 	Fiji
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fj"
+msgstr "Fiji"
+
+# 	Finland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fi"
+msgstr "Finland"
+
+# 	France
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-fr"
+msgstr "France"
+
+# 	French Guiana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gf"
+msgstr "French Guiana"
+
+# 	Gabon
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ga"
+msgstr "Gabon"
+
+# 	Gambia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gm"
+msgstr "Gambia"
+
+# 	Georgia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ge"
+msgstr "Georgia"
+
+# 	Germany
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-de"
+msgstr "Germany"
+
+# 	Ghana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gh"
+msgstr "Ghana"
+
+# 	Greece
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gr"
+msgstr "Greece"
+
+# 	Greenland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gl"
+msgstr "Greenland"
+
+# 	Grenada
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gd"
+msgstr "Grenada"
+
+# 	Guadeloupe
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gp"
+msgstr "Guadeloupe"
+
+# 	Guatemala
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gt"
+msgstr "Guatemala"
+
+# 	Guinea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gn"
+msgstr "Guinea"
+
+# 	Guinea-Bissau
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gw"
+msgstr "Guinea-Bissau"
+
+# 	Guyana
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gy"
+msgstr "Guyana"
+
+# 	Haiti
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ht"
+msgstr "Haiti"
+
+# 	Honduras
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hn"
+msgstr "Honduras"
+
+# 	Hong Kong
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hk"
+msgstr "Hong Kong"
+
+# 	Hungary
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-hu"
+msgstr "Hungary"
+
+# 	Iceland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-is"
+msgstr "Iceland"
+
+# 	India
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-in"
+msgstr "India"
+
+# 	Indonesia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-id"
+msgstr "Indonesia"
+
+# 	Islamic Republic of Iran
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ir"
+msgstr "Islamic Republic of Iran"
+
+# 	Iraq
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-iq"
+msgstr "Iraq"
+
+# 	Ireland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ie"
+msgstr "Ireland"
+
+# 	Israel
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-il"
+msgstr "Israel"
+
+# 	Italy
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-it"
+msgstr "Italy"
+
+# 	Jamaica
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-jm"
+msgstr "Jamaica"
+
+# 	Japan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-jp"
+msgstr "Japan"
+
+# 	Jordan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-jo"
+msgstr "Jordan"
+
+# 	Kazakhstan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kz"
+msgstr "Kazakhstan"
+
+# 	Kenya
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ke"
+msgstr "Kenya"
+
+# 	Nauru
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nr"
+msgstr "Nauru"
+
+# 	Democratic People's Republic of Korea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kp"
+msgstr "Democratic People's Republic of Korea"
+
+# 	Republic of Korea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kr"
+msgstr "Republic of Korea"
+
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kv"
+msgstr ""
+
+# 	Kuwait
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kw"
+msgstr "Kuwait"
+
+# 	Kyrgyzstan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kg"
+msgstr "Kyrgyzstan"
+
+# 	Lao People's Democratic Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-la"
+msgstr "Lao People's Democratic Republic"
+
+# 	Latvia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lv"
+msgstr "Latvia"
+
+# 	Lebanon
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lb"
+msgstr "Lebanon"
+
+# 	Lesotho
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ls"
+msgstr "Lesotho"
+
+# 	Liberia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lr"
+msgstr "Liberia"
+
+# 	Libyan Arab Jamahiriya
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ly"
+msgstr "Libyan Arab Jamahiriya"
+
+# 	Liechtenstein
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-li"
+msgstr "Liechtenstein"
+
+# 	Lithuania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lt"
+msgstr "Lithuania"
+
+# 	Luxembourg
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lu"
+msgstr "Luxembourg"
+
+# 	The Former Yugoslav Republic of Macedonia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mk"
+msgstr "The Former Yugoslav Republic of Macedonia"
+
+# 	Madagascar
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mg"
+msgstr "Madagascar"
+
+# 	Malawi
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mw"
+msgstr "Malawi"
+
+# 	Malaysia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-my"
+msgstr "Malaysia"
+
+# 	Mali
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ml"
+msgstr "Mali"
+
+# 	Malta
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mt"
+msgstr "Malta"
+
+# 	Martinique
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mq"
+msgstr "Martinique"
+
+# 	Mauritania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mr"
+msgstr "Mauritania"
+
+# 	Mauritius
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mu"
+msgstr "Mauritius"
+
+# 	Mexico
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mx"
+msgstr "Mexico"
+
+# 	Moldova
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-md"
+msgstr "Moldova"
+
+# 	Mongolia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mn"
+msgstr "Mongolia"
+
+# 	Montenegro
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-me"
+msgstr "Montenegro"
+
+# 	Montserrat
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ms"
+msgstr "Montserrat"
+
+# 	Morocco
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ma"
+msgstr "Morocco"
+
+# 	Mozambique
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mz"
+msgstr "Mozambique"
+
+# 	Myanmar
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mm"
+msgstr "Myanmar"
+
+# 	Namibia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-na"
+msgstr "Namibia"
+
+# 	Nepal
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-np"
+msgstr "Nepal"
+
+# 	Netherlands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nl"
+msgstr "Netherlands"
+
+# 	New Caledonia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nc"
+msgstr "New Caledonia"
+
+# 	New Zealand
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-nz"
+msgstr "New Zealand"
+
+# 	Nicaragua
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ni"
+msgstr "Nicaragua"
+
+# 	Niger
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ne"
+msgstr "Niger"
+
+# 	Nigeria
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ng"
+msgstr "Nigeria"
+
+# 	Norway
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-no"
+msgstr "Norway"
+
+# 	Oman
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-om"
+msgstr "Oman"
+
+# 	Pakistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pk"
+msgstr "Pakistan"
+
+# 	Palau
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pw"
+msgstr "Palau"
+
+# 	Occupied Palestinian Territory
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ps"
+msgstr "Occupied Palestinian Territory"
+
+# 	Panama
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pa"
+msgstr "Panama"
+
+# 	Papua New Guinea
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pg"
+msgstr "Papua New Guinea"
+
+# 	Paraguay
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-py"
+msgstr "Paraguay"
+
+# 	Peru
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pe"
+msgstr "Peru"
+
+# 	Philippines
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ph"
+msgstr "Philippines"
+
+# 	Poland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pl"
+msgstr "Poland"
+
+# 	Portugal
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pt"
+msgstr "Portugal"
+
+# 	Puerto Rico
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-pr"
+msgstr "Puerto Rico"
+
+# 	Qatar
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-qa"
+msgstr "Qatar"
+
+# 	Réunion
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-re"
+msgstr "Réunion"
+
+# 	Romania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ro"
+msgstr "Romania"
+
+# 	Russian Federation
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ru"
+msgstr "Russian Federation"
+
+# 	Rwanda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-rw"
+msgstr "Rwanda"
+
+# 	Saint Kitts and Nevis
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-kn"
+msgstr "Saint Kitts and Nevis"
+
+# 	Saint Lucia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lc"
+msgstr "Saint Lucia"
+
+# 	Saint Martin
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mf"
+msgstr "Saint Martin"
+
+# 	Saint Vincent and the Grenadines
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vc"
+msgstr "Saint Vincent and the Grenadines"
+
+# 	Samoa
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ws"
+msgstr "Samoa"
+
+# 	Sao Tome and Principe
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-st"
+msgstr "Sao Tome and Principe"
+
+# 	Saudi Arabia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sa"
+msgstr "Saudi Arabia"
+
+# 	Senegal
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sn"
+msgstr "Senegal"
+
+# 	Serbia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-rs"
+msgstr "Serbia"
+
+# 	Sierra Leone
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sl"
+msgstr "Sierra Leone"
+
+# 	Singapore
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sg"
+msgstr "Singapore"
+
+# 	Slovakia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sk"
+msgstr "Slovakia"
+
+# 	Slovenia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-si"
+msgstr "Slovenia"
+
+# 	Solomon Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sb"
+msgstr "Solomon Islands"
+
+# 	Somalia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-so"
+msgstr "Somalia"
+
+# 	South Africa
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-za"
+msgstr "South Africa"
+
+# 	South Georgia and the South Sandwich Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gs"
+msgstr "South Georgia and the South Sandwich Islands"
+
+# 	Spain
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-es"
+msgstr "Spain"
+
+# 	Sri Lanka
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-lk"
+msgstr "Sri Lanka"
+
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sc"
+msgstr "Seychelles"
+
+# 	Sudan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sd"
+msgstr "Sudan"
+
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ss"
+msgstr ""
+
+# 	Suriname
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sr"
+msgstr "Suriname"
+
+# 	Svalbard and Jan Mayen
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sj"
+msgstr "Svalbard and Jan Mayen"
+
+# 	Swaziland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sz"
+msgstr "Swaziland"
+
+# 	Sweden
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-se"
+msgstr "Sweden"
+
+# 	Switzerland
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ch"
+msgstr "Switzerland"
+
+# 	Syrian Arab Republic
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-sy"
+msgstr "Syrian Arab Republic"
+
+# 	Taiwan, Province of China
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tw"
+msgstr "Taiwan"
+
+# 	Tajikistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tj"
+msgstr "Tajikistan"
+
+# 	United Republic of Tanzania
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tz"
+msgstr "United Republic of Tanzania"
+
+# 	Thailand
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-th"
+msgstr "Thailand"
+
+# 	Timor-Leste
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tl"
+msgstr "Timor-Leste"
+
+# 	Togo
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tg"
+msgstr "Togo"
+
+# 	Tonga
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-to"
+msgstr "Tonga"
+
+# 	Trinidad and Tobago
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tt"
+msgstr "Trinidad and Tobago"
+
+# 	Tunisia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tn"
+msgstr "Tunisia"
+
+# 	Turkey
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tr"
+msgstr "Turkey"
+
+# 	Turkmenistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tm"
+msgstr "Turkmenistan"
+
+# 	Turks and Caicos Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-tc"
+msgstr "Turks and Caicos Islands"
+
+# 	Uganda
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ug"
+msgstr "Uganda"
+
+# 	Ukraine
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ua"
+msgstr "Ukraine"
+
+# 	United Arab Emirates
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ae"
+msgstr "United Arab Emirates"
+
+# 	United Kingdom
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gb"
+msgstr "United Kingdom"
+
+# 	United States
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-us"
+msgstr "United States"
+
+# 	Uruguay
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-uy"
+msgstr "Uruguay"
+
+# 	Uzbekistan
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-uz"
+msgstr "Uzbekistan"
+
+# 	Vanuatu
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vu"
+msgstr "Vanuatu"
+
+# 	Venezuela
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ve"
+msgstr "Venezuela"
+
+# 	Viet Nam
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vn"
+msgstr "Viet Nam"
+
+# 	British Virgin Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vg"
+msgstr "British Virgin Islands"
+
+# 	U.S. Virgin Islands
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-vi"
+msgstr "U.S. Virgin Islands"
+
+# 	Western Sahara
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-eh"
+msgstr "Western Sahara"
+
+# 	Yemen
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-ye"
+msgstr "Yemen"
+
+# 	Zambia
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-zm"
+msgstr "Zambia"
+
+# 	Zimbabwe
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-zw"
+msgstr "Zimbabwe"
+
+# 	Guernsey
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-gg"
+msgstr "Guernsey"
+
+# 	Jersey
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-je"
+msgstr "Jersey"
+
+# 	Isle of Man
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-im"
+msgstr "Isle of Man"
+
+# 	Maldives
+#: ../../admin/view/wp-slimstat-reports.php:978
+msgid "c-mv"
+msgstr "Maldives"
+
+#: ../../admin/view/wp-slimstat-reports.php:979
+msgid "c-eu"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1068
+msgid ""
+"This value includes not only posts, but also custom post types, regardless "
+"of their status"
+msgstr "این مقدار شامل همه ارسال ها میشود"
+
+#: ../../admin/view/wp-slimstat-reports.php:1069
+msgid "Content Items"
+msgstr " محتوا موردها"
+
+#: ../../admin/view/wp-slimstat-reports.php:1070
+msgid "Total Comments"
+msgstr "همه نظرها"
+
+#: ../../admin/view/wp-slimstat-reports.php:1071
+msgid "Pingbacks"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1072
+msgid "Trackbacks"
+msgstr ""
+
+#: ../../admin/view/wp-slimstat-reports.php:1073
+msgid "Longest Post (ID)"
+msgstr "طولانی‌ترین ارسال (شناسه)"
+
+#: ../../admin/view/wp-slimstat-reports.php:1074
+msgid "Longest Comment (ID)"
+msgstr "طولانی ترین نظر (شناسه)"
+
+#: ../../admin/view/wp-slimstat-reports.php:1075
+msgid "Avg Comments Per Post"
+msgstr "میانگین نظر برای هر ارسال"
+
+#: ../../admin/view/wp-slimstat-reports.php:1076
+msgid "Avg Posts Per Day"
+msgstr "میانگین ارسال در روز"
+
+#: ../../admin/view/wp-slimstat-reports.php:1103
+msgid "Visits"
+msgstr "بازدیدها"
+
+#: ../../admin/view/wp-slimstat-reports.php:1107
+msgid "Domains"
+msgstr "دامنه‌ها"
+
+#: ../../admin/view/wp-slimstat-reports.php:1112
+msgid "Avg Pageviews"
+msgstr "میان‌گین مشاهده صفحات"
+
+#~ msgid "Right Now"
+#~ msgstr "همین حالا"
+
+#~ msgid "Right Now Screen"
+#~ msgstr "صفحه همین حالا"
+
+#~ msgid "Right Now Extended"
+#~ msgstr "همین حالا تمدید شده"
+
+#~ msgid ""
+#~ "We have teamed up with HackerNinja.com to offer you a free website "
+#~ "security scan. By clicking on Start Free Scan, your website will be "
+#~ "analyzed to detect viruses and other treats. Please note that no "
+#~ "confidential information is being sent to HackerNinja."
+#~ msgstr ""
+#~ "میتوانید پایگاه را خود را به صورت رایگاه ویروسیابی کنید (با همکاری "
+#~ "HackerNinja.com). با فشار دادن دکمه زیر، پایگاه شما برای ویروس و دیگر "
+#~ "تهدید ها کاوش میشود. هیچ اطلاعات شخصی به HackerNinja فرستاده نمیشود."
+
+#~ msgid "Security Scan"
+#~ msgstr "بررسی امنیت"
+
+#~ msgid "AntiVirus Scan"
+#~ msgstr "ویروسیابی"
+
+#~ msgid "Scan for Hostile Strings"
+#~ msgstr "بررسی برای رشته خطرناک"
+
+#~ msgid "Google Safe Browsing List"
+#~ msgstr " فهرست پایگاه های امن گوگل"
+
+#~ msgid "Hostile External Links"
+#~ msgstr "پیوند خارجی خطرناک"
+
+#~ msgid "Other Treats"
+#~ msgstr " قاقالی‌لی"
+
+#~ msgid "Passed"
+#~ msgstr "قبول شد"
+
+#~ msgid "At Risk"
+#~ msgstr "در خطر"
+
+#~ msgid "Chart Annotations"
+#~ msgstr "حاشیه نمودار"
+
+#~ msgid ""
+#~ "Add <em>markings</em> to each chart by specifying a date and its "
+#~ "description in the field below. Useful to keep track of special events "
+#~ "and correlate them to your analytics. Please use the following format:"
+#~ "<code>YYYY MM DD HH:mm=Description 1,YYYY MM DD HH:mm=Description 2</"
+#~ "code>. For example: 2012 12 31 23:55=New Year's Eve."
+#~ msgstr ""
+#~ "اضافه کردن تاریخ و توضیحات در ناحیه های زیر میتواند در رهگیری رویداد ها و "
+#~ "مرتبط کردن آنها مفید باشد. لطفا از این نگارش استفاده کنید: <code>YYYY MM "
+#~ "DD HH:mm=Description 1,YYYY MM DD HH:mm=Description 2</code>. 2012 12 31 "
+#~ "23:55=New Year's Eve برای مثال."
+
+#~ msgid ""
+#~ "Paste your export file's content and click on the button below, to import "
+#~ "your settings."
+#~ msgstr ""
+#~ "برای وارد کردن تنظیمات محتوا را از پرونده قبلی برداید و در جعبه بچسبانید، "
+#~ "سپس دکمه را فشار دهید"
+
+#~ msgid "Export Settings"
+#~ msgstr "صادر کردن تنظیمات"
+
+#~ msgid "Stats"
+#~ msgstr "آمارها"
+
+#~ msgid "Hide Stats Link"
+#~ msgstr "پنهان کردن پیوند آمار"
+
+#~ msgid ""
+#~ "Enable this option if your users are confused by the Stats link associate "
+#~ "to each post in the Edit Posts page."
+#~ msgstr ""
+#~ "این گزینه را فعال کنید اگر پیوند آمار در صفحه ویراش ارسال کاربران را گیج "
+#~ "میکند. "
+
+#~ msgid "Blacklist"
+#~ msgstr "فهرست سیاه"
+
+#~ msgid ""
+#~ "How valuable is monitoring your visitors for your site? WP SlimStat is "
+#~ "and will always be free, but consider supporting the author if this "
+#~ "plugin made your web site better, especially if you are making money out "
+#~ "of it. Any donation received will be reinvested in the development of WP "
+#~ "SlimStat, and to buy some food for my hungry family."
+#~ msgstr ""
+#~ "تا چه حد ارزشمند است نظارت بر بازدید کنندگان خود را برای سایت شما؟ "
+#~ "SlimStat WP است و همیشه نیز خواهد بود، اما در نظر نویسنده اگر این افزونه "
+#~ "وب سایت شما بهتر است، به خصوص اگر شما در حال ساخت پول از آن. هر گونه کمک "
+#~ "مالی دریافتی در توسعه SlimStat WP دوباره سرمایه گذاری خواهد شد و برای "
+#~ "خرید برخی از مواد غذایی برای خانواده گرسنه ام."
+
+#~ msgid "Need help?"
+#~ msgstr "کمک؟"
+
+#, fuzzy
+#~ msgid ""
+#~ "Please visit our official <a href='http://wordpress.org/support/plugin/wp-"
+#~ "slimstat' target='_blank'>support forum</a> to see if your question has "
+#~ "already been answered. If not, feel free to post your request there, I'll "
+#~ "do my best to address your concerns as soon as possible."
+#~ msgstr ""
+#~ "لطفا از پایگاه رسمی ما به نشانی &lt;a href='http://wordpress.org/support/"
+#~ "plugin/wp-slimstat' target='_blank'&gt;تالار گفتگو&lt;/a&gt;  بازدید کنید "
+#~ "تا ببینید آیا سوال شما پاسخ داده شده است؟ اگر نه، با احساس آزادی کامل "
+#~ "سوال خود را آن‌جا بپرسید."
+
+#~ msgid "Recent messages from the support forum"
+#~ msgstr "پیام‌های اخیر از تالار گفتگو."
+
+#~ msgid "Don't want or cannot donate?"
+#~ msgstr "نمی‌خواهید، یا نمی‌توانید اعانه دهید؟"
+
+#~ msgid ""
+#~ "If you cannot donate money, please consider blogging about WP SlimStat, "
+#~ "your visitors may not know you're using it! You can also contribute by "
+#~ "donating some of your spare time: send me bug reports, localization files "
+#~ "and ideas on how to improve WP SlimStat."
+#~ msgstr ""
+#~ "اگر شما می توانید پول را اهدا نمی کند، لطفا نظر وبلاگ نویسی در مورد "
+#~ "SlimStat WP، بازدید کنندگان خود را نمی دانند ممکن است شما با استفاده از "
+#~ "آن! شما همچنین می توانید با اهدای برخی از اوقات فراغت خود را کمک: به من "
+#~ "گزارش اشکال، فایل ها و محلی سازی ایده ها در مورد چگونگی بهبود SlimStat WP "
+#~ "ارسال کنید."
+
+#~ msgid "Show your appreciation"
+#~ msgstr "قدردانی خود را نشان دهید"
+
+#, fuzzy
+#~ msgid ""
+#~ "Tell other people if WP SlimStat works for you and how good it is. <a "
+#~ "href=\"http://wordpress.org/extend/plugins/wp-slimstat/\">Rate it</a> on "
+#~ "its Plugin Directory page."
+#~ msgstr ""
+#~ "اگر SlimStat WP خوب کار می کند، به افراد دیگر بگویید.\n"
+#~ "در صفحه‌ی خود افزونه &lt;a href=\"http://wordpress.org/extend/plugins/wp-"
+#~ "slimstat/\"&gt;امتیاز بدهید&lt;/a&gt;. "
+
+#~ msgid "Support"
+#~ msgstr "پشتیبانی"
+
+#, fuzzy
+#~ msgid ""
+#~ "<a href=\"http://slimstat.getused.to.it/\">WP SlimStat</a> is and will "
+#~ "always be free, but consider supporting the author if this plugin helped "
+#~ "you improve your website, or if you are making money out of it. Donations "
+#~ "will be invested in the development of WP SlimStat, and to buy some food "
+#~ "for my hungry family. You can also leave <a href=\"http://wordpress.org/"
+#~ "support/view/plugin-reviews/wp-slimstat\">a review</a> to let other users "
+#~ "know how this plugin has helped you manage your site."
+#~ msgstr ""
+#~ "تا چه حد ارزشمند است نظارت بر بازدید کنندگان خود را برای سایت شما؟ "
+#~ "SlimStat WP است و همیشه نیز خواهد بود، اما در نظر نویسنده اگر این افزونه "
+#~ "وب سایت شما بهتر است، به خصوص اگر شما در حال ساخت پول از آن. هر گونه کمک "
+#~ "مالی دریافتی در توسعه SlimStat WP دوباره سرمایه گذاری خواهد شد و برای "
+#~ "خرید برخی از مواد غذایی برای خانواده گرسنه ام."
+
+#~ msgid ""
+#~ "You may want to prevent WP SlimStat from tracking users, but still be "
+#~ "able to access your stats."
+#~ msgstr ""
+#~ "ممکن است بخواهید از ره‌گیری کاربران توست WP SlimStat جلوگیری کنید، اما "
+#~ "همچنان قادر به دست‌رسی به آمار باشید."
+
+#~ msgid "Store Data For"
+#~ msgstr "ذخیره‌ی داده برای"
+
+#, fuzzy
+#~ msgid ""
+#~ "Automatically deletes pageviews older than <strong>X</strong> days (uses "
+#~ "Wordpress cron jobs). Zero disables this feature."
+#~ msgstr ""
+#~ "به صورت خودکار مشاهده صفحات قبل از &lt;strong&gt;X&lt;/strong&gt; روز را "
+#~ "حذف می‌کند(با استفاده از cron وردپرس). «صفر» این قابلیت را از کار می‌اندازد."
+
+#, fuzzy
+#~ msgid ""
+#~ "Display hostnames instead of IP addresses. It slows down the rendering of "
+#~ "your metrics."
+#~ msgstr ""
+#~ "مشاهده نام میزبان به جای نشانی آی‌پی. این کار نمایش گزارش را کمی کند می‌کند."
+
+#, fuzzy
+#~ msgid ""
+#~ "Specify the number of results to return for each module. Please use a "
+#~ "<strong>positive</strong> value."
+#~ msgstr ""
+#~ "تعداد نتایجی که برای هر بخش می‌خواهید نشان داده شوند را انتخاب کنید. لطفا "
+#~ "یک عدد &lt;strong&gt;مثبت&lt;/strong&gt; باشد."
+
+#, fuzzy
+#~ msgid "Right Now Rows"
+#~ msgstr "همین الآن"
+
+#~ msgid "Customize the IP lookup service URL."
+#~ msgstr "نشانی خادم دل‌خواه برای مکان‌یابی بر اساس نشانی آی‌پی را وارد کنید."
+
+#~ msgid "Refresh Every"
+#~ msgstr "به‌روزآوری هر"
+
+#~ msgid "Anonymize IP Addresses"
+#~ msgstr "غیرقابل تشخیص کردن آی‌پی‌ها"
+
+#~ msgid "Filter Prefetch"
+#~ msgstr "نادیده گرفتن پیش‌دریافت"
+
+#~ msgid "IP Addresses"
+#~ msgstr "نشانی‌های آی‌پی"
+
+#~ msgid "Users"
+#~ msgstr "کاربران"
+
+#~ msgid "Read access"
+#~ msgstr "دست‌رسی خواندن"
+
+#~ msgid "Config access"
+#~ msgstr "دست‌رسی پیکربندی"
+
+#~ msgid "Track Browser Capabilities"
+#~ msgstr "ره‌گیری قابلیت‌های مرورگر"
+
+#, fuzzy
+#~ msgid ""
+#~ "Hooks a javascript event handler to each external link on your site, to "
+#~ "track when visitors click on them. If Browser Capabilities is disabled, "
+#~ "outbound clicks <strong>will not</strong> be tracked regardless of which "
+#~ "value you set for this option."
+#~ msgstr ""
+#~ "می افزاید: کنترل رویداد جاوا اسکریپت به یک لینک خارجی در سایت خود، به "
+#~ "پیگیری وقتی که بازدید کننده بر روی آنها کلیک کنید. اگر قابلیت های مرورگر "
+#~ "غیر فعال است، بین المللی عازم ناحیه دور دست &lt;STRONG&gt; کلیک &lt;/ "
+#~ "strong&gt; در دنبال بدون در نظر گرفتن که ارزش شما برای این گزینه است."
+
+#~ msgid ""
+#~ "Are you sure you want to remove all the information about your hits and "
+#~ "visits?"
+#~ msgstr ""
+#~ "آیا مطمئن هستید که می‌خواهید تمامی اطلاعات مربوط به آمار بازدید و "
+#~ "بازدیدکننده‌ها را حذف کنید؟"
+
+#~ msgid "Your WP SlimStat table has been successfully emptied."
+#~ msgstr "جداول WP SlimStat با موفقیت خالی شدند"
+
+#~ msgid "Your WP SlimStat tabs have been successfully reset."
+#~ msgstr "جداول SlimStat به خوبی بازنشانی شدند."
+
+#~ msgid "Your WP SlimStat table has been successfully reset."
+#~ msgstr "جداول SlimStat به خوبی بازنشانی شدند."
+
+#~ msgid "ERROR: Your Slimstat table could not be initialized."
+#~ msgstr "خطا: جداول SlimStat نمی‌توانند آماده‌سازی شوند."
+
+#~ msgid "Your WP SlimStat table has been successfully optimized."
+#~ msgstr "جداول WP SlimStat با موفقیت بهینه‌سازی شد."
+
+#~ msgid "Your WP SlimStat indexes have been successfully created."
+#~ msgstr "اندیس‌های WP SlimStat با موفقیت ساخته شد."
+
+#~ msgid "Your WP SlimStat indexes have been successfully removed."
+#~ msgstr "اندیس‌های WP SlimStat با موفقیت حذف شد."
+
+#~ msgid "Your WP SlimStat table has been successfully cleaned. Rows affected:"
+#~ msgstr "جداول WP SlimStat با موفقیت پاک‌سازی شد. ردیف‌های تحت تاثیر:"
+
+#~ msgid ", it may take some time and exceed PHP's maximum execution time"
+#~ msgstr ""
+#~ "، ممکن است مقداری طول بکشد و از بیشینه مقدار زمان اجرای پی‌اچ‌پی بیش‌تر باشد."
+
+#~ msgid "Size"
+#~ msgstr "اندازه"
+
+#~ msgid "Average Record Length"
+#~ msgstr "میانگین طول رکورد"
+
+#~ msgid "Created on"
+#~ msgstr "ساخته شده در"
+
+#~ msgid "Approximate Overhead"
+#~ msgstr "سربار تقریبی"
+
+#~ msgid "Optimize tables"
+#~ msgstr "بهینه کردن جداول"
+
+#~ msgid "Purge Data"
+#~ msgstr "حذف داده‌های"
+
+#~ msgid "Is equal to"
+#~ msgstr "مساوی‌ست با"
+
+#~ msgid "Contains"
+#~ msgstr "شامل"
+
+#~ msgid "Does not contain"
+#~ msgstr "ناشامل"
+
+#~ msgid "Starts with"
+#~ msgstr "شروع می‌شود با"
+
+#~ msgid "Ends with"
+#~ msgstr "خاتمه می‌یابد با"
+
+#~ msgid "Does not start with"
+#~ msgstr "شروع نمی‌شود با"
+
+#~ msgid "Does not end with"
+#~ msgstr "خاتمه نمی‌یابد با"
+
+#~ msgid "DELETE"
+#~ msgstr "حذف"
+
+#~ msgid "Activate Indexes"
+#~ msgstr "فعال کردن اندیس‌ها"
+
+#~ msgid "Remove Indexes"
+#~ msgstr "حذف اندیس‌ها"
+
+#~ msgid ""
+#~ "Use this feature if you want to save some DB space, while slightly "
+#~ "degrading WP SlimStat overall performances."
+#~ msgstr ""
+#~ "با استفاده از این ویژگی، می‌توانید بخشی از فضای پایگاه داده را صرفه‌جویی "
+#~ "کنید، اما کمی از کارایی زمان اجرای افزونه کاسته خواهد شد."
+
+#~ msgid "Reset Stats"
+#~ msgstr "بازنشانی آمارها"
+
+#~ msgid ""
+#~ "Select this option if you want to empty your WP SlimStat database (does "
+#~ "not reset your settings)."
+#~ msgstr ""
+#~ "این گزینه را انتخاب کنید اگر شما می خواهید برای خالی کردن پایگاه داده WP "
+#~ "خود را SlimStat (تنظیمات خود را تنظیم مجدد کنید)."
+
+#~ msgid "Details"
+#~ msgstr "جزئیات"
+
+#~ msgid "Show records where"
+#~ msgstr "نشان دادن رکوردها وقتی"
+
+#~ msgid ""
+#~ "Please refer to the contextual help (available on WP 3.3+) for more "
+#~ "information on what these filters mean."
+#~ msgstr ""
+#~ "لطفا برای کسب اطلاعات بیش‌تر در مورد این فیلترها به متن کمک (قابل دسترس در "
+#~ "WP 3.3+) مراجعه کنید."
+
+#~ msgid "Select a day to make the interval field appear."
+#~ msgstr "یک روز را انتخاب کنید تا انتخاب بازه تاریخ فعال شود"
+
+#~ msgid "Filter by date"
+#~ msgstr "فیلتر با تاریخ"
+
+#~ msgid "Go"
+#~ msgstr "برو"
+
+#~ msgid "No records found"
+#~ msgstr "هیچ رکوردی یافت نشد"
+
+#~ msgid "refreshing in"
+#~ msgstr "تازه کردن در"
+
+#~ msgid "Filter results where IP equals %s"
+#~ msgstr "نتایج را فیلتر کن وقتی آی‌پی مساوی‌ست با %s"
+
+#~ msgid "Filter results where user equals %s"
+#~ msgstr "نتایج را فیلتر کن وقتی کاربر مساوی‌ست با %s"
+
+#~ msgid "Filter results where ther user's real IP equals %s"
+#~ msgstr "نتایج را فیلتر کن وقتی نشانی واقعی آی‌پی کاربر مساوی‌ست با %s"
+
+#~ msgid "Country"
+#~ msgstr "کشور"
+
+#~ msgid "Platform"
+#~ msgstr "بستر"
+
+#, fuzzy
+#~ msgid "Filter results where browser type equals %s"
+#~ msgstr "نتایج را فیلتر کن وقتی نوع محتوا مساوی‌ست با %s"
+
+#~ msgid "Filter results where screen resolution equals %s"
+#~ msgstr "نتایح را فیلتر کن وقتی ابعاد صفحه نمایش مساوی‌ست با %s"
+
+#~ msgid "Filter results where content type equals %s"
+#~ msgstr "نتایج را فیلتر کن وقتی نوع محتوا مساوی‌ست با %s"
+
+#~ msgid "Bots, Crawlers and others"
+#~ msgstr "بات‌ها، خزنده‌ها و سایر..."
+
+#~ msgid "Recent Known Visitors"
+#~ msgstr "کاربران آشنای اخیر"
+
+#~ msgid "Recent 404 URLs"
+#~ msgstr "نشانی خطاهای ۴۰۴ اخیر"
+
+#~ msgid "Top 404 URLs"
+#~ msgstr "بالاترین نشانی‌های خطای ۴۰۴"
+
+#~ msgid "Remove all filters"
+#~ msgstr "حذف همه فیلترها"
+
+#~ msgid "Filter results where domain equals %s"
+#~ msgstr "نتایج را فیلتر کن وقتی که دامنه مساوی‌ست با %s"
+
+#~ msgid "Filter results where searchterm equals %s"
+#~ msgstr "نتایج را فیلتر کن وقتی عبارت جستجو مساوی‌ست با %s"
+
+#, fuzzy
+#~ msgid "Filter results where date equals today"
+#~ msgstr "نتایج را فیلتر کن وقتی که دامنه مساوی‌ست با %s"
+
+#, fuzzy
+#~ msgid "Filter results where date equals yesterday"
+#~ msgstr "نتایج را فیلتر کن وقتی که دامنه مساوی‌ست با %s"
+
+#, fuzzy
+#~ msgid "This number includes <strong>human visits</strong> only."
+#~ msgstr "این عدد فقط شامل مشاهدات انسانی‌ست."
+
+#~ msgid "10 - 20 minutes"
+#~ msgstr "۱۰ تا ۲۰ دقیقه"
+
+#, fuzzy
+#~ msgid "Your Content"
+#~ msgstr "محتوا"
+
+#~ msgid "Ignore users"
+#~ msgstr "کاربران را نادیده بگیر"
+
+#~ msgid "Users by capability"
+#~ msgstr "کاربران بر اساس قابلیت"
+
+#~ msgid "Top Languages - Just Visitors"
+#~ msgstr "بیش‌ترین زبان‌ها - فقط بینندگان"
+
+#~ msgid "Resources"
+#~ msgstr "منابع"
+
+#~ msgid "Minimum capability"
+#~ msgstr "حداقل قابلیت"
+
+#, fuzzy
+#~ msgid "Records: %d - %d"
+#~ msgstr "رکوردهای %d تا %d از %d"
+
+#~ msgid "Open in a new window"
+#~ msgstr "در پنجره جدید باز کن"
+
+#~ msgid "Your Geolocation data has been successfully updated."
+#~ msgstr "داده‌های مکان‌یابی با موفقیت به‌روزرسانی شدند"
+
+#~ msgid "ERROR: Your Geolocation source file is not readable."
+#~ msgstr "خطا: فایل مکان‌یابی قابل خواندن نیست."
+
+#~ msgid "Update Geolocation DB"
+#~ msgstr "به‌روزآوری پایگاه داده مکان‌یابی"
+
+#~ msgid "This button loads the new ip2location data."
+#~ msgstr "این دکمه داده‌های «تبدیل آی‌پی به موقعیت» جدید را بارگزاری می‌کند"
+
+#~ msgid "Use standalone menu"
+#~ msgstr "استفاده از منوی مستقل"
+
+#, fuzzy
+#~ msgid ""
+#~ "Specify the number of rows per page to show in the Right Now screen. "
+#~ "Please use a <strong>positive</strong> value."
+#~ msgstr ""
+#~ "تعداد ردیف‌های هر صفحه که در «همین الآن» نمایش داده می‌شوند را انتخاب کنید. "
+#~ "لطفا عددی&lt;strong&gt;مثبت&lt;/strong&gt; باشد."
