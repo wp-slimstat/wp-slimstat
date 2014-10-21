@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.7.4
+Version: 3.7.5
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.7.4';
+	public static $version = '3.7.5';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -269,7 +269,7 @@ class wp_slimstat{
 		}
 
 		// User's IP address
-		list(self::$stat['ip'], $long_other_ip) = self::_get_ip2long_remote_ip();
+		list(self::$stat['ip'], self::$stat['other_ip']) = self::_get_ip2long_remote_ip();
 		if (empty(self::$stat['ip'])){
 			self::$stat['id'] = -203;
 			return $_argument;
@@ -330,7 +330,7 @@ class wp_slimstat{
 			$long_ip_to_ignore = ip2long($ip_to_ignore);
 			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
 			$long_masked_user_ip = self::$stat['ip'] & $long_mask;
-			$long_masked_other_ip = $long_other_ip & $long_mask;
+			$long_masked_other_ip = self::$stat['other_ip'] & $long_mask;
 			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
 			if ($long_masked_user_ip == $long_masked_ip_to_ignore || $long_masked_other_ip == $long_masked_ip_to_ignore){
 				self::$stat['id'] = -204;
@@ -345,7 +345,7 @@ class wp_slimstat{
 		// Anonymize IP Address?
 		if (self::$options['anonymize_ip'] == 'yes'){
 			self::$stat['ip'] = self::$stat['ip']&4294967040;
-			$long_other_ip = $long_other_ip&4294967040;
+			self::$stat['other_ip'] = self::$stat['other_ip']&4294967040;
 		}
 
 		// Is this country blacklisted?
@@ -405,8 +405,8 @@ class wp_slimstat{
 
 		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter
 		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
-		if (!empty($long_other_ip) && $long_other_ip != self::$stat['ip']){
-			self::$stat['other_ip'] = sprintf("%u", $long_other_ip);
+		if (!empty(self::$stat['other_ip']) && self::$stat['other_ip'] != self::$stat['ip']){
+			self::$stat['other_ip'] = sprintf("%u", self::$stat['other_ip']);
 		}
 
 		// Now let's save this information in the database

@@ -39,6 +39,7 @@
 			
 			?>
 			<input type="submit" value="<?php _e('Apply','wp-slimstat') ?>" class="button-secondary">
+			<a href="#" id="slimstat-load-saved-filters" class="button-secondary" title="Saved Filters"><?php _e('Load','wp-slimstat') ?></a>
 		</fieldset><!-- slimstat-filters -->
 
 		<fieldset id="slimstat-date-filters" class="wp-ui-highlight">

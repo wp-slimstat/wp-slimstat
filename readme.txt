@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.7.4
+Stable tag: 3.7.5
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -270,6 +270,10 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.7.5 =
+* [Fix] Some plugins are not considerate of the shared environment they use, and don't return data in the right format ;) We added some extra code to make sure the data Slimstat needs is of the correct type (thank you, [p30m](https://wordpress.org/support/topic/slim-stat-dosnt-work-after-wordpress-ugrade))
+* [Fix] Compatibility issue with our Firewall Fix add-on
 
 = 3.7.4 =
 * [Fix] Issue with menus when displayed in the admin bar (thank you all the users who pointed this out)

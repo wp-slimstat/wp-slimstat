@@ -265,11 +265,12 @@ class wp_slimstat_reports {
 			}
 		}
 		if (!empty($filters_html)){
-			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul>";
+			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-current-filters' class='slimstat-filter-action-button button-secondary' data-saved-label='".__('Coming Soon','wp-slimstat')."'>".__('Save','wp-slimstat')."</a>";
 		}
 		if(count($filters_dropdown) > 1){
-			$filters_html .= '<a href="'.self::fs_url().'" id="slimstat-remove-all-filters" class="button-secondary">'.__('Reset All','wp-slimstat').'</a>';
+			$filters_html .= '<a href="'.self::fs_url().'" id="slimstat-remove-all-filters" class="button-secondary slimstat-filter-action-button">'.__('Reset All','wp-slimstat').'</a>';
 		}
+		$filters_html .= '';
 
 		return ($filters_html != "<span class='filters-title'>".__('Current filters:','wp-slimstat').'</span> ')?$filters_html:'';
 	}

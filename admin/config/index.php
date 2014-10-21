@@ -50,7 +50,7 @@ switch ($config_tabs[$current_tab-1]){
 			'show_display_name' => array('description' => __('Show Display Name','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('By default, users are listed by their usernames. Use this option to visualize their display names instead.','wp-slimstat')),
 			'show_complete_user_agent_tooltip' => array('description' => __('Show User Agent','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see the browser name or a complete user agent string when hovering on browser icons.','wp-slimstat')),
 			'convert_resource_urls_to_titles' => array('description' => __('Show Titles','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Slimstat converts your permalinks into post and page titles. Disable this feature if you need to see the URL in your reports.','wp-slimstat')),
-			'date_time_format' => array('description' => __('Date and Time','wp-slimstat'), 'type' => 'text', 'long_description' => __('Format to use to display date and time of a pageview.','wp-slimstat')),
+			'date_time_format' => array('description' => __('Date and Time','wp-slimstat'), 'type' => 'text', 'long_description' => __('<a href="http://php.net/manual/en/function.date.php" target="_blank">PHP Format</a> to use when displaying date and time of a pageview.','wp-slimstat')),
 			
 			'views_functionality_header' => array('description' => __('Functionality','wp-slimstat'), 'type' => 'section_header'),
 			'async_load' => array('description' => __('Asynchronous Views','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Load all the reports dynamically. It makes the reports render faster, but it increases the load on your server.','wp-slimstat')),

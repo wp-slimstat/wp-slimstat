@@ -463,7 +463,6 @@ jQuery(function(){
 			closeOnEscape: true,
 			closeText: '',
 			draggable: true,
-			height: 415,
 			modal: true,
 			open: function(){
 				jQuery('.ui-widget-overlay,.close-dialog').bind('click',function(){
@@ -475,14 +474,29 @@ jQuery(function(){
 		});
 	}
 
-	// Modal Window / Overlay: Whois
+	// Modal Window / Whois
 	jQuery(document).on('click', '.whois', function(e){
 		e.preventDefault();
 		jQuery('#slimstat-modal-dialog').dialog({
 			dialogClass: 'slimstat',
 			title: jQuery(this).attr('title')
-		}).html('<iframe id="ip2location" src="'+jQuery(this).attr('href')+'" width="100%" height="92%"></iframe>');
+		}).html('<iframe id="ip2location" src="'+jQuery(this).attr('href')+'" width="100%" height="600"></iframe>');
 		jQuery('#slimstat-modal-dialog').dialog('open');
+	});
+
+	// Modal Window / Load & Save Filters
+	jQuery(document).on('click', '#slimstat-load-saved-filters', function(e){
+		e.preventDefault();
+		jQuery('#slimstat-modal-dialog').dialog({
+			dialogClass: 'slimstat',
+			title: jQuery(this).attr('title')
+		}).html('<p>We are working on a new feature that will allow you to save, reload and edit groups of filters, so that you don\'t have to set them every time you access your reports. Stay tuned.</p>');
+		jQuery('#slimstat-modal-dialog').dialog('open');
+	});
+	
+	jQuery(document).on('click', '#slimstat-save-current-filters', function(e){
+		e.preventDefault();
+		jQuery(this).text(jQuery(this).attr('data-saved-label')).fadeOut(1500);
 	});
 
 	// Redraw charts and adjust modal window width on resize

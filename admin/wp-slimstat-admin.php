@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			self::$admin_notice = "We would like to thank all our users who volunteered their time to test our latest add-on (more than 100 requests), which can now be found on our <a href='http://slimstat.getused.to.it/addons/' target='_blank'>online store</a>.";
+			self::$admin_notice = "Please help us update all the localization files for Slimstat. If you're using our software in a language other than English, and you see untranslated strings, there's a chance you can lend a hand. We are starting to implement the new language API introduced in WordPress 4.0, and it would be great to have Slimstat speak new languages! <a href='http://support.getused.to.it/' target='_blank'>Contact us</a> today to contribute.";
 		}
 		else {
 			self::$admin_notice = "

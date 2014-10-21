@@ -93,25 +93,27 @@
 	background-color: #c0c0c0;
 	color: #fff;
 	font-size: 1.1em;
-	padding: 10px 5px 8px;
+	overflow: hidden;
+	padding: 5px;
 	position: relative;
 }
 #slimstat-current-filters .slimstat-remove-filter{
 	color: #fff;
 }
 #slimstat-current-filters .slimstat-filter-list{
+	float: left;
 	margin: 0;
-	padding: 0 75px 0 0;
+	padding: 3px 0 0 5px;
 }
 #slimstat-current-filters .slimstat-filter-list li{
 	display: inline;
-	margin-right: 20px;
+	margin: 0 20px 0 0;
 	text-transform: lowercase;
+	vertical-align: middle;
 }
-#slimstat-remove-all-filters{
-	position: absolute;
-	right: 5px;
-	top: 4px;
+.slimstat-filter-action-button{
+	float: right;
+	margin-left: 10px !important;
 }
 
 /* Reports: Container */
@@ -330,8 +332,8 @@
 	border: 0;
 	border-radius: 0;
 	padding: 0;
-	width: 80% !important;
-	z-index: 1005 !important;
+	width: 90% !important;
+	z-index: 100500 !important;
 }
 .ui-dialog.slimstat .ui-dialog-titlebar{
 	background: #4b8df8;
@@ -351,7 +353,7 @@
 	border: 0;
 	color: #fff;
 	float: right;
-	line-height: 1em;
+	line-height: 1.3em;
 	padding: 0;
 }
 .ui-dialog.slimstat .ui-dialog-titlebar-close:before{
@@ -366,6 +368,10 @@
 	display: none;
 	padding: 0;
 	width: auto;
+}
+#slimstat-modal-dialog p{
+	margin: 0;
+	padding: 10px;
 }
 
 /* Add-on: WP SlimStat - Dashboard Widgets */
