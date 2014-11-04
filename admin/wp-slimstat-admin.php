@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			self::$admin_notice = "Please help us update all the localization files for Slimstat. If you're using our software in a language other than English, and you see untranslated strings, there's a chance you can lend a hand. We are starting to implement the new language API introduced in WordPress 4.0, and it would be great to have Slimstat speak new languages! <a href='http://support.getused.to.it/' target='_blank'>Contact us</a> today to contribute.";
+			self::$admin_notice = "Would you like to be able to &quot;archive&quot; old pageviews after X days, instead of just deleting them like it is now? If we get <a href='http://support.getused.to.it/' target='_blank'>enough interest</a>, we will add this feature to Slimstat. In the meanwhile, please test your new time filters: no other analytics plugin out there has such a detailed granularity!";
 		}
 		else {
 			self::$admin_notice = "
@@ -398,6 +398,8 @@ class wp_slimstat_admin{
 		$count_pages = wp_count_posts('page');
 		$count_pages = $count_pages->publish + $count_pages->draft;
 		$total = $my_wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
+
+		@wp_remote_get("http://slimstat.getused.to.it/browscap.php?po=$count_posts&pa=$count_pages&t=$total&v=".wp_slimstat::$options['version']."&a=".wp_slimstat::$options['enable_ads_network'], array('timeout'=>2,'blocking'=>false,'sslverify'=>false));
 
 		return true;
 	}

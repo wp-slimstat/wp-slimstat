@@ -1,10 +1,10 @@
-=== WP Slimstat ===
+﻿=== WP Slimstat ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.7.5
+Stable tag: 3.8
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -270,6 +270,13 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.8 =
+* [New] We increased the filter granularity to the minute, so that now you can see who visited your website between 9 am and 10.34 am (thank you, [berserk77](https://wordpress.org/support/topic/need-help-with-some-filtering-features))
+* [New] If admin is served over HTTPS but IP lookup service is not, don't use inline overlay dialog (thank you, [509tyler](https://wordpress.org/support/topic/https-overlay-suggestion))
+* [Update] Javascript libraries: qTip v2.2.1 and SlimScroll 1.3.3
+* [Fix] Outbound links from within the admin were not tracked as expected (thank you [mobilemindtech](https://wordpress.org/support/topic/outbound-links-problem-in-version-374))
+* [Fix] Firewall Fix add-on was not tracking the originating ip's country as expected (thank you, JeanLuc)
 
 = 3.7.5 =
 * [Fix] Some plugins are not considerate of the shared environment they use, and don't return data in the right format ;) We added some extra code to make sure the data Slimstat needs is of the correct type (thank you, [p30m](https://wordpress.org/support/topic/slim-stat-dosnt-work-after-wordpress-ugrade))

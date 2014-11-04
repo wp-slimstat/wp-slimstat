@@ -183,17 +183,13 @@ class wp_slimstat_reports {
 		if (!empty($_POST['f']) && !empty($_POST['o'])){
 			$filters[] = "{$_POST['f']} {$_POST['o']} ".(isset($_POST['v'])?$_POST['v']:'');
 		}
-		if (!empty($_POST['day'])){
-			$filters[] = "day equals {$_POST['day']}";
-		}
-		if (!empty($_POST['month'])){
-			$filters[] = "month equals {$_POST['month']}";
-		}
-		if (!empty($_POST['year'])){
-			$filters[] = "year equals {$_POST['year']}";
-		}
-		if (!empty($_POST['interval'])){
-			$filters[] = "interval equals {$_POST['interval']}";
+		
+		$date_time_filters = array('minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes');
+		
+		foreach ($date_time_filters as $a_date_time_filter_name){
+			if (!empty($_POST[$a_date_time_filter_name])){
+				$filters[] = "$a_date_time_filter_name equals {$_POST[$a_date_time_filter_name]}";
+			}
 		}
 
 		// Hidden Filters
@@ -213,7 +209,7 @@ class wp_slimstat_reports {
 		wp_slimstat_db::init($filters);
 
 		// Some of the filters supported by the API do not appear in the dropdown
- 		self::$dropdown_filter_names = array_diff_key(wp_slimstat_db::$filter_names, array('hour' => 1, 'day' => 1, 'month' => 1, 'year' => 1, 'interval' => 1, 'direction' => 1, 'limit_results' => 1, 'start_from' => 1, 'strtotime' => 1));
+ 		self::$dropdown_filter_names = array_diff_key(wp_slimstat_db::$filter_names, array('minute' => 1, 'hour' => 1, 'day' => 1, 'month' => 1, 'year' => 1, 'interval' => 1, 'interval_hours' => 1, 'interval_minutes' => 1, 'direction' => 1, 'limit_results' => 1, 'start_from' => 1, 'strtotime' => 1));
 
 		// Default text for the inline help associated to the chart
 		self::$chart_tooltip = '<strong>'.__('Chart controls','wp-slimstat').'</strong><ul><li>'.__('Use your mouse wheel to zoom in and out','wp-slimstat').'</li><li>'.__('While zooming in, drag the chart to move to a different area','wp-slimstat').'</li><li>'.__('Double click on an empty region to reset the zoom level','wp-slimstat').'</li>';
@@ -534,7 +530,7 @@ class wp_slimstat_reports {
 			$element_value = "<a class='slimstat-filter-link' href='".self::fs_url($_column.' '.$_args['filter_op'].' '.$results[$i][$_column])."'>$element_value</a>";
 
 			if ($_type == 'recent'){
-				$row_details = date_i18n(wp_slimstat::$options['date_time_format'], $results[$i]['dt'], true).$row_details;
+				$row_details = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true).$row_details;
 			}
 			else{
 				$percentage = ' <span>'.(($_args['total_for_percentage'] > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['counthits']/$_args['total_for_percentage'])), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0).'%</span>';
@@ -710,7 +706,7 @@ class wp_slimstat_reports {
 				$host_by_ip .= ($host_by_ip != $results[$i]['ip'])?" ({$results[$i]['ip']})":'';
 			}
 
-			$results[$i]['dt'] = date_i18n(wp_slimstat::$options['date_time_format'], $results[$i]['dt'], true);
+			$results[$i]['dt'] = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true);
 			if (!empty($results[$i]['searchterms']) && empty($results[$i]['resource'])){
 				$results[$i]['resource'] = __('Search for','wp-slimstat').': '.htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
 			}
@@ -778,8 +774,8 @@ class wp_slimstat_reports {
 		<p><?php _e('Javascript Mode', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['javascript_mode']), 'wp-slimstat') ?></span></p>
 		<p><?php _e('Tracking Browser Caps', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['enable_javascript']), 'wp-slimstat') ?></span></p>
 		<p><?php _e('Auto purge', 'wp-slimstat') ?> <span><?php echo (wp_slimstat::$options['auto_purge'] > 0)?wp_slimstat::$options['auto_purge'].' '.__('days','wp-slimstat'):__('No','wp-slimstat') ?></span></p>
-		<p><?php _e('Oldest pageview', 'wp-slimstat') ?> <span><?php $dt = wp_slimstat_db::get_oldest_visit('1=1', false); echo ($dt == null)?__('No visits','wp-slimstat'):date_i18n(get_option('date_format'), $dt) ?></span></p>
-		<p>Geo IP <span><?php echo date_i18n(get_option('date_format'), @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/databases/maxmind.dat')) ?></span></p><?php
+		<p><?php _e('Oldest pageview', 'wp-slimstat') ?> <span><?php $dt = wp_slimstat_db::get_oldest_visit('1=1', false); echo ($dt == null)?__('No visits','wp-slimstat'):date_i18n(wp_slimstat::$options['date_format'], $dt) ?></span></p>
+		<p>Geo IP <span><?php echo date_i18n(wp_slimstat::$options['date_format'], @filemtime(WP_PLUGIN_DIR.'/wp-slimstat/databases/maxmind.dat')) ?></span></p><?php
 	}
 
 	public static function show_overview_summary($_id = 'p0', $_current_pageviews = 0, $_chart_data = array()){

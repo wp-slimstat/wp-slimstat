@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.7.5
+Version: 3.8
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.7.5';
+	public static $version = '3.8';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -106,6 +106,7 @@ class wp_slimstat{
 			}
 		}
 		else{
+			self::$stat = array();
 			list(self::$data_js['id'], $nonce) = explode('.', self::$data_js['id']);
 			if ($nonce != md5(self::$data_js['id'].self::$options['secret'])){
 				do_action('slimstat_track_exit_104');
@@ -340,7 +341,7 @@ class wp_slimstat{
 
 		// Country and Language
 		self::$stat['language'] = self::_get_language();
-		self::$stat['country'] = self::_get_country(self::$stat['ip']);
+		self::$stat['country'] = self::get_country(self::$stat['ip']);
 
 		// Anonymize IP Address?
 		if (self::$options['anonymize_ip'] == 'yes'){
@@ -443,7 +444,7 @@ class wp_slimstat{
 	/**
 	 * Searches for country associated to a given IP address
 	 */
-	protected static function _get_country($_ipnum = 0){
+	public static function get_country($_ipnum = 0){
 		$float_ipnum = (float)sprintf("%u", $_ipnum);
 
 		// Is this a RFC1918 (local) IP?
@@ -487,7 +488,7 @@ class wp_slimstat{
 		fclose($handle);
 		return 'xx';
 	}
-	// end _get_country
+	// end get_country
 
 	/**
 	 * Tries to find the user's REAL IP address
@@ -1095,7 +1096,8 @@ class wp_slimstat{
 			'show_display_name' => $val_no,
 			'show_complete_user_agent_tooltip' => $val_no,
 			'convert_resource_urls_to_titles' => $val_yes,
-			'date_time_format' => ($val_yes == 'null')?'':'m-d-y h:i a',
+			'date_format' => ($val_yes == 'null')?'':'m-d-y',
+			'time_format' => ($val_yes == 'null')?'':'h:i a',
 			'async_load' => $val_no,
 			'use_slimscroll' => $val_yes,
 			'expand_details' => $val_no,

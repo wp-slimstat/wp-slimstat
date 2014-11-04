@@ -63,7 +63,7 @@
 	position: absolute;
 	right: 0;
 	top: 30px;
-	width: 300px;
+	width: 450px;
 	z-index: 120;
 }
 #slimstat-date-filters span a.slimstat-date-choice{
@@ -83,7 +83,10 @@
 }
 #slimstat-date-filters span select, #slimstat-date-filters span input{
 	margin-bottom: 5px;
-	width: 28%;
+	width: 80px;
+}
+#slimstat-date-filters span select.short, #slimstat-date-filters span input.short{
+	width: 50px;
 }
 #slimstat-date-filters span .ui-datepicker-trigger{
 	float: right;
