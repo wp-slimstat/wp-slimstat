@@ -1,5 +1,5 @@
 /* Links */
-.wrap.slimstat a{
+.wrap.slimstat a, [id^=slim_] a{
 	outline: none;
 	text-decoration: none;
 }
@@ -106,12 +106,11 @@
 #slimstat-current-filters .slimstat-filter-list{
 	float: left;
 	margin: 0;
-	padding: 3px 0 0 5px;
+	padding: 4px 0 5px 5px;;
 }
 #slimstat-current-filters .slimstat-filter-list li{
 	display: inline;
 	margin: 0 20px 0 0;
-	text-transform: lowercase;
 	vertical-align: middle;
 }
 .slimstat-filter-action-button{

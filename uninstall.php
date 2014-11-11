@@ -40,6 +40,7 @@ function slimstat_uninstall($_wpdb = ''){
 	// Goodbye options...
 	delete_option('slimstat_options');
 	delete_option('slimstat_visit_id');
+	delete_option('slimstat_filters');
 
 	$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%wp-slimstat%'");
 

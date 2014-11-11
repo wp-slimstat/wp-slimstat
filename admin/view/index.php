@@ -37,9 +37,13 @@
 				echo $filter_name_html.$filter_operator_html.$filter_value_html;
 			}
 			
+			echo '<input type="submit" value="'.__('Apply','wp-slimstat').'" class="button-secondary">';
+			
+			$saved_filters = get_option('slimstat_filters', array());
+			if (!empty($saved_filters)){
+				echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary" title="Saved Filters">'.__('Load','wp-slimstat').'</a>';
+			}
 			?>
-			<input type="submit" value="<?php _e('Apply','wp-slimstat') ?>" class="button-secondary">
-			<a href="#" id="slimstat-load-saved-filters" class="button-secondary" title="Saved Filters"><?php _e('Load','wp-slimstat') ?></a>
 		</fieldset><!-- slimstat-filters -->
 
 		<fieldset id="slimstat-date-filters" class="wp-ui-highlight">
@@ -90,8 +94,8 @@
 				<input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
 				<br/>
 				<select name="interval_direction" class="short" id="slimstat-filter-interval_direction">
-					<option value="minus"<?php echo (wp_slimstat_db::$filters_normalized['date']['interval_direction'] == 'minus')?' selected="selected"':''; ?>>-</option>
-					<option value="plus"<?php echo (wp_slimstat_db::$filters_normalized['date']['interval_direction'] == 'plus')?' selected="selected"':''; ?>>+</option>
+					<option value="minus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], 'minus')?>>-</option>
+					<option value="plus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], 'plus')?>>+</option>
 				</select>
 				<input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('days', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval'])?wp_slimstat_db::$filters_normalized['date']['interval']:'' ?>">,
 				<input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('hours', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval_hours'])?wp_slimstat_db::$filters_normalized['date']['interval_hours']:'' ?>">:

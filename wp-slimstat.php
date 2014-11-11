@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.8
+Version: 3.8.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.8';
+	public static $version = '3.8.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -190,6 +190,15 @@ class wp_slimstat{
 	public static function slimtrack($_argument = ''){
 		self::$stat['dt'] = date_i18n('U');
 		self::$stat['notes'] = '';
+
+		// Allow third-party tools to initialize the stat array
+		self::$stat = apply_filters('slimstat_filter_pageview_stat_init', self::$stat);
+
+		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
+		if (empty(self::$stat) || empty(self::$stat['dt'])){
+			self::$stat['id'] = -213;
+			return $_argument;
+		}
 
 		$referer = array();
 		if ((self::$options['javascript_mode'] != 'yes' && !empty($_SERVER['HTTP_REFERER'])) || !empty(self::$data_js['ref'])){

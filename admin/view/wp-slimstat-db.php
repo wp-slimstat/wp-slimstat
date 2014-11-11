@@ -629,7 +629,9 @@ class wp_slimstat_db {
 
 		$filters_normalized = array(
 			'columns' => array(),
-			'date' => array(),
+			'date' => array(
+				'interval_direction' => 'minus'
+			),
 			'misc' => $_init_misc?array(
 				'direction' => 'desc',
 				'limit_results' => wp_slimstat::$options['rows_to_show'],
@@ -696,7 +698,11 @@ class wp_slimstat_db {
 					case 'interval':
 					case 'interval_hours':
 					case 'interval_minutes':
-						$filters_normalized['date'][$a_filter[1]] = intval($a_filter[3]);
+						$intval_filter = intval($a_filter[3]);
+						$filters_normalized['date'][$a_filter[1]] = abs($intval_filter);
+						if ($intval_filter < 0){
+							$filters_normalized['date'][interval_direction] = 'minus';
+						}
 						break;
 					case 'interval_direction':
 						$filters_normalized['date'][$a_filter[1]] = in_array($a_filter[3], array('plus', 'minus'))?$a_filter[3]:'plus';

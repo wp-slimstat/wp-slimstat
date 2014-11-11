@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.8
+Stable tag: 3.8.2
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -14,7 +14,7 @@ Visit our [website](http://slimstat.getused.to.it/) for more information and to 
 * The first and only to provide information about page speed and server latency
 * Compatible with W3 Total Cache, WP SuperCache and HyperCache
 * The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
-* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.getused.to.it/) if you would like to share your localization.
+* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.getused.to.it/) if you would like to share your localization.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = What are people saying about Slimstat? =
@@ -271,6 +271,20 @@ foreach ($results...`
 
 == Changelog ==
 
+= 3.8.2 =
+* [New] You can now load, save and delete filters (or "goal conversions", in Google's terminology). Please test this new functionality and let us know if you find any bugs!
+* [Update] Added new WordPress filter hooks to initialize the arrays storing the data about the pageview (thank you, Tayyab)
+* [Update] [AmMap](http://www.amcharts.com/download/) version 3.11.3
+* [Update] MaxMind GeoLite IP has been updated to the latest version (2014-11-05)
+* [Fix] Bug affecting links opening in a new tab/window (target=_blank). Our thanks go to all the users who helped us troubleshoot the issue!
+* [Fix] Backward compatibility of new date/time filters with old ones
+* [Fix] Issue with counters on Posts/Pages screen (thank you, [vaguiners](https://wordpress.org/support/topic/0-visits-in-every-post-in-list-of-post-after-update))
+* [Fix] Warning about undefined array index in date/time filters (thank you, Chris)
+* [Fix] Some tooltips were being displayed outside of the browser viewport (thank you, Vitaly)
+
+= 3.8.1 =
+* It was only released on Github to solve a critical bug affecting external links
+
 = 3.8 =
 * [New] We increased the filter granularity to the minute, so that now you can see who visited your website between 9 am and 10.34 am (thank you, [berserk77](https://wordpress.org/support/topic/need-help-with-some-filtering-features))
 * [New] If admin is served over HTTPS but IP lookup service is not, don't use inline overlay dialog (thank you, [509tyler](https://wordpress.org/support/topic/https-overlay-suggestion))
@@ -314,62 +328,6 @@ foreach ($results...`
 * [Update] All the icons used in the admin are now optimized (thank you, [scruffy1](http://wordpress.org/support/topic/suggestion-79))
 * [Fix] Introduced some code optimizations (browser detection) that will solve the slow response time once and for all!
 * [Fix] Add-ons page was not accessible if menu was attached to the Admin Bar (thank you, h_a_l_f)
-
-= 3.6.9 =
-* [Note] Our new website is finally live, [check it out](http://slimstat.getused.to.it/)
-* [Update] [AmMap](http://www.amcharts.com/download/) has been updated to version 3.10.2 (August 6, 2014)
-* [Update] Renamed some sections to make their purpose more intuitive (thank you, Aaron)
-* [Fix] The browser's properties (css version, mobile device, etc) were not being recorded properly
-
-= 3.6.8 =
-* [Fix] Mobile Safari on iOS was not being properly detected
-* [Fix] Google Bot icon was not being displayed under certain circumstances
-
-= 3.6.7 =
-* [Fix] Foreach warning was being displayed, related to the latest browscap update. Sorry for the inconvenience, folks!
-
-= 3.6.6 =
-* [New] Top Traffic Sources is now showing the percentage of direct pageviews (thank you, [uewinfo_frm](http://wordpress.org/support/topic/top-traffic-sources-to-add-direct-access))
-* [Update] [Browscap](http://browscap.org/) has been updated to version 5031, released on July 2, 2014
-* [Fix] Index name was not properly handled (thank you, [bretweinraub](https://github.com/getusedtoit/wp-slimstat/pull/8))
-* [Fix] Patched XSS Vulnerability (thank you, Yogendra Sharma)
-* [Fix] Code for tracking external pages could not be selected in Firefox (thank you, [KSteinmann](http://wordpress.org/support/topic/cant-select-slimstat-external-pages-tracking-script)) 
-
-= 3.6.5 =
-* [Update] MaxMind's IP Database has been updated to the latest version (2014-07-01)
-* [Fix] Bug in tracking visits when the CDN option is enabled
-* [Fix] Number format description was sort of misleading (thank you, [Shonu](http://wordpress.org/support/topic/number-format-label))
-
-= 3.6.4 =
-* [Fix] Issue with our UAN code
-
-= 3.6.3 =
-* [Fix] Issue with heuristic user agent detection
-
-= 3.6.2 =
-* [New] You can disable SlimScroll if it doesn't work on your browser or mobile device (thank you, Egor)
-* [New] Track non-WP pages (within the same domain) with WP SlimStat. Go to Settings > Advanced and get your tracking code (thank you, [JourdanDixon](http://wordpress.org/support/topic/adding-slim-stat-to-non-wp-page))
-* [Fix] Page load speed has been improved introducing some caching mechanisms for certain requests
-
-= 3.6.1 =
-* [Update] Streamlined DB initialization / update procedures (thank you, [PyroSteveJr](http://wordpress.org/support/topic/not-capturing-anything))
-* [Update] [AmMap](http://www.amcharts.com/javascript-maps/) has been updated to version 3.8.13
-* [Fix] Uninstall procedure was not removing all the tables as expected (thank you, [scruffy1](http://wordpress.org/support/topic/how-to-delete-slim-stat))
-* [Fix] Bug in retrieving the ID of the longest comment
-* [Fix] Inconsistent table records were being removed without alerting the admin
-* [Fix] Bug in calculating the CIDR mask for some IP-based filters (thank you, Alan)
-* [Fix] Current tab was not remembered when clicking on a report's link to filter the data
-* [Fix] Sorting was not available in Asynchronous Mode for certain reports (thank you, [psn](http://wordpress.org/support/topic/order-to-show-user-overview))
-
-= 3.6 =
-* [Note] We'll go back to our biweekly release schedule after this release - we just wanted to get our latest feature to our users as soon as possible
-* [New] Support for network-wide reports is now complete
-* [New] Support for network-wide settings is being tested and will be added soon
-* [Update] MaxMind's IP Database has been updated to the latest version (2014-04-02)
-* [Update] French localization had some encoding issues (thank you, Yves Pouplard)
-* [Update] Swedish localization has been updated (thank you, Per Soderman)
-* [Fix] User Overview add-on is now compatible with network-wide reports
-* [Fix] Author filters were not working under certain circumstances (thank you, [tbetzold](http://wordpress.org/support/topic/authors-not-able-to-see-their-own-stats))
 
 == Special Thanks To ==
 

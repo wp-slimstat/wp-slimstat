@@ -257,11 +257,11 @@ class wp_slimstat_reports {
 				}
 
 				$a_filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-				$filters_html .= "<li>".wp_slimstat_db::$filter_names[$a_filter_label].' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat')." $a_filter_value_no_slashes <a class='slimstat-remove-filter slimstat-font-cancel' title='".htmlentities(__('Remove filter for','wp-slimstat'), ENT_QUOTES, 'UTF-8').' '.wp_slimstat_db::$filter_names[$a_filter_label]."' href='".self::fs_url("$a_filter_label equals ")."'></a></li>";
+				$filters_html .= "<li>".strtolower(wp_slimstat_db::$filter_names[$a_filter_label]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat')." $a_filter_value_no_slashes <a class='slimstat-remove-filter slimstat-font-cancel' title='".htmlentities(__('Remove filter for','wp-slimstat'), ENT_QUOTES, 'UTF-8').' '.wp_slimstat_db::$filter_names[$a_filter_label]."' href='".self::fs_url("$a_filter_label equals ")."'></a></li>";
 			}
 		}
 		if (!empty($filters_html)){
-			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-current-filters' class='slimstat-filter-action-button button-secondary' data-saved-label='".__('Coming Soon','wp-slimstat')."'>".__('Save','wp-slimstat')."</a>";
+			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary' data-filter-array='".serialize($_filters_array)."'>".__('Save','wp-slimstat')."</a>";
 		}
 		if(count($filters_dropdown) > 1){
 			$filters_html .= '<a href="'.self::fs_url().'" id="slimstat-remove-all-filters" class="button-secondary slimstat-filter-action-button">'.__('Reset All','wp-slimstat').'</a>';
@@ -293,7 +293,12 @@ class wp_slimstat_reports {
 		if (is_array($_filters)){
 			$flat_filters = array();
 			foreach($_filters as $a_key => $a_filter_data){
-				$flat_filters[] = "$a_key $a_filter_data";
+				if (is_array($a_filter_data)){
+					$flat_filters[] = "$a_key {$a_filter_data[0]} {$a_filter_data[1]}";
+				}
+				else if (is_string($a_filter_data)){
+					$flat_filters[] = "$a_key $a_filter_data";
+				}
 			}
 			$_filters = implode('&&&', $flat_filters);
 		}

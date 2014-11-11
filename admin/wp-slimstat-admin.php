@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			self::$admin_notice = "Would you like to be able to &quot;archive&quot; old pageviews after X days, instead of just deleting them like it is now? If we get <a href='http://support.getused.to.it/' target='_blank'>enough interest</a>, we will add this feature to Slimstat. In the meanwhile, please test your new time filters: no other analytics plugin out there has such a detailed granularity!";
+			self::$admin_notice = "You can now load, save and manage your filters (or goal conversions, to use Google's terminology) with just a few clicks. Please help us test this new functionality, and do not hesitate to let us know if you find a bugs. Just make sure to clear all your caches before opening a new tickets.";
 		}
 		else {
 			self::$admin_notice = "
@@ -137,6 +137,7 @@ class wp_slimstat_admin{
 		if (defined('DOING_AJAX') && DOING_AJAX){
 			add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'show_report_wrapper'));
 			add_action('wp_ajax_slimstat_hide_admin_notice', array(__CLASS__, 'hide_admin_notice'));
+			add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
 			add_action('wp_ajax_slimstat_enable_ads_feature', array(__CLASS__, 'enable_ads_feature'));
 		}
 	}
@@ -601,9 +602,9 @@ class wp_slimstat_admin{
 		
 		$parsed_permalink = parse_url( get_permalink($_post_id) );
 		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		wp_slimstat_db::init('resource contains '.$parsed_permalink.'&&&hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365');
+		wp_slimstat_db::init('resource contains '.$parsed_permalink.'&&&hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals 365&&&interval_direction equals minus');
 		$count = wp_slimstat_db::count_records();
-		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals -365').'">'.$count.'</a>';
+		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals 365&&&interval_direction equals minus').'">'.$count.'</a>';
 	}
 	// end add_column
 
@@ -651,7 +652,73 @@ class wp_slimstat_admin{
 		wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$version;
 		die();
 	}
-	
+
+	/**
+	 * Handles the Ajax requests to load, save or delete existing filters
+	 */
+	public static function manage_filters(){
+		check_ajax_referer('meta-box-order', 'security');
+
+		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
+		$current_tab = !empty($_POST['current_tab'])?intval($_POST['current_tab']):1;
+		wp_slimstat_reports::init(array('current_tab' => $current_tab));
+
+		$saved_filters = get_option('slimstat_filters', array());
+		$filter_found = 0;
+
+		switch($_POST['type']){
+			case 'save':
+				$new_filter = unserialize(stripslashes_deep($_POST['filter_array']));
+
+				// Check if this filter is already saved
+				foreach ($saved_filters as $a_saved_filter){
+					$filter_found = 0;
+
+					if (count($a_saved_filter) != count($new_filter) || count(array_intersect_key($a_saved_filter, $new_filter)) != count($new_filter)){
+						$filter_found = 1;
+						continue;
+					}
+
+					foreach ($a_saved_filter as $a_key => $a_value){
+						$filter_found += ($a_value == $new_filter[$a_key])?0:1;
+					}
+
+					if ($filter_found == 0){
+						echo __('Already saved','wp-slimstat');
+						break;
+					}
+				}
+
+				if (empty($saved_filters) || $filter_found > 0){
+					$saved_filters[] = $new_filter;
+					update_option('slimstat_filters', $saved_filters);
+					echo __('Saved','wp-slimstat');
+				}
+
+				break;
+
+			case 'delete':
+				unset($saved_filters[intval($_POST['filter_id'])]);
+				update_option('slimstat_filters', $saved_filters);
+
+				// No break here - We want to return the new list of filters!
+
+			default:
+				echo '<div id="slim_filters_overlay">';
+				foreach ($saved_filters as $a_filter_id => $a_filter_data){
+					$a_filter_html = array();
+					foreach ($a_filter_data as $a_filter_label => $a_filter_details){
+						$a_filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
+						$a_filter_html[] = strtolower(wp_slimstat_db::$filter_names[$a_filter_label]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat').' '.$a_filter_value_no_slashes;
+					}
+					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="'.$a_filter_id.'" title="'.__('Delete this filter','wp-slimstat').'" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="'.wp_slimstat_reports::fs_url($a_filter_data).'">'.implode(', ', $a_filter_html).'</a> <a href="#"></a></p>';
+				}
+				echo '</div>';
+				break;
+		}
+		die();
+	}
+
 	/**
 	 * Handles the Ajax request to enable the ads network
 	 */
@@ -706,76 +773,6 @@ class wp_slimstat_admin{
 			</table>
 			<?php if ($_current_tab != 7): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
 		</form><?php
-	}
-
-	protected static function settings_table_row($_option_name = '', $_option_details = array(), $_alternate = false){
-		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
-		
-		if (!isset(wp_slimstat::$options[$_option_name])){
-			wp_slimstat::$options[$_option_name] = ''; 
-		}
-
-		$is_disabled = (!empty($_option_details['disabled']) && $_option_details['disabled'] === true)?' disabled':'';
-
-		echo '<tr'.($_alternate?' class="alternate"':'').'>';
-		switch($_option_details['type']){
-			case 'section_header': ?>
-				<td colspan="2" class="slimstat-options-section-header"><?php echo $_option_details['description'] ?></td><?php
-				break;
-			case 'static': ?>
-				<td colspan="2"><?php echo $_option_details['description'] ?> <textarea rows="7" class="large-text code" readonly><?php echo $_option_details['long_description'] ?></textarea></td><?php
-				break;
-			case 'yesno': ?>
-				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-				<td>
-					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?></span>
-					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
-					<?php if (is_network_admin()): ?><span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_null" value="null" <?php echo (wp_slimstat::$options[$_option_name] == 'null')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_null'])?$_option_details['custom_label_null']:__('Site Specific','wp-slimstat') ?></span><?php endif; ?>
-					<span class="description"><?php echo $_option_details['long_description'] ?></span>
-				</td><?php
-				break;
-			case 'select': ?>
-				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-				<td>
-					<span class="block-element">
-						<select <?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php
-							foreach($_option_details['values'] as $a_key => $a_value){
-								$is_selected = (wp_slimstat::$options[$_option_name] == $a_key)?' selected':'';
-								echo "<option$is_selected value='$a_key'>$a_value</option>";
-							}
-						?></select>
-					</span>
-					<span class="description"><?php echo $_option_details['long_description'] ?></span>
-				</td><?php
-				break;
-				
-			case 'text':
-			case 'integer': ?>
-				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-				<td>
-					<span class="block-element"><?php echo $_option_details['before_input_field'] ?><input<?php echo $is_disabled ?> type="<?php echo ($_option_details['type'] == 'integer')?'number':'text' ?>" class="<?php echo ($_option_details['type'] == 'integer')?'small-text':'regular-text' ?>" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="<?php echo wp_slimstat::$options[$_option_name] ?>"> <?php echo $_option_details['after_input_field'] ?></span>
-					<span class="description"><?php echo $_option_details['long_description'] ?></span>
-				</td><?php
-				break;
-			default:
-		}
-		echo '</tr>';
-	}
-
-	protected static function settings_textarea($_option_name = '', $_option_details = array('description' =>'', 'type' => '', 'long_description' => ''), $_alternate = false){
-		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
-		
-		if (!isset(wp_slimstat::$options[$_option_name])){
-			wp_slimstat::$options[$_option_name] = '';
-		} ?>
-
-		<tr<?php echo ($_alternate?' class="alternate"':''); ?>>
-			<td colspan="2">
-				<label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label>
-				<p class="description"><?php echo $_option_details['long_description'] ?></p>
-				<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo !empty(wp_slimstat::$options[$_option_name])?stripslashes(wp_slimstat::$options[$_option_name]):'' ?></textarea> <span class="description"><?php echo $_option_details['after_input_field'] ?></span></p>
-			</td>
-		</tr><?php
 	}
 
 	/**
@@ -850,6 +847,76 @@ class wp_slimstat_admin{
 		);
 	}
 	// end contextual_help
+
+	protected static function settings_table_row($_option_name = '', $_option_details = array(), $_alternate = false){
+		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
+		
+		if (!isset(wp_slimstat::$options[$_option_name])){
+			wp_slimstat::$options[$_option_name] = ''; 
+		}
+
+		$is_disabled = (!empty($_option_details['disabled']) && $_option_details['disabled'] === true)?' disabled':'';
+
+		echo '<tr'.($_alternate?' class="alternate"':'').'>';
+		switch($_option_details['type']){
+			case 'section_header': ?>
+				<td colspan="2" class="slimstat-options-section-header"><?php echo $_option_details['description'] ?></td><?php
+				break;
+			case 'static': ?>
+				<td colspan="2"><?php echo $_option_details['description'] ?> <textarea rows="7" class="large-text code" readonly><?php echo $_option_details['long_description'] ?></textarea></td><?php
+				break;
+			case 'yesno': ?>
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?></span>
+					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
+					<?php if (is_network_admin()): ?><span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_null" value="null" <?php echo (wp_slimstat::$options[$_option_name] == 'null')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_null'])?$_option_details['custom_label_null']:__('Site Specific','wp-slimstat') ?></span><?php endif; ?>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
+				break;
+			case 'select': ?>
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element">
+						<select <?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php
+							foreach($_option_details['values'] as $a_key => $a_value){
+								$is_selected = (wp_slimstat::$options[$_option_name] == $a_key)?' selected':'';
+								echo "<option$is_selected value='$a_key'>$a_value</option>";
+							}
+						?></select>
+					</span>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
+				break;
+				
+			case 'text':
+			case 'integer': ?>
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element"><?php echo $_option_details['before_input_field'] ?><input<?php echo $is_disabled ?> type="<?php echo ($_option_details['type'] == 'integer')?'number':'text' ?>" class="<?php echo ($_option_details['type'] == 'integer')?'small-text':'regular-text' ?>" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="<?php echo wp_slimstat::$options[$_option_name] ?>"> <?php echo $_option_details['after_input_field'] ?></span>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
+				break;
+			default:
+		}
+		echo '</tr>';
+	}
+
+	protected static function settings_textarea($_option_name = '', $_option_details = array('description' =>'', 'type' => '', 'long_description' => ''), $_alternate = false){
+		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
+		
+		if (!isset(wp_slimstat::$options[$_option_name])){
+			wp_slimstat::$options[$_option_name] = '';
+		} ?>
+
+		<tr<?php echo ($_alternate?' class="alternate"':''); ?>>
+			<td colspan="2">
+				<label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label>
+				<p class="description"><?php echo $_option_details['long_description'] ?></p>
+				<p><textarea class="large-text code" cols="50" rows="3" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php echo !empty(wp_slimstat::$options[$_option_name])?stripslashes(wp_slimstat::$options[$_option_name]):'' ?></textarea> <span class="description"><?php echo $_option_details['after_input_field'] ?></span></p>
+			</td>
+		</tr><?php
+	}
 
 	/**
 	 * Creates a table in the database
