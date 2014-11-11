@@ -1,479 +1,18 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WP SlimStat JP\n"
-"POT-Creation-Date: 2014-10-13 14:16-0500\n"
-"PO-Revision-Date: 2014-10-13 14:16-0500\n"
+"POT-Creation-Date: 2014-11-09 14:57-0500\n"
+"PO-Revision-Date: 2014-11-09 14:57-0500\n"
 "Last-Translator: Get Used To IT <support@getused.to.it>\n"
 "Language-Team: 半月\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.6.3\n"
+"X-Generator: Poedit 1.6.9\n"
 "X-Poedit-KeywordsList: _;gettext;gettext_noop;__;_e\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SearchPath-0: ..\n"
-
-#: ../wp-slimstat-admin.php:490 ../wp-slimstat-admin.php:502
-#: ../wp-slimstat-admin.php:505
-msgid "SlimStat"
-msgstr "SlimStat"
-
-#: ../wp-slimstat-admin.php:491 ../view/wp-slimstat-reports.php:34
-msgid "Real-Time Log"
-msgstr "リアルタイム解析"
-
-#: ../wp-slimstat-admin.php:492 ../wp-slimstat-admin.php:509
-#: ../view/wp-slimstat-reports.php:35
-msgid "Overview"
-msgstr "概要"
-
-#: ../wp-slimstat-admin.php:493 ../wp-slimstat-admin.php:510
-#: ../view/wp-slimstat-reports.php:36
-msgid "Audience"
-msgstr "訪問者"
-
-#: ../wp-slimstat-admin.php:494 ../wp-slimstat-admin.php:511
-#: ../view/wp-slimstat-reports.php:37
-msgid "Site Analysis"
-msgstr "サイト解析"
-
-#: ../wp-slimstat-admin.php:495 ../wp-slimstat-admin.php:512
-#: ../view/index.php:178 ../view/wp-slimstat-reports.php:38
-msgid "Traffic Sources"
-msgstr "トラフィック"
-
-#: ../wp-slimstat-admin.php:496 ../wp-slimstat-admin.php:513
-#: ../view/wp-slimstat-reports.php:39
-msgid "Map Overlay"
-msgstr "地域"
-
-#: ../wp-slimstat-admin.php:497 ../wp-slimstat-admin.php:514
-#: ../view/wp-slimstat-reports.php:40
-msgid "Custom Reports"
-msgstr "カスタムレポート"
-
-#: ../wp-slimstat-admin.php:498 ../wp-slimstat-admin.php:515
-#: ../config/addons.php:29 ../config/index.php:9
-msgid "Add-ons"
-msgstr "アドオン"
-
-#: ../wp-slimstat-admin.php:544 ../wp-slimstat-admin.php:547
-#: ../config/index.php:14 ../config/index.php:138
-msgid "Settings"
-msgstr "設定"
-
-#: ../wp-slimstat-admin.php:586
-msgid "Pageviews in the last 365 days"
-msgstr "過去 365 日のページビュー"
-
-#: ../wp-slimstat-admin.php:614
-msgid "Show on screen"
-msgstr "表示する項目"
-
-#: ../wp-slimstat-admin.php:642
-msgid "Hide this notice"
-msgstr "この通知を隠す"
-
-#: ../wp-slimstat-admin.php:679
-msgid "There was an error updating the following options:"
-msgstr "以下の理由でアップデートにエラーが発生しました:"
-
-#: ../wp-slimstat-admin.php:682
-msgid "Your changes have been saved."
-msgstr "変更を保存しました。"
-
-#: ../wp-slimstat-admin.php:705
-msgid "Save Changes"
-msgstr "変更を保存"
-
-#: ../wp-slimstat-admin.php:729
-msgid "Yes"
-msgstr "はい"
-
-#: ../wp-slimstat-admin.php:730 ../view/wp-slimstat-reports.php:779
-msgid "No"
-msgstr "いいえ"
-
-#: ../wp-slimstat-admin.php:731
-msgid "Site Specific"
-msgstr ""
-
-#: ../wp-slimstat-admin.php:791
-msgid "Definitions"
-msgstr "定義"
-
-#: ../wp-slimstat-admin.php:794
-msgid "Pageview"
-msgstr "PV"
-
-#: ../wp-slimstat-admin.php:794
-msgid ""
-"A request to load a single HTML file (\"page\"). This should be contrasted "
-"with a \"hit\", which refers to a request for any file from a web server. "
-"Slimstat logs a pageview each time the tracking code is executed"
-msgstr ""
-"サイト内に存在する HTML ファイル (\"page\") が読み込まれた回数の合計です。こ"
-"れは Web サーバーから何らかのファイルが読み込まれた時に記録される \"hit\" と"
-"は別物と考えてください。SlimStat は解析コードが実行されるたびに PV を記録しま"
-"す。"
-
-#: ../wp-slimstat-admin.php:795
-msgid "(Human) Visit"
-msgstr "(人間の) 訪問"
-
-#: ../wp-slimstat-admin.php:795
-msgid ""
-"A period of interaction between a visitor's browser and your website, ending "
-"when the browser is closed or when the user has been inactive on that site "
-"for 30 minutes"
-msgstr ""
-"SlimStat は、訪問者がページを離脱する、ブラウザを閉じる、または 30 分以上滞在"
-"するまでを 1 回の訪問としてカウントします。"
-
-#: ../wp-slimstat-admin.php:796 ../view/index.php:153 ../view/right-now.php:21
-msgid "Known Visitor"
-msgstr "既知の訪問者"
-
-#: ../wp-slimstat-admin.php:796
-msgid ""
-"Any user who has left a comment on your blog, and is thus identified by "
-"Wordpress as a returning visitor"
-msgstr ""
-"ブログにコメントを残したユーザーと、WordPress によってリピーターとして確認さ"
-"れた訪問者を表します。"
-
-#: ../wp-slimstat-admin.php:797
-msgid "Unique IP"
-msgstr "ユニーク IP"
-
-#: ../wp-slimstat-admin.php:797
-msgid ""
-"Used to differentiate between multiple requests to download a file from one "
-"internet address (IP) and requests originating from many distinct addresses; "
-"since this measurement looks only at the internet address a pageview came "
-"from, it is useful, but not perfect"
-msgstr ""
-"サイトを訪れた全ての IP アドレスから重複を除いた値を表します。この値はあくま"
-"で IP アドレスだけを見るものであり、サイトを訪れた特定の個人の数を表す値では"
-"ありません。例えば、同じ人物が職場と自宅から同じサイトを訪れると、ユニーク "
-"IP は 2 としてカウントされます。"
-
-#: ../wp-slimstat-admin.php:798 ../wp-slimstat-admin.php:840
-#: ../view/right-now.php:109 ../view/wp-slimstat-db.php:65
-msgid "Originating IP"
-msgstr "送信元 IP"
-
-#: ../wp-slimstat-admin.php:798
-msgid ""
-"the originating IP address of a client connecting to a web server through an "
-"HTTP proxy or load balancer"
-msgstr ""
-"HTTP プロキシまたはロードバランサーを通して Web サーバーに接続したクライアン"
-"トの IP アドレスです。"
-
-#: ../wp-slimstat-admin.php:799
-msgid "Direct Traffic"
-msgstr "直接アクセス"
-
-#: ../wp-slimstat-admin.php:799
-msgid ""
-"All those people showing up to your Web site by typing in the URL of your "
-"Web site coming or from a bookmark; some people also call this \"default "
-"traffic\" or \"ambient traffic\""
-msgstr ""
-"アドレスバーにサイト URL を直接打ち込んだ、またはブックマークからサイトを表示"
-"した訪問者を表します。"
-
-#: ../wp-slimstat-admin.php:800
-msgid "Search Engine"
-msgstr "検索エンジン"
-
-#: ../wp-slimstat-admin.php:800
-msgid ""
-"Google, Yahoo, MSN, Ask, others; this bucket will include both your organic "
-"as well as your paid (PPC/SEM) traffic, so be aware of that"
-msgstr ""
-"Google、Yahoo、MSN、Ask などの検索エンジンです。この値にはオーガニック検索お"
-"よび有料の検索トラフィックが含まれます。"
-
-#: ../wp-slimstat-admin.php:801 ../wp-slimstat-admin.php:817
-#: ../view/right-now.php:148 ../view/wp-slimstat-db.php:44
-msgid "Search Terms"
-msgstr "検索キーワード"
-
-#: ../wp-slimstat-admin.php:801 ../wp-slimstat-admin.php:817
-msgid "Keywords used by your visitors to find your website on a search engine"
-msgstr ""
-"訪問者が検索エンジン上で Web サイトを見つけるために使用したキーワードを入力し"
-"ます。"
-
-#: ../wp-slimstat-admin.php:802
-msgid "SERP"
-msgstr "SERP"
-
-#: ../wp-slimstat-admin.php:802
-msgid ""
-"Short for search engine results page, the Web page that a search engine "
-"returns with the results of its search. The value shown represents your rank "
-"(or position) within that list of results"
-msgstr ""
-"検索エンジン結果ページ (Search Engine Results Page) の略です。この値は、対応"
-"する検索キーワードによって生成される検索結果ページ内で、あなたのサイトがどの"
-"ランク (または位置) に表示されているかを表します。"
-
-#: ../wp-slimstat-admin.php:803 ../view/wp-slimstat-db.php:57
-msgid "User Agent"
-msgstr "User Agent"
-
-#: ../wp-slimstat-admin.php:803
-msgid ""
-"Any program used for accessing a website; this includes browsers, robots, "
-"spiders and any other program that was used to retrieve information from the "
-"site"
-msgstr ""
-"Web サイトへアクセスするのに使用されたプログラム (またはその名前の一部) を表"
-"します。この値にはブラウザのほか、ロボット、スパイダー、クローラーなど、サイ"
-"トから情報を取得するために使用されたあらゆるプログラムが含まれます。"
-
-#: ../wp-slimstat-admin.php:804 ../view/wp-slimstat-db.php:62
-msgid "Outbound Link"
-msgstr "外部リンク"
-
-#: ../wp-slimstat-admin.php:804
-msgid ""
-"A link from one domain to another is said to be outbound from its source "
-"anchor and inbound to its target. This report lists all the links to other "
-"websites followed by your visitors."
-msgstr ""
-"外部サイトへの URL が指定されたリンクを表します。このレポートは訪問者によって"
-"クリックされた外部サイトへのリンクを一覧表示します。"
-
-#: ../wp-slimstat-admin.php:811
-msgid "Basic Filters"
-msgstr "基本フィルター"
-
-#: ../wp-slimstat-admin.php:814 ../view/wp-slimstat-db.php:41
-msgid "Browser"
-msgstr "ブラウザ"
-
-#: ../wp-slimstat-admin.php:814
-msgid "User agent (Firefox, Chrome, ...)"
-msgstr "User Agent (Firefox、Chrome、etc) を入力します。"
-
-#: ../wp-slimstat-admin.php:815 ../view/wp-slimstat-db.php:42
-#: ../view/wp-slimstat-reports.php:490
-msgid "Country Code"
-msgstr "国コード"
-
-#: ../wp-slimstat-admin.php:815
-msgid "2-letter code (us, ru, de, it, ...)"
-msgstr "2桁の国コード (us、ru、de、it、jp、etc) を入力します。"
-
-#: ../wp-slimstat-admin.php:816
-msgid "IP"
-msgstr "IP"
-
-#: ../wp-slimstat-admin.php:816
-msgid "Visitor's public IP address"
-msgstr "訪問者のグローバル IP アドレスを入力します。"
-
-#: ../wp-slimstat-admin.php:818 ../view/wp-slimstat-db.php:45
-#: ../view/wp-slimstat-reports.php:502
-msgid "Language Code"
-msgstr "言語コード"
-
-#: ../wp-slimstat-admin.php:818
-msgid ""
-"Please refer to this <a target=\"_blank\" href=\"http://msdn.microsoft.com/"
-"en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first "
-"column) for more information"
-msgstr ""
-"詳細については<a target=\"_blank\" href=\"http://msdn.microsoft.com/en-us/"
-"library/ee825488(v=cs.20).aspx\">このページ</a>の最初の列を参照してください。"
-
-#: ../wp-slimstat-admin.php:819 ../view/wp-slimstat-db.php:46
-msgid "Operating System"
-msgstr "OS"
-
-#: ../wp-slimstat-admin.php:819
-msgid ""
-"Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="
-"\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">this "
-"manual page</a> for more information"
-msgstr ""
-"win7、win98、macosx のような識別子を入力します。詳細については<a target="
-"\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">この"
-"ページ</a>を参照してください。"
-
-#: ../wp-slimstat-admin.php:820 ../view/wp-slimstat-db.php:47
-msgid "Permalink"
-msgstr "パーマリンク"
-
-#: ../wp-slimstat-admin.php:820
-msgid "URL accessed on your site"
-msgstr "サイト上でアクセスされた URL を入力します。"
-
-#: ../wp-slimstat-admin.php:821 ../view/wp-slimstat-db.php:49
-msgid "Referer"
-msgstr "リファラー"
-
-#: ../wp-slimstat-admin.php:821
-msgid "Complete address of the referrer page"
-msgstr "参照元ページの URL を入力します。"
-
-#: ../wp-slimstat-admin.php:822 ../view/wp-slimstat-db.php:50
-msgid "Visitor's Name"
-msgstr "訪問者名"
-
-#: ../wp-slimstat-admin.php:822
-msgid ""
-"Visitors' names according to the cookie set by Wordpress after they leave a "
-"comment"
-msgstr ""
-"訪問者がコメントを残した際に保存される cookie に基づく訪問者名を入力します。"
-
-#: ../wp-slimstat-admin.php:830
-msgid "Advanced Filters"
-msgstr "詳細フィルター"
-
-#: ../wp-slimstat-admin.php:833 ../view/wp-slimstat-db.php:55
-msgid "Browser Version"
-msgstr "ブラウザのバージョン"
-
-#: ../wp-slimstat-admin.php:833
-msgid "user agent version (9.0, 11, ...)"
-msgstr "User Agent のバージョン (9.0、11、etc) を入力します。"
-
-#: ../wp-slimstat-admin.php:834 ../view/wp-slimstat-db.php:56
-msgid "Browser Type"
-msgstr "ブラウザの種類"
-
-#: ../wp-slimstat-admin.php:834
-msgid ""
-"1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = "
-"all others"
-msgstr ""
-"1 = 検索エンジンのクローラー、2 = 携帯端末、3 = RSSリーダー、0 = その他全て"
-
-#: ../wp-slimstat-admin.php:835 ../view/wp-slimstat-db.php:58
-msgid "Color Depth"
-msgstr "色深度"
-
-#: ../wp-slimstat-admin.php:835
-msgid "visitor's screen's color depth (8, 16, 24, ...)"
-msgstr "訪問者のモニターの色深度 (8、16、24、32、etc) を入力します。"
-
-#: ../wp-slimstat-admin.php:836 ../view/wp-slimstat-db.php:59
-msgid "CSS Version"
-msgstr "CSS バージョン"
-
-#: ../wp-slimstat-admin.php:836
-msgid ""
-"what CSS standard was supported by that browser (1, 2, 3 and other integer "
-"values)"
-msgstr ""
-"ブラウザによってサポートされている CSS 標準規格 (1、2、3、etc) を入力します。"
-
-#: ../wp-slimstat-admin.php:837 ../view/wp-slimstat-db.php:60
-msgid "Pageview Attributes"
-msgstr "PV 属性"
-
-#: ../wp-slimstat-admin.php:837
-msgid ""
-"this field is set to <em>[pre]</em> if the resource has been accessed "
-"through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
-"Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
-msgstr ""
-"このフィールドは Firefox の<a target=\"_blank\" href=\"https://developer."
-"mozilla.org/en/Link_prefetching_FAQ\">リンク先読み機能</a>、またはこれに類似"
-"した機能を通じてリソースがアクセスされた場合、<code>[pre]</code> にセットされ"
-"ます。"
-
-#: ../wp-slimstat-admin.php:838 ../view/wp-slimstat-db.php:63
-msgid "Post Author"
-msgstr "投稿者"
-
-#: ../wp-slimstat-admin.php:838
-msgid "author associated to that post/page when the resource was accessed"
-msgstr "アクセスされた投稿/ページに関連した投稿者を入力します。"
-
-#: ../wp-slimstat-admin.php:839 ../view/wp-slimstat-db.php:64
-msgid "Post Category ID"
-msgstr "投稿カテゴリ ID"
-
-#: ../wp-slimstat-admin.php:839
-msgid "ID of the category/term associated to the resource, when available"
-msgstr "リソースに紐づくカテゴリー/キーワード IDを入力します (有効な場合)。"
-
-#: ../wp-slimstat-admin.php:840
-msgid "visitor's originating IP address, if available"
-msgstr "訪問者の送信元 IP を入力します (有効な場合)。"
-
-#: ../wp-slimstat-admin.php:841 ../view/wp-slimstat-db.php:66
-msgid "Resource Content Type"
-msgstr "リソース コンテンツの種類"
-
-#: ../wp-slimstat-admin.php:841
-msgid ""
-"post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
-"post_type_archive, tag, taxonomy, category, date, author, archive, search, "
-"feed, home; please refer to the <a target=\"_blank\" href=\"http://codex."
-"wordpress.org/Conditional_Tags\">Conditional Tags</a> manual page for more "
-"information"
-msgstr ""
-"post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
-"post_type_archive, tag, taxonomy, category, date, author, archive, search, "
-"feed, home などの条件分岐タグを入力します。詳細については<a target=\"_blank"
-"\" href=\"http://wpdocs.sourceforge.jp/Conditional_Tags\">条件分岐タグ</a>マ"
-"ニュアルページを参照してください。"
-
-#: ../wp-slimstat-admin.php:842 ../view/wp-slimstat-db.php:68
-msgid "Screen Resolution"
-msgstr "モニタ解像度"
-
-#: ../wp-slimstat-admin.php:842
-msgid "viewport width and height (1024x768, 800x600, ...)"
-msgstr ""
-"モニタ解像度の幅と高さ (1024x768、800x600、1920x1080、etc) を入力します。"
-
-#: ../wp-slimstat-admin.php:843 ../view/wp-slimstat-db.php:69
-msgid "Visit ID"
-msgstr "訪問 ID"
-
-#: ../wp-slimstat-admin.php:843
-msgid ""
-"generally used in conjunction with <em>is not empty</em>, identifies human "
-"visitors"
-msgstr ""
-"一般的に、人間の訪問者を確認する際 <em>is not empy</em> と合わせて使用されま"
-"す。"
-
-#: ../wp-slimstat-admin.php:844
-msgid "Date Filters"
-msgstr "期間指定"
-
-#: ../wp-slimstat-admin.php:844
-msgid ""
-"you can specify the timeframe by entering a number in the <em>interval</em> "
-"field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, "
-"year=blank, interval=-1 will set a year-to-date filter)"
-msgstr ""
-"'日間'フィールドに数字を入力することで期間を指定できます。現在 (今日) までの"
-"期間を指定したい場合は、-1 を入力します (例: 日=1、月=1、年=空白、日間=-1で元"
-"旦から現在までのフィルターがセットされる)。"
-
-#: ../wp-slimstat-admin.php:845
-msgid "SERP Position"
-msgstr "SERP ランキング"
-
-#: ../wp-slimstat-admin.php:845
-msgid ""
-"set the filter to Referer contains cd=N&, where N is the position you are "
-"looking for"
-msgstr ""
-"cd=N& を含むリファラーにフィルターをセットします。N は表示したいリファラーの"
-"位置を表します。"
 
 #: ../config/addons.php:14
 msgid ""
@@ -490,6 +29,11 @@ msgid ""
 msgstr ""
 "アドオン一覧の復号化にエラーが発生しました。しばらく経ってから再度お試しくだ"
 "さい。"
+
+#: ../config/addons.php:29 ../config/index.php:9 ../wp-slimstat-admin.php:501
+#: ../wp-slimstat-admin.php:518
+msgid "Add-ons"
+msgstr "アドオン"
 
 #: ../config/addons.php:30
 msgid ""
@@ -522,23 +66,28 @@ msgstr "全般"
 msgid "Views"
 msgstr "表示"
 
-#: ../config/index.php:9 ../config/index.php:67
+#: ../config/index.php:9 ../config/index.php:68
 msgid "Filters"
 msgstr "フィルター"
 
-#: ../config/index.php:9 ../config/index.php:131
+#: ../config/index.php:9 ../config/index.php:132
 msgid "Permissions"
 msgstr "権限"
 
-#: ../config/index.php:9 ../config/index.php:208
+#: ../config/index.php:9 ../config/index.php:209
 msgid "Advanced"
 msgstr "詳細"
 
-#: ../config/index.php:9 ../config/index.php:241
+#: ../config/index.php:9 ../config/index.php:242
 msgid "Maintenance"
 msgstr "メンテナンス"
 
-#: ../config/index.php:20 ../config/index.php:214
+#: ../config/index.php:14 ../config/index.php:139 ../wp-slimstat-admin.php:547
+#: ../wp-slimstat-admin.php:550
+msgid "Settings"
+msgstr "設定"
+
+#: ../config/index.php:20 ../config/index.php:215
 msgid "Tracker"
 msgstr "解析"
 
@@ -659,8 +208,8 @@ msgstr "次回のクリーンアップ日"
 msgid "Entries logged on or before %s will be permanently deleted."
 msgstr "%s 以前に記録されたログは完全に削除されます。"
 
-#: ../config/index.php:31 ../view/index.php:86 ../view/wp-slimstat-db.php:76
-#: ../view/wp-slimstat-reports.php:779
+#: ../config/index.php:31 ../view/index.php:100 ../view/wp-slimstat-db.php:74
+#: ../view/wp-slimstat-reports.php:781
 msgid "days"
 msgstr "日間"
 
@@ -732,25 +281,37 @@ msgstr ""
 "SlimStat はパーマリンクを記事名に変換します。レポートで URL を表示したい場合"
 "は、この機能を無効にします。"
 
-#: ../config/index.php:53 ../view/right-now.php:152
-msgid "Date and Time"
-msgstr "日付と時間"
+#: ../config/index.php:53
+#, fuzzy
+msgid "Date Format"
+msgstr "データと形式"
 
 #: ../config/index.php:53
 msgid ""
-"<a href=\"http://php.net/manual/en/function.date.php\" target=\"_blank\">PHP "
-"Format</a> to use when displaying date and time of a pageview."
+"<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP "
+"Format</a> to use when displaying a pageview's date."
 msgstr ""
 
-#: ../config/index.php:55
+#: ../config/index.php:54
+#, fuzzy
+msgid "Time Format"
+msgstr "数字の書式"
+
+#: ../config/index.php:54
+msgid ""
+"<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP "
+"Format</a> to use when displaying a pageview's time."
+msgstr ""
+
+#: ../config/index.php:56
 msgid "Functionality"
 msgstr "機能"
 
-#: ../config/index.php:56
+#: ../config/index.php:57
 msgid "Asynchronous Views"
 msgstr "非同期表示"
 
-#: ../config/index.php:56
+#: ../config/index.php:57
 msgid ""
 "Load all the reports dynamically. It makes the reports render faster, but it "
 "increases the load on your server."
@@ -758,11 +319,11 @@ msgstr ""
 "全てのレポートを事前に読み込みます。この機能はレポートの表示を高速化します"
 "が、サーバーへの負荷が上昇します。"
 
-#: ../config/index.php:57
+#: ../config/index.php:58
 msgid "SlimScroll"
 msgstr "SlimScroll"
 
-#: ../config/index.php:57
+#: ../config/index.php:58
 msgid ""
 "Enable SlimScroll, a slick jQuery library that replaces the built-in browser "
 "scrollbar."
@@ -770,31 +331,31 @@ msgstr ""
 "ブラウザの内蔵スクロールバーを、JQuery ライブラリを利用した滑らかな "
 "SlimScroll に置き換えます。"
 
-#: ../config/index.php:58
+#: ../config/index.php:59
 msgid "Expand Details"
 msgstr "詳細の展開"
 
-#: ../config/index.php:58
+#: ../config/index.php:59
 msgid "Expand each row's details by default, insted of on mousehover."
 msgstr "マウスオーバー中に表示される詳細を常に表示します。"
 
-#: ../config/index.php:59 ../config/index.php:63
+#: ../config/index.php:60 ../config/index.php:64
 msgid "Rows to Display"
 msgstr "表示する項目数"
 
-#: ../config/index.php:59
+#: ../config/index.php:60
 msgid "Specify the number of items in each report."
 msgstr "各レポートで表示する項目の数を指定します。"
 
-#: ../config/index.php:61
+#: ../config/index.php:62
 msgid "Activity Log"
 msgstr "リアルタイム解析"
 
-#: ../config/index.php:62
+#: ../config/index.php:63
 msgid "Live Stream"
 msgstr "ライブストリーミング"
 
-#: ../config/index.php:62
+#: ../config/index.php:63
 #, fuzzy
 msgid ""
 "Enable the Live view, which refreshes the Activity Log every X seconds. "
@@ -803,19 +364,19 @@ msgstr ""
 "ライブビューを有効にすると、リアルタイム解析は X 秒ごとに自動でリロードされま"
 "す。この機能を無効にしたい場合は、<strong>0</strong> (数字の0) を入力します。"
 
-#: ../config/index.php:62 ../config/index.php:217
+#: ../config/index.php:63 ../config/index.php:218
 msgid "seconds"
 msgstr "秒"
 
-#: ../config/index.php:63
+#: ../config/index.php:64
 msgid "Specify the number of items in the Activity Log."
 msgstr "リアルタイム解析で表示する項目の数を指定します。"
 
-#: ../config/index.php:64
+#: ../config/index.php:65
 msgid "Activity Log Extended"
 msgstr "リアルタイムログの展開"
 
-#: ../config/index.php:64
+#: ../config/index.php:65
 msgid ""
 "Choose if you want to see outbound links listed in the Activity Log. It "
 "might slow down the rendering of this report."
@@ -823,23 +384,23 @@ msgstr ""
 "リアルタイム解析で外部リンクを表示したい場合は、このオプションを有効にしま"
 "す。有効にするとレポートの表示速度が低下するかもしれません。"
 
-#: ../config/index.php:69
+#: ../config/index.php:70
 msgid "Visitors and Known Users"
 msgstr "訪問者と既知のユーザー"
 
-#: ../config/index.php:70
+#: ../config/index.php:71
 msgid "Track Registered Users"
 msgstr "登録ユーザーの解析"
 
-#: ../config/index.php:70
+#: ../config/index.php:71
 msgid "Enable this option to track logged in users."
 msgstr "ログイン中のユーザーを解析します。"
 
-#: ../config/index.php:71
+#: ../config/index.php:72
 msgid "Blacklist by Username"
 msgstr "ブラックリスト (ユーザー名)"
 
-#: ../config/index.php:71
+#: ../config/index.php:72
 msgid ""
 "List all the usernames you don't want to track, separated by commas. Please "
 "be aware that spaces are <em>not</em> ignored and that usernames are case "
@@ -848,11 +409,11 @@ msgstr ""
 "解析から除外したいユーザー名を、カンマで区切って入力します。スペースは無視さ"
 "れず、ユーザー名の大文字と小文字は区別されます。"
 
-#: ../config/index.php:72
+#: ../config/index.php:73
 msgid "Blacklist by IP Address"
 msgstr "ブラックリスト (IP アドレス)"
 
-#: ../config/index.php:72
+#: ../config/index.php:73
 msgid ""
 "List all the IP addresses you don't want to track, separated by commas. Each "
 "network <strong>must</strong> be defined using the <a href='http://en."
@@ -861,11 +422,11 @@ msgid ""
 "public IP and the originating IP, if available."
 msgstr "解析から除外したい IP アドレスを、カンマで区切って入力します。"
 
-#: ../config/index.php:73
+#: ../config/index.php:74
 msgid "Blacklist by Capability"
 msgstr "ブラックリスト (機能)"
 
-#: ../config/index.php:73
+#: ../config/index.php:74
 msgid ""
 "Users having at least one of the <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>capabilities</a> listed here below "
@@ -875,15 +436,15 @@ msgstr ""
 "target='_new'>機能</a>のうちのいずれかを持つユーザーを解析から除外します。機"
 "能の大文字と小文字は区別されます。"
 
-#: ../config/index.php:75
+#: ../config/index.php:76
 msgid "Profiling"
 msgstr "プロファイリング"
 
-#: ../config/index.php:76
+#: ../config/index.php:77
 msgid "Ignore Spammers"
 msgstr "スパム投稿者を無視"
 
-#: ../config/index.php:76
+#: ../config/index.php:77
 msgid ""
 "Enable this option if you don't want to track visits from users identified "
 "as spammers by third-party tools like Akismet. Pageviews generated by users "
@@ -895,11 +456,11 @@ msgstr ""
 "のコメントをスパムとしてマークした場合、そのコメントを投稿したユーザーによっ"
 "て生成された PV もまたデータベースから除外されます。"
 
-#: ../config/index.php:77
+#: ../config/index.php:78
 msgid "Permalinks"
 msgstr "パーマリンク"
 
-#: ../config/index.php:77
+#: ../config/index.php:78
 msgid ""
 "List all the URLs on your website that you don't want to track, separated by "
 "commas. Don't include the domain name: <em>/about, ?p=1</em>, etc. "
@@ -916,11 +477,11 @@ msgstr ""
 "abo!t</code>は /about や/abort とマッチする)。 文字列の大文字と小文字は区別さ"
 "れます。ドメイン名は入力しないでください。"
 
-#: ../config/index.php:78
+#: ../config/index.php:79
 msgid "Countries"
 msgstr "国"
 
-#: ../config/index.php:78
+#: ../config/index.php:79
 msgid ""
 "Country codes (i.e.: <code>en-us, it, es</code>) that you don't want to "
 "track, separated by commas."
@@ -928,11 +489,11 @@ msgstr ""
 "解析から除外したい国コード (例: <code>en-us、it、es</code>) を、カンマで区"
 "切って入力します。"
 
-#: ../config/index.php:79
+#: ../config/index.php:80
 msgid "User Agents"
 msgstr "User Agents"
 
-#: ../config/index.php:79
+#: ../config/index.php:80
 msgid ""
 "Browsers (user agents) you don't want to track, separated by commas. You can "
 "specify the browser's version adding a slash after the name  (i.e. "
@@ -949,11 +510,11 @@ msgstr ""
 "code> は IE/<strong>7</strong>.0 や IE/<strong>8</strong>.0 とマッチする)。 "
 "文字列の大文字と小文字は区別されます。"
 
-#: ../config/index.php:80
+#: ../config/index.php:81
 msgid "Referring Sites"
 msgstr "参照元サイト"
 
-#: ../config/index.php:80
+#: ../config/index.php:81
 msgid ""
 "Referring URLs that you don't want to track, separated by commas: "
 "<code>http://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. "
@@ -969,24 +530,24 @@ msgstr ""
 "いワイルドカードまたはプロトコルのいずれかを記入してください (http://, "
 "https://)。"
 
-#: ../config/index.php:82 ../config/index.php:234
+#: ../config/index.php:83 ../config/index.php:235
 msgid "Miscellaneous"
 msgstr "その他"
 
-#: ../config/index.php:83
+#: ../config/index.php:84
 msgid "Enable Privacy Mode"
 msgstr "プライバシーモードを有効化"
 
-#: ../config/index.php:83
+#: ../config/index.php:84
 msgid "Mask your visitors' IP addresses to comply with European Privacy Laws."
 msgstr ""
 "ヨーロッパ個人情報保護法に基づき訪問者の IP アドレスの一部分を隠します。"
 
-#: ../config/index.php:84
+#: ../config/index.php:85
 msgid "Ignore Prefetch Requests"
 msgstr "リンクの先読みを無視"
 
-#: ../config/index.php:84
+#: ../config/index.php:85
 msgid ""
 "Prevent Slimstat from tracking pageviews generated by Firefox's <a "
 "href='https://developer.mozilla.org/en/Link_prefetching_FAQ' "
@@ -996,11 +557,11 @@ msgstr ""
 "Link_prefetching_FAQ' target='_blank'>リンクの先読み機能</a>によって生成され"
 "るページビューの解析を防止します。"
 
-#: ../config/index.php:100
+#: ../config/index.php:101
 msgid "Ignore users (username not found)"
 msgstr "無効なユーザー (ユーザー名が見つかりません)"
 
-#: ../config/index.php:123
+#: ../config/index.php:124
 msgid ""
 "Invalid capability. Please check <a href=\"http://codex.wordpress.org/"
 "Roles_and_Capabilities\" target=\"_new\">this page</a> for more information"
@@ -1008,26 +569,26 @@ msgstr ""
 "無効な機能です。詳細については<a href=\"http://codex.wordpress.org/"
 "Roles_and_Capabilities\" target=\"_new\">このページ</a>を確認してください。"
 
-#: ../config/index.php:133
+#: ../config/index.php:134
 msgid "Reports"
 msgstr "レポート"
 
-#: ../config/index.php:134
+#: ../config/index.php:135
 msgid "Restrict Authors"
 msgstr "投稿者の制限"
 
-#: ../config/index.php:134
+#: ../config/index.php:135
 msgid ""
 "Enable this option if you want your authors to only see stats related to "
 "their own content."
 msgstr ""
 "投稿者が自分のコンテンツに関連したレポートのみを閲覧できるようにします。"
 
-#: ../config/index.php:135 ../config/index.php:139
+#: ../config/index.php:136 ../config/index.php:140
 msgid "Capability"
 msgstr "機能"
 
-#: ../config/index.php:135
+#: ../config/index.php:136
 msgid ""
 "Specify the minimum <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>capability</a> needed to access the "
@@ -1041,11 +602,11 @@ msgstr ""
 "空にすると、下のホワイトリストでユーザーを指定しない限り、購読者を含むあらゆ"
 "るユーザーがレポートにアクセスできるようになります。"
 
-#: ../config/index.php:136 ../config/index.php:140
+#: ../config/index.php:137 ../config/index.php:141
 msgid "Whitelist"
 msgstr "ホワイトリスト"
 
-#: ../config/index.php:136
+#: ../config/index.php:137
 msgid ""
 "List all the users who should have access to the reports, separated by "
 "commas. Administrators are implicitly allowed, so you don't need to list "
@@ -1055,7 +616,7 @@ msgstr ""
 "者への権限は自動で付与されるため、入力する必要はありません。ユーザー名の大文"
 "字と小文字は区別されます。"
 
-#: ../config/index.php:139
+#: ../config/index.php:140
 msgid ""
 "Specify the minimum <a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>capability</a> required to configure "
@@ -1067,7 +628,7 @@ msgstr ""
 "<code>activate_plugins</code>)。下のホワイトリストで指定されたユーザーはこの"
 "オプションを無視することができます。"
 
-#: ../config/index.php:140
+#: ../config/index.php:141
 msgid ""
 "List all the users who can edit these options, separated by commas. Please "
 "be advised that admins <strong>are not</strong> implicitly allowed, so do "
@@ -1077,11 +638,11 @@ msgstr ""
 "の権限は自動で付与<strong>されない</strong>ため、<strong>絶対に</strong>管理"
 "者名の入力を忘れないでください。ユーザー名の大文字と小文字は区別されます。"
 
-#: ../config/index.php:156
+#: ../config/index.php:157
 msgid "Read access: username not found"
 msgstr "リード アクセス: ユーザー名が見つかりません"
 
-#: ../config/index.php:169 ../config/index.php:200
+#: ../config/index.php:170 ../config/index.php:201
 msgid ""
 "Invalid minimum capability. Please check <a href=\"http://codex.wordpress."
 "org/Roles_and_Capabilities\" target=\"_new\">this page</a> for more "
@@ -1090,15 +651,15 @@ msgstr ""
 "無効な機能です。詳細については<a href=\"http://codex.wordpress.org/"
 "Roles_and_Capabilities\" target=\"_new\">このページ</a>を確認してください。"
 
-#: ../config/index.php:187
+#: ../config/index.php:188
 msgid "Config access: username not found"
 msgstr "設定 アクセス: ユーザー名が見つかりません"
 
-#: ../config/index.php:215
+#: ../config/index.php:216
 msgid "Detect Smoothing"
 msgstr "スムージングの検出"
 
-#: ../config/index.php:215
+#: ../config/index.php:216
 msgid ""
 "Detect if your visitors' browsers support anti-aliasing (font smoothing). "
 "This option required Spy Mode to be enabled."
@@ -1106,11 +667,11 @@ msgstr ""
 "訪問者のブラウザーがアンチエイリアシング (フォントスムージング) をサポートし"
 "ているかどうかを検出します。このオプションはスパイモードの有効化が必要です。"
 
-#: ../config/index.php:216
+#: ../config/index.php:217
 msgid "Track Outbound Clicks"
 msgstr "外部リンクのクリックを解析"
 
-#: ../config/index.php:216
+#: ../config/index.php:217
 msgid ""
 "Track when your visitors click on link to external websites. This option "
 "required Spy Mode to be enabled."
@@ -1118,11 +679,11 @@ msgstr ""
 "訪問者が行ったサイト外へのリンクのクリックを解析します。このオプションはスパ"
 "イモードの有効化が必要です。"
 
-#: ../config/index.php:217
+#: ../config/index.php:218
 msgid "Session Duration"
 msgstr "セッション時間"
 
-#: ../config/index.php:217
+#: ../config/index.php:218
 msgid ""
 "How many seconds should a human session last? Google Analytics sets it to "
 "1800 seconds."
@@ -1130,19 +691,19 @@ msgstr ""
 "セッション時間の最大値を指定します。Google アナリティクスはこの値を 1800 秒に"
 "設定しています。"
 
-#: ../config/index.php:218
+#: ../config/index.php:219
 msgid "Extend Session"
 msgstr "セッションの延長"
 
-#: ../config/index.php:218
+#: ../config/index.php:219
 msgid "Extend the duration of a session each time the user visits a new page."
 msgstr "訪問者が新規ページを表示するたびにセッション時間を延長します。"
 
-#: ../config/index.php:219
+#: ../config/index.php:220
 msgid "Enable CDN"
 msgstr "CDN を有効化"
 
-#: ../config/index.php:219
+#: ../config/index.php:220
 msgid ""
 "Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, "
 "by serving our tracking code from their fast and reliable network (free "
@@ -1152,11 +713,11 @@ msgstr ""
 "jsdelivr.com/' target='_blank'>JSDelivr</a> の CDN (コンテンツ・デリバリー・"
 "ネットワーク) から受け取ります (無料サービス)。"
 
-#: ../config/index.php:220
+#: ../config/index.php:221
 msgid "Extensions to Track"
 msgstr "解析する拡張子"
 
-#: ../config/index.php:220
+#: ../config/index.php:221
 msgid ""
 "List all the file extensions that you want to be treated as Downloads. "
 "Please note that links pointing to external resources (i.e. PDFs on a "
@@ -1168,35 +729,35 @@ msgstr ""
 "pdf、doc、xls、zip etc)。外部リソースへのリンク (例: 外部サイト上にあるPDF) "
 "は外部リンクではなくダウンロードとして扱われます。"
 
-#: ../config/index.php:222
+#: ../config/index.php:223
 msgid "External Pages"
 msgstr "外部ページ"
 
-#: ../config/index.php:223
+#: ../config/index.php:224
 msgid "Add the following code to all the non-WP pages you want to track"
 msgstr "解析したい WordPress 外のページに以下のコードを追記します。"
 
-#: ../config/index.php:235
+#: ../config/index.php:236
 msgid "Debug Mode"
 msgstr "デバッグモード"
 
-#: ../config/index.php:235
+#: ../config/index.php:236
 msgid "Display the SQL queries used to retrieve the data."
 msgstr "データを取得するために使用される SQL クエリを表示します。"
 
-#: ../config/index.php:236
+#: ../config/index.php:237
 msgid "IP Lookup"
 msgstr "IP Lookup"
 
-#: ../config/index.php:236
+#: ../config/index.php:237
 msgid "Customize the Geolocation service to be used in the reports."
 msgstr "レポート内で使用する位置情報サービスを変更できます。"
 
-#: ../config/index.php:237
+#: ../config/index.php:238
 msgid "Custom CSS"
 msgstr "カスタム CSS"
 
-#: ../config/index.php:237
+#: ../config/index.php:238
 msgid ""
 "Paste here your custom stylesheet to personalize the way your reports look. "
 "<a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
@@ -1207,11 +768,11 @@ msgstr ""
 "い使い方は <a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
 "target='_blank'>FAQ</a> をご覧ください。"
 
-#: ../config/index.php:238
+#: ../config/index.php:239
 msgid "Enable UAN"
 msgstr "UAN を有効化"
 
-#: ../config/index.php:238
+#: ../config/index.php:239
 msgid ""
 "Send anonymous data about user agents to our server for analysis. This "
 "allows us to contribute to the <a href='http://browscap.org/' "
@@ -1328,7 +889,7 @@ msgstr "が空"
 msgid "is not empty"
 msgstr "が空でない"
 
-#: ../config/maintenance.php:139 ../view/index.php:41 ../view/index.php:87
+#: ../config/maintenance.php:139 ../view/index.php:40 ../view/index.php:103
 msgid "Apply"
 msgstr "適用"
 
@@ -2607,7 +2168,7 @@ msgstr "ズールー語"
 msgid "l-zu-za"
 msgstr "ズールー語 (南アフリカ)"
 
-#: ../lang/dynamic_strings.php:298 ../view/wp-slimstat-reports.php:503
+#: ../lang/dynamic_strings.php:298 ../view/wp-slimstat-reports.php:505
 msgid "l-"
 msgstr "不明"
 
@@ -2627,55 +2188,75 @@ msgstr "ローカル IP"
 msgid "is between (x,y)"
 msgstr ""
 
-#: ../view/index.php:57 ../view/wp-slimstat-reports.php:800
+#: ../view/index.php:44
+msgid "Load"
+msgstr ""
+
+#: ../view/index.php:64 ../view/wp-slimstat-reports.php:802
 msgid "Today"
 msgstr "今日"
 
-#: ../view/index.php:58 ../view/wp-slimstat-reports.php:801
+#: ../view/index.php:65 ../view/wp-slimstat-reports.php:803
 msgid "Yesterday"
 msgstr "昨日"
 
-#: ../view/index.php:59
+#: ../view/index.php:66
 msgid "Last 7 Days"
 msgstr "過去 7 日"
 
-#: ../view/index.php:60
+#: ../view/index.php:67
 msgid "Last 60 Days"
 msgstr "過去 60 日"
 
-#: ../view/index.php:61
+#: ../view/index.php:68
 msgid "Last 90 Days"
 msgstr "過去 90 日"
 
-#: ../view/index.php:62
+#: ../view/index.php:69
 msgid "This Year So Far"
 msgstr "元日から現在まで"
 
-#: ../view/index.php:63
+#: ../view/index.php:70
 msgid "Date Range"
 msgstr "期間を指定"
 
-#: ../view/index.php:65 ../view/wp-slimstat-db.php:73
+#: ../view/index.php:72 ../view/wp-slimstat-db.php:70
 msgid "Day"
 msgstr "日"
 
-#: ../view/index.php:75 ../view/wp-slimstat-db.php:74
+#: ../view/index.php:82 ../view/wp-slimstat-db.php:71
 msgid "Month"
 msgstr "月"
 
-#: ../view/index.php:84 ../view/wp-slimstat-db.php:75
+#: ../view/index.php:91 ../view/wp-slimstat-db.php:72
 msgid "Year"
 msgstr "年"
 
-#: ../view/index.php:89
+#: ../view/index.php:92 ../view/wp-slimstat-db.php:69
+msgid "Hour"
+msgstr "時間"
+
+#: ../view/index.php:93
+msgid "Min"
+msgstr ""
+
+#: ../view/index.php:101 ../view/wp-slimstat-db.php:75
+msgid "hours"
+msgstr ""
+
+#: ../view/index.php:102
+msgid "mins"
+msgstr ""
+
+#: ../view/index.php:110
 msgid "Reset Filters"
 msgstr "フィルターをリセット"
 
-#: ../view/index.php:130
+#: ../view/index.php:151
 msgid "Your report here"
 msgstr "あなたのレポート"
 
-#: ../view/index.php:132
+#: ../view/index.php:153
 msgid ""
 "Yes, you can! Create and view your personalized analytics for Slimstat. Just "
 "write a new plugin that retrieves the desired information from the database "
@@ -2689,12 +2270,12 @@ msgstr ""
 "wordpress.org/tags/wp-slimstat?forum_id=10\" target=\"_blank\">サポートフォー"
 "ラム</a>を参照してください。"
 
-#: ../view/index.php:146 ../view/wp-slimstat-reports.php:791
-#: ../view/wp-slimstat-reports.php:893 ../view/wp-slimstat-reports.php:1116
+#: ../view/index.php:167 ../view/wp-slimstat-reports.php:793
+#: ../view/wp-slimstat-reports.php:895 ../view/wp-slimstat-reports.php:1118
 msgid "Pageviews"
 msgstr "PV"
 
-#: ../view/index.php:149
+#: ../view/index.php:170
 msgid ""
 "When visitors leave a comment on your blog, WordPress assigns them a cookie. "
 "Slimstat leverages this information to identify returning visitors. Please "
@@ -2704,37 +2285,41 @@ msgstr ""
 "を発行します。SlimStat はリピート訪問者を検出するためにこの情報を活用していま"
 "す。この値には登録ユーザーが含まれます。"
 
-#: ../view/index.php:153 ../view/index.php:191 ../view/index.php:194
+#: ../view/index.php:174 ../view/index.php:212 ../view/index.php:215
 #: ../view/right-now.php:21
 msgid "Color codes"
 msgstr "カラーコード"
 
-#: ../view/index.php:153 ../view/right-now.php:21
+#: ../view/index.php:174 ../view/right-now.php:21
 #, fuzzy
 msgid "From search result page"
 msgstr "検索結果ページからの訪問"
 
-#: ../view/index.php:153 ../view/index.php:191 ../view/index.php:194
+#: ../view/index.php:174 ../view/right-now.php:21 ../wp-slimstat-admin.php:792
+msgid "Known Visitor"
+msgstr "既知の訪問者"
+
+#: ../view/index.php:174 ../view/index.php:212 ../view/index.php:215
 #: ../view/right-now.php:21
 msgid "Known Users"
 msgstr "既知のユーザー"
 
-#: ../view/index.php:153 ../view/index.php:191 ../view/index.php:194
+#: ../view/index.php:174 ../view/index.php:212 ../view/index.php:215
 #: ../view/right-now.php:21
 msgid "Other Humans"
 msgstr "その他の人間"
 
-#: ../view/index.php:153 ../view/right-now.php:21
+#: ../view/index.php:174 ../view/right-now.php:21
 msgid "Bot or Crawler"
 msgstr "ボットまたはクローラー"
 
-#: ../view/index.php:157
+#: ../view/index.php:178
 msgid "Keywords used by your visitors to find your website on a search engine."
 msgstr ""
 "訪問者が検索エンジン上で あなたの Web サイトを見つけるために使用したキーワー"
 "ドです。"
 
-#: ../view/index.php:160
+#: ../view/index.php:181
 msgid ""
 "Slimstat retrieves live information from Alexa, Facebook and Google, to "
 "measures your site's rankings. Values are updated every 12 hours. Filters "
@@ -2744,11 +2329,11 @@ msgstr ""
 "から 12 時間毎に情報を取得します。上記のフィルターはこのレポートには適用され"
 "ません。"
 
-#: ../view/index.php:163
+#: ../view/index.php:184
 msgid "Human Visits"
 msgstr "人間の訪問"
 
-#: ../view/index.php:166
+#: ../view/index.php:187
 msgid ""
 "Internet Service Provider: a company which provides other companies or "
 "individuals with access to the Internet. Your DSL or cable internet service "
@@ -2760,7 +2345,7 @@ msgstr ""
 "フィルターを設定することで、特定の IP アドレスを解析から除外することができま"
 "す。"
 
-#: ../view/index.php:169
+#: ../view/index.php:190
 msgid ""
 "You can configure Slimstat to ignore a specific Country by setting the "
 "corresponding filter under Settings > Slimstat > Filters."
@@ -2768,23 +2353,28 @@ msgstr ""
 "設定 > フィルター で対応するフィルターをセットすることで、特定の国を解析から"
 "除外することができます。"
 
-#: ../view/index.php:172
+#: ../view/index.php:193
 msgid ""
 "This report shows you what user agent families (no version considered) are "
 "popular among your visitors."
 msgstr "このレポートは訪問者が使用しているブラウザの種類を表示します。"
 
-#: ../view/index.php:175
+#: ../view/index.php:196
 msgid ""
 "This report shows you what operating system families (no version considered) "
 "are popular among your visitors."
 msgstr "このレポートは訪問者が使用している OS の種類を表示します。"
 
-#: ../view/index.php:181
+#: ../view/index.php:199 ../view/wp-slimstat-reports.php:38
+#: ../wp-slimstat-admin.php:498 ../wp-slimstat-admin.php:515
+msgid "Traffic Sources"
+msgstr "トラフィック"
+
+#: ../view/index.php:202
 msgid "Average Pageviews per Visit"
 msgstr "平均 PV / 訪問"
 
-#: ../view/index.php:184
+#: ../view/index.php:205
 msgid ""
 "A <em>bounce page</em> is a single-page visit, or visit in which the person "
 "left your site from the entrance (landing) page."
@@ -2792,11 +2382,11 @@ msgstr ""
 "1 ページのみの訪問、またはエントランス(ランディング)ページからサイトを去った"
 "訪問者が表示したページを直帰ページといいます。"
 
-#: ../view/index.php:187
+#: ../view/index.php:208
 msgid "Searches performed using Wordpress' built-in search functionality."
 msgstr "検索は WordPress のビルトイン検索機能を使用して行われました。"
 
-#: ../view/index.php:191
+#: ../view/index.php:212
 msgid ""
 "<strong>Link Details</strong><br>- <em>A:n</em> means that the n-th link in "
 "the page was clicked.<br>- <em>ID:xx</em> is shown when the corresponding "
@@ -2806,7 +2396,7 @@ msgstr ""
 "応するページ内で n 番目に存在するかを表します。<br>- <em>ID:xx</em> は、対応"
 "するリンクが ID 属性を持つ際に表示されます。"
 
-#: ../view/index.php:194
+#: ../view/index.php:215
 msgid ""
 "This report lists any <em>event</em> occurred on your website. Please refer "
 "to the FAQ for more information on how to leverage this functionality."
@@ -2814,7 +2404,7 @@ msgstr ""
 "このレポートはあなたの Web サイト上で発生した全てのイベントを一覧表示します。"
 "この機能の詳しい活用方法は FAQ をご覧ください。"
 
-#: ../view/index.php:197
+#: ../view/index.php:218
 msgid ""
 "Your content at a glance: posts, comments, pingbacks, etc. Please note that "
 "this report is not affected by the filters set here above."
@@ -2838,15 +2428,20 @@ msgstr "携帯端末"
 msgid "Syndication Reader"
 msgstr "RSS リーダー"
 
-#: ../view/right-now.php:30 ../view/wp-slimstat-reports.php:438
-#: ../view/wp-slimstat-reports.php:697
+#: ../view/right-now.php:30 ../view/wp-slimstat-reports.php:440
+#: ../view/wp-slimstat-reports.php:699
 msgid "No data to display"
 msgstr "表示するデータがありません"
 
-#: ../view/right-now.php:56 ../view/wp-slimstat-reports.php:491
-#: ../view/wp-slimstat-reports.php:740 ../view/wp-slimstat-reports.php:1004
+#: ../view/right-now.php:56 ../view/wp-slimstat-reports.php:493
+#: ../view/wp-slimstat-reports.php:742 ../view/wp-slimstat-reports.php:1006
 msgid "c-"
 msgstr "不明"
+
+#: ../view/right-now.php:109 ../view/wp-slimstat-db.php:61
+#: ../wp-slimstat-admin.php:794 ../wp-slimstat-admin.php:836
+msgid "Originating IP"
+msgstr "送信元 IP"
 
 #: ../view/right-now.php:130
 msgid "Server Latency and Page Speed in milliseconds"
@@ -2860,15 +2455,20 @@ msgstr ""
 msgid "PS"
 msgstr ""
 
-#: ../view/right-now.php:140 ../view/wp-slimstat-reports.php:550
-#: ../view/wp-slimstat-reports.php:554 ../view/wp-slimstat-reports.php:722
-#: ../view/wp-slimstat-reports.php:760
+#: ../view/right-now.php:140 ../view/wp-slimstat-reports.php:552
+#: ../view/wp-slimstat-reports.php:556 ../view/wp-slimstat-reports.php:724
+#: ../view/wp-slimstat-reports.php:762
 msgid "Open this URL in a new window"
 msgstr "この URL を新規ウィンドウで開く"
 
 #: ../view/right-now.php:143
 msgid "Local search results page"
 msgstr "サイト内検索結果ページ"
+
+#: ../view/right-now.php:148 ../view/wp-slimstat-db.php:40
+#: ../wp-slimstat-admin.php:797 ../wp-slimstat-admin.php:813
+msgid "Search Terms"
+msgstr "検索キーワード"
 
 #: ../view/right-now.php:150
 msgid "Open this referrer in a new window"
@@ -2878,41 +2478,132 @@ msgstr "この参照元を新規ウィンドウで開く"
 msgid "Open this outbound link in a new window"
 msgstr "この外部リンクを新規ウィンドウで開く"
 
+#: ../view/right-now.php:152
+msgid "Date and Time"
+msgstr "日付と時間"
+
 #: ../view/right-now.php:153
 msgid "Content Type"
 msgstr "コンテンツの種類"
 
-#: ../view/wp-slimstat-db.php:43
+#: ../view/wp-slimstat-db.php:37 ../wp-slimstat-admin.php:810
+msgid "Browser"
+msgstr "ブラウザ"
+
+#: ../view/wp-slimstat-db.php:38 ../view/wp-slimstat-reports.php:492
+#: ../wp-slimstat-admin.php:811
+msgid "Country Code"
+msgstr "国コード"
+
+#: ../view/wp-slimstat-db.php:39
 msgid "IP Address"
 msgstr "IP アドレス"
 
-#: ../view/wp-slimstat-db.php:48
+#: ../view/wp-slimstat-db.php:41 ../view/wp-slimstat-reports.php:504
+#: ../wp-slimstat-admin.php:814
+msgid "Language Code"
+msgstr "言語コード"
+
+#: ../view/wp-slimstat-db.php:42 ../wp-slimstat-admin.php:815
+msgid "Operating System"
+msgstr "OS"
+
+#: ../view/wp-slimstat-db.php:43 ../wp-slimstat-admin.php:816
+msgid "Permalink"
+msgstr "パーマリンク"
+
+#: ../view/wp-slimstat-db.php:44
 msgid "Domain"
 msgstr "ドメイン"
 
-#: ../view/wp-slimstat-db.php:51
+#: ../view/wp-slimstat-db.php:45 ../wp-slimstat-admin.php:817
+msgid "Referer"
+msgstr "リファラー"
+
+#: ../view/wp-slimstat-db.php:46 ../wp-slimstat-admin.php:818
+msgid "Visitor's Name"
+msgstr "訪問者名"
+
+#: ../view/wp-slimstat-db.php:47
 msgid "Page Speed"
 msgstr ""
 
-#: ../view/wp-slimstat-db.php:53
+#: ../view/wp-slimstat-db.php:49
 msgid "-- Advanced filters --"
 msgstr "-- 詳細フィルター --"
 
-#: ../view/wp-slimstat-db.php:54 ../view/wp-slimstat-reports.php:64
+#: ../view/wp-slimstat-db.php:50 ../view/wp-slimstat-reports.php:64
 msgid "Browser Capabilities"
 msgstr "ブラウザの機能"
 
-#: ../view/wp-slimstat-db.php:61
+#: ../view/wp-slimstat-db.php:51 ../wp-slimstat-admin.php:829
+msgid "Browser Version"
+msgstr "ブラウザのバージョン"
+
+#: ../view/wp-slimstat-db.php:52 ../wp-slimstat-admin.php:830
+msgid "Browser Type"
+msgstr "ブラウザの種類"
+
+#: ../view/wp-slimstat-db.php:53 ../wp-slimstat-admin.php:799
+msgid "User Agent"
+msgstr "User Agent"
+
+#: ../view/wp-slimstat-db.php:54 ../wp-slimstat-admin.php:831
+msgid "Color Depth"
+msgstr "色深度"
+
+#: ../view/wp-slimstat-db.php:55 ../wp-slimstat-admin.php:832
+msgid "CSS Version"
+msgstr "CSS バージョン"
+
+#: ../view/wp-slimstat-db.php:56 ../wp-slimstat-admin.php:833
+msgid "Pageview Attributes"
+msgstr "PV 属性"
+
+#: ../view/wp-slimstat-db.php:57
 msgid "Server Latency"
 msgstr ""
 
-#: ../view/wp-slimstat-db.php:67
+#: ../view/wp-slimstat-db.php:58 ../wp-slimstat-admin.php:800
+msgid "Outbound Link"
+msgstr "外部リンク"
+
+#: ../view/wp-slimstat-db.php:59 ../wp-slimstat-admin.php:834
+msgid "Post Author"
+msgstr "投稿者"
+
+#: ../view/wp-slimstat-db.php:60 ../wp-slimstat-admin.php:835
+msgid "Post Category ID"
+msgstr "投稿カテゴリ ID"
+
+#: ../view/wp-slimstat-db.php:62 ../wp-slimstat-admin.php:837
+msgid "Resource Content Type"
+msgstr "リソース コンテンツの種類"
+
+#: ../view/wp-slimstat-db.php:63
 msgid "Resource ID"
 msgstr "リソース ID"
 
-#: ../view/wp-slimstat-db.php:72
-msgid "Hour"
-msgstr "時間"
+#: ../view/wp-slimstat-db.php:64 ../wp-slimstat-admin.php:838
+msgid "Screen Resolution"
+msgstr "モニタ解像度"
+
+#: ../view/wp-slimstat-db.php:65 ../wp-slimstat-admin.php:839
+msgid "Visit ID"
+msgstr "訪問 ID"
+
+#: ../view/wp-slimstat-db.php:68
+msgid "Minute"
+msgstr ""
+
+#: ../view/wp-slimstat-db.php:73
+msgid "+/-"
+msgstr ""
+
+#: ../view/wp-slimstat-db.php:76
+#, fuzzy
+msgid "minutes"
+msgstr "1 - 3 分"
 
 #: ../view/wp-slimstat-db.php:78
 msgid "Order Direction"
@@ -2925,6 +2616,35 @@ msgstr "結果の制限"
 #: ../view/wp-slimstat-db.php:80
 msgid "Start From"
 msgstr "から始まる"
+
+#: ../view/wp-slimstat-reports.php:34 ../wp-slimstat-admin.php:494
+msgid "Real-Time Log"
+msgstr "リアルタイム解析"
+
+#: ../view/wp-slimstat-reports.php:35 ../wp-slimstat-admin.php:495
+#: ../wp-slimstat-admin.php:512
+msgid "Overview"
+msgstr "概要"
+
+#: ../view/wp-slimstat-reports.php:36 ../wp-slimstat-admin.php:496
+#: ../wp-slimstat-admin.php:513
+msgid "Audience"
+msgstr "訪問者"
+
+#: ../view/wp-slimstat-reports.php:37 ../wp-slimstat-admin.php:497
+#: ../wp-slimstat-admin.php:514
+msgid "Site Analysis"
+msgstr "サイト解析"
+
+#: ../view/wp-slimstat-reports.php:39 ../wp-slimstat-admin.php:499
+#: ../wp-slimstat-admin.php:516
+msgid "Map Overlay"
+msgstr "地域"
+
+#: ../view/wp-slimstat-reports.php:40 ../wp-slimstat-admin.php:500
+#: ../wp-slimstat-admin.php:517
+msgid "Custom Reports"
+msgstr "カスタムレポート"
 
 #: ../view/wp-slimstat-reports.php:44
 msgid "Pageviews (chart)"
@@ -3150,158 +2870,166 @@ msgstr "地域"
 msgid "Activity"
 msgstr "リアルタイム解析"
 
-#: ../view/wp-slimstat-reports.php:219
+#: ../view/wp-slimstat-reports.php:215
 msgid "Chart controls"
 msgstr "チャートの操作"
 
-#: ../view/wp-slimstat-reports.php:219
+#: ../view/wp-slimstat-reports.php:215
 msgid "Use your mouse wheel to zoom in and out"
 msgstr "ズームイン／アウト: マウスホイール"
 
-#: ../view/wp-slimstat-reports.php:219
+#: ../view/wp-slimstat-reports.php:215
 msgid "While zooming in, drag the chart to move to a different area"
 msgstr "チャートの移動: ズームイン中にドラッグ"
 
-#: ../view/wp-slimstat-reports.php:219
+#: ../view/wp-slimstat-reports.php:215
 msgid "Double click on an empty region to reset the zoom level"
 msgstr "ズームレベルをリセットするには空白をダブルクリックします"
 
-#: ../view/wp-slimstat-reports.php:232
+#: ../view/wp-slimstat-reports.php:228
 msgid "src"
 msgstr "src"
 
-#: ../view/wp-slimstat-reports.php:233
+#: ../view/wp-slimstat-reports.php:229
 msgid "serp"
 msgstr "serp"
 
-#: ../view/wp-slimstat-reports.php:238
+#: ../view/wp-slimstat-reports.php:234
 msgid "Go to the corresponding search engine result page"
 msgstr "一致する検索エンジンの結果ページを開く"
 
-#: ../view/wp-slimstat-reports.php:241
+#: ../view/wp-slimstat-reports.php:237
 msgid "Go to the referring page"
 msgstr "参照元ページを開く"
 
-#: ../view/wp-slimstat-reports.php:264
+#: ../view/wp-slimstat-reports.php:260
 msgid "Remove filter for"
 msgstr "フィルターを除去:"
 
-#: ../view/wp-slimstat-reports.php:271
+#: ../view/wp-slimstat-reports.php:264
+msgid "Save"
+msgstr ""
+
+#: ../view/wp-slimstat-reports.php:267
 msgid "Reset All"
 msgstr "全てのフィルターをリセット"
 
-#: ../view/wp-slimstat-reports.php:274
+#: ../view/wp-slimstat-reports.php:271
 msgid "Current filters:"
 msgstr "現在のフィルター:"
 
-#: ../view/wp-slimstat-reports.php:278
+#: ../view/wp-slimstat-reports.php:275
 msgid "Refresh"
 msgstr "更新"
 
-#: ../view/wp-slimstat-reports.php:352
+#: ../view/wp-slimstat-reports.php:354
 #, php-format
 msgid "Results %s - %s of %s"
 msgstr "結果 %s - %s / %s"
 
-#: ../view/wp-slimstat-reports.php:354
+#: ../view/wp-slimstat-reports.php:356
 msgid "Refresh in"
 msgstr "更新まで"
 
-#: ../view/wp-slimstat-reports.php:376 ../view/wp-slimstat-reports.php:388
+#: ../view/wp-slimstat-reports.php:378 ../view/wp-slimstat-reports.php:390
 #, php-format
 msgid "Daily %s"
 msgstr "日別 %s"
 
-#: ../view/wp-slimstat-reports.php:379
+#: ../view/wp-slimstat-reports.php:381
 #, php-format
 msgid "%s Minute by Minute"
 msgstr "1 分毎の %s"
 
-#: ../view/wp-slimstat-reports.php:382
+#: ../view/wp-slimstat-reports.php:384
 #, php-format
 msgid "Hourly %s"
 msgstr "時間別 %s"
 
-#: ../view/wp-slimstat-reports.php:385
+#: ../view/wp-slimstat-reports.php:387
 #, php-format
 msgid "Monthly %s"
 msgstr "月別 %s"
 
-#: ../view/wp-slimstat-reports.php:473
+#: ../view/wp-slimstat-reports.php:475
 msgid "Category ID"
 msgstr "カテゴリ ID"
 
-#: ../view/wp-slimstat-reports.php:506
+#: ../view/wp-slimstat-reports.php:508
 msgid "OS Code"
 msgstr "OSコード"
 
-#: ../view/wp-slimstat-reports.php:516
+#: ../view/wp-slimstat-reports.php:518
 msgid "Referrer"
 msgstr "リファラー"
 
-#: ../view/wp-slimstat-reports.php:540 ../view/wp-slimstat-reports.php:828
-#: ../view/wp-slimstat-reports.php:837 ../view/wp-slimstat-reports.php:843
-#: ../view/wp-slimstat-reports.php:849 ../view/wp-slimstat-reports.php:855
-#: ../view/wp-slimstat-reports.php:861 ../view/wp-slimstat-reports.php:867
-#: ../view/wp-slimstat-reports.php:873
+#: ../view/wp-slimstat-reports.php:542 ../view/wp-slimstat-reports.php:830
+#: ../view/wp-slimstat-reports.php:839 ../view/wp-slimstat-reports.php:845
+#: ../view/wp-slimstat-reports.php:851 ../view/wp-slimstat-reports.php:857
+#: ../view/wp-slimstat-reports.php:863 ../view/wp-slimstat-reports.php:869
+#: ../view/wp-slimstat-reports.php:875
 msgid "Hits"
 msgstr "ヒット"
 
-#: ../view/wp-slimstat-reports.php:714
+#: ../view/wp-slimstat-reports.php:716
 msgid "Search for"
 msgstr "検索"
 
-#: ../view/wp-slimstat-reports.php:750 ../view/wp-slimstat-reports.php:760
+#: ../view/wp-slimstat-reports.php:752 ../view/wp-slimstat-reports.php:762
 msgid "Source"
 msgstr "参照元"
 
-#: ../view/wp-slimstat-reports.php:752
+#: ../view/wp-slimstat-reports.php:754
 msgid "Keywords"
 msgstr "キーワード"
 
-#: ../view/wp-slimstat-reports.php:760
+#: ../view/wp-slimstat-reports.php:762
 #, php-format
 msgid "Filter results where resource equals %s"
 msgstr "フィルターの結果: %s"
 
-#: ../view/wp-slimstat-reports.php:761
+#: ../view/wp-slimstat-reports.php:763
 #, fuzzy
 msgid "Link Details"
 msgstr "詳細の展開"
 
-#: ../view/wp-slimstat-reports.php:774
+#: ../view/wp-slimstat-reports.php:776
 msgid "Total Pageviews"
 msgstr "総 PV"
 
-#: ../view/wp-slimstat-reports.php:775
+#: ../view/wp-slimstat-reports.php:777
 msgid "DB Size"
 msgstr "DB サイズ"
 
-#: ../view/wp-slimstat-reports.php:776
+#: ../view/wp-slimstat-reports.php:778
 msgid "Tracking Active"
 msgstr "解析を有効化"
 
-#: ../view/wp-slimstat-reports.php:777
+#: ../view/wp-slimstat-reports.php:779
 msgid "Javascript Mode"
 msgstr "JavaScript モード"
 
-#: ../view/wp-slimstat-reports.php:778
+#: ../view/wp-slimstat-reports.php:780
 msgid "Tracking Browser Caps"
 msgstr "ブラウザの機能を解析"
 
-#: ../view/wp-slimstat-reports.php:779
+#: ../view/wp-slimstat-reports.php:781
 msgid "Auto purge"
 msgstr "データの保存期間"
 
-#: ../view/wp-slimstat-reports.php:780
+#: ../view/wp-slimstat-reports.php:781 ../wp-slimstat-admin.php:869
+msgid "No"
+msgstr "いいえ"
+
+#: ../view/wp-slimstat-reports.php:782
 msgid "Oldest pageview"
 msgstr "最も古いページビュー"
 
-#: ../view/wp-slimstat-reports.php:780
+#: ../view/wp-slimstat-reports.php:782
 msgid "No visits"
 msgstr "訪問なし"
 
-#: ../view/wp-slimstat-reports.php:790 ../view/wp-slimstat-reports.php:892
+#: ../view/wp-slimstat-reports.php:792 ../view/wp-slimstat-reports.php:894
 msgid ""
 "A request to load a single HTML file. Slimstat logs a \"pageview\" each time "
 "the tracking code is executed."
@@ -3309,46 +3037,46 @@ msgstr ""
 "サイト内に存在する HTML ファイルが読み込まれた回数の合計です。SlimStat は解析"
 "コードが実行されるたび \"pageview\" を記録します。"
 
-#: ../view/wp-slimstat-reports.php:792
+#: ../view/wp-slimstat-reports.php:794
 msgid "How many pages have been visited on average during the current period."
 msgstr "訪問者が 1 回のセッション中に表示したページ数の平均を表します。"
 
-#: ../view/wp-slimstat-reports.php:793
+#: ../view/wp-slimstat-reports.php:795
 msgid "Average Pageviews"
 msgstr "平均 PV"
 
-#: ../view/wp-slimstat-reports.php:794
+#: ../view/wp-slimstat-reports.php:796
 msgid ""
 "Visitors who landed on your site after searching for a keyword on Google, "
 "Yahoo, etc."
 msgstr ""
 "Google や Yahoo などの検索結果ページからサイトを訪れた訪問者の数を表します。"
 
-#: ../view/wp-slimstat-reports.php:795
+#: ../view/wp-slimstat-reports.php:797
 msgid "From Search Results"
 msgstr "検索結果からの訪問"
 
-#: ../view/wp-slimstat-reports.php:796
+#: ../view/wp-slimstat-reports.php:798
 msgid ""
 "Used to differentiate between multiple requests to download a file from one "
 "internet address (IP) and requests originating from many distinct addresses"
 msgstr "サイトを訪れた全ての IP アドレスから重複を除いた値を表します。"
 
-#: ../view/wp-slimstat-reports.php:797 ../view/wp-slimstat-reports.php:812
-#: ../view/wp-slimstat-reports.php:1116 ../view/wp-slimstat-reports.php:1120
-#: ../view/wp-slimstat-reports.php:1124
+#: ../view/wp-slimstat-reports.php:799 ../view/wp-slimstat-reports.php:814
+#: ../view/wp-slimstat-reports.php:1118 ../view/wp-slimstat-reports.php:1122
+#: ../view/wp-slimstat-reports.php:1126
 msgid "Unique IPs"
 msgstr "ユニーク IP"
 
-#: ../view/wp-slimstat-reports.php:798
+#: ../view/wp-slimstat-reports.php:800
 msgid "Last 5 minutes"
 msgstr "過去 5 分"
 
-#: ../view/wp-slimstat-reports.php:799
+#: ../view/wp-slimstat-reports.php:801
 msgid "Last 30 minutes"
 msgstr "過去 30 分"
 
-#: ../view/wp-slimstat-reports.php:809
+#: ../view/wp-slimstat-reports.php:811
 msgid ""
 "A visit is a session of at most 30 minutes. Returning visitors are counted "
 "multiple times if they perform multiple visits."
@@ -3357,89 +3085,89 @@ msgstr ""
 "再度サイトを訪れた場合、その訪問は以前の訪問とは別のものとしてカウントされま"
 "す。"
 
-#: ../view/wp-slimstat-reports.php:810
+#: ../view/wp-slimstat-reports.php:812
 msgid "Human visits"
 msgstr "人間の訪問"
 
-#: ../view/wp-slimstat-reports.php:811
+#: ../view/wp-slimstat-reports.php:813
 msgid "It includes only traffic generated by human visitors."
 msgstr "この値は人間の訪問者によって生成されたトラフィックのみを含みます。"
 
-#: ../view/wp-slimstat-reports.php:813 ../view/wp-slimstat-reports.php:904
+#: ../view/wp-slimstat-reports.php:815 ../view/wp-slimstat-reports.php:906
 msgid ""
 "Percentage of single-page visits, i.e. visits in which the person left your "
 "site from the entrance page."
 msgstr "1 ページのみを閲覧してサイトを去った訪問者の割合です。"
 
-#: ../view/wp-slimstat-reports.php:814
+#: ../view/wp-slimstat-reports.php:816
 msgid "Bounce rate"
 msgstr "直帰率"
 
-#: ../view/wp-slimstat-reports.php:815
+#: ../view/wp-slimstat-reports.php:817
 msgid "Visitors who had previously left a comment on your blog."
 msgstr "以前にブログにコメントを残したことのある訪問者の数です。"
 
-#: ../view/wp-slimstat-reports.php:816
+#: ../view/wp-slimstat-reports.php:818
 msgid "Known visitors"
 msgstr "既知の訪問者"
 
-#: ../view/wp-slimstat-reports.php:817
+#: ../view/wp-slimstat-reports.php:819
 msgid "Human users who visited your site only once."
 msgstr "現在までに一度だけサイトを訪れたユーザーの数です。"
 
-#: ../view/wp-slimstat-reports.php:818
+#: ../view/wp-slimstat-reports.php:820
 msgid "New visitors"
 msgstr "新規の訪問者"
 
-#: ../view/wp-slimstat-reports.php:819
+#: ../view/wp-slimstat-reports.php:821
 msgid "Bots"
 msgstr "ボット"
 
-#: ../view/wp-slimstat-reports.php:820
+#: ../view/wp-slimstat-reports.php:822
 msgid "Pages per visit"
 msgstr "平均 PV"
 
-#: ../view/wp-slimstat-reports.php:821 ../view/wp-slimstat-reports.php:1129
+#: ../view/wp-slimstat-reports.php:823 ../view/wp-slimstat-reports.php:1131
 msgid "Longest visit"
 msgstr "最多 PV"
 
-#: ../view/wp-slimstat-reports.php:821
+#: ../view/wp-slimstat-reports.php:823
 msgid "hits"
 msgstr "ヒット"
 
-#: ../view/wp-slimstat-reports.php:839
+#: ../view/wp-slimstat-reports.php:841
 msgid "0 - 30 seconds"
 msgstr "0 - 30 秒"
 
-#: ../view/wp-slimstat-reports.php:845
+#: ../view/wp-slimstat-reports.php:847
 msgid "31 - 60 seconds"
 msgstr "31 - 61 秒"
 
-#: ../view/wp-slimstat-reports.php:851
+#: ../view/wp-slimstat-reports.php:853
 msgid "1 - 3 minutes"
 msgstr "1 - 3 分"
 
-#: ../view/wp-slimstat-reports.php:857
+#: ../view/wp-slimstat-reports.php:859
 msgid "3 - 5 minutes"
 msgstr "3 - 5 分"
 
-#: ../view/wp-slimstat-reports.php:863
+#: ../view/wp-slimstat-reports.php:865
 msgid "5 - 7 minutes"
 msgstr "5 - 7 分"
 
-#: ../view/wp-slimstat-reports.php:869
+#: ../view/wp-slimstat-reports.php:871
 msgid "7 - 10 minutes"
 msgstr "7 - 10 分"
 
-#: ../view/wp-slimstat-reports.php:875
+#: ../view/wp-slimstat-reports.php:877
 msgid "More than 10 minutes"
 msgstr "10 分以上"
 
-#: ../view/wp-slimstat-reports.php:884
+#: ../view/wp-slimstat-reports.php:886
 msgid "Average time on site"
 msgstr "平均滞在時間"
 
-#: ../view/wp-slimstat-reports.php:894
+#: ../view/wp-slimstat-reports.php:896
 msgid ""
 "A referrer (or referring site) is the site that a visitor previously visited "
 "before following a link to your site."
@@ -3447,11 +3175,11 @@ msgstr ""
 "リファラー (または参照元サイト) とは訪問者があなたのサイトへのリンクをクリッ"
 "クする前に訪問していたサイトです。"
 
-#: ../view/wp-slimstat-reports.php:895
+#: ../view/wp-slimstat-reports.php:897
 msgid "Unique Referrers"
 msgstr "ユニーク リファラー"
 
-#: ../view/wp-slimstat-reports.php:896
+#: ../view/wp-slimstat-reports.php:898
 msgid ""
 "Visitors who visited the site by typing the URL directly into their browser. "
 "<em>Direct</em> can also refer to the visitors who clicked on the links from "
@@ -3462,11 +3190,11 @@ msgstr ""
 "ク／お気に入り、またはリファラーを含まないローカルドキュメントや Eメール 内の"
 "リンクのクリックを経由してサイトを訪れた訪問者が含まれます。"
 
-#: ../view/wp-slimstat-reports.php:897
+#: ../view/wp-slimstat-reports.php:899
 msgid "Direct Pageviews"
 msgstr "直接 PV"
 
-#: ../view/wp-slimstat-reports.php:898
+#: ../view/wp-slimstat-reports.php:900
 msgid ""
 "Visitors who came to your site via searches on Google or some other search "
 "engine."
@@ -3474,11 +3202,11 @@ msgstr ""
 "Google やその他の検索エンジンの検索を用いてあなたのサイトに訪れた訪問者の数で"
 "す。"
 
-#: ../view/wp-slimstat-reports.php:899
+#: ../view/wp-slimstat-reports.php:901
 msgid "From a search result"
 msgstr "検索結果からの訪問"
 
-#: ../view/wp-slimstat-reports.php:900
+#: ../view/wp-slimstat-reports.php:902
 msgid ""
 "The first page that a user views during a session. This is also known as the "
 "<em>entrance page</em>. For example, if they search for 'Brooklyn Office "
@@ -3490,49 +3218,49 @@ msgstr ""
 "してあなたのブログを訪れた時、表示されたページはランディングページとしてカウ"
 "ントされます。"
 
-#: ../view/wp-slimstat-reports.php:901
+#: ../view/wp-slimstat-reports.php:903
 msgid "Unique Landing Pages"
 msgstr "ユニーク ランディングページ"
 
-#: ../view/wp-slimstat-reports.php:902
+#: ../view/wp-slimstat-reports.php:904
 msgid "Number of single-page visits to your site over the selected period."
 msgstr "1 ページのみを閲覧してサイトを去った訪問者の割合です。"
 
-#: ../view/wp-slimstat-reports.php:903
+#: ../view/wp-slimstat-reports.php:905
 msgid "Bounce Pages"
 msgstr "直帰ページ"
 
-#: ../view/wp-slimstat-reports.php:905
+#: ../view/wp-slimstat-reports.php:907
 msgid "New Visitors Rate"
 msgstr "新規の訪問者の割合"
 
-#: ../view/wp-slimstat-reports.php:906
+#: ../view/wp-slimstat-reports.php:908
 msgid ""
 "Visitors who visited the site in the last 5 minutes coming from a search "
 "engine."
 msgstr "過去 5 分の間に検索エンジンからサイトに訪れた訪問者の数です。"
 
-#: ../view/wp-slimstat-reports.php:907
+#: ../view/wp-slimstat-reports.php:909
 msgid "Currently from search engines"
 msgstr "最新 検索エンジンからの訪問"
 
-#: ../view/wp-slimstat-reports.php:975
+#: ../view/wp-slimstat-reports.php:977
 msgid "Number of pages in your site included in Google's index."
 msgstr "Google インデックスに含まれるサイト内のページ数です。"
 
-#: ../view/wp-slimstat-reports.php:976
+#: ../view/wp-slimstat-reports.php:978
 msgid "Google Index"
 msgstr "Google インデックス"
 
-#: ../view/wp-slimstat-reports.php:977
+#: ../view/wp-slimstat-reports.php:979
 msgid "Number of pages, according to Google, that link back to your site."
 msgstr "Google が検出したあなたのサイトへのリンクが存在するページの数です。"
 
-#: ../view/wp-slimstat-reports.php:978
+#: ../view/wp-slimstat-reports.php:980
 msgid "Google Backlinks"
 msgstr "Google 被リンク"
 
-#: ../view/wp-slimstat-reports.php:979
+#: ../view/wp-slimstat-reports.php:981
 msgid ""
 "How many times the Facebook Like button has been approximately clicked on "
 "your site."
@@ -3540,923 +3268,923 @@ msgstr ""
 "サイト内の Facebook いいね！ボタンが現在までにクリックされたおおよその回数で"
 "す。"
 
-#: ../view/wp-slimstat-reports.php:980
+#: ../view/wp-slimstat-reports.php:982
 msgid "Facebook Likes"
 msgstr "Facebook いいね！"
 
-#: ../view/wp-slimstat-reports.php:981
+#: ../view/wp-slimstat-reports.php:983
 msgid ""
 "How many times your site has been shared by someone on the social network."
 msgstr ""
 "ソーシャルネットワーク上で現在までにあなたの Web サイトがシェアされた回数で"
 "す。"
 
-#: ../view/wp-slimstat-reports.php:982
+#: ../view/wp-slimstat-reports.php:984
 msgid "Facebook Shares"
 msgstr "Facebook シェア"
 
-#: ../view/wp-slimstat-reports.php:983
+#: ../view/wp-slimstat-reports.php:985
 msgid "How many times links to your website have been clicked on Facebook."
 msgstr ""
 "Facebook 上で現在までにあなたの Web サイトへのリンクがクリックされた回数で"
 "す。"
 
-#: ../view/wp-slimstat-reports.php:984
+#: ../view/wp-slimstat-reports.php:986
 msgid "Facebook Clicks"
 msgstr "Facebook クリック"
 
-#: ../view/wp-slimstat-reports.php:985
+#: ../view/wp-slimstat-reports.php:987
 msgid ""
 "Alexa is a subsidiary company of Amazon.com which provides commercial web "
 "traffic data."
 msgstr ""
 "Alexa は商業的な Web トラフィックデータを提供する Amazon.com の子会社です。"
 
-#: ../view/wp-slimstat-reports.php:986
+#: ../view/wp-slimstat-reports.php:988
 msgid "Alexa World Rank"
 msgstr "Alexa 世界ランク"
 
-#: ../view/wp-slimstat-reports.php:987
+#: ../view/wp-slimstat-reports.php:989
 msgid "Alexa Country Rank"
 msgstr "Alexa 国別ランク"
 
-#: ../view/wp-slimstat-reports.php:988
+#: ../view/wp-slimstat-reports.php:990
 msgid "Alexa Popularity"
 msgstr "Alexa 人気度"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-xx"
 msgstr "Unkwnon"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-af"
 msgstr "アフガニスタン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ax"
 msgstr "オーランド諸島 (フィンランド領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-al"
 msgstr "アルバニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-dz"
 msgstr "アルジェリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ad"
 msgstr "アンドラ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ao"
 msgstr "アンゴラ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ai"
 msgstr "アンギラ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ag"
 msgstr "アンティグア・バーブーダ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ar"
 msgstr "アルゼンチン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-am"
 msgstr "アルメニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-aw"
 msgstr "アルバ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-au"
 msgstr "オーストラリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-at"
 msgstr "オーストリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-az"
 msgstr "アゼルバイジャン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bs"
 msgstr "バハマ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bh"
 msgstr "バーレーン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bd"
 msgstr "バングラデシュ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bb"
 msgstr "バルバドス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-by"
 msgstr "ベラルーシ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-be"
 msgstr "ベルギー"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bz"
 msgstr "ベリーズ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bj"
 msgstr "ベナン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bm"
 msgstr "バミューダ諸島 (イギリス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bt"
 msgstr "ブータン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bo"
 msgstr "ボリビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ba"
 msgstr "ボスニア・ヘルツェゴヴィナ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bw"
 msgstr "ボツワナ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-br"
 msgstr "ブラジル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bn"
 msgstr "ブルネイ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bg"
 msgstr "ブルガリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bf"
 msgstr "ブルキナファソ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-bi"
 msgstr "ブルンジ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kh"
 msgstr "カンボジア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cm"
 msgstr "カメルーン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ca"
 msgstr "カナダ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cv"
 msgstr "カーボベルデ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ky"
 msgstr "ケイマン諸島"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cf"
 msgstr "中央アフリカ共和国"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-td"
 msgstr "チャド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cl"
 msgstr "チリ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cn"
 msgstr "中国"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-co"
 msgstr "コロンビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-km"
 msgstr "コモロ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cg"
 msgstr "コンゴ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cd"
 msgstr "コンゴ民主共和国"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cr"
 msgstr "コスタリカ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ci"
 msgstr "コートジボワール"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-hr"
 msgstr "クロアチア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cu"
 msgstr "キューバ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cy"
 msgstr "キプロス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-cz"
 msgstr "チェコ共和国"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-dk"
 msgstr "デンマーク"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-dj"
 msgstr "ジブチ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-dm"
 msgstr "ドミニカ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-do"
 msgstr "ドミニカ共和国"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ec"
 msgstr "エクアドル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-eg"
 msgstr "エジプト"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sv"
 msgstr "エルサルバドル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gq"
 msgstr "赤道ギニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-er"
 msgstr "エリトリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ee"
 msgstr "エストニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-et"
 msgstr "エチオピア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-fo"
 msgstr "フェロー諸島"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-fk"
 msgstr "フォークランド諸島 (マルビナス諸島)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-fj"
 msgstr "フィジー"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-fi"
 msgstr "フィンランド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-fr"
 msgstr "フランス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gf"
 msgstr "フランス領ギアナ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ga"
 msgstr "ガボン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gm"
 msgstr "ガンビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ge"
 msgstr "グルジア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-de"
 msgstr "ドイツ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gh"
 msgstr "ガーナ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gr"
 msgstr "ギリシャ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gl"
 msgstr "グリーンランド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gd"
 msgstr "グレナダ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gp"
 msgstr "グアドループ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gt"
 msgstr "グアテマラ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gn"
 msgstr "ギニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gw"
 msgstr "ギニアビサオ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gy"
 msgstr "ガイアナ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ht"
 msgstr "ハイチ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-hn"
 msgstr "ホンジュラス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-hk"
 msgstr "香港"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-hu"
 msgstr "ハンガリー"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-is"
 msgstr "アイスランド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-in"
 msgstr "インド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-id"
 msgstr "インドネシア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ir"
 msgstr "イラン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-iq"
 msgstr "イラク"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ie"
 msgstr "アイルランド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-il"
 msgstr "イスラエル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-it"
 msgstr "イタリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-jm"
 msgstr "ジャマイカ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-jp"
 msgstr "日本"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-jo"
 msgstr "ヨルダン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kz"
 msgstr "カザフスタン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ke"
 msgstr "ケニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-nr"
 msgstr "ナウル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kp"
 msgstr "北朝鮮"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kr"
 msgstr "韓国"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kv"
 msgstr "コソボ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kw"
 msgstr "クウェート"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kg"
 msgstr "キルギスタン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-la"
 msgstr "ラオス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-lv"
 msgstr "ラトビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-lb"
 msgstr "レバノン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ls"
 msgstr "レソト"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-lr"
 msgstr "リベリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ly"
 msgstr "リビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-li"
 msgstr "リヒテンシュタイン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-lt"
 msgstr "リトアニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-lu"
 msgstr "ルクセンブルク"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mk"
 msgstr "マケドニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mg"
 msgstr "マダガスカル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mw"
 msgstr "マラウイ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-my"
 msgstr "マレーシア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ml"
 msgstr "マリ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mt"
 msgstr "マルタ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mq"
 msgstr "マルチニーク (フランス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mr"
 msgstr "モーリタニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mu"
 msgstr "モーリシャス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mx"
 msgstr "メキシコ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-md"
 msgstr "モルドバ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mn"
 msgstr "モンゴル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-me"
 msgstr "モンテネグロ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ms"
 msgstr "モントセラト (イギリス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ma"
 msgstr "モロッコ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mz"
 msgstr "モザンビーク"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mm"
 msgstr "ミャンマー"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-na"
 msgstr "ナミビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-np"
 msgstr "ネパール"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-nl"
 msgstr "オランダ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-nc"
 msgstr "ニューカレドニア (フランス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-nz"
 msgstr "ニュージーランド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ni"
 msgstr "ニカラグア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ne"
 msgstr "ニジェール"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ng"
 msgstr "ナイジェリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-no"
 msgstr "ノルウェー"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-om"
 msgstr "オマーン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pk"
 msgstr "パキスタン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pw"
 msgstr "パラオ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ps"
 msgstr "パレスチナ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pa"
 msgstr "パナマ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pg"
 msgstr "パプアニューギニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-py"
 msgstr "パラグアイ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pe"
 msgstr "ペルー"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ph"
 msgstr "フィリピン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pl"
 msgstr "ポーランド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pt"
 msgstr "ポルトガル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-pr"
 msgstr "プエルトリコ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-qa"
 msgstr "カタール"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-re"
 msgstr "レユニオン島 (フランス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ro"
 msgstr "ルーマニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ru"
 msgstr "ロシア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-rw"
 msgstr "ルワンダ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-kn"
 msgstr "セントクリストファー・ネイビス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-lc"
 msgstr "セントルシア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mf"
 msgstr "サン・マルタン (フランス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-vc"
 msgstr "セントビンセントおよびグレナディン諸島"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ws"
 msgstr "西サモア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-st"
 msgstr "サントメ・プリンシペ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sa"
 msgstr "サウジアラビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sn"
 msgstr "セネガル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-rs"
 msgstr "セルビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sl"
 msgstr "シエラレオネ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sg"
 msgstr "シンガポール"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sk"
 msgstr "スロバキア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-si"
 msgstr "スロベニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sb"
 msgstr "ソロモン諸島"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-so"
 msgstr "ソマリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-za"
 msgstr "南アフリカ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gs"
 msgstr "サウスジョージア・サウスサンドイッチ島 (イギリス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-es"
 msgstr "スペイン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-lk"
 msgstr "スリランカ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sc"
 msgstr "セイシェル"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sd"
 msgstr "スーダン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ss"
 msgstr "南スーダン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sr"
 msgstr "スリナム"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sj"
 msgstr "スバールバル・ヤンマイエン島 (ノルウェー領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sz"
 msgstr "スワジランド"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-se"
 msgstr "スウェーデン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ch"
 msgstr "スイス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-sy"
 msgstr "シリア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tw"
 msgstr "台湾"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tj"
 msgstr "タジキスタン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tz"
 msgstr "タンザニア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-th"
 msgstr "タイ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tl"
 msgstr "東ティモール"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tg"
 msgstr "トーゴ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-to"
 msgstr "トンガ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tt"
 msgstr "トリニダード・トバゴ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tn"
 msgstr "チュニジア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tr"
 msgstr "トルコ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tm"
 msgstr "トルクメニスタン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-tc"
 msgstr "タークス・カイコス諸島"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ug"
 msgstr "ウガンダ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ua"
 msgstr "ウクライナ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ae"
 msgstr "アラブ首長国連邦"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gb"
 msgstr "イギリス"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-us"
 msgstr "アメリカ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-uy"
 msgstr "ウルグアイ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-uz"
 msgstr "ウズベキスタン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-vu"
 msgstr "バヌアツ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ve"
 msgstr "ベネズエラ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-vn"
 msgstr "ベトナム"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-vg"
 msgstr "ヴァージン諸島 (イギリス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-vi"
 msgstr "ヴァージン諸島 (アメリカ領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-eh"
 msgstr "西サモア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-ye"
 msgstr "イエメン"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-zm"
 msgstr "ザンビア"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-zw"
 msgstr "ジンバブエ"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-gg"
 msgstr "ガーンジー島 (イギリス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-je"
 msgstr "ジャージー島 (イギリス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-im"
 msgstr "マン島 (イギリス領)"
 
-#: ../view/wp-slimstat-reports.php:995
+#: ../view/wp-slimstat-reports.php:997
 msgid "c-mv"
 msgstr "モルディブ"
 
-#: ../view/wp-slimstat-reports.php:996
+#: ../view/wp-slimstat-reports.php:998
 msgid "c-eu"
 msgstr "EU"
 
-#: ../view/wp-slimstat-reports.php:1085
+#: ../view/wp-slimstat-reports.php:1087
 msgid ""
 "This value includes not only posts, but also custom post types, regardless "
 "of their status"
@@ -4464,50 +4192,384 @@ msgstr ""
 "この値は投稿だけでなく、カスタム投稿タイプも含まれます。下書き・公開などの状"
 "態は考慮されません。"
 
-#: ../view/wp-slimstat-reports.php:1086
+#: ../view/wp-slimstat-reports.php:1088
 msgid "Content Items"
 msgstr "コンテンツ"
 
-#: ../view/wp-slimstat-reports.php:1087
+#: ../view/wp-slimstat-reports.php:1089
 msgid "Total Comments"
 msgstr "総コメント数"
 
-#: ../view/wp-slimstat-reports.php:1088
+#: ../view/wp-slimstat-reports.php:1090
 msgid "Pingbacks"
 msgstr "ピンバック"
 
-#: ../view/wp-slimstat-reports.php:1089
+#: ../view/wp-slimstat-reports.php:1091
 msgid "Trackbacks"
 msgstr "トラックバック"
 
-#: ../view/wp-slimstat-reports.php:1090
+#: ../view/wp-slimstat-reports.php:1092
 msgid "Avg Comments Per Post"
 msgstr "平均コメント数 / 投稿"
 
-#: ../view/wp-slimstat-reports.php:1091
+#: ../view/wp-slimstat-reports.php:1093
 msgid "Avg Posts Per Day"
 msgstr "平均投稿数 / 日"
 
-#: ../view/wp-slimstat-reports.php:1092
+#: ../view/wp-slimstat-reports.php:1094
 msgid "Avg Server Latency"
 msgstr ""
 
-#: ../view/wp-slimstat-reports.php:1093
+#: ../view/wp-slimstat-reports.php:1095
 #, fuzzy
 msgid "Avg Page Load Time"
 msgstr "平均 PV"
 
-#: ../view/wp-slimstat-reports.php:1120
+#: ../view/wp-slimstat-reports.php:1122
 msgid "Visits"
 msgstr "訪問"
 
-#: ../view/wp-slimstat-reports.php:1124
+#: ../view/wp-slimstat-reports.php:1126
 msgid "Domains"
 msgstr "ドメイン"
 
-#: ../view/wp-slimstat-reports.php:1129
+#: ../view/wp-slimstat-reports.php:1131
 msgid "Avg Pageviews"
 msgstr "平均 PV"
+
+#: ../wp-slimstat-admin.php:493 ../wp-slimstat-admin.php:505
+#: ../wp-slimstat-admin.php:508
+msgid "SlimStat"
+msgstr "SlimStat"
+
+#: ../wp-slimstat-admin.php:589
+msgid "Pageviews in the last 365 days"
+msgstr "過去 365 日のページビュー"
+
+#: ../wp-slimstat-admin.php:617
+msgid "Show on screen"
+msgstr "表示する項目"
+
+#: ../wp-slimstat-admin.php:645
+msgid "Hide this notice"
+msgstr "この通知を隠す"
+
+#: ../wp-slimstat-admin.php:684
+msgid "Already saved"
+msgstr ""
+
+#: ../wp-slimstat-admin.php:692
+msgid "Saved"
+msgstr ""
+
+#: ../wp-slimstat-admin.php:711
+#, fuzzy
+msgid "Delete this filter"
+msgstr "削除する PV を指定"
+
+#: ../wp-slimstat-admin.php:745
+msgid "There was an error updating the following options:"
+msgstr "以下の理由でアップデートにエラーが発生しました:"
+
+#: ../wp-slimstat-admin.php:748
+msgid "Your changes have been saved."
+msgstr "変更を保存しました。"
+
+#: ../wp-slimstat-admin.php:771
+msgid "Save Changes"
+msgstr "変更を保存"
+
+#: ../wp-slimstat-admin.php:787
+msgid "Definitions"
+msgstr "定義"
+
+#: ../wp-slimstat-admin.php:790
+msgid "Pageview"
+msgstr "PV"
+
+#: ../wp-slimstat-admin.php:790
+msgid ""
+"A request to load a single HTML file (\"page\"). This should be contrasted "
+"with a \"hit\", which refers to a request for any file from a web server. "
+"Slimstat logs a pageview each time the tracking code is executed"
+msgstr ""
+"サイト内に存在する HTML ファイル (\"page\") が読み込まれた回数の合計です。こ"
+"れは Web サーバーから何らかのファイルが読み込まれた時に記録される \"hit\" と"
+"は別物と考えてください。SlimStat は解析コードが実行されるたびに PV を記録しま"
+"す。"
+
+#: ../wp-slimstat-admin.php:791
+msgid "(Human) Visit"
+msgstr "(人間の) 訪問"
+
+#: ../wp-slimstat-admin.php:791
+msgid ""
+"A period of interaction between a visitor's browser and your website, ending "
+"when the browser is closed or when the user has been inactive on that site "
+"for 30 minutes"
+msgstr ""
+"SlimStat は、訪問者がページを離脱する、ブラウザを閉じる、または 30 分以上滞在"
+"するまでを 1 回の訪問としてカウントします。"
+
+#: ../wp-slimstat-admin.php:792
+msgid ""
+"Any user who has left a comment on your blog, and is thus identified by "
+"Wordpress as a returning visitor"
+msgstr ""
+"ブログにコメントを残したユーザーと、WordPress によってリピーターとして確認さ"
+"れた訪問者を表します。"
+
+#: ../wp-slimstat-admin.php:793
+msgid "Unique IP"
+msgstr "ユニーク IP"
+
+#: ../wp-slimstat-admin.php:793
+msgid ""
+"Used to differentiate between multiple requests to download a file from one "
+"internet address (IP) and requests originating from many distinct addresses; "
+"since this measurement looks only at the internet address a pageview came "
+"from, it is useful, but not perfect"
+msgstr ""
+"サイトを訪れた全ての IP アドレスから重複を除いた値を表します。この値はあくま"
+"で IP アドレスだけを見るものであり、サイトを訪れた特定の個人の数を表す値では"
+"ありません。例えば、同じ人物が職場と自宅から同じサイトを訪れると、ユニーク "
+"IP は 2 としてカウントされます。"
+
+#: ../wp-slimstat-admin.php:794
+msgid ""
+"the originating IP address of a client connecting to a web server through an "
+"HTTP proxy or load balancer"
+msgstr ""
+"HTTP プロキシまたはロードバランサーを通して Web サーバーに接続したクライアン"
+"トの IP アドレスです。"
+
+#: ../wp-slimstat-admin.php:795
+msgid "Direct Traffic"
+msgstr "直接アクセス"
+
+#: ../wp-slimstat-admin.php:795
+msgid ""
+"All those people showing up to your Web site by typing in the URL of your "
+"Web site coming or from a bookmark; some people also call this \"default "
+"traffic\" or \"ambient traffic\""
+msgstr ""
+"アドレスバーにサイト URL を直接打ち込んだ、またはブックマークからサイトを表示"
+"した訪問者を表します。"
+
+#: ../wp-slimstat-admin.php:796
+msgid "Search Engine"
+msgstr "検索エンジン"
+
+#: ../wp-slimstat-admin.php:796
+msgid ""
+"Google, Yahoo, MSN, Ask, others; this bucket will include both your organic "
+"as well as your paid (PPC/SEM) traffic, so be aware of that"
+msgstr ""
+"Google、Yahoo、MSN、Ask などの検索エンジンです。この値にはオーガニック検索お"
+"よび有料の検索トラフィックが含まれます。"
+
+#: ../wp-slimstat-admin.php:797 ../wp-slimstat-admin.php:813
+msgid "Keywords used by your visitors to find your website on a search engine"
+msgstr ""
+"訪問者が検索エンジン上で Web サイトを見つけるために使用したキーワードを入力し"
+"ます。"
+
+#: ../wp-slimstat-admin.php:798
+msgid "SERP"
+msgstr "SERP"
+
+#: ../wp-slimstat-admin.php:798
+msgid ""
+"Short for search engine results page, the Web page that a search engine "
+"returns with the results of its search. The value shown represents your rank "
+"(or position) within that list of results"
+msgstr ""
+"検索エンジン結果ページ (Search Engine Results Page) の略です。この値は、対応"
+"する検索キーワードによって生成される検索結果ページ内で、あなたのサイトがどの"
+"ランク (または位置) に表示されているかを表します。"
+
+#: ../wp-slimstat-admin.php:799
+msgid ""
+"Any program used for accessing a website; this includes browsers, robots, "
+"spiders and any other program that was used to retrieve information from the "
+"site"
+msgstr ""
+"Web サイトへアクセスするのに使用されたプログラム (またはその名前の一部) を表"
+"します。この値にはブラウザのほか、ロボット、スパイダー、クローラーなど、サイ"
+"トから情報を取得するために使用されたあらゆるプログラムが含まれます。"
+
+#: ../wp-slimstat-admin.php:800
+msgid ""
+"A link from one domain to another is said to be outbound from its source "
+"anchor and inbound to its target. This report lists all the links to other "
+"websites followed by your visitors."
+msgstr ""
+"外部サイトへの URL が指定されたリンクを表します。このレポートは訪問者によって"
+"クリックされた外部サイトへのリンクを一覧表示します。"
+
+#: ../wp-slimstat-admin.php:807
+msgid "Basic Filters"
+msgstr "基本フィルター"
+
+#: ../wp-slimstat-admin.php:810
+msgid "User agent (Firefox, Chrome, ...)"
+msgstr "User Agent (Firefox、Chrome、etc) を入力します。"
+
+#: ../wp-slimstat-admin.php:811
+msgid "2-letter code (us, ru, de, it, ...)"
+msgstr "2桁の国コード (us、ru、de、it、jp、etc) を入力します。"
+
+#: ../wp-slimstat-admin.php:812
+msgid "IP"
+msgstr "IP"
+
+#: ../wp-slimstat-admin.php:812
+msgid "Visitor's public IP address"
+msgstr "訪問者のグローバル IP アドレスを入力します。"
+
+#: ../wp-slimstat-admin.php:814
+msgid ""
+"Please refer to this <a target=\"_blank\" href=\"http://msdn.microsoft.com/"
+"en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first "
+"column) for more information"
+msgstr ""
+"詳細については<a target=\"_blank\" href=\"http://msdn.microsoft.com/en-us/"
+"library/ee825488(v=cs.20).aspx\">このページ</a>の最初の列を参照してください。"
+
+#: ../wp-slimstat-admin.php:815
+msgid ""
+"Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="
+"\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">this "
+"manual page</a> for more information"
+msgstr ""
+"win7、win98、macosx のような識別子を入力します。詳細については<a target="
+"\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">この"
+"ページ</a>を参照してください。"
+
+#: ../wp-slimstat-admin.php:816
+msgid "URL accessed on your site"
+msgstr "サイト上でアクセスされた URL を入力します。"
+
+#: ../wp-slimstat-admin.php:817
+msgid "Complete address of the referrer page"
+msgstr "参照元ページの URL を入力します。"
+
+#: ../wp-slimstat-admin.php:818
+msgid ""
+"Visitors' names according to the cookie set by Wordpress after they leave a "
+"comment"
+msgstr ""
+"訪問者がコメントを残した際に保存される cookie に基づく訪問者名を入力します。"
+
+#: ../wp-slimstat-admin.php:826
+msgid "Advanced Filters"
+msgstr "詳細フィルター"
+
+#: ../wp-slimstat-admin.php:829
+msgid "user agent version (9.0, 11, ...)"
+msgstr "User Agent のバージョン (9.0、11、etc) を入力します。"
+
+#: ../wp-slimstat-admin.php:830
+msgid ""
+"1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = "
+"all others"
+msgstr ""
+"1 = 検索エンジンのクローラー、2 = 携帯端末、3 = RSSリーダー、0 = その他全て"
+
+#: ../wp-slimstat-admin.php:831
+msgid "visitor's screen's color depth (8, 16, 24, ...)"
+msgstr "訪問者のモニターの色深度 (8、16、24、32、etc) を入力します。"
+
+#: ../wp-slimstat-admin.php:832
+msgid ""
+"what CSS standard was supported by that browser (1, 2, 3 and other integer "
+"values)"
+msgstr ""
+"ブラウザによってサポートされている CSS 標準規格 (1、2、3、etc) を入力します。"
+
+#: ../wp-slimstat-admin.php:833
+msgid ""
+"this field is set to <em>[pre]</em> if the resource has been accessed "
+"through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
+"Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
+msgstr ""
+"このフィールドは Firefox の<a target=\"_blank\" href=\"https://developer."
+"mozilla.org/en/Link_prefetching_FAQ\">リンク先読み機能</a>、またはこれに類似"
+"した機能を通じてリソースがアクセスされた場合、<code>[pre]</code> にセットされ"
+"ます。"
+
+#: ../wp-slimstat-admin.php:834
+msgid "author associated to that post/page when the resource was accessed"
+msgstr "アクセスされた投稿/ページに関連した投稿者を入力します。"
+
+#: ../wp-slimstat-admin.php:835
+msgid "ID of the category/term associated to the resource, when available"
+msgstr "リソースに紐づくカテゴリー/キーワード IDを入力します (有効な場合)。"
+
+#: ../wp-slimstat-admin.php:836
+msgid "visitor's originating IP address, if available"
+msgstr "訪問者の送信元 IP を入力します (有効な場合)。"
+
+#: ../wp-slimstat-admin.php:837
+msgid ""
+"post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
+"post_type_archive, tag, taxonomy, category, date, author, archive, search, "
+"feed, home; please refer to the <a target=\"_blank\" href=\"http://codex."
+"wordpress.org/Conditional_Tags\">Conditional Tags</a> manual page for more "
+"information"
+msgstr ""
+"post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
+"post_type_archive, tag, taxonomy, category, date, author, archive, search, "
+"feed, home などの条件分岐タグを入力します。詳細については<a target=\"_blank"
+"\" href=\"http://wpdocs.sourceforge.jp/Conditional_Tags\">条件分岐タグ</a>マ"
+"ニュアルページを参照してください。"
+
+#: ../wp-slimstat-admin.php:838
+msgid "viewport width and height (1024x768, 800x600, ...)"
+msgstr ""
+"モニタ解像度の幅と高さ (1024x768、800x600、1920x1080、etc) を入力します。"
+
+#: ../wp-slimstat-admin.php:839
+msgid ""
+"generally used in conjunction with <em>is not empty</em>, identifies human "
+"visitors"
+msgstr ""
+"一般的に、人間の訪問者を確認する際 <em>is not empy</em> と合わせて使用されま"
+"す。"
+
+#: ../wp-slimstat-admin.php:840
+msgid "Date Filters"
+msgstr "期間指定"
+
+#: ../wp-slimstat-admin.php:840
+msgid ""
+"you can specify the timeframe by entering a number in the <em>interval</em> "
+"field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, "
+"year=blank, interval=-1 will set a year-to-date filter)"
+msgstr ""
+"'日間'フィールドに数字を入力することで期間を指定できます。現在 (今日) までの"
+"期間を指定したい場合は、-1 を入力します (例: 日=1、月=1、年=空白、日間=-1で元"
+"旦から現在までのフィルターがセットされる)。"
+
+#: ../wp-slimstat-admin.php:841
+msgid "SERP Position"
+msgstr "SERP ランキング"
+
+#: ../wp-slimstat-admin.php:841
+msgid ""
+"set the filter to Referer contains cd=N&, where N is the position you are "
+"looking for"
+msgstr ""
+"cd=N& を含むリファラーにフィルターをセットします。N は表示したいリファラーの"
+"位置を表します。"
+
+#: ../wp-slimstat-admin.php:868
+msgid "Yes"
+msgstr "はい"
+
+#: ../wp-slimstat-admin.php:870
+msgid "Site Specific"
+msgstr ""
 
 #~ msgid "Take a sneak peek at what human visitors are doing on your website."
 #~ msgstr "訪問者のサイト上での行動を覗き見ます。"
