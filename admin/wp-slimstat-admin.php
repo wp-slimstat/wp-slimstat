@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			self::$admin_notice = "You can now load, save and manage your filters (or goal conversions, to use Google's terminology) with just a few clicks. Please help us test this new functionality, and do not hesitate to let us know if you find a bugs. Just make sure to clear all your caches before opening a new tickets.";
+			self::$admin_notice = "You can now load, save and manage your filters (or goal conversions, to use Google's terminology) with just a few clicks. Please help us test this new functionality, and do not hesitate to let us know if you find a bug. Just make sure to clear all your caches before opening a new tickets.";
 		}
 		else {
 			self::$admin_notice = "
