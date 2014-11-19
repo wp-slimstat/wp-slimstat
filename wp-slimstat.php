@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.8.2
+Version: 3.8.3
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.8.2';
+	public static $version = '3.8.3';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -414,10 +414,10 @@ class wp_slimstat{
 		}
 
 		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter
-		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
 		if (!empty(self::$stat['other_ip']) && self::$stat['other_ip'] != self::$stat['ip']){
 			self::$stat['other_ip'] = sprintf("%u", self::$stat['other_ip']);
 		}
+		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
 
 		// Now let's save this information in the database
 		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id', array());
@@ -735,7 +735,7 @@ class wp_slimstat{
 			unset($browsers);
 			unset($userAgents);
 			unset($patterns);
- 
+
 			if (!empty($search) && $search[5] != 'Default Browser' && $search[5] != 'unknown'){
 				$browser['browser'] = $search[5];
 				$browser['version'] = intval($search[6]);
