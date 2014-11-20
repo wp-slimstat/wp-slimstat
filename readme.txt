@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.8.2
+Stable tag: 3.8.3
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -270,6 +270,11 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.8.3 =
+* [Update] Browscap v5035 - November 4, 2014 (this should fix all the issues with recent Firefox versions)
+* [Fix] The originating IP address was not being ignored, if it was the same as the IP address (thank you, [morcom](https://wordpress.org/support/topic/real-time-log-originating-ip-on-all-entries))
+* [Fix] Visits in map were not correctly displayed (thank you, [psn](https://wordpress.org/support/topic/numbers-of-visit-in-maps-shows-zero))
 
 = 3.8.2 =
 * [New] You can now load, save and delete filters (or "goal conversions", in Google's terminology). Please test this new functionality and let us know if you find any bugs!
