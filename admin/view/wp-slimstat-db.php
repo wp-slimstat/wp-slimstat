@@ -683,29 +683,42 @@ class wp_slimstat_db {
 									break;
 								case 'day':
 									$filters_normalized['date']['day'] = date('j', strtotime($a_filter[3], intval(date_i18n('U'))));
-									if ($filters_normalized['date']['day'] != date_i18n('j')){
-										$filters_normalized['date']['is_past'] = true;
-									}
 									break;
 								case 'month':
 									$filters_normalized['date']['month'] = date('n', strtotime($a_filter[3], intval(date_i18n('U'))));
-									if ($filters_normalized['date']['month'] != date_i18n('n')){
-										$filters_normalized['date']['is_past'] = true;
-									}
 									break;
 								case 'year':
 									$filters_normalized['date']['year'] = date('Y', strtotime($a_filter[3], intval(date_i18n('U'))));
-									if ($filters_normalized['date']['year'] != date_i18n('Y')){
-										$filters_normalized['date']['is_past'] = true;
-									}
 									break;
 								default:
 									break;
 							}
+							
 							if ($filters_normalized['date'][$a_filter[1]] === false){
 								unset($filters_normalized['date'][$a_filter[1]]);
 							}
 						}
+
+						switch($a_filter[1]){
+							case 'day':
+								if ($filters_normalized['date']['day'] != date_i18n('j')){
+									$filters_normalized['date']['is_past'] = true;
+								}
+								break;
+							case 'month':
+								if ($filters_normalized['date']['month'] != date_i18n('n')){
+									$filters_normalized['date']['is_past'] = true;
+								}
+								break;
+							case 'year':
+								if ($filters_normalized['date']['year'] != date_i18n('Y')){
+									$filters_normalized['date']['is_past'] = true;
+								}
+								break;
+							default:
+								break;
+						}
+						
 						break;
 					case 'interval':
 					case 'interval_hours':
@@ -715,7 +728,6 @@ class wp_slimstat_db {
 						if ($intval_filter < 0){
 							$filters_normalized['date'][interval_direction] = 'minus';
 						}
-						$filters_normalized['date']['is_past'] = true;
 						break;
 					case 'interval_direction':
 						$filters_normalized['date'][$a_filter[1]] = in_array($a_filter[3], array('plus', 'minus'))?$a_filter[3]:'plus';
