@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
-			self::$admin_notice = "What would you like to see in Slimstat next? Send us your ideas through <a href='http://slimstat.getused.to.it' target='_blank'>our website</a>!";
+			self::$admin_notice = "Our request for feedback regarding a new feature to archive existing pageviews was met with a lot of enthusiasm. So we got to work and added it to Slimstat. It's not enabled by default, so if you want to test it, head to Slimstat > Settings > General and set <strong>Delete Records</strong> to No. You can also restore or delete archived pageviews by using the new tools available under the Maintenance tab. Please report any issue you may encounter, or show your appreciation by <a href='https://wordpress.org/support/view/plugin-reviews/wp-slimstat#postform' target='_blank'>leaving a review</a> for our plugin.";
 		}
 		else {
 			self::$admin_notice = "
@@ -202,8 +202,8 @@ class wp_slimstat_admin{
 		$use_innodb = (!empty($have_innodb[0]) && $have_innodb[0]['Value'] == 'YES')?'ENGINE=InnoDB':'';
 
 		// Table that stores the actual data about visits
-		$stats_table_sql =
-			"CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
+		$stats_table_sql = "
+			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
 				id INT UNSIGNED NOT NULL auto_increment,
 				ip INT UNSIGNED DEFAULT 0,
 				other_ip INT UNSIGNED DEFAULT 0,
@@ -230,8 +230,8 @@ class wp_slimstat_admin{
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// A lookup table for browsers can help save some space
-		$browsers_table_sql =
-			"CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_browsers (
+		$browsers_table_sql = "
+			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_browsers (
 				browser_id SMALLINT UNSIGNED NOT NULL auto_increment,
 				browser VARCHAR(40) DEFAULT '',
 				version VARCHAR(15) DEFAULT '',
@@ -244,8 +244,8 @@ class wp_slimstat_admin{
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// A lookup table to store screen resolutions
-		$screen_res_table_sql =
-			"CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_screenres (
+		$screen_res_table_sql = "
+			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_screenres (
 				screenres_id MEDIUMINT UNSIGNED NOT NULL auto_increment,
 				resolution VARCHAR(12) DEFAULT '',
 				colordepth VARCHAR(5) DEFAULT '',
@@ -255,8 +255,8 @@ class wp_slimstat_admin{
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// A lookup table to store content information
-		$content_info_table_sql =
-			"CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_content_info (
+		$content_info_table_sql = "
+			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}slim_content_info (
 				content_info_id INT UNSIGNED NOT NULL auto_increment,
 				content_type VARCHAR(64) DEFAULT '',
 				category VARCHAR(256) DEFAULT '',
@@ -267,8 +267,8 @@ class wp_slimstat_admin{
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
-		$outbound_table_sql =
-			"CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_outbound (
+		$outbound_table_sql = "
+			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_outbound (
 				outbound_id INT UNSIGNED NOT NULL auto_increment,
 				outbound_domain VARCHAR(255) DEFAULT '',
 				outbound_resource VARCHAR(2048) DEFAULT '',
@@ -281,6 +281,10 @@ class wp_slimstat_admin{
 				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_outbound (dt),
 				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
 			) COLLATE utf8_general_ci $use_innodb";
+			
+		$archive_table_sql = "
+			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
+			LIKE {$GLOBALS['wpdb']->prefix}slim_stats";
 
 		// Ok, let's create the table structure
 		self::_create_table($browsers_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_browsers', $_wpdb);
@@ -288,6 +292,7 @@ class wp_slimstat_admin{
 		self::_create_table($content_info_table_sql, $GLOBALS['wpdb']->base_prefix.'slim_content_info', $_wpdb);
 		self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats', $_wpdb);
 		self::_create_table($outbound_table_sql, $GLOBALS['wpdb']->prefix.'slim_outbound', $_wpdb);
+		self::_create_table($archive_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats_archive', $_wpdb);
 
 		// Let's save the version in the database
 		if (empty(wp_slimstat::$options['version'])){
@@ -390,6 +395,12 @@ class wp_slimstat_admin{
 			}
 		}
 		// --- END: Updates for version 3.7.3 ---
+
+		// --- Updates for version 3.8.4 ---
+		if (version_compare(wp_slimstat::$options['version'], '3.8.4', '<')){
+			$my_wpdb->query("CREATE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive LIKE {$GLOBALS['wpdb']->prefix}slim_stats");
+		}
+		// --- END: Updates for version 3.8.4 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$options['version'] = wp_slimstat::$version;

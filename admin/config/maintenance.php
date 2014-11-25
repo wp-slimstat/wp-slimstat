@@ -31,8 +31,24 @@ if (!empty($_REQUEST['action'])){
 			break;
 		case 'truncate-table':
 			wp_slimstat::$wpdb->query("DELETE tob FROM {$GLOBALS['wpdb']->prefix}slim_outbound tob");
+			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_outbound");
 			wp_slimstat::$wpdb->query("DELETE t1 FROM {$GLOBALS['wpdb']->prefix}slim_stats t1");
+			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
 			wp_slimstat_admin::show_alert_message(__('All the records were successfully deleted.','wp-slimstat'), 'updated below-h2');
+			break;
+		case 'truncate-archive':
+			wp_slimstat::$wpdb->query("DELETE tsa FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
+			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
+			wp_slimstat_admin::show_alert_message(__('All the archived records were successfully deleted.','wp-slimstat'), 'updated below-h2');
+			break;
+		case 'restore-archived-records':
+			wp_slimstat::$wpdb->query("
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (ip, other_ip, user, language, country, domain, referer, resource, searchterms, browser_id, screenres_id, content_info_id, plugins, notes, visit_id, server_latency, page_performance, dt)
+				SELECT tsa.ip, tsa.other_ip, tsa.user, tsa.language, tsa.country, tsa.domain, tsa.referer, tsa.resource, tsa.searchterms, tsa.browser_id, tsa.screenres_id, tsa.content_info_id, tsa.plugins, tsa.notes, tsa.visit_id, tsa.server_latency, tsa.page_performance, tsa.dt
+				FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
+			wp_slimstat::$wpdb->query("DELETE tsa FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
+			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
+			wp_slimstat_admin::show_alert_message(__('All the archived records were successfully restored.','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'restore-views':
 			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%slim%'");
@@ -72,7 +88,8 @@ $details_wp_slim_tables = array_merge(
 	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_outbound'", ARRAY_A),
 	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_browsers'", ARRAY_A),
 	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_screenres'", ARRAY_A),
-	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_content_info'", ARRAY_A)
+	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->base_prefix}slim_content_info'", ARRAY_A),
+	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats_archive'", ARRAY_A)
 );
 $have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
@@ -142,22 +159,30 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 		</td>
 	</tr>
 	<tr class="alternate">
-		<th scope="row"><?php _e('Empty Database','wp-slimstat') ?></th>
+		<th scope="row"><?php _e('Truncate Tables','wp-slimstat') ?></th>
 		<td>
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=truncate-table"
-				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY DELETE ALL the records from your database?','wp-slimstat'); ?>'))"><?php _e('Delete All Pageviews','wp-slimstat'); ?></a>
-			<span class="description"><?php _e('Erase all the information collected so far by Slimstat. This operation <strong>does not</strong> reset your settings.','wp-slimstat') ?></span>
+				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY DELETE ALL the records from your database?','wp-slimstat'); ?>'))"><?php _e('Delete All Records','wp-slimstat'); ?></a>
+			<span class="description"><?php _e('Erase all the information collected so far by Slimstat, including the archive. This operation <strong>does not</strong> reset your settings.','wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr>
-		<th scope="row"><?php _e('Reset Reports','wp-slimstat') ?></th>
+		<th scope="row"><?php _e('Restore archive','wp-slimstat') ?></th>
 		<td>
-			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-views"
-				onclick="return(confirm('<?php _e('Are you sure you want to restore the default arrangement of your reports?','wp-slimstat'); ?>'))"><?php _e('No Panic Button','wp-slimstat'); ?></a>
-			<span class="description"><?php _e("Reset the default arrangement of your reports. Helpful when, for some reason, reports disappear from your panels.",'wp-slimstat') ?></span>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-archived-records"
+				onclick="return(confirm('<?php _e('Are you sure you want to restore all the archived pageviews?','wp-slimstat'); ?>'))"><?php _e("Get 'em back",'wp-slimstat'); ?></a>
+			<span class="description"><?php _e("Move all the archived pageviews back to the main Slimstat table. Please note that, unless you disabled the daily purge, this data will be archived again at the next scheduled clean-up.",'wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr class="alternate">
+		<th scope="row"><?php _e('Empty Archive','wp-slimstat') ?></th>
+		<td>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=truncate-archive"
+				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY DELETE ALL the records from your archive?','wp-slimstat'); ?>'))"><?php _e('Delete Archive','wp-slimstat'); ?></a>
+			<span class="description"><?php _e("Erase all the archived records. This operation cannot be undone.",'wp-slimstat') ?></span>
+		</td>
+	</tr>
+	<tr>
 		<th scope="row"><?php _e('Performance','wp-slimstat') ?></th>
 		<?php if (empty($check_index)): ?>	
 		<td>

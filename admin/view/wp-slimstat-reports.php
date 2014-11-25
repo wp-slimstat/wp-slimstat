@@ -352,7 +352,7 @@ class wp_slimstat_reports {
 		}
 
 		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from']+1, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']));
-		if (wp_slimstat::$options['refresh_interval'] > 0 && $_id == 'slim_p7_02'){
+		if (wp_slimstat::$options['refresh_interval'] > 0 && $_id == 'slim_p7_02' && !wp_slimstat_db::$filters_normalized['date']['is_past']){
 			$pagination .= ' &ndash; '.__('Refresh in','wp-slimstat').' <i class="refresh-timer"></i>';
 		}
 		$pagination .= $pagination_buttons.'</p>';

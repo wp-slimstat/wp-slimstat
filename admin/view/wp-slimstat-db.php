@@ -630,7 +630,8 @@ class wp_slimstat_db {
 		$filters_normalized = array(
 			'columns' => array(),
 			'date' => array(
-				'interval_direction' => 'minus'
+				'interval_direction' => 'minus',
+				'is_past' => false
 			),
 			'misc' => $_init_misc?array(
 				'direction' => 'desc',
@@ -673,19 +674,30 @@ class wp_slimstat_db {
 							// Try to apply strtotime to value
 							switch($a_filter[1]){
 								case 'minute':
-									$filters_normalized['date'][$a_filter[1]] = date('i', strtotime($a_filter[3], intval(date_i18n('U'))));
+									$filters_normalized['date']['minute'] = date('i', strtotime($a_filter[3], intval(date_i18n('U'))));
+									$filters_normalized['date']['is_past'] = true;
 									break;
 								case 'hour':
-									$filters_normalized['date'][$a_filter[1]] = date('H', strtotime($a_filter[3], intval(date_i18n('U'))));
+									$filters_normalized['date']['hour'] = date('H', strtotime($a_filter[3], intval(date_i18n('U'))));
+									$filters_normalized['date']['is_past'] = true;
 									break;
 								case 'day':
-									$filters_normalized['date'][$a_filter[1]] = date('j', strtotime($a_filter[3], intval(date_i18n('U'))));
+									$filters_normalized['date']['day'] = date('j', strtotime($a_filter[3], intval(date_i18n('U'))));
+									if ($filters_normalized['date']['day'] != date_i18n('j')){
+										$filters_normalized['date']['is_past'] = true;
+									}
 									break;
 								case 'month':
-									$filters_normalized['date'][$a_filter[1]] = date('n', strtotime($a_filter[3], intval(date_i18n('U'))));
+									$filters_normalized['date']['month'] = date('n', strtotime($a_filter[3], intval(date_i18n('U'))));
+									if ($filters_normalized['date']['month'] != date_i18n('n')){
+										$filters_normalized['date']['is_past'] = true;
+									}
 									break;
 								case 'year':
-									$filters_normalized['date'][$a_filter[1]] = date('Y', strtotime($a_filter[3], intval(date_i18n('U'))));
+									$filters_normalized['date']['year'] = date('Y', strtotime($a_filter[3], intval(date_i18n('U'))));
+									if ($filters_normalized['date']['year'] != date_i18n('Y')){
+										$filters_normalized['date']['is_past'] = true;
+									}
 									break;
 								default:
 									break;
@@ -703,6 +715,7 @@ class wp_slimstat_db {
 						if ($intval_filter < 0){
 							$filters_normalized['date'][interval_direction] = 'minus';
 						}
+						$filters_normalized['date']['is_past'] = true;
 						break;
 					case 'interval_direction':
 						$filters_normalized['date'][$a_filter[1]] = in_array($a_filter[3], array('plus', 'minus'))?$a_filter[3]:'plus';
