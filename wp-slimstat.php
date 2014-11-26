@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.8.3
+Version: 3.8.4
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.8.3';
+	public static $version = '3.8.4';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -682,13 +682,13 @@ class wp_slimstat{
 		$browser = array('browser' => 'Default Browser', 'version' => '', 'platform' => 'unknown', 'css_version' => 1, 'type' => 1);
 		$search = array();
 
+		// Automatically detect the useragent
+		if (!isset($_SERVER['HTTP_USER_AGENT'])){
+			return $browser;
+		}
+
 		for($idx_cache = 1; $idx_cache <= 5; $idx_cache++){
 			@include(plugin_dir_path( __FILE__ )."databases/browscap-$idx_cache.php");
-
-			// Automatically detect the useragent
-			if (!isset($_SERVER['HTTP_USER_AGENT'])){
-				return $browser;
-			}
 
 			foreach ($patterns as $pattern => $pattern_data){
 				if (preg_match($pattern . 'i', $_SERVER['HTTP_USER_AGENT'], $matches)){
@@ -1096,6 +1096,7 @@ class wp_slimstat{
 			'javascript_mode' => $val_yes,
 			'add_posts_column' => $val_no,
 			'use_separate_menu' => $val_yes,
+			'auto_purge_delete' => $val_yes,
 			'auto_purge' => 0,
 
 			// Views
@@ -1280,11 +1281,19 @@ class wp_slimstat{
 	// end wp_slimstat_enqueue_tracking_script
 
 	/**
-	 * Removes old entries from the database
+	 * Removes old entries from the main table
 	 */
 	public static function wp_slimstat_purge(){
 		if (($autopurge_interval = intval(self::$options['auto_purge'])) <= 0) return;
 
+		if (self::$options['auto_purge_delete'] != 'yes'){
+			self::$wpdb->query("
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (ip, other_ip, user, language, country, domain, referer, resource, searchterms, browser_id, screenres_id, content_info_id, plugins, notes, visit_id, server_latency, page_performance, dt)
+				SELECT ts.ip, ts.other_ip, ts.user, ts.language, ts.country, ts.domain, ts.referer, ts.resource, ts.searchterms, ts.browser_id, ts.screenres_id, ts.content_info_id, ts.plugins, ts.notes, ts.visit_id, ts.server_latency, ts.page_performance, ts.dt
+				FROM {$GLOBALS['wpdb']->prefix}slim_stats ts 
+				WHERE ts.dt < $days_ago");
+		}
+		
 		// Delete old entries
 		$days_ago = strtotime(date_i18n('Y-m-d H:i:s')." -$autopurge_interval days");
 		self::$wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.dt < $days_ago");

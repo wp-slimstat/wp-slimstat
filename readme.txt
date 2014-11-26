@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.8.3
+Stable tag: 3.8.4
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -270,6 +270,12 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.8.4 =
+* [New] You can now archive old pageviews, instead of deleting them
+* [Update] Code optimizations to the Javascript tracker (and a bugfix - thank you, [themadproducer](https://wordpress.org/support/topic/external-links-problem))
+* [Fix] Fixed a corrupted browscap data file (thank you, [crzyhrse](https://wordpress.org/support/topic/clobbered-my-sites-again))
+* [Fix] Do not refresh the Real-Time log if a date filter is set (thank you, [asylum119](https://wordpress.org/support/topic/viewing-yesterdays-stats-still-auto-refreshes))
 
 = 3.8.3 =
 * [Update] Browscap v5035 - November 4, 2014 (this should fix all the issues with recent Firefox versions)
