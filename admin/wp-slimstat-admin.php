@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 * Init -- Sets things up.
 	 */
 	public static function init(){
-		if (wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no') {
+		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
 			self::$admin_notice = "Our request for feedback regarding a new feature to archive existing pageviews was met with a lot of enthusiasm. So we got to work and added it to Slimstat. It's not enabled by default, so if you want to test it, head to Slimstat > Settings > General and set <strong>Delete Records</strong> to No. You can also restore or delete archived pageviews by using the new tools available under the Maintenance tab. Please report any issue you may encounter, or show your appreciation by <a href='https://wordpress.org/support/view/plugin-reviews/wp-slimstat#postform' target='_blank'>leaving a review</a> for our plugin.";
 		}
 		else {
@@ -94,7 +94,7 @@ class wp_slimstat_admin{
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
 
 		// Display a notice that hightlights this version's features
-		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version) {
+		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version && current_user_can('manage_options')) {
 			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
 		}
 
