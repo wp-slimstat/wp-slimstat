@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.8.4
+Version: 3.8.5
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.8.4';
+	public static $version = '3.8.5';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -249,15 +249,7 @@ class wp_slimstat{
 		}
 		elseif (empty($_REQUEST['s'])){
 			self::$stat['searchterms'] = self::_get_search_terms($referer);
-			if (isset($_SERVER['REQUEST_URI'])){
-				self::$stat['resource'] = urldecode($_SERVER['REQUEST_URI']);
-			}
-			elseif (isset($_SERVER['SCRIPT_NAME'])){
-				self::$stat['resource'] = isset($_SERVER['QUERY_STRING'])?$_SERVER['SCRIPT_NAME']."?".$_SERVER['QUERY_STRING']:$_SERVER['SCRIPT_NAME'];
-			}
-			else{
-				self::$stat['resource'] = isset($_SERVER['QUERY_STRING'])?$_SERVER['PHP_SELF']."?".$_SERVER['QUERY_STRING']:$_SERVER['PHP_SELF'];
-			}
+			self::$stat['resource'] = self::get_request_uri();
 		}
 		else{
 			self::$stat['searchterms'] = str_replace('\\', '', $_REQUEST['s']);
@@ -498,6 +490,18 @@ class wp_slimstat{
 		return 'xx';
 	}
 	// end get_country
+
+	public static function get_request_uri(){
+		if (isset($_SERVER['REQUEST_URI'])){
+			return urldecode($_SERVER['REQUEST_URI']);
+		}
+		elseif (isset($_SERVER['SCRIPT_NAME'])){
+			return isset($_SERVER['QUERY_STRING'])?$_SERVER['SCRIPT_NAME']."?".$_SERVER['QUERY_STRING']:$_SERVER['SCRIPT_NAME'];
+		}
+		else{
+			return isset($_SERVER['QUERY_STRING'])?$_SERVER['PHP_SELF']."?".$_SERVER['QUERY_STRING']:$_SERVER['PHP_SELF'];
+		}
+	}
 
 	/**
 	 * Tries to find the user's REAL IP address
@@ -1307,7 +1311,10 @@ class wp_slimstat{
 	 * Adds a new entry to the Wordpress Toolbar
 	 */
 	public static function wp_slimstat_adminbar(){
-		if ((function_exists('is_network_admin') && is_network_admin()) || !is_admin_bar_showing()) return;
+		if ((function_exists('is_network_admin') && is_network_admin())){
+			return;
+		}
+
 		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
 
 		self::$options['capability_can_view'] = empty(self::$options['capability_can_view'])?'read':self::$options['capability_can_view'];

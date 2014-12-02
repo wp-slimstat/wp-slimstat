@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.8.4
+Stable tag: 3.8.5
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -270,6 +270,10 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.8.5 =
+* [Update] Show notices only to admin users (thank you, [thisismyway](https://wordpress.org/support/topic/hide-notifications-for-non-admins))
+* [Fix] The javascript tracker had been changed to deal with popup blocker issues, but the new code was causing even more problems to other people. Implemented a synchronous solution to make everybody happy! (thank you, bishoph)
 
 = 3.8.4 =
 * [New] You can now archive old pageviews, instead of deleting them
