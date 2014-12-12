@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Our request for feedback regarding a new feature to archive existing pageviews was met with a lot of enthusiasm. So we got to work and added it to Slimstat. It's not enabled by default, so if you want to test it, head to Slimstat > Settings > General and set <strong>Delete Records</strong> to No. You can also restore or delete archived pageviews by using the new tools available under the Maintenance tab. Please report any issue you may encounter, or show your appreciation by <a href='https://wordpress.org/support/view/plugin-reviews/wp-slimstat#postform' target='_blank'>leaving a review</a> for our plugin.";
+			self::$admin_notice = "We are working on a new heatmap add-on, which allows you to visualize the <strong>hottest</strong> spots on your website, page by page. Hurry, the first 20 users who <a href='http://support.getused.to.it/' target='_blank'>contact us</a>, will get a chance to try our alpha version for free. Happy New Year!";
 		}
 		else {
 			self::$admin_notice = "

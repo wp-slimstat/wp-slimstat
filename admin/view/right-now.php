@@ -131,6 +131,11 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 		}
 
 		// Permalink: find post title, if available
+		$results[$i]['blog_id'] = empty($results[$i]['blog_id'])?1:$results[$i]['blog_id'];
+		$base_url = parse_url(get_site_url($results[$i]['blog_id']));
+		$base_host = $base_url['host'];
+		$base_url = $base_url['scheme'].'://'.$base_host;
+
 		if (!empty($results[$i]['resource'])){
 			$base_url = '';
 			if (!empty($results[$i]['blog_id'])){
@@ -147,8 +152,9 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 		if (!empty($results[$i]['searchterms'])){
 			$results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='".__('Search Terms','wp-slimstat')."'></i> ".wp_slimstat_reports::get_search_terms_info($results[$i]['searchterms'], $results[$i]['domain'], $results[$i]['referer']);
 		}
+		
 		$results[$i]['domain'] = (!empty($results[$i]['domain']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> {$results[$i]['domain']}":'';
-		$results[$i]['outbound_domain'] = (!empty($results[$i]['outbound_domain']))?"<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this outbound link in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_domain']}":'';
+		$results[$i]['outbound_domain'] = (!empty($results[$i]['outbound_domain']) && $results[$i]['outbound_domain'] != $base_host)?"<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this outbound link in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_domain']}":'';
 		$results[$i]['dt'] = "<i class='spaced slimstat-font-clock' title='".__('Date and Time','wp-slimstat')."'></i> {$results[$i]['dt']}";
 		$results[$i]['content_type'] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
 		echo "{$results[$i]['resource']} <span class='details'>{$results[$i]['searchterms']} {$results[$i]['domain']} {$results[$i]['outbound_domain']} {$results[$i]['content_type']} $performance {$results[$i]['dt']}</span>";

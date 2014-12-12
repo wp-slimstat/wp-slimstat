@@ -1,0 +1,14 @@
+{
+    "name"          : "wp-slimstat",
+    "version"       : "3.7",
+    "author"        : "Camu",
+    "description"   : "The leading web analytics plugin for WordPress",
+    "homepage"      : "http://slimstat.getused.to.it",
+    "license"       : "GPL",
+    "keywords"      : ["analytics", "wordpress", "statistics"],
+    "repository"    : {
+        "type": "git",
+        "url": "git://github.com/getusedtoit/wp-slimstat.git"
+    },
+    "main"          : "./wp-slimstat.js"
+}

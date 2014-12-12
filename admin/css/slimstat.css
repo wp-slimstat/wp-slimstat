@@ -423,10 +423,10 @@
 	text-decoration: none;
 }
 .form-table{
-	margin-top: -1px;
+	margin-top: 0 !important;
 }
 .form-table th{
-	padding: 15px 10px;
+	padding: 15px 10px !important;
 }
 .form-table td.slimstat-options-section-header{
 	background-color: #c0c0c0;
