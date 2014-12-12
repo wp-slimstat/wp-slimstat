@@ -101,13 +101,14 @@
 				<input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('hours', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval_hours'])?wp_slimstat_db::$filters_normalized['date']['interval_hours']:'' ?>">:
 				<input type="text" name="interval_minutes" id="slimstat-filter-interval_minutes" placeholder="<?php _e('mins', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval_minutes'])?wp_slimstat_db::$filters_normalized['date']['interval_minutes']:'' ?>">
 				<input type="submit" value="<?php _e('Apply','wp-slimstat') ?>" class="button-secondary">
-				<?php if (!(empty(wp_slimstat_db::$filters_normalized['date']['day']) || wp_slimstat_db::$filters_normalized['date']['day'] == date_i18n('j')) ||
+				<?php 
+				if (!empty(wp_slimstat_db::$filters_normalized['date']['day']) ||
 							!(empty(wp_slimstat_db::$filters_normalized['date']['month']) || wp_slimstat_db::$filters_normalized['date']['month'] == date_i18n('n')) || 
-							!(empty(wp_slimstat_db::$filters_normalized['date']['year']) || wp_slimstat_db::$filters_normalized['date']['year'] == date_i18n('Y')) ||
+							!empty(wp_slimstat_db::$filters_normalized['date']['year']) ||
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval']) ||
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval_hours']) ||
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval_minutes'])): ?>
-				<a class="slimstat-filter-link button-secondary" href="<?php echo wp_slimstat_reports::fs_url('minute equals 0&&&hour equals 0&&&day equals 0&&&month equals '.date_i18n('n').'&&&year equals '.date_i18n('Y').'&&&interval_direction equals future&&&interval equals 0&&&interval_hours equals 0&&&interval_minutes equals 0') ?>"><?php _e('Reset Filters','wp-slimstat') ?></a>
+				<a class="slimstat-filter-link button-secondary" href="<?php echo wp_slimstat_reports::fs_url('minute equals 0&&&hour equals 0&&&day equals 0&&&month equals '.date_i18n('n').'&&&year equals 0&&&interval_direction equals future&&&interval equals 0&&&interval_hours equals 0&&&interval_minutes equals 0') ?>"><?php _e('Reset Filters','wp-slimstat') ?></a>
 				<?php endif ?>
 			</span>
 		</fieldset><!-- .slimstat-date-filters -->

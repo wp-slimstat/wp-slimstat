@@ -693,6 +693,10 @@ class wp_slimstat_reports {
 	}
 	
 	public static function show_spy_view($_id = 'p0', $_type = 'undefined'){
+		$supported_browser_icons = array('Android','Anonymouse','Baiduspider','BlackBerry','BingBot','CFNetwork','Chrome','Chromium','Default Browser','Exabot/BiggerBetter','FacebookExternalHit','FeedBurner','Feedfetcher-Google','Firefox','Internet Archive','Googlebot','Google Bot','Google Feedfetcher','Google Web Preview','IE','IEMobile','iPad','iPhone','iPod Touch','Maxthon','Mediapartners-Google','Microsoft-WebDAV','msnbot','Mozilla','NewsGatorOnline','Netscape','Nokia','Opera','Opera Mini','Opera Mobi','Python','PycURL','Safari','W3C_Validator','WordPress','Yahoo! Slurp','YandexBot');
+		$supported_os_icons = array('android','blackberry os','iphone osx','ios','java','linux','macosx','symbianos','win7','win8','win8.1','winphone7','winvista','winxp','unknown');
+		$plugin_url = plugins_url('', dirname(__FILE__));
+		
 		$results = !is_int($_type)?wp_slimstat_db::get_recent('t1.id', '(t1.visit_id > 0 AND tb.type <> 1)', 'tb.browser, tb.version, tb.platform, tb.type, tb.user_agent', '', 't1.visit_id DESC'):wp_slimstat_db::get_recent_outbound($_type);
 
 		if (count($results) == 0){
@@ -740,9 +744,24 @@ class wp_slimstat_reports {
 				}
 				$host_by_ip = "<a class='slimstat-font-location-1 whois' href='".wp_slimstat::$options['ip_lookup_service']."{$results[$i]['ip']}' target='_blank' title='WHOIS: {$results[$i]['ip']}'></a> $host_by_ip";
 				$results[$i]['country'] = "<a class='slimstat-filter-link inline-icon' href='".self::fs_url('country equals '.$results[$i]['country'])."'><img class='slimstat-tooltip-trigger' src='".plugins_url('/images/flags/'.$results[$i]['country'].'.png', dirname(__FILE__))."' width='16' height='16'/><span class='slimstat-tooltip-content'>".__('c-'.$results[$i]['country'],'wp-slimstat').'</span></a>';
+				
+				if ($results[$i]['version'] == 0) $results[$i]['version'] = '';
+				$browser_title = (wp_slimstat::$options['show_complete_user_agent_tooltip'] == 'no')?"{$results[$i]['browser']} {$results[$i]['version']}":$results[$i]['user_agent'];
+				$browser_icon = $plugin_url.'/images/browsers/other-browsers-and-os.png';
+				if (in_array($results[$i]['browser'], $supported_browser_icons)){
+					$browser_icon = $plugin_url.'/images/browsers/'.sanitize_title($results[$i]['browser']).'.png';
+				}
+				
+				$platform_icon = $plugin_url."/images/browsers/other-browsers-and-os.png' title='".__($results[$i]['platform'],'wp-slimstat')."' width='16' height='16'/>";
+				if (in_array(strtolower($results[$i]['platform']), $supported_os_icons)){
+					$platform_icon = $plugin_url.'/images/platforms/'.sanitize_title($results[$i]['platform']).'.png';
+				}
+				
+				$results[$i]['browser'] = "<a class='slimstat-filter-link inline-icon' href='".wp_slimstat_reports::fs_url('browser equals '.$results[$i]['browser'])."'><img class='slimstat-tooltip-trigger' src='$browser_icon' width='16' height='16'/><span class='slimstat-tooltip-content'>$browser_title</span></a>";
+				$results[$i]['platform'] = "<a class='slimstat-filter-link inline-icon' href='".wp_slimstat_reports::fs_url('platform equals '.$results[$i]['platform'])."'><img class='slimstat-tooltip-trigger' src='$platform_icon' width='16' height='16'/><span class='slimstat-tooltip-content'>".__($results[$i]['platform'],'wp-slimstat')."</span></a>";
 				$results[$i]['other_ip'] = !empty($results[$i]['other_ip'])?" <a class='slimstat-filter-link' href='".self::fs_url('other_ip equals '.$results[$i]['other_ip'])."'>".long2ip($results[$i]['other_ip']).'</a>&nbsp;&nbsp;':'';
 		
-				echo "<p class='header$highlight_row'>{$results[$i]['country']} $host_by_ip <span class='date-and-other'><em>{$results[$i]['other_ip']} {$results[$i]['dt']}</em></span></p>";
+				echo "<p class='header$highlight_row'>{$results[$i]['country']} {$results[$i]['browser']} {$results[$i]['platform']} $host_by_ip <span class='date-and-other'><em>{$results[$i]['other_ip']} {$results[$i]['dt']}</em></span></p>";
 				$visit_id = $results[$i]['visit_id'];
 			}
 
