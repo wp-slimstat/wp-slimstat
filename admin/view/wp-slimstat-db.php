@@ -17,7 +17,7 @@ class wp_slimstat_db {
 	 */
 	public static function init($_filters = ''){
 		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
-		wp_slimstat::$wpdb->query("SET @@session.time_zone = '+00:00'");
+		//wp_slimstat::$wpdb->query("SET @@session.time_zone = '+00:00'");
 		date_default_timezone_set('UTC');
 
 		// Decimal and thousand separators
@@ -562,7 +562,7 @@ class wp_slimstat_db {
 		}
 
 		// Build the SQL query
-		$sql = "SELECT dt, DATE_FORMAT(FROM_UNIXTIME(dt), '%Y-%m-%d %H:%i') datestamp, $_data1 first_metric, $_data2 second_metric";
+		$sql = "SELECT dt, $_data1 first_metric, $_data2 second_metric";
 
 		// Panel 4 has a slightly different structure
 		if(empty($_sql_from_where)){
@@ -579,7 +579,7 @@ class wp_slimstat_db {
 		$sql .= " GROUP BY $group_by_string";
 
 		// Get the data
-		$results = self::get_results($sql, 'blog_id, datestamp', '', $group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric');
+		$results = self::get_results($sql, 'blog_id', '', $group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric');
 
 		// Fill the output array
 		$output['current']['label'] = '';
@@ -609,14 +609,14 @@ class wp_slimstat_db {
 
 		// Rearrange the data and then format it for Flot
 		foreach ($results as $i => $a_result){
-			$unix_datestamp = strtotime($a_result['datestamp'].' UTC');
-			$index = (!empty(self::$filters_normalized['date']['interval']))?floor(($unix_datestamp - wp_slimstat_db::$filters_normalized['utime']['start'])/86400):gmdate($group_by[2], $unix_datestamp);
-			
-			if (empty(self::$filters_normalized['date']['interval']) && gmdate(self::$filters_normalized['utime']['type'], $unix_datestamp) == gmdate(self::$filters_normalized['utime']['type'], $previous['start'])){
+			//$unix_datestamp = strtotime($a_result['datestamp'].' UTC');
+			$index = (!empty(self::$filters_normalized['date']['interval']))?floor(($a_result['dt'] - wp_slimstat_db::$filters_normalized['utime']['start'])/86400):gmdate($group_by[2], $a_result['dt']);
+
+			if (empty(self::$filters_normalized['date']['interval']) && gmdate(self::$filters_normalized['utime']['type'], $a_result['dt']) == gmdate(self::$filters_normalized['utime']['type'], $previous['start'])){
 				$output['previous']['first_metric'][$index] = $a_result['first_metric'];
 				$output['previous']['second_metric'][$index] = $a_result['second_metric'];
 			}
-			if (!empty(self::$filters_normalized['date']['interval']) || gmdate(self::$filters_normalized['utime']['type'], $unix_datestamp) == gmdate(self::$filters_normalized['utime']['type'], self::$filters_normalized['utime']['start'])){
+			if (!empty(self::$filters_normalized['date']['interval']) || gmdate(self::$filters_normalized['utime']['type'], $a_result['dt']) == gmdate(self::$filters_normalized['utime']['type'], self::$filters_normalized['utime']['start'])){
 				$output['current']['first_metric'][$index] = $a_result['first_metric'];
 				$output['current']['second_metric'][$index] = $a_result['second_metric'];
 			}
