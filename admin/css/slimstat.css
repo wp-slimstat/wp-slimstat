@@ -368,6 +368,8 @@
 #slimstat-modal-dialog{
 	background-color: #fff;
 	display: none;
+	max-height: 650px !important;
+	overflow: auto;
 	padding: 0;
 	width: auto;
 }
