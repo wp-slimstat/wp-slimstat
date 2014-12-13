@@ -15,6 +15,7 @@
 			$filter_operator_html .= '<option value="equals">'.__('equals','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="is_not_equal_to">'.__('is not equal to','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="contains">'.__('contains','wp-slimstat').'</option>';
+			$filter_operator_html .= '<option value="includes_in_set">'.__('is included in','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="does_not_contain">'.__('does not contain','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="starts_with">'.__('starts with','wp-slimstat').'</option>';
 			$filter_operator_html .= '<option value="ends_with">'.__('ends with','wp-slimstat').'</option>';

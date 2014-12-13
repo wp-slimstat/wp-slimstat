@@ -141,6 +141,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 					<option value="equals"><?php _e('equals','wp-slimstat') ?></option>
 					<option value="is_not_equal_to"><?php _e('is not equal to','wp-slimstat') ?></option>
 					<option value="contains"><?php _e('contains','wp-slimstat') ?></option>
+					<option value="includes_in_set"><?php _e('is included in','wp-slimstat') ?></option>
 					<option value="does_not_contain"><?php _e('does not contain','wp-slimstat') ?></option>
 					<option value="starts_with"><?php _e('starts with','wp-slimstat') ?></option>
 					<option value="ends_with"><?php _e('ends with','wp-slimstat') ?></option>
