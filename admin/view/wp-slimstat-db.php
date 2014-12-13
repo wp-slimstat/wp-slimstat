@@ -257,6 +257,9 @@ class wp_slimstat_db {
 				case 'contains':
 					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column LIKE %s", '%'.$a_filter_data[1].'%');
 					break;
+				case 'includes_in_set':
+					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND FIND_IN_SET(%s, $a_filter_column) > 0", $a_filter_data[1]);
+					break;
 				case 'does_not_contain':
 					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column NOT LIKE %s", '%'.$a_filter_data[1].'%');;
 					break;
