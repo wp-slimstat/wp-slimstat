@@ -221,6 +221,9 @@
 							break;
 						case 'slim_p4_02':
 						case 'slim_p4_05':
+						case 'slim_p4_23':
+						case 'slim_p4_24':
+						case 'slim_p4_25':
 							wp_slimstat_reports::report_header($a_box_id, 'wide');
 							break;
 						case 'slim_p1_02':
