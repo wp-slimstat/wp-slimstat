@@ -452,7 +452,7 @@ class wp_slimstat_db {
 		return self::get_results("
 			SELECT tob.outbound_resource as resource, COUNT(*) counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id ".self::$sql_filters['from']['browsers'].' '.self::$sql_filters['from']['screenres'].' '.self::$sql_filters['from']['content_info']."
-			WHERE 1=1 ".self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
+			WHERE (tob.type = 0 OR tob.type = 1) ".self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
 			GROUP BY tob.outbound_resource 
 			ORDER BY counthits '.self::$filters_normalized['misc']['direction'].'
 			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
@@ -462,24 +462,25 @@ class wp_slimstat_db {
 			'SUM(counthits) AS counthits');
 	}
 
-	/* public static function get_popular_complete($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = ''){
+	public static function get_popular_complete($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_outer_select_column = '', $_max_min = 'MAX'){
+		$column_for_select = empty($_outer_select_column)?$_column:$_outer_select_column;
 		return self::get_results("
-			SELECT t1.ip, t1.other_ip, t1.user, t1.language, t1.country, t1.domain, t1.referer, t1.searchterms, t1.resource, t1.visit_id, ts1.maxid, ts1.counthits
+			SELECT $column_for_select, ts1.maxid, COUNT(*) counthits
 			FROM (
-				SELECT $_column, MAX(t1.id) maxid, COUNT(*) counthits
+				SELECT $_column, $_max_min(t1.id) maxid
 				FROM ".self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
 				WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range']."
 				GROUP BY $_column $_having_clause
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
-			(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
-			ORDER BY ts1.counthits '.self::$filters_normalized['misc']['direction'].'
+			(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'')."
+			GROUP BY $column_for_select
+			ORDER BY counthits ".self::$filters_normalized['misc']['direction'].'
 			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
-			'ip, other_ip, user, language, country, domain, referer, searchterms, resource, visit_id',
+			$column_for_select,
 			'counthits '.self::$filters_normalized['misc']['direction'],
-			'',
+			$column_for_select,
 			'MAX(maxid), SUM(counthits)');
 	}
-	*/
 
 	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = '', $_use_date_filters = true){
 		if ($_column == 't1.id'){
