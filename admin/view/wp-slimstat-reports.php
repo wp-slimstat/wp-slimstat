@@ -1152,8 +1152,8 @@ class wp_slimstat_reports {
 				$chart_labels = array(__('Domains','wp-slimstat'), __('Unique IPs','wp-slimstat'));
 				break;
 			case 'slim_p4_01':
-				$sql_from_where = " FROM (SELECT t1.visit_id, count(t1.ip) counthits, MAX(t1.dt) dt FROM [from_tables] WHERE [where_clause] GROUP BY t1.visit_id) AS ts1";
-				$chart_data = wp_slimstat_db::get_data_for_chart('ROUND(AVG(ts1.counthits),2)', 'MAX(ts1.counthits)', 'AND t1.visit_id > 0', $sql_from_where);
+				$sql_from_where = " FROM (SELECT t1.visit_id, count(t1.ip) counthits, MAX(t1.dt) dt FROM [from_tables] WHERE [where_clause] GROUP BY t1.visit_id) AS t1";
+				$chart_data = wp_slimstat_db::get_data_for_chart('ROUND(AVG(t1.counthits),2)', 'MAX(t1.counthits)', 'AND t1.visit_id > 0', $sql_from_where);
 				$chart_labels = array(__('Avg Pageviews','wp-slimstat'), __('Longest visit','wp-slimstat'));
 				break;
 			default:
