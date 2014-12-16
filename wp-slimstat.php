@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.8.5
+Version: 3.9
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.8.5';
+	public static $version = '3.9';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -1130,6 +1130,11 @@ class wp_slimstat{
 			'ignore_countries' => '',
 			'ignore_browsers' => '',
 			'ignore_referers' => '',
+			'enable_outbound_tracking' => $val_yes,
+			'track_internal_links' => $val_no,
+			'ignore_outbound_classes' => 'noslimstat,ab-item',
+			'ignore_outbound_rel' => '',
+			'ignore_outbound_href' => '',
 			'anonymize_ip' => $val_no,
 			'ignore_prefetch' => $val_yes,
 
@@ -1142,7 +1147,6 @@ class wp_slimstat{
 
 			// Advanced
 			'detect_smoothing' => $val_yes,
-			'enable_outbound_tracking' => $val_yes,
 			'session_duration' => 1800,
 			'extend_session' => $val_no,
 			'enable_cdn' => $val_yes,
@@ -1271,12 +1275,25 @@ class wp_slimstat{
 		if (self::$options['enable_outbound_tracking'] == 'no'){
 			$params['disable_outbound_tracking'] = 'true';
 		}
+		if (self::$options['track_internal_links'] == 'yes'){
+			$params['track_internal_links'] = 'true';
+		}
 		if (!empty(self::$options['extensions_to_track'])){
 			$params['extensions_to_track'] = str_replace(' ', '', self::$options['extensions_to_track']);
 		}
 		if (self::$options['enable_javascript'] == 'yes' && self::$options['detect_smoothing'] == 'no'){
 			$params['detect_smoothing'] = 'false';
 		}
+		if (!empty(self::$options['ignore_outbound_classes'])){
+			$params['outbound_classes_to_ignore'] = str_replace(' ', '', self::$options['ignore_outbound_classes']);
+		}
+		if (!empty(self::$options['ignore_outbound_rel'])){
+			$params['outbound_rel_to_ignore'] = trim(self::$options['ignore_outbound_rel']);
+		}
+		if (!empty(self::$options['ignore_outbound_href'])){
+			$params['outbound_href_to_ignore'] = trim(self::$options['ignore_outbound_href']);
+		}
+		
 		$params = apply_filters('slimstat_js_params', $params);
 
 		wp_enqueue_script('wp_slimstat');

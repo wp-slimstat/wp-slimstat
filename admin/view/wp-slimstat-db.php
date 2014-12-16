@@ -566,7 +566,7 @@ class wp_slimstat_db {
 		}
 
 		// Build the SQL query
-		$sql = "SELECT dt, $_data1 first_metric, $_data2 second_metric";
+		$sql = "SELECT t1.dt, $_data1 first_metric, $_data2 second_metric";
 
 		// Panel 4 has a slightly different structure
 		if(empty($_sql_from_where)){
@@ -579,7 +579,7 @@ class wp_slimstat_db {
 			$sql .= $sql_no_placeholders;
 		}
 
-		$group_by_string = "{$group_by[0]}(FROM_UNIXTIME(dt)), {$group_by[1]}(FROM_UNIXTIME(dt))";
+		$group_by_string = "{$group_by[0]}(FROM_UNIXTIME(t1.dt)), {$group_by[1]}(FROM_UNIXTIME(t1.dt))";
 		$sql .= " GROUP BY $group_by_string";
 
 		// Get the data

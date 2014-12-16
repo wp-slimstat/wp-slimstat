@@ -4,16 +4,15 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.8.5
+Stable tag: 3.9
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
 
 = Key Features =
-* Real-time activity log
-* The first and only to provide information about page speed and server latency
-* Compatible with W3 Total Cache, WP SuperCache and HyperCache
-* The most accurate IP geolocation, browser and platform detection ever seen (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
+* Real-time activity log, server latency, heatmaps, email reports, export data to Excel, and much more
+* Compatible with W3 Total Cache, WP SuperCache and most caching plugins
+* Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
 * Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.getused.to.it/) if you would like to share your localization.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
@@ -21,7 +20,7 @@ Visit our [website](http://slimstat.getused.to.it/) for more information and to 
 * One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
 * Thanks you for such an excellent plugin. I am using it to kick Jetpack out of all the wordpress installations that I manage for myself and others - [robertwagnervt](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
 * I like Slimstat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
-* Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own
+* Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own!
 
 = Requirements =
 * WordPress 3.8+
@@ -193,7 +192,7 @@ Change it to:
 
 `<a href="/wp-slimstat" class="noslimstat">Open Image in LightBox</a>`
 
-You can also use the corresponding setting under Options > Advanced, and disable outbound link tracking for *all* the external links in your site.
+You can also use the corresponding options under Settings > Filters, and disable outbound link tracking for given categories of links.
 
 = Why does Slimstat show more page views than actual pages clicked by a user? =
 "Phantom" page views can occur when a user's browser does automatic feed retrieval,
@@ -270,6 +269,20 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9 =
+* [Note] Announcing our latest add-on: heatmaps! Get your free copy of our beta: contact our support team today.
+* [New] Section under Settings > Filters that allows you to specify what links you want to "leave alone", so that the tracker doesn't interfere with your lightbox treatments.
+* [New] You can now turn on the option to collect mouse coordinates for internal links, which will be used to draw the heatmap on your pages.
+* [New] Operator "is included in" has been added to search matches in lists of strings (see [W3resources](http://www.w3resource.com/mysql/string-functions/mysql-find_in_set-function.php), thank you [pchrisl](https://github.com/27pchrisl/wp-slimstat/commit/5a5bc3b8c21ec16445292d8674d669c37c2a08b4))
+* [New] Added new reports: Top Bounce Pages, Top Exit Pages, Recent Exit Pages (thank you, [Random Dev](https://wordpress.org/support/topic/no-visitor-path-through-site-wslimstat))
+* [Update] Partial overhaul of the javascript tracker. We reintroduced the new algorithm to track pageviews, which now avoids the problem of triggering the popup blocker on links opening in a new tab. 
+* [Update] Added browser and operating system to Spy View report
+* [Update] MaxMind GeoLite IP has been updated to the latest version (2014-12-02)
+* [Fix] Bug in archiving old pageviews under certain circumstances (thank you, Thomas)
+* [Fix] Added max height to overlay, for those who have very long lists of saved filters
+* [Fix] The button to reset date filters was not being displayed in some cases (thank you, [RangerPretzel](https://wordpress.org/support/topic/custom-data-range-in-slimstat-produces-charts-with-days-that-have-0-pageviews))
+* [Fix] Charts were not accurate when a custom interval was selected and the mysql server's timezone was different from the web server timezone (thank you, [RangerPretzel](https://wordpress.org/support/topic/custom-data-range-in-slimstat-produces-charts-with-days-that-have-0-pageviews))
 
 = 3.8.5 =
 * [Update] Show notices only to admin users (thank you, [thisismyway](https://wordpress.org/support/topic/hide-notifications-for-non-admins))
