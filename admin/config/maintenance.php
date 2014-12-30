@@ -212,5 +212,17 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 			</form>
 		</td>
 	</tr>
+	<tr>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('Miscellaneous','wp-slimstat') ?></td>
+	</tr>
+	<tr>
+		<th scope="row"><?php _e('Reset Reports','wp-slimstat') ?></th>
+		<td>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-views"
+				onclick="return(confirm('<?php _e('Are you sure you want to restore the default arrangement of your reports?','wp-slimstat'); ?>'))"><?php _e('No Panic Button','wp-slimstat'); ?></a>
+			<span class="description"><?php _e("Reset the default arrangement of your reports. Helpful when, for some reason, reports disappear from your panels or something doesn't look right in your views.",'wp-slimstat') ?></span>
+		</td>
+	</tr>
+	
 </tbody>
 </table>

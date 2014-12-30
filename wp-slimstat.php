@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.9
+Version: 3.9.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.9';
+	public static $version = '3.9.1';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -1106,6 +1106,7 @@ class wp_slimstat{
 			// Views
 			'convert_ip_addresses' => $val_no,
 			'use_european_separators' => $val_yes,
+			'reset_timezone' => $val_yes,
 			'enable_sov' => $val_no,
 			'show_display_name' => $val_no,
 			'show_complete_user_agent_tooltip' => $val_no,
@@ -1254,7 +1255,7 @@ class wp_slimstat{
 	public static function wp_slimstat_enqueue_tracking_script(){
 		if (self::$options['enable_cdn'] == 'yes'){
 			$schema = is_ssl()?'https':'http';
-			wp_register_script('wp_slimstat', $schema.'://cdn.jsdelivr.net/wp-slimstat/'.self::$version.'/wp-slimstat.js', array(), null, true);
+			wp_register_script('wp_slimstat', $schema.'://cdn.jsdelivr.net/wp/wp-slimstat/tags/'.self::$version.'/wp-slimstat.js', array(), null, true);
 		}
 		else{
 			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), null, true);

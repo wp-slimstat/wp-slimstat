@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.0
-Stable tag: 3.9
+Stable tag: 3.9.1
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -51,214 +51,7 @@ Please note: if you decide to uninstall Slimstat, all the stats will be **PERMAN
 
 == Frequently Asked Questions ==
 
-= I see a warning message saying that a misconfigured setting and/or server environment is preventing Slimstat from properly tracking my visitors =
-Slimstat's tracking engine has a server-side component, which records all the information available at the time the resource is served,
-and a client-side component, which collects extra data from your visitors' browsers, like their screen resolution, (x,y) coordinates of their
-clicks and the events they trigger. 
-
-One of the files handling all the client-server communications is WordPress' `admin-ajax.php`, usually located inside your */wp-admin/* folder.
-Point your browser to that file directly: if you see an error 404 or 500, then you will need to fix that problem, to allow Slimstat to do its job.
-If you see the number zero, then the problem could be related to a conflict with another plugin (caching, javascript minimizers, etc).
-
-= I am using W3 Total Cache (or WP Super Cache, HyperCache, etc), and it looks like Slimstat is not tracking all of my visitors. Can you help me? =
-Go to Slimstat > Settings > General and set Tracking Mode to Javascript. Don't forget to invalidate/clear your plugin's cache, to let Slimstat add its tracking code to all the newly cached pages.
-Also, if you're using W3 Total Cache, make sure to exclude wp-slimstat.js from the minifier: our code is already minified, and it looks like W3TC breaks something when it tries to minify it again.
-
-= My screen goes blank when trying to access the reports / after installing Slimstat =
-Go to Slimstat > Settings > Maintenance and click the NO PANIC Button. If that doesn't help,
-[increase the amount of memory](http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP) allocated to PHP.
-
-= Reports look all messy and not styled =
-Go to Slimstat > Settings > Maintenance and click the NO PANIC Button. If that doesn't help, make sure you don't have AdBlock installed and active in your browser. For some reason, that plugin doesn't like Slimstat.
-
-= When trying to access any of options screens, I get the following error: You do not have sufficient permissions to access this page. =
-You were playing with the plugin's permission settings, weren't you? But don't worry, there's a secret passage that will allow you to unlock your access. Create a new WordPress admin user named `slimstatadmin`. Then log into your WordPress admin area with the new user and... voila: you can now access Slimstat's settings again. Update your users' permissions and then get rid of this newly created user.
-
-= I am using WP Touch, and mobile visitors are not tracked by your plugin. How can I fix this problem? =
-WP Touch has an advanced option that they call Restricted Mode, which attempts to fix issues where other plugins load scripts which interfere with WPtouch CSS and JavaScript. If you enable this feature, it will prevent Slimstat from running the tracking script (thank you, [Per](http://wordpress.org/support/topic/known-users-not-logged)).
-
-= How can I change the colors associated to color-coded pageviews (known user, known visitors, search engines, etc)? =
-Go to Slimstat > Settings > Advanced tab and paste your custom CSS into the corresponding field. Use the following code as a reference:
-
-`[id^=slim_] .header.is-search-engine, .is-search-engine{
-	background-color:#c1e751;
-	color:#444;
-}
-[id^=slim_] .header.is-direct, .is-direct{
-	background-color:#d0e0eb;
-	color:#111;
-}
-[id^=slim_] .header.is-known-user,.is-known-user{
-	background-color:#F1CF90;
-}
-[id^=slim_] .header.is-known-visitor,.is-known-visitor{
-	background-color:#EFFD8C;
-}
-[id^=slim_] .header.is-spam,.is-spam{
-	background-color:#AAB3AB;
-	color:#222;
-}`
-
-= Can I track clicks and other events happening on the page? =
-Yes, you can. This plugin includes a Javascript handler that can be attached to any event: click, mouseover, focus, keypress, etc. Here's the syntax:
-
-`SlimStat.ss_track(event, event_id, message)`
-
-Where:
-
-* `event` is the event that was triggered (the word 'event' *must* be used when attaching event handlers to HTML tags, see examples below)
-* `event_id` is a numeric value between 1 and 254 (zero is reserved for outbound clicks)
-* `message` is a custom message (up to 512 chars long) that can be used to add a note to the event tracked. If the ID attribute is defined, and no note has been specified, the former will be recorded. If the function is attached to a key-related event, the key pressed will be recorded.
-
-Examples:
-
-* `onclick="if(typeof SlimStat.ss_track == 'function') SlimStat.ss_track(event, 5, 'clicked on first link');"`
-* `onkeypress="if(typeof SlimStat.ss_track == 'function') SlimStat.ss_track(event, 20);"`
-* To make your life easier, a *Google Plus One* callback function is included as well: `<g:plusone callback="SlimStat.slimstat_plusone"></g:plusone>`. Clicks on your Google+ button will be identified by the note 'google-plus-on/off'. Pleae refer to the [official documentation](https://developers.google.com/+/plugins/+1button/) for more information.
-
-= How do I use all those filters in the dropdown menu? =
-Here's a brief description of what they mean. Please remember that you can access the same information directly from within the admin, by 'pulling' the Help tab that should appear in the top right hand corner.
-
-Basic filters:
-
-* `browser`: user agent (Firefox, Chrome, ...)
-* `country code`: 2-letter code (us, ru, de, it, ...)
-* `referring domain`: domain name of the referrer page (i.e., www.google.com if a visitor was coming from Google)
-* `ip`: visitor's public IP address
-* `search terms`: keywords visitors used to find your website on a search engine
-* `language code`: please refer to the [language culture names](http://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx) (first column) for more information
-* `operating system`: accepts identifiers like win7, win98, macosx, ...; please refer to [this manual page](http://php.net/manual/en/function.get-browser.php) for more information about these codes
-* `permalink`: URL accessed on your site
-* `referer`: complete URL of the referrer page
-* `visitor's name`: visitor's name according to the cookie set by WordPress after leaving a comment
-
-Advanced filters:
-
-* `browser capabilities`: plugins or extensions installed by that user (flash, java, silverlight...)
-* `browser version`: user agent version (9.0, 11, ...)
-* `browser type`: 1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others
-* `color depth`: visitor's screen's color depth (8, 16, 24, ...)
-* `css version`: what CSS standard was supported by that browser (1, 2, 3 and other integer values)
-* `pageview attributes`: this field is set to [pre] if the resource has been accessed through Link Prefetching or similar techniques
-* `post author`: author associated to that post/page when the resource was accessed
-* `post category id`: ID of the category/term associated to the resource, when available
-* `private ip`: visitor's private IP address, if available
-* `resource content type`: post, page, cpt:*custom-post-type*, attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the [Conditional Tags](http://codex.wordpress.org/Conditional_Tags) manual page for more information
-* `screen resolution`: viewport width and height (1024x768, 800x600, ...)
-* `visit id`: generally used in conjunction with 'is not empty', identifies human visitors
-
-= How do I create my own custom reports? =
-You will need to embed them in a plugin that leverages Slimstat APIs to retrieve the data. You can also access Slimstat's tables directly, for more complicated stuff.
-Please refer to the database description and API reference guide here below for more information on what tables/methods are available.
-
-Let's say you came up with your own SQL query, something like
-
-`SELECT resource, COUNT(*) countresults
-FROM $this->table_stats
-WHERE resource <> ''
-GROUP BY resource
-ORDER BY countresults DESC
-LIMIT 0,20`
-
-Just write a function that gets the results and displays them, making sure to use the same HTML markup shown here below:
-
-`public function my_cystom_report() {
-	$sql = "SELECT ...";
-	$results = $wpdb->get_results($sql, ARRAY_A);
-
-	// Reports come in two sizes: normal (default) and wide.
-	wp_slimstat_reports:report_header('my_custom_report_id', 'report_size', 'My Custom Report Tooltip', 'My Cool Report Name');
-
-	foreach($results as $a_result){
-		echo "<p>{$a_result['resource']} <span>{$a_result['countresults']}</span></p>";
-	}
-	
-	wp_slimstat_reports:report_footer();
-}`
-
-Then let Slimstat know about it:
-
-`add_action('wp_slimstat_custom_report', 'my_cystom_report');`
-
-Save your file as `my_custom_report.php` and then [follow these instructions](http://codex.wordpress.org/Writing_a_Plugin#Standard_Plugin_Information) to make a plugin out of that file.
-
-= Can I disable outbound link tracking on a given link? =
-Yes, you can. This is useful if you notice that, after clicking on a Lightbox-powered thumbnail, the image doesn't open inside the popup window as expected.
-Let's say you have a link associated to Lightbox (or one of its clones):
-
-`<a href="/wp-slimstat">Open Image in LightBox</a>`
-
-Change it to:
-
-`<a href="/wp-slimstat" class="noslimstat">Open Image in LightBox</a>`
-
-You can also use the corresponding options under Settings > Filters, and disable outbound link tracking for given categories of links.
-
-= Why does Slimstat show more page views than actual pages clicked by a user? =
-"Phantom" page views can occur when a user's browser does automatic feed retrieval,
-[link pre-fetching](https://developer.mozilla.org/en/Link_prefetching_FAQ), or a page refresh. Slimstat tracks these because they are valid
-requests from that user's browser and are indistinguishable from user link clicks. You can ignore these visits setting the corresponding option
-in Slimstat > Settings > Filters
-
-= Why can't Slimstat track visitors using IPv6? =
-IPv6 support, as of today, is still limited both in PHP and MySQL. There are a few workarounds that could be implemented, but this
-would make the DB structure less optimized, add overhead for tracking regular requests, and you would have a half-baked product.
-
-= How do I prevent Slimstat from tracking spammers? =
-Go to Slimstat > Settings > Filters and set "Ignore Spammers" to YES.
-
-= Can I add/show reports on my website? =
-Yes, you can. Slimstat offers two ways of displaying its reports on your website.
-
-*Via shortcodes*
-
-Please download and install [WP Slimstat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) to enable shortcode support in Slimstat.
-
-You will need to edit your template and add something like this where you want your metrics to appear:
-
-`// Load WP SlimStat DB, the API library exposing all the reports
-require_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/view/wp-slimstat-db.php');
-
-// Initialize the API. You can pass a filter in the options, i.e. show only hits by people who where using Firefox (any version) *and* visiting 'posts':
-wp_slimstat_db::init('browser contains Firefox&&&content_type equals post');
-
-// Use the appropriate method to display your stats
-echo wp_slimstat_db::count_records('1=1', '*', false);`
-
-You can list more than one filter by using &&& to separate them (which is evaluated as AND among the filters). Please read [these FAQs](http://wordpress.org/plugins/wp-slimstat-shortcodes/faq/) for more information on how to combine filters.
-
-*Available methods*
-
-* `count_records($where_clause = '1=1', $column = '*', $use_filters = true, $use_date_filters = true)` - returns the number of records matching your criteria
- * **$where_clause** is the one used in the SQL query
- * **$column**, if specified, will count DISTINCT values
- * **$use_filters** can be true or false, it enables or disables previously set filters (useful to count ALL the records in the database, since by default a filter for the current month is enabled)
- * **$use_date_filters** can be set to false to count ALL the pageviews from the beginning of time
-* `count_bouncing_pages()` - returns the number of [pages that 'bounce'](http://en.wikipedia.org/wiki/Bounce_rate#Definition)
-* `count_exit_pages()` - returns the number of [exit pages](http://support.google.com/analytics/bin/answer.py?hl=en&answer=2525491)
-* `get_recent($column = 'id', $custom_where = '', $join_tables = '', $having_clause = '')` - returns recent results matching your criteria
- * **$column** is the column you want group results by
- * **$custom_where** can be used to replace the default WHERE clause
- * **$join_tables** by default, this method return all the columns of wp_slim_stats; if you need to access (join) other tables, use this param to list them: `tb.*, tss.*, tci.*`
- * **$having_clause** can be used to further filter results based on aggregate functions
-* `get_popular($column = 'id', $custom_where = '', $join_tables = '')`
- * **$column** is the column you want group results by
- * **$custom_where** can be used to replace the default WHERE clause
- * **$_more_columns** to 'group by' more than one column and return the corresponding rows
-
-*Examples*
-
-Recent Posts: 
-
-`wp_slimstat_db::init('content_type equals post');
-$results = wp_slimstat_db::get_recent('t1.resource');
-foreach ($results...`
-
-Top Languages last month:
-
-`wp_slimstat_db::init('month equals last month');
-$results = wp_slimstat_db::get_popular('t1.language');
-foreach ($results...`
+Our FAQs are available on our [support center](https://slimstat.freshdesk.com/support/solutions/folders/5000156457) website.
 
 == Screenshots ==
 
@@ -269,6 +62,13 @@ foreach ($results...`
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9.1 =
+* [New] Quickly delete single pageviews in the Real-Time Log screen
+* [New] Option to fix an issue occurring when the DB server and the website are in different timezones. Please disable this option if your charts seem to be off.
+* [New] Using the new [WP Proxy CDN feature](https://github.com/jsdelivr/jsdelivr/issues/2632). Please contact us if you notice any problems with this new option, as this feature is still being tested.
+* [Update] Reintroduced the NO PANIC button under Settings > Maintenance > Miscellaneous
+* [Fix] Conflict with WP-Jalali, which forces date_i18n to return not western numerals but their Farsi representation
 
 = 3.9 =
 * [Note] Announcing our latest add-on: heatmaps! Get your free copy of our beta: contact our support team today.

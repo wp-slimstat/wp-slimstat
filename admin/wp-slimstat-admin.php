@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "We are working on a new heatmap add-on, which allows you to visualize the <strong>hottest</strong> spots on your website, page by page. Hurry, the first 20 users who <a href='http://support.getused.to.it/' target='_blank'>contact us</a>, will get a chance to try our alpha version for free. Happy New Year!";
+			self::$admin_notice = "We got lots of requests to test our heatmap add-on: thank you all for your help! In order to streamline our support service, we're migrating our ticketing system to Freshdesk (sorry, osTicket). This new site will also include searchable FAQs and much more. <a target='_blank' href='http://support.getused.to.it/'>Feel free to stop by</a> and say hello.";
 		}
 		else {
 			self::$admin_notice = "
@@ -138,6 +138,7 @@ class wp_slimstat_admin{
 			add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'show_report_wrapper'));
 			add_action('wp_ajax_slimstat_hide_admin_notice', array(__CLASS__, 'hide_admin_notice'));
 			add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
+			add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
 			add_action('wp_ajax_slimstat_enable_ads_feature', array(__CLASS__, 'enable_ads_feature'));
 		}
 	}
@@ -421,8 +422,10 @@ class wp_slimstat_admin{
 	 * Removes 'spammers' from the database when the corresponding comments are marked as spam
 	 */
 	public static function remove_spam($_new_status = '', $_old_status = '', $_comment = ''){
+		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+
 		if ($_new_status == 'spam'  && !empty($_comment->comment_author) && !empty($_comment->comment_author_IP)){
-			wp_slimstat::$wpdb->query(wp_slimstat::$wpdb->prepare("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE user = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
+			$my_wpdb->query(wp_slimstat::$wpdb->prepare("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE user = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
 		}
 	}
 	// end remove_spam
@@ -727,6 +730,16 @@ class wp_slimstat_admin{
 				echo '</div>';
 				break;
 		}
+		die();
+	}
+	
+	/**
+	 * Handles the Ajax request to enable the ads network
+	 */
+	public static function delete_pageview(){
+		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+		$pageview_id = intval($_POST['pageview_id']);
+		$my_wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.id = $pageview_id");
 		die();
 	}
 

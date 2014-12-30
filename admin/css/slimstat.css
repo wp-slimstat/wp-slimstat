@@ -3,6 +3,9 @@
 	outline: none;
 	text-decoration: none;
 }
+[id^=slim_] a.slimstat-delete-entry{
+	color: #bbb;
+}
 
 /* Admin Notice */
 .slimstat-notice{

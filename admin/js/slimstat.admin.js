@@ -399,7 +399,7 @@ jQuery(function(){
 			data: data
 		});
 	});
-	
+
 	// Enable ads on click
 	jQuery(document).on('click', '#slimstat-enable-ads-toggle', function(e){
 		e.preventDefault();
@@ -410,6 +410,22 @@ jQuery(function(){
 			type: 'post',
 			async: true,
 			data: data
+		});
+	});
+
+	// Delete Pageview
+	jQuery(document).on('click', '.slimstat-delete-entry', function(e){
+		var target = jQuery(this);
+
+		e.preventDefault();
+		data = {action: 'slimstat_delete_pageview', security: jQuery('#meta-box-order-nonce').val(), pageview_id : target.attr('data-pageview-id')};
+		jQuery.ajax({
+			url: ajaxurl,
+			type: 'post',
+			async: true,
+			data: data
+		}).done(function(){
+			target.parents('p').fadeOut(1000);
 		});
 	});
 
