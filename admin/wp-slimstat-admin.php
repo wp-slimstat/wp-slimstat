@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "We got lots of requests to test our heatmap add-on: thank you all for your help! In order to streamline our support service, we're migrating our ticketing system to Freshdesk (sorry, osTicket). This new site will also include searchable FAQs and much more. <a target='_blank' href='http://support.getused.to.it/'>Feel free to stop by</a> and say hello.";
+			self::$admin_notice = "Meet our recommended partner, <a href='https://managewp.com/?utm_source=A&utm_medium=Banner&utm_content=mwp_banner_25_300x250&utm_campaign=A&utm_mrl=2844' target='_blank'>ManageWP</a>. Their platform allows you to manage all your WordPress sites from one powerful dashboard. Our users get a 10% discount on their premium services. And if you manage less than 5 websites, you can use ManageWP free of charge!";
 		}
 		else {
 			self::$admin_notice = "

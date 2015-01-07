@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
-Tested up to: 4.0
-Stable tag: 3.9.1
+Tested up to: 4.1
+Stable tag: 3.9.2
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -62,6 +62,10 @@ Our FAQs are available on our [support center](https://slimstat.freshdesk.com/su
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9.2 =
+* [New] Welcome our recommended partner, [ManageWP](https://managewp.com/?utm_source=A&utm_medium=Banner&utm_content=mwp_banner_25_300x250&utm_campaign=A&utm_mrl=2844). You will get a 10% discount on their products using our affiliation link.
+* [Fix] XSS Vulnerability introduced by the new Save Filters functionality (thank you, [Ryan](https://wpvulndb.com/vulnerabilities/7744))
 
 = 3.9.1 =
 * [New] Quickly delete single pageviews in the Real-Time Log screen

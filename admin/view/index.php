@@ -182,6 +182,9 @@
 						case 'slim_p1_15':
 							wp_slimstat_reports::report_header($a_box_id, 'normal', __("Slimstat retrieves live information from Alexa, Facebook and Google, to measures your site's rankings. Values are updated every 12 hours. Filters set above don't apply to this report.",'wp-slimstat'));
 							break;
+						case 'slim_p1_18':
+							wp_slimstat_reports::report_header($a_box_id, 'normal', '', wp_slimstat_reports::$all_reports_titles[$a_box_id], false);
+							break;
 						case 'slim_p2_01':
 							wp_slimstat_reports::report_header($a_box_id, 'wide chart', wp_slimstat_reports::$chart_tooltip, wp_slimstat_reports::chart_title(__('Human Visits', 'wp-slimstat')));
 							break;
@@ -226,50 +229,8 @@
 						case 'slim_p4_25':
 							wp_slimstat_reports::report_header($a_box_id, 'wide');
 							break;
-						case 'slim_p1_02':
-						case 'slim_p1_03':
-						case 'slim_p1_08':
-						case 'slim_p1_10':
-						case 'slim_p1_11':
-						case 'slim_p1_12':
-						case 'slim_p1_13':
-						case 'slim_p1_17':
-						case 'slim_p2_02':
-						case 'slim_p2_03':
-						case 'slim_p2_04':
-						case 'slim_p2_06':
-						case 'slim_p2_07':
-						case 'slim_p2_09':
-						case 'slim_p2_12':
-						case 'slim_p2_13':
-						case 'slim_p2_14':
-						case 'slim_p2_15':
-						case 'slim_p2_16':
-						case 'slim_p2_17':
-						case 'slim_p2_20':
-						case 'slim_p2_21':
-						case 'slim_p3_02':
-						case 'slim_p3_03':
-						case 'slim_p3_04':
-						case 'slim_p3_05':
-						case 'slim_p3_06':
-						case 'slim_p3_10':
-						case 'slim_p3_11':
-						case 'slim_p4_04':
-						case 'slim_p4_07':
-						case 'slim_p4_11':
-						case 'slim_p4_12':
-						case 'slim_p4_13':
-						case 'slim_p4_14':
-						case 'slim_p4_15':
-						case 'slim_p4_16':
-						case 'slim_p4_17':
-						case 'slim_p4_18':
-						case 'slim_p4_19':
-						case 'slim_p4_21':
-							wp_slimstat_reports::report_header($a_box_id);
-							break;
 						default:
+							wp_slimstat_reports::report_header($a_box_id);
 							break;
 					}
 					wp_slimstat_reports::show_report_wrapper($a_box_id);
