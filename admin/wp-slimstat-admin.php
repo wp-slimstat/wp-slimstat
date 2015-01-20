@@ -12,7 +12,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Meet our recommended partner, <a href='https://managewp.com/?utm_source=A&utm_medium=Banner&utm_content=mwp_banner_25_300x250&utm_campaign=A&utm_mrl=2844' target='_blank'>ManageWP</a>. Their platform allows you to manage all your WordPress sites from one powerful dashboard. Our users get a 10% discount on their premium services. And if you manage less than 5 websites, you can use ManageWP free of charge!";
+			self::$admin_notice = "We're starting to work on a completely redesigned data layer, which will require less SQL resources and offer a much needed performance improvement. We hope to have it ready in time for version 4.0. Some experimental code will be added to one of the next releases, with the option to deactivate it and use the classic library. Stay tuned!";
 		}
 		else {
 			self::$admin_notice = "

@@ -672,7 +672,7 @@ class wp_slimstat_db {
 			foreach($matches as $idx => $a_match){
 				preg_match('/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode($a_match), $a_filter);
 
-				if ((empty($a_filter) || !array_key_exists($a_filter[1], self::$filter_names) || strpos($a_filter[1], 'no_filter') !== false) && strpos($a_filter[1], 'addon_') === false){
+				if (empty($a_filter) || ((!array_key_exists($a_filter[1], self::$filter_names) || strpos($a_filter[1], 'no_filter') !== false) && strpos($a_filter[1], 'addon_') === false)){
 					continue;
 				}
 

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.1
-Stable tag: 3.9.2
+Stable tag: 3.9.3
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -63,13 +63,19 @@ Our FAQs are available on our [support center](https://slimstat.freshdesk.com/su
 
 == Changelog ==
 
+= 3.9.3 =
+* [New] We're starting to work on a completely redesigned data layer, which will require less SQL resources and offer a much needed performance improvement. Stay tuned.
+* [New] Three new settings to turn off the tracker completely on specific links (internal and external), by class name, rel attribute or simply by URL.
+* [Update] MaxMind GeoLite IP has been updated to the latest version (2015-01-06).
+* [Fix] Bug affecting our add-ons setting page, in some specific circumstances (thank you, Erik).
+
 = 3.9.2 =
 * [New] Welcome our recommended partner, [ManageWP](https://managewp.com/?utm_source=A&utm_medium=Banner&utm_content=mwp_banner_25_300x250&utm_campaign=A&utm_mrl=2844). You will get a 10% discount on their products using our affiliation link.
-* [Fix] XSS Vulnerability introduced by the new Save Filters functionality (thank you, [Ryan](https://wpvulndb.com/vulnerabilities/7744))
+* [Fix] XSS Vulnerability introduced by the new Save Filters functionality (thank you, [Ryan](https://wpvulndb.com/vulnerabilities/7744)).
 
 = 3.9.1 =
 * [New] Quickly delete single pageviews in the Real-Time Log screen
-* [New] Option to fix an issue occurring when the DB server and the website are in different timezones. Please disable this option if your charts seem to be off.
+* [New] Option to fix an issue occurring when the DB server and the website are in different timezones. Please disable this option if your charts seem to be off!
 * [New] Using the new [WP Proxy CDN feature](https://github.com/jsdelivr/jsdelivr/issues/2632). Please contact us if you notice any problems with this new option, as this feature is still being tested.
 * [Update] Reintroduced the NO PANIC button under Settings > Maintenance > Miscellaneous
 * [Fix] Conflict with WP-Jalali, which forces date_i18n to return not western numerals but their Farsi representation
@@ -124,47 +130,10 @@ Our FAQs are available on our [support center](https://slimstat.freshdesk.com/su
 * [Fix] Outbound links from within the admin were not tracked as expected (thank you [mobilemindtech](https://wordpress.org/support/topic/outbound-links-problem-in-version-374))
 * [Fix] Firewall Fix add-on was not tracking the originating ip's country as expected (thank you, JeanLuc)
 
-= 3.7.5 =
-* [Fix] Some plugins are not considerate of the shared environment they use, and don't return data in the right format ;) We added some extra code to make sure the data Slimstat needs is of the correct type (thank you, [p30m](https://wordpress.org/support/topic/slim-stat-dosnt-work-after-wordpress-ugrade))
-* [Fix] Compatibility issue with our Firewall Fix add-on
-
-= 3.7.4 =
-* [Fix] Issue with menus when displayed in the admin bar (thank you all the users who pointed this out)
-
-= 3.7.3 =
-* [Note] A few people have asked us why they don't see the search keywords anymore, for the traffic coming from Google. Blame the NSA, Prism and... your government ;) [Read more here](https://wordpress.org/support/topic/incoming-search-terms)
-* [New] Slimstat now tracks server latency and page performance. Please be patient the first time you load the reports: the database is being upgraded to store this new info!
-* [New] Date and time formatting is now independent from the one used by WordPress
-* [Update] Autopurge is now disabled by default on new installs, since people have had issues with losing old data by mistake
-* [Update] Russian Localization (thank you, [Vitaly](http://tiny.cc/iHerbSpecials))
-* [Update] Real-Time Log legend has been moved to the top, for easy access (thank you, [scruffy1](https://wordpress.org/support/topic/suggestion))
-* [Fix] Visit ID were not being tracked if FORCE_SSL_ADMIN was enabled in wp_config, when the site was served over HTTP (thank you, [Pepe](https://wordpress.org/support/topic/session-grouping-doesnt-seem-to-work-anymore))
-
-= 3.7.2 =
-* [New] Added operator BETWEEN, to express filters like "country code BETWEEN f,g" and get reports for France and Ghana but not for Portugal. Or something like "screen resolution BETWEEN 1000,1300" to get data for visitors whose screen *width* is at least 1000 px and no more than 1300 px. Separate the two values in the range with a comma.
-* [New] A premium add-on to track all the cookies associated with the domain
-* [New] Notes regarding a specific pageview are now accessible under the Real-Time Log (little note/pencil icon next to the list of browser extensions). This will allow you to know things like prefetch requests, user id, spam, etc. If you have the Track Cookies add-on, here you will also find all the information about each user's cookies
-* [Fix] Counter on Posts and Pages screens was not working as expected
-* [Fix] Color-coded visits in the Real-Time log were not displayed correctly (thank you, Vitaly)
-
-= 3.7.1 =
-* [Note] Our Reports API (wp-slimstat-reports.php) does not extend wp-slimstat-admin anymore, for extra flexibility in building third-party solutions
-* [New] Added support for generating email reports
-* [Update] MaxMind's IP Database has been updated to the latest version (2014-09-04)
-* [Fix] Some settings could not be turned off, because of the Network Settings functionality (thank you, [LeonardShelby](http://wordpress.org/support/topic/cannot-disable-live-stream))
-
-= 3.7 =
-* [New] Japanese localization added (thank you, [h_a_l_f](http://wordpress.org/support/topic/japanese-localization))
-* [New] Added support for [SOV Languages](http://en.wikipedia.org/wiki/Subject%E2%80%93object%E2%80%93verb) (thank you, h_a_l_f)
-* [New] Added support for our Network Settings premium add-on
-* [Update] All the icons used in the admin are now optimized (thank you, [scruffy1](http://wordpress.org/support/topic/suggestion-79))
-* [Fix] Introduced some code optimizations (browser detection) that will solve the slow response time once and for all!
-* [Fix] Add-ons page was not accessible if menu was attached to the Admin Bar (thank you, h_a_l_f)
-
 == Special Thanks To ==
 
-* [Vitaly](http://www.visbiz.org/), who volunteered quite a lot of time for QA and testing, and provided the complete Russian localization
-* [Davide Tomasello](http://www.davidetomasello.it/), who provided great feedback and plenty of ideas to take this plugin to the next level
+* [Vitaly](http://www.visbiz.org/), who volunteers quite a lot of time for QA, testing, and for his Russian localization.
+* Davide Tomasello, who provided great feedback and plenty of ideas to take this plugin to the next level.
 
 == Supporters ==
 Slimstat is an Open Source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
