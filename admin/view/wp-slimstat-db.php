@@ -16,13 +16,6 @@ class wp_slimstat_db {
 	 * Initializes the environment, sets the filters
 	 */
 	public static function init($_filters = ''){
-		// Reset MySQL timezone settings, our dates and times are recorded using WP settings
-		
-		if (wp_slimstat::$options['reset_timezone'] == 'yes'){
-			wp_slimstat::$wpdb->query("SET @@session.time_zone = '+00:00'");
-			date_default_timezone_set('UTC');
-		}
-
 		// Decimal and thousand separators
 		if (wp_slimstat::$options['use_european_separators'] == 'no'){
 			self::$formats['decimal'] = '.';
@@ -103,7 +96,6 @@ class wp_slimstat_db {
 		}
 
 		if (empty(self::$filters_normalized['date']['interval']) && empty(self::$filters_normalized['date']['interval_hours']) && empty(self::$filters_normalized['date']['interval_minutes'])){
-
 			if (!empty(self::$filters_normalized['date']['minute'])){
 				self::$filters_normalized['utime']['start'] = mktime(
 					!empty(self::$filters_normalized['date']['hour'])?self::$filters_normalized['date']['hour']:0,
@@ -167,27 +159,25 @@ class wp_slimstat_db {
 			self::$filters_normalized['utime']['type'] = 'interval';
 
 			self::$filters_normalized['utime']['start'] = mktime(
-				!empty(self::$filters_normalized['date']['hour'])?self::$filters_normalized['date']['hour']:date_i18n('G'),
-				!empty(self::$filters_normalized['date']['minute'])?self::$filters_normalized['date']['minute']:date_i18n('i'),
+				!empty(self::$filters_normalized['date']['hour'])?self::$filters_normalized['date']['hour']:0,
+				!empty(self::$filters_normalized['date']['minute'])?self::$filters_normalized['date']['minute']:0,
 				0,
 				!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'),
 				!empty(self::$filters_normalized['date']['day'])?self::$filters_normalized['date']['day']:date_i18n('j'),
 				!empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y')
 			);
-			
+
 			$sign = (self::$filters_normalized['date']['interval_direction'] == 'plus')?'+':'-';
 
-			self::$filters_normalized['utime']['end'] = date('U', 
-				strtotime($sign.(
-					(!empty(self::$filters_normalized['date']['interval'])?intval(self::$filters_normalized['date']['interval']):0) * 1440 + 
-					(!empty(self::$filters_normalized['date']['interval_hours'])?intval(self::$filters_normalized['date']['interval_hours']):0) * 60 +
-					(!empty(self::$filters_normalized['date']['interval_minutes'])?intval(self::$filters_normalized['date']['interval_minutes']):0)
-				).' minutes', self::$filters_normalized['utime']['start'])
-			);
+			self::$filters_normalized['utime']['end'] = self::$filters_normalized['utime']['start'] + intval($sign.(
+					(!empty(self::$filters_normalized['date']['interval'])?intval(self::$filters_normalized['date']['interval'] + 1):0) * 86400 + 
+					(!empty(self::$filters_normalized['date']['interval_hours'])?intval(self::$filters_normalized['date']['interval_hours']):0) * 3600 +
+					(!empty(self::$filters_normalized['date']['interval_minutes'])?intval(self::$filters_normalized['date']['interval_minutes']):0) * 60
+				)) - 1;
 
 			// Swap boundaries if we're going back
 			if (self::$filters_normalized['date']['interval_direction'] == 'minus'){
-				list(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']) = array(self::$filters_normalized['utime']['end'], self::$filters_normalized['utime']['start']);
+				list(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']) = array(self::$filters_normalized['utime']['end'] + 86401, self::$filters_normalized['utime']['start'] + 86399);
 			}
 		}
 
@@ -216,43 +206,57 @@ class wp_slimstat_db {
 			}
 		}
 		
-		// Now let's translate our filters into SQL clauses
+		// Now let's translate our filters into SQL
 		self::$sql_filters = array(
 			'from' => array(
-				'browsers' => '',
-				'screenres' => '',
-				'content_info' => '',
-				'outbound' => '',
-				'all_tables' => '',
-				'all_other_tables' => ''
+				'tb' => '',
+				'tci' => '',
+				'tob' => '',
+				'tss' => '',
+
+				'all' => '',
+				'all_others' => ''
 			),
-			'where' => '',
-			'where_time_range' => ' AND (t1.dt BETWEEN '.self::$filters_normalized['utime']['start'].' AND '.self::$filters_normalized['utime']['end'].')'
+
+			'where' => array(
+				't1' => '',
+				'tb' => '',
+				'tci' => '',
+				'tob' => '',
+				'tss' => '',
+
+				'all' => '',
+				'time_range' => ' AND (t1.dt BETWEEN '.self::$filters_normalized['utime']['start'].' AND '.self::$filters_normalized['utime']['end'].')'
+			)
 		);
 
 		foreach (self::$filters_normalized['columns'] as $a_filter_column => $a_filter_data){
-			$a_filter_empty = '0';
-			
 			// Add-ons can set their own custom filters, which are ignored here
 			if (strpos($a_filter_column, 'addon_') !== false){
 				continue;
 			}
 
+			$filter_empty = '0';
+
+			// Table this column belongs to
+			$table_alias = self::get_table_alias($a_filter_column);
+
 			// Some columns are in separate tables, so we need to join them
-			switch (self::get_table_identifier($a_filter_column)){
-				case 'tb.':
-					self::$sql_filters['from']['browsers'] = "INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers tb ON t1.browser_id = tb.browser_id";
+			switch ($table_alias){
+				case 'tb':
+					self::$sql_filters['from'][$table_alias] = "INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers $table_alias ON t1.browser_id = $table_alias.browser_id";
 					break;
-				case 'tci.':
-					self::$sql_filters['from']['content_info'] = "INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info tci ON t1.content_info_id = tci.content_info_id";
+				case 'tci':
+					self::$sql_filters['from'][$table_alias] = "INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info $table_alias ON t1.content_info_id = $table_alias.content_info_id";
 					break;
-				case 'tss.':
-					self::$sql_filters['from']['screenres'] = "LEFT JOIN {$GLOBALS['wpdb']->base_prefix}slim_screenres tss ON t1.screenres_id = tss.screenres_id";
+				case 'tob':
+					self::$sql_filters['from'][$table_alias] = "LEFT JOIN {$GLOBALS['wpdb']->prefix}slim_outbound $table_alias ON (t1.id = $table_alias.id)";
 					break;
-				case 'tob.':
-					self::$sql_filters['from']['outbound'] = "LEFT JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON (t1.id = tob.id)";
+				case 'tss':
+					self::$sql_filters['from'][$table_alias] = "LEFT JOIN {$GLOBALS['wpdb']->base_prefix}slim_screenres $table_alias ON t1.screenres_id = $table_alias.screenres_id";
 					break;
 				default:
+					break;
 			}
 
 			// Some columns require a special treatment
@@ -260,70 +264,73 @@ class wp_slimstat_db {
 				case 'ip':
 				case 'other_ip':
 					$a_filter_column = "INET_NTOA($a_filter_column)";
-					$a_filter_empty = '0.0.0.0';
+					$filter_empty = '0.0.0.0';
 					break;
 				default:
-					$a_filter_column = self::get_table_identifier($a_filter_column).$a_filter_column;
+					$a_filter_column = $table_alias.'.'.$a_filter_column;
 					break;
 			}
 
 			switch ($a_filter_data[0]){
 				case 'is_not_equal_to':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column <> %s", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column <> %s", $a_filter_data[1]);
 					break;
 				case 'contains':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column LIKE %s", '%'.$a_filter_data[1].'%');
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column LIKE %s", '%'.$a_filter_data[1].'%');
 					break;
 				case 'includes_in_set':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND FIND_IN_SET(%s, $a_filter_column) > 0", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND FIND_IN_SET(%s, $a_filter_column) > 0", $a_filter_data[1]);
 					break;
 				case 'does_not_contain':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column NOT LIKE %s", '%'.$a_filter_data[1].'%');;
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column NOT LIKE %s", '%'.$a_filter_data[1].'%');;
 					break;
 				case 'starts_with':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column LIKE %s", $a_filter_data[1].'%');
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column LIKE %s", $a_filter_data[1].'%');
 					break;
 				case 'ends_with':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column LIKE %s", '%'.$a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column LIKE %s", '%'.$a_filter_data[1]);
 					break;
 				case 'sounds_like':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND SOUNDEX($a_filter_column) = SOUNDEX(%s)", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND SOUNDEX($a_filter_column) = SOUNDEX(%s)", $a_filter_data[1]);
 					break;
 				case 'is_empty':
-					self::$sql_filters['where'] .= " AND ($a_filter_column = '' OR $a_filter_column = '$a_filter_empty')";
+					self::$sql_filters['where'][$table_alias] .= " AND ($a_filter_column = '' OR $a_filter_column = '$filter_empty')";
 					break;
 				case 'is_not_empty':
-					self::$sql_filters['where'] .= " AND $a_filter_column <> '' AND $a_filter_column <> '$a_filter_empty'";
+					self::$sql_filters['where'][$table_alias] .= " AND $a_filter_column <> '' AND $a_filter_column <> '$filter_empty'";
 					break;
 				case 'is_greater_than':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column > %s", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column > %d", $a_filter_data[1]);
 					break;
 				case 'is_less_than':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column < %s", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column < %d", $a_filter_data[1]);
 					break;
 				case 'between':
 					$range = explode(',', $a_filter_data[1]);
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column BETWEEN %s AND %s", $range[0], $range[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column BETWEEN %d AND %d", $range[0], $range[1]);
 					break;
 				case 'matches':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column REGEXP %s", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column REGEXP %s", $a_filter_data[1]);
 					break;
 				case 'does_not_match':
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column NOT REGEXP %s", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column NOT REGEXP %s", $a_filter_data[1]);
 					break;
 				default:
-					self::$sql_filters['where'] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column = %s", $a_filter_data[1]);
+					self::$sql_filters['where'][$table_alias] .= $GLOBALS['wpdb']->prepare(" AND $a_filter_column = %s", $a_filter_data[1]);
 			}
 		}
-		self::$sql_filters['from']['all_other_tables'] = trim(self::$sql_filters['from']['browsers'].' '.self::$sql_filters['from']['screenres'].' '.self::$sql_filters['from']['content_info'].' '.self::$sql_filters['from']['outbound']);
-		self::$sql_filters['from']['all_tables'] = "{$GLOBALS['wpdb']->prefix}slim_stats t1 ".self::$sql_filters['from']['all_other_tables'];
+
+		self::$sql_filters['from']['all_others'] = trim(self::$sql_filters['from']['tb'].' '.self::$sql_filters['from']['tci'].' '.self::$sql_filters['from']['tob'].' '.self::$sql_filters['from']['tss']);
+		self::$sql_filters['from']['all'] = "{$GLOBALS['wpdb']->prefix}slim_stats t1 ".self::$sql_filters['from']['all_others'];
+
+		self::$sql_filters['where']['all'] = trim(self::$sql_filters['where']['t1'].' '.self::$sql_filters['where']['tb'].' '.self::$sql_filters['where']['tci'].' '.self::$sql_filters['where']['tob'].' '.self::$sql_filters['where']['tss']);
 	}
 	// end init
 
 	/**
 	 * Associates tables and their 'SQL aliases'
 	 */
-	public static function get_table_identifier($_field = 'id'){
+	public static function get_table_alias($_field = 'id'){
 		switch($_field){
 			case 'browser':
 			case 'version':
@@ -331,29 +338,29 @@ class wp_slimstat_db {
 			case 'type':
 			case 'platform':
 			case 'user_agent':
-				return 'tb.';
+				return 'tb';
 				break;
 			case 'resolution':
 			case 'colordepth':
-				return 'tss.';
+				return 'tss';
 				break;
 			case 'author':
 			case 'category':
 			case 'content_type':
 			case 'content_id':
-				return 'tci.';
+				return 'tci';
 				break;
 			case 'outbound_domain':
 			case 'outbound_resource':
 			case 'position':
-				return 'tob.';
+				return 'tob';
 				break;
 			default:
-				return 't1.';
+				return 't1';
 				break;
 		}	
 	}
-	// end get_table_identifier
+	// end get_table_alias
 
 	// The following methods retrieve the information from the database
 
@@ -362,8 +369,8 @@ class wp_slimstat_db {
 			SELECT COUNT(*) counthits
 				FROM (
 					SELECT t1.resource
-					FROM '.self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from('tci.content_type').'
-					WHERE t1.visit_id <> 0 AND t1.resource <> "" AND tci.content_type <> "404" '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
+					FROM '.self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from('tci.content_type').'
+					WHERE t1.visit_id <> 0 AND t1.resource <> "" AND tci.content_type <> "404" '.self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range'].'
 					GROUP BY visit_id
 					HAVING COUNT(visit_id) = 1
 				) as ts1',
@@ -375,8 +382,8 @@ class wp_slimstat_db {
 			SELECT COUNT(*) counthits
 				FROM (
 					SELECT resource, visit_id, dt
-					FROM '.self::$sql_filters['from']['all_tables'].'
-					WHERE visit_id > 0 AND resource <> "" '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
+					FROM '.self::$sql_filters['from']['all'].'
+					WHERE visit_id > 0 AND resource <> "" '.self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range'].'
 					GROUP BY visit_id
 					HAVING dt = MAX(dt)
 				) AS ts1',
@@ -387,16 +394,16 @@ class wp_slimstat_db {
 		$column = ($_distinct_column != '*')?"DISTINCT $_distinct_column":$_distinct_column;
 		return intval(self::get_var("
 			SELECT COUNT($column) counthits
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 ".($_use_filters?self::$sql_filters['from']['all_other_tables']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_join_tables).'
-			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$sql_filters['where']:'').' '.($_use_date_filters?self::$sql_filters['where_time_range']:''),
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 ".($_use_filters?self::$sql_filters['from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause.$_join_tables).'
+			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$sql_filters['where']['all']:'').' '.($_use_date_filters?self::$sql_filters['where']['time_range']:''),
 			'SUM(counthits) AS counthits'));
 	}
 
 	public static function count_outbound(){
 		return intval(self::get_var("
 			SELECT COUNT(outbound_id) counthits
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id ".self::$sql_filters['from']['all_other_tables']."
-			WHERE 1=1 ".self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'],
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id ".self::$sql_filters['from']['all_others']."
+			WHERE 1=1 ".self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range'],
 			'SUM(counthits) AS counthits'));
 	}
 
@@ -404,8 +411,8 @@ class wp_slimstat_db {
 		return intval(self::get_var("
 			SELECT COUNT(*) counthits FROM (
 				SELECT $_column
-				FROM ".self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_where_clause)."
-				WHERE $_where_clause ".self::$sql_filters['where'].' '.self::$sql_filters['where_time_range']."
+				FROM ".self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_where_clause)."
+				WHERE $_where_clause ".self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range']."
 				GROUP BY $_column
 				".(!empty($_having_clause)?"HAVING $_having_clause":'').')
 			AS ts1',
@@ -431,8 +438,8 @@ class wp_slimstat_db {
 		return self::get_results('
 			SELECT AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits FROM (
 				SELECT count(ip) counthits, visit_id
-				FROM '.self::$sql_filters['from']['all_tables'].'
-				WHERE visit_id > 0 '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
+				FROM '.self::$sql_filters['from']['all'].'
+				WHERE visit_id > 0 '.self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range'].'
 				GROUP BY visit_id
 			) AS ts1',
 			'blog_id',
@@ -444,8 +451,8 @@ class wp_slimstat_db {
 	public static function get_oldest_visit($_where_clause = '1=1', $_use_filters = true){
 		return self::get_var("
 			SELECT t1.dt
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 ".($_use_filters?self::$sql_filters['from']['all_other_tables']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
-			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$sql_filters['where']:'').'
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 ".($_use_filters?self::$sql_filters['from']['all_others']:'').' '.self::_add_filters_to_sql_from($_where_clause).'
+			WHERE '.(!empty($_where_clause)?$_where_clause:'1=1').' '.($_use_filters?self::$sql_filters['where']['all']:'').'
 			ORDER BY dt ASC
 			LIMIT 0,1',
 			'MIN(dt)');
@@ -454,8 +461,8 @@ class wp_slimstat_db {
 	public static function get_popular($_column = 't1.id', $_custom_where = '', $_more_columns = '', $_having_clause = '', $_as_column = ''){
 		return self::get_results("
 			SELECT $_column ".(!empty($_as_column)?'AS '.$_as_column:'')." $_more_columns, COUNT(*) counthits
-			FROM ".self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_column.$_custom_where.$_more_columns).'
-			WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range']."
+			FROM ".self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where.$_more_columns).'
+			WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range']."
 			GROUP BY $_column $_more_columns $_having_clause
 			ORDER BY counthits ".self::$filters_normalized['misc']['direction']."
 			LIMIT ".self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], 
@@ -468,8 +475,8 @@ class wp_slimstat_db {
 	public static function get_popular_outbound(){
 		return self::get_results("
 			SELECT tob.outbound_resource as resource, COUNT(*) counthits
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id ".self::$sql_filters['from']['browsers'].' '.self::$sql_filters['from']['screenres'].' '.self::$sql_filters['from']['content_info']."
-			WHERE (tob.type = 0 OR tob.type = 1) ".self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id ".self::$sql_filters['from']['tb'].' '.self::$sql_filters['from']['tss'].' '.self::$sql_filters['from']['tci']."
+			WHERE (tob.type = 0 OR tob.type = 1) ".self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range'].'
 			GROUP BY tob.outbound_resource 
 			ORDER BY counthits '.self::$filters_normalized['misc']['direction'].'
 			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
@@ -485,8 +492,8 @@ class wp_slimstat_db {
 			SELECT $column_for_select, ts1.maxid, COUNT(*) counthits
 			FROM (
 				SELECT $_column, $_max_min(t1.id) maxid
-				FROM ".self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
-				WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range']."
+				FROM ".self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
+				WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range']."
 				GROUP BY $_column $_having_clause
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 			(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'')."
@@ -503,8 +510,8 @@ class wp_slimstat_db {
 		if ($_column == 't1.id'){
 			return self::get_results('
 				SELECT t1.*'.(!empty($_join_tables)?', '.$_join_tables:'').'
-				FROM '.self::$sql_filters['from']['all_tables'].' '.(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
-				WHERE '.(empty($_custom_where)?"$_column <> 0 ":$_custom_where).' '.self::$sql_filters['where'].' '.($_use_date_filters?self::$sql_filters['where_time_range']:'').'
+				FROM '.self::$sql_filters['from']['all'].' '.(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
+				WHERE '.(empty($_custom_where)?"$_column <> 0 ":$_custom_where).' '.self::$sql_filters['where']['all'].' '.($_use_date_filters?self::$sql_filters['where']['time_range']:'').'
 				ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by).'
 				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
 				'*',
@@ -516,8 +523,8 @@ class wp_slimstat_db {
 				SELECT t1.*, '.(!empty($_join_tables)?$_join_tables:'ts1.maxid')."
 				FROM (
 					SELECT $_column, MAX(t1.id) maxid
-					FROM ".self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
-					WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where'].' '.($_use_date_filters?self::$sql_filters['where_time_range']:'')."
+					FROM ".self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
+					WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where']['all'].' '.($_use_date_filters?self::$sql_filters['where']['time_range']:'')."
 					GROUP BY $_column $_having_clause
 				) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
 				(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
@@ -531,8 +538,8 @@ class wp_slimstat_db {
 	public static function get_recent_outbound($_type = -1){
 		return self::get_results("
 			SELECT tob.outbound_id as visit_id, tob.outbound_domain, tob.outbound_resource as resource, tob.type, tob.notes, t1.ip, t1.other_ip, t1.user, 'local' as domain, t1.resource as referer, t1.country, tb.browser, tb.version, tb.platform, tob.dt
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON tob.id = t1.id INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers tb on t1.browser_id = tb.browser_id ".self::$sql_filters['from']['screenres'].' '.self::$sql_filters['from']['content_info'].'
-			WHERE '.(($_type != -1)?"tob.type = $_type":'tob.type > 1').' '.self::$sql_filters['where'].' '.self::$sql_filters['where_time_range'].'
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats t1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON tob.id = t1.id INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers tb on t1.browser_id = tb.browser_id ".self::$sql_filters['from']['tci'].' '.self::$sql_filters['from']['tss'].'
+			WHERE '.(($_type != -1)?"tob.type = $_type":'tob.type > 1').' '.self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range'].'
 			ORDER BY tob.dt '.self::$filters_normalized['misc']['direction'].'
 			LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
 			'blog_id, visit_id, outbound_domain, resource, type, notes, ip, other_ip, user, domain, referer, country, browser, platform, dt',
@@ -550,34 +557,34 @@ class wp_slimstat_db {
 				$previous['start'] = self::$filters_normalized['utime']['start'] - 3600;
 				$label_date_format = wp_slimstat::$options['time_format'];
 				$group_by = array('HOUR', 'MINUTE', 'i');
-				$values_in_interval = array(60, 60, 0); 
+				$values_in_interval = array(59, 59, 0, 60); 
 				break;
 			case 'd':
 				$previous['start'] = self::$filters_normalized['utime']['start'] - 86400;
 				$label_date_format = (self::$formats['decimal'] == '.')?'m/d':'d/m';
 				$group_by = array('DAY', 'HOUR', 'G');
-				$values_in_interval = array(24, 24, 0);
+				$values_in_interval = array(23, 23, 0, 3600);
 				break;
 			case 'Y':
 				$previous['start'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']-1);
 				$label_date_format = 'Y';
 				$group_by = array('YEAR', 'MONTH', 'n');
-				$values_in_interval = array(12, 12, 1);
+				$values_in_interval = array(12, 12, 1, 2678400);
 				break;
 			case 'interval':
 				$group_by = array('MONTH', 'DAY', 'j');
-				$values_in_interval = array(abs(self::$filters_normalized['date']['interval']), abs(self::$filters_normalized['date']['interval']), 0);
+				$values_in_interval = array(abs(self::$filters_normalized['date']['interval']) + 1, abs(self::$filters_normalized['date']['interval']) + 1, 0, 86400);
 				break;
 			default:
 				$previous['start'] = mktime(0, 0, 0, (!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'))-1, 1, !empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y'));
 				$label_date_format = 'm/Y';
 				$group_by = array('MONTH', 'DAY', 'j');
-				$values_in_interval = array(date('t', $previous['start']), date('t', self::$filters_normalized['utime']['start']), 1);
+				$values_in_interval = array(date('t', $previous['start']), date('t', self::$filters_normalized['utime']['start']), 1, 86400);
 				break;
 		}
 
 		// Custom intervals don't have a comparison chart ('previous' range)
-		$time_range = self::$sql_filters['where_time_range'];
+		$time_range = self::$sql_filters['where']['time_range'];
 		if (empty(self::$filters_normalized['date']['interval'])){
 			$time_range = 'AND (t1.dt BETWEEN '.$previous['start'].' AND '.$previous['end'].' OR t1.dt BETWEEN '.self::$filters_normalized['utime']['start'].' AND '.self::$filters_normalized['utime']['end'].')';
 		}
@@ -587,16 +594,16 @@ class wp_slimstat_db {
 
 		// Panel 4 has a slightly different structure
 		if(empty($_sql_from_where)){
-			$sql .= '	FROM '.self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause)."
-						WHERE 1=1 $time_range ".self::$sql_filters['where'].' '.$_custom_where_clause;
+			$sql .= '	FROM '.self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause)."
+						WHERE 1=1 $time_range ".self::$sql_filters['where']['all'].' '.$_custom_where_clause;
 		}
 		else{
-			$sql_no_placeholders = str_replace('[from_tables]', self::$sql_filters['from']['all_tables'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause), $_sql_from_where);
-			$sql_no_placeholders = str_replace('[where_clause]', '1=1 '.$time_range.' '.self::$sql_filters['where'].' '.$_custom_where_clause, $sql_no_placeholders);
+			$sql_no_placeholders = str_replace('[from_tables]', self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_data1.$_data2.$_custom_where_clause), $_sql_from_where);
+			$sql_no_placeholders = str_replace('[where_clause]', '1=1 '.$time_range.' '.self::$sql_filters['where']['all'].' '.$_custom_where_clause, $sql_no_placeholders);
 			$sql .= $sql_no_placeholders;
 		}
 
-		$group_by_string = "{$group_by[0]}(FROM_UNIXTIME(t1.dt)), {$group_by[1]}(FROM_UNIXTIME(t1.dt))";
+		$group_by_string = "{$group_by[0]}(CONVERT_TZ(FROM_UNIXTIME(t1.dt), @@session.time_zone, '+00:00')), {$group_by[1]}(CONVERT_TZ(FROM_UNIXTIME(t1.dt), @@session.time_zone, '+00:00'))";
 		$sql .= " GROUP BY $group_by_string";
 
 		// Get the data
@@ -612,13 +619,17 @@ class wp_slimstat_db {
 		$output['previous']['first_metric'] = array_fill($values_in_interval[2], $values_in_interval[0], 0);
 		$output['previous']['second_metric'] = array_fill($values_in_interval[2], $values_in_interval[0], 0);
 
-		for ($i = $values_in_interval[2]; $i < $values_in_interval[0]; $i++){
-			// Do not include dates in the future
 
-			if ((empty(self::$filters_normalized['date']['interval']) || date('Ymd', wp_slimstat_db::$filters_normalized['utime']['start'] + ( $i * 86400)) > date_i18n('Ymd')) && 
-				(!empty(self::$filters_normalized['date']['interval']) || $i > date_i18n($group_by[2]))){
+		$today_limit = floatval(date_i18n('Ymd.Hi'));
+		for ($i = $values_in_interval[2]; $i <= $values_in_interval[1]; $i++){
+			// Do not include dates in the future
+			
+			$floatval = floatval(date('Ymd.Hi', wp_slimstat_db::$filters_normalized['utime']['start'] + ( ($i - $values_in_interval[2]) * $values_in_interval[3])));
+			
+			if ($floatval > $today_limit){
 				continue;
 			}
+
 			$output['current']['first_metric'][$i] = 0;
 			$output['current']['second_metric'][$i] = 0;
 		}
@@ -630,7 +641,6 @@ class wp_slimstat_db {
 
 		// Rearrange the data and then format it for Flot
 		foreach ($results as $i => $a_result){
-			//$unix_datestamp = strtotime($a_result['datestamp'].' UTC');
 			$index = (!empty(self::$filters_normalized['date']['interval']))?floor(($a_result['dt'] - wp_slimstat_db::$filters_normalized['utime']['start'])/86400):gmdate($group_by[2], $a_result['dt']);
 
 			if (empty(self::$filters_normalized['date']['interval']) && gmdate(self::$filters_normalized['utime']['type'], $a_result['dt']) == gmdate(self::$filters_normalized['utime']['type'], $previous['start'])){
@@ -788,42 +798,18 @@ class wp_slimstat_db {
 		return wp_slimstat::$wpdb->get_var($_sql);
 	}
 
-/*
-	public static function datetime_offset_chart_filter($_index = 0){
-		// Each type has its own parameters
-		switch (self::$filters_normalized['utime']['type']){
-			case 'H':
-				return '';
-				break;
-			case 'd':
-				return 'fs%hour%5D=equals+'.date('H', self::$filters_normalized['utime']['current_start'] + $_index * 3600);
-				break;
-			case 'Y':
-				$previous['start'] = mktime(0, 0, 0, 1, 1, self::$filters_normalized['date']['year']-1);
-				$label_date_format = 'Y';
-				$group_by = array('YEAR', 'MONTH', 'n');
-				$values_in_interval = array(12, 12, 1);
-				break;
-			default:
-				return 'fs%day%5D=equals+'.date('d', self::$filters_normalized['utime']['current_start'] + $_index * 86400).;
-				break;
-		}
-
-	}
-*/
-
 	protected static function _add_filters_to_sql_from($_sql_tables = '', $_ignore_empty = false){
 		$sql_from = '';
-		if (($_ignore_empty || empty(self::$sql_filters['from']['browsers'])) && strpos($_sql_tables, 'tb.') !== false)
+		if (($_ignore_empty || empty(self::$sql_filters['from']['tb'])) && strpos($_sql_tables, 'tb.') !== false)
 			$sql_from .= " INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers tb ON t1.browser_id = tb.browser_id";
 
-		if (($_ignore_empty || empty(self::$sql_filters['from']['content_info'])) && strpos($_sql_tables, 'tci.') !== false)
+		if (($_ignore_empty || empty(self::$sql_filters['from']['tci'])) && strpos($_sql_tables, 'tci.') !== false)
 			$sql_from .=  " INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info tci ON t1.content_info_id = tci.content_info_id";
 
-		if (($_ignore_empty || empty(self::$sql_filters['from']['outbound'])) && strpos($_sql_tables, 'tob.') !== false)
+		if (($_ignore_empty || empty(self::$sql_filters['from']['tob'])) && strpos($_sql_tables, 'tob.') !== false)
 			$sql_from .=  " LEFT JOIN {$GLOBALS['wpdb']->prefix}slim_outbound tob ON t1.id = tob.id";
 
-		if (($_ignore_empty || empty(self::$sql_filters['from']['screenres'])) && strpos($_sql_tables, 'tss.') !== false)
+		if (($_ignore_empty || empty(self::$sql_filters['from']['tss'])) && strpos($_sql_tables, 'tss.') !== false)
 			$sql_from .=  " LEFT JOIN {$GLOBALS['wpdb']->base_prefix}slim_screenres tss ON t1.screenres_id = tss.screenres_id";
 		
 		return $sql_from;

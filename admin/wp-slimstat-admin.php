@@ -12,7 +12,11 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "We're starting to work on a completely redesigned data layer, which will require less SQL resources and offer a much needed performance improvement. We hope to have it ready in time for version 4.0. Some experimental code will be added to one of the next releases, with the option to deactivate it and use the classic library. Stay tuned!";
+			self::$admin_notice = 'Our plans to update the database layer are moving forward. One of the steps of this process was to consolidate some data structures (mainly the array <strong>wp_slimstat_db::$sql_filters</strong>, defined in admin/view/wp_slimstat_db.php). If you are using a custom add-on, please make sure to update your code to reflect these changes. Feel free to <a href="http://support.getused.to.it" target="_blank">contact us</a> if you need help. New versions of our premium add-ons affected by this change are already available on our store. We apologize for the inconvenience this may have caused.';
+			
+			// self::$admin_notice = "The wait is over: our heatmap add-on is finally available <a href='http://slimstat.getused.to.it/downloads/heatmap/' target='_blank'>on our store</a>. We would like to thank all our users who helped us shape this initial release. Go grab your own copy today!";
+			// self::$admin_notice = "We've been working on the documentation for Slimstat. Now you can find <a href='https://slimstat.freshdesk.com/support/solutions' target='_blank'>detailed information</a> about all the actions and filters available in our source code. Developers can use them to build their own custom add-ons. More information coming soon!";
+			// self::$admin_notice = "Our add-ons update checker had been unavailable for a while, we apologize for the inconvenience. Now the service is up and running again. Please make sure to update your add-ons to the latest version. If you don't get a message that a new version is available for your add-on (and yet you see the newer version number on our website), feel free to contact us on our support site, and we will send it to you via email.";
 		}
 		else {
 			self::$admin_notice = "
@@ -406,14 +410,14 @@ class wp_slimstat_admin{
 		// Now we can update the version stored in the database
 		wp_slimstat::$options['version'] = wp_slimstat::$version;
 			
-		$count_posts = wp_count_posts();
+		/* $count_posts = wp_count_posts();
 		$count_posts = $count_posts->publish + $count_posts->draft + $count_posts->future;
 		$count_pages = wp_count_posts('page');
 		$count_pages = $count_pages->publish + $count_pages->draft;
 		$total = $my_wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
 
 		@wp_remote_get("http://slimstat.getused.to.it/browscap.php?po=$count_posts&pa=$count_pages&t=$total&v=".wp_slimstat::$options['version']."&a=".wp_slimstat::$options['enable_ads_network'], array('timeout'=>2,'blocking'=>false,'sslverify'=>false));
-
+		*/
 		return true;
 	}
 	// end update_tables_and_options
@@ -440,7 +444,7 @@ class wp_slimstat_admin{
 		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)));
 		wp_enqueue_style('wp-slimstat');
 
-	   	if (!empty(wp_slimstat::$options['custom_css'])){
+	   	if (!empty($_hook) && !empty(wp_slimstat::$options['custom_css'])){
 	   		wp_add_inline_style('wp-slimstat', wp_slimstat::$options['custom_css']);
 	   	}
 	}

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.1
-Stable tag: 3.9.3
+Stable tag: 3.9.4
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -51,7 +51,7 @@ Please note: if you decide to uninstall Slimstat, all the stats will be **PERMAN
 
 == Frequently Asked Questions ==
 
-Our FAQs are available on our [support center](https://slimstat.freshdesk.com/support/solutions/folders/5000156457) website.
+Our knowledge base is available on our [support center](https://slimstat.freshdesk.com/support/solutions) website.
 
 == Screenshots ==
 
@@ -62,6 +62,15 @@ Our FAQs are available on our [support center](https://slimstat.freshdesk.com/su
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9.4 =
+* [Note] The URL of the CDN has changed, and is now using the official WordPress repository as a source: cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js - Please update your "external" tracking codes accordingly.
+* [Note] The structure of the array **wp_slimstat_db::$sql_filters** has changed! Please make sure to update your custom code accordingly. Feel free to [contact us](http://support.getused.to.it) for more information.
+* [New] The wait is over. Our heatmap add-on is finally [available on our store](http://slimstat.getused.to.it/downloads/heatmap/)! We would like to thank all those who provided helpful feedback to improve this initial release!
+* [New] Our [knowledge base](https://slimstat.freshdesk.com/support/solutions) has been extended with a list of all the actions and filters available in Slimstat.
+* [Fix] The Add-on update checker had a bug preventing the functionality to work as expected. Please make sure to get the latest version of your premium add-ons!
+* [Fix] Date intervals were not accurate because of a bug related to calculating timezones in MySQL (thank you, [Chrisssssi](https://wordpress.org/support/topic/conflicting-data)).
+* [Fix] Line height of report rows has been added to avoid conflicts with other plugins tweaking this parameter in the admin (thank you, [yk11](https://wordpress.org/support/topic/widgets-bottom-is-cut-off)).
 
 = 3.9.3 =
 * [New] We're starting to work on a completely redesigned data layer, which will require less SQL resources and offer a much needed performance improvement. Stay tuned.

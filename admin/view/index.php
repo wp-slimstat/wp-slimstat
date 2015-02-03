@@ -188,6 +188,9 @@
 						case 'slim_p2_01':
 							wp_slimstat_reports::report_header($a_box_id, 'wide chart', wp_slimstat_reports::$chart_tooltip, wp_slimstat_reports::chart_title(__('Human Visits', 'wp-slimstat')));
 							break;
+						case 'slim_p2_02':
+							wp_slimstat_reports::report_header($a_box_id, 'normal', __('Where not otherwise specified, the metrics in this report are referred to human visitors.','wp-slimstat'));
+							break;
 						case 'slim_p2_05':
 							wp_slimstat_reports::report_header($a_box_id, 'wide', __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.','wp-slimstat'));
 							break;
