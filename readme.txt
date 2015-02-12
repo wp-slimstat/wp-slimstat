@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
-Tested up to: 4.1
-Stable tag: 3.9.4
+Tested up to: 4.2
+Stable tag: 3.9.5
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -63,6 +63,12 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 
 == Changelog ==
 
+= 3.9.5 =
+* [Note] Some of our add-ons had a bug preventing them from properly checking for updates. Please [contact us](http://support.getused.to.it) if you need to obtain the latest version of your add-ons.
+* [Update] The Save button in the settings is now always visible, so that there is no need to scroll all the way to the bottom to save your options.
+* [Update] More data layer updates introduced in wp_slimstat_db. Keep an eye on your custom add-ons!
+* [Fix] Pagination was not working as expected when a date range was set in the filters (thank you, [nick-v](https://wordpress.org/support/topic/paging-is-broke))
+
 = 3.9.4 =
 * [Note] The URL of the CDN has changed, and is now using the official WordPress repository as a source: cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js - Please update your "external" tracking codes accordingly.
 * [Note] The structure of the array **wp_slimstat_db::$sql_filters** has changed! Please make sure to update your custom code accordingly. Feel free to [contact us](http://support.getused.to.it) for more information.
@@ -73,7 +79,7 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 * [Fix] Line height of report rows has been added to avoid conflicts with other plugins tweaking this parameter in the admin (thank you, [yk11](https://wordpress.org/support/topic/widgets-bottom-is-cut-off)).
 
 = 3.9.3 =
-* [New] We're starting to work on a completely redesigned data layer, which will require less SQL resources and offer a much needed performance improvement. Stay tuned.
+* [Note] We're starting to work on a completely redesigned data layer, which will require less SQL resources and offer a much needed performance improvement. Stay tuned.
 * [New] Three new settings to turn off the tracker completely on specific links (internal and external), by class name, rel attribute or simply by URL.
 * [Update] MaxMind GeoLite IP has been updated to the latest version (2015-01-06).
 * [Fix] Bug affecting our add-ons setting page, in some specific circumstances (thank you, Erik).

@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.9.4
+Version: 3.9.5
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.9.4';
+	public static $version = '3.9.5';
 	public static $options = array();
 
 	public static $wpdb = '';

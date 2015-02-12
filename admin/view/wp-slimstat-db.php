@@ -463,7 +463,7 @@ class wp_slimstat_db {
 			SELECT $_column ".(!empty($_as_column)?'AS '.$_as_column:'')." $_more_columns, COUNT(*) counthits
 			FROM ".self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where.$_more_columns).'
 			WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where']['all'].' '.self::$sql_filters['where']['time_range']."
-			GROUP BY $_column $_more_columns $_having_clause
+			GROUP BY $_column $_having_clause
 			ORDER BY counthits ".self::$filters_normalized['misc']['direction']."
 			LIMIT ".self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'], 
 			(!empty($_as_column)?$_as_column:$_column).' '.$_more_columns.', blog_id',
@@ -506,11 +506,11 @@ class wp_slimstat_db {
 			'MAX(maxid), SUM(counthits)');
 	}
 
-	public static function get_recent($_column = 't1.id', $_custom_where = '', $_join_tables = '', $_having_clause = '', $_order_by = '', $_use_date_filters = true){
+	public static function get_recent($_column = 't1.id', $_custom_where = '', $_more_columns = '', $_having_clause = '', $_order_by = '', $_use_date_filters = true){
 		if ($_column == 't1.id'){
 			return self::get_results('
-				SELECT t1.*'.(!empty($_join_tables)?', '.$_join_tables:'').'
-				FROM '.self::$sql_filters['from']['all'].' '.(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
+				SELECT t1.*'.(!empty($_more_columns)?', '.$_more_columns:'').'
+				FROM '.self::$sql_filters['from']['all'].' '.(!empty($_more_columns)?self::_add_filters_to_sql_from($_more_columns):'').'
 				WHERE '.(empty($_custom_where)?"$_column <> 0 ":$_custom_where).' '.self::$sql_filters['where']['all'].' '.($_use_date_filters?self::$sql_filters['where']['time_range']:'').'
 				ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by).'
 				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
@@ -520,17 +520,17 @@ class wp_slimstat_db {
 		}
 		else{
 			return self::get_results('
-				SELECT t1.*, '.(!empty($_join_tables)?$_join_tables:'ts1.maxid')."
+				SELECT t1.*, '.(!empty($_more_columns)?$_more_columns:'ts1.maxid')."
 				FROM (
 					SELECT $_column, MAX(t1.id) maxid
 					FROM ".self::$sql_filters['from']['all'].' '.self::_add_filters_to_sql_from($_column.$_custom_where).'
 					WHERE '.(empty($_custom_where)?"$_column <> '' ":$_custom_where).' '.self::$sql_filters['where']['all'].' '.($_use_date_filters?self::$sql_filters['where']['time_range']:'')."
 					GROUP BY $_column $_having_clause
 				) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id ".
-				(!empty($_join_tables)?self::_add_filters_to_sql_from($_join_tables):'').'
+				(!empty($_more_columns)?self::_add_filters_to_sql_from($_more_columns):'').'
 				ORDER BY '.(empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by).'
 				LIMIT '.self::$filters_normalized['misc']['start_from'].', '.self::$filters_normalized['misc']['limit_results'],
-				't1.*, '.(!empty($_join_tables)?$_join_tables:'ts1.maxid'),
+				't1.*, '.(!empty($_more_columns)?$_more_columns:'ts1.maxid'),
 				empty($_order_by)?'t1.dt '.self::$filters_normalized['misc']['direction']:$_order_by);
 		}
 	}
@@ -573,7 +573,7 @@ class wp_slimstat_db {
 				break;
 			case 'interval':
 				$group_by = array('MONTH', 'DAY', 'j');
-				$values_in_interval = array(abs(self::$filters_normalized['date']['interval']) + 1, abs(self::$filters_normalized['date']['interval']) + 1, 0, 86400);
+				$values_in_interval = array(abs(self::$filters_normalized['date']['interval']), abs(self::$filters_normalized['date']['interval']), 0, 86400);
 				break;
 			default:
 				$previous['start'] = mktime(0, 0, 0, (!empty(self::$filters_normalized['date']['month'])?self::$filters_normalized['date']['month']:date_i18n('n'))-1, 1, !empty(self::$filters_normalized['date']['year'])?self::$filters_normalized['date']['year']:date_i18n('Y'));
@@ -661,7 +661,7 @@ class wp_slimstat_db {
 		$filters_normalized = array(
 			'columns' => array(),
 			'date' => array(
-				'interval_direction' => 'minus',
+				'interval_direction' => '',
 				'is_past' => false
 			),
 			'misc' => $_init_misc?array(
@@ -757,7 +757,7 @@ class wp_slimstat_db {
 						$intval_filter = intval($a_filter[3]);
 						$filters_normalized['date'][$a_filter[1]] = abs($intval_filter);
 						if ($intval_filter < 0){
-							$filters_normalized['date'][interval_direction] = 'minus';
+							$filters_normalized['date']['interval_direction'] = 'minus';
 						}
 						break;
 					case 'interval_direction':

@@ -95,8 +95,8 @@
 				<input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
 				<br/>
 				<select name="interval_direction" class="short" id="slimstat-filter-interval_direction">
-					<option value="minus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], 'minus')?>>-</option>
-					<option value="plus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], 'plus')?>>+</option>
+					<option value="minus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], array('', 'minus')) ?>>-</option>
+					<option value="plus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], 'plus') ?>>+</option>
 				</select>
 				<input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('days', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval'])?wp_slimstat_db::$filters_normalized['date']['interval']:'' ?>">,
 				<input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('hours', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval_hours'])?wp_slimstat_db::$filters_normalized['date']['interval_hours']:'' ?>">:
@@ -109,7 +109,7 @@
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval']) ||
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval_hours']) ||
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval_minutes'])): ?>
-				<a class="slimstat-filter-link button-secondary" href="<?php echo wp_slimstat_reports::fs_url('minute equals 0&&&hour equals 0&&&day equals 0&&&month equals '.date_i18n('n').'&&&year equals 0&&&interval_direction equals future&&&interval equals 0&&&interval_hours equals 0&&&interval_minutes equals 0') ?>"><?php _e('Reset Filters','wp-slimstat') ?></a>
+				<a class="slimstat-filter-link button-secondary" href="<?php echo wp_slimstat_reports::fs_url('minute equals 0&&&hour equals 0&&&day equals 0&&&month equals '.date_i18n('n').'&&&year equals 0&&&interval_direction equals plus&&&interval equals 0&&&interval_hours equals 0&&&interval_minutes equals 0') ?>"><?php _e('Reset Filters','wp-slimstat') ?></a>
 				<?php endif ?>
 			</span>
 		</fieldset><!-- .slimstat-date-filters -->

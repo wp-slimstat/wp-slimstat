@@ -459,6 +459,11 @@
 .form-table #slimstat-filter-name, .form-table #slimstat-filter-operator, .form-table #slimstat-filter-value{
 	width: 20%;
 }
+.slimstat p.submit{
+	position: fixed;
+	right: 25px;
+	top: 30px;
+}
 
 /* Add-ons Page */
 .wp-list-table.slimstat-addons{

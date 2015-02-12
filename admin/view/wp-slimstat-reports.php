@@ -276,7 +276,7 @@ class wp_slimstat_reports {
 	}
 
 	public static function report_header($_id = 'p0', $_postbox_class = 'normal', $_tooltip = '', $_title = '', $_show_reload = true){
-		$header_buttons = $_show_reload?'<a class="button-ajax refresh slimstat-font-spin3" title="'.__('Refresh','wp-slimstat').'" href="'.wp_slimstat_reports::fs_url().'"></a>':'';
+		$header_buttons = $_show_reload?'<a class="button-ajax refresh slimstat-font-spin3" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>':'';
 		$header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_id);
 		$header_buttons = '<div class="slimstat-header-buttons">'.$header_buttons.'</div>';
 		
@@ -311,21 +311,27 @@ class wp_slimstat_reports {
 		$filters_normalized = wp_slimstat_db::parse_filters($_filters, false);
 		if (!empty($filters_normalized['columns'])){
 			foreach($filters_normalized['columns'] as $a_key => $a_filter){
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);
+				if (!empty($a_filter[1])){
+					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);
+				}
 			}
 		}
 
 		// Date ranges
 		if (!empty($filters_normalized['date'])){
 			foreach($filters_normalized['date'] as $a_key => $a_filter){
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
+				if (!empty($a_filter) || $a_filter === 0){
+					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
+				}
 			}
 		}
 
 		// Misc filters
 		if (!empty($filters_normalized['misc'])){
 			foreach($filters_normalized['misc'] as $a_key => $a_filter){
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
+				if (!empty($a_filter)){
+					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
+				}
 			}
 		}
 
@@ -421,7 +427,7 @@ class wp_slimstat_reports {
 		//$count_all_results = wp_slimstat_db::count_records();
 		switch($_type){
 			case 'recent':
-				$all_results = wp_slimstat_db::get_recent($column, $_args['custom_where'], $_args['join_tables'], $_args['having_clause'], $_args['order_by'], $_args['use_date_filters']);
+				$all_results = wp_slimstat_db::get_recent($column, $_args['custom_where'], $_args['more_columns'], $_args['having_clause'], $_args['order_by'], $_args['use_date_filters']);
 				break;
 			case 'popular':
 				$all_results = wp_slimstat_db::get_popular($column, $_args['custom_where'], $_args['more_columns'], $_args['having_clause'], $_args['as_column']);
@@ -1250,13 +1256,13 @@ class wp_slimstat_reports {
 				self::show_results('recent', $_report_id, 'country');
 				break;
 			case 'slim_p2_14':
-				self::show_results('recent', $_report_id, 'resolution', array('join_tables' => 'tss.*'));
+				self::show_results('recent', $_report_id, 'resolution', array('more_columns' => 'tss.*'));
 				break;
 			case 'slim_p2_15':
-				self::show_results('recent', $_report_id, 'platform', array('join_tables' => 'tb.*'));
+				self::show_results('recent', $_report_id, 'platform', array('more_columns' => 'tb.*'));
 				break;
 			case 'slim_p2_16':
-				self::show_results('recent', $_report_id, 'browser', array('join_tables' => 'tb.*'));
+				self::show_results('recent', $_report_id, 'browser', array('more_columns' => 'tb.*'));
 				break;
 			case 'slim_p2_17':
 				self::show_results('recent', $_report_id, 'language');
@@ -1319,7 +1325,7 @@ class wp_slimstat_reports {
 				self::show_results('popular', $_report_id, 'searchterms', array('total_for_percentage' => wp_slimstat_db::count_records('(t1.resource = "__l_s__" OR t1.resource = "" OR tci.content_type LIKE "%search%")'), 'custom_where' => '(t1.resource = "__l_s__" OR t1.resource = "" OR tci.content_type LIKE "%search%")'));
 				break;
 			case 'slim_p4_15':
-				self::show_results('recent', $_report_id, 'resource', array('custom_where' => '(tci.content_type = "category" OR tci.content_type = "tag")', 'join_tables' => 'tci.*'));
+				self::show_results('recent', $_report_id, 'resource', array('custom_where' => '(tci.content_type = "category" OR tci.content_type = "tag")', 'more_columns' => 'tci.*'));
 				break;
 			case 'slim_p4_16':
 				self::show_results('popular', $_report_id, 'resource', array('total_for_percentage' => wp_slimstat_db::count_records('(t1.resource LIKE "[404]%" OR tci.content_type LIKE "%404%")'), 'custom_where' => '(t1.resource LIKE "[404]%" OR tci.content_type LIKE "%404%")'));
