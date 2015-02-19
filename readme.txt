@@ -66,6 +66,7 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 = 3.9.6 =
 * [Note] The security of our users' data is our top priority, and for this reason we tightened our SQL queries and made our encryption key harder to guess. If you are using a caching plugin, please flush its cache so that the tracking code can be regenerated with the new key. Also, if you are using Slimstat to track external websites, please make sure to replace the tracking code with the new one available under Settings > Advanced. As usual, feel free to contact us if you have any questions.
 * [Note] Added un-minified js tracker to the repo, for those who would like to take a look at how things work.
+* [New] Introduced option to ignore bots when in Server-side mode.
 * [Update] Cleaned up the Settings/Filters screen by consolidating some options.
 * [Update] AmMap has been updated to version 3.13.1
 * [Update] MaxMind GeoLite IP has been updated to the latest version (2015-02-04).

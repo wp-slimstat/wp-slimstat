@@ -376,7 +376,7 @@ class wp_slimstat{
 		self::$browser = self::_get_browser();
 
 		// Are we ignoring bots?
-		if (self::$options['javascript_mode'] == 'yes' && self::$browser['type']%2 != 0){
+		if ((self::$options['javascript_mode'] == 'yes' || self::$options['ignore_bots'] == 'yes') && self::$browser['type']%2 != 0){
 			self::$stat['id'] = -211;
 			return $_argument;
 		}
@@ -1140,6 +1140,7 @@ class wp_slimstat{
 			'ignore_ip' => '',
 			'ignore_capabilities' => '',
 			'ignore_spammers' => $val_yes,
+			'ignore_bots' => $val_no,
 			'ignore_resources' => '',
 			'ignore_countries' => '',
 			'ignore_browsers' => '',
