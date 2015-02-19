@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 3.9.5
+Stable tag: 3.9.6
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -62,6 +62,16 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9.6 =
+* [Note] The security of our users' data is our top priority, and for this reason we tightened our SQL queries and made our encryption key harder to guess. If you are using a caching plugin, please flush its cache so that the tracking code can be regenerated with the new key. Also, if you are using Slimstat to track external websites, please make sure to replace the tracking code with the new one available under Settings > Advanced. As usual, feel free to contact us if you have any questions.
+* [Note] Added un-minified js tracker to the repo, for those who would like to take a look at how things work.
+* [Update] Cleaned up the Settings/Filters screen by consolidating some options.
+* [Update] AmMap has been updated to version 3.13.1
+* [Update] MaxMind GeoLite IP has been updated to the latest version (2015-02-04).
+* [Fix] Patched a rare SQL injection vulnerability exploitable using a bruteforce attack on the secret key (used to encrypt the data between client and server).
+* [Fix] Increased checks on SQL code that stores data in the database (maybe_insert_row).
+* [Fix] Report filters could not be removed after being set.
 
 = 3.9.5 =
 * [Note] Some of our add-ons had a bug preventing them from properly checking for updates. Please [contact us](http://support.getused.to.it) if you need to obtain the latest version of your add-ons.

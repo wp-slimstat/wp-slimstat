@@ -12,10 +12,11 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "We discovered a bug in our Export to Excel and User Overview add-ons, which prevents them from properly checking for updates, under certain circumstances. Please go to Slimstat > Add-ons to see what the current version available is, and then compare it with the version number you see in your Plugins admin screen. Feel free to <a href='http://support.getused.to.it/' target='_blank'>contact us</a>, if you need to obtain the latest version. Thank you for your cooperation.";
-			// self::$admin_notice = "The wait is over: our heatmap add-on is finally available <a href='http://slimstat.getused.to.it/downloads/heatmap/' target='_blank'>on our store</a>. We would like to thank all our users who helped us shape this initial release. Go grab your own copy today!";
-			// self::$admin_notice = "We've been working on the documentation for Slimstat. Now you can find <a href='https://slimstat.freshdesk.com/support/solutions' target='_blank'>detailed information</a> about all the actions and filters available in our source code. Developers can use them to build their own custom add-ons. More information coming soon!";
-			// self::$admin_notice = "Our add-ons update checker had been unavailable for a while, we apologize for the inconvenience. Now the service is up and running again. Please make sure to update your add-ons to the latest version. If you don't get a message that a new version is available for your add-on (and yet you see the newer version number on our website), feel free to contact us on our support site, and we will send it to you via email.";
+			self::$admin_notice = "The security of our users' data is our top priority, and for this reason we tightened our SQL queries and made our encryption key harder to guess. If you are using a caching plugin, please <strong>flush its cache</strong> so that the tracking code can be regenerated with the new key. Also, if you are using Slimstat to track external websites, please make sure to replace the tracking code with the new one available under Settings > Advanced. As usual, feel free to contact us if you have any questions.";
+
+			// 3.9.7 self::$admin_notice = "The wait is over: our heatmap add-on is finally available <a href='http://slimstat.getused.to.it/downloads/heatmap/' target='_blank'>on our store</a>. We would like to thank all our users who helped us shape this initial release. Go grab your own copy today! PS: have you noticed those new add-on overview videos on our website?";
+			// 3.9.8 self::$admin_notice = "We've been working on the documentation for Slimstat. Now you can find <a href='https://slimstat.freshdesk.com/support/solutions' target='_blank'>detailed information</a> about all the actions and filters available in our source code. Developers, use them to build your own custom add-ons! We are also adding video tours of our add-ons, and organizing the source code to make it easier to read and understand.";
+			// 3.9.9 self::$admin_notice = "Happy birthday, Slimstat. Nine years ago version 0.8.7 was released to the public, starting the unbelievable journey that has taken us here today. We would like to thank all the 25,000 users who appreciate and support our work in many great ways. We wouldn't have more than 1.3 million downloads, 700 5-star reviews, 16 add-ons, video tutorials, etc... if it weren't for you!";
 		}
 		else {
 			self::$admin_notice = "
@@ -406,17 +407,27 @@ class wp_slimstat_admin{
 		}
 		// --- END: Updates for version 3.8.4 ---
 
+		// --- Updates for version 3.9.6 ---
+		if (version_compare(wp_slimstat::$options['version'], '3.9.6', '<')){
+			// Consolidate some settings
+			$classes = wp_slimstat::string_to_array(wp_slimstat::$options['ignore_outbound_classes']);
+			$rel = wp_slimstat::string_to_array(wp_slimstat::$options['ignore_outbound_rel']);
+			$href = wp_slimstat::string_to_array(wp_slimstat::$options['ignore_outbound_href']);
+			wp_slimstat::$options['ignore_outbound_classes_rel_href'] = implode(',', array_merge($classes, $rel, $href));
+
+			$classes = wp_slimstat::string_to_array(wp_slimstat::$options['do_not_track_outbound_classes']);
+			$rel = wp_slimstat::string_to_array(wp_slimstat::$options['do_not_track_outbound_rel']);
+			$href = wp_slimstat::string_to_array(wp_slimstat::$options['do_not_track_outbound_href']);
+			wp_slimstat::$options['do_not_track_outbound_classes_rel_href'] = implode(',', array_merge($classes, $rel, $href));
+			
+			// More secure secret key
+			wp_slimstat::$options['secret'] = wp_hash(uniqid(time(), true));
+		}
+		// --- END: Updates for version 3.9.6 ---
+
 		// Now we can update the version stored in the database
 		wp_slimstat::$options['version'] = wp_slimstat::$version;
-			
-		/* $count_posts = wp_count_posts();
-		$count_posts = $count_posts->publish + $count_posts->draft + $count_posts->future;
-		$count_pages = wp_count_posts('page');
-		$count_pages = $count_pages->publish + $count_pages->draft;
-		$total = $my_wpdb->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
 
-		@wp_remote_get("http://slimstat.getused.to.it/browscap.php?po=$count_posts&pa=$count_pages&t=$total&v=".wp_slimstat::$options['version']."&a=".wp_slimstat::$options['enable_ads_network'], array('timeout'=>2,'blocking'=>false,'sslverify'=>false));
-		*/
 		return true;
 	}
 	// end update_tables_and_options

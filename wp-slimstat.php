@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.9.5
+Version: 3.9.6
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.9.5';
+	public static $version = '3.9.6';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -412,7 +412,9 @@ class wp_slimstat{
 		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
 
 		// Now let's save this information in the database
-		if (!empty($content_info)) self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id', array());
+		if (!empty($content_info)){
+			self::$stat['content_info_id'] = self::maybe_insert_row($content_info, $GLOBALS['wpdb']->base_prefix.'slim_content_info', 'content_info_id', array());
+		}
 		self::$stat['browser_id'] = self::maybe_insert_row(self::$browser, $GLOBALS['wpdb']->base_prefix.'slim_browsers', 'browser_id', array('user_agent' => self::$browser['user_agent']));
 		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
 
@@ -978,7 +980,7 @@ class wp_slimstat{
 
 		return ($_browser['platform'] = 'unknown');
 	}
-	// end os_version
+	// end _get_os_version
 
 	/**
 	 * Reads the cookie to get the visit_id and sets the variable accordingly
@@ -1032,22 +1034,32 @@ class wp_slimstat{
 	 * Stores the information (array) in the appropriate table (if needed) and returns the corresponding ID
 	 */
 	public static function maybe_insert_row($_data = array(), $_table = '', $_id_column = '', $_not_unique = array()){
-		if (empty($_data) || empty($_id_column) || empty($_table)) return -1;
-
-		$select_sql = "SELECT $_id_column FROM $_table WHERE ";
-		$data = array_diff($_data, $_not_unique);
-		foreach ($data as $a_key => $a_value){
-			$select_sql .= "$a_key = %s AND ";
+		if (empty($_data) || empty($_id_column) || empty($_table)){
+			return -1;
 		}
-		$select_sql = self::$wpdb->prepare(substr($select_sql, 0, -5), $data);
+
+		$data = array_diff($_data, $_not_unique);
+		if (empty($data)){
+			return -1;
+		}
+		
+		$select_sql = "SELECT $_id_column FROM $_table WHERE `".self::$wpdb->prepare(implode('` = %s AND `', array_keys($data)).'` = %s', $data);
 
 		// Let's see if this row is already in our lookup table
 		$id = self::$wpdb->get_var($select_sql);
+
+		// Something went wrong while trying to determine the ID of this entry in one of the lookup tables
+		if (!empty(self::$wpdb->last_error)){
+			return -1;
+		}
+
 		if (empty($id)){
 			$id = self::insert_row($_data, $_table);
 
 			// This may happen if the new content type was added just before performing the INSERT here above
-			if (empty($id)) $id = self::$wpdb->get_var($select_sql);
+			if (empty($id)){
+				$id = intval(self::$wpdb->get_var($select_sql));
+			}
 		}
 
 		return $id;
@@ -1058,10 +1070,12 @@ class wp_slimstat{
 	 * Stores the information (array) in the appropriate table and returns the corresponding ID
 	 */
 	public static function insert_row($_data = array(), $_table = ''){
-		if (empty($_data) || empty($_table)) return -1;
+		if (empty($_data) || empty($_table)){
+			return -1;
+		}
 
 		self::$wpdb->query(self::$wpdb->prepare("
-			INSERT IGNORE INTO $_table (".implode(", ", array_keys($_data)).') 
+			INSERT IGNORE INTO $_table (`".implode("`, `", array_keys($_data)).'`) 
 			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).")", $_data));
 
 		return intval(self::$wpdb->insert_id);
@@ -1090,7 +1104,7 @@ class wp_slimstat{
 
 		$options = array(
 			'version' => self::$version,
-			'secret' => md5(time()),
+			'secret' => wp_hash(uniqid(time(), true)),
 			'show_admin_notice' => 0,
 			
 			// General
@@ -1132,12 +1146,8 @@ class wp_slimstat{
 			'ignore_referers' => '',
 			'enable_outbound_tracking' => $val_yes,
 			'track_internal_links' => $val_no,
-			'ignore_outbound_classes' => '',
-			'ignore_outbound_rel' => '',
-			'ignore_outbound_href' => '',
-			'do_not_track_outbound_classes' => 'noslimstat,ab-item',
-			'do_not_track_outbound_rel' => '',
-			'do_not_track_outbound_href' => '',
+			'ignore_outbound_classes_rel_href' => '',
+			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'anonymize_ip' => $val_no,
 			'ignore_prefetch' => $val_yes,
 
@@ -1257,10 +1267,10 @@ class wp_slimstat{
 	public static function wp_slimstat_enqueue_tracking_script(){
 		if (self::$options['enable_cdn'] == 'yes'){
 			$schema = is_ssl()?'https':'http';
-			wp_register_script('wp_slimstat', $schema.'://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js', array(), null, true);
+			wp_register_script('wp_slimstat', $schema.'://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js', array(), null, true);
 		}
 		else{
-			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.js', __FILE__), array(), null, true);
+			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), array(), null, true);
 		}
 
 		// Pass some information to Javascript
@@ -1287,23 +1297,11 @@ class wp_slimstat{
 		if (self::$options['enable_javascript'] == 'yes' && self::$options['detect_smoothing'] == 'no'){
 			$params['detect_smoothing'] = 'false';
 		}
-		if (!empty(self::$options['ignore_outbound_classes'])){
-			$params['outbound_classes_to_ignore'] = str_replace(' ', '', self::$options['ignore_outbound_classes']);
+		if (!empty(self::$options['ignore_outbound_classes_rel_href'])){
+			$params['outbound_classes_rel_href_to_ignore'] = str_replace(' ', '', self::$options['ignore_outbound_classes_rel_href']);
 		}
-		if (!empty(self::$options['ignore_outbound_rel'])){
-			$params['outbound_rel_to_ignore'] = trim(self::$options['ignore_outbound_rel']);
-		}
-		if (!empty(self::$options['ignore_outbound_href'])){
-			$params['outbound_href_to_ignore'] = trim(self::$options['ignore_outbound_href']);
-		}
-		if (!empty(self::$options['do_not_track_outbound_classes'])){
-			$params['outbound_classes_to_not_track'] = str_replace(' ', '', self::$options['do_not_track_outbound_classes']);
-		}
-		if (!empty(self::$options['do_not_track_outbound_rel'])){
-			$params['outbound_rel_to_not_track'] = trim(self::$options['do_not_track_outbound_rel']);
-		}
-		if (!empty(self::$options['do_not_track_outbound_href'])){
-			$params['outbound_href_to_not_track'] = trim(self::$options['do_not_track_outbound_href']);
+		if (!empty(self::$options['do_not_track_outbound_classes_rel_href'])){
+			$params['outbound_classes_rel_href_to_not_track'] = str_replace(' ', '', self::$options['do_not_track_outbound_classes_rel_href']);
 		}
 		
 		$params = apply_filters('slimstat_js_params', $params);

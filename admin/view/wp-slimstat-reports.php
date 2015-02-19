@@ -311,9 +311,7 @@ class wp_slimstat_reports {
 		$filters_normalized = wp_slimstat_db::parse_filters($_filters, false);
 		if (!empty($filters_normalized['columns'])){
 			foreach($filters_normalized['columns'] as $a_key => $a_filter){
-				if (!empty($a_filter[1])){
-					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);
-				}
+				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);
 			}
 		}
 
@@ -329,9 +327,7 @@ class wp_slimstat_reports {
 		// Misc filters
 		if (!empty($filters_normalized['misc'])){
 			foreach($filters_normalized['misc'] as $a_key => $a_filter){
-				if (!empty($a_filter)){
-					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
-				}
+				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
 			}
 		}
 
