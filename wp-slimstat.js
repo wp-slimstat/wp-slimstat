@@ -411,8 +411,9 @@ SlimStat.add_event(window, 'load', function() {
 				}
 
 				// Do not invoke the callback or don't track links with given classes
-				if (cur_link.slimstat_track_me && to_ignore.length > 0){
+				if (cur_link.slimstat_track_me && (to_ignore.length > 0 || to_not_track.length > 0)){
 					classes_current_link = (typeof cur_link.className != 'undefined' && cur_link.className.length > 0) ? cur_link.className.split(' '):[];
+
 					for (var cl = 0; cl < classes_current_link.length; cl++){
 						if (SlimStat.in_array_substring(classes_current_link[cl], to_ignore)) {
 							cur_link.slimstat_callback = false;
