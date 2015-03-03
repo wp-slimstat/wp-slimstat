@@ -12,11 +12,10 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "The security of our users' data is our top priority, and for this reason we tightened our SQL queries and made our encryption key harder to guess. If you are using a caching plugin, please <strong>flush its cache</strong> so that the tracking code can be regenerated with the new key. Also, if you are using Slimstat to track external websites, please make sure to replace the tracking code with the new one available under Settings > Advanced. As usual, feel free to contact us if you have any questions.";
+			self::$admin_notice = "The wait is finally over: our heatmap add-on is now available <a href='http://slimstat.getused.to.it/downloads/heatmap/' target='_blank'>on our store</a>. We would like to thank all our users who helped us shape this extension. Go grab your own copy today! PS: have you noticed those new add-on overview videos on our website?";
 
-			// 3.9.7 self::$admin_notice = "The wait is over: our heatmap add-on is finally available <a href='http://slimstat.getused.to.it/downloads/heatmap/' target='_blank'>on our store</a>. We would like to thank all our users who helped us shape this initial release. Go grab your own copy today! PS: have you noticed those new add-on overview videos on our website?";
 			// 3.9.8 self::$admin_notice = "We've been working on the documentation for Slimstat. Now you can find <a href='https://slimstat.freshdesk.com/support/solutions' target='_blank'>detailed information</a> about all the actions and filters available in our source code. Developers, use them to build your own custom add-ons! We are also adding video tours of our add-ons, and organizing the source code to make it easier to read and understand.";
-			// 3.9.9 self::$admin_notice = "Happy birthday, Slimstat. Nine years ago version 0.8.7 was released to the public, starting the unbelievable journey that has taken us here today. We would like to thank all the 25,000 users who appreciate and support our work in many great ways. We wouldn't have more than 1.3 million downloads, 700 5-star reviews, 16 add-ons, video tutorials, etc... if it weren't for you!";
+			// 3.9.9 self::$admin_notice = "Happy birthday, Slimstat. Nine years ago version 0.8.7 was released to the public, starting the unbelievable journey that has taken us here today. We would like to thank all the 25,000 users who appreciate and support our work in many great ways. We wouldn't have more than 1.3 million downloads, 4.8 out of 5 overall rating, 16 add-ons, video tutorials, etc... if it weren't for you!";
 		}
 		else {
 			self::$admin_notice = "

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 3.9.6
+Stable tag: 3.9.7
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -62,6 +62,14 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9.7 =
+* [Note] The uninstall routine now deletes the archive table (wp_slim_stats_archive) along with all the other tables (thank you, KalleL)
+* [New] Some users who are using our "track external sites" feature, were getting an error saying that no 'Access-Control-Allow-Origin' header was present on the requested resource. We've added a new option under Settings > Advanced that allows you to specify what domains to allow. Please refer to [this page](http://www.w3.org/TR/cors/#security) for more information about the security implications of allowing an external domain to submit AJAX requests to your server.
+* [Fix] The option to delete pageviews based on given filters (Settings > Maintenance > Data Maintenance) was not working as expected (thank you, [kentahayashi](https://wordpress.org/support/topic/cant-delete-pageviews-on-version-396))
+* [Fix] The uninstall script was not deleting all the tables as expected (thank you, [KalleL](https://wordpress.org/support/topic/unable-to-uninstall-wp-slimstat-from-db))
+* [Fix] We've implemented [Marc-Alexandre's new recommendations](http://blog.sucuri.net/2015/02/security-advisory-wp-slimstat-3-9-5-and-lower.html) to further tighten up our SQL queries.
+* [Fix] The new encryption key was affecting the way external sites could be tracked. You can now track non-WP sites again: please make sure to copy and paste the new tracking code (Settings > Advanced) right before your closing BODY tag at the end of your pages.
 
 = 3.9.6 =
 * [Note] The security of our users' data is our top priority, and for this reason we tightened our SQL queries and made our encryption key harder to guess. If you are using a caching plugin, please flush its cache so that the tracking code can be regenerated with the new key. Also, if you are using Slimstat to track external websites, please make sure to replace the tracking code with the new one available under Settings > Advanced. As usual, feel free to contact us if you have any questions.

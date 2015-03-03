@@ -28,8 +28,8 @@ switch ($config_tabs[$current_tab-1]){
 			'add_posts_column' => array( 'description' => __('Add Stats to Posts and Pages','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Add a new column to the Edit Posts/Pages screens, with the number of hits per post.','wp-slimstat') ),
 
 			'general_database_header' => array('description' => __('Database','wp-slimstat'), 'type' => 'section_header'),
-			'auto_purge_delete' => array( 'description' => __('Delete records','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('If database space is not an issue, you can decide to archive older records in another table, instead of deleting them. This way performance is preserved, but you will still be able to access your data at a later time, if needed.','wp-slimstat') ),
-			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Clean-up log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').(wp_get_schedule('wp_slimstat_purge')?' '.__('Next clean-up on','wp-slimstat').' <strong>'.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'</strong>. '.sprintf(__('Entries logged on or before %s will be permanently deleted.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$options['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') )
+			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Clean-up log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').(wp_get_schedule('wp_slimstat_purge')?' '.__('Next clean-up on','wp-slimstat').' <strong>'.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'</strong>. '.sprintf(__('Entries logged on or before %s will be archived or deleted according to the option here below.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$options['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') ),
+			'auto_purge_delete' => array( 'description' => __('Delete records','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('If DB space is not an issue, you can decide to archive older records in another table, instead of deleting them. This way performance is preserved, but you will still be able to access your data at a later time, if needed. Please note that the archive table (<code>wp_slim_stats_archive</code>) will be <strong>deleted</strong> along with all the other tables, when Slimstat is uninstalled. Make sure to backup your data before you proceed.','wp-slimstat') )
 		);
 
 		// If autopurge = 0, we can unschedule our cron job. If autopurge > 0 and the hook was not scheduled, we schedule it
@@ -215,7 +215,6 @@ switch ($config_tabs[$current_tab-1]){
 		}
 		break;
 	case __('Advanced','wp-slimstat'):
-		$this_domain = parse_url(get_bloginfo('url'));
 		$encoded_ci = 'YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=';
 		$encoded_ci = $encoded_ci.'.'.md5($encoded_ci.wp_slimstat::$options['secret']);
 
@@ -228,7 +227,7 @@ switch ($config_tabs[$current_tab-1]){
 			'extensions_to_track' => array('description' => __('Extensions to Track','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the file extensions that you want to be treated as Downloads. Please note that links pointing to external resources (i.e. PDFs on a different website) are considered Downloads and not Outbound Links (and tracked as such), if their extension matches one of the ones listed here below.",'wp-slimstat')),
 
 			'advanced_external_pages_header' => array('description' => __('External Pages','wp-slimstat'), 'type' => 'section_header'),
-			'external_pages_script' => array('type' => 'static', 'skip_update' => 'yes', 'description' => __('Add the following code to all the non-WP pages you want to track','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
+			'external_pages_script' => array('type' => 'static', 'skip_update' => 'yes', 'description' => __('Add the following code to all the non-WP pages you want to track, right before the closing BODY tag','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
 /* &lt;![CDATA[ */
 var SlimStatParams = {
 	ajaxurl: "'.admin_url('admin-ajax.php').'",
@@ -238,7 +237,7 @@ var SlimStatParams = {
 /* ]]&gt; */
 &lt;/script&gt;
 &lt;script type="text/javascript" src="http://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js"&gt;&lt;/script&gt;'),
-
+			'external_domains' => array('description' => __('Allow External Domains','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme, separated by commas) you would like to allow. For example: <code>http://my.domain.ext</code> (no trailing slash). Please see <a href='http://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.",'wp-slimstat')),
 			'advanced_misc_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
 			'show_sql_debug' => array('description' => __('Debug Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Display the SQL queries used to retrieve the data.','wp-slimstat')),
 			'ip_lookup_service' => array('description' => __('IP Lookup','wp-slimstat'), 'type' => 'text', 'long_description' => __('Customize the Geolocation service to be used in the reports.','wp-slimstat')),

@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.9.6
+Version: 3.9.7
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.9.6';
+	public static $version = '3.9.7';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -49,6 +49,9 @@ class wp_slimstat{
 		// Hook a DB clean-up routine to the daily cronjob
 		add_action('wp_slimstat_purge', array(__CLASS__, 'wp_slimstat_purge'));
 
+		// Allow external domains on CORS requests
+		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
+
 		// Enable the tracker (both server- and client-side)
 		if (!is_admin() || self::$options['track_admin_pages'] == 'yes'){
 			// Allow add-ons to turn off the tracker based on other conditions
@@ -66,7 +69,9 @@ class wp_slimstat{
 			// Slimstat tracks screen resolutions, outbound links and other client-side information using javascript
 			if ((self::$options['enable_javascript'] == 'yes' || self::$options['javascript_mode'] == 'yes') && self::$options['is_tracking'] == 'yes' && $is_tracking_filter_js){
 				add_action($action_to_hook, array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
-				if (self::$options['track_users'] == 'yes') add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
+				if (self::$options['track_users'] == 'yes'){
+					add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
+				}
 			}
 
 			if (self::$options['enable_ads_network'] == 'yes'){
@@ -236,8 +241,19 @@ class wp_slimstat{
 			}
 		}
 
+		// Information about this resource
+		$content_info = (is_array(self::$data_js) && isset(self::$data_js['ci']))?unserialize(base64_decode(self::$data_js['ci'])):self::_get_content_info();
+		if (!is_array($content_info)) $content_info = array('content_type' => 'unknown');
+
 		// We want to record both hits and searches (performed through the site search form)
-		if (is_array(self::$data_js) && isset(self::$data_js['res'])){
+
+		if ($content_info['content_type'] == 'external'){
+			self::$stat['resource'] = $_SERVER['HTTP_REFERER'];
+			self::$stat['domain'] = '';
+			self::$stat['referer'] = '';
+		}
+		elseif (is_array(self::$data_js) && isset(self::$data_js['res'])){
+
 			$parsed_permalink = parse_url(base64_decode(self::$data_js['res']));
 			self::$stat['searchterms'] = self::_get_search_terms($referer);
 
@@ -255,6 +271,7 @@ class wp_slimstat{
 			self::$stat['searchterms'] = str_replace('\\', '', $_REQUEST['s']);
 			self::$stat['resource'] = ''; // Mark the resource to remember that this is a 'local search'
 		}
+
 		if (strpos(self::$stat['resource'], 'wp-admin/admin-ajax.php')!==false || (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-')!==false)){
 			return $_argument;
 		}
@@ -367,10 +384,6 @@ class wp_slimstat{
 				self::$stat['notes'] .= 'pre:yes;';
 			}
 		}
-
-		// Information about this resource
-		$content_info = (is_array(self::$data_js) && isset(self::$data_js['ci']))?unserialize(base64_decode(self::$data_js['ci'])):self::_get_content_info();
-		if (!is_array($content_info)) $content_info = array('content_type' => 'unknown');
 
 		// Detect user agent
 		self::$browser = self::_get_browser();
@@ -1042,8 +1055,14 @@ class wp_slimstat{
 		if (empty($data)){
 			return -1;
 		}
-		
-		$select_sql = "SELECT $_id_column FROM $_table WHERE `".self::$wpdb->prepare(implode('` = %s AND `', array_keys($data)).'` = %s', $data);
+
+		// Remove unwanted characters (SQL injections, anyone?)
+		$data_keys = array();
+		foreach (array_keys($data) as $a_key){
+			$data_keys[] = sanitize_key($a_key);
+		}
+
+		$select_sql = "SELECT $_id_column FROM $_table WHERE ".self::$wpdb->prepare(implode(' = %s AND ', $data_keys).' = %s', $data);
 
 		// Let's see if this row is already in our lookup table
 		$id = self::$wpdb->get_var($select_sql);
@@ -1074,13 +1093,32 @@ class wp_slimstat{
 			return -1;
 		}
 
+		// Remove unwanted characters (SQL injections, anyone?)
+		$data_keys = array();
+		foreach (array_keys($_data) as $a_key){
+			$data_keys[] = sanitize_key($a_key);
+		}
+
 		self::$wpdb->query(self::$wpdb->prepare("
-			INSERT IGNORE INTO $_table (`".implode("`, `", array_keys($_data)).'`) 
+			INSERT IGNORE INTO $_table (".implode(", ", $data_keys).') 
 			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).")", $_data));
 
 		return intval(self::$wpdb->insert_id);
 	}
 	// end insert_row
+
+	/**
+	 * Opens given domains during CORS requests to admin-ajax.php
+	 */
+	public static function open_cors_admin_ajax( $_allowed_origins ){
+		$exploded_domains = self::string_to_array( self::$options['external_domains'] );
+
+		if (!empty($exploded_domains) && !empty($exploded_domains[0])){
+			$_allowed_origins = array_merge($_allowed_origins, $exploded_domains);
+		}
+
+		return $_allowed_origins;
+	}
 
 	/**
 	 * Converts a series of comma separated values into an array
@@ -1165,6 +1203,7 @@ class wp_slimstat{
 			'extend_session' => $val_no,
 			'enable_cdn' => $val_yes,
 			'extensions_to_track' => 'pdf,doc,xls,zip',
+			'external_domains' => '',
 			'show_sql_debug' => $val_no,
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'custom_css' => '',

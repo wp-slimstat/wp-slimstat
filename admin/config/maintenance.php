@@ -24,8 +24,8 @@ if (!empty($_REQUEST['action'])){
 			if (key_exists($_POST['f'], wp_slimstat_reports::$dropdown_filter_names)){
 				$rows_affected = wp_slimstat::$wpdb->query('
 					DELETE t1.* 
-					FROM '.wp_slimstat_db::$sql_filters['from']['all_tables'].'
-					WHERE 1=1 '.wp_slimstat_db::$sql_filters['where']);
+					FROM '.wp_slimstat_db::$sql_filters['from']['all'].'
+					WHERE 1=1 '.wp_slimstat_db::$sql_filters['where']['all']);
 			}
 			wp_slimstat_admin::show_alert_message(intval($rows_affected).' '.__('records deleted from your database.','wp-slimstat'), 'updated below-h2');
 			break;
