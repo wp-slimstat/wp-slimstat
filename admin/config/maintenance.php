@@ -1,6 +1,8 @@
 <?php
 // Avoid direct access to this piece of code
-if (!function_exists('add_action') || (!empty($_POST) && !check_admin_referer('maintenance_wp_slimstat','maintenance_wp_slimstat_nonce'))) exit(0);
+if (!function_exists('add_action') || (!empty($_POST) && !check_admin_referer('maintenance_wp_slimstat','maintenance_wp_slimstat_nonce'))){
+	exit(0);
+}
 
 include_once(dirname(dirname(__FILE__))."/view/wp-slimstat-reports.php");
 wp_slimstat_reports::init();
@@ -202,7 +204,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 	</tr>
 	<tr>
 		<td colspan="2">
-			<strong><?php _e("Here below you can find the current configuration string for Slimstat. You can update your settings by pasting a new string here below and clicking on Import.",'wp-slimstat') ?></strong>
+			<strong><?php _e("Here below you can find the current configuration string for Slimstat. You can update your settings by pasting a new string inside the text area and clicking the Import button.",'wp-slimstat') ?></strong>
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />
@@ -210,6 +212,16 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-secondary"
 					onclick="return(confirm('<?php _e('Are you sure you want to OVERWRITE your current settings?','wp-slimstat'); ?>'))">
 			</form>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('Debugging','wp-slimstat') ?></td>
+	</tr>
+	<tr>
+		<th scope="row"><?php _e('Tracker Error Code','wp-slimstat') ?></th>
+		<td>
+			<?php echo is_array(wp_slimstat::$options['last_tracker_error'])?'<code>'.wp_slimstat::$options['last_tracker_error'][0].'</code> '.wp_slimstat::$options['last_tracker_error'][1].', '.__('recorded on','wp-slimstat').' '.date_i18n(wp_slimstat::$options['date_format'], wp_slimstat::$options['last_tracker_error'][2], true).' '.__('at','wp-slimstat').' '.date_i18n(wp_slimstat::$options['time_format'],  wp_slimstat::$options['last_tracker_error'][2], true):__('No Errors so far','wp-slimstat'); ?>
+			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. Please include this code when sending a support request.','wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr>
