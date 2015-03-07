@@ -68,7 +68,7 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_browser_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers DROP INDEX browser_all_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres DROP INDEX screenres_all_idx");
-			wp_slimstat_admin::show_alert_message(__('Indexing has been successfully disabled. Enjoy the extra database space you just gained!','wp-slimstat'), 'updated below-h2');
+			wp_slimstat_admin::show_alert_message(__('Indexing has been successfully disabled. Enjoy the extra database space!','wp-slimstat'), 'updated below-h2');
 			break;
 		case 'import-settings':
 			$new_options = @unserialize(stripslashes($_POST['import-slimstat-settings']));
@@ -118,7 +118,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 			
 			echo '<tr '.(($i%2==0)?'class="alternate"':'').">
 					<th scope='row'>{$a_table['Name']}</th>
-					<td>".$a_table['Data_length_with_suffix'].'<br/>'.number_format($a_table['Rows'], 0).' '.__('records','wp-slimstat').'</td>
+					<td>".$a_table['Data_length_with_suffix'].' ('.number_format($a_table['Rows'], 0).' '.__('records','wp-slimstat').')</td>
 				  </tr>';
 		}
 	?>
@@ -162,39 +162,46 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 		</td>
 	</tr>
 	<tr class="alternate">
-		<th scope="row"><?php _e('Truncate Tables','wp-slimstat') ?></th>
-		<td>
+		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=truncate-table"
 				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY DELETE ALL the records from your database?','wp-slimstat'); ?>'))"><?php _e('Delete All Records','wp-slimstat'); ?></a>
+		</th>
+		<td>
 			<span class="description"><?php _e('Erase all the information collected so far by Slimstat, including the archive. This operation <strong>does not</strong> reset your settings.','wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr>
-		<th scope="row"><?php _e('Restore archive','wp-slimstat') ?></th>
-		<td>
+		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-archived-records"
-				onclick="return(confirm('<?php _e('Are you sure you want to restore all the archived pageviews?','wp-slimstat'); ?>'))"><?php _e("Get 'em back",'wp-slimstat'); ?></a>
+				onclick="return(confirm('<?php _e('Are you sure you want to restore all the archived pageviews?','wp-slimstat'); ?>'))"><?php _e("Restore Archive",'wp-slimstat'); ?></a>
+		</th>
+		<td>
 			<span class="description"><?php _e("Move all the archived pageviews back to the main Slimstat table. Please note that, unless you disabled the daily purge, this data will be archived again at the next scheduled clean-up.",'wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr class="alternate">
-		<th scope="row"><?php _e('Empty Archive','wp-slimstat') ?></th>
-		<td>
+		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=truncate-archive"
 				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY DELETE ALL the records from your archive?','wp-slimstat'); ?>'))"><?php _e('Delete Archive','wp-slimstat'); ?></a>
+		</th>
+		<td>
 			<span class="description"><?php _e("Erase all the archived records. This operation cannot be undone.",'wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr>
-		<th scope="row"><?php _e('Performance','wp-slimstat') ?></th>
-		<?php if (empty($check_index)): ?>	
-		<td>
+		<?php if (empty($check_index)): ?>
+		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-indexes"><?php _e("Improve Performance",'wp-slimstat'); ?></a>
+		</th>
+		<td>
+			
 			<span class="description"><?php _e("Please note that you will need about 30% more DB space to store the extra information required.",'wp-slimstat') ?></span>
 		</td>
 		<?php else: ?>
-		<td>
+		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=deactivate-indexes"><?php _e('Save DB Space','wp-slimstat'); ?></a>
+		</th>
+		<td>
 			<span class="description"><?php _e("Please note that by removing table indexes, Slimstat's performance will be affected.",'wp-slimstat') ?></span>
 		</td>
 		<?php endif ?>
@@ -220,7 +227,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 	<tr>
 		<th scope="row"><?php _e('Tracker Error Code','wp-slimstat') ?></th>
 		<td>
-			<?php echo is_array(wp_slimstat::$options['last_tracker_error'])?'<code>'.wp_slimstat::$options['last_tracker_error'][0].'</code> '.wp_slimstat::$options['last_tracker_error'][1].', '.__('recorded on','wp-slimstat').' '.date_i18n(wp_slimstat::$options['date_format'], wp_slimstat::$options['last_tracker_error'][2], true).' '.__('at','wp-slimstat').' '.date_i18n(wp_slimstat::$options['time_format'],  wp_slimstat::$options['last_tracker_error'][2], true):__('No Errors so far','wp-slimstat'); ?>
+			<?php echo is_array(wp_slimstat::$options['last_tracker_error'])?'<code>'.wp_slimstat::$options['last_tracker_error'][0].' '.wp_slimstat::$options['last_tracker_error'][1].'</code> '.__('recorded on','wp-slimstat').' '.date_i18n(wp_slimstat::$options['date_format'], wp_slimstat::$options['last_tracker_error'][2], true).' '.__('at','wp-slimstat').' '.date_i18n(wp_slimstat::$options['time_format'],  wp_slimstat::$options['last_tracker_error'][2], true):__('No Errors so far','wp-slimstat'); ?>
 			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. Please include this code when sending a support request.','wp-slimstat') ?></span>
 		</td>
 	</tr>

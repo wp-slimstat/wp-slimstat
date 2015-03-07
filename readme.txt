@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 3.9.7
+Stable tag: 3.9.7.1
 
 == Description ==
 Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
@@ -62,6 +62,8 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 3.9.7.1 =
+* The team who manages the WordPress Plugin Repository notified us that since the [MaxMind GeoLite library](http://dev.maxmind.com/geoip/legacy/geolite/) used by Slimstat to geolocate visitors is not released under the GNU General Public License (or compatible), it violates the repository guidelines, and cannot be shipped with the plugin any longer. We were required to remove the code and alter the plugin so that this functionality becomes optional. We apologize for the inconvenience, and even if we really tried hard to convince the repo administrators of our good intentions, we are deactivating the geolocation functionality starting from now. We are already at work to find an alternative solution that satisfies the repo's rules and regulations. Stay tuned.
 
 = 3.9.7 =
 * [Note] The uninstall routine now deletes the archive table (wp_slim_stats_archive) along with all the other tables (thank you, KalleL)
