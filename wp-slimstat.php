@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.9.7.1
+Version: 3.9.8
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.9.7.1';
+	public static $version = '3.9.8';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -489,7 +489,7 @@ class wp_slimstat{
 	// end slimtrack
 
 	/**
-	 * Searches for country associated to a given IP address
+	 * Searches for the country code associated to a given IP address
 	 */
 	public static function get_country($_ipnum = 0){
 		$float_ipnum = (float)sprintf("%u", $_ipnum);
@@ -501,39 +501,8 @@ class wp_slimstat{
 			($float_ipnum >= 3232235521 && $float_ipnum <= 3232301055) ){ // 192.168.0.1 - 192.168.255.255
 				return 'xy';
 		}
-		
-		$country_codes = array("","ap","eu","ad","ae","af","ag","ai","al","am","cw","ao","aq","ar","as","at","au","aw","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","fi","fj","fk","fm","fo","fr","sx","ga","gb","gd","ge","gf","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","in","io","iq","ir","is","it","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","st","sv","sy","sz","tc","td","tf","tg","th","tj","tk","tm","tn","to","tl","tr","tt","tv","tw","tz","ua","ug","um","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","rs","za","zm","me","zw","a1","a2","o1","ax","gg","im","je","bl","mf","bq","ss","o1");
-		if (!$handle = fopen(WP_PLUGIN_DIR."/wp-slimstat/databases/maxmind.dat", "rb")){
-			return 'xx';
-		}
 
-		$offset = 0;
-		for ($depth = 31; $depth >= 0; --$depth) {
-			if (fseek($handle, 6 * $offset, SEEK_SET) != 0) return 'xx';
-			$buf = fread($handle, 6);
-			$x = array(0,0);
-			for ($i = 0; $i < 2; ++$i) {
-				for ($j = 0; $j < 3; ++$j) {
-					$x[$i] += ord(substr($buf, 3 * $i + $j, 1)) << ($j * 8);
-				}
-			}
-
-			if ($_ipnum & (1 << $depth)) {
-				if ($x[1] >= 16776960 && !empty($country_codes[$x[1] - 16776960])) {
-					fclose($handle);
-					return $country_codes[$x[1] - 16776960];
-				}
-				$offset = $x[1];
-			} else {
-				if ($x[0] >= 16776960 && !empty($country_codes[$x[0] - 16776960])) {
-					fclose($handle);
-					return $country_codes[$x[0] - 16776960];
-				}
-				$offset = $x[0];
-			}
-		}
-		fclose($handle);
-		return 'xx';
+		return apply_filters('slimstat_get_country', 'xx', $_ipnum);
 	}
 	// end get_country
 
@@ -1182,6 +1151,8 @@ class wp_slimstat{
 			'enable_javascript' => $val_yes,
 			'javascript_mode' => $val_yes,
 			'add_posts_column' => $val_no,
+			'posts_column_day_interval' => 30,
+			'posts_column_pageviews' => $val_yes,
 			'use_separate_menu' => $val_yes,
 			'auto_purge_delete' => $val_yes,
 			'auto_purge' => 0,
