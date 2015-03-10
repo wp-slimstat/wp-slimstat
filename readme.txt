@@ -16,6 +16,14 @@ Stable tag: 3.9.8
 * Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.getused.to.it/) if you would like to share your localization.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
+= Track countries by IP Address =
+Starting from Slimstat 3.9.8, we removed the functionality that allows the tracker to identify a visitor's country based on his IP address.
+The team who manages the WordPress Plugin Repository notified us that since the [MaxMind GeoLite library](http://dev.maxmind.com/geoip/legacy/geolite/)
+used by our plugin to geolocate visitors is released under the Creative Commons BY-SA 3.0 license, it violates the repository guidelines, and cannot
+be bundled with the code. We were required to remove it and alter the plugin so that this functionality becomes optional. By default, your visitors' country
+will be set to Unknown. You can download the geolocation DB as a [separate add-on](http://slimstat.getused.to.it/downloads/get-country/) on our website, free of charge,
+to restore this feature. Don't forget to enter your license key in the corresponding field under Slimstat > Add-ons, to receive free updates!
+
 = What are people saying about Slimstat? =
 * One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
 * Thanks you for such an excellent plugin. I am using it to kick Jetpack out of all the wordpress installations that I manage for myself and others - [robertwagnervt](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
