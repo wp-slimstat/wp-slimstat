@@ -7,7 +7,7 @@ Tested up to: 4.2
 Stable tag: 3.9.8
 
 == Description ==
-Visit our [website](http://slimstat.getused.to.it/) for more information and to [watch our introductory videos](http://slimstat.getused.to.it/features/video-tutorials/).
+[youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
 
 = Key Features =
 * Real-time activity log, server latency, heatmaps, email reports, export data to Excel, and much more
