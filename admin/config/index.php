@@ -67,7 +67,6 @@ switch ($config_tabs[$current_tab-1]){
 			
 			'reports_miscellaneous_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
 			'show_complete_user_agent_tooltip' => array('description' => __('Show User Agent','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see the browser name or a complete user agent string when hovering on browser icons.','wp-slimstat')),
-			'no_maxmind_warning' => array('description' => __('Hide MaxMind Warning','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Hide the warning message related to the geolocation functionality not being installed.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
 			'enable_sov' => array('description' => __('Enable SOV','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese.','wp-slimstat'))
 		);
 		break;

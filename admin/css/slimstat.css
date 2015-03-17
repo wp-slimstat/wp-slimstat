@@ -6,6 +6,9 @@
 [id^=slim_] a.slimstat-delete-entry{
 	color: #bbb;
 }
+.slimstat-float-right{
+	float: right;
+}
 
 /* Admin Notice */
 .slimstat-notice{
@@ -14,9 +17,6 @@
 .slimstat-notice span{
 	float: left;
 	width: 97%;
-}
-#slimstat-hide-admin-notice{
-	float: right;
 }
 .slimstat-notice .fixed-height {
 	height: 120px;
@@ -174,15 +174,19 @@
 
 /* Single Report: Header and Header Buttons - Pagination */
 [id^=slim_] p.pagination{
-	background-color: #c0c0c0;
-	color: #fff;
+	background-color: #e0e0e0;
+	border-bottom: 1px solid #cde;
+	border-top: 1px solid #cde;
+	color: #444;
+	line-height: 1em;
+	min-height: 5px;
 }
 [id^=slim_] p.pagination a{
-	color: #fff;
+	color: #444;
 	float: right;
 }
 [id^=slim_] p.pagination a:hover{
-	text-shadow: 0 0 3px #000;
+	text-shadow: 0 0 2px #000;
 }
 
 /* Single Report: Inside */
@@ -408,8 +412,7 @@
 	content: "\f160";
 }
 #slimstat-message p{
-	font-size: 16px;
-	line-height: .8em;
+	line-height: 1em;
 }
 #slimstat-message a{
 	color: #fc0;
