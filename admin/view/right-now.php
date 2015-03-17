@@ -12,9 +12,9 @@ $plugin_url = plugins_url('', dirname(__FILE__));
 // Set the filters
 $tables_to_join = 'tb.browser,tb.version,tb.platform,tb.css_version,tb.type,tb.user_agent,tci.content_type,tci.category,tci.author,tci.content_id';
 wp_slimstat_db::$filters_normalized['misc']['limit_results'] = wp_slimstat::$options['number_results_raw_data'];
-if (wp_slimstat::$options['include_outbound_links_right_now'] == 'yes'){
+//if (wp_slimstat::$options['include_outbound_links_right_now'] == 'yes'){
 	$tables_to_join .= ',tob.outbound_domain,tob.outbound_resource';
-}
+//}
 
 // Report Header
 if (empty($_POST['report_id'])){

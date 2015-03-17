@@ -126,8 +126,11 @@
 		<input type="hidden" name="fs[<?php echo $a_key ?>]" class="slimstat-post-filter" value="equals <?php echo htmlspecialchars($a_value) ?>"/>
 		<?php endif; endforeach; ?>
 	</form>
-
 	<?php
+		if (!file_exists(wp_slimstat::$maxmind_path) && wp_slimstat::$options['no_maxmind_warning'] != 'yes'){
+			wp_slimstat_admin::show_alert_message(sprintf(__("Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.",'wp-slimstat'), self::$config_url.'7'), 'wp-ui-notification below-h2');
+		}
+
 		$filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']);
 		if (!empty($filters_html)){
 			echo "<div id='slimstat-current-filters'>$filters_html</div>";

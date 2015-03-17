@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 3.9.8
+Stable tag: 3.9.8.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -48,12 +48,13 @@ Visit [our website](http://slimstat.getused.to.it/addons/) for a list of availab
 
 == Installation ==
 
-0. **If you are upgrading from 2.8.4 or earlier, you MUST first install version 3.0 (deactivate/activate) and then upgrade to the latest release available**
+0. **If you are upgrading from 2.8.4 or earlier, you MUST first install [version 3.0](https://downloads.wordpress.org/plugin/wp-slimstat.3.0.zip) (deactivate/activate) and then upgrade to the latest release available**
 1. In your WordPress admin, go to Plugins > Add New
 2. Search for WP Slimstat
-3. Click on **Install Now** under WP Slimstat
+3. Click on **Install Now** under WP Slimstat and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-5. If your `wp-admin` folder is not publicly accessible, make sure to check the [FAQs](http://wordpress.org/extend/plugins/wp-slimstat/faq/) to see if there's anything else you need to do
+5. Go to Slimstat > Settings > Maintenance tab > MaxMind IP to Country section and click on "Install GeoLite DB" to detect your visitors' countries based on their IP addresses
+6. If your `wp-admin` folder is not publicly accessible, make sure to check the [FAQs](http://wordpress.org/extend/plugins/wp-slimstat/faq/) to see if there's anything else you need to do
 
 Please note: if you decide to uninstall Slimstat, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
 
@@ -70,6 +71,12 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9.8.1 =
+* [Note] After further discussing with the repo moderators the incompatibility issue regarding the license under which MaxMind GeoLite is released, we were able to implement a much easier way to enable the geolocation functionality in Slimstat. There's no need to download a separate plugin anymore! Just go to Slimstat > Settings > Maintenance tab, and click on Install GeoLite DB. Of course, you can always deactivate this feature by clicking on the corresponding button under the Maintenance tab.
+* [Note] If you had downloaded and installed our Get Country add-on, you can now *uninstall* it from your server. We apologize for any inconvenience this might have caused.
+* [New] A warning message is now displayed on the reports screens to remind you to install the GeoLite database. You can hide this message by enabling the corresponding option under Slimstat > Settings > Reports tab > Miscellaneous section.
+* [Update] Some of the Settings screens have been cleaned up and reorganized
 
 = 3.9.8 =
 * [Note] The team who manages the WordPress Plugin Repository notified us that since the [MaxMind GeoLite library](http://dev.maxmind.com/geoip/legacy/geolite/) used by Slimstat to geolocate visitors is released under the Creative Commons BY-SA 3.0 license, it violates the repository guidelines, and cannot be bundled with the plugin. We were required to remove the code and alter the plugin so that this functionality becomes optional. We apologize for the inconvenience. However, the only immediate consequence is that your visitors' country will not be identified; everything else will still work as usual. You can download the geolocation DB as a [separate add-on](http://slimstat.getused.to.it/downloads/get-country/) on our store, free of charge. Don't forget to enter your license key in the corresponding field under Slimstat > Add-ons, to receive free updates!

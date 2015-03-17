@@ -9,6 +9,74 @@ wp_slimstat_reports::init();
 
 if (!empty($_REQUEST['action'])){
 	switch ($_REQUEST['action']){
+		case 'activate-indexes':
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX stats_resource_idx(resource(20))");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX stats_browser_idx(browser_id)");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD INDEX browser_all_idx(browser,version,platform,css_version,type)");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD INDEX screenres_all_idx(resolution,colordepth,antialias)");
+			wp_slimstat_admin::show_alert_message(__('Congrats! Slimstat is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			break;
+
+		case 'deactivate-indexes':
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_resource_idx");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_browser_idx");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers DROP INDEX browser_all_idx");
+			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres DROP INDEX screenres_all_idx");
+			wp_slimstat_admin::show_alert_message(__('Indexing has been disabled. Enjoy the extra database space!','wp-slimstat'), 'wp-ui-highlight below-h2');
+			break;
+
+		case 'delete-records':
+			$rows_affected = 0;
+			if (key_exists($_POST['f'], wp_slimstat_reports::$dropdown_filter_names)){
+				$rows_affected = wp_slimstat::$wpdb->query('
+					DELETE t1.* 
+					FROM '.wp_slimstat_db::$sql_filters['from']['all'].'
+					WHERE 1=1 '.wp_slimstat_db::$sql_filters['where']['all']);
+			}
+			wp_slimstat_admin::show_alert_message(intval($rows_affected).' '.__('records deleted from your database.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			break;
+
+		case 'delete-maxmind':
+			@unlink(wp_slimstat::$maxmind_path);
+			wp_slimstat_admin::show_alert_message(__('The geolocation database has been uninstalled from your server.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			break;
+
+		case 'download-maxmind':
+			$error = wp_slimstat::download_maxmind_database();
+
+			if (!empty($error)){
+				wp_slimstat_admin::show_alert_message($error, 'wp-ui-notification below-h2');
+			}
+			else {
+				wp_slimstat_admin::show_alert_message(__('The geolocation database has been installed on your server.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			}
+			break;
+
+		case 'import-settings':
+			$new_options = @unserialize(stripslashes($_POST['import-slimstat-settings']));
+			$new_options = array_intersect_key($new_options, wp_slimstat::$options);
+			if (!empty($new_options)){
+				foreach ($new_options as $a_option_name => $a_option_value){
+					wp_slimstat::$options[$a_option_name] = $a_option_value;
+				}
+			}
+			break;
+
+		case 'restore-archived-records':
+			wp_slimstat::$wpdb->query("
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (ip, other_ip, user, language, country, domain, referer, resource, searchterms, browser_id, screenres_id, content_info_id, plugins, notes, visit_id, server_latency, page_performance, dt)
+				SELECT tsa.ip, tsa.other_ip, tsa.user, tsa.language, tsa.country, tsa.domain, tsa.referer, tsa.resource, tsa.searchterms, tsa.browser_id, tsa.screenres_id, tsa.content_info_id, tsa.plugins, tsa.notes, tsa.visit_id, tsa.server_latency, tsa.page_performance, tsa.dt
+				FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
+			wp_slimstat::$wpdb->query("DELETE tsa FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
+			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
+			wp_slimstat_admin::show_alert_message(__('All the archived records were successfully restored.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			break;
+
+		case 'restore-views':
+			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%slim%'");
+			wp_slimstat_admin::show_alert_message(__('Your reports were successfully restored to their default arrangement.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			break;
+
 		case 'switch-engine':
 			$have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 			if ($have_innodb[0]['Value'] != 'YES') return;
@@ -19,67 +87,25 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ENGINE = InnoDB");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_content_info ENGINE = InnoDB");
 			
-			wp_slimstat_admin::show_alert_message(__('Your Slimstat tables have been successfully converted to InnoDB.','wp-slimstat'), 'updated below-h2');
+			wp_slimstat_admin::show_alert_message(__('Your Slimstat tables have been successfully converted to InnoDB.','wp-slimstat'), 'wp-ui-highlight below-h2');
 			break;
-		case 'delete-records':
-			$rows_affected = 0;
-			if (key_exists($_POST['f'], wp_slimstat_reports::$dropdown_filter_names)){
-				$rows_affected = wp_slimstat::$wpdb->query('
-					DELETE t1.* 
-					FROM '.wp_slimstat_db::$sql_filters['from']['all'].'
-					WHERE 1=1 '.wp_slimstat_db::$sql_filters['where']['all']);
-			}
-			wp_slimstat_admin::show_alert_message(intval($rows_affected).' '.__('records deleted from your database.','wp-slimstat'), 'updated below-h2');
+
+		case 'truncate-archive':
+			wp_slimstat::$wpdb->query("DELETE tsa FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
+			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
+			wp_slimstat_admin::show_alert_message(__('All the archived records were successfully deleted.','wp-slimstat'), 'wp-ui-highlight below-h2');
 			break;
+
 		case 'truncate-table':
 			wp_slimstat::$wpdb->query("DELETE tob FROM {$GLOBALS['wpdb']->prefix}slim_outbound tob");
 			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_outbound");
 			wp_slimstat::$wpdb->query("DELETE t1 FROM {$GLOBALS['wpdb']->prefix}slim_stats t1");
 			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
-			wp_slimstat_admin::show_alert_message(__('All the records were successfully deleted.','wp-slimstat'), 'updated below-h2');
+			wp_slimstat_admin::show_alert_message(__('All the records were successfully deleted.','wp-slimstat'), 'wp-ui-highlight below-h2');
 			break;
-		case 'truncate-archive':
-			wp_slimstat::$wpdb->query("DELETE tsa FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
-			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
-			wp_slimstat_admin::show_alert_message(__('All the archived records were successfully deleted.','wp-slimstat'), 'updated below-h2');
-			break;
-		case 'restore-archived-records':
-			wp_slimstat::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (ip, other_ip, user, language, country, domain, referer, resource, searchterms, browser_id, screenres_id, content_info_id, plugins, notes, visit_id, server_latency, page_performance, dt)
-				SELECT tsa.ip, tsa.other_ip, tsa.user, tsa.language, tsa.country, tsa.domain, tsa.referer, tsa.resource, tsa.searchterms, tsa.browser_id, tsa.screenres_id, tsa.content_info_id, tsa.plugins, tsa.notes, tsa.visit_id, tsa.server_latency, tsa.page_performance, tsa.dt
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
-			wp_slimstat::$wpdb->query("DELETE tsa FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
-			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
-			wp_slimstat_admin::show_alert_message(__('All the archived records were successfully restored.','wp-slimstat'), 'updated below-h2');
-			break;
-		case 'restore-views':
-			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%slim%'");
-			wp_slimstat_admin::show_alert_message(__('Your reports were successfully restored to their default arrangement.','wp-slimstat'), 'updated below-h2');
-			break;
-		case 'activate-indexes':
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX stats_resource_idx(resource(20))");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX stats_browser_idx(browser_id)");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers ADD INDEX browser_all_idx(browser,version,platform,css_version,type)");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres ADD INDEX screenres_all_idx(resolution,colordepth,antialias)");
-			wp_slimstat_admin::show_alert_message(__('Congrats! Slimstat is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.','wp-slimstat'), 'updated below-h2');
-			break;
-		case 'deactivate-indexes':
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_resource_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX stats_browser_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_browsers DROP INDEX browser_all_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}slim_screenres DROP INDEX screenres_all_idx");
-			wp_slimstat_admin::show_alert_message(__('Indexing has been successfully disabled. Enjoy the extra database space!','wp-slimstat'), 'updated below-h2');
-			break;
-		case 'import-settings':
-			$new_options = @unserialize(stripslashes($_POST['import-slimstat-settings']));
-			$new_options = array_intersect_key($new_options, wp_slimstat::$options);
-			if (!empty($new_options)){
-				foreach ($new_options as $a_option_name => $a_option_value){
-					wp_slimstat::$options[$a_option_name] = $a_option_value;
-				}
-			}
-			break;
+
 		default:
+			break;
 	}
 }
 
@@ -99,6 +125,24 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 
 <table class="form-table widefat">
 <tbody>
+	<tr>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('MaxMind IP to Country','wp-slimstat') ?></td>
+	</tr>
+	<tr>
+		<th scope="row">
+			<?php if (!file_exists(wp_slimstat::$maxmind_path)): ?>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=download-maxmind"
+				onclick="return(confirm('<?php _e('Do you want to download and install the geolocation database from MaxMind\'s server?','wp-slimstat'); ?>'))"><?php _e("Install GeoLite DB",'wp-slimstat'); ?></a>
+			<?php else: ?>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=delete-maxmind"
+				onclick="return(confirm('<?php _e('Do you want to uninstall the geolocation database?','wp-slimstat'); ?>'))"><?php _e("Uninstall GeoLite DB",'wp-slimstat'); ?></a>
+			<?php endif; ?>
+		</th>
+		<td>
+			<span class="description"><?php _e("The <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind GeoLite library</a> used to geolocate visitors is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality.",'wp-slimstat') ?></span>
+		</td>
+			
+	</tr>
 	<tr>
 		<td colspan="2" class="slimstat-options-section-header"><?php _e('Database Information','wp-slimstat') ?></td>
 	</tr>

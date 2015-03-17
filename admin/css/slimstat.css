@@ -404,6 +404,9 @@
 	margin-right: 10px;
 	vertical-align: bottom;
 }
+#slimstat-message.wp-ui-notification p:before{
+	content: "\f160";
+}
 #slimstat-message p{
 	font-size: 16px;
 	line-height: .8em;

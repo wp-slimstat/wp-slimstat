@@ -6,7 +6,7 @@ if (!function_exists('add_action')) exit(0);
 // Define the tabs
 $slimtabs = '';
 $current_tab = empty($_GET['tab'])?1:intval($_GET['tab']);
-$config_tabs = apply_filters('slimstat_config_tabs', array(__('General','wp-slimstat'),__('Views','wp-slimstat'),__('Filters','wp-slimstat'),__('Permissions','wp-slimstat'),__('Advanced','wp-slimstat'),has_filter('slimstat_options_on_page')?__('Add-ons','wp-slimstat'):'none',__('Maintenance','wp-slimstat')));
+$config_tabs = apply_filters('slimstat_config_tabs', array(__('General','wp-slimstat'),__('Reports','wp-slimstat'),__('Filters','wp-slimstat'),__('Permissions','wp-slimstat'),__('Advanced','wp-slimstat'),has_filter('slimstat_options_on_page')?__('Add-ons','wp-slimstat'):'none',__('Maintenance','wp-slimstat')));
 foreach ($config_tabs as $a_tab_id => $a_tab_name){
 	if ($a_tab_name != 'none') $slimtabs .= "<li class='nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."'><a href='".wp_slimstat_admin::$config_url.($a_tab_id+1)."'>$a_tab_name</a></li>";
 }
@@ -44,28 +44,31 @@ switch ($config_tabs[$current_tab-1]){
 			}
 		}
 		break;
-	case __('Views','wp-slimstat'):
+	case __('Reports','wp-slimstat'):
 		$options_on_this_page = array(
-			'views_basic_header' => array('description' => __('Data and Formats','wp-slimstat'), 'type' => 'section_header'),
-			'convert_ip_addresses' => array('description' => __('Convert IP Addresses','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Display provider names instead of IP addresses.','wp-slimstat')),
+			'reports_basic_header' => array('description' => __('Formats and Conversions','wp-slimstat'), 'type' => 'section_header'),
 			'use_european_separators' => array('description' => __('Number Format','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose the number format you want to use for your reports.','wp-slimstat'), 'custom_label_yes' => '1.234,56', 'custom_label_no' => '1,234.56'),
-			'enable_sov' => array('description' => __('Enable SOV','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese.','wp-slimstat')),
-			'show_display_name' => array('description' => __('Show Display Name','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('By default, users are listed by their usernames. Use this option to visualize their display names instead.','wp-slimstat')),
-			'show_complete_user_agent_tooltip' => array('description' => __('Show User Agent','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see the browser name or a complete user agent string when hovering on browser icons.','wp-slimstat')),
-			'convert_resource_urls_to_titles' => array('description' => __('Show Titles','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Slimstat converts your permalinks into post and page titles. Disable this feature if you need to see the URL in your reports.','wp-slimstat')),
 			'date_format' => array('description' => __('Date Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's date.",'wp-slimstat')),
 			'time_format' => array('description' => __('Time Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's time.",'wp-slimstat')),
+			'show_display_name' => array('description' => __('Use Display Name','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('By default, users are listed by their usernames. Use this option to visualize their display names instead.','wp-slimstat')),
+			'convert_resource_urls_to_titles' => array('description' => __('Use Post Titles','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Slimstat converts your permalinks into post and page titles. Disable this feature if you need to see the URL in your reports.','wp-slimstat')),
+			'convert_ip_addresses' => array('description' => __('Convert IP Addresses','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Display provider names instead of IP addresses.','wp-slimstat')),
 			
-			'views_functionality_header' => array('description' => __('Functionality','wp-slimstat'), 'type' => 'section_header'),
+			'reports_functionality_header' => array('description' => __('Functionality','wp-slimstat'), 'type' => 'section_header'),
 			'async_load' => array('description' => __('Asynchronous Views','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Load all the reports dynamically. It makes the reports render faster, but it increases the load on your server.','wp-slimstat')),
 			'use_slimscroll' => array('description' => __('SlimScroll','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable SlimScroll, a slick jQuery library that replaces the built-in browser scrollbar.','wp-slimstat')),
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
 			
-			'views_right_now_header' => array('description' => __('Activity Log','wp-slimstat'), 'type' => 'section_header'),
+			'reports_right_now_header' => array('description' => __('Activity Log','wp-slimstat'), 'type' => 'section_header'),
 			'refresh_interval' => array('description' => __('Live Stream','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enable the Live view, which refreshes the Activity Log every X seconds. Enter <strong>0</strong> (number zero) to deactivate this feature.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
 			'number_results_raw_data' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in the Activity Log.','wp-slimstat')),
-			'include_outbound_links_right_now' => array('description' => __('Activity Log Extended','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see outbound links listed in the Activity Log. It might slow down the rendering of this report.','wp-slimstat'))
+			// 'include_outbound_links_right_now' => array('description' => __('Activity Log Extended','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see outbound links listed in the Activity Log. It might slow down the rendering of this report.','wp-slimstat')),
+			
+			'reports_miscellaneous_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
+			'show_complete_user_agent_tooltip' => array('description' => __('Show User Agent','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see the browser name or a complete user agent string when hovering on browser icons.','wp-slimstat')),
+			'no_maxmind_warning' => array('description' => __('Hide MaxMind Warning','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Hide the warning message related to the geolocation functionality not being installed.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
+			'enable_sov' => array('description' => __('Enable SOV','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese.','wp-slimstat'))
 		);
 		break;
 	case __('Filters','wp-slimstat'):
