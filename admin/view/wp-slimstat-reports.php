@@ -54,7 +54,7 @@ class wp_slimstat_reports {
 			'slim_p1_13' => __('Top Countries','wp-slimstat'),
 			'slim_p1_15' => __('Rankings','wp-slimstat'),
 			'slim_p1_17' => __('Top Language Families','wp-slimstat'),
-			'slim_p1_18' => __('Our Team Recommends','wp-slimstat'),
+			'slim_p1_18' => __('Our Team Recommends','wp-slimstat'), // to be removed: managewp
 			'slim_p2_01' => __('Human Visits (chart)','wp-slimstat'),
 			'slim_p2_02' => __('Audience Overview','wp-slimstat'),
 			'slim_p2_03' => __('Top Languages','wp-slimstat'),
@@ -132,7 +132,7 @@ class wp_slimstat_reports {
 		$all_existing_reports = array(
 			0 => array(),
 			1 => array('slim_p7_02'),
-			2 => array('slim_p1_01','slim_p1_18','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_11','slim_p1_12','slim_p1_05','slim_p1_08','slim_p1_10','slim_p1_13','slim_p1_15','slim_p1_17'),
+			2 => array('slim_p1_01','slim_p1_02','slim_p1_03','slim_p1_04','slim_p1_11','slim_p1_12','slim_p1_05','slim_p1_08','slim_p1_10','slim_p1_13','slim_p1_15','slim_p1_17'),
 			3 => array('slim_p2_01','slim_p2_02','slim_p2_03','slim_p2_04','slim_p2_06','slim_p2_05','slim_p2_07','slim_p2_09','slim_p2_10','slim_p2_12','slim_p2_13','slim_p2_14','slim_p2_15','slim_p2_16','slim_p2_17','slim_p2_18','slim_p2_19','slim_p2_20','slim_p2_21'),
 			4 => array('slim_p4_01','slim_p4_22','slim_p1_06','slim_p4_07','slim_p4_02','slim_p4_03','slim_p4_05','slim_p4_04','slim_p4_06','slim_p4_08','slim_p4_12','slim_p4_13','slim_p4_14','slim_p4_15','slim_p4_16','slim_p4_17','slim_p4_18','slim_p4_11','slim_p4_10','slim_p4_19','slim_p4_20','slim_p4_21','slim_p4_23','slim_p4_24','slim_p4_25'),
 			5 => array('slim_p3_01','slim_p3_02','slim_p3_03','slim_p3_04','slim_p3_06','slim_p3_05','slim_p3_08','slim_p3_10','slim_p3_09','slim_p3_11'),
@@ -154,11 +154,14 @@ class wp_slimstat_reports {
 			self::$hidden_reports = get_user_option("metaboxhidden_{$page_location}", $user->ID);
 		}
 
+		// Remove deprecated reports
+		self::$all_reports = array_diff(self::$all_reports, array('slim_p1_18'));
+
 		// Default values
 		if (self::$hidden_reports === false){
 			switch(self::$current_tab){
 				case 2:
-					self::$hidden_reports = array('slim_p1_02', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13','slim_p1_17');
+					self::$hidden_reports = array('slim_p1_02', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13','slim_p1_17', 'slim_p1_18');
 					break;
 				case 3:
 					self::$hidden_reports = array('slim_p2_05', 'slim_p2_07', 'slim_p2_09', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21');
@@ -403,10 +406,6 @@ class wp_slimstat_reports {
 			echo $wrapped_text;
 		else
 			return $wrapped_text;
-	}
-
-	public static function manage_wp(){
-		echo '<a href="https://managewp.com/?utm_source=A&utm_medium=Banner&utm_content=mwp_banner_25_300x250&utm_campaign=A&utm_mrl=2844"><img src="https://managewp.com/banners/affiliate/mwp_banner_25_300x250.gif" style="width:100%;height:auto;"/></a>';
 	}
 
 	public static function show_results($_type = 'recent', $_id = 'p0', $_column = 'id', $_args = array()){
@@ -1221,7 +1220,7 @@ class wp_slimstat_reports {
 				self::show_results('popular', $_report_id, 'SUBSTRING(t1.language, 1, 2)', array('total_for_percentage' => $current_pageviews, 'as_column' => 'language', 'filter_op' => 'contains'));
 				break;
 			case 'slim_p1_18':
-				self::manage_wp();
+				// self::manage_wp();
 				break;
 			case 'slim_p2_02':
 				self::show_visitors_summary($_report_id,  wp_slimstat_db::count_records('visit_id > 0 AND tb.type <> 1', 'id'), wp_slimstat_db::count_records('t1.visit_id > 0 AND tb.type <> 1', 'visit_id'));

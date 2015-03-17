@@ -390,8 +390,21 @@ jQuery(function(){
 	// Hide Admin Notice
 	jQuery(document).on('click', '#slimstat-hide-admin-notice', function(e){
 		e.preventDefault();
-		jQuery('.updated.slimstat-notice').slideUp(1000);
+		jQuery(this).parents('.updated.slimstat-notice').slideUp(1000);
 		data = {action: 'slimstat_hide_admin_notice', security: jQuery('#meta-box-order-nonce').val()};
+		jQuery.ajax({
+			url: ajaxurl,
+			type: 'post',
+			async: true,
+			data: data
+		});
+	});
+	
+	// Hide GeoLite Notice
+	jQuery(document).on('click', '#slimstat-hide-geolite-notice', function(e){
+		e.preventDefault();
+		jQuery(this).parents('.wp-ui-notification').slideUp(1000);
+		data = {action: 'slimstat_hide_geolite_notice', security: jQuery('#meta-box-order-nonce').val()};
 		jQuery.ajax({
 			url: ajaxurl,
 			type: 'post',

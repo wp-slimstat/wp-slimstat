@@ -139,6 +139,7 @@ class wp_slimstat_admin{
 		if (defined('DOING_AJAX') && DOING_AJAX){
 			add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'show_report_wrapper'));
 			add_action('wp_ajax_slimstat_hide_admin_notice', array(__CLASS__, 'hide_admin_notice'));
+			add_action('wp_ajax_slimstat_hide_geolite_notice', array(__CLASS__, 'hide_geolite_notice'));
 			add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
 			add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
 			add_action('wp_ajax_slimstat_enable_ads_feature', array(__CLASS__, 'enable_ads_feature'));
@@ -679,7 +680,7 @@ class wp_slimstat_admin{
 	 * Displays a message related to the current version of Slimstat
 	 */
 	public static function show_admin_notice(){
-		echo '<div class="updated slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span> <a id="slimstat-hide-admin-notice" class="slimstat-font-cancel" title="'.__('Hide this notice','wp-slimstat').'" href="#"></a></div>';
+		echo '<div class="updated slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span> <a id="slimstat-hide-admin-notice" class="slimstat-font-cancel slimstat-float-right" title="'.__('Hide this notice','wp-slimstat').'" href="#"></a></div>';
 	}
 	
 	/**
@@ -687,6 +688,14 @@ class wp_slimstat_admin{
 	 */
 	public static function hide_admin_notice(){
 		wp_slimstat::$options['show_admin_notice'] = wp_slimstat::$version;
+		die();
+	}
+
+	/**
+	 * Handles the Ajax request to hide the geolite notice
+	 */
+	public static function hide_geolite_notice(){
+		wp_slimstat::$options['no_maxmind_warning'] = 'yes';
 		die();
 	}
 
