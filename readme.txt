@@ -66,7 +66,7 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 
 = 3.9.8.2 =
 * [Note] Browscap.org just released a new version of their database, but it looks like [it has some issues](https://groups.google.com/forum/#!topic/browscap/x0onOyHz-D0). We'll wait for a more stable release and then update our optimized version of their db.
-* [Fix] Some user are reporting problems related to the compressed (gzipped) version of the MaxMind GeoLite DB introduced in version 3.9.8.1. We updated our code to unzip the database before the tracker uses it. Please note: if your install is working as expected, you can skip this update.
+* [Fix] Some users are reporting problems related to the compressed (gzipped) version of the MaxMind GeoLite DB introduced in version 3.9.8.1. We updated our code to unzip the database before the tracker uses it. Please note: if your install is working as expected, you can skip this update.
 
 = 3.9.8.1 =
 * [Note] After further discussing with the repo moderators the incompatibility issue regarding the license under which MaxMind GeoLite is released, we were able to implement a much easier way to enable the geolocation functionality in Slimstat. There's no need to download a separate plugin anymore! Just go to Slimstat > Settings > Maintenance tab, and click on Install GeoLite DB. Of course, you can always deactivate this feature by clicking on the corresponding button under the Maintenance tab.
