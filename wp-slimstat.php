@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.9.8.1
+Version: 3.9.8.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.9.8.1';
+	public static $version = '3.9.8.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -60,7 +60,7 @@ class wp_slimstat{
 		if (!file_exists(self::$maxmind_path['basedir'].'/wp-slimstat/')){
 			mkdir(self::$maxmind_path['basedir'].'/wp-slimstat/');
 		}
-		self::$maxmind_path = self::$maxmind_path['basedir'].'/wp-slimstat/maxmind.dat.gz';
+		self::$maxmind_path = self::$maxmind_path['basedir'].'/wp-slimstat/maxmind.dat';
 
 		// Enable the tracker (both server- and client-side)
 		if (!is_admin() || self::$options['track_admin_pages'] == 'yes'){
@@ -514,7 +514,7 @@ class wp_slimstat{
 		}
 		else {
 			$country_codes = array("","ap","eu","ad","ae","af","ag","ai","al","am","cw","ao","aq","ar","as","at","au","aw","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","fi","fj","fk","fm","fo","fr","sx","ga","gb","gd","ge","gf","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","in","io","iq","ir","is","it","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","st","sv","sy","sz","tc","td","tf","tg","th","tj","tk","tm","tn","to","tl","tr","tt","tv","tw","tz","ua","ug","um","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","rs","za","zm","me","zw","a1","a2","o1","ax","gg","im","je","bl","mf","bq","ss","o1");
-			if (file_exists(self::$maxmind_path) && ($handle = gzopen(self::$maxmind_path, "rb"))){
+			if (file_exists(self::$maxmind_path) && ($handle = fopen(self::$maxmind_path, "rb"))){
 
 				// Do we need to update the file?
 				if (false !== ($file_stat = stat(self::$maxmind_path))){
@@ -522,11 +522,10 @@ class wp_slimstat{
 					// Is the database more than 30 days old?
 					if ((date('U') - $file_stat['mtime'] > 2629740)){
 						fclose($handle);
-						@unlink(self::$maxmind_path);
 
 						self::download_maxmind_database();
 
-						if (false === ($handle = gzopen(self::$maxmind_path, "rb"))){
+						if (false === ($handle = fopen(self::$maxmind_path, "rb"))){
 							return apply_filters('slimstat_get_country', 'xx', $_ipnum);
 						}
 					}
@@ -1188,12 +1187,31 @@ class wp_slimstat{
 		// Download the most recent database directly from MaxMind's repository
 		$maxmind_tmp = download_url('http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz', 5);
 
+		if (file_exists(self::$maxmind_path)){
+			@unlink(self::$maxmind_path);
+		}
+		
 		if (is_wp_error($maxmind_tmp)){
 			return __('There was an error downloading the MaxMind Geolite DB:','wp-slimstat').' '.$maxmind_tmp->get_error_message();
 		}
 
-		copy($maxmind_tmp, self::$maxmind_path);
+		if (false === ($zh = gzopen($maxmind_tmp, 'rb'))){
+			return __('There was an error opening the zipped MaxMind Geolite DB','wp-slimstat');
+		}
+
+		if (false === ($fh = fopen(self::$maxmind_path, 'wb'))){
+			return __('There was an error opening the unzipped MaxMind Geolite DB','wp-slimstat');
+		}
+
+		while(($data = gzread($zh, 4096)) != false){
+			fwrite($fh, $data);
+		}
+
+		@gzclose($zh);
+		@fclose($fh);
+
 		@unlink($maxmind_tmp);
+
 		return '';
 	}
 

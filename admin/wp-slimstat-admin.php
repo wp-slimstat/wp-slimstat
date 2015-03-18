@@ -124,7 +124,7 @@ class wp_slimstat_admin{
 
 			// Update the table structure and options, if needed
 			if (!empty(wp_slimstat::$options['version']) && wp_slimstat::$options['version'] != wp_slimstat::$version){
-				self::update_tables_and_options();
+				add_action('admin_init', array(__CLASS__, 'update_tables_and_options'));
 			}
 		}
 
@@ -423,6 +423,16 @@ class wp_slimstat_admin{
 			wp_slimstat::$options['secret'] = wp_hash(uniqid(time(), true));
 		}
 		// --- END: Updates for version 3.9.6 ---
+
+		// --- Updates for version 3.9.8.2 ---
+		if (version_compare(wp_slimstat::$options['version'], '3.9.8.2', '<')){
+			// The GeoLite DB is already installed, let's unzip it to improve the tracker's performance
+			if (file_exists(wp_slimstat::$maxmind_path.'.gz')){
+				@unlink(wp_slimstat::$maxmind_path.'.gz');
+				wp_slimstat::download_maxmind_database();
+			}
+		}
+		// --- END: Updates for version 3.9.8.2 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$options['version'] = wp_slimstat::$version;
