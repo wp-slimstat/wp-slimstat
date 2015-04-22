@@ -97,7 +97,7 @@ class wp_slimstat_admin{
 
 		// Display a notice that hightlights this version's features
 		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version && current_user_can('manage_options')) {
-			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
+			// add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
 		}
 
 		// Remove spammers from the database

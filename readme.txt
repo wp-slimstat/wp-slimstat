@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 3.9.8.2
+Stable tag: 3.9.9
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -63,6 +63,9 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 3.9.9 =
+* [Fix] Some users get an error where download_url is undefined. This is a WordPress core function, so we're really not sure why that is happening to those few users. We included a fix that makes sure the function exists before calling it.
 
 = 3.9.8.2 =
 * [Note] Browscap.org just released a new version of their database, but it looks like [it has some issues](https://groups.google.com/forum/#!topic/browscap/x0onOyHz-D0). We'll wait for a more stable release and then update our optimized version of their db.

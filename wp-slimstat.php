@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 3.9.8.2
+Version: 3.9.9
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '3.9.8.2';
+	public static $version = '3.9.9';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -1185,6 +1185,9 @@ class wp_slimstat{
 	 */
 	public static function download_maxmind_database(){
 		// Download the most recent database directly from MaxMind's repository
+		if (!function_exists('download_url')){
+			return __('There was an error using download_url.','wp-slimstat');
+		}
 		$maxmind_tmp = download_url('http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz', 5);
 
 		if (file_exists(self::$maxmind_path)){
