@@ -46,6 +46,9 @@ __('palm','wp-slimstat'), // Palm
 __('wap','wp-slimstat'), // WAP
 __('java','wp-slimstat'), // Java
 __('winphone7','wp-slimstat'), // Windows Phone
+__('winphone7.5','wp-slimstat'), // Windows Phone
+__('winphone8','wp-slimstat'), // Windows Phone
+__('winphone8.1','wp-slimstat'), // Windows Phone
 __('wince','wp-slimstat'), // Windows CE
 __('symbianos','wp-slimstat'), // Symbian OS
 __('blackberry os','wp-slimstat'), // BlackBerry OS

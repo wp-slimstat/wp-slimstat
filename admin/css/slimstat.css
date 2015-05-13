@@ -40,21 +40,21 @@
 	width: 15%;
 }
 #slimstat-date-filters{
-	padding: 5px 5px 5px 10px;
+	padding: 4px 10px 6px 20px;
 	position: absolute;
 	right: 5px;
 	top: 5px;
 }
 #slimstat-date-filters>a{
 	color: #fff;
+	white-space: nowrap;
 }
-#slimstat-date-filters>a:after{
+#slimstat-date-filters>a::after{
 	content: "\f140";
 	font: normal 20px/1 'dashicons';
-	float: right;
-	vertical-align: bottom;
+	  vertical-align: bottom;
 }
-#slimstat-date-filters>a.open:after{
+#slimstat-date-filters>a.open::after{
 	content: "\f142";
 }
 #slimstat-date-filters span{
@@ -64,8 +64,8 @@
 	display: none;
 	padding: 5px 0 5px 5px;
 	position: absolute;
-	right: 0;
-	top: 30px;
+	right: -4px;
+	top: 35px;
 	width: 450px;
 	z-index: 120;
 }
@@ -127,7 +127,7 @@
 }
 
 /* Single Report */
-.wrap.slimstat .postbox{
+.wrap.slimstat .postbox, .wrap.slimstat .sortable-placeholder{
 	float: left;
 	height: 282px;
 	margin-right: .5%;
@@ -141,6 +141,12 @@
 .wrap.slimstat .postbox.tall{
 	height:661px;
 	width:100%;
+}
+
+.sortable-placeholder{
+	background-color: #ccc;
+	border: 1px dashed #bbb;
+	margin-bottom:20px
 }
 
 /* Single Report: Header and Header Buttons */
@@ -170,6 +176,9 @@
 }
 .wrap.slimstat .hndle .slimstat-tooltip-trigger.corner{
 	right: 0;
+}
+.slimstat .no-refresh .refresh{
+	display: none;
 }
 
 /* Single Report: Header and Header Buttons - Pagination */

@@ -117,54 +117,6 @@ var SlimStat = {
 		}
 		return plugins;
 	},
-
-	// From http://www.useragentman.com/blog/2009/11/29/how-to-detect-font-smoothing-using-javascript/
-	has_smoothing : function () {
-		// IE has screen.fontSmoothingEnabled - sweet!
-		if (typeof screen.fontSmoothingEnabled != 'undefined'){
-			return Number(screen.fontSmoothingEnabled);
-		}
-		else{
-			if (typeof SlimStatParams.detect_smoothing != 'undefined') return 0;
-
-			try{
-				// Create a 35x35 Canvas block.
-				var canvasNode = document.createElement('canvas');
-				canvasNode.width = "35";
-				canvasNode.height = "35";
-
-				// We must put this node into the body, otherwise Safari for Windows does not report correctly.
-				canvasNode.style.display = 'none';
-				document.body.appendChild(canvasNode);
-				var ctx = canvasNode.getContext('2d');
-
-				// draw a black letter 'O', 32px Arial.
-				ctx.textBaseline = "top";
-				ctx.font = "32px Arial";
-				ctx.fillStyle = "black";
-				ctx.strokeStyle = "black";
-
-				ctx.fillText("O", 0, 0);
-
-				// start at (8,1) and search the canvas from left to right, top to bottom to see if we can find a non-black pixel.  If so we return 1.
-				for (var j = 8; j <= 32; j++){
-					for (var i = 1; i <= 32; i++){
-						var imageData = ctx.getImageData(i, j, 1, 1).data;
-						var alpha = imageData[3];
-
-						if (alpha != 255 && alpha != 0) return 1; // font-smoothing must be on.
-					}
-				}
-
-				// didn't find any non-black pixels - return 0.
-				return 0;
-			}
-			catch (ex){
-				// Something went wrong (for example, Opera cannot use the canvas fillText() method.
-				return 0;
-			}
-		}
-	},
 	
 	get_page_performance : function () {
 		slim_performance = window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
@@ -184,8 +136,8 @@ var SlimStat = {
 		return slim_performance.timing.responseEnd - slim_performance.timing.connectEnd;
 	},
 
-	send_to_server : function (data_to_send, callback) {
-		if (typeof SlimStatParams.ajaxurl == 'undefined' || typeof data_to_send == 'undefined'){
+	send_to_server : function (data, callback) {
+		if (typeof SlimStatParams.ajaxurl == 'undefined' || typeof data == 'undefined'){
 			if (typeof callback == 'function'){
 				callback();
 			}
@@ -207,7 +159,6 @@ var SlimStat = {
 		}
 
 		if (request) {
-			var data = "action=slimtrack_js&data="+SlimStat._base64_encode(data_to_send);
 			request.open("POST", SlimStatParams.ajaxurl, true);
             request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			request.send(data);
@@ -237,7 +188,7 @@ var SlimStat = {
 		if (!e){
 			e = window.event;
 		}
-		code = (typeof c == 'undefined')?0:parseInt(c);
+		type = (typeof c == 'undefined')?0:parseInt(c);
 		note_array = [];
 
 		// Do nothing if we don't have a valid SlimStat._id
@@ -261,28 +212,29 @@ var SlimStat = {
 		if (node.nodeType == 3) node = node.parentNode;
 
 		parent_node = node.parentNode;
-		node_hostname = '';
-		node_pathname = location.pathname;
+		outbound_resource = '';
 
 		// This handler can be attached to any element, but only A carries the extra info we need
 		switch (node.nodeName) {
 			case 'FORM':
-				if (node.action.length > 0) node_pathname = escape(node.action);
+				if (node.action.length > 0){
+					outbound_resource = escape(node.action);
+				}
 				break;
 
 			case 'INPUT':
 				// Let's look for a FORM element
 				while (typeof parent_node != 'undefined' && parent_node.nodeName != 'FORM' && parent_node.nodeName != 'BODY') parent_node = parent_node.parentNode;
 				if (typeof parent_node.action != 'undefined' && parent_node.action.length > 0) {
-					node_pathname = escape(parent_node.action);
+					outbound_resource = escape(parent_node.action);
 					break;
 				}
 
 			default:
 				// Any other element
 				if (node.nodeName != 'A') {
-					if (typeof node.getAttribute == 'function' && node.getAttribute('id') != 'undefined' && node.getAttribute('id') != null && node.getAttribute('id').length > 0){
-						node_pathname = node.getAttribute('id');
+					if (typeof node.getAttribute == 'function' && node.getAttribute('id') != 'undefined' && node.getAttribute('id').length){
+						outbound_resource = node.getAttribute('id');
 						break;
 					}
 					while (typeof node.parentNode != 'undefined' && node.parentNode != null && node.nodeName != 'A' && node.nodeName != 'BODY') node = node.parentNode;
@@ -290,25 +242,26 @@ var SlimStat = {
 
 				// Anchor in the same page
 				if (typeof node.hash != 'undefined' && node.hash.length > 0 && node.hostname == location.hostname) {
-					node_pathname = escape(node.hash);
+					outbound_resource = escape(node.hash);
 				}
-				else {
-					node_hostname = (typeof node.hostname != 'undefined')?node.hostname:'';
-					if (typeof node.href != 'undefined') {
-						node_pathname = escape(node.href);
-					}
+				else if (typeof node.href != 'undefined') {
+					outbound_resource = escape(node.href);
 				}
 
 				// If this element has a title, we can record that as well
 				if (typeof node.getAttribute == 'function'){
-					if (node.getAttribute('title') != 'undefined' && node.getAttribute('title') != null && node.getAttribute('title').length > 0) note_array.push('Title:'+node.getAttribute('title'));
-					if (node.getAttribute('id') != 'undefined' && node.getAttribute('id') != null && node.getAttribute('id').length > 0) note_array.push('ID:'+node.getAttribute('id'));
+					if (typeof node.getAttribute('title') != 'undefined' && node.getAttribute('title') != null && node.getAttribute('title').length > 0){
+						note_array.push('Title:'+node.getAttribute('title'));
+					}
+					if (typeof node.getAttribute('id') != 'undefined' && node.getAttribute('id') != null && node.getAttribute('id').length > 0){
+						note_array.push('ID:'+node.getAttribute('id'));
+					}
 				}
 		}
-		slimstat_info = "&obd="+node_hostname+"&obr="+node_pathname;
 
 		// Track mouse coordinates
-		pos_x = -1; var pos_y = -1;
+		pos_x = -1; pos_y = -1;
+		position = '';
 		if (typeof e.pageX != 'undefined' && typeof e.pageY != 'undefined') {
 			pos_x = e.pageX;
 			pos_y = e.pageY;
@@ -319,26 +272,39 @@ var SlimStat = {
 			pos_x = e.clientX+document.body.scrollLeft+document.documentElement.scrollLeft;
 			pos_y = e.clientY+document.body.scrollTop+document.documentElement.scrollTop;
 		}
-		if (pos_x > 0 && pos_y > 0) slimstat_info += ((slimstat_info.length > 0)?'&':'?')+'po='+pos_x+','+pos_y;
-
-		// Event type and button pressed
-		note_array.push('Event:'+e.type);
-		if (typeof note != 'undefined' && note.length > 0) note_array.push(note);
-
-		if (e.type != 'click' && typeof(e.which) != 'undefined'){
-			if (e.type == 'keypress')
-				note_array.push('Key:'+String.fromCharCode(parseInt(e.which)));
-			else
-				note_array.push('Type:'+e.which);
+		if (pos_x > 0 && pos_y > 0){
+			position = 'po='+pos_x+','+pos_y;
 		}
 
-		SlimStat.send_to_server("id="+SlimStat._id+"&ty="+code+slimstat_info+"&no="+escape(note_array.join(', ')), callback);
+		// Event description and button pressed
+		event_description = e.type;
+		if (e.type != 'click' && typeof(e.which) != 'undefined'){
+			if (e.type == 'keypress'){
+				event_description += '; keypress:'+String.fromCharCode(parseInt(e.which));
+			}
+			else{
+				event_description += '; which:'+e.which;
+			}
+		}
+
+		// Custom description for this event
+		if (typeof note != 'undefined' && note.length > 0){
+			note_array.push(note);
+		}
+
+		// Internal downloads are tracked as pageviews
+		if (type == 1){
+			SlimStat.send_to_server("action=slimtrack_pageview&id="+SlimStat._id+"&ref="+SlimStat._base64_encode(document.referrer)+"&res="+SlimStat._base64_encode(outbound_resource.substring(outbound_resource.indexOf(location.hostname) + location.hostname.length))+"&sw="+screen.width+"&sh="+screen.height+"&bw="+window.innerWidth+"&bh="+window.innerHeight+"&sl="+SlimStat.get_server_latency()+"&pp="+SlimStat.get_page_performance()+"&pl="+SlimStat.detect_plugins());
+		}
+
+		SlimStat.send_to_server("action=slimtrack_event&id="+SlimStat._id+"&type="+type+"&outbound="+SlimStat._base64_encode(outbound_resource)+"&position="+position+"&description="+SlimStat._base64_encode(event_description)+"&notes="+SlimStat._base64_encode(escape(note_array.join(', '))), callback);
+		
 		return true;
 	},
 	
 	// Tracks Google+1 clicks
 	slimstat_plusone : function (obj) {
-		SlimStat.send_to_server('ty=4&obr='+escape('#google-plus-'+obj.state)); 
+		SlimStat.send_to_server('type=4&outbound='+escape('#google-plus-'+obj.state)); 
 	},
 	
 	add_event : function ( obj, type, fn ) {
@@ -393,12 +359,17 @@ SlimStat.add_event(window, 'load', function() {
 			(function() {
 				var cur_link = all_links[i];
 
+				// Types
+				// 0: external
+				// 1: download
+				// 2: internal
+
 				cur_link.slimstat_actual_click = false;
 				cur_link.slimstat_type = (cur_link.href && (cur_link.hostname == location.hostname || cur_link.href.indexOf('://') == -1))?2:0;
 				cur_link.slimstat_track_me = true;
 				cur_link.slimstat_callback = true;
 
-				// Track downloads (internal and external)
+				// Track downloads (internal)
 				if (extensions_to_track.length > 0 && cur_link.pathname.indexOf('.') > 0 && cur_link.hostname == location.hostname){
 					extension_current_link = cur_link.pathname.split('.').pop().replace(/[\/\-]/g, '');
 					cur_link.slimstat_track_me = SlimStat.in_array(extension_current_link, extensions_to_track);
@@ -475,19 +446,19 @@ SlimStat.add_event(window, 'load', function() {
 });
 
 // Is Javascript Mode active?
-var current_data = '';
+var current_data = 'action=slimtrack_pageview';
 if (typeof SlimStatParams.id != 'undefined' && parseInt(SlimStatParams.id)>0){
-	current_data = "id="+SlimStatParams.id;
+	current_data += "&id="+SlimStatParams.id;
 }
 else if (typeof SlimStatParams.ci != 'undefined'){
-	current_data = "ci="+SlimStatParams.ci+"&ref="+SlimStat._base64_encode(document.referrer)+"&res="+SlimStat._base64_encode(window.location.href);
+	current_data += "&ci="+SlimStatParams.ci+"&ref="+SlimStat._base64_encode(document.referrer)+"&res="+SlimStat._base64_encode(window.location.href);
 }
 
 // Gathers all the information and sends it to the server
 if (current_data.length){
 	SlimStat.add_event(window, 'load', function(){
 		setTimeout(function(){
-			SlimStat.send_to_server(current_data+"&sw="+(screen.width||window.innerWidth||document.documentElement.clientWidth||document.body.offsetWidth)+"&sh="+(screen.height||window.innerHeight||document.documentElement.clientHeight||document.body.offsetHeight)+"&cd="+screen.colorDepth+"&aa="+SlimStat.has_smoothing()+"&sl="+SlimStat.get_server_latency()+"&pp="+SlimStat.get_page_performance()+"&pl="+SlimStat.detect_plugins());
+			SlimStat.send_to_server(current_data+"&sw="+screen.width+"&sh="+screen.height+"&bw="+window.innerWidth+"&bh="+window.innerHeight+"&sl="+SlimStat.get_server_latency()+"&pp="+SlimStat.get_page_performance()+"&pl="+SlimStat.detect_plugins());
 		}, 0)
 	});
 }

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 3.9.9
+Stable tag: 4.0
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -63,6 +63,29 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.0 =
+* [Note] A brave new world is now ready to be explored: Slimstat 4.0. This version introduces a totally redesigned database architecture, new streamlined tracking code, new heuristic user agent parser, new filters and much more. You will surely notice the performance improvements!
+* [Note] Our dev team should have read [this article](http://blog.codinghorror.com/maybe-normalizing-isnt-normal/) a long time ago. But it's never too late, and we can guarantee you that the new denormalized table structure will make your report generation so quick that your jaw will drop. Sure, the table size will increase 50%, but in the age where space is cheap, the real precious resource is time. The time you won't have to wait for your report to appear!
+* [Note] Upon update, Slimstat will convert the old table structure to the new one. Just to stay on the safe side, the old tables will not be removed (wp_slim_stats will be renamed to wp_slim_stats_3). After a transition period, we will offer the option to remove the old tables with a button in the settings.
+* [Note] Please make sure that your MySQL user can issue a RENAME command.
+* [Note] We are now working on our premium add-ons to make them compatible with Slimstat 4.0. Some of them might stop working until a new update is available.
+* [New] MaxMind upload folder path can now be filtered (thank you, [chrisl27](https://wordpress.org/support/topic/filter-for-maxmind-path)).
+* [New] The new tracker is measuring both the screen resolution and the viewport size. [Here](http://www.quirksmode.org/mobile/viewports.html) you can find more information on this topic.
+* [New] The library wp-slimstat-db.php has been cleaned up and reorganized (20% smaller!). Please note: some of the function signatures have changed (order of parameters), please update your custom code accordingly or contact us for more information.
+* [New] Internal downloads are now tracked as regular pageviews, with content_type = download. This allows to make our filters more intuitive and our reports faster.
+* [New] The table wp_slim_events will now store all the information regarding events happening on your pages (including the coordinates of clicks for the heatmap).
+* [New] Inline data attributes on links will tell you right away if an external URL will be tracked or not.
+* [New] Custom reports can now be added to ANY screen, and soon you will be able to move any built-in report to any screen.
+* [Update] We are making our source code easier to read, by applying some well established best practices about indentation, spacing and variable names.
+* [Update] Removed the chart Average Pageviews per Visit, which required a complex SQL query to be generated, and didn't convey any key information, according to a quick survey we had among some of our users. 
+* [Update] The Spy View report under the Overview tab has been merged with the Real-Time log, since users were pointing out that it was confusing to have two separate reports displaying pretty much the same information.
+* [Update] We decided to hide some reports under the Site Analysis tab by default. They are not gone, and can be quickly activated by enabling the corresponding checkbox under Screen Options.
+* [Update] The browser CSS version is not tracked anymore.
+* [Update] Google+1 clicks are not tracked/supported anymore.
+* [Update] Vitaly has sent us the latest version of the Russian localization. Way to go!
+* [Fix] Implemented a more robust fix for the issue with download_url throwing an undefined function error (this is supposed to be part of [WP Core](https://codex.wordpress.org/Function_Reference/download_url)!)
+* [Fix] When dragging boxes around, the placeholder was not being displayed in the right place.
 
 = 3.9.9 =
 * [Fix] Some users get an error where download_url is undefined. This is a WordPress core function, so we're really not sure why that is happening to those few users. We included a fix that makes sure the function exists before calling it.

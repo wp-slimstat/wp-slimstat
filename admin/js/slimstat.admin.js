@@ -1,4 +1,4 @@
-﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {current_tab: 1, async_load: 'no', refresh_interval: 0, expand_details: 'no', datepicker_image: '', text_direction: '', use_slimscroll: 'yes'};
+﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {async_load: 'no', refresh_interval: 0, expand_details: 'no', datepicker_image: '', text_direction: '', use_slimscroll: 'yes'};
 var SlimStatAdmin = {
 	// Public variables
 	chart_data: [],
@@ -241,6 +241,23 @@ var SlimStatAdmin = {
 
 		// Remove filters set by other Ajax buttons
 		jQuery('.slimstat-temp-filter').remove();
+	},
+	
+	get_query_string_value : function( key ) {
+		query_string = window.location.search.substring( 1 );
+	 
+		// Split into key/value pairs
+		pairs = query_string.split("&");
+	 
+		// Convert the array of strings into an object
+		for ( i in pairs ) {
+			pair_array = pairs[i].split('=');
+			if ( pair_array[ 0 ] == key ) {
+				return pair_array[ 1 ];
+			}
+		}
+	 
+		return '';
 	}
 }
 
@@ -363,7 +380,7 @@ jQuery(function(){
 			}
 		}
 
-		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), current_tab: SlimStatAdminParams.current_tab};
+		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) };
 		SlimStatAdmin.refresh_report(report_id, data);
 		
 		if (SlimStatAdminParams.use_slimscroll == 'yes'){
@@ -382,7 +399,7 @@ jQuery(function(){
 	if (SlimStatAdminParams.async_load == 'yes'){
 		jQuery('div[id^=slim_]').each(function(){
 			report_id = jQuery(this).attr('id');
-			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), current_tab: SlimStatAdminParams.current_tab}
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) }
 			SlimStatAdmin.refresh_report(report_id, data);
 		});
 	}
@@ -413,8 +430,8 @@ jQuery(function(){
 		});
 	});
 
-	// Enable ads on click
-	jQuery(document).on('click', '#slimstat-enable-ads-toggle', function(e){
+	// Accept terms and conditions
+	jQuery(document).on('click', '#slimstat-accept-terms', function(e){
 		e.preventDefault();
 		jQuery('.updated.slimstat-notice').slideUp(1000);
 		data = {action: 'slimstat_enable_ads_feature', security: jQuery('#meta-box-order-nonce').val()};
@@ -529,7 +546,7 @@ jQuery(function(){
 		e.preventDefault();
 		var inner_html = '';
 		
-		data = {action: 'slimstat_manage_filters', security: jQuery('#meta-box-order-nonce').val(), type: 'load', current_tab: SlimStatAdminParams.current_tab};
+		data = {action: 'slimstat_manage_filters', security: jQuery('#meta-box-order-nonce').val(), type: 'load', page: SlimStatAdmin.get_query_string_value( 'page' ) };
 		jQuery.ajax({
 			url: ajaxurl,
 			type: 'post',
@@ -565,7 +582,7 @@ jQuery(function(){
 	jQuery(document).on('click', '.slimstat-delete-filter', function(e){
 		e.preventDefault();
 
-		data = {action: 'slimstat_manage_filters', security: jQuery('#meta-box-order-nonce').val(), type: 'delete', filter_id: jQuery(this).attr('data-filter-id'), current_tab: SlimStatAdminParams.current_tab};
+		data = {action: 'slimstat_manage_filters', security: jQuery('#meta-box-order-nonce').val(), type: 'delete', filter_id: jQuery(this).attr('data-filter-id'), page: SlimStatAdmin.get_query_string_value( 'page' ) };
 		jQuery.ajax({
 			url: ajaxurl,
 			type: 'post',
