@@ -149,7 +149,7 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 		}
 
 		$domain = parse_url($results[$i]['referer']);
-		$domain = $domain['host'];
+		$domain = ( !empty( $domain[ 'host' ] ) ) ? $domain['host'] : '';
 		$results[$i]['referer'] = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> $domain":'';
 		// $results[$i]['outbound_domain'] = (!empty($results[$i]['outbound_domain']) && $results[$i]['outbound_domain'] != $base_host)?"<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this outbound link in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_domain']}":'';
 		$results[$i]['dt'] = "<i class='spaced slimstat-font-clock' title='".__('Date and Time','wp-slimstat')."'></i> {$results[$i]['dt']}";
