@@ -1065,11 +1065,11 @@ class wp_slimstat_reports {
 				}
 				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
 			}
-			if ($_column_for_results == 'referer'){
+			if ($_columns == 'referer'){
 				$element_url = htmlentities($results[$i]['referer'], ENT_QUOTES, 'UTF-8');
 				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 			}
-			if (!empty($results[$i]['ip']) && $_column_for_results != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
+			if (!empty($results[$i]['ip']) && $_columns != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
 				$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
 			}
 			if (!empty($row_details)){
