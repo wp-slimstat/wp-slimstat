@@ -121,8 +121,6 @@ class wp_slimstat_db {
 	}
 
 	protected static function _get_combined_where( $_where = '', $_column = '*', $_use_time_range = true ) {
-		$filter_empty = "$_column ".( ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0' );
-		$filter_not_empty = "$_column ".( ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0' );
 
 		if ( empty( $_where ) ) {
 			if ( !empty( self::$sql_where[ 'columns' ] ) ) {
@@ -148,8 +146,13 @@ class wp_slimstat_db {
 			}
 		}
 
-		if ( array_key_exists( $_column, self::$filters_names ) && strpos( $_where, $filter_empty) === false && strpos( $_where, $filter_not_empty) === false) {
-			$_where = "$filter_not_empty AND $_where";
+		if ( !empty( self::$filters_names[ $_column ] ) ) {
+			$filter_empty = "$_column ".( ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0' );
+			$filter_not_empty = "$_column ".( ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0' );
+
+			if ( strpos( $_where, $filter_empty ) === false && strpos( $_where, $filter_not_empty) === false) {
+				$_where = "$filter_not_empty AND $_where";
+			}
 		}
 
 		return $_where;
