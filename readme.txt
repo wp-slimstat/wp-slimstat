@@ -66,6 +66,7 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 = 4.0.2 =
 * [Note] There seem to be some issues with the tracker not being updated throughout the CDN. If you are using this service, please disable it temporarily (Settings > Advanced > Enable CDN = No) until this is resolved. [We are in touch](https://github.com/jsdelivr/jsdelivr/issues/2632#issuecomment-101994217) with the team managing the CDN.
 * [Fix] Some users reported a PHP syntax error message related to a short syntax used by the heuristic browser detection script (thank you, [engesco](https://wordpress.org/support/topic/error-with-new-plug-in-update?replies=27#post-6949271))
+* [Fix] A PHP warning was being displayed for some undefined indexes (thank you, [mark_kay](https://wordpress.org/support/topic/error-with-new-plug-in-update?replies=29#post-6948972))
 
 = 4.0.1 =
 * [Note] Version 4.0 had a bumpy start, but that's expected when something radically new is released to the public. We thank you for your patience while we addressed the bugs that didn't surface during our tests. 
