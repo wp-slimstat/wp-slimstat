@@ -70,6 +70,7 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 * [New] Say hello to your new Dashboard Widgets. We decided to merge our free add-on into the main plugin: this way you don't have to deal with a separate software, our update cycle is streamlined, and performance increases. You can always deactivate this integration by using the corresponding option under Settings > General.
 * [Fix] A few people pointed out a Unexpected T_FUNCTION parse error. Slimstat officially requires PHP 5.3 to function properly. Nevertheless, we implemented a workaround so that people with PHP 5.2 can still enjoy all the power of our plugin. Thank you for your patience.
 * [Fix] MySQL Error 121 was preventing the plugin from creating the new table structure, if MySQL was configured to work in strict mode (thank you, [wvploeg](https://wordpress.org/support/topic/after-update-it-stopped-working?replies=6))
+* [Fix] If you compile PHP with certain flags on Ubuntu, gzopen is not available (thank you, [larryisthere](https://wordpress.org/support/topic/geolite-db-installation-issue-on-ubuntu-trusty?replies=2))
 
 = 4.0 =
 * [Note] A brave new world is now ready to be explored: Slimstat 4.0. This version introduces a totally redesigned database architecture, new streamlined tracking code, new heuristic user agent parser, new filters and much more. You will surely notice the performance improvements!
