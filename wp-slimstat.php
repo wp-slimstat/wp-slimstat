@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.0.1
+Version: 4.0.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '4.0.1';
+	public static $version = '4.0.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -870,7 +870,7 @@ class wp_slimstat{
 					(?:\ [^;]*)?
 					(?:;|$)/imx', $parent_matches[1], $result, PREG_PATTERN_ORDER);
 
-			$priority = array('Android', 'Xbox One', 'Xbox', 'Tizen');
+			$priority = array( 'Xbox One', 'Xbox', 'Windows Phone', 'Tizen', 'Android' );
 			$result['platform'] = array_unique($result['platform']);
 			if (count($result['platform']) > 1 && ($keys = array_intersect($priority, $result['platform']))){
 				$browser['platform'] = reset($keys);
@@ -880,12 +880,7 @@ class wp_slimstat{
 			}
 		}
 
-		preg_match_all('%(?P<browser>Camino|Kindle(\ Fire\ Build)?|Firefox|Iceweasel|Safari|MSIE|Trident|AppleWebKit|TizenBrowser|Chrome|
-				Vivaldi|IEMobile|Opera|OPR|Silk|Midori|Edge|
-				Baiduspider|Googlebot|YandexBot|bingbot|Lynx|Version|Wget|curl|
-				NintendoBrowser|PLAYSTATION\ (\d|Vita)+)
-				(?:\)?;?)
-				(?:(?:[:/ ])(?P<version>[0-9A-Z.]+)|/(?:[A-Z]*))%ix',
+		preg_match_all('%(?P<browser>Camino|Kindle(\ Fire\ Build)?|Firefox|Iceweasel|Safari|MSIE|Trident|AppleWebKit|TizenBrowser|Chrome|Vivaldi|IEMobile|Opera|OPR|Silk|Midori|Edge|Baiduspider|Googlebot|YandexBot|bingbot|Lynx|Version|Wget|curl|NintendoBrowser|PLAYSTATION\ (\d|Vita)+)(?:\)?;?)(?:(?:[:/ ])(?P<version>[0-9A-Z.]+)|/(?:[A-Z]*))%ix',
 			$_SERVER['HTTP_USER_AGENT'], $match, PREG_PATTERN_ORDER);
 
 		// If nothing matched, return null (to avoid undefined index errors)
@@ -943,7 +938,7 @@ class wp_slimstat{
 				$browser['browser_version'] = $match['version'][self::$heuristic_key];
 				$browser['browser_type'] = 2;
 			} else {
-				$browser['browser_version'] = $rv_result ?: $match['version'][self::$heuristic_key];
+				$browser['browser_version'] = $rv_result ? $rv_result : $match['version'][self::$heuristic_key];
 			}
 		} elseif( self::_heuristic_find('Vivaldi', $match) ) {
 			$browser['browser'] = 'Vivaldi';

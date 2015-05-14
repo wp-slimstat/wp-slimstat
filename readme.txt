@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.0.1
+Stable tag: 4.0.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -63,8 +63,12 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 
 == Changelog ==
 
+= 4.0.2 =
+* [Note] There seem to be some issues with the tracker not being updated throughout the CDN. If you are using this service, please disable it temporarily (Settings > Advanced > Enable CDN = No) until this is resolved. [We are in touch](https://github.com/jsdelivr/jsdelivr/issues/2632#issuecomment-101994217) with the team managing the CDN.
+* [Fix] Some users reported a PHP syntax error message related to a short syntax used by the heuristic browser detection script (thank you, [engesco](https://wordpress.org/support/topic/error-with-new-plug-in-update?replies=27#post-6949271))
+
 = 4.0.1 =
-* [Note] Version 4.0 had a bumpy start, but that's expected when something radically new is released to the public. We got in touch with some of our users to ask them to test 4.0 before it was released, but unfortunately people are busy, and out of 120 requests for testing, we only got feedback from 3 users. Such is life.
+* [Note] Version 4.0 had a bumpy start, but that's expected when something radically new is released to the public. We thank you for your patience while we addressed the bugs that didn't surface during our tests. 
 * [Note] Make sure to uninstall the Dashboard Widgets add-on before upgrading to Slimstat 4.0, or you might get a white screen of death. If this is the case, please remove the folder wp-content/plugins/wp-slimstat-dashboard-widgets via FTP. You will not lose your data.
 * [New] Say hello to your new Dashboard Widgets. We decided to merge our free add-on into the main plugin: this way you don't have to deal with a separate software, our update cycle is streamlined, and performance increases. You can always deactivate this integration by using the corresponding option under Settings > General.
 * [Fix] A few people pointed out a Unexpected T_FUNCTION parse error. Slimstat officially requires PHP 5.3 to function properly. Nevertheless, we implemented a workaround so that people with PHP 5.2 can still enjoy all the power of our plugin. Thank you for your patience.
