@@ -132,8 +132,8 @@ if (!empty($_REQUEST['action'])){
 					t1.dt
 
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats_3 AS t1
-				INNER JOIN {$GLOBALS['wpdb']->prefix}slim_browsers AS tb ON t1.browser_id = tb.browser_id
-				INNER JOIN {$GLOBALS['wpdb']->prefix}slim_content_info AS tci ON t1.content_info_id = tci.content_info_id" );
+				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers AS tb ON t1.browser_id = tb.browser_id
+				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info AS tci ON t1.content_info_id = tci.content_info_id" );
 
 			// Copy the events
 			wp_slimstat::$wpdb->query( "
