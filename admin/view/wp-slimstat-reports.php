@@ -1026,7 +1026,10 @@ class wp_slimstat_reports {
 					break;
 				case 'searchterms':
 					if ($_type == 'recent'){
-						$row_details = '<br>'.__('Referrer','wp-slimstat').": {$results[$i]['domain']}";
+						$domain = parse_url( $results[$i]['domain'] );
+						$domain = !empty( $domain['host'] ) ? $domain['host'] : '';
+						
+						$row_details = '<br>'.__('Referrer','wp-slimstat').": $domain";
 						$element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'], true);
 					}
 					else{
@@ -1515,7 +1518,7 @@ class wp_slimstat_reports {
 		$query_details = '';
 		$search_terms_info = '';
 		$domain = parse_url($_referer);
-		$domain = $domain['host'];
+		$domain = !empty( $domain['host'] ) ? $domain['host'] : '';
 
 		parse_str("daum=search?q&naver=search.naver?query&google=search?q&yahoo=search?p&bing=search?q&aol=search?query&lycos=web?q&ask=web?q&cnn=search/?query&about=?q&mamma=result.php?q&voila=S/voila?rdata&virgilio=ricerca?qs&baidu=s?wd&yandex=yandsearch?text&najdi=search.jsp?q&seznam=?q&onet=wyniki.html?qt&yam=Search/Web/DefaultCSA.aspx?k&pchome=/search/?q&kvasir=alle?q&arama.mynet=web/goal/1/?q&nova_rambler=search?query", $query_formats);
 		preg_match("/(daum|naver|google|yahoo|bing|aol|lycos|ask|cnn|about|mamma|voila|virgilio|baidu|yandex|najdi|seznam|onet|szukacz|yam|pchome|kvasir|mynet|ekolay|rambler)./", $domain, $matches);
@@ -1572,14 +1575,16 @@ class wp_slimstat_reports {
 
 		// Allow only legitimate requests
 		$request_uri = $_SERVER['REQUEST_URI'];
-		$request_page = $_REQUEST[ 'page' ];
+		$request_page = 'wp-slim-view-1';
 		
 		// Are we on the Dashboard?
-		if ( empty( $request_page ) ) {
+		if ( empty( $_REQUEST[ 'page' ] ) ) {
 			$request_uri = str_replace( 'index.php', 'admin.php', $request_uri );
-			$request_page = 'wp-slim-view-1';
 		}
-		else if ( !array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ){
+		else if ( array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ) {
+			$request_page = $_REQUEST[ 'page' ];
+		}
+		else {
 			return '';
 		}
 
