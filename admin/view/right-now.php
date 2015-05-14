@@ -51,7 +51,7 @@ else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_i
 		if ($i == 0 || $results[$i-1]['visit_id'] != $results[$i]['visit_id'] || ($results[$i]['visit_id'] == 0 && ($results[$i-1]['ip'] != $results[$i]['ip'] || $results[$i-1]['browser'] != $results[$i]['browser'] || $results[$i-1]['platform'] != $results[$i]['platform']))){
 
 			// Color-coded headers
-			$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(($results[$i]['type'] != 1)?' is-direct':'');
+			$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(($results[$i]['browser_type'] != 1)?' is-direct':'');
 
 			// Country
 			$results[$i]['country'] = "<a class='slimstat-filter-link inline-icon' href='".wp_slimstat_reports::fs_url('country equals '.$results[$i]['country'])."'><img class='slimstat-tooltip-trigger' src='$plugin_url/images/flags/{$results[$i]['country']}.png' width='16' height='16'/><span class='slimstat-tooltip-content'>".__('c-'.$results[$i]['country'],'wp-slimstat')."</span></a>";
