@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.0
+Version: 4.0.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '4.0';
+	public static $version = '4.0.1';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -22,6 +22,7 @@ class wp_slimstat{
 	protected static $options_signature = '';
 	
 	protected static $browser = array();
+	protected static $heuristic_key = 0;
 	protected static $pidx = array('id' => false, 'response' => '');
 
 	/**
@@ -899,71 +900,59 @@ class wp_slimstat{
 		$browser['browser'] = $match['browser'][0];
 		$browser['browser_version'] = $match['version'][0];
 
-		$find = function ($search, &$key) use ($match){
-			$xkey = array_search(strtolower($search), array_map('strtolower', $match['browser']));
-			if ($xkey !== false) {
-				$key = $xkey;
-				return true;
-			}
-			return false;
-		};
-
-		$key = 0;
 		$ekey = 0;
 		if ($browser['browser'] == 'Iceweasel'){
 			$browser['browser'] = 'Firefox';
 		}
-		elseif ($find('Playstation Vita', $key)){
+		elseif (self::_heuristic_find('Playstation Vita', $match)){
 			$browser['platform'] = 'CellOS';
 			$browser['browser'] = 'PlayStation';
 			$browser['browser_type'] = 2;
 		}
-		elseif ($find('Kindle Fire Build', $key) || $find('Silk', $key)){
-			$browser['browser'] = $match['browser'][$key] == 'Silk' ? 'Silk' : 'Kindle';
+		elseif ( self::_heuristic_find( 'Kindle Fire Build', $match ) || self::_heuristic_find( 'Silk', $match ) ) {
+			$browser['browser'] = $match['browser'][self::$heuristic_key] == 'Silk' ? 'Silk' : 'Kindle';
 			$browser['platform'] = 'Android';
-			if ($browser['browser_version'] != $match['version'][$key] || !is_numeric($browser['browser_version'][0])){
+			if ($browser['browser_version'] != $match['version'][self::$heuristic_key] || !is_numeric($browser['browser_version'][0])){
 				$browser['browser_version'] = $match['version'][array_search('Version', $match['browser'])];
 			}
 			$browser['browser_type'] = 2;
 		}
-		elseif ($find('Kindle', $key)){
-			$browser['browser'] = $match['browser'][$key];
+		elseif ( self::_heuristic_find( 'Kindle', $match ) ) {
+			$browser['browser'] = $match['browser'][self::$heuristic_key];
 			$browser['platform'] = 'Android';
-			$browser['browser_version']  = $match['version'][$key];
+			$browser['browser_version']  = $match['version'][self::$heuristic_key];
 			$browser['browser_type'] = 2;
 		}
-		elseif ($find('OPR', $key)){
+		elseif ( self::_heuristic_find( 'OPR', $match ) ) {
 			$browser['browser'] = 'Opera';
-			$browser['browser_version'] = $match['version'][$key];
+			$browser['browser_version'] = $match['version'][self::$heuristic_key];
 		}
-		elseif ($find('Opera', $key)){
+		elseif ( self::_heuristic_find( 'Opera', $match ) ) {
 			$browser['browser'] = 'Opera';
-			$find('Version', $key);
-			$browser['browser_version'] = $match['version'][$key];
+			self::_heuristic_find('Version', $match);
+			$browser['browser_version'] = $match['version'][self::$heuristic_key];
 		}
-		elseif ($find('Midori', $key)){
+		elseif (self::_heuristic_find('Midori', $match)){
 			$browser['browser'] = 'Midori';
-			$browser['browser_version'] = $match['version'][$key];
+			$browser['browser_version'] = $match['version'][self::$heuristic_key];
 		}
-		elseif ($browser['browser'] == 'MSIE' || ($rv_result && $find('Trident', $key)) || $find('Edge', $ekey)){
+		elseif ($browser['browser'] == 'MSIE' || ($rv_result && self::_heuristic_find('Trident', $match)) || self::_heuristic_find('Edge', $match)){
 			$browser['browser'] = 'IE';
-			if( $find('IEMobile', $key) ) {
+			if( self::_heuristic_find('IEMobile', $match) ) {
 				$browser['browser'] = 'IE';
-				$browser['browser_version'] = $match['version'][$key];
+				$browser['browser_version'] = $match['version'][self::$heuristic_key];
 				$browser['browser_type'] = 2;
-			} elseif( $ekey ) {
-				$browser['browser_version'] = $match['version'][$ekey];
 			} else {
-				$browser['browser_version'] = $rv_result ?: $match['version'][$key];
+				$browser['browser_version'] = $rv_result ?: $match['version'][self::$heuristic_key];
 			}
-		} elseif( $find('Vivaldi', $key) ) {
+		} elseif( self::_heuristic_find('Vivaldi', $match) ) {
 			$browser['browser'] = 'Vivaldi';
-			$browser['browser_version'] = $match['version'][$key];
-		} elseif( $find('Chrome', $key) ) {
+			$browser['browser_version'] = $match['version'][self::$heuristic_key];
+		} elseif( self::_heuristic_find('Chrome', $match) ) {
 			$browser['browser'] = 'Chrome';
-			$browser['browser_version'] = $match['version'][$key];
+			$browser['browser_version'] = $match['version'][self::$heuristic_key];
 		} elseif( $browser['browser'] == 'AppleWebKit' ) {
-			if( ($browser['platform'] == 'Android' && !($key = 0)) ) {
+			if( ($browser['platform'] == 'Android' && !(self::$heuristic_key = 0)) ) {
 				$browser['browser'] = 'Android Browser';
 				$browser['browser_type'] = 2;
 			} elseif( strpos($browser['platform'], 'BB') === 0 ) {
@@ -973,17 +962,18 @@ class wp_slimstat{
 			} elseif( $browser['platform'] == 'BlackBerry' || $browser['platform'] == 'PlayBook' ) {
 				$browser['browser'] = 'BlackBerry';
 				$browser['browser_type'] = 2;
-			} elseif( $find('Safari', $key) ) {
+			} elseif( self::_heuristic_find('Safari', $match) ) {
 				$browser['browser'] = 'Safari';
-			} elseif( $find('TizenBrowser', $key) ) {
+			} elseif( self::_heuristic_find('TizenBrowser', $match) ) {
 				$browser['browser'] = 'TizenBrowser';
 			}
 
-			$find('Version', $key);
+			self::_heuristic_find('Version', $match);
 
-			$browser['browser_version'] = $match['version'][$key];
-		} elseif( $key = preg_grep('/playstation \d/i', array_map('strtolower', $match['browser'])) ) {
-			$key = reset($key);
+			$browser['browser_version'] = $match['version'][self::$heuristic_key];
+		} elseif( self::$heuristic_key = preg_grep('/playstation \d/i', array_map('strtolower', $match['browser'])) ) {
+			self::$heuristic_key = reset(self::$heuristic_key);
+			self::$heuristic_key = reset(self::$heuristic_key);
 
 			$browser['platform'] = 'CellOS';
 			$browser['browser']  = 'NetFront';
@@ -1008,7 +998,18 @@ class wp_slimstat{
 	// end _get_browser
 
 	/**
-	 * Helper function for get_browser [courtesy of: GaretJax/PHPBrowsCap]
+	 * Helper function for get_browser [ courtesy of: https://github.com/donatj/PhpUserAgent ]
+	 */
+	protected static function _heuristic_find( $search, $match ) {
+		$xkey = array_search( strtolower( $search ), array_map( 'strtolower', $match[ 'browser' ] ) );
+		if ( $xkey !== false ) {
+			self::$heuristic_key = $xkey;
+			return true;
+		}
+		return false;
+	}
+	/**
+	 * Helper function for get_browser [ courtesy of: GaretJax/PHPBrowsCap ]
 	 */
 	protected static function _preg_unquote($pattern, $matches){
 		$search = array('\\@', '\\.', '\\\\', '\\+', '\\[', '\\^', '\\]', '\\$', '\\(', '\\)', '\\{', '\\}', '\\=', '\\!', '\\<', '\\>', '\\|', '\\:', '\\-', '.*', '.', '\\?');
@@ -1234,6 +1235,7 @@ class wp_slimstat{
 			'enable_javascript' => $val_yes,
 			'javascript_mode' => $val_yes,
 			'add_posts_column' => $val_no,
+			'add_dashboard_widgets' => $val_yes,
 			'posts_column_day_interval' => 30,
 			'posts_column_pageviews' => $val_yes,
 			'use_separate_menu' => $val_yes,

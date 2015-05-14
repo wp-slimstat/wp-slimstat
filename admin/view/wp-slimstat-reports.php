@@ -40,7 +40,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Pageviews', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'wide', 'chart' ),
-				'screens' => array( 'wp-slim-view-2' ),
+				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
 				'tooltip' => $chart_tooltip
 			),
 			'slim_p1_02' => array(
@@ -54,14 +54,14 @@ class wp_slimstat_reports {
 				'title' => __( 'At a Glance', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2' ),
+				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
 				'tooltip' => ''
 			),
 			'slim_p1_04' => array(
 				'title' => __( 'Currently Online', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2' ),
+				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
 				'tooltip' => __( 'When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat' )
 			),
 			'slim_p1_06' => array(
@@ -75,35 +75,35 @@ class wp_slimstat_reports {
 				'title' => __( 'Top Pages', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2' ),
+				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
 				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any web page on your website, including posts, products, categories, and so on.', 'wp-slimstat' )
 			),
 			'slim_p1_10' => array(
 				'title' => __('Top Traffic Sources', 'wp-slimstat'),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5' ),
+				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5', 'dashboard' ),
 				'tooltip' => ''
 			),
 			'slim_p1_11' => array(
 				'title' => __( 'Top Known Visitors', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-2' ),
+				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
 				'tooltip' => ''
 			),
 			'slim_p1_12' => array(
 				'title' => __( 'Top Search Terms', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-4', 'wp-slim-view-5' ),
+				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-4', 'wp-slim-view-5', 'dashboard' ),
 				'tooltip' => ''
 			),
 			'slim_p1_13' => array(
 				'title' => __( 'Top Countries', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-3', 'wp-slim-view-5' ),
+				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-3', 'wp-slim-view-5', 'dashboard' ),
 				'tooltip' => __( 'You can configure Slimstat to ignore a specific Country by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat' )
 			),
 			'slim_p1_15' => array(
@@ -132,7 +132,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Audience Overview', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-3' ),
+				'screens' => array( 'wp-slim-view-3', 'dashboard' ),
 				'tooltip' => __( 'Where not otherwise specified, the metrics in this report are referred to human visitors.', 'wp-slimstat' )
 			),
 			'slim_p2_03' => array(
@@ -143,7 +143,7 @@ class wp_slimstat_reports {
 				'tooltip' => ''
 			),
 			'slim_p2_04' => array(
-				'title' => __( 'Top Browsers', 'wp-slimstat' ),
+				'title' => __( 'Top Browsers', 'wp-slimstat', 'dashboard' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3' ),
@@ -167,7 +167,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Top Screen Resolutions', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-3' ),
+				'screens' => array( 'wp-slim-view-3', 'dashboard' ),
 				'tooltip' => ''
 			),
 			'slim_p2_09' => array(
@@ -244,7 +244,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Top Users', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3' ),
+				'screens' => array( 'wp-slim-view-3', 'dashboard' ),
 				'tooltip' => ''
 			),
 
@@ -266,7 +266,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Top Referring Search Engines', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-5' ),
+				'screens' => array( 'wp-slim-view-5', 'dashboard' ),
 				'tooltip' => ''
 			),
 			'slim_p3_11' => array(
@@ -325,7 +325,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Top Categories', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-4' ),
+				'screens' => array( 'wp-slim-view-4', 'dashboard' ),
 				'tooltip' => ''
 			),
 			/*
@@ -377,7 +377,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Top Authors', 'wp-slimstat' ),
 				'callback' => 'report_body',
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-4' ),
+				'screens' => array( 'wp-slim-view-4', 'dashboard' ),
 				'tooltip' => ''
 			),
 			'slim_p4_19' => array(
@@ -544,16 +544,20 @@ class wp_slimstat_reports {
 	}
 	// end init
 
-	public static function report_body($_report_id = 'p0', $_force_return = false) {
+	public static function report_body( $_report_id = '', $_args = false ) {
 		$is_ajax = false;
+
 		if ( !empty( $_POST[ 'report_id' ] ) ) {
 			// Let's make sure the request is coming from the right place
 			check_ajax_referer( 'meta-box-order', 'security' );
 			$_report_id = $_POST[ 'report_id' ];
 			$is_ajax = true;
 		}
+		else if ( !empty( $_args[ 'id' ] ) ){
+			$_report_id = $_args[ 'id' ];
+		}
 
-		if ( !$_force_return && !$is_ajax && ( in_array( 'hidden', self::$reports_info[ $_report_id ][ 'classes' ] ) || wp_slimstat::$options['async_load'] == 'yes' ) ) {
+		if ( !$is_ajax && ( in_array( 'hidden', self::$reports_info[ $_report_id ][ 'classes' ] ) || wp_slimstat::$options['async_load'] == 'yes' ) ) {
 			return 0;
 		}
 
@@ -1567,12 +1571,20 @@ class wp_slimstat_reports {
 	public static function fs_url($_filters = ''){
 
 		// Allow only legitimate requests
-		if ( !array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ){
+		$request_uri = $_SERVER['REQUEST_URI'];
+		$request_page = $_REQUEST[ 'page' ];
+		
+		// Are we on the Dashboard?
+		if ( empty( $request_page ) ) {
+			$request_uri = str_replace( 'index.php', 'admin.php', $request_uri );
+			$request_page = 'wp-slim-view-1';
+		}
+		else if ( !array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ){
 			return '';
 		}
 
-		$filtered_url = ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ? explode( '?', $_SERVER["HTTP_REFERER"] ) : explode( '?', $_SERVER['REQUEST_URI'] );
-		$filtered_url = $filtered_url[ 0 ] . '?page=' . $_REQUEST[ 'page' ];
+		$filtered_url = ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ? explode( '?', $_SERVER["HTTP_REFERER"] ) : explode( '?', $request_uri );
+		$filtered_url = $filtered_url[ 0 ] . '?page=' . $request_page;
 
 		// Columns
 		$filters_normalized = wp_slimstat_db::parse_filters( $_filters, false );

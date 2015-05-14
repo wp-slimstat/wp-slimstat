@@ -129,6 +129,15 @@ class wp_slimstat_admin{
 			add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ) );
 		}
 
+		// Dashboard Widgets
+		if ( wp_slimstat::$options[ 'add_dashboard_widgets' ] == 'yes' ) {
+			if( strpos( $_SERVER['REQUEST_URI'], 'index.php' ) ) {
+				add_action( 'admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts' ) );
+				add_action( 'admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet' ) );
+			}
+			add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widgets' ) );
+		}
+
 		// AJAX Handlers
 		if (defined('DOING_AJAX') && DOING_AJAX){
 			add_action('wp_ajax_slimstat_hide_admin_notice', array(__CLASS__, 'hide_admin_notice'));
@@ -250,8 +259,8 @@ class wp_slimstat_admin{
 				dt INT(10) UNSIGNED DEFAULT 0,
 				
 				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_events (dt),
-				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
+				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events (dt),
+				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
 			) COLLATE utf8_general_ci $use_innodb";
 			
 		$archive_table_sql = "
@@ -487,6 +496,30 @@ class wp_slimstat_admin{
 	}
 	// end update_tables_and_options
 
+	public static function add_dashboard_widgets(){
+
+		// If this user is whitelisted, we use the minimum capability
+		if ( strpos( wp_slimstat::$options[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ){
+			$minimum_capability = wp_slimstat::$options[ 'capability_can_view' ];
+		}
+		else{
+			$minimum_capability = 'read';
+		}
+
+		if ( !current_user_can( $minimum_capability ) ) {
+			return;
+		}
+
+		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
+		wp_slimstat_reports::init();
+		
+		foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
+			if ( in_array( 'dashboard', $a_report_info[ 'screens' ] ) ) {
+				wp_add_dashboard_widget( $a_report_id, $a_report_info[ 'title' ], array( 'wp_slimstat_reports', $a_report_info[ 'callback' ] ) );
+			}
+		}
+	}
+
 	/**
 	 * Removes 'spammers' from the database when the corresponding comments are marked as spam
 	 */
@@ -535,10 +568,10 @@ class wp_slimstat_admin{
 	}
 	// end wp_slimstat_userdefined_stylesheet
 
-	public static function wp_slimstat_enqueue_scripts(){
+	public static function wp_slimstat_enqueue_scripts( $_hook = '' ) {
 		wp_enqueue_script('dashboard');
 		wp_enqueue_script('jquery-ui-datepicker');
-		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), null);
+		wp_enqueue_script('slimstat_admin', plugins_url('/admin/js/slimstat.admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), null, false);
 
 		// Pass some information to Javascript
 		$params = array(
