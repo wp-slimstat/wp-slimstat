@@ -1181,15 +1181,29 @@ class wp_slimstat{
 		$maxmind_tmp = download_url('http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz', 5);
 
 		if (is_wp_error($maxmind_tmp)){
-			return __('There was an error downloading the MaxMind Geolite DB:','wp-slimstat').' '.$maxmind_tmp->get_error_message();
+			return __('There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat').' '.$maxmind_tmp->get_error_message();
 		}
 
-		if (false === ($zh = gzopen($maxmind_tmp, 'rb'))){
-			return __('There was an error opening the zipped MaxMind Geolite DB','wp-slimstat');
+		$zh = false;
+
+		if ( !function_exists( 'gzopen' ) ) {
+			if ( function_exists( 'gzopen64' ) ) {
+				if ( false === ( $zh = gzopen64( $maxmind_tmp, 'rb' ) ) ) {
+					return __( 'There was an error opening the zipped MaxMind Geolite DB.', 'wp-slimstat' );
+				}
+			}
+			else {
+				return __( 'Function gzopen not defined. Aborting.', 'wp-slimstat' );
+			}
+		}
+		else{
+			if ( false === ( $zh = gzopen( $maxmind_tmp, 'rb' ) ) ) {
+				return __( 'There was an error opening the zipped MaxMind Geolite DB.', 'wp-slimstat' );
+			}
 		}
 
-		if (false === ($fh = fopen(self::$maxmind_path, 'wb'))){
-			return __('There was an error opening the unzipped MaxMind Geolite DB','wp-slimstat');
+		if ( false === ( $fh = fopen( self::$maxmind_path, 'wb' ) ) ) {
+			return __('There was an error opening the unzipped MaxMind Geolite DB.','wp-slimstat');
 		}
 
 		while(($data = gzread($zh, 4096)) != false){
