@@ -126,8 +126,13 @@ class wp_slimstat_admin{
 			include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
 			wp_slimstat_reports::init();
 			
-			$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
-			add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ) );
+			if ( !empty( $_POST[ 'report_id' ] ) ) {
+				$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
+				
+				if ( !empty( wp_slimstat_reports::$reports_info[ $report_id ] ) ) {
+					add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ) );
+				}
+			}
 		}
 
 		// Dashboard Widgets
