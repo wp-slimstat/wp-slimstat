@@ -1571,12 +1571,12 @@ class wp_slimstat_reports {
 		return ($filters_html != "<span class='filters-title'>".__('Current filters:','wp-slimstat').'</span> ')?$filters_html:'';
 	}
 
-	public static function fs_url($_filters = ''){
+	public static function fs_url( $_filters = '' ){
 
 		// Allow only legitimate requests
 		$request_uri = $_SERVER['REQUEST_URI'];
 		$request_page = 'wp-slim-view-1';
-		
+
 		// Are we on the Dashboard?
 		if ( empty( $_REQUEST[ 'page' ] ) ) {
 			$request_uri = str_replace( 'index.php', 'admin.php', $request_uri );
@@ -1593,6 +1593,7 @@ class wp_slimstat_reports {
 
 		// Columns
 		$filters_normalized = wp_slimstat_db::parse_filters( $_filters, false );
+//var_dump( $_filters );
 		if (!empty($filters_normalized['columns'])){
 			foreach($filters_normalized['columns'] as $a_key => $a_filter){
 				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);

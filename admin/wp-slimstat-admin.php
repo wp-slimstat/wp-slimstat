@@ -814,7 +814,7 @@ class wp_slimstat_admin{
 		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
 		wp_slimstat_reports::init();
 
-		$saved_filters = get_option('slimstat_filters', array());
+		$saved_filters = get_option( 'slimstat_filters', array() );
 		$filter_found = 0;
 
 		switch($_POST['type']){
@@ -840,12 +840,11 @@ class wp_slimstat_admin{
 					}
 				}
 
-				if (empty($saved_filters) || $filter_found > 0){
+				if ( empty( $saved_filters) || $filter_found > 0 ) {
 					$saved_filters[] = $new_filter;
-					update_option('slimstat_filters', $saved_filters);
-					echo __('Saved','wp-slimstat');
+					update_option( 'slimstat_filters', $saved_filters );
+					echo __( 'Saved', 'wp-slimstat' );
 				}
-
 				break;
 
 			case 'delete':
@@ -857,12 +856,14 @@ class wp_slimstat_admin{
 			default:
 				echo '<div id="slim_filters_overlay">';
 				foreach ($saved_filters as $a_filter_id => $a_filter_data){
-					$a_filter_html = array();
+
+					$filter_html = $filter_strings = array();
 					foreach ($a_filter_data as $a_filter_label => $a_filter_details){
-						$a_filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-						$a_filter_html[] = strtolower(wp_slimstat_db::$filters_names[$a_filter_label][0]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat').' '.$a_filter_value_no_slashes;
+						$filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
+						$filter_html[] = strtolower(wp_slimstat_db::$filters_names[$a_filter_label][0]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat').' '.$filter_value_no_slashes;
+						$filter_strings[] = "$a_filter_label {$a_filter_details[0]} $filter_value_no_slashes";
 					}
-					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="'.$a_filter_id.'" title="'.__('Delete this filter','wp-slimstat').'" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="'.wp_slimstat_reports::fs_url($a_filter_data).'">'.implode(', ', $a_filter_html).'</a> <a href="#"></a></p>';
+					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="'.$a_filter_id.'" title="'.__('Delete this filter','wp-slimstat').'" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url( implode( '&&&', $filter_strings ) ).'">'.implode(', ', $filter_html).'</a> <a href="#"></a></p>';
 				}
 				echo '</div>';
 				break;
