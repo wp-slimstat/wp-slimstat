@@ -625,11 +625,12 @@ class wp_slimstat_db {
 		}
 
 		// Build the SQL query
+		$group_by_string = "GROUP BY {$group_by[0]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), {$group_by[1]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
 		$sql = "
 			SELECT dt, $_data1 first_metric, $_data2 second_metric
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where $previous_time_range
-			GROUP BY {$group_by[0]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), {$group_by[1]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+			$group_by_string";
 
 		// Get the data
 		$results = self::_get_results( $sql, 'blog_id', '', $group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
@@ -734,7 +735,7 @@ class wp_slimstat_db {
 			GROUP BY $_as_column $_having
 			ORDER BY counthits DESC
 			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ], 
-			( ( !empty( $_as_column ) && $_as_column != $_columns ) ? $_as_column : $_column ).', blog_id',
+			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
 			'counthits DESC',
 			$_column,
 			'SUM(counthits) AS counthits' );
