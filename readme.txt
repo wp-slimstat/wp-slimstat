@@ -35,7 +35,6 @@ Stable tag: 4.0.1
 Visit [our website](http://slimstat.getused.to.it/addons/) for a list of available extensions.
 
 = Free Add-ons =
-* [WP Slimstat Dashboard Widgets](http://wordpress.org/extend/plugins/wp-slimstat-dashboard-widgets) adds the most important reports right on your WordPress Dashboard
 * [WP Slimstat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) allows you to share your reports with your readers
 
 == Installation ==
