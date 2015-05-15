@@ -497,7 +497,7 @@ class wp_slimstat_reports {
 						self::$reports_info[ $a_report_id ][ 'classes' ][] = 'hidden';
 					}
 				}
-				else {
+				else if ( is_array( self::$reports_info[ $a_report_id ][ 'classes' ] ) ) {
 					self::$reports_info[ $a_report_id ][ 'classes' ] = array_diff( self::$reports_info[ $a_report_id ][ 'classes' ], array( 'hidden' ) );
 				}
 			}
