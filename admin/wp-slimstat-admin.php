@@ -586,7 +586,7 @@ class wp_slimstat_admin{
 			'async_load' => wp_slimstat::$options['async_load'],
 			'datepicker_image' => plugins_url('/admin/images/datepicker.png', dirname(__FILE__)),
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
-			'refresh_interval' => ( $_GET[ 'page'] == 'wp-slim-view-1' ) ? intval( wp_slimstat::$options[ 'refresh_interval' ] ) : 0,
+			'refresh_interval' => ( !empty( $_GET[ 'page' ] ) && $_GET[ 'page' ] == 'wp-slim-view-1' ) ? intval( wp_slimstat::$options[ 'refresh_interval' ] ) : 0,
 			'text_direction' => $GLOBALS['wp_locale']->text_direction,
 			'use_slimscroll' => isset(wp_slimstat::$options['use_slimscroll'])?wp_slimstat::$options['use_slimscroll']:'yes'
 		);

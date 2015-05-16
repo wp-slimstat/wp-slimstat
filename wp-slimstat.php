@@ -238,34 +238,29 @@ class wp_slimstat{
 			}
 		}
 
-		// Information about this resource
-		$content_info = array('content_type' => 'unknown');
-		
 		// Did we receive data from an Ajax request?
-		if (!empty(self::$data_js['id'])){
-		
+		$content_info = self::_get_content_info();
+		if ( !empty( self::$data_js['id'] ) && self::$data_js['id'] > 0 ){
+
 			// Are we tracking a new pageview? (pos is empty = no event was triggered)
-			if (empty(self::$data_js['pos'])){
-				$content_info = unserialize(base64_decode(self::$data_js['id']));
-				if ($content_info === false){
+			if ( empty( self::$data_js[ 'pos' ] ) ) {
+				$content_info = unserialize( base64_decode( self::$data_js[ 'id' ] ) );
+				if ( $content_info === false ){
 					$content_info = array();
 				}
 			}
 			
 			// If pos is not empty and slimtrack was called, it means we are tracking a new internal download
-			else if (isset(self::$data_js['res'])){
-				$download_url = base64_decode(self::$data_js['res']);
-				if (is_string($download_url)){
-					$download_extension = pathinfo($download_url, PATHINFO_EXTENSION);
-					if (in_array($download_extension, self::string_to_array(self::$options['extensions_to_track']))){
-						unset(self::$stat['id']);
-						$content_info = array('content_type' => 'download');
+			else if ( !empty( self::$data_js[ 'res' ] ) ) {
+				$download_url = base64_decode( self::$data_js[ 'res' ] );
+				if ( is_string( $download_url ) ) {
+					$download_extension = pathinfo( $download_url, PATHINFO_EXTENSION );
+					if ( in_array( $download_extension, self::string_to_array( self::$options[ 'extensions_to_track' ] ) ) ) {
+						unset( self::$stat[ 'id' ] );
+						$content_info = array( 'content_type' => 'download' );
 					}
 				}
 			}
-		}
-		else{
-			$content_info = self::_get_content_info();
 		}
 
 		self::$stat = self::$stat + $content_info;
@@ -741,8 +736,11 @@ class wp_slimstat{
 		elseif (is_home()){
 			$content_info['content_type'] = 'home';
 		}
-		elseif (in_array($GLOBALS['pagenow'], array('wp-login.php', 'wp-register.php'))){
+		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-login.php' ) {
 			$content_info['content_type'] = 'login';
+		}
+		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-register.php' ) {
+			$content_info['content_type'] = 'registration';
 		}
 		elseif (is_admin()){
 			$content_info['content_type'] = 'admin';
