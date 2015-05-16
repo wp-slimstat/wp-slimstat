@@ -19,7 +19,7 @@ if (!empty($_GET['force_refresh']) || false === $response){
 	set_transient('wp_slimstat_addon_list', $response, 86400);
 }
 
-$license_key_field = false;
+$at_least_one_add_on_active = false;
 $list_addons = maybe_unserialize($response['body']);
 if (!is_array($list_addons)){
 	echo '<p>'.__('There was an error decoding the add-ons list from the server. Please try again later.','wp-slimstat').'</p></div>';
@@ -54,6 +54,7 @@ if (!is_array($list_addons)){
 				<div class="row-actions-visible"><?php 
 					if (is_plugin_active($a_addon['slug'].'/index.php') || is_plugin_active($a_addon['slug'].'/'.$a_addon['slug'].'.php')){
 						echo 'Latest Version: '.$a_addon['version'].'<br/>Installed and Active';
+						$at_least_one_add_on_active = true;
 					}
 					else{
 						echo 'Latest Version: '.$a_addon['version'].'<br/>Price: '.(is_numeric($a_addon['price'])?'$'.$a_addon['price']:$a_addon['price']);
@@ -72,7 +73,7 @@ if (!is_array($list_addons)){
 		<?php endforeach ?>
 	</tbody>
 </table>
-<input type="submit" value="Save Changes" class="button-primary" name="Submit">
+<?php if ( $at_least_one_add_on_active ): ?><input type="submit" value="Save License Keys" class="button-primary" name="Submit"><?php endif ?>
 
 </form>
 </div>
