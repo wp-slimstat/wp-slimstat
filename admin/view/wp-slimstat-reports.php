@@ -470,7 +470,11 @@ class wp_slimstat_reports {
 		// Retrieve this user's list of active reports, 
 		$user = wp_get_current_user();
 		$page_location = ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
-		$user_reports = get_user_option( "meta-box-order_{$page_location}_page_{$_REQUEST['page']}", $user->ID );
+		
+		// Do this only if we are in one of our screens (no dashboard!)
+		if ( !empty( $_REQUEST['page'] ) && strpos( $_REQUEST['page'], 'wp-slim-view' ) !== false ) {
+			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_{$_REQUEST['page']}", $user->ID );
+		}
 
 		// If this list is not empty, we rearrange the order of our reports
 		if ( !empty( $user_reports[ 0 ] ) ) {
@@ -792,7 +796,7 @@ class wp_slimstat_reports {
 
 			// Top Pages Not Found
 			case 'slim_p4_16':
-				self::show_results( 'popular', 'resource', array( 'where' => 'content_type LIKE "%404%")' ) );
+				self::show_results( 'popular', 'resource', array( 'where' => 'content_type LIKE "%404%"' ) );
 				break;
 
 			// Top Authors
