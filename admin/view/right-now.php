@@ -12,21 +12,21 @@ $plugin_url = plugins_url('', dirname(__FILE__));
 // Set the filters
 wp_slimstat_db::$filters_normalized['misc']['limit_results'] = wp_slimstat::$options['number_results_raw_data'];
 
-// Get the data
-$results = wp_slimstat_db::get_recent('*');
-
-// Return the results if we are not echoing them (export, email, etc)
-if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
-	return $results;
+// Report Header
+if (empty($_POST['report_id'])){
+	wp_slimstat_reports::report_header('slim_p7_02', 'tall', __('Color codes','wp-slimstat').'</strong><p><span class="little-color-box is-search-engine"></span> '.__('From search result page','wp-slimstat').'</p><p><span class="little-color-box is-known-visitor"></span> '.__('Known Visitor','wp-slimstat').'</p><p><span class="little-color-box is-known-user"></span> '.__('Known Users','wp-slimstat').'</p><p><span class="little-color-box is-direct"></span> '.__('Other Humans','wp-slimstat').'</p><p><span class="little-color-box"></span> '.__('Bot or Crawler','wp-slimstat').'</p>');
 }
 
+// Get the data
+$results = wp_slimstat_db::get_recent('*');
+// $results = wp_slimstat_db::get_popular('browser');
 $count_page_results = count($results);
 $count_all_results = wp_slimstat_db::count_records();
 
 if ($count_page_results == 0){
 	echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
 }
-else {
+else if (wp_slimstat::$options['async_load'] != 'yes' || !empty($_POST['report_id'])){
 	
 	// Pagination
 	echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true );
@@ -167,3 +167,9 @@ else {
 		echo wp_slimstat_reports::report_pagination('slim_p7_02', $count_page_results, $count_all_results);
 	}
 }
+
+if (empty($_POST['report_id'])): ?>
+	</div>
+</div>
+<?php
+endif; 

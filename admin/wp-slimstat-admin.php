@@ -130,7 +130,7 @@ class wp_slimstat_admin{
 				$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
 				
 				if ( !empty( wp_slimstat_reports::$reports_info[ $report_id ] ) ) {
-					add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ), 10, 2 );
+					add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ) );
 				}
 			}
 		}
@@ -520,11 +520,10 @@ class wp_slimstat_admin{
 
 		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
 		wp_slimstat_reports::init();
-
+		
 		foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
 			if ( in_array( 'dashboard', $a_report_info[ 'screens' ] ) ) {
-				// When called this way, callback_wrapper receives just the report_id as the SECOND parameter
-				wp_add_dashboard_widget( $a_report_id, $a_report_info[ 'title' ], array( 'wp_slimstat_reports', 'callback_wrapper' ) );
+				wp_add_dashboard_widget( $a_report_id, $a_report_info[ 'title' ], array( 'wp_slimstat_reports', $a_report_info[ 'callback' ] ) );
 			}
 		}
 	}
@@ -584,6 +583,7 @@ class wp_slimstat_admin{
 
 		// Pass some information to Javascript
 		$params = array(
+			'async_load' => wp_slimstat::$options['async_load'],
 			'datepicker_image' => plugins_url('/admin/images/datepicker.png', dirname(__FILE__)),
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
 			'refresh_interval' => ( !empty( $_GET[ 'page' ] ) && $_GET[ 'page' ] == 'wp-slim-view-1' ) ? intval( wp_slimstat::$options[ 'refresh_interval' ] ) : 0,

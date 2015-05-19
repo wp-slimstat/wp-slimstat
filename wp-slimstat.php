@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1
+Version: 4.0.2
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,7 +11,7 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '4.1';
+	public static $version = '4.0.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -240,12 +240,12 @@ class wp_slimstat{
 
 		// Did we receive data from an Ajax request?
 		$content_info = self::_get_content_info();
-		if ( !empty( self::$data_js['id'] ) ){
+		if ( !empty( self::$data_js['id'] ) && self::$data_js['id'] > 0 ){
 
 			// Are we tracking a new pageview? (pos is empty = no event was triggered)
 			if ( empty( self::$data_js[ 'pos' ] ) ) {
 				$content_info = unserialize( base64_decode( self::$data_js[ 'id' ] ) );
-				if ( $content_info === false || empty( $content_info[ 'content_type' ] ) ) {
+				if ( $content_info === false ){
 					$content_info = array();
 				}
 			}
@@ -261,7 +261,6 @@ class wp_slimstat{
 					}
 				}
 			}
-
 		}
 
 		self::$stat = self::$stat + $content_info;
@@ -734,7 +733,7 @@ class wp_slimstat{
 		elseif (is_feed()){
 			$content_info['content_type'] = 'feed';
 		}
-		elseif ( is_home() || is_front_page() ){
+		elseif (is_home()){
 			$content_info['content_type'] = 'home';
 		}
 		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-login.php' ) {
@@ -743,8 +742,7 @@ class wp_slimstat{
 		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-register.php' ) {
 			$content_info['content_type'] = 'registration';
 		}
-		// WordPress sets is_admin() to true for all ajax requests ( front-end or admin-side )
-		elseif ( is_admin() && ( !defined('DOING_AJAX') || !DOING_AJAX ) ) {
+		elseif (is_admin()){
 			$content_info['content_type'] = 'admin';
 		}
 
@@ -1258,6 +1256,7 @@ class wp_slimstat{
 			'show_display_name' => $val_no,
 			'convert_resource_urls_to_titles' => $val_yes,
 			'convert_ip_addresses' => $val_no,
+			'async_load' => $val_no,
 			'use_slimscroll' => $val_yes,
 			'expand_details' => $val_no,
 			'rows_to_show' => ($val_yes == 'null')?'0':'20',

@@ -138,7 +138,7 @@ class wp_slimstat_db {
 			}
 		}
 		else {
-			if ( $_where != '1=1' && !empty( self::$sql_where[ 'columns' ] ) ) {
+			if ( !empty( self::$sql_where[ 'columns' ] ) ) {
 				$_where .= ' AND '.self::$sql_where[ 'columns' ];
 			}
 			if ( $_use_time_range ) {
@@ -718,7 +718,7 @@ class wp_slimstat_db {
 			'MIN(dt)' );
 	}
 
-	public static function get_top( $_column = 'id', $_where = '', $_having = '', $_as_column = '' ){
+	public static function get_popular( $_column = 'id', $_where = '', $_having = '', $_as_column = '' ){
 		if ( !empty( $_as_column ) ) {
 			$_column = "$_column AS $_as_column";
 		}
@@ -741,7 +741,7 @@ class wp_slimstat_db {
 			'SUM(counthits) AS counthits' );
 	}
 
-	public static function get_top_complete( $_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX' ) {
+	public static function get_popular_complete( $_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX' ) {
 		$_where = self::_get_combined_where( $_where, $_column );
 
 		return self::_get_results( "

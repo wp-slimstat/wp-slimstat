@@ -1,4 +1,4 @@
-﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {refresh_interval: 0, expand_details: 'no', datepicker_image: '', text_direction: '', use_slimscroll: 'yes'};
+﻿if (typeof SlimStatAdminParams == 'undefined') SlimStatAdminParams = {async_load: 'no', refresh_interval: 0, expand_details: 'no', datepicker_image: '', text_direction: '', use_slimscroll: 'yes'};
 var SlimStatAdmin = {
 	// Public variables
 	chart_data: [],
@@ -394,6 +394,15 @@ jQuery(function(){
 			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
 		}
 	});
+
+	// Asynchronous Reports
+	if (SlimStatAdminParams.async_load == 'yes'){
+		jQuery('div[id^=slim_]').each(function(){
+			report_id = jQuery(this).attr('id');
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) }
+			SlimStatAdmin.refresh_report(report_id, data);
+		});
+	}
 
 	// Hide Admin Notice
 	jQuery(document).on('click', '#slimstat-hide-admin-notice', function(e){
