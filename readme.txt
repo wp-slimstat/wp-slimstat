@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.0.2
+Stable tag: 4.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -34,12 +34,8 @@ Stable tag: 4.0.2
 = Premium Add-ons =
 Visit [our website](http://slimstat.getused.to.it/addons/) for a list of available extensions.
 
-= Free Add-ons =
-* [WP Slimstat Shortcodes](http://wordpress.org/extend/plugins/wp-slimstat-shortcodes/) allows you to share your reports with your readers
-
 == Installation ==
 
-0. **If you are upgrading from 2.8.4 or earlier, you MUST first install [version 3.0](https://downloads.wordpress.org/plugin/wp-slimstat.3.0.zip) (deactivate/activate) and then upgrade to the latest release available**
 1. In your WordPress admin, go to Plugins > Add New
 2. Search for WP Slimstat
 3. Click on **Install Now** under WP Slimstat and then activate the plugin
@@ -62,6 +58,17 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1 =
+* [Note] We'd like to hear from you: have you noticed any performance improvements after switching to Slimstat 4.0? Let us know through the forum or contant our support team.
+* [New] Our dev team is moving forward with their effort to give Slimstat's source code a good scrub. After cleaning up the database library, it was now the report library's turn. Again, if you developed your own custom report, you will probably need to update your code to make it work with our new library. We are going to update our online documentation in the next few days.
+* [New] The DB library function wp_slimstat_db::get_popular has been renamed wp_slimstat_db::get_top for consistency with the rest our codebase. Please update your code accordingly.
+* [New] Say hello to your new shortcodes. We merged the ShortCodes add-on directly into our main plugin. This improves the overall performance and streamlines our software lifecycle. Please note: the shortcode syntax has been updated and simplified (you need to replace 'popular' with 'top'). All the information is being added to our [knowledge base](https://slimstat.freshdesk.com/support/solutions) for your convenience. Stay tuned or contact our support team for more information.
+* [Update] [AmMap](http://www.amcharts.com/javascript-maps/) has been updated to version 3.14.2. Please consider supporting this project by [purchasing a license](http://www.amcharts.com/online-store/).
+* [Fix] We took care of various warnings displayed with DEBUG_MODE enabled.
+* [Fix] The data import script failed to do its job in some multisite environments (thank you, pepe).
+* [Fix] In Client Mode (aka Javascript mode), all page content types were being set to 'admin', under certain circumstances.
+* [Fix] THe uninstall script was not removing the 'old' tables (wp_slim_stats_3, wp_slim_stats_archive_3).
 
 = 4.0.2 =
 * [Note] There seem to be some issues with the tracker not being updated throughout the CDN. If you are using this service, please disable it temporarily (Settings > Advanced > Enable CDN = No) until this is resolved. [We are in touch](https://github.com/jsdelivr/jsdelivr/issues/2632#issuecomment-101994217) with the team managing the CDN.

@@ -138,7 +138,7 @@ class wp_slimstat_db {
 			}
 		}
 		else {
-			if ( !empty( self::$sql_where[ 'columns' ] ) ) {
+			if ( $_where != '1=1' && !empty( self::$sql_where[ 'columns' ] ) ) {
 				$_where .= ' AND '.self::$sql_where[ 'columns' ];
 			}
 			if ( $_use_time_range ) {
@@ -297,6 +297,7 @@ class wp_slimstat_db {
 				switch( $a_filter[ 1 ] ) {
 					case 'strtotime':
 						$custom_date = strtotime( $a_filter[ 3 ].' UTC' );
+var_dump($custom_date);
 						$filters_normalized[ 'date' ][ 'day' ] = date( 'j', $custom_date );
 						$filters_normalized[ 'date' ][ 'month' ] = date( 'n', $custom_date );
 						$filters_normalized[ 'date' ][ 'year' ] = date( 'Y', $custom_date );
@@ -718,49 +719,6 @@ class wp_slimstat_db {
 			'MIN(dt)' );
 	}
 
-	public static function get_popular( $_column = 'id', $_where = '', $_having = '', $_as_column = '' ){
-		if ( !empty( $_as_column ) ) {
-			$_column = "$_column AS $_as_column";
-		}
-		else {
-			$_as_column = $_column;
-		}
-
-		$_where = self::_get_combined_where( $_where, $_as_column );
-
-		return self::_get_results( "
-			SELECT $_column, COUNT(*) counthits
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE $_where
-			GROUP BY $_as_column $_having
-			ORDER BY counthits DESC
-			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ], 
-			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
-			'counthits DESC',
-			$_column,
-			'SUM(counthits) AS counthits' );
-	}
-
-	public static function get_popular_complete( $_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX' ) {
-		$_where = self::_get_combined_where( $_where, $_column );
-
-		return self::_get_results( "
-			SELECT $_outer_select_column, ts1.maxid, COUNT(*) counthits
-			FROM (
-				SELECT $_column, $_aggr_function(id) maxid
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats
-				WHERE $_where
-				GROUP BY $_column
-			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id 
-			GROUP BY $_outer_select_column
-			ORDER BY counthits DESC
-			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ],
-			$column_for_select,
-			'counthits DESC',
-			$column_for_select,
-			'MAX(maxid), SUM(counthits)' );
-	}
-
 	public static function get_recent( $_column = '*', $_where = '', $_having = '', $_use_time_range = true, $_as_column = '' ) {
 		if ( !empty( $_as_column ) ) {
 			$_column = "$_column AS $_as_column";
@@ -795,5 +753,48 @@ class wp_slimstat_db {
 				( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
 				't1.dt DESC' );
 		}
+	}
+	
+	public static function get_top( $_column = 'id', $_where = '', $_having = '', $_use_time_range = true, $_as_column = '' ){
+		if ( !empty( $_as_column ) ) {
+			$_column = "$_column AS $_as_column";
+		}
+		else {
+			$_as_column = $_column;
+		}
+
+		$_where = self::_get_combined_where( $_where, $_as_column, $_use_time_range );
+
+		return self::_get_results( "
+			SELECT $_column, COUNT(*) counthits
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats
+			WHERE $_where
+			GROUP BY $_as_column $_having
+			ORDER BY counthits DESC
+			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ], 
+			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
+			'counthits DESC',
+			$_column,
+			'SUM(counthits) AS counthits' );
+	}
+
+	public static function get_top_complete( $_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX' ) {
+		$_where = self::_get_combined_where( $_where, $_column );
+
+		return self::_get_results( "
+			SELECT $_outer_select_column, ts1.maxid, COUNT(*) counthits
+			FROM (
+				SELECT $_column, $_aggr_function(id) maxid
+				FROM {$GLOBALS['wpdb']->prefix}slim_stats
+				WHERE $_where
+				GROUP BY $_column
+			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id 
+			GROUP BY $_outer_select_column
+			ORDER BY counthits DESC
+			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ],
+			$column_for_select,
+			'counthits DESC',
+			$column_for_select,
+			'MAX(maxid), SUM(counthits)' );
 	}
 }

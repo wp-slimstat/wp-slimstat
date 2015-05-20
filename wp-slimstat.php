@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.0.2
+Version: 4.1
 Author: Camu
 Author URI: http://slimstat.getused.to.it/
 */
@@ -11,19 +11,19 @@ Author URI: http://slimstat.getused.to.it/
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '4.0.2';
+	public static $version = '4.1';
 	public static $options = array();
 
 	public static $wpdb = '';
 	public static $maxmind_path = '';
 
-	protected static $data_js = array('id' => -1);
+	protected static $data_js = array( 'id' => 0 );
 	protected static $stat = array();
 	protected static $options_signature = '';
 	
 	protected static $browser = array();
 	protected static $heuristic_key = 0;
-	protected static $pidx = array('id' => false, 'response' => '');
+	protected static $pidx = array( 'id' => false, 'response' => '' );
 
 	/**
 	 * Initializes variables and actions
@@ -87,6 +87,9 @@ class wp_slimstat{
 			}
 		}
 
+		// Shortcodes
+		add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
+
 		// Update the options before shutting down
 		add_action('shutdown', array(__CLASS__, 'slimstat_save_options'), 100);
 	}
@@ -123,15 +126,15 @@ class wp_slimstat{
 			}
 		}
 
-		if (self::$data_js['op'] == 'add'){
+		if ( self::$data_js['op'] == 'add' ){
 			self::slimtrack();
 		}
 		else{
 			// Update an existing pageview with client-based information (resolution, plugins installed, etc)
-			self::_set_visit_id(true);
+			self::_set_visit_id( true );
 
 			// ID of the pageview to update
-			self::$stat['id'] = abs(intval(self::$data_js['id']));
+			self::$stat[ 'id' ] = abs( intval( self::$data_js[ 'id' ] ) );
 
 			// Are we tracking an outbound click?
 			if (!empty(self::$data_js['res'])){
@@ -142,7 +145,7 @@ class wp_slimstat{
 		}
 
 		// Was this pageview tracked?
-		if (self::$stat['id'] <= 0){
+		if ( self::$stat[ 'id' ] <= 0 ){
 			$abs_error_code = abs(self::$stat['id']);
 			switch ($abs_error_code){
 				case '212':
@@ -205,7 +208,6 @@ class wp_slimstat{
 			return $_argument;
 		}
 
-		$referer = array();
 		if (!empty(self::$data_js['ref'])){
 			self::$stat['referer'] = base64_decode(self::$data_js['ref']);
 		}
@@ -213,21 +215,22 @@ class wp_slimstat{
 			self::$stat['referer'] = $_SERVER['HTTP_REFERER'];
 		}
 
-		// Is this a 'seriously malformed' URL?
-		$referer = parse_url(self::$stat['referer']);
-		if (!$referer){
-			self::$stat['id'] = -208;
-			self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Malformed URL','wp-slimstat'), date_i18n('U'));
-			return $_argument;
-		}
+		if ( !empty( self::$stat[ 'referer' ] ) ) {
+		
+			// Is this a 'seriously malformed' URL?
+			$referer = parse_url( self::$stat[ 'referer' ] );
+			if ( !$referer ){
+				self::$stat[ 'id' ] = -208;
+				self::$options[ 'last_tracker_error' ] = array( 200, __( 'Malformed URL', 'wp-slimstat' ), date_i18n( 'U' ) );
+				return $_argument;
+			}
 
-		// Fix Google Images referring domain
-		if ((strpos(self::$stat['referer'], 'www.google') !== false) && (strpos(self::$stat['referer'], '/imgres?') !== false)){
-			self::$stat['referer'] = str_replace('www.google', 'images.google', self::$stat['referer']);
-		}
+			// Fix Google Images referring domain
+			if ( ( strpos(self::$stat[ 'referer' ], 'www.google' ) !== false ) && ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) ) {
+				self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
+			}
 
-		// Is this referer blacklisted?
-		if (!empty(self::$stat['referer'])){
+			// Is this referer blacklisted?
 			foreach(self::string_to_array(self::$options['ignore_referers']) as $a_filter){
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
 				if (preg_match("@^$pattern$@i", self::$stat['referer'])){
@@ -238,14 +241,15 @@ class wp_slimstat{
 			}
 		}
 
-		// Did we receive data from an Ajax request?
 		$content_info = self::_get_content_info();
-		if ( !empty( self::$data_js['id'] ) && self::$data_js['id'] > 0 ){
+
+		// Did we receive data from an Ajax request?
+		if ( !empty( self::$data_js['id'] ) ) {
 
 			// Are we tracking a new pageview? (pos is empty = no event was triggered)
 			if ( empty( self::$data_js[ 'pos' ] ) ) {
 				$content_info = unserialize( base64_decode( self::$data_js[ 'id' ] ) );
-				if ( $content_info === false ){
+				if ( $content_info === false || empty( $content_info[ 'content_type' ] ) ) {
 					$content_info = array();
 				}
 			}
@@ -261,6 +265,7 @@ class wp_slimstat{
 					}
 				}
 			}
+
 		}
 
 		self::$stat = self::$stat + $content_info;
@@ -270,34 +275,35 @@ class wp_slimstat{
 			self::$stat['resource'] = $_SERVER['HTTP_REFERER'];
 			self::$stat['referer'] = '';
 		}
-		elseif (is_array(self::$data_js) && isset(self::$data_js['res'])){
+		else if (is_array(self::$data_js) && isset(self::$data_js['res'])){
 
 			$parsed_permalink = parse_url(base64_decode(self::$data_js['res']));
 			self::$stat['searchterms'] = self::_get_search_terms($referer);
 
 			// Was this an internal search?
 			if (empty(self::$stat['searchterms'])){
-				self::$stat['searchterms'] = self::_get_search_terms($parsed_permalink);
+				self::$stat['searchterms'] = self::_get_search_terms( $parsed_permalink );
 			}
 
 			self::$stat['resource'] = !is_array($parsed_permalink)?self::$data_js['res']:$parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.urldecode($parsed_permalink['query']):'');
 		}
-		elseif (empty($_REQUEST['s'])){
-			self::$stat['searchterms'] = self::_get_search_terms($referer);
-			self::$stat['resource'] = self::get_request_uri();
+		elseif ( empty( $_REQUEST[ 's' ] ) ) {
+			if ( !empty( $referer ) ) {
+				self::$stat[ 'searchterms' ] = self::_get_search_terms( $referer );
+			}
+			self::$stat[ 'resource' ] = self::get_request_uri();
 		}
 		else{
-			self::$stat['searchterms'] = str_replace('\\', '', $_REQUEST['s']);
-			self::$stat['resource'] = ''; // Mark the resource to remember that this is a 'local search'
+			self::$stat[ 'searchterms' ] = str_replace( '\\', '', $_REQUEST[ 's' ] );
 		}
 
 		// Don't store empty values in the database
-		if (empty(self::$stat['searchterms'])){
-			unset(self::$stat['searchterms']);
+		if ( empty( self::$stat['searchterms'] ) ) {
+			unset( self::$stat['searchterms'] );
 		}
 
 		// Do not track report pages in the admin
-		if (strpos(self::$stat['resource'], 'wp-admin/admin-ajax.php')!==false || (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-')!==false)){
+		if ( ( !empty( self::$stat[ 'resource' ] ) && strpos( self::$stat[ 'resource' ], 'wp-admin/admin-ajax.php' ) !== false ) || ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'wp-slim-view' ) !== false ) ) {
 			return $_argument;
 		}
 
@@ -733,7 +739,7 @@ class wp_slimstat{
 		elseif (is_feed()){
 			$content_info['content_type'] = 'feed';
 		}
-		elseif (is_home()){
+		elseif ( is_home() || is_front_page() ){
 			$content_info['content_type'] = 'home';
 		}
 		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-login.php' ) {
@@ -742,7 +748,8 @@ class wp_slimstat{
 		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-register.php' ) {
 			$content_info['content_type'] = 'registration';
 		}
-		elseif (is_admin()){
+		// WordPress sets is_admin() to true for all ajax requests ( front-end or admin-side )
+		elseif ( is_admin() && ( !defined('DOING_AJAX') || !DOING_AJAX ) ) {
 			$content_info['content_type'] = 'admin';
 		}
 
@@ -1076,9 +1083,9 @@ class wp_slimstat{
 		self::$data_js = apply_filters('slimstat_filter_pageview_data_js', $_data);
 
 		// Do we have an id for this request?
-		if (empty(self::$data_js['id']) || empty(self::$data_js['op'])){
-			do_action('slimstat_track_exit_102');
-			self::$options['last_tracker_error'] = array(102, __('Invalid payload string','wp-slimstat'), date_i18n('U'));
+		if ( empty( self::$data_js[ 'id' ] ) || empty( self::$data_js[ 'op' ] ) ) {
+			do_action( 'slimstat_track_exit_102' );
+			self::$options[ 'last_tracker_error' ] = array( 102, __( 'Invalid payload string', 'wp-slimstat' ), date_i18n( 'U' ) );
 			self::slimstat_save_options();
 			exit('-102.0');
 		}
@@ -1211,6 +1218,135 @@ class wp_slimstat{
 		return '';
 	}
 
+	public static function slimstat_shortcode( $_attributes = '', $_content = '' ){
+		extract( shortcode_atts( array(
+			'f' => '',		// recent, popular, count
+			'w' => '',		// column to use
+			's' => ' '		// separator
+		), $_attributes));
+
+		$output = $where = '';
+		$s = "<span class='slimstat-item-separator'>$s</span>";
+
+		// Load the database library
+		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
+
+		// Load the localization files (for languages, operating systems, etc)
+		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
+
+		// Look for required fields
+		if ( empty( $f ) || empty( $w ) ) {
+			return '<!-- Slimstat Shortcode Error: missing parameter -->';
+		}
+
+		if ( strpos ( $_content, 'WHERE:' ) !== false ) {
+			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
+			wp_slimstat_db::init();
+		}
+		else{
+			wp_slimstat_db::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
+		}
+
+		switch( $f ) {
+			case 'count':
+			case 'count-all':
+				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all') === false );
+				break;
+
+			case 'recent':
+			case 'recent-all':
+			case 'top':
+			case 'top-all':
+				$function = 'get_' . str_replace( '-all', '', $f );
+
+				if ( $w == '*' ) {
+					$w = 'id';
+				}
+
+				$w = wp_slimstat::string_to_array( $w );
+
+				// Some columns are 'special' and need be removed from the list
+				$w_clean = array_diff( $w, array( 'count', 'hostname', 'post_link', 'dt' ) );
+
+				// The special value 'post_list' requires the permalink to be generated
+				if ( in_array( 'post_link', $w ) ) {
+					$w_clean[] = 'resource';
+				}
+
+				// Retrieve the data
+				$results = wp_slimstat_db::$function( implode( ', ', $w_clean ), $where, '', strpos( $f, 'all') === false );
+
+				// No data? No problem!
+				if ( empty( $results ) ) {
+					return '<!--  Slimstat Shortcode: No Data -->';
+				}
+
+				// Are nice permalinks enabled?
+				$permalinks_enabled = get_option('permalink_structure');
+
+				// Format results
+				$output = array();
+				foreach( $results as $result_idx => $a_result ) {
+					foreach( $w as $a_column ) {
+						$output[ $result_idx ][ $a_column ] = "<span class='col-$a_column'>";
+
+						if ( $permalinks_enabled ) {
+							$a_result[ 'resource' ] = strtok( $a_result[ 'resource' ], '?' );
+						}
+
+						switch( $a_column ) {
+							case 'post_link':
+								$post_id = url_to_postid( $a_result[ 'resource' ] );
+								if ($post_id > 0) {
+									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>" . get_the_title( $post_id ) . '</a>'; 
+								}
+								else {
+									$output[ $result_idx ][ $a_column ] .= $a_result[ 'resource' ];
+								}
+								break;
+
+							case 'dt':
+								$output[ $result_idx ][ $a_column ] .= date_i18n( wp_slimstat::$options[ 'date_format' ] . ' ' . wp_slimstat::$options[ 'time_format' ], $a_result[ 'dt' ] );
+								break;
+
+							case 'hostname':
+								$output[ $result_idx ][ $a_column ] .= gethostbyaddr( long2ip( $a_result[ 'ip' ] ) );
+								break;
+
+							case 'ip':
+								$output[ $result_idx ][ $a_column ] .= long2ip( $a_result['ip'] );
+								break;
+
+							case 'count':
+								$output[ $result_idx ][ $a_column ] .= $a_result[ 'counthits' ];
+								break;
+
+							case 'language':
+								$output[ $result_idx ][ $a_column ] .= __( 'l-' . $a_result[ $a_column ], 'wp-slimstat' );
+								break;
+								
+							case 'platform':
+								$output[ $result_idx ][ $a_column ] .= __( $a_result[ $a_column ], 'wp-slimstat' );
+
+							default:
+								$output[ $result_idx ][ $a_column ] .= $a_result[ $a_column ];
+								break;
+						}
+						$output[ $result_idx ][ $a_column ] .= '</span>';
+					}
+					$output[ $result_idx ] = '<li>' . implode( $s, $output[ $result_idx ] ). '</li>';
+				}
+
+				$output = '<ul class="slimstat-shortcode ' . $f . implode( '-', $w ). '">' . implode( '', $output ) . '</ul>';
+				break;
+
+			default:
+				break;
+		}
+
+		return $output;
+	}
+
 	/**
 	 * Converts a series of comma separated values into an array
 	 */
@@ -1256,7 +1392,6 @@ class wp_slimstat{
 			'show_display_name' => $val_no,
 			'convert_resource_urls_to_titles' => $val_yes,
 			'convert_ip_addresses' => $val_no,
-			'async_load' => $val_no,
 			'use_slimscroll' => $val_yes,
 			'expand_details' => $val_no,
 			'rows_to_show' => ($val_yes == 'null')?'0':'20',

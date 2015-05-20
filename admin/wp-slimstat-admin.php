@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Happy birthday, Slimstat. Nine years ago version 0.8.7 was released to the public, starting the unbelievable journey that has taken us here today. We would like to thank all the 100,000+ users (according to WordPress.org) who appreciate and support our work in many great ways. We wouldn't have more than 1.4 million downloads, 4.8 out of 5 overall rating, 16 add-ons, video tutorials, etc... if it weren't for <strong>you</strong>! To celebrate this special occasion, we decided to get to work and improve the overall performance of our plugin. Version 4.0 comes with a new simplified table structure (<a href='http://blog.codinghorror.com/maybe-normalizing-isnt-normal/' target='_blank'>denormalization, anyone</a>?), which will make your reports load so fast that your jaw will drop. Sure, the main table will be about 35% bigger, but in the age where disk space is cheap, the precioussss resource becomes time. The time you won't have to wait for your reports to load! <strong>Please note</strong>: if you have more than 750k records in your table, the import script will not run automatically. Go to Settings > Maintentance and click the Import Old Data button. Feel free to contact us if you need help.";
+			self::$admin_notice = "Our dev team is moving forward with their effort to give Slimstat's source code a good scrub. After cleaning up the database library, it was now the report library's turn. Again, if you developed your own custom report, you will probably need to update your code to make it work with our new library. We are going to update our online documentation in the next few days. By the way, we'd like to hear from you: have you noticed any performance improvements after switching to Slimstat 4.0? Let us know through the forum or contant our support team.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">I got it, thanks</a>';
 		}
 		else {
@@ -130,7 +130,7 @@ class wp_slimstat_admin{
 				$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
 				
 				if ( !empty( wp_slimstat_reports::$reports_info[ $report_id ] ) ) {
-					add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ) );
+					add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ), 10, 2 );
 				}
 			}
 		}
@@ -145,6 +145,9 @@ class wp_slimstat_admin{
 			}
 			add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widgets' ) );
 		}
+
+		// WordPress Widget
+		// FIX ME: To be implemented
 
 		// AJAX Handlers
 		if (defined('DOING_AJAX') && DOING_AJAX){
@@ -520,10 +523,11 @@ class wp_slimstat_admin{
 
 		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
 		wp_slimstat_reports::init();
-		
+
 		foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
 			if ( in_array( 'dashboard', $a_report_info[ 'screens' ] ) ) {
-				wp_add_dashboard_widget( $a_report_id, $a_report_info[ 'title' ], array( 'wp_slimstat_reports', $a_report_info[ 'callback' ] ) );
+				// When called this way, callback_wrapper receives just the report_id as the SECOND parameter
+				wp_add_dashboard_widget( $a_report_id, $a_report_info[ 'title' ], array( 'wp_slimstat_reports', 'callback_wrapper' ) );
 			}
 		}
 	}
@@ -583,7 +587,6 @@ class wp_slimstat_admin{
 
 		// Pass some information to Javascript
 		$params = array(
-			'async_load' => wp_slimstat::$options['async_load'],
 			'datepicker_image' => plugins_url('/admin/images/datepicker.png', dirname(__FILE__)),
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
 			'refresh_interval' => ( !empty( $_GET[ 'page' ] ) && $_GET[ 'page' ] == 'wp-slim-view-1' ) ? intval( wp_slimstat::$options[ 'refresh_interval' ] ) : 0,
