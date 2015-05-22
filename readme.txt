@@ -47,7 +47,7 @@ Please note: if you decide to uninstall Slimstat, all the stats will be **PERMAN
 
 == Frequently Asked Questions ==
 
-Our knowledge base is available on our [support center](https://slimstat.freshdesk.com/support/solutions) website.
+Our knowledge base is available on our [support center](http://docs.wp-slimstat.com/) website.
 
 == Screenshots ==
 
@@ -69,7 +69,7 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 * [Note] We'd like to hear from you: have you noticed any performance improvements after switching to Slimstat 4.0? Let us know through the forum or contant our support team.
 * [New] Our dev team is moving forward with their effort to give Slimstat's source code a good scrub. After cleaning up the database library, it was now the report library's turn. Again, if you developed your own custom report, you will probably need to update your code to make it work with our new library. We are going to update our online documentation in the next few days.
 * [New] The DB library function wp_slimstat_db::get_popular has been renamed wp_slimstat_db::get_top for consistency with the rest our codebase. Please update your code accordingly.
-* [New] Say hello to your new shortcodes. We merged the ShortCodes add-on directly into our main plugin. This improves the overall performance and streamlines our software lifecycle. Please note: the shortcode syntax has been updated and simplified (you need to replace 'popular' with 'top'). All the information is being added to our [knowledge base](https://slimstat.freshdesk.com/support/solutions) for your convenience. Stay tuned or contact our support team for more information.
+* [New] Say hello to your new shortcodes. We merged the ShortCodes add-on directly into our main plugin. This improves the overall performance and streamlines our software lifecycle. Please note: the shortcode syntax has been updated and simplified (you need to replace 'popular' with 'top'). All the information is being added to our [knowledge base](http://docs.wp-slimstat.com/) for your convenience. Stay tuned or contact our support team for more information.
 * [Update] [AmMap](http://www.amcharts.com/javascript-maps/) has been updated to version 3.14.2. Please consider supporting this project by [purchasing a license](http://www.amcharts.com/online-store/).
 * [Fix] We took care of various warnings displayed with DEBUG_MODE enabled.
 * [Fix] The data import script failed to do its job in some multisite environments (thank you, pepe).
@@ -160,7 +160,7 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 * [Note] The URL of the CDN has changed, and is now using the official WordPress repository as a source: cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js - Please update your "external" tracking codes accordingly.
 * [Note] The structure of the array **wp_slimstat_db::$sql_filters** has changed! Please make sure to update your custom code accordingly. Feel free to [contact us](http://support.wp-slimstat.com) for more information.
 * [New] The wait is over. Our heatmap add-on is finally [available on our store](http://www.wp-slimstat.com/downloads/heatmap/)! We would like to thank all those who provided helpful feedback to improve this initial release!
-* [New] Our [knowledge base](https://slimstat.freshdesk.com/support/solutions) has been extended with a list of all the actions and filters available in Slimstat.
+* [New] Our [knowledge base](http://docs.wp-slimstat.com/) has been extended with a list of all the actions and filters available in Slimstat.
 * [Fix] The Add-on update checker had a bug preventing the functionality to work as expected. Please make sure to get the latest version of your premium add-ons!
 * [Fix] Date intervals were not accurate because of a bug related to calculating timezones in MySQL (thank you, [Chrisssssi](https://wordpress.org/support/topic/conflicting-data)).
 * [Fix] Line height of report rows has been added to avoid conflicts with other plugins tweaking this parameter in the admin (thank you, [yk11](https://wordpress.org/support/topic/widgets-bottom-is-cut-off)).
@@ -286,7 +286,7 @@ Thomas Weiss,
 Wayne Liebman,
 Willow Ridge Press
 
-== Tools of the trade, in alphabetical order ==
+== Tools of the trade
 [Duri.Me](http://duri.me/),
 [Filezilla](https://filezilla-project.org/),
 [Fontello](http://fontello.com/),
