@@ -13,7 +13,7 @@ Stable tag: 4.1.1
 * Real-time activity log, server latency, heatmaps, email reports, export data to Excel, and much more
 * Compatible with W3 Total Cache, WP SuperCache and most caching plugins
 * Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
-* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.getused.to.it/) if you would like to share your localization.
+* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.wp-slimstat.com/) if you would like to share your localization.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = What are people saying about Slimstat? =
@@ -32,7 +32,7 @@ Stable tag: 4.1.1
 * IE9+ or any browser supporting HTML5, to access the reports
 
 = Premium Add-ons =
-Visit [our website](http://slimstat.getused.to.it/addons/) for a list of available extensions.
+Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available extensions.
 
 == Installation ==
 
@@ -128,7 +128,6 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 * [Update] Removed banner from our partner ManageWP
 
 = 3.9.8 =
-* [Note] The team who manages the WordPress Plugin Repository notified us that since the [MaxMind GeoLite library](http://dev.maxmind.com/geoip/legacy/geolite/) used by Slimstat to geolocate visitors is released under the Creative Commons BY-SA 3.0 license, it violates the repository guidelines, and cannot be bundled with the plugin. We were required to remove the code and alter the plugin so that this functionality becomes optional. We apologize for the inconvenience. However, the only immediate consequence is that your visitors' country will not be identified; everything else will still work as usual. You can download the geolocation DB as a [separate add-on](http://slimstat.getused.to.it/downloads/get-country/) on our store, free of charge. Don't forget to enter your license key in the corresponding field under Slimstat > Add-ons, to receive free updates!
 * [New] A few new options under Slimstat > Settings > General tab > WordPress Integration section, allow you to have more control over the information displayed in the Posts admin screen (thank you, Brad).
 
 = 3.9.7 =
@@ -152,15 +151,15 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 * [Fix] Report filters could not be removed after being set.
 
 = 3.9.5 =
-* [Note] Some of our add-ons had a bug preventing them from properly checking for updates. Please [contact us](http://support.getused.to.it) if you need to obtain the latest version of your add-ons.
+* [Note] Some of our add-ons had a bug preventing them from properly checking for updates. Please [contact us](http://support.wp-slimstat.com) if you need to obtain the latest version of your add-ons.
 * [Update] The Save button in the settings is now always visible, so that there is no need to scroll all the way to the bottom to save your options.
 * [Update] More data layer updates introduced in wp_slimstat_db. Keep an eye on your custom add-ons!
 * [Fix] Pagination was not working as expected when a date range was set in the filters (thank you, [nick-v](https://wordpress.org/support/topic/paging-is-broke))
 
 = 3.9.4 =
 * [Note] The URL of the CDN has changed, and is now using the official WordPress repository as a source: cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js - Please update your "external" tracking codes accordingly.
-* [Note] The structure of the array **wp_slimstat_db::$sql_filters** has changed! Please make sure to update your custom code accordingly. Feel free to [contact us](http://support.getused.to.it) for more information.
-* [New] The wait is over. Our heatmap add-on is finally [available on our store](http://slimstat.getused.to.it/downloads/heatmap/)! We would like to thank all those who provided helpful feedback to improve this initial release!
+* [Note] The structure of the array **wp_slimstat_db::$sql_filters** has changed! Please make sure to update your custom code accordingly. Feel free to [contact us](http://support.wp-slimstat.com) for more information.
+* [New] The wait is over. Our heatmap add-on is finally [available on our store](http://www.wp-slimstat.com/downloads/heatmap/)! We would like to thank all those who provided helpful feedback to improve this initial release!
 * [New] Our [knowledge base](https://slimstat.freshdesk.com/support/solutions) has been extended with a list of all the actions and filters available in Slimstat.
 * [Fix] The Add-on update checker had a bug preventing the functionality to work as expected. Please make sure to get the latest version of your premium add-ons!
 * [Fix] Date intervals were not accurate because of a bug related to calculating timezones in MySQL (thank you, [Chrisssssi](https://wordpress.org/support/topic/conflicting-data)).
