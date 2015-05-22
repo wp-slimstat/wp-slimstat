@@ -9,7 +9,7 @@ if (!empty($_POST['licenses'])){
 
 $response = get_transient('wp_slimstat_addon_list');
 if (!empty($_GET['force_refresh']) || false === $response){
-	$response = wp_remote_get('http://slimstat.getused.to.it/update-checker/', array('headers' => array('referer' => get_site_url())));
+	$response = wp_remote_get('http://www.wp-slimstat.com/update-checker/', array('headers' => array('referer' => get_site_url())));
 	if(is_wp_error($response) || $response['response']['code'] != 200){
 		$error_message = is_wp_error($response)?$response->get_error_message():$response['response']['code'].' '. $response['response']['message'];
 		echo '<p>'.__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message:','wp-slimstat').' '.$error_message.'</p></div>';
