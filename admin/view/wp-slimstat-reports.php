@@ -760,7 +760,7 @@ class wp_slimstat_reports {
 			if ( !empty( $hidden_reports ) && is_array( $hidden_reports ) ) {
 				foreach ( self::$reports_info as $a_report_id => $a_report_info ) {
 					if ( in_array( $a_report_id, $hidden_reports ) ) {
-						if ( !in_array( 'hidden', $a_report_info[ 'classes' ] ) ) {
+						if ( is_array( self::$reports_info[ $a_report_id ][ 'classes' ] ) && !in_array( 'hidden', $a_report_info[ 'classes' ] ) ) {
 							self::$reports_info[ $a_report_id ][ 'classes' ][] = 'hidden';
 						}
 					}
