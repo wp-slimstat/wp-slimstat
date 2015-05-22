@@ -77,10 +77,11 @@ class wp_slimstat_reports {
 		self::$reports_info = array(
 			'slim_p7_02' => array(
 				'title' => __( 'Activity', 'wp-slimstat' ),
-				'callback' => 'show_activity_log',
+				'callback' => array( __CLASS__, 'show_activity_log' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'id'
+					'columns' => 'id',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'tall' ),
 				'screens' => array( 'wp-slim-view-1', 'raw' ),
@@ -89,10 +90,10 @@ class wp_slimstat_reports {
 
 			'slim_p1_01' => array(
 				'title' => __( 'Pageviews', 'wp-slimstat' ),
-				'callback' => 'show_chart',
+				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
 					'chart_data' => wp_slimstat_db::get_data_for_chart( 'COUNT(ip)', 'COUNT(DISTINCT(ip))' ),
-					'chart_labels' => array( __( 'Pageviews', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) )
+					'chart_labels' => array( __( 'Pageviews', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) ),
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
@@ -100,24 +101,25 @@ class wp_slimstat_reports {
 			),
 			'slim_p1_02' => array(
 				'title' => __( 'About Slimstat', 'wp-slimstat' ),
-				'callback' => 'show_about_wpslimstat',
+				'callback' => array( __CLASS__, 'show_about_wpslimstat' ),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-2' )
 			),
 			'slim_p1_03' => array(
 				'title' => __( 'At a Glance', 'wp-slimstat' ),
-				'callback' => 'show_overview_summary',
+				'callback' => array( __CLASS__, 'show_overview_summary' ),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2', 'dashboard' )
 			),
 			'slim_p1_04' => array(
 				'title' => __( 'Currently Online', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'username',
 					'where' => 'dt > '. ( date_i18n( 'U' ) - 300 ),
-					'use_date_filters' => false
+					'use_date_filters' => false,
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2', 'dashboard', 'raw' ),
@@ -125,10 +127,11 @@ class wp_slimstat_reports {
 			),
 			'slim_p1_06' => array(
 				'title' => __( 'Recent Search Terms', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'searchterms'
+					'columns' => 'searchterms',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5', 'raw' ),
@@ -136,12 +139,13 @@ class wp_slimstat_reports {
 			),
 			'slim_p1_08' => array(
 				'title' => __( 'Top Pages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'SUBSTRING_INDEX(resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1)',
 					'as_column' => 'resource',
-					'filter_op' => 'contains'
+					'filter_op' => 'contains',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2', 'dashboard', 'raw' ),
@@ -149,41 +153,45 @@ class wp_slimstat_reports {
 			),
 			'slim_p1_10' => array(
 				'title' => __('Top Traffic Sources', 'wp-slimstat'),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'referer',
-					'where' => 'referer NOT LIKE "%' . home_url() . '%"'
+					'where' => 'referer NOT LIKE "%' . home_url() . '%"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5', 'dashboard', 'raw' )
 			),
 			'slim_p1_11' => array(
 				'title' => __( 'Top Known Visitors', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'username'
+					'columns' => 'username',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-2', 'dashboard', 'raw' )
 			),
 			'slim_p1_12' => array(
 				'title' => __( 'Top Search Terms', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'searchterms'
+					'columns' => 'searchterms',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-4', 'wp-slim-view-5', 'dashboard', 'raw' )
 			),
 			'slim_p1_13' => array(
 				'title' => __( 'Top Countries', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'country'
+					'columns' => 'country',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-3', 'wp-slim-view-5', 'dashboard', 'raw' ),
@@ -191,19 +199,20 @@ class wp_slimstat_reports {
 			),
 			'slim_p1_15' => array(
 				'title' => __( 'Rankings', 'wp-slimstat' ),
-				'callback' => 'show_rankings',
+				'callback' => array( __CLASS__, 'show_rankings' ),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2' ),
 				'tooltip' => __( "Slimstat retrieves live information from Alexa, Facebook and Google, to measures your site's rankings. Values are updated every 12 hours. Filters set above don't apply to this report.", 'wp-slimstat' )
 			),
 			'slim_p1_17' => array(
 				'title' => __( 'Top Language Families', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'SUBSTRING(language, 1, 2)',
 					'as_column' => 'language',
-					'filter_op' => 'contains'
+					'filter_op' => 'contains',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-2', 'raw' )
@@ -211,10 +220,11 @@ class wp_slimstat_reports {
 
 			'slim_p2_01' => array(
 				'title' => __( 'Human Visits', 'wp-slimstat' ),
-				'callback' => 'show_chart',
+				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
 					'chart_data' => wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', '(visit_id > 0 AND browser_type <> 1)' ),
-					'chart_labels' => array( __( 'Visits', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) )
+					'chart_labels' => array( __( 'Visits', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) ),
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'wp-slim-view-3' ),
@@ -222,37 +232,40 @@ class wp_slimstat_reports {
 			),
 			'slim_p2_02' => array(
 				'title' => __( 'Audience Overview', 'wp-slimstat' ),
-				'callback' => 'show_visitors_summary',
+				'callback' => array( __CLASS__, 'show_visitors_summary' ),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3', 'dashboard' ),
 				'tooltip' => __( 'Where not otherwise specified, the metrics in this report are referred to human visitors.', 'wp-slimstat' )
 			),
 			'slim_p2_03' => array(
 				'title' => __( 'Top Languages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'language'
+					'columns' => 'language',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 			'slim_p2_04' => array(
 				'title' => __( 'Top Browsers', 'wp-slimstat', 'dashboard' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'browser, browser_version'
+					'columns' => 'browser, browser_version',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 			'slim_p2_05' => array(
 				'title' => __( 'Top Service Providers', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'ip'
+					'columns' => 'ip',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'wide', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' ),
@@ -260,10 +273,11 @@ class wp_slimstat_reports {
 			),
 			'slim_p2_06' => array(
 				'title' => __( 'Top Operating Systems', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'platform'
+					'columns' => 'platform',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' ),
@@ -271,82 +285,89 @@ class wp_slimstat_reports {
 			),
 			'slim_p2_07' => array(
 				'title' => __( 'Top Screen Resolutions', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'resolution'
+					'columns' => 'resolution',
+					'raw' => array( __CLASS__, 'get_raw_results' ),
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3', 'dashboard', 'raw' )
 			),
 			'slim_p2_09' => array(
 				'title' => __( 'Browser Capabilities', 'wp-slimstat' ),
-				'callback' => 'show_plugins',
+				'callback' => array( __CLASS__, 'show_plugins' ),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_12' => array(
 				'title' => __( 'Visit Duration', 'wp-slimstat' ),
-				'callback' => 'show_visit_duration',
+				'callback' => array( __CLASS__, 'show_visit_duration' ),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_13' => array(
 				'title' => __( 'Recent Countries', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'country'
+					'columns' => 'country',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'wp-slim-view-5', 'raw' )
 			),
 			'slim_p2_14' => array(
 				'title' => __( 'Recent Screen Resolutions', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'resolution'
+					'columns' => 'resolution',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 			'slim_p2_15' => array(
 				'title' => __( 'Recent Operating Systems', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'platform'
+					'columns' => 'platform',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 			'slim_p2_16' => array(
 				'title' => __( 'Recent Browsers', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'browser, browser_version'
+					'columns' => 'browser, browser_version',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 			'slim_p2_17' => array(
 				'title' => __( 'Recent Languages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'language'
+					'columns' => 'language',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 			'slim_p2_18' => array(
 				'title' => __( 'Top Browser Families', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'browser'
+					'columns' => 'browser',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' ),
@@ -354,12 +375,13 @@ class wp_slimstat_reports {
 			),
 			'slim_p2_19' => array(
 				'title' => __( 'Top OS Families', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
 					'as_column' => 'platform',
-					'filter_op' => 'contains'
+					'filter_op' => 'contains',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' ),
@@ -367,22 +389,24 @@ class wp_slimstat_reports {
 			),
 			'slim_p2_20' => array(
 				'title' => __( 'Recent Users', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'username',
-					'where' => 'notes LIKE "%user:%"'
+					'where' => 'notes LIKE "%user:%"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 			'slim_p2_21' => array(
 				'title' => __( 'Top Users', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'username',
-					'where' => 'notes LIKE "%user:%"'
+					'where' => 'notes LIKE "%user:%"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3', 'dashboard', 'raw' )
@@ -390,7 +414,7 @@ class wp_slimstat_reports {
 
 			'slim_p3_01' => array(
 				'title' => __( 'Traffic Sources', 'wp-slimstat' ),
-				'callback' => 'show_chart',
+				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
 					'chart_data' => wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT(referer))', 'COUNT(DISTINCT(ip))', '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")' ),
 					'chart_labels' => array( __( 'Domains', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) )
@@ -401,27 +425,29 @@ class wp_slimstat_reports {
 			),
 			'slim_p3_02' => array(
 				'title' => __( 'Summary', 'wp-slimstat' ),
-				'callback' => 'show_traffic_sources_summary',
+				'callback' => array( __CLASS__, 'show_traffic_sources_summary' ),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-5' )
 			),
 			'slim_p3_06' => array(
 				'title' => __( 'Top Referring Search Engines', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'referer',
-					'where' => "searchterms IS NOT NULL AND referer NOT LIKE '%".home_url()."%'"
+					'where' => "searchterms IS NOT NULL AND referer NOT LIKE '%".home_url()."%'",
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-5', 'dashboard', 'raw' )
 			),
 			'slim_p3_11' => array(
 				'title' => __( 'Recent Exit Pages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'visit_id' // raw_results_to_html knows to display the resource, when the column is visit_id
+					'columns' => 'visit_id', // raw_results_to_html knows to display the resource, when the column is visit_id
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-5', 'raw' )
@@ -430,7 +456,8 @@ class wp_slimstat_reports {
 			/*
 			'slim_p4_01' => array(
 				'title' => __( 'Recent Outbound Links', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_raw' => array( __CLASS__, 'get_raw_results' ),
 				'classes' => array( 'wide' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' ),
 				'tooltip' => ''
@@ -438,23 +465,25 @@ class wp_slimstat_reports {
 			*/
 			'slim_p4_02' => array(
 				'title' => __( 'Recent Posts', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'resource',
-					'where' => 'content_type => "post"'
+					'where' => 'content_type = "post"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_03' => array(
 				'title' => __( 'Recent Bounce Pages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'resource',
 					'where' => 'content_type <> "404"',
-					'having' => 'HAVING COUNT(visit_id) => 1'
+					'having' => 'HAVING COUNT(visit_id) => 1',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' ),
@@ -462,33 +491,36 @@ class wp_slimstat_reports {
 			),
 			'slim_p4_04' => array(
 				'title' => __( 'Recent Feeds', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'resource',
-					'where' => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")'
+					'where' => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_05' => array(
 				'title' => __( 'Recent Pages Not Found', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'resource',
-					'where' => '(resource LIKE "[404]%" OR content_type LIKE "%404%")'
+					'where' => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_06' => array(
 				'title' => __( 'Recent Internal Searches', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'searchterms',
-					'where' => 'content_type LIKE "%search%"'
+					'where' => 'content_type LIKE "%search%"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' ),
@@ -496,11 +528,12 @@ class wp_slimstat_reports {
 			),
 			'slim_p4_07' => array(
 				'title' => __( 'Top Categories', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'category',
-					'where' => 'content_type LIKE "%category%"'
+					'where' => 'content_type LIKE "%category%"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'raw' ),
 				'screens' => array( 'wp-slim-view-4', 'dashboard' )
@@ -509,9 +542,9 @@ class wp_slimstat_reports {
 			NOTE TO SELF: don't forget to remove from deprecated, when implemented
 			'slim_p4_09' => array(
 				'title' => __( 'Top Downloads', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
-
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' ),
@@ -519,9 +552,10 @@ class wp_slimstat_reports {
 			),
 			'slim_p4_10' => array(
 				'title' => __( 'Recent Events', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' ),
@@ -530,102 +564,111 @@ class wp_slimstat_reports {
 			*/
 			'slim_p4_11' => array(
 				'title' => __( 'Top Posts', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'resource',
-					'where' => 'content_type => "post"'
+					'where' => 'content_type = "post"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_13' => array(
 				'title' => __( 'Top Internal Searches', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'searchterms',
-					'where' => 'content_type LIKE "%search%"'
+					'where' => 'content_type LIKE "%search%"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_15' => array(
 				'title' => __( 'Recent Categories', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'resource',
-					'where' => '(content_type => "category" OR content_type => "tag")'
+					'where' => '(content_type => "category" OR content_type => "tag")',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_16' => array(
 				'title' => __( 'Top Pages Not Found', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'resource',
-					'where' => 'content_type LIKE "%404%"'
+					'where' => 'content_type LIKE "%404%"',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_18' => array(
 				'title' => __( 'Top Authors', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'author'
+					'columns' => 'author',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-4', 'dashboard', 'raw' )
 			),
 			'slim_p4_19' => array(
 				'title' => __( 'Top Tags', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'category',
-					'where' => '(content_type LIKE "%tag%")'
+					'where' => '(content_type LIKE "%tag%")',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_20' => array(
 				'title' => __( 'Recent Downloads', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'wide', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_21' => array(
 				'title' => __( 'Top Outbound Links', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_22' => array(
 				'title' => __( 'Your Website', 'wp-slimstat' ),
-				'callback' => 'show_your_blog',
+				'callback' => array( __CLASS__, 'show_your_blog' ),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' ),
+				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => __( 'Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set here above.', 'wp-slimstat' )
 			),
 			'slim_p4_23' => array(
 				'title' => __( 'Top Bounce Pages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'resource',
 					'where' => 'content_type <> "404"',
-					'having' => 'HAVING COUNT(visit_id) => 1'
+					'having' => 'HAVING COUNT(visit_id) => 1',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
@@ -633,24 +676,26 @@ class wp_slimstat_reports {
 			/* NOTE TO SELF: remove them from deprecated, when reimplemented
 			'slim_p4_24' => array(
 				'title' => __( 'Top Exit Pages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top_complete',
 					'columns' => 'visit_id',
 					'outer_select_column' => 'resource',
-					'aggr_function' => 'MAX'
+					'aggr_function' => 'MAX',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
 			),
 			'slim_p4_25' => array(
 				'title' => __( 'Top Entry Pages', 'wp-slimstat' ),
-				'callback' => 'raw_results_to_html',
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top_complete',
 					'columns' => 'visit_id',
 					'outer_select_column' => 'resource',
-					'aggr_function' => 'MIN'
+					'aggr_function' => 'MIN',
+					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4', 'raw' )
@@ -659,7 +704,7 @@ class wp_slimstat_reports {
 
 			'slim_p6_01' => array(
 				'title' => __( 'World Map', 'wp-slimstat' ),
-				'callback' => 'show_world_map',
+				'callback' => array( __CLASS__, 'show_world_map' ),
 				'classes' => array( 'tall' ),
 				'screens' => array( 'wp-slim-view-6' ),
 				'tooltip' => ''
@@ -791,6 +836,20 @@ class wp_slimstat_reports {
 			return array();
 		}
 
+		// Default Values
+		$_args = array_merge( array(
+			'type' => '',
+			'columns' => '', 
+			'where' => '',
+			'having' => '', 
+			'as_column' => '',
+			'filter_op' => 'equals',
+			'outer_select_column' => '',
+			'aggr_function' => 'MAX',
+			'use_date_filters' => true
+		), $_args );
+
+
 		switch ( $_args[ 'type' ] ) {
 			case 'recent':
 				$all_results = wp_slimstat_db::get_recent( $_args[ 'columns' ], $_args[ 'where' ], $_args[ 'having' ], $_args[ 'use_date_filters' ], $_args['as_column'] );
@@ -819,11 +878,11 @@ class wp_slimstat_reports {
 	public static function callback_wrapper() {
 		$_args = self::_check_args( func_get_args() );
 
-		call_user_func( array( __CLASS__, $_args[ 'callback' ] ), $_args[ 'callback_args' ] );
+		call_user_func( $_args[ 'callback' ] , $_args[ 'callback_args' ] );
 	}
 
 	public static function raw_results_to_html( $_args = array() ){
-		$all_results = self::get_raw_results( $_args );
+		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
 
 		$results = array_slice(
 			$all_results,
@@ -1501,12 +1560,12 @@ class wp_slimstat_reports {
 
 		if (!empty($filters_dropdown)){
 			foreach($filters_dropdown as $a_filter_label => $a_filter_details){
-				if (!array_key_exists($a_filter_label, wp_slimstat_db::$filters_names) || strpos($a_filter_label, 'no_filter') !== false){
+				if (!array_key_exists($a_filter_label, wp_slimstat_db::$columns_names) || strpos($a_filter_label, 'no_filter') !== false){
 					continue;
 				}
 
 				$a_filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-				$filters_html .= "<li>".strtolower(wp_slimstat_db::$filters_names[$a_filter_label][ 0 ]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat')." $a_filter_value_no_slashes <a class='slimstat-remove-filter slimstat-font-cancel' title='".htmlentities(__('Remove filter for','wp-slimstat'), ENT_QUOTES, 'UTF-8').' '.wp_slimstat_db::$filters_names[ $a_filter_label ][ 0 ]."' href='".self::fs_url("$a_filter_label equals ")."'></a></li>";
+				$filters_html .= "<li>".strtolower(wp_slimstat_db::$columns_names[$a_filter_label][ 0 ]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat')." $a_filter_value_no_slashes <a class='slimstat-remove-filter slimstat-font-cancel' title='".htmlentities(__('Remove filter for','wp-slimstat'), ENT_QUOTES, 'UTF-8').' '.wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ]."' href='".self::fs_url("$a_filter_label equals ")."'></a></li>";
 			}
 		}
 		if (!empty($filters_html)){
@@ -1627,30 +1686,26 @@ class wp_slimstat_reports {
 			$_args = array_merge( array(
 				'title' => '',
 				'callback' => '',
-				'callback_args' => '',
-				'classes' => '', 
-				'screens' => '',
+				'callback_args' => array(),
+				'callback_raw' => '',
+				'classes' => array(), 
+				'screens' => array(),
 				'tooltip' => ''
 			), self::$reports_info[ $report_id ] );
 		}
 
-		if ( !empty( self::$reports_info[ $report_id ][ 'callback_args' ] ) && is_array( self::$reports_info[ $report_id ][ 'callback_args' ] ) ) {
-			// Default values
-			$_args[ 'callback_args' ] = array_merge( array(
-				'type' => '',
-				'columns' => '', 
-				'where' => '',
-				'having' => '', 
-				'as_column' => '',
-				'filter_op' => 'equals',
-				'outer_select_column' => '',
-				'aggr_function' => 'MAX',
-				'use_date_filters' => true,
-				'echo' => true
-			), self::$reports_info[ $report_id ][ 'callback_args' ] );
-		}
-
-		$_args[ 'id' ] = $report_id;
+		// Default callback args
+		$_args[ 'callback_args' ] = array_merge( array(
+			'type' => '',
+			'columns' => '', 
+			'where' => '',
+			'having' => '', 
+			'as_column' => '',
+			'filter_op' => 'equals',
+			'outer_select_column' => '',
+			'aggr_function' => 'MAX',
+			'use_date_filters' => true
+		), $_args[ 'callback_args' ] );
 
 		return $_args;
 	}

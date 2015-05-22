@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1
+Stable tag: 4.1.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,12 @@ Our knowledge base is available on our [support center](https://slimstat.freshde
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.1 =
+* [Note] We are starting to hit the limits imposed by our current hosting provider, so it's time to move to a new more reliable server farm. We will be migrating our platform in the next few weeks, and this might cause some downtime for those trying to buy our premium add-ons. We apologize for the inconvenience.
+* [Update] Minor adjustments to our codebase to make Slimstat easily extensible. Now you can quickly add your own reports by just passing some simple information to the plugin. More information soon available on our knowledge base website.
+* [Update] Our premium add-on Export to Excel has been updated to be compatible with Slimstat 4.0. 
+* [Fix] We took care of some other tenacious warnings displayed with DEBUG_MODE enabled.
 
 = 4.1 =
 * [Note] We'd like to hear from you: have you noticed any performance improvements after switching to Slimstat 4.0? Let us know through the forum or contant our support team.

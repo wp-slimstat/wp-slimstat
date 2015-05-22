@@ -133,7 +133,7 @@ else {
 		$base_host = $parse_url['host'];
 		$base_url = '';
 
-		if (!empty($results[$i]['resource'])){
+		if ( !empty( $results[$i]['resource'] ) ) {
 			if (!empty($results[$i]['blog_id'])){
 				$base_url = $parse_url['scheme'].'://'.$base_host;
 			}

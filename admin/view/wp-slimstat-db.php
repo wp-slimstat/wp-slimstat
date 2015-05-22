@@ -3,7 +3,7 @@
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db {
 	// Filters
-	public static $filters_names = array();
+	public static $columns_names = array();
 	public static $filters_normalized = array();
 
 	// Number and date formats
@@ -13,7 +13,7 @@ class wp_slimstat_db {
 	public static $sql_where = array( 'columns' => '', 'time_range' => '' );
 
 	// Filters that are not visible in the dropdown
-	protected static $other_filters_names = array();
+	public static $all_columns_names = array();
 
 	/*
 	 * Sets the filters and other structures needed to store the data retrieved from the DB
@@ -31,7 +31,7 @@ class wp_slimstat_db {
 		}
 
 		// List of supported filters and their friendly names
-		self::$filters_names = array(
+		self::$columns_names = array(
 			'no_filter_selected_1' => array( '&nbsp;', 'none' ),
 			'browser' => array( __( 'Browser', 'wp-slimstat' ), 'varchar' ),
 			'country' => array( __( 'Country Code', 'wp-slimstat' ), 'varchar' ),
@@ -64,7 +64,7 @@ class wp_slimstat_db {
 		);
 
 		// The following filters will not be displayed in the dropdown
-		self::$other_filters_names = array(
+		self::$all_columns_names = array_merge( array(
 			'minute' => array( __( 'Minute', 'wp-slimstat' ), 'int' ),
 			'hour' => array( __( 'Hour', 'wp-slimstat' ), 'int' ),
 			'day' => array( __( 'Day', 'wp-slimstat' ), 'int' ),
@@ -81,7 +81,7 @@ class wp_slimstat_db {
 
 			// Misc Filters
 			'strtotime' => array( 0, 'int' )
-		);
+		), self::$columns_names );
 
 		// Hook for the... filters
 		$_filters = apply_filters( 'slimstat_db_pre_filters', $_filters );
@@ -120,7 +120,7 @@ class wp_slimstat_db {
 		return '';
 	}
 
-	protected static function _get_combined_where( $_where = '', $_column = '*', $_use_time_range = true ) {
+	public static function get_combined_where( $_where = '', $_column = '*', $_use_time_range = true ) {
 
 		if ( empty( $_where ) ) {
 			if ( !empty( self::$sql_where[ 'columns' ] ) ) {
@@ -146,9 +146,9 @@ class wp_slimstat_db {
 			}
 		}
 
-		if ( !empty( self::$filters_names[ $_column ] ) ) {
-			$filter_empty = "$_column ".( ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0' );
-			$filter_not_empty = "$_column ".( ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0' );
+		if ( !empty( self::$columns_names[ $_column ] ) ) {
+			$filter_empty = "$_column ".( ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0' );
+			$filter_not_empty = "$_column ".( ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0' );
 
 			if ( strpos( $_where, $filter_empty ) === false && strpos( $_where, $filter_not_empty) === false) {
 				$_where = "$filter_not_empty AND $_where";
@@ -162,8 +162,8 @@ class wp_slimstat_db {
 	 * Translates user-friendly operators into SQL conditions
 	 */
 	protected static function _get_single_where_clause( $_column = 'id', $_operator = 'equals', $_value = '' ) {
-		$filter_empty = ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0';
-		$filter_not_empty = ( self::$filters_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0';
+		$filter_empty = ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0';
+		$filter_not_empty = ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0';
 
 		switch( $_column ) {
 			case 'ip':
@@ -286,18 +286,17 @@ class wp_slimstat_db {
 
 		if ( !empty( $_filters ) ) {
 			$matches = explode( '&&&', $_filters );
-			$all_filters_names = self::$filters_names + self::$other_filters_names;
 			foreach( $matches as $idx => $a_match ) {
 				preg_match( '/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode( $a_match ), $a_filter );
 
-				if ( empty( $a_filter ) || ( ( !array_key_exists( $a_filter[ 1 ], $all_filters_names ) || strpos( $a_filter[ 1 ], 'no_filter' ) !== false ) && strpos( $a_filter[ 1 ], 'addon_' ) === false ) ) {
+				if ( empty( $a_filter ) || ( ( !array_key_exists( $a_filter[ 1 ], self::$all_columns_names ) || strpos( $a_filter[ 1 ], 'no_filter' ) !== false ) && strpos( $a_filter[ 1 ], 'addon_' ) === false ) ) {
 					continue;
 				}
 
 				switch( $a_filter[ 1 ] ) {
 					case 'strtotime':
 						$custom_date = strtotime( $a_filter[ 3 ].' UTC' );
-var_dump($custom_date);
+
 						$filters_normalized[ 'date' ][ 'day' ] = date( 'j', $custom_date );
 						$filters_normalized[ 'date' ][ 'month' ] = date( 'n', $custom_date );
 						$filters_normalized[ 'date' ][ 'year' ] = date( 'Y', $custom_date );
@@ -520,7 +519,7 @@ var_dump($custom_date);
 	// The following methods retrieve the information from the database
 
 	public static function count_bouncing_pages() {
-		$where = self::_get_combined_where( 'visit_id > 0 AND content_type <> "404"', 'resource' );
+		$where = self::get_combined_where( 'visit_id > 0 AND content_type <> "404"', 'resource' );
 
 		return intval( self::_get_var( "
 			SELECT COUNT(*) counthits
@@ -535,7 +534,7 @@ var_dump($custom_date);
 	}
 
 	public static function count_exit_pages() {
-		$where = self::_get_combined_where( 'visit_id > 0', 'resource' );
+		$where = self::get_combined_where( 'visit_id > 0', 'resource' );
 
 		return intval( self::_get_var( "
 			SELECT COUNT(*) counthits
@@ -551,7 +550,7 @@ var_dump($custom_date);
 
 	public static function count_records( $_column = 'id', $_where = '', $_use_time_range = true ) {
 		$distinct_column = ( $_column != 'id' ) ? "DISTINCT $_column" : $_column;
-		$_where = self::_get_combined_where( $_where, $_column, $_use_time_range );
+		$_where = self::get_combined_where( $_where, $_column, $_use_time_range );
 
 		return intval( self::_get_var( "
 			SELECT COUNT($distinct_column) counthits
@@ -561,7 +560,7 @@ var_dump($custom_date);
 	}
 
 	public static function count_records_having( $_column = 'id', $_where = '', $_having = '' ) {
-		$_where = self::_get_combined_where( $_where, $_column );
+		$_where = self::get_combined_where( $_where, $_column );
 
 		return intval( self::_get_var( "
 			SELECT COUNT(*) counthits FROM (
@@ -617,11 +616,11 @@ var_dump($custom_date);
 
 		// Custom intervals don't have a comparison chart ('previous' range)
 		if ( empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ) {
-			$_where = self::_get_combined_where( $_where, '*', false );
+			$_where = self::get_combined_where( $_where, '*', false );
 			$previous_time_range = ' AND (dt BETWEEN '.$previous[ 'start' ].' AND '.$previous[ 'end' ].' OR dt BETWEEN '.self::$filters_normalized[ 'utime' ][ 'start' ].' AND '.self::$filters_normalized[ 'utime' ][ 'end' ].')';
 		}
 		else {
-			$_where = self::_get_combined_where( $_where );
+			$_where = self::get_combined_where( $_where );
 			$previous_time_range = '';
 		}
 
@@ -695,7 +694,7 @@ var_dump($custom_date);
 	}
 
 	public static function get_max_and_average_pages_per_visit() {
-		$where = self::_get_combined_where( 'visit_id > 0' );
+		$where = self::get_combined_where( 'visit_id > 0' );
 
 		return self::_get_results( "
 			SELECT AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits FROM (
@@ -727,7 +726,7 @@ var_dump($custom_date);
 			$_as_column = $_column;
 		}
 
-		$_where = self::_get_combined_where( $_where, $_column, $_use_time_range );
+		$_where = self::get_combined_where( $_where, $_column, $_use_time_range );
 
 		if ( $_column == '*' ) {
 			return self::_get_results( "
@@ -763,7 +762,7 @@ var_dump($custom_date);
 			$_as_column = $_column;
 		}
 
-		$_where = self::_get_combined_where( $_where, $_as_column, $_use_time_range );
+		$_where = self::get_combined_where( $_where, $_as_column, $_use_time_range );
 
 		return self::_get_results( "
 			SELECT $_column, COUNT(*) counthits
@@ -779,7 +778,7 @@ var_dump($custom_date);
 	}
 
 	public static function get_top_complete( $_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX' ) {
-		$_where = self::_get_combined_where( $_where, $_column );
+		$_where = self::get_combined_where( $_where, $_column );
 
 		return self::_get_results( "
 			SELECT $_outer_select_column, ts1.maxid, COUNT(*) counthits

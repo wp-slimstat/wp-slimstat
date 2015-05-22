@@ -6,7 +6,7 @@
 	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
 		<fieldset id="slimstat-filters"><?php
 			$filter_name_html = '<select name="f" id="slimstat-filter-name">';
-			foreach (wp_slimstat_db::$filters_names as $a_filter_label => $a_filter_info){
+			foreach (wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info){
 				$filter_name_html .= "<option value='$a_filter_label'>{$a_filter_info[0]}</option>";
 			}
 			$filter_name_html .= '</select>';

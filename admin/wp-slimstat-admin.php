@@ -130,7 +130,7 @@ class wp_slimstat_admin{
 				$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
 				
 				if ( !empty( wp_slimstat_reports::$reports_info[ $report_id ] ) ) {
-					add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', wp_slimstat_reports::$reports_info[ $report_id ][ 'callback' ] ), 10, 2 );
+					add_action('wp_ajax_slimstat_load_report', array( 'wp_slimstat_reports', 'callback_wrapper' ), 10, 2 );
 				}
 			}
 		}
@@ -863,7 +863,7 @@ class wp_slimstat_admin{
 					$filter_html = $filter_strings = array();
 					foreach ($a_filter_data as $a_filter_label => $a_filter_details){
 						$filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-						$filter_html[] = strtolower(wp_slimstat_db::$filters_names[$a_filter_label][0]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat').' '.$filter_value_no_slashes;
+						$filter_html[] = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat').' '.$filter_value_no_slashes;
 						$filter_strings[] = "$a_filter_label {$a_filter_details[0]} $filter_value_no_slashes";
 					}
 					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="'.$a_filter_id.'" title="'.__('Delete this filter','wp-slimstat').'" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url( implode( '&&&', $filter_strings ) ).'">'.implode(', ', $filter_html).'</a> <a href="#"></a></p>';

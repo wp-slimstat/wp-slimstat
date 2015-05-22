@@ -25,7 +25,7 @@ if (!empty($_REQUEST['action'])){
 
 		case 'delete-records':
 			$rows_affected = 0;
-			if (key_exists($_POST['f'], wp_slimstat_db::$filters_names)){
+			if (key_exists($_POST['f'], wp_slimstat_db::$columns_names)){
 				$rows_affected = wp_slimstat::$wpdb->query("
 					DELETE t1.* 
 					FROM {$GLOBALS['wpdb']->prefix}slim_stats t1
@@ -258,7 +258,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 				
 				<select name="f" id="slimstat-filter-name">
 					<?php 
-						foreach (wp_slimstat_db::$filters_names as $a_filter_id => $a_filter_info){
+						foreach (wp_slimstat_db::$columns_names as $a_filter_id => $a_filter_info){
 							echo "<option value='$a_filter_id'>{$a_filter_info[0]}</option>";
 						}
 					?>
