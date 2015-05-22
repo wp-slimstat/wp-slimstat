@@ -663,9 +663,11 @@ class wp_slimstat_admin{
 			$minimum_capability = wp_slimstat::$options['capability_can_admin'];
 		}
 
-		$new_entry = add_submenu_page(null, __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
 			$new_entry = add_submenu_page('wp-slim-view-1', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
+		}
+		else {
+			$new_entry = add_submenu_page('admin.php', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
 		}
 		
 		// Load styles and Javascript needed to make the reports look nice and interactive
