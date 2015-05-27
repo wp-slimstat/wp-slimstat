@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1.1
+Stable tag: 4.1.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,15 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.2 =
+* [Note] A few weeks ago we started hitting the limits imposed on our site by our existing hosting provider. It was clearly time to find a new home for Slimstat. We've been working on migrating our web platform (website and add-on repository API) to a new more powerful server, and a new domain: [wp-slimstat.com](http://www.wp-slimstat.com).
+* [Note] Our dev team has released updates for our premium add-ons Export to Excel, Email Reports and User Overview, which are now fully compatible with Slimstat 4. Go get your copy today.
+* [Update] More adjustments to streamline the report API and make it easier for our users to add new custom reports.
+* [Update] Restored the following reports: Recent/Top Downloads, Recent/Top Outbound Links, Top Entry Pages, Top Exit Pages.
+* [Fix] Bug preventing some outbound links to be properly tracked.
+* [Fix] In a Windows Server environment, the way the checkboxes are added under Screen Options was creating some issues (thank you, Rafael Ortman).
+* [Fix] Post and page titles were not being displayed when the corresponding option was set
 
 = 4.1.1 =
 * [Note] We are starting to hit the limits imposed by our current hosting provider, so it's time to move to a new more reliable server farm. We will be migrating our platform in the next few weeks, and this might cause some downtime for those trying to buy our premium add-ons. We apologize for the inconvenience.
@@ -155,82 +164,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Update] The Save button in the settings is now always visible, so that there is no need to scroll all the way to the bottom to save your options.
 * [Update] More data layer updates introduced in wp_slimstat_db. Keep an eye on your custom add-ons!
 * [Fix] Pagination was not working as expected when a date range was set in the filters (thank you, [nick-v](https://wordpress.org/support/topic/paging-is-broke))
-
-= 3.9.4 =
-* [Note] The URL of the CDN has changed, and is now using the official WordPress repository as a source: cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js - Please update your "external" tracking codes accordingly.
-* [Note] The structure of the array **wp_slimstat_db::$sql_filters** has changed! Please make sure to update your custom code accordingly. Feel free to [contact us](http://support.wp-slimstat.com) for more information.
-* [New] The wait is over. Our heatmap add-on is finally [available on our store](http://www.wp-slimstat.com/downloads/heatmap/)! We would like to thank all those who provided helpful feedback to improve this initial release!
-* [New] Our [knowledge base](http://docs.wp-slimstat.com/) has been extended with a list of all the actions and filters available in Slimstat.
-* [Fix] The Add-on update checker had a bug preventing the functionality to work as expected. Please make sure to get the latest version of your premium add-ons!
-* [Fix] Date intervals were not accurate because of a bug related to calculating timezones in MySQL (thank you, [Chrisssssi](https://wordpress.org/support/topic/conflicting-data)).
-* [Fix] Line height of report rows has been added to avoid conflicts with other plugins tweaking this parameter in the admin (thank you, [yk11](https://wordpress.org/support/topic/widgets-bottom-is-cut-off)).
-
-= 3.9.3 =
-* [Note] We're starting to work on a completely redesigned data layer, which will require less SQL resources and offer a much needed performance improvement. Stay tuned.
-* [New] Three new settings to turn off the tracker completely on specific links (internal and external), by class name, rel attribute or simply by URL.
-* [Update] MaxMind GeoLite IP has been updated to the latest version (2015-01-06).
-* [Fix] Bug affecting our add-ons setting page, in some specific circumstances (thank you, Erik).
-
-= 3.9.2 =
-* [New] Welcome our recommended partner, [ManageWP](https://managewp.com/?utm_source=A&utm_medium=Banner&utm_content=mwp_banner_25_300x250&utm_campaign=A&utm_mrl=2844). You will get a 10% discount on their products using our affiliation link.
-* [Fix] XSS Vulnerability introduced by the new Save Filters functionality (thank you, [Ryan](https://wpvulndb.com/vulnerabilities/7744)).
-
-= 3.9.1 =
-* [New] Quickly delete single pageviews in the Real-Time Log screen
-* [New] Option to fix an issue occurring when the DB server and the website are in different timezones. Please disable this option if your charts seem to be off!
-* [New] Using the new [WP Proxy CDN feature](https://github.com/jsdelivr/jsdelivr/issues/2632). Please contact us if you notice any problems with this new option, as this feature is still being tested.
-* [Update] Reintroduced the NO PANIC button under Settings > Maintenance > Miscellaneous
-* [Fix] Conflict with WP-Jalali, which forces date_i18n to return not western numerals but their Farsi representation
-
-= 3.9 =
-* [Note] Announcing our latest add-on: heatmaps! Get your free copy of our beta: contact our support team today.
-* [New] Section under Settings > Filters that allows you to specify what links you want to "leave alone", so that the tracker doesn't interfere with your lightbox treatments.
-* [New] You can now turn on the option to collect mouse coordinates for internal links, which will be used to draw the heatmap on your pages.
-* [New] Operator "is included in" has been added to search matches in lists of strings (see [W3resources](http://www.w3resource.com/mysql/string-functions/mysql-find_in_set-function.php), thank you [pchrisl](https://github.com/27pchrisl/wp-slimstat/commit/5a5bc3b8c21ec16445292d8674d669c37c2a08b4))
-* [New] Added new reports: Top Bounce Pages, Top Exit Pages, Recent Exit Pages (thank you, [Random Dev](https://wordpress.org/support/topic/no-visitor-path-through-site-wslimstat))
-* [Update] Partial overhaul of the javascript tracker. We reintroduced the new algorithm to track pageviews, which now avoids the problem of triggering the popup blocker on links opening in a new tab. 
-* [Update] Added browser and operating system to Spy View report
-* [Update] MaxMind GeoLite IP has been updated to the latest version (2014-12-02)
-* [Fix] Bug in archiving old pageviews under certain circumstances (thank you, Thomas)
-* [Fix] Added max height to overlay, for those who have very long lists of saved filters
-* [Fix] The button to reset date filters was not being displayed in some cases (thank you, [RangerPretzel](https://wordpress.org/support/topic/custom-data-range-in-slimstat-produces-charts-with-days-that-have-0-pageviews))
-* [Fix] Charts were not accurate when a custom interval was selected and the mysql server's timezone was different from the web server timezone (thank you, [RangerPretzel](https://wordpress.org/support/topic/custom-data-range-in-slimstat-produces-charts-with-days-that-have-0-pageviews))
-
-= 3.8.5 =
-* [Update] Show notices only to admin users (thank you, [thisismyway](https://wordpress.org/support/topic/hide-notifications-for-non-admins))
-* [Fix] The javascript tracker had been changed to deal with popup blocker issues, but the new code was causing even more problems to other people. Implemented a synchronous solution to make everybody happy! (thank you, bishoph)
-
-= 3.8.4 =
-* [New] You can now archive old pageviews, instead of deleting them
-* [Update] Code optimizations to the Javascript tracker (and a bugfix - thank you, [themadproducer](https://wordpress.org/support/topic/external-links-problem))
-* [Fix] Fixed a corrupted browscap data file (thank you, [crzyhrse](https://wordpress.org/support/topic/clobbered-my-sites-again))
-* [Fix] Do not refresh the Real-Time log if a date filter is set (thank you, [asylum119](https://wordpress.org/support/topic/viewing-yesterdays-stats-still-auto-refreshes))
-
-= 3.8.3 =
-* [Update] Browscap v5035 - November 4, 2014 (this should fix all the issues with recent Firefox versions)
-* [Fix] The originating IP address was not being ignored, if it was the same as the IP address (thank you, [morcom](https://wordpress.org/support/topic/real-time-log-originating-ip-on-all-entries))
-* [Fix] Visits in map were not correctly displayed (thank you, [psn](https://wordpress.org/support/topic/numbers-of-visit-in-maps-shows-zero))
-
-= 3.8.2 =
-* [New] You can now load, save and delete filters (or "goal conversions", in Google's terminology). Please test this new functionality and let us know if you find any bugs!
-* [Update] Added new WordPress filter hooks to initialize the arrays storing the data about the pageview (thank you, Tayyab)
-* [Update] [AmMap](http://www.amcharts.com/download/) version 3.11.3
-* [Update] MaxMind GeoLite IP has been updated to the latest version (2014-11-05)
-* [Fix] Bug affecting links opening in a new tab/window (target=_blank). Our thanks go to all the users who helped us troubleshoot the issue!
-* [Fix] Backward compatibility of new date/time filters with old ones
-* [Fix] Issue with counters on Posts/Pages screen (thank you, [vaguiners](https://wordpress.org/support/topic/0-visits-in-every-post-in-list-of-post-after-update))
-* [Fix] Warning about undefined array index in date/time filters (thank you, Chris)
-* [Fix] Some tooltips were being displayed outside of the browser viewport (thank you, Vitaly)
-
-= 3.8.1 =
-* It was only released on Github to solve a critical bug affecting external links
-
-= 3.8 =
-* [New] We increased the filter granularity to the minute, so that now you can see who visited your website between 9 am and 10.34 am (thank you, [berserk77](https://wordpress.org/support/topic/need-help-with-some-filtering-features))
-* [New] If admin is served over HTTPS but IP lookup service is not, don't use inline overlay dialog (thank you, [509tyler](https://wordpress.org/support/topic/https-overlay-suggestion))
-* [Update] Javascript libraries: qTip v2.2.1 and SlimScroll 1.3.3
-* [Fix] Outbound links from within the admin were not tracked as expected (thank you [mobilemindtech](https://wordpress.org/support/topic/outbound-links-problem-in-version-374))
-* [Fix] Firewall Fix add-on was not tracking the originating ip's country as expected (thank you, JeanLuc)
 
 == Special Thanks To ==
 

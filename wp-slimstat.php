@@ -3,15 +3,15 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.1
+Version: 4.1.2
 Author: Camu
-Author URI: http://slimstat.getused.to.it/
+Author URI: http://www.wp-slimstat.com/
 */
  
 if (!empty(wp_slimstat::$options)) return true;
 
 class wp_slimstat{
-	public static $version = '4.1.1';
+	public static $version = '4.1.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -31,8 +31,8 @@ class wp_slimstat{
 	public static function init(){
 
 		// Load all the settings
-		self::$options = (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'wp-slim-view') === false))?get_site_option('slimstat_options', array()):get_option('slimstat_options', array());
-		self::$options = array_merge(self::init_options(), self::$options);
+		self::$options = ( is_network_admin() && ( empty($_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'wp-slim-view' ) === false ) ) ? get_site_option( 'slimstat_options', array() ) : get_option( 'slimstat_options', array() );
+		self::$options = array_merge( self::init_options(), self::$options );
 
 		// Allow third party tools to edit the options
 		self::$options = apply_filters('slimstat_init_options', self::$options);
@@ -166,8 +166,8 @@ class wp_slimstat{
 				'dt' => date_i18n('U')
 			);
 			
-			if (!empty(self::$data_js['res'])){
-				$event_info['type'] = abs(intval(self::$data_js['type']));
+			if (!empty(self::$data_js['ty'])){
+				$event_info['type'] = abs(intval(self::$data_js['ty']));
 			}
 			if (!empty(self::$data_js['des'])){
 				$event_info['event_description'] = strip_tags(trim(base64_decode(self::$data_js['des'])));
@@ -226,8 +226,13 @@ class wp_slimstat{
 			}
 
 			// Fix Google Images referring domain
-			if ( ( strpos(self::$stat[ 'referer' ], 'www.google' ) !== false ) && ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) ) {
-				self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
+			if ( strpos(self::$stat[ 'referer' ], 'www.google' ) !== false ) { 
+				if ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) {
+					self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
+				}
+				if ( strpos( self::$stat[ 'referer' ], '/url?' ) !== false ) {
+					self::$stat[ 'referer' ] = str_replace( '/url?', '/search?', self::$stat[ 'referer' ] );
+				}
 			}
 
 			// Is this referer blacklisted?

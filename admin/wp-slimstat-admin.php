@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Our dev team is moving forward with their effort to give Slimstat's source code a good scrub. After cleaning up the database library, it was now the report library's turn. Again, if you developed your own custom report, you will probably need to update your code to make it work with our new library. We are going to update our online documentation in the next few days. By the way, we'd like to hear from you: have you noticed any performance improvements after switching to Slimstat 4.0? Let us know through the forum or contant our support team.";
+			self::$admin_notice = "A few weeks ago we started hitting the limits imposed on our site by our existing hosting provider. It was clearly time to find a new home for Slimstat. We've been working on migrating our web platform (website and add-on repository API) to a new more powerful server, and a new domain: <a href='http://www.wp-slimstat.com' target='_blank'>wp-slimstat.com</a>. Our dev team has also released updates for our premium add-ons Export to Excel, Email Reports and User Overview, which are now fully compatible with Slimstat 4. Go get your copy today.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">I got it, thanks</a>';
 		}
 		else {
@@ -122,7 +122,7 @@ class wp_slimstat_admin{
 		}
 
 		// Load the library of functions to generate the reports
-		if ((!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim-view') !== false) || (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report')){
+		if ( ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'wp-slim-view' ) !== false ) || (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report')){
 			include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
 			wp_slimstat_reports::init();
 			
@@ -663,11 +663,9 @@ class wp_slimstat_admin{
 			$minimum_capability = wp_slimstat::$options['capability_can_admin'];
 		}
 
+		$new_entry = add_submenu_page(null, __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
 			$new_entry = add_submenu_page('wp-slim-view-1', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
-		}
-		else {
-			$new_entry = add_submenu_page('admin.php', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
 		}
 		
 		// Load styles and Javascript needed to make the reports look nice and interactive

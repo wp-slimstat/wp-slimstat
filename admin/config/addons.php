@@ -25,6 +25,7 @@ if (!is_array($list_addons)){
 	echo '<p>'.__('There was an error decoding the add-ons list from the server. Please try again later.','wp-slimstat').'</p></div>';
 	return;
 }
+
 ?>
 
 <div class="wrap slimstat">
@@ -32,8 +33,8 @@ if (!is_array($list_addons)){
 <p><?php _e('Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.','wp-slimstat') ?>
 <?php
 	if (empty($_GET['force_refresh'])){
-
-		printf(__('This list is cached daily on your server: <a href="%s&amp;force_refresh=true">click here</a> to clear the cache.','wp-slimstat'), $_SERVER['REQUEST_URI']);
+		echo ' ';
+		printf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true">click here</a> to clear the cache.','wp-slimstat'), $_SERVER['REQUEST_URI']);
 	}
 ?>
 </p>
@@ -52,12 +53,16 @@ if (!is_array($list_addons)){
 			<th scope="row" class="plugin-title">
 				<strong><a target="_blank" href="<?php echo $a_addon['download_url'] ?>"><?php echo $a_addon['name'] ?></a></strong>
 				<div class="row-actions-visible"><?php 
-					if (is_plugin_active($a_addon['slug'].'/index.php') || is_plugin_active($a_addon['slug'].'/'.$a_addon['slug'].'.php')){
-						echo 'Latest Version: '.$a_addon['version'].'<br/>Installed and Active';
+					if ( !empty( $a_addon['version'] ) ) {
+						echo 'Version: '.$a_addon['version'].'<br/>';
+					}
+
+					if ( $is_active ){
+						echo 'Installed and Active';
 						$at_least_one_add_on_active = true;
 					}
 					else{
-						echo 'Latest Version: '.$a_addon['version'].'<br/>Price: '.(is_numeric($a_addon['price'])?'$'.$a_addon['price']:$a_addon['price']);
+						echo 'Price: '.(is_numeric($a_addon['price'])?'$'.$a_addon['price']:$a_addon['price']);
 					}  ?>
 				</div>
 			</th>

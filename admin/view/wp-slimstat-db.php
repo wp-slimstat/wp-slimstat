@@ -76,12 +76,16 @@ class wp_slimstat_db {
 			'interval_minutes' => array( __( 'minutes', 'wp-slimstat' ), 'int' ),
 			'dt' => array( __( 'Unix Timestamp', 'wp-slimstat' ), 'int' ),
 
+			'direction' => array( __( 'Direction', 'wp-slimstat' ), 'varchar' ),
 			'limit_results' => array( __( 'Limit Results', 'wp-slimstat' ), 'int' ),
 			'start_from' => array( __( 'Start From', 'wp-slimstat' ), 'int' ),
 
 			// Misc Filters
 			'strtotime' => array( 0, 'int' )
 		), self::$columns_names );
+
+		// Allow third party plugins to add even more column names to the array
+		self::$all_columns_names = apply_filters( 'slimstat_column_names', self::$all_columns_names );
 
 		// Hook for the... filters
 		$_filters = apply_filters( 'slimstat_db_pre_filters', $_filters );
@@ -246,7 +250,7 @@ class wp_slimstat_db {
 		echo "<p class='debug'>$_message</p>";
 	}
 
-	protected static function _get_results( $_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '' ) {
+	public static function get_results( $_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '' ) {
 		$_sql = apply_filters( 'slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add );
 
 		if ( wp_slimstat::$options[ 'show_sql_debug' ] == 'yes' ) {
@@ -256,7 +260,7 @@ class wp_slimstat_db {
 		return wp_slimstat::$wpdb->get_results( $_sql, ARRAY_A );
 	}
 
-	protected static function _get_var( $_sql = '', $_aggregate_value = '' ) {
+	public static function get_var( $_sql = '', $_aggregate_value = '' ) {
 		$_sql = apply_filters( 'slimstat_get_var_sql', $_sql, $_aggregate_value );
 
 		if ( wp_slimstat::$options[ 'show_sql_debug' ] == 'yes' ) {
@@ -274,6 +278,7 @@ class wp_slimstat_db {
 				'is_past' => false
 			),
 			'misc' => $_init_misc?array(
+				'direction' => 'DESC',
 				'limit_results' => wp_slimstat::$options[ 'rows_to_show' ],
 				'start_from' => 0
 			) : array(),
@@ -382,6 +387,7 @@ class wp_slimstat_db {
 						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = in_array( $a_filter[ 3 ], array( 'plus', 'minus' ) ) ? $a_filter[ 3 ] : 'plus';
 						break;
 
+					case 'direction':
 					case 'limit_results':
 					case 'start_from':
 						$filters_normalized[ 'misc' ][ $a_filter[ 1 ] ] = str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) );
@@ -521,7 +527,7 @@ class wp_slimstat_db {
 	public static function count_bouncing_pages() {
 		$where = self::get_combined_where( 'visit_id > 0 AND content_type <> "404"', 'resource' );
 
-		return intval( self::_get_var( "
+		return intval( self::get_var( "
 			SELECT COUNT(*) counthits
 				FROM (
 					SELECT resource, visit_id
@@ -536,7 +542,7 @@ class wp_slimstat_db {
 	public static function count_exit_pages() {
 		$where = self::get_combined_where( 'visit_id > 0', 'resource' );
 
-		return intval( self::_get_var( "
+		return intval( self::get_var( "
 			SELECT COUNT(*) counthits
 				FROM (
 					SELECT resource, dt
@@ -552,7 +558,7 @@ class wp_slimstat_db {
 		$distinct_column = ( $_column != 'id' ) ? "DISTINCT $_column" : $_column;
 		$_where = self::get_combined_where( $_where, $_column, $_use_time_range );
 
-		return intval( self::_get_var( "
+		return intval( self::get_var( "
 			SELECT COUNT($distinct_column) counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where",
@@ -562,7 +568,7 @@ class wp_slimstat_db {
 	public static function count_records_having( $_column = 'id', $_where = '', $_having = '' ) {
 		$_where = self::get_combined_where( $_where, $_column );
 
-		return intval( self::_get_var( "
+		return intval( self::get_var( "
 			SELECT COUNT(*) counthits FROM (
 				SELECT $_column
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats
@@ -633,7 +639,7 @@ class wp_slimstat_db {
 			$group_by_string";
 
 		// Get the data
-		$results = self::_get_results( $sql, 'blog_id', '', $group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
+		$results = self::get_results( $sql, 'blog_id', '', $group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
 
 		// Fill the output array
 		$output[ 'current' ][ 'label' ] = '';
@@ -696,7 +702,7 @@ class wp_slimstat_db {
 	public static function get_max_and_average_pages_per_visit() {
 		$where = self::get_combined_where( 'visit_id > 0' );
 
-		return self::_get_results( "
+		return self::get_results( "
 			SELECT AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits FROM (
 				SELECT count(ip) counthits, visit_id
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats
@@ -710,7 +716,7 @@ class wp_slimstat_db {
 	}
 
 	public static function get_oldest_visit() {
-		return self::_get_var( "
+		return self::get_var( "
 			SELECT dt
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			ORDER BY dt ASC
@@ -729,7 +735,7 @@ class wp_slimstat_db {
 		$_where = self::get_combined_where( $_where, $_column, $_use_time_range );
 
 		if ( $_column == '*' ) {
-			return self::_get_results( "
+			return self::get_results( "
 				SELECT *
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats
 				WHERE $_where
@@ -739,7 +745,7 @@ class wp_slimstat_db {
 				'dt DESC' );
 		}
 		else {
-			return self::_get_results( "
+			return self::get_results( "
 				SELECT t1.*
 				FROM (
 					SELECT $_column, MAX(id) maxid
@@ -764,7 +770,7 @@ class wp_slimstat_db {
 
 		$_where = self::get_combined_where( $_where, $_as_column, $_use_time_range );
 
-		return self::_get_results( "
+		return self::get_results( "
 			SELECT $_column, COUNT(*) counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
@@ -777,23 +783,23 @@ class wp_slimstat_db {
 			'SUM(counthits) AS counthits' );
 	}
 
-	public static function get_top_complete( $_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX' ) {
+	public static function get_top_aggr( $_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX' ) {
 		$_where = self::get_combined_where( $_where, $_column );
 
-		return self::_get_results( "
-			SELECT $_outer_select_column, ts1.maxid, COUNT(*) counthits
+		return self::get_results( "
+			SELECT $_outer_select_column, ts1.aggrid, COUNT(*) counthits
 			FROM (
-				SELECT $_column, $_aggr_function(id) maxid
+				SELECT $_column, $_aggr_function(id) aggrid
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats
 				WHERE $_where
 				GROUP BY $_column
-			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id 
+			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id 
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
 			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ],
-			$column_for_select,
+			$_outer_select_column,
 			'counthits DESC',
-			$column_for_select,
-			'MAX(maxid), SUM(counthits)' );
+			$_outer_select_column,
+			"$_aggr_function(aggrid), SUM(counthits)" );
 	}
 }

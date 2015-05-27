@@ -137,9 +137,11 @@
 .wrap.slimstat .postbox.wide{
 	width:65.8%
 }
+.wrap.slimstat .postbox.full-width{
+	width:99%
+}
 .wrap.slimstat .postbox.tall{
 	height:661px;
-	width:100%;
 }
 
 .sortable-placeholder{
