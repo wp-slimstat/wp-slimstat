@@ -506,7 +506,8 @@ class wp_slimstat_admin{
 			// Change column type to add IPv6 support
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD ip_temp VARCHAR(39) DEFAULT NULL AFTER id, ADD other_ip_temp VARCHAR(39) DEFAULT NULL AFTER id" );
 			$my_wpdb->query( "UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET ip_temp = INET_NTOA(ip), other_ip_temp = INET_NTOA(other_ip)" );
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP COLUMN ip, DROP COLUMN other_ip" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE ip ip_num INT UNSIGNED DEFAULT 0" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE other_ip other_ip_num INT UNSIGNED DEFAULT 0" );
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE ip_temp ip VARCHAR(39) DEFAULT NULL AFTER id" );
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE other_ip_temp other_ip VARCHAR(39) DEFAULT NULL AFTER ip" );
 		}
