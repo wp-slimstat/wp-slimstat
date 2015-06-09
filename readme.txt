@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1.3.1
+Stable tag: 4.1.3.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.3.2 =
+* [Fix] A bug was preventing the tracker from correctly determining the country code of a given IP address
 
 = 4.1.3.1 =
 * [update] Our shortcode now supports an offset for the counters, that allows you to indicate any previous visits not tracked by Slimstat.

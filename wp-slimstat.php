@@ -1,9 +1,9 @@
-<?php
+f<?php
 /*
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.3.1
+Version: 4.1.3.2
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 */
@@ -11,7 +11,7 @@ Author URI: http://www.wp-slimstat.com/
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.1.3.1';
+	public static $version = '4.1.3.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -539,7 +539,7 @@ class wp_slimstat {
 	 * Searches for the country code associated to a given IP address
 	 */
 	public static function get_country( $_ip_address = '0.0.0.0' ){
-		$float_ipnum = (float)sprintf( "%u", $_ip_address );
+		$float_ipnum = (float) sprintf( "%u", bindec( self::_dtr_pton( $_ip_address ) ) );
 		$country_output = 'xx';
 
 		// Is this a RFC1918 (local) IP?
@@ -581,7 +581,7 @@ class wp_slimstat {
 						}
 					}
 
-					if ( !empty( $_ip_address ) & ( 1 << $depth ) ) {
+					if ( $float_ipnum & ( 1 << $depth ) ) {
 						if ($x[1] >= 16776960 && !empty($country_codes[$x[1] - 16776960])) {
 							$country_output = $country_codes[$x[1] - 16776960];
 							break;
