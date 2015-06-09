@@ -505,12 +505,30 @@ class wp_slimstat {
 		// Is this a new visitor?
 		$is_set_cookie = apply_filters('slimstat_set_visit_cookie', true);
 		if ($is_set_cookie){
+			$unique_id = get_current_user_id();
+			if ( empty( $unique_id ) ) {
+				$unique_id = '';
+			}
+			else {
+				$unique_id = '_'.$unique_id;
+			}
+
 			if (empty(self::$stat['visit_id']) && !empty(self::$stat['id'])){
 				// Set a cookie to track this visit (Google and other non-human engines will just ignore it)
-				@setcookie('slimstat_tracking_code', self::$stat['id'].'id.'.md5(self::$stat['id'].'id'.self::$options['secret']), time()+2678400, COOKIEPATH); // one month
+				@setcookie(
+					'slimstat_tracking_code' . $unique_id,
+					self::$stat[ 'id' ] . 'id.' . md5( self::$stat[ 'id' ] . 'id' . self::$options[ 'secret' ] ),
+					time() + 2678400, // one month
+					COOKIEPATH
+				);
 			}
-			elseif (!$cookie_has_been_set && self::$options['extend_session'] == 'yes' && self::$stat['visit_id'] > 0){
-				@setcookie('slimstat_tracking_code', self::$stat['visit_id'].'.'.md5(self::$stat['visit_id'].self::$options['secret']), time()+self::$options['session_duration'], COOKIEPATH);
+			elseif (!$cookie_has_been_set && self::$options[ 'extend_session' ] == 'yes' && self::$stat[ 'visit_id' ] > 0){
+				@setcookie(
+				 'slimstat_tracking_code' . $unique_id,
+				 self::$stat[ 'visit_id' ] . '.' . md5( self::$stat[ 'visit_id' ] . self::$options[ 'secret' ] ),
+				 time() + self::$options[ 'session_duration' ],
+				 COOKIEPATH
+				);
 			}
 		}
 		return $_argument;
@@ -1049,8 +1067,16 @@ class wp_slimstat {
 		$is_new_session = true;
 		$identifier = 0;
 
-		if (isset($_COOKIE['slimstat_tracking_code'])){
-			list($identifier, $control_code) = explode('.', $_COOKIE['slimstat_tracking_code']);
+		$unique_id = get_current_user_id();
+		if ( empty( $unique_id ) ) {
+			$unique_id = '';
+		}
+		else {
+			$unique_id = '_'.$unique_id;
+		}
+
+		if ( isset( $_COOKIE[ 'slimstat_tracking_code' . $unique_id ] ) ) {
+			list( $identifier, $control_code ) = explode( '.', $_COOKIE[ 'slimstat_tracking_code' .  $unique_id ] );
 
 			// Make sure only authorized information is recorded
 			if ($control_code !== md5($identifier.self::$options['secret'])) return false;
@@ -1071,8 +1097,13 @@ class wp_slimstat {
 			update_option('slimstat_visit_id', self::$stat['visit_id']);
 
 			$is_set_cookie = apply_filters('slimstat_set_visit_cookie', true);
-			if ($is_set_cookie){
-				@setcookie('slimstat_tracking_code', self::$stat['visit_id'].'.'.md5(self::$stat['visit_id'].self::$options['secret']), time()+self::$options['session_duration'], COOKIEPATH);
+			if ( $is_set_cookie ) {
+				@setcookie(
+					'slimstat_tracking_code' . $unique_id,
+					self::$stat[ 'visit_id' ] . '.' . md5( self::$stat[ 'visit_id' ] . self::$options[ 'secret' ] ),
+					time() + self::$options[ 'session_duration' ],
+					COOKIEPATH
+				);
 			}
 
 		}
