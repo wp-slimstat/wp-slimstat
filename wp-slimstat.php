@@ -1,4 +1,4 @@
-f<?php
+<?php
 /*
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
