@@ -1637,14 +1637,16 @@ class wp_slimstat_reports {
 
 			$all_terms = get_terms( 'category' );
 			foreach ( $all_terms as $a_term ) {
-				if ( str_replace( $home_url, $relative_home, get_term_link( $a_term, 'category' ) ) == $_resource ) {
+				$term_link = get_term_link( $a_term, 'category' );
+				if ( !is_wp_error( $term_link ) && str_replace( $home_url, $relative_home, $term_link ) == $_resource ) {
 					$term_names[] = $a_term->name;
 				}
 			}
 
 			$all_terms = get_terms( 'tag' );
 			foreach ( $all_terms as $a_term ) {
-				if ( str_replace( $home_url, $relative_home, get_term_link( $a_term, 'category' ) ) == $_resource ) {
+				$term_link = get_term_link( $a_term, 'tag' );
+				if ( !is_wp_error( $term_link ) && str_replace( $home_url, $relative_home, $term_link ) == $_resource ) {
 					$term_names[] = $a_term->name;
 				}
 			}
