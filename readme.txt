@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1.3
+Stable tag: 4.1.3.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.3.1 =
+* [Fix] A fatal error message was being displayed if a tag or a category did not exist anymore in WordPress, and Slimstat would attempt to calculate its permalink.
 
 = 4.1.3 =
 * [Note] We've updated the following add-ons to be compatible with Slimstat 4.x: Custom DB, Heatmap, Track Cookies. Go get your copy today.
