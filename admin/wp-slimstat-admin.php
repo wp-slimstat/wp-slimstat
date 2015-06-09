@@ -223,8 +223,8 @@ class wp_slimstat_admin{
 		$stats_table_sql = "
 			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
 				id INT UNSIGNED NOT NULL auto_increment,
-				ip INT UNSIGNED DEFAULT 0,
-				other_ip INT UNSIGNED DEFAULT 0,
+				ip VARCHAR(39) DEFAULT NULL,
+				other_ip VARCHAR(39) DEFAULT NULL,
 				username VARCHAR(255) DEFAULT NULL,
 				country VARCHAR(16) DEFAULT NULL,
 				referer VARCHAR(2048) DEFAULT NULL,
@@ -342,8 +342,8 @@ class wp_slimstat_admin{
 			self::_create_table ("
 				CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_4 (
 					id INT UNSIGNED NOT NULL auto_increment,
-					ip VARCHAR(39) DEFAULT NULL,
-					other_ip VARCHAR(39) DEFAULT NULL,
+					ip INT UNSIGNED DEFAULT 0,
+					other_ip INT UNSIGNED DEFAULT 0,
 					username VARCHAR(255) DEFAULT NULL,
 					country VARCHAR(16) DEFAULT NULL,
 					referer VARCHAR(2048) DEFAULT NULL,
