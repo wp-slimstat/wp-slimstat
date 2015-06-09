@@ -35,7 +35,7 @@ class wp_slimstat_db {
 			'no_filter_selected_1' => array( '&nbsp;', 'none' ),
 			'browser' => array( __( 'Browser', 'wp-slimstat' ), 'varchar' ),
 			'country' => array( __( 'Country Code', 'wp-slimstat' ), 'varchar' ),
-			'ip' => array( __( 'IP Address', 'wp-slimstat' ), 'int' ),
+			'ip' => array( __( 'IP Address', 'wp-slimstat' ), 'varchar' ),
 			'searchterms' => array( __( 'Search Terms', 'wp-slimstat' ), 'varchar' ),
 			'language' => array( __( 'Language Code', 'wp-slimstat' ), 'varchar' ),
 			'platform' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
@@ -54,7 +54,7 @@ class wp_slimstat_db {
 			'server_latency' => array( __( 'Server Latency', 'wp-slimstat' ), 'int' ),
 			'author' => array( __( 'Post Author', 'wp-slimstat' ), 'varchar' ),
 			'category' => array( __( 'Post Category ID', 'wp-slimstat' ), 'varchar' ),
-			'other_ip' => array( __( 'Originating IP', 'wp-slimstat' ), 'int' ),
+			'other_ip' => array( __( 'Originating IP', 'wp-slimstat' ), 'varchar' ),
 			'content_type' => array( __( 'Resource Content Type', 'wp-slimstat' ), 'varchar' ),
 			'content_id' => array( __( 'Resource ID', 'wp-slimstat' ), 'int' ),
 			'screen_width' => array( __( 'Screen Width', 'wp-slimstat' ), 'int' ),
@@ -305,8 +305,10 @@ class wp_slimstat_db {
 
 				switch( $a_filter[ 1 ] ) {
 					case 'strtotime':
-						$custom_date = strtotime( $a_filter[ 3 ].' UTC' );
+						$custom_date = strtotime( $a_filter[ 3 ], date_i18n( 'U' ) );
 
+						$filters_normalized[ 'date' ][ 'minute' ] = date( 'i', $custom_date );
+						$filters_normalized[ 'date' ][ 'hour' ] = date( 'H', $custom_date );
 						$filters_normalized[ 'date' ][ 'day' ] = date( 'j', $custom_date );
 						$filters_normalized[ 'date' ][ 'month' ] = date( 'n', $custom_date );
 						$filters_normalized[ 'date' ][ 'year' ] = date( 'Y', $custom_date );
@@ -488,14 +490,14 @@ class wp_slimstat_db {
 			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 'plus' )?'+':'-';
 
 			$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + intval( $sign.( 
-					( !empty( $filters_normalized[ 'date' ][ 'interval' ] )?intval( $filters_normalized[ 'date' ][ 'interval' ] + 1 ):0 ) * 86400 + 
+					( !empty( $filters_normalized[ 'date' ][ 'interval' ] )?intval( $filters_normalized[ 'date' ][ 'interval' ] + 1):0 ) * 86400 + 
 					( !empty( $filters_normalized[ 'date' ][ 'interval_hours' ] )?intval( $filters_normalized[ 'date' ][ 'interval_hours' ] ):0 ) * 3600 +
 					( !empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] )?intval( $filters_normalized[ 'date' ][ 'interval_minutes' ] ):0 ) * 60
 				 ) ) - 1;
 
 			// Swap boundaries if we're going back in time
 			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 'minus' ) {
-				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + 86401, $filters_normalized[ 'utime' ][ 'start' ] + 86399 );
+				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + 1, $filters_normalized[ 'utime' ][ 'start' ] - 1 );
 			}
 		}
 
