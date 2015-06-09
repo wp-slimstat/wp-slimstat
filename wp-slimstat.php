@@ -3,15 +3,15 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.2
+Version: 4.1.3
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 */
  
-if (!empty(wp_slimstat::$options)) return true;
+if ( !empty( wp_slimstat::$options ) ) return true;
 
-class wp_slimstat{
-	public static $version = '4.1.2';
+class wp_slimstat {
+	public static $version = '4.1.3';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -202,9 +202,9 @@ class wp_slimstat{
 		self::$stat = apply_filters('slimstat_filter_pageview_stat_init', self::$stat);
 
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
-		if (empty(self::$stat) || empty(self::$stat['dt'])){
-			self::$stat['id'] = -213;
-			self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Pageview filtered by third-party code','wp-slimstat'), date_i18n('U'));
+		if ( empty( self::$stat ) || empty( self::$stat[ 'dt' ] ) ) {
+			self::$stat[ 'id' ] = -213;
+			self::_set_error_array( __( 'Pageview filtered by third-party code', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
@@ -221,7 +221,7 @@ class wp_slimstat{
 			$referer = parse_url( self::$stat[ 'referer' ] );
 			if ( !$referer ){
 				self::$stat[ 'id' ] = -208;
-				self::$options[ 'last_tracker_error' ] = array( 200, __( 'Malformed URL', 'wp-slimstat' ), date_i18n( 'U' ) );
+				self::_set_error_array( __( 'Malformed URL', 'wp-slimstat' ) );
 				return $_argument;
 			}
 
@@ -239,8 +239,8 @@ class wp_slimstat{
 			foreach(self::string_to_array(self::$options['ignore_referers']) as $a_filter){
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
 				if (preg_match("@^$pattern$@i", self::$stat['referer'])){
-					self::$stat['id'] = -207;
-					self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Referrer is blacklisted','wp-slimstat'), date_i18n('U'));
+					self::$stat[ 'id' ] = -207;
+					self::_set_error_array( __( 'Referrer is blacklisted', 'wp-slimstat') );
 					return $_argument;
 				}
 			}
@@ -318,26 +318,27 @@ class wp_slimstat{
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
 				if (preg_match("@^$pattern$@i", self::$stat['resource'])){
 					self::$stat['id'] = -209;
-					self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Permalink is blacklisted','wp-slimstat'), date_i18n('U'));
+					self::_set_error_array( __( 'Permalink is blacklisted', 'wp-slimstat' ) );
 					return $_argument;
 				}
 			}
 		}
 
 		// User's IP address
-		list(self::$stat['ip'], self::$stat['other_ip']) = self::_get_ip2long_remote_ip();
-		if (empty(self::$stat['ip'])){
-			self::$stat['id'] = -203;
-			self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Empty IP Address','wp-slimstat'), date_i18n('U'));
+		list ( self::$stat[ 'ip' ], self::$stat[ 'other_ip' ] ) = self::_get_remote_ip();
+
+		if ( empty( self::$stat[ 'ip' ] ) || self::$stat[ 'ip' ] == '0.0.0.0' ) {
+			self::$stat[ 'id' ] = -203;
+			self::_set_error_array( __( 'Empty or not supported IP address format (IPv6)', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
 		// Should we ignore this user?
-		if (!empty($GLOBALS['current_user']->ID)){
+		if ( !empty( $GLOBALS[ 'current_user' ]->ID ) ) {
 			// Don't track logged-in users, if the corresponding option is enabled
 			if (self::$options['track_users'] == 'no'){
 				self::$stat['id'] = -214;
-				self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Logged in user not tracked','wp-slimstat'), date_i18n('U'));
+				self::_set_error_array( __( 'Logged in user not tracked', 'wp-slimstat' ) );
 				return $_argument;
 			}
 
@@ -345,14 +346,14 @@ class wp_slimstat{
 			foreach(self::string_to_array(self::$options['ignore_capabilities']) as $a_capability){
 				if (array_key_exists(strtolower($a_capability), $GLOBALS['current_user']->allcaps)){
 					self::$stat['id'] = -200;
-					self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('User with given capability not tracked','wp-slimstat'), date_i18n('U'));
+					self::_set_error_array( __( 'User with given capability not tracked', 'wp-slimstat' ) );
 					return $_argument;
 				}
 			}
 
 			if (is_string(self::$options['ignore_users']) && strpos(self::$options['ignore_users'], $GLOBALS['current_user']->data->user_login) !== false){
 				self::$stat['id'] = -201;
-				self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('User is blacklisted','wp-slimstat'), date_i18n('U'));
+				self::_set_error_array( sprintf( __('User %s is blacklisted', 'wp-slimstat'), $GLOBALS['current_user']->data->user_login ) );
 				return $_argument;
 			}
 
@@ -362,11 +363,17 @@ class wp_slimstat{
 		}
 		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
 			// Is this a spammer?
-			$spam_comment = self::$wpdb->get_row("SELECT comment_author, COUNT(*) comment_count FROM {$GLOBALS['wpdb']->prefix}comments WHERE INET_ATON(comment_author_IP) = '".sprintf("%u", self::$stat['ip'])."' AND comment_approved = 'spam' GROUP BY comment_author LIMIT 0,1", ARRAY_A);
-			if (isset($spam_comment['comment_count']) && $spam_comment['comment_count'] > 0){
-				if (self::$options['ignore_spammers'] == 'yes'){
-					self::$stat['id'] = -202;
-					self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Spammer not tracked','wp-slimstat'), date_i18n('U'));
+			$spam_comment = self::$wpdb->get_row( self::$wpdb->prepare( "
+				SELECT comment_author, COUNT(*) comment_count
+				FROM {$GLOBALS['wpdb']->prefix}comments
+				WHERE comment_author_IP = %s AND comment_approved = 'spam'
+				GROUP BY comment_author
+				LIMIT 0,1", self::$stat[ 'ip' ] ), ARRAY_A );
+
+			if ( !empty( $spam_comment[ 'comment_count' ] ) ) {
+				if ( self::$options[ 'ignore_spammers' ] == 'yes' ){
+					self::$stat[ 'id' ] = -202;
+					self::_set_error_array( sprintf( __( 'Spammer %s not tracked', 'wp-slimstat' ), $spam_comment[ 'comment_author' ] ) );
 					return $_argument;
 				}
 				else{
@@ -379,43 +386,52 @@ class wp_slimstat{
 		}
 
 		// Should we ignore this IP address?
-		foreach(self::string_to_array(self::$options['ignore_ip']) as $a_ip_range){
-			$mask = 32;
+		foreach ( self::string_to_array( self::$options[ 'ignore_ip' ] ) as $a_ip_range ) {
 			$ip_to_ignore = $a_ip_range;
 
-			if (strpos($ip_to_ignore, '/') !== false){
-				list($ip_to_ignore, $mask) = @explode('/', trim($ip_to_ignore));
-				if (empty($mask) || !is_numeric($mask)){
-					$mask = 32;
-				}
+			if ( strpos( $ip_to_ignore, '/' ) !== false ) {
+				list( $ip_to_ignore, $cidr_mask ) = explode( '/', trim( $ip_to_ignore ) );
+			}
+			else{
+				$cidr_mask = self::_get_mask_length( $ip_to_ignore );
 			}
 
-			$long_ip_to_ignore = ip2long($ip_to_ignore);
-			$long_mask = bindec( str_pad('', $mask, '1') . str_pad('', 32-$mask, '0') );
-			$long_masked_user_ip = self::$stat['ip'] & $long_mask;
-			$long_masked_other_ip = self::$stat['other_ip'] & $long_mask;
-			$long_masked_ip_to_ignore = $long_ip_to_ignore & $long_mask;
-			if ($long_masked_user_ip == $long_masked_ip_to_ignore || $long_masked_other_ip == $long_masked_ip_to_ignore){
+			$long_masked_ip_to_ignore = substr( self::_dtr_pton( $ip_to_ignore ), 0, $cidr_mask );
+			$long_masked_user_ip = substr( self::_dtr_pton( self::$stat[ 'ip' ] ), 0, $cidr_mask );
+			$long_masked_user_other_ip = substr( self::_dtr_pton( self::$stat[ 'other_ip' ] ), 0 , $cidr_mask );
+
+			if ( $long_masked_user_ip === $long_masked_ip_to_ignore || $long_masked_user_other_ip === $long_masked_ip_to_ignore ) {
 				self::$stat['id'] = -204;
-				self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('IP Address is blacklisted','wp-slimstat'), date_i18n('U'));
+				self::_set_error_array( sprintf( __('IP address %s is blacklisted', 'wp-slimstat'), self::$stat[ 'ip' ] . ( !empty( self::$stat[ 'other_ip' ] ) ? ' (' . self::$stat[ 'other_ip' ] . ')' : '' ) ) );
 				return $_argument;
 			}
 		}
 
 		// Country and Language
 		self::$stat['language'] = self::_get_language();
-		self::$stat['country'] = self::get_country(self::$stat['ip']);
+		self::$stat['country'] = self::get_country(self::$stat[ 'ip' ]);
 
 		// Anonymize IP Address?
-		if (self::$options['anonymize_ip'] == 'yes'){
-			self::$stat['ip'] = self::$stat['ip']&4294967040;
-			self::$stat['other_ip'] = self::$stat['other_ip']&4294967040;
+		if ( self::$options[ 'anonymize_ip' ] == 'yes' ) {
+			// IPv4 or IPv6
+			$needle = '.';
+			$replace = '.0';
+			if ( self::_get_mask_length( self::$stat['ip'] ) == 128 ) {
+				$needle = ':';
+				$replace = ':0000';
+			}
+
+			self::$stat[ 'ip' ] = substr( self::$stat[ 'ip' ], 0, strrpos( self::$stat[ 'ip' ], $needle ) ) . $replace;
+
+			if ( !empty( self::$stat[ 'other_ip' ] ) ) {
+				self::$stat[ 'other_ip' ] = substr( self::$stat[ 'other_ip' ], 0, strrpos( self::$stat[ 'other_ip' ], $needle ) ) . $replace;
+			}
 		}
 
 		// Is this country blacklisted?
-		if (is_string(self::$options['ignore_countries']) && stripos(self::$options['ignore_countries'], self::$stat['country']) !== false){
+		if ( is_string( self::$options[ 'ignore_countries' ] ) && stripos( self::$options[ 'ignore_countries' ], self::$stat[ 'country' ] ) !== false ) {
 			self::$stat['id'] = -206;
-			self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Country is blacklisted','wp-slimstat'), date_i18n('U'));
+			self::_set_error_array( sprintf( __('Country %s is blacklisted', 'wp-slimstat'), self::$stat[ 'country' ] ) );
 			return $_argument;
 		}
 
@@ -424,7 +440,7 @@ class wp_slimstat{
 			(isset($_SERVER['HTTP_X_PURPOSE']) && (strtolower($_SERVER['HTTP_X_PURPOSE']) == 'preview'))){
 			if (self::$options['ignore_prefetch'] == 'yes'){
 				self::$stat['id'] = -210;
-				self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Prefetch requests are ignored','wp-slimstat'), date_i18n('U'));
+				self::_set_error_array( __( 'Prefetch requests are ignored', 'wp-slimstat' ) );
 				return $_argument;
 			}
 			else{
@@ -438,7 +454,7 @@ class wp_slimstat{
 		// Are we ignoring bots?
 		if ((self::$options['javascript_mode'] == 'yes' || self::$options['ignore_bots'] == 'yes') && self::$browser['browser_type']%2 != 0){
 			self::$stat['id'] = -211;
-			self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Bot not tracked','wp-slimstat'), date_i18n('U'));
+			self::_set_error_array( __( 'Bot not tracked', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
@@ -447,7 +463,7 @@ class wp_slimstat{
 			$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
 			if (preg_match("~^$pattern$~i", self::$browser['browser'].'/'.self::$browser['version']) || preg_match("~^$pattern$~i", self::$browser['browser']) || preg_match("~^$pattern$~i", self::$browser['user_agent'])){
 				self::$stat['id'] = -212;
-				self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Browser is blacklisted','wp-slimstat'), date_i18n('U'));
+				self::_set_error_array( sprintf( __( 'Browser %s is blacklisted', 'wp-slimstat' ), self::$browser['browser'] ) );
 				return $_argument;
 			}
 		}
@@ -464,16 +480,10 @@ class wp_slimstat{
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if (empty(self::$stat) || empty(self::$stat['dt'])){
 			self::$stat['id'] = -213;
-			self::$options['last_tracker_error'] = array(abs(self::$stat['id']), __('Pageview filtered by third-party code','wp-slimstat'), date_i18n('U'));
+			self::_set_error_array( __( 'Pageview filtered by third-party code', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
-		// Because PHP's integer type is signed, and many IP addresses will result in negative integers on 32-bit architectures, we need to use the "%u" formatter
-		if (!empty(self::$stat['other_ip']) && self::$stat['other_ip'] != self::$stat['ip']){
-			self::$stat['other_ip'] = sprintf("%u", self::$stat['other_ip']);
-		}
-		self::$stat['ip'] = sprintf("%u", self::$stat['ip']);
-		
 		// Implode the notes
 		self::$stat['notes'] = implode(';', self::$stat['notes']);
 
@@ -483,8 +493,8 @@ class wp_slimstat{
 		// Something went wrong during the insert
 		if (empty(self::$stat['id'])){
 			self::$stat['id'] = -215;
-			self::$options['last_tracker_error'] = array(abs(self::$stat['id']), self::$wpdb->last_error, date_i18n('U'));
-			
+			self::_set_error_array( self::$wpdb->last_error );
+
 			// Attempt to init the environment (new blog in a MU network?)
 			include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
 			wp_slimstat_admin::init_environment(true);
@@ -510,8 +520,8 @@ class wp_slimstat{
 	/**
 	 * Searches for the country code associated to a given IP address
 	 */
-	public static function get_country($_ipnum = 0){
-		$float_ipnum = (float)sprintf("%u", $_ipnum);
+	public static function get_country( $_ip_address = '0.0.0.0' ){
+		$float_ipnum = (float)sprintf( "%u", $_ip_address );
 		$country_output = 'xx';
 
 		// Is this a RFC1918 (local) IP?
@@ -535,7 +545,7 @@ class wp_slimstat{
 						add_action('shutdown', array(__CLASS__, 'download_maxmind_database'));
 
 						if (false === ($handle = fopen(self::$maxmind_path, "rb"))){
-							return apply_filters('slimstat_get_country', 'xx', $_ipnum);
+							return apply_filters( 'slimstat_get_country', 'xx', $_ip_address );
 						}
 					}
 				}
@@ -553,7 +563,7 @@ class wp_slimstat{
 						}
 					}
 
-					if ($_ipnum & (1 << $depth)) {
+					if ( !empty( $_ip_address ) & ( 1 << $depth ) ) {
 						if ($x[1] >= 16776960 && !empty($country_codes[$x[1] - 16776960])) {
 							$country_output = $country_codes[$x[1] - 16776960];
 							break;
@@ -571,7 +581,7 @@ class wp_slimstat{
 			}
 		}
 
-		return apply_filters('slimstat_get_country', $country_output, $_ipnum);
+		return apply_filters( 'slimstat_get_country', $country_output, $_ip_address );
 	}
 	// end get_country
 
@@ -594,37 +604,37 @@ class wp_slimstat{
 	/**
 	 * Tries to find the user's REAL IP address
 	 */
-	protected static function _get_ip2long_remote_ip(){
-		$long_ip = array(0, 0);
+	protected static function _get_remote_ip(){
+		$ip_array = array( '', '' );
 
-		if (isset($_SERVER["REMOTE_ADDR"]) && filter_var($_SERVER["REMOTE_ADDR"], FILTER_VALIDATE_IP) !== false){
-			$long_ip[0] = ip2long($_SERVER["REMOTE_ADDR"]);
+		if ( !empty( $_SERVER[ 'REMOTE_ADDR' ] ) && filter_var( $_SERVER[ 'REMOTE_ADDR' ], FILTER_VALIDATE_IP ) !== false ) {
+			$ip_array[ 0 ] = $_SERVER["REMOTE_ADDR"];
 		}
 
-		if (isset($_SERVER["HTTP_CLIENT_IP"]) && filter_var($_SERVER["HTTP_CLIENT_IP"], FILTER_VALIDATE_IP) !== false){
-			$long_ip[1] = ip2long($_SERVER["HTTP_CLIENT_IP"]);
+		if ( !empty( $_SERVER[ 'HTTP_CLIENT_IP' ] ) && filter_var( $_SERVER[ 'HTTP_CLIENT_IP' ], FILTER_VALIDATE_IP ) !== false ) {
+			$ip_array[ 1 ] = $_SERVER["HTTP_CLIENT_IP"];
 		}
 
-		if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])){
-			foreach (explode(",",$_SERVER["HTTP_X_FORWARDED_FOR"]) as $a_ip){
-				if (filter_var($a_ip, FILTER_VALIDATE_IP) !== false){
-					$long_ip[1] = ip2long($a_ip);
+		if ( !empty( $_SERVER[ 'HTTP_X_FORWARDED_FOR' ] ) ) {
+			foreach ( explode( ',', $_SERVER[ 'HTTP_X_FORWARDED_FOR' ] ) as $a_ip ) {
+				if ( filter_var( $a_ip, FILTER_VALIDATE_IP ) !== false ) {
+					$ip_array[ 1 ] = $a_ip;
 					break;
 				}
 			}
 		}
 
-		if (isset($_SERVER["HTTP_FORWARDED"]) && filter_var($_SERVER["HTTP_FORWARDED"], FILTER_VALIDATE_IP) !== false){
-			$long_ip[1] = ip2long($_SERVER["HTTP_FORWARDED"]);
+		if ( !empty( $_SERVER[ 'HTTP_FORWARDED' ] ) && filter_var( $_SERVER[ 'HTTP_FORWARDED' ], FILTER_VALIDATE_IP ) !== false ) {
+			$ip_array[ 1 ] = $_SERVER[ 'HTTP_FORWARDED' ];
 		}
 
-		if (isset($_SERVER["HTTP_X_FORWARDED"]) && filter_var($_SERVER["HTTP_X_FORWARDED"], FILTER_VALIDATE_IP) !== false){
-			$long_ip[1] = ip2long($_SERVER["HTTP_X_FORWARDED"]);
+		if ( !empty( $_SERVER[ 'HTTP_X_FORWARDED' ] ) && filter_var( $_SERVER[ 'HTTP_X_FORWARDED' ], FILTER_VALIDATE_IP ) !== false ) {
+			$ip_array[ 1 ] = $_SERVER[ 'HTTP_X_FORWARDED' ];
 		}
 
-		return $long_ip;
+		return $ip_array;
 	}
-	// end _get_ip2long_remote_ip
+	// end _get_remote_ip
 
 	/**
 	 * Extracts the accepted language from browser headers
@@ -1090,7 +1100,8 @@ class wp_slimstat{
 		// Do we have an id for this request?
 		if ( empty( self::$data_js[ 'id' ] ) || empty( self::$data_js[ 'op' ] ) ) {
 			do_action( 'slimstat_track_exit_102' );
-			self::$options[ 'last_tracker_error' ] = array( 102, __( 'Invalid payload string', 'wp-slimstat' ), date_i18n( 'U' ) );
+			self::$stat[ 'id' ] = -102;
+			self::_set_error_array( __( 'Invalid payload string. Try clearing your WordPress cache.', 'wp-slimstat' ) );
 			self::slimstat_save_options();
 			exit('-102.0');
 		}
@@ -1099,7 +1110,8 @@ class wp_slimstat{
 		list(self::$data_js['id'], $nonce) = explode('.', self::$data_js['id']);
 		if ($nonce !== md5(self::$data_js['id'].self::$options['secret'])){
 			do_action('slimstat_track_exit_103');
-			self::$options['last_tracker_error'] = array(103, __('Invalid data signature','wp-slimstat'), date_i18n('U'));
+			self::$stat[ 'id' ] = -102;
+			self::_set_error_array( __( 'Invalid data signature. Try clearing your WordPress cache.', 'wp-slimstat' ) );
 			self::slimstat_save_options();
 			exit('-103.0');
 		}
@@ -1155,6 +1167,40 @@ class wp_slimstat{
 			WHERE id = %d", $_data));
 
 		return 0;
+	}
+
+	protected static function _set_error_array( $_error_message = '' ) {
+		$error_code = abs( self::$stat[ 'id' ] );
+		self::$options['last_tracker_error'] = array( $error_code, $_error_message, date_i18n( 'U' ) );
+	}
+
+	protected static function _dtr_pton( $ip ){
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			$unpacked = unpack( 'A4', inet_pton( $ip ) );
+		}
+		else if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			$unpacked = unpack( 'A16', inet_pton( $ip ) );
+		}
+
+		$binary_ip = '';
+		if ( !empty( $unpacked ) ) {
+			$unpacked = str_split( $unpacked[ 1 ] );
+			foreach ( $unpacked as $char ) {
+				$binary_ip .= str_pad( decbin( ord( $char ) ), 8, '0', STR_PAD_LEFT );
+			}
+		}
+		return $binary_ip;
+	}
+	
+	protected static function _get_mask_length( $ip ){
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return 32;
+		}
+		else if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			return 128;
+		}
+
+		return false;
 	}
 
 	/**
@@ -1315,11 +1361,7 @@ class wp_slimstat{
 								break;
 
 							case 'hostname':
-								$output[ $result_idx ][ $a_column ] .= gethostbyaddr( long2ip( $a_result[ 'ip' ] ) );
-								break;
-
-							case 'ip':
-								$output[ $result_idx ][ $a_column ] .= long2ip( $a_result['ip'] );
+								$output[ $result_idx ][ $a_column ] .= gethostbyaddr( $a_result[ 'ip' ] );
 								break;
 
 							case 'count':
@@ -1445,7 +1487,7 @@ class wp_slimstat{
 			'enable_ads_network' => 'null',
 
 			// Maintenance
-			'last_tracker_error' => array(0, '', date_i18n('U')),
+			'last_tracker_error' => array( 0, '', 0 ),
 
 			// Network-wide Settings
 			'locked_options' => ''

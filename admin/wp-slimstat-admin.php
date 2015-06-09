@@ -11,7 +11,8 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "A few weeks ago we started hitting the limits imposed on our site by our existing hosting provider. It was clearly time to find a new home for Slimstat. We've been working on migrating our web platform (website and add-on repository API) to a new more powerful server, and a new domain: <a href='http://www.wp-slimstat.com' target='_blank'>wp-slimstat.com</a>. Our dev team has also released updates for our premium add-ons Export to Excel, Email Reports and User Overview, which are now fully compatible with Slimstat 4. Go get your copy today.";
+			self::$admin_notice = "A few users have been asking us to support IPv6. You will be pleased to know that we got to work and updated our table structure to accommodate this request. Unfortunately MaxMind only supports IPv6 in their new GeoLite2 format, <a href='https://github.com/maxmind/GeoIP2-php#requirements' target='_blank'>which requires PHP 5.3</a>. We know for a fact that some of our users are still on PHP 5.2, and we would like to hear your opinion on this matter: should we enforce the minimum requirement of PHP 5.3 in order to detect the Country associated to IPv6 addresses? Or do you think it's better to be compatible with PHP 5.2? Let us know through the forum or via our support service. Thank you.";
+			// 4.1.4  self::$admin_notice = "Can you believe it? We have passed 1.5 million downloads! To thank you for your loyalty and continued support, we are offering a 15% discount on all orders (including the bundles!) till the end of the month. Just enter <code>15OFF</code> in the corresponding field at checkout. Have you already purchased one of our add-ons? We have an even bigger surprise for you: as a way to thank you for your patience while we updated our extensions to make them compatible with Slimstat 4, we are giving away 50 codes to download one <strong>free</strong> add-on from our store. Including the new ones we're about to announce. Contact us to get your code (please mention your license key in your message).";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">I got it, thanks</a>';
 		}
 		else {
@@ -341,8 +342,8 @@ class wp_slimstat_admin{
 			self::_create_table ("
 				CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_4 (
 					id INT UNSIGNED NOT NULL auto_increment,
-					ip INT UNSIGNED DEFAULT 0,
-					other_ip INT UNSIGNED DEFAULT 0,
+					ip VARCHAR(39) DEFAULT NULL,
+					other_ip VARCHAR(39) DEFAULT NULL,
 					username VARCHAR(255) DEFAULT NULL,
 					country VARCHAR(16) DEFAULT NULL,
 					referer VARCHAR(2048) DEFAULT NULL,
@@ -499,6 +500,17 @@ class wp_slimstat_admin{
 			}
 		}
 		// --- END: Updates for version 4.0 ---
+
+		// --- Updates for version 4.1.3 ---
+		if (version_compare(wp_slimstat::$options['version'], '4.1.3', '<')){
+			// Change column type to add IPv6 support
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD ip_temp VARCHAR(39) DEFAULT NULL AFTER id, ADD other_ip_temp VARCHAR(39) DEFAULT NULL AFTER id" );
+			$my_wpdb->query( "UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET ip_temp = INET_NTOA(ip), other_ip_temp = INET_NTOA(other_ip)" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP COLUMN ip, DROP COLUMN other_ip" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE ip_temp ip VARCHAR(39) DEFAULT NULL AFTER id" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE other_ip_temp other_ip VARCHAR(39) DEFAULT NULL AFTER ip" );
+		}
+		// --- END: Updates for version 4.1.3 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$options['version'] = wp_slimstat::$version;

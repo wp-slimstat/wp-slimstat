@@ -4,13 +4,13 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1.2
+Stable tag: 4.1.3
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
 
 = Key Features =
-* Real-time activity log, server latency, heatmaps, email reports, export data to Excel, and much more
+* Real-time activity log, server latency, heatmaps, email reports, export data to Excel, full IPv6 support, and much more
 * Compatible with W3 Total Cache, WP SuperCache and most caching plugins
 * Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
 * Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.wp-slimstat.com/) if you would like to share your localization.
@@ -58,6 +58,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.3 =
+* [Note] We've updated the following add-ons to be compatible with Slimstat 4.x: Custom DB, Heatmap, Track Cookies. Go get your copy today.
+* [Update] Say hello to IPv6 internet addresses. Slimstat is now compatible with this technology, and will not throw an error when users visit the site using an IPv6 address. Please note: the column type in the database has changed from INT UNSIGNED to VARCHAR(39). Update your custom code accordingly.
+* [Update] Category names are now displayed instead of their URLs, when the corresponding option is enabled (thank you, Keith Gengler).
+* [Update] Now the database API can be given a table alias for when JOINS are necessary, to avoid MySQL errors or ambiguous column names.
+* [Fix] Map overlay was being displayed not in full width, because of some class name changes we implemented in Slimstat 4.
+* [Fix] Tracking of internal link coordinates (heatmap) was not accurate if the link tag had markup inside it (thank you, [dragon013](https://wordpress.org/support/topic/for-links-a-doublelink-is-needed)).
 
 = 4.1.2 =
 * [Note] A few weeks ago we started hitting the limits imposed on our site by our existing hosting provider. It was clearly time to find a new home for Slimstat. We've been working on migrating our web platform (website and add-on repository API) to a new more powerful server, and a new domain: [wp-slimstat.com](http://www.wp-slimstat.com).

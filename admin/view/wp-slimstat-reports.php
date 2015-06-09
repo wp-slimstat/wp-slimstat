@@ -711,7 +711,7 @@ class wp_slimstat_reports {
 			'slim_p6_01' => array(
 				'title' => __( 'World Map', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_world_map' ),
-				'classes' => array( 'tall' ),
+				'classes' => array( 'full-width tall' ),
 				'screens' => array( 'wp-slim-view-6' ),
 				'tooltip' => ''
 			)
@@ -927,11 +927,6 @@ class wp_slimstat_reports {
 			$element_pre_value = '';
 			$element_value = $results[ $i ][ $_args[ 'columns' ] ];
 
-			// Convert the IP address
-			if (!empty($results[$i]['ip'])){
-				$results[$i]['ip'] = long2ip($results[$i]['ip']);
-			}
-
 			// Some columns require a special pre-treatment
 			switch ( $_args[ 'columns' ] ){
 
@@ -942,27 +937,11 @@ class wp_slimstat_reports {
 					$element_value = $results[$i]['browser'].((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0)?' '.$results[$i]['browser_version']:'');
 					break;
 
-				case 'category':
-					$row_details .= '<br>'.__('Category ID','wp-slimstat').": {$results[$i]['category']}";
-					$cat_ids = explode(',', $results[$i]['category']);
-					if (!empty($cat_ids)){
-						$element_value = '';
-						foreach ($cat_ids as $a_cat_id){
-							if (empty($a_cat_id)) continue;
-							$cat_name = get_cat_name($a_cat_id);
-							if (empty($cat_name)) {
-								$tag = get_term($a_cat_id, 'post_tag');
-								if (!empty($tag->name)) $cat_name = $tag->name;
-							}
-							$element_value .= ', '.(!empty($cat_name)?$cat_name:$a_cat_id);
-						}
-						$element_value = substr($element_value, 2);
-					}
-					break;
 				case 'country':
 					$row_details .= '<br>'.__('Country Code','wp-slimstat').": {$results[$i]['country']}";
 					$element_value = __('c-'.$results[$i]['country'], 'wp-slimstat');
 					break;
+
 				case 'ip':
 					if (wp_slimstat::$options['convert_ip_addresses'] == 'yes'){
 						$element_value = gethostbyaddr($results[$i]['ip']);
@@ -982,8 +961,9 @@ class wp_slimstat_reports {
 					$element_value = __($results[$i]['platform'], 'wp-slimstat');
 					break;
 
+				case 'category':
 				case 'resource':
-					$resource_title = self::get_resource_title( $results[ $i ][ 'resource' ] );
+					$resource_title = self::get_resource_title( $results[ $i ][ 'resource' ], !empty( $results[ $i ][ 'category' ] ) ? $results[ $i ][ 'category' ] : '' );
 					if ( $resource_title != $results[ $i ][ 'resource' ] ) {
 						$row_details = '<br>'.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8');
 					}
@@ -1039,7 +1019,7 @@ class wp_slimstat_reports {
 				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 			}
 			if (!empty($results[$i]['ip']) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
-				$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.long2ip($results[$i]['other_ip']):'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
+				$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.$results[$i]['other_ip']:'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
 			}
 			if (!empty($row_details)){
 				$row_details = "<b class='slimstat-row-details$is_expanded'>$row_details</b>";
@@ -1636,17 +1616,45 @@ class wp_slimstat_reports {
 	/**
 	 * Attempts to convert a permalink into a post title
 	 */
-	public static function get_resource_title($_resource = ''){
-		if (wp_slimstat::$options['convert_resource_urls_to_titles'] == 'yes'){	
-			if ( get_option( 'permalink_structure' , false ) ) {
-				$_resource = strtok($_resource, '?');
+	public static function get_resource_title( $_resource = '' ) {
+		$resource_title = $_resource;
+
+		if  ( wp_slimstat::$options[ 'convert_resource_urls_to_titles' ] != 'yes' ) {
+			return htmlentities( urldecode( $resource_title ), ENT_QUOTES, 'UTF-8' );
+		}
+
+		// Is this a post or a page?
+		$post_id = url_to_postid( $_resource );
+		if ( $post_id > 0 ) {
+			$resource_title = get_the_title( $post_id );
+		}
+
+		// Is this a category or tag permalink?
+		else {
+			$term_names = array();
+			$home_url = get_home_url();
+			$relative_home = parse_url( $home_url, PHP_URL_PATH );
+
+			$all_terms = get_terms( 'category' );
+			foreach ( $all_terms as $a_term ) {
+				if ( str_replace( $home_url, $relative_home, get_term_link( $a_term, 'category' ) ) == $_resource ) {
+					$term_names[] = $a_term->name;
+				}
 			}
-			$post_id = url_to_postid( $_resource );
-			if ( $post_id > 0 ) {
-				return get_the_title( $post_id );
+
+			$all_terms = get_terms( 'tag' );
+			foreach ( $all_terms as $a_term ) {
+				if ( str_replace( $home_url, $relative_home, get_term_link( $a_term, 'category' ) ) == $_resource ) {
+					$term_names[] = $a_term->name;
+				}
+			}
+
+			if ( !empty( $term_names ) ) {
+				$resource_title = implode( ',', $term_names );
 			}
 		}
-		return htmlentities(urldecode($_resource), ENT_QUOTES, 'UTF-8');
+
+		return htmlentities( urldecode( $resource_title ), ENT_QUOTES, 'UTF-8' );
 	}
 	
 	public static function inline_help( $_text = '', $_echo = true ) {

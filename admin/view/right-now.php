@@ -37,8 +37,6 @@ else {
 
 	// Loop through the results
 	for($i=0; $i<$count_page_results; $i++){
-		
-		$results[$i]['ip'] = long2ip($results[$i]['ip']);
 		$host_by_ip = $results[$i]['ip'];
 		if (wp_slimstat::$options['convert_ip_addresses'] == 'yes'){
 			$gethostbyaddr = gethostbyaddr( $results[$i]['ip'] );
@@ -106,7 +104,6 @@ else {
 			// Originating IP Address
 			$other_ip_address = '';
 			if (!empty($results[$i]['other_ip'])){
-				$results[$i]['other_ip'] = long2ip($results[$i]['other_ip']);
 				$other_ip_address = "<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('other_ip equals '.$results[$i]['other_ip'])."'>(".__('Originating IP','wp-slimstat').": {$results[$i]['other_ip']})</a>";
 			}
 
@@ -137,7 +134,7 @@ else {
 			if (!empty($results[$i]['blog_id'])){
 				$base_url = $parse_url['scheme'].'://'.$base_host;
 			}
-			$results[$i]['resource'] = "<a class='slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this URL in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='".$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8')."'></a> $base_url<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('resource equals '.$results[$i]['resource'])."'>".wp_slimstat_reports::get_resource_title($results[$i]['resource']).'</a>';
+			$results[$i]['resource'] = "<a class='slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this URL in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='".$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8')."'></a> $base_url<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('resource equals '.$results[$i]['resource'])."'>".wp_slimstat_reports::get_resource_title( $results[$i][ 'resource' ], $results[$i][ 'category' ] ).'</a>';
 		}
 		else{
 			$results[$i]['resource'] = __('Local search results page','wp-slimstat');
