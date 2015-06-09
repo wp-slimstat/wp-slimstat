@@ -60,6 +60,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 == Changelog ==
 
 = 4.1.3.1 =
+* [update] Our shortcode now supports an offset for the counters, that allows you to indicate any previous visits not tracked by Slimstat.
 * [Fix] A fatal error message was being displayed if a tag or a category did not exist anymore in WordPress, and Slimstat would attempt to calculate its permalink.
 
 = 4.1.3 =
