@@ -1273,7 +1273,8 @@ class wp_slimstat {
 		extract( shortcode_atts( array(
 			'f' => '',		// recent, popular, count
 			'w' => '',		// column to use
-			's' => ' '		// separator
+			's' => ' ',		// separator
+			'o' => 0		// offset for counters
 		), $_attributes));
 
 		$output = $where = '';
@@ -1301,7 +1302,7 @@ class wp_slimstat {
 		switch( $f ) {
 			case 'count':
 			case 'count-all':
-				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all') === false );
+				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all') === false ) + $o;
 				break;
 
 			case 'recent':
