@@ -307,11 +307,11 @@ class wp_slimstat_db {
 					case 'strtotime':
 						$custom_date = strtotime( $a_filter[ 3 ], date_i18n( 'U' ) );
 
-						$filters_normalized[ 'date' ][ 'minute' ] = date( 'i', $custom_date );
-						$filters_normalized[ 'date' ][ 'hour' ] = date( 'H', $custom_date );
-						$filters_normalized[ 'date' ][ 'day' ] = date( 'j', $custom_date );
-						$filters_normalized[ 'date' ][ 'month' ] = date( 'n', $custom_date );
-						$filters_normalized[ 'date' ][ 'year' ] = date( 'Y', $custom_date );
+						$filters_normalized[ 'date' ][ 'minute' ] = intval( date( 'i', $custom_date ) );
+						$filters_normalized[ 'date' ][ 'hour' ] = intval( date( 'H', $custom_date ) );
+						$filters_normalized[ 'date' ][ 'day' ] = intval( date( 'j', $custom_date ) );
+						$filters_normalized[ 'date' ][ 'month' ] = intval( date( 'n', $custom_date ) );
+						$filters_normalized[ 'date' ][ 'year' ] = intval( date( 'Y', $custom_date ) );
 						break;
 
 					case 'minute':
@@ -326,25 +326,25 @@ class wp_slimstat_db {
 							// Try to apply strtotime to value
 							switch( $a_filter[ 1 ] ) {
 								case 'minute':
-									$filters_normalized[ 'date' ][ 'minute' ] = date( 'i', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) );
+									$filters_normalized[ 'date' ][ 'minute' ] = intval( date( 'i', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									$filters_normalized[ 'date' ][ 'is_past' ] = true;
 									break;
 
 								case 'hour':
-									$filters_normalized[ 'date' ][ 'hour' ] = date( 'H', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) );
+									$filters_normalized[ 'date' ][ 'hour' ] = intval( date( 'H', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									$filters_normalized[ 'date' ][ 'is_past' ] = true;
 									break;
 
 								case 'day':
-									$filters_normalized[ 'date' ][ 'day' ] = date( 'j', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) );
+									$filters_normalized[ 'date' ][ 'day' ] = intval( date( 'j', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									break;
 
 								case 'month':
-									$filters_normalized[ 'date' ][ 'month' ] = date( 'n', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) );
+									$filters_normalized[ 'date' ][ 'month' ] = intval( date( 'n', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									break;
 
 								case 'year':
-									$filters_normalized[ 'date' ][ 'year' ] = date( 'Y', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) );
+									$filters_normalized[ 'date' ][ 'year' ] = intval( date( 'Y', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									break;
 
 								default:
