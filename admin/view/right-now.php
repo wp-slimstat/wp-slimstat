@@ -167,6 +167,6 @@ else {
 	
 	// Pagination
 	if ($count_page_results > 20){
-		echo wp_slimstat_reports::report_pagination('slim_p7_02', $count_page_results, $count_all_results);
+		echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true );
 	}
 }
