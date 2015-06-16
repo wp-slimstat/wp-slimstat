@@ -146,7 +146,7 @@ class wp_slimstat_db {
 		}
 		else {
 			if ( $_where != '1=1' && !empty( self::$filters_normalized[ 'columns' ] ) ) {
-				$_where .= self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
+				$_where .= ' AND ' . self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
 			}
 			if ( $_use_time_range ) {
 				$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
