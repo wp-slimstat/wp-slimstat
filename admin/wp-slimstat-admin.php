@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Can you believe it? We have passed 1.5 million downloads! To thank you for your loyalty and continued support, we are offering a 15% discount on all orders (including the bundles!) till the end of the month. Just enter <code>15OFF</code> in the corresponding field at checkout. Have you already purchased one of our add-ons? We have an even bigger surprise for you: as a way to thank you for your patience while we updated our extensions to make them compatible with Slimstat 4, we are giving away 50 codes to download one <strong>free</strong> add-on from our store. Including the new ones we're about to announce. Contact us to get your code (please mention your license key in your message).";
+			self::$admin_notice = "Can you believe it? We just passed 1.5 million downloads! To thank you for your loyalty and continued support, we are offering a 15% discount on all orders (including the bundles!) till the end of the month. Just enter <code>15OFF</code> in the corresponding field at checkout. Have you already purchased one of our add-ons? We have an even bigger surprise for you: as a way to thank you for your patience while we updated our extensions to make them compatible with Slimstat 4, we are giving away 50 codes to download one <strong>free</strong> add-on from our store. Including the new ones we're about to announce. Contact us to get your code (please mention your license key in your message).";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">I got it, thanks</a>';
 		}
 		else {

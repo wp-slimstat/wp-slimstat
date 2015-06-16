@@ -1677,25 +1677,33 @@ class wp_slimstat {
 	 * Removes old entries from the main table
 	 */
 	public static function wp_slimstat_purge(){
-		if (($autopurge_interval = intval(self::$options['auto_purge'])) <= 0) return;
-
-		$days_ago = strtotime(date_i18n('Y-m-d H:i:s')." -$autopurge_interval days");
-
-		// Copy entries to the archive table, if needed
-		if (self::$options['auto_purge_delete'] != 'yes'){
-			self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, colordepth, antialias, content_type, category, author, content_id, outbound_resource, dt)
-				SELECT ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, colordepth, antialias, content_type, category, author, content_id, outbound_resource, dt
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats
-				WHERE dt < $days_ago");
+		$autopurge_interval = intval( self::$options[ 'auto_purge' ] );
+		if ( $autopurge_interval <= 0 ) {
+			return;
 		}
 
-		// Delete old entries
-		self::$wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.dt < $days_ago");
+		$days_ago = strtotime( date_i18n( 'Y-m-d H:i:s' ) . " -$autopurge_interval days" );
+
+		// Copy entries to the archive table, if needed
+		if ( self::$options[ 'auto_purge_delete' ] != 'yes' ) {
+			$is_copy_done = self::$wpdb->query("
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt)
+				SELECT ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt
+				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+				WHERE dt < $days_ago");
+				
+			if ( $is_copy_done !== false ) {
+				self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
+			}
+		}
+		else {
+			// Delete old entries
+			self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
+		}
 
 		// Optimize tables
-		self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
-		self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
+		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
+		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
 	}
 	// end wp_slimstat_purge
 

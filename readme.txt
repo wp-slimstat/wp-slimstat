@@ -66,6 +66,8 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Update] Outbound links in the Real-Time Log were restored, along with screen resolutions and a first pass of code optimizations for this crucial report.
 * [Update] Added some new OS Families to the tracker (certain flavors of Blackberry and Linux, plus Fire OS).
 * [Update] We are updating all our premium add-ons to use the same [update checker library](https://github.com/YahnisElsts/plugin-update-checker) (now moved to Slimstat as a shared resource). This allows third party developers to leverage the same library in case they want to offer a similar functionality for automatic updates.
+* [Fix] A residue column from the old database structure was preventing the archive script from working as expected.
+* [Fix] Bottom pagination for the Real-Time Log has been restored.
 * [Fix] The Screen Options toggle was not working as expected for certain hidden reports.
 * [Fix] Implemented code optimizations that allowed us to remove some unnecessary SQL queries. This will further improve your reports' performance.
 * [Fix] We've updated our code to not drop the old ip/other_ip columns anymore, in case something goes wrong during the update.
