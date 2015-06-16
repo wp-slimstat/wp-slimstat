@@ -139,9 +139,9 @@ class wp_slimstat {
 			// Are we tracking an outbound click?
 			if (!empty(self::$data_js['res'])){
 				$outbound_resource = strip_tags( trim( base64_decode( self::$data_js[ 'res' ] ) ) );
-				$outbound_parsed = parse_url( $outbound_resource );
-				$site_parsed = parse_url( get_site_url() );
-				if ( $outbound_parsed[ 'host' ] != $site_parsed[ 'host' ] ) {
+				$outbound_host = parse_url( $outbound_resource, PHP_URL_HOST );
+				$site_host = parse_url( get_site_url(), PHP_URL_HOST );
+				if ( $outbound_host != $site_host ) {
 					self::$stat[ 'outbound_resource' ] = $outbound_resource;
 				}
 			}
