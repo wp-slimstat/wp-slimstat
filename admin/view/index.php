@@ -142,14 +142,16 @@
 		<form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form><?php
 
 		foreach( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
-			if ( empty( $a_report_info[ 'screens' ] ) || !in_array( $_GET[ 'page' ], $a_report_info[ 'screens' ] ) || in_array( 'hidden', $a_report_info[ 'classes' ] ) ) {
+			if ( empty( $a_report_info[ 'screens' ] ) || !in_array( $_GET[ 'page' ], $a_report_info[ 'screens' ] ) ) {
 				continue;
 			}
 
 			wp_slimstat_reports::report_header( $a_report_id );
 
 			// Third party reports can add their own methods via the callback parameter
-			wp_slimstat_reports::callback_wrapper( array( 'id' => $a_report_id ) );
+			if ( !in_array( 'hidden', $a_report_info[ 'classes' ] ) ) {
+				wp_slimstat_reports::callback_wrapper( array( 'id' => $a_report_id ) );
+			}
 
 			wp_slimstat_reports::report_footer();
 		}

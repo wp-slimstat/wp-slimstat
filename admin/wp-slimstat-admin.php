@@ -11,8 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "A few users have been asking us to support IPv6. You will be pleased to know that we got to work and updated our table structure to accommodate this request. Unfortunately MaxMind only supports IPv6 in their new GeoLite2 format, <a href='https://github.com/maxmind/GeoIP2-php#requirements' target='_blank'>which requires PHP 5.3</a>. We know for a fact that some of our users are still on PHP 5.2, and we would like to hear your opinion on this matter: should we enforce the minimum requirement of PHP 5.3 in order to detect the Country associated to IPv6 addresses? Or do you think it's better to be compatible with PHP 5.2? Let us know through the forum or via our support service. Thank you.";
-			// 4.1.4  self::$admin_notice = "Can you believe it? We have passed 1.5 million downloads! To thank you for your loyalty and continued support, we are offering a 15% discount on all orders (including the bundles!) till the end of the month. Just enter <code>15OFF</code> in the corresponding field at checkout. Have you already purchased one of our add-ons? We have an even bigger surprise for you: as a way to thank you for your patience while we updated our extensions to make them compatible with Slimstat 4, we are giving away 50 codes to download one <strong>free</strong> add-on from our store. Including the new ones we're about to announce. Contact us to get your code (please mention your license key in your message).";
+			self::$admin_notice = "Can you believe it? We have passed 1.5 million downloads! To thank you for your loyalty and continued support, we are offering a 15% discount on all orders (including the bundles!) till the end of the month. Just enter <code>15OFF</code> in the corresponding field at checkout. Have you already purchased one of our add-ons? We have an even bigger surprise for you: as a way to thank you for your patience while we updated our extensions to make them compatible with Slimstat 4, we are giving away 50 codes to download one <strong>free</strong> add-on from our store. Including the new ones we're about to announce. Contact us to get your code (please mention your license key in your message).";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">I got it, thanks</a>';
 		}
 		else {
@@ -158,6 +157,11 @@ class wp_slimstat_admin{
 			add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
 			add_action('wp_ajax_slimstat_enable_ads_feature', array(__CLASS__, 'enable_ads_feature'));
 		}
+		
+		// Hide plugins
+		if ( wp_slimstat::$options[ 'hide_addons' ] == 'yes' ) {
+			add_filter( 'all_plugins', array( __CLASS__, 'hide_addons' ) );
+		}
 	}
 	// end init
 	
@@ -184,7 +188,7 @@ class wp_slimstat_admin{
 	 * Support for WP MU site deletion
 	 */
 	public static function drop_tables($_tables, $_blog_id){
-		$_tables['slim_outbound'] = $GLOBALS['wpdb']->prefix.'slim_outbound';
+		$_tables['slim_events'] = $GLOBALS['wpdb']->prefix.'slim_events';
 		$_tables['slim_stats'] = $GLOBALS['wpdb']->prefix.'slim_stats';
 		
 		return $_tables;
@@ -757,6 +761,20 @@ class wp_slimstat_admin{
 		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals '.wp_slimstat::$options['posts_column_day_interval'].'&&interval_direction equals minus').'">'.$count.'</a>';
 	}
 	// end add_column
+
+	public static function hide_addons( $_plugins = array() ) {
+		if ( !is_array( $_plugins ) ) {
+			return $_plugins;
+		}
+
+		foreach ( $_plugins as $a_plugin_slug => $a_plugin_info ) {
+			if ( strpos( $a_plugin_slug, 'wp-slimstat-' ) !== false  && is_plugin_active( $a_plugin_slug ) ) {
+				unset( $_plugins[ $a_plugin_slug ] );
+			}
+		}
+
+		return $_plugins;
+	}
 
 	/**
 	 * Displays a tab to customize this user's screen options (what boxes to see/hide)

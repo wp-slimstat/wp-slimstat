@@ -90,8 +90,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Pageviews', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
-					'chart_data' => wp_slimstat_db::get_data_for_chart( 'COUNT(ip)', 'COUNT(DISTINCT(ip))' ),
-					'chart_labels' => array( __( 'Pageviews', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) ),
+					'type' => 'p1_01'
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
@@ -141,7 +140,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'SUBSTRING_INDEX(resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1)',
-					'as_column' => 'resource',
+					'as_column' => 'resource_substring',
 					'filter_op' => 'contains',
 					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
@@ -208,21 +207,19 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'SUBSTRING(language, 1, 2)',
-					'as_column' => 'language',
+					'as_column' => 'language_substring',
 					'filter_op' => 'contains',
 					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-2', 'raw' )
+				'screens' => array( 'wp-slim-view-3', 'raw' )
 			),
 
 			'slim_p2_01' => array(
 				'title' => __( 'Human Visits', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
-					'chart_data' => wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', '(visit_id > 0 AND browser_type <> 1)' ),
-					'chart_labels' => array( __( 'Visits', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) ),
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'type' => 'p2_01'
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'wp-slim-view-3' ),
@@ -377,7 +374,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
-					'as_column' => 'platform',
+					'as_column' => 'platform_substring',
 					'filter_op' => 'contains',
 					'raw' => array( __CLASS__, 'get_raw_results' )
 				),
@@ -414,8 +411,7 @@ class wp_slimstat_reports {
 				'title' => __( 'Traffic Sources', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
-					'chart_data' => wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT(referer))', 'COUNT(DISTINCT(ip))', '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")' ),
-					'chart_labels' => array( __( 'Domains', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) )
+					'type' => 'p3_01'
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'wp-slim-view-5' ),
@@ -943,29 +939,36 @@ class wp_slimstat_reports {
 					break;
 
 				case 'ip':
-					if (wp_slimstat::$options['convert_ip_addresses'] == 'yes'){
-						$element_value = gethostbyaddr($results[$i]['ip']);
+					if ( wp_slimstat::$options['convert_ip_addresses'] == 'yes' ) {
+						$element_value = gethostbyaddr( $results[ $i ][ $_args[ 'columns' ] ] );
 					}
 					else{
-						$element_value = $results[$i]['ip'];
+						$element_value = $results[ $i ][ $_args[ 'columns' ] ];
 					}
 					break;
 
 				case 'language':
-					$row_details = '<br>'.__('Language Code','wp-slimstat').": {$results[$i]['language']}";
-					$element_value = __('l-'.$results[$i]['language'], 'wp-slimstat');
+				case 'language_substring':
+					$row_details = '<br>'.__('Language Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
+					$element_value = __('l-'.$results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
 					break;
 
 				case 'platform':
-					$row_details = '<br>'.__('OS Code','wp-slimstat').": {$results[$i]['platform']}";
-					$element_value = __($results[$i]['platform'], 'wp-slimstat');
+				case 'platform_substring':
+					$row_details = '<br>'.__('OS Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
+					$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
 					break;
 
 				case 'category':
+					$row_details = '<br>'.__( 'Category ID', 'wp-slimstat' ) . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+					$element_value = get_cat_name( $results[ $i ][ $_args[ 'columns' ] ] );
+					break;
+
 				case 'resource':
-					$resource_title = self::get_resource_title( $results[ $i ][ 'resource' ], !empty( $results[ $i ][ 'category' ] ) ? $results[ $i ][ 'category' ] : '' );
-					if ( $resource_title != $results[ $i ][ 'resource' ] ) {
-						$row_details = '<br>'.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8');
+				case 'resource_substring':
+					$resource_title = self::get_resource_title( $results[ $i ][ $_args[ 'columns' ] ] );
+					if ( $resource_title != $results[ $i ][ $_args[ 'columns' ] ] ) {
+						$row_details = '<br>' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' );
 					}
 					$element_value = $resource_title;
 					break;
@@ -1042,22 +1045,46 @@ class wp_slimstat_reports {
 		}
 	}
 
-	public static function show_chart( $_args = array() ){ ?>
+	public static function show_chart( $_args = array() ){ 
+		switch ( $_args[ 'type' ] ) {
+			case 'p1_01':
+				$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(ip)', 'COUNT(DISTINCT(ip))' );
+				$chart_labels = array( __( 'Pageviews', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
+				break;
+
+			case 'p2_01':
+				$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', '(visit_id > 0 AND browser_type <> 1)' );
+				$chart_labels = array( __( 'Visits', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
+				break;
+
+			case 'p3_01':
+				$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT(referer))', 'COUNT(DISTINCT(ip))', '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")' );
+				$chart_labels = array( __( 'Domains', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
+				break;
+
+			default:
+				$chart_data = array();
+				$chart_labels = array( '', '' );
+				break;
+		}
+	
+	
+	?>
 		<div id="chart-placeholder"></div><div id="chart-legend"></div>
 		<script type="text/javascript">
 			SlimStatAdmin.chart_data = [];
 
-			<?php if (!empty($_args[ 'chart_data' ][ 'previous' ][ 'label' ])): ?>
+			<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
 			SlimStatAdmin.chart_data.push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 0 ] . ' ' . $_args[ 'chart_data' ][ 'previous' ][ 'label' ] ?>',
+				label: '<?php echo $chart_labels[ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
-					foreach($_args[ 'chart_data' ][ 'previous' ][ 'first_metric' ] as $a_value){
+					foreach( $chart_data[ 'previous' ][ 'first_metric' ] as $a_value ) {
 						$tmp_serialize[] = "[$j, $a_value]";
 						$j++;
 					}
-					echo implode(',', $tmp_serialize); 
+					echo implode( ',', $tmp_serialize ); 
 				?>],
 				points: {
 					show: true,
@@ -1067,15 +1094,15 @@ class wp_slimstat_reports {
 				}
 			});
 			SlimStatAdmin.chart_data.push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 1 ] . ' ' . $_args[ 'chart_data' ][ 'previous' ][ 'label' ] ?>',
+				label: '<?php echo $chart_labels[ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
-					foreach($_args[ 'chart_data' ][ 'previous' ][ 'second_metric' ] as $a_value){
+					foreach( $chart_data[ 'previous' ][ 'second_metric' ] as $a_value ) {
 						$tmp_serialize[] = "[$j, $a_value]";
 						$j++;
 					}
-					echo implode(',', $tmp_serialize); 
+					echo implode( ',', $tmp_serialize ); 
 				?>],
 				points: {
 					show: true,
@@ -1087,15 +1114,15 @@ class wp_slimstat_reports {
 			<?php endif ?>
 
 			SlimStatAdmin.chart_data.push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 0 ] . ' ' . $_args[ 'chart_data' ][ 'current' ][ 'label' ] ?>',
+				label: '<?php echo $chart_labels[ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
-					foreach( $_args[ 'chart_data' ][ 'current' ][ 'first_metric' ] as $a_value ){
+					foreach( $chart_data[ 'current' ][ 'first_metric' ] as $a_value ) {
 						$tmp_serialize[] = "[$j, $a_value]";
 						$j++;
 					}
-					echo implode(',', $tmp_serialize); 
+					echo implode( ',', $tmp_serialize ); 
 				?>],
 				points: {
 					show: true,
@@ -1105,15 +1132,15 @@ class wp_slimstat_reports {
 				}
 			});
 			SlimStatAdmin.chart_data.push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 1 ] . ' ' . $_args[ 'chart_data' ][ 'current' ][ 'label' ] ?>',
+				label: '<?php echo $chart_labels[ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
-					foreach($_args[ 'chart_data' ][ 'current' ][ 'second_metric' ] as $a_value){
+					foreach( $chart_data[ 'current' ][ 'second_metric' ] as $a_value ) {
 						$tmp_serialize[] = "[$j, $a_value]";
 						$j++;
 					}
-					echo implode(',', $tmp_serialize); 
+					echo implode( ',', $tmp_serialize );
 				?>],
 				points: {
 					show: true,
@@ -1125,19 +1152,19 @@ class wp_slimstat_reports {
 
 			SlimStatAdmin.ticks = [<?php
 				$tmp_serialize = array();
-				$max_ticks = max(count($_args[ 'chart_data' ][ 'current' ][ 'first_metric' ]), count($_args[ 'chart_data' ][ 'previous' ][ 'first_metric' ]));
-				if (!empty(wp_slimstat_db::$filters_normalized['date']['interval'])){
-					for ($i = 0; $i < $max_ticks; $i++){
+				$max_ticks = max( count( $chart_data[ 'current' ][ 'first_metric' ]), count( $chart_data[ 'previous' ][ 'first_metric' ] ) );
+				if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] ) ) {
+					for ( $i = 0; $i < $max_ticks; $i++ ) {
 						$tmp_serialize[] = "[$i,'".date('d/m', wp_slimstat_db::$filters_normalized['utime']['start'] + ( $i * 86400) )."']";
 					}
 				}
 				else{
-					$min_idx = min(array_keys($_args[ 'chart_data' ][ 'current' ][ 'first_metric' ]));
+					$min_idx = min( array_keys( $chart_data[ 'current' ][ 'first_metric' ] ) );
 					for ($i = $min_idx; $i < $max_ticks+$min_idx; $i++){
 						$tmp_serialize[] = '['.($i-$min_idx).',"'.$i.'"]';
 					}
 				}
-				echo implode(',', $tmp_serialize); 
+				echo implode( ',', $tmp_serialize ); 
 			?>];
 		</script> <?php
 

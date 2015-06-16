@@ -239,6 +239,9 @@
 [id^=slim_] p span{
 	float: right;
 }
+[id^=slim_] p span.pageview-screenres{
+	margin-right: 10px;
+}
 [id^=slim_] a:hover{
 	text-shadow: 0 0 2px #bbb;
 }
@@ -269,9 +272,13 @@
 }
 
 /* Single Report: Debug Message */
+.debug {
+	display: none;
+}
 .slimstat .debug{
 	background-color: #000;
 	color: #fff;
+	display: block;
 	font-family: monospace;
 	opacity: .8;
 	padding: 20px;

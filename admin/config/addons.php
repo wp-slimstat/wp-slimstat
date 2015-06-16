@@ -72,7 +72,7 @@ if (!is_array($list_addons)){
 				<div class="active second">
 					License Key: <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty(wp_slimstat::$options['addon_licenses'][$a_addon['slug']])?wp_slimstat::$options['addon_licenses'][$a_addon['slug']]:'' ?>" size="50"/>
 				</div>
-				<?php endif ?>
+				<?php endif; ?>
 			</td>
 		</tr>
 		<?php endforeach ?>

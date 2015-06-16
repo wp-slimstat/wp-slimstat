@@ -79,7 +79,7 @@ else {
 			$notes = '';
 			if (!empty($results[$i]['notes'])){
 				$notes = str_replace(array(';', ':'), array('<br/>', ': '), $results[$i]['notes']);
-				$notes = "<span id='pageview-notes'><i class='slimstat-font-edit inline-icon slimstat-tooltip-trigger'></i><b class='slimstat-tooltip-content'>{$notes}</b></span>";
+				$notes = "<span class='pageview-notes'><i class='slimstat-font-edit inline-icon slimstat-tooltip-trigger'></i><b class='slimstat-tooltip-content'>{$notes}</b></span>";
 			}
 
 			// IP Address and user
@@ -117,7 +117,13 @@ else {
 				}
 			}
 
-			echo "<p class='header$highlight_row'>{$results[$i]['country']} $browser_filtered $platform_filtered $browser_type_filtered $ip_address $other_ip_address $notes <span class='plugins'>$plugins</span></p>";
+			// Screen Resolution
+			$screen_resolution = '';
+			if ( !empty( $results[ $i ][ 'screen_width' ] ) && !empty( $results[ $i ][ 'screen_height' ] ) ) {
+				$screen_resolution = "<span class='pageview-screenres'>{$results[ $i ][ 'screen_width' ]}x{$results[ $i ][ 'screen_height' ]}</span>";
+			}
+
+			echo "<p class='header$highlight_row'>{$results[$i]['country']} $browser_filtered $platform_filtered $browser_type_filtered $ip_address $other_ip_address $notes <span class='plugins'>$plugins</span> $screen_resolution</p>";
 		}
 
 		$performance = '';
@@ -140,7 +146,7 @@ else {
 			$results[$i]['resource'] = __('Local search results page','wp-slimstat');
 		}
 
-		// Search Terms, with link to original SERP
+		// Search Terms, with link to original SERP, and Outbound Resource
 		if (!empty($results[$i]['searchterms'])){
 			$results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='".__('Search Terms','wp-slimstat')."'></i> ".wp_slimstat_reports::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer']);
 		}
@@ -148,7 +154,7 @@ else {
 		$domain = parse_url($results[$i]['referer']);
 		$domain = ( !empty( $domain[ 'host' ] ) ) ? $domain['host'] : '';
 		$results[$i]['referer'] = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> $domain":'';
-		$results[$i]['outbound_domain'] = ''; // (!empty($results[$i]['outbound_domain']) && $results[$i]['outbound_domain'] != $base_host)?"<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this outbound link in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_domain']}":'';
+		$results[$i][ 'outbound_resource' ] = ( !empty( $results[ $i ][ 'outbound_resource' ] ) ) ? "<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_resource']}" : '';
 		$results[$i]['dt'] = "<i class='spaced slimstat-font-clock' title='".__('Date and Time','wp-slimstat')."'></i> {$results[$i]['dt']}";
 		$results[$i]['content_type'] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
 
@@ -156,7 +162,7 @@ else {
 			$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this pageview','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
 		}
 
-		echo "<p>{$results[$i]['resource']} <span class='details'>{$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_domain']} {$results[$i]['content_type']} $performance {$results[$i]['dt']} {$delete_row}</span></p>";
+		echo "<p>{$results[$i]['resource']} <span class='details'>{$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance {$results[$i]['dt']} {$delete_row}</span></p>";
 	}
 	
 	// Pagination

@@ -56,12 +56,15 @@ __('webos','wp-slimstat'), // WebOS
 __('p-and','wp-slimstat'), // Android
 __('p-bla','wp-slimstat'), // BlackBerry
 __('p-chr','wp-slimstat'), // Chrome OS
+__('p-fir','wp-slimstat'), // Fire OS
 __('p-fre','wp-slimstat'), // Linux FreeBSD
 __('p-ios','wp-slimstat'), // Apple iOS
 __('p-jav','wp-slimstat'), // Java-based OS
 __('p-lin','wp-slimstat'), // Linux
 __('p-mac','wp-slimstat'), // Apple
+__('p-rim','wp-slimstat'), // Blackberry
 __('p-sym','wp-slimstat'), // Symbian OS
+__('p-ubu','wp-slimstat'), // Linux
 __('p-unk','wp-slimstat'), // Unknown
 __('p-win','wp-slimstat'), // Microsoft
 __('powertv','wp-slimstat'), // PowerTV

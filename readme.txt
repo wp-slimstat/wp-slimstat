@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1.3.2
+Stable tag: 4.1.4
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,19 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.4 =
+* [Note] If you have a custom report that is still using the Custom Reports tab, please note that this approach is about to be deprecated. We are working on the documentation to explain how to use the new method.
+* [Note] Our partners over at [Browscap.org](http://browscap.org/) just released a new version of their database. We're working on compiling our optimized version for it, to be included soon in our package.
+* [New] You can now hide your active Slimstat add-ons, so that the list of plugins in your WordPress dashboard is not so crowded. Go to Settings > General > WordPress integration and activate the corresponding option.
+* [Update] Outbound links in the Real-Time Log were restored, along with screen resolutions and a first pass of code optimizations for this crucial report.
+* [Update] Added some new OS Families to the tracker (certain flavors of Blackberry and Linux, plus Fire OS).
+* [Update] We are updating all our premium add-ons to use the same [update checker library](https://github.com/YahnisElsts/plugin-update-checker) (now moved to Slimstat as a shared resource). This allows third party developers to leverage the same library in case they want to offer a similar functionality for automatic updates.
+* [Fix] The Screen Options toggle was not working as expected for certain hidden reports.
+* [Fix] Implemented code optimizations that allowed us to remove some unnecessary SQL queries. This will further improve your reports' performance.
+* [Fix] We've updated our code to not drop the old ip/other_ip columns anymore, in case something goes wrong during the update.
+* [Fix] Top Language Families and OS Families were showing duplicates and wrong percentages.
+* [Fix] Top Categories report was throwing a warning message under certain circumstances.
 
 = 4.1.3.2 =
 * [Fix] A bug was preventing the tracker from correctly determining the country code of a given IP address
