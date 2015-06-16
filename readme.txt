@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1.4
+Stable tag: 4.1.4.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.4.1 =
+* [Fix] A bug was preventing our Export to Excel add-on from working as expected under certain circumstances (mainly WPMU-related).
 
 = 4.1.4 =
 * [Note] If you have a custom report that is still using the Custom Reports tab, please note that this approach is about to be deprecated. We are working on the documentation to explain how to use the new method.
