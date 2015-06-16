@@ -93,7 +93,7 @@ else {
 					if (is_object($display_real_name)) $display_user_name = $display_real_name->display_name;
 				}
 				$ip_address = "<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('username equals '.$results[$i]['username'])."'>{$display_user_name}</a>";
-				$ip_address .= " <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('ip equals '.$results[$i]['ip'])."'>({$results[$i]['ip']})</a>";
+				$ip_address .= " <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('ip equals '.$results[$i]['ip'])."'>($host_by_ip)</a>";
 				$highlight_row = (strpos( $results[$i]['notes'], 'user:') !== false)?' is-known-user':' is-known-visitor';
 				
 			}

@@ -61,6 +61,7 @@ if (!empty($_REQUEST['action'])){
 			break;
 
 		case 'import-data-from-old-tables':
+			$current_id = wp_slimstat::$wpdb->get_var( "SELECT COUNT(*) FROM  {$GLOBALS['wpdb']->prefix}slim_stats" );
 			wp_slimstat::$wpdb->query( "
 				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (
 					id,
@@ -98,7 +99,7 @@ if (!empty($_REQUEST['action'])){
 					dt
 				)
 				SELECT 
-					t1.id,
+					t1.id + $current_id + 1,
 					t1.ip,
 					t1.other_ip,
 					NULLIF(t1.user, ''),
@@ -150,7 +151,7 @@ if (!empty($_REQUEST['action'])){
 					SUBSTRING(tob.notes, LOCATE('Event:', tob.notes)+6, LOCATE(',', tob.notes, LOCATE('Event:', tob.notes)+6) - LOCATE('Event:', tob.notes)-6),
 					SUBSTRING(tob.notes, 1, LOCATE('Event:', tob.notes) - 3),
 					tob.position,
-					tob.id,
+					tob.id + $current_id + 1,
 					tob.dt
 				FROM {$GLOBALS['wpdb']->prefix}slim_outbound AS tob" );
 			wp_slimstat_admin::show_alert_message(__('Your data was successfully imported. You may now drop the old tables: wp_slim_stats_3, wp_slim_browsers, wp_slim_content_info, wp_slim_screenres, wp_slim_outbound. Please note: if you are using Slimstat in a MU network, you will need to run the import script on all your sites before you can delete the old tables.','wp-slimstat'), 'wp-ui-highlight below-h2');
