@@ -127,16 +127,18 @@ class wp_slimstat_db {
 			$dt_with_alias = $_slim_stats_table_alias . '.' . $dt_with_alias;
 		}
 
+		$time_range_condition = '';
 		if ( empty( $_where ) ) {
 			if ( !empty( self::$filters_normalized[ 'columns' ] ) ) {
 				$_where = self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
 
 				if ($_use_time_range) {
-					$_where .= " AND $dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
+					$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 				}
+
 			}
 			elseif ( $_use_time_range ) {
-				$_where = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
+				$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 			}
 			else {
 				$_where = '1=1';
@@ -144,11 +146,18 @@ class wp_slimstat_db {
 		}
 		else {
 			if ( $_where != '1=1' && !empty( self::$filters_normalized[ 'columns' ] ) ) {
-				$_where .= ' AND ' . self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
+				$_where .= self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
 			}
 			if ( $_use_time_range ) {
-				$_where .= " AND $dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
+				$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 			}
+		}
+
+		if ( !empty( $_where ) && !empty( $time_range_condition ) ) {
+			$_where = "$_where AND $time_range_condition";
+		}
+		else {
+			$_where = trim( "$_where $time_range_condition" );
 		}
 
 		if ( !empty( self::$columns_names[ $_column ] ) ) {
