@@ -156,6 +156,10 @@
 	margin: 0;
 	padding: 5px 10px;
 }
+.wrap.slimstat .postbox .hndle a{
+	font-size: 1em;
+	font-weight: 700;
+}
 .wrap.slimstat .postbox.tall .hndle{
 	cursor:auto;
 }
@@ -269,6 +273,14 @@
 }
 #dashboard-widgets-wrap .whois{
 	display: none;
+}
+
+/* Single Report: Table */
+[id^=slim_] .widefat th{
+	white-space: nowrap;
+}
+[id^=slim_] .widefat td{
+	  border-bottom: 1px solid #e1e1e1;
 }
 
 /* Single Report: Debug Message */

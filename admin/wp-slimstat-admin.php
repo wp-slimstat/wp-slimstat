@@ -11,7 +11,8 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Can you believe it? We just passed 1.5 million downloads! To thank you for your loyalty and continued support, we are offering a 15% discount on all orders (including the bundles!) till the end of the month. Just enter <code>15OFF</code> in the corresponding field at checkout. Are you an existing premium customer? We have an even bigger surprise for you: as a way to thank you for your patience while we updated our extensions to make them compatible with Slimstat 4, we are giving away 50 codes to download one <strong>free</strong> add-on from our store. Including the new ones we're about to announce. Contact us to get your code (please mention your license key in your message).";
+			self::$admin_notice = "Join us in welcoming our new partner <a href='' target='_blank'>GetSocial.io</a>, a service that allows you to find your true influencers and understand which users are driving your traffic and conversions through their shares. Our users get <strong>free access</strong> to their platform through a new report located in the Site Analysis screen. We hope you will enjoy all the benefits of social media analytics. Please note: by enabling this feature, you agree to have Slimstat send GetSocial your posts' URLs once daily for analysis. No other information is disclosed. You can always opt-out and deactivate this functionality by using the corresponding option under Settings > Reports.";
+			// self::$admin_notice = "We are still getting support requests from users having issues with Slimstat because of the Geolite add-on that was distributed a few months ago. If you are still using this separate add-on, we'd like to remind you that Slimstat 4 introduced a new more intuitive way of managing the MaxMind Geolocation database bundled with our software. Actually, the free Geolite plugin <strong>is not compatible</strong> with the latest version of Slimstat, because of the IPv6 support we implemented. We recommend that you uninstall the add-on from your systems, thus improving the overall performance of your website. As usual, do not hesitate to contact us if you have any questions.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">I got it, thanks</a>';
 		}
 		else {
@@ -109,7 +110,10 @@ class wp_slimstat_admin{
 				add_filter('manage_pages_columns', array(__CLASS__, 'add_column_header'));
 				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
 				add_action('manage_pages_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
-				add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
+
+				if( strpos( $_SERVER['REQUEST_URI'], 'edit.php' ) !== false || ( $temp >= 0 && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false ) ) {
+					add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
+				}
 			}
 			
 			// Add some inline CSS to customize the icon associated to SlimStat in the sidebar
@@ -202,7 +206,7 @@ class wp_slimstat_admin{
 		if (function_exists('apply_filters')){
 			$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 		}
-		
+
 		// Create the tables
 		self::init_tables($my_wpdb);
 
@@ -564,15 +568,12 @@ class wp_slimstat_admin{
 	/**
 	 * Loads a custom stylesheet file for the administration panels
 	 */
-	public static function wp_slimstat_stylesheet($_hook = ''){
-		if (!empty($_GET['page']) && strpos($_GET['page'], 'wp-slim') === false && $_hook != 'edit.php'){
-			return;
-		}
-		wp_register_style('wp-slimstat', plugins_url('/admin/css/slimstat.css', dirname(__FILE__)));
-		wp_enqueue_style('wp-slimstat');
+	public static function wp_slimstat_stylesheet( $_hook = '' ) {
+		wp_register_style( 'wp-slimstat', plugins_url( '/admin/css/slimstat.css', dirname( __FILE__ ) ) );
+		wp_enqueue_style( 'wp-slimstat' );
 
-	   	if (!empty($_hook) && !empty(wp_slimstat::$options['custom_css'])){
-	   		wp_add_inline_style('wp-slimstat', wp_slimstat::$options['custom_css']);
+	   	if ( !empty( wp_slimstat::$options[ 'custom_css' ] ) ) {
+	   		wp_add_inline_style( 'wp-slimstat', wp_slimstat::$options[ 'custom_css' ] );
 	   	}
 	}
 	// end wp_slimstat_stylesheet
@@ -632,7 +633,7 @@ class wp_slimstat_admin{
 		$new_entry = array();
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
 			$new_entry[] = add_menu_page(__('SlimStat','wp-slimstat'), __('SlimStat','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
-			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Real-Time Log','wp-slimstat'), __('Real-Time Log','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
+			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Access Log','wp-slimstat'), __('Access Log','wp-slimstat'), $minimum_capability, 'wp-slim-view-1', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Overview','wp-slimstat'), __('Overview','wp-slimstat'), $minimum_capability, 'wp-slim-view-2', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Audience','wp-slimstat'), __('Audience','wp-slimstat'), $minimum_capability, 'wp-slim-view-3', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('wp-slim-view-1', __('Site Analysis','wp-slimstat'), __('Site Analysis','wp-slimstat'), $minimum_capability, 'wp-slim-view-4', array(__CLASS__, 'wp_slimstat_include_view'));
@@ -967,7 +968,7 @@ class wp_slimstat_admin{
 				}
 			?></tbody>
 			</table>
-			<?php if ($_current_tab != 7): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
+			<?php if ( empty( $_options[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
 		</form><?php
 	}
 

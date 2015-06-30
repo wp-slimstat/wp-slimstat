@@ -1,6 +1,8 @@
 <?php
 // Avoid direct access to this piece of code
-if (!function_exists('add_action')) exit(0);
+if ( !function_exists( 'add_action' ) ) {
+	exit(0);
+}
 
 // Available icons
 $supported_browser_icons = array('Android','Anonymouse','Baiduspider','BlackBerry','BingBot','CFNetwork','Chrome','Chromium','Default Browser','Exabot/BiggerBetter','FacebookExternalHit','FeedBurner','Feedfetcher-Google','Firefox','Internet Archive','Googlebot','Google Bot','Google Feedfetcher','Google Web Preview','IE','IEMobile','iPad','iPhone','iPod Touch','Maxthon','Mediapartners-Google','Microsoft-WebDAV','msnbot','Mozilla','NewsGatorOnline','Netscape','Nokia','Opera','Opera Mini','Opera Mobi','Python','PycURL','Safari','W3C_Validator','WordPress','Yahoo! Slurp','YandexBot');
@@ -9,19 +11,21 @@ $supported_browser_types = array(__('Human','wp-slimstat'),__('Bot/Crawler','wp-
 
 $plugin_url = plugins_url('', dirname(__FILE__));
 
-// Set the filters
-wp_slimstat_db::$filters_normalized['misc']['limit_results'] = wp_slimstat::$options['number_results_raw_data'];
-
 // Get the data
-$results = wp_slimstat_db::get_recent('*');
+$all_results = wp_slimstat_db::get_recent( wp_slimstat_reports::$reports_info[ 'slim_p7_02' ][ 'callback_args' ] );
+$results = array_slice(
+	$all_results,
+	wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
+	wp_slimstat::$options[ 'number_results_raw_data' ]
+);
 
 // Return the results if we are not echoing them (export, email, etc)
 if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
 	return $results;
 }
 
-$count_page_results = count($results);
-$count_all_results = wp_slimstat_db::count_records();
+$count_all_results = count( $all_results );
+$count_page_results = count( $results );
 
 if ($count_page_results == 0){
 	echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
@@ -29,7 +33,7 @@ if ($count_page_results == 0){
 else {
 	
 	// Pagination
-	echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true );
+	echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true, wp_slimstat::$options[ 'number_results_raw_data' ] );
 
 	// Show delete button? (only those who can access the settings can see it)
 	$current_user_can_delete = current_user_can(wp_slimstat::$options['capability_can_admin']);
@@ -167,6 +171,6 @@ else {
 	
 	// Pagination
 	if ($count_page_results > 20){
-		echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true );
+		echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true, wp_slimstat::$options[ 'number_results_raw_data' ] );
 	}
 }

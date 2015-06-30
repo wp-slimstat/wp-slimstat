@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.4.1
+Version: 4.1.5
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 */
@@ -11,7 +11,7 @@ Author URI: http://www.wp-slimstat.com/
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.1.4.1';
+	public static $version = '4.1.5';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -1486,6 +1486,7 @@ class wp_slimstat {
 			'show_complete_user_agent_tooltip' => $val_no,
 			'no_maxmind_warning' => $val_no,
 			'enable_sov' => $val_no,
+			'enable_getsocial' => $val_no,
 
 			// Filters
 			'track_users' => $val_yes,
@@ -1679,9 +1680,25 @@ class wp_slimstat {
 	// end wp_slimstat_enqueue_tracking_script
 
 	/**
-	 * Removes old entries from the main table
+	 * Removes old entries from the main table and performs other daily tasks
 	 */
 	public static function wp_slimstat_purge(){
+		// Send the updated list of posts to GetSocial, if the corresponding option is enabled
+		$all_posts = get_posts( array( 'posts_per_page' => 100 ) );
+		$all_post_urls = array();
+
+		if ( !empty( $all_posts ) ) {
+			foreach( $all_posts as $a_post ) {
+				$all_post_urls[] = parse_url( get_permalink( $a_post->ID ), PHP_URL_PATH );
+			}
+
+			$args = json_encode( array(
+				'domain' => parse_url( get_site_url(), PHP_URL_HOST ),
+				'items' => $all_post_urls
+			) );
+			wp_remote_post( 'http://api.at.sharescount.com/process', array( 'timeout' => 5, 'body' => $args ) );
+		}
+
 		$autopurge_interval = intval( self::$options[ 'auto_purge' ] );
 		if ( $autopurge_interval <= 0 ) {
 			return;
@@ -1729,7 +1746,7 @@ class wp_slimstat {
 			$slimstat_config_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=wp-slim-config");
 			
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-header', 'title' => 'Slimstat', 'href' => "{$slimstat_view_url}wp-slim-view-1"));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel1', 'href' => "{$slimstat_view_url}wp-slim-view-1", 'parent' => 'slimstat-header', 'title' => __('Real-Time Log', 'wp-slimstat')));
+			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel1', 'href' => "{$slimstat_view_url}wp-slim-view-1", 'parent' => 'slimstat-header', 'title' => __('Access Log', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel2', 'href' => "{$slimstat_view_url}wp-slim-view-2", 'parent' => 'slimstat-header', 'title' => __('Overview', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel3', 'href' => "{$slimstat_view_url}wp-slim-view-3", 'parent' => 'slimstat-header', 'title' => __('Audience', 'wp-slimstat')));
 			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel4', 'href' => "{$slimstat_view_url}wp-slim-view-4", 'parent' => 'slimstat-header', 'title' => __('Site Analysis', 'wp-slimstat')));

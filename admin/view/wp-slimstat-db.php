@@ -50,7 +50,7 @@ class wp_slimstat_db {
 			'browser_version' => array( __( 'Browser Version', 'wp-slimstat' ), 'varchar' ),
 			'browser_type' => array( __( 'Browser Type', 'wp-slimstat' ), 'int' ),
 			'user_agent' => array( __( 'User Agent', 'wp-slimstat' ), 'varchar' ),
-			'notes' => array( __( 'Pageview Attributes', 'wp-slimstat' ), 'varchar' ),
+			'notes' => array( __( 'Annotations', 'wp-slimstat' ), 'varchar' ),
 			'server_latency' => array( __( 'Server Latency', 'wp-slimstat' ), 'int' ),
 			'author' => array( __( 'Post Author', 'wp-slimstat' ), 'varchar' ),
 			'category' => array( __( 'Post Category ID', 'wp-slimstat' ), 'varchar' ),
@@ -76,9 +76,15 @@ class wp_slimstat_db {
 			'interval_minutes' => array( __( 'minutes', 'wp-slimstat' ), 'int' ),
 			'dt' => array( __( 'Unix Timestamp', 'wp-slimstat' ), 'int' ),
 
+			// Events
+			'event_id' => array( __( 'Event ID', 'wp-slimstat' ), 'int' ),
+			'type' => array( __( 'Type', 'wp-slimstat' ), 'int' ),
+			'event_description' => array( __( 'Event Description', 'wp-slimstat' ), 'varchar' ),
+			'position' => array( __( 'Event Coordinates', 'wp-slimstat' ), 'int' ),
+
 			'direction' => array( __( 'Direction', 'wp-slimstat' ), 'varchar' ),
-			'limit_results' => array( __( 'Limit Results', 'wp-slimstat' ), 'int' ),
-			'start_from' => array( __( 'Start From', 'wp-slimstat' ), 'int' ),
+			'limit_results' => array( __( 'Max Results', 'wp-slimstat' ), 'int' ),
+			'start_from' => array( __( 'Offset', 'wp-slimstat' ), 'int' ),
 
 			// Misc Filters
 			'strtotime' => array( 0, 'int' )
@@ -110,7 +116,7 @@ class wp_slimstat_db {
 				continue;
 			}
 
-			$sql_array[] = self::_get_single_where_clause( $a_filter_column, $a_filter_data[ 0 ], $a_filter_data[ 1 ], $_slim_stats_table_alias );
+			$sql_array[] = self::get_single_where_clause( $a_filter_column, $a_filter_data[ 0 ], $a_filter_data[ 1 ], $_slim_stats_table_alias );
 		}
 
 		// Flatten array
@@ -121,7 +127,7 @@ class wp_slimstat_db {
 		return '';
 	}
 
-	public static function get_combined_where( $_where = '', $_column = '*', $_use_time_range = true, $_slim_stats_table_alias = '' ) {
+	public static function get_combined_where( $_where = '', $_column = '*', $_use_date_filters = true, $_slim_stats_table_alias = '' ) {
 		$dt_with_alias = 'dt';
 		if ( !empty( $_slim_stats_table_alias ) ) {
 			$dt_with_alias = $_slim_stats_table_alias . '.' . $dt_with_alias;
@@ -132,12 +138,12 @@ class wp_slimstat_db {
 			if ( !empty( self::$filters_normalized[ 'columns' ] ) ) {
 				$_where = self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
 
-				if ($_use_time_range) {
+				if ($_use_date_filters) {
 					$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 				}
 
 			}
-			elseif ( $_use_time_range ) {
+			elseif ( $_use_date_filters ) {
 				$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 			}
 			else {
@@ -146,9 +152,14 @@ class wp_slimstat_db {
 		}
 		else {
 			if ( $_where != '1=1' && !empty( self::$filters_normalized[ 'columns' ] ) ) {
-				$_where .= ' AND ' . self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
+				$new_clause = self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
+
+				// This condition could be empty if it's related to a custom column
+				if ( !empty( $new_clause ) ) {
+					$_where .= ' AND ' . $new_clause;
+				}
 			}
-			if ( $_use_time_range ) {
+			if ( $_use_date_filters ) {
 				$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 			}
 		}
@@ -161,8 +172,13 @@ class wp_slimstat_db {
 		}
 
 		if ( !empty( self::$columns_names[ $_column ] ) ) {
-			$filter_empty = "$_column ".( ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0' );
-			$filter_not_empty = "$_column ".( ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0' );
+			$column_with_alias = $_column;
+			if ( !empty( $_slim_stats_table_alias ) ) {
+				$column_with_alias = $_slim_stats_table_alias . '.' . $column_with_alias;
+			}
+
+			$filter_empty = "$column_with_alias " . ( ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0' );
+			$filter_not_empty = "$column_with_alias " . ( ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0' );
 
 			if ( strpos( $_where, $filter_empty ) === false && strpos( $_where, $filter_not_empty) === false) {
 				$_where = "$filter_not_empty AND $_where";
@@ -175,9 +191,9 @@ class wp_slimstat_db {
 	/**
 	 * Translates user-friendly operators into SQL conditions
 	 */
-	protected static function _get_single_where_clause( $_column = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = 'b' ) {
-		$filter_empty = ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0';
-		$filter_not_empty = ( self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0';
+	public static function get_single_where_clause( $_column = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '' ) {
+		$filter_empty = ( !empty( self::$columns_names[ $_column ] ) && self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0';
+		$filter_not_empty = ( !empty( self::$columns_names[ $_column ] ) && self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0';
 
 		$column_with_alias = $_column;
 		if ( !empty( $_slim_stats_table_alias ) ) {
@@ -224,11 +240,11 @@ class wp_slimstat_db {
 				break;
 
 			case 'is_empty':
-				$where = array( "$column_with_alias $filter_empty", array() );
+				$where = array( "$column_with_alias $filter_empty", '' );
 				break;
 
 			case 'is_not_empty':
-				$where = array( "$column_with_alias $filter_not_empty", array() );
+				$where = array( "$column_with_alias $filter_not_empty", '' );
 				break;
 
 			case 'is_greater_than':
@@ -257,7 +273,12 @@ class wp_slimstat_db {
 				break;
 		}
 
-		return $GLOBALS[ 'wpdb' ]->prepare( $where[0], $where[1] );
+		if ( !empty( $where[ 1 ] ) ) {
+			return $GLOBALS[ 'wpdb' ]->prepare( $where[ 0 ], $where[ 1 ] );
+		}
+		else {
+			return $where[ 0 ];
+		}
 	}
 
 	protected static function _show_debug( $_message = '' ) {
@@ -293,7 +314,7 @@ class wp_slimstat_db {
 			),
 			'misc' => $_init_misc?array(
 				'direction' => 'DESC',
-				'limit_results' => wp_slimstat::$options[ 'rows_to_show' ],
+				'limit_results' => 1000,
 				'start_from' => 0
 			) : array(),
 			'utime' => array(
@@ -570,9 +591,9 @@ class wp_slimstat_db {
 			'SUM(counthits) AS counthits' ) );
 	}
 
-	public static function count_records( $_column = 'id', $_where = '', $_use_time_range = true ) {
+	public static function count_records( $_column = 'id', $_where = '', $_use_date_filters = true ) {
 		$distinct_column = ( $_column != 'id' ) ? "DISTINCT $_column" : $_column;
-		$_where = self::get_combined_where( $_where, $_column, $_use_time_range );
+		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
 		return intval( self::get_var( "
 			SELECT COUNT($distinct_column) counthits
@@ -736,11 +757,20 @@ class wp_slimstat_db {
 			SELECT dt
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			ORDER BY dt ASC
-			LIMIT 0,1",
+			LIMIT 0, 1",
 			'MIN(dt)' );
 	}
 
-	public static function get_recent( $_column = '*', $_where = '', $_having = '', $_use_time_range = true, $_as_column = '' ) {
+	public static function get_recent( $_column = '*', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '' ) {
+		// This function can be passed individual arguments, or an array of arguments
+		if ( is_array( $_column ) ) {
+			$_where = !empty( $_column[ 'where' ] ) ? $_column[ 'where' ] : '';
+			$_having = !empty( $_column[ 'having' ] ) ? $_column[ 'having' ] : '';
+			$_use_date_filters = !empty( $_column[ 'use_date_filters' ] ) ? $_column[ 'use_date_filters' ] : true;
+			$_as_column = !empty( $_column[ 'as_column' ] ) ? $_column[ 'as_column' ] : '';
+			$_column = $_column[ 'columns' ];
+		}
+
 		if ( !empty( $_as_column ) ) {
 			$_column = "$_column AS $_as_column";
 		}
@@ -748,7 +778,7 @@ class wp_slimstat_db {
 			$_as_column = $_column;
 		}
 
-		$_where = self::get_combined_where( $_where, $_column, $_use_time_range );
+		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
 		if ( $_column == '*' ) {
 			return self::get_results( "
@@ -756,7 +786,7 @@ class wp_slimstat_db {
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats
 				WHERE $_where
 				ORDER BY dt DESC
-				LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ],
+				LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
 				$_column,
 				'dt DESC' );
 		}
@@ -770,13 +800,40 @@ class wp_slimstat_db {
 					GROUP BY $_as_column $_having
 				) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id
 				ORDER BY t1.dt DESC
-				LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ],
+				LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
 				( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
 				't1.dt DESC' );
 		}
 	}
-	
-	public static function get_top( $_column = 'id', $_where = '', $_having = '', $_use_time_range = true, $_as_column = '' ){
+
+	public static function get_recent_events() {
+		if ( empty( self::$filters_normalized[ 'columns' ] ) ) {
+			$from = "{$GLOBALS['wpdb']->prefix}slim_events te";
+			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes' );
+		}
+		else {
+			$from = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
+			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes', true, 't1' );
+		}
+
+		return self::get_results( "
+			SELECT *
+			FROM $from
+			WHERE $where
+			ORDER BY te.dt DESC"
+		);
+	}
+
+	public static function get_top( $_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '' ){
+		// This function can be passed individual arguments, or an array of arguments
+		if ( is_array( $_column ) ) {
+			$_where = !empty( $_column[ 'where' ] ) ? $_column[ 'where' ] : '';
+			$_having = !empty( $_column[ 'having' ] ) ? $_column[ 'having' ] : '';
+			$_use_date_filters = !empty( $_column[ 'use_date_filters' ] ) ? $_column[ 'use_date_filters' ] : true;
+			$_as_column = !empty( $_column[ 'as_column' ] ) ? $_column[ 'as_column' ] : '';
+			$_column = $_column[ 'columns' ];
+		}
+
 		if ( !empty( $_as_column ) ) {
 			$_column = "$_column AS $_as_column";
 		}
@@ -784,7 +841,7 @@ class wp_slimstat_db {
 			$_as_column = $_column;
 		}
 
-		$_where = self::get_combined_where( $_where, $_as_column, $_use_time_range );
+		$_where = self::get_combined_where( $_where, $_as_column, $_use_date_filters );
 
 		return self::get_results( "
 			SELECT $_column, COUNT(*) counthits
@@ -792,7 +849,7 @@ class wp_slimstat_db {
 			WHERE $_where
 			GROUP BY $_as_column $_having
 			ORDER BY counthits DESC
-			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ], 
+			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ], 
 			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
 			'counthits DESC',
 			$_column,
@@ -812,10 +869,29 @@ class wp_slimstat_db {
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id 
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
-			LIMIT ".self::$filters_normalized[ 'misc' ][ 'start_from' ].', '.self::$filters_normalized[ 'misc' ][ 'limit_results' ],
+			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
 			$_outer_select_column,
 			'counthits DESC',
 			$_outer_select_column,
 			"$_aggr_function(aggrid), SUM(counthits)" );
+	}
+
+	public static function get_top_events() {
+		if ( empty( self::$filters_normalized[ 'columns' ] ) ) {
+			$from = "{$GLOBALS['wpdb']->prefix}slim_events te";
+			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes' );
+		}
+		else {
+			$from = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
+			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes', true, 't1' );
+		}
+
+		return self::get_results( "
+			SELECT te.notes, te.type, COUNT(*) counthits
+			FROM $from
+			WHERE $where
+			GROUP BY te.notes, te.type
+			ORDER BY counthits DESC"
+		);
 	}
 }

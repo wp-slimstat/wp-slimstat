@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.2
-Stable tag: 4.1.4.1
+Stable tag: 4.1.5
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,21 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.5 =
+* [New] Welcome our new partner GetSocial.io, a service that allows you to find your true influencers and understand which users are driving your traffic and conversions through their shares. Our users get free access to their platform through a new report located in the Site Analysis screen.
+* [New] Slimstat can now differentiate between viewport size and screen size (or resolution). Two new reports, hidden by default, will enumerate the most popular of both categories.
+* [Update] We implemented a more flexible way to change the number of results returned by the database API (via filter). Documentation to follow soon.
+* [Update] Reports for Top and Recent Events are back. Go say hi, they will be waiting for you under Slimstat > Site Analysis. If you don't see them, you will need to activate them inside the Screen Options tab.
+* [Update] After the report and data API overhaul, it was now the config panels' turn. We revisited the way they are managed, and consolidated how third party add-ons can add their own parameters. All of our add-ons affected by this change have been updated on our repository.
+* [Update] Third party plugins and add-ons have now an easier way to increase the limit on the number of results returned by the data API.
+* [Update] To avoid confusion when a date filter is set, the Real-Time Log has been renamed Access Log.
+* [Update] Code optimizations in the report library/API: function get_raw_results is about to be deprecated. Please contact us if you're using it and would like to know how to proceed from now on.
+* [Fix] Setting the 'is empty' filter would cause a WordPress warning regarding wpdb->prepare.
+* [Fix] The setting to ignore visitors by username was not being saved as expected (thank you, Romain).
+* [Fix] Custom CSS styles were not being properly enqueued (thank you, Romain).
+* [Fix] Quotes in post titles were being escaped twice (better safe than sorry, right? thank you, Victor).
+* [Fix] Bug affecting the Export to Excel add-on.
 
 = 4.1.4.1 =
 * [Fix] A bug was preventing our Export to Excel add-on from working as expected under certain circumstances (mainly WPMU-related).

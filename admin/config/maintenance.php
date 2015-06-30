@@ -25,17 +25,18 @@ if (!empty($_REQUEST['action'])){
 
 		case 'delete-records':
 			$rows_affected = 0;
-			if (key_exists($_POST['f'], wp_slimstat_db::$columns_names)){
+
+			if (key_exists($_REQUEST['f'], wp_slimstat_db::$columns_names)){
 				$rows_affected = wp_slimstat::$wpdb->query("
 					DELETE t1.* 
 					FROM {$GLOBALS['wpdb']->prefix}slim_stats t1
-					WHERE ".wp_slimstat_db::$sql_where[ 'columns' ]);
+					WHERE ".wp_slimstat_db::get_combined_where('', '*', false));
 			}
 			wp_slimstat_admin::show_alert_message(intval($rows_affected).' '.__('records deleted from your database.','wp-slimstat'), 'wp-ui-highlight below-h2');
 			break;
 
 		case 'delete-maxmind':
-			@unlink(wp_slimstat::$maxmind_path);
+			@unlink( wp_slimstat::$maxmind_path );
 			wp_slimstat_admin::show_alert_message(__('The geolocation database has been uninstalled from your server.','wp-slimstat'), 'wp-ui-highlight below-h2');
 			break;
 
@@ -207,46 +208,24 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 <table class="form-table widefat">
 <tbody>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('MaxMind IP to Country','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('Debugging','wp-slimstat') ?></td>
 	</tr>
 	<tr>
-		<th scope="row">
-			<?php if (!file_exists(wp_slimstat::$maxmind_path)): ?>
-			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=download-maxmind"
-				onclick="return(confirm('<?php _e('Do you want to download and install the geolocation database from MaxMind\'s server?','wp-slimstat'); ?>'))"><?php _e("Install GeoLite DB",'wp-slimstat'); ?></a>
-			<?php else: ?>
-			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=delete-maxmind"
-				onclick="return(confirm('<?php _e('Do you want to uninstall the geolocation database?','wp-slimstat'); ?>'))"><?php _e("Uninstall GeoLite DB",'wp-slimstat'); ?></a>
-			<?php endif; ?>
-		</th>
+		<th scope="row"><?php _e('Tracker Error Code','wp-slimstat') ?></th>
 		<td>
-			<span class="description"><?php _e("The <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind GeoLite library</a> used to geolocate visitors is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality.",'wp-slimstat') ?></span>
+			<?php echo is_array(wp_slimstat::$options['last_tracker_error'])?'<code>'.wp_slimstat::$options['last_tracker_error'][0].' '.wp_slimstat::$options['last_tracker_error'][1].'</code> '.__('recorded on','wp-slimstat').' '.date_i18n(wp_slimstat::$options['date_format'], wp_slimstat::$options['last_tracker_error'][2], true).' @ '.date_i18n(wp_slimstat::$options['time_format'],  wp_slimstat::$options['last_tracker_error'][2], true):__('No Errors so far','wp-slimstat'); ?>
+			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. Please include this code when sending a support request.','wp-slimstat') ?></span>
 		</td>
-			
 	</tr>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Database Information','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('Layout','wp-slimstat') ?></td>
 	</tr>
 	<tr>
-		<th scope="row"><?php _e('Engine','wp-slimstat') ?></th>
-		<td><?php 
-			echo $details_wp_slim_tables[0]['Engine']; 
-			if (!empty($have_innodb) && $have_innodb[0]['Value'] == 'YES' && $details_wp_slim_tables[0]['Engine'] == 'MyISAM'){
-				echo ' [<a href="'.wp_slimstat_admin::$config_url.$current_tab.'&amp;action=switch-engine">'.__('switch to InnoDB','wp-slimstat').'</a>]';
-			}
-		?></td>
+		<th scope="row"><a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-views" onclick="return(confirm('<?php _e('Are you sure you want to restore the default arrangement of your reports?','wp-slimstat'); ?>'))"><?php _e('No Panic Button','wp-slimstat'); ?></a></th>
+		<td>
+			<span class="description"><?php _e("Reset the default arrangement of your reports. Helpful when, for some reason, reports disappear from your panels or something doesn't look right in your views.",'wp-slimstat') ?></span>
+		</td>
 	</tr>
-	<?php
-		foreach ($details_wp_slim_tables as $i => $a_table){
-			$base = ($a_table['Data_length'] != 0)?(log($a_table['Data_length']) / log(1024)):0;
-			$a_table['Data_length_with_suffix'] = round(pow(1024, $base - floor($base)), 2).' '.$suffixes[floor($base)];
-			
-			echo '<tr '.(($i%2==0)?'class="alternate"':'').">
-					<th scope='row'>{$a_table['Name']}</th>
-					<td>".$a_table['Data_length_with_suffix'].' ('.number_format($a_table['Rows'], 0).' '.__('records','wp-slimstat').')</td>
-				  </tr>';
-		}
-	?>
 	<tr>
 		<td colspan="2" class="slimstat-options-section-header"><?php _e('Data Maintenance','wp-slimstat') ?></td>
 	</tr>
@@ -332,6 +311,24 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 		</td>
 	</tr>
 	<tr>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('MaxMind IP to Country','wp-slimstat') ?></td>
+	</tr>
+	<tr>
+		<th scope="row">
+			<?php if (!file_exists(wp_slimstat::$maxmind_path)): ?>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=download-maxmind"
+				onclick="return(confirm('<?php _e('Do you want to download and install the geolocation database from MaxMind\'s server?','wp-slimstat'); ?>'))"><?php _e("Install GeoLite DB",'wp-slimstat'); ?></a>
+			<?php else: ?>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=delete-maxmind"
+				onclick="return(confirm('<?php _e('Do you want to uninstall the geolocation database?','wp-slimstat'); ?>'))"><?php _e("Uninstall GeoLite DB",'wp-slimstat'); ?></a>
+			<?php endif; ?>
+		</th>
+		<td>
+			<span class="description"><?php _e("The <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind GeoLite library</a> used to geolocate visitors is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality.",'wp-slimstat') ?></span>
+		</td>
+			
+	</tr>
+	<tr>
 		<td colspan="2" class="slimstat-options-section-header"><?php _e('Import and Export','wp-slimstat') ?></td>
 	</tr>
 	<tr>
@@ -347,26 +344,27 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 		</td>
 	</tr>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Debugging','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('Database Information','wp-slimstat') ?></td>
 	</tr>
 	<tr>
-		<th scope="row"><?php _e('Tracker Error Code','wp-slimstat') ?></th>
-		<td>
-			<?php echo is_array(wp_slimstat::$options['last_tracker_error'])?'<code>'.wp_slimstat::$options['last_tracker_error'][0].' '.wp_slimstat::$options['last_tracker_error'][1].'</code> '.__('recorded on','wp-slimstat').' '.date_i18n(wp_slimstat::$options['date_format'], wp_slimstat::$options['last_tracker_error'][2], true).' @ '.date_i18n(wp_slimstat::$options['time_format'],  wp_slimstat::$options['last_tracker_error'][2], true):__('No Errors so far','wp-slimstat'); ?>
-			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. Please include this code when sending a support request.','wp-slimstat') ?></span>
-		</td>
+		<th scope="row"><?php _e('Engine','wp-slimstat') ?></th>
+		<td><?php 
+			echo $details_wp_slim_tables[0]['Engine']; 
+			if (!empty($have_innodb) && $have_innodb[0]['Value'] == 'YES' && $details_wp_slim_tables[0]['Engine'] == 'MyISAM'){
+				echo ' [<a href="'.wp_slimstat_admin::$config_url.$current_tab.'&amp;action=switch-engine">'.__('switch to InnoDB','wp-slimstat').'</a>]';
+			}
+		?></td>
 	</tr>
-	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Miscellaneous','wp-slimstat') ?></td>
-	</tr>
-	<tr>
-		<th scope="row"><?php _e('Reset Reports','wp-slimstat') ?></th>
-		<td>
-			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-views"
-				onclick="return(confirm('<?php _e('Are you sure you want to restore the default arrangement of your reports?','wp-slimstat'); ?>'))"><?php _e('No Panic Button','wp-slimstat'); ?></a>
-			<span class="description"><?php _e("Reset the default arrangement of your reports. Helpful when, for some reason, reports disappear from your panels or something doesn't look right in your views.",'wp-slimstat') ?></span>
-		</td>
-	</tr>
-	
+	<?php
+		foreach ($details_wp_slim_tables as $i => $a_table){
+			$base = ($a_table['Data_length'] != 0)?(log($a_table['Data_length']) / log(1024)):0;
+			$a_table['Data_length_with_suffix'] = round(pow(1024, $base - floor($base)), 2).' '.$suffixes[floor($base)];
+			
+			echo '<tr '.(($i%2==0)?'class="alternate"':'').">
+					<th scope='row'>{$a_table['Name']}</th>
+					<td>".$a_table['Data_length_with_suffix'].' ('.number_format($a_table['Rows'], 0).' '.__('records','wp-slimstat').')</td>
+				  </tr>';
+		}
+	?>
 </tbody>
 </table>

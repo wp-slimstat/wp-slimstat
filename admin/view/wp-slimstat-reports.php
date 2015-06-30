@@ -27,8 +27,8 @@ class wp_slimstat_reports {
 
 		// Filters use the following format: browser equals Firefox&&&country contains gb
 		$filters = array();
-		if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])){
-			foreach($_REQUEST['fs'] as $a_request_filter_name => $a_request_filter_value){
+		if ( !empty( $_REQUEST[ 'fs' ] ) && is_array( $_REQUEST[ 'fs' ] ) ) {
+			foreach( $_REQUEST[ 'fs' ] as $a_request_filter_name => $a_request_filter_value ) {
 				$filters[] = "$a_request_filter_name $a_request_filter_value";
 			}
 		}
@@ -38,7 +38,7 @@ class wp_slimstat_reports {
 			$filters[] = "{$_POST[ 'f' ]} {$_POST[ 'o' ]} " . ( isset( $_POST[ 'v' ] ) ? $_POST[ 'v' ] : '' );
 		}
 
-		foreach ( array('minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes') as $a_date_time_filter_name ) {
+		foreach ( array( 'minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes' ) as $a_date_time_filter_name ) {
 			if ( !empty( $_POST[ $a_date_time_filter_name ] ) ) {
 				$filters[] = "$a_date_time_filter_name equals {$_POST[ $a_date_time_filter_name ]}";
 			}
@@ -46,8 +46,8 @@ class wp_slimstat_reports {
 
 		// Hidden Filters
 		if ( wp_slimstat::$options[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) ) {
-			$filters[] = 'author equals '.$GLOBALS['current_user']->user_login;
-			self::$hidden_filters['author'] = 1;
+			$filters[] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
+			self::$hidden_filters[ 'author' ] = 1;
 		}
 
 		if ( !empty( $filters ) ) {
@@ -68,21 +68,28 @@ class wp_slimstat_reports {
 		// - callback : function to use to render the report
 		// - callback_args : parameters to pass to the function
 		// - classes : determine the look and feel of this report ( tall, normal, wide, hidden )
-		// - screens : where should the report appear ( wp-slim-view-1, .., wp-slim-view-4, dashboard, raw ). If 'raw' is used, it means that this report can return an array of rows for other uses ( export, email, etc )
+		// - screens : where should the report appear ( wp-slim-view-1, .., wp-slim-view-4, dashboard )
 		// - tooltip : contextual help to be displayed on hover
 		
-		$chart_tooltip = '<strong>'.__( 'Chart controls', 'wp-slimstat' ).'</strong><ul><li>'.__( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ).'</li><li>'.__( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ).'</li><li>'.__( 'Double click on an empty region to reset the zoom level', 'wp-slimstat' ).'</li></ul>';
+		$chart_tooltip = '<strong>' . __( 'Chart controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li><li>' . __( 'Double click on an empty region to reset the zoom level', 'wp-slimstat' ) . '</li></ul>';
 		self::$reports_info = array(
+			'slim_getsocial' => array(
+				'title' => __( 'Social Sharing Analytics <a href="http://getsocial.io/?utm_source=slimstat">powered by GetSocial</a>', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'show_getsocial' ),
+				'classes' => array( 'full-width' ),
+				'screens' => array( 'wp-slim-view-4' )
+			),
+
 			'slim_p7_02' => array(
 				'title' => __( 'Activity', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_activity_log' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'id',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'full-width', 'tall' ),
-				'screens' => array( 'wp-slim-view-1', 'raw' ),
+				'screens' => array( 'wp-slim-view-1' ),
 				'tooltip' => __( 'Color codes', 'wp-slimstat' ).'</strong><p><span class="little-color-box is-search-engine"></span> '.__( 'From search result page', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-visitor"></span> '.__( 'Known Visitor', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-user"></span> '.__( 'Known Users', 'wp-slimstat' ).'</p><p><span class="little-color-box is-direct"></span> '.__( 'Other Humans', 'wp-slimstat' ).'</p><p><span class="little-color-box"></span> '.__( 'Bot or Crawler', 'wp-slimstat' ).'</p>'
 			),
 
@@ -116,10 +123,10 @@ class wp_slimstat_reports {
 					'columns' => 'username',
 					'where' => 'dt > '. ( date_i18n( 'U' ) - 300 ),
 					'use_date_filters' => false,
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2', 'dashboard', 'raw' ),
+				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
 				'tooltip' => __( 'When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat' )
 			),
 			'slim_p1_06' => array(
@@ -128,10 +135,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'searchterms',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5', 'raw' ),
+				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5' ),
 				'tooltip' => __( 'Keywords used by your visitors to find your website on a search engine.', 'wp-slimstat' )
 			),
 			'slim_p1_08' => array(
@@ -142,10 +149,10 @@ class wp_slimstat_reports {
 					'columns' => 'SUBSTRING_INDEX(resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1)',
 					'as_column' => 'resource_substring',
 					'filter_op' => 'contains',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2', 'dashboard', 'raw' ),
+				'screens' => array( 'wp-slim-view-2', 'dashboard' ),
 				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any web page on your website, including posts, products, categories, and so on.', 'wp-slimstat' )
 			),
 			'slim_p1_10' => array(
@@ -155,10 +162,10 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'referer',
 					'where' => 'referer NOT LIKE "%' . home_url() . '%"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5', 'dashboard', 'raw' )
+				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-5', 'dashboard' )
 			),
 			'slim_p1_11' => array(
 				'title' => __( 'Top Known Visitors', 'wp-slimstat' ),
@@ -166,10 +173,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'username',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-2', 'dashboard', 'raw' )
+				'screens' => array( 'wp-slim-view-2', 'dashboard' )
 			),
 			'slim_p1_12' => array(
 				'title' => __( 'Top Search Terms', 'wp-slimstat' ),
@@ -177,10 +184,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'searchterms',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-4', 'wp-slim-view-5', 'dashboard', 'raw' )
+				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-4', 'wp-slim-view-5', 'dashboard' )
 			),
 			'slim_p1_13' => array(
 				'title' => __( 'Top Countries', 'wp-slimstat' ),
@@ -188,10 +195,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'country',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-3', 'wp-slim-view-5', 'dashboard', 'raw' ),
+				'screens' => array( 'wp-slim-view-2', 'wp-slim-view-3', 'wp-slim-view-5', 'dashboard' ),
 				'tooltip' => __( 'You can configure Slimstat to ignore a specific Country by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat' )
 			),
 			'slim_p1_15' => array(
@@ -209,10 +216,10 @@ class wp_slimstat_reports {
 					'columns' => 'SUBSTRING(language, 1, 2)',
 					'as_column' => 'language_substring',
 					'filter_op' => 'contains',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 
 			'slim_p2_01' => array(
@@ -238,21 +245,21 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'language',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_04' => array(
-				'title' => __( 'Top Browsers', 'wp-slimstat', 'dashboard' ),
+				'title' => __( 'Top Browsers', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'browser, browser_version',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3', 'dashboard' )
 			),
 			'slim_p2_05' => array(
 				'title' => __( 'Top Service Providers', 'wp-slimstat' ),
@@ -260,10 +267,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'ip',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'wide', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' ),
+				'screens' => array( 'wp-slim-view-3' ),
 				'tooltip' => __( 'Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat' )
 			),
 			'slim_p2_06' => array(
@@ -272,10 +279,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'platform',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' ),
+				'screens' => array( 'wp-slim-view-3' ),
 				'tooltip' => __( 'Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat' )
 			),
 			'slim_p2_07' => array(
@@ -283,11 +290,22 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'resolution',
-					'raw' => array( __CLASS__, 'get_raw_results' ),
+					'columns' => 'screen_width, screen_height',
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-3', 'dashboard', 'raw' )
+				'screens' => array( 'wp-slim-view-3', 'dashboard' )
+			),
+			'slim_p2_08' => array(
+				'title' => __( 'Top Viewport Sizes', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'type' => 'top',
+					'columns' => 'resolution',
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
+				),
+				'classes' => array( 'normal', 'hidden' ),
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_09' => array(
 				'title' => __( 'Browser Capabilities', 'wp-slimstat' ),
@@ -307,21 +325,21 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'country',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'wp-slim-view-5', 'raw' )
+				'screens' => array( 'wp-slim-view-3', 'wp-slim-view-5' )
 			),
 			'slim_p2_14' => array(
-				'title' => __( 'Recent Screen Resolutions', 'wp-slimstat' ),
+				'title' => __( 'Recent Viewport Sizes', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'resolution',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_15' => array(
 				'title' => __( 'Recent Operating Systems', 'wp-slimstat' ),
@@ -329,10 +347,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'platform',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_16' => array(
 				'title' => __( 'Recent Browsers', 'wp-slimstat' ),
@@ -340,10 +358,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'browser, browser_version',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_17' => array(
 				'title' => __( 'Recent Languages', 'wp-slimstat' ),
@@ -351,10 +369,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'language',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_18' => array(
 				'title' => __( 'Top Browser Families', 'wp-slimstat' ),
@@ -362,10 +380,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'browser',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' ),
+				'screens' => array( 'wp-slim-view-3' ),
 				'tooltip' => __( 'This report shows you what user agent families (no version considered) are popular among your visitors.', 'wp-slimstat' )
 			),
 			'slim_p2_19' => array(
@@ -376,10 +394,10 @@ class wp_slimstat_reports {
 					'columns' => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
 					'as_column' => 'platform_substring',
 					'filter_op' => 'contains',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' ),
+				'screens' => array( 'wp-slim-view-3' ),
 				'tooltip' => __( 'This report shows you what operating system families (no version considered) are popular among your visitors.', 'wp-slimstat' )
 			),
 			'slim_p2_20' => array(
@@ -389,10 +407,10 @@ class wp_slimstat_reports {
 					'type' => 'recent',
 					'columns' => 'username',
 					'where' => 'notes LIKE "%user:%"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-3', 'raw' )
+				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_21' => array(
 				'title' => __( 'Top Users', 'wp-slimstat' ),
@@ -401,10 +419,10 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'username',
 					'where' => 'notes LIKE "%user:%"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3', 'dashboard', 'raw' )
+				'screens' => array( 'wp-slim-view-3', 'dashboard' )
 			),
 
 			'slim_p3_01' => array(
@@ -430,10 +448,10 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'referer',
 					'where' => "searchterms IS NOT NULL AND referer NOT LIKE '%".home_url()."%'",
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-5', 'dashboard', 'raw' )
+				'screens' => array( 'wp-slim-view-5', 'dashboard' )
 			),
 			'slim_p3_11' => array(
 				'title' => __( 'Recent Exit Pages', 'wp-slimstat' ),
@@ -441,10 +459,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'visit_id', // raw_results_to_html knows to display the resource, when the column is visit_id
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-5', 'raw' )
+				'screens' => array( 'wp-slim-view-5' )
 			),
 
 			'slim_p4_01' => array(
@@ -453,11 +471,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'outbound_resource', // raw_results_to_html knows to display the resource, when the column is visit_id
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
-				'callback_raw' => array( __CLASS__, 'get_raw_results' ),
 				'classes' => array( 'wide' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' ),
+				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => ''
 			),
 			'slim_p4_02' => array(
@@ -467,10 +484,10 @@ class wp_slimstat_reports {
 					'type' => 'recent',
 					'columns' => 'resource',
 					'where' => 'content_type = "post"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_03' => array(
 				'title' => __( 'Recent Bounce Pages', 'wp-slimstat' ),
@@ -480,10 +497,10 @@ class wp_slimstat_reports {
 					'columns' => 'resource',
 					'where' => 'content_type <> "404"',
 					'having' => 'HAVING COUNT(visit_id) => 1',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' ),
+				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => __( 'A <em>bounce page</em> is a single-page visit, or visit in which the person left your site from the entrance (landing) page.', 'wp-slimstat' )
 			),
 			'slim_p4_04' => array(
@@ -493,10 +510,10 @@ class wp_slimstat_reports {
 					'type' => 'recent',
 					'columns' => 'resource',
 					'where' => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_05' => array(
 				'title' => __( 'Recent Pages Not Found', 'wp-slimstat' ),
@@ -505,10 +522,10 @@ class wp_slimstat_reports {
 					'type' => 'recent',
 					'columns' => 'resource',
 					'where' => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_06' => array(
 				'title' => __( 'Recent Internal Searches', 'wp-slimstat' ),
@@ -517,10 +534,10 @@ class wp_slimstat_reports {
 					'type' => 'recent',
 					'columns' => 'searchterms',
 					'where' => 'content_type LIKE "%search%"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' ),
+				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => __( "Searches performed using WordPress' built-in search functionality.", 'wp-slimstat' )
 			),
 			'slim_p4_07' => array(
@@ -530,9 +547,9 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'category',
 					'where' => 'content_type LIKE "%category%"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
-				'classes' => array( 'normal', 'raw' ),
+				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-4', 'dashboard' )
 			),
 			
@@ -543,26 +560,24 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'resource',
 					'where' => 'content_type = "download"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'wide', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' ),
+				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => __( 'You can configure Slimstat to track specific file extensions as downloads.', 'wp-slimstat' )
 			),
-			/*
-			NOTE TO SELF: don't forget to remove from deprecated, when implemented
 			'slim_p4_10' => array(
 				'title' => __( 'Recent Events', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback' => array( __CLASS__, 'show_events' ),
 				'callback_args' => array(
-
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'type' => 'recent',
+					'columns' => 'notes',
+					'raw' => array( 'wp_slimstat_db', 'get_recent_events' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' ),
+				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => __( 'This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to use this functionality.', 'wp-slimstat' )
 			),
-			*/
 			'slim_p4_11' => array(
 				'title' => __( 'Top Posts', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
@@ -570,10 +585,22 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'resource',
 					'where' => 'content_type = "post"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
+			),
+			'slim_p4_12' => array(
+				'title' => __( 'Top Events', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'show_events' ),
+				'callback_args' => array(
+					'type' => 'top',
+					'columns' => 'notes',
+					'raw' => array( 'wp_slimstat_db', 'get_top_events' )
+				),
+				'classes' => array( 'normal', 'hidden' ),
+				'screens' => array( 'wp-slim-view-4' ),
+				'tooltip' => __( 'This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to use this functionality.', 'wp-slimstat' )
 			),
 			'slim_p4_13' => array(
 				'title' => __( 'Top Internal Searches', 'wp-slimstat' ),
@@ -582,10 +609,10 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'searchterms',
 					'where' => 'content_type LIKE "%search%"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_15' => array(
 				'title' => __( 'Recent Categories', 'wp-slimstat' ),
@@ -594,10 +621,10 @@ class wp_slimstat_reports {
 					'type' => 'recent',
 					'columns' => 'resource',
 					'where' => '(content_type => "category" OR content_type => "tag")',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_16' => array(
 				'title' => __( 'Top Pages Not Found', 'wp-slimstat' ),
@@ -606,10 +633,10 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'resource',
 					'where' => 'content_type LIKE "%404%"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_18' => array(
 				'title' => __( 'Top Authors', 'wp-slimstat' ),
@@ -617,10 +644,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'author',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'wp-slim-view-4', 'dashboard', 'raw' )
+				'screens' => array( 'wp-slim-view-4', 'dashboard' )
 			),
 			'slim_p4_19' => array(
 				'title' => __( 'Top Tags', 'wp-slimstat' ),
@@ -629,10 +656,10 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'category',
 					'where' => '(content_type LIKE "%tag%")',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_20' => array(
 				'title' => __( 'Recent Downloads', 'wp-slimstat' ),
@@ -641,10 +668,10 @@ class wp_slimstat_reports {
 					'type' => 'recent',
 					'columns' => 'resource',
 					'where' => 'content_type = "download"',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'wide', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_21' => array(
 				'title' => __( 'Top Outbound Links', 'wp-slimstat' ),
@@ -652,10 +679,10 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'outbound_resource',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_22' => array(
 				'title' => __( 'Your Website', 'wp-slimstat' ),
@@ -672,36 +699,36 @@ class wp_slimstat_reports {
 					'columns' => 'resource',
 					'where' => 'content_type <> "404"',
 					'having' => 'HAVING COUNT(visit_id) => 1',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_24' => array(
 				'title' => __( 'Top Exit Pages', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
-					'type' => 'top_aggr',
+					'type' => 'top',
 					'columns' => 'visit_id',
 					'outer_select_column' => 'resource',
 					'aggr_function' => 'MAX',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top_aggr' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 			'slim_p4_25' => array(
 				'title' => __( 'Top Entry Pages', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
-					'type' => 'top_aggr',
+					'type' => 'top',
 					'columns' => 'visit_id',
 					'outer_select_column' => 'resource',
 					'aggr_function' => 'MIN',
-					'raw' => array( __CLASS__, 'get_raw_results' )
+					'raw' => array( 'wp_slimstat_db', 'get_top_aggr' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4', 'raw' )
+				'screens' => array( 'wp-slim-view-4' )
 			),
 
 			'slim_p6_01' => array(
@@ -728,8 +755,6 @@ class wp_slimstat_reports {
 			'slim_p3_09',
 			'slim_p3_10',
 			'slim_p4_08',
-			'slim_p4_10',
-			'slim_p4_12',
 			'slim_p4_14',
 			'slim_p4_17'
 		);
@@ -790,30 +815,34 @@ class wp_slimstat_reports {
 		echo '</div></div>';
 	}
 
-	public static function report_pagination( $_count_page_results = 0, $_count_all_results = 0, $_show_refresh_countdown = false ) {
-		$endpoint = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + wp_slimstat_db::$filters_normalized['misc']['limit_results']);
+	public static function report_pagination( $_count_page_results = 0, $_count_all_results = 0, $_show_refresh_countdown = false, $_results_per_page = -1 ) {
+		$_results_per_page = ( $_results_per_page < 0 ) ? wp_slimstat::$options[ 'rows_to_show' ] : $_results_per_page;
+
+		$endpoint = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page);
 		$pagination_buttons = '';
 		$direction_prev = is_rtl()?'right':'left';
 		$direction_next = is_rtl()?'left':'right';
 
-		if ($endpoint + wp_slimstat_db::$filters_normalized['misc']['limit_results'] < $_count_all_results && $_count_page_results > 0){
-			$startpoint = $_count_all_results - $_count_all_results%wp_slimstat_db::$filters_normalized['misc']['limit_results'];
-			if ($startpoint == $_count_all_results) $startpoint -= wp_slimstat_db::$filters_normalized['misc']['limit_results'];
+		if ($endpoint + $_results_per_page < $_count_all_results && $_count_page_results > 0){
+			$startpoint = $_count_all_results - $_count_all_results % $_results_per_page;
+			if ($startpoint == $_count_all_results) {
+				$startpoint -= $_results_per_page;
+			}
 			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-'.$direction_next.'" href="'.wp_slimstat_reports::fs_url('start_from equals '.$startpoint).'"></a> ';
 		}
 		if ($endpoint < $_count_all_results && $_count_page_results > 0){
-			$startpoint = wp_slimstat_db::$filters_normalized['misc']['start_from'] + wp_slimstat_db::$filters_normalized['misc']['limit_results'];
+			$startpoint = wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page;
 			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-'.$direction_next.'" href="'.wp_slimstat_reports::fs_url('start_from equals '.$startpoint).'"></a> ';
 		}
 		if (wp_slimstat_db::$filters_normalized['misc']['start_from'] > 0){
-			$startpoint = (wp_slimstat_db::$filters_normalized['misc']['start_from'] > wp_slimstat_db::$filters_normalized['misc']['limit_results'])?wp_slimstat_db::$filters_normalized['misc']['start_from']-wp_slimstat_db::$filters_normalized['misc']['limit_results']:0;
+			$startpoint = (wp_slimstat_db::$filters_normalized['misc']['start_from'] > $_results_per_page)?wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page : 0;
 			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals '.$startpoint).'"></a> ';
 		}
-		if (wp_slimstat_db::$filters_normalized['misc']['start_from'] - wp_slimstat_db::$filters_normalized['misc']['limit_results'] > 0){
+		if (wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page > 0){
 			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals 0').'"></a> ';
 		}
 
-		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from']+1, 0, '', wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, '', wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, '', wp_slimstat_db::$formats['thousand']).(($_count_all_results == 1000)?'+':''));
+		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1, 0, '', wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, '', wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, '', wp_slimstat_db::$formats['thousand']).(($_count_all_results == 1000)?'+':''));
 		if ($_show_refresh_countdown && wp_slimstat::$options['refresh_interval'] > 0 && !wp_slimstat_db::$filters_normalized['date']['is_past']){
 			$pagination .= ' &ndash; '.__('Refresh in','wp-slimstat').' <i class="refresh-timer"></i>';
 		}
@@ -822,13 +851,8 @@ class wp_slimstat_reports {
 		echo $pagination;
 	}
 
+	/* FIX ME: This function can be removed, is not used anymore */
 	public static function get_raw_results( $_args = array() ) {
-		// Get ALL the results
-		$temp_starting = wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ];
-		$temp_limit_results = wp_slimstat_db::$filters_normalized[ 'misc' ][ 'limit_results' ];
-		wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ] = 0;
-		wp_slimstat_db::$filters_normalized[ 'misc' ][ 'limit_results' ] = 1000;
-
 		if ( empty( $_args[ 'type' ] ) ) {
 			return array();
 		}
@@ -864,10 +888,6 @@ class wp_slimstat_reports {
 				break;
 		}
 
-		// Restore the original filters
-		wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ] = $temp_starting;
-		wp_slimstat_db::$filters_normalized[ 'misc' ][ 'limit_results' ] = $temp_limit_results;
-
 		return $all_results;
 	}
 
@@ -877,13 +897,14 @@ class wp_slimstat_reports {
 		call_user_func( $_args[ 'callback' ] , $_args[ 'callback_args' ] );
 	}
 
-	public static function raw_results_to_html( $_args = array() ){
+	public static function raw_results_to_html( $_args = array() ) {
+
 		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
 
 		$results = array_slice(
 			$all_results,
 			wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
-			wp_slimstat_db::$filters_normalized[ 'misc' ][ 'limit_results' ]
+			wp_slimstat::$options[ 'rows_to_show' ]
 		);
 
 		// Count the results
@@ -933,6 +954,11 @@ class wp_slimstat_reports {
 					$element_value = $results[$i]['browser'].((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0)?' '.$results[$i]['browser_version']:'');
 					break;
 
+				case 'category':
+					$row_details = '<br>'.__( 'Category ID', 'wp-slimstat' ) . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+					$element_value = get_cat_name( $results[ $i ][ $_args[ 'columns' ] ] );
+					break;
+
 				case 'country':
 					$row_details .= '<br>'.__('Country Code','wp-slimstat').": {$results[$i]['country']}";
 					$element_value = __('c-'.$results[$i]['country'], 'wp-slimstat');
@@ -959,11 +985,6 @@ class wp_slimstat_reports {
 					$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
 					break;
 
-				case 'category':
-					$row_details = '<br>'.__( 'Category ID', 'wp-slimstat' ) . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
-					$element_value = get_cat_name( $results[ $i ][ $_args[ 'columns' ] ] );
-					break;
-
 				case 'resource':
 				case 'resource_substring':
 					$resource_title = self::get_resource_title( $results[ $i ][ $_args[ 'columns' ] ] );
@@ -973,10 +994,13 @@ class wp_slimstat_reports {
 					$element_value = $resource_title;
 					break;
 
+				case 'screen_width':
+					$element_value = "{$results[ $i ][ $_args[ 'columns' ] ]} x {$results[ $i ][ 'screen_height' ]}";
+					break;
+
 				case 'searchterms':
 					if ($_args[ 'type' ] == 'recent'){
-						$domain = parse_url( $results[$i]['domain'] );
-						$domain = !empty( $domain['host'] ) ? $domain['host'] : '';
+						$domain = parse_url( $results[ $i ][ 'resource' ], PHP_URL_HOST );
 						
 						$row_details = '<br>'.__('Referrer','wp-slimstat').": $domain";
 						$element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'], true);
@@ -1000,10 +1024,11 @@ class wp_slimstat_reports {
 			
 			$element_value = "<a class='slimstat-filter-link' href='".self::fs_url( $_args[ 'columns' ].' '.$_args['filter_op'].' '.$results[$i][ $_args[ 'columns' ] ] )."'>$element_value</a>";
 
-			if ( $_args[ 'type' ] == 'recent' ) {
+			if ( !empty($_args['type'] ) && $_args['type'] == 'recent' ) {
 				$row_details = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true).$row_details;
 			}
-			else{
+
+			if ( !empty($_args['type'] ) && $_args['type'] == 'top' ) {
 				$percentage = ' <span>'.((self::$pageviews > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['counthits']/self::$pageviews)), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0).'%</span>';
 				$row_details = __('Hits','wp-slimstat').': '.number_format($results[$i]['counthits'], 0, '', wp_slimstat_db::$formats['thousand']).$row_details;
 			}
@@ -1338,7 +1363,52 @@ class wp_slimstat_reports {
 			die();
 		}
 	}
-	
+
+	public static function show_events( $_args = array() ) {
+		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
+
+		$results = array_slice(
+			$all_results,
+			wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
+			wp_slimstat::$options[ 'rows_to_show' ]
+		);
+
+		// Count the results
+		$count_page_results = count( $results );
+
+		if ($count_page_results == 0){
+			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
+			
+			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+				die();
+			}
+			else{
+				return array();
+			}
+		}
+
+		self::report_pagination( $count_page_results, count( $all_results ) );
+		$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
+
+		foreach ( $results as $a_result ) {
+			echo "<p>{$a_result[ 'notes' ]} <b class='slimstat-row-details$is_expanded'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
+
+			if ( !empty( $a_result[ 'dt' ] ) ) {
+				$date_time = date_i18n( wp_slimstat::$options[ 'date_format' ] . ' ' . wp_slimstat::$options[ 'time_format' ], $a_result[ 'dt' ], true );
+				echo '<br/>' . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br/>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
+			}
+			if ( !empty( $a_result[ 'counthits' ] ) ) {
+				echo '<br/>' . __( 'Hits', 'wp-slimstat' ) . ": {$a_result[ 'counthits' ]}";
+			}
+
+			echo "</b></p>";
+		}
+
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			die();
+		}
+	}
+
 	public static function show_rankings(){
 		$options = array('timeout' => 1, 'headers' => array('Accept' => 'application/json'));
 		$site_url_array = parse_url(home_url());
@@ -1424,8 +1494,78 @@ class wp_slimstat_reports {
 		}
 	}
 
-	public static function show_world_map(){
-		wp_slimstat_db::$filters_normalized['misc']['limit_results'] = 9999;
+	public static function show_getsocial() {
+		if ( !empty( $_POST[ 'fs' ][ 'addon_enable_getsocial' ] ) ) {
+			wp_slimstat::$options[ 'enable_getsocial' ] = 'yes';
+
+			// Update the list of posts
+			$all_posts = get_posts( array( 'posts_per_page' => 100 ) );
+			$all_post_urls = array();
+
+			if ( !empty( $all_posts ) ) {
+				foreach( $all_posts as $a_post ) {
+					$all_post_urls[] = parse_url( get_permalink( $a_post->ID ), PHP_URL_PATH );
+				}
+
+				$args = json_encode( array(
+					'domain' => parse_url( get_site_url(), PHP_URL_HOST ),
+					'items' => $all_post_urls
+				) );
+				wp_remote_post( 'http://api.at.sharescount.com/process', array( 'timeout' => 5, 'body' => $args ) );
+			}
+		}
+		if ( wp_slimstat::$options[ 'enable_getsocial' ] == 'yes' ) { 
+			$response = wp_remote_get( 'http://api.at.sharescount.com/results/' . parse_url( get_site_url(), PHP_URL_HOST ), array( 'timeout' => 5 ) );
+			if ( is_wp_error( $response ) ) {
+				echo '<p class="nodata">' . __( 'Error contacting the GetSocial endpoint.', 'wp-slimstat' ) . '</p>';
+			}
+			else {
+                // Parse remote HTML file
+				$data = wp_remote_retrieve_body( $response );
+
+				// Check for error
+				if ( is_wp_error( $data ) ) {
+					echo '<p class="nodata">' . __( 'Error decoding the GetSocial payload.', 'wp-slimstat' ) . '</p>';
+				}
+				else {
+					$decoded_data = @json_decode( $data );
+
+					echo '<table class="wp-list-table widefat fixed" cellspacing="0">
+							<thead>
+								<tr>
+									<th scope="col" style="width:45%">Page</th>
+									<th scope="col" style="text-align:center">Facebook</th>
+									<th scope="col" style="text-align:center">Twitter</th>
+									<th scope="col" style="text-align:center">LinkedIn</th>
+									<th scope="col" style="text-align:center">Pinterest</th>
+									<th scope="col" style="text-align:center">Google</th>
+									<th scope="col" style="text-align:center">Total</th>
+								</tr>
+							</thead>';
+					foreach ( $decoded_data as $key => $obj ) {
+						echo "<tr>
+							<td>" . self::get_resource_title( $key ) ."</td>
+							<td style='text-align:center'>" . ( !empty( $obj->facebook ) ? $obj->facebook : 0 ) . "</td>
+							<td style='text-align:center'>" . ( !empty( $obj->twitter ) ? $obj->twitter : 0 ) . "</td>
+							<td style='text-align:center'>" . ( !empty( $obj->linkedin ) ? $obj->linkedin : 0 ) . "</td>
+							<td style='text-align:center'>" . ( !empty( $obj->pinterest ) ? $obj->pinterest : 0 ) . "</td>
+							<td style='text-align:center'>" . ( !empty( $obj->google ) ? $obj->google : 0 ) . "</td>
+							<td style='text-align:center'>" . ( !empty( $obj->total ) ? $obj->total : 0 ) . "</td>";
+					}
+					echo '</table>';
+				}
+			}
+		}
+		else { 
+			echo '<p class="nodata">' . __( "Thanks to a partnership with GetSocial.io, you can access your website's<br/>social media metrics and identify your top performing posts.<br/> <a class='button-ajax' title='Enable this functionality' href='".self::fs_url()."&amp;fs%5Baddon_enable_getsocial%5D=yes'>Enable your social sharing report.</a>", 'wp-slimstat' ) . '</p>';
+		}
+
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			die();
+		}
+	}
+
+	public static function show_world_map() {
 		$countries = wp_slimstat_db::get_top('country');
 		$data_areas = array('xx'=>'{id:"XX",balloonText:"'.__('c-xx','wp-slimstat').': 0",value:0,color:"#ededed"}','af'=>'{id:"AF",balloonText:"'.__('c-af','wp-slimstat').': 0",value:0,color:"#ededed"}','ax'=>'{id:"AX",balloonText:"'.__('c-ax','wp-slimstat').': 0",value:0,color:"#ededed"}','al'=>'{id:"AL",balloonText:"'.__('c-al','wp-slimstat').': 0",value:0,color:"#ededed"}','dz'=>'{id:"DZ",balloonText:"'.__('c-dz','wp-slimstat').': 0",value:0,color:"#ededed"}','ad'=>'{id:"AD",balloonText:"'.__('c-ad','wp-slimstat').': 0",value:0,color:"#ededed"}','ao'=>'{id:"AO",balloonText:"'.__('c-ao','wp-slimstat').': 0",value:0,color:"#ededed"}','ai'=>'{id:"AI",balloonText:"'.__('c-ai','wp-slimstat').': 0",value:0,color:"#ededed"}','ag'=>'{id:"AG",balloonText:"'.__('c-ag','wp-slimstat').': 0",value:0,color:"#ededed"}','ar'=>'{id:"AR",balloonText:"'.__('c-ar','wp-slimstat').': 0",value:0,color:"#ededed"}','am'=>'{id:"AM",balloonText:"'.__('c-am','wp-slimstat').': 0",value:0,color:"#ededed"}','aw'=>'{id:"AW",balloonText:"'.__('c-aw','wp-slimstat').': 0",value:0,color:"#ededed"}','au'=>'{id:"AU",balloonText:"'.__('c-au','wp-slimstat').': 0",value:0,color:"#ededed"}','at'=>'{id:"AT",balloonText:"'.__('c-at','wp-slimstat').': 0",value:0,color:"#ededed"}','az'=>'{id:"AZ",balloonText:"'.__('c-az','wp-slimstat').': 0",value:0,color:"#ededed"}','bs'=>'{id:"BS",balloonText:"'.__('c-bs','wp-slimstat').': 0",value:0,color:"#ededed"}','bh'=>'{id:"BH",balloonText:"'.__('c-bh','wp-slimstat').': 0",value:0,color:"#ededed"}','bd'=>'{id:"BD",balloonText:"'.__('c-bd','wp-slimstat').': 0",value:0,color:"#ededed"}','bb'=>'{id:"BB",balloonText:"'.__('c-bb','wp-slimstat').': 0",value:0,color:"#ededed"}','by'=>'{id:"BY",balloonText:"'.__('c-by','wp-slimstat').': 0",value:0,color:"#ededed"}','be'=>'{id:"BE",balloonText:"'.__('c-be','wp-slimstat').': 0",value:0,color:"#ededed"}','bz'=>'{id:"BZ",balloonText:"'.__('c-bz','wp-slimstat').': 0",value:0,color:"#ededed"}','bj'=>'{id:"BJ",balloonText:"'.__('c-bj','wp-slimstat').': 0",value:0,color:"#ededed"}','bm'=>'{id:"BM",balloonText:"'.__('c-bm','wp-slimstat').': 0",value:0,color:"#ededed"}','bt'=>'{id:"BT",balloonText:"'.__('c-bt','wp-slimstat').': 0",value:0,color:"#ededed"}','bo'=>'{id:"BO",balloonText:"'.__('c-bo','wp-slimstat').': 0",value:0,color:"#ededed"}','ba'=>'{id:"BA",balloonText:"'.__('c-ba','wp-slimstat').': 0",value:0,color:"#ededed"}','bw'=>'{id:"BW",balloonText:"'.__('c-bw','wp-slimstat').': 0",value:0,color:"#ededed"}','br'=>'{id:"BR",balloonText:"'.__('c-br','wp-slimstat').': 0",value:0,color:"#ededed"}','bn'=>'{id:"BN",balloonText:"'.__('c-bn','wp-slimstat').': 0",value:0,color:"#ededed"}','bg'=>'{id:"BG",balloonText:"'.__('c-bg','wp-slimstat').': 0",value:0,color:"#ededed"}','bf'=>'{id:"BF",balloonText:"'.__('c-bf','wp-slimstat').': 0",value:0,color:"#ededed"}','bi'=>'{id:"BI",balloonText:"'.__('c-bi','wp-slimstat').': 0",value:0,color:"#ededed"}','kh'=>'{id:"KH",balloonText:"'.__('c-kh','wp-slimstat').': 0",value:0,color:"#ededed"}','cm'=>'{id:"CM",balloonText:"'.__('c-cm','wp-slimstat').': 0",value:0,color:"#ededed"}','ca'=>'{id:"CA",balloonText:"'.__('c-ca','wp-slimstat').': 0",value:0,color:"#ededed"}','cv'=>'{id:"CV",balloonText:"'.__('c-cv','wp-slimstat').': 0",value:0,color:"#ededed"}','ky'=>'{id:"KY",balloonText:"'.__('c-ky','wp-slimstat').': 0",value:0,color:"#ededed"}','cf'=>'{id:"CF",balloonText:"'.__('c-cf','wp-slimstat').': 0",value:0,color:"#ededed"}','td'=>'{id:"TD",balloonText:"'.__('c-td','wp-slimstat').': 0",value:0,color:"#ededed"}','cl'=>'{id:"CL",balloonText:"'.__('c-cl','wp-slimstat').': 0",value:0,color:"#ededed"}','cn'=>'{id:"CN",balloonText:"'.__('c-cn','wp-slimstat').': 0",value:0,color:"#ededed"}','co'=>'{id:"CO",balloonText:"'.__('c-co','wp-slimstat').': 0",value:0,color:"#ededed"}','km'=>'{id:"KM",balloonText:"'.__('c-km','wp-slimstat').': 0",value:0,color:"#ededed"}','cg'=>'{id:"CG",balloonText:"'.__('c-cg','wp-slimstat').': 0",value:0,color:"#ededed"}','cd'=>'{id:"CD",balloonText:"'.__('c-cd','wp-slimstat').': 0",value:0,color:"#ededed"}','cr'=>'{id:"CR",balloonText:"'.__('c-cr','wp-slimstat').': 0",value:0,color:"#ededed"}','ci'=>'{id:"CI",balloonText:"'.__('c-ci','wp-slimstat').': 0",value:0,color:"#ededed"}','hr'=>'{id:"HR",balloonText:"'.__('c-hr','wp-slimstat').': 0",value:0,color:"#ededed"}','cu'=>'{id:"CU",balloonText:"'.__('c-cu','wp-slimstat').': 0",value:0,color:"#ededed"}','cy'=>'{id:"CY",balloonText:"'.__('c-cy','wp-slimstat').': 0",value:0,color:"#ededed"}','cz'=>'{id:"CZ",balloonText:"'.__('c-cz','wp-slimstat').': 0",value:0,color:"#ededed"}','dk'=>'{id:"DK",balloonText:"'.__('c-dk','wp-slimstat').': 0",value:0,color:"#ededed"}','dj'=>'{id:"DJ",balloonText:"'.__('c-dj','wp-slimstat').': 0",value:0,color:"#ededed"}','dm'=>'{id:"DM",balloonText:"'.__('c-dm','wp-slimstat').': 0",value:0,color:"#ededed"}','do'=>'{id:"DO",balloonText:"'.__('c-do','wp-slimstat').': 0",value:0,color:"#ededed"}','ec'=>'{id:"EC",balloonText:"'.__('c-ec','wp-slimstat').': 0",value:0,color:"#ededed"}','eg'=>'{id:"EG",balloonText:"'.__('c-eg','wp-slimstat').': 0",value:0,color:"#ededed"}','sv'=>'{id:"SV",balloonText:"'.__('c-sv','wp-slimstat').': 0",value:0,color:"#ededed"}','gq'=>'{id:"GQ",balloonText:"'.__('c-gq','wp-slimstat').': 0",value:0,color:"#ededed"}','er'=>'{id:"ER",balloonText:"'.__('c-er','wp-slimstat').': 0",value:0,color:"#ededed"}','ee'=>'{id:"EE",balloonText:"'.__('c-ee','wp-slimstat').': 0",value:0,color:"#ededed"}','et'=>'{id:"ET",balloonText:"'.__('c-et','wp-slimstat').': 0",value:0,color:"#ededed"}','fo'=>'{id:"FO",balloonText:"'.__('c-fo','wp-slimstat').': 0",value:0,color:"#ededed"}','fk'=>'{id:"FK",balloonText:"'.__('c-fk','wp-slimstat').': 0",value:0,color:"#ededed"}','fj'=>'{id:"FJ",balloonText:"'.__('c-fj','wp-slimstat').': 0",value:0,color:"#ededed"}','fi'=>'{id:"FI",balloonText:"'.__('c-fi','wp-slimstat').': 0",value:0,color:"#ededed"}','fr'=>'{id:"FR",balloonText:"'.__('c-fr','wp-slimstat').': 0",value:0,color:"#ededed"}','gf'=>'{id:"GF",balloonText:"'.__('c-gf','wp-slimstat').': 0",value:0,color:"#ededed"}','ga'=>'{id:"GA",balloonText:"'.__('c-ga','wp-slimstat').': 0",value:0,color:"#ededed"}','gm'=>'{id:"GM",balloonText:"'.__('c-gm','wp-slimstat').': 0",value:0,color:"#ededed"}','ge'=>'{id:"GE",balloonText:"'.__('c-ge','wp-slimstat').': 0",value:0,color:"#ededed"}','de'=>'{id:"DE",balloonText:"'.__('c-de','wp-slimstat').': 0",value:0,color:"#ededed"}','gh'=>'{id:"GH",balloonText:"'.__('c-gh','wp-slimstat').': 0",value:0,color:"#ededed"}','gr'=>'{id:"GR",balloonText:"'.__('c-gr','wp-slimstat').': 0",value:0,color:"#ededed"}','gl'=>'{id:"GL",balloonText:"'.__('c-gl','wp-slimstat').': 0",value:0,color:"#ededed"}','gd'=>'{id:"GD",balloonText:"'.__('c-gd','wp-slimstat').': 0",value:0,color:"#ededed"}','gp'=>'{id:"GP",balloonText:"'.__('c-gp','wp-slimstat').': 0",value:0,color:"#ededed"}','gt'=>'{id:"GT",balloonText:"'.__('c-gt','wp-slimstat').': 0",value:0,color:"#ededed"}','gn'=>'{id:"GN",balloonText:"'.__('c-gn','wp-slimstat').': 0",value:0,color:"#ededed"}','gw'=>'{id:"GW",balloonText:"'.__('c-gw','wp-slimstat').': 0",value:0,color:"#ededed"}','gy'=>'{id:"GY",balloonText:"'.__('c-gy','wp-slimstat').': 0",value:0,color:"#ededed"}','ht'=>'{id:"HT",balloonText:"'.__('c-ht','wp-slimstat').': 0",value:0,color:"#ededed"}','hn'=>'{id:"HN",balloonText:"'.__('c-hn','wp-slimstat').': 0",value:0,color:"#ededed"}','hk'=>'{id:"HK",balloonText:"'.__('c-hk','wp-slimstat').': 0",value:0,color:"#ededed"}','hu'=>'{id:"HU",balloonText:"'.__('c-hu','wp-slimstat').': 0",value:0,color:"#ededed"}','is'=>'{id:"IS",balloonText:"'.__('c-is','wp-slimstat').': 0",value:0,color:"#ededed"}','in'=>'{id:"IN",balloonText:"'.__('c-in','wp-slimstat').': 0",value:0,color:"#ededed"}','id'=>'{id:"ID",balloonText:"'.__('c-id','wp-slimstat').': 0",value:0,color:"#ededed"}','ir'=>'{id:"IR",balloonText:"'.__('c-ir','wp-slimstat').': 0",value:0,color:"#ededed"}','iq'=>'{id:"IQ",balloonText:"'.__('c-iq','wp-slimstat').': 0",value:0,color:"#ededed"}','ie'=>'{id:"IE",balloonText:"'.__('c-ie','wp-slimstat').': 0",value:0,color:"#ededed"}','il'=>'{id:"IL",balloonText:"'.__('c-il','wp-slimstat').': 0",value:0,color:"#ededed"}','it'=>'{id:"IT",balloonText:"'.__('c-it','wp-slimstat').': 0",value:0,color:"#ededed"}','jm'=>'{id:"JM",balloonText:"'.__('c-jm','wp-slimstat').': 0",value:0,color:"#ededed"}','jp'=>'{id:"JP",balloonText:"'.__('c-jp','wp-slimstat').': 0",value:0,color:"#ededed"}','jo'=>'{id:"JO",balloonText:"'.__('c-jo','wp-slimstat').': 0",value:0,color:"#ededed"}','kz'=>'{id:"KZ",balloonText:"'.__('c-kz','wp-slimstat').': 0",value:0,color:"#ededed"}','ke'=>'{id:"KE",balloonText:"'.__('c-ke','wp-slimstat').': 0",value:0,color:"#ededed"}','nr'=>'{id:"NR",balloonText:"'.__('c-nr','wp-slimstat').': 0",value:0,color:"#ededed"}','kp'=>'{id:"KP",balloonText:"'.__('c-kp','wp-slimstat').': 0",value:0,color:"#ededed"}','kr'=>'{id:"KR",balloonText:"'.__('c-kr','wp-slimstat').': 0",value:0,color:"#ededed"}','kv'=>'{id:"KV",balloonText:"'.__('c-kv','wp-slimstat').': 0",value:0,color:"#ededed"}','kw'=>'{id:"KW",balloonText:"'.__('c-kw','wp-slimstat').': 0",value:0,color:"#ededed"}','kg'=>'{id:"KG",balloonText:"'.__('c-kg','wp-slimstat').': 0",value:0,color:"#ededed"}','la'=>'{id:"LA",balloonText:"'.__('c-la','wp-slimstat').': 0",value:0,color:"#ededed"}','lv'=>'{id:"LV",balloonText:"'.__('c-lv','wp-slimstat').': 0",value:0,color:"#ededed"}','lb'=>'{id:"LB",balloonText:"'.__('c-lb','wp-slimstat').': 0",value:0,color:"#ededed"}','ls'=>'{id:"LS",balloonText:"'.__('c-ls','wp-slimstat').': 0",value:0,color:"#ededed"}','lr'=>'{id:"LR",balloonText:"'.__('c-lr','wp-slimstat').': 0",value:0,color:"#ededed"}','ly'=>'{id:"LY",balloonText:"'.__('c-ly','wp-slimstat').': 0",value:0,color:"#ededed"}','li'=>'{id:"LI",balloonText:"'.__('c-li','wp-slimstat').': 0",value:0,color:"#ededed"}','lt'=>'{id:"LT",balloonText:"'.__('c-lt','wp-slimstat').': 0",value:0,color:"#ededed"}','lu'=>'{id:"LU",balloonText:"'.__('c-lu','wp-slimstat').': 0",value:0,color:"#ededed"}','mk'=>'{id:"MK",balloonText:"'.__('c-mk','wp-slimstat').': 0",value:0,color:"#ededed"}','mg'=>'{id:"MG",balloonText:"'.__('c-mg','wp-slimstat').': 0",value:0,color:"#ededed"}','mw'=>'{id:"MW",balloonText:"'.__('c-mw','wp-slimstat').': 0",value:0,color:"#ededed"}','my'=>'{id:"MY",balloonText:"'.__('c-my','wp-slimstat').': 0",value:0,color:"#ededed"}','ml'=>'{id:"ML",balloonText:"'.__('c-ml','wp-slimstat').': 0",value:0,color:"#ededed"}','mt'=>'{id:"MT",balloonText:"'.__('c-mt','wp-slimstat').': 0",value:0,color:"#ededed"}','mq'=>'{id:"MQ",balloonText:"'.__('c-mq','wp-slimstat').': 0",value:0,color:"#ededed"}','mr'=>'{id:"MR",balloonText:"'.__('c-mr','wp-slimstat').': 0",value:0,color:"#ededed"}','mu'=>'{id:"MU",balloonText:"'.__('c-mu','wp-slimstat').': 0",value:0,color:"#ededed"}','mx'=>'{id:"MX",balloonText:"'.__('c-mx','wp-slimstat').': 0",value:0,color:"#ededed"}','md'=>'{id:"MD",balloonText:"'.__('c-md','wp-slimstat').': 0",value:0,color:"#ededed"}','mn'=>'{id:"MN",balloonText:"'.__('c-mn','wp-slimstat').': 0",value:0,color:"#ededed"}','me'=>'{id:"ME",balloonText:"'.__('c-me','wp-slimstat').': 0",value:0,color:"#ededed"}','ms'=>'{id:"MS",balloonText:"'.__('c-ms','wp-slimstat').': 0",value:0,color:"#ededed"}','ma'=>'{id:"MA",balloonText:"'.__('c-ma','wp-slimstat').': 0",value:0,color:"#ededed"}','mz'=>'{id:"MZ",balloonText:"'.__('c-mz','wp-slimstat').': 0",value:0,color:"#ededed"}','mm'=>'{id:"MM",balloonText:"'.__('c-mm','wp-slimstat').': 0",value:0,color:"#ededed"}','na'=>'{id:"NA",balloonText:"'.__('c-na','wp-slimstat').': 0",value:0,color:"#ededed"}','np'=>'{id:"NP",balloonText:"'.__('c-np','wp-slimstat').': 0",value:0,color:"#ededed"}','nl'=>'{id:"NL",balloonText:"'.__('c-nl','wp-slimstat').': 0",value:0,color:"#ededed"}','nc'=>'{id:"NC",balloonText:"'.__('c-nc','wp-slimstat').': 0",value:0,color:"#ededed"}','nz'=>'{id:"NZ",balloonText:"'.__('c-nz','wp-slimstat').': 0",value:0,color:"#ededed"}','ni'=>'{id:"NI",balloonText:"'.__('c-ni','wp-slimstat').': 0",value:0,color:"#ededed"}','ne'=>'{id:"NE",balloonText:"'.__('c-ne','wp-slimstat').': 0",value:0,color:"#ededed"}','ng'=>'{id:"NG",balloonText:"'.__('c-ng','wp-slimstat').': 0",value:0,color:"#ededed"}','no'=>'{id:"NO",balloonText:"'.__('c-no','wp-slimstat').': 0",value:0,color:"#ededed"}','om'=>'{id:"OM",balloonText:"'.__('c-om','wp-slimstat').': 0",value:0,color:"#ededed"}','pk'=>'{id:"PK",balloonText:"'.__('c-pk','wp-slimstat').': 0",value:0,color:"#ededed"}','pw'=>'{id:"PW",balloonText:"'.__('c-pw','wp-slimstat').': 0",value:0,color:"#ededed"}','ps'=>'{id:"PS",balloonText:"'.__('c-ps','wp-slimstat').': 0",value:0,color:"#ededed"}','pa'=>'{id:"PA",balloonText:"'.__('c-pa','wp-slimstat').': 0",value:0,color:"#ededed"}','pg'=>'{id:"PG",balloonText:"'.__('c-pg','wp-slimstat').': 0",value:0,color:"#ededed"}','py'=>'{id:"PY",balloonText:"'.__('c-py','wp-slimstat').': 0",value:0,color:"#ededed"}','pe'=>'{id:"PE",balloonText:"'.__('c-pe','wp-slimstat').': 0",value:0,color:"#ededed"}','ph'=>'{id:"PH",balloonText:"'.__('c-ph','wp-slimstat').': 0",value:0,color:"#ededed"}','pl'=>'{id:"PL",balloonText:"'.__('c-pl','wp-slimstat').': 0",value:0,color:"#ededed"}','pt'=>'{id:"PT",balloonText:"'.__('c-pt','wp-slimstat').': 0",value:0,color:"#ededed"}','pr'=>'{id:"PR",balloonText:"'.__('c-pr','wp-slimstat').': 0",value:0,color:"#ededed"}','qa'=>'{id:"QA",balloonText:"'.__('c-qa','wp-slimstat').': 0",value:0,color:"#ededed"}','re'=>'{id:"RE",balloonText:"'.__('c-re','wp-slimstat').': 0",value:0,color:"#ededed"}','ro'=>'{id:"RO",balloonText:"'.__('c-ro','wp-slimstat').': 0",value:0,color:"#ededed"}','ru'=>'{id:"RU",balloonText:"'.__('c-ru','wp-slimstat').': 0",value:0,color:"#ededed"}','rw'=>'{id:"RW",balloonText:"'.__('c-rw','wp-slimstat').': 0",value:0,color:"#ededed"}','kn'=>'{id:"KN",balloonText:"'.__('c-kn','wp-slimstat').': 0",value:0,color:"#ededed"}','lc'=>'{id:"LC",balloonText:"'.__('c-lc','wp-slimstat').': 0",value:0,color:"#ededed"}','mf'=>'{id:"MF",balloonText:"'.__('c-mf','wp-slimstat').': 0",value:0,color:"#ededed"}','vc'=>'{id:"VC",balloonText:"'.__('c-vc','wp-slimstat').': 0",value:0,color:"#ededed"}','ws'=>'{id:"WS",balloonText:"'.__('c-ws','wp-slimstat').': 0",value:0,color:"#ededed"}','st'=>'{id:"ST",balloonText:"'.__('c-st','wp-slimstat').': 0",value:0,color:"#ededed"}','sa'=>'{id:"SA",balloonText:"'.__('c-sa','wp-slimstat').': 0",value:0,color:"#ededed"}','sn'=>'{id:"SN",balloonText:"'.__('c-sn','wp-slimstat').': 0",value:0,color:"#ededed"}','rs'=>'{id:"RS",balloonText:"'.__('c-rs','wp-slimstat').': 0",value:0,color:"#ededed"}','sl'=>'{id:"SL",balloonText:"'.__('c-sl','wp-slimstat').': 0",value:0,color:"#ededed"}','sg'=>'{id:"SG",balloonText:"'.__('c-sg','wp-slimstat').': 0",value:0,color:"#ededed"}','sk'=>'{id:"SK",balloonText:"'.__('c-sk','wp-slimstat').': 0",value:0,color:"#ededed"}','si'=>'{id:"SI",balloonText:"'.__('c-si','wp-slimstat').': 0",value:0,color:"#ededed"}','sb'=>'{id:"SB",balloonText:"'.__('c-sb','wp-slimstat').': 0",value:0,color:"#ededed"}','so'=>'{id:"SO",balloonText:"'.__('c-so','wp-slimstat').': 0",value:0,color:"#ededed"}','za'=>'{id:"ZA",balloonText:"'.__('c-za','wp-slimstat').': 0",value:0,color:"#ededed"}','gs'=>'{id:"GS",balloonText:"'.__('c-gs','wp-slimstat').': 0",value:0,color:"#ededed"}','es'=>'{id:"ES",balloonText:"'.__('c-es','wp-slimstat').': 0",value:0,color:"#ededed"}','lk'=>'{id:"LK",balloonText:"'.__('c-lk','wp-slimstat').': 0",value:0,color:"#ededed"}','sc'=>'{id:"SC",balloonText:"'.__('c-sc','wp-slimstat').': 0",value:0,color:"#ededed"}','sd'=>'{id:"SD",balloonText:"'.__('c-sd','wp-slimstat').': 0",value:0,color:"#ededed"}','ss'=>'{id:"SS",balloonText:"'.__('c-ss','wp-slimstat').': 0",value:0,color:"#ededed"}','sr'=>'{id:"SR",balloonText:"'.__('c-sr','wp-slimstat').': 0",value:0,color:"#ededed"}','sj'=>'{id:"SJ",balloonText:"'.__('c-sj','wp-slimstat').': 0",value:0,color:"#ededed"}','sz'=>'{id:"SZ",balloonText:"'.__('c-sz','wp-slimstat').': 0",value:0,color:"#ededed"}','se'=>'{id:"SE",balloonText:"'.__('c-se','wp-slimstat').': 0",value:0,color:"#ededed"}','ch'=>'{id:"CH",balloonText:"'.__('c-ch','wp-slimstat').': 0",value:0,color:"#ededed"}','sy'=>'{id:"SY",balloonText:"'.__('c-sy','wp-slimstat').': 0",value:0,color:"#ededed"}','tw'=>'{id:"TW",balloonText:"'.__('c-tw','wp-slimstat').': 0",value:0,color:"#ededed"}','tj'=>'{id:"TJ",balloonText:"'.__('c-tj','wp-slimstat').': 0",value:0,color:"#ededed"}','tz'=>'{id:"TZ",balloonText:"'.__('c-tz','wp-slimstat').': 0",value:0,color:"#ededed"}','th'=>'{id:"TH",balloonText:"'.__('c-th','wp-slimstat').': 0",value:0,color:"#ededed"}','tl'=>'{id:"TL",balloonText:"'.__('c-tl','wp-slimstat').': 0",value:0,color:"#ededed"}','tg'=>'{id:"TG",balloonText:"'.__('c-tg','wp-slimstat').': 0",value:0,color:"#ededed"}','to'=>'{id:"TO",balloonText:"'.__('c-to','wp-slimstat').': 0",value:0,color:"#ededed"}','tt'=>'{id:"TT",balloonText:"'.__('c-tt','wp-slimstat').': 0",value:0,color:"#ededed"}','tn'=>'{id:"TN",balloonText:"'.__('c-tn','wp-slimstat').': 0",value:0,color:"#ededed"}','tr'=>'{id:"TR",balloonText:"'.__('c-tr','wp-slimstat').': 0",value:0,color:"#ededed"}','tm'=>'{id:"TM",balloonText:"'.__('c-tm','wp-slimstat').': 0",value:0,color:"#ededed"}','tc'=>'{id:"TC",balloonText:"'.__('c-tc','wp-slimstat').': 0",value:0,color:"#ededed"}','ug'=>'{id:"UG",balloonText:"'.__('c-ug','wp-slimstat').': 0",value:0,color:"#ededed"}','ua'=>'{id:"UA",balloonText:"'.__('c-ua','wp-slimstat').': 0",value:0,color:"#ededed"}','ae'=>'{id:"AE",balloonText:"'.__('c-ae','wp-slimstat').': 0",value:0,color:"#ededed"}','gb'=>'{id:"GB",balloonText:"'.__('c-gb','wp-slimstat').': 0",value:0,color:"#ededed"}','us'=>'{id:"US",balloonText:"'.__('c-us','wp-slimstat').': 0",value:0,color:"#ededed"}','uy'=>'{id:"UY",balloonText:"'.__('c-uy','wp-slimstat').': 0",value:0,color:"#ededed"}','uz'=>'{id:"UZ",balloonText:"'.__('c-uz','wp-slimstat').': 0",value:0,color:"#ededed"}','vu'=>'{id:"VU",balloonText:"'.__('c-vu','wp-slimstat').': 0",value:0,color:"#ededed"}','ve'=>'{id:"VE",balloonText:"'.__('c-ve','wp-slimstat').': 0",value:0,color:"#ededed"}','vn'=>'{id:"VN",balloonText:"'.__('c-vn','wp-slimstat').': 0",value:0,color:"#ededed"}','vg'=>'{id:"VG",balloonText:"'.__('c-vg','wp-slimstat').': 0",value:0,color:"#ededed"}','vi'=>'{id:"VI",balloonText:"'.__('c-vi','wp-slimstat').': 0",value:0,color:"#ededed"}','eh'=>'{id:"EH",balloonText:"'.__('c-eh','wp-slimstat').': 0",value:0,color:"#ededed"}','ye'=>'{id:"YE",balloonText:"'.__('c-ye','wp-slimstat').': 0",value:0,color:"#ededed"}','zm'=>'{id:"ZM",balloonText:"'.__('c-zm','wp-slimstat').': 0",value:0,color:"#ededed"}','zw'=>'{id:"ZW",balloonText:"'.__('c-zw','wp-slimstat').': 0",value:0,color:"#ededed"}','gg'=>'{id:"GG",balloonText:"'.__('c-gg','wp-slimstat').': 0",value:0,color:"#ededed"}','je'=>'{id:"JE",balloonText:"'.__('c-je','wp-slimstat').': 0",value:0,color:"#ededed"}','im'=>'{id:"IM",balloonText:"'.__('c-im','wp-slimstat').': 0",value:0,color:"#ededed"}','mv'=>'{id:"MV",balloonText:"'.__('c-mv','wp-slimstat').': 0",value:0,color:"#ededed"}');
 		$countries_not_represented = array( __('c-eu','wp-slimstat') );
@@ -1733,7 +1873,6 @@ class wp_slimstat_reports {
 				'title' => '',
 				'callback' => '',
 				'callback_args' => array(),
-				'callback_raw' => '',
 				'classes' => array(), 
 				'screens' => array(),
 				'tooltip' => ''
@@ -1750,7 +1889,8 @@ class wp_slimstat_reports {
 			'filter_op' => 'equals',
 			'outer_select_column' => '',
 			'aggr_function' => 'MAX',
-			'use_date_filters' => true
+			'use_date_filters' => true,
+			'results_per_page' => wp_slimstat::$options[ 'rows_to_show' ]
 		), $_args[ 'callback_args' ] );
 
 		return $_args;

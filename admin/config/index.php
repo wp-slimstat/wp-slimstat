@@ -1,22 +1,130 @@
 <?php
 
 // Avoid direct access to this piece of code
-if (!function_exists('add_action')) exit(0);
-
-// Define the tabs
-$slimtabs = '';
-$current_tab = empty($_GET['tab'])?1:intval($_GET['tab']);
-$config_tabs = apply_filters('slimstat_config_tabs', array(__('General','wp-slimstat'),__('Reports','wp-slimstat'),__('Filters','wp-slimstat'),__('Permissions','wp-slimstat'),__('Advanced','wp-slimstat'),has_filter('slimstat_options_on_page')?__('Add-ons','wp-slimstat'):'none',__('Maintenance','wp-slimstat')));
-foreach ($config_tabs as $a_tab_id => $a_tab_name){
-	if ($a_tab_name != 'none') $slimtabs .= "<li class='nav-tab nav-tab".(($current_tab == $a_tab_id+1)?'-active':'-inactive')."'><a href='".wp_slimstat_admin::$config_url.($a_tab_id+1)."'>$a_tab_name</a></li>";
+if ( !function_exists( 'add_action' ) ) {
+	exit(0);
 }
 
-echo '<div class="wrap slimstat"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$slimtabs.'</ul>';
+// Handle special options
+if (isset($_POST['options']['auto_purge'])){
+	if ($_POST['options']['auto_purge'] == 0){
+		wp_clear_scheduled_hook('wp_slimstat_purge');
+	}
+	else if (wp_next_scheduled( 'my_schedule_hook' ) == 0){
+		wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
+	}
+}
 
-$options_on_this_page = array();
-switch ($config_tabs[$current_tab-1]){
-	case __('General','wp-slimstat'):
-		$options_on_this_page = array(
+if ( !empty( $_POST[ 'options' ][ 'enable_getsocial' ] ) && $_POST[ 'options' ][ 'enable_getsocial' ] == 'yes' ) {
+	$all_posts = get_posts( array( 'posts_per_page' => 100 ) );
+	$all_post_urls = array();
+
+	if ( !empty( $all_posts ) ) {
+		foreach( $all_posts as $a_post ) {
+			$all_post_urls[] = parse_url( get_permalink( $a_post->ID ), PHP_URL_PATH );
+		}
+
+		$args = json_encode( array(
+			'domain' => parse_url( get_site_url(), PHP_URL_HOST ),
+			'items' => $all_post_urls
+		) );
+		wp_remote_post( 'http://api.at.sharescount.com/process', array( 'timeout' => 5, 'body' => $args ) );
+	}
+}
+
+if (!empty($_POST['options']['ignore_users'])){
+	// Make sure all the users exist in the system 
+	$user_array = wp_slimstat::string_to_array($_POST['options']['ignore_users']);
+	$post_data = trim($_POST['options']['ignore_users']);
+
+	if (is_array($user_array) && !empty($post_data)){
+		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
+		if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
+			wp_slimstat::$options['ignore_users'] = $_POST['options']['ignore_users'];
+
+		}
+		else{
+			wp_slimstat_admin::$faulty_fields[] = __('Ignore users (username not found)','wp-slimstat');
+		}
+	}
+}
+
+if (!empty($_POST['options']['ignore_capabilities'])){
+	// Make sure all the capabilities exist in the system 
+	$capability_array = wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']);
+	$capability_not_found = false;
+	foreach(wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']) as $a_capability){
+		if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && !array_key_exists($a_capability, $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
+			$capability_not_found = true;
+			break;
+		}
+	}
+	
+	if (!$capability_not_found){		
+		wp_slimstat::$options['ignore_capabilities'] = $_POST['options']['ignore_capabilities'];
+	}
+	else{
+		wp_slimstat_admin::$faulty_fields[] = __('Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
+	}
+}
+
+if (!empty($_POST['options']['can_view'])){
+	// Make sure all the users exist in the system 
+	$post_data = trim($_POST['options']['can_view']);
+	$user_array = wp_slimstat::string_to_array($_POST['options']['can_view']);
+
+	if (is_array($user_array) && !empty($post_data)){
+		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
+		if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
+			wp_slimstat::$options['can_view'] = $_POST['options']['can_view'];
+		}
+		else{
+			wp_slimstat_admin::$faulty_fields[] = __('Read access: username not found','wp-slimstat');
+		}
+	}
+}
+
+if (!empty($_POST['options']['capability_can_view'])){
+	if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_view'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
+		wp_slimstat::$options['capability_can_view'] = $_POST['options']['capability_can_view'];
+	}
+	else{
+		wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
+	}
+}
+
+if (!empty($_POST['options']['can_admin'])){
+	// Make sure all the users exist in the system
+	$post_data = trim($_POST['options']['can_admin']);
+	$user_array = wp_slimstat::string_to_array($_POST['options']['can_admin']);
+
+	if (is_array($user_array) && !empty($post_data)){
+		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
+		if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
+			wp_slimstat::$options['can_admin'] = $_POST['options']['can_admin'];
+		}
+		else{
+			wp_slimstat_admin::$faulty_fields[] = __('Config access: username not found','wp-slimstat');
+		}
+	}
+}
+			
+if (!empty($_POST['options']['capability_can_admin'])){
+	if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_admin'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
+		wp_slimstat::$options['capability_can_admin'] = $_POST['options']['capability_can_admin'];
+	}
+	else{
+		wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
+	}
+}
+
+$current_tab = empty( $_GET[ 'tab' ] ) ? 1 : intval( $_GET[ 'tab' ] );
+
+// Define all the options
+$options = array(
+	1 => array(
+		'title' => __( 'General', 'wp-slimstat' ),
+		'rows' => array(
 			'general_tracking_header' => array('description' => __('Tracker','wp-slimstat'), 'type' => 'section_header'),
 			'is_tracking' => array( 'description' => __('Tracking','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Turn the tracker on or off, but keep the reports accessible.','wp-slimstat'), 'custom_label_yes' => __('On','wp-slimstat'), 'custom_label_no' => __('Off','wp-slimstat') ),
 			'track_admin_pages' => array( 'description' => __('Admin Pages','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Enable this option to track your users' activity within the admin.",'wp-slimstat'), 'custom_label_yes' => __('Track','wp-slimstat'), 'custom_label_no' => __('Do not track','wp-slimstat') ),
@@ -34,20 +142,12 @@ switch ($config_tabs[$current_tab-1]){
 			'general_database_header' => array('description' => __('Database','wp-slimstat'), 'type' => 'section_header'),
 			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Clean-up log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').(wp_get_schedule('wp_slimstat_purge')?' '.__('Next clean-up on','wp-slimstat').' <strong>'.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'</strong>. '.sprintf(__('Entries logged on or before %s will be archived or deleted according to the option here below.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$options['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') ),
 			'auto_purge_delete' => array( 'description' => __('Delete records','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('If DB space is not an issue, you can decide to archive older records in another table, instead of deleting them. This way performance is preserved, but you will still be able to access your data at a later time, if needed. Please note that the archive table (<code>wp_slim_stats_archive</code>) will be <strong>deleted</strong> along with all the other tables, when Slimstat is uninstalled. Make sure to backup your data before you proceed.','wp-slimstat') )
-		);
+		)
+	),
 
-		// If autopurge = 0, we can unschedule our cron job. If autopurge > 0 and the hook was not scheduled, we schedule it
-		if (isset($_POST['options']['auto_purge'])){
-			if ($_POST['options']['auto_purge'] == 0){
-				wp_clear_scheduled_hook('wp_slimstat_purge');
-			}
-			else if (wp_next_scheduled( 'my_schedule_hook' ) == 0){
-				wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
-			}
-		}
-		break;
-	case __('Reports','wp-slimstat'):
-		$options_on_this_page = array(
+	2 => array(
+		'title' => __( 'Reports', 'wp-slimstat' ),
+		'rows' => array(
 			'reports_basic_header' => array('description' => __('Formats and Conversions','wp-slimstat'), 'type' => 'section_header'),
 			'use_european_separators' => array('description' => __('Number Format','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose the number format you want to use for your reports.','wp-slimstat'), 'custom_label_yes' => '1.234,56', 'custom_label_no' => '1,234.56'),
 			'date_format' => array('description' => __('Date Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's date.", 'wp-slimstat')),
@@ -55,24 +155,26 @@ switch ($config_tabs[$current_tab-1]){
 			'show_display_name' => array('description' => __('Use Display Name','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('By default, users are listed by their usernames. Use this option to visualize their display names instead.','wp-slimstat')),
 			'convert_resource_urls_to_titles' => array('description' => __('Use Titles','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Slimstat converts your permalinks into post, page and category titles. Disable this feature if you need to see the URL in your reports.', 'wp-slimstat')),
 			'convert_ip_addresses' => array('description' => __('Convert IP Addresses','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Display provider names instead of IP addresses.','wp-slimstat')),
-			
+
 			'reports_functionality_header' => array('description' => __('Functionality','wp-slimstat'), 'type' => 'section_header'),
 			'use_slimscroll' => array('description' => __('SlimScroll','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable SlimScroll, a slick jQuery library that replaces the built-in browser scrollbar.','wp-slimstat')),
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
-			
+
 			'reports_right_now_header' => array('description' => __('Activity Log','wp-slimstat'), 'type' => 'section_header'),
 			'refresh_interval' => array('description' => __('Live Stream','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enable the Live view, which refreshes the Activity Log every X seconds. Enter <strong>0</strong> (number zero) to deactivate this feature.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
 			'number_results_raw_data' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in the Activity Log.','wp-slimstat')),
-			// 'include_outbound_links_right_now' => array('description' => __('Activity Log Extended','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see outbound links listed in the Activity Log. It might slow down the rendering of this report.','wp-slimstat')),
-			
+
 			'reports_miscellaneous_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
 			'show_complete_user_agent_tooltip' => array('description' => __('Show User Agent','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see the browser name or a complete user agent string when hovering on browser icons.','wp-slimstat')),
-			'enable_sov' => array('description' => __('Enable SOV','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese.','wp-slimstat'))
-		);
-		break;
-	case __('Filters','wp-slimstat'):
-		$options_on_this_page = array(
+			'enable_sov' => array('description' => __('Enable SOV','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese.','wp-slimstat')),
+			'enable_getsocial' => array('description' => __( 'Social Analytics', 'wp-slimstat' ), 'type' => 'yesno', 'long_description' => __("Thanks to a <a href='http://getsocial.io/enterprise' target='_blank'>partnership with GetSocial.io</a>, you can access a powerful set of analytics for social media where you can identify top performing posts. Track social sharing to understand which of your posts are generating more engagement. When this option is enabled, Slimstat sends a list of all your posts's URLs to their service for analysis once daily.", 'wp-slimstat' ) )
+		)
+	),
+
+	3 => array(
+		'title' => __( 'Filters', 'wp-slimstat' ),
+		'rows' => array(
 			'filters_users_header' => array('description' => __('Visitors and Known Users','wp-slimstat'), 'type' => 'section_header'),
 			'track_users' => array('description' => __('Track Registered Users','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option to track logged in users.','wp-slimstat')),
 			'ignore_users' => array('description' => __('Blacklist by Username','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the usernames you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored and that usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true),
@@ -96,136 +198,28 @@ switch ($config_tabs[$current_tab-1]){
 			'filters_miscellaneous_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
 			'anonymize_ip' => array('description' => __('Enable Privacy Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Mask your visitors' IP addresses to comply with European Privacy Laws.",'wp-slimstat')),
 			'ignore_prefetch' => array('description' => __('Ignore Prefetch Requests','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Prevent Slimstat from tracking pageviews generated by Firefox's <a href='https://developer.mozilla.org/en/Link_prefetching_FAQ' target='_blank'>Link Prefetching functionality</a>.",'wp-slimstat'))
-		);
+		)
+	),
 
-		// Some options need a special treatment
-		if (isset($_POST['options'])){
-			if (!empty($_POST['options']['ignore_users'])){
-				// Make sure all the users exist in the system 
-				$user_array = wp_slimstat::string_to_array($_POST['options']['ignore_users']);
-				$post_data = trim($_POST['options']['ignore_users']);
-
-				if (is_array($user_array) && !empty($post_data)){
-					$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
-					if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
-						wp_slimstat::$options['ignore_users'] = $_POST['options']['ignore_users'];
-					}
-					else{
-						wp_slimstat_admin::$faulty_fields[] = __('Ignore users (username not found)','wp-slimstat');
-					}
-				}
-			}
-			else{
-				wp_slimstat::$options['ignore_users'] = '';
-			}
-
-			if (!empty($_POST['options']['ignore_capabilities'])){
-				// Make sure all the capabilities exist in the system 
-				$capability_array = wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']);
-				$capability_not_found = false;
-				foreach(wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']) as $a_capability){
-					if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && !array_key_exists($a_capability, $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
-						$capability_not_found = true;
-						break;
-					}
-				}
-				
-				if (!$capability_not_found){		
-					wp_slimstat::$options['ignore_capabilities'] = $_POST['options']['ignore_capabilities'];
-				}
-				else{
-					wp_slimstat_admin::$faulty_fields[] = __('Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
-				}
-			}
-			else{
-				wp_slimstat::$options['ignore_capabilities'] = '';
-			}
-		}
-		break;
-	case __('Permissions','wp-slimstat'):
-		$options_on_this_page = array(
+	4 => array(
+		'title' => __( 'Permissions', 'wp-slimstat' ),
+		'rows' => array(
 			'permissions_reports_header' => array('description' => __('Reports','wp-slimstat'), 'type' => 'section_header'),
 			'restrict_authors_view' => array('description' => __('Restrict Authors','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option if you want your authors to only see stats related to their own content.','wp-slimstat')),
 			'capability_can_view' => array('description' => __('Capability','wp-slimstat'), 'type' => 'text', 'long_description' => __("Specify the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to access the reports (default: <code>activate_plugins</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here below. In this case, the list has precedence over the capability.",'wp-slimstat')),
 			'can_view' => array('description' => __('Whitelist','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the users who should have access to the reports, separated by commas. Administrators are implicitly allowed, so you don't need to list them in here. Usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true),
-			
+
 			'permissions_config_header' => array('description' => __('Settings','wp-slimstat'), 'type' => 'section_header'),
 			'capability_can_admin' => array('description' => __('Capability','wp-slimstat'), 'type' => 'text', 'long_description' => __("Specify the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> required to configure Slimstat (default: <code>activate_plugins</code>). The whitelist here below can be used to override this option for specific users.",'wp-slimstat')),
 			'can_admin' => array('description' => __('Whitelist','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the users who can edit these options, separated by commas. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! Usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true)
-		);
+		)
+	),
 
-		// Some options need a special treatment
-		if (isset($_POST['options'])){
-			if (!empty($_POST['options']['can_view'])){
-				// Make sure all the users exist in the system 
-				$post_data = trim($_POST['options']['can_view']);
-				$user_array = wp_slimstat::string_to_array($_POST['options']['can_view']);
-
-				if (is_array($user_array) && !empty($post_data)){
-					$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
-					if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
-						wp_slimstat::$options['can_view'] = $_POST['options']['can_view'];
-					}
-					else{
-						wp_slimstat_admin::$faulty_fields[] = __('Read access: username not found','wp-slimstat');
-					}
-				}
-			}
-			else{
-				wp_slimstat::$options['can_view'] = '';
-			}
-
-			if (!empty($_POST['options']['capability_can_view'])){
-				if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_view'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
-					wp_slimstat::$options['capability_can_view'] = $_POST['options']['capability_can_view'];
-				}
-				else{
-					wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
-				}
-			}
-			else{
-				wp_slimstat::$options['capability_can_view'] = '';
-			}
-
-			if (!empty($_POST['options']['can_admin'])){
-				// Make sure all the users exist in the system
-				$post_data = trim($_POST['options']['can_admin']);
-				$user_array = wp_slimstat::string_to_array($_POST['options']['can_admin']);
-
-				if (is_array($user_array) && !empty($post_data)){
-					$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
-					if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
-						wp_slimstat::$options['can_admin'] = $_POST['options']['can_admin'];
-					}
-					else{
-						wp_slimstat_admin::$faulty_fields[] = __('Config access: username not found','wp-slimstat');
-					}
-				}
-			}
-			else{
-				wp_slimstat::$options['can_admin'] = '';
-			}
-			
-			if (!empty($_POST['options']['capability_can_admin'])){
-				if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_admin'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
-					wp_slimstat::$options['capability_can_admin'] = $_POST['options']['capability_can_admin'];
-				}
-				else{
-					wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
-				}
-			}
-			else{
-				wp_slimstat::$options['capability_can_admin'] = '';
-			}
-		}
-		break;
-	case __('Advanced','wp-slimstat'):
-		$encoded_ci = 'YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=';
-		$encoded_ci = $encoded_ci.'.'.md5($encoded_ci.wp_slimstat::$options['secret']);
-
-		$options_on_this_page = array(
+	5 => array(
+		'title' => __( 'Advanced', 'wp-slimstat' ),
+		'rows' => array(
 			'advanced_tracker_header' => array('description' => __('Tracker','wp-slimstat'), 'type' => 'section_header'),
-			'detect_smoothing' => array('description' => __('Detect Smoothing','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Detect if your visitors' browsers support anti-aliasing (font smoothing). This option required Spy Mode to be enabled.",'wp-slimstat')),
+			'detect_smoothing' => array('description' => __('Detect Smoothing','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Detect if your visitors' browsers support anti-aliasing (font smoothing). This option requires Stealth Mode to be turned off.",'wp-slimstat')),
 			'session_duration' => array('description' => __('Session Duration','wp-slimstat'), 'type' => 'integer', 'long_description' => __('How many seconds should a human session last? Google Analytics sets it to 1800 seconds.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
 			'extend_session' => array('description' => __('Extend Session','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Extend the duration of a session each time the user visits a new page.','wp-slimstat')),
 			'enable_cdn' => array('description' => __('Enable CDN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).",'wp-slimstat')),
@@ -233,36 +227,49 @@ switch ($config_tabs[$current_tab-1]){
 
 			'advanced_external_pages_header' => array('description' => __('External Pages','wp-slimstat'), 'type' => 'section_header'),
 			'external_pages_script' => array('type' => 'static', 'skip_update' => 'yes', 'description' => __('Add the following code to all the non-WP pages you want to track, right before the closing BODY tag','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
-/* &lt;![CDATA[ */
-var SlimStatParams = {
-	ajaxurl: "'.admin_url('admin-ajax.php').'",
-	ci: "'.$encoded_ci.'",
-	extensions_to_track: "'.wp_slimstat::$options['extensions_to_track'].'"
-};
-/* ]]&gt; */
-&lt;/script&gt;
-&lt;script type="text/javascript" src="http://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js"&gt;&lt;/script&gt;'),
+	/* &lt;![CDATA[ */
+	var SlimStatParams = {
+		ajaxurl: "'.admin_url('admin-ajax.php').'",
+		ci: "YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=.' . md5('YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=' . wp_slimstat::$options[ 'secret' ] ).'",
+		extensions_to_track: "'.wp_slimstat::$options['extensions_to_track'].'"
+	};
+	/* ]]&gt; */
+	&lt;/script&gt;
+	&lt;script type="text/javascript" src="http://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js"&gt;&lt;/script&gt;'),
 			'external_domains' => array('description' => __('Allow External Domains','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme, separated by commas) you would like to allow. For example: <code>http://my.domain.ext</code> (no trailing slash). Please see <a href='http://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.",'wp-slimstat')),
 			'advanced_misc_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
 			'show_sql_debug' => array('description' => __('Debug Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Display the SQL queries used to retrieve the data.','wp-slimstat')),
 			'ip_lookup_service' => array('description' => __('IP Lookup','wp-slimstat'), 'type' => 'text', 'long_description' => __('Customize the Geolocation service to be used in the reports.','wp-slimstat')),
 			'custom_css' => array('description' => __('Custom CSS','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("Paste here your custom stylesheet to personalize the way your reports look. <a href='https://slimstat.freshdesk.com/support/solutions/articles/5000528528-how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-e' target='_blank'>Check the FAQ</a> for more information on how to use this setting.",'wp-slimstat')),
 			'enable_ads_network' => array('description' => __('Enable UAN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Send anonymous data about user agents to our server for analysis. This allows us to contribute to the <a href='http://browscap.org/' target='_blank'>BrowsCap opensource project</a>, and improve the accuracy of Slimstat's browser detection functionality. It also enables our transparent ads network. No worries, your site will not be affected in any way.",'wp-slimstat'))
-		);
-		break;
-	case __('Maintenance','wp-slimstat'):
-		include_once(dirname(__FILE__).'/maintenance.php');
-		break;
-	default:
-		break;
+		)
+	),
+	
+	6 => array(
+		'title' => __( 'Maintenance', 'wp-slimstat' ),
+		'include' => dirname(__FILE__).'/maintenance.php'
+	),
+	
+	7 => array(
+		'title' => __( 'Add-ons', 'wp-slimstat' )
+	)
+);
+
+$options = apply_filters( 'slimstat_options_on_page', $options );
+
+$tabs_html = '';
+foreach ( $options as $a_tab_id => $a_tab_info ) {
+	$tabs_html .= "<li class='nav-tab nav-tab".(($current_tab == $a_tab_id)?'-active':'-inactive')."'><a href='".wp_slimstat_admin::$config_url.$a_tab_id."'>{$a_tab_info[ 'title' ]}</a></li>";
 }
 
-if (has_filter('slimstat_options_on_page')){
-	$options_on_this_page = apply_filters('slimstat_options_on_page', $options_on_this_page, $current_tab);
-}
+echo '<div class="wrap slimstat"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$tabs_html.'</ul>';
 
-if (isset($options_on_this_page)){
-	wp_slimstat_admin::update_options($options_on_this_page);
-	wp_slimstat_admin::display_options($options_on_this_page, $current_tab); 
+// The maintenance tab has its own separate file
+if ( !empty( $options[ $current_tab ][ 'include' ] ) ) {
+	include_once( $options[ $current_tab ][ 'include' ] );
+}
+else if ( !empty( $options[ $current_tab ][ 'rows' ] ) ) {
+	wp_slimstat_admin::update_options( $options[ $current_tab ][ 'rows' ] );
+	wp_slimstat_admin::display_options( $options[ $current_tab ][ 'rows' ], $current_tab); 
 }
 echo '</div>';
