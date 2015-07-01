@@ -111,7 +111,7 @@ class wp_slimstat_admin{
 				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
 				add_action('manage_pages_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
 
-				if( strpos( $_SERVER['REQUEST_URI'], 'edit.php' ) !== false || ( $temp >= 0 && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false ) ) {
+				if( strpos( $_SERVER['REQUEST_URI'], '/wp-admin/edit.php' ) !== false ) {
 					add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
 				}
 			}
