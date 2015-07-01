@@ -171,7 +171,7 @@ class wp_slimstat_db {
 			$_where = trim( "$_where $time_range_condition" );
 		}
 
-		if ( !empty( self::$columns_names[ $_column ] ) ) {
+		if ( !empty( $_column ) && !empty( self::$columns_names[ $_column ] ) ) {
 			$column_with_alias = $_column;
 			if ( !empty( $_slim_stats_table_alias ) ) {
 				$column_with_alias = $_slim_stats_table_alias . '.' . $column_with_alias;

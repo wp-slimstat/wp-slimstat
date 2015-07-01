@@ -48,6 +48,9 @@ if (!empty($_POST['options']['ignore_users'])){
 		}
 	}
 }
+else {
+	wp_slimstat::$options['ignore_users'] = '';
+}
 
 if (!empty($_POST['options']['ignore_capabilities'])){
 	// Make sure all the capabilities exist in the system 
@@ -67,6 +70,9 @@ if (!empty($_POST['options']['ignore_capabilities'])){
 		wp_slimstat_admin::$faulty_fields[] = __('Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
 	}
 }
+else {
+	wp_slimstat::$options['ignore_capabilities'] = '';
+}
 
 if (!empty($_POST['options']['can_view'])){
 	// Make sure all the users exist in the system 
@@ -83,6 +89,9 @@ if (!empty($_POST['options']['can_view'])){
 		}
 	}
 }
+else {
+	wp_slimstat::$options['can_view'] = '';
+}
 
 if (!empty($_POST['options']['capability_can_view'])){
 	if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_view'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
@@ -91,6 +100,9 @@ if (!empty($_POST['options']['capability_can_view'])){
 	else{
 		wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
 	}
+}
+else {
+	wp_slimstat::$options['capability_can_view'] = '';
 }
 
 if (!empty($_POST['options']['can_admin'])){
@@ -108,7 +120,10 @@ if (!empty($_POST['options']['can_admin'])){
 		}
 	}
 }
-			
+else {
+	wp_slimstat::$options['can_admin'] = '';
+}
+
 if (!empty($_POST['options']['capability_can_admin'])){
 	if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_admin'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
 		wp_slimstat::$options['capability_can_admin'] = $_POST['options']['capability_can_admin'];
@@ -116,6 +131,9 @@ if (!empty($_POST['options']['capability_can_admin'])){
 	else{
 		wp_slimstat_admin::$faulty_fields[] = __('Invalid minimum capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
 	}
+}
+else {
+	wp_slimstat::$options['capability_can_admin'] = '';
 }
 
 $current_tab = empty( $_GET[ 'tab' ] ) ? 1 : intval( $_GET[ 'tab' ] );
