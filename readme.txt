@@ -3,8 +3,8 @@ Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
-Tested up to: 4.2
-Stable tag: 4.1.5
+Tested up to: 4.3
+Stable tag: 4.1.5.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,11 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.5.1 =
+* [Update] Our Export to Excel add-on now includes the post slug, when appropriate.
+* [Fix] Removed a few warnings displayed when DEBUG MODE was enabled.
+* [Fix] A warning was being displayed when exporting certain reports.
 
 = 4.1.5 =
 * [New] Welcome our new partner GetSocial.io, a service that allows you to find your true influencers and understand which users are driving your traffic and conversions through their shares. Our users get free access to their platform through a new report located in the Site Analysis screen.

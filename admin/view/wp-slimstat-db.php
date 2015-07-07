@@ -76,6 +76,11 @@ class wp_slimstat_db {
 			'interval_minutes' => array( __( 'minutes', 'wp-slimstat' ), 'int' ),
 			'dt' => array( __( 'Unix Timestamp', 'wp-slimstat' ), 'int' ),
 
+			// Other columns
+			'language_substring' => array( __( 'Language', 'wp-slimstat' ), 'varchar' ),
+			'platform_substring' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
+			'resource_substring' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
+
 			// Events
 			'event_id' => array( __( 'Event ID', 'wp-slimstat' ), 'int' ),
 			'type' => array( __( 'Type', 'wp-slimstat' ), 'int' ),
