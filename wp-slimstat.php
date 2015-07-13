@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.5.1
+Version: 4.1.5.2
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 */
@@ -11,7 +11,7 @@ Author URI: http://www.wp-slimstat.com/
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.1.5.1';
+	public static $version = '4.1.5.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -449,7 +449,7 @@ class wp_slimstat {
 				return $_argument;
 			}
 			else{
-				self::$stat['notes'][] = 'pre:yes';
+				self::$stat[ 'notes' ][] = 'pre:yes';
 			}
 		}
 
@@ -457,8 +457,8 @@ class wp_slimstat {
 		self::$browser = self::_get_browser();
 
 		// Are we ignoring bots?
-		if ((self::$options['javascript_mode'] == 'yes' || self::$options['ignore_bots'] == 'yes') && self::$browser['browser_type']%2 != 0){
-			self::$stat['id'] = -211;
+		if ( ( self::$options[ 'javascript_mode' ] == 'yes' || self::$options[ 'ignore_bots' ] == 'yes' ) && self::$browser[ 'browser_type' ] % 2 != 0 ) {
+			self::$stat[ 'id' ] = -211;
 			self::_set_error_array( __( 'Bot not tracked', 'wp-slimstat' ) );
 			return $_argument;
 		}
@@ -490,7 +490,7 @@ class wp_slimstat {
 		}
 
 		// Implode the notes
-		self::$stat['notes'] = implode(';', self::$stat['notes']);
+		self::$stat[ 'notes' ] = implode( ';', self::$stat[ 'notes' ] );
 
 		// Now let's save this information in the database
 		self::$stat['id'] = self::_insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
@@ -1146,7 +1146,7 @@ class wp_slimstat {
 		list(self::$data_js['id'], $nonce) = explode('.', self::$data_js['id']);
 		if ($nonce !== md5(self::$data_js['id'].self::$options['secret'])){
 			do_action('slimstat_track_exit_103');
-			self::$stat[ 'id' ] = -102;
+			self::$stat[ 'id' ] = -103;
 			self::_set_error_array( __( 'Invalid data signature. Try clearing your WordPress cache.', 'wp-slimstat' ) );
 			self::slimstat_save_options();
 			exit('-103.0');

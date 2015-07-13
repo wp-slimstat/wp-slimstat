@@ -4,6 +4,8 @@ if ( !function_exists( 'add_action' ) ) {
 	exit(0);
 }
 
+$is_dashboard = empty( $_GET[ 'page' ] ) || $_GET[ 'page' ] != 'wp-slim-view-1';
+
 // Available icons
 $supported_browser_icons = array('Android','Anonymouse','Baiduspider','BlackBerry','BingBot','CFNetwork','Chrome','Chromium','Default Browser','Exabot/BiggerBetter','FacebookExternalHit','FeedBurner','Feedfetcher-Google','Firefox','Internet Archive','Googlebot','Google Bot','Google Feedfetcher','Google Web Preview','IE','IEMobile','iPad','iPhone','iPod Touch','Maxthon','Mediapartners-Google','Microsoft-WebDAV','msnbot','Mozilla','NewsGatorOnline','Netscape','Nokia','Opera','Opera Mini','Opera Mobi','Python','PycURL','Safari','W3C_Validator','WordPress','Yahoo! Slurp','YandexBot');
 $supported_os_icons = array('android','blackberry os','cellos','chromeos','ios','iphone osx','java','linux','macosx','rim os','symbianos','win7','win8','win8.1','winphone7','winphone7.5','winphone8','winphone8.1','winvista','winxp','unknown');
@@ -12,12 +14,16 @@ $supported_browser_types = array(__('Human','wp-slimstat'),__('Bot/Crawler','wp-
 $plugin_url = plugins_url('', dirname(__FILE__));
 
 // Get the data
+wp_slimstat_db::$debug_message = '';
 $all_results = wp_slimstat_db::get_recent( wp_slimstat_reports::$reports_info[ 'slim_p7_02' ][ 'callback_args' ] );
 $results = array_slice(
 	$all_results,
 	wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
 	wp_slimstat::$options[ 'number_results_raw_data' ]
 );
+
+// Echo the debug message
+echo wp_slimstat_db::$debug_message;
 
 // Return the results if we are not echoing them (export, email, etc)
 if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
@@ -131,7 +137,7 @@ else {
 		}
 
 		$performance = '';
-		if (!empty($results[$i]['server_latency']) || !empty($results[$i]['page_performance'])){
+		if ( !$is_dashboard && ( !empty( $results[ $i ][ 'server_latency' ] ) || !empty( $results[ $i ][ 'page_performance' ] ) ) ) {
 			$performance = "<i class='slimstat-font-gauge spaced' title='".__('Server Latency and Page Speed in milliseconds','wp-slimstat')."'></i> ".__('SL','wp-slimstat').": {$results[$i]['server_latency']} / ".__('PS','wp-slimstat').": {$results[$i]['page_performance']}";
 		}
 
@@ -140,7 +146,7 @@ else {
 		$base_host = $parse_url['host'];
 		$base_url = '';
 
-		if ( !empty( $results[$i]['resource'] ) ) {
+		if ( !empty( $results[ $i ][ 'resource' ] ) ) {
 			if (!empty($results[$i]['blog_id'])){
 				$base_url = $parse_url['scheme'].'://'.$base_host;
 			}
@@ -155,16 +161,22 @@ else {
 			$results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='".__('Search Terms','wp-slimstat')."'></i> ".wp_slimstat_reports::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer']);
 		}
 
-		$domain = parse_url($results[$i]['referer']);
-		$domain = ( !empty( $domain[ 'host' ] ) ) ? $domain['host'] : '';
-		$results[$i]['referer'] = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> $domain":'';
-		$results[$i][ 'outbound_resource' ] = ( !empty( $results[ $i ][ 'outbound_resource' ] ) ) ? "<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_resource']}" : '';
-		$results[$i]['dt'] = "<i class='spaced slimstat-font-clock' title='".__('Date and Time','wp-slimstat')."'></i> {$results[$i]['dt']}";
-		$results[$i]['content_type'] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
+		if ( !$is_dashboard ) {
+			$domain = parse_url( $results[ $i ] [ 'referer' ] );
+			$domain = !empty( $domain[ 'host' ] ) ? $domain[ 'host' ] : '';
+			$results[$i][ 'referer' ] = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> $domain":'';
+			$results[$i][ 'outbound_resource' ] = ( !empty( $results[ $i ][ 'outbound_resource' ] ) ) ? "<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_resource']}" : '';
+			$results[$i][ 'content_type' ] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
 
-		if ($current_user_can_delete){
-			$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this pageview','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
+			if ($current_user_can_delete){
+				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this pageview','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
+			}
 		}
+		else {
+			$results[$i]['referer'] = $results[$i][ 'outbound_resource' ] = $results[$i][ 'content_type' ] = '';
+		}
+
+		$results[$i]['dt'] = "<i class='spaced slimstat-font-clock' title='".__('Date and Time','wp-slimstat')."'></i> {$results[$i]['dt']}";
 
 		echo "<p>{$results[$i]['resource']} <span class='details'>{$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance {$results[$i]['dt']} {$delete_row}</span></p>";
 	}

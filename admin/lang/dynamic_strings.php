@@ -1,58 +1,79 @@
 <?php 
 $dynamic_strings = array(
 __('xx','wp-slimstat'),
-__('unknown','wp-slimstat'), // Unknown
-__('win8.1','wp-slimstat'), // Windows 8.1
-__('win8','wp-slimstat'), // Windows 8
-__('win7','wp-slimstat'), // Windows 7
-__('winvista','wp-slimstat'), // Windows Vista
-__('win2003','wp-slimstat'), // Windows 2003
-__('winxp','wp-slimstat'), // Windows XP
-__('winnt','wp-slimstat'), // Windows NT
-__('win2000','wp-slimstat'), // Windows 2000
-__('winme','wp-slimstat'), // Windows ME
-__('win98','wp-slimstat'), // Windows 98
-__('win95','wp-slimstat'), // Windows 95
-__('win31','wp-slimstat'), // Windows 3.1
-__('win32','wp-slimstat'), // Windows 32-bit
-__('win16','wp-slimstat'), // Windows 16-bit
+
+// Operating Systems
+__('aix','wp-slimstat'), // IBM AIX
+__('amiga','wp-slimstat'), // Amiga
+__('android','wp-slimstat'), // Android
+__('beos','wp-slimstat'), // BeOS
+__('blackberry os','wp-slimstat'), // BlackBerry OS
+__('chromeos','wp-slimstat'), // Windows 16-bit
+__('cygwin','wp-slimstat'), // Cygwin
+__('debian','wp-slimstat'), // Debian
+__('digital unix','wp-slimstat'), // Digital Unix
+__('firefoxos','wp-slimstat'), // Windows 16-bit
+__('freebsd','wp-slimstat'), // FreeBSD
+__('hp-ux','wp-slimstat'), // HP-UX
+__('ios','wp-slimstat'), // iPhone OS X
+__('iphone osx','wp-slimstat'), // iPhone OS X
+__('irix','wp-slimstat'), // IRIX
+__('java','wp-slimstat'), // Java
+__('linux','wp-slimstat'), // Linux
+__('mac','wp-slimstat'), // Mac
 __('mac68k','wp-slimstat'), // Mac 68k
 __('macosx','wp-slimstat'), // Mac OS X
 __('macppc','wp-slimstat'), // Mac PowerPC
-__('mac','wp-slimstat'), // Mac
-__('os/2','wp-slimstat'), // IBM OS/2
-__('sunos','wp-slimstat'), // Sun OS
-__('solaris','wp-slimstat'), // Solaris
-__('unix','wp-slimstat'), // Unix
-__('irix','wp-slimstat'), // IRIX
-__('hp-ux','wp-slimstat'), // HP-UX
-__('aix','wp-slimstat'), // IBM AIX
-__('beos','wp-slimstat'), // BeOS
-__('cygwin','wp-slimstat'), // Cygwin
-__('digital unix','wp-slimstat'), // Digital Unix
-__('risc os','wp-slimstat'), // Risc OS
-__('openvms','wp-slimstat'), // OpenVMS
-__('linux','wp-slimstat'), // Linux
-__('freebsd','wp-slimstat'), // FreeBSD
-__('openbsd','wp-slimstat'), // OpenBSD
 __('netbsd','wp-slimstat'), // NetBSD
-__('debian','wp-slimstat'), // Debian
-__('amiga','wp-slimstat'), // Amiga
-__('android','wp-slimstat'), // Android
-__('wyderos','wp-slimstat'), // WyderOS
-__('iphone osx','wp-slimstat'), // iPhone OS X
-__('ios','wp-slimstat'), // iPhone OS X
+__('openbsd','wp-slimstat'), // OpenBSD
+__('openvms','wp-slimstat'), // OpenVMS
+__('os/2','wp-slimstat'), // IBM OS/2
 __('palm','wp-slimstat'), // Palm
+__('powertv','wp-slimstat'), // PowerTV
+__('rim os','wp-slimstat'), // Blackberry
+__('risc os','wp-slimstat'), // Risc OS
+__('solaris','wp-slimstat'), // Solaris
+__('sunos','wp-slimstat'), // Sun OS
+__('symbianos','wp-slimstat'), // Symbian OS
+__('ubuntu','wp-slimstat'), // Java
+__('unix','wp-slimstat'), // Unix
+__('unknown','wp-slimstat'), // Unknown
 __('wap','wp-slimstat'), // WAP
-__('java','wp-slimstat'), // Java
+__('webos','wp-slimstat'), // WebOS
+__('win10','wp-slimstat'), // Windows 10
+__('win16','wp-slimstat'), // Windows 16-bit
+__('win2000','wp-slimstat'), // Windows 2000
+__('win2003','wp-slimstat'), // Windows 2003
+__('win31','wp-slimstat'), // Windows 3.1
+__('win32','wp-slimstat'), // Windows 32-bit
+__('win7','wp-slimstat'), // Windows 7
+__('win7','wp-slimstat'), // Windows 7
+__('win8','wp-slimstat'), // Windows 8
+__('win8.1','wp-slimstat'), // Windows 8.1
+__('win95','wp-slimstat'), // Windows 95
+__('win98','wp-slimstat'), // Windows 98
+__('wince','wp-slimstat'), // Windows CE
+__('windows phone','wp-slimstat'), // Windows 16-bit
+__('winme','wp-slimstat'), // Windows ME
+__('winnt','wp-slimstat'), // Windows NT
 __('winphone7','wp-slimstat'), // Windows Phone
 __('winphone7.5','wp-slimstat'), // Windows Phone
 __('winphone8','wp-slimstat'), // Windows Phone
 __('winphone8.1','wp-slimstat'), // Windows Phone
-__('wince','wp-slimstat'), // Windows CE
-__('symbianos','wp-slimstat'), // Symbian OS
-__('blackberry os','wp-slimstat'), // BlackBerry OS
-__('webos','wp-slimstat'), // WebOS
+__('winvista','wp-slimstat'), // Windows Vista
+__('winxp','wp-slimstat'), // Windows XP
+__('wyderos','wp-slimstat'), // WyderOS
+
+// Browser Extensions
+__('acrobat','wp-slimstat'), // Acrobat Reader
+__('director','wp-slimstat'), // Macromedia Director
+__('flash','wp-slimstat'), // Adobe Flash Player
+__('mediaplayer','wp-slimstat'), // Microsoft Media Player
+__('quicktime','wp-slimstat'), // QuickTime
+__('real','wp-slimstat'), // Real Player
+__('silverlight','wp-slimstat'), // Microsoft Silverlight
+
+// Operating System Families
 __('p-and','wp-slimstat'), // Android
 __('p-bla','wp-slimstat'), // BlackBerry
 __('p-chr','wp-slimstat'), // Chrome OS
@@ -67,14 +88,8 @@ __('p-sym','wp-slimstat'), // Symbian OS
 __('p-ubu','wp-slimstat'), // Linux
 __('p-unk','wp-slimstat'), // Unknown
 __('p-win','wp-slimstat'), // Microsoft
-__('powertv','wp-slimstat'), // PowerTV
-__('acrobat','wp-slimstat'), // Acrobat Reader
-__('director','wp-slimstat'), // Macromedia Director
-__('flash','wp-slimstat'), // Adobe Flash Player
-__('mediaplayer','wp-slimstat'), // Microsoft Media Player
-__('quicktime','wp-slimstat'), // QuickTime
-__('real','wp-slimstat'), // Real Player
-__('silverlight','wp-slimstat'), // Microsoft Silverlight
+
+// Languages
 __('l-af','wp-slimstat'), // Afrikaans
 __('l-af-za','wp-slimstat'), // Afrikaans (South Africa)
 __('l-ar','wp-slimstat'), // Arabic
@@ -304,5 +319,6 @@ __('l-zu-za','wp-slimstat'), // Zulu (South Africa)
 __('l-','wp-slimstat'), // Unknown
 __('l-empty','wp-slimstat'), // Unknown
 __('l-xx','wp-slimstat'), // Unknown
+
 __('c-xy','wp-slimstat') // Local IP Address
 );

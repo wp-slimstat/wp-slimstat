@@ -284,10 +284,7 @@
 }
 
 /* Single Report: Debug Message */
-.debug {
-	display: none;
-}
-.slimstat .debug{
+[id^=slim_] .debug{
 	background-color: #000;
 	color: #fff;
 	display: block;

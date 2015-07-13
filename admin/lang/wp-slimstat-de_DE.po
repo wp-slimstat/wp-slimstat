@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: WP SlimStat\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-06-15 22:59-0500\n"
-"PO-Revision-Date: 2015-06-15 22:59-0500\n"
+"PO-Revision-Date: 2015-07-08 21:43-0500\n"
 "Last-Translator: Get Used To IT <support@getused.to.it>\n"
 "Language-Team: TechnoViel <klaus@technoviel.de>\n"
 "Language: de_DE\n"
@@ -117,7 +117,7 @@ msgstr ""
 
 #: ../../admin/config/index.php:21 ../../admin/config/index.php:23
 msgid "On"
-msgstr "am"
+msgstr "An"
 
 #: ../../admin/config/index.php:21 ../../admin/config/index.php:23
 msgid "Off"

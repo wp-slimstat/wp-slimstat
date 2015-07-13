@@ -17,7 +17,7 @@ class wp_slimstat_reports {
 	 */
 	public static function init(){
 		self::$screens_info = array(
-			'wp-slim-view-1' => __( 'Real-Time Log', 'wp-slimstat' ),
+			'wp-slim-view-1' => __( 'Access Log', 'wp-slimstat' ),
 			'wp-slim-view-2' => __( 'Overview', 'wp-slimstat' ),
 			'wp-slim-view-3' => __( 'Audience', 'wp-slimstat' ),
 			'wp-slim-view-4' => __( 'Site Analysis', 'wp-slimstat' ),
@@ -89,7 +89,7 @@ class wp_slimstat_reports {
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'full-width', 'tall' ),
-				'screens' => array( 'wp-slim-view-1' ),
+				'screens' => array( 'wp-slim-view-1', 'dashboard' ),
 				'tooltip' => __( 'Color codes', 'wp-slimstat' ).'</strong><p><span class="little-color-box is-search-engine"></span> '.__( 'From search result page', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-visitor"></span> '.__( 'Known Visitor', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-user"></span> '.__( 'Known Users', 'wp-slimstat' ).'</p><p><span class="little-color-box is-direct"></span> '.__( 'Other Humans', 'wp-slimstat' ).'</p><p><span class="little-color-box"></span> '.__( 'Bot or Crawler', 'wp-slimstat' ).'</p>'
 			),
 
@@ -620,7 +620,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'resource',
-					'where' => '(content_type => "category" OR content_type => "tag")',
+					'where' => '(content_type = "category" OR content_type = "tag")',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
@@ -899,7 +899,10 @@ class wp_slimstat_reports {
 
 	public static function raw_results_to_html( $_args = array() ) {
 
+		wp_slimstat_db::$debug_message = '';
 		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
+
+		echo wp_slimstat_db::$debug_message;
 
 		$results = array_slice(
 			$all_results,
@@ -936,6 +939,7 @@ class wp_slimstat_reports {
 		}
 
 		self::report_pagination( $count_page_results, count( $all_results ) );
+		
 		$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
 		$permalinks_enabled = get_option( 'permalink_structure' );
 
@@ -1071,6 +1075,8 @@ class wp_slimstat_reports {
 	}
 
 	public static function show_chart( $_args = array() ){ 
+		wp_slimstat_db::$debug_message = '';
+
 		switch ( $_args[ 'type' ] ) {
 			case 'p1_01':
 				$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(ip)', 'COUNT(DISTINCT(ip))' );
@@ -1093,7 +1099,7 @@ class wp_slimstat_reports {
 				break;
 		}
 	
-	
+		echo wp_slimstat_db::$debug_message;
 	?>
 		<div id="chart-placeholder"></div><div id="chart-legend"></div>
 		<script type="text/javascript">
@@ -1823,7 +1829,7 @@ class wp_slimstat_reports {
 			}
 		}
 
-		return htmlentities( urldecode( $resource_title ), ENT_QUOTES, 'UTF-8' );
+		return str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $resource_title ) );
 	}
 	
 	public static function inline_help( $_text = '', $_echo = true ) {

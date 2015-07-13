@@ -15,6 +15,9 @@ class wp_slimstat_db {
 	// Filters that are not visible in the dropdown
 	public static $all_columns_names = array();
 
+	// Debug message
+	public static $debug_message = '';
+
 	/*
 	 * Sets the filters and other structures needed to store the data retrieved from the DB
 	 */
@@ -286,15 +289,11 @@ class wp_slimstat_db {
 		}
 	}
 
-	protected static function _show_debug( $_message = '' ) {
-		echo "<p class='debug'>$_message</p>";
-	}
-
 	public static function get_results( $_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '' ) {
 		$_sql = apply_filters( 'slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add );
 
 		if ( wp_slimstat::$options[ 'show_sql_debug' ] == 'yes' ) {
-			self::_show_debug( $_sql );
+			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
 		return wp_slimstat::$wpdb->get_results( $_sql, ARRAY_A );
@@ -304,7 +303,7 @@ class wp_slimstat_db {
 		$_sql = apply_filters( 'slimstat_get_var_sql', $_sql, $_aggregate_value );
 
 		if ( wp_slimstat::$options[ 'show_sql_debug' ] == 'yes' ) {
-			self::_show_debug( $_sql );
+			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
 		return wp_slimstat::$wpdb->get_var( $_sql );

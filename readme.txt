@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.3
-Stable tag: 4.1.5.1
+Stable tag: 4.1.5.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,17 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.5.2 =
+* [Note] We are still getting support requests from users having issues with Slimstat because of the GeoLite add-on that was distributed a few months ago. If you are still using this separate add-on, we'd like to remind you that Slimstat 4 introduced a new more intuitive way of managing the MaxMind Geolocation database bundled with our software. Actually, the free Geolite plugin is not compatible with the latest version of Slimstat, because of the IPv6 support we introduced a few weeks ago. We recommend that you uninstall the add-on from your systems, thus improving the overall performance of your website. As usual, do not hesitate to contact us if you have any questions.
+* [Update] Restored Activity Log report in the WordPress Dashboard.
+* [Fix] The Add-ons tab under settings was visible even if no add-ons were installed (thank you, [greg57 and others](https://wordpress.org/support/topic/add-ons-tab-blank)).
+* [Fix] Typo in our German localization (thank you, Marc-Oliver).
+* [Fix] Adding users to the corresponding blacklist was not working if the table wp_users had certain collations (thank you, Romain Petges).
+* [Fix] Non-standard quotes and other characters (hyphens, etc) were getting munged because of a security feature being overzealous (thank you, Victor).
+* [Fix] SQL Debug Mode is now correctly displayed in the WP Dashboard reports.
+* [Fix] More PHP warnings (debug mode) removed.
+* [Fix] Added missing localization strings for certain operating systems (thank you, Romain Petges).
 
 = 4.1.5.1 =
 * [Update] Our Export to Excel add-on now includes the post slug, when appropriate.

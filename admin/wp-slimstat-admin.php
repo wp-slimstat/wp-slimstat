@@ -11,8 +11,8 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "<strong>Attention, please!</strong> We are still getting support requests from users having issues with Slimstat because of the GeoLite add-on that was distributed a few months ago. If you are still using this separate add-on, we'd like to remind you that Slimstat 4 introduced a new more intuitive way of managing the MaxMind Geolocation database bundled with our software. Actually, the free Geolite plugin <strong>is not compatible</strong> with the latest version of Slimstat, because of the IPv6 support we introduced a few weeks ago. We recommend that you uninstall the add-on from your systems, thus improving the overall performance of your website. As usual, do not hesitate to contact us if you have any questions.";
-			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">I got it, thanks</a>';
+			self::$admin_notice = "The month of August is approaching rather quickly and our support team is taking a few days off. We will still be monitoring our ticketing system, however it might take a little longer to get an answer to your requests. Please be patient and remember that even hardcore developers deserve a little break once in a while.";
+			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
 			self::$admin_notice = "
@@ -110,7 +110,7 @@ class wp_slimstat_admin{
 				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
 				add_action('manage_pages_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
 
-				if( strpos( $_SERVER['REQUEST_URI'], 'edit.php' ) !== false || ( $temp >= 0 && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false ) ) {
+				if ( strpos( $_SERVER['REQUEST_URI'], 'edit.php' ) !== false ) {
 					add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
 				}
 			}
@@ -606,7 +606,7 @@ class wp_slimstat_admin{
 		$params = array(
 			'datepicker_image' => plugins_url('/admin/images/datepicker.png', dirname(__FILE__)),
 			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
-			'refresh_interval' => ( !empty( $_GET[ 'page' ] ) && $_GET[ 'page' ] == 'wp-slim-view-1' ) ? intval( wp_slimstat::$options[ 'refresh_interval' ] ) : 0,
+			'refresh_interval' => intval( wp_slimstat::$options[ 'refresh_interval' ] ),
 			'text_direction' => $GLOBALS['wp_locale']->text_direction,
 			'use_slimscroll' => isset(wp_slimstat::$options['use_slimscroll'])?wp_slimstat::$options['use_slimscroll']:'yes'
 		);
@@ -820,7 +820,7 @@ class wp_slimstat_admin{
 	 * Displays a message related to the current version of Slimstat
 	 */
 	public static function show_admin_notice(){
-		echo '<div class="updated slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span></div>';
+		echo '<div class="notice slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span></div>';
 	}
 	
 	/**

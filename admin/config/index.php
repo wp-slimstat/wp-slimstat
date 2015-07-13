@@ -38,7 +38,7 @@ if (!empty($_POST['options']['ignore_users'])){
 	$post_data = trim($_POST['options']['ignore_users']);
 
 	if (is_array($user_array) && !empty($post_data)){
-		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
+		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s'));
 		if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
 			wp_slimstat::$options['ignore_users'] = $_POST['options']['ignore_users'];
 
@@ -74,7 +74,7 @@ if (!empty($_POST['options']['can_view'])){
 	$user_array = wp_slimstat::string_to_array($_POST['options']['can_view']);
 
 	if (is_array($user_array) && !empty($post_data)){
-		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
+		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s'));
 		if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
 			wp_slimstat::$options['can_view'] = $_POST['options']['can_view'];
 		}
@@ -99,7 +99,7 @@ if (!empty($_POST['options']['can_admin'])){
 	$user_array = wp_slimstat::string_to_array($_POST['options']['can_admin']);
 
 	if (is_array($user_array) && !empty($post_data)){
-		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s COLLATE utf8_bin'));
+		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s'));
 		if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
 			wp_slimstat::$options['can_admin'] = $_POST['options']['can_admin'];
 		}
@@ -259,7 +259,9 @@ $options = apply_filters( 'slimstat_options_on_page', $options );
 
 $tabs_html = '';
 foreach ( $options as $a_tab_id => $a_tab_info ) {
-	$tabs_html .= "<li class='nav-tab nav-tab".(($current_tab == $a_tab_id)?'-active':'-inactive')."'><a href='".wp_slimstat_admin::$config_url.$a_tab_id."'>{$a_tab_info[ 'title' ]}</a></li>";
+	if ( !empty( $a_tab_info[ 'rows' ] ) || !empty( $a_tab_info[ 'include' ] ) ) {
+		$tabs_html .= "<li class='nav-tab nav-tab".(($current_tab == $a_tab_id)?'-active':'-inactive')."'><a href='".wp_slimstat_admin::$config_url.$a_tab_id."'>{$a_tab_info[ 'title' ]}</a></li>";
+	}
 }
 
 echo '<div class="wrap slimstat"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$tabs_html.'</ul>';
