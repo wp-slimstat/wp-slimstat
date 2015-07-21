@@ -105,13 +105,21 @@ class wp_slimstat_reports {
 			),
 			'slim_p1_02' => array(
 				'title' => __( 'About Slimstat', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_about_wpslimstat' ),
+				//'callback' => array( __CLASS__, 'show_about_wpslimstat' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'raw' => array( __CLASS__, 'get_about_wpslimstat' )
+				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-2' )
 			),
 			'slim_p1_03' => array(
 				'title' => __( 'At a Glance', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_overview_summary' ),
+				// 'callback' => array( __CLASS__, 'show_overview_summary' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'raw' => array( __CLASS__, 'get_overview_summary' )
+				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-2', 'dashboard' )
 			),
@@ -234,7 +242,10 @@ class wp_slimstat_reports {
 			),
 			'slim_p2_02' => array(
 				'title' => __( 'Audience Overview', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_visitors_summary' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'raw' => array( __CLASS__, 'get_visitors_summary' )
+				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-3', 'dashboard' ),
 				'tooltip' => __( 'Where not otherwise specified, the metrics in this report are referred to human visitors.', 'wp-slimstat' )
@@ -309,15 +320,22 @@ class wp_slimstat_reports {
 			),
 			'slim_p2_09' => array(
 				'title' => __( 'Browser Capabilities', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_plugins' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'raw' => array( __CLASS__, 'get_plugins' )
+				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-3' )
 			),
 			'slim_p2_12' => array(
 				'title' => __( 'Visit Duration', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_visit_duration' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'raw' => array( __CLASS__, 'get_visits_duration' )
+				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-3' )
+				'screens' => array( 'wp-slim-view-3' ),
+				'tooltip' => __( 'All values represent the percentages of pageviews within the corresponding time range.', 'wp-slimstat' )
 			),
 			'slim_p2_13' => array(
 				'title' => __( 'Recent Countries', 'wp-slimstat' ),
@@ -436,8 +454,11 @@ class wp_slimstat_reports {
 				'tooltip' => $chart_tooltip
 			),
 			'slim_p3_02' => array(
-				'title' => __( 'Summary', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_traffic_sources_summary' ),
+				'title' => __( 'Traffic Summary', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'raw' => array( __CLASS__, 'get_traffic_sources_summary' )
+				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-5' )
 			),
@@ -686,7 +707,10 @@ class wp_slimstat_reports {
 			),
 			'slim_p4_22' => array(
 				'title' => __( 'Your Website', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_your_blog' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'raw' => array( __CLASS__, 'get_your_blog' )
+				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => __( 'Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set here above.', 'wp-slimstat' )
@@ -820,8 +844,8 @@ class wp_slimstat_reports {
 
 		$endpoint = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page);
 		$pagination_buttons = '';
-		$direction_prev = is_rtl()?'right':'left';
-		$direction_next = is_rtl()?'left':'right';
+		$direction_prev = is_rtl() ? 'right' : 'left';
+		$direction_next = is_rtl() ? 'left' : 'right';
 
 		if ($endpoint + $_results_per_page < $_count_all_results && $_count_page_results > 0){
 			$startpoint = $_count_all_results - $_count_all_results % $_results_per_page;
@@ -842,222 +866,201 @@ class wp_slimstat_reports {
 			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals 0').'"></a> ';
 		}
 
-		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1, 0, '', wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, '', wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, '', wp_slimstat_db::$formats['thousand']).(($_count_all_results == 1000)?'+':''));
+		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1, 0, '', wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, '', wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, '', wp_slimstat_db::$formats['thousand']) . ( ( $_count_all_results == wp_slimstat::$options[ 'limit_results' ] ) ? '+' : '') );
 		if ($_show_refresh_countdown && wp_slimstat::$options['refresh_interval'] > 0 && !wp_slimstat_db::$filters_normalized['date']['is_past']){
-			$pagination .= ' &ndash; '.__('Refresh in','wp-slimstat').' <i class="refresh-timer"></i>';
+			$pagination .= ' ['.__('Refresh in','wp-slimstat').' <i class="refresh-timer"></i>]';
 		}
 		$pagination .= $pagination_buttons.'</p>';
 
 		echo $pagination;
 	}
 
-	/* FIX ME: This function can be removed, is not used anymore */
-	public static function get_raw_results( $_args = array() ) {
-		if ( empty( $_args[ 'type' ] ) ) {
-			return array();
-		}
-
-		// Default Values
-		$_args = array_merge( array(
-			'type' => '',
-			'columns' => '', 
-			'where' => '',
-			'having' => '', 
-			'as_column' => '',
-			'filter_op' => 'equals',
-			'outer_select_column' => '',
-			'aggr_function' => 'MAX',
-			'use_date_filters' => true
-		), $_args );
-
-		switch ( $_args[ 'type' ] ) {
-			case 'recent':
-				$all_results = wp_slimstat_db::get_recent( $_args[ 'columns' ], $_args[ 'where' ], $_args[ 'having' ], $_args[ 'use_date_filters' ], $_args['as_column'] );
-				break;
-
-			case 'top':
-				$all_results = wp_slimstat_db::get_top( $_args[ 'columns' ], $_args['where'], $_args['having'], $_args[ 'use_date_filters' ], $_args['as_column'] );
-				break;
-
-			case 'top_aggr':
-				$all_results = wp_slimstat_db::get_top_aggr( $_args[ 'columns' ], $_args['where'], $_args['outer_select_column'], $_args['aggr_function'] );
-				break;
-
-			default:
-				$all_results = array();
-				break;
-		}
-
-		return $all_results;
-	}
-
 	public static function callback_wrapper() {
 		$_args = self::_check_args( func_get_args() );
-
 		call_user_func( $_args[ 'callback' ] , $_args[ 'callback_args' ] );
 	}
 
 	public static function raw_results_to_html( $_args = array() ) {
-
 		wp_slimstat_db::$debug_message = '';
 		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
 
 		echo wp_slimstat_db::$debug_message;
 
-		$results = array_slice(
-			$all_results,
-			wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
-			wp_slimstat::$options[ 'rows_to_show' ]
-		);
+		// Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
+		if ( empty( $_args[ 'columns' ] ) ) {
+			foreach ( $all_results as $a_result ) {
+				echo '<p>';
 
-		// Count the results
-		$count_page_results = count( $results );
-
-		if ($count_page_results == 0){
-			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
-			
-			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-				die();
-			}
-			else{
-				return array();
-			}
-		}
-
-		// Some reports use aliases for column names
-		if ( !empty( $_args[ 'as_column' ] ) ) {
-			$_args[ 'columns' ] = $_args[ 'as_column' ];
-		}
-		else if ( !empty( $_args[ 'outer_select_column' ] ) ) {
-			$_args[ 'columns' ] = $_args[ 'outer_select_column' ];
-		}
-
-		// Some reports query more than one column
-		if ( strpos( $_args[ 'columns' ], ',' ) !== false ) {
-			$_args[ 'columns' ] = explode( ',', $_args[ 'columns' ] );
-			$_args[ 'columns' ] = trim( $_args[ 'columns' ][ 0 ] );
-		}
-
-		self::report_pagination( $count_page_results, count( $all_results ) );
-		
-		$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
-		$permalinks_enabled = get_option( 'permalink_structure' );
-
-		for($i=0; $i<$count_page_results; $i++){
-			$row_details = $percentage = '';
-			$element_pre_value = '';
-			$element_value = $results[ $i ][ $_args[ 'columns' ] ];
-
-			// Some columns require a special pre-treatment
-			switch ( $_args[ 'columns' ] ){
-
-				case 'browser':
-					if (!empty($results[$i]['user_agent']) && wp_slimstat::$options['show_complete_user_agent_tooltip'] == 'yes'){
-						$element_pre_value = self::inline_help($results[$i]['user_agent'], false);
-					}
-					$element_value = $results[$i]['browser'].((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0)?' '.$results[$i]['browser_version']:'');
-					break;
-
-				case 'category':
-					$row_details = '<br>'.__( 'Category ID', 'wp-slimstat' ) . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
-					$element_value = get_cat_name( $results[ $i ][ $_args[ 'columns' ] ] );
-					break;
-
-				case 'country':
-					$row_details .= '<br>'.__('Country Code','wp-slimstat').": {$results[$i]['country']}";
-					$element_value = __('c-'.$results[$i]['country'], 'wp-slimstat');
-					break;
-
-				case 'ip':
-					if ( wp_slimstat::$options['convert_ip_addresses'] == 'yes' ) {
-						$element_value = gethostbyaddr( $results[ $i ][ $_args[ 'columns' ] ] );
-					}
-					else{
-						$element_value = $results[ $i ][ $_args[ 'columns' ] ];
-					}
-					break;
-
-				case 'language':
-				case 'language_substring':
-					$row_details = '<br>'.__('Language Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
-					$element_value = __('l-'.$results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
-					break;
-
-				case 'platform':
-				case 'platform_substring':
-					$row_details = '<br>'.__('OS Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
-					$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
-					break;
-
-				case 'resource':
-				case 'resource_substring':
-					$resource_title = self::get_resource_title( $results[ $i ][ $_args[ 'columns' ] ] );
-					if ( $resource_title != $results[ $i ][ $_args[ 'columns' ] ] ) {
-						$row_details = '<br>' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' );
-					}
-					$element_value = $resource_title;
-					break;
-
-				case 'screen_width':
-					$element_value = "{$results[ $i ][ $_args[ 'columns' ] ]} x {$results[ $i ][ 'screen_height' ]}";
-					break;
-
-				case 'searchterms':
-					if ($_args[ 'type' ] == 'recent'){
-						$domain = parse_url( $results[ $i ][ 'resource' ], PHP_URL_HOST );
-						
-						$row_details = '<br>'.__('Referrer','wp-slimstat').": $domain";
-						$element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'], true);
-					}
-					else{
-						$element_value = htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
-					}
-					break;
-				case 'username':
-					$element_value = $results[$i]['username'];
-					if (wp_slimstat::$options['show_display_name'] == 'yes'){
-						$element_custom_value = get_user_by('login', $results[$i]['username']);
-						if (is_object($element_custom_value)) $element_value = $element_custom_value->display_name;
-					}
-					break;
-				case 'visit_id':
-					$element_value = $results[$i]['resource'];
-					break;
-				default:
-			}
-			
-			$element_value = "<a class='slimstat-filter-link' href='".self::fs_url( $_args[ 'columns' ].' '.$_args['filter_op'].' '.$results[$i][ $_args[ 'columns' ] ] )."'>$element_value</a>";
-
-			if ( !empty($_args['type'] ) && $_args['type'] == 'recent' ) {
-				$row_details = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true).$row_details;
-			}
-
-			if ( !empty($_args['type'] ) && $_args['type'] == 'top' ) {
-				$percentage = ' <span>'.((self::$pageviews > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['counthits']/self::$pageviews)), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0).'%</span>';
-				$row_details = __('Hits','wp-slimstat').': '.number_format($results[$i]['counthits'], 0, '', wp_slimstat_db::$formats['thousand']).$row_details;
-			}
-
-			// Some columns require a special post-treatment
-			if ( $_args[ 'columns' ] == 'resource' && strpos( $_args['where'], '404' ) === false ) {
-				$base_url = '';
-				if (isset($results[$i]['blog_id'])){
-					$base_url = parse_url(get_site_url($results[$i]['blog_id']));
-					$base_url = $base_url['scheme'].'://'.$base_url['host'];
+				if ( !empty( $a_result[ 'tooltip' ] ) ) {
+					self::inline_help( $a_result[ 'tooltip' ] ); 
 				}
-				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
+
+				echo "{$a_result[ 'metric' ]} <span>{$a_result[ 'value' ]}</span>";
+
+				if ( !empty( $a_result[ 'details' ] ) ) {
+					$is_expanded = ( wp_slimstat::$options[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
+					echo "<b class='slimstat-row-details$is_expanded'>{$a_result[ 'details' ]}</b>";
+				}
+
+				echo '</p>';
 			}
-			if ( $_args[ 'columns' ] == 'referer' ) {
-				$element_url = htmlentities($results[$i]['referer'], ENT_QUOTES, 'UTF-8');
-				$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
-			}
-			if (!empty($results[$i]['ip']) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
-				$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.$results[$i]['other_ip']:'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
-			}
-			if (!empty($row_details)){
-				$row_details = "<b class='slimstat-row-details$is_expanded'>$row_details</b>";
+		}
+		else {
+			$results = array_slice(
+				$all_results,
+				wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
+				wp_slimstat::$options[ 'rows_to_show' ]
+			);
+
+			// Count the results
+			$count_page_results = count( $results );
+
+			if ($count_page_results == 0){
+				echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
+				
+				if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+					die();
+				}
+				else{
+					return array();
+				}
 			}
 
-			echo "<p>$element_pre_value$element_value$percentage $row_details</p>";
+			// Some reports use aliases for column names
+			if ( !empty( $_args[ 'as_column' ] ) ) {
+				$_args[ 'columns' ] = $_args[ 'as_column' ];
+			}
+			else if ( !empty( $_args[ 'outer_select_column' ] ) ) {
+				$_args[ 'columns' ] = $_args[ 'outer_select_column' ];
+			}
+
+			// Some reports query more than one column
+			if ( strpos( $_args[ 'columns' ], ',' ) !== false ) {
+				$_args[ 'columns' ] = explode( ',', $_args[ 'columns' ] );
+				$_args[ 'columns' ] = trim( $_args[ 'columns' ][ 0 ] );
+			}
+
+			self::report_pagination( $count_page_results, count( $all_results ) );
+			
+			$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
+			$permalinks_enabled = get_option( 'permalink_structure' );
+
+			for($i=0; $i<$count_page_results; $i++){
+				$row_details = $percentage = '';
+				$element_pre_value = '';
+				$element_value = $results[ $i ][ $_args[ 'columns' ] ];
+
+				// Some columns require a special pre-treatment
+				switch ( $_args[ 'columns' ] ){
+
+					case 'browser':
+						if (!empty($results[$i]['user_agent']) && wp_slimstat::$options['show_complete_user_agent_tooltip'] == 'yes'){
+							$element_pre_value = self::inline_help($results[$i]['user_agent'], false);
+						}
+						$element_value = $results[$i]['browser'].((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0)?' '.$results[$i]['browser_version']:'');
+						break;
+
+					case 'category':
+						$row_details = '<br>'.__( 'Category ID', 'wp-slimstat' ) . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+						$element_value = get_cat_name( $results[ $i ][ $_args[ 'columns' ] ] );
+						break;
+
+					case 'country':
+						$row_details .= '<br>'.__('Country Code','wp-slimstat').": {$results[$i]['country']}";
+						$element_value = __('c-'.$results[$i]['country'], 'wp-slimstat');
+						break;
+
+					case 'ip':
+						if ( wp_slimstat::$options['convert_ip_addresses'] == 'yes' ) {
+							$element_value = gethostbyaddr( $results[ $i ][ $_args[ 'columns' ] ] );
+						}
+						else{
+							$element_value = $results[ $i ][ $_args[ 'columns' ] ];
+						}
+						break;
+
+					case 'language':
+					case 'language_substring':
+						$row_details = '<br>'.__('Language Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
+						$element_value = __('l-'.$results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
+						break;
+
+					case 'platform':
+					case 'platform_substring':
+						$row_details = '<br>'.__('OS Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
+						$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
+						break;
+
+					case 'resource':
+					case 'resource_substring':
+						$resource_title = self::get_resource_title( $results[ $i ][ $_args[ 'columns' ] ] );
+						if ( $resource_title != $results[ $i ][ $_args[ 'columns' ] ] ) {
+							$row_details = '<br>' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' );
+						}
+						$element_value = $resource_title;
+						break;
+
+					case 'screen_width':
+						$element_value = "{$results[ $i ][ $_args[ 'columns' ] ]} x {$results[ $i ][ 'screen_height' ]}";
+						break;
+
+					case 'searchterms':
+						if ($_args[ 'type' ] == 'recent'){
+							$domain = parse_url( $results[ $i ][ 'resource' ], PHP_URL_HOST );
+							
+							$row_details = '<br>'.__('Referrer','wp-slimstat').": $domain";
+							$element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'], true);
+						}
+						else{
+							$element_value = htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
+						}
+						break;
+					case 'username':
+						$element_value = $results[$i]['username'];
+						if (wp_slimstat::$options['show_display_name'] == 'yes'){
+							$element_custom_value = get_user_by('login', $results[$i]['username']);
+							if (is_object($element_custom_value)) $element_value = $element_custom_value->display_name;
+						}
+						break;
+					case 'visit_id':
+						$element_value = $results[$i]['resource'];
+						break;
+					default:
+				}
+				
+				$element_value = "<a class='slimstat-filter-link' href='".self::fs_url( $_args[ 'columns' ].' '.$_args['filter_op'].' '.$results[$i][ $_args[ 'columns' ] ] )."'>$element_value</a>";
+
+				if ( !empty($_args['type'] ) && $_args['type'] == 'recent' ) {
+					$row_details = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true).$row_details;
+				}
+
+				if ( !empty($_args['type'] ) && $_args['type'] == 'top' ) {
+					$percentage = ' <span>'.((self::$pageviews > 0)?number_format(sprintf("%01.2f", (100*$results[$i]['counthits']/self::$pageviews)), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0).'%</span>';
+					$row_details = __('Hits','wp-slimstat').': '.number_format($results[$i]['counthits'], 0, '', wp_slimstat_db::$formats['thousand']).$row_details;
+				}
+
+				// Some columns require a special post-treatment
+				if ( $_args[ 'columns' ] == 'resource' && strpos( $_args['where'], '404' ) === false ) {
+					$base_url = '';
+					if (isset($results[$i]['blog_id'])){
+						$base_url = parse_url(get_site_url($results[$i]['blog_id']));
+						$base_url = $base_url['scheme'].'://'.$base_url['host'];
+					}
+					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
+				}
+				if ( $_args[ 'columns' ] == 'referer' ) {
+					$element_url = htmlentities($results[$i]['referer'], ENT_QUOTES, 'UTF-8');
+					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
+				}
+				if (!empty($results[$i]['ip']) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
+					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.$results[$i]['other_ip']:'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
+				}
+				if (!empty($row_details)){
+					$row_details = "<b class='slimstat-row-details$is_expanded'>$row_details</b>";
+				}
+
+				echo "<p>$element_pre_value$element_value$percentage $row_details</p>";
+			}
 		}
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
@@ -1204,215 +1207,234 @@ class wp_slimstat_reports {
 		}
 	}
 
-	public static function show_about_wpslimstat() { ?>
+	public static function get_about_wpslimstat() { 
+		$dt = wp_slimstat_db::get_oldest_visit( '1=1', false );
+		$results = array();
 
-		<p><?php _e('Dataset Size', 'wp-slimstat') ?> <span><?php echo number_format( wp_slimstat_db::count_records('id', '1=1', false), 0, '', wp_slimstat_db::$formats['thousand']).' '; _e( 'records', 'wp-slimstat' ); ?></span></p>
-		<p><?php _e('DB Size', 'wp-slimstat') ?> <span><?php echo wp_slimstat_db::get_data_size() ?></span></p>
-		<p><?php _e('Tracking Active', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['is_tracking']), 'wp-slimstat') ?></span></p>
-		<p><?php _e('Javascript Mode', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['javascript_mode']), 'wp-slimstat') ?></span></p>
-		<p><?php _e('Tracking Browser Caps', 'wp-slimstat') ?> <span><?php _e(ucfirst(wp_slimstat::$options['enable_javascript']), 'wp-slimstat') ?></span></p>
-		<p><?php _e('Auto purge', 'wp-slimstat') ?> <span><?php echo (wp_slimstat::$options['auto_purge'] > 0)?wp_slimstat::$options['auto_purge'].' '.__('days','wp-slimstat'):__('No','wp-slimstat') ?></span></p>
-		<p><?php _e('Oldest pageview', 'wp-slimstat') ?> <span><?php $dt = wp_slimstat_db::get_oldest_visit('1=1', false); echo ($dt == null)?__('No visits','wp-slimstat'):date_i18n(wp_slimstat::$options['date_format'], $dt) ?></span></p>
-		<p>Geo IP <span><?php echo date_i18n(wp_slimstat::$options['date_format'], @filemtime(wp_slimstat::$maxmind_path)) ?></span></p><?php
+		$results[ 0 ][ 'metric' ] = __( 'Dataset Size', 'wp-slimstat' );
+		$results[ 0 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', '1=1', false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 0 ][ 'tooltip' ] = __( 'Total number of records stored in the database.', 'wp-slimstat' );
 
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ){
-			die();
-		}
+		$results[ 1 ][ 'metric' ] = __( 'DB Size', 'wp-slimstat' );
+		$results[ 1 ][ 'value' ] = wp_slimstat_db::get_data_size();
+
+		$results[ 2 ][ 'metric' ] = __( 'Tracking Enabled', 'wp-slimstat' );
+		$results[ 2 ][ 'value' ] = __( ucfirst( wp_slimstat::$options[ 'is_tracking' ] ), 'wp-slimstat' );
+
+		$results[ 3 ][ 'metric' ] = __( 'Javascript Mode', 'wp-slimstat' );
+		$results[ 3 ][ 'value' ] = __( ucfirst( wp_slimstat::$options[ 'javascript_mode' ] ), 'wp-slimstat' );
+
+		$results[ 4 ][ 'metric' ] = __( 'Tracking Browser Caps', 'wp-slimstat' );
+		$results[ 4 ][ 'value' ] = __( ucfirst( wp_slimstat::$options[ 'enable_javascript' ] ), 'wp-slimstat' );
+
+		$results[ 5 ][ 'metric' ] = __( 'Auto purge', 'wp-slimstat' );
+		$results[ 5 ][ 'value' ] = ( wp_slimstat::$options[ 'auto_purge' ] > 0 ) ? wp_slimstat::$options[ 'auto_purge' ] . ' ' . __( 'days', 'wp-slimstat' ) : __( 'Off', 'wp-slimstat' );
+
+		$results[ 6 ][ 'metric' ] = __( 'Oldest pageview', 'wp-slimstat' );
+		$results[ 6 ][ 'value' ] = ( $dt == null ) ? __( 'No visits', 'wp-slimstat' ) : date_i18n( wp_slimstat::$options[ 'date_format' ], $dt );
+
+		$results[ 7 ][ 'metric' ] = __( 'Geolocation', 'wp-slimstat' );
+		$results[ 7 ][ 'value' ] = date_i18n( wp_slimstat::$options[ 'date_format' ], @filemtime( wp_slimstat::$maxmind_path ) );
+		$results[ 7 ][ 'tooltip' ] = __( 'Date when the MaxMind Geolocation database was last updated.', 'wp-slimstat' );
+
+		return $results;
 	}
 
-	public static function show_overview_summary() {
-		$days_in_range = ceil( ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] - wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 ); ?>
+	public static function get_overview_summary() {
+		$days_in_range = ceil( ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] - wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 ); 
+		$results = array();
 
-		<p><?php self::inline_help(__('A request to load a single HTML file. Slimstat logs a "pageview" each time the tracking code is executed.','wp-slimstat'));
-			_e('Pageviews', 'wp-slimstat'); ?> <span><?php echo number_format(self::$pageviews, 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Days in Range', 'wp-slimstat') ?> <span><?php echo $days_in_range ?></span></p>
-		<p><?php self::inline_help(__('How many pages have been visited on average every day during the current period.','wp-slimstat'));
-			_e('Average Daily Pageviews', 'wp-slimstat') ?> <span><?php echo number_format( intval( self::$pageviews/$days_in_range ), 0, '', wp_slimstat_db::$formats['thousand'] ) ?></span></p>
-		<p><?php self::inline_help(__('Visitors who landed on your site after searching for a keyword on Google, Yahoo, etc.','wp-slimstat'));
-			_e('From Search Results', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL'), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php self::inline_help(__('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses','wp-slimstat'));
-			_e('Unique IPs', 'wp-slimstat'); ?> <span><?php echo number_format(wp_slimstat_db::count_records('ip'), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Last 30 minutes', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('id', 'dt > '.(date_i18n('U')-1800), false), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Today', 'wp-slimstat'); ?> <span><?php echo number_format(wp_slimstat_db::count_records('id', 'dt > '.(date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y')))), false), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Yesterday', 'wp-slimstat'); ?> <span><?php echo number_format(wp_slimstat_db::count_records('id', 'dt BETWEEN '.(date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y')))).' AND '.(date_i18n('U', mktime(23, 59, 59, date_i18n('m'), date_i18n('d')-1, date_i18n('Y')))), false), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p><?php
+		$results[ 0 ][ 'metric' ] = __( 'Pageviews', 'wp-slimstat' );
+		$results[ 0 ][ 'value' ] = number_format( self::$pageviews, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 0 ][ 'tooltip' ] = __( 'A request to load a single HTML file. Slimstat logs a "pageview" each time the tracking code is executed.', 'wp-slimstat' );
 
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
+		$results[ 1 ][ 'metric' ] = __( 'Days in Range', 'wp-slimstat' );
+		$results[ 1 ][ 'value' ] = $days_in_range;
+
+		$results[ 2 ][ 'metric' ] = __( 'Average Daily Pageviews', 'wp-slimstat' );
+		$results[ 2 ][ 'value' ] = number_format( intval( self::$pageviews/$days_in_range ), 0, '', wp_slimstat_db::$formats['thousand'] );
+		$results[ 2 ][ 'tooltip' ] = __( 'How many pages have been visited on average every day during the current period.', 'wp-slimstat' );
+
+		$results[ 3 ][ 'metric' ] = __( 'From Search Results', 'wp-slimstat' );
+		$results[ 3 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'searchterms IS NOT NULL' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 3 ][ 'tooltip' ] = __( 'Visitors who landed on your site after searching for a keyword on Google, Yahoo, etc.', 'wp-slimstat' );
+
+		$results[ 4 ][ 'metric' ] = __( 'Unique IPs', 'wp-slimstat' );
+		$results[ 4 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'ip' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 4 ][ 'tooltip' ] = __( 'Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses', 'wp-slimstat' );
+
+		$results[ 5 ][ 'metric' ] = __( 'Last 30 minutes', 'wp-slimstat' );
+		$results[ 5 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'dt > ' . ( date_i18n( 'U' ) - 1800 ), false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+		$results[ 6 ][ 'metric' ] = __( 'Today', 'wp-slimstat' );
+		$results[ 6 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'dt > ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ), date_i18n( 'Y' ) ) ) ), false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+		$results[ 7 ][ 'metric' ] = __( 'Yesterday', 'wp-slimstat' );
+		$results[ 7 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'dt BETWEEN ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ) . ' AND ' . ( date_i18n( 'U', mktime( 23, 59, 59, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ), false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+		return $results;
 	}
 
-	public static function show_plugins() {
+	public static function get_plugins() {
 		$wp_slim_plugins = array( 'flash', 'silverlight', 'acrobat', 'java', 'mediaplayer', 'director', 'real', 'quicktime' );
 		$total_human_hits = wp_slimstat_db::count_records( 'id', 'visit_id > 0 AND browser_type <> 1' );
-// FIX ME: implement echo/return
-		foreach( $wp_slim_plugins as $i => $a_plugin ){
+		$results = array();
+
+		foreach ( $wp_slim_plugins as $i => $a_plugin ) {
 			$count_results = wp_slimstat_db::count_records( 'id', "plugins LIKE '%{$a_plugin}%'" );
-			echo "<p title='".__('Hits','wp-slimstat').": $count_results'>".ucfirst($a_plugin).' <span>';
-			echo ($total_human_hits > 0)?number_format(sprintf("%01.2f", (100*$count_results/$total_human_hits)), 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']):0;
-			echo '%</span></p>';
+			$results[ $i ][ 'metric' ] = ucfirst( $a_plugin );
+			$results[ $i ][ 'value' ] = ( $total_human_hits > 0 ) ? number_format( ( 100 * $count_results / $total_human_hits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+			$results[ $i ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 		}
 
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
+		return $results;
 	}
 
-	public static function show_visitors_summary() {
+	public static function get_visitors_summary() {
+		$results = array();
 		$total_human_hits = wp_slimstat_db::count_records( 'id', 'visit_id > 0 AND browser_type <> 1');
-		$total_human_visits = wp_slimstat_db::count_records('visit_id', 'visit_id > 0 AND browser_type <> 1');
 		$new_visitors = wp_slimstat_db::count_records_having( 'ip', 'visit_id > 0 AND browser_type <> 1', 'COUNT(visit_id) = 1' );
-		$new_visitors_rate = ( $total_human_hits > 0) ? sprintf( "%01.2f", ( 100 * $new_visitors / $total_human_hits ) ) : 0;
-		if (intval($new_visitors_rate) > 99) $new_visitors_rate = '100';
-		$metrics_per_visit = wp_slimstat_db::get_max_and_average_pages_per_visit(); ?>
-		
-		<p><?php self::inline_help( __( 'A visit is a session of at most 30 minutes. Returning visitors are counted multiple times if they perform multiple visits.', 'wp-slimstat' ) ) ?>
-			<?php _e( 'Visits', 'wp-slimstat' ) ?> <span><?php echo number_format( $total_human_visits, 0, '', wp_slimstat_db::$formats['thousand'] ) ?></span></p>
-		<p><?php self::inline_help( __( 'It includes only traffic generated by human visitors.', 'wp-slimstat' ) ) ?>
-			<?php _e( 'Unique IPs', 'wp-slimstat' ) ?> <span><?php echo number_format( wp_slimstat_db::count_records('ip', 'visit_id > 0 AND browser_type <> 1'), 0, '', wp_slimstat_db::$formats['thousand'] ) ?></span></p>
-		<p><?php self::inline_help( __( 'Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.', 'wp-slimstat' ) ) ?>
-			<?php _e( 'Bounce rate', 'wp-slimstat' ) ?> <span><?php echo number_format( $new_visitors_rate, 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand'] ) ?>%</span></p>
-		<p><?php self::inline_help( __( 'Visitors who had previously left a comment on your blog.', 'wp-slimstat' ) ) ?>
-			<?php _e( 'Known visitors', 'wp-slimstat') ?> <span><?php echo wp_slimstat_db::count_records( 'username' ) ?></span></p>
-		<p><?php self::inline_help( __( 'Human users who visited your site only once.', 'wp-slimstat' ) ) ?>
-			<?php _e( 'New visitors', 'wp-slimstat' ) ?> <span><?php echo number_format( $new_visitors, 0, '', wp_slimstat_db::$formats['thousand'] ) ?></span></p>
-		<p><?php _e( 'Bots', 'wp-slimstat' ) ?> <span><?php echo number_format( wp_slimstat_db::count_records( 'id', 'browser_type = 1' ), 0, '', wp_slimstat_db::$formats['thousand'] ) ?></span></p>
-		<p><?php _e( 'Pages per visit', 'wp-slimstat' ) ?> <span><?php echo number_format( $metrics_per_visit[0]['avghits'], 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand'] ) ?></span></p>
-		<p><?php _e( 'Longest visit', 'wp-slimstat' ) ?> <span><?php echo number_format( $metrics_per_visit[0]['maxhits'], 0, '', wp_slimstat_db::$formats['thousand'] ).' '.__('hits','wp-slimstat') ?></span></p><?php
-
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
+		$new_visitors_rate = ( $total_human_hits > 0) ? ( 100 * $new_visitors / $total_human_hits ) : 0;
+		$metrics_per_visit = wp_slimstat_db::get_max_and_average_pages_per_visit();
+		if ( intval( $new_visitors_rate ) > 99 ) {
+			$new_visitors_rate = '100';
 		}
+		
+		$results[ 0 ][ 'metric' ] = __( 'Visits', 'wp-slimstat' );
+		$results[ 0 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'visit_id', 'visit_id > 0 AND browser_type <> 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 0 ][ 'tooltip' ] = __( 'A visit is a session of at most 30 minutes. Returning visitors are counted multiple times if they perform multiple visits.', 'wp-slimstat' );
+
+		$results[ 1 ][ 'metric' ] = __( 'Unique IPs', 'wp-slimstat' );
+		$results[ 1 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'ip', 'visit_id > 0 AND browser_type <> 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 1 ][ 'tooltip' ] = __( 'It includes only traffic generated by human visitors.', 'wp-slimstat' );
+
+		$results[ 2 ][ 'metric' ] = __( 'Bounce rate', 'wp-slimstat' );
+		$results[ 2 ][ 'value' ] = number_format( $new_visitors_rate, 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 2 ][ 'tooltip' ] = __( 'Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.', 'wp-slimstat' );
+
+		$results[ 3 ][ 'metric' ] = __( 'Known visitors', 'wp-slimstat' );
+		$results[ 3 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'username' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 3 ][ 'tooltip' ] = __( 'Visitors who had previously left a comment on your blog.', 'wp-slimstat' );
+
+		$results[ 4 ][ 'metric' ] = __( 'New visitors', 'wp-slimstat' );
+		$results[ 4 ][ 'value' ] = number_format( $new_visitors, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 4 ][ 'tooltip' ] = __( 'Human users who visited your site only once.', 'wp-slimstat' );
+
+		$results[ 5 ][ 'metric' ] = __( 'Bots', 'wp-slimstat' );
+		$results[ 5 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'browser_type = 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+		$results[ 6 ][ 'metric' ] = __( 'Pages per visit', 'wp-slimstat' );
+		$results[ 6 ][ 'value' ] = number_format( $metrics_per_visit[ 0 ][ 'avghits' ], 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+
+		$results[ 7 ][ 'metric' ] = __( 'Longest visit', 'wp-slimstat' );
+		$results[ 7 ][ 'value' ] = number_format( $metrics_per_visit[ 0 ][ 'maxhits' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] ) . ' ' . __( 'hits', 'wp-slimstat' );
+
+		return $results;
 	}
 
-	public static function show_visit_duration() {
-		$total_human_visits = wp_slimstat_db::count_records('visit_id', 'visit_id > 0 AND browser_type <> 1');
-		$count = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) >= 0 AND max(dt) - min(dt) <= 30' );
-		$percentage = ($total_human_visits > 0)?sprintf("%01.2f", (100*$count/$total_human_visits)):0;
-		$extra_info =  "title='".__('Hits','wp-slimstat').": {$count}'";
-		$average_time = 30 * $count;
-		echo "<p $extra_info>".__('0 - 30 seconds','wp-slimstat')." <span>$percentage%</span></p>";
+	public static function get_visits_duration() {
+		$total_human_visits = wp_slimstat_db::count_records( 'visit_id', 'visit_id > 0 AND browser_type <> 1' );
+		$results = array();
 
-		$count = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 30 AND max(dt) - min(dt) <= 60' );
-		$percentage = ($total_human_visits > 0)?sprintf("%01.2f", (100*$count/$total_human_visits)):0;
-		$extra_info =  "title='".__('Hits','wp-slimstat').": {$count}'";
-		$average_time += 60 * $count;
-		echo "<p $extra_info>".__('31 - 60 seconds','wp-slimstat')." <span>$percentage%</span></p>";
+		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) >= 0 AND max(dt) - min(dt) <= 30' );
+		$average_time = 30 * $count_results;
+		$results[ 0 ][ 'metric' ] = __( '0 - 30 seconds', 'wp-slimstat' );
+		$results[ 0 ][ 'value' ] = ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+		$results[ 0 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
-		$count = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 60 AND max(dt) - min(dt) <= 180' );
-		$percentage = ($total_human_visits > 0)?sprintf("%01.2f", (100*$count/$total_human_visits)):0;
-		$extra_info =  "title='".__('Hits','wp-slimstat').": {$count}'";
-		$average_time += 180 * $count;
-		echo "<p $extra_info>".__('1 - 3 minutes','wp-slimstat')." <span>$percentage%</span></p>";
+		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 30 AND max(dt) - min(dt) <= 60' );
+		$average_time += 60 * $count_results;
+		$results[ 1 ][ 'metric' ] = __( '31 - 60 seconds', 'wp-slimstat' );
+		$results[ 1 ][ 'value' ] = ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+		$results[ 1 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
-		$count = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 180 AND max(dt) - min(dt) <= 300' );
-		$percentage = ($total_human_visits > 0)?sprintf("%01.2f", (100*$count/$total_human_visits)):0;
-		$extra_info =  "title='".__('Hits','wp-slimstat').": {$count}'";
-		$average_time += 300 * $count;
-		echo "<p $extra_info>".__('3 - 5 minutes','wp-slimstat')." <span>$percentage%</span></p>";
+		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 60 AND max(dt) - min(dt) <= 180' );
+		$average_time += 180 * $count_results;
+		$results[ 2 ][ 'metric' ] = __( '1 - 3 minutes', 'wp-slimstat' );
+		$results[ 2 ][ 'value' ] = ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+		$results[ 2 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
-		$count = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 300 AND max(dt) - min(dt) <= 420' );
-		$percentage = ($total_human_visits > 0)?sprintf("%01.2f", (100*$count/$total_human_visits)):0;
-		$extra_info =  "title='".__('Hits','wp-slimstat').": {$count}'";
-		$average_time += 420 * $count;
-		echo "<p $extra_info>".__('5 - 7 minutes','wp-slimstat')." <span>$percentage%</span></p>";
+		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 180 AND max(dt) - min(dt) <= 300' );
+		$average_time += 300 * $count_results;
+		$results[ 3 ][ 'metric' ] = __( '3 - 5 minutes', 'wp-slimstat' );
+		$results[ 3 ][ 'value' ] = ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+		$results[ 3 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
-		$count = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 420 AND max(dt) - min(dt) <= 600' );
-		$percentage = ($total_human_visits > 0)?sprintf("%01.2f", (100*$count/$total_human_visits)):0;
-		$extra_info =  "title='".__('Hits','wp-slimstat').": {$count}'";
-		$average_time += 600* $count;
-		echo "<p $extra_info>".__('7 - 10 minutes','wp-slimstat')." <span>$percentage%</span></p>";
+		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 300 AND max(dt) - min(dt) <= 420' );
+		$average_time += 420 * $count_results;
+		$results[ 4 ][ 'metric' ] = __( '5 - 7 minutes', 'wp-slimstat' );
+		$results[ 4 ][ 'value' ] = ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+		$results[ 4 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
-		$count = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 600' );
-		$percentage = ($total_human_visits > 0)?sprintf("%01.2f", (100*$count/$total_human_visits)):0;
-		$extra_info =  "title='".__('Hits','wp-slimstat').": {$count}'";
-		$average_time += 900 * $count;
-		echo "<p $extra_info>".__('More than 10 minutes','wp-slimstat')." <span>$percentage%</span></p>";
+		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 420 AND max(dt) - min(dt) <= 600' );
+		$average_time += 600* $count_results;
+		$results[ 5 ][ 'metric' ] = __( '7 - 10 minutes', 'wp-slimstat' );
+		$results[ 5 ][ 'value' ] = ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+		$results[ 5 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
-		if ($total_human_visits > 0){
+		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'max(dt) - min(dt) > 600' );
+		$average_time += 900 * $count_results;
+		$results[ 6 ][ 'metric' ] = __( 'More than minutes', 'wp-slimstat' );
+		$results[ 6 ][ 'value' ] = ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
+		$results[ 6 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
+
+		if ( $total_human_visits > 0 ) {
 			$average_time /= $total_human_visits;
 			$average_time = date('m:s', intval($average_time));
 		}
 		else{
 			$average_time = '0:00';
 		}
-		echo '<p>'.__('Average time on site','wp-slimstat')." <span>$average_time </span></p>";
 
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
+		$results[ 7 ][ 'metric' ] = __( 'Average time on site', 'wp-slimstat' );
+		$results[ 7 ][ 'value' ] = $average_time;
+		$results[ 7 ][ 'details' ] = '';
+
+		return $results;
 	}
 	
-	public static function show_traffic_sources_summary() {
-		$total_human_hits = wp_slimstat_db::count_records('id', 'visit_id > 0 AND browser_type <> 1');
+	public static function get_traffic_sources_summary() {
+		$results = array();
+		$total_human_hits = wp_slimstat_db::count_records( 'id', 'visit_id > 0 AND browser_type <> 1' );
 		$new_visitors = wp_slimstat_db::count_records_having( 'ip', 'visit_id > 0', 'COUNT(visit_id) = 1' );
 		$new_visitors_rate = ($total_human_hits > 0)?sprintf("%01.2f", (100*$new_visitors/$total_human_hits)):0;
-		if (intval($new_visitors_rate) > 99) $new_visitors_rate = '100'; ?>
-
-		<p><?php self::inline_help(__('A request to load a single HTML file. Slimstat logs a "pageview" each time the tracking code is executed.','wp-slimstat')) ?>
-			<?php _e('Pageviews', 'wp-slimstat') ?> <span><?php echo number_format(self::$pageviews, 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php self::inline_help(__('A referrer (or referring site) is the site that a visitor previously visited before following a link to your site.','wp-slimstat')) ?>
-			<?php _e('Unique Referrers', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('referer', "referer NOT LIKE '%{$_SERVER['SERVER_NAME']}%'"), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php self::inline_help(__("Visitors who visited the site by typing the URL directly into their browser. <em>Direct</em> can also refer to the visitors who clicked on the links from their bookmarks/favorites, untagged links within emails, or links from documents that don't include tracking variables.",'wp-slimstat')) ?>
-			<?php _e('Direct Pageviews', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('id', 'resource IS NULL'), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php self::inline_help(__("Visitors who came to your site via searches on Google or some other search engine.",'wp-slimstat')) ?>
-			<?php _e('From a search result', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('id', "searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%".home_url()."%'"), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php self::inline_help(__("The first page that a user views during a session. This is also known as the <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on your home page, it gets counted (for that visit) as a landing page.",'wp-slimstat')) ?>
-			<?php _e('Unique Landing Pages', 'wp-slimstat') ?> <span><?php echo number_format (wp_slimstat_db::count_records( 'resource' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] ) ?></span></p>
-		<p><?php self::inline_help(__("Number of single-page visits to your site over the selected period.",'wp-slimstat')) ?>
-			<?php _e('Bounce Pages', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_bouncing_pages(), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php self::inline_help(__('Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.','wp-slimstat')) ?>
-			<?php _e('New Visitors Rate', 'wp-slimstat') ?> <span><?php echo number_format($new_visitors_rate, 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?>%</span></p>
-		<p><?php self::inline_help(__("Visitors who visited the site in the last 5 minutes coming from a search engine.",'wp-slimstat')) ?>
-			<?php _e('Currently from search engines', 'wp-slimstat') ?> <span><?php echo number_format(wp_slimstat_db::count_records('id', "searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE '%".home_url()."%' AND dt > UNIX_TIMESTAMP()-300", false), 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p><?php
-
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
-	}
-
-	public static function show_events( $_args = array() ) {
-		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
-
-		$results = array_slice(
-			$all_results,
-			wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
-			wp_slimstat::$options[ 'rows_to_show' ]
-		);
-
-		// Count the results
-		$count_page_results = count( $results );
-
-		if ($count_page_results == 0){
-			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
-			
-			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-				die();
-			}
-			else{
-				return array();
-			}
+		if (intval($new_visitors_rate) > 99) {
+			$new_visitors_rate = '100';
 		}
 
-		self::report_pagination( $count_page_results, count( $all_results ) );
-		$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
+		$results[ 0 ][ 'metric' ] = __( 'Pageviews', 'wp-slimstat' );
+		$results[ 0 ][ 'value' ] = number_format( self::$pageviews, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 0 ][ 'tooltip' ] = __( 'A request to load a single HTML file. Slimstat logs a "pageview" each time the tracking code is executed.', 'wp-slimstat' );
 
-		foreach ( $results as $a_result ) {
-			echo "<p>{$a_result[ 'notes' ]} <b class='slimstat-row-details$is_expanded'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
+		$results[ 1 ][ 'metric' ] = __( 'Unique Referrers', 'wp-slimstat' );
+		$results[ 1 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'referer', "referer NOT LIKE '%{$_SERVER['SERVER_NAME']}%'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 1 ][ 'tooltip' ] = __( 'A referrer (or referring site) is the site that a visitor previously visited before following a link to your site.', 'wp-slimstat' );
 
-			if ( !empty( $a_result[ 'dt' ] ) ) {
-				$date_time = date_i18n( wp_slimstat::$options[ 'date_format' ] . ' ' . wp_slimstat::$options[ 'time_format' ], $a_result[ 'dt' ], true );
-				echo '<br/>' . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br/>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
-			}
-			if ( !empty( $a_result[ 'counthits' ] ) ) {
-				echo '<br/>' . __( 'Hits', 'wp-slimstat' ) . ": {$a_result[ 'counthits' ]}";
-			}
+		$results[ 2 ][ 'metric' ] = __( 'Direct Pageviews', 'wp-slimstat' );
+		$results[ 2 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'resource IS NULL' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 2 ][ 'tooltip' ] = __( "Visitors who visited the site by typing the URL directly into their browser. <em>Direct</em> can also refer to the visitors who clicked on the links from their bookmarks/favorites, untagged links within emails, or links from documents that don't include tracking variables.", 'wp-slimstat' );
 
-			echo "</b></p>";
-		}
+		$results[ 3 ][ 'metric' ] = __( 'From a search result', 'wp-slimstat' );
+		$results[ 3 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', "searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 3 ][ 'tooltip' ] = __( "Visitors who came to your site via searches on Google or some other search engine.", 'wp-slimstat' );
 
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
+		$results[ 4 ][ 'metric' ] = __( 'Unique Landing Pages', 'wp-slimstat' );
+		$results[ 4 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'resource' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 4 ][ 'tooltip' ] = __( "The first page that a user views during a session. This is also known as the <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on your home page, it gets counted (for that visit) as a landing page.", 'wp-slimstat' );
+
+		$results[ 5 ][ 'metric' ] = __( 'Bounce Pages', 'wp-slimstat' );
+		$results[ 5 ][ 'value' ] = number_format( wp_slimstat_db::count_bouncing_pages(), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 5 ][ 'tooltip' ] = __( 'Number of single page visits to your site over the selected period.', 'wp-slimstat' );
+
+		$results[ 6 ][ 'metric' ] = __( 'New Visitors Rate', 'wp-slimstat' );
+		$results[ 6 ][ 'value' ] = number_format( $new_visitors_rate, 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 6 ][ 'tooltip' ] = __( 'Percentage of single page visits, i.e. visits in which the person left your site from the entrance page.', 'wp-slimstat' );
+
+		$results[ 7 ][ 'metric' ] = __( 'Currently from search engines', 'wp-slimstat' );
+		$results[ 7 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', "searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%' AND dt > UNIX_TIMESTAMP() - 300", false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 7 ][ 'tooltip' ] = __( 'Visitors who visited the site in the last 5 minutes coming from a search engine.', 'wp-slimstat' );
+
+		return $results;
 	}
 
 	public static function show_rankings(){
@@ -1494,6 +1516,91 @@ class wp_slimstat_reports {
 			<?php _e('Alexa World Rank', 'wp-slimstat') ?> <span><?php echo number_format($rankings['alexa_world_rank'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 		<p><?php _e('Alexa Country Rank', 'wp-slimstat') ?> <span><?php echo number_format($rankings['alexa_country_rank'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
 		<p><?php _e('Alexa Popularity', 'wp-slimstat') ?> <span><?php echo number_format($rankings['alexa_popularity'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p><?php
+
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			die();
+		}
+	}
+
+	public static function get_your_blog(){
+		if ( false === ( $results = get_transient( 'slimstat_your_content' ) ) ) {
+			$results = array();
+
+			$results[ 0 ][ 'metric' ] = __( 'Content Items', 'wp-slimstat' );
+			$results[ 0 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type <> 'revision' AND post_status <> 'auto-draft'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 0 ][ 'tooltip' ] = __( 'This value includes not only posts, but also custom post types, regardless of their status', 'wp-slimstat' );
+
+			$results[ 1 ][ 'metric' ] = __( 'Posts', 'wp-slimstat' );
+			$results[ 1 ][ 'value' ] = $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'post'" );
+
+			$results[ 2 ][ 'metric' ] = __( 'Pages', 'wp-slimstat' );
+			$results[ 2 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'page'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+			$results[ 3 ][ 'metric' ] = __( 'Attachments', 'wp-slimstat' );
+			$results[ 3 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'attachment'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+			$results[ 4 ][ 'metric' ] = __( 'Revisions', 'wp-slimstat' );
+			$results[ 4 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'revision'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+			$results[ 5 ][ 'metric' ] = __( 'Comments', 'wp-slimstat' );
+			$results[ 5 ][ 'value' ] = $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments}" );
+			
+			$results[ 6 ][ 'metric' ] = __( 'Avg Comments per Post', 'wp-slimstat' );
+			$results[ 6 ][ 'value' ] = number_format( !empty( $results[ 1 ][ 'value' ] ) ? $results[ 5 ][ 'value' ] / $results[ 1 ][ 'value' ] : 0, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			
+			$results[ 7 ][ 'metric' ] = __( 'Avg Server Latency', 'wp-slimstat' );
+			$results[ 7 ][ 'value' ] = number_format( wp_slimstat::$wpdb->get_var( "SELECT AVG(server_latency) FROM {$GLOBALS[ 'wpdb' ]->prefix }slim_stats WHERE server_latency <> 0" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 7 ][ 'tooltip' ] = __( 'Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server.', 'wp-slimstat' );
+
+			$results[ 1 ][ 'value' ] = number_format( $results[ 1 ][ 'value' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 5 ][ 'value' ] = number_format( $results[ 5 ][ 'value' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+
+			// Store values as transients for 30 minutes
+			set_transient( 'slimstat_your_content', $results, 1800 );
+		}
+
+		return $results;
+	}
+
+	public static function show_events( $_args = array() ) {
+		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
+
+		$results = array_slice(
+			$all_results,
+			wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
+			wp_slimstat::$options[ 'rows_to_show' ]
+		);
+
+		// Count the results
+		$count_page_results = count( $results );
+
+		if ($count_page_results == 0){
+			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
+			
+			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+				die();
+			}
+			else{
+				return array();
+			}
+		}
+
+		self::report_pagination( $count_page_results, count( $all_results ) );
+		$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
+
+		foreach ( $results as $a_result ) {
+			echo "<p>{$a_result[ 'notes' ]} <b class='slimstat-row-details$is_expanded'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
+
+			if ( !empty( $a_result[ 'dt' ] ) ) {
+				$date_time = date_i18n( wp_slimstat::$options[ 'date_format' ] . ' ' . wp_slimstat::$options[ 'time_format' ], $a_result[ 'dt' ], true );
+				echo '<br/>' . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br/>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
+			}
+			if ( !empty( $a_result[ 'counthits' ] ) ) {
+				echo '<br/>' . __( 'Hits', 'wp-slimstat' ) . ": {$a_result[ 'counthits' ]}";
+			}
+
+			echo "</b></p>";
+		}
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			die();
@@ -1639,42 +1746,6 @@ class wp_slimstat_reports {
 			map.write("slim_p6_01_inside");
 		//});
 		</script><?php
-
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
-	}
-	
-	public static function show_your_blog(){
-		if (false === ($your_content = get_transient( 'slimstat_your_content' ))){
-			$your_content = array();
-			$your_content['content_items'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type <> 'revision' AND post_status <> 'auto-draft'");
-			$your_content['posts'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'post'");
-			$your_content['comments'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments}");
-			$your_content['pingbacks'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments} WHERE comment_type = 'pingback'");
-			$your_content['trackbacks'] = $GLOBALS['wpdb']->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments} WHERE comment_type = 'trackback'");
-			$your_content['oldest_post_timestamp'] = $GLOBALS['wpdb']->get_var("SELECT UNIX_TIMESTAMP(post_date) FROM {$GLOBALS['wpdb']->posts} WHERE post_status = 'publish' AND post_type = 'post' ORDER BY post_date ASC LIMIT 0,1");
-			$your_content['avg_comments_per_post'] = !empty($your_content['posts'])?$your_content['comments']/$your_content['posts']:0;
-			$days_in_interval = floor((date_i18n('U')-$your_content['oldest_post_timestamp'])/86400);
-			$your_content['avg_posts_per_day'] = ($days_in_interval > 0)?$your_content['posts']/$days_in_interval:$your_content['posts'];
-
-			$your_content['avg_server_latency'] = $GLOBALS['wpdb']->get_var("SELECT AVG(server_latency) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE server_latency <> 0");
-			$your_content['avg_page_speed'] = $GLOBALS['wpdb']->get_var("SELECT AVG(page_performance) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE page_performance <> 0");
-
-			// Store values as transients for 30 minutes
-			set_transient('slimstat_your_content', $your_content, 1800);
-		}
-		?>
-		
-		<p><?php self::inline_help(__("This value includes not only posts, but also custom post types, regardless of their status",'wp-slimstat')) ?>
-			<?php _e('Content Items', 'wp-slimstat') ?> <span><?php echo number_format($your_content['content_items'], 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Total Comments', 'wp-slimstat') ?> <span><?php echo number_format($your_content['comments'], 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Pingbacks', 'wp-slimstat') ?> <span><?php echo number_format($your_content['pingbacks'], 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Trackbacks', 'wp-slimstat') ?> <span><?php echo number_format($your_content['trackbacks'], 0, '', wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Avg Comments Per Post', 'wp-slimstat') ?> <span><?php echo number_format($your_content['avg_comments_per_post'], 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Avg Posts Per Day', 'wp-slimstat') ?> <span><?php echo number_format($your_content['avg_posts_per_day'], 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']) ?></span></p>
-		<p><?php _e('Avg Server Latency', 'wp-slimstat') ?> <span><?php echo number_format($your_content['avg_server_latency'], 0, '', wp_slimstat_db::$formats['thousand']) ?> ms</span></p>
-		<p><?php _e('Avg Page Load Time', 'wp-slimstat') ?> <span><?php echo number_format($your_content['avg_page_speed'], 0, '', wp_slimstat_db::$formats['thousand']) ?> ms</span></p><?php
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			die();

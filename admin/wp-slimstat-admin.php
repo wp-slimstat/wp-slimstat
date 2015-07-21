@@ -11,7 +11,8 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "The month of August is approaching rather quickly and our support team is taking a few days off. We will still be monitoring our ticketing system, however it might take a little longer to get an answer to your requests. Please be patient and remember that even hardcore developers deserve a little break once in a while.";
+			self::$admin_notice = "Two new members just joined the big family of add-ons available on our store: <a href='http://www.wp-slimstat.com/downloads/heartbeat/' target='_blank'>Heartbeat</a> and <a href='http://www.wp-slimstat.com/downloads/whitelist-manager/' target='_blank'>Whitelist Manager</a>. The former increases the accuracy of visit durations, and the latter allows you to determine what pageviews should be tracked by Slimstat, based on criteria like username, IP address, permalink, country and referring URL. Go get your copy today!";
+			// self::$admin_notice = "Isn't it nice when a WordPress Forum moderator <a href='https://wordpress.org/support/topic/statistics-30' target='_blank'>recommends our plugin</a> to users asking what analytics tool to use for their website? And what about the joy of being listed on the <a href='http://plugintable.com/' target='_blank'>Periodic Table of WordPress Plugins</a> ranking? Thank you 1.6 million times for showing your appreciation and support, and making Slimstat one of the leading analytics tools for WordPress.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {

@@ -491,6 +491,9 @@
 .form-table #slimstat-filter-name, .form-table #slimstat-filter-operator, .form-table #slimstat-filter-value{
 	width: 20%;
 }
+[id^=form-slimstat-options] input[type=number].small-text{
+	width: 85px;
+}
 .slimstat p.submit{
 	position: fixed;
 	right: 25px;

