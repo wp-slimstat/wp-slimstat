@@ -74,7 +74,7 @@ class wp_slimstat_reports {
 		$chart_tooltip = '<strong>' . __( 'Chart controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li><li>' . __( 'Double click on an empty region to reset the zoom level', 'wp-slimstat' ) . '</li></ul>';
 		self::$reports_info = array(
 			'slim_getsocial' => array(
-				'title' => __( 'Social Sharing Analytics <a href="http://getsocial.io/?utm_source=slimstat">powered by GetSocial</a>', 'wp-slimstat' ),
+				'title' => __( 'Social Sharing Analytics <a href="https://wordpress.org/plugins/wp-share-buttons-analytics-by-getsocial/ ">powered by GetSocial</a>', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_getsocial' ),
 				'classes' => array( 'full-width' ),
 				'screens' => array( 'wp-slim-view-4' )
