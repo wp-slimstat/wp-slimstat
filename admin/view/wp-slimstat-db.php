@@ -790,7 +790,7 @@ class wp_slimstat_db {
 
 		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
-		if ( $_column == '*' ) {
+		if ( $_column == 'id' || $_column == '*' ) {
 			return self::get_results( "
 				SELECT *
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats
