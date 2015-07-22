@@ -105,11 +105,14 @@ class wp_slimstat_admin{
 			add_action('admin_menu', array(__CLASS__, 'wp_slimstat_add_config_menu'));
 
 			// Display the column in the Edit Posts / Pages screen
-			if (wp_slimstat::$options['add_posts_column'] == 'yes'){
-				add_filter('manage_posts_columns', array(__CLASS__, 'add_column_header'));
-				add_filter('manage_pages_columns', array(__CLASS__, 'add_column_header'));
-				add_action('manage_posts_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
-				add_action('manage_pages_custom_column', array(__CLASS__, 'add_post_column'), 10, 2);
+			if ( wp_slimstat::$options['add_posts_column'] == 'yes' ) {
+				$post_types = get_post_types( array( 'public' => true, 'show_ui'  => true ), 'names' );
+				include_once( dirname(__FILE__) . '/view/wp-slimstat-reports.php' );
+
+				foreach ( $post_types as $a_post_type ) {
+					add_filter("manage_{$a_post_type}_posts_columns", array(__CLASS__, 'add_column_header'));
+					add_action("manage_{$a_post_type}_posts_custom_column", array(__CLASS__, 'add_post_column'), 10, 2);
+				}
 
 				if ( strpos( $_SERVER['REQUEST_URI'], 'edit.php' ) !== false ) {
 					add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
@@ -740,24 +743,25 @@ class wp_slimstat_admin{
 	 * Adds a new column to the Posts management panel
 	 */
 	public static function add_post_column($_column_name, $_post_id){
-		if ('wp-slimstat' != $_column_name) return;
-
-		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
-		wp_slimstat_reports::init();
-
-		if (wp_slimstat::$options['posts_column_day_interval'] == 0){
-			wp_slimstat::$options['posts_column_day_interval'] = 30;
+		if ( 'wp-slimstat' != $_column_name ) {
+			return;
 		}
 
-		$parsed_permalink = parse_url( get_permalink($_post_id) );
-		$parsed_permalink = $parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.$parsed_permalink['query']:'');
-		wp_slimstat_db::init('resource contains '.$parsed_permalink.'&&&hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals '.wp_slimstat::$options['posts_column_day_interval'].'&&&interval_direction equals minus');
+		wp_slimstat_reports::init();
 
-		if (wp_slimstat::$options['posts_column_pageviews'] == 'yes'){
+		if ( empty( wp_slimstat::$options[ 'posts_column_day_interval' ] ) ) {
+			wp_slimstat::$options[ 'posts_column_day_interval' ] = 30;
+		}
+
+		$parsed_permalink = parse_url( get_permalink( $_post_id ) );
+		$parsed_permalink = $parsed_permalink[ 'path' ] . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . $parsed_permalink[ 'query' ] : '' );
+		wp_slimstat_db::init( 'resource contains ' . $parsed_permalink . '&&&hour equals 0&&&day equals ' . date_i18n( 'd' ) . '&&&month equals ' . date_i18n( 'm' ) . '&&&year equals ' . date_i18n( 'Y' ) . '&&&interval equals ' . wp_slimstat::$options[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' );
+
+		if ( wp_slimstat::$options[ 'posts_column_pageviews' ] == 'yes' ) {
 			$count = wp_slimstat_db::count_records();
 		}
 		else{
-			$count = wp_slimstat_db::count_records('ip', '1=1');
+			$count = wp_slimstat_db::count_records( 'ip' );
 		}
 		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals '.wp_slimstat::$options['posts_column_day_interval'].'&&interval_direction equals minus').'">'.$count.'</a>';
 	}
