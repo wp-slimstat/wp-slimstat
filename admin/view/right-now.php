@@ -156,6 +156,9 @@ else {
 			$results[$i]['resource'] = __('Local search results page','wp-slimstat');
 		}
 
+		// Avoid XSS attacks through the referer URL
+		$results[ $i ] [ 'referer' ] = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ] [ 'referer' ] ) );
+
 		// Search Terms, with link to original SERP, and Outbound Resource
 		if (!empty($results[$i]['searchterms'])){
 			$results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='".__('Search Terms','wp-slimstat')."'></i> ".wp_slimstat_reports::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer']);

@@ -215,11 +215,11 @@ class wp_slimstat {
 			return $_argument;
 		}
 
-		if (!empty(self::$data_js['ref'])){
-			self::$stat['referer'] = base64_decode(self::$data_js['ref']);
+		if ( !empty( self::$data_js[ 'ref' ] ) ) { 
+			self::$stat[ 'referer' ] = base64_decode( self::$data_js[ 'ref' ] );
 		}
-		else if (!empty($_SERVER['HTTP_REFERER'])){
-			self::$stat['referer'] = $_SERVER['HTTP_REFERER'];
+		else if ( !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
+			self::$stat[ 'referer' ] = $_SERVER[ 'HTTP_REFERER' ];
 		}
 
 		if ( !empty( self::$stat[ 'referer' ] ) ) {
@@ -1796,7 +1796,7 @@ if ( function_exists( 'add_action' ) ) {
 	// From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
 	if ( is_admin() ) {
 		include_once ( plugin_dir_path( __FILE__ ) . '/admin/wp-slimstat-admin.php' );
-		add_action( 'plugins_loaded', array( 'wp_slimstat_admin', 'init' ), 15 );
+		add_action( 'wp_loaded', array( 'wp_slimstat_admin', 'init' ), 10 );
 		register_activation_hook( __FILE__, array( 'wp_slimstat_admin', 'init_environment' ) );
 		register_deactivation_hook( __FILE__, array( 'wp_slimstat_admin', 'deactivate' ) );
 	}

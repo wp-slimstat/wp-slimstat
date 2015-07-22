@@ -74,7 +74,7 @@ class wp_slimstat_reports {
 		$chart_tooltip = '<strong>' . __( 'Chart controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li><li>' . __( 'Double click on an empty region to reset the zoom level', 'wp-slimstat' ) . '</li></ul>';
 		self::$reports_info = array(
 			'slim_getsocial' => array(
-				'title' => __( 'Social Sharing Analytics <a href="https://wordpress.org/plugins/wp-share-buttons-analytics-by-getsocial/ ">powered by GetSocial</a>', 'wp-slimstat' ),
+				'title' => __( 'Social Sharing Analytics <a href="http://getsocial.io/?utm_source=slimstat">powered by GetSocial</a>', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_getsocial' ),
 				'classes' => array( 'full-width' ),
 				'screens' => array( 'wp-slim-view-4' )
@@ -991,6 +991,10 @@ class wp_slimstat_reports {
 						$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
 						break;
 
+					case 'referer':
+						$element_value = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ][ $_args[ 'columns' ] ] ) );
+						break;
+
 					case 'resource':
 					case 'resource_substring':
 						$resource_title = self::get_resource_title( $results[ $i ][ $_args[ 'columns' ] ] );
@@ -1022,8 +1026,13 @@ class wp_slimstat_reports {
 							if (is_object($element_custom_value)) $element_value = $element_custom_value->display_name;
 						}
 						break;
+
 					case 'visit_id':
-						$element_value = $results[$i]['resource'];
+						$resource_title = self::get_resource_title( $results[ $i ][ 'resource' ] );
+						if ( $resource_title != $results[ $i ][ 'resource' ] ) {
+							$row_details = '<br>' . htmlentities( $results[ $i ][ 'resource' ], ENT_QUOTES, 'UTF-8' );
+						}
+						$element_value = $resource_title;
 						break;
 					default:
 				}
@@ -1869,6 +1878,7 @@ class wp_slimstat_reports {
 
 		// Is this a post or a page?
 		$post_id = url_to_postid( $_resource );
+
 		if ( $post_id > 0 ) {
 			$resource_title = get_the_title( $post_id );
 		}
