@@ -207,7 +207,7 @@ var SlimStatAdmin = {
 		}
 		else{
 			report_id = 'slim_p7_02';
-			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val()};
+			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) };
 			jQuery('#'+report_id+' .inside').html('<p class="loading"></p>');
 			SlimStatAdmin.refresh_report(report_id, data);
 
