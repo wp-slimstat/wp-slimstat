@@ -129,7 +129,7 @@
 	</form>
 	<?php
 		if (!file_exists(wp_slimstat::$maxmind_path) && wp_slimstat::$options['no_maxmind_warning'] != 'yes'){
-			wp_slimstat_admin::show_alert_message(sprintf(__("Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.",'wp-slimstat'), self::$config_url.'7').'<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2');
+			wp_slimstat_admin::show_alert_message(sprintf(__("Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.",'wp-slimstat'), self::$config_url.'6').'<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2');
 		}
 
 		$filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']);
