@@ -82,9 +82,9 @@ class wp_slimstat_db {
 			'dt' => array( __( 'Unix Timestamp', 'wp-slimstat' ), 'int' ),
 
 			// Other columns
-			'language_substring' => array( __( 'Language', 'wp-slimstat' ), 'varchar' ),
-			'platform_substring' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
-			'resource_substring' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
+			'language_calculated' => array( __( 'Language', 'wp-slimstat' ), 'varchar' ),
+			'platform_calculated' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
+			'resource_calculated' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
 			'metric' => array( __( 'Metric', 'wp-slimstat' ), 'varchar' ),
 			'value' => array( __( 'Value', 'wp-slimstat' ), 'varchar' ),
 			'tooltip' => array( __( 'Notes', 'wp-slimstat' ), 'varchar' ),
@@ -186,6 +186,7 @@ class wp_slimstat_db {
 		}
 
 		if ( !empty( $_column ) && !empty( self::$columns_names[ $_column ] ) ) {
+			$_column = str_replace( '_calculated', '', $_column );
 			$column_with_alias = $_column;
 			if ( !empty( $_slim_stats_table_alias ) ) {
 				$column_with_alias = $_slim_stats_table_alias . '.' . $column_with_alias;
@@ -208,6 +209,8 @@ class wp_slimstat_db {
 	public static function get_single_where_clause( $_column = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '' ) {
 		$filter_empty = ( !empty( self::$columns_names[ $_column ] ) && self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0';
 		$filter_not_empty = ( !empty( self::$columns_names[ $_column ] ) && self::$columns_names[ $_column ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0';
+
+		$_column = str_replace( '_calculated', '', $_column );
 
 		$column_with_alias = $_column;
 		if ( !empty( $_slim_stats_table_alias ) ) {
