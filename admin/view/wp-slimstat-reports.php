@@ -155,7 +155,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'SUBSTRING_INDEX(resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1)',
-					'as_column' => 'resource_substring',
+					'as_column' => 'resource_calculated',
 					'filter_op' => 'contains',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
@@ -222,7 +222,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'SUBSTRING(language, 1, 2)',
-					'as_column' => 'language_substring',
+					'as_column' => 'language_calculated',
 					'filter_op' => 'contains',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
@@ -410,7 +410,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
-					'as_column' => 'platform_substring',
+					'as_column' => 'platform_calculated',
 					'filter_op' => 'contains',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
@@ -980,13 +980,13 @@ class wp_slimstat_reports {
 						break;
 
 					case 'language':
-					case 'language_substring':
+					case 'language_calculated':
 						$row_details = '<br>'.__('Language Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
 						$element_value = __('l-'.$results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
 						break;
 
 					case 'platform':
-					case 'platform_substring':
+					case 'platform_calculated':
 						$row_details = '<br>'.__('OS Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
 						$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
 						break;
@@ -996,7 +996,7 @@ class wp_slimstat_reports {
 						break;
 
 					case 'resource':
-					case 'resource_substring':
+					case 'resource_calculated':
 						$resource_title = self::get_resource_title( $results[ $i ][ $_args[ 'columns' ] ] );
 						if ( $resource_title != $results[ $i ][ $_args[ 'columns' ] ] ) {
 							$row_details = '<br>' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' );
@@ -1843,6 +1843,7 @@ class wp_slimstat_reports {
 
 		if (!empty($filters_normalized['columns'])){
 			foreach($filters_normalized['columns'] as $a_key => $a_filter){
+				$a_key = str_replace( '_calculated', '', $a_key );
 				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);
 			}
 		}
