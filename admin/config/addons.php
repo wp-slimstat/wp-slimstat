@@ -54,11 +54,23 @@ if (!is_array($list_addons)){
 				<strong><a target="_blank" href="<?php echo $a_addon['download_url'] ?>"><?php echo $a_addon['name'] ?></a></strong>
 				<div class="row-actions-visible"><?php 
 					if ( !empty( $a_addon['version'] ) ) {
-						echo 'Version: '.$a_addon['version'].'<br/>';
+						echo ( $is_active ? __( 'Repo Version', 'wp-slimstat' ) : __( 'Version', 'wp-slimstat' ) ) . ': ' . $a_addon[ 'version' ].'<br/>';
 					}
 
 					if ( $is_active ){
-						echo 'Installed and Active';
+						if ( is_plugin_active($a_addon['slug'].'/index.php') ) {
+							$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $a_addon['slug'] . '/index.php' );
+						}
+						else {
+							$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $a_addon['slug'] . '/' . $a_addon['slug'] );
+						}
+
+						if ( !empty( $plugin_data[ 'Version' ] ) ) {
+							echo __( 'Your Version:', 'wp-slimstat' ) . ' ' . $plugin_data[ 'Version' ];
+						}
+						else{
+							_e( 'Installed and Active', 'wp-slimstat' );
+						}
 						$at_least_one_add_on_active = true;
 					}
 					else{

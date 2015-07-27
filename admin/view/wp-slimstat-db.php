@@ -774,49 +774,64 @@ class wp_slimstat_db {
 			'MIN(dt)' );
 	}
 
-	public static function get_recent( $_column = '*', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '' ) {
+	public static function get_recent( $_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_columns = '' ) {
 		// This function can be passed individual arguments, or an array of arguments
 		if ( is_array( $_column ) ) {
 			$_where = !empty( $_column[ 'where' ] ) ? $_column[ 'where' ] : '';
 			$_having = !empty( $_column[ 'having' ] ) ? $_column[ 'having' ] : '';
 			$_use_date_filters = !empty( $_column[ 'use_date_filters' ] ) ? $_column[ 'use_date_filters' ] : true;
 			$_as_column = !empty( $_column[ 'as_column' ] ) ? $_column[ 'as_column' ] : '';
+			$_more_columns = !empty( $_column[ 'more_columns' ] ) ? $_column[ 'more_columns' ] : '';
 			$_column = $_column[ 'columns' ];
 		}
 
+		$columns = $_column;
 		if ( !empty( $_as_column ) ) {
-			$_column = "$_column AS $_as_column";
+			$columns = "$_column AS $_as_column";
 		}
-		else {
-			$_as_column = $_column;
+
+		if ( $_column != '*' ) {
+			$columns .= ', ip, dt';
+		}
+
+		if ( !empty( $_more_columns ) ) {
+			$columns .= ', ' . $_more_columns;
 		}
 
 		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
-		if ( $_column == 'id' || $_column == '*' ) {
-			return self::get_results( "
-				SELECT *
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats
-				WHERE $_where
-				ORDER BY dt DESC
-				LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
-				$_column,
-				'dt DESC' );
+		//if ( $_column == 'id' || $_column == '*' ) {
+		$results = self::get_results( "
+			SELECT $columns
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats
+			WHERE $_where
+			ORDER BY dt DESC
+			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
+			$columns,
+			'dt DESC' );
+
+		if ( $_column != '*' ) {
+			$column_values = array_map( 'unserialize', array_unique( array_map( 'serialize', self::array_column( $results, explode( ',', $_column ) ) ) ) );
+			$results = array_intersect_key( $results, $column_values );
 		}
-		else {
-			return self::get_results( "
-				SELECT t1.*
-				FROM (
-					SELECT $_column, MAX(id) maxid
-					FROM {$GLOBALS['wpdb']->prefix}slim_stats
-					WHERE $_where
-					GROUP BY $_as_column $_having
-				) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id
-				ORDER BY t1.dt DESC
-				LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
-				( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
-				't1.dt DESC' );
-		}
+
+		return $results;
+
+		//}
+		//else {
+		//	return self::get_results( "
+		//		SELECT t1.*
+		//		FROM (
+		//			SELECT $_column, MAX(id) maxid
+		//			FROM {$GLOBALS['wpdb']->prefix}slim_stats
+		//			WHERE $_where
+		//			GROUP BY $_as_column $_having
+		//		) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id
+		//		ORDER BY t1.dt DESC
+		//		LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
+		//		( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
+		//		't1.dt DESC' );
+		//}
 	}
 
 	public static function get_recent_events() {
@@ -923,5 +938,20 @@ class wp_slimstat_db {
 			GROUP BY te.notes, te.type
 			ORDER BY counthits DESC"
 		);
+	}
+
+	protected static function array_column( $input = array(), $columns = array() ) {
+		$output = array();
+
+		foreach ( $input as $a_key => $a_row ) {
+			foreach ( $columns as $a_column ) {
+				$a_column = trim( $a_column );
+				if ( $a_row[ $a_column ] != NULL ) {
+					$output[ $a_key ][ $a_column ] = $a_row[ $a_column ];
+				}
+			}
+		}
+
+		return $output;
 	}
 }

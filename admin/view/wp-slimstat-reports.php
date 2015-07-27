@@ -85,7 +85,7 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'show_activity_log' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'id',
+					'columns' => '*',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'full-width', 'tall' ),
@@ -143,6 +143,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'searchterms',
+					'more_columns' => 'referer, resource',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
@@ -474,24 +475,27 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-5', 'dashboard' )
 			),
+			
+			/*
 			'slim_p3_11' => array(
 				'title' => __( 'Recent Exit Pages', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'visit_id', // raw_results_to_html knows to display the resource, when the column is visit_id
+					'columns' => 'visit_id, resource', // raw_results_to_html knows to display the resource, when the column is visit_id
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-5' )
 			),
+			*/
 
 			'slim_p4_01' => array(
 				'title' => __( 'Recent Outbound Links', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'outbound_resource', // raw_results_to_html knows to display the resource, when the column is visit_id
+					'columns' => 'outbound_resource',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'wide' ),
@@ -510,6 +514,7 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal' ),
 				'screens' => array( 'wp-slim-view-4' )
 			),
+			/*
 			'slim_p4_03' => array(
 				'title' => __( 'Recent Bounce Pages', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
@@ -524,6 +529,7 @@ class wp_slimstat_reports {
 				'screens' => array( 'wp-slim-view-4' ),
 				'tooltip' => __( 'A <em>bounce page</em> is a single-page visit, or visit in which the person left your site from the entrance (landing) page.', 'wp-slimstat' )
 			),
+			*/
 			'slim_p4_04' => array(
 				'title' => __( 'Recent Feeds', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
@@ -1009,14 +1015,14 @@ class wp_slimstat_reports {
 						break;
 
 					case 'searchterms':
-						if ($_args[ 'type' ] == 'recent'){
-							$domain = parse_url( $results[ $i ][ 'resource' ], PHP_URL_HOST );
-							
-							$row_details = '<br>'.__('Referrer','wp-slimstat').": $domain";
-							$element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'], true);
+						if ( $_args[ 'type' ] == 'recent' ) {
+							$domain = parse_url( $results[ $i ][ 'referer' ], PHP_URL_HOST );
+
+							$row_details = '<br>' . __( 'Referrer', 'wp-slimstat' ) . ": $domain";
+							$element_value = self::get_search_terms_info( $results[ $i ][ 'searchterms' ], $results[ $i ][ 'referer' ], true );
 						}
 						else{
-							$element_value = htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
+							$element_value = htmlentities( $results[ $i ][ 'searchterms' ], ENT_QUOTES, 'UTF-8' );
 						}
 						break;
 					case 'username':

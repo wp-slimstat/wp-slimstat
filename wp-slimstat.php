@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.6
+Version: 4.1.6.1
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 */
@@ -11,7 +11,7 @@ Author URI: http://www.wp-slimstat.com/
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.1.6';
+	public static $version = '4.1.6.1';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -1457,13 +1457,13 @@ class wp_slimstat {
 	 */
 	public static function init_options(){
 		$val_yes = 'yes'; $val_no = 'no';
-		if (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'wp-slim-view') === false)){
+		if ( is_network_admin() && ( empty( $_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'wp-slim-view' ) === false ) ) {
 			$val_yes = $val_no = 'null';
 		}
 
 		$options = array(
 			'version' => self::$version,
-			'secret' => wp_hash(uniqid(time(), true)),
+			'secret' => wp_hash( uniqid( time(), true ) ),
 			'show_admin_notice' => 0,
 
 			// General
@@ -1482,18 +1482,17 @@ class wp_slimstat {
 
 			// Views
 			'use_european_separators' => $val_yes,
-			'date_format' => ($val_yes == 'null')?'':'m-d-y',
-			'time_format' => ($val_yes == 'null')?'':'h:i a',
+			'date_format' => ( $val_yes == 'null' ) ? '' : 'm-d-y',
+			'time_format' => ( $val_yes == 'null' ) ? '' : 'h:i a',
 			'show_display_name' => $val_no,
 			'convert_resource_urls_to_titles' => $val_yes,
 			'convert_ip_addresses' => $val_no,
 			'use_slimscroll' => $val_yes,
 			'expand_details' => $val_no,
-			'rows_to_show' => ($val_yes == 'null')?'0':'20',
-			'limit_results' => ($val_yes == 'null')?'0':'5000',
-			'refresh_interval' => ($val_yes == 'null')?'0':'60',
-			'number_results_raw_data' => ($val_yes == 'null')?'0':'50',
-			// 'include_outbound_links_right_now' => $val_yes,
+			'rows_to_show' => ( $val_yes == 'null' ) ? '0' : '20',
+			'limit_results' => ( $val_yes == 'null' ) ? '0' : '1000',
+			'refresh_interval' => ( $val_yes == 'null' ) ? '0' : '60',
+			'number_results_raw_data' => ( $val_yes == 'null' ) ? '0' : '50',
 			'show_complete_user_agent_tooltip' => $val_no,
 			'no_maxmind_warning' => $val_no,
 			'enable_sov' => $val_no,
@@ -1519,9 +1518,9 @@ class wp_slimstat {
 
 			// Permissions
 			'restrict_authors_view' => $val_yes,
-			'capability_can_view' => ($val_yes == 'null')?'':'activate_plugins',
+			'capability_can_view' => ( $val_yes == 'null' ) ? '' : 'activate_plugins',
 			'can_view' => '',
-			'capability_can_admin' => ($val_yes == 'null')?'':'activate_plugins',
+			'capability_can_admin' => ( $val_yes == 'null' ) ? '' : 'activate_plugins',
 			'can_admin' => '',
 
 			// Advanced
