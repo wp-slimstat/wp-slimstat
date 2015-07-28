@@ -60,7 +60,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 == Changelog ==
 
 = 4.1.6.1 =
-* [New] COntextual counters are now added not just to pages and posts, but to other custom post types available on your website.
+* [New] Contextual counters are now added not just to pages and posts, but to other custom post types available on your website.
 * [Update] Optimized SQL query that retrieves the data for the Access Log report.
 * [Update] New link for GetSocial.io partnership.
 * [Fix] Patched a remote XSS vulnerability related to forged referrer URLs.
