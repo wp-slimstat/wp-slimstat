@@ -22,13 +22,13 @@ Stable tag: 4.1.6.1
 * I like Slimstat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
 * Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own!
 
-= Requirements =
-* WordPress 3.8+
-* PHP 5.3+
-* MySQL 5.0.3+
-* At least 5 MB of free web space
-* At least 5 MB of free DB space
-* At least 4 Mb of free PHP memory for the tracker (peak memory usage)
+= Minimum Requirements =
+* WordPress 3.8
+* PHP 5.3
+* MySQL 5.0.3
+* 25 MB of free space on your filesystem
+* 5 MB of free DB space
+* 10 Mb of free PHP memory for the tracker (peak memory usage)
 * IE9+ or any browser supporting HTML5, to access the reports
 
 = Premium Add-ons =

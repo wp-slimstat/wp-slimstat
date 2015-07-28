@@ -32,6 +32,13 @@ class wp_slimstat {
 
 		// Load all the settings
 		self::$options = ( is_network_admin() && ( empty($_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'wp-slim-view' ) === false ) ) ? get_site_option( 'slimstat_options', array() ) : get_option( 'slimstat_options', array() );
+
+		// If no settings were found, we might be in the Network Admin with no "Network View" add-on enabled
+		if ( empty( self::$options ) && is_network_admin() ) {
+			self::$options = get_blog_option( 1, 'slimstat_options', array() );
+		}
+
+		// Initialize the options, if needed
 		self::$options = array_merge( self::init_options(), self::$options );
 
 		// Allow third party tools to edit the options
