@@ -170,7 +170,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'referer',
-					'where' => 'referer NOT LIKE "%' . home_url() . '%"',
+					'where' => 'referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
