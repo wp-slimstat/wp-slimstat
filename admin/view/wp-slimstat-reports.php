@@ -1887,7 +1887,7 @@ class wp_slimstat_reports {
 		$post_id = url_to_postid( $_resource );
 
 		if ( $post_id > 0 ) {
-			$resource_title = get_the_title( $post_id );
+			$resource_title = the_title_attribute( array( 'post' => $post_id, 'echo' => false ) );
 		}
 
 		// Is this a category or tag permalink?
@@ -1917,7 +1917,7 @@ class wp_slimstat_reports {
 			}
 		}
 
-		return str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $resource_title ) );
+		return $resource_title;
 	}
 	
 	public static function inline_help( $_text = '', $_echo = true ) {

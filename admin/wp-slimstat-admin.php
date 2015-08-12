@@ -11,8 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Isn't it nice when a WordPress Forum moderator <a href='https://wordpress.org/support/topic/statistics-30' target='_blank'>recommends Slimstat</a> to those who ask what analytics tool to use for their website? Thank you 1.6 million times for showing your appreciation and support, and making Slimstat one of the leading analytics tools for WordPress. We are celebrating by updating our website with a new homepage and new information on this plugin. <a href='http://www.wp-slimstat.com/' target='_blank'>Go take a look</a>.";
-			// self::$admin_notice = "Performance, performance, performance. This has been our mantra in the last few weeks. The new database API introduced in version 4 allowed us to clean up our code and reveal little hidden paths that lead to code perfection. <a href='https://wordpress.org/support/view/plugin-reviews/wp-slimstat#postform' target='_blank'>Let us know</a> if you notice any difference in the amount of time needed to generate your reports.";
+			self::$admin_notice = "Performance, performance, performance. This has been our mantra in the last few weeks. The new database API introduced in version 4 allowed us to clean up our code and reveal little hidden paths that lead to code perfection. <a href='https://wordpress.org/support/view/plugin-reviews/wp-slimstat#postform' target='_blank'>Let us know</a> if you notice any difference in the amount of time needed to generate your reports.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {

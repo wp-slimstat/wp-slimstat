@@ -424,7 +424,7 @@ jQuery(function(){
 	// Accept terms and conditions
 	jQuery(document).on('click', '#slimstat-accept-terms', function(e){
 		e.preventDefault();
-		jQuery('.updated.slimstat-notice').slideUp(1000);
+		jQuery('.slimstat-notice').slideUp(1000);
 		data = {action: 'slimstat_enable_ads_feature', security: jQuery('#meta-box-order-nonce').val()};
 		jQuery.ajax({
 			url: ajaxurl,

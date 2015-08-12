@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.3
-Stable tag: 4.1.6.1
+Stable tag: 4.1.6.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -22,13 +22,13 @@ Stable tag: 4.1.6.1
 * I like Slimstat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
 * Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own!
 
-= Minimum Requirements =
-* WordPress 3.8
-* PHP 5.3
-* MySQL 5.0.3
-* 25 MB of free space on your filesystem
-* 5 MB of free DB space
-* 10 Mb of free PHP memory for the tracker (peak memory usage)
+= Requirements =
+* WordPress 3.8+
+* PHP 5.3+
+* MySQL 5.0.3+
+* At least 5 MB of free web space
+* At least 5 MB of free DB space
+* At least 4 Mb of free PHP memory for the tracker (peak memory usage)
 * IE9+ or any browser supporting HTML5, to access the reports
 
 = Premium Add-ons =
@@ -58,6 +58,12 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.6.2 =
+* [Note] Yep, our team is active even in August, while sunbathing somewhere on the US East Coast.
+* [Update] Now all the 'Recent' reports leverage the new optimized SQL code, not just Activity Log.
+* [Fix] Replaced function get_the_title with the_title_attribute (thank you, [Pepe](https://wordpress.org/support/topic/html-code-in-reports-post-titles))
+* [Fix] The GNU License notice was not hiding upon acceptance of the terms and conditions.
 
 = 4.1.6.1 =
 * [New] Contextual counters are now added not just to pages and posts, but to other custom post types available on your website.
