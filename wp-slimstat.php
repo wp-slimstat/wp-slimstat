@@ -297,7 +297,7 @@ class wp_slimstat {
 				self::$stat['searchterms'] = self::_get_search_terms( $parsed_permalink );
 			}
 
-			self::$stat['resource'] = !is_array($parsed_permalink)?self::$data_js['res']:$parsed_permalink['path'].(!empty($parsed_permalink['query'])?'?'.urldecode($parsed_permalink['query']):'');
+			self::$stat['resource'] = !is_array( $parsed_permalink ) ? self::$data_js[ 'res' ] : urldecode( $parsed_permalink[ 'path' ] ) . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . urldecode( $parsed_permalink[ 'query' ] ) : '' );
 		}
 		elseif ( empty( $_REQUEST[ 's' ] ) ) {
 			if ( !empty( $referer ) ) {
