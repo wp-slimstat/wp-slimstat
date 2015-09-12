@@ -61,7 +61,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 = 4.1.6.3 =
 * [New] Polish localization added. Thank you, [DFactory Team](https://www.dfactory.eu/)
+* [Update] Renamed two reports to avoid conflicts with similarly named widgets on WP's main dashboard (thank you, Romain)
 * [Fix] Bug affecting the admin bar: permissions to display the link to just administrators were not being honored (thank you, Nils)
+
 
 = 4.1.6.2 =
 * [Note] Yep, our team is active even in August, while sunbathing somewhere on the US East Coast.

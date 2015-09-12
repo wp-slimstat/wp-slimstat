@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "It looks like it was yesterday that we launched version 4.0 and the new database structure, but it's already been five months. Now that our core infrastructure is stable enough, we are starting to imagine all the new features that can be implemented: membership tracking, beautiful charts, and of course new reports. If you would like to suggest a new feature, please <a href='http://support.wp-slimstat.com' target='_blank'>feel free to contact us</a>.";
+			self::$admin_notice = "It looks like it was yesterday that we launched version 4.0 and the new database structure, but it's already been five months. Now that our core infrastructure is stable enough, we are starting to imagine all the new features that can implement: membership tracking, beautiful charts, and of course new reports. If you would like to suggest a new feature, please <a href='http://support.wp-slimstat.com' target='_blank'>feel free to contact us</a>.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {

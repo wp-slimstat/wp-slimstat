@@ -81,7 +81,7 @@ class wp_slimstat_reports {
 			),
 
 			'slim_p7_02' => array(
-				'title' => __( 'Activity', 'wp-slimstat' ),
+				'title' => __( 'Visitors Activity', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_activity_log' ),
 				'callback_args' => array(
 					'type' => 'recent',
@@ -114,7 +114,7 @@ class wp_slimstat_reports {
 				'screens' => array( 'wp-slim-view-2' )
 			),
 			'slim_p1_03' => array(
-				'title' => __( 'At a Glance', 'wp-slimstat' ),
+				'title' => __( 'Traffic at a Glance', 'wp-slimstat' ),
 				// 'callback' => array( __CLASS__, 'show_overview_summary' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
