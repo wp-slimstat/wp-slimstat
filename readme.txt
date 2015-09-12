@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Requires at least: 3.8
 Tested up to: 4.3
-Stable tag: 4.1.6.2
+Stable tag: 4.1.6.3
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -58,6 +58,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.6.3 =
+* [New] Polish localization added. Thank you, [DFactory Team](https://www.dfactory.eu/)
+* [Fix] Bug affecting the admin bar: permissions to display the link to just administrators were not being honored (thank you, Nils)
 
 = 4.1.6.2 =
 * [Note] Yep, our team is active even in August, while sunbathing somewhere on the US East Coast.

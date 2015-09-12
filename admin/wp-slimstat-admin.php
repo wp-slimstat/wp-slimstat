@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "Performance, performance, performance. This has been our mantra in the last few weeks. The new database API introduced in version 4 allowed us to clean up our code and reveal little hidden paths that lead to code perfection. <a href='https://wordpress.org/support/view/plugin-reviews/wp-slimstat#postform' target='_blank'>Let us know</a> if you notice any difference in the amount of time needed to generate your reports.";
+			self::$admin_notice = "It looks like it was yesterday that we launched version 4.0 and the new database structure, but it's already been five months. Now that our core infrastructure is stable enough, we are starting to imagine all the new features that can implement: membership tracking, beautiful charts, and of course new reports. If you would like to suggest a new feature, please <a href='http://support.wp-slimstat.com' target='_blank'>feel free to contact us</a>.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -656,7 +656,6 @@ class wp_slimstat_admin{
 			$new_entry[] = add_submenu_page('admin.php', __('Site Analysis','wp-slimstat'), __('Site Analysis','wp-slimstat'), $minimum_capability, 'wp-slim-view-4', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('admin.php', __('Traffic Sources','wp-slimstat'), __('Traffic Sources','wp-slimstat'), $minimum_capability, 'wp-slim-view-5', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('admin.php', __('Map Overlay','wp-slimstat'), __('Map Overlay','wp-slimstat'), $minimum_capability, 'wp-slim-view-6', array(__CLASS__, 'wp_slimstat_include_view'));
-			if (has_action('wp_slimstat_custom_report')) $new_entry[] = add_submenu_page('admin.php', __('Custom Reports','wp-slimstat'), __('Custom Reports','wp-slimstat'), $minimum_capability, 'wp-slim-view-7', array(__CLASS__, 'wp_slimstat_include_view'));
 			$new_entry[] = add_submenu_page('admin.php', __('Add-ons','wp-slimstat'), __('Add-ons','wp-slimstat'), $minimum_capability, 'wp-slim-addons', array(__CLASS__, 'wp_slimstat_include_addons'));
 		}
 
