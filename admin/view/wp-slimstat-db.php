@@ -79,7 +79,8 @@ class wp_slimstat_db {
 			'interval' => array( __( 'days', 'wp-slimstat' ), 'int' ),
 			'interval_hours' => array( __( 'hours', 'wp-slimstat' ), 'int' ),
 			'interval_minutes' => array( __( 'minutes', 'wp-slimstat' ), 'int' ),
-			'dt' => array( __( 'Unix Timestamp', 'wp-slimstat' ), 'int' ),
+			'dt' => array( __( 'Timestamp', 'wp-slimstat' ), 'int' ),
+			'dt_out' => array( __( 'Exit Timestamp', 'wp-slimstat' ), 'int' ),
 
 			// Other columns
 			'language_calculated' => array( __( 'Language', 'wp-slimstat' ), 'varchar' ),

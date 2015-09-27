@@ -53,7 +53,7 @@ else {
 			if ($gethostbyaddr != $host_by_ip && !empty($gethostbyaddr)) $host_by_ip .= ', '.$gethostbyaddr;
 		}
 		
-		$results[$i]['dt'] = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true);
+		$date_time = "<i class='spaced slimstat-font-clock' title='".__( 'Date and Time', 'wp-slimstat' )."'></i> " . date_i18n( wp_slimstat::$options[ 'date_format' ] . ' ' . wp_slimstat::$options[ 'time_format' ], $results[ $i ][ 'dt' ], true );
 
 		// Print visit header?
 		if ($i == 0 || $results[$i-1]['visit_id'] != $results[$i]['visit_id'] || ($results[$i]['visit_id'] == 0 && ($results[$i-1]['ip'] != $results[$i]['ip'] || $results[$i-1]['browser'] != $results[$i]['browser'] || $results[$i-1]['platform'] != $results[$i]['platform']))){
@@ -136,9 +136,16 @@ else {
 			echo "<p class='header$highlight_row'>{$results[$i]['country']} $browser_filtered $platform_filtered $browser_type_filtered $ip_address $other_ip_address $notes <span class='plugins'>$plugins</span> $screen_resolution</p>";
 		}
 
+		// Server Latency and Page Speed
 		$performance = '';
 		if ( !$is_dashboard && ( !empty( $results[ $i ][ 'server_latency' ] ) || !empty( $results[ $i ][ 'page_performance' ] ) ) ) {
 			$performance = "<i class='slimstat-font-gauge spaced' title='".__('Server Latency and Page Speed in milliseconds','wp-slimstat')."'></i> ".__('SL','wp-slimstat').": {$results[$i]['server_latency']} / ".__('PS','wp-slimstat').": {$results[$i]['page_performance']}";
+		}
+
+		// Time on page
+		$time_on_page = '';
+		if ( !$is_dashboard && !empty( $results[ $i ][ 'dt_out' ] ) ) {
+			$time_on_page = "<i class='slimstat-font-stopwatch spaced' title='" . __( 'Time spent on this page in seconds', 'wp-slimstat' ) . "'></i> " . date( 'i:s', $results[ $i ][ 'dt_out' ] - $results[ $i ][ 'dt' ] );
 		}
 
 		// Permalink: find post title, if available
@@ -179,9 +186,7 @@ else {
 			$results[$i]['referer'] = $results[$i][ 'outbound_resource' ] = $results[$i][ 'content_type' ] = '';
 		}
 
-		$results[$i]['dt'] = "<i class='spaced slimstat-font-clock' title='".__('Date and Time','wp-slimstat')."'></i> {$results[$i]['dt']}";
-
-		echo "<p>{$results[$i]['resource']} <span class='details'>{$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance {$results[$i]['dt']} {$delete_row}</span></p>";
+		echo "<p>{$results[$i]['resource']} <span class='details'>$time_on_page {$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance $date_time {$delete_row}</span></p>";
 	}
 	
 	// Pagination

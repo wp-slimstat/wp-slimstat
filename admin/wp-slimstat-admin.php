@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "It looks like it was yesterday that we launched version 4.0 and the new database structure, but it's already been five months. Now that our core infrastructure is stable enough, we are starting to imagine all the new features that can implement: membership tracking, beautiful charts, and of course new reports. If you would like to suggest a new feature, please <a href='http://support.wp-slimstat.com' target='_blank'>feel free to contact us</a>.";
+			self::$admin_notice = "Last time we asked our users to send us suggestions on what they would like us to focus on. Fabian came up with a great idea: free premium add-ons for reviewing Slimstat. We liked it so much that we decided to extend it to all our users: write a review and get a $50 coupon (to be used on our store). Just follow these three easy steps: [1] send us your website URL so that we can approve your request; [2] write a review and leave it online for at least two weeks; [3] send us a link to your review and earn a $50 discount code. What are you waiting for?";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -122,8 +122,8 @@ class wp_slimstat_admin{
 			add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet_icon'));
 
 			// Update the table structure and options, if needed
-			if (!empty(wp_slimstat::$options['version']) && wp_slimstat::$options['version'] != wp_slimstat::$version){
-				add_action('admin_init', array(__CLASS__, 'update_tables_and_options'));
+			if ( !empty( wp_slimstat::$options[ 'version' ] ) && wp_slimstat::$options[ 'version' ] != wp_slimstat::$version ) {
+				add_action( 'admin_init', array(__CLASS__, 'update_tables_and_options' ) );
 			}
 		}
 
@@ -264,7 +264,9 @@ class wp_slimstat_admin{
 				
 				outbound_resource VARCHAR(2048) DEFAULT NULL,
 
+				dt_out INT(10) UNSIGNED DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
+
 				CONSTRAINT PRIMARY KEY (id),
 				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stats_dt (dt)
 			) COLLATE utf8_general_ci $use_innodb";
@@ -383,7 +385,9 @@ class wp_slimstat_admin{
 					
 					outbound_resource VARCHAR(2048) DEFAULT NULL,
 
+					dt_out INT(10) UNSIGNED DEFAULT 0,
 					dt INT(10) UNSIGNED DEFAULT 0,
+
 					CONSTRAINT PRIMARY KEY (id),
 					INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stats_dt (dt)
 				) COLLATE utf8_general_ci $use_innodb", $GLOBALS['wpdb']->prefix.'slim_stats_4', $my_wpdb );
@@ -514,7 +518,7 @@ class wp_slimstat_admin{
 		// --- Updates for version 4.1.3 ---
 		if (version_compare(wp_slimstat::$options['version'], '4.1.3', '<')){
 			// Change column type to add IPv6 support
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD ip_temp VARCHAR(39) DEFAULT NULL AFTER id, ADD other_ip_temp VARCHAR(39) DEFAULT NULL AFTER id" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD ip_temp VARCHAR(39) DEFAULT NULL AFTER outbound_resource, ADD other_ip_temp VARCHAR(39) DEFAULT NULL AFTER id" );
 			$my_wpdb->query( "UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET ip_temp = INET_NTOA(ip), other_ip_temp = INET_NTOA(other_ip)" );
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE ip ip_num INT UNSIGNED DEFAULT 0" );
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE other_ip other_ip_num INT UNSIGNED DEFAULT 0" );
@@ -522,6 +526,12 @@ class wp_slimstat_admin{
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE other_ip_temp other_ip VARCHAR(39) DEFAULT NULL AFTER ip" );
 		}
 		// --- END: Updates for version 4.1.3 ---
+
+		// --- Updates for version 4.1.7 ---
+		if ( version_compare( wp_slimstat::$options[ 'version' ], '4.1.7', '<' ) ) {
+			// Change column type to add IPv6 support
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD dt_out INT(10) UNSIGNED DEFAULT 0 AFTER outbound_resource" );
+		}
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$options['version'] = wp_slimstat::$version;

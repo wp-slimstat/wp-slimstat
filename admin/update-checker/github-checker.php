@@ -1,8 +1,8 @@
 <?php
 
-if ( !class_exists('PucGitHubChecker_2_0') ):
+if ( !class_exists('PucGitHubChecker_2_2', false) ):
 
-class PucGitHubChecker_2_0 extends PluginUpdateChecker_2_0 {
+class PucGitHubChecker_2_2 extends PluginUpdateChecker_2_2 {
 	/**
 	 * @var string GitHub username.
 	 */
@@ -57,7 +57,7 @@ class PucGitHubChecker_2_0 extends PluginUpdateChecker_2_0 {
 	 * @return PluginInfo
 	 */
 	public function requestInfo($unusedQueryArgs = array()) {
-		$info = new PluginInfo_2_0();
+		$info = new PluginInfo_2_2();
 		$info->filename = $this->pluginFile;
 		$info->slug = $this->slug;
 		$info->sections = array();
@@ -94,6 +94,8 @@ class PucGitHubChecker_2_0 extends PluginUpdateChecker_2_0 {
 
 		if ( empty($info->download_url) ) {
 			$info->download_url = $this->buildArchiveDownloadUrl($ref);
+		} else if ( !empty($this->accessToken) ) {
+			$info->download_url = add_query_arg('access_token', $this->accessToken, $info->download_url);
 		}
 
 		//Get headers from the main plugin file in this branch/tag. Its "Version" header and other metadata
@@ -254,7 +256,7 @@ class PucGitHubChecker_2_0 extends PluginUpdateChecker_2_0 {
 	 * @return string
 	 */
 	protected function parseMarkdown($markdown) {
-		if ( !class_exists('Parsedown') ) {
+		if ( !class_exists('Parsedown', false) ) {
 			require_once(dirname(__FILE__) . '/vendor/Parsedown.php');
 		}
 
@@ -375,7 +377,7 @@ class PucGitHubChecker_2_0 extends PluginUpdateChecker_2_0 {
 	 * Copy plugin metadata from a file header to a PluginInfo object.
 	 *
 	 * @param array $fileHeader
-	 * @param PluginInfo_2_0 $pluginInfo
+	 * @param PluginInfo_2_2 $pluginInfo
 	 */
 	protected function setInfoFromHeader($fileHeader, $pluginInfo) {
 		$headerToPropertyMap = array(
@@ -406,7 +408,7 @@ class PucGitHubChecker_2_0 extends PluginUpdateChecker_2_0 {
 	}
 
 	protected function parseReadme($content) {
-		if ( !class_exists('PucReadmeParser') ) {
+		if ( !class_exists('PucReadmeParser', false) ) {
 			require_once(dirname(__FILE__) . '/vendor/readme-parser.php');
 		}
 		$parser = new PucReadmeParser();

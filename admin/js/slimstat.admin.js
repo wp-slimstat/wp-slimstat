@@ -208,7 +208,7 @@ var SlimStatAdmin = {
 		else{
 			report_id = 'slim_p7_02';
 			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) };
-			jQuery('#'+report_id+' .inside').html('<p class="loading"></p>');
+			jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin3 animate-spin"></i></p>');
 			SlimStatAdmin.refresh_report(report_id, data);
 
 			window.clearTimeout(refresh_handle);
@@ -225,7 +225,7 @@ var SlimStatAdmin = {
 			data[filters_input[i]['name']] = filters_input[i]['value'];
 		}
 
-		jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin1 animate-spin"></i></p>');
+		jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin3 animate-spin"></i></p>');
 
 		jQuery.post(ajaxurl, data, function(response){
 			if (report_id.indexOf('_01') > 0){
