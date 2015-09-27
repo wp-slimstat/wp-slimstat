@@ -62,6 +62,8 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 = 4.1.7 =
 * [New] Added new column dt_out to our table structure, to capture when a visitor leaves the page. This allows us to measure things like time on page and time on site. Please consider purchasing our [Heartbeat](http://www.wp-slimstat.com/downloads/heartbeat/) add-on to increase this metric's accuracy.
 * [Update] New icon added to our custom font package, and removed unneded font files for faster loading.
+* [Update] [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) version 2.2 is now part of the package.
+* [Fix] Bug preventing the stylesheet from loading on the Settings pages, under certain circumstances.
 
 = 4.1.6.3 =
 * [New] Polish localization added. Thank you, [DFactory Team](https://www.dfactory.eu/).
