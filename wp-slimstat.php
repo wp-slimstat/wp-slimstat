@@ -3,15 +3,17 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.1.7
+Version: 4.1.8
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
+Text Domain: wp-slimstat
+Domain Path: /languages
 */
  
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.1.7';
+	public static $version = '4.1.8';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -315,6 +317,16 @@ class wp_slimstat {
 		// Don't store empty values in the database
 		if ( empty( self::$stat['searchterms'] ) ) {
 			unset( self::$stat['searchterms'] );
+		}
+
+		// If referer is site itself, unset value
+		if ( !empty( self::$stat[ 'referer' ] ) ) {
+			$parsed_referer = parse_url( self::$stat[ 'referer' ], PHP_URL_HOST );
+			$parsed_site_url = parse_url( get_site_url(), PHP_URL_HOST );
+
+			if ( $parsed_referer == $parsed_site_url ) {
+				unset( self::$stat[ 'referer' ] );
+			}
 		}
 
 		// Do not track report pages in the admin
@@ -882,7 +894,7 @@ class wp_slimstat {
 		$browser['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
 		$search = array();
 
-		for ( $idx_cache = 1; $idx_cache <= 5; $idx_cache++ ) {
+		for ( $idx_cache = 1; $idx_cache <= 8; $idx_cache++ ) {
 			@include(plugin_dir_path( __FILE__ )."browscap/browscap-$idx_cache.php");
 			foreach ($patterns as $pattern => $pattern_data){
 				if (preg_match($pattern . 'i', $_SERVER['HTTP_USER_AGENT'], $matches)){
@@ -1333,7 +1345,7 @@ class wp_slimstat {
 		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
 
 		// Load the localization files (for languages, operating systems, etc)
-		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
+		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages');
 
 		// Look for required fields
 		if ( empty( $f ) || empty( $w ) ) {
@@ -1496,6 +1508,8 @@ class wp_slimstat {
 			'limit_results' => ( $val_yes == 'null' ) ? '0' : '1000',
 			'refresh_interval' => ( $val_yes == 'null' ) ? '0' : '60',
 			'number_results_raw_data' => ( $val_yes == 'null' ) ? '0' : '50',
+			'custom_css' => '',
+			'chart_colors' => '',
 			'show_complete_user_agent_tooltip' => $val_no,
 			'no_maxmind_warning' => $val_no,
 			'enable_sov' => $val_no,
@@ -1527,7 +1541,6 @@ class wp_slimstat {
 			'can_admin' => '',
 
 			// Advanced
-			'detect_smoothing' => $val_yes,
 			'session_duration' => 1800,
 			'extend_session' => $val_no,
 			'enable_cdn' => $val_yes,
@@ -1535,7 +1548,6 @@ class wp_slimstat {
 			'external_domains' => '',
 			'show_sql_debug' => $val_no,
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
-			'custom_css' => '',
 			'enable_ads_network' => 'null',
 
 			// Maintenance
@@ -1674,9 +1686,6 @@ class wp_slimstat {
 		if (!empty(self::$options['extensions_to_track'])){
 			$params['extensions_to_track'] = str_replace(' ', '', self::$options['extensions_to_track']);
 		}
-		if (self::$options['enable_javascript'] == 'yes' && self::$options['detect_smoothing'] == 'no'){
-			$params['detect_smoothing'] = 'false';
-		}
 		if (!empty(self::$options['ignore_outbound_classes_rel_href'])){
 			$params['outbound_classes_rel_href_to_ignore'] = str_replace(' ', '', self::$options['ignore_outbound_classes_rel_href']);
 		}
@@ -1772,7 +1781,7 @@ class wp_slimstat {
 			return;
 		}
 
-		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/admin/lang', '/wp-slimstat/admin/lang');
+		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages');
 
 		self::$options['capability_can_view'] = empty(self::$options['capability_can_view'])?'read':self::$options['capability_can_view'];
 

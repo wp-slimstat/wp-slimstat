@@ -249,14 +249,9 @@
 [id^=slim_] a:hover{
 	text-shadow: 0 0 2px #bbb;
 }
-[id^=slim_] .slimstat-row-details{
-	font-size: .9em;
-	font-weight: 300;
-	display: none;
-	margin-top: 5px;
-}
-[id^=slim_] .slimstat-row-details.expanded{
+[id^=slim_] .slimstat-tooltip-content.expanded{
 	display: block;
+	font-weight: normal;
 }
 [id^=slim_] .inline-icon{
 	background-color: transparent;
@@ -654,6 +649,11 @@
 	}
 	.form-table #slimstat-filter-name, .form-table #slimstat-filter-operator, .form-table #slimstat-filter-value{
 		width: 100%;
+	}
+
+	/* Add-on: WP SlimStat - User Overview */
+	[id^='slim_'] .users .column-name {
+		display: none;
 	}
 }
 
