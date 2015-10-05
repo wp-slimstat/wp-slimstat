@@ -27,9 +27,9 @@ Stable tag: 4.1.8
 * WordPress 3.8+
 * PHP 5.3+
 * MySQL 5.0.3+
-* At least 5 MB of free web space
+* At least 25 MB of free web space
 * At least 5 MB of free DB space
-* At least 4 Mb of free PHP memory for the tracker (peak memory usage)
+* At least 20 Mb of free PHP memory for the tracker (peak memory usage)
 * IE9+ or any browser supporting HTML5, to access the reports
 
 = Premium Add-ons =
