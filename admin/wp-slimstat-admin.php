@@ -387,7 +387,6 @@ class wp_slimstat_admin{
 					
 					outbound_resource VARCHAR(2048) DEFAULT NULL,
 
-					dt_out INT(10) UNSIGNED DEFAULT 0,
 					dt INT(10) UNSIGNED DEFAULT 0,
 
 					CONSTRAINT PRIMARY KEY (id),
