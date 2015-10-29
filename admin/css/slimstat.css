@@ -489,11 +489,6 @@
 [id^=form-slimstat-options] input[type=number].small-text{
 	width: 85px;
 }
-.slimstat p.submit{
-	position: fixed;
-	right: 25px;
-	top: 30px;
-}
 
 /* Add-ons Page */
 .wp-list-table.slimstat-addons{

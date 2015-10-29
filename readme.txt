@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4
-Stable tag: 4.1.8
+Stable tag: 4.1.8.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -59,6 +59,11 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.1.8.1 =
+* [Update] Added icons for Windows 10 and Microsoft Edge 12 browser (thank you, Romain Petges)
+* [Fix] One metric's description was misleading: it was supposed to be Pageviews per Visit, not Pages per Visit (thank you, Bperun)
+* [Fix] Some people were having problems locating the Save button in the settings, which was also hidden when RTL was enabled.
 
 = 4.1.8 =
 * [New] The hover effect that revealed the details of a given row in many of our list reports has been flagged as not user-friendly by some users. A new approach using a floating tooltip has been implemented to address this issue (thank you, Romain Petges).
@@ -194,7 +199,7 @@ Thomas Weiss,
 Wayne Liebman,
 Willow Ridge Press
 
-== Tools of the trade
+== Tools of the trade ==
 [Duri.Me](http://duri.me/),
 [Filezilla](https://filezilla-project.org/),
 [Fontello](http://fontello.com/),

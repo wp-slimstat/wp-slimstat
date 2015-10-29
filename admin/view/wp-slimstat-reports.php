@@ -1361,7 +1361,7 @@ class wp_slimstat_reports {
 		$results[ 5 ][ 'metric' ] = __( 'Bots', 'wp-slimstat' );
 		$results[ 5 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'browser_type = 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 
-		$results[ 6 ][ 'metric' ] = __( 'Pages per visit', 'wp-slimstat' );
+		$results[ 6 ][ 'metric' ] = __( 'Pageviews per visit', 'wp-slimstat' );
 		$results[ 6 ][ 'value' ] = number_format( $metrics_per_visit[ 0 ][ 'avghits' ], 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
 
 		$results[ 7 ][ 'metric' ] = __( 'Longest visit', 'wp-slimstat' );
