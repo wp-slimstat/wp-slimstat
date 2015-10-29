@@ -724,7 +724,7 @@ class wp_slimstat_reports {
 					'criteria' => 'swap'
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4' ),
+				'screens' => array( 'wp-slim-view-4', 'dashboard' ),
 			),
 			'slim_p4_22' => array(
 				'title' => __( 'Your Website', 'wp-slimstat' ),
@@ -760,7 +760,7 @@ class wp_slimstat_reports {
 					'raw' => array( 'wp_slimstat_db', 'get_top_aggr' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4' )
+				'screens' => array( 'wp-slim-view-4', 'dashboard' )
 			),
 			'slim_p4_25' => array(
 				'title' => __( 'Top Entry Pages', 'wp-slimstat' ),
