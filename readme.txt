@@ -62,6 +62,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 = 4.1.8.1 =
 * [Update] Added icons for Windows 10 and Microsoft Edge 12 browser (thank you, Romain Petges)
+* [Update] Top Outbound Links and other reports can now be added to the WordPress dashboard (thank you, Cole)
 * [Fix] One metric's description was misleading: it was supposed to be Pageviews per Visit, not Pages per Visit (thank you, Bperun)
 * [Fix] Some people were having problems locating the Save button in the settings, which was also hidden when RTL was enabled.
 
