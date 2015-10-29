@@ -720,10 +720,11 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'outbound_resource',
-					'raw' => array( 'wp_slimstat_db', 'get_top' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' ),
+					'criteria' => 'swap'
 				),
 				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'wp-slim-view-4' )
+				'screens' => array( 'wp-slim-view-4' ),
 			),
 			'slim_p4_22' => array(
 				'title' => __( 'Your Website', 'wp-slimstat' ),
