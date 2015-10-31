@@ -123,7 +123,7 @@ $current_tab = empty( $_GET[ 'tab' ] ) ? 1 : intval( $_GET[ 'tab' ] );
 // Define all the options
 $options = array(
 	1 => array(
-		'title' => __( 'General', 'wp-slimstat' ),
+		'title' => __( 'Basic', 'wp-slimstat' ),
 		'rows' => array(
 			'general_tracking_header' => array('description' => __('Tracker','wp-slimstat'), 'type' => 'section_header'),
 			'is_tracking' => array( 'description' => __('Track Pageviews','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Turn the tracker on or off, while keeping the reports accessible.','wp-slimstat'), 'custom_label_yes' => __('On','wp-slimstat'), 'custom_label_no' => __('Off','wp-slimstat') ),
@@ -146,6 +146,33 @@ $options = array(
 	),
 
 	2 => array(
+		'title' => __( 'Tracker', 'wp-slimstat' ),
+		'rows' => array(
+			'advanced_tracker_header' => array('description' => __('Tracker','wp-slimstat'), 'type' => 'section_header'),
+			'session_duration' => array('description' => __('Session Duration','wp-slimstat'), 'type' => 'integer', 'long_description' => __('How many seconds should a human session last? Google Analytics sets it to 1800 seconds.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
+			'extend_session' => array('description' => __('Extend Session','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Extend the duration of a session each time the user visits a new page.','wp-slimstat')),
+			'enable_cdn' => array('description' => __('Enable CDN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).",'wp-slimstat')),
+			'extensions_to_track' => array('description' => __('Extensions to Track','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the file extensions that you want to be treated as Downloads. Please note that links pointing to external resources (i.e. PDFs on a different website) are considered Downloads and not Outbound Links (and tracked as such), if their extension matches one of the ones listed here below.",'wp-slimstat')),
+
+			'advanced_external_pages_header' => array('description' => __('Pages not belonging to this site','wp-slimstat'), 'type' => 'section_header'),
+			'external_pages_script' => array('type' => 'static', 'skip_update' => 'yes', 'description' => __('Add the following code to all the non-WP pages you want to track, right before the closing BODY tag','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
+	/* &lt;![CDATA[ */
+	var SlimStatParams = {
+		ajaxurl: "'.admin_url('admin-ajax.php').'",
+		ci: "YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=.' . md5('YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=' . wp_slimstat::$options[ 'secret' ] ).'",
+		extensions_to_track: "'.wp_slimstat::$options['extensions_to_track'].'"
+	};
+	/* ]]&gt; */
+	&lt;/script&gt;
+	&lt;script type="text/javascript" src="http://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js"&gt;&lt;/script&gt;'),
+			'external_domains' => array('description' => __('Allow External Domains','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme, separated by commas) you would like to allow. For example: <code>http://my.domain.ext</code> (no trailing slash). Please see <a href='http://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.",'wp-slimstat')),
+			'advanced_misc_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
+			'enable_ads_network' => array('description' => __('Enable UAN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Send anonymous data about user agents to our server for analysis. This allows us to contribute to the <a href='http://browscap.org/' target='_blank'>BrowsCap opensource project</a>, and improve the accuracy of Slimstat's browser detection functionality. It also enables our transparent ads network. No worries, your site will not be affected in any way.",'wp-slimstat'))
+		)
+	),
+
+
+	3 => array(
 		'title' => __( 'Reports', 'wp-slimstat' ),
 		'rows' => array(
 			'reports_basic_header' => array('description' => __('Formats and Conversions','wp-slimstat'), 'type' => 'section_header'),
@@ -160,7 +187,8 @@ $options = array(
 			'use_slimscroll' => array('description' => __('SlimScroll','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable SlimScroll, a slick jQuery library that replaces the built-in browser scrollbar.','wp-slimstat')),
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
-			'limit_results' => array('description' => __('Max Results','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Decide how many records should be retrieved from the database in total. Depending on your server configuration, you may want to fine tune this value to avoid exceeding your PHP memory limit.','wp-slimstat')),
+			'limit_results' => array( 'description' => __( 'Max Results','wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'Decide how many records should be retrieved from the database in total. Depending on your server configuration, you may want to fine tune this value to avoid exceeding your PHP memory limit.', 'wp-slimstat' ) ),
+			'ip_lookup_service' => array('description' => __( 'IP Lookup', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Customize the Geolocation service to be used in the reports.', 'wp-slimstat' ) ),
 
 			'reports_right_now_header' => array('description' => __('Activity Log','wp-slimstat'), 'type' => 'section_header'),
 			'refresh_interval' => array('description' => __('Live Stream','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enable the Live view, which refreshes the Activity Log every X seconds. Enter <strong>0</strong> (number zero) to deactivate this feature.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
@@ -175,7 +203,7 @@ $options = array(
 		)
 	),
 
-	3 => array(
+	4 => array(
 		'title' => __( 'Filters', 'wp-slimstat' ),
 		'rows' => array(
 			'filters_users_header' => array('description' => __('Visitors and Known Users','wp-slimstat'), 'type' => 'section_header'),
@@ -204,7 +232,7 @@ $options = array(
 		)
 	),
 
-	4 => array(
+	5 => array(
 		'title' => __( 'Permissions', 'wp-slimstat' ),
 		'rows' => array(
 			'permissions_reports_header' => array('description' => __('Reports','wp-slimstat'), 'type' => 'section_header'),
@@ -218,34 +246,6 @@ $options = array(
 		)
 	),
 
-	5 => array(
-		'title' => __( 'Advanced', 'wp-slimstat' ),
-		'rows' => array(
-			'advanced_tracker_header' => array('description' => __('Tracker','wp-slimstat'), 'type' => 'section_header'),
-			'session_duration' => array('description' => __('Session Duration','wp-slimstat'), 'type' => 'integer', 'long_description' => __('How many seconds should a human session last? Google Analytics sets it to 1800 seconds.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
-			'extend_session' => array('description' => __('Extend Session','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Extend the duration of a session each time the user visits a new page.','wp-slimstat')),
-			'enable_cdn' => array('description' => __('Enable CDN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).",'wp-slimstat')),
-			'extensions_to_track' => array('description' => __('Extensions to Track','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the file extensions that you want to be treated as Downloads. Please note that links pointing to external resources (i.e. PDFs on a different website) are considered Downloads and not Outbound Links (and tracked as such), if their extension matches one of the ones listed here below.",'wp-slimstat')),
-
-			'advanced_external_pages_header' => array('description' => __('Pages not belonging to this site','wp-slimstat'), 'type' => 'section_header'),
-			'external_pages_script' => array('type' => 'static', 'skip_update' => 'yes', 'description' => __('Add the following code to all the non-WP pages you want to track, right before the closing BODY tag','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
-	/* &lt;![CDATA[ */
-	var SlimStatParams = {
-		ajaxurl: "'.admin_url('admin-ajax.php').'",
-		ci: "YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=.' . md5('YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=' . wp_slimstat::$options[ 'secret' ] ).'",
-		extensions_to_track: "'.wp_slimstat::$options['extensions_to_track'].'"
-	};
-	/* ]]&gt; */
-	&lt;/script&gt;
-	&lt;script type="text/javascript" src="http://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.js"&gt;&lt;/script&gt;'),
-			'external_domains' => array('description' => __('Allow External Domains','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme, separated by commas) you would like to allow. For example: <code>http://my.domain.ext</code> (no trailing slash). Please see <a href='http://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.",'wp-slimstat')),
-			'advanced_misc_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
-			'show_sql_debug' => array('description' => __('Debug Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Display the SQL queries used to retrieve the data.','wp-slimstat')),
-			'ip_lookup_service' => array('description' => __('IP Lookup','wp-slimstat'), 'type' => 'text', 'long_description' => __('Customize the Geolocation service to be used in the reports.','wp-slimstat')),
-			'enable_ads_network' => array('description' => __('Enable UAN','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Send anonymous data about user agents to our server for analysis. This allows us to contribute to the <a href='http://browscap.org/' target='_blank'>BrowsCap opensource project</a>, and improve the accuracy of Slimstat's browser detection functionality. It also enables our transparent ads network. No worries, your site will not be affected in any way.",'wp-slimstat'))
-		)
-	),
-	
 	6 => array(
 		'title' => __( 'Maintenance', 'wp-slimstat' ),
 		'include' => dirname(__FILE__).'/maintenance.php'
