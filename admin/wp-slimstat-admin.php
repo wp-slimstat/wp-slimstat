@@ -1059,7 +1059,7 @@ class wp_slimstat_admin{
 	}
 	// end contextual_help
 
-	protected static function settings_table_row($_option_name = '', $_option_details = array(), $_alternate = false){
+	public static function settings_table_row($_option_name = '', $_option_details = array(), $_alternate = false){
 		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
 		
 		if (!isset(wp_slimstat::$options[$_option_name])){

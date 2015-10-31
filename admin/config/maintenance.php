@@ -16,11 +16,19 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat_admin::show_alert_message(__('Congrats! Slimstat is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.','wp-slimstat'), 'wp-ui-highlight below-h2');
 			break;
 
+		case 'activate-sql-debug-mode':
+			wp_slimstat::$options[ 'show_sql_debug' ] = 'yes';
+			break;
+
 		case 'deactivate-indexes':
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx");
 			wp_slimstat_admin::show_alert_message(__('Indexing has been disabled. Enjoy the extra database space!','wp-slimstat'), 'wp-ui-highlight below-h2');
+			break;
+
+		case 'deactivate-sql-debug-mode':
+			wp_slimstat::$options[ 'show_sql_debug' ] = 'no';
 			break;
 
 		case 'delete-records':
@@ -220,6 +228,23 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 			<?php echo is_array(wp_slimstat::$options['last_tracker_error'])?'<code>'.wp_slimstat::$options['last_tracker_error'][0].' '.wp_slimstat::$options['last_tracker_error'][1].'</code> '.__('recorded on','wp-slimstat').' '.date_i18n(wp_slimstat::$options['date_format'], wp_slimstat::$options['last_tracker_error'][2], true).' @ '.date_i18n(wp_slimstat::$options['time_format'],  wp_slimstat::$options['last_tracker_error'][2], true):__('No Errors so far','wp-slimstat'); ?>
 			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. Please include this code when sending a support request.','wp-slimstat') ?></span>
 		</td>
+	</tr>
+	<tr  class="alternate">
+		<?php if ( wp_slimstat::$options[ 'show_sql_debug' ] != 'yes' ): ?>
+		<th scope="row">
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-sql-debug-mode"><?php _e("Enable SQL Debug",'wp-slimstat'); ?></a>
+		</th>
+		<td>
+			<span class="description"><?php _e("Please note that you will need about 30% more DB space to store the extra information required.",'wp-slimstat') ?></span>
+		</td>
+		<?php else: ?>
+		<th scope="row">
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=deactivate-sql-debug-mode"><?php _e('Disable SQL Debug','wp-slimstat'); ?></a>
+		</th>
+		<td>
+			<span class="description"><?php _e("Please note that by removing table indexes, Slimstat's performance will be affected.",'wp-slimstat') ?></span>
+		</td>
+		<?php endif ?>
 	</tr>
 	<tr>
 		<td colspan="2" class="slimstat-options-section-header"><?php _e('Layout','wp-slimstat') ?></td>
