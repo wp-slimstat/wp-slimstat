@@ -38,7 +38,7 @@
 
 <div class="wrap slimstat-layout">
 <h2><?php _e( 'Customize and organize your reports','wp-slimstat' ) ?></h2>
-<p><?php _e( 'Drag and drop report placeholders from one container to another, to customize the information you want to see right away when you open Slimstat. Compare multiple charts in one page, clone reports on multiple pages and move placeholders to the Inactive Reports container for improved performance. It is your website, and you are the only one who knows how metrics should be combined to get a clear picture of your website traffic.<br/><br/><strong>Note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden (Screen Options tab).', 'wp-slimstat') ?></p>
+<p><?php _e( 'Drag and drop report placeholders from one container to another, to customize the information you want to see right away when you open Slimstat. Place two or more charts on the same view, clone reports or move them to the Inactive Reports container for improved performance. It is your website, and you know how metrics should be combined to get a clear picture of the traffic it generates.<br/><br/><strong>Note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden (Screen Options tab).', 'wp-slimstat') ?></p>
 
 <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form>
 
