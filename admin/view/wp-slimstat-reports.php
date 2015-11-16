@@ -1822,7 +1822,7 @@ class wp_slimstat_reports {
 		}
 
 		if (!empty($_searchterms)){		
-			$search_terms_info = htmlentities($_searchterms, ENT_QUOTES, 'UTF-8').'<a class="slimstat-font-logout" target="_blank" title="'.htmlentities(__('Go to the referring page','wp-slimstat'), ENT_QUOTES, 'UTF-8').'" href="'.$_referer.'"></a>';
+			$search_terms_info = '<a class="slimstat-font-logout" target="_blank" title="' . htmlentities( __( 'Go to the referring page', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . $_referer . '"></a>' . htmlentities( $_searchterms, ENT_QUOTES, 'UTF-8' );
 			$search_terms_info = "$search_terms_info $query_details";
 		}
 		return $search_terms_info;
