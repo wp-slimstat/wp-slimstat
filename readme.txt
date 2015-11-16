@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4
-Stable tag: 4.2
+Stable tag: 4.2.0.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -59,6 +59,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.2.0.1 =
+* [Fix] The Access Log report was not displaying referrers and other critical information.
 
 = 4.2 =
 * [Note] You now have full control over the placement of your reports. Move them not just within each screen, but from one screen to another. Build your own custom Overview, by simply dragging and dropping report labels just like you already do with widgets and widget areas. Compare multiple charts in one screen, and much more. Go to Slimstat > Customize and... have fun!
