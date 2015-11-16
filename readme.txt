@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4
-Stable tag: 4.1.8.1
+Stable tag: 4.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -60,11 +60,19 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+= 4.2 =
+* [Note] You now have full control over the placement of your reports. Move them not just within each screen, but from one screen to another. Build your own custom Overview, by simply dragging and dropping report labels just like you already do with widgets and widget areas. Compare multiple charts in one screen, and much more. Go to Slimstat > Customize and... have fun!
+* [Note] If for any reasons your reports are not being displayed correctly, make sure to give the No Panic button a try (under Settings > Maintenance)
+* [Note] Did you say charts? We are adding new visual reports to Slimstat, to make your metrics easier to interpret. Stay tuned!
+* [Update] Support for the old "Custom Report" screen (already deprecated in version 4.0) has been removed from the source code. Please update your custom reports accordingly.
+* [Update] Renamed and reorganized tabs under Settings to make them easier to understand.
+* [Update] [Flot](http://www.flotcharts.org/) chart library updated to version 0.8.3
+
 = 4.1.8.1 =
-* [Update] Renamed and reorganized some tabs under Settings to make them easier to understand
-* [Update] Added icons for Windows 10 and Microsoft Edge 12 browser (thank you, Romain Petges)
-* [Update] Top Outbound Links and other reports can now be added to the WordPress dashboard (thank you, Cole)
-* [Fix] One metric's description was misleading: it was supposed to be Pageviews per Visit, not Pages per Visit (thank you, Bperun)
+* [Update] Renamed and reorganized some tabs under Settings to make them easier to understand.
+* [Update] Added icons for Windows 10 and Microsoft Edge 12 browser (thank you, Romain Petges).
+* [Update] Top Outbound Links and other reports can now be added to the WordPress dashboard (thank you, Cole).
+* [Fix] One metric's description was misleading: it was supposed to be Pageviews per Visit, not Pages per Visit (thank you, Bperun).
 * [Fix] Some people were having problems locating the Save button in the settings, which was also hidden when RTL was enabled.
 
 = 4.1.8 =

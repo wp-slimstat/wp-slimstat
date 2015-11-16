@@ -142,9 +142,9 @@
 		<form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form><?php
 
 		foreach( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
-			if ( empty( $a_report_info[ 'screens' ] ) || !in_array( $_GET[ 'page' ], $a_report_info[ 'screens' ] ) ) {
-				continue;
-			}
+			// if ( empty( $a_report_info[ 'screens' ] ) || !in_array( $_GET[ 'page' ], $a_report_info[ 'screens' ] ) ) {
+			// 	continue;
+			// }
 
 			wp_slimstat_reports::report_header( $a_report_id );
 
