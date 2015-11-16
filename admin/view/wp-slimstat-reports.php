@@ -152,7 +152,7 @@ class wp_slimstat_reports {
 				'tooltip' => __( 'Keywords used by your visitors to find your website on a search engine.', 'wp-slimstat' )
 			),
 			'slim_p1_08' => array(
-				'title' => __( 'Top Pages', 'wp-slimstat' ),
+				'title' => __( 'Top Web Pages', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
@@ -163,7 +163,7 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview2', 'dashboard' ),
-				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any web page on your website, including posts, products, categories, and so on.', 'wp-slimstat' )
+				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and so on.', 'wp-slimstat' )
 			),
 			'slim_p1_10' => array(
 				'title' => __('Top Traffic Sources', 'wp-slimstat'),
