@@ -15,7 +15,7 @@ var SlimStatAdmin = {
 			clickable: true
 		},
 		legend: {
-			container: '#chart-legend',
+			container: '',
 			noColumns: 4
 		},
 		pan: { interactive: true },
@@ -50,6 +50,7 @@ var SlimStatAdmin = {
 		jQuery(".chart-placeholder").each( function() {
 			SlimStatAdmin._placeholder = jQuery(this);
 			SlimStatAdmin._chart_id = jQuery(this).parents('.postbox').attr('id');
+			SlimStatAdmin._chart_options.legend.container = '#' + SlimStatAdmin._chart_id + ' .chart-legend';
 
 			// Don't do anything if no placeholder or if hidden
 			if (!SlimStatAdmin._placeholder.length || SlimStatAdmin._placeholder.is(':hidden')){
@@ -66,7 +67,7 @@ var SlimStatAdmin = {
 
 			// Calculate the remaining options
 			SlimStatAdmin._chart_options.colors = SlimStatAdminParams.chart_colors,
-			// 
+
 			SlimStatAdmin._chart_options.xaxis = {
 				ticks: (SlimStatAdmin.ticks[0][1].indexOf('/') > 0 && SlimStatAdmin.ticks.length > 16) ? [] : SlimStatAdmin.ticks,
 				tickDecimals: 0,
@@ -198,7 +199,7 @@ var SlimStatAdmin = {
 		else{
 			report_id = 'slim_p7_02';
 			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) };
-			jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin3 animate-spin"></i></p>');
+			jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
 			SlimStatAdmin.refresh_report(report_id, data);
 
 			window.clearTimeout(refresh_handle);
@@ -215,7 +216,7 @@ var SlimStatAdmin = {
 			data[filters_input[i]['name']] = filters_input[i]['value'];
 		}
 
-		jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin3 animate-spin"></i></p>');
+		jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
 
 		jQuery.post(ajaxurl, data, function(response){
 			if (report_id.indexOf('_01') > 0){

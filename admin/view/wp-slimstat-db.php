@@ -630,7 +630,8 @@ class wp_slimstat_db {
 			'SUM(counthits) AS counthits' ) );
 	}
 
-	public static function get_data_for_chart( $_data1 = '', $_data2 = '', $_where = '' ) {
+	// public static function get_data_for_chart( $_data1 = '', $_data2 = '', $_where = '' ) {
+	public static function get_data_for_chart( $_args = array() ) {
 		$previous = array( 'end' => self::$filters_normalized[ 'utime' ][ 'start' ] - 1 );
 		$label_date_format = '';
 		$output = array();
@@ -671,22 +672,26 @@ class wp_slimstat_db {
 				break;
 		}
 
+		if ( empty( $_args[ 'where' ] ) ) {
+			$_args[ 'where' ] = '';
+		}
+
 		// Custom intervals don't have a comparison chart ('previous' range)
 		if ( empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ) {
-			$_where = self::get_combined_where( $_where, '*', false );
+			$_args[ 'where' ] = self::get_combined_where( $_args[ 'where' ], '*', false );
 			$previous_time_range = ' AND (dt BETWEEN '.$previous[ 'start' ].' AND '.$previous[ 'end' ].' OR dt BETWEEN '.self::$filters_normalized[ 'utime' ][ 'start' ].' AND '.self::$filters_normalized[ 'utime' ][ 'end' ].')';
 		}
 		else {
-			$_where = self::get_combined_where( $_where );
+			$_args[ 'where' ] = self::get_combined_where( $_args[ 'where' ] );
 			$previous_time_range = '';
 		}
 
 		// Build the SQL query
 		$group_by_string = "GROUP BY {$group_by[0]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), {$group_by[1]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
 		$sql = "
-			SELECT dt, $_data1 first_metric, $_data2 second_metric
+			SELECT dt, {$_args[ 'data1' ]} first_metric, {$_args[ 'data2' ]} second_metric
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE $_where $previous_time_range
+			WHERE {$_args[ 'where' ]} $previous_time_range
 			$group_by_string";
 
 		// Get the data

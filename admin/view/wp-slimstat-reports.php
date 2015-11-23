@@ -100,7 +100,15 @@ class wp_slimstat_reports {
 				'title' => __( 'Pageviews', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
-					'type' => 'slim_p1_01'
+					'id' => 'slim_p1_01',
+					'chart_data' => array(
+						'data1' => 'COUNT( ip )',
+						'data2' => 'COUNT( DISTINCT ip )'
+					),
+					'chart_labels' => array(
+						__( 'Pageviews', 'wp-slimstat' ),
+						__( 'Unique IPs', 'wp-slimstat' )
+					)
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'slimview2', 'dashboard' ),
@@ -163,7 +171,7 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview2', 'dashboard' ),
-				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and so on.', 'wp-slimstat' )
+				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and so on. You can set the corresponding filter where Resource Content Type equals cpt:you_cpt_slug_here to get top web pages for a specific custom post type you have.', 'wp-slimstat' )
 			),
 			'slim_p1_10' => array(
 				'title' => __('Top Traffic Sources', 'wp-slimstat'),
@@ -245,12 +253,39 @@ class wp_slimstat_reports {
 				'screens' => array( 'slimview2', 'dashboard' ),
 				'tooltip' => __( 'When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat' )
 			),
+			'slim_p1_19_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
+				'title' => __( 'Search Terms', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'show_chart' ),
+				'callback_args' => array(
+					'id' => 'slim_p1_19_01',
+					'chart_data' => array(
+						'data1' => 'COUNT( searchterms )',
+						'data2' => 'COUNT( DISTINCT searchterms )'
+					),
+					'chart_labels' => array(
+						__( 'Search Terms', 'wp-slimstat' ),
+						__( 'Unique Terms', 'wp-slimstat' )
+					)
+				),
+				'classes' => array( 'wide', 'chart' ),
+				'screens' => array( 'slimview2' ),
+				'tooltip' => $chart_tooltip
+			),
 
 			'slim_p2_01' => array(
 				'title' => __( 'Human Visits', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
-					'type' => 'slim_p2_01'
+					'id' => 'slim_p2_01',
+					'chart_data' => array(
+						'data1' => 'COUNT( DISTINCT visit_id )',
+						'data2' => 'COUNT( DISTINCT ip )'
+					),
+					'chart_labels' => array(
+						__( 'Visits', 'wp-slimstat' ),
+						__( 'Unique IPs', 'wp-slimstat' )
+					),
+					'where' => '(visit_id > 0 AND browser_type <> 1)'
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'slimview3' ),
@@ -458,12 +493,39 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'slimview3', 'dashboard' )
 			),
+			'slim_p2_22_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
+				'title' => __( 'Users', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'show_chart' ),
+				'callback_args' => array(
+					'id' => 'slim_p2_22_01',
+					'chart_data' => array(
+						'data1' => 'COUNT( username )',
+						'data2' => 'COUNT( DISTINCT username )'
+					),
+					'chart_labels' => array(
+						__( 'Users', 'wp-slimstat' ),
+						__( 'Unique Users', 'wp-slimstat' )
+					)
+				),
+				'classes' => array( 'wide', 'chart' ),
+				'screens' => array( 'slimview3' ),
+				'tooltip' => $chart_tooltip
+			),
 
 			'slim_p3_01' => array(
 				'title' => __( 'Traffic Sources', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
-					'type' => 'slim_p3_01'
+					'id' => 'slim_p3_01',
+					'chart_data' => array(
+						'data1' => 'COUNT( DISTINCT referer )',
+						'data2' => 'COUNT( DISTINCT ip )'
+					),
+					'chart_labels' => array(
+						__( 'Domains', 'wp-slimstat' ),
+						__( 'Unique IPs', 'wp-slimstat' )
+					),
+					'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")'
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'slimview5' ),
@@ -777,6 +839,24 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'slimview4' )
 			),
+			'slim_p4_26_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
+				'title' => __( 'Outbound Links', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'show_chart' ),
+				'callback_args' => array(
+					'id' => 'slim_p4_26_01',
+					'chart_data' => array(
+						'data1' => 'COUNT( outbound_resource )',
+						'data2' => 'COUNT( DISTINCT outbound_resource )'
+					),
+					'chart_labels' => array(
+						__( 'Outbound Links', 'wp-slimstat' ),
+						__( 'Unique Outbound', 'wp-slimstat' )
+					)
+				),
+				'classes' => array( 'wide', 'chart' ),
+				'screens' => array( 'slimview4' ),
+				'tooltip' => $chart_tooltip
+			),
 
 			'slim_p6_01' => array(
 				'title' => __( 'World Map', 'wp-slimstat' ),
@@ -792,18 +872,19 @@ class wp_slimstat_reports {
 
 		// Define what reports have been deprecated over time, to remove them from the user's settings
 		$deprecated_reports = array(
-			'slim_p1_05',
-			'slim_p1_18',
-			'slim_p2_10',
-			'slim_p3_03',
-			'slim_p3_04',
-			'slim_p3_05',
-			'slim_p3_08',
-			'slim_p3_09',
-			'slim_p3_10',
-			'slim_p4_08',
-			'slim_p4_14',
-			'slim_p4_17'
+			'slim_p1_05' => 1,
+			'slim_p1_18' => 1,
+			'slim_p2_10' => 1,
+			'slim_p3_03' => 1,
+			'slim_p3_04' => 1,
+			'slim_p3_05' => 1,
+			'slim_p3_08' => 1,
+			'slim_p3_09' => 1,
+			'slim_p3_10' => 1,
+			'slim_p4_08' => 1,
+			'slim_p4_14' => 1,
+			'slim_p4_16' => 1,
+			'slim_p4_17' => 1
 		);
 
 		// Retrieve this user's list of active reports, 
@@ -1127,39 +1208,37 @@ class wp_slimstat_reports {
 	}
 
 	public static function show_chart( $_args = array() ){ 
-		wp_slimstat_db::$debug_message = '';
+		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
 
-		switch ( $_args[ 'type' ] ) {
-			case 'slim_p1_01':
-				$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(ip)', 'COUNT(DISTINCT(ip))' );
-				$chart_labels = array( __( 'Pageviews', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
-				break;
+		// switch ( $_args[ 'type' ] ) {
+		// 	case 'slim_p1_01':
+		// 		$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(ip)', 'COUNT(DISTINCT(ip))' );
+		// 		$chart_labels = array( __( 'Pageviews', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
+		// 		break;
 
-			case 'slim_p2_01':
-				$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', '(visit_id > 0 AND browser_type <> 1)' );
-				$chart_labels = array( __( 'Visits', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
-				break;
+		// 	case 'slim_p2_01':
+		// 		$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', '(visit_id > 0 AND browser_type <> 1)' );
+		// 		$chart_labels = array( __( 'Visits', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
+		// 		break;
 
-			case 'slim_p3_01':
-				$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT(referer))', 'COUNT(DISTINCT(ip))', '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")' );
-				$chart_labels = array( __( 'Domains', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
-				break;
+		// 	case 'slim_p3_01':
+		// 		$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT(referer))', 'COUNT(DISTINCT(ip))', '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")' );
+		// 		$chart_labels = array( __( 'Domains', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
+		// 		break;
 
-			default:
-				$chart_data = array();
-				$chart_labels = array( '', '' );
-				break;
-		}
-	
-		echo wp_slimstat_db::$debug_message;
+		// 	default:
+		// 		$chart_data = array();
+		// 		$chart_labels = array( '', '' );
+		// 		break;
+		// }
 	?>
 		<div class="chart-placeholder"></div><div class="chart-legend"></div>
 		<script type="text/javascript">
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'type' ] ?>' ] = [];
+			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ] = [];
 
 			<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'type' ] ?>' ].push({
-				label: '<?php echo $chart_labels[ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
+			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ].push({
+				label: '<?php echo $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
@@ -1176,8 +1255,8 @@ class wp_slimstat_reports {
 					}
 				}
 			});
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'type' ] ?>' ].push({
-				label: '<?php echo $chart_labels[ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
+			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ].push({
+				label: '<?php echo $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
@@ -1196,8 +1275,8 @@ class wp_slimstat_reports {
 			});
 			<?php endif ?>
 
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'type' ] ?>'  ].push({
-				label: '<?php echo $chart_labels[ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
+			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>'  ].push({
+				label: '<?php echo $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
@@ -1214,8 +1293,8 @@ class wp_slimstat_reports {
 					}
 				}
 			});
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'type' ] ?>'  ].push({
-				label: '<?php echo $chart_labels[ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
+			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>'  ].push({
+				label: '<?php echo $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
