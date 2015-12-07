@@ -11,9 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "You now have full control over the placement of your reports. Move them not just within each screen, but from one screen to another. Build your own custom Overview, by simply dragging and dropping report labels just like you already do with widgets and widget areas. For example, you can now compare multiple charts side by side on the same screen. And access all the new reports we made available in this version of Slimstat. Go to Slimstat > Customize and... have fun!";
-			// The WordPress Translation Team contacted us to let us know that Slimstat has been imported into <a href='https://translate.wordpress.org/projects/wp-plugins/wp-slimstat' target='_blank'>translate.wordpress.org</a>. We are adapting the source code and moving the localization files within our folder structure, to comply with their new guidelines. It looks like it will now be much easier for our users to contribute, and help Slimstat speak many new languages. <a href='https://translate.wordpress.org/projects/wp-plugins/wp-slimstat/stable' target='_blank'>Go take a look</a> and get a $50 coupon to spend on our store for each localization you contribute.
-
+			self::$admin_notice = "The WordPress Translation Team contacted us to let us know that Slimstat has been imported into <a href='https://translate.wordpress.org/projects/wp-plugins/wp-slimstat' target='_blank'>translate.wordpress.org</a>. We adapted the source code and moved the localization files within our folder structure, to comply with their new guidelines. It looks like it will now be much easier for our users to contribute, and help Slimstat speak many new languages. <a href='https://translate.wordpress.org/projects/wp-plugins/wp-slimstat/stable' target='_blank'>Go take a look</a>!";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -109,6 +107,7 @@ class wp_slimstat_admin{
 			if ( wp_slimstat::$options['add_posts_column'] == 'yes' ) {
 				$post_types = get_post_types( array( 'public' => true, 'show_ui'  => true ), 'names' );
 				include_once( dirname(__FILE__) . '/view/wp-slimstat-reports.php' );
+				include_once( dirname(__FILE__) . '/view/wp-slimstat-db.php' );
 
 				foreach ( $post_types as $a_post_type ) {
 					add_filter("manage_{$a_post_type}_posts_columns", array(__CLASS__, 'add_column_header'));
@@ -602,15 +601,13 @@ class wp_slimstat_admin{
 			return;
 		}
 
-		wp_slimstat_reports::init();
-
 		if ( empty( wp_slimstat::$options[ 'posts_column_day_interval' ] ) ) {
 			wp_slimstat::$options[ 'posts_column_day_interval' ] = 30;
 		}
 
 		$parsed_permalink = parse_url( get_permalink( $_post_id ) );
 		$parsed_permalink = $parsed_permalink[ 'path' ] . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . $parsed_permalink[ 'query' ] : '' );
-		wp_slimstat_db::init( 'resource contains ' . $parsed_permalink . '&&&hour equals 0&&&day equals ' . date_i18n( 'd' ) . '&&&month equals ' . date_i18n( 'm' ) . '&&&year equals ' . date_i18n( 'Y' ) . '&&&interval equals ' . wp_slimstat::$options[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' );
+		wp_slimstat_db::init( 'resource contains ' . $parsed_permalink . '&&&interval equals ' . wp_slimstat::$options[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' );
 
 		if ( wp_slimstat::$options[ 'posts_column_pageviews' ] == 'yes' ) {
 			$count = wp_slimstat_db::count_records();
@@ -618,7 +615,7 @@ class wp_slimstat_admin{
 		else{
 			$count = wp_slimstat_db::count_records( 'ip' );
 		}
-		echo '<a href="'.wp_slimstat_reports::fs_url("resource contains $parsed_permalink&&&day equals ".date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals '.wp_slimstat::$options['posts_column_day_interval'].'&&interval_direction equals minus').'">'.$count.'</a>';
+		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource contains ' . $parsed_permalink . '&&&interval equals ' . wp_slimstat::$options[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' ). '">'.$count.'</a>';
 	}
 	// end add_column
 

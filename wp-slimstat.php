@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.2.1
+Version: 4.2.2
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -13,7 +13,7 @@ Domain Path: /languages
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.2.1';
+	public static $version = '4.2.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -66,19 +66,18 @@ class wp_slimstat {
 			$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', true );
 			$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
 
-			$action_to_hook = is_admin() ? 'admin_init' : 'wp';
-
 			// Is server-side tracking active?
-			if (self::$options['javascript_mode'] != 'yes' && self::$options['is_tracking'] == 'yes' && $is_tracking_filter){
-				add_action($action_to_hook, array(__CLASS__, 'slimtrack'), 5);
-				if (self::$options['track_users'] == 'yes'){
-					add_action('login_init', array(__CLASS__, 'slimtrack'), 10);
+			if ( self::$options[ 'javascript_mode' ] != 'yes' && self::$options[ 'is_tracking' ] == 'yes' && $is_tracking_filter ) {
+				add_action( is_admin() ? 'admin_init' : 'wp', array( __CLASS__, 'slimtrack' ), 5 );
+
+				if ( self::$options[ 'track_users' ] == 'yes' ) {
+					add_action( 'login_init', array( __CLASS__, 'slimtrack' ), 10 );
 				}
 			}
 
 			// Slimstat tracks screen resolutions, outbound links and other client-side information using javascript
 			if ((self::$options['enable_javascript'] == 'yes' || self::$options['javascript_mode'] == 'yes') && self::$options['is_tracking'] == 'yes' && $is_tracking_filter_js){
-				add_action($action_to_hook, array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
+				add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
 				if (self::$options['track_users'] == 'yes'){
 					add_action('login_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 10);
 				}
@@ -131,7 +130,7 @@ class wp_slimstat {
 		}
 
 		if ( self::$data_js['op'] == 'add' ){
-			self::slimtrack();
+			self::slimtrack( 3212 );
 		}
 		else{
 			// Update an existing pageview with client-based information (resolution, plugins installed, etc)
@@ -206,9 +205,14 @@ class wp_slimstat {
 	/**
 	 * Core tracking functionality
 	 */
-	public static function slimtrack($_argument = ''){
-		self::$stat['dt'] = date_i18n('U');
-		self::$stat['notes'] = array();
+	public static function slimtrack( $_argument = '' ) {
+		// Do not track requests to admin-ajax.php itself, unless the function is being called by slimtrack_ajax
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX && $_argument != 3212 ) {
+			return $_argument;
+		}
+
+		self::$stat[ 'dt' ] = date_i18n( 'U' );
+		self::$stat[ 'notes' ] = array();
 
 		// Allow third-party tools to initialize the stat array
 		self::$stat = apply_filters('slimstat_filter_pageview_stat_init', self::$stat);
@@ -373,14 +377,18 @@ class wp_slimstat {
 				}
 			}
 
-			if (is_string(self::$options['ignore_users']) && strpos(self::$options['ignore_users'], $GLOBALS['current_user']->data->user_login) !== false){
-				self::$stat['id'] = -201;
-				self::_set_error_array( sprintf( __('User %s is blacklisted', 'wp-slimstat'), $GLOBALS['current_user']->data->user_login ) );
-				return $_argument;
+			// Is this user blacklisted?
+			foreach ( self::string_to_array( self::$options[ 'ignore_users' ] ) as $a_filter ) {
+				$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
+				if ( preg_match( "~^$pattern$~i", $GLOBALS[ 'current_user' ]->data->user_login ) ) {
+					self::$stat['id'] = -201;
+					self::_set_error_array( sprintf( __( 'User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ) );
+					return $_argument;
+				}
 			}
 
 			self::$stat['username'] = $GLOBALS['current_user']->data->user_login;
-			self::$stat['notes'][] = 'user:'.$GLOBALS['current_user']->data->ID;
+			self::$stat['notes'][] = 'user:' . $GLOBALS[ 'current_user' ]->data->ID;
 			$not_spam = true;
 		}
 		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
@@ -495,7 +503,7 @@ class wp_slimstat {
 		self::$stat = self::$stat + self::$browser;
 
 		// Do we need to assign a visit_id to this user?
-		$cookie_has_been_set = self::_set_visit_id(false);
+		$cookie_has_been_set = self::_set_visit_id( false );
 
 		// Allow third-party tools to modify all the data we've gathered so far
 		self::$stat = apply_filters( 'slimstat_filter_pageview_stat', self::$stat );
@@ -527,34 +535,27 @@ class wp_slimstat {
 		}
 
 		// Is this a new visitor?
-		$is_set_cookie = apply_filters('slimstat_set_visit_cookie', true);
-		if ($is_set_cookie){
-			$unique_id = get_current_user_id();
-			if ( empty( $unique_id ) ) {
-				$unique_id = '';
-			}
-			else {
-				$unique_id = '_'.$unique_id;
-			}
-
-			if (empty(self::$stat['visit_id']) && !empty(self::$stat['id'])){
+		$is_set_cookie = apply_filters( 'slimstat_set_visit_cookie', true );
+		if ( $is_set_cookie ) {
+			if ( empty( self::$stat[ 'visit_id' ] ) && !empty( self::$stat[ 'id' ] ) ) {
 				// Set a cookie to track this visit (Google and other non-human engines will just ignore it)
 				@setcookie(
-					'slimstat_tracking_code' . $unique_id,
+					'slimstat_tracking_code',
 					self::$stat[ 'id' ] . 'id.' . md5( self::$stat[ 'id' ] . 'id' . self::$options[ 'secret' ] ),
 					time() + 2678400, // one month
 					COOKIEPATH
 				);
 			}
-			elseif (!$cookie_has_been_set && self::$options[ 'extend_session' ] == 'yes' && self::$stat[ 'visit_id' ] > 0){
+			elseif ( !$cookie_has_been_set && self::$options[ 'extend_session' ] == 'yes' && self::$stat[ 'visit_id' ] > 0 ) {
 				@setcookie(
-				 'slimstat_tracking_code' . $unique_id,
+				 'slimstat_tracking_code',
 				 self::$stat[ 'visit_id' ] . '.' . md5( self::$stat[ 'visit_id' ] . self::$options[ 'secret' ] ),
 				 time() + self::$options[ 'session_duration' ],
 				 COOKIEPATH
 				);
 			}
 		}
+
 		return $_argument;
 	}
 	// end slimtrack
@@ -647,7 +648,7 @@ class wp_slimstat {
 	 * Stores the information (array) in the appropriate table and returns the corresponding ID
 	 */
 	public static function insert_row($_data = array(), $_table = ''){
-		if (empty($_data) || empty($_table)){
+		if ( empty( $_data ) || empty( $_table ) ) {
 			return -1;
 		}
 
@@ -1148,16 +1149,8 @@ class wp_slimstat {
 		$is_new_session = true;
 		$identifier = 0;
 
-		$unique_id = get_current_user_id();
-		if ( empty( $unique_id ) ) {
-			$unique_id = '';
-		}
-		else {
-			$unique_id = '_'.$unique_id;
-		}
-
-		if ( isset( $_COOKIE[ 'slimstat_tracking_code' . $unique_id ] ) ) {
-			list( $identifier, $control_code ) = explode( '.', $_COOKIE[ 'slimstat_tracking_code' .  $unique_id ] );
+		if ( isset( $_COOKIE[ 'slimstat_tracking_code' ] ) ) {
+			list( $identifier, $control_code ) = explode( '.', $_COOKIE[ 'slimstat_tracking_code' ] );
 
 			// Make sure only authorized information is recorded
 			if ($control_code !== md5($identifier.self::$options['secret'])) return false;
@@ -1180,7 +1173,7 @@ class wp_slimstat {
 			$is_set_cookie = apply_filters('slimstat_set_visit_cookie', true);
 			if ( $is_set_cookie ) {
 				@setcookie(
-					'slimstat_tracking_code' . $unique_id,
+					'slimstat_tracking_code',
 					self::$stat[ 'visit_id' ] . '.' . md5( self::$stat[ 'visit_id' ] . self::$options[ 'secret' ] ),
 					time() + self::$options[ 'session_duration' ],
 					COOKIEPATH
@@ -1694,11 +1687,14 @@ class wp_slimstat {
 		}
 
 		if (self::$options['javascript_mode'] != 'yes'){
-			if (!empty(self::$stat['id']) && intval(self::$stat['id']) > 0){
-				$params['id'] = self::$stat['id'].'.'.md5(self::$stat['id'].self::$options['secret']);
+			if ( !empty( self::$stat[ 'id' ] ) && intval( self::$stat[ 'id' ] ) > 0 ) {
+				$params[ 'id' ] = self::$stat[ 'id' ] . '.' . md5( self::$stat[ 'id' ] . self::$options[ 'secret' ] );
 			}
-			else{
+			else if ( !empty( self::$stat[ 'id' ] ) ) {
 				$params['id'] = self::$stat['id'].'.0';
+			}
+			else {
+				$params['id'] = '-300.0';
 			}
 		}
 		else{

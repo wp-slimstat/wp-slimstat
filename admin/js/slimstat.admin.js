@@ -338,7 +338,7 @@ jQuery(function(){
 	});
 
 	// Send filters as post requests
-	jQuery(document).on('click', '.slimstat-filter-link, #toplevel_page_slimview1 li a, #wp-admin-bar-slimstat-header li a', function(e){
+	jQuery(document).on('click', '.slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a', function(e){
 		e.preventDefault();
 
 		if (!jQuery('#slimstat-filters-form').length){

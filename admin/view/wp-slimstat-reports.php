@@ -2030,7 +2030,7 @@ class wp_slimstat_reports {
 			}
 		}
 
-		return $resource_title;
+		return htmlentities( $resource_title, ENT_QUOTES, 'UTF-8' );
 	}
 	
 	public static function inline_help( $_text = '', $_echo = true ) {

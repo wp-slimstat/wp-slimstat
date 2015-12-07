@@ -258,7 +258,9 @@
 	background-position: 0 0;
 	background-repeat: no-repeat;
 	display: inline-block;
+	font-size: 18px;
 	height: 16px;
+	line-height: 16px;
 	margin-right: 5px;
 	vertical-align: top;
 	width: 16px;

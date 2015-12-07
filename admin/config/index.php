@@ -32,23 +32,6 @@ if ( !empty( $_POST[ 'options' ][ 'enable_getsocial' ] ) && $_POST[ 'options' ][
 	}
 }
 
-if (!empty($_POST['options']['ignore_users'])){
-	// Make sure all the users exist in the system 
-	$user_array = wp_slimstat::string_to_array($_POST['options']['ignore_users']);
-	$post_data = trim($_POST['options']['ignore_users']);
-
-	if (is_array($user_array) && !empty($post_data)){
-		$sql_user_placeholders = implode(', ', array_fill(0, count($user_array), '%s'));
-		if ($GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->users} WHERE user_login IN ($sql_user_placeholders)", $user_array)) == count($user_array)){
-			wp_slimstat::$options['ignore_users'] = $_POST['options']['ignore_users'];
-
-		}
-		else{
-			wp_slimstat_admin::$faulty_fields[] = __('Ignore users (username not found)','wp-slimstat');
-		}
-	}
-}
-
 if (!empty($_POST['options']['ignore_capabilities'])){
 	// Make sure all the capabilities exist in the system 
 	$capability_array = wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']);
@@ -126,17 +109,17 @@ $options = array(
 		'title' => __( 'Basic', 'wp-slimstat' ),
 		'rows' => array(
 			'general_tracking_header' => array('description' => __('Tracker','wp-slimstat'), 'type' => 'section_header'),
-			'is_tracking' => array( 'description' => __('Track Pageviews','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Turn the tracker on or off, while keeping the reports accessible.','wp-slimstat'), 'custom_label_yes' => __('On','wp-slimstat'), 'custom_label_no' => __('Off','wp-slimstat') ),
-			'javascript_mode' => array( 'description' => __('Tracking Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Select <strong>Client</strong> if you are using a caching plugin (W3 Total Cache, WP SuperCache, HyperCache, etc). Slimstat will behave pretty much like Google Analytics, and visitors whose browser does not support Javascript will be ignored. A nice side effect is that <strong>most spammers, search engines and other crawlers</strong> will not be tracked.','wp-slimstat'), 'custom_label_yes' => __('Client','wp-slimstat'), 'custom_label_no' => __('Server','wp-slimstat') ),
+			'is_tracking' => array( 'description' => __( 'Enable Tracking', 'wp-slimstat' ), 'type' => 'yesno', 'long_description' => __( 'Turn the tracker on or off, while keeping the reports accessible.', 'wp-slimstat' ) ),
+			'javascript_mode' => array( 'description' => __( 'Tracking Mode', 'wp-slimstat' ), 'type' => 'yesno', 'long_description' => __('Select <strong>Client</strong> if you are using a caching plugin (W3 Total Cache, WP SuperCache, HyperCache, etc). Slimstat will behave pretty much like Google Analytics, and visitors whose browser does not support Javascript will be ignored. A nice side effect is that <strong>most spammers, search engines and other crawlers</strong> will not be tracked.','wp-slimstat'), 'custom_label_yes' => __('Client Side','wp-slimstat'), 'custom_label_no' => __('Server Side','wp-slimstat') ),
 			'enable_javascript' => array('description' => __('Stealth Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Do not add the javascript tracking code to your pages, if tracking mode is set to Server. Please note: if enabled, this will prevent the tracker from collecting information such as screen resolution, outbound links, downloads, etc. This option is ignored is Tracking Mode is set to Client.",'wp-slimstat'), 'custom_label_yes' => __('Off','wp-slimstat'), 'custom_label_no' => __('On','wp-slimstat') ),
 			'track_admin_pages' => array( 'description' => __('Admin Pages','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Enable this option to track your users' activity within the admin.",'wp-slimstat'), 'custom_label_yes' => __('Track','wp-slimstat'), 'custom_label_no' => __('Do not track','wp-slimstat') ),
 
 			'general_integration_header' => array('description' => __('WordPress Integration','wp-slimstat'), 'type' => 'section_header'),
 			'use_separate_menu' => array( 'description' => __('Menu Position','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose between a standalone admin menu for Slimstat or a drop down in the admin bar (if visible).','wp-slimstat'), 'custom_label_yes' => __('Side Menu','wp-slimstat'), 'custom_label_no' => __('Admin Bar','wp-slimstat') ),
 			'add_posts_column' => array( 'description' => __('Posts and Pages','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Add a new column to the Edit Posts/Pages screens, with the number of hits per post in the last 365 days.','wp-slimstat') ),
-			'add_dashboard_widgets' => array( 'description' => __('Dashboard Widgets','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to have the most important reports on your WordPress Dashboard. Use the Screen Options dropdown to select which ones to display.','wp-slimstat') ),
 			'posts_column_day_interval' => array( 'description' => __('Report Interval','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enter the time range, in days, that should be used to calculate the value here above.','wp-slimstat') ),
 			'posts_column_pageviews' => array( 'description' => __('Report Type','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Select what kind of information you would like to see displayed on the Posts admin screen. Pageviews include all the hits regardless of the user, Unique IPs consider only one hit per user in the given time range.','wp-slimstat'), 'custom_label_yes' => __('Pageviews','wp-slimstat'), 'custom_label_no' => __('Unique IPs','wp-slimstat') ),
+			'add_dashboard_widgets' => array( 'description' => __('Dashboard Widgets','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to have the most important reports on your WordPress Dashboard. Use the Screen Options dropdown to select which ones to display.','wp-slimstat') ),
 			'hide_addons' => array( 'description' => __('Hide Add-ons','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option to hide all your <strong>active</strong> premium add-ons from the list of plugins in WordPress. Please note that you will still receive updates for hidden add-ons.','wp-slimstat') ),
 
 			'general_database_header' => array('description' => __('Database','wp-slimstat'), 'type' => 'section_header'),
@@ -180,9 +163,9 @@ $options = array(
 	3 => array(
 		'title' => __( 'Filters', 'wp-slimstat' ),
 		'rows' => array(
-			'filters_users_header' => array('description' => __('Visitors and Known Users','wp-slimstat'), 'type' => 'section_header'),
+			'filters_header' => array('description' => __('Do not track settings','wp-slimstat'), 'type' => 'section_header'),
 			'track_users' => array('description' => __('Track Registered Users','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option to track logged in users.','wp-slimstat')),
-			'ignore_users' => array('description' => __('Blacklist by Username','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the usernames you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored and that usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true),
+			'ignore_users' => array( 'description' => __( 'Blacklist by Username', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the usernames you don't want to track, separated by commas. Please be aware that spaces are <em>not</em> ignored and that usernames are case sensitive. Wildcards: <code>*</code> matches 'any string, including the empty string', <code>!</code> matches 'any character'. For example, <code>user*</code> will match user12 and userfoo, <code>u*100</code> will match user100 and uber100, <code>user!0</code> will match user10 and user90.", 'wp-slimstat' ) ),
 			'ignore_ip' => array('description' => __('Blacklist by IP Address','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the IP addresses you don't want to track, separated by commas. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.0.0/24</em>). This filter applies both to the public IP and the originating IP, if available.",'wp-slimstat')),
 			'ignore_capabilities' => array('description' => __('Blacklist by Capability','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("Users having at least one of the <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capabilities</a> listed here below will not be tracked. Capabilities are case-insensitive.",'wp-slimstat'), 'skip_update' => true),
 

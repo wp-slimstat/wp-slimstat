@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4
-Stable tag: 4.2.1
+Stable tag: 4.2.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -61,6 +61,19 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.2.2 =
+* [Note] The WordPress Translation Team contacted us to let us know that Slimstat has been imported into [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/wp-slimstat). We adapted the source code and moved the localization files within our folder structure, to comply with their new guidelines. It looks like it will now be much easier for our users to contribute, and help Slimstat speak many new languages.
+* [New] You can now filter existing users in groups, using wildcards.
+* [New] Our premium add-on User Overview now extends the tracker to record login/logout events. This feature can be useful if you have a membership site and want to know when users actually log in.
+* [Update] Time on page now displays hours, if the duration is long enough (thank you, Ralf)
+* [Fix] Patched a javascript vulnerability that might be exploited via the Activity Log report (thank you, Ivan)
+* [Fix] Session tracking cookie does not differentiate between logged in and anonymous users anymore.
+* [Fix] Tracker was not working as expected on the WordPress login screen and when admin-ajax.php was being called by other scripts.
+* [Fix] Blacklist by username was incorrectly considering substrings.
+* [Fix] When running reports on date intervals, start and end of calculated timeframe were skewed by one day under certain circumstances.
+* [Fix] Link on Edit Posts/Pages counter was not working as expected (thank you, [SGURYGF](https://wordpress.org/support/topic/pagesposts-view-count-0)).
+* [Fix] Miscellaneous code optimizations and clean-up.
 
 = 4.2.1 =
 * [Note] If you're upgrading from a version prior to 4.0, please upgrade to version 4.0 first. To simplify our codebase, we removed all the upgrade scripts to support versions prior to 4.0.
