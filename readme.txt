@@ -70,6 +70,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Update] Tracker Error Codes are now called Tracker Statuses, to avoid confusion between when the plugin is not working and when it's actually doing its job.
 * [Update] Javascript tracker is now capable of tracking custom link types.
 * [Fix] Custom filters (used in some of our premium add-on) where affecting the way charts were being displayed.
+* [Fix] Resolved an encoding issue, introduced by our XSS patch in version 4.2.2 (thank you, [Paper Bird](https://wordpress.org/support/topic/special-characters-in-page-titles-displaying-as-iso-code))
 * [Fix] Shorcodes were not working as expected if the value passed to the filter was zero (thanky you, [Sheriffonline](https://wordpress.org/support/topic/monthly-visitors-showing-0-always)).
 * [Fix] Shortcode for countries will now return Country names, not codes (thank you, [Sheriffonline](https://wordpress.org/support/topic/monthly-visitors-showing-0-always)).
 * [Fix] Time ranges within the same day (i.e. visitors in the last 5 minutes) were not being calculated correctly.
