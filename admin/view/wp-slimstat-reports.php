@@ -2001,6 +2001,11 @@ class wp_slimstat_reports {
 
 		if ( $post_id > 0 ) {
 			$resource_title = the_title_attribute( array( 'post' => $post_id, 'echo' => false ) );
+
+			// Encode URLs to avoid XSS attacks
+			if ( $resource_title == $_resource ) {
+				$resource_title = htmlspecialchars( $resource_title, ENT_QUOTES, 'UTF-8' );
+			}
 		}
 
 		// Is this a category or tag permalink?
@@ -2028,9 +2033,12 @@ class wp_slimstat_reports {
 			if ( !empty( $term_names ) ) {
 				$resource_title = implode( ',', $term_names );
 			}
+			else {
+				$resource_title = htmlspecialchars( $resource_title, ENT_QUOTES, 'UTF-8' );
+			}
 		}
 
-		return htmlentities( $resource_title, ENT_QUOTES, 'UTF-8' );
+		return $resource_title;
 	}
 	
 	public static function inline_help( $_text = '', $_echo = true ) {
