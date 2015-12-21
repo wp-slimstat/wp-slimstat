@@ -136,19 +136,6 @@ else {
 			echo "<p class='header$highlight_row'>{$results[$i]['country']} $browser_filtered $platform_filtered $browser_type_filtered $ip_address $other_ip_address $notes <span class='plugins'>$plugins</span> $screen_resolution</p>";
 		}
 
-		// Server Latency and Page Speed
-		$performance = '';
-		if ( !$is_dashboard && ( !empty( $results[ $i ][ 'server_latency' ] ) || !empty( $results[ $i ][ 'page_performance' ] ) ) ) {
-			$performance = "<i class='slimstat-font-gauge spaced' title='".__('Server Latency and Page Speed in milliseconds','wp-slimstat')."'></i> ".__('SL','wp-slimstat').": {$results[$i]['server_latency']} / ".__('PS','wp-slimstat').": {$results[$i]['page_performance']}";
-		}
-
-		// Time on page
-		$time_on_page = '';
-		if ( !$is_dashboard && !empty( $results[ $i ][ 'dt_out' ] ) ) {
-			$duration = $results[ $i ][ 'dt_out' ] - $results[ $i ][ 'dt' ];
-			$time_on_page = "<i class='slimstat-font-stopwatch spaced' title='" . __( 'Time spent on this page in seconds', 'wp-slimstat' ) . "'></i> " . date( ( $duration > 3599 ? 'H:i:s' : 'i:s' ), $duration );
-		}
-
 		// Permalink: find post title, if available
 		$parse_url = parse_url(get_site_url(empty($results[$i]['blog_id'])?1:$results[$i]['blog_id']));
 		$base_host = $parse_url['host'];
@@ -164,14 +151,28 @@ else {
 			$results[$i]['resource'] = __('Local search results page','wp-slimstat');
 		}
 
-		// Avoid XSS attacks through the referer URL
-		$results[ $i ] [ 'referer' ] = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ] [ 'referer' ] ) );
-
 		// Search Terms, with link to original SERP, and Outbound Resource
 		if (!empty($results[$i]['searchterms'])){
 			$results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='".__('Search Terms','wp-slimstat')."'></i> ".wp_slimstat_reports::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer']);
 		}
 
+		// Server Latency and Page Speed
+		$performance = '';
+		if ( !$is_dashboard && ( !empty( $results[ $i ][ 'server_latency' ] ) || !empty( $results[ $i ][ 'page_performance' ] ) ) ) {
+			$performance = "<i class='slimstat-font-gauge spaced' title='".__('Server Latency and Page Speed in milliseconds','wp-slimstat')."'></i> ".__('SL','wp-slimstat').": {$results[$i]['server_latency']} / ".__('PS','wp-slimstat').": {$results[$i]['page_performance']}";
+		}
+
+		// Time on page
+		$time_on_page = '';
+		if ( !$is_dashboard && !empty( $results[ $i ][ 'dt_out' ] ) ) {
+			$duration = $results[ $i ][ 'dt_out' ] - $results[ $i ][ 'dt' ];
+			$time_on_page = "<i class='slimstat-font-stopwatch spaced' title='" . __( 'Time spent on this page in seconds', 'wp-slimstat' ) . "'></i> " . date( ( $duration > 3599 ? 'H:i:s' : 'i:s' ), $duration );
+		}
+
+		// Avoid XSS attacks through the referer URL
+		$results[ $i ] [ 'referer' ] = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ] [ 'referer' ] ) );
+
+		$login_logout = '';
 		if ( !$is_dashboard ) {
 			$domain = parse_url( $results[ $i ] [ 'referer' ] );
 			$domain = !empty( $domain[ 'host' ] ) ? $domain[ 'host' ] : '';
@@ -182,12 +183,34 @@ else {
 			if ($current_user_can_delete){
 				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this pageview','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
 			}
+
+			// Login / Logout Event
+			if ( strpos( $results[ $i ][ 'notes' ], 'loggedin:' ) !== false ) {
+				$exploded_notes = explode( ';', $results[ $i ][ 'notes' ] );
+				foreach ( $exploded_notes as $a_note ) {
+					if ( strpos( $a_note, 'loggedin:' ) === false ) {
+						continue;
+					}
+
+					$login_logout = "<i class='slimstat-font-user-plus spaced' title='" . __( 'User Logged In', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedin:', '', $a_note );
+				}
+			}
+			else if ( strpos( $results[ $i ][ 'notes' ], 'loggedout:' ) !== false ) {
+				$exploded_notes = explode( ';', $results[ $i ][ 'notes' ] );
+				foreach ( $exploded_notes as $a_note ) {
+					if ( strpos( $a_note, 'loggedout:' ) === false ) {
+						continue;
+					}
+
+					$login_logout = "<i class='slimstat-font-user-times spaced' title='" . __( 'User Logged Out', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedout:', '', $a_note );
+				}
+			}
 		}
 		else {
 			$results[$i]['referer'] = $results[$i][ 'outbound_resource' ] = $results[$i][ 'content_type' ] = '';
 		}
 
-		echo "<p>{$results[$i]['resource']} <span class='details'>$time_on_page {$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance $date_time {$delete_row}</span></p>";
+		echo "<p>{$results[$i]['resource']} <span class='details'>$time_on_page $login_logout {$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance $date_time {$delete_row}</span></p>";
 	}
 	
 	// Pagination

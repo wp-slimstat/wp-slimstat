@@ -11,7 +11,7 @@ class wp_slimstat_admin{
 	 */
 	public static function init(){
 		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "The WordPress Translation Team contacted us to let us know that Slimstat has been imported into <a href='https://translate.wordpress.org/projects/wp-plugins/wp-slimstat' target='_blank'>translate.wordpress.org</a>. We adapted the source code and moved the localization files within our folder structure, to comply with their new guidelines. It looks like it will now be much easier for our users to contribute, and help Slimstat speak many new languages. <a href='https://translate.wordpress.org/projects/wp-plugins/wp-slimstat/stable' target='_blank'>Go take a look</a>!";
+			self::$admin_notice = "The Javascript Tracker has been partially rewritten to store each link's state as inline <strong>data</strong> attributes. A similar feature had already been implemented a while ago; however the tracker was not using those values to decide what to do; it was using instead internal private Javascript variables. Now the code has been consolidated and optimized (no more closures), allowing third party tools to affect the behavior of the tracker at runtime. Please feel free to contact us if you want to know more about this new feature.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {

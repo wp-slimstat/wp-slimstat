@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4
-Stable tag: 4.2.2
+Stable tag: 4.2.3
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -61,6 +61,18 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.2.3 =
+* [Note] The Javascript Tracker has been partially rewritten to store each link's state as inline "data" attributes. This had already been implemented a while ago, however the tracker was not using those values to decide what to do; it was using instead Javascript variables. Now the code has been consolidated, also allowing third party tools to affect the behavior of the tracker at runtime, by modifying the values associated to the data attributes. Please feel free to contact us if you want to know more about this new feature.
+* [Note] As the tracker engine has been changed, please make sure to flush your server caches to take advantage of all the new features and optimizations.
+* [Update] The Activity Log report displays when users login and logout (this feature requires our premium add-on [User Overview](http://www.wp-slimstat.com/downloads/user-overview/)). You can also create filters on this event using the 'Annotations' filter in the dropdown. Contact our support team for more information.
+* [Update] Minor CSS improvements to adapt the layout to WordPress 4.4.
+* [Update] Tracker Error Codes are now called Tracker Statuses, to avoid confusion between when the plugin is not working and when it's actually doing its job.
+* [Update] Javascript tracker is now capable of tracking custom link types.
+* [Fix] Custom filters (used in some of our premium add-on) where affecting the way charts were being displayed.
+* [Fix] Shorcodes were not working as expected if the value passed to the filter was zero (thanky you, [Sheriffonline](https://wordpress.org/support/topic/monthly-visitors-showing-0-always)).
+* [Fix] Shortcode for countries will now return Country names, not codes (thank you, [Sheriffonline](https://wordpress.org/support/topic/monthly-visitors-showing-0-always)).
+* [Fix] Time ranges within the same day (i.e. visitors in the last 5 minutes) were not being calculated correctly.
 
 = 4.2.2 =
 * [Note] The WordPress Translation Team contacted us to let us know that Slimstat has been imported into [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/wp-slimstat). We adapted the source code and moved the localization files within our folder structure, to comply with their new guidelines. It looks like it will now be much easier for our users to contribute, and help Slimstat speak many new languages.

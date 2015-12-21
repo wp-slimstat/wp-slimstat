@@ -941,7 +941,7 @@ class wp_slimstat_reports {
 
 	public static function report_header( $_report_id = '' ) {
 		$header_classes =  !empty( self::$reports_info[ $_report_id ][ 'classes' ] ) ? implode( ' ', self::$reports_info[ $_report_id ][ 'classes' ] ) : '';
-		$header_buttons = '<div class="slimstat-header-buttons">'.apply_filters('slimstat_report_header_buttons', '<a class="button-ajax refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>', $_report_id).'</div>';
+		$header_buttons = '<div class="slimstat-header-buttons">'.apply_filters('slimstat_report_header_buttons', '<a class="button-ajax noslimstat refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>', $_report_id).'</div>';
 		$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>".self::$reports_info[ $_report_id ][ 'tooltip' ]."</span>" : '';
 
 		echo "<div class='postbox $header_classes' id='$_report_id'>$header_buttons<h3>".self::$reports_info[ $_report_id ][ 'title' ]." $header_tooltip</h3><div class='inside' id='{$_report_id}_inside'>";

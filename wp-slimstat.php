@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.2.2
+Version: 4.2.3
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -13,7 +13,7 @@ Domain Path: /languages
 if ( !empty( wp_slimstat::$options ) ) return true;
 
 class wp_slimstat {
-	public static $version = '4.2.2';
+	public static $version = '4.2.3';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -220,7 +220,7 @@ class wp_slimstat {
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if ( empty( self::$stat ) || empty( self::$stat[ 'dt' ] ) ) {
 			self::$stat[ 'id' ] = -213;
-			self::_set_error_array( __( 'Pageview filtered by third-party code', 'wp-slimstat' ) );
+			self::_set_error_array( __( 'Notice: Pageview filtered by third-party code', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
@@ -237,7 +237,7 @@ class wp_slimstat {
 			$referer = parse_url( self::$stat[ 'referer' ] );
 			if ( !$referer ){
 				self::$stat[ 'id' ] = -208;
-				self::_set_error_array( __( 'Malformed URL', 'wp-slimstat' ) );
+				self::_set_error_array( sprintf( __( 'Error: Malformed URL %s', 'wp-slimstat' ), self::$stat[ 'referer' ] ) );
 				return $_argument;
 			}
 
@@ -254,9 +254,9 @@ class wp_slimstat {
 			// Is this referer blacklisted?
 			foreach(self::string_to_array(self::$options['ignore_referers']) as $a_filter){
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if (preg_match("@^$pattern$@i", self::$stat['referer'])){
+				if ( preg_match( "@^$pattern$@i", self::$stat[ 'referer' ] ) ) {
 					self::$stat[ 'id' ] = -207;
-					self::_set_error_array( __( 'Referrer is blacklisted', 'wp-slimstat') );
+					self::_set_error_array( sprintf( __( 'Notice: Referrer %s is blacklisted', 'wp-slimstat'), self::$stat[ 'referer' ] ) );
 					return $_argument;
 				}
 			}
@@ -339,12 +339,12 @@ class wp_slimstat {
 		}
 
 		// Is this resource blacklisted?
-		if (!empty(self::$stat['resource'])){
-			foreach(self::string_to_array(self::$options['ignore_resources']) as $a_filter){
+		if ( !empty( self::$stat[ 'resource' ] ) ) {
+			foreach ( self::string_to_array( self::$options[ 'ignore_resources' ] ) as $a_filter ) {
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if (preg_match("@^$pattern$@i", self::$stat['resource'])){
+				if ( preg_match( "@^$pattern$@i", self::$stat[ 'resource' ] ) ) {
 					self::$stat['id'] = -209;
-					self::_set_error_array( __( 'Permalink is blacklisted', 'wp-slimstat' ) );
+					self::_set_error_array( sprintf( __( 'Notice: Permalink %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'resource' ] ) );
 					return $_argument;
 				}
 			}
@@ -355,16 +355,16 @@ class wp_slimstat {
 
 		if ( empty( self::$stat[ 'ip' ] ) || self::$stat[ 'ip' ] == '0.0.0.0' ) {
 			self::$stat[ 'id' ] = -203;
-			self::_set_error_array( __( 'Empty or not supported IP address format (IPv6)', 'wp-slimstat' ) );
+			self::_set_error_array( __( 'Error: Empty or not supported IP address format (IPv6)', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
 		// Should we ignore this user?
 		if ( !empty( $GLOBALS[ 'current_user' ]->ID ) ) {
 			// Don't track logged-in users, if the corresponding option is enabled
-			if (self::$options['track_users'] == 'no'){
+			if ( self::$options[ 'track_users' ] == 'no' ) {
 				self::$stat['id'] = -214;
-				self::_set_error_array( __( 'Logged in user not tracked', 'wp-slimstat' ) );
+				self::_set_error_array( sprintf( __( 'Notice: Logged in user %s not tracked', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ) );
 				return $_argument;
 			}
 
@@ -372,7 +372,7 @@ class wp_slimstat {
 			foreach(self::string_to_array(self::$options['ignore_capabilities']) as $a_capability){
 				if (array_key_exists(strtolower($a_capability), $GLOBALS['current_user']->allcaps)){
 					self::$stat['id'] = -200;
-					self::_set_error_array( __( 'User with given capability not tracked', 'wp-slimstat' ) );
+					self::_set_error_array( sprintf( __( 'Notice: User with capability %s not tracked', 'wp-slimstat' ), $a_capability ) );
 					return $_argument;
 				}
 			}
@@ -382,7 +382,7 @@ class wp_slimstat {
 				$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
 				if ( preg_match( "~^$pattern$~i", $GLOBALS[ 'current_user' ]->data->user_login ) ) {
 					self::$stat['id'] = -201;
-					self::_set_error_array( sprintf( __( 'User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ) );
+					self::_set_error_array( sprintf( __( 'Notice: User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ) );
 					return $_argument;
 				}
 			}
@@ -403,7 +403,7 @@ class wp_slimstat {
 			if ( !empty( $spam_comment[ 'comment_count' ] ) ) {
 				if ( self::$options[ 'ignore_spammers' ] == 'yes' ){
 					self::$stat[ 'id' ] = -202;
-					self::_set_error_array( sprintf( __( 'Spammer %s not tracked', 'wp-slimstat' ), $spam_comment[ 'comment_author' ] ) );
+					self::_set_error_array( sprintf( __( 'Notice: Spammer %s not tracked', 'wp-slimstat' ), $spam_comment[ 'comment_author' ] ) );
 					return $_argument;
 				}
 				else{
@@ -432,7 +432,7 @@ class wp_slimstat {
 
 			if ( $long_masked_user_ip === $long_masked_ip_to_ignore || $long_masked_user_other_ip === $long_masked_ip_to_ignore ) {
 				self::$stat['id'] = -204;
-				self::_set_error_array( sprintf( __('IP address %s is blacklisted', 'wp-slimstat'), self::$stat[ 'ip' ] . ( !empty( self::$stat[ 'other_ip' ] ) ? ' (' . self::$stat[ 'other_ip' ] . ')' : '' ) ) );
+				self::_set_error_array( sprintf( __('Notice: IP address %s is blacklisted', 'wp-slimstat'), self::$stat[ 'ip' ] . ( !empty( self::$stat[ 'other_ip' ] ) ? ' (' . self::$stat[ 'other_ip' ] . ')' : '' ) ) );
 				return $_argument;
 			}
 		}
@@ -461,7 +461,7 @@ class wp_slimstat {
 		// Is this country blacklisted?
 		if ( is_string( self::$options[ 'ignore_countries' ] ) && stripos( self::$options[ 'ignore_countries' ], self::$stat[ 'country' ] ) !== false ) {
 			self::$stat['id'] = -206;
-			self::_set_error_array( sprintf( __('Country %s is blacklisted', 'wp-slimstat'), self::$stat[ 'country' ] ) );
+			self::_set_error_array( sprintf( __('Notice: Country %s is blacklisted', 'wp-slimstat'), self::$stat[ 'country' ] ) );
 			return $_argument;
 		}
 
@@ -470,7 +470,7 @@ class wp_slimstat {
 			(isset($_SERVER['HTTP_X_PURPOSE']) && (strtolower($_SERVER['HTTP_X_PURPOSE']) == 'preview'))){
 			if (self::$options['ignore_prefetch'] == 'yes'){
 				self::$stat['id'] = -210;
-				self::_set_error_array( __( 'Prefetch requests are ignored', 'wp-slimstat' ) );
+				self::_set_error_array( __( 'Notice: Prefetch requests are ignored', 'wp-slimstat' ) );
 				return $_argument;
 			}
 			else{
@@ -486,7 +486,7 @@ class wp_slimstat {
 		// Are we ignoring bots?
 		if ( ( self::$options[ 'javascript_mode' ] == 'yes' || self::$options[ 'ignore_bots' ] == 'yes' ) && self::$browser[ 'browser_type' ] % 2 != 0 ) {
 			self::$stat[ 'id' ] = -211;
-			self::_set_error_array( __( 'Bot not tracked', 'wp-slimstat' ) );
+			self::_set_error_array( __( 'Notice: Bot not tracked', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
@@ -495,7 +495,7 @@ class wp_slimstat {
 			$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
 			if (preg_match("~^$pattern$~i", self::$browser['browser'].'/'.self::$browser['version']) || preg_match("~^$pattern$~i", self::$browser['browser']) || preg_match("~^$pattern$~i", self::$browser['user_agent'])){
 				self::$stat['id'] = -212;
-				self::_set_error_array( sprintf( __( 'Browser %s is blacklisted', 'wp-slimstat' ), self::$browser['browser'] ) );
+				self::_set_error_array( sprintf( __( 'Notice: Browser %s is blacklisted', 'wp-slimstat' ), self::$browser['browser'] ) );
 				return $_argument;
 			}
 		}
@@ -512,7 +512,7 @@ class wp_slimstat {
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if (empty(self::$stat) || empty(self::$stat['dt'])){
 			self::$stat['id'] = -213;
-			self::_set_error_array( __( 'Pageview filtered by third-party code', 'wp-slimstat' ) );
+			self::_set_error_array( __( 'Notice: Pageview filtered by third-party code', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
@@ -525,7 +525,7 @@ class wp_slimstat {
 		// Something went wrong during the insert
 		if (empty(self::$stat['id'])){
 			self::$stat['id'] = -215;
-			self::_set_error_array( self::$wpdb->last_error );
+			self::_set_error_array( __( 'Error:', 'wp-slimstat' ) . ' ' . self::$wpdb->last_error );
 
 			// Attempt to init the environment (new blog in a MU network?)
 			include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
@@ -1396,19 +1396,17 @@ class wp_slimstat {
 					foreach( $w as $a_column ) {
 						$output[ $result_idx ][ $a_column ] = "<span class='col-$a_column'>";
 
-						if ( $permalinks_enabled ) {
+						if ( $permalinks_enabled && !empty( $a_result[ 'resource' ] ) ) {
 							$a_result[ 'resource' ] = strtok( $a_result[ 'resource' ], '?' );
 						}
 
 						switch( $a_column ) {
-							case 'post_link':
-								$post_id = url_to_postid( $a_result[ 'resource' ] );
-								if ($post_id > 0) {
-									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>" . get_the_title( $post_id ) . '</a>'; 
-								}
-								else {
-									$output[ $result_idx ][ $a_column ] .= $a_result[ 'resource' ];
-								}
+							case 'count':
+								$output[ $result_idx ][ $a_column ] .= $a_result[ 'counthits' ];
+								break;
+
+							case 'country':
+								$output[ $result_idx ][ $a_column ] .= __( 'c-' . $a_result[ $a_column ], 'wp-slimstat' );
 								break;
 
 							case 'dt':
@@ -1419,16 +1417,22 @@ class wp_slimstat {
 								$output[ $result_idx ][ $a_column ] .= gethostbyaddr( $a_result[ 'ip' ] );
 								break;
 
-							case 'count':
-								$output[ $result_idx ][ $a_column ] .= $a_result[ 'counthits' ];
-								break;
-
 							case 'language':
 								$output[ $result_idx ][ $a_column ] .= __( 'l-' . $a_result[ $a_column ], 'wp-slimstat' );
 								break;
-								
+
 							case 'platform':
 								$output[ $result_idx ][ $a_column ] .= __( $a_result[ $a_column ], 'wp-slimstat' );
+
+							case 'post_link':
+								$post_id = url_to_postid( $a_result[ 'resource' ] );
+								if ($post_id > 0) {
+									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>" . get_the_title( $post_id ) . '</a>'; 
+								}
+								else {
+									$output[ $result_idx ][ $a_column ] .= $a_result[ 'resource' ];
+								}
+								break;
 
 							default:
 								$output[ $result_idx ][ $a_column ] .= $a_result[ $a_column ];

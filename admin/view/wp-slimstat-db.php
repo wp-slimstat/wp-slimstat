@@ -156,12 +156,13 @@ class wp_slimstat_db {
 				if ($_use_date_filters) {
 					$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 				}
-
 			}
 			elseif ( $_use_date_filters ) {
 				$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 			}
-			else {
+			
+			// This could happen if we have custom filters (add-ons, third party tools)
+			if ( empty( $_where ) ) {
 				$_where = '1=1';
 			}
 		}
@@ -291,7 +292,7 @@ class wp_slimstat_db {
 				break;
 		}
 
-		if ( !empty( $where[ 1 ] ) ) {
+		if ( isset( $where[ 1 ] ) ) {
 			return $GLOBALS[ 'wpdb' ]->prepare( $where[ 0 ], $where[ 1 ] );
 		}
 		else {
@@ -540,7 +541,8 @@ class wp_slimstat_db {
 
 			// Swap boundaries if we're going back in time
 			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 'minus' ) {
-				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + 86400, $filters_normalized[ 'utime' ][ 'start' ] + 86400 );
+				$adjustment = ( abs( $filters_normalized[ 'utime' ][ 'start' ] - $filters_normalized[ 'utime' ][ 'end' ] ) < 86400 ) ? 0 : 86400; 
+				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + $adjustment, $filters_normalized[ 'utime' ][ 'start' ] + $adjustment );
 			}
 
 			$filters_normalized[ 'utime' ][ 'end' ]--;
