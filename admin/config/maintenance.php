@@ -69,101 +69,8 @@ if (!empty($_REQUEST['action'])){
 			}
 			break;
 
-		case 'import-data-from-old-tables':
-			$current_id = wp_slimstat::$wpdb->get_var( "SELECT COUNT(*) FROM  {$GLOBALS['wpdb']->prefix}slim_stats" );
-			wp_slimstat::$wpdb->query( "
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (
-					id,
-					ip,
-					other_ip,
-					username,
-					country,
-					referer,
-					resource,
-					searchterms,
-
-					plugins,
-					notes,
-					visit_id,
-					server_latency,
-					page_performance,
-
-					browser,
-					browser_version,
-					browser_type,
-					platform,
-					language,
-					user_agent,
-
-					screen_width,
-					screen_height,
-
-					content_type,
-					category,
-					author,
-					content_id,
-
-					outbound_resource,
-
-					dt
-				)
-				SELECT 
-					t1.id + $current_id + 1,
-					t1.ip,
-					t1.other_ip,
-					NULLIF(t1.user, ''),
-					NULLIF(t1.country, ''),
-					NULLIF(t1.referer, ''),
-					NULLIF(t1.resource, ''),
-					NULLIF(t1.searchterms, ''),
-					NULLIF(t1.plugins, ''),
-					NULLIF(t1.notes, ''),
-					t1.visit_id,
-					t1.server_latency,
-					t1.page_performance,
-
-					NULLIF(tb.browser, ''),
-					NULLIF(tb.version, ''),
-					tb.type,
-					NULLIF(tb.platform, ''),
-					NULLIF(t1.language, ''),
-					NULLIF(tb.user_agent, ''),
-
-					9812,
-					9812,
-
-					NULLIF(tci.content_type, ''),
-					NULLIF(tci.category, ''),
-					NULLIF(tci.author, ''),
-					tci.content_id,
-
-					NULL,
-
-					t1.dt
-
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats_3 AS t1
-				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers AS tb ON t1.browser_id = tb.browser_id
-				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info AS tci ON t1.content_info_id = tci.content_info_id" );
-
-			// Copy the events
-			wp_slimstat::$wpdb->query( "
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events (
-					type,
-					event_description,
-					notes,
-					position,
-					id,
-					dt
-				)
-				SELECT
-					tob.type,
-					SUBSTRING(tob.notes, LOCATE('Event:', tob.notes)+6, LOCATE(',', tob.notes, LOCATE('Event:', tob.notes)+6) - LOCATE('Event:', tob.notes)-6),
-					SUBSTRING(tob.notes, 1, LOCATE('Event:', tob.notes) - 3),
-					tob.position,
-					tob.id + $current_id + 1,
-					tob.dt
-				FROM {$GLOBALS['wpdb']->prefix}slim_outbound AS tob" );
-			wp_slimstat_admin::show_alert_message(__('Your data was successfully imported. You may now drop the old tables: wp_slim_stats_3, wp_slim_browsers, wp_slim_content_info, wp_slim_screenres, wp_slim_outbound. Please note: if you are using Slimstat in a MU network, you will need to run the import script on all your sites before you can delete the old tables.','wp-slimstat'), 'wp-ui-highlight below-h2');
+		case 'reset-tracker-status':
+			wp_slimstat::$options[ 'last_tracker_error' ] = array();
 			break;
 
 		case 'restore-views':
@@ -218,13 +125,13 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 <table class="form-table widefat">
 <tbody>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Debugging','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header"><?php _e('Troubleshooting','wp-slimstat') ?></td>
 	</tr>
 	<tr>
 		<th scope="row"><?php _e('Tracker Status','wp-slimstat') ?></th>
 		<td>
-			<?php echo is_array(wp_slimstat::$options['last_tracker_error'])?'<code>'.wp_slimstat::$options['last_tracker_error'][0].' '.wp_slimstat::$options['last_tracker_error'][1].'</code><br/> '.__('recorded on','wp-slimstat').' '.date_i18n(wp_slimstat::$options['date_format'], wp_slimstat::$options['last_tracker_error'][2], true).' @ '.date_i18n(wp_slimstat::$options['time_format'],  wp_slimstat::$options['last_tracker_error'][2], true):__('No Errors so far','wp-slimstat'); ?>
-			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. It includes both <strong>errors</strong>, which are returned when the tracker could not record a pageview and are indicative of some kind of malfunction, and <strong>notices</strong>, which explain the reason why the most recent pageview was not recorded, based on your settings (filters, blackslists, etc). Please include this code when sending a support request.','wp-slimstat') ?></span>
+			<?php echo ( !empty( wp_slimstat::$options[ 'last_tracker_error' ] ) && is_array( wp_slimstat::$options[ 'last_tracker_error' ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$options[ 'date_format' ], wp_slimstat::$options[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$options[ 'time_format' ], wp_slimstat::$options[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$options[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$options[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-delete-entry slimstat-font-cancel" title="' . htmlentities( __( 'Reset the tracker status', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-status"></a>' : __( 'No Errors so far', 'wp-slimstat' ); ?>
+			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. It includes both <strong>errors</strong>, which are returned when the tracker could not record a pageview and are indicative of some kind of malfunction, and <strong>notices</strong>, which explain the reason why the most recent pageview was not recorded, based on your settings (filters, blackslists, etc). Please include the message here above when sending a support request.','wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr  class="alternate">
@@ -243,9 +150,6 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 			<span class="description"><?php _e("Deactivate the SQL output on top of each report.",'wp-slimstat') ?></span>
 		</td>
 		<?php endif ?>
-	</tr>
-	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Layout','wp-slimstat') ?></td>
 	</tr>
 	<tr>
 		<th scope="row"><a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-views" onclick="return(confirm('<?php _e('Are you sure you want to restore the default arrangement of your reports?','wp-slimstat'); ?>'))"><?php _e('No Panic Button','wp-slimstat'); ?></a></th>
@@ -327,15 +231,6 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 			<span class="description"><?php _e("Please note that by removing table indexes, Slimstat's performance will be affected.",'wp-slimstat') ?></span>
 		</td>
 		<?php endif ?>
-	</tr>
-	<tr>
-		<th scope="row">
-			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=import-data-from-old-tables"
-				onclick="return(confirm('<?php _e('Hold on tight, we are about to import all your old data. Are you sure you want to proceed?','wp-slimstat'); ?>'))"><?php _e('Import old data','wp-slimstat'); ?></a>
-		</th>
-		<td>
-			<span class="description"><?php _e("Import all the records from the old table structure. No data will be deleted from your database.",'wp-slimstat') ?></span>
-		</td>
 	</tr>
 	<tr>
 		<td colspan="2" class="slimstat-options-section-header"><?php _e('MaxMind IP to Country','wp-slimstat') ?></td>

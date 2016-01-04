@@ -453,11 +453,7 @@ class wp_slimstat_db {
 		}
 
 		// Temporarily disable any filters on date_i18n
-		$date_i18n_filters = array();
-		if ( !empty( $GLOBALS[ 'wp_filter' ][ 'date_i18n' ] ) ) {
-			$date_i18n_filters = $GLOBALS[ 'wp_filter' ][ 'date_i18n' ];
-			remove_all_filters( 'date_i18n' );
-		}
+		wp_slimstat::toggle_date_i18n_filters( false );
 
 		// Let's calculate our time range, based on date filters
 		if ( empty( $filters_normalized[ 'date' ][ 'interval' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_hours' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ) {
@@ -567,11 +563,7 @@ class wp_slimstat_db {
 		}
 
 		// Restore filters on date_i18n
-		foreach ($date_i18n_filters as $i18n_priority => $i18n_func_list) {
-			foreach ($i18n_func_list as $func_name => $func_args) {
-				add_filter('date_i8n', $func_args[ 'function' ], $i18n_priority, $func_args[ 'accepted_args' ]);
-			}
-		}
+		wp_slimstat::toggle_date_i18n_filters( true );
 
 		return $filters_normalized;
 	}

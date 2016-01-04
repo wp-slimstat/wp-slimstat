@@ -1,39 +1,39 @@
 var SlimStat = {
 	// Private Properties
-    _id: "undefined" != typeof SlimStatParams.id ? SlimStatParams.id : "-1.0",
-    _base64_key_str: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
-    _plugins: {
-        acrobat: {
-            substrings: ["Adobe", "Acrobat"],
-            active_x_strings: ["AcroPDF.PDF", "PDF.PDFCtrl.5"]
-        },
-        director: {
-            substrings: ["Shockwave", "Director"],
-            active_x_strings: ["SWCtl.SWCtl"]
-        },
-        flash: {
-            substrings: ["Shockwave", "Flash"],
-            active_x_strings: ["ShockwaveFlash.ShockwaveFlash"]
-        },
-        mediaplayer: {
-            substrings: ["Windows Media"],
-            active_x_strings: ["WMPlayer.OCX"]
-        },
-        quicktime: {
-            substrings: ["QuickTime"],
-            active_x_strings: ["QuickTime.QuickTime"]
-        },
-        real: {
-            substrings: ["RealPlayer"],
-            active_x_strings: ["rmocx.RealPlayer G2 Control", "RealPlayer.RealPlayer(tm) ActiveX Control (32-bit)", "RealVideo.RealVideo(tm) ActiveX Control (32-bit)"]
-        },
-        silverlight: {
-            substrings: ["Silverlight"],
-            active_x_strings: ["AgControl.AgControl"]
-        }
-    },
+	_id: "undefined" != typeof SlimStatParams.id ? SlimStatParams.id : "-1.0",
+	_base64_key_str: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+	_plugins: {
+		acrobat: {
+			substrings: ["Adobe", "Acrobat"],
+			active_x_strings: ["AcroPDF.PDF", "PDF.PDFCtrl.5"]
+		},
+		director: {
+			substrings: ["Shockwave", "Director"],
+			active_x_strings: ["SWCtl.SWCtl"]
+		},
+		flash: {
+			substrings: ["Shockwave", "Flash"],
+			active_x_strings: ["ShockwaveFlash.ShockwaveFlash"]
+		},
+		mediaplayer: {
+			substrings: ["Windows Media"],
+			active_x_strings: ["WMPlayer.OCX"]
+		},
+		quicktime: {
+			substrings: ["QuickTime"],
+			active_x_strings: ["QuickTime.QuickTime"]
+		},
+		real: {
+			substrings: ["RealPlayer"],
+			active_x_strings: ["rmocx.RealPlayer G2 Control", "RealPlayer.RealPlayer(tm) ActiveX Control (32-bit)", "RealVideo.RealVideo(tm) ActiveX Control (32-bit)"]
+		},
+		silverlight: {
+			substrings: ["Silverlight"],
+			active_x_strings: ["AgControl.AgControl"]
+		}
+	},
 
-    _utf8_encode : function (string) {
+	_utf8_encode : function (string) {
 		var n, c, utftext = "";
 
 		string = string.replace(/\r\n/g,"\n");
@@ -57,7 +57,7 @@ var SlimStat = {
 		return utftext;
 	},
 
-    // Base64 Encode - http://www.webtoolkit.info/
+	// Base64 Encode - http://www.webtoolkit.info/
 	_base64_encode : function ( input ) {
 		var chr1, chr2, chr3, enc1, enc2, enc3, enc4, output = "", i = 0;
 
@@ -104,7 +104,7 @@ var SlimStat = {
 		return false;
 	},
 
-   _detect_single_plugin_ie : function ( plugin_name ) {
+	_detect_single_plugin_ie : function ( plugin_name ) {
 		var i;
 
 		for (i in SlimStat._plugins[plugin_name].active_x_strings) {
@@ -139,7 +139,7 @@ var SlimStat = {
 		return plugins.join( "," );
 	},
 
-    get_page_performance : function () {
+	get_page_performance : function () {
 		slim_performance = window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
 		if ( "undefined" == typeof slim_performance.timing ){
 			return 0;
@@ -187,7 +187,7 @@ var SlimStat = {
 
 		if ( request ) {
 			request.open( "POST", SlimStatParams.ajaxurl, async );
-            request.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
+			request.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
 			request.send( slimstat_data_with_client_info );
 
 			if ( async ) {
@@ -206,8 +206,8 @@ var SlimStat = {
 						if ( "function" == typeof callback ) {
 							callback();
 						}
-			 		}
-			 	}
+					}
+				}
 			}
 			else {
 				if ( "undefined" == typeof SlimStatParams.id ) {
@@ -308,7 +308,7 @@ var SlimStat = {
 						note_array.push( "ID:" + node.getAttribute( "id" ) );
 					}
 				}
-        }
+		}
 
 		// Event coordinates
 		pos_x = -1; 
@@ -332,13 +332,11 @@ var SlimStat = {
 
 		// Event description and button pressed
 		event_description = e.type;
-		if ( "click" != e.type && "undefined" != typeof e.which ) {
-			if ( "keypress" == e.type ){
-				event_description += '; keypress:' + String.fromCharCode( parseInt( e.which ) );
-			}
-			else{
-				event_description += '; which:' + e.which;
-			}
+		if ( "keypress" == e.type ) {
+			event_description += '; keypress:' + String.fromCharCode( parseInt( e.which ) );
+		}
+		else if ( "click" == e.type ) {
+			event_description += '; which:' + e.which;
 		}
 
 		// Custom description for this event
@@ -359,7 +357,7 @@ var SlimStat = {
 		SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, callback, async );
 
 		return true;
-    },
+	},
 
 	add_event : function ( obj, type, fn ) {
 		if ( obj && obj.addEventListener ) {
@@ -375,23 +373,22 @@ var SlimStat = {
 		}
 	},
 
-	event_fire : function ( obj, evt ) {
-		var fire_on_this = obj;
+	event_fire : function ( target, event_object ) {
+		if ( document.createEvent ) {
 
-	    if ( document.createEvent ) {
-	      var ev_obj = document.createEvent( 'MouseEvents' );
-	      ev_obj.initEvent( evt, true, false );
-	      fire_on_this.dispatchEvent( ev_obj );
-	    }
-	    else if ( document.createEventObject ) {
-	      var ev_obj = document.createEventObject();
-	      fire_on_this.fireEvent( 'on' + evt, ev_obj );
-	    }
+			new_event = document.createEvent( 'MouseEvents' );
+			new_event.initEvent( event_object.type, true, false, document.defaultView, event_object.button );
+			target.dispatchEvent( new_event );
+		}
+		else if ( document.createEventObject ) {
+			new_event = document.createEventObject();
+			target.fireEvent( 'on' + event_object.type, new_event );
+		}
 	},
 
 	in_array : function ( needle, haystack ) {
 		for ( var i = 0; i < haystack.length; i++ ) {
-			if ( haystack[ i ].trim() == needle ) {
+			if ( "function" == typeof haystack[ i ].trim && haystack[ i ].trim() == needle ) {
 				return true;
 			}
 		}
@@ -400,7 +397,7 @@ var SlimStat = {
 
 	in_array_substring : function ( needle, haystack_of_substrings ) {
 		for ( var i = 0; i < haystack_of_substrings.length; i++ ) {
-			if ( needle.indexOf( haystack_of_substrings[ i ].trim() ) != -1 ) {
+			if ( "function" == typeof haystack_of_substrings[ i ].trim && needle.indexOf( haystack_of_substrings[ i ].trim() ) != -1 ) {
 				return true;
 			}
 		}
@@ -409,13 +406,13 @@ var SlimStat = {
 };
 
 SlimStat.add_event( window, "load", function() {
-    if ( "undefined" == typeof SlimStatParams.disable_outbound_tracking ) {
-        all_links = document.getElementsByTagName( "a" );
+	if ( "undefined" == typeof SlimStatParams.disable_outbound_tracking ) {
+		all_links = document.getElementsByTagName( "a" );
 		var extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
 		var to_ignore = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_ignore && SlimStatParams.outbound_classes_rel_href_to_ignore ) ? SlimStatParams.outbound_classes_rel_href_to_ignore.split( ',' ) : [];
 		var to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
 
-        for (var i = 0; i < all_links.length; i++) {
+		for (var i = 0; i < all_links.length; i++) {
 			var cur_link = all_links[i];
 
 			// Types
@@ -490,25 +487,23 @@ SlimStat.add_event( window, "load", function() {
 			SlimStat.add_event( cur_link, "click", function( e ) {
 				if ( "true" == this.getAttribute( "data-slimstat-tracking" ) && "false" == this.getAttribute( "data-slimstat-clicked" ) ) {
 					if ( "true" == this.getAttribute( "data-slimstat-callback" ) ) {
-						if ( "function" == typeof e.preventDefault ) {
-							e.preventDefault();
-						}
-
 						this.setAttribute( "data-slimstat-clicked", "true" );
 
-						(function( node ) {
-							SlimStat.ss_track( event, node.getAttribute( "data-slimstat-type" ), "", function() {
-								SlimStat.event_fire( node, 'click' );
+						(function( node, event_object ) {
+							SlimStat.ss_track( event_object, node.getAttribute( "data-slimstat-type" ), "", function() {
+								SlimStat.event_fire( node, event_object );
 							}, ( node.getAttribute( "data-slimstat-async" ) == "true" || node.getAttribute( "data-slimstat-callback" ) == "false" ) );
-						})( this );
+						})( this, e );
+
+						return false;
 					}
 					else{
-						SlimStat.ss_track( event, this.getAttribute( "data-slimstat-type" ), "", function() {}, ( this.getAttribute( "data-slimstat-async" ) == "true" || this.getAttribute( "data-slimstat-callback" ) == "false" ) );
+						SlimStat.ss_track( e, this.getAttribute( "data-slimstat-type" ), "", function() {}, ( this.getAttribute( "data-slimstat-async" ) == "true" || this.getAttribute( "data-slimstat-callback" ) == "false" ) );
 					}
 				}
 			});
 		}
-    }
+	}
 } );
 
 var slimstat_data = "action=slimtrack";

@@ -1,6 +1,6 @@
 <?php
 
-class wp_slimstat_admin{
+class wp_slimstat_admin {
 	public static $config_url = '';
 	public static $faulty_fields = array();
 	
@@ -10,8 +10,9 @@ class wp_slimstat_admin{
 	 * Init -- Sets things up.
 	 */
 	public static function init(){
-		if ((wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no')){
-			self::$admin_notice = "The Javascript Tracker has been partially rewritten to store each link's state as inline <strong>data</strong> attributes. A similar feature had already been implemented a while ago; however the tracker was not using those values to decide what to do; it was using instead internal private Javascript variables. Now the code has been consolidated and optimized (no more closures), allowing third party tools to affect the behavior of the tracker at runtime. Please feel free to contact us if you want to know more about this new feature.";
+		if ( ( wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no' ) ) {
+			self::$admin_notice = "2015 was a year full of exciting milestones and news for our plugin: more than 1.8 million downloads, 617 reviews with an average of 4.8 out of 5 stars, a major version release which brought a much needed denormalized data structure, a brand new javascript tracker, 1200 support tickets resolved, even <a style='font-weight:bold' href='https://www.youtube.com/watch?v=rxubKKLxhNE' target='_blank'>a YouTube video</a> talking about the security vulnerability that was patched last February. We look forward to improving our plugin even further during this new year that just started, as a way to celebrate Slimstat's 10th birthday (this April) in the best way possible. Thank you for being part of this incredible adventure!";
+			// "We rewrote the heuristic algorithm decoding the user agent string (to determine the corresponding browser name, version, etc) from scratch. Also, we introduced a new option (under Settings > Tracker) to allow you to choose the detection logic to be used first: the heuristic function is much faster and requires very little memory, but it might be less accurate, and not produce the right match; browscap.ini, the third party database we use, is memory intensive and it uses a bruteforce approach to determine a visitor's browser, but it's very accurate and precise even with the most obscure user agent strings (almost all of them). You decide which one works best for you."
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -69,11 +70,11 @@ class wp_slimstat_admin{
 		self::$config_url = 'admin.php?page=wp-slim-config&amp;tab=';
 
 		// Load language files
-		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages');
+		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
 
 		// If a localization does not exist, use English
-		if (!isset($l10n['wp-slimstat'])){
-			load_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages/wp-slimstat-en_US.mo');
+		if ( !isset( $l10n[ 'wp-slimstat' ] ) ) {
+			load_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages/wp-slimstat-en_US.mo' );
 		}
 
 		// WPMU - New blog created

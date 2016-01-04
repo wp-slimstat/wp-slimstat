@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4
-Stable tag: 4.2.3
+Stable tag: 4.2.4
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -18,7 +18,8 @@ Stable tag: 4.2.3
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = What are people saying about Slimstat? =
-* One of the 15+ Cool Free SEO Plugins for WordPress - [udesign](http://www.pixeldetail.com/wordpress/free-seo-plugins-for-wordpress/)
+* This is by far the most accurate and in-depth tracking plugin I've encountered for WordPress [MiMango](https://wordpress.org/support/topic/excellent-plugin-and-service-9)
+* I have been relying on SlimStat to not only track all traffic to my sites accurately but also to present the stats in very useful graphic format [JJD3](https://wordpress.org/support/topic/an-essential-plugin-14)
 * Thanks you for such an excellent plugin. I am using it to kick Jetpack out of all the wordpress installations that I manage for myself and others - [robertwagnervt](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
 * I like Slimstat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
 * Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own!
@@ -27,7 +28,7 @@ Stable tag: 4.2.3
 * WordPress 3.8+
 * PHP 5.3+
 * MySQL 5.0.3+
-* At least 35 MB of free web space
+* At least 15 MB of free web space
 * At least 5 MB of free DB space
 * At least 30 Mb of free PHP memory for the tracker (peak memory usage)
 * IE9+ or any browser supporting HTML5, to access the reports
@@ -61,6 +62,17 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.2.4 =
+* [New] You can now reset the tracker status in order to better troubleshoot issues with the plugin (thank you, Per).
+* [New] We rewrote the heuristic algorithm decoding the user agent string (to determine the corresponding browser name, version, etc) from scratch. Also, we introduced a new option (under Settings > Tracker) to allow you to choose the detection logic to be used first: the heuristic function is much faster and requires very little memory, but it might be less accurate, and not produce the right match; browscap.ini, the third party database we use, is memory intensive and it uses a bruteforce approach to determine a visitor's browser, but it's very accurate and precise even with the most obscure user agent strings (almost all of them). You decide which one works best for you.
+* [Update] We now include the smaller version of the Browscap database, which covers the 50,000 most common user agent strings, instead of the full version which covers about 130,000 strings. Please contact us if your project requires the high level of accuracy offered by the latter.
+* [Update] Swedish localization updated and 100% complete (thank you, Per).
+* [Update] Some web accelerators (Cloudflare and others) use the custom header HTTP_X_REAL_IP to keep track of a visitor's originating IP. Our code is now inspecting this header (thank you, Saeid).
+* [Update] Added many new flavors of Linux to the feature in charge of detecting the user's operating system.
+* [Update] Moved plugin screenshots to 'assets' folder in the repository, so that they are not downloaded with the zip file anymore.
+* [Fix] Other plugins might affect the format of the value returned by date_i18n (by introducing, for example, Persian numbers). This was preventing Slimstat from being able to calculate dates and time frames (thank you, Saeid).
+* [Fix] The new Javascript tracker was not working as expected in Internet Explorer 10 and 11 (thank you, Arne).
 
 = 4.2.3 =
 * [Note] The Javascript Tracker has been partially rewritten to store each link's state as inline "data" attributes. This had already been implemented a while ago, however the tracker was not using those values to decide what to do; it was using instead Javascript variables. Now the code has been consolidated, also allowing third party tools to affect the behavior of the tracker at runtime, by modifying the values associated to the data attributes. Please feel free to contact us if you want to know more about this new feature.
@@ -128,72 +140,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] An update to the WordPress CSS files affected the layout of our User Overview add-on (thank you, Per Soderman).
 * [Fix] Do not record referer URL, if it's the site URL itself.
 
-= 4.1.7 =
-* [New] Added new column dt_out to our table structure, to capture when a visitor leaves the page. This allows us to measure things like time on page and time on site. Please consider purchasing our [Heartbeat](http://www.wp-slimstat.com/downloads/heartbeat/) add-on to increase this metric's accuracy.
-* [Update] New icon added to our custom font package, and removed unneded font files for faster loading.
-* [Update] [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) version 2.2 is now part of the package.
-* [Fix] Bug preventing the stylesheet from loading on the Settings pages, under certain circumstances.
-
-= 4.1.6.3 =
-* [New] Polish localization added. Thank you, [DFactory Team](https://www.dfactory.eu/).
-* [Fix] Bug affecting the admin bar: permissions to display the link to just administrators were not being honored. (thank you, Nils)
-
-= 4.1.6.2 =
-* [Note] Yep, our team is active even in August, while sunbathing somewhere on the US East Coast.
-* [Update] Now all the 'Recent' reports leverage the new optimized SQL code, not just Activity Log.
-* [Fix] Replaced function get_the_title with the_title_attribute (thank you, [Pepe](https://wordpress.org/support/topic/html-code-in-reports-post-titles))
-* [Fix] The GNU License notice was not hiding upon acceptance of the terms and conditions.
-
-= 4.1.6.1 =
-* [New] Contextual counters are now added not just to pages and posts, but to other custom post types available on your website.
-* [Update] Optimized SQL query that retrieves the data for the Access Log report.
-* [Update] New link for GetSocial.io partnership.
-* [Fix] Patched a remote XSS vulnerability related to forged referrer URLs.
-* [Fix] Bug in refreshing Access Log (second try).
-* [Fix] Bug in calculating Unique IP counters for pages and posts.
-* [Fix] Link to install the GeoLocation DB was pointing to the wrong tab under Settings.
-* [Fix] When selecting the filter in Overview > Top Pages, reports were returning empty datasets.
-* [Fix] Resetting the report layout was not always working as expected, if Slimstat was displayed in the admin bar.
-
-= 4.1.6 =
-* [New] Administrators can now set the maximum number of records that should be retrieved from the database when generating the reports (Settings > Reports). This allows those with powerful servers and unlimited PHP resources to increase this limit and get a more accurate picture of their visitors.
-* [New] Extended the export functionality (via our premium Export to Excel add-on) to reports like At a Glance, Rankings, Audience Overview, etc (thank you, Tiffany).
-* [Fix] Undefined variable 'temp' in wp-slimstat-admin.php (thank you, [candidhams](https://wordpress.org/support/topic/undefined-variable-temp-in-wp-slimstat-adminphp)).
-* [Fix] Referrers and other information were not being displayed when the Access Log report was refreshed through the admin button (thank you, [Diggories](https://wordpress.org/support/topic/losing-referrers-on-refresh)).
-* [Fix] Warning message in Top Entry Pages and Top Exit Pages (thank you, Romain).
-* [Fix] The link in the admin bar, when the corresponding option was enabled, was interfering with some admin bar plugins (thank you, Christian)
-
-= 4.1.5.2 =
-* [Note] We are still getting support requests from users having issues with Slimstat because of the GeoLite add-on that was distributed a few months ago. If you are still using this separate add-on, we'd like to remind you that Slimstat 4 introduced a new more intuitive way of managing the MaxMind Geolocation database bundled with our software. Actually, the free Geolite plugin is not compatible with the latest version of Slimstat, because of the IPv6 support we introduced a few weeks ago. We recommend that you uninstall the add-on from your systems, thus improving the overall performance of your website. As usual, do not hesitate to contact us if you have any questions.
-* [Update] Restored Activity Log report in the WordPress Dashboard.
-* [Fix] The Add-ons tab under settings was visible even if no add-ons were installed (thank you, [greg57 and others](https://wordpress.org/support/topic/add-ons-tab-blank)).
-* [Fix] Typo in our German localization (thank you, Marc-Oliver).
-* [Fix] Adding users to the corresponding blacklist was not working if the table wp_users had certain collations (thank you, Romain Petges).
-* [Fix] Non-standard quotes and other characters (hyphens, etc) were getting munged because of a security feature being overzealous (thank you, Victor).
-* [Fix] SQL Debug Mode is now correctly displayed in the WP Dashboard reports.
-* [Fix] More PHP warnings (debug mode) removed.
-* [Fix] Added missing localization strings for certain operating systems (thank you, Romain Petges).
-
-= 4.1.5.1 =
-* [Update] Our Export to Excel add-on now includes the post slug, when appropriate.
-* [Fix] Removed a few warnings displayed when DEBUG MODE was enabled.
-* [Fix] A warning was being displayed when exporting certain reports.
-
-= 4.1.5 =
-* [New] Welcome our new partner GetSocial.io, a service that allows you to find your true influencers and understand which users are driving your traffic and conversions through their shares. Our users get free access to their platform through a new report located in the Site Analysis screen.
-* [New] Slimstat can now differentiate between viewport size and screen size (or resolution). Two new reports, hidden by default, will enumerate the most popular of both categories.
-* [Update] We implemented a more flexible way to change the number of results returned by the database API (via filter). Documentation to follow soon.
-* [Update] Reports for Top and Recent Events are back. Go say hi, they will be waiting for you under Slimstat > Site Analysis. If you don't see them, you will need to activate them inside the Screen Options tab.
-* [Update] After the report and data API overhaul, it was now the config panels' turn. We revisited the way they are managed, and consolidated how third party add-ons can add their own parameters. All of our add-ons affected by this change have been updated on our repository.
-* [Update] Third party plugins and add-ons have now an easier way to increase the limit on the number of results returned by the data API.
-* [Update] To avoid confusion when a date filter is set, the Real-Time Log has been renamed Access Log.
-* [Update] Code optimizations in the report library/API: function get_raw_results is about to be deprecated. Please contact us if you're using it and would like to know how to proceed from now on.
-* [Fix] Setting the 'is empty' filter would cause a WordPress warning regarding wpdb->prepare.
-* [Fix] The setting to ignore visitors by username was not being saved as expected (thank you, Romain).
-* [Fix] Custom CSS styles were not being properly enqueued (thank you, Romain).
-* [Fix] Quotes in post titles were being escaped twice (better safe than sorry, right? thank you, Victor).
-* [Fix] Bug affecting the Export to Excel add-on.
-
 == Supporters ==
 Slimstat is an Open Source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
 is for those who want to donate money - be it once, be it regularly, be it a small or a big amount. Everything is set up for an easy donation process.
@@ -245,5 +191,5 @@ Willow Ridge Press
 
 == Special Thanks To ==
 
-* [Vitaly](http://www.visbiz.org/), who volunteers quite a lot of time for QA, testing, and for his Russian localization.
+* Vitaly, who volunteers quite a lot of time for QA, testing, and for his Russian localization.
 * Davide Tomasello, who provided great feedback and plenty of ideas to take this plugin to the next level.

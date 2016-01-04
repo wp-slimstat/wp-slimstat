@@ -3,17 +3,19 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.2.3
+Version: 4.2.4
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
 */
- 
-if ( !empty( wp_slimstat::$options ) ) return true;
+
+if ( !empty( wp_slimstat::$options ) ) {
+	return true;
+}
 
 class wp_slimstat {
-	public static $version = '4.2.3';
+	public static $version = '4.2.4';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -26,6 +28,8 @@ class wp_slimstat {
 	protected static $browser = array();
 	protected static $heuristic_key = 0;
 	protected static $pidx = array( 'id' => false, 'response' => '' );
+
+	protected static $date_i18n_filters = array();
 
 	/**
 	 * Initializes variables and actions
@@ -140,7 +144,9 @@ class wp_slimstat {
 			self::$stat[ 'id' ] = abs( intval( self::$data_js[ 'id' ] ) );
 
 			// Visitor is still on this page, record the timestamp in the corresponding field
+			self::toggle_date_i18n_filters( false );
 			self::$stat['dt_out'] = date_i18n( 'U' );
+			self::toggle_date_i18n_filters( true );
 
 			// Are we tracking an outbound click?
 			if (!empty(self::$data_js['res'])){
@@ -170,12 +176,14 @@ class wp_slimstat {
 		}
 
 		// Is an event associated to this request?
-		if (!empty(self::$data_js['pos'])){
+		if ( !empty( self::$data_js[ 'pos' ] ) ) {
+			self::toggle_date_i18n_filters( false );
 			$event_info = array(
-				'position' => strip_tags(trim(self::$data_js['pos'])),
-				'id' => self::$stat['id'],
-				'dt' => date_i18n('U')
+				'position' => strip_tags( trim( self::$data_js[ 'pos' ] ) ),
+				'id' => self::$stat[ 'id' ],
+				'dt' => date_i18n( 'U' )
 			);
+			self::toggle_date_i18n_filters( true );
 			
 			if (!empty(self::$data_js['ty'])){
 				$event_info['type'] = abs(intval(self::$data_js['ty']));
@@ -211,8 +219,10 @@ class wp_slimstat {
 			return $_argument;
 		}
 
+		self::toggle_date_i18n_filters( false );
 		self::$stat[ 'dt' ] = date_i18n( 'U' );
 		self::$stat[ 'notes' ] = array();
+		self::toggle_date_i18n_filters( true );
 
 		// Allow third-party tools to initialize the stat array
 		self::$stat = apply_filters('slimstat_filter_pageview_stat_init', self::$stat);
@@ -705,25 +715,16 @@ class wp_slimstat {
 			$ip_array[ 0 ] = $_SERVER["REMOTE_ADDR"];
 		}
 
-		if ( !empty( $_SERVER[ 'HTTP_CLIENT_IP' ] ) && filter_var( $_SERVER[ 'HTTP_CLIENT_IP' ], FILTER_VALIDATE_IP ) !== false ) {
-			$ip_array[ 1 ] = $_SERVER["HTTP_CLIENT_IP"];
-		}
-
-		if ( !empty( $_SERVER[ 'HTTP_X_FORWARDED_FOR' ] ) ) {
-			foreach ( explode( ',', $_SERVER[ 'HTTP_X_FORWARDED_FOR' ] ) as $a_ip ) {
-				if ( filter_var( $a_ip, FILTER_VALIDATE_IP ) !== false ) {
-					$ip_array[ 1 ] = $a_ip;
-					break;
+		$originating_ip_headers = array( 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
+		foreach ( $originating_ip_headers as $a_header ) {
+			if ( !empty( $_SERVER[ $a_header ] ) ) {
+				foreach ( explode( ',', $_SERVER[ $a_header ] ) as $a_ip ) {
+					if ( filter_var( $a_ip, FILTER_VALIDATE_IP ) !== false && $a_ip != $ip_array[ 0 ] ) {
+						$ip_array[ 1 ] = $a_ip;
+						break;
+					}
 				}
 			}
-		}
-
-		if ( !empty( $_SERVER[ 'HTTP_FORWARDED' ] ) && filter_var( $_SERVER[ 'HTTP_FORWARDED' ], FILTER_VALIDATE_IP ) !== false ) {
-			$ip_array[ 1 ] = $_SERVER[ 'HTTP_FORWARDED' ];
-		}
-
-		if ( !empty( $_SERVER[ 'HTTP_X_FORWARDED' ] ) && filter_var( $_SERVER[ 'HTTP_X_FORWARDED' ], FILTER_VALIDATE_IP ) !== false ) {
-			$ip_array[ 1 ] = $_SERVER[ 'HTTP_X_FORWARDED' ];
 		}
 
 		return $ip_array;
@@ -789,24 +790,26 @@ class wp_slimstat {
 
 		// Type
 		else if ( is_single() ) {
-			if (($post_type = get_post_type()) != 'post') {
-				$post_type = 'cpt:'.$post_type;
+			if ( ( $post_type = get_post_type() ) != 'post' ) {
+				$post_type = 'cpt:' . $post_type;
 			}
 
-			$content_info['content_type'] = $post_type;
+			$content_info[ 'content_type' ] = $post_type;
 			$content_info_array = array();
-			foreach (get_object_taxonomies($GLOBALS['post']) as $a_taxonomy){
-				$terms = get_the_terms($GLOBALS['post']->ID, $a_taxonomy);
-				if (is_array($terms)){
-					foreach ($terms as $a_term) $content_info_array[] = $a_term->term_id;
-					$content_info['category'] = implode(',', $content_info_array);
+			foreach ( get_object_taxonomies( $GLOBALS[ 'post' ] ) as $a_taxonomy ) {
+				$terms = get_the_terms( $GLOBALS[ 'post' ]->ID, $a_taxonomy );
+				if ( is_array( $terms ) ) {
+					foreach ( $terms as $a_term ) {
+						$content_info_array[] = $a_term->term_id;
+					}
+					$content_info[ 'category' ] = implode( ',', $content_info_array );
 				}
 			}
-			$content_info['content_id'] = $GLOBALS['post']->ID;
+			$content_info[ 'content_id' ] = $GLOBALS[ 'post' ]->ID;
 		}
-		elseif (is_page()){
-			$content_info['content_type'] = 'page';
-			$content_info['content_id'] = $GLOBALS['post']->ID;
+		else if ( is_page() ) {
+			$content_info[ 'content_type' ] = 'page';
+			$content_info[ 'content_id' ] = $GLOBALS[ 'post' ]->ID;
 		}
 		elseif (is_attachment()){
 			$content_info['content_type'] = 'attachment';
@@ -836,29 +839,29 @@ class wp_slimstat {
 				if (!empty($cat_info)) $content_info['category'] = "$cat_info->term_id";
 			}
 		}
-		elseif (is_date()){
+		else if (is_date()){
 			$content_info['content_type']= 'date';
 		}
-		elseif (is_author()){
+		else if (is_author()){
 			$content_info['content_type'] = 'author';
 		}
-		elseif (is_archive()){
+		else if ( is_archive() ) {
 			$content_info['content_type'] = 'archive';
 		}
-		elseif (is_search()){
-			$content_info['content_type'] = 'search';
+		else if ( is_search() ) {
+			$content_info[ 'content_type' ] = 'search';
 		}
-		elseif (is_feed()){
-			$content_info['content_type'] = 'feed';
+		else if ( is_feed() ) {
+			$content_info[ 'content_type' ] = 'feed';
 		}
-		elseif ( is_home() || is_front_page() ){
+		else if ( is_home() || is_front_page() ) {
 			$content_info['content_type'] = 'home';
 		}
-		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-login.php' ) {
-			$content_info['content_type'] = 'login';
+		else if ( !empty( $GLOBALS[ 'pagenow' ] ) && $GLOBALS[ 'pagenow' ] == 'wp-login.php' ) {
+			$content_info[ 'content_type' ] = 'login';
 		}
-		elseif ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-register.php' ) {
-			$content_info['content_type'] = 'registration';
+		else if ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-register.php' ) {
+			$content_info[ 'content_type' ] = 'registration';
 		}
 		// WordPress sets is_admin() to true for all ajax requests ( front-end or admin-side )
 		elseif ( is_admin() && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
@@ -882,247 +885,122 @@ class wp_slimstat {
 	// end _get_content_info
 
 	/**
-	 * Retrieves some information about the user agent; relies on browscap.php database (included)
+	 * Converts the USER AGENT string into a more user-friendly browser data structure, with name, version and operating system
 	 */
-	protected static function _get_browser(){
-		$browser = array( 'browser' => 'Default Browser', 'browser_version' => '', 'browser_type' => 1, 'platform' => 'unknown', 'user_agent' => '' );
+	public static function _get_browser( $_user_agent = '' ) {
+		$browser = array( 'browser' => 'Default Browser', 'browser_version' => '', 'browser_type' => 1, 'platform' => 'unknown', 'user_agent' => empty( $_user_agent ) ? self::_get_user_agent() : $_user_agent );
 
-		// Automatically detect the useragent
-		if ( !isset( $_SERVER[ 'HTTP_USER_AGENT' ] ) ) {
+		if ( empty( $browser[ 'user_agent' ] ) ) {
 			return $browser;
 		}
 
-		$browser['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+		if ( self::$options[ 'browser_detection_mode' ] == 'no' ) {
+			include_once( plugin_dir_path( __FILE__ ) . '/browscap/uadetector.php' );
+			$browser = slim_browser::get_browser( $browser[ 'user_agent' ] );
+
+			// If we found a match...
+			if ( $browser[ 'browser' ] != 'Default Browser' ) {
+				return $browser;
+			}
+		}
+
+		// ... otherwise we need to resort to the bruteforce approach (browscap database)
 		$search = array();
+		@include( plugin_dir_path( __FILE__ ) . "browscap/browscap-db.php" );
 
-		for ( $idx_cache = 1; $idx_cache <= 8; $idx_cache++ ) {
-			@include(plugin_dir_path( __FILE__ )."browscap/browscap-$idx_cache.php");
-			foreach ($patterns as $pattern => $pattern_data){
-				if (preg_match($pattern . 'i', $_SERVER['HTTP_USER_AGENT'], $matches)){
-					if (1 == count($matches)) {
-						$key = $pattern_data;
-						$simple_match = true;
-					}
-					else{
-						$pattern_data = unserialize($pattern_data);
-						array_shift($matches);
-						
-						$match_string = '@' . implode('|', $matches);
+		foreach ( $patterns as $pattern => $pattern_data ) {
+			if ( preg_match( $pattern . 'i', $browser[ 'user_agent' ], $matches ) ) {
+				if ( 1 == count( $matches ) ) {
+					$key = $pattern_data;
+					$simple_match = true;
+				}
+				else{
+					$pattern_data = unserialize( $pattern_data );
+					array_shift( $matches );
+					
+					$match_string = '@' . implode( '|', $matches );
 
-						if (!isset($pattern_data[$match_string])){
-							continue;
-						}
-
-						$key = $pattern_data[$match_string];
-
-						$simple_match = false;
+					if ( !isset( $pattern_data[ $match_string ] ) ) {
+						continue;
 					}
 
-					$search = array(
-						$_SERVER['HTTP_USER_AGENT'],
-						trim(strtolower($pattern), '@'),
-						self::_preg_unquote($pattern, $simple_match ? false : $matches)
-					);
+					$key = $pattern_data[ $match_string ];
 
-					$search = $value = $search + unserialize($browsers[$key]);
-
-					while (array_key_exists(3, $value)) {
-						$value = unserialize($browsers[$value[3]]);
-						$search += $value;
-					}
-
-					if (!empty($search[3]) && array_key_exists($search[3], $userAgents)) {
-						$search[3] = $userAgents[$search[3]];
-					}
-
-					break;
-				}
-			}
-
-			unset( $browsers );
-			unset( $userAgents );
-			unset( $patterns );
-
-			// Add the keys for each property
-			$search_normalized = array();
-			foreach ($search as $key => $value) {
-				if ($value === 'true') {
-					$value = true;
-				} elseif ($value === 'false') {
-					$value = false;
-				}
-				$search_normalized[strtolower($properties[$key])] = $value;
-			}
-
-			if (!empty($search_normalized) && $search_normalized['browser'] != 'Default Browser' && $search_normalized['browser'] != 'unknown'){
-				$browser['browser'] = $search_normalized['browser'];
-				$browser['browser_version'] = floatval($search_normalized['version']);
-				$browser['platform'] = strtolower($search_normalized['platform']);
-				$browser['user_agent'] =  $search_normalized['browser_name'];
-
-				// browser Types:
-				//		0: regular
-				//		1: crawler
-				//		2: mobile
-				//		3: syndication reader
-				if ($search_normalized['ismobiledevice'] || $search_normalized['istablet']){
-					$browser['browser_type'] = 2;
-				}
-				elseif ($search_normalized['issyndicationreader']){
-					$browser['browser_type'] = 3;
-				}
-				elseif (!$search_normalized['crawler']){
-					$browser['browser_type'] = 0;
+					$simple_match = false;
 				}
 
-				if ($browser['browser_version'] != 0 || $browser['browser_type'] != 0){
-					return $browser;
+				$search = array(
+					$browser[ 'user_agent' ],
+					trim( strtolower( $pattern ), '@' ),
+					self::_preg_unquote( $pattern, $simple_match ? false : $matches )
+				);
+
+				$search = $value = $search + unserialize( $browsers[ $key ] );
+
+				while ( array_key_exists( 3, $value ) ) {
+					$value = unserialize( $browsers[ $value[ 3 ] ] );
+					$search += $value;
 				}
+
+				if ( !empty( $search[ 3 ] ) && array_key_exists( $search[ 3 ], $userAgents ) ) {
+					$search[ 3 ] = $userAgents[ $search[ 3 ] ];
+				}
+
+				break;
 			}
 		}
 
-		// Let's try with the heuristic approach ( portions of code from https://github.com/donatj/PhpUserAgent )
-		$browser['browser_type'] = 0;
-		
-		if( preg_match('/\((.*?)\)/im', $_SERVER['HTTP_USER_AGENT'], $parent_matches) ) {
+		unset( $browsers );
+		unset( $userAgents );
+		unset( $patterns );
 
-			preg_match_all('/(?P<platform>BB\d+;|Android|CrOS|iPhone|iPad|Linux|Macintosh|Windows(\ Phone)?|Silk|linux-gnu|BlackBerry|PlayBook|(New\ )?Nintendo\ (WiiU?|3DS)|Xbox(\ One)?)
-					(?:\ [^;]*)?
-					(?:;|$)/imx', $parent_matches[1], $result, PREG_PATTERN_ORDER);
-
-			$priority = array( 'Xbox One', 'Xbox', 'Windows Phone', 'Tizen', 'Android' );
-			$result['platform'] = array_unique($result['platform']);
-			if (count($result['platform']) > 1 && ($keys = array_intersect($priority, $result['platform']))){
-				$browser['platform'] = reset($keys);
+		// Add the keys for each property
+		$search_normalized = array();
+		foreach ($search as $key => $value) {
+			if ($value === 'true') {
+				$value = true;
+			} elseif ($value === 'false') {
+				$value = false;
 			}
-			elseif (isset($result['platform'][0]) && in_array($result['platform'][0], $priority)){
-				$browser['platform'] = $result['platform'][0];
-			}
+			$search_normalized[strtolower($properties[$key])] = $value;
 		}
 
-		preg_match_all('%(?P<browser>Camino|Kindle(\ Fire\ Build)?|Firefox|Iceweasel|Safari|MSIE|Trident|AppleWebKit|TizenBrowser|Chrome|Vivaldi|IEMobile|Opera|OPR|Silk|Midori|Edge|Baiduspider|Googlebot|YandexBot|bingbot|Lynx|Version|Wget|curl|NintendoBrowser|PLAYSTATION\ (\d|Vita)+)(?:\)?;?)(?:(?:[:/ ])(?P<version>[0-9A-Z.]+)|/(?:[A-Z]*))%ix',
-			$_SERVER['HTTP_USER_AGENT'], $match, PREG_PATTERN_ORDER);
+		if (!empty($search_normalized) && $search_normalized['browser'] != 'Default Browser' && $search_normalized['browser'] != 'unknown'){
+			$browser[ 'browser' ] = $search_normalized[ 'browser' ];
+			$browser[ 'browser_version' ] = floatval( $search_normalized[ 'version' ] );
+			$browser[ 'platform' ] = strtolower( $search_normalized[ 'platform' ] );
+			$browser[ 'user_agent' ] =  $search_normalized[ 'browser_name' ];
 
-		// If nothing matched, return null (to avoid undefined index errors)
-		if (!isset($match['browser'][0]) || !isset($match['version'][0])){
-			return $browser;
-		}
-
-		if (preg_match('/rv:(?P<version>[0-9A-Z.]+)/si', $_SERVER['HTTP_USER_AGENT'], $rv_result)){
-			$rv_result = $rv_result['version'];
-		}
-
-		$browser['browser'] = $match['browser'][0];
-		$browser['browser_version'] = $match['version'][0];
-
-		$ekey = 0;
-		if ($browser['browser'] == 'Iceweasel'){
-			$browser['browser'] = 'Firefox';
-		}
-		elseif (self::_heuristic_find('Playstation Vita', $match)){
-			$browser['platform'] = 'CellOS';
-			$browser['browser'] = 'PlayStation';
-			$browser['browser_type'] = 2;
-		}
-		elseif ( self::_heuristic_find( 'Kindle Fire Build', $match ) || self::_heuristic_find( 'Silk', $match ) ) {
-			$browser['browser'] = $match['browser'][self::$heuristic_key] == 'Silk' ? 'Silk' : 'Kindle';
-			$browser['platform'] = 'Android';
-			if ($browser['browser_version'] != $match['version'][self::$heuristic_key] || !is_numeric($browser['browser_version'][0])){
-				$browser['browser_version'] = $match['version'][array_search('Version', $match['browser'])];
-			}
-			$browser['browser_type'] = 2;
-		}
-		elseif ( self::_heuristic_find( 'Kindle', $match ) ) {
-			$browser['browser'] = $match['browser'][self::$heuristic_key];
-			$browser['platform'] = 'Android';
-			$browser['browser_version']  = $match['version'][self::$heuristic_key];
-			$browser['browser_type'] = 2;
-		}
-		elseif ( self::_heuristic_find( 'OPR', $match ) ) {
-			$browser['browser'] = 'Opera';
-			$browser['browser_version'] = $match['version'][self::$heuristic_key];
-		}
-		elseif ( self::_heuristic_find( 'Opera', $match ) ) {
-			$browser['browser'] = 'Opera';
-			self::_heuristic_find('Version', $match);
-			$browser['browser_version'] = $match['version'][self::$heuristic_key];
-		}
-		elseif (self::_heuristic_find('Midori', $match)){
-			$browser['browser'] = 'Midori';
-			$browser['browser_version'] = $match['version'][self::$heuristic_key];
-		}
-		elseif ($browser['browser'] == 'MSIE' || ($rv_result && self::_heuristic_find('Trident', $match)) || self::_heuristic_find('Edge', $match)){
-			$browser['browser'] = 'IE';
-			if( self::_heuristic_find('IEMobile', $match) ) {
-				$browser['browser'] = 'IE';
-				$browser['browser_version'] = $match['version'][self::$heuristic_key];
+			// Browser Types:
+			//		0: regular
+			//		1: crawler
+			//		2: mobile
+			if ($search_normalized['ismobiledevice'] || $search_normalized['istablet']){
 				$browser['browser_type'] = 2;
-			} else {
-				$browser['browser_version'] = $rv_result ? $rv_result : $match['version'][self::$heuristic_key];
 			}
-		} elseif( self::_heuristic_find('Vivaldi', $match) ) {
-			$browser['browser'] = 'Vivaldi';
-			$browser['browser_version'] = $match['version'][self::$heuristic_key];
-		} elseif( self::_heuristic_find('Chrome', $match) ) {
-			$browser['browser'] = 'Chrome';
-			$browser['browser_version'] = $match['version'][self::$heuristic_key];
-		} elseif( $browser['browser'] == 'AppleWebKit' ) {
-			if( ($browser['platform'] == 'Android' && !(self::$heuristic_key = 0)) ) {
-				$browser['browser'] = 'Android Browser';
-				$browser['browser_type'] = 2;
-			} elseif( strpos($browser['platform'], 'BB') === 0 ) {
-				$browser['browser']  = 'BlackBerry';
-				$browser['platform'] = 'RIM OS';
-				$browser['browser_type'] = 2;
-			} elseif( $browser['platform'] == 'BlackBerry' || $browser['platform'] == 'PlayBook' ) {
-				$browser['browser'] = 'BlackBerry';
-				$browser['browser_type'] = 2;
-			} elseif( self::_heuristic_find('Safari', $match) ) {
-				$browser['browser'] = 'Safari';
-			} elseif( self::_heuristic_find('TizenBrowser', $match) ) {
-				$browser['browser'] = 'TizenBrowser';
+			elseif (!$search_normalized['crawler']){
+				$browser['browser_type'] = 0;
 			}
 
-			self::_heuristic_find('Version', $match);
-
-			$browser['browser_version'] = $match['version'][self::$heuristic_key];
-		} elseif( self::$heuristic_key = preg_grep('/playstation \d/i', array_map('strtolower', $match['browser'])) ) {
-			self::$heuristic_key = reset(self::$heuristic_key);
-			self::$heuristic_key = reset(self::$heuristic_key);
-
-			$browser['platform'] = 'CellOS';
-			$browser['browser']  = 'NetFront';
+			if ( $browser[ 'browser_version' ] != 0 || $browser[ 'browser_type' ] != 0 ) {
+				return $browser;
+			}
 		}
 
-		if( $browser['platform'] == 'linux-gnu' ) {
-			$browser['platform'] = 'Linux';
-		} elseif( $browser['platform'] == 'CrOS' ) {
-			$browser['platform'] = 'ChromeOS';
-		}
+		if ( self::$options[ 'browser_detection_mode' ] != 'no' ) {
+			include_once( plugin_dir_path( __FILE__ ) . '/browscap/uadetector.php' );
+			$browser = slim_browser::get_browser( $browser[ 'user_agent' ] );
 
-		$browser['browser_version'] = floatval($browser['browser_version']);
-		$browser['platform'] = strtolower($browser['platform']);
-
-		if ($browser['platform'] == 'unknown'){
-			$browser['browser_type'] = 1;
-			$browser['browser_version'] = 0;
+			// If we found a match...
+			if ( $browser[ 'browser' ] != 'Default Browser' ) {
+				return $browser;
+			}
 		}
 
 		return $browser;
 	}
 	// end _get_browser
 
-	/**
-	 * Helper function for get_browser [ courtesy of: https://github.com/donatj/PhpUserAgent ]
-	 */
-	protected static function _heuristic_find( $search, $match ) {
-		$xkey = array_search( strtolower( $search ), array_map( 'strtolower', $match[ 'browser' ] ) );
-		if ( $xkey !== false ) {
-			self::$heuristic_key = $xkey;
-			return true;
-		}
-		return false;
-	}
 	/**
 	 * Helper function for get_browser [ courtesy of: GaretJax/PHPBrowsCap ]
 	 */
@@ -1140,6 +1018,29 @@ class wp_slimstat {
 		}
 
 		return $result;
+	}
+
+	protected static function _get_user_agent() {
+		$user_agent = ( !empty( $_SERVER[ 'HTTP_USER_AGENT' ] ) ? trim( $_SERVER[ 'HTTP_USER_AGENT' ] ) : '' );
+
+		if ( !empty( $_SERVER[ 'HTTP_X_DEVICE_USER_AGENT' ] ) ) {
+			$real_user_agent = trim( $_SERVER[ 'HTTP_X_DEVICE_USER_AGENT' ] );
+		}
+		elseif ( !empty( $_SERVER[ 'HTTP_X_ORIGINAL_USER_AGENT' ] ) ) {
+			$real_user_agent = trim( $_SERVER[ 'HTTP_X_ORIGINAL_USER_AGENT' ] );
+		}
+		elseif( !empty( $_SERVER[ 'HTTP_X_MOBILE_UA' ] ) ) {
+			$real_user_agent = trim( $_SERVER[ 'HTTP_X_MOBILE_UA' ] );
+		}
+		elseif( !empty( $_SERVER[ 'HTTP_X_OPERAMINI_PHONE_UA' ] ) ) {
+			$real_user_agent = trim( $_SERVER[ 'HTTP_X_OPERAMINI_PHONE_UA' ] );
+		}
+
+		if ( !empty( $real_user_agent ) && ( strlen( $real_user_agent ) >= 5 || empty( $user_agent ) ) ) {
+			return $real_user_agent;
+		}
+
+		return $user_agent;
 	}
 
 	/**
@@ -1225,7 +1126,9 @@ class wp_slimstat {
 
 	protected static function _set_error_array( $_error_message = '' ) {
 		$error_code = abs( self::$stat[ 'id' ] );
+		self::toggle_date_i18n_filters( false );
 		self::$options['last_tracker_error'] = array( $error_code, $_error_message, date_i18n( 'U' ) );
+		self::toggle_date_i18n_filters( true );
 	}
 
 	public static function dtr_pton( $ip ){
@@ -1462,7 +1365,23 @@ class wp_slimstat {
 		else
 			return array_map('trim', explode(',', $_option));
 	}
-	// end string_to_array
+
+	/**
+	 * Toggles WordPress filters on date_i18n function
+	 */
+	public static function toggle_date_i18n_filters( $_turn_on = true ) {
+		if ( $_turn_on && !empty( self::$date_i18n_filters ) && is_array( self::$date_i18n_filters ) ) {
+			foreach ( self::$date_i18n_filters as $i18n_priority => $i18n_func_list ) {
+				foreach ( $i18n_func_list as $func_name => $func_args ) {
+					add_filter( 'date_i8n', $func_args[ 'function' ], $i18n_priority, $func_args[ 'accepted_args' ] );
+				}
+			}
+		}
+		else if ( !empty( $GLOBALS[ 'wp_filter' ][ 'date_i18n' ] ) ) {
+			self::$date_i18n_filters = $GLOBALS[ 'wp_filter' ][ 'date_i18n' ];
+			remove_all_filters( 'date_i18n' );
+		}
+	}
 
 	/**
 	 * Imports all the 'old' options into the new array, and saves them
@@ -1480,37 +1399,30 @@ class wp_slimstat {
 
 			// General
 			'is_tracking' => $val_yes,
-			'track_admin_pages' => $val_no,
-			'enable_javascript' => $val_yes,
 			'javascript_mode' => $val_yes,
+			'enable_javascript' => $val_yes,
+			'track_admin_pages' => $val_no,
+			'use_separate_menu' => $val_yes,
 			'add_posts_column' => $val_no,
-			'add_dashboard_widgets' => $val_yes,
 			'posts_column_day_interval' => 30,
 			'posts_column_pageviews' => $val_yes,
+			'add_dashboard_widgets' => $val_yes,
 			'hide_addons' => $val_no,
-			'use_separate_menu' => $val_yes,
-			'auto_purge_delete' => $val_yes,
 			'auto_purge' => 0,
+			'auto_purge_delete' => $val_yes,
 
-			// Views
-			'use_european_separators' => $val_yes,
-			'date_format' => ( $val_yes == 'null' ) ? '' : 'm-d-y',
-			'time_format' => ( $val_yes == 'null' ) ? '' : 'h:i a',
-			'show_display_name' => $val_no,
-			'convert_resource_urls_to_titles' => $val_yes,
-			'convert_ip_addresses' => $val_no,
-			'use_slimscroll' => $val_yes,
-			'expand_details' => $val_no,
-			'rows_to_show' => ( $val_yes == 'null' ) ? '0' : '20',
-			'limit_results' => ( $val_yes == 'null' ) ? '0' : '1000',
-			'refresh_interval' => ( $val_yes == 'null' ) ? '0' : '60',
-			'number_results_raw_data' => ( $val_yes == 'null' ) ? '0' : '50',
-			'custom_css' => '',
-			'chart_colors' => '',
-			'show_complete_user_agent_tooltip' => $val_no,
-			'no_maxmind_warning' => $val_no,
-			'enable_sov' => $val_no,
-			'enable_getsocial' => $val_no,
+			// Tracker
+			'session_duration' => 1800,
+			'extend_session' => $val_no,
+			'browser_detection_mode' => $val_yes,
+			'enable_cdn' => $val_yes,
+			'extensions_to_track' => 'pdf,doc,xls,zip',
+			'enable_outbound_tracking' => $val_yes,
+			'track_internal_links' => $val_no,
+			'ignore_outbound_classes_rel_href' => '',
+			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
+			'external_domains' => '',
+			'enable_ads_network' => 'null',
 
 			// Filters
 			'track_users' => $val_yes,
@@ -1523,32 +1435,39 @@ class wp_slimstat {
 			'ignore_countries' => '',
 			'ignore_browsers' => '',
 			'ignore_referers' => '',
-			'enable_outbound_tracking' => $val_yes,
-			'track_internal_links' => $val_no,
-			'ignore_outbound_classes_rel_href' => '',
-			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'anonymize_ip' => $val_no,
 			'ignore_prefetch' => $val_yes,
 
-			// Permissions
+			// Reports
+			'use_european_separators' => $val_yes,
+			'date_format' => ( $val_yes == 'null' ) ? '' : 'm-d-y',
+			'time_format' => ( $val_yes == 'null' ) ? '' : 'h:i a',
+			'show_display_name' => $val_no,
+			'convert_resource_urls_to_titles' => $val_yes,
+			'convert_ip_addresses' => $val_no,
+			'use_slimscroll' => $val_yes,
+			'expand_details' => $val_no,
+			'rows_to_show' => ( $val_yes == 'null' ) ? '0' : '20',
+			'limit_results' => ( $val_yes == 'null' ) ? '0' : '1000',
+			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
+			'refresh_interval' => ( $val_yes == 'null' ) ? '0' : '60',
+			'number_results_raw_data' => ( $val_yes == 'null' ) ? '0' : '50',
+			'custom_css' => '',
+			'chart_colors' => '',
+			'show_complete_user_agent_tooltip' => $val_no,
+			'enable_sov' => $val_no,
+			'enable_getsocial' => $val_no,
+
+			// Access Control
 			'restrict_authors_view' => $val_yes,
 			'capability_can_view' => ( $val_yes == 'null' ) ? '' : 'activate_plugins',
 			'can_view' => '',
 			'capability_can_admin' => ( $val_yes == 'null' ) ? '' : 'activate_plugins',
 			'can_admin' => '',
 
-			// Advanced
-			'session_duration' => 1800,
-			'extend_session' => $val_no,
-			'enable_cdn' => $val_yes,
-			'extensions_to_track' => 'pdf,doc,xls,zip',
-			'external_domains' => '',
-			'show_sql_debug' => $val_no,
-			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
-			'enable_ads_network' => 'null',
-
 			// Maintenance
 			'last_tracker_error' => array( 0, '', 0 ),
+			'show_sql_debug' => $val_no,
 
 			// Network-wide Settings
 			'locked_options' => ''
@@ -1737,7 +1656,9 @@ class wp_slimstat {
 			return;
 		}
 
+		self::toggle_date_i18n_filters( false );
 		$days_ago = strtotime( date_i18n( 'Y-m-d H:i:s' ) . " -$autopurge_interval days" );
+		self::toggle_date_i18n_filters( true );
 
 		// Copy entries to the archive table, if needed
 		if ( self::$options[ 'auto_purge_delete' ] != 'yes' ) {
