@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4
-Stable tag: 4.2.4
+Stable tag: 4.2.5
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -63,9 +63,16 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+= 4.2.5 =
+* [New] A filter to customize the list of report screens/pages: slimstat_screens_info. Please contact us for more information.
+* [Update] After we introduced the new Customizer function, one of our most active users noted that pages would not disappear from the side navigation if no reports were associated to them. We update the functionality to include this new feature.
+* [Update] Instead of creating a copy of the MaxMind database for each site in a network, now the plugin uses a shared one stored in the main "uploads" folder.
+* [Update] How many people read this changelog? We want to use a little experiment to find out: use code CHANGELOG to get $25 off any order on [our store](http://www.wp-slimstat.com/addons/). One use per account, only available to the first 20 users who will place an order.
+* [Fix] The tracker was not working as expected in Internet Explorer 7, returning the error message "Object doesn't support this property or method: trim" (thank you, Nick).
+
 = 4.2.4 =
-* [New] You can now reset the tracker status in order to better troubleshoot issues with the plugin (thank you, Per).
 * [New] We rewrote the heuristic algorithm that decodes the user agent string. Also, we introduced a new option (under Settings > Tracker) to allow you to choose the detection logic to be used first: the heuristic function is much faster and requires very little memory, but it might be less accurate, and not produce the right match; browscap.ini, the third party database we use, is memory intensive and it uses a bruteforce approach to determine a visitor's browser, but it's very accurate and precise even with the most obscure user agent strings (almost all of them). You decide which one works best for you.
+* [New] You can now reset the tracker status in order to better troubleshoot issues with the plugin (thank you, Per).
 * [Update] We now include the smaller version of the Browscap database, which covers the 50,000 most common user agent strings, instead of the full version which covers about 130,000 strings. Please contact us if your project requires the high level of accuracy offered by the latter.
 * [Update] Swedish localization updated and 100% complete (thank you, Per).
 * [Update] Some web accelerators (Cloudflare and others) use the custom header HTTP_X_REAL_IP to keep track of a visitor's originating IP. Our code is now inspecting this header (thank you, Saeid).

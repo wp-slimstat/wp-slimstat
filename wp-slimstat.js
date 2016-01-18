@@ -388,7 +388,7 @@ var SlimStat = {
 
 	in_array : function ( needle, haystack ) {
 		for ( var i = 0; i < haystack.length; i++ ) {
-			if ( "function" == typeof haystack[ i ].trim && haystack[ i ].trim() == needle ) {
+			if ( haystack[ i ].trim() == needle ) {
 				return true;
 			}
 		}
@@ -397,7 +397,7 @@ var SlimStat = {
 
 	in_array_substring : function ( needle, haystack_of_substrings ) {
 		for ( var i = 0; i < haystack_of_substrings.length; i++ ) {
-			if ( "function" == typeof haystack_of_substrings[ i ].trim && needle.indexOf( haystack_of_substrings[ i ].trim() ) != -1 ) {
+			if ( needle.indexOf( haystack_of_substrings[ i ].trim() ) != -1 ) {
 				return true;
 			}
 		}

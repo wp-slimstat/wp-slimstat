@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.2.4
+Version: 4.2.5
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.2.4';
+	public static $version = '4.2.5';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -49,20 +49,19 @@ class wp_slimstat {
 		// Allow third-party tools to use a custom database for Slimstat
 		self::$wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
-		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
-		if ( self::$options[ 'use_separate_menu' ] != 'yes' && is_admin_bar_showing() ) {
-			add_action( 'admin_bar_menu', array( __CLASS__, 'wp_slimstat_adminbar' ), 100 );
-		}
-
 		// Hook a DB clean-up routine to the daily cronjob
 		add_action( 'wp_slimstat_purge', array( __CLASS__, 'wp_slimstat_purge' ) );
 
 		// Allow external domains on CORS requests
 		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
 
-		// Define the folder where to store the geolocation database
-		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', wp_upload_dir() );
-		self::$maxmind_path = self::$maxmind_path['basedir'] . '/wp-slimstat/maxmind.dat';
+		// Define the folder where to store the geolocation database (shared among sites in a network, by default)
+		self::$maxmind_path = wp_upload_dir();
+		if ( is_multisite() && ! ( is_main_network() && is_main_site() && defined( 'MULTISITE' ) ) ) {
+			self::$maxmind_path = str_replace( '/sites/' . get_current_blog_id(), '', self::$maxmind_path );
+		}
+		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', self::$maxmind_path );
+		self::$maxmind_path = self::$maxmind_path[ 'basedir' ] . '/wp-slimstat/maxmind.dat';
 
 		// Enable the tracker (both server- and client-side)
 		if ( !is_admin() || self::$options[ 'track_admin_pages' ] == 'yes' ) {
@@ -87,7 +86,7 @@ class wp_slimstat {
 				}
 			}
 
-			if ( self::$options[ 'enable_ads_network' ] == 'yes' ) {
+			if ( self::$options[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
 				add_action( 'init', array( __CLASS__, 'init_pidx' ) );
 				add_action( 'wp_head', array( __CLASS__, 'print_code' ) );
 				add_filter( 'the_content', array( __CLASS__, 'print_code' ) );
@@ -96,6 +95,11 @@ class wp_slimstat {
 
 		// Shortcodes
 		add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
+
+		if ( is_user_logged_in() ) {
+			include_once ( plugin_dir_path( __FILE__ ) . '/admin/wp-slimstat-admin.php' );
+			add_action( 'init', array( 'wp_slimstat_admin', 'init' ) );
+		}
 
 		// Update the options before shutting down
 		add_action('shutdown', array(__CLASS__, 'slimstat_save_options'), 100);
@@ -538,8 +542,7 @@ class wp_slimstat {
 			self::_set_error_array( __( 'Error:', 'wp-slimstat' ) . ' ' . self::$wpdb->last_error );
 
 			// Attempt to init the environment (new blog in a MU network?)
-			include_once(WP_PLUGIN_DIR.'/wp-slimstat/admin/wp-slimstat-admin.php');
-			wp_slimstat_admin::init_environment(true);
+			wp_slimstat_admin::init_environment( true );
 			
 			return $_argument;
 		}
@@ -1468,6 +1471,7 @@ class wp_slimstat {
 			// Maintenance
 			'last_tracker_error' => array( 0, '', 0 ),
 			'show_sql_debug' => $val_no,
+			'no_maxmind_warning' => $val_no,
 
 			// Network-wide Settings
 			'locked_options' => ''
@@ -1681,50 +1685,6 @@ class wp_slimstat {
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
 	}
-
-	/**
-	 * Adds a new entry to the Wordpress Toolbar
-	 */
-	public static function wp_slimstat_adminbar(){
-		// If this user is whitelisted, we use the minimum capability
-		$minimum_capability_view = 'read';
-		if ( strpos( self::$options[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ) {
-			$minimum_capability_view = self::$options[ 'capability_can_view' ];
-		}
-
-		// If this user is whitelisted, we use the minimum capability
-		$minimum_capability_config = 'read';
-		if ( ( strpos( self::$options[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) === false) && $GLOBALS[ 'current_user' ]->user_login != 'slimstatadmin' ) {
-			$minimum_capability_config = self::$options[ 'capability_can_admin' ];
-		}
-
-		if ( ( function_exists( 'is_network_admin' ) && is_network_admin() ) || !is_user_logged_in() || !current_user_can( $minimum_capability_view ) ) {
-			return;
-		}
-
-		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages');
-
-		self::$options['capability_can_view'] = empty(self::$options['capability_can_view'])?'read':self::$options['capability_can_view'];
-
-		if (empty(self::$options['can_view']) || strpos(self::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
-			$slimstat_view_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=");
-			$slimstat_config_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=wp-slim-config");
-			
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-header', 'title' => 'Slimstat', 'href' => "{$slimstat_view_url}slimview1"));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel1', 'href' => "{$slimstat_view_url}slimview1", 'parent' => 'slimstat-header', 'title' => __('Access Log', 'wp-slimstat')));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel2', 'href' => "{$slimstat_view_url}slimview2", 'parent' => 'slimstat-header', 'title' => __('Overview', 'wp-slimstat')));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel3', 'href' => "{$slimstat_view_url}slimview3", 'parent' => 'slimstat-header', 'title' => __('Audience', 'wp-slimstat')));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel4', 'href' => "{$slimstat_view_url}slimview4", 'parent' => 'slimstat-header', 'title' => __('Site Analysis', 'wp-slimstat')));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel5', 'href' => "{$slimstat_view_url}slimview5", 'parent' => 'slimstat-header', 'title' => __('Traffic Sources', 'wp-slimstat')));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel6', 'href' => "{$slimstat_view_url}slimview6", 'parent' => 'slimstat-header', 'title' => __('Geolocation', 'wp-slimstat')));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel9', 'href' => "{$slimstat_view_url}slimlayout", 'parent' => 'slimstat-header', 'title' => __('Customize', 'wp-slimstat')));
-			$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-panel8', 'href' => "{$slimstat_view_url}slimaddons", 'parent' => 'slimstat-header', 'title' => __('Add-ons', 'wp-slimstat')));
-			
-			if ( ( empty( self::$options[ 'can_admin' ] ) || strpos( self::$options[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) !== false || $GLOBALS[ 'current_user' ]->user_login == 'slimstatadmin' ) && current_user_can( $minimum_capability_config ) ) {
-				$GLOBALS['wp_admin_bar']->add_menu(array('id' => 'slimstat-config', 'href' => $slimstat_config_url, 'parent' => 'slimstat-header', 'title' => __('Settings', 'wp-slimstat')));
-			}
-		}
-	}
 }
 // end of class declaration
 
@@ -1736,11 +1696,9 @@ if ( function_exists( 'add_action' ) ) {
 		add_action( 'wp_ajax_slimtrack', array( 'wp_slimstat', 'slimtrack_ajax' ) ); 
 	}
 
-	// Load the admin API, if needed
 	// From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
 	if ( is_admin() ) {
-		include_once ( plugin_dir_path( __FILE__ ) . '/admin/wp-slimstat-admin.php' );
-		add_action( 'wp_loaded', array( 'wp_slimstat_admin', 'init' ), 10 );
+		include_once( WP_PLUGIN_DIR . '/wp-slimstat/admin/wp-slimstat-admin.php' );
 		register_activation_hook( __FILE__, array( 'wp_slimstat_admin', 'init_environment' ) );
 		register_deactivation_hook( __FILE__, array( 'wp_slimstat_admin', 'deactivate' ) );
 	}

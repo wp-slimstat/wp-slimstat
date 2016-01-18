@@ -44,7 +44,7 @@ class wp_slimstat_db {
 			'platform' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
 			'resource' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
 			'referer' => array( __( 'Referer', 'wp-slimstat' ), 'varchar' ),
-			'username' => array( __( 'Visitor\'s Name', 'wp-slimstat' ), 'varchar' ),
+			'username' => array( __( 'Visitor\'s Username', 'wp-slimstat' ), 'varchar' ),
 			'outbound_resource' => array( __( 'Outbound Link', 'wp-slimstat' ), 'varchar' ),
 			'page_performance' => array( __( 'Page Speed', 'wp-slimstat' ), 'int' ),
 			'no_filter_selected_2' => array( '&nbsp;', 'none' ),

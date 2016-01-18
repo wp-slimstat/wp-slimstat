@@ -166,7 +166,7 @@ else {
 		$time_on_page = '';
 		if ( !$is_dashboard && !empty( $results[ $i ][ 'dt_out' ] ) ) {
 			$duration = $results[ $i ][ 'dt_out' ] - $results[ $i ][ 'dt' ];
-			$time_on_page = "<i class='slimstat-font-stopwatch spaced' title='" . __( 'Time spent on this page in seconds', 'wp-slimstat' ) . "'></i> " . date( ( $duration > 3599 ? 'H:i:s' : 'i:s' ), $duration );
+			$time_on_page = "<i class='slimstat-font-stopwatch spaced' title='" . __( 'Time spent on this page', 'wp-slimstat' ) . "'></i> " . date( ( $duration > 3599 ? 'H:i:s' : 'i:s' ), $duration );
 		}
 
 		// Avoid XSS attacks through the referer URL

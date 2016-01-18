@@ -1,7 +1,7 @@
 <?php if (!function_exists('add_action')) exit(0); ?>
 
 <div class="wrap slimstat">
-	<h2><?php echo wp_slimstat_reports::$screens_info[ $_GET[ 'page' ] ] ?></h2>
+	<h2><?php echo wp_slimstat_admin::$screens_info[ $_GET[ 'page' ] ][ 'title' ] ?></h2>
 
 	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
 		<fieldset id="slimstat-filters"><?php
@@ -128,8 +128,8 @@
 		<?php endif; endforeach; ?>
 	</form>
 	<?php
-		if (!file_exists(wp_slimstat::$maxmind_path) && wp_slimstat::$options['no_maxmind_warning'] != 'yes'){
-			wp_slimstat_admin::show_alert_message(sprintf(__("Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.",'wp-slimstat'), self::$config_url.'6').'<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2');
+		if ( !file_exists( wp_slimstat::$maxmind_path ) && ( empty( wp_slimstat::$options[ 'no_maxmind_warning' ] ) || wp_slimstat::$options[ 'no_maxmind_warning' ] != 'yes' ) ) {
+			wp_slimstat_admin::show_alert_message( sprintf( __( "Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6' ) . '<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
 		}
 
 		$filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']);
@@ -142,10 +142,6 @@
 		<form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form><?php
 
 		foreach( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
-			// if ( empty( $a_report_info[ 'screens' ] ) || !in_array( $_GET[ 'page' ], $a_report_info[ 'screens' ] ) ) {
-			// 	continue;
-			// }
-
 			wp_slimstat_reports::report_header( $a_report_id );
 
 			// Third party reports can add their own methods via the callback parameter

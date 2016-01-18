@@ -3,7 +3,6 @@
 class wp_slimstat_reports {
 
 	// Structures to store all the information about what screens and reports are available
-	public static $screens_info = array();
 	public static $reports_info = array();
 	public static $user_reports = array();
 
@@ -17,17 +16,6 @@ class wp_slimstat_reports {
 	 * Initalize class properties
 	 */
 	public static function init(){
-		self::$screens_info = array(
-			'slimview1' => __( 'Access Log', 'wp-slimstat' ),
-			'slimview2' => __( 'Overview', 'wp-slimstat' ),
-			'slimview3' => __( 'Audience', 'wp-slimstat' ),
-			'slimview4' => __( 'Site Analysis', 'wp-slimstat' ),
-			'slimview5' => __( 'Traffic Sources', 'wp-slimstat' ),
-			'slimview6' => __( 'Geolocation', 'wp-slimstat' ),
-			'dashboard' => __( 'WordPress Dashboard', 'wp-slimstat' ),
-			'inactive' => __( 'Inactive Reports')
-		);
-
 		// Filters use the following format: browser equals Firefox&&&country contains gb
 		$filters = array();
 		if ( !empty( $_REQUEST[ 'fs' ] ) && is_array( $_REQUEST[ 'fs' ] ) ) {
@@ -890,10 +878,9 @@ class wp_slimstat_reports {
 		// Retrieve this user's list of active reports, 
 		$current_user = wp_get_current_user();
 		$page_location = ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
-		
-		// Do this only if we are in one of our screens (no dashboard!)
 		self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
 
+		// Do this only if we are in one of our screens (no dashboard!)
 		if ( !empty( $_REQUEST['page'] ) && strpos( $_REQUEST['page'], 'slimview' ) !== false ) {
 
 			// If this list is not empty, we rearrange the order of our reports
@@ -1947,7 +1934,7 @@ class wp_slimstat_reports {
 		if ( empty( $_REQUEST[ 'page' ] ) ) {
 			$request_uri = str_replace( 'index.php', 'admin.php', $request_uri );
 		}
-		else if ( array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ) {
+		else if ( array_key_exists( $_REQUEST[ 'page' ], wp_slimstat_admin::$screens_info ) ) {
 			$request_page = $_REQUEST[ 'page' ];
 		}
 		else {

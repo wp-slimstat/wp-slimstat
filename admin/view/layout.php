@@ -13,19 +13,26 @@
 		'slimview6' => array(),
 		'dashboard' => array()	
 	);
-	foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
-		if ( !empty( $a_report_info[ 'screens' ] ) ) {
-			foreach ( $a_report_info[ 'screens' ] as $a_report_screen ) {
-				if ( isset( $report_locations[ $a_report_screen ] ) ) {
-					$report_locations[ $a_report_screen ][] = $a_report_id;
+
+	if ( empty( wp_slimstat_reports::$user_reports ) ) {
+		foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
+			if ( !empty( $a_report_info[ 'screens' ] ) ) {
+				foreach ( $a_report_info[ 'screens' ] as $a_report_screen ) {
+					if ( isset( $report_locations[ $a_report_screen ] ) ) {
+						$report_locations[ $a_report_screen ][] = $a_report_id;
+					}
 				}
 			}
 		}
 	}
-
-	foreach ( $report_locations as $a_location_id => $a_location_list ) {
-		if ( !empty( wp_slimstat_reports::$user_reports[ $a_location_id ] ) ) {
-			$report_locations[ $a_location_id ] = explode( ',', wp_slimstat_reports::$user_reports[ $a_location_id ] );
+	else {
+		foreach ( $report_locations as $a_location_id => $a_location_list ) {
+			if ( !empty( wp_slimstat_reports::$user_reports[ $a_location_id ] ) ) {
+				$report_locations[ $a_location_id ] = explode( ',', wp_slimstat_reports::$user_reports[ $a_location_id ] );
+			}
+			else {
+				$report_locations[ $a_location_id ] = array();
+			}
 		}
 	}
 
@@ -44,7 +51,7 @@
 
 <?php foreach ( $report_locations as $a_location_id => $a_location_list ): $hidden_reports = get_user_option( "metaboxhidden_{$page_location}_page_{$a_location_id}", $current_user->ID ); if ( !is_array( $hidden_reports ) ) $hidden_reports = array(); ?>
 <div id="postbox-container-<?php echo $a_location_id ?>" class="postbox-container">
-<h2 class="slimstat-options-section-header"><?php echo wp_slimstat_reports::$screens_info[ $a_location_id ] ?></h2>
+<h2 class="slimstat-options-section-header"><?php echo wp_slimstat_admin::$screens_info[ $a_location_id ][ 'title' ] ?></h2>
 <div id="<?php echo $a_location_id ?>-sortables" class="meta-box-sortables"><?php
 	foreach( $a_location_list as $a_report_id ) {
 		if ( !in_array( $a_report_id, $already_seen ) ) {
