@@ -152,8 +152,12 @@ else {
 		}
 
 		// Search Terms, with link to original SERP, and Outbound Resource
-		if (!empty($results[$i]['searchterms'])){
-			$results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='".__('Search Terms','wp-slimstat')."'></i> ".wp_slimstat_reports::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer']);
+		$search_terms_info = wp_slimstat_reports::get_search_terms_info( $results[ $i ][ 'searchterms' ], $results[ $i ][ 'referer' ] );
+		if ( !empty( $search_terms_info ) ) {
+			$results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='" . __( 'Search Terms', 'wp-slimstat' ) . "'></i> $search_terms_info";
+		}
+		else {
+			$results[$i]['searchterms'] = '';
 		}
 
 		// Server Latency and Page Speed

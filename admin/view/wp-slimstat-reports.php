@@ -140,6 +140,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'searchterms',
+					'where' => 'searchterms <> "_"',
 					'more_columns' => 'referer, resource',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
@@ -190,6 +191,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'searchterms',
+					'where' => 'searchterms <> "_"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
@@ -253,7 +255,8 @@ class wp_slimstat_reports {
 					'chart_labels' => array(
 						__( 'Search Terms', 'wp-slimstat' ),
 						__( 'Unique Terms', 'wp-slimstat' )
-					)
+					),
+					'where' => 'searchterms <> "_"'
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'slimview2' ),
@@ -1092,6 +1095,7 @@ class wp_slimstat_reports {
 
 					case 'referer':
 						$element_value = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ][ $_args[ 'columns' ] ] ) );
+						$element_value = parse_url( $element_value, PHP_URL_HOST );
 						break;
 
 					case 'resource':
@@ -1870,24 +1874,21 @@ class wp_slimstat_reports {
 	public static function get_search_terms_info($_searchterms = '', $_referer = '', $_serp_only = false){
 		$query_details = '';
 		$search_terms_info = '';
-		$domain = parse_url($_referer);
-		$domain = !empty( $domain['host'] ) ? $domain['host'] : '';
+		parse_str( $_referer, $query_parse_str );
 
-		parse_str("daum=search?q&naver=search.naver?query&google=search?q&yahoo=search?p&bing=search?q&aol=search?query&lycos=web?q&ask=web?q&cnn=search/?query&about=?q&mamma=result.php?q&voila=S/voila?rdata&virgilio=ricerca?qs&baidu=s?wd&yandex=yandsearch?text&najdi=search.jsp?q&seznam=?q&onet=wyniki.html?qt&yam=Search/Web/DefaultCSA.aspx?k&pchome=/search/?q&kvasir=alle?q&arama.mynet=web/goal/1/?q&nova_rambler=search?query", $query_formats);
-		preg_match("/(daum|naver|google|yahoo|bing|aol|lycos|ask|cnn|about|mamma|voila|virgilio|baidu|yandex|najdi|seznam|onet|szukacz|yam|pchome|kvasir|mynet|ekolay|rambler)./", $domain, $matches);
-		parse_str($_referer, $query_parse_str);
+		if ( !empty( $query_parse_str[ 'source' ] ) && !$_serp_only ) {
+			$query_details = __( 'src', 'wp-slimstat' ) . ": {$query_parse_str[ 'source' ]}";
+		}
 
-		if (!empty($query_parse_str['source']) && !$_serp_only){
-			$query_details = __('src','wp-slimstat').": {$query_parse_str['source']}";
+		if ( !empty( $query_parse_str[ 'cd' ] ) ) {
+			$query_details = __( 'serp', 'wp-slimstat') . ": {$query_parse_str[ 'cd' ]}";
 		}
-		if (!empty($query_parse_str['cd'])){
-			$query_details = __('serp','wp-slimstat').": {$query_parse_str['cd']}";
-		}
-		if (!empty($query_details)){
+
+		if ( !empty( $query_details ) ) {
 			$query_details = "($query_details)";
 		}
 
-		if (!empty($_searchterms)){		
+		if ( !empty( $_searchterms ) && $_searchterms != '_' ) {		
 			$search_terms_info = '<a class="slimstat-font-logout" target="_blank" title="' . htmlentities( __( 'Go to the referring page', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . $_referer . '"></a>' . htmlentities( $_searchterms, ENT_QUOTES, 'UTF-8' );
 			$search_terms_info = "$search_terms_info $query_details";
 		}
