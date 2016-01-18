@@ -255,23 +255,29 @@ class wp_slimstat {
 				return $_argument;
 			}
 
-			// Fix Google Images referring domain
-			if ( strpos(self::$stat[ 'referer' ], 'www.google' ) !== false ) { 
-				if ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) {
-					self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
-				}
-				if ( strpos( self::$stat[ 'referer' ], '/url?' ) !== false ) {
-					self::$stat[ 'referer' ] = str_replace( '/url?', '/search?', self::$stat[ 'referer' ] );
-				}
+			$parsed_site_url = parse_url( get_site_url(), PHP_URL_HOST );
+			if ( $referer[ 'host' ] == $parsed_site_url ) {
+				unset( self::$stat[ 'referer' ] );
 			}
+			else {
+				// Fix Google Images referring domain
+				if ( strpos(self::$stat[ 'referer' ], 'www.google' ) !== false ) { 
+					if ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) {
+						self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
+					}
+					if ( strpos( self::$stat[ 'referer' ], '/url?' ) !== false ) {
+						self::$stat[ 'referer' ] = str_replace( '/url?', '/search?', self::$stat[ 'referer' ] );
+					}
+				}
 
-			// Is this referer blacklisted?
-			foreach(self::string_to_array(self::$options['ignore_referers']) as $a_filter){
-				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if ( preg_match( "@^$pattern$@i", self::$stat[ 'referer' ] ) ) {
-					self::$stat[ 'id' ] = -207;
-					self::_set_error_array( sprintf( __( 'Notice: Referrer %s is blacklisted', 'wp-slimstat'), self::$stat[ 'referer' ] ) );
-					return $_argument;
+				// Is this referer blacklisted?
+				foreach(self::string_to_array(self::$options['ignore_referers']) as $a_filter){
+					$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
+					if ( preg_match( "@^$pattern$@i", self::$stat[ 'referer' ] ) ) {
+						self::$stat[ 'id' ] = -207;
+						self::_set_error_array( sprintf( __( 'Notice: Referrer %s is blacklisted', 'wp-slimstat'), self::$stat[ 'referer' ] ) );
+						return $_argument;
+					}
 				}
 			}
 		}
@@ -306,13 +312,12 @@ class wp_slimstat {
 		self::$stat = self::$stat + $content_info;
 
 		// We want to record both hits and searches (performed through the site search form)
-		if (self::$stat['content_type'] == 'external'){
-			self::$stat['resource'] = $_SERVER['HTTP_REFERER'];
-			self::$stat['referer'] = '';
+		if ( self::$stat[ 'content_type' ] == 'external' ) {
+			self::$stat[ 'resource' ] = $_SERVER[ 'HTTP_REFERER' ];
+			self::$stat[ 'referer' ] = '';
 		}
-		else if (is_array(self::$data_js) && isset(self::$data_js['res'])){
-
-			$parsed_permalink = parse_url(base64_decode(self::$data_js['res']));
+		else if ( is_array( self::$data_js ) && isset( self::$data_js[ 'res' ] ) ) {
+			$parsed_permalink = parse_url( base64_decode( self::$data_js[ 'res' ] ) );
 			self::$stat['searchterms'] = self::_get_search_terms($referer);
 
 			// Was this an internal search?
@@ -333,18 +338,8 @@ class wp_slimstat {
 		}
 
 		// Don't store empty values in the database
-		if ( empty( self::$stat['searchterms'] ) ) {
-			unset( self::$stat['searchterms'] );
-		}
-
-		// If referer is site itself, unset value
-		if ( !empty( self::$stat[ 'referer' ] ) ) {
-			$parsed_referer = parse_url( self::$stat[ 'referer' ], PHP_URL_HOST );
-			$parsed_site_url = parse_url( get_site_url(), PHP_URL_HOST );
-
-			if ( $parsed_referer == $parsed_site_url ) {
-				unset( self::$stat[ 'referer' ] );
-			}
+		if ( empty( self::$stat[ 'searchterms' ] ) ) {
+			unset( self::$stat[ 'searchterms' ] );
 		}
 
 		// Do not track report pages in the admin
@@ -753,8 +748,8 @@ class wp_slimstat {
 	/**
 	 * Sniffs out referrals from search engines and tries to determine the query string
 	 */
-	protected static function _get_search_terms($_url = array()){
-		if ( empty( $_url ) || !isset( $_url[ 'host' ] ) || !isset( $_url[ 'query' ] ) || strpos( $_url[ 'host' ], 'facebook' ) !== false ) {
+	protected static function _get_search_terms( $_url = array() ) {
+		if ( empty( $_url ) || !isset( $_url[ 'host' ] ) ) {
 			return '';
 		}
 
@@ -792,15 +787,13 @@ class wp_slimstat {
 		$searchterms = '';
 
 		parse_str( $_url[ 'query' ], $query );
-		preg_match( "/($regex_match)./", $_url[ 'host' ], $matches );
+		preg_match( "/($regex_match)./i", $_url[ 'host' ], $matches );
 
 		if ( !empty( $matches[ 1 ] ) ) {
 			// Let's remember that this is a search engine, regardless of the URL containing searchterms (thank you, NSA)
 			$searchterms = '_';
-
 			if ( !empty( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) {
 				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) );
-
 				// Test for encodings different from UTF-8
 				if ( function_exists( 'mb_check_encoding' ) && !mb_check_encoding( $query[ $query_formats[ $matches[ 1 ] ] ], 'UTF-8' ) && !empty( $charsets[ $matches[ 1 ] ] ) ) {
 					$searchterms = mb_convert_encoding( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ), 'UTF-8', $charsets[ $matches[ 1 ] ] );
