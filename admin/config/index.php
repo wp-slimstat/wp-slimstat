@@ -15,23 +15,6 @@ if (isset($_POST['options']['auto_purge'])){
 	}
 }
 
-if ( !empty( $_POST[ 'options' ][ 'enable_getsocial' ] ) && $_POST[ 'options' ][ 'enable_getsocial' ] == 'yes' ) {
-	$all_posts = get_posts( array( 'posts_per_page' => 100 ) );
-	$all_post_urls = array();
-
-	if ( !empty( $all_posts ) ) {
-		foreach( $all_posts as $a_post ) {
-			$all_post_urls[] = parse_url( get_permalink( $a_post->ID ), PHP_URL_PATH );
-		}
-
-		$args = json_encode( array(
-			'domain' => parse_url( get_site_url(), PHP_URL_HOST ),
-			'items' => $all_post_urls
-		) );
-		wp_remote_post( 'http://api.at.sharescount.com/process', array( 'timeout' => 5, 'body' => $args ) );
-	}
-}
-
 if (!empty($_POST['options']['ignore_capabilities'])){
 	// Make sure all the capabilities exist in the system 
 	$capability_array = wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']);
@@ -210,8 +193,7 @@ $options = array(
 			'custom_css' => array('description' => __('Custom CSS','wp-slimstat'), 'type' => 'textarea', 'rows' => 8, 'long_description' => __("Paste here your custom stylesheet to personalize the way your reports look. <a href='https://slimstat.freshdesk.com/support/solutions/articles/5000528528-how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-e' target='_blank'>Check the FAQ</a> for more information on how to use this setting.",'wp-slimstat')),
 			'chart_colors' => array('description' => __('Chart Colors','wp-slimstat'), 'type' => 'text', 'long_description' => __("Customize the look and feel of your charts by assigning personalized colors to each metric. List 4 hex colors separated by commas, strictly in the following order: metric 1 previous, metric 2 previous, metric 1 current, metric 2 current. For example: <code>#ccc, #999, #bbcc44, #21759b</code>.",'wp-slimstat')),
 			'show_complete_user_agent_tooltip' => array('description' => __('Show User Agent','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to see the browser name or a complete user agent string when hovering on browser icons.','wp-slimstat')),
-			'enable_sov' => array('description' => __('Enable SOV','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese.','wp-slimstat')),
-			'enable_getsocial' => array('description' => __( 'Social Analytics', 'wp-slimstat' ), 'type' => 'yesno', 'long_description' => __("Thanks to a <a href='http://getsocial.io/enterprise' target='_blank'>partnership with GetSocial.io</a>, you can access a powerful set of analytics for social media where you can identify top performing posts. Track social sharing to understand which of your posts are generating more engagement. When this option is enabled, Slimstat sends a list of all your posts's URLs to their service for analysis once daily.", 'wp-slimstat' ) )
+			'enable_sov' => array('description' => __('Enable SOV','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese.','wp-slimstat'))
 		)
 	),
 

@@ -1493,7 +1493,6 @@ class wp_slimstat {
 			'chart_colors' => '',
 			'show_complete_user_agent_tooltip' => $val_no,
 			'enable_sov' => $val_no,
-			'enable_getsocial' => $val_no,
 
 			// Access Control
 			'restrict_authors_view' => $val_yes,
@@ -1673,22 +1672,6 @@ class wp_slimstat {
 	 * Removes old entries from the main table and performs other daily tasks
 	 */
 	public static function wp_slimstat_purge(){
-		// Send the updated list of posts to GetSocial, if the corresponding option is enabled
-		$all_posts = get_posts( array( 'posts_per_page' => 100 ) );
-		$all_post_urls = array();
-
-		if ( !empty( $all_posts ) ) {
-			foreach( $all_posts as $a_post ) {
-				$all_post_urls[] = parse_url( get_permalink( $a_post->ID ), PHP_URL_PATH );
-			}
-
-			$args = json_encode( array(
-				'domain' => parse_url( get_site_url(), PHP_URL_HOST ),
-				'items' => $all_post_urls
-			) );
-			wp_remote_post( 'http://api.at.sharescount.com/process', array( 'timeout' => 5, 'body' => $args ) );
-		}
-
 		$autopurge_interval = intval( self::$options[ 'auto_purge' ] );
 		if ( $autopurge_interval <= 0 ) {
 			return;
