@@ -66,8 +66,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 = 4.2.5 =
 * [New] A filter to customize the list of report screens/pages: slimstat_screens_info. Please contact us for more information.
 * [Update] After we introduced the new Customizer function, one of our most active users noted that pages would not disappear from the side navigation if no reports were associated to them. We update the functionality to include this new feature.
+* [Update] Detecting search engines and searchterms has become a real challenge in the last few years (thank you, NSA!). We updated our algorithm to detect if a referer is a search engine or not. (thank you, HubieDoobieDoo)
 * [Update] Instead of creating a copy of the MaxMind database for each site in a network, now the plugin uses a shared one stored in the main "uploads" folder.
-* [Update] How many people read this changelog? We want to use a little experiment to find out: use code CHANGELOG to get $25 off any order on [our store](http://www.wp-slimstat.com/addons/). One use per account, only available to the first 20 users who will place an order.
+* [Update] How many people read this changelog? We want to conduct a little experiment to find out: use code CHANGELOG to get $25 off any order on [our store](http://www.wp-slimstat.com/addons/). One use per account, only available to the first 20 users who will place an order.
 * [Fix] The tracker was not working as expected in Internet Explorer 7, returning the error message "Object doesn't support this property or method: trim" (thank you, Nick).
 
 = 4.2.4 =

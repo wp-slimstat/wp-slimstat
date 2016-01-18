@@ -754,27 +754,49 @@ class wp_slimstat {
 	 * Sniffs out referrals from search engines and tries to determine the query string
 	 */
 	protected static function _get_search_terms($_url = array()){
-		if (empty($_url) || !isset($_url['host']) || !isset($_url['query']) || strpos($_url['host'], 'facebook') !== false) return '';
+		if ( empty( $_url ) || !isset( $_url[ 'host' ] ) || !isset( $_url[ 'query' ] ) || strpos( $_url[ 'host' ], 'facebook' ) !== false ) {
+			return '';
+		}
 
-		$query_formats = array('daum' => 'q', 'eniro' => 'search_word', 'naver' => 'query', 'google' => 'q', 'www.google' => 'as_q', 'yahoo' => 'p', 'msn' => 'q', 'bing' => 'q', 'aol' => 'query', 'lycos' => 'q', 'ask' => 'q', 'cnn' => 'query', 'about' => 'q', 'mamma' => 'q', 'voila' => 'rdata', 'virgilio' => 'qs', 'baidu' => 'wd', 'yandex' => 'text', 'najdi' => 'q', 'seznam' => 'q', 'search' => 'q', 'onet' => 'qt', 'yam' => 'k', 'pchome' => 'q', 'kvasir' => 'q', 'mynet' => 'q', 'nova_rambler' => 'words');
-		$charsets = array('baidu' => 'EUC-CN');
+		$query_formats = array(
+			'baidu' => 'wd',
+			'eniro' => 'search_word',
+			'maktoob' => 'p',
+			'naver' => 'query',
+			'rambler' => 'query',
+			'virgilio' => 'qs',
+			'voila' => 'rdata',
+			'yahoo' => 'p',
+			'yam' => 'k',
+			'yandex' => 'text',
+			'yell' => 'keywords'
+		);
 
-		parse_str($_url['query'], $query);
-		preg_match("/(daum|eniro|naver|google|www.google|yahoo|msn|bing|aol|lycos|ask|cnn|about|mamma|voila|virgilio|baidu|yandex|najdi|seznam|search|onet|yam|pchome|kvasir|mynet|rambler)./", $_url['host'], $matches);
+		$charsets = array( 'baidu' => 'EUC-CN' );
+		$regex_match = implode( '|', array_keys( $query_formats ) );
 
-		if (isset($matches[1]) && isset($query[$query_formats[$matches[1]]])){
+		parse_str( $_url[ 'query' ], $query );
+		preg_match( "/($regex_match)./", $_url[ 'host' ], $matches );
+
+		if ( isset( $matches[ 1 ] ) && isset( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) {
 			// Test for encodings different from UTF-8
-			if (function_exists('mb_check_encoding') && !mb_check_encoding($query[$query_formats[$matches[1]]], 'UTF-8') && !empty($charsets[$matches[1]]))
-				return mb_convert_encoding(urldecode($query[$query_formats[$matches[1]]]), 'UTF-8', $charsets[$matches[1]]);
+			if ( function_exists( 'mb_check_encoding' ) && !mb_check_encoding( $query[ $query_formats[ $matches[ 1 ] ] ], 'UTF-8' ) && !empty( $charsets[ $matches[ 1 ] ] ) ) {
+				$searchterms = mb_convert_encoding( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ), 'UTF-8', $charsets[ $matches[ 1 ] ] );
+			}
+			else {
+				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) );
+			}
 
-			return str_replace('\\', '', trim(urldecode($query[$query_formats[$matches[1]]])));
+			return empty( $searchterms ) ? '_' : $searchterms;
 		}
 
 		// We weren't lucky, but there's still hope
-		foreach(array('q','s','k','qt') as $a_format)
-			if (isset($query[$a_format])){
-				return str_replace('\\', '', trim(urldecode($query[$a_format])));
+		foreach( array( 'q','s','k','qt' ) as $a_format ) {
+			if ( isset( $query[ $a_format ] ) ) {
+				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $a_format ] ) ) );
+				return empty( $searchterms ) ? '_' : $searchterms;
 			}
+		}
 
 		return '';
 	}
