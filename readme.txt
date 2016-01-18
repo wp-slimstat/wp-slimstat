@@ -69,7 +69,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Update] Detecting search engines and searchterms has become a real challenge in the last few years (thank you, NSA!). We updated our algorithm to detect if a referer is a search engine or not. (thank you, HubieDoobieDoo)
 * [Update] Instead of creating a copy of the MaxMind database for each site in a network, now the plugin uses a shared one stored in the main "uploads" folder.
 * [Update] How many people read this changelog? We want to conduct a little experiment to find out: use code CHANGELOG to get $25 off any order on [our store](http://www.wp-slimstat.com/addons/). One use per account, only available to the first 20 users who will place an order.
+* [Update] Unfortunately our partner GetSocial.io has decided to terminate their partnership with us. The corresponding report has been removed from the admin.
 * [Fix] The tracker was not working as expected in Internet Explorer 7, returning the error message "Object doesn't support this property or method: trim" (thank you, Nick).
+* [Fix] Traffic Sources report was not grouping records as expected (thank you, [HubieDoobieDoo](https://wordpress.org/support/topic/search-engine-detection-googlefr-1))
 
 = 4.2.4 =
 * [New] We rewrote the heuristic algorithm that decodes the user agent string. Also, we introduced a new option (under Settings > Tracker) to allow you to choose the detection logic to be used first: the heuristic function is much faster and requires very little memory, but it might be less accurate, and not produce the right match; browscap.ini, the third party database we use, is memory intensive and it uses a bruteforce approach to determine a visitor's browser, but it's very accurate and precise even with the most obscure user agent strings (almost all of them). You decide which one works best for you.

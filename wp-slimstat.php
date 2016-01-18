@@ -758,47 +758,66 @@ class wp_slimstat {
 			return '';
 		}
 
+		// Engines with different character encodings should always be listed here, regardless of their query string format
 		$query_formats = array(
-			'baidu' => 'wd',
+			'baidu.com' => 'wd',
+			'bing' => 'q',
+			'dogpile.com' => 'q',
+			'duckduckgo' => 'q',
 			'eniro' => 'search_word',
+			'exalead.com' => 'q',
+			'excite' => 'q',
+			'gigablast' => 'q',
+			'google' => 'q',
+			'hotbot' => 'q',
 			'maktoob' => 'p',
+			'mamma' => 'q',
 			'naver' => 'query',
+			'qwant' => 'q',
 			'rambler' => 'query',
+			'seznam' => 'oq',
+			'soso.com' => 'query',
 			'virgilio' => 'qs',
 			'voila' => 'rdata',
 			'yahoo' => 'p',
 			'yam' => 'k',
 			'yandex' => 'text',
-			'yell' => 'keywords'
+			'yell' => 'keywords',
+			'yippy' => 'query',
+			'youdao' => 'q'
 		);
 
 		$charsets = array( 'baidu' => 'EUC-CN' );
 		$regex_match = implode( '|', array_keys( $query_formats ) );
+		$searchterms = '';
 
 		parse_str( $_url[ 'query' ], $query );
 		preg_match( "/($regex_match)./", $_url[ 'host' ], $matches );
 
-		if ( isset( $matches[ 1 ] ) && isset( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) {
-			// Test for encodings different from UTF-8
-			if ( function_exists( 'mb_check_encoding' ) && !mb_check_encoding( $query[ $query_formats[ $matches[ 1 ] ] ], 'UTF-8' ) && !empty( $charsets[ $matches[ 1 ] ] ) ) {
-				$searchterms = mb_convert_encoding( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ), 'UTF-8', $charsets[ $matches[ 1 ] ] );
-			}
-			else {
+		if ( !empty( $matches[ 1 ] ) ) {
+			// Let's remember that this is a search engine, regardless of the URL containing searchterms (thank you, NSA)
+			$searchterms = '_';
+
+			if ( !empty( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) {
 				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) );
-			}
 
-			return empty( $searchterms ) ? '_' : $searchterms;
-		}
-
-		// We weren't lucky, but there's still hope
-		foreach( array( 'q','s','k','qt' ) as $a_format ) {
-			if ( isset( $query[ $a_format ] ) ) {
-				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $a_format ] ) ) );
-				return empty( $searchterms ) ? '_' : $searchterms;
+				// Test for encodings different from UTF-8
+				if ( function_exists( 'mb_check_encoding' ) && !mb_check_encoding( $query[ $query_formats[ $matches[ 1 ] ] ], 'UTF-8' ) && !empty( $charsets[ $matches[ 1 ] ] ) ) {
+					$searchterms = mb_convert_encoding( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ), 'UTF-8', $charsets[ $matches[ 1 ] ] );
+				}
 			}
 		}
+		else {
+			// We weren't lucky, but there's still hope
+			foreach( array( 'q','s','k','qt' ) as $a_format ) {
+				if ( !empty( $query[ $a_format ] ) ) {
+					$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $a_format ] ) ) );
+					break;
+				}
+			}
+		}
 
-		return '';
+		return $searchterms;
 	}
 	// end _get_search_terms
 
