@@ -64,13 +64,6 @@ class wp_slimstat_reports {
 		
 		$chart_tooltip = '<strong>' . __( 'Chart controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li></ul>';
 		self::$reports_info = array(
-			'slim_getsocial' => array(
-				'title' => __( 'Social Sharing Analytics', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_getsocial' ),
-				'classes' => array( 'full-width' ),
-				'screens' => array( 'slimview4' )
-			),
-
 			'slim_p7_02' => array(
 				'title' => __( 'Visitors Activity', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_activity_log' ),
@@ -167,7 +160,9 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'referer',
+					'columns' => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
+					'as_column' => 'referer_calculated',
+					'filter_op' => 'contains',
 					'where' => 'referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
@@ -344,6 +339,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'screen_width, screen_height',
+					'where' => 'screen_width <> 0 AND screen_height <> 0',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
@@ -536,8 +532,10 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'referer',
-					'where' => "searchterms IS NOT NULL AND referer NOT LIKE '%".home_url()."%'",
+					'columns' => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
+					'as_column' => 'referer_calculated',
+					'filter_op' => 'contains',
+					'where' => 'searchterms IS NOT NULL AND referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
@@ -875,7 +873,8 @@ class wp_slimstat_reports {
 			'slim_p4_08' => 1,
 			'slim_p4_14' => 1,
 			'slim_p4_16' => 1,
-			'slim_p4_17' => 1
+			'slim_p4_17' => 1,
+			'slim_getsocial' => 1
 		);
 
 		// Retrieve this user's list of active reports, 
@@ -1046,6 +1045,7 @@ class wp_slimstat_reports {
 			
 			$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
 			$permalinks_enabled = get_option( 'permalink_structure' );
+			$column_not_calculated = str_replace( '_calculated', '', $_args[ 'columns' ] );
 
 			for($i=0; $i<$count_page_results; $i++){
 				$row_details = $percentage = '';
@@ -1053,7 +1053,7 @@ class wp_slimstat_reports {
 				$element_value = $results[ $i ][ $_args[ 'columns' ] ];
 
 				// Some columns require a special pre-treatment
-				switch ( $_args[ 'columns' ] ){
+				switch ( $column_not_calculated ){
 
 					case 'browser':
 						if (!empty($results[$i]['user_agent']) && wp_slimstat::$options['show_complete_user_agent_tooltip'] == 'yes'){
@@ -1082,24 +1082,22 @@ class wp_slimstat_reports {
 						break;
 
 					case 'language':
-					case 'language_calculated':
-						$row_details = __('Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
-						$element_value = __('l-'.$results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
+						$row_details = __( 'Code', 'wp-slimstat' ) . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+						$element_value = __( 'l-' . $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat' );
 						break;
 
 					case 'platform':
-					case 'platform_calculated':
-						$row_details = __('Code','wp-slimstat').": {$results[ $i ][ $_args[ 'columns' ] ]}";
-						$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat');
+						$row_details = __( 'Code', 'wp-slimstat' ).": {$results[ $i ][ $_args[ 'columns' ] ]}";
+						$element_value = __( $results[ $i ][ $_args[ 'columns' ] ], 'wp-slimstat' );
+						$results[ $i ][ $_args[ 'columns' ] ] = str_replace( 'p-', '', $results[ $i ][ $_args[ 'columns' ] ] );
 						break;
 
 					case 'referer':
 						$element_value = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ][ $_args[ 'columns' ] ] ) );
-						$element_value = parse_url( $element_value, PHP_URL_HOST );
+						//$element_value = parse_url( $element_value, PHP_URL_HOST );
 						break;
 
 					case 'resource':
-					case 'resource_calculated':
 						$resource_title = self::get_resource_title( $results[ $i ][ $_args[ 'columns' ] ] );
 						if ( $resource_title != $results[ $i ][ $_args[ 'columns' ] ] ) {
 							$row_details = __( 'URL', 'wp-slimstat' ) . ': ' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' );
@@ -1122,6 +1120,7 @@ class wp_slimstat_reports {
 							$element_value = htmlentities( $results[ $i ][ 'searchterms' ], ENT_QUOTES, 'UTF-8' );
 						}
 						break;
+
 					case 'username':
 						$element_value = $results[$i]['username'];
 						if (wp_slimstat::$options['show_display_name'] == 'yes'){
@@ -1140,9 +1139,9 @@ class wp_slimstat_reports {
 					default:
 				}
 				
-				$element_value = "<a class='slimstat-filter-link' href='".self::fs_url( $_args[ 'columns' ].' '.$_args['filter_op'].' '.$results[$i][ $_args[ 'columns' ] ] )."'>$element_value</a>";
+				$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $column_not_calculated. ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
 
-				if ( !empty($_args['type'] ) && $_args['type'] == 'recent' ) {
+				if ( !empty( $_args['type'] ) && $_args['type'] == 'recent' ) {
 					$row_details = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true) . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details;
 				}
 
@@ -1169,10 +1168,10 @@ class wp_slimstat_reports {
 					}
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
 				}
-				if ( $_args[ 'columns' ] == 'referer' ) {
-					$element_url = htmlentities($results[$i]['referer'], ENT_QUOTES, 'UTF-8');
-					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
-				}
+				// if ( $_args[ 'columns' ] == 'referer' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
+				// 	$element_url = htmlentities( $results[ $i ][ 'referer' ], ENT_QUOTES, 'UTF-8' );
+				// 	$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
+				// }
 				if (!empty($results[$i]['ip']) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
 					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.$results[$i]['other_ip']:'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
 				}
@@ -1719,77 +1718,6 @@ class wp_slimstat_reports {
 			}
 
 			echo "</b></p>";
-		}
-
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
-	}
-
-	public static function show_getsocial() {
-		if ( !empty( $_POST[ 'fs' ][ 'addon_enable_getsocial' ] ) ) {
-			wp_slimstat::$options[ 'enable_getsocial' ] = 'yes';
-
-			// Update the list of posts
-			$all_posts = get_posts( array( 'posts_per_page' => 100 ) );
-			$all_post_urls = array();
-
-			if ( !empty( $all_posts ) ) {
-				foreach( $all_posts as $a_post ) {
-					$all_post_urls[] = parse_url( get_permalink( $a_post->ID ), PHP_URL_PATH );
-				}
-
-				$args = json_encode( array(
-					'domain' => parse_url( get_site_url(), PHP_URL_HOST ),
-					'items' => $all_post_urls
-				) );
-				wp_remote_post( 'http://api.at.sharescount.com/process', array( 'timeout' => 5, 'body' => $args ) );
-			}
-		}
-		if ( wp_slimstat::$options[ 'enable_getsocial' ] == 'yes' ) { 
-			$response = wp_remote_get( 'http://api.at.sharescount.com/results/' . parse_url( get_site_url(), PHP_URL_HOST ), array( 'timeout' => 5 ) );
-			if ( is_wp_error( $response ) ) {
-				echo '<p class="nodata">' . __( 'Error contacting the GetSocial endpoint.', 'wp-slimstat' ) . '</p>';
-			}
-			else {
-                // Parse remote HTML file
-				$data = wp_remote_retrieve_body( $response );
-
-				// Check for error
-				if ( is_wp_error( $data ) ) {
-					echo '<p class="nodata">' . __( 'Error decoding the GetSocial payload.', 'wp-slimstat' ) . '</p>';
-				}
-				else {
-					$decoded_data = @json_decode( $data );
-
-					echo '<table class="wp-list-table widefat fixed" cellspacing="0">
-							<thead>
-								<tr>
-									<th scope="col" style="width:45%">Page</th>
-									<th scope="col" style="text-align:center">Facebook</th>
-									<th scope="col" style="text-align:center">Twitter</th>
-									<th scope="col" style="text-align:center">LinkedIn</th>
-									<th scope="col" style="text-align:center">Pinterest</th>
-									<th scope="col" style="text-align:center">Google</th>
-									<th scope="col" style="text-align:center">Total</th>
-								</tr>
-							</thead>';
-					foreach ( $decoded_data as $key => $obj ) {
-						echo "<tr>
-							<td>" . self::get_resource_title( $key ) ."</td>
-							<td style='text-align:center'>" . ( !empty( $obj->facebook ) ? $obj->facebook : 0 ) . "</td>
-							<td style='text-align:center'>" . ( !empty( $obj->twitter ) ? $obj->twitter : 0 ) . "</td>
-							<td style='text-align:center'>" . ( !empty( $obj->linkedin ) ? $obj->linkedin : 0 ) . "</td>
-							<td style='text-align:center'>" . ( !empty( $obj->pinterest ) ? $obj->pinterest : 0 ) . "</td>
-							<td style='text-align:center'>" . ( !empty( $obj->google ) ? $obj->google : 0 ) . "</td>
-							<td style='text-align:center'>" . ( !empty( $obj->total ) ? $obj->total : 0 ) . "</td>";
-					}
-					echo '</table>';
-				}
-			}
-		}
-		else { 
-			echo '<p class="nodata">' . __( "Thanks to a partnership with GetSocial.io, you can access your website's<br/>social media metrics and identify your top performing posts.<br/> <a class='button-ajax' title='Enable this functionality' href='".self::fs_url()."&amp;fs%5Baddon_enable_getsocial%5D=yes'>Enable your social sharing report.</a>", 'wp-slimstat' ) . '</p>';
 		}
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
