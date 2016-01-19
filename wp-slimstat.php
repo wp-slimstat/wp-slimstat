@@ -537,6 +537,7 @@ class wp_slimstat {
 			self::_set_error_array( __( 'Error:', 'wp-slimstat' ) . ' ' . self::$wpdb->last_error );
 
 			// Attempt to init the environment (new blog in a MU network?)
+			include_once ( plugin_dir_path( __FILE__ ) . '/admin/wp-slimstat-admin.php' );
 			wp_slimstat_admin::init_environment( true );
 			
 			return $_argument;
