@@ -4,6 +4,10 @@ if ( !function_exists( 'add_action' ) ) {
 	exit(0);
 }
 
+if ( wp_slimstat::$options[ 'async_load' ] == 'yes' && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
+	return '';
+}
+
 $is_dashboard = empty( $_REQUEST[ 'page' ] ) || $_REQUEST[ 'page' ] != 'slimview1';
 
 // Available icons
@@ -42,7 +46,7 @@ else {
 	echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true, wp_slimstat::$options[ 'number_results_raw_data' ] );
 
 	// Show delete button? (only those who can access the settings can see it)
-	$current_user_can_delete = current_user_can(wp_slimstat::$options['capability_can_admin']);
+	$current_user_can_delete = ( current_user_can( wp_slimstat::$options[ 'capability_can_admin' ] ) && !is_network_admin() );
 	$delete_row = '';
 
 	// Loop through the results
@@ -184,7 +188,7 @@ else {
 			$results[$i][ 'outbound_resource' ] = ( !empty( $results[ $i ][ 'outbound_resource' ] ) ) ? "<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_resource']}" : '';
 			$results[$i][ 'content_type' ] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
 
-			if ($current_user_can_delete){
+			if ( $current_user_can_delete ){
 				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this pageview','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
 			}
 

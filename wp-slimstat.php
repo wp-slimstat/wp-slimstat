@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.2.5
+Version: 4.2.6
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.2.5';
+	public static $version = '4.2.6';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -37,7 +37,7 @@ class wp_slimstat {
 	public static function init(){
 
 		// Load all the settings
-		self::$options = ( is_network_admin() && ( empty($_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'wp-slim-view' ) === false ) ) ? get_site_option( 'slimstat_options', array() ) : get_option( 'slimstat_options', array() );
+		self::$options = ( is_network_admin() && ( empty($_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'slimview' ) === false ) ) ? get_site_option( 'slimstat_options', array() ) : get_option( 'slimstat_options', array() );
 		self::$options = array_merge( self::init_options(), self::$options );
 
 		// Allow third party tools to edit the options
@@ -343,7 +343,7 @@ class wp_slimstat {
 		}
 
 		// Do not track report pages in the admin
-		if ( ( !empty( self::$stat[ 'resource' ] ) && strpos( self::$stat[ 'resource' ], 'wp-admin/admin-ajax.php' ) !== false ) || ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'wp-slim-view' ) !== false ) ) {
+		if ( ( !empty( self::$stat[ 'resource' ] ) && strpos( self::$stat[ 'resource' ], 'wp-admin/admin-ajax.php' ) !== false ) || ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) ) {
 			return $_argument;
 		}
 
@@ -787,8 +787,13 @@ class wp_slimstat {
 		$regex_match = implode( '|', array_keys( $query_formats ) );
 		$searchterms = '';
 
-		parse_str( $_url[ 'query' ], $query );
-		preg_match( "/($regex_match)./i", $_url[ 'host' ], $matches );
+		if ( !empty( $_url[ 'query' ] ) ) {
+			parse_str( $_url[ 'query' ], $query );
+		}
+
+		if ( !empty( $_url[ 'host' ] ) ) {
+			preg_match( "/($regex_match)./i", $_url[ 'host' ], $matches );
+		}
 
 		if ( !empty( $matches[ 1 ] ) ) {
 			// Let's remember that this is a search engine, regardless of the URL containing searchterms (thank you, NSA)
@@ -1426,7 +1431,7 @@ class wp_slimstat {
 	 */
 	public static function init_options(){
 		$val_yes = 'yes'; $val_no = 'no';
-		if ( is_network_admin() && ( empty( $_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'wp-slim-view' ) === false ) ) {
+		if ( is_network_admin() && ( empty( $_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'slimview' ) === false ) ) {
 			$val_yes = $val_no = 'null';
 		}
 
@@ -1483,6 +1488,7 @@ class wp_slimstat {
 			'show_display_name' => $val_no,
 			'convert_resource_urls_to_titles' => $val_yes,
 			'convert_ip_addresses' => $val_no,
+			'async_load' => $val_no,
 			'use_slimscroll' => $val_yes,
 			'expand_details' => $val_no,
 			'rows_to_show' => ( $val_yes == 'null' ) ? '0' : '20',
@@ -1683,7 +1689,7 @@ class wp_slimstat {
 		self::toggle_date_i18n_filters( true );
 
 		// Copy entries to the archive table, if needed
-		if ( self::$options[ 'auto_purge_delete' ] != 'yes' ) {
+		if ( self::$options[ 'auto_purge_delete' ] != 'no' ) {
 			$is_copy_done = self::$wpdb->query("
 				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt)
 				SELECT ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt

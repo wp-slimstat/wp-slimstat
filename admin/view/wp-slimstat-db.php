@@ -682,15 +682,19 @@ class wp_slimstat_db {
 		}
 
 		// Build the SQL query
-		$group_by_string = "GROUP BY {$group_by[0]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), {$group_by[1]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+		$group_by_string = "{$group_by[0]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), {$group_by[1]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
 		$sql = "
 			SELECT dt, {$_args[ 'data1' ]} first_metric, {$_args[ 'data2' ]} second_metric
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE {$_args[ 'where' ]} $previous_time_range
-			$group_by_string";
+			GROUP BY $group_by_string";
 
 		// Get the data
-		$results = self::get_results( $sql, 'blog_id', '', $group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
+		$results = self::get_results(
+				$sql,
+				'dt',
+				'',
+				$group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
 
 		// Fill the output array
 		$output[ 'current' ][ 'label' ] = '';
@@ -794,6 +798,9 @@ class wp_slimstat_db {
 		if ( $_column != '*' ) {
 			$columns .= ', ip, dt';
 		}
+		else {
+			$columns = 'id, ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
+		}
 
 		if ( !empty( $_more_columns ) ) {
 			$columns .= ', ' . $_more_columns;
@@ -879,9 +886,9 @@ class wp_slimstat_db {
 			GROUP BY $_as_column $_having
 			ORDER BY counthits DESC
 			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ], 
-			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
+			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ),
 			'counthits DESC',
-			$_column,
+			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ),
 			'SUM(counthits) AS counthits' );
 	}
 

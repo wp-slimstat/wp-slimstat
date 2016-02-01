@@ -12,8 +12,8 @@ class wp_slimstat_admin {
 	 */
 	public static function init(){
 		if ( ( wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no' ) ) {
-			self::$admin_notice = "The heuristic algorithm in charge of decoding the user agent string has been rewritten from scratch. It now includes a new option (under Settings > Tracker) to choose the approach to be used: the heuristic function is much faster and requires very little memory, but it might be less accurate, and not produce the right match; browscap.ini, the third party database we use, is memory intensive and it uses a bruteforce approach to determine a visitor's browser, but it's very accurate and precise even with the most obscure user agent strings (almost all of them). You decide which one works best for you.";
-			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
+			self::$admin_notice = "Dear User,<br/><br/>my name is Dino, Slimstat's lead developer. With me works Luigi, aka Camu, who does an excellent job at taking care of all the support requests we receive on a daily basis. Slimstat was born 10 years ago, and since then we have invested countless hours in our software. What keeps driving us is our passion for WordPress, the open source world and a global community of more than 100,000 users who discover meaningful patterns in their website traffic every single day, free of charge.<br/><br/>Today I am going to ask you to support our work. I was recently involved in a real estate lawsuit that required legal representation. Bills are starting to pile up, and unfortunately this means I will have to stop working on Slimstat for a while, and find something more remunerative to pay those bills. <strong>Unless...</strong> you decide to help. <a style='font-weight:700' target='_blank' href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UBYWQYPLU9JUA'>Your donation will allow</a> me and Luigi stay focused on our software. If each single user <a style='font-weight:700' target='_blank' href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UBYWQYPLU9JUA'>donated just five dollars</a>, we wouldn't have to worry about this legal setback for many months to come.<br/><br/>Trust me, it was not easy for me to write these words, but I decided to swallow my pride and ask my community to pitch in. Your donation will help us keep Slimstat free for everyone.<br/><br/>Thank you,<br/>Dino and Luigi.";
+			self::$admin_notice .= '<br/><br/><a style="font-weight:700" target="_blank" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UBYWQYPLU9JUA" class="button">Donate Now</a> <a id="slimstat-hide-admin-notice" href="#" class="button-secondary">No, thanks</a>';
 		}
 		else {
 			self::$admin_notice = "
@@ -430,8 +430,13 @@ class wp_slimstat_admin {
 		}
 		// --- END: Updates for version 4.2.1 ---
 
+		// --- Updates for version 4.2.6 ---
+		if ( version_compare( wp_slimstat::$options[ 'version' ], '4.2.6', '<' ) ) {
+			wp_slimstat::$options[ 'auto_purge_delete' ] = ( wp_slimstat::$options[ 'auto_purge_delete' ] == 'yes' ) ? 'no' : 'yes';
+		}
+
 		// Now we can update the version stored in the database
-		wp_slimstat::$options['version'] = wp_slimstat::$version;
+		wp_slimstat::$options[ 'version' ] = wp_slimstat::$version;
 
 		return true;
 	}
@@ -522,12 +527,13 @@ class wp_slimstat_admin {
 
 		// Pass some information to Javascript
 		$params = array(
-			'datepicker_image' => plugins_url('/admin/images/datepicker.png', dirname(__FILE__)),
-			'expand_details' => isset(wp_slimstat::$options['expand_details'])?wp_slimstat::$options['expand_details']:'no',
+			'async_load' => !empty( wp_slimstat::$options[ 'async_load' ] ) ? wp_slimstat::$options[ 'async_load' ] : 'no',
+			'chart_colors' => !empty( wp_slimstat::$options[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$options[ 'chart_colors' ] ) : array( '#ccc', '#999', '#bbcc44', '#21759b' ),
+			'datepicker_image' => plugins_url( '/admin/images/datepicker.png', dirname( __FILE__ ) ),
+			'expand_details' => !empty( wp_slimstat::$options[ 'expand_details' ] ) ? wp_slimstat::$options[ 'expand_details' ] : 'no',
 			'refresh_interval' => intval( wp_slimstat::$options[ 'refresh_interval' ] ),
-			'text_direction' => $GLOBALS['wp_locale']->text_direction,
-			'use_slimscroll' => !empty( wp_slimstat::$options[ 'use_slimscroll' ] ) ? wp_slimstat::$options[ 'use_slimscroll' ] : 'yes',
-			'chart_colors' => !empty( wp_slimstat::$options[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$options[ 'chart_colors' ] ) : array( '#ccc', '#999', '#bbcc44', '#21759b' )
+			'text_direction' => $GLOBALS[ 'wp_locale' ]->text_direction,
+			'use_slimscroll' => !empty( wp_slimstat::$options[ 'use_slimscroll' ] ) ? wp_slimstat::$options[ 'use_slimscroll' ] : 'yes'
 		);
 		wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 	}
@@ -542,14 +548,16 @@ class wp_slimstat_admin {
 	public static function wp_slimstat_add_view_menu( $_s = '' ) {
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability = 'read';
-		if (strpos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) === false){
-			$minimum_capability = wp_slimstat::$options['capability_can_view'];
+		if ( is_network_admin() ) {
+			$minimum_capability = 'manage_network';
+		}
+		else if ( strpos( wp_slimstat::$options[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ) {
+			$minimum_capability = wp_slimstat::$options[ 'capability_can_view' ];
 		}
 
 		// Get the current report assignments
-
 		$new_entry = array();
-		if ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' ) {
+		if ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' || is_network_admin() ) {
 			$parent = 'slimview1';
 			$page_location = 'slimstat';
 			$new_entry[] = add_menu_page(__('SlimStat','wp-slimstat'), __('SlimStat','wp-slimstat'), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	

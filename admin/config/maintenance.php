@@ -103,7 +103,7 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_events");
 			wp_slimstat::$wpdb->query("DELETE t1 FROM {$GLOBALS['wpdb']->prefix}slim_stats t1");
 			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
-			wp_slimstat_admin::show_alert_message(__('All the records were successfully deleted.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat_admin::show_alert_message( __( 'All the records were successfully deleted.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 			break;
 
 		default:
@@ -202,7 +202,7 @@ $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
 				onclick="return(confirm('<?php _e('Are you sure you want to PERMANENTLY DELETE ALL the records from your database?','wp-slimstat'); ?>'))"><?php _e('Delete All Records','wp-slimstat'); ?></a>
 		</th>
 		<td>
-			<span class="description"><?php _e('Erase all the information collected so far by Slimstat, including the archive. This operation <strong>does not</strong> reset your settings.','wp-slimstat') ?></span>
+			<span class="description"><?php _e('Erase all the information collected so far by Slimstat, but not the archived records (<code>wp_slim_stats_archive</code>). This operation <strong>does not</strong> reset your settings and it can be undone by manually copying your records from the archive table.','wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr >

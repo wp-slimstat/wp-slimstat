@@ -156,7 +156,7 @@ class wp_slimstat_reports {
 				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and so on. You can set the corresponding filter where Resource Content Type equals cpt:you_cpt_slug_here to get top web pages for a specific custom post type you have.', 'wp-slimstat' )
 			),
 			'slim_p1_10' => array(
-				'title' => __('Top Traffic Sources', 'wp-slimstat'),
+				'title' => __('Top Referring Domains', 'wp-slimstat'),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
@@ -245,17 +245,29 @@ class wp_slimstat_reports {
 					'id' => 'slim_p1_19_01',
 					'chart_data' => array(
 						'data1' => 'COUNT( searchterms )',
-						'data2' => 'COUNT( DISTINCT searchterms )'
+						'data2' => 'COUNT( DISTINCT searchterms )',
+						'where' => 'searchterms <> "_"'
 					),
 					'chart_labels' => array(
 						__( 'Search Terms', 'wp-slimstat' ),
 						__( 'Unique Terms', 'wp-slimstat' )
-					),
-					'where' => 'searchterms <> "_"'
+					)
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'slimview2' ),
 				'tooltip' => $chart_tooltip
+			),
+			'slim_p1_20' => array(
+				'title' => __('Top Referring URLs', 'wp-slimstat'),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'type' => 'top',
+					'columns' => 'referer',
+					'where' => 'referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
+				),
+				'classes' => array( 'normal' ),
+				'screens' => array( 'slimview2', 'slimview5', 'dashboard' )
 			),
 
 			'slim_p2_01' => array(
@@ -265,13 +277,13 @@ class wp_slimstat_reports {
 					'id' => 'slim_p2_01',
 					'chart_data' => array(
 						'data1' => 'COUNT( DISTINCT visit_id )',
-						'data2' => 'COUNT( DISTINCT ip )'
+						'data2' => 'COUNT( DISTINCT ip )',
+						'where' => '(visit_id > 0 AND browser_type <> 1)'
 					),
 					'chart_labels' => array(
 						__( 'Visits', 'wp-slimstat' ),
 						__( 'Unique IPs', 'wp-slimstat' )
-					),
-					'where' => '(visit_id > 0 AND browser_type <> 1)'
+					)
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'slimview3' ),
@@ -506,13 +518,13 @@ class wp_slimstat_reports {
 					'id' => 'slim_p3_01',
 					'chart_data' => array(
 						'data1' => 'COUNT( DISTINCT referer )',
-						'data2' => 'COUNT( DISTINCT ip )'
+						'data2' => 'COUNT( DISTINCT ip )',
+						'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")'
 					),
 					'chart_labels' => array(
 						__( 'Domains', 'wp-slimstat' ),
 						__( 'Unique IPs', 'wp-slimstat' )
-					),
-					'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")'
+					)
 				),
 				'classes' => array( 'wide', 'chart' ),
 				'screens' => array( 'slimview5' ),
@@ -982,7 +994,12 @@ class wp_slimstat_reports {
 	}
 
 	public static function raw_results_to_html( $_args = array() ) {
+		if ( wp_slimstat::$options[ 'async_load' ] == 'yes' && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
+			return '';
+		}
+
 		wp_slimstat_db::$debug_message = '';
+
 		$all_results = call_user_func( $_args[ 'raw' ] , $_args );
 
 		echo wp_slimstat_db::$debug_message;
@@ -1168,10 +1185,17 @@ class wp_slimstat_reports {
 					}
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
 				}
-				// if ( $_args[ 'columns' ] == 'referer' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
-				// 	$element_url = htmlentities( $results[ $i ][ 'referer' ], ENT_QUOTES, 'UTF-8' );
-				// 	$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
-				// }
+				
+				if ( $_args[ 'columns' ] == 'referer_calculated' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
+					$element_url = 'http://' . htmlentities( $results[ $i ][ 'referer_calculated' ], ENT_QUOTES, 'UTF-8' );
+					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
+				}
+
+				if ( $_args[ 'columns' ] == 'referer' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
+					$element_url = htmlentities( $results[ $i ][ 'referer' ], ENT_QUOTES, 'UTF-8' );
+					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
+				}
+				
 				if (!empty($results[$i]['ip']) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
 					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.$results[$i]['other_ip']:'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
 				}

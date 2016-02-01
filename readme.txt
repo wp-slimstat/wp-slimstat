@@ -4,8 +4,8 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Text Domain: wp-slimstat
 Requires at least: 3.8
-Tested up to: 4.4
-Stable tag: 4.2.5
+Tested up to: 4.4.1
+Stable tag: 4.2.6
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -14,7 +14,7 @@ Stable tag: 4.2.5
 * Real-time activity log, server latency, heatmaps, email reports, export data to Excel, full IPv6 support, and much more
 * Compatible with W3 Total Cache, WP SuperCache and most caching plugins
 * Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
-* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman). Is your language missing or incomplete? [Contact Us](http://support.wp-slimstat.com/) if you would like to share your localization.
+* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = What are people saying about Slimstat? =
@@ -62,6 +62,15 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.2.6 =
+* [New] Reintroduced our beloved Async Mode (Slimstat > Settings > Reports > Functionality). Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple requests, thus avoiding memory issues and performance problems.
+* [New] Turkish localization added. (thank you, Seyit Mehmet Çoban)
+* [Update] To avoid confusion, we updated the option from 'Delete Records' to 'Archive Records'. Please go make sure it is set according to your needs. (thank you, Steve)
+* [Update] Our premium add-on Network View, now renamed Network Analysis, is now compatible with Slimstat 4.x. [Go grab your copy today](http://www.wp-slimstat.com/downloads/network-view/)
+* [Fix] Some charts were not displaying accurate metrics under certain circumstances (filters).
+* [Fix] A PHP warning was being displayed if WP_DEBUG was set to true. (thank you, [Salpetriere](https://wordpress.org/support/topic/another-php-error-with-plugin))
+* [Fix] A fatal error message was being displayed on the login screen if the data structure was not up-to-date or corrupted. (thank you, Chuck)
 
 = 4.2.5 =
 * [New] A filter to customize the list of report screens/pages: slimstat_screens_info. Please contact us for more information.
