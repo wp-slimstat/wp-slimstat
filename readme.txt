@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4.1
-Stable tag: 4.2.6
+Stable tag: 4.2.7
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.2.7 =
+* [Note] Our previous request for help did not fall on deaf ears. Each donation we received in the past few weeks, reminded us just how important is our work for our community, and how much you all appreciate it. To show how grateful we are, we decided to give back to our community twice as much. Yes, you read that right. In the next few days, we will be sending our donors coupons that can be used on our store to get a discount equal to double the amount they donated. If you are a donor and don't get an email from us in a few days, feel free to contact us so that we can look into it. This promotion will only apply to donations received by midnight on February 15, 2016. Again, thank you for stepping up and being such a great community of supporters. It means a lot to us.
+* [New] Option to configure the tracker to work in asynchronous mode. (see [this thread](https://wordpress.org/support/topic/slimstat-bbpress-need-to-double-click-links-ff-or-wait-chrome-to-load?replies=8#post-8031657) for more information)
+* [Update] [Browscap]() library updated to version 6012, released on February 4th, 2016.
+* [Fix] The tracker was erroneously returning "invalid checksum" even when other errors were occurring, or filters being applied to a pageview.
+* [Fix] The javascript tracker was not compressed.
+* [Fix] Top Pages Not Found report had been removed by mistake. (thank you, Bperun)
 
 = 4.2.6 =
 * [New] Reintroduced our beloved Async Mode (Slimstat > Settings > Reports > Functionality). Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple requests, thus avoiding memory issues and performance problems.
@@ -137,27 +145,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Update] Support for the old "Custom Report" screen (already deprecated in version 4.0) has been removed from the source code. Please update your custom reports accordingly.
 * [Update] Renamed and reorganized tabs under Settings to make them easier to understand.
 * [Update] [Flot](http://www.flotcharts.org/) chart library updated to version 0.8.3
-
-= 4.1.8.1 =
-* [Update] Renamed and reorganized some tabs under Settings to make them easier to understand.
-* [Update] Added icons for Windows 10 and Microsoft Edge 12 browser (thank you, Romain Petges).
-* [Update] Top Outbound Links and other reports can now be added to the WordPress dashboard (thank you, Cole).
-* [Fix] One metric's description was misleading: it was supposed to be Pageviews per Visit, not Pages per Visit (thank you, Bperun).
-* [Fix] Some people were having problems locating the Save button in the settings, which was also hidden when RTL was enabled.
-
-= 4.1.8 =
-* [New] The hover effect that revealed the details of a given row in many of our list reports has been flagged as not user-friendly by some users. A new approach using a floating tooltip has been implemented to address this issue (thank you, Romain Petges).
-* [New] Slimstat now differentiates between known users who are currently visiting your website, and all others users currently online (two separate reports).
-* [New] Customize the look and feel of your charts. Go to Settings > Reports > Miscellaneous, and follow the instructions (thank you, [Morcom](https://wordpress.org/support/topic/slimstatadmin_chart_optionscolors)).
-* [Update] The WordPress Translation Team contacted us to let us know that Slimstat has been imported into [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/wp-slimstat). We are adapting the source code and relocating the localization files within our folder structure, to comply with their new guidelines.
-* [Update] Removed atialiasing detection feature from the tracker source code, as it was not considered reliable and it didn't really add any useful information for the administrator.
-* [Update] Top Downloads report is now showing number of downloads by default, and percentages on hover (thank you, Romain Petges).
-* [Update] SlimScroll jquery library has been updated to version 1.3.6.
-* [Update] [Browscap](http://browscap.org/) has been updated to version 6007, released on September 28, 2015.
-* [Update] [AmMap](http://www.amcharts.com/javascript-maps/) has been updated to version 3.17.1, released on September 16, 2015.
-* [Fix] A bug in the SQL to calculate the top bounce pages was affecting the report itself (thank you, Pattaya_web).
-* [Fix] An update to the WordPress CSS files affected the layout of our User Overview add-on (thank you, Per Soderman).
-* [Fix] Do not record referer URL, if it's the site URL itself.
 
 == Supporters ==
 Slimstat is an Open Source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)

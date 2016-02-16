@@ -884,7 +884,6 @@ class wp_slimstat_reports {
 			'slim_p3_10' => 1,
 			'slim_p4_08' => 1,
 			'slim_p4_14' => 1,
-			'slim_p4_16' => 1,
 			'slim_p4_17' => 1,
 			'slim_getsocial' => 1
 		);

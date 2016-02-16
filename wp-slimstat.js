@@ -1,3 +1,4 @@
+
 var SlimStat = {
 	// Private Properties
 	_id: "undefined" != typeof SlimStatParams.id ? SlimStatParams.id : "-1.0",
@@ -424,7 +425,7 @@ SlimStat.add_event( window, "load", function() {
 			cur_link.setAttribute( "data-slimstat-type", ( cur_link.href && ( cur_link.hostname == location.hostname || cur_link.href.indexOf('://') == -1 ) ) ? 2 : 0 );
 			cur_link.setAttribute( "data-slimstat-tracking", "true" );
 			cur_link.setAttribute( "data-slimstat-callback", "true" );
-			cur_link.setAttribute( "data-slimstat-async", "false" );
+			cur_link.setAttribute( "data-slimstat-async", !( "undefined" == typeof SlimStatParams.async_tracker || "false" == SlimStatParams.async_tracker ) );
 
 			// Track other internal links?
 			if ( 2 == cur_link.getAttribute( "data-slimstat-type" ) && ( "undefined" == typeof SlimStatParams.track_internal_links || "false" == SlimStatParams.track_internal_links ) ) {
@@ -513,12 +514,21 @@ if ( "undefined" != typeof SlimStatParams.id && parseInt( SlimStatParams.id ) > 
 else if ( "undefined" != typeof SlimStatParams.ci ) {
 	slimstat_data += "&op=add&id=" + SlimStatParams.ci + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( window.location.href );
 }
+else {
+	slimstat_data = "";
+}
 
 // Gathers all the information and sends it to the server
-if ( slimstat_data.length ) {
+if ( slimstat_data.length > 0 ) {
 	SlimStat.add_event( window, 'load', function(){
 		setTimeout( function(){
 			SlimStat.send_to_server(slimstat_data);
 		}, 0 );
 	} );
+}
+
+if ( typeof String.prototype.trim !== 'function' ) {
+	String.prototype.trim = function() {
+		return this.replace( /^\s+|\s+$/g, '' ); 
+	}
 }
