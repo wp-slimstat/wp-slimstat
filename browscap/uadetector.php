@@ -533,7 +533,7 @@ class slim_browser {
 		}
 		
 		if ( stristr( $_os, 'Windows NT 5.0' ) !== false || strstr( $_os, 'Windows 2000' ) !== false ) {
-			return arrya( 'win2000', 0 );
+			return array( 'win2000', 0 );
 		}
 		
 		if ( stristr( $_os, 'Windows ME' ) !== false ) {
