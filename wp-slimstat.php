@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: WP Slimstat
+Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.2.7
+Version: 4.3
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.2.7';
+	public static $version = '4.3';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -1513,6 +1513,8 @@ class wp_slimstat {
 			'rows_to_show' => ( $val_yes == 'null' ) ? '0' : '20',
 			'limit_results' => ( $val_yes == 'null' ) ? '0' : '1000',
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
+			'mozcom_access_id' => '',
+			'mozcom_secret_key' => '',
 			'refresh_interval' => ( $val_yes == 'null' ) ? '0' : '60',
 			'number_results_raw_data' => ( $val_yes == 'null' ) ? '0' : '50',
 			'custom_css' => '',

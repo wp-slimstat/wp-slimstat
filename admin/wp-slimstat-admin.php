@@ -12,13 +12,13 @@ class wp_slimstat_admin {
 	 */
 	public static function init(){
 		if ( ( wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no' ) ) {
-			self::$admin_notice = "THANK YOU. From the bottom of our hearts. Our previous request for help did not fall on deaf ears. Each donation we received in the past few weeks, reminded us just how important is our work for our community, and how much you all appreciate it. To date, about 120 people have donated more than $900, which will help us pay this month's attorney's bill. To show how grateful we are, we decided to give back to our community <strong>twice as much</strong>. Yes, you read that right. In the next few days, we will be sending our donors coupons that <a href='http://www.wp-slimstat.com/addons/' target='_blank'>can be used on our store</a> to get a discount equal to double the amount they donated. If you are a donor and don't get an email from us in a few days, feel free to contact us so that we can look into it. This promotion will only apply to donations received by midnight on February 15, 2016. Again, thank you for stepping up and being such a great community of supporters. It means a lot to us.";
+			self::$admin_notice = "To celebrate Slimstat's 10th birthday, we decided to tweak its name, to better reflect what it does. A few users have pointed out over time that it hadn't been easy for them to find our plugin in the repository. With our limited resources, we have been working on giving our work more visibility, and we are convinced that adding the word Analytics to the plugin's name is a step in the right direction. In a few months, we hope to reap the benefits of our efforts. Let's see how quickly we can celebrate our 2,000,000th download!";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
 			self::$admin_notice = "
 			<div class='fixed-height'>
-				<p>In order to protect our intellectual property rights (<a href='http://www.youtube.com/watch?v=OeU-RrjolCw' target='_blank'>Keyword Swarm</a>, anyone?), we are asking you to review the following terms of use.</p>
+				<p>We would like to warn our users about other <em>not so legit</em> clones of Slimstat being sold out there. Keyword Swarm, for example, is a repackaged version of Slimstat plus all our premium add-ons. We never authorized the author to resell our add-ons, and our license explicitly forbids it. Slimstat is free, and people should not pay for an unsupported fraudulent piece of software. In order to protect our intellectual property rights, we are asking you to review the following terms of use.</p>
 				<p><strong>GNU General Public License v2</strong></p>
 				<ol>
 					<li>You may copy and distribute verbatim copies of Slimstat's source code as you receive it, in any medium, provided that you conspicuously and appropriately publish on each copy an appropriate copyright notice and disclaimer of warranty; keep intact all the notices that refer to this License and to the absence of any warranty; and give any other recipients of Slimstat a copy of this License along with Slimstat. You may charge a fee for the physical act of transferring a copy, and you may at your option offer warranty protection in exchange for a fee.</li>
@@ -140,7 +140,7 @@ class wp_slimstat_admin {
 		self::$screens_info = apply_filters( 'slimstat_screens_info', self::$screens_info );
 
 		// Settings URL
-		self::$config_url = 'admin.php?page=wp-slim-config&amp;tab=';
+		self::$config_url = 'admin.php?page=slimconfig&amp;tab=';
 
 		// WPMU - New blog created
 		$active_sitewide_plugins = get_site_option('active_sitewide_plugins');
@@ -155,8 +155,11 @@ class wp_slimstat_admin {
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
 
 		// Display a notice that hightlights this version's features
-		if (!empty($_GET['page']) && strpos($_GET['page'], 'slimview') !== false && !empty(self::$admin_notice) && wp_slimstat::$options['show_admin_notice'] != wp_slimstat::$version && current_user_can('manage_options')) {
-			add_action('admin_notices', array(__CLASS__, 'show_admin_notice'));
+		if ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slim' ) !== false ) {
+			if ( !empty( self::$admin_notice ) && wp_slimstat::$options[ 'show_admin_notice' ] != wp_slimstat::$version && current_user_can( 'manage_options' ) ) {
+				add_action( 'admin_notices', array( __CLASS__, 'show_admin_notice' ) );
+			}
+			add_filter( 'admin_footer_text', array( __CLASS__, 'admin_footer_text' ) );
 		}
 
 		// Remove spammers from the database
@@ -611,7 +614,7 @@ class wp_slimstat_admin {
 
 		if (empty(wp_slimstat::$options['can_view']) || strpos(wp_slimstat::$options['can_view'], $GLOBALS['current_user']->user_login) !== false || current_user_can('manage_options')){
 			$slimstat_view_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=");
-			$slimstat_config_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=wp-slim-config");
+			$slimstat_config_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=slimconfig");
 
 			$page_location = ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
 			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
@@ -652,10 +655,10 @@ class wp_slimstat_admin {
 		}
 
 		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
-			$new_entry = add_submenu_page('slimview1', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
+			$new_entry = add_submenu_page('slimview1', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'slimconfig', array(__CLASS__, 'wp_slimstat_include_config'));
 		}
 		else {
-			$new_entry = add_submenu_page(null, __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'wp-slim-config', array(__CLASS__, 'wp_slimstat_include_config'));
+			$new_entry = add_submenu_page(null, __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'slimconfig', array(__CLASS__, 'wp_slimstat_include_config'));
 		}
 		
 		// Load styles and Javascript needed to make the reports look nice and interactive
@@ -741,6 +744,10 @@ class wp_slimstat_admin {
 		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource contains ' . $parsed_permalink . '&&&interval equals ' . wp_slimstat::$options[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' ). '">'.$count.'</a>';
 	}
 	// end add_column
+
+	public static function admin_footer_text( $_text = '' ) {
+		return $_text . sprintf( __( ' And for keeping an eye on your web traffic with %sSlimStat Analytics%s.', 'wp-slimstat' ), '<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38" target="_blank">', '</a>' );
+	}
 
 	public static function hide_addons( $_plugins = array() ) {
 		if ( !is_array( $_plugins ) ) {
