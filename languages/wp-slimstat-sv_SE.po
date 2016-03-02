@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP SlimStat\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-27 23:03-0500\n"
-"PO-Revision-Date: 2016-02-27 23:03-0500\n"
+"POT-Creation-Date: 2016-03-01 22:01-0500\n"
+"PO-Revision-Date: 2016-03-01 22:01-0500\n"
 "Last-Translator: WP Slimstat <support@wp-slimstat.com>\n"
 "Language-Team: camu <info@duechiacchiere.it>\n"
 "Language: sv\n"
@@ -970,7 +970,7 @@ msgstr "Anpassa Geolokalisering tjänst som ska användas i rapporterna."
 
 #: ../admin/config/index.php:189
 msgid "Mozscape Access ID"
-msgstr ""
+msgstr "Mozscape Access ID"
 
 #: ../admin/config/index.php:189
 msgid ""
@@ -979,16 +979,22 @@ msgid ""
 "\">Mozscape API</a> service. Sign up for a free community account to get "
 "started. Then enter your personal identification code here."
 msgstr ""
+"Få exakta ranking för din webbplats genom den fria <a href=\"https://moz.com/"
+"community/join?redirect=/products/api/keys\" target=\"_blank\">Mozscape API</"
+"a> tjänsten. Registrera dig för ett gratis konto för att komma igång. Ange "
+"sedan din personliga identifieringskod här."
 
 #: ../admin/config/index.php:190
 msgid "Mozscape Secret Key"
-msgstr ""
+msgstr "Mozscape hemlig nyckel"
 
 #: ../admin/config/index.php:190
 msgid ""
 "Do not share your secret key with anyone or they will be able to make API "
 "requests on your account!"
 msgstr ""
+"Dela inte din hemliga nyckel med någon eller de kommer att kunna göra API-"
+"förfrågningar på ditt konto!"
 
 # @ wp-slimstat
 #: ../admin/config/index.php:192
@@ -2179,16 +2185,16 @@ msgstr "Rankningar"
 
 # @ wp-slimstat
 #: ../admin/view/wp-slimstat-reports.php:212
-#, fuzzy
 msgid ""
 "Slimstat retrieves live information from Alexa, Facebook and Mozscape, to "
 "measures your site's rankings. Values are updated every 12 hours. Please "
 "enter your personal access ID in the settings to access your personalized "
 "Mozscape data."
 msgstr ""
-"Slimstat hämtar live-information från Alexa, Facebook och Google, för att "
-"mäta webbplatsens ranking. Värden uppdateras var 12: e timme. Filter som "
-"anges ovan gäller inte för den här rapporten."
+"Slimstat hämtar realtidsinformation från Alexa, Facebook och Mozscape, för "
+"att mäta webbplatsens ranking. Värden uppdateras var 12: e timme. Ange ditt "
+"personliga access ID i inställningarna för att få tillgång till din "
+"personliga Mozscape uppgifter."
 
 # @ wp-slimstat
 #: ../admin/view/wp-slimstat-reports.php:215
@@ -2929,24 +2935,24 @@ msgid ""
 "internal or external) to your website. Set the permalink filter here above "
 "to get the corresponding metrics in this report."
 msgstr ""
+"Antal godkända passerande länkar (inklusive följande länkar och "
+"omdirigeringar, intern eller extern) till din webbplats. Ställ permalänk "
+"filtret här ovan för att få motsvarande statistik i denna rapport."
 
 # @ wp-slimstat
 #: ../admin/view/wp-slimstat-reports.php:1657
-#, fuzzy
 msgid "Equity Links"
-msgstr "Utgående Länkar"
+msgstr "Utgående externa Länkar "
 
 # @ wp-slimstat
 #: ../admin/view/wp-slimstat-reports.php:1658
-#, fuzzy
 msgid "Number of external equity links to your website."
-msgstr "Antal sidor, enligt Google, som länkar tillbaka till din webbplats."
+msgstr "Antal externa länkar, som länkar tillbaka till din webbplats."
 
 # @ wp-slimstat
 #: ../admin/view/wp-slimstat-reports.php:1659
-#, fuzzy
 msgid "Backlinks"
-msgstr "Google bakåtlänkar"
+msgstr "Bakåtlänkar"
 
 #: ../admin/view/wp-slimstat-reports.php:1660
 msgid ""
@@ -2954,10 +2960,13 @@ msgid ""
 "link popularity score. It reflects the importance of any given web page on "
 "the Internet."
 msgstr ""
+"MozRank av webbadressen i en normaliserad 10-poängs lista. MozRank "
+"representerar en länk popularitet poäng. Det speglar vikten av en viss "
+"webbsida på Internet."
 
 #: ../admin/view/wp-slimstat-reports.php:1661
 msgid "MozRank"
-msgstr ""
+msgstr "MozRank"
 
 # @ wp-slimstat
 #: ../admin/view/wp-slimstat-reports.php:1662
@@ -4463,6 +4472,7 @@ msgstr "Unika IP-adresser"
 msgid ""
 " And for keeping an eye on your web traffic with %sSlimStat Analytics%s."
 msgstr ""
+" And for keeping an eye on your web traffic with %sSlimStat Analytics%s."
 
 # @ wp-slimstat
 #: ../admin/wp-slimstat-admin.php:774
@@ -6798,38 +6808,3 @@ msgstr "Funktion gzopen inte definierad. Avbryter."
 #: ../wp-slimstat.php:1275
 msgid "There was an error opening the unzipped MaxMind Geolite DB."
 msgstr "Det gick inte att öppna den uppackade MaxMind GeoLite DB."
-
-# @ wp-slimstat
-#~ msgid "Number of pages in your site included in Google's index."
-#~ msgstr "Antal sidor i din webbplats i Googles index."
-
-# @ wp-slimstat
-#~ msgid "Google Index"
-#~ msgstr "Google Index"
-
-# @ wp-slimstat
-#~ msgid ""
-#~ "How many times the Facebook Like button has been approximately clicked on "
-#~ "your site."
-#~ msgstr ""
-#~ "Hur många gånger har knappen Facebook Gilla ungefär klickats på din "
-#~ "webbplats."
-
-# @ wp-slimstat
-#~ msgid "Facebook Likes"
-#~ msgstr "Facebook Gillas"
-
-#~ msgid "WP Slimstat"
-#~ msgstr "WP Slimstat"
-
-#~ msgid "http://wordpress.org/plugins/wp-slimstat"
-#~ msgstr "http://wordpress.org/plugins/wp-slimstat"
-
-#~ msgid "The leading web analytics plugin for WordPress"
-#~ msgstr "De ledande webbanalys plugin"
-
-#~ msgid "Camu"
-#~ msgstr "Camu"
-
-#~ msgid "http://www.wp-slimstat.com"
-#~ msgstr "ttp://www.wp-slimstat.com"
