@@ -116,9 +116,12 @@ else {
 			}
 
 			// Originating IP Address
-			$other_ip_address = '';
-			if (!empty($results[$i]['other_ip'])){
+			$other_ip_address = intval( $results[ $i ][ 'other_ip' ] );
+			if ( !empty( $other_ip_address ) ) {
 				$other_ip_address = "<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('other_ip equals '.$results[$i]['other_ip'])."'>(".__('Originating IP','wp-slimstat').": {$results[$i]['other_ip']})</a>";
+			}
+			else {
+				$other_ip_address = '';
 			}
 
 			// Plugins

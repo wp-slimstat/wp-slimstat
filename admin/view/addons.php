@@ -1,31 +1,34 @@
 <?php
 // Avoid direct access to this piece of code
-if (!function_exists('add_action')) exit(0);
-
-// Update license keys, if needed
-if (!empty($_POST['licenses'])){
-	wp_slimstat::$options['addon_licenses'] = $_POST['licenses'];
+if ( !function_exists( 'add_action' ) ) {
+	exit(0);
 }
 
-$response = get_transient('wp_slimstat_addon_list');
-if (!empty($_GET['force_refresh']) || false === $response){
-	$response = wp_remote_get('http://www.wp-slimstat.com/update-checker/', array('headers' => array('referer' => get_site_url())));
-	if(is_wp_error($response) || $response['response']['code'] != 200){
-		$error_message = is_wp_error($response)?$response->get_error_message():$response['response']['code'].' '. $response['response']['message'];
-		echo '<p>'.__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message:','wp-slimstat').' '.$error_message.'</p></div>';
-		return;
-	}
+// Update license keys, if needed
+if ( !empty( $_POST[ 'licenses' ] ) ) {
+	wp_slimstat::$options[ 'addon_licenses' ] = $_POST[ 'licenses' ];
+}
 
-	set_transient('wp_slimstat_addon_list', $response, 86400);
+$response = get_transient( 'wp_slimstat_addon_list' );
+$error_message = '';
+
+if ( !empty( $_GET[ 'force_refresh' ] ) || false === $response ) {
+	$response = wp_remote_get( 'http://www.wp-slimstat.com/update-checker/', array( 'headers' => array( 'referer' => get_site_url() ) ) );
+	if ( is_wp_error( $response ) || $response[ 'response' ][ 'code' ] != 200 ) {
+		$error_message = is_wp_error( $response ) ? $response->get_error_message() : $response[ 'response' ][ 'code' ] . ' ' . $response[ 'response' ][ 'message' ];
+		$error_message = sprintf( __( 'There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s', 'wp-slimstat' ), $error_message );
+	}
+	else {
+		set_transient( 'wp_slimstat_addon_list', $response, 86400 );
+	}
 }
 
 $at_least_one_add_on_active = false;
-$list_addons = maybe_unserialize($response['body']);
-if (!is_array($list_addons)){
-	echo '<p>'.__('There was an error decoding the add-ons list from the server. Please try again later.','wp-slimstat').'</p></div>';
-	return;
-}
+$list_addons = @unserialize( $response[ 'body' ] );
 
+if ( !is_array( $list_addons ) ) {
+	$error_message = __( 'There was an error decoding the add-ons list from the server. Please try again later.', 'wp-slimstat' );
+}
 ?>
 
 <div class="wrap slimstat">
@@ -35,6 +38,11 @@ if (!is_array($list_addons)){
 	if (empty($_GET['force_refresh'])){
 		echo ' ';
 		printf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true">click here</a> to clear the cache.','wp-slimstat'), $_SERVER['REQUEST_URI']);
+	}
+
+	if ( !empty( $error_message ) ) {
+		wp_slimstat_admin::show_alert_message( $error_message, 'wp-ui-text-notification below-h2' );
+		return;
 	}
 ?>
 </p>

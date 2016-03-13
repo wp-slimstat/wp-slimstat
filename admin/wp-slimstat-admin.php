@@ -11,8 +11,8 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init(){
-		if ( ( wp_slimstat::$options['enable_ads_network'] == 'yes' || wp_slimstat::$options['enable_ads_network'] == 'no' ) ) {
-			self::$admin_notice = "To celebrate Slimstat's 10th birthday, we decided to tweak its name, to better reflect what it does. A few users have pointed out over time that it hadn't been easy for them to find our plugin in the repository. With our limited resources, we have been working on giving our work more visibility, and we are convinced that adding the word Analytics to the plugin's name is a step in the right direction. In a few months, we hope to reap the benefits of our efforts. Let's see how quickly we can celebrate our 2,000,000th download!";
+		if ( ( wp_slimstat::$options[ 'enable_ads_network' ] == 'yes' || wp_slimstat::$options[ 'enable_ads_network' ] == 'no' ) ) {
+			self::$admin_notice = "A few users have pointed out issues upgrading from versions prior to 4.0, which introduced a new table structure (see changelog). About eight months after we released version 4.0, we removed the upgrade script to streamline our codebase and improve performance. Given all these requests for help, we now decided to restore that code, and extend it to include extra checks and warnings, if something goes wrong. The script uses a very conservative approach, and no data is deleted in the process. Please remember, you can also find a <a href='https://slimstat.freshdesk.com/support/solutions/articles/12000003148-how-do-i-update-the-table-structure-if-i-upgraded-from-a-version-prior-to-4-0' target='_blank'>step by step guide in our knowledge base</a> on how to manually upgrade and consolidate your table structure. As usual, feel free to contact us if you have any questions.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -57,7 +57,7 @@ class wp_slimstat_admin {
 				<p><strong>Third Party Text Links</strong></p>
 				<p>Third party text networks supply text for display in Slimstat. These networks may collect your visitors' IP addresses, in native or hashed forms, for purposes of controlling the distribution of text links. Slimstat collects anonymous aggregated usage statistics.</p>
 				<p>By clicking the button here below, you agree to the terms and conditions and give permission to place text links on your website when search engine crawlers access it. Your website's layout, performance and interaction with human visitors should not be altered or affected in any way. Please note that this feature can be deactivated at any time under Setting > Advanced > UAN Netword, without affecting any other feature available in Slimstat.</p>
-				<p>WP Slimstat - Copyright &copy; ".date('Y')." Get Used to IT.</p>
+				<p>WP Slimstat - Copyright &copy; ".date( 'Y' )." Get Used to IT.</p>
 			</div>
 			
 			<div>
@@ -155,7 +155,7 @@ class wp_slimstat_admin {
 		add_filter('screen_settings', array(__CLASS__, 'screen_settings'), 10, 2);
 
 		// Display a notice that hightlights this version's features
-		if ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slim' ) !== false ) {
+		if ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) {
 			if ( !empty( self::$admin_notice ) && wp_slimstat::$options[ 'show_admin_notice' ] != wp_slimstat::$version && current_user_can( 'manage_options' ) ) {
 				add_action( 'admin_notices', array( __CLASS__, 'show_admin_notice' ) );
 			}
@@ -231,12 +231,13 @@ class wp_slimstat_admin {
 		// FIX ME: To be implemented
 
 		// AJAX Handlers
-		if (defined('DOING_AJAX') && DOING_AJAX){
-			add_action('wp_ajax_slimstat_hide_admin_notice', array(__CLASS__, 'hide_admin_notice'));
-			add_action('wp_ajax_slimstat_hide_geolite_notice', array(__CLASS__, 'hide_geolite_notice'));
-			add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
-			add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
-			add_action('wp_ajax_slimstat_enable_ads_feature', array(__CLASS__, 'enable_ads_feature'));
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			add_action( 'wp_ajax_slimstat_hide_admin_notice', array( __CLASS__, 'hide_admin_notice' ) );
+			add_action( 'wp_ajax_slimstat_hide_geolite_notice', array( __CLASS__, 'hide_geolite_notice' ) );
+			add_action( 'wp_ajax_slimstat_hide_caching_notice', array( __CLASS__, 'hide_caching_notice' ) );
+			add_action( 'wp_ajax_slimstat_manage_filters', array( __CLASS__, 'manage_filters' ) );
+			add_action( 'wp_ajax_slimstat_delete_pageview', array( __CLASS__, 'delete_pageview' ) );
+			add_action( 'wp_ajax_slimstat_enable_ads_feature', array( __CLASS__, 'enable_ads_feature' ) );
 		}
 		
 		// Hide plugins
@@ -383,6 +384,221 @@ class wp_slimstat_admin {
 	 */
 	public static function update_tables_and_options(){
 		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+
+		// --- Updates for version 3.8.4 ---
+		if ( version_compare( wp_slimstat::$options[ 'version' ], '3.8.4', '<' ) ) {
+			$my_wpdb->query( "CREATE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive LIKE {$GLOBALS['wpdb']->prefix}slim_stats" );
+		}
+		// --- END: Updates for version 3.8.4 ---
+
+		// --- Updates for version 3.9.6 ---
+		if ( version_compare( wp_slimstat::$options[ 'version' ], '3.9.6', '<' ) ) {
+			// Consolidate some settings
+			$classes = wp_slimstat::string_to_array( wp_slimstat::$options[ 'ignore_outbound_classes' ] );
+			$rel = wp_slimstat::string_to_array( wp_slimstat::$options[ 'ignore_outbound_rel' ] );
+			$href = wp_slimstat::string_to_array( wp_slimstat::$options[ 'ignore_outbound_href' ] );
+			wp_slimstat::$options[ 'ignore_outbound_classes_rel_href' ] = implode( ',', array_merge( $classes, $rel, $href ) );
+
+			$classes = wp_slimstat::string_to_array( wp_slimstat::$options[ 'do_not_track_outbound_classes' ] );
+			$rel = wp_slimstat::string_to_array( wp_slimstat::$options[ 'do_not_track_outbound_rel' ] );
+			$href = wp_slimstat::string_to_array( wp_slimstat::$options[ 'do_not_track_outbound_href' ] );
+			wp_slimstat::$options[ 'do_not_track_outbound_classes_rel_href' ] = implode( ',', array_merge( $classes, $rel, $href ) );
+			
+			// Make secret key really... secret!
+			wp_slimstat::$options[ 'secret' ] = wp_hash( uniqid( time(), true ) );
+		}
+		// --- END: Updates for version 3.9.6 ---
+
+		// --- Updates for version 3.9.8.2 ---
+		if ( version_compare( wp_slimstat::$options[ 'version' ], '3.9.8.2', '<' ) ) {
+			// The GeoLite DB is already installed, let's unzip it to improve the tracker's performance
+			if ( file_exists( wp_slimstat::$maxmind_path.'.gz' ) ) {
+				@unlink( wp_slimstat::$maxmind_path.'.gz' );
+				wp_slimstat::download_maxmind_database();
+			}
+		}
+		// --- END: Updates for version 3.9.8.2 ---
+
+		// --- Updates for version 4.0 ---
+		if ( version_compare( wp_slimstat::$options[ 'version' ], '4.0', '<' ) ) {
+			$GLOBALS['wpdb']->query( "DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE 'meta-box-order_slimstat%'" );
+
+			$have_innodb = $GLOBALS[ 'wpdb' ]->get_results( "SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A );
+			$use_innodb = ( !empty( $have_innodb[ 0 ] ) && $have_innodb[ 0 ][ 'Value' ] == 'YES' ) ? 'ENGINE=InnoDB' : '';
+
+			// Create the new table
+			self::_create_table ("
+				CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_4 (
+					id INT UNSIGNED NOT NULL auto_increment,
+					ip INT UNSIGNED DEFAULT 0,
+					other_ip INT UNSIGNED DEFAULT 0,
+					username VARCHAR(255) DEFAULT NULL,
+					country VARCHAR(16) DEFAULT NULL,
+					referer VARCHAR(2048) DEFAULT NULL,
+					resource VARCHAR(2048) DEFAULT NULL,
+					searchterms VARCHAR(2048) DEFAULT NULL,
+					plugins VARCHAR(255) DEFAULT NULL,
+					notes VARCHAR(2048) DEFAULT NULL,
+					visit_id INT UNSIGNED NOT NULL DEFAULT 0,
+					server_latency INT(10) UNSIGNED DEFAULT 0,
+					page_performance INT(10) UNSIGNED DEFAULT 0,
+
+					browser VARCHAR(40) DEFAULT NULL,
+					browser_version VARCHAR(15) DEFAULT NULL,
+					browser_type TINYINT UNSIGNED DEFAULT 0,
+					platform VARCHAR(15) DEFAULT NULL,
+					language VARCHAR(5) DEFAULT NULL,
+					user_agent VARCHAR(2048) DEFAULT NULL,
+
+					resolution VARCHAR(12) DEFAULT NULL,
+					screen_width SMALLINT UNSIGNED DEFAULT 0,
+					screen_height SMALLINT UNSIGNED DEFAULT 0,
+
+					content_type VARCHAR(64) DEFAULT NULL,
+					category VARCHAR(256) DEFAULT NULL,
+					author VARCHAR(64) DEFAULT NULL,
+					content_id BIGINT(20) UNSIGNED DEFAULT 0,
+					
+					outbound_resource VARCHAR(2048) DEFAULT NULL,
+
+					dt INT(10) UNSIGNED DEFAULT 0,
+
+					CONSTRAINT PRIMARY KEY (id),
+					INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stats_dt (dt)
+				) COLLATE utf8_general_ci $use_innodb", $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats_4', $my_wpdb );
+
+			// Create the archive table
+			$my_wpdb->query( "CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive_4 LIKE {$GLOBALS['wpdb']->prefix}slim_stats_4" );
+
+			// Rename old and new tables
+			$my_wpdb->query( "SET foreign_key_checks = 0" );
+			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_3" );
+			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_4 TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
+			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive_3" );
+			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive_4 TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
+
+			// Sometimes db users are not granted the capability to rename tables
+			$slim_stats_4_exists = $my_wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats_4'", 0 );
+			$resolution_exists = $my_wpdb->get_results( "SHOW COLUMNS FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats LIKE 'resolution'" );
+
+			// Something went wrong during the upgrade
+			if ( !empty( $slim_stats_4_exists ) && empty( $resolution_exists ) ) {
+				self::$admin_notice = __( "Slimstat attempted to upgrade your database structure, but the procedure might not have been completed (temporary tables were detected in your database). This might be caused by restrictive user permissions that don't grant commands like RENAME, ALTER/CHANGE and others. You might need to manually consolidate your tables. No worries, we wrote a <a href='https://slimstat.freshdesk.com/support/solutions/articles/12000003148-how-do-i-update-the-table-structure-if-i-upgraded-from-a-version-prior-to-4-0' target='_blank'>step by step guide</a> on how to do that. Please feel free to contact our support team if you have any questions.", 'wp-slimstat' );
+				self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
+				return 0;
+			}
+
+			// Create the new events table
+			$my_wpdb->query( "
+				CREATE TABLE IF NOT EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_events (
+					event_id INT(10) NOT NULL AUTO_INCREMENT,
+					type TINYINT UNSIGNED DEFAULT 0,
+					event_description VARCHAR(64) DEFAULT NULL,
+					notes VARCHAR(256) DEFAULT NULL,
+					position VARCHAR(32) DEFAULT NULL,
+					id INT UNSIGNED NOT NULL DEFAULT 0,
+					dt INT(10) UNSIGNED DEFAULT 0,
+					
+					CONSTRAINT PRIMARY KEY (event_id),
+					INDEX idx_{$GLOBALS['wpdb']->prefix}slim_events (dt),
+					CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
+				) COLLATE utf8_general_ci $use_innodb" );
+			
+			$my_wpdb->query( "
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (
+					id,
+					ip,
+					other_ip,
+					username,
+					country,
+					referer,
+					resource,
+					searchterms,
+					plugins,
+					notes,
+					visit_id,
+					server_latency,
+					page_performance,
+
+					browser,
+					browser_version,
+					browser_type,
+					platform,
+					language,
+					user_agent,
+
+					screen_width,
+					screen_height,
+
+					content_type,
+					category,
+					author,
+					content_id,
+
+					outbound_resource,
+
+					dt
+				)
+				SELECT 
+					t1.id,
+					t1.ip,
+					t1.other_ip,
+					NULLIF(t1.user, ''),
+					NULLIF(t1.country, ''),
+					NULLIF(t1.referer, ''),
+					NULLIF(t1.resource, ''),
+					NULLIF(t1.searchterms, ''),
+					NULLIF(t1.plugins, ''),
+					NULLIF(t1.notes, ''),
+					t1.visit_id,
+					t1.server_latency,
+					t1.page_performance,
+
+					NULLIF(tb.browser, ''),
+					NULLIF(tb.version, ''),
+					tb.type,
+					NULLIF(tb.platform, ''),
+					NULLIF(t1.language, ''),
+					NULLIF(tb.user_agent, ''),
+
+					9812,
+					9812,
+
+					NULLIF(tci.content_type, ''),
+					NULLIF(tci.category, ''),
+					NULLIF(tci.author, ''),
+					tci.content_id,
+
+					NULL,
+
+					t1.dt
+
+				FROM {$GLOBALS['wpdb']->prefix}slim_stats_3 AS t1
+				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers AS tb ON t1.browser_id = tb.browser_id
+				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info AS tci ON t1.content_info_id = tci.content_info_id" );
+			
+			// Copy the events
+			$my_wpdb->query( "
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events (
+					type,
+					event_description,
+					notes,
+					position,
+					id,
+					dt
+				)
+				SELECT
+					tob.type,
+					SUBSTRING(tob.notes, LOCATE('Event:', tob.notes)+6, LOCATE(',', tob.notes, LOCATE('Event:', tob.notes)+6) - LOCATE('Event:', tob.notes)-6),
+					SUBSTRING(tob.notes, 1, LOCATE('Event:', tob.notes) - 3),
+					tob.position,
+					tob.id,
+					tob.dt
+				FROM {$GLOBALS['wpdb']->prefix}slim_outbound AS tob" );
+
+			$my_wpdb->query( "SET foreign_key_checks = 1" );
+		}
+		// --- END: Updates for version 4.0 ---
 
 		// --- Updates for version 4.1.3 ---
 		if ( version_compare( wp_slimstat::$options[ 'version' ], '4.1.3', '<' ) ) {
@@ -766,8 +982,8 @@ class wp_slimstat_admin {
 	/**
 	 * Displays a tab to customize this user's screen options (what boxes to see/hide)
 	 */
-	public static function screen_settings($_current, $_screen){
-		if (strpos($_screen->id, 'page_slimview') === false){
+	public static function screen_settings( $_current = '', $_screen ) {
+		if ( strpos( $_screen->id, 'page_slimview' ) === false ) {
 			return $_current;
 		}
 
@@ -775,6 +991,10 @@ class wp_slimstat_admin {
 
 		// The Reports Library wp_slimstat_reports has already been loaded at this point
 		foreach( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
+			if ( !is_array( $a_report_info[ 'classes' ] ) ) {
+				continue;
+			}
+
 			$checked = !in_array( 'hidden', $a_report_info[ 'classes' ] ) ? ' checked="checked"' : '';
 
 			$current .= "
@@ -819,6 +1039,14 @@ class wp_slimstat_admin {
 	 */
 	public static function hide_geolite_notice(){
 		wp_slimstat::$options['no_maxmind_warning'] = 'yes';
+		die();
+	}
+
+	/**
+	 * Handles the Ajax request to hide the cache notice
+	 */
+	public static function hide_caching_notice(){
+		wp_slimstat::$options['no_caching_warning'] = 'yes';
 		die();
 	}
 
@@ -1032,7 +1260,7 @@ class wp_slimstat_admin {
 			wp_slimstat::$options[$_option_name] = ''; 
 		}
 
-		$is_disabled = (!empty($_option_details['disabled']) && $_option_details['disabled'] === true)?' disabled':'';
+		$is_disabled = (!empty($_option_details['disabled']) && $_option_details['disabled'] === true)?' disabled="disabled"':'';
 
 		echo '<tr'.($_alternate?' class="alternate"':'').'>';
 		switch($_option_details['type']){
@@ -1047,7 +1275,7 @@ class wp_slimstat_admin {
 				<td>
 					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?></span>
 					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
-					<?php if (is_network_admin()): ?><span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_null" value="null" <?php echo (wp_slimstat::$options[$_option_name] == 'null')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_null'])?$_option_details['custom_label_null']:__('Site Specific','wp-slimstat') ?></span><?php endif; ?>
+					<?php if (is_network_admin()): ?><span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_null" value="null" <?php echo (wp_slimstat::$options[$_option_name] == 'null')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_null'])?$_option_details['custom_label_null']:__('Do not override','wp-slimstat') ?></span><?php endif; ?>
 					<span class="description"><?php echo $_option_details['long_description'] ?></span>
 				</td><?php
 				break;

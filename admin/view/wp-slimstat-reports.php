@@ -1620,19 +1620,19 @@ class wp_slimstat_reports {
 			if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
 				$response = simplexml_load_string( $response[ 'body' ] );
 				if ( is_object( $response->SD[ 1 ] ) && is_object( $response->SD[ 1 ]->POPULARITY ) ) {
-					$attributes = $response->SD[ 1 ]->POPULARITY->attributes();
-					if ( !empty( $attributes ) ) {
-						$rankings[ 'alexa_popularity' ] = number_format( floatval( $attributes[ 'TEXT' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					$popularity = $response->SD[ 1 ]->POPULARITY->attributes();
+					if ( !empty( $popularity ) ) {
+						$rankings[ 'alexa_popularity' ] = number_format( floatval( $popularity[ 'TEXT' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 					}
 
-					$attributes = $response->SD[ 1 ]->REACH->attributes();
-					if ( !empty( $attributes ) ) {
-						$rankings[ 'alexa_world_rank' ] = number_format( floatval( $attributes[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					$reach = $response->SD[ 1 ]->REACH->attributes();
+					if ( !empty( $reach ) ) {
+						$rankings[ 'alexa_world_rank' ] = number_format( floatval( $reach[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 					}
 
-					$attributes = $response->SD[ 1 ]->COUNTRY->attributes();
-					if ( !empty( $attributes ) ) {
-						$rankings[ 'alexa_country_rank' ] = number_format( floatval( $attributes[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					$country = $response->SD[ 1 ]->COUNTRY->attributes();
+					if ( !empty( $country ) ) {
+						$rankings[ 'alexa_country_rank' ] = number_format( floatval( $country[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 					}
 				}
 			}

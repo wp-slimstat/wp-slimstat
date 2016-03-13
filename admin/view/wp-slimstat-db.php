@@ -86,6 +86,7 @@ class wp_slimstat_db {
 			'language_calculated' => array( __( 'Language', 'wp-slimstat' ), 'varchar' ),
 			'platform_calculated' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
 			'resource_calculated' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
+			'referer_calculated' => array( __( 'Referer', 'wp-slimstat' ), 'varchar' ),
 			'metric' => array( __( 'Metric', 'wp-slimstat' ), 'varchar' ),
 			'value' => array( __( 'Value', 'wp-slimstat' ), 'varchar' ),
 			'tooltip' => array( __( 'Notes', 'wp-slimstat' ), 'varchar' ),

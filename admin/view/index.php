@@ -132,7 +132,11 @@
 			wp_slimstat_admin::show_alert_message( sprintf( __( "Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6' ) . '<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
 		}
 
-		$filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']);
+		if ( wp_slimstat::$advanced_cache_exists && ( empty( wp_slimstat::$options[ 'no_caching_warning' ] ) || wp_slimstat::$options[ 'no_caching_warning' ] != 'yes' ) && ( empty( wp_slimstat::$options[ 'javascript_mode' ] ) || wp_slimstat::$options[ 'javascript_mode' ] != 'yes' ) ) {
+			wp_slimstat_admin::show_alert_message( sprintf( __( "A caching plugin has been detected on your website. Please <a href='%s' target='_blank'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat' ), 'https://slimstat.freshdesk.com/support/solutions/articles/5000528524-i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra' ) . '<a id="slimstat-hide-caching-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
+		}
+
+		$filters_html = wp_slimstat_reports::get_filters_html( wp_slimstat_db::$filters_normalized[ 'columns' ] );
 		if (!empty($filters_html)){
 			echo "<div id='slimstat-current-filters'>$filters_html</div>";
 		}
@@ -142,6 +146,10 @@
 		<form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form><?php
 
 		foreach( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
+			if ( !is_array( $a_report_info[ 'classes' ] ) ) {
+				continue;
+			}
+
 			wp_slimstat_reports::report_header( $a_report_id );
 
 			// Third party reports can add their own methods via the callback parameter

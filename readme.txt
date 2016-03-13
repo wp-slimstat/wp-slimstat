@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.4.2
-Stable tag: 4.3
+Stable tag: 4.3.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.3.1 =
+* [Note] A few users have pointed out issues upgrading from versions prior to 4.0, which introduced a new table structure (see changelog). About eight months after we released version 4.0, we removed the upgrade script to streamline our codebase and improve performance. Given all these requests for help, we now decided to restore that code, and extend it to include extra checks and warnings, if something goes wrong. Check Settings > Maintenance > Database to see if you have a notice recommending to remove table leftovers from your database.
+* [New] A warning will alert administrator if a caching plugin has been detected, so that they remember to configure Slimstat Analytics accordingly.
+* [Fix] Some users were getting a 403 Forbidden when trying to access the list of add-ons from our servers.
+* [Fix] A PHP Error was being returned by the new Rankings report.
+* [Fix] The Top Referring Domains export was missing one column.
+* [Fix] A bug in the customizer was preventing the reports from being displayed correctly, under certain circumstances.
 
 = 4.3 =
 * [Note] To celebrate Slimstat's 10th birthday, we decided to tweak its name, to better reflect what it does. A few users have pointed out over time that it hadn't been easy for them to find our plugin in the repository. With our limited resources, we have been working on giving our work more visibility, and we are convinced that adding the word "Analytics" to the plugin's name is a step in the right direction. In a few months, we hope to reap the benefits of our efforts.
@@ -145,17 +153,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] Some users were seeing "ghost reports" in their admin screens. A residue from Halloween, we assume.
 * [Fix] Our "loading" animated icon was not being displayed correctly on refresh.
 * [Fix] Chart legend was not being displayed as expected.
-
-= 4.2.0.1 =
-* [Fix] The Access Log report was not displaying referrers and other critical information.
-
-= 4.2 =
-* [Note] You now have full control over the placement of your reports. Move them not just within each screen, but from one screen to another. Build your own custom Overview, by simply dragging and dropping report labels just like you already do with widgets and widget areas. Compare multiple charts in one screen, and much more. Go to Slimstat > Customize and... have fun!
-* [Note] If for any reasons your reports are not being displayed correctly, make sure to give the No Panic button a try (under Settings > Maintenance)
-* [Note] Did you say charts? We are adding new visual reports to Slimstat, to make your metrics easier to interpret. Stay tuned!
-* [Update] Support for the old "Custom Report" screen (already deprecated in version 4.0) has been removed from the source code. Please update your custom reports accordingly.
-* [Update] Renamed and reorganized tabs under Settings to make them easier to understand.
-* [Update] [Flot](http://www.flotcharts.org/) chart library updated to version 0.8.3
 
 == Supporters ==
 Slimstat Analytics is an open source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
