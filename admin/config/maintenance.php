@@ -10,10 +10,10 @@ wp_slimstat_reports::init();
 if (!empty($_REQUEST['action'])){
 	switch ($_REQUEST['action']){
 		case 'activate-indexes':
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx(resource(20))");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx(browser(10))");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx(searchterms(15))");
-			wp_slimstat_admin::show_alert_message(__('Congrats! Slimstat is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )" );
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )" );
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
+			wp_slimstat_admin::show_alert_message( __( 'Congratulations! Slimstat Analytics is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 			break;
 
 		case 'activate-sql-debug-mode':
@@ -24,7 +24,7 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx");
-			wp_slimstat_admin::show_alert_message(__('Indexing has been disabled. Enjoy the extra database space!','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat_admin::show_alert_message( __( 'Indexing has been disabled. Enjoy the extra database space!', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 			break;
 
 		case 'deactivate-sql-debug-mode':
@@ -93,16 +93,16 @@ if (!empty($_REQUEST['action'])){
 			break;
 
 		case 'truncate-archive':
-			wp_slimstat::$wpdb->query("DELETE tsa FROM {$GLOBALS['wpdb']->prefix}slim_stats_archive tsa");
-			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive");
-			wp_slimstat_admin::show_alert_message(__('All the archived records were successfully deleted.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat::$wpdb->query( "DELETE tsa FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive tsa" );
+			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
+			wp_slimstat_admin::show_alert_message( __( 'All the archived records were successfully deleted.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 			break;
 
 		case 'truncate-table':
-			wp_slimstat::$wpdb->query("DELETE te FROM {$GLOBALS['wpdb']->prefix}slim_events te");
-			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_events");
-			wp_slimstat::$wpdb->query("DELETE t1 FROM {$GLOBALS['wpdb']->prefix}slim_stats t1");
-			wp_slimstat::$wpdb->query("OPTIMIZE TABLE {$GLOBALS['wpdb']->prefix}slim_stats");
+			wp_slimstat::$wpdb->query( "DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te" );
+			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
+			wp_slimstat::$wpdb->query( "DELETE t1 FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats t1" );
+			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
 			wp_slimstat_admin::show_alert_message( __( 'All the records were successfully deleted.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 			break;
 
@@ -112,11 +112,11 @@ if (!empty($_REQUEST['action'])){
 }
 
 // Retrieve some information about the tables used by Slimstat
-$check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'stats_resource_idx'");
+$check_index = wp_slimstat::$wpdb->get_results( "SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'" );
 $details_wp_slim_tables = array_merge(
-	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'", ARRAY_A),
-	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_events'", ARRAY_A),
-	wp_slimstat::$wpdb->get_results("SHOW TABLE STATUS LIKE '{$GLOBALS['wpdb']->prefix}slim_stats_archive'", ARRAY_A)
+	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats'", ARRAY_A ),
+	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_events'", ARRAY_A ),
+	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive'", ARRAY_A )
 );
 $have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
