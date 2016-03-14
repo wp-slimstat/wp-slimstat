@@ -65,7 +65,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 = 4.3.1 =
 * [Note] A few users have pointed out issues upgrading from versions prior to 4.0, which introduced a new table structure (see changelog). About eight months after we released version 4.0, we removed the upgrade script to streamline our codebase and improve performance. Given all these requests for help, we now decided to restore that code, and extend it to include extra checks and warnings, if something goes wrong. Check Settings > Maintenance > Database to see if you have a notice recommending to remove table leftovers from your database.
-* [New] A warning will alert administrator if a caching plugin has been detected, so that they remember to configure Slimstat Analytics accordingly.
+* [New] A warning will alert administrators if a caching plugin has been detected, so that they remember to configure Slimstat Analytics accordingly.
 * [Fix] Some users were getting a 403 Forbidden when trying to access the list of add-ons from our servers.
 * [Fix] A PHP Error was being returned by the new Rankings report.
 * [Fix] The Top Referring Domains export was missing one column.
