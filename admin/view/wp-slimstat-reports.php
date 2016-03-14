@@ -1618,7 +1618,7 @@ class wp_slimstat_reports {
 			// Alexa
 			$response = @wp_remote_get( 'http://data.alexa.com/data?cli=10&dat=snbamz&url=' . $site_url, $options );
 			if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
-				$response = simplexml_load_string( $response[ 'body' ] );
+				$response = @simplexml_load_string( $response[ 'body' ] );
 				if ( is_object( $response->SD[ 1 ] ) && is_object( $response->SD[ 1 ]->POPULARITY ) ) {
 					$popularity = $response->SD[ 1 ]->POPULARITY->attributes();
 					if ( !empty( $popularity ) ) {
@@ -1641,7 +1641,7 @@ class wp_slimstat_reports {
 			$options[ 'headers' ][ 'Accept' ] = 'text/xml';
 			$response = @wp_remote_get( 'http://api.facebook.com/restserver.php?method=links.getStats&urls=' . $site_url, $options );
 			if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
-				$response = simplexml_load_string( $response[ 'body' ] );
+				$response = @simplexml_load_string( $response[ 'body' ] );
 				if ( is_object( $response ) && is_object( $response->link_stat ) ) {
 					$rankings['facebook_shares'] = number_format( intval( $response->link_stat->share_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 					$rankings['facebook_clicks'] = number_format( intval( $response->link_stat->click_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
