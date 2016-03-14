@@ -70,6 +70,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] A PHP Error was being returned by the new Rankings report.
 * [Fix] The Top Referring Domains export was missing one column.
 * [Fix] A bug in the customizer was preventing the reports from being displayed correctly, under certain circumstances.
+* [Fix] PHP warning being displayed in textareas (settings) under certain circumstances (thank you, [Chris](https://wordpress.org/support/topic/in-php-debug-mode-errors-appear-in-textareas))
 
 = 4.3 =
 * [Note] To celebrate Slimstat's 10th birthday, we decided to tweak its name, to better reflect what it does. A few users have pointed out over time that it hadn't been easy for them to find our plugin in the repository. With our limited resources, we have been working on giving our work more visibility, and we are convinced that adding the word "Analytics" to the plugin's name is a step in the right direction. In a few months, we hope to reap the benefits of our efforts.
