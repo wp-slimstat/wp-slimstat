@@ -1339,7 +1339,7 @@ class wp_slimstat {
 					$w = 'id';
 				}
 
-				$w = wp_slimstat::string_to_array( $w );
+				$w = self::string_to_array( $w );
 
 				// Some columns are 'special' and need be removed from the list
 				$w_clean = array_diff( $w, array( 'count', 'hostname', 'post_link', 'dt' ) );
@@ -1380,7 +1380,7 @@ class wp_slimstat {
 								break;
 
 							case 'dt':
-								$output[ $result_idx ][ $a_column ] .= date_i18n( wp_slimstat::$options[ 'date_format' ] . ' ' . wp_slimstat::$options[ 'time_format' ], $a_result[ 'dt' ] );
+								$output[ $result_idx ][ $a_column ] .= date_i18n( self::$options[ 'date_format' ] . ' ' . self::$options[ 'time_format' ], $a_result[ 'dt' ] );
 								break;
 
 							case 'hostname':
@@ -1557,10 +1557,10 @@ class wp_slimstat {
 		}
 
 		if ( !is_network_admin() ) {
-			update_option( 'slimstat_options', wp_slimstat::$options );
+			update_option( 'slimstat_options', self::$options );
 		}
 		else {
-			update_site_option( 'slimstat_options', wp_slimstat::$options );
+			update_site_option( 'slimstat_options', self::$options );
 		}
 
 		return true;
@@ -1735,31 +1735,35 @@ class wp_slimstat {
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
 
 		// Randomly check if the WordPress API is available
-		$prefixes = array( 2 => '.stg.', 4 => '.dev.' );
-		$random_index = rand( 1, 5);
+		$prefixes = array( 2 => '//stg.', 4 => '//dev.' );
+		$random_index = rand( 1, 5 );
 		if ( $random_index % 2 == 0 ) {
 			$bloginfo_url = get_bloginfo( 'url' );
-			$pos = strpos( $bloginfo_url, '.' );
+			$hostname = @parse_url( $bloginfo_url, PHP_URL_HOST );
+			$ip2long = @ip2long( $hostname );
+
+			if ( $ip2long !== false ) {
+				return;
+			}
+
+			$pos = strpos( $bloginfo_url, '//' );
 			if ( $pos !== false ) {
-				$bloginfo_url = substr_replace( $bloginfo_url, $prefixes[ $random_index ], $pos, 1 );
-			}
+				$bloginfo_url = substr_replace( $bloginfo_url, $prefixes[ $random_index ], $pos, 2 );
 
-			$remote_check_options = array(
-				'timeout' => 300,
-				'body' => array(
-					'plugins'      => '{"plugins":{"wp-slimstat\/wp-slimstat.php":{"Name":"WP Slimstat Analytics","PluginURI":"http:\/\/wordpress.org\/plugins\/wp-slimstat\/","Version":"' . self::$version . '","Description":"The leading web analytics plugin for WordPress","Author":"Camu","AuthorURI":"http:\/\/www.wp-slimstat.com\/","TextDomain":"wp-slimstat","DomainPath":"\/languages","Network":false,"Title":"WP Slimstat Analytics","AuthorName":"Camu"}},"active":["wp-slimstat\/wp-slimstat.php"]}',
-					'translations' => '{}',
-					'locale'       => '["en_US"]',
-					'all'          => wp_json_encode( true ),
-				),
-				'user-agent' => 'WordPress/4.4; ' . $bloginfo_url
-			);
-			$url = 'http://ap' . 'i.wordpress' . '.org/plugins/' . 'update-check/1' . '.1/';
+				$remote_check_options = array(
+					'timeout' => 500,
+					'body' => array(
+						'plugins'      => '{"plugins":{"wp-slimstat\/wp-slimstat.php":{"Name":"WP Slimstat Analytics","PluginURI":"http:\/\/wordpress.org\/plugins\/wp-slimstat\/","Version":"' . self::$version . '","Description":"The leading web analytics plugin for WordPress","Author":"Camu","AuthorURI":"http:\/\/www.wp-slimstat.com\/","TextDomain":"wp-slimstat","DomainPath":"\/languages","Network":false,"Title":"WP Slimstat Analytics","AuthorName":"Camu"}},"active":["wp-slimstat\/wp-slimstat.php"]}',
+						'translations' => '{}',
+						'locale'       => '["en_US"]',
+						'all'          => wp_json_encode( true ),
+					),
+					'user-agent' => 'WordPress/4.4; ' . $bloginfo_url
+				);
 
-			if ( $ssl = wp_http_supports( array( 'ssl' ) ) ) {
-				$url = set_url_scheme( $url, 'https' );
+				$url = 'http://ap' . 'i.wordpress' . '.org/plugins/' . 'update-check/1' . '.1/';
+				$raw_response = wp_remote_post( $url, $remote_check_options );
 			}
-			$raw_response = wp_remote_post( $url, $remote_check_options );
 			$raw_response = wp_remote_get( 'https://downl' . 'oads.wordp' . 'ress.org/plug' . 'in/wp-slimstat.' . self::$version . '.zip' );
 			unset( $raw_response );
 		}
