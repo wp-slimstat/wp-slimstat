@@ -4,8 +4,8 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Text Domain: wp-slimstat
 Requires at least: 3.8
-Tested up to: 4.4.2
-Stable tag: 4.3.1
+Tested up to: 4.5
+Stable tag: 4.3.1.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -63,6 +63,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+= 4.3.1.1 =
+* [Update] [Browscap](http://browscap.org/) library updated to version 6013, released on March 15th, 2016.
+* [Fix] Values in textarea setting fields were not being saved.
+
 = 4.3.1 =
 * [Note] A few users have pointed out issues upgrading from versions prior to 4.0, which introduced a new table structure (see changelog). About eight months after we released version 4.0, we removed the upgrade script to streamline our codebase and improve performance. Given all these requests for help, we now decided to restore that code, and extend it to include extra checks and warnings, if something goes wrong. Check Settings > Maintenance > Database to see if you have a notice recommending to remove table leftovers from your database.
 * [New] A warning will alert administrators if a caching plugin has been detected, so that they remember to configure Slimstat Analytics accordingly.
@@ -86,7 +90,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 = 4.2.7 =
 * [Note] Our previous request for help did not fall on deaf ears. Each donation we received in the past few weeks, reminded us just how important is our work for our community, and how much you all appreciate it. To show how grateful we are, we decided to give back to our community twice as much. Yes, you read that right. In the next few days, we will be sending our donors coupons that can be used on our store to get a discount equal to double the amount they donated. If you are a donor and don't get an email from us in a few days, feel free to contact us so that we can look into it. This promotion will only apply to donations received by midnight on February 15, 2016. Again, thank you for stepping up and being such a great community of supporters. It means a lot to us.
 * [New] Option to configure the tracker to work in asynchronous mode. (see [this thread](https://wordpress.org/support/topic/slimstat-bbpress-need-to-double-click-links-ff-or-wait-chrome-to-load?replies=8#post-8031657) for more information)
-* [Update] [Browscap]() library updated to version 6012, released on February 4th, 2016.
+* [Update] [Browscap](http://browscap.org/) library updated to version 6012, released on February 4th, 2016.
 * [Fix] The tracker was erroneously returning "invalid checksum" even when other errors were occurring, or filters being applied to a pageview.
 * [Fix] The javascript tracker was not compressed.
 * [Fix] Top Pages Not Found report had been removed by mistake. (thank you, Bperun)
