@@ -1588,7 +1588,48 @@ class wp_slimstat_reports {
 
 		// Check if we have a valied transient
 		if ( false === ( $rankings = get_transient( 'slimstat_ranking_values' ) ) ) {
-			$rankings = array( 'seomoz_equity_backlinks' => 0, 'seomoz_mozrank' => 0, 'seomoz_equity_links' => 0, 'facebook_shares' => 0, 'facebook_clicks' => 0, 'alexa_world_rank' => 0, 'alexa_country_rank' => 0, 'alexa_popularity' => 0 );
+			$rankings = array(
+				'seomoz_equity_backlinks' => array(
+					0,
+					__( 'Backlinks', 'wp-slimstat' ),
+					__( 'Number of external equity links to your website.', 'wp-slimstat' )
+				),
+				'seomoz_mozrank' => array(
+					0,
+					__( 'MozRank', 'wp-slimstat' ),
+					__( 'MozRank of the URL, in a normalized 10-point score. MozRank represents a link popularity score. It reflects the importance of any given web page on the Internet.', 'wp-slimstat' )
+				),
+				'seomoz_equity_links' => array(
+					0,
+					__( 'Equity Links', 'wp-slimstat' ),
+					__( 'Number of authority-passing links (including followed links and redirects, internal or external) to your website. Set the permalink filter here above to get the corresponding metrics in this report.', 'wp-slimstat' )
+				),
+				'facebook_shares' => array(
+					0,
+					__( 'Facebook Shares', 'wp-slimstat' ),
+					''
+				),
+				'facebook_clicks' => array(
+					0,
+					__( 'Facebook Clicks', 'wp-slimstat' ),
+					__( 'How many times links to your website have been clicked on Facebook.', 'wp-slimstat' )
+				),
+				'alexa_world_rank' => array( 
+					0,
+					__( 'Alexa World Rank', 'wp-slimstat' ),
+					__( 'Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data.', 'wp-slimstat' )
+				),
+				'alexa_country_rank' => array(
+					0,
+					__( 'Alexa Country Rank', 'wp-slimstat' ),
+					''
+				),
+				'alexa_popularity' => array(
+					0,
+					__( 'Alexa Popularity', 'wp-slimstat' ),
+					''
+				)
+			);
 
 			if ( !empty( wp_slimstat::$options[ 'mozcom_access_id' ] ) && !empty( wp_slimstat::$options[ 'mozcom_secret_key' ] ) ) {
 				$expiration_token = time() + 300;
@@ -1601,15 +1642,15 @@ class wp_slimstat_reports {
 					$response = @json_decode( $response[ 'body' ] );
 					if ( is_object( $response ) ) {
 						if ( !empty( $response->ujid ) ) {
-							$rankings[ 'seomoz_equity_links' ] = number_format( intval( $response->ujid ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'seomoz_equity_links' ][ 0 ] = number_format( intval( $response->ujid ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 						}
 
 						if ( !empty( $response->ueid ) ) {
-							$rankings[ 'seomoz_equity_backlinks' ] = number_format( intval( $response->ueid ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'seomoz_equity_backlinks' ][ 0 ] = number_format( intval( $response->ueid ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 						}
 
 						if ( !empty( $response->umrp ) ) {
-							$rankings[ 'seomoz_mozrank' ] = number_format( floatval( $response->umrp ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'seomoz_mozrank' ][ 0 ] = number_format( floatval( $response->umrp ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
 						}
 					}
 				}
@@ -1619,20 +1660,33 @@ class wp_slimstat_reports {
 			$response = @wp_remote_get( 'http://data.alexa.com/data?cli=10&dat=snbamz&url=' . $site_url, $options );
 			if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
 				$response = @simplexml_load_string( $response[ 'body' ] );
-				if ( is_object( $response->SD[ 1 ] ) && is_object( $response->SD[ 1 ]->POPULARITY ) ) {
-					$popularity = $response->SD[ 1 ]->POPULARITY->attributes();
-					if ( !empty( $popularity ) ) {
-						$rankings[ 'alexa_popularity' ] = number_format( floatval( $popularity[ 'TEXT' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+				if ( is_object( $response->SD[ 1 ] ) ) {
+					if ( $response->SD[ 1 ]->POPULARITY && $response->SD[ 1 ]->POPULARITY->attributes() ) {
+						$popularity = $response->SD[ 1 ]->POPULARITY->attributes();
+						if ( !empty( $popularity ) ) {
+							$rankings[ 'alexa_popularity' ][ 0 ] = number_format( floatval( $popularity[ 'TEXT' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+						}
 					}
 
-					$reach = $response->SD[ 1 ]->REACH->attributes();
-					if ( !empty( $reach ) ) {
-						$rankings[ 'alexa_world_rank' ] = number_format( floatval( $reach[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					if ( $response->SD[ 1 ]->REACH && $response->SD[ 1 ]->REACH->attributes() ) {
+						$reach = $response->SD[ 1 ]->REACH->attributes();
+						if ( !empty( $reach ) ) {
+							$rankings[ 'alexa_world_rank' ][ 0 ] = number_format( floatval( $reach[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+						}
 					}
 
-					$country = $response->SD[ 1 ]->COUNTRY->attributes();
-					if ( !empty( $country ) ) {
-						$rankings[ 'alexa_country_rank' ] = number_format( floatval( $country[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					if ( $response->SD[ 1 ]->COUNTRY && $response->SD[ 1 ]->COUNTRY->attributes() ) {
+						$country = $response->SD[ 1 ]->COUNTRY->attributes();
+						if ( !empty( $country ) ) {
+							$rankings[ 'alexa_country_rank' ][ 0 ] = number_format( floatval( $country[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+						}
+					}
+					else if ( $response->SD[ 1 ]->RANK && $response->SD[ 1 ]->RANK->attributes() ) {
+						$rank = $response->SD[ 1 ]->RANK->attributes();
+						if ( !empty( $rank ) ) {
+							$rankings[ 'alexa_country_rank' ][ 0 ] = number_format( floatval( $rank[ 'DELTA' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'alexa_country_rank' ][ 1 ] = __( 'Alexa Delta', 'wp-slimstat' );
+						}
 					}
 				}
 			}
@@ -1643,30 +1697,18 @@ class wp_slimstat_reports {
 			if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
 				$response = @simplexml_load_string( $response[ 'body' ] );
 				if ( is_object( $response ) && is_object( $response->link_stat ) ) {
-					$rankings['facebook_shares'] = number_format( intval( $response->link_stat->share_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
-					$rankings['facebook_clicks'] = number_format( intval( $response->link_stat->click_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					$rankings[ 'facebook_shares' ][ 0 ] = number_format( intval( $response->link_stat->share_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					$rankings[ 'facebook_clicks' ][ 0 ] = number_format( intval( $response->link_stat->click_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 				}
 			}
 
 			// Store rankings as transients for 12 hours
 			//set_transient('slimstat_ranking_values', $rankings, 43200);
 		}
-		?>
-		
-		<p><?php self::inline_help( __( "Number of authority-passing links (including followed links and redirects, internal or external) to your website. Set the permalink filter here above to get the corresponding metrics in this report.", 'wp-slimstat' ) ) ?>
-			<?php _e('Equity Links', 'wp-slimstat') ?> <span><?php echo $rankings[ 'seomoz_equity_links' ] ?></span></p>
-		<p><?php self::inline_help( __( "Number of external equity links to your website.", 'wp-slimstat' ) ) ?>
-			<?php _e('Backlinks', 'wp-slimstat') ?> <span><?php echo $rankings[ 'seomoz_equity_backlinks' ] ?></span></p>
-		<p><?php self::inline_help( __( "MozRank of the URL, in a normalized 10-point score. MozRank represents a link popularity score. It reflects the importance of any given web page on the Internet.", 'wp-slimstat' ) ) ?>
-			<?php _e('MozRank', 'wp-slimstat') ?> <span><?php echo $rankings[ 'seomoz_mozrank' ] ?></span></p>
-		<p><?php self::inline_help( __( "Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data.", 'wp-slimstat' ) ) ?>
-			<?php _e( 'Alexa World Rank', 'wp-slimstat' ) ?> <span><?php echo $rankings[ 'alexa_world_rank' ] ?></span></p>
-		<p><?php _e( 'Alexa Country Rank', 'wp-slimstat' ) ?> <span><?php echo $rankings[ 'alexa_country_rank' ] ?></span></p>
-		<p><?php _e( 'Alexa Popularity', 'wp-slimstat' ) ?> <span><?php echo $rankings[ 'alexa_popularity' ] ?></span></p>
-		<p><?php self::inline_help( __( "How many times your site has been shared by someone on the social network.", 'wp-slimstat' ) ) ?>
-			<?php _e( 'Facebook Shares', 'wp-slimstat' ) ?> <span><?php echo $rankings[ 'facebook_shares' ] ?></span></p>
-		<p><?php self::inline_help(__("How many times links to your website have been clicked on Facebook.",'wp-slimstat')) ?>
-			<?php _e( 'Facebook Clicks', 'wp-slimstat' ) ?> <span><?php echo $rankings[ 'facebook_clicks' ] ?></span></p><?php
+
+		foreach ( $rankings as $a_ranking ) {
+			echo '<p>' . self::inline_help( $a_ranking[ 2 ], false ) . $a_ranking[ 1 ] . '<span>' . $a_ranking[ 0 ] . '</span></p>';
+		}
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			die();
@@ -1991,7 +2033,13 @@ class wp_slimstat_reports {
 	}
 	
 	public static function inline_help( $_text = '', $_echo = true ) {
-		$wrapped_text = "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>$_text</span>";
+		if ( !empty( $_text ) ) {
+			$wrapped_text = "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>$_text</span>";
+		}
+		else {
+			$wrapped_text = '';
+		}
+
 		if ($_echo)
 			echo $wrapped_text;
 		else

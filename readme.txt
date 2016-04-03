@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.5
-Stable tag: 4.3.1.1
+Stable tag: 4.3.1.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.3.1.2 =
+* [Update] Activity log entries are now grouped both by IP and by username (thank you []())
+* [Fix] A PHP Warning was being returned by the new Rankings report.
 
 = 4.3.1.1 =
 * [Update] [Browscap](http://browscap.org/) library updated to version 6013, released on March 15th, 2016.
