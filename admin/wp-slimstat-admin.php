@@ -1182,6 +1182,85 @@ class wp_slimstat_admin {
 		</form><?php
 	}
 
+	public static function settings_table_row($_option_name = '', $_option_details = array(), $_alternate = false){
+		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
+		
+		if (!isset(wp_slimstat::$options[$_option_name])){
+			wp_slimstat::$options[$_option_name] = ''; 
+		}
+
+		$is_disabled = (!empty($_option_details['disabled']) && $_option_details['disabled'] === true)?' disabled="disabled"':'';
+
+		echo '<tr'.($_alternate?' class="alternate"':'').'>';
+		switch($_option_details['type']){
+			case 'section_header': ?>
+				<td colspan="2" class="slimstat-options-section-header"><?php echo $_option_details['description'] ?></td><?php
+				break;
+
+			case 'static': ?>
+				<td colspan="2"><?php echo $_option_details['description'] ?> <textarea rows="7" class="large-text code" readonly><?php echo $_option_details['long_description'] ?></textarea></td><?php
+				break;
+
+			case 'yesno': ?>
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?></span>
+					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
+					<?php if (is_network_admin()): ?><span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_null" value="null" <?php echo (wp_slimstat::$options[$_option_name] == 'null')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_null'])?$_option_details['custom_label_null']:__('Do not override','wp-slimstat') ?></span><?php endif; ?>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
+				break;
+
+			case 'select': ?>
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element">
+						<select <?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php
+							foreach($_option_details['values'] as $a_key => $a_value){
+								$is_selected = (wp_slimstat::$options[$_option_name] == $a_key)?' selected':'';
+								echo "<option$is_selected value='$a_key'>$a_value</option>";
+							}
+						?></select>
+					</span>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
+				break;
+				
+			case 'text':
+			case 'integer': ?>
+				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
+				<td>
+					<span class="block-element"><?php echo $_option_details['before_input_field'] ?><input<?php echo $is_disabled ?> type="<?php echo ($_option_details['type'] == 'integer')?'number':'text' ?>" class="<?php echo ($_option_details['type'] == 'integer')?'small-text':'regular-text' ?>" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="<?php echo wp_slimstat::$options[$_option_name] ?>"> <?php echo $_option_details['after_input_field'] ?></span>
+					<span class="description"><?php echo $_option_details['long_description'] ?></span>
+				</td><?php
+				break;
+
+			case 'custom':
+				echo '<td colspan="2">' . $_option_details[ 'description' ] . '<br/><br/>' . $_option_details[ 'markup' ] . '</td>';
+				break;
+
+			default:
+		}
+		echo '</tr>';
+	}
+
+	protected static function settings_textarea( $_option_name = '', $_option_details = array( 'description' =>'', 'type' => '', 'long_description' => '', 'rows' => 2 ), $_alternate = false ) {
+		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
+		$is_disabled = (!empty($_option_details['disabled']) && $_option_details['disabled'] === true)?' disabled="disabled"':'';
+
+		if (!isset(wp_slimstat::$options[$_option_name])){
+			wp_slimstat::$options[$_option_name] = '';
+		} ?>
+
+		<tr<?php echo ($_alternate?' class="alternate"':''); ?>>
+			<td colspan="2">
+				<label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label>
+				<p class="description"><?php echo $_option_details['long_description'] ?></p>
+				<p><textarea class="large-text code" cols="50" rows="<?php echo array_key_exists( 'rows', $_option_details ) ? $_option_details[ 'rows' ] : 3 ?>" id="<?php echo $_option_name ?>" name="options[<?php echo $_option_name ?>]"<?php echo $is_disabled ?>><?php echo !empty( wp_slimstat::$options[ $_option_name ] ) ? stripslashes( wp_slimstat::$options[ $_option_name ] ) : '' ?></textarea> <span class="description"><?php echo $_option_details[ 'after_input_field' ] ?></span></p>
+			</td>
+		</tr><?php
+	}
+
 	/**
 	 * Contextual help
 	 */
@@ -1252,76 +1331,6 @@ class wp_slimstat_admin {
 		);
 	}
 	// end contextual_help
-
-	public static function settings_table_row($_option_name = '', $_option_details = array(), $_alternate = false){
-		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
-		
-		if (!isset(wp_slimstat::$options[$_option_name])){
-			wp_slimstat::$options[$_option_name] = ''; 
-		}
-
-		$is_disabled = (!empty($_option_details['disabled']) && $_option_details['disabled'] === true)?' disabled="disabled"':'';
-
-		echo '<tr'.($_alternate?' class="alternate"':'').'>';
-		switch($_option_details['type']){
-			case 'section_header': ?>
-				<td colspan="2" class="slimstat-options-section-header"><?php echo $_option_details['description'] ?></td><?php
-				break;
-			case 'static': ?>
-				<td colspan="2"><?php echo $_option_details['description'] ?> <textarea rows="7" class="large-text code" readonly><?php echo $_option_details['long_description'] ?></textarea></td><?php
-				break;
-			case 'yesno': ?>
-				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-				<td>
-					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_yes" value="yes"<?php echo (wp_slimstat::$options[$_option_name] == 'yes')?' checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_yes'])?$_option_details['custom_label_yes']:__('Yes','wp-slimstat') ?></span>
-					<span class="block-element"><input type="radio"<?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_no" value="no" <?php echo (wp_slimstat::$options[$_option_name] == 'no')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_no'])?$_option_details['custom_label_no']:__('No','wp-slimstat') ?></span>
-					<?php if (is_network_admin()): ?><span class="block-element"><input type="radio" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>_null" value="null" <?php echo (wp_slimstat::$options[$_option_name] == 'null')?'  checked="checked"':''; ?>> <?php echo !empty($_option_details['custom_label_null'])?$_option_details['custom_label_null']:__('Do not override','wp-slimstat') ?></span><?php endif; ?>
-					<span class="description"><?php echo $_option_details['long_description'] ?></span>
-				</td><?php
-				break;
-			case 'select': ?>
-				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-				<td>
-					<span class="block-element">
-						<select <?php echo $is_disabled ?> name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>"><?php
-							foreach($_option_details['values'] as $a_key => $a_value){
-								$is_selected = (wp_slimstat::$options[$_option_name] == $a_key)?' selected':'';
-								echo "<option$is_selected value='$a_key'>$a_value</option>";
-							}
-						?></select>
-					</span>
-					<span class="description"><?php echo $_option_details['long_description'] ?></span>
-				</td><?php
-				break;
-				
-			case 'text':
-			case 'integer': ?>
-				<th scope="row"><label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label></th>
-				<td>
-					<span class="block-element"><?php echo $_option_details['before_input_field'] ?><input<?php echo $is_disabled ?> type="<?php echo ($_option_details['type'] == 'integer')?'number':'text' ?>" class="<?php echo ($_option_details['type'] == 'integer')?'small-text':'regular-text' ?>" name="options[<?php echo $_option_name ?>]" id="<?php echo $_option_name ?>" value="<?php echo wp_slimstat::$options[$_option_name] ?>"> <?php echo $_option_details['after_input_field'] ?></span>
-					<span class="description"><?php echo $_option_details['long_description'] ?></span>
-				</td><?php
-				break;
-			default:
-		}
-		echo '</tr>';
-	}
-
-	protected static function settings_textarea( $_option_name = '', $_option_details = array( 'description' =>'', 'type' => '', 'long_description' => '', 'rows' => 2 ), $_alternate = false ) {
-		$_option_details = array_merge(array('description' =>'', 'type' => '', 'long_description' => '', 'before_input_field' => '', 'after_input_field' => '', 'custom_label_yes' => '', 'custom_label_no' => ''), $_option_details);
-		
-		if (!isset(wp_slimstat::$options[$_option_name])){
-			wp_slimstat::$options[$_option_name] = '';
-		} ?>
-
-		<tr<?php echo ($_alternate?' class="alternate"':''); ?>>
-			<td colspan="2">
-				<label for="<?php echo $_option_name ?>"><?php echo $_option_details['description'] ?></label>
-				<p class="description"><?php echo $_option_details['long_description'] ?></p>
-				<p><textarea class="large-text code" cols="50" rows="<?php echo array_key_exists( 'rows', $_option_details ) ? $_option_details[ 'rows' ] : 3 ?>" id="<?php echo $_option_name ?>" name="options[<?php echo $_option_name ?>]"><?php echo !empty( wp_slimstat::$options[ $_option_name ] ) ? stripslashes( wp_slimstat::$options[ $_option_name ] ) : '' ?></textarea> <span class="description"><?php echo $_option_details[ 'after_input_field' ] ?></span></p>
-			</td>
-		</tr><?php
-	}
 
 	/**
 	 * Creates a table in the database

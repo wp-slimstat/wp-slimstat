@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.5
-Stable tag: 4.3.1.2
+Stable tag: 4.3.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -63,8 +63,15 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+= 4.3.2 =
+* [Note] We are working on a new add-on, Slimstat Sentinel, which will alert you if suspicious activity is detected on your website. Stay tuned.
+* [New] Added support for "current post/page" to shortcodes. Now you won't need to write any PHP code to show, for example, the number of pageviews for a given page. Just use the following shortcode: `[slimstat f='count' w='id']content_id equals current[/slimstat]`. You can find more information on our [knowledge base](http://docs.wp-slimstat.com)
+* [Update] [Browscap](http://browscap.org/) library updated to version 6014, released on April 21th, 2016.
+* [Fix] When the Network Settings add-on was activated and subsequently deactivated, some of the original options would be lost.
+* [Fix] Text areas in the settings were not becoming read-only if the corresponding option was set "network wide" via the Network Settings add-on.
+
 = 4.3.1.2 =
-* [Update] Activity log entries are now grouped both by IP and by username (thank you []())
+* [Update] Activity log entries are now grouped both by IP and by username.
 * [Fix] A PHP Warning was being returned by the new Rankings report.
 
 = 4.3.1.1 =

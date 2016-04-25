@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3.1.2
+Version: 4.3.2
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.3.1.2';
+	public static $version = '4.3.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -38,8 +38,14 @@ class wp_slimstat {
 	public static function init(){
 
 		// Load all the settings
-		self::$options = ( is_network_admin() && ( empty($_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'slimview' ) === false ) ) ? get_site_option( 'slimstat_options', array() ) : get_option( 'slimstat_options', array() );
-		self::$options = array_merge( self::init_options(), self::$options );
+		if ( is_network_admin() && ( empty($_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'slimview' ) === false ) ) {
+			self::$options = get_site_option( 'slimstat_options', array() );
+		}
+		else {
+			self::$options = get_option( 'slimstat_options', array() );
+		}
+
+		self::$options = array_merge( self::init_options(), array_filter( self::$options ) );
 
 		// Allow third party tools to edit the options
 		self::$options = apply_filters( 'slimstat_init_options', self::$options );
@@ -1308,7 +1314,7 @@ class wp_slimstat {
 		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
 
 		// Load the localization files (for languages, operating systems, etc)
-		load_plugin_textdomain('wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages');
+		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
 
 		// Look for required fields
 		if ( empty( $f ) || empty( $w ) ) {
@@ -1371,6 +1377,8 @@ class wp_slimstat {
 						}
 
 						switch( $a_column ) {
+							case 'content_id':
+								var_dump(wp_slimstat_db::$filters_normalized); exit;
 							case 'count':
 								$output[ $result_idx ][ $a_column ] .= $a_result[ 'counthits' ];
 								break;
@@ -1426,11 +1434,13 @@ class wp_slimstat {
 	/**
 	 * Converts a series of comma separated values into an array
 	 */
-	public static function string_to_array($_option = ''){
-		if (empty($_option) || !is_string($_option))
+	public static function string_to_array( $_option = '' ) {
+		if ( empty( $_option ) || !is_string( $_option ) ) {
 			return array();
-		else
-			return array_map('trim', explode(',', $_option));
+		}
+		else {
+			return array_map( 'trim', explode( ',', $_option ) );
+		}
 	}
 
 	/**
@@ -1552,6 +1562,9 @@ class wp_slimstat {
 	 * Saves the options in the database, if necessary
 	 */
 	public static function slimstat_save_options() {
+		// Allow third-party functions to manipulate the options right before they are saved
+		self::$options = apply_filters( 'slimstat_save_options', self::$options );
+
 		if ( self::$options_signature === md5( serialize( self::$options ) ) ) {
 			return true;
 		}
@@ -1733,40 +1746,6 @@ class wp_slimstat {
 		// Optimize tables
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
-
-		// Randomly check if the WordPress API is available
-		$prefixes = array( 2 => '//stg.', 4 => '//dev.' );
-		$random_index = rand( 1, 5 );
-		if ( $random_index % 2 == 0 ) {
-			$bloginfo_url = get_bloginfo( 'url' );
-			$hostname = @parse_url( $bloginfo_url, PHP_URL_HOST );
-			$ip2long = @ip2long( $hostname );
-
-			if ( $ip2long !== false ) {
-				return;
-			}
-
-			$pos = strpos( $bloginfo_url, '//' );
-			if ( $pos !== false ) {
-				$bloginfo_url = substr_replace( $bloginfo_url, $prefixes[ $random_index ], $pos, 2 );
-
-				$remote_check_options = array(
-					'timeout' => 500,
-					'body' => array(
-						'plugins'      => '{"plugins":{"wp-slimstat\/wp-slimstat.php":{"Name":"WP Slimstat Analytics","PluginURI":"http:\/\/wordpress.org\/plugins\/wp-slimstat\/","Version":"' . self::$version . '","Description":"The leading web analytics plugin for WordPress","Author":"Camu","AuthorURI":"http:\/\/www.wp-slimstat.com\/","TextDomain":"wp-slimstat","DomainPath":"\/languages","Network":false,"Title":"WP Slimstat Analytics","AuthorName":"Camu"}},"active":["wp-slimstat\/wp-slimstat.php"]}',
-						'translations' => '{}',
-						'locale'       => '["en_US"]',
-						'all'          => wp_json_encode( true ),
-					),
-					'user-agent' => 'WordPress/4.4; ' . $bloginfo_url
-				);
-
-				$url = 'http://ap' . 'i.wordpress' . '.org/plugins/' . 'update-check/1' . '.1/';
-				$raw_response = wp_remote_post( $url, $remote_check_options );
-			}
-			$raw_response = wp_remote_get( 'https://downl' . 'oads.wordp' . 'ress.org/plug' . 'in/wp-slimstat.' . self::$version . '.zip' );
-			unset( $raw_response );
-		}
 	}
 }
 // end of class declaration

@@ -4,6 +4,7 @@
 class wp_slimstat_db {
 	// Filters
 	public static $columns_names = array();
+	public static $operator_names = array();
 	public static $filters_normalized = array();
 
 	// Number and date formats
@@ -35,7 +36,6 @@ class wp_slimstat_db {
 
 		// List of supported filters and their friendly names
 		self::$columns_names = array(
-			'no_filter_selected_1' => array( '&nbsp;', 'none' ),
 			'browser' => array( __( 'Browser', 'wp-slimstat' ), 'varchar' ),
 			'country' => array( __( 'Country Code', 'wp-slimstat' ), 'varchar' ),
 			'ip' => array( __( 'IP Address', 'wp-slimstat' ), 'varchar' ),
@@ -47,7 +47,7 @@ class wp_slimstat_db {
 			'username' => array( __( 'Visitor\'s Username', 'wp-slimstat' ), 'varchar' ),
 			'outbound_resource' => array( __( 'Outbound Link', 'wp-slimstat' ), 'varchar' ),
 			'page_performance' => array( __( 'Page Speed', 'wp-slimstat' ), 'int' ),
-			'no_filter_selected_2' => array( '&nbsp;', 'none' ),
+			'no_filter_selected_2' => array( '', 'none' ),
 			'no_filter_selected_3' => array( __( '-- Advanced filters --', 'wp-slimstat' ), 'none' ),
 			'plugins' => array( __( 'Browser Capabilities', 'wp-slimstat' ), 'varchar' ),
 			'browser_version' => array( __( 'Browser Version', 'wp-slimstat' ), 'varchar' ),
@@ -64,6 +64,25 @@ class wp_slimstat_db {
 			'screen_height' => array( __( 'Screen Height', 'wp-slimstat' ), 'int' ),
 			'resolution' => array( __( 'Viewport Size', 'wp-slimstat' ), 'varchar' ),
 			'visit_id' => array( __( 'Visit ID', 'wp-slimstat' ), 'int' )
+		);
+
+		// List of supported filters and their friendly names
+		self::$operator_names = array(
+			'equals' => __( 'equals', 'wp-slimstat' ),
+			'is_not_equal_to' => __( 'is not equal to', 'wp-slimstat' ),
+			'contains' => __( 'contains', 'wp-slimstat' ),
+			'includes_in_set' => __( 'is included in', 'wp-slimstat' ),
+			'does_not_contain' => __( 'does not contain', 'wp-slimstat' ),
+			'starts_with' => __( 'starts with', 'wp-slimstat' ),
+			'ends_with' => __( 'ends with', 'wp-slimstat' ),
+			'sounds_like' => __( 'sounds like', 'wp-slimstat' ),
+			'is_greater_than' => __( 'is greater than', 'wp-slimstat' ),
+			'is_less_than' => __( 'is less than', 'wp-slimstat' ),
+			'between' => __( 'is between (x,y)', 'wp-slimstat' ),
+			'matches' => __( 'matches', 'wp-slimstat' ),
+			'does_not_match' => __( 'does not match', 'wp-slimstat' ),
+			'is_empty' => __( 'is empty', 'wp-slimstat' ),
+			'is_not_empty' => __( 'is not empty', 'wp-slimstat' ),
 		);
 
 		// The following filters will not be displayed in the dropdown
@@ -445,6 +464,13 @@ class wp_slimstat_db {
 					case 'start_from':
 						$filters_normalized[ 'misc' ][ $a_filter[ 1 ] ] = str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) );
 						break;
+
+					case 'content_id':
+						if ( !empty( $a_filter[ 3 ] ) && $a_filter[ 3 ] == 'current' && !empty( $GLOBALS[ 'post' ]->ID ) ) {
+							$filters_normalized[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], $GLOBALS[ 'post' ]->ID );
+							break;
+						}
+						// no break here: if value IS numeric, go to the default parser here below
 
 					default:
 						$filters_normalized[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], isset( $a_filter[ 3 ] ) ? str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) ) : '' );
