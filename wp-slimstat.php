@@ -1,4 +1,4 @@
-<?php
+var_<?php
 /*
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
@@ -1377,8 +1377,6 @@ class wp_slimstat {
 						}
 
 						switch( $a_column ) {
-							case 'content_id':
-								var_dump(wp_slimstat_db::$filters_normalized); exit;
 							case 'count':
 								$output[ $result_idx ][ $a_column ] .= $a_result[ 'counthits' ];
 								break;
