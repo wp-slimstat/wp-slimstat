@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.5
-Stable tag: 4.3.2
+Stable tag: 4.3.2.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.3.2.1 =
+* [Fix] Some static text ( var_ ) sneaked into the source code. Apologies for the inconvenience.
 
 = 4.3.2 =
 * [Note] We are working on a new add-on, Slimstat Sentinel, which will alert you if suspicious activity is detected on your website. Stay tuned.
