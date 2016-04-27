@@ -63,6 +63,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+
 = 4.3.2.1 =
 * [Fix] Some static text ( var_ ) sneaked into the source code. Apologies for the inconvenience.
 
