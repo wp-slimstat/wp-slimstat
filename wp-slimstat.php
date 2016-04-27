@@ -10,6 +10,7 @@ Text Domain: wp-slimstat
 Domain Path: /languages
 */
 
+
 if ( !empty( wp_slimstat::$options ) ) {
 	return true;
 }
