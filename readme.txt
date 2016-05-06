@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.5
-Stable tag: 4.3.2.1
+Stable tag: 4.3.2.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -14,7 +14,7 @@ Stable tag: 4.3.2.1
 * Real-time activity log, server latency, heatmaps, email reports, export data to Excel, full IPv6 support, and much more
 * Compatible with W3 Total Cache, WP SuperCache and most caching plugins
 * Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
-* Available in multiple languages: English, Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
+* Available in multiple languages: English, Belarusian ([UStarCash](https://www.ustarcash.com/)), Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = What are people saying about Slimstat Analytics? =
@@ -63,6 +63,12 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+= 4.3.2.2 =
+* [Note] Just a quick note to let you know that we will be focusing on a major project in the next few weeks, so both development and customer support might be less responsive than usual. Please be patient, and refrain from submitting the same request more than once. Thank you!
+* [New] Slimstat now speaks Belarusian thanks to Natasha from [UStarCash](https://www.ustarcash.com/).
+* [Fix] Bug in Javascript tracker with Async mode enabled was duplicating entries in the Access Log.
+* [Fix] Variable type mismatch was preventing scheduled posts from publishing (thank you, [Salpertriere](https://wordpress.org/support/topic/latest-version-stops-scheduled-posts-from-publishing?replies=5#post-8365376))
+* [Fix] Some Javascript strings (used to generate the charts) where not correctly encoded and were breaking the source code in certain localizations.
 
 = 4.3.2.1 =
 * [Fix] Some static text ( var_ ) sneaked into the source code. Apologies for the inconvenience.

@@ -3,20 +3,19 @@
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3.2.1
+Version: 4.3.2.2
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
 */
 
-
 if ( !empty( wp_slimstat::$options ) ) {
 	return true;
 }
 
 class wp_slimstat {
-	public static $version = '4.3.2.1';
+	public static $version = '4.3.2.2';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -151,7 +150,7 @@ class wp_slimstat {
 		}
 
 		if ( self::$data_js[ 'op' ] == 'add' ) {
-			self::slimtrack( 3212 );
+			self::slimtrack();
 		}
 		else{
 			// Update an existing pageview with client-based information (resolution, plugins installed, etc)
@@ -225,11 +224,6 @@ class wp_slimstat {
 	 * Core tracking functionality
 	 */
 	public static function slimtrack( $_argument = '' ) {
-		// Do not track requests to admin-ajax.php itself, unless the function is being called by slimtrack_ajax
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX && $_argument != 3212 ) {
-			return $_argument;
-		}
-
 		self::toggle_date_i18n_filters( false );
 		self::$stat[ 'dt' ] = date_i18n( 'U' );
 		self::$stat[ 'notes' ] = array();
@@ -313,7 +307,6 @@ class wp_slimstat {
 					}
 				}
 			}
-
 		}
 
 		self::$stat = self::$stat + $content_info;

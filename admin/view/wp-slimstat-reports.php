@@ -1222,28 +1222,6 @@ class wp_slimstat_reports {
 
 	public static function show_chart( $_args = array() ){ 
 		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
-
-		// switch ( $_args[ 'type' ] ) {
-		// 	case 'slim_p1_01':
-		// 		$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(ip)', 'COUNT(DISTINCT(ip))' );
-		// 		$chart_labels = array( __( 'Pageviews', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
-		// 		break;
-
-		// 	case 'slim_p2_01':
-		// 		$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT visit_id)', 'COUNT(DISTINCT ip)', '(visit_id > 0 AND browser_type <> 1)' );
-		// 		$chart_labels = array( __( 'Visits', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
-		// 		break;
-
-		// 	case 'slim_p3_01':
-		// 		$chart_data = wp_slimstat_db::get_data_for_chart( 'COUNT(DISTINCT(referer))', 'COUNT(DISTINCT(ip))', '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")' );
-		// 		$chart_labels = array( __( 'Domains', 'wp-slimstat' ), __( 'Unique IPs', 'wp-slimstat' ) );
-		// 		break;
-
-		// 	default:
-		// 		$chart_data = array();
-		// 		$chart_labels = array( '', '' );
-		// 		break;
-		// }
 	?>
 		<div class="chart-placeholder"></div><div class="chart-legend"></div>
 		<script type="text/javascript">
@@ -1251,7 +1229,7 @@ class wp_slimstat_reports {
 
 			<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
 			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ].push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
+				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
@@ -1269,7 +1247,7 @@ class wp_slimstat_reports {
 				}
 			});
 			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ].push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ] ?>',
+				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
@@ -1289,7 +1267,7 @@ class wp_slimstat_reports {
 			<?php endif ?>
 
 			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>'  ].push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
+				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;
@@ -1307,7 +1285,7 @@ class wp_slimstat_reports {
 				}
 			});
 			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>'  ].push({
-				label: '<?php echo $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ] ?>',
+				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
 				data: [<?php 
 					$tmp_serialize = array();
 					$j = 0;

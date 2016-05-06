@@ -3,8 +3,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Development (trunk)\n"
-"POT-Creation-Date: 2016-04-29 19:44-0500\n"
-"PO-Revision-Date: 2016-04-29 19:45-0500\n"
+"POT-Creation-Date: 2016-05-04 22:23-0500\n"
+"PO-Revision-Date: 2016-05-04 22:23-0500\n"
 "Last-Translator: WP Slimstat <support@wp-slimstat.com>\n"
 "Language-Team: Natasha\n"
 "Language: be\n"
@@ -108,7 +108,7 @@ msgstr ""
 "выходных спасылак, загрузкі і г.д. Гэтая опцыя ігнаруецца, калі рэжым "
 "адсочвання усталяваны на кліенце."
 
-#: ../admin/config/index.php:97 ../admin/view/wp-slimstat-reports.php:1372
+#: ../admin/config/index.php:97 ../admin/view/wp-slimstat-reports.php:1350
 msgid "Off"
 msgstr "выключана"
 
@@ -211,16 +211,16 @@ msgstr ""
 
 #: ../admin/config/index.php:105 ../admin/view/wp-slimstat-reports.php:81
 #: ../admin/view/wp-slimstat-reports.php:90
-#: ../admin/view/wp-slimstat-reports.php:1388
-#: ../admin/view/wp-slimstat-reports.php:1546
+#: ../admin/view/wp-slimstat-reports.php:1366
+#: ../admin/view/wp-slimstat-reports.php:1524
 msgid "Pageviews"
 msgstr "прагляд старонкі"
 
 #: ../admin/config/index.php:105 ../admin/view/wp-slimstat-reports.php:91
 #: ../admin/view/wp-slimstat-reports.php:285
 #: ../admin/view/wp-slimstat-reports.php:526
-#: ../admin/view/wp-slimstat-reports.php:1403
-#: ../admin/view/wp-slimstat-reports.php:1448
+#: ../admin/view/wp-slimstat-reports.php:1381
+#: ../admin/view/wp-slimstat-reports.php:1426
 msgid "Unique IPs"
 msgstr "Унікальныя IP-адрасы"
 
@@ -271,7 +271,7 @@ msgstr ""
 
 #: ../admin/config/index.php:109 ../admin/view/index.php:89
 #: ../admin/view/wp-slimstat-db.php:98
-#: ../admin/view/wp-slimstat-reports.php:1372
+#: ../admin/view/wp-slimstat-reports.php:1350
 msgid "days"
 msgstr "дні"
 
@@ -1418,7 +1418,7 @@ msgid "Old Tables"
 msgstr "Старыя таблiцы"
 
 #: ../admin/config/maintenance.php:298
-#, fuzzy, php-format
+#, php-format
 msgid ""
 "It looks like your database was upgraded from a version prior to 4.0. Our "
 "upgrade procedure follows a conservative approach, and does not "
@@ -1430,13 +1430,13 @@ msgid ""
 "%s. When in doubt, do not hesitate to contact us for help."
 msgstr ""
 "Падобна на тое, што ваша база дадзеных была абноўлена з версіі да 4.0. Наша "
-"працэдура абнаўлення варта кансерватыўны падыход, і не будзе аўтаматычна "
-"выконваць любую зборку смецця. Іншымі словамі, старыя данныяне выдаляюцца з "
+"працэдура абнаўлення мае кансерватыўны падыход, і не будзе аўтаматычна "
+"выконваць любую зборку смецця. Іншымі словамі, старыя данныя не выдаляюцца з "
 "базы дадзеных. Гэта дазваляе нашым карыстальнікам лёгка адкаціць ў працоўны "
 "стан у выпадку ўзнікнення праблем. Аднак, калі ўсё працуе, як і чакалася "
 "(трэкера і справаздач), вы можаце ўвайсці ў PhpMyAdmin і выдаліце наступныя "
-"табліцы, калі яны існуюць:% S. Калі ёсць сумневы, не саромейцеся звяртацца "
-"да нас па дапамогу."
+"табліцы, калі яны існуюць: %s. Калі ёсць сумненні, не саромейцеся звяртацца "
+"да нас за дапамогай."
 
 #: ../admin/view/addons.php:19
 #, php-format
@@ -1503,19 +1503,18 @@ msgid "Installed and Active"
 msgstr "Усталяваць і актызаваць:"
 
 #: ../admin/view/index.php:8
-#, fuzzy
 msgid "Filter"
-msgstr "фільтры"
+msgstr "фільтр"
 
 #: ../admin/view/index.php:33
 msgid "Load"
 msgstr "загрузка"
 
-#: ../admin/view/index.php:53 ../admin/view/wp-slimstat-reports.php:1410
+#: ../admin/view/index.php:53 ../admin/view/wp-slimstat-reports.php:1388
 msgid "Today"
 msgstr "Сёння"
 
-#: ../admin/view/index.php:54 ../admin/view/wp-slimstat-reports.php:1413
+#: ../admin/view/index.php:54 ../admin/view/wp-slimstat-reports.php:1391
 msgid "Yesterday"
 msgstr "Учора"
 
@@ -1640,7 +1639,7 @@ msgid "Syndication Reader"
 msgstr "Чытач сіндыкацыі"
 
 #: ../admin/view/right-now.php:41 ../admin/view/wp-slimstat-reports.php:1036
-#: ../admin/view/wp-slimstat-reports.php:1771
+#: ../admin/view/wp-slimstat-reports.php:1749
 msgid "No data to display"
 msgstr "Няма дадзеных для адлюстравання"
 
@@ -1649,7 +1648,7 @@ msgid "Date and Time"
 msgstr "Дата і час"
 
 #: ../admin/view/right-now.php:69 ../admin/view/wp-slimstat-reports.php:1088
-#: ../admin/view/wp-slimstat-reports.php:1814 ../wp-slimstat.php:1385
+#: ../admin/view/wp-slimstat-reports.php:1792 ../wp-slimstat.php:1379
 msgid "c-"
 msgstr ""
 
@@ -1864,7 +1863,7 @@ msgid "Event ID"
 msgstr "ID падзеі"
 
 #: ../admin/view/wp-slimstat-db.php:116
-#: ../admin/view/wp-slimstat-reports.php:1785
+#: ../admin/view/wp-slimstat-reports.php:1763
 msgid "Type"
 msgstr "тып"
 
@@ -2037,7 +2036,7 @@ msgid "Human Visits"
 msgstr "чалавечыя прагляды"
 
 #: ../admin/view/wp-slimstat-reports.php:284
-#: ../admin/view/wp-slimstat-reports.php:1444
+#: ../admin/view/wp-slimstat-reports.php:1422
 msgid "Visits"
 msgstr "прагляды"
 
@@ -2334,7 +2333,7 @@ msgid "Code"
 msgstr "Код"
 
 #: ../admin/view/wp-slimstat-reports.php:1102
-#: ../languages/dynamic_strings.php:339 ../wp-slimstat.php:1397
+#: ../languages/dynamic_strings.php:339 ../wp-slimstat.php:1391
 msgid "l-"
 msgstr ""
 
@@ -2347,65 +2346,65 @@ msgid "Referrer"
 msgstr "Referrer"
 
 #: ../admin/view/wp-slimstat-reports.php:1174
-#: ../admin/view/wp-slimstat-reports.php:1428
-#: ../admin/view/wp-slimstat-reports.php:1484
-#: ../admin/view/wp-slimstat-reports.php:1490
-#: ../admin/view/wp-slimstat-reports.php:1496
-#: ../admin/view/wp-slimstat-reports.php:1502
-#: ../admin/view/wp-slimstat-reports.php:1508
-#: ../admin/view/wp-slimstat-reports.php:1514
-#: ../admin/view/wp-slimstat-reports.php:1520
-#: ../admin/view/wp-slimstat-reports.php:1792
+#: ../admin/view/wp-slimstat-reports.php:1406
+#: ../admin/view/wp-slimstat-reports.php:1462
+#: ../admin/view/wp-slimstat-reports.php:1468
+#: ../admin/view/wp-slimstat-reports.php:1474
+#: ../admin/view/wp-slimstat-reports.php:1480
+#: ../admin/view/wp-slimstat-reports.php:1486
+#: ../admin/view/wp-slimstat-reports.php:1492
+#: ../admin/view/wp-slimstat-reports.php:1498
+#: ../admin/view/wp-slimstat-reports.php:1770
 msgid "Hits"
 msgstr "колькасць праглядаў"
 
-#: ../admin/view/wp-slimstat-reports.php:1355
+#: ../admin/view/wp-slimstat-reports.php:1333
 msgid "Dataset Size"
 msgstr "Памер набора дадзеных"
 
-#: ../admin/view/wp-slimstat-reports.php:1357
+#: ../admin/view/wp-slimstat-reports.php:1335
 msgid "Total number of records stored in the database."
 msgstr "Агульная колькасць запісаў, якія захоўваюцца ў базе дадзеных."
 
-#: ../admin/view/wp-slimstat-reports.php:1359
+#: ../admin/view/wp-slimstat-reports.php:1337
 msgid "DB Size"
 msgstr "Памер набора дадзеных"
 
-#: ../admin/view/wp-slimstat-reports.php:1362
+#: ../admin/view/wp-slimstat-reports.php:1340
 msgid "Tracking Enabled"
 msgstr "Уключыць адсочванне"
 
-#: ../admin/view/wp-slimstat-reports.php:1365
+#: ../admin/view/wp-slimstat-reports.php:1343
 msgid "Javascript Mode"
 msgstr "Асінхронны рэжым"
 
-#: ../admin/view/wp-slimstat-reports.php:1368
+#: ../admin/view/wp-slimstat-reports.php:1346
 msgid "Tracking Browser Caps"
 msgstr "адсочваць заглушку браўзэра"
 
-#: ../admin/view/wp-slimstat-reports.php:1371
+#: ../admin/view/wp-slimstat-reports.php:1349
 msgid "Auto purge"
 msgstr "аўтаматычная чыстка"
 
-#: ../admin/view/wp-slimstat-reports.php:1374
+#: ../admin/view/wp-slimstat-reports.php:1352
 msgid "Oldest pageview"
 msgstr "Старыя старонкi"
 
-#: ../admin/view/wp-slimstat-reports.php:1375
+#: ../admin/view/wp-slimstat-reports.php:1353
 msgid "No visits"
 msgstr "няма наведвання"
 
-#: ../admin/view/wp-slimstat-reports.php:1377
+#: ../admin/view/wp-slimstat-reports.php:1355
 #: ../admin/wp-slimstat-admin.php:112
 msgid "Geolocation"
 msgstr "Геалакацыя"
 
-#: ../admin/view/wp-slimstat-reports.php:1379
+#: ../admin/view/wp-slimstat-reports.php:1357
 msgid "Date when the MaxMind Geolocation database was last updated."
 msgstr "Дата, калі база дадзеных MaxMind Geolocation была абнаўленна."
 
-#: ../admin/view/wp-slimstat-reports.php:1390
-#: ../admin/view/wp-slimstat-reports.php:1548
+#: ../admin/view/wp-slimstat-reports.php:1368
+#: ../admin/view/wp-slimstat-reports.php:1526
 msgid ""
 "A request to load a single HTML file. Slimstat logs a \"pageview\" each time "
 "the tracking code is executed."
@@ -2413,15 +2412,15 @@ msgstr ""
 "Запыт на загрузку аднаго файла HTML.  Slimstat рэгіструе \"прагляд старонкі"
 "\" кожны раз, калі выконваецца код адсочвання."
 
-#: ../admin/view/wp-slimstat-reports.php:1392
+#: ../admin/view/wp-slimstat-reports.php:1370
 msgid "Days in Range"
 msgstr "Дні ў дыяпазоне"
 
-#: ../admin/view/wp-slimstat-reports.php:1395
+#: ../admin/view/wp-slimstat-reports.php:1373
 msgid "Average Daily Pageviews"
 msgstr "Сярэдняя колькасць прагляду старонак"
 
-#: ../admin/view/wp-slimstat-reports.php:1397
+#: ../admin/view/wp-slimstat-reports.php:1375
 msgid ""
 "How many pages have been visited on average every day during the current "
 "period."
@@ -2429,11 +2428,11 @@ msgstr ""
 "Колькі старонак былі наведаны у сярэднім кожны дзень на працягу бягучага "
 "перыяду."
 
-#: ../admin/view/wp-slimstat-reports.php:1399
+#: ../admin/view/wp-slimstat-reports.php:1377
 msgid "From Search Results"
 msgstr "З вынікаў пошуку"
 
-#: ../admin/view/wp-slimstat-reports.php:1401
+#: ../admin/view/wp-slimstat-reports.php:1379
 msgid ""
 "Visitors who landed on your site after searching for a keyword on Google, "
 "Yahoo, etc."
@@ -2441,7 +2440,7 @@ msgstr ""
 "Наведвальнікі, якія прыйшлi на ваш сайт пасля пошуку па ключавым слове у "
 "Google, Yahoo і г.д."
 
-#: ../admin/view/wp-slimstat-reports.php:1405
+#: ../admin/view/wp-slimstat-reports.php:1383
 msgid ""
 "Used to differentiate between multiple requests to download a file from one "
 "internet address (IP) and requests originating from many distinct addresses"
@@ -2450,11 +2449,11 @@ msgstr ""
 "аднаго інтэрнэт-адрасы (IP) і запытаў, якія адбываюцца з многіх розных "
 "адрасоў"
 
-#: ../admin/view/wp-slimstat-reports.php:1407
+#: ../admin/view/wp-slimstat-reports.php:1385
 msgid "Last 30 minutes"
 msgstr "Апошнiя 30 хвiлiн"
 
-#: ../admin/view/wp-slimstat-reports.php:1446
+#: ../admin/view/wp-slimstat-reports.php:1424
 msgid ""
 "A visit is a session of at most 30 minutes. Returning visitors are counted "
 "multiple times if they perform multiple visits."
@@ -2462,15 +2461,15 @@ msgstr ""
 "Час візіт не больш за 30 хвілін.  Наведвальнікі, якія вярнуліся, "
 "падлічваюцца некалькі разоў, калі яны выконваюць некалькі візітаў."
 
-#: ../admin/view/wp-slimstat-reports.php:1450
+#: ../admin/view/wp-slimstat-reports.php:1428
 msgid "It includes only traffic generated by human visitors."
 msgstr "Уключае ў сябе толькі трафік, генераваны чалавека наведвальнікаў."
 
-#: ../admin/view/wp-slimstat-reports.php:1452
+#: ../admin/view/wp-slimstat-reports.php:1430
 msgid "Bounce rate"
 msgstr "Паказчык адмоваў"
 
-#: ../admin/view/wp-slimstat-reports.php:1454
+#: ../admin/view/wp-slimstat-reports.php:1432
 msgid ""
 "Percentage of single-page visits, i.e. visits in which the person left your "
 "site from the entrance page."
@@ -2478,75 +2477,75 @@ msgstr ""
 "Працэнт наведванняў адной старонкі, гэта значыць наведванняў, у якіх "
 "наведвальнік пакідае сайт са старонкі ўваходу."
 
-#: ../admin/view/wp-slimstat-reports.php:1456
+#: ../admin/view/wp-slimstat-reports.php:1434
 msgid "Known visitors"
 msgstr "вядомыя наведвальнікі"
 
-#: ../admin/view/wp-slimstat-reports.php:1458
+#: ../admin/view/wp-slimstat-reports.php:1436
 msgid "Visitors who had previously left a comment on your blog."
 msgstr "Наведвальнікі, якія раней пакінуў каментар на вашым блогу."
 
-#: ../admin/view/wp-slimstat-reports.php:1460
+#: ../admin/view/wp-slimstat-reports.php:1438
 msgid "New visitors"
 msgstr "новыя наведвальнiкi"
 
-#: ../admin/view/wp-slimstat-reports.php:1462
+#: ../admin/view/wp-slimstat-reports.php:1440
 msgid "Human users who visited your site only once."
 msgstr "Чалавечыя карыстальнікаў, якія наведалі ваш сайт толькі адзін раз."
 
-#: ../admin/view/wp-slimstat-reports.php:1464
+#: ../admin/view/wp-slimstat-reports.php:1442
 msgid "Bots"
 msgstr "Боты"
 
-#: ../admin/view/wp-slimstat-reports.php:1467
+#: ../admin/view/wp-slimstat-reports.php:1445
 msgid "Pageviews per visit"
 msgstr "Праглядаў старонак за адно наведванне"
 
-#: ../admin/view/wp-slimstat-reports.php:1470
+#: ../admin/view/wp-slimstat-reports.php:1448
 msgid "Longest visit"
 msgstr "Самы доугi вiзiт"
 
-#: ../admin/view/wp-slimstat-reports.php:1471
+#: ../admin/view/wp-slimstat-reports.php:1449
 msgid "hits"
 msgstr "колькасць праглядаў"
 
-#: ../admin/view/wp-slimstat-reports.php:1482
+#: ../admin/view/wp-slimstat-reports.php:1460
 msgid "0 - 30 seconds"
 msgstr "0 - 30 секунд"
 
-#: ../admin/view/wp-slimstat-reports.php:1488
+#: ../admin/view/wp-slimstat-reports.php:1466
 msgid "31 - 60 seconds"
 msgstr "31-60 секунд"
 
-#: ../admin/view/wp-slimstat-reports.php:1494
+#: ../admin/view/wp-slimstat-reports.php:1472
 msgid "1 - 3 minutes"
 msgstr "1 - 3 хвіліны"
 
-#: ../admin/view/wp-slimstat-reports.php:1500
+#: ../admin/view/wp-slimstat-reports.php:1478
 msgid "3 - 5 minutes"
 msgstr "3-5 хвіліны"
 
-#: ../admin/view/wp-slimstat-reports.php:1506
+#: ../admin/view/wp-slimstat-reports.php:1484
 msgid "5 - 7 minutes"
 msgstr "5- 7 хвіліны"
 
-#: ../admin/view/wp-slimstat-reports.php:1512
+#: ../admin/view/wp-slimstat-reports.php:1490
 msgid "7 - 10 minutes"
 msgstr "7-10 хвіліны"
 
-#: ../admin/view/wp-slimstat-reports.php:1518
+#: ../admin/view/wp-slimstat-reports.php:1496
 msgid "More than 10 minutes"
 msgstr "Больш за 10  хвілін"
 
-#: ../admin/view/wp-slimstat-reports.php:1530
+#: ../admin/view/wp-slimstat-reports.php:1508
 msgid "Average visit duration"
 msgstr "Сярэдняя працягласць наведвання"
 
-#: ../admin/view/wp-slimstat-reports.php:1550
+#: ../admin/view/wp-slimstat-reports.php:1528
 msgid "Unique Referrers"
 msgstr "унікальныя рэферэрам"
 
-#: ../admin/view/wp-slimstat-reports.php:1552
+#: ../admin/view/wp-slimstat-reports.php:1530
 msgid ""
 "A referrer (or referring site) is the site that a visitor previously visited "
 "before following a link to your site."
@@ -2554,11 +2553,11 @@ msgstr ""
 "Рэферэрам з'яўляецца сайт, які наведвальнік раней наведвалі да наступнага "
 "спасылку на ваш сайт."
 
-#: ../admin/view/wp-slimstat-reports.php:1554
+#: ../admin/view/wp-slimstat-reports.php:1532
 msgid "Direct Pageviews"
 msgstr "Прамы прагляд старонак"
 
-#: ../admin/view/wp-slimstat-reports.php:1556
+#: ../admin/view/wp-slimstat-reports.php:1534
 msgid ""
 "Visitors who visited the site by typing the URL directly into their browser. "
 "<em>Direct</em> can also refer to the visitors who clicked on the links from "
@@ -2571,11 +2570,11 @@ msgstr ""
 "паведамленнях электроннай пошты ці спасылкі з дакументаў, якія не ўключаюць "
 "у сябе адсочванне зменных."
 
-#: ../admin/view/wp-slimstat-reports.php:1558
+#: ../admin/view/wp-slimstat-reports.php:1536
 msgid "From a search result"
 msgstr "З вынікаў пошуку"
 
-#: ../admin/view/wp-slimstat-reports.php:1560
+#: ../admin/view/wp-slimstat-reports.php:1538
 msgid ""
 "Visitors who came to your site via searches on Google or some other search "
 "engine."
@@ -2583,11 +2582,11 @@ msgstr ""
 "Наведвальнікі, якія прыйшлі на ваш сайт з дапамогай пошуку на Google або "
 "якой-небудзь іншай пошукавай сістэмы."
 
-#: ../admin/view/wp-slimstat-reports.php:1562
+#: ../admin/view/wp-slimstat-reports.php:1540
 msgid "Unique Landing Pages"
 msgstr "Унікальныя мэтавыя старонкі"
 
-#: ../admin/view/wp-slimstat-reports.php:1564
+#: ../admin/view/wp-slimstat-reports.php:1542
 msgid ""
 "The first page that a user views during a session. This is also known as the "
 "<em>entrance page</em>. For example, if they search for 'Brooklyn Office "
@@ -2600,20 +2599,20 @@ msgstr ""
 "старонцы, ён атрымлівае падлічваюцца (для гэтага візіту) у якасці мэтавай "
 "старонкі."
 
-#: ../admin/view/wp-slimstat-reports.php:1566
+#: ../admin/view/wp-slimstat-reports.php:1544
 msgid "Bounce Pages"
 msgstr "Паказчык адмоваў"
 
-#: ../admin/view/wp-slimstat-reports.php:1568
+#: ../admin/view/wp-slimstat-reports.php:1546
 msgid "Number of single page visits to your site over the selected period."
 msgstr ""
 "Колькасць аднамесных наведванняў старонак вашага сайта на абраны перыяд."
 
-#: ../admin/view/wp-slimstat-reports.php:1570
+#: ../admin/view/wp-slimstat-reports.php:1548
 msgid "New Visitors Rate"
 msgstr "Стайка новых наведвальнікау"
 
-#: ../admin/view/wp-slimstat-reports.php:1572
+#: ../admin/view/wp-slimstat-reports.php:1550
 msgid ""
 "Percentage of single page visits, i.e. visits in which the person left your "
 "site from the entrance page."
@@ -2621,11 +2620,11 @@ msgstr ""
 "Працэнт наведванняў адной старонцы, то ёсць наведванняў, у якіх наведвальнік "
 "пакідае сайт са старонкі ўваходу."
 
-#: ../admin/view/wp-slimstat-reports.php:1574
+#: ../admin/view/wp-slimstat-reports.php:1552
 msgid "Currently from search engines"
 msgstr "З вынікаў пошуку"
 
-#: ../admin/view/wp-slimstat-reports.php:1576
+#: ../admin/view/wp-slimstat-reports.php:1554
 msgid ""
 "Visitors who visited the site in the last 5 minutes coming from a search "
 "engine."
@@ -2633,19 +2632,19 @@ msgstr ""
 "Наведвальнікі, якія наведалі сайт на працягу апошніх 5 хвілін, якія прыйшлi "
 "з пошукавай сістэмы."
 
-#: ../admin/view/wp-slimstat-reports.php:1594
+#: ../admin/view/wp-slimstat-reports.php:1572
 msgid "Backlinks"
 msgstr "Зваротныя спасылкі"
 
-#: ../admin/view/wp-slimstat-reports.php:1595
+#: ../admin/view/wp-slimstat-reports.php:1573
 msgid "Number of external equity links to your website."
 msgstr "Колькасць знешніх фондавых спасылак на ваш сайт."
 
-#: ../admin/view/wp-slimstat-reports.php:1599
+#: ../admin/view/wp-slimstat-reports.php:1577
 msgid "MozRank"
 msgstr "Moz Званне"
 
-#: ../admin/view/wp-slimstat-reports.php:1600
+#: ../admin/view/wp-slimstat-reports.php:1578
 msgid ""
 "MozRank of the URL, in a normalized 10-point score. MozRank represents a "
 "link popularity score. It reflects the importance of any given web page on "
@@ -2655,11 +2654,11 @@ msgstr ""
 "папулярнасці спасылак. Ен адлюстроўвае важнасць той ці іншай вэб-старонкі ў "
 "Інтэрнэце."
 
-#: ../admin/view/wp-slimstat-reports.php:1604
+#: ../admin/view/wp-slimstat-reports.php:1582
 msgid "Equity Links"
 msgstr "Адзінства спасылак"
 
-#: ../admin/view/wp-slimstat-reports.php:1605
+#: ../admin/view/wp-slimstat-reports.php:1583
 msgid ""
 "Number of authority-passing links (including followed links and redirects, "
 "internal or external) to your website. Set the permalink filter here above "
@@ -2669,23 +2668,23 @@ msgstr ""
 "ўнутраныя або знешнія) на свой вэб-сайт. Усталюйце пастаянную фільтр тут, "
 "каб атрымаць адпаведныя паказчыкі ў гэтай справаздачы."
 
-#: ../admin/view/wp-slimstat-reports.php:1609
+#: ../admin/view/wp-slimstat-reports.php:1587
 msgid "Facebook Shares"
 msgstr "Падзяліцца на Facebook "
 
-#: ../admin/view/wp-slimstat-reports.php:1614
+#: ../admin/view/wp-slimstat-reports.php:1592
 msgid "Facebook Clicks"
 msgstr "Нацiскi на Facebook"
 
-#: ../admin/view/wp-slimstat-reports.php:1615
+#: ../admin/view/wp-slimstat-reports.php:1593
 msgid "How many times links to your website have been clicked on Facebook."
 msgstr "Колькі разоў спасылкі на ваш сайт былі націснулі на Facebook."
 
-#: ../admin/view/wp-slimstat-reports.php:1619
+#: ../admin/view/wp-slimstat-reports.php:1597
 msgid "Alexa World Rank"
 msgstr "Alexa Сусветны ранг"
 
-#: ../admin/view/wp-slimstat-reports.php:1620
+#: ../admin/view/wp-slimstat-reports.php:1598
 msgid ""
 "Alexa is a subsidiary company of Amazon.com which provides commercial web "
 "traffic data."
@@ -2693,23 +2692,23 @@ msgstr ""
 "Alexa з'яўляецца даччынай кампаніяй Amazon.com, які дае камерцыйныя дадзеныя "
 "вэб-трафіку."
 
-#: ../admin/view/wp-slimstat-reports.php:1624
+#: ../admin/view/wp-slimstat-reports.php:1602
 msgid "Alexa Country Rank"
 msgstr "Alexa Краiны ранг"
 
-#: ../admin/view/wp-slimstat-reports.php:1629
+#: ../admin/view/wp-slimstat-reports.php:1607
 msgid "Alexa Popularity"
 msgstr "Alexa Папулярнасць"
 
-#: ../admin/view/wp-slimstat-reports.php:1688
+#: ../admin/view/wp-slimstat-reports.php:1666
 msgid "Alexa Delta"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-reports.php:1722
+#: ../admin/view/wp-slimstat-reports.php:1700
 msgid "Content Items"
 msgstr "Змест пунктау"
 
-#: ../admin/view/wp-slimstat-reports.php:1724
+#: ../admin/view/wp-slimstat-reports.php:1702
 msgid ""
 "This value includes not only posts, but also custom post types, regardless "
 "of their status"
@@ -2717,35 +2716,35 @@ msgstr ""
 "Гэта значэнне ўключае ў сябе не толькі пасты, але і прыстасаваныя тыпы "
 "поста, незалежна ад іх статусу"
 
-#: ../admin/view/wp-slimstat-reports.php:1726
+#: ../admin/view/wp-slimstat-reports.php:1704
 msgid "Posts"
 msgstr "пасты"
 
-#: ../admin/view/wp-slimstat-reports.php:1729
+#: ../admin/view/wp-slimstat-reports.php:1707
 msgid "Pages"
 msgstr "Старонкi"
 
-#: ../admin/view/wp-slimstat-reports.php:1732
+#: ../admin/view/wp-slimstat-reports.php:1710
 msgid "Attachments"
 msgstr "укладаннi"
 
-#: ../admin/view/wp-slimstat-reports.php:1735
+#: ../admin/view/wp-slimstat-reports.php:1713
 msgid "Revisions"
 msgstr "перагляды"
 
-#: ../admin/view/wp-slimstat-reports.php:1738
+#: ../admin/view/wp-slimstat-reports.php:1716
 msgid "Comments"
 msgstr "каментары"
 
-#: ../admin/view/wp-slimstat-reports.php:1741
+#: ../admin/view/wp-slimstat-reports.php:1719
 msgid "Avg Comments per Post"
 msgstr "Сярэдняя колькасць  каментарау  на паведамленне"
 
-#: ../admin/view/wp-slimstat-reports.php:1744
+#: ../admin/view/wp-slimstat-reports.php:1722
 msgid "Avg Server Latency"
 msgstr "сярэднii час затрымкi сервера"
 
-#: ../admin/view/wp-slimstat-reports.php:1746
+#: ../admin/view/wp-slimstat-reports.php:1724
 msgid ""
 "Latency is the amount of time it takes for the host server to receive and "
 "process a request for a page object. The amount of latency depends largely "
@@ -2755,1125 +2754,1125 @@ msgstr ""
 "прыёму і апрацоўкі запыту для аб'екта старонкі. Велічыня латэнтнага часу  "
 "шмат у чым залежыць ад таго, як далёка карыстальнік знаходзіцца з сервера."
 
-#: ../admin/view/wp-slimstat-reports.php:1789
+#: ../admin/view/wp-slimstat-reports.php:1767
 msgid "Coordinates"
 msgstr "каардынаты"
 
-#: ../admin/view/wp-slimstat-reports.php:1789
+#: ../admin/view/wp-slimstat-reports.php:1767
 msgid "Date"
 msgstr "дата"
 
 # Unknown
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-xx"
 msgstr "Unknown"
 
 # 	Afghanistan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-af"
-msgstr "Afghanistan"
+msgstr "Афганістан"
 
 # 	Åland Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ax"
-msgstr "Aland Islands"
+msgstr "Аландскія астравы"
 
 # 	Albania
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-al"
-msgstr "Albania"
+msgstr "Албанія"
 
 # 	Algeria
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-dz"
-msgstr "Algeria"
+msgstr "Алжыр"
 
 # 	Andorra
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ad"
-msgstr "Andorra"
+msgstr "Андора"
 
 # 	Angola
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ao"
-msgstr "Angola"
+msgstr "Ангола"
 
 # 	Anguilla
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ai"
-msgstr "Anguilla"
+msgstr "Ангілья"
 
 # 	Antigua and Barbuda
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ag"
-msgstr "Antigua and Barbuda"
+msgstr "Антыгуа і Барбуда"
 
 # 	Argentina
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ar"
-msgstr "Argentina"
+msgstr "Аргенціна"
 
 # 	Armenia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-am"
-msgstr "Armenia"
+msgstr "Арменія"
 
 # 	Aruba
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-aw"
-msgstr "Aruba"
+msgstr "Аруба"
 
 # 	Australia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-au"
-msgstr "Australia"
+msgstr "Аўстралія"
 
 # 	Austria
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-at"
-msgstr "Austria"
+msgstr "Аўстрыя"
 
 # 	Azerbaijan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-az"
-msgstr "Azerbaijan"
+msgstr "Азербайджан"
 
 # 	Bahamas
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bs"
-msgstr "Bahamas"
+msgstr "Багамскія а-вы"
 
 # 	Bahrain
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bh"
-msgstr "Bahrain"
+msgstr "Бахрэйн"
 
 # 	Bangladesh
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bd"
-msgstr "Bangladesh"
+msgstr "Бангладэш"
 
 # 	Barbados
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bb"
-msgstr "Barbados"
+msgstr "Барбадас"
 
 # 	Belarus
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-by"
-msgstr "Belarus"
+msgstr "Беларусь"
 
 # 	Belgium
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-be"
-msgstr "Belgium"
+msgstr "Бельгія"
 
 # 	Belize
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bz"
-msgstr "Belize"
+msgstr "Беліз"
 
 # 	Benin
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bj"
-msgstr "Benin"
+msgstr "Бенін"
 
 # 	Bermuda
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bm"
-msgstr "Bermuda"
+msgstr "Бэрмудзкія выспы"
 
 # 	Bhutan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bt"
-msgstr "Bhutan"
+msgstr "Бутан"
 
 # 	Bolivia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bo"
-msgstr "Bolivia"
+msgstr "Балівія"
 
 # 	Bosnia and Herzegovina
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ba"
-msgstr "Bosnia and Herzegovina"
+msgstr "Боснія і Герцагавіна"
 
 # 	Botswana
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bw"
-msgstr "Botswana"
+msgstr "Батсвана"
 
 # 	Brazil
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-br"
-msgstr "Brazil"
+msgstr "Бразілія"
 
 # 	Brunei Darussalam
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bn"
-msgstr "Brunei Darussalam"
+msgstr "Бруней Даруссалам"
 
 # 	Bulgaria
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bg"
-msgstr "Bulgaria"
+msgstr "Балгарыя"
 
 # 	Burkina Faso
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bf"
-msgstr "Burkina Faso"
+msgstr "Буркіна-Фасо"
 
 # 	Burundi
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-bi"
-msgstr "Burundi"
+msgstr "Бурундзі"
 
 # 	Cambodia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kh"
-msgstr "Cambodia"
+msgstr "Камбоджа"
 
 # 	Cameroon
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cm"
-msgstr "Cameroon"
+msgstr "Камерун"
 
 # 	Canada
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ca"
-msgstr "Canada"
+msgstr "Канада"
 
 # 	Cape Verde
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cv"
-msgstr "Cape Verde"
+msgstr "Каба-Вэрдэ"
 
 # 	Cayman Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ky"
-msgstr "Cayman Islands"
+msgstr "Кайманавы выспы"
 
 # 	Central African Republic
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cf"
-msgstr "Central African Republic"
+msgstr "Цэнтральна-Афрыканская Рэспубліка"
 
 # 	Chad
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-td"
-msgstr "Chad"
+msgstr "Чад"
 
 # 	Chile
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cl"
-msgstr "Chile"
+msgstr "Чылі"
 
 # 	China
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cn"
-msgstr "China"
+msgstr "Кітай"
 
 # 	Colombia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-co"
-msgstr "Colombia"
+msgstr "Калумбія"
 
 # 	Comoros
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-km"
-msgstr "Comoros"
+msgstr "Каморскія выспы"
 
 # 	Congo
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cg"
-msgstr "Congo"
+msgstr "Конга"
 
 # 	The Democratic Republic of the Congo
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cd"
-msgstr "The Democratic Republic of the Congo"
+msgstr "Дэмакратычная Рэспубліка Конга"
 
 # 	Costa Rica
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cr"
-msgstr "Costa Rica"
+msgstr "Коста-Рыка"
 
 # 	Côte d'Ivoire
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ci"
-msgstr "Côte d'Ivoire"
+msgstr "Бераг Слановай Косці"
 
 # 	Croatia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-hr"
-msgstr "Croatia"
+msgstr "Харватыя"
 
 # 	Cuba
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cu"
-msgstr "Cuba"
+msgstr "Куба"
 
 # 	Cyprus
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cy"
-msgstr "Cyprus"
+msgstr "Кіпр"
 
 # 	Czech Republic
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-cz"
-msgstr "Czech Republic"
+msgstr "Чэская Рэспубліка"
 
 # 	Denmark
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-dk"
-msgstr "Denmark"
+msgstr "Данія"
 
 # 	Djibouti
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-dj"
-msgstr "Djibouti"
+msgstr "Джыбуці"
 
 # 	Dominica
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-dm"
-msgstr "Dominica"
+msgstr "Дамініка"
 
 # 	Dominican Republic
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-do"
-msgstr "Dominican Republic"
+msgstr "Дамініканская Рэспубліка"
 
 # 	Ecuador
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ec"
-msgstr "Ecuador"
+msgstr "Эквадор"
 
 # 	Egypt
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-eg"
-msgstr "Egypt"
+msgstr "Егіпет"
 
 # 	El Salvador
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sv"
-msgstr "El Salvador"
+msgstr "Сальвадор"
 
 # 	Equatorial Guinea
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gq"
-msgstr "Equatorial Guinea"
+msgstr "Экватарыяльная Гвінея"
 
 # 	Eritrea
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-er"
-msgstr "Eritrea"
+msgstr "Эрытрэя"
 
 # 	Estonia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ee"
-msgstr "Estonia"
+msgstr "Эстонія"
 
 # 	Ethiopia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-et"
-msgstr "Ethiopia"
+msgstr "Эфіопія"
 
 # 	Faroe Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-fo"
-msgstr "Faroe Islands"
+msgstr "Фарэрскія выспы"
 
 # 	Falkland Islands (Malvinas)
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-fk"
-msgstr "Falkland Islands (Malvinas)"
+msgstr "Фалклендскія (Мальвінскія) выспы"
 
 # 	Fiji
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-fj"
-msgstr "Fiji"
+msgstr "Фіджы"
 
 # 	Finland
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-fi"
-msgstr "Finland"
+msgstr "Фінляндыя"
 
 # 	France
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-fr"
-msgstr "France"
+msgstr "Францыя"
 
 # 	French Guiana
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gf"
-msgstr "French Guiana"
+msgstr "Французская Гвіяна"
 
 # 	Gabon
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ga"
-msgstr "Gabon"
+msgstr "Габон"
 
 # 	Gambia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gm"
-msgstr "Gambia"
+msgstr "Гамбія"
 
 # 	Georgia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ge"
-msgstr "Georgia"
+msgstr "Грузія"
 
 # 	Germany
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-de"
-msgstr "Germany"
+msgstr "Германія"
 
 # 	Ghana
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gh"
-msgstr "Ghana"
+msgstr "Гана"
 
 # 	Greece
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gr"
-msgstr "Greece"
+msgstr "Грэцыя"
 
 # 	Greenland
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gl"
-msgstr "Greenland"
+msgstr "Грэнландыя"
 
 # 	Grenada
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gd"
-msgstr "Grenada"
+msgstr "Грэнада"
 
 # 	Guadeloupe
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gp"
-msgstr "Guadeloupe"
+msgstr "Гвадэлупа"
 
 # 	Guatemala
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gt"
-msgstr "Guatemala"
+msgstr "Гватэмала"
 
 # 	Guinea
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gn"
-msgstr "Guinea"
+msgstr "Гвінея"
 
 # 	Guinea-Bissau
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gw"
-msgstr "Guinea-Bissau"
+msgstr "Гвінея-Бісаў"
 
 # 	Guyana
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gy"
-msgstr "Guyana"
+msgstr "Гаяна"
 
 # 	Haiti
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ht"
-msgstr "Haiti"
+msgstr "Гаіці"
 
 # 	Honduras
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-hn"
-msgstr "Honduras"
+msgstr "Гандурас"
 
 # 	Hong Kong
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-hk"
-msgstr "Hong Kong"
+msgstr "Ганконг"
 
 # 	Hungary
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-hu"
-msgstr "Hungary"
+msgstr "Венгрыя"
 
 # 	Iceland
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-is"
-msgstr "Iceland"
+msgstr "Ісландыя"
 
 # 	India
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-in"
-msgstr "India"
+msgstr "Індыя"
 
 # 	Indonesia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-id"
-msgstr "Indonesia"
+msgstr "Інданезія"
 
 # 	Islamic Republic of Iran
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ir"
-msgstr "Islamic Republic of Iran"
+msgstr "Ісламская Рэспубліка Іран"
 
 # 	Iraq
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-iq"
-msgstr "Iraq"
+msgstr "Ірак"
 
 # 	Ireland
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ie"
-msgstr "Ireland"
+msgstr "Ірландыя"
 
 # 	Israel
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-il"
-msgstr "Israel"
+msgstr "Ізраіль"
 
 # 	Italy
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-it"
-msgstr "Italy"
+msgstr "Італія"
 
 # 	Jamaica
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-jm"
-msgstr "Jamaica"
+msgstr "Ямайка"
 
 # 	Japan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-jp"
-msgstr "Japan"
+msgstr "Японія"
 
 # 	Jordan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-jo"
-msgstr "Jordan"
+msgstr "Іарданія"
 
 # 	Kazakhstan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kz"
-msgstr "Kazakhstan"
+msgstr "Казахстан"
 
 # 	Kenya
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ke"
-msgstr "Kenya"
+msgstr "Кенія"
 
 # 	Nauru
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-nr"
-msgstr "Nauru"
+msgstr "Науру"
 
 # 	Democratic People's Republic of Korea
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kp"
-msgstr "Democratic People's Republic of Korea"
+msgstr "Карэйская Народна-Дэмакратычная Рэспубліка"
 
 # 	Republic of Korea
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kr"
-msgstr "Republic of Korea"
+msgstr "Рэспубліка Карэя"
 
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kv"
-msgstr "Kosovo"
+msgstr "Косава"
 
 # 	Kuwait
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kw"
-msgstr "Kuwait"
+msgstr "Кувейт"
 
 # 	Kyrgyzstan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kg"
-msgstr "Kyrgyzstan"
+msgstr "Кіргізія"
 
 # 	Lao People's Democratic Republic
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-la"
-msgstr "Lao People's Democratic Republic"
+msgstr "Лаоскай Народна-Дэмакратычная Рэспубліка"
 
 # 	Latvia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-lv"
-msgstr "Latvia"
+msgstr "Латвія"
 
 # 	Lebanon
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-lb"
-msgstr "Lebanon"
+msgstr "Ліван"
 
 # 	Lesotho
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ls"
-msgstr "Lesotho"
+msgstr "Лесота"
 
 # 	Liberia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-lr"
-msgstr "Liberia"
+msgstr "Ліберыя"
 
 # 	Libyan Arab Jamahiriya
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ly"
-msgstr "Libyan Arab Jamahiriya"
+msgstr "Лівійская Араб Джамахірыя"
 
 # 	Liechtenstein
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-li"
-msgstr "Liechtenstein"
+msgstr "Ліхтэнштэйн"
 
 # 	Lithuania
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-lt"
-msgstr "Lithuania"
+msgstr "Літва"
 
 # 	Luxembourg
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-lu"
-msgstr "Luxembourg"
+msgstr "Люксембург"
 
 # 	The Former Yugoslav Republic of Macedonia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mk"
-msgstr "The Former Yugoslav Republic of Macedonia"
+msgstr "Былая югаслаўская Рэспубліка Македонія"
 
 # 	Madagascar
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mg"
-msgstr "Madagascar"
+msgstr "Мадагаскар"
 
 # 	Malawi
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mw"
-msgstr "Malawi"
+msgstr "Малаві"
 
 # 	Malaysia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-my"
-msgstr "Malaysia"
+msgstr "Малайзія"
 
 # 	Mali
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ml"
-msgstr "Mali"
+msgstr "Малі"
 
 # 	Malta
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mt"
-msgstr "Malta"
+msgstr "Мальта"
 
 # 	Martinique
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mq"
-msgstr "Martinique"
+msgstr "Марцініка"
 
 # 	Mauritania
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mr"
-msgstr "Mauritania"
+msgstr "Маўрытанія"
 
 # 	Mauritius
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mu"
-msgstr "Mauritius"
+msgstr "Маўрыкій"
 
 # 	Mexico
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mx"
-msgstr "Mexico"
+msgstr "Мехіка"
 
 # 	Moldova
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-md"
-msgstr "Moldova"
+msgstr "Малдова"
 
 # 	Mongolia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mn"
-msgstr "Mongolia"
+msgstr "Манголія"
 
 # 	Montenegro
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-me"
-msgstr "Montenegro"
+msgstr "Чарнагорыя"
 
 # 	Montserrat
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ms"
-msgstr "Montserrat"
+msgstr "Мансерат"
 
 # 	Morocco
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ma"
-msgstr "Morocco"
+msgstr "Марока"
 
 # 	Mozambique
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mz"
-msgstr "Mozambique"
+msgstr "Мазамбік"
 
 # 	Myanmar
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mm"
-msgstr "Myanmar"
+msgstr "М'янма"
 
 # 	Namibia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-na"
-msgstr "Namibia"
+msgstr "Намібія"
 
 # 	Nepal
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-np"
-msgstr "Nepal"
+msgstr "Непал"
 
 # 	Netherlands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-nl"
-msgstr "Netherlands"
+msgstr "Нідэрланды"
 
 # 	New Caledonia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-nc"
-msgstr "New Caledonia"
+msgstr "Новая Каледонія"
 
 # 	New Zealand
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-nz"
-msgstr "New Zealand"
+msgstr "Новая Зеландыя"
 
 # 	Nicaragua
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ni"
-msgstr "Nicaragua"
+msgstr "Нікарагуа"
 
 # 	Niger
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ne"
-msgstr "Niger"
+msgstr "Нігер"
 
 # 	Nigeria
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ng"
-msgstr "Nigeria"
+msgstr "Нігерыя"
 
 # 	Norway
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-no"
-msgstr "Norway"
+msgstr "Нарвегія"
 
 # 	Oman
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-om"
-msgstr "Oman"
+msgstr "Аман"
 
 # 	Pakistan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pk"
-msgstr "Pakistan"
+msgstr "Пакістан"
 
 # 	Palau
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pw"
-msgstr "Palau"
+msgstr "Палаў"
 
 # 	Occupied Palestinian Territory
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ps"
-msgstr "Occupied Palestinian Territory"
+msgstr "Акупаваная палестынская тэрыторыя"
 
 # 	Panama
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pa"
-msgstr "Panama"
+msgstr "Панама"
 
 # 	Papua New Guinea
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pg"
-msgstr "Papua New Guinea"
+msgstr "Папуа-Новая Гвінея"
 
 # 	Paraguay
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-py"
-msgstr "Paraguay"
+msgstr "Парагвай"
 
 # 	Peru
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pe"
-msgstr "Peru"
+msgstr "Перу"
 
 # 	Philippines
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ph"
-msgstr "Philippines"
+msgstr "Філіпіны"
 
 # 	Poland
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pl"
-msgstr "Poland"
+msgstr "Польшча"
 
 # 	Portugal
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pt"
-msgstr "Portugal"
+msgstr "Партугалія"
 
 # 	Puerto Rico
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-pr"
-msgstr "Puerto Rico"
+msgstr "Пуэрта-Рыка"
 
 # 	Qatar
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-qa"
-msgstr "Qatar"
+msgstr "Катар"
 
 # 	Réunion
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-re"
-msgstr "Réunion"
+msgstr "Рэюньён"
 
 # 	Romania
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ro"
-msgstr "Romania"
+msgstr "Румынія"
 
 # 	Russian Federation
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ru"
-msgstr "Russian Federation"
+msgstr "Расія"
 
 # 	Rwanda
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-rw"
-msgstr "Rwanda"
+msgstr "Руанда"
 
 # 	Saint Kitts and Nevis
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-kn"
-msgstr "Saint Kitts and Nevis"
+msgstr "Сэнт-Кітс і Нэвіс"
 
 # 	Saint Lucia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-lc"
-msgstr "Saint Lucia"
+msgstr "Сэнт-Люсія"
 
 # 	Saint Martin
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mf"
-msgstr "Saint Martin"
+msgstr "Сен-Мартэн"
 
 # 	Saint Vincent and the Grenadines
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-vc"
-msgstr "Saint Vincent and the Grenadines"
+msgstr "Сэнт-Вінсэнт і Грэнадыны"
 
 # 	Samoa
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ws"
-msgstr "Samoa"
+msgstr "Самоа"
 
 # 	Sao Tome and Principe
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-st"
-msgstr "Sao Tome and Principe"
+msgstr "Сан-Томе і Прынсэп"
 
 # 	Saudi Arabia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sa"
-msgstr "Saudi Arabia"
+msgstr "Саўдаўская Аравія"
 
 # 	Senegal
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sn"
-msgstr "Senegal"
+msgstr "Сенегал"
 
 # 	Serbia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-rs"
-msgstr "Serbia"
+msgstr "Сербія"
 
 # 	Sierra Leone
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sl"
-msgstr "Sierra Leone"
+msgstr "Сьера-Леонэ"
 
 # 	Singapore
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sg"
-msgstr "Singapore"
+msgstr "Сінгапур"
 
 # 	Slovakia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sk"
-msgstr "Slovakia"
+msgstr "Славакія"
 
 # 	Slovenia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-si"
-msgstr "Slovenia"
+msgstr "Славенія"
 
 # 	Solomon Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sb"
-msgstr "Solomon Islands"
+msgstr "Саламонавы выспы"
 
 # 	Somalia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-so"
-msgstr "Somalia"
+msgstr "Самалі"
 
 # 	South Africa
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-za"
-msgstr "South Africa"
+msgstr "Паўднёвая Афрыка"
 
 # 	South Georgia and the South Sandwich Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gs"
-msgstr "South Georgia and the South Sandwich Islands"
+msgstr "Паўднёвая Джорджыя і Паўднёвыя Сандвічавы астравы"
 
 # 	Spain
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-es"
-msgstr "Spain"
+msgstr "Іспанія"
 
 # 	Sri Lanka
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-lk"
-msgstr "Sri Lanka"
+msgstr "Шры Ланка"
 
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sc"
-msgstr "Seychelles"
+msgstr "Сейшэльскія выспы"
 
 # 	Sudan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sd"
-msgstr "Sudan"
+msgstr "Судан"
 
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ss"
-msgstr "South Sudan"
+msgstr "Паўднёвы Судан"
 
 # 	Suriname
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sr"
-msgstr "Suriname"
+msgstr "Сурынам"
 
 # 	Svalbard and Jan Mayen
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sj"
-msgstr "Svalbard and Jan Mayen"
+msgstr "Шпіцбэрген і Ян-Майен"
 
 # 	Swaziland
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sz"
-msgstr "Swaziland"
+msgstr "Свазіленд"
 
 # 	Sweden
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-se"
-msgstr "Sweden"
+msgstr "Швецыя"
 
 # 	Switzerland
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ch"
-msgstr "Switzerland"
+msgstr "Швейцарыя"
 
 # 	Syrian Arab Republic
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-sy"
-msgstr "Syrian Arab Republic"
+msgstr "Сірыйская Арабская Рэспубліка"
 
 # 	Taiwan, Province of China
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tw"
-msgstr "Taiwan"
+msgstr "Тайвань"
 
 # 	Tajikistan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tj"
-msgstr "Tajikistan"
+msgstr "Таджыкістан"
 
 # 	United Republic of Tanzania
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tz"
-msgstr "United Republic of Tanzania"
+msgstr "Аб'яднаная Рэспубліка Танзанія"
 
 # 	Thailand
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-th"
-msgstr "Thailand"
+msgstr "Тайланд"
 
 # 	Timor-Leste
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tl"
-msgstr "Timor-Leste"
+msgstr "Усходні Тымор"
 
 # 	Togo
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tg"
-msgstr "Togo"
+msgstr "Таго"
 
 # 	Tonga
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-to"
-msgstr "Tonga"
+msgstr "Тонга"
 
 # 	Trinidad and Tobago
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tt"
-msgstr "Trinidad and Tobago"
+msgstr "Трынідад і Табага"
 
 # 	Tunisia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tn"
-msgstr "Tunisia"
+msgstr "Туніс"
 
 # 	Turkey
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tr"
-msgstr "Turkey"
+msgstr "Турцыя"
 
 # 	Turkmenistan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tm"
-msgstr "Turkmenistan"
+msgstr "Туркменістан"
 
 # 	Turks and Caicos Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-tc"
-msgstr "Turks and Caicos Islands"
+msgstr "Астравы Тэркс і Кайкас"
 
 # 	Uganda
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ug"
-msgstr "Uganda"
+msgstr "Уганда"
 
 # 	Ukraine
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ua"
-msgstr "Ukraine"
+msgstr "Украіна"
 
 # 	United Arab Emirates
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ae"
-msgstr "United Arab Emirates"
+msgstr "Аб'яднаныя Арабскія Эміраты"
 
 # 	United Kingdom
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gb"
-msgstr "United Kingdom"
+msgstr "Злучанае Каралеўства"
 
 # 	United States
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-us"
-msgstr "United States"
+msgstr "ЗША"
 
 # 	Uruguay
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-uy"
-msgstr "Uruguay"
+msgstr "Уругвай"
 
 # 	Uzbekistan
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-uz"
-msgstr "Uzbekistan"
+msgstr "Узбекістан"
 
 # 	Vanuatu
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-vu"
-msgstr "Vanuatu"
+msgstr "Вануату"
 
 # 	Venezuela
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ve"
-msgstr "Venezuela"
+msgstr "Венесуэла"
 
 # 	Viet Nam
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-vn"
-msgstr "Viet Nam"
+msgstr "В'етнам"
 
 # 	British Virgin Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-vg"
-msgstr "British Virgin Islands"
+msgstr "Брытанскія Віргінскія выспы"
 
 # 	U.S. Virgin Islands
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-vi"
-msgstr "U.S. Virgin Islands"
+msgstr "Віргінскія астравы ЗША"
 
 # 	Western Sahara
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-eh"
-msgstr "Western Sahara"
+msgstr "Заходняя Сахара"
 
 # 	Yemen
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-ye"
-msgstr "Yemen"
+msgstr "Емен"
 
 # 	Zambia
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-zm"
-msgstr "Zambia"
+msgstr "Замбія"
 
 # 	Zimbabwe
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-zw"
-msgstr "Zimbabwe"
+msgstr "Зімбабвэ"
 
 # 	Guernsey
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-gg"
-msgstr "Guernsey"
+msgstr "Гернсі"
 
 # 	Jersey
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-je"
-msgstr "Jersey"
+msgstr "Джэрсі"
 
 # 	Isle of Man
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-im"
-msgstr "Isle of Man"
+msgstr "Востраў Мэн"
 
 # 	Maldives
-#: ../admin/view/wp-slimstat-reports.php:1805
+#: ../admin/view/wp-slimstat-reports.php:1783
 msgid "c-mv"
-msgstr "Maldives"
+msgstr "Мальдывы"
 
-#: ../admin/view/wp-slimstat-reports.php:1806
+#: ../admin/view/wp-slimstat-reports.php:1784
 msgid "c-eu"
-msgstr "Europe"
+msgstr "Еўропа"
 
-#: ../admin/view/wp-slimstat-reports.php:1883
+#: ../admin/view/wp-slimstat-reports.php:1861
 msgid "src"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-reports.php:1887
+#: ../admin/view/wp-slimstat-reports.php:1865
 msgid "serp"
 msgstr "serp"
 
-#: ../admin/view/wp-slimstat-reports.php:1895
+#: ../admin/view/wp-slimstat-reports.php:1873
 msgid "Go to the referring page"
 msgstr "Перайсці да старонкі са спасылкай"
 
-#: ../admin/view/wp-slimstat-reports.php:1917
+#: ../admin/view/wp-slimstat-reports.php:1895
 msgid "Remove filter for"
 msgstr "Выдаліць фільтр для"
 
-#: ../admin/view/wp-slimstat-reports.php:1921
+#: ../admin/view/wp-slimstat-reports.php:1899
 msgid "Save"
 msgstr "Захаваць"
 
-#: ../admin/view/wp-slimstat-reports.php:1924
+#: ../admin/view/wp-slimstat-reports.php:1902
 msgid "Reset All"
 msgstr "Скінуць ўсе"
 
-#: ../admin/view/wp-slimstat-reports.php:1928
+#: ../admin/view/wp-slimstat-reports.php:1906
 msgid "Current filters:"
 msgstr "Бягучыя фільтры:"
 
@@ -3937,14 +3936,12 @@ msgid "Slimstat"
 msgstr "Slimstat"
 
 #: ../admin/wp-slimstat-admin.php:929
-#, fuzzy
 msgid "Pageviews in the last "
-msgstr "Праглядаў старонак за адно наведванне"
+msgstr "Прагляд старонак у апошнім"
 
 #: ../admin/wp-slimstat-admin.php:932
-#, fuzzy
 msgid "Unique IPs in the last "
-msgstr "Унікальныя IP-адрасы"
+msgstr "Унікальныя IP-адрасы ў апошнім"
 
 #: ../admin/wp-slimstat-admin.php:965
 #, php-format
@@ -4678,7 +4675,7 @@ msgstr "Linux Ubuntu"
 
 #: ../languages/dynamic_strings.php:109
 msgid "p-unk"
-msgstr "Unknown"
+msgstr "невядомы"
 
 #: ../languages/dynamic_strings.php:110
 msgid "p-win"
@@ -4687,377 +4684,377 @@ msgstr "Microsoft"
 # 	Afrikaans
 #: ../languages/dynamic_strings.php:113
 msgid "l-af"
-msgstr "Afrikaans"
+msgstr "Афрыкаанскі"
 
 # 	Afrikaans
 #: ../languages/dynamic_strings.php:114
 msgid "l-af-za"
-msgstr "Afrikaans (South Africa)"
+msgstr "Афрыкаанскі (Паўднёвая Афрыка)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:115
 msgid "l-ar"
-msgstr "Arabic"
+msgstr "арабская"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:116
 msgid "l-ar-ae"
-msgstr "Arabic (U.A.E.)"
+msgstr "Арабская (ААЭ)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:117
 msgid "l-ar-bh"
-msgstr "Arabic (Bahrain)"
+msgstr "Арабская (Бахрэйн)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:118
 msgid "l-ar-dz"
-msgstr "Arabic (Algeria)"
+msgstr "Арабская (Алжыр)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:119
 msgid "l-ar-eg"
-msgstr "Arabic (Egypt)"
+msgstr "Арабская (Егіпет)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:120
 msgid "l-ar-iq"
-msgstr "Arabic (Iraq)"
+msgstr "Арабская (Ірак)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:121
 msgid "l-ar-jo"
-msgstr "Arabic (Jordan)"
+msgstr "Арабская (Іарданія)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:122
 msgid "l-ar-kw"
-msgstr "Arabic (Kuwait)"
+msgstr "Арабская (Кувейт)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:123
 msgid "l-ar-lb"
-msgstr "Arabic (Lebanon)"
+msgstr "Арабская (Ліван)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:124
 msgid "l-ar-ly"
-msgstr "Arabic (Libya)"
+msgstr "Арабская (Лівія)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:125
 msgid "l-ar-ma"
-msgstr "Arabic (Morocco)"
+msgstr "Арабская (Марока)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:126
 msgid "l-ar-om"
-msgstr "Arabic (Oman)"
+msgstr "Арабская (Аман)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:127
 msgid "l-ar-qa"
-msgstr "Arabic (Qatar)"
+msgstr "Арабская (Катар)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:128
 msgid "l-ar-sa"
-msgstr "Arabic (Saudi Arabia)"
+msgstr "Арабская (Саудаўская Аравія)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:129
 msgid "l-ar-sy"
-msgstr "Arabic (Syria)"
+msgstr "Арабская (Сірыя)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:130
 msgid "l-ar-tn"
-msgstr "Arabic (Tunisia)"
+msgstr "Арабская (Туніс)"
 
 # 	Arabic
 #: ../languages/dynamic_strings.php:131
 msgid "l-ar-ye"
-msgstr "Arabic (Yemen)"
+msgstr "Арабская (Емен)"
 
 # 	Azerbaijani
 #: ../languages/dynamic_strings.php:132
 msgid "l-az"
-msgstr "Azerbaijani"
+msgstr "азербайджанская"
 
 # 	Azerbaijani
 #: ../languages/dynamic_strings.php:133
 msgid "l-az-az"
-msgstr "Azeri (Latin)"
+msgstr "Азербайджанская (Латынь)"
 
 # 	Belarusian
 #: ../languages/dynamic_strings.php:134
 msgid "l-be"
-msgstr "Belarusian"
+msgstr "Беларуская"
 
 # 	Belarusian
 #: ../languages/dynamic_strings.php:135
 msgid "l-be-by"
-msgstr "Belarusian (Belarus)"
+msgstr "Беларуская (Беларусь)"
 
 # 	Bulgarian
 #: ../languages/dynamic_strings.php:136
 msgid "l-bg"
-msgstr "Bulgarian"
+msgstr "Балнарская"
 
 # 	Bulgarian
 #: ../languages/dynamic_strings.php:137
 msgid "l-bg-bg"
-msgstr "Bulgarian (Bulgaria)"
+msgstr "Балгарская (Балгарыя)"
 
 # 	Bosnian
 #: ../languages/dynamic_strings.php:138
 msgid "l-bs-ba"
-msgstr "Bosnian"
+msgstr "Баснійская"
 
 # 	Catalan; Valencian
 #: ../languages/dynamic_strings.php:139
 msgid "l-ca"
-msgstr "Catalan"
+msgstr "Каталонская"
 
 # 	Catalan; Valencian
 #: ../languages/dynamic_strings.php:140
 msgid "l-ca-es"
-msgstr "Catalan; Valencian"
+msgstr "Каталонская; Валенская"
 
 # 	Czech
 #: ../languages/dynamic_strings.php:141
 msgid "l-cs"
-msgstr "Czech"
+msgstr "Чэшская"
 
 # 	Czech
 #: ../languages/dynamic_strings.php:142
 msgid "l-cs-cz"
-msgstr "Czech (Czech Republic)"
+msgstr "Чэшская (Чэская Рэспубліка)"
 
 # 	Welsh
 #: ../languages/dynamic_strings.php:143
 msgid "l-cy"
-msgstr "Welsh"
+msgstr "валійская"
 
 # 	Welsh
 #: ../languages/dynamic_strings.php:144
 msgid "l-cy-gb"
-msgstr "Welsh (UK)"
+msgstr "Валійская (Велікабрытанія"
 
 # 	Danish
 #: ../languages/dynamic_strings.php:145
 msgid "l-da"
-msgstr "Danish"
+msgstr "Дацкая"
 
 # 	Danish
 #: ../languages/dynamic_strings.php:146
 msgid "l-da-dk"
-msgstr "Danish (Denmark)"
+msgstr "Дацкая (Данія)"
 
 # 	German
 #: ../languages/dynamic_strings.php:147
 msgid "l-de"
-msgstr "German"
+msgstr "Нямецкая"
 
 # 	German
 #: ../languages/dynamic_strings.php:148
 msgid "l-de-at"
-msgstr "German (Austria)"
+msgstr "Нямецкая (Аўстрыя)"
 
 # 	German
 #: ../languages/dynamic_strings.php:149
 msgid "l-de-ch"
-msgstr "German (Switzerland)"
+msgstr "Нямецкая (Швейцарыя)"
 
 # 	German
 #: ../languages/dynamic_strings.php:150
 msgid "l-de-de"
-msgstr "German (Germany)"
+msgstr "Нямецкая (Германія)"
 
 # 	German
 #: ../languages/dynamic_strings.php:151
 msgid "l-de-li"
-msgstr "German (Liechtenstein)"
+msgstr "Нямецкая (Ліхтэнштэйн)"
 
 # 	German
 #: ../languages/dynamic_strings.php:152
 msgid "l-de-lu"
-msgstr "German (Luxembourg)"
+msgstr "Нямецкая (Люксембург)"
 
 # 	Dhivehi; Divehi; Maldivian
 #: ../languages/dynamic_strings.php:153
 msgid "l-dv"
-msgstr "Dhivehi; Divehi; Maldivian"
+msgstr "Дывехі; дывехі; мальдыўская"
 
 # 	Dhivehi; Divehi; Maldivian
 #: ../languages/dynamic_strings.php:154
 msgid "l-dv-mv"
-msgstr "Maldivian"
+msgstr "Мальдыўская"
 
 # 	Modern Greek (1453-)
 #: ../languages/dynamic_strings.php:155
 msgid "l-el"
-msgstr "Greek"
+msgstr "Грэцкі"
 
 # 	Modern Greek (1453-)
 #: ../languages/dynamic_strings.php:156
 msgid "l-el-gr"
-msgstr "Greek (Greece)"
+msgstr "Грэцкі (Грэцыя)"
 
 # 	English
 #: ../languages/dynamic_strings.php:157
 msgid "l-en"
-msgstr "English"
+msgstr "англійская"
 
 # 	English
 #: ../languages/dynamic_strings.php:158
 msgid "l-en-au"
-msgstr "English (Australia)"
+msgstr "англійская (Аўстралія)"
 
 # 	English
 #: ../languages/dynamic_strings.php:159
 msgid "l-en-bz"
-msgstr "English (Belize)"
+msgstr "англійская (Беліз)"
 
 # 	English
 #: ../languages/dynamic_strings.php:160
 msgid "l-en-ca"
-msgstr "English (Canada)"
+msgstr "англійская (Канада)"
 
 # 	English
 #: ../languages/dynamic_strings.php:161
 msgid "l-en-cb"
-msgstr "English (Caribbean)"
+msgstr "англійская (карыбскі)"
 
 # 	English
 #: ../languages/dynamic_strings.php:162
 msgid "l-en-gb"
-msgstr "English (Great Britain)"
+msgstr "Англійская (Вялікабрытанія)"
 
 # 	English
 #: ../languages/dynamic_strings.php:163
 msgid "l-en-ie"
-msgstr "English (Ireland)"
+msgstr "Англійская (Ірландыя)"
 
 # 	English
 #: ../languages/dynamic_strings.php:164
 msgid "l-en-jm"
-msgstr "English (Jamaica)"
+msgstr "Англійская (Ямайка)"
 
 # 	English
 #: ../languages/dynamic_strings.php:165
 msgid "l-en-nz"
-msgstr "English (New Zealand)"
+msgstr "Англійская (Новая Зеландыя)"
 
 # 	English
 #: ../languages/dynamic_strings.php:166
 msgid "l-en-ph"
-msgstr "English (Philippines)"
+msgstr "Англійская (Філіпіны)"
 
 # 	English
 #: ../languages/dynamic_strings.php:167
 msgid "l-en-tt"
-msgstr "English (Trinidad and Tobago)"
+msgstr "Англійская (Трынідад і Табага)"
 
 # 	English
 #: ../languages/dynamic_strings.php:168
 msgid "l-en-us"
-msgstr "English (USA)"
+msgstr "Англійская (ЗША)"
 
 # 	English
 #: ../languages/dynamic_strings.php:169
 msgid "l-en-za"
-msgstr "English (South Africa)"
+msgstr "Англійская (Паўднёвая Афрыка)"
 
 # 	English
 #: ../languages/dynamic_strings.php:170
 msgid "l-en-zw"
-msgstr "English (Zimbabwe)"
+msgstr "Англійская (Зімбабвэ)"
 
 # 	Esperanto
 #: ../languages/dynamic_strings.php:171
 msgid "l-eo"
-msgstr "Esperanto"
+msgstr "эсперанта"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:172
 msgid "l-es"
-msgstr "Spanish"
+msgstr "іспанскі"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:173
 msgid "l-es-ar"
-msgstr "Spanish (Argentina)"
+msgstr "Іспанскі (Аргенціна)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:174
 msgid "l-es-bo"
-msgstr "Spanish (Bolivia)"
+msgstr "Іспанскі (Балівія)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:175
 msgid "l-es-cl"
-msgstr "Spanish (Chile)"
+msgstr "Іспанскі (Чылі)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:176
 msgid "l-es-co"
-msgstr "Spanish (Colombia)"
+msgstr "Іспанскі (Калумбія)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:177
 msgid "l-es-cr"
-msgstr "Spanish (Costa Rica)"
+msgstr "Іспанскі (Коста-Рыка)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:178
 msgid "l-es-do"
-msgstr "Spanish (Dominican Republic)"
+msgstr "Іспанскі (Дамініканская Рэспубліка)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:179
 msgid "l-es-ec"
-msgstr "Spanish (Ecuador)"
+msgstr "Іспанскі (Эквадор)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:180
 msgid "l-es-es"
-msgstr "Spanish (Spain)"
+msgstr "Іспанскі (Іспанія)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:181
 msgid "l-es-gt"
-msgstr "Spanish (Guatemala)"
+msgstr "Іспанскі (Гватэмала)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:182
 msgid "l-es-hn"
-msgstr "Spanish (Honduras)"
+msgstr "Іспанскі (Гандурас)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:183
 msgid "l-es-mx"
-msgstr "Spanish (Mexico)"
+msgstr "Іспанскі (Мексіка)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:184
 msgid "l-es-ni"
-msgstr "Spanish (Nicaragua)"
+msgstr "Іспанскі (Нікарагуа)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:185
 msgid "l-es-pa"
-msgstr "Spanish (Panama)"
+msgstr "Іспанскі (Панама)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:186
 msgid "l-es-pe"
-msgstr "Spanish (Peru)"
+msgstr "Іспанскі (Перу)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:187
 msgid "l-es-pr"
-msgstr "Spanish (Puerto Rico)"
+msgstr "Іспанскі (Пуэрта-Рыка)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:188
@@ -5067,573 +5064,573 @@ msgstr "Spanish (Paraguay)"
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:189
 msgid "l-es-sv"
-msgstr "Spanish (El Salvador)"
+msgstr "Іспанскі (Сальвадор)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:190
 msgid "l-es-uy"
-msgstr "Spanish (Uruguay)"
+msgstr "Іспанскі (Уругвай)"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:191
 msgid "l-es-ve"
-msgstr "Spanish (Venezuela)"
+msgstr "Іспанскі (Венесуэла)"
 
 # 	Estonian
 #: ../languages/dynamic_strings.php:192
 msgid "l-et"
-msgstr "Estonian"
+msgstr "эстонскі"
 
 # 	Estonian
 #: ../languages/dynamic_strings.php:193
 msgid "l-et-ee"
-msgstr "Estonian (Estonia)"
+msgstr "Эстоніскі (Эстонія)"
 
 # 	Basque
 #: ../languages/dynamic_strings.php:194
 msgid "l-eu"
-msgstr "Basque"
+msgstr "баскская"
 
 # 	Basque
 #: ../languages/dynamic_strings.php:195
 msgid "l-eu-es"
-msgstr "Basque (Spain)"
+msgstr "Баскская (Іспанія)"
 
 # 	Persian
 #: ../languages/dynamic_strings.php:196
 msgid "l-fa"
-msgstr "Persian"
+msgstr "Фарсі"
 
 # 	Persian
 #: ../languages/dynamic_strings.php:197
 msgid "l-fa-ir"
-msgstr "Persian (Iran)"
+msgstr "Фарсі (Іран)"
 
 # 	Finnish
 #: ../languages/dynamic_strings.php:198
 msgid "l-fi"
-msgstr "Finnish"
+msgstr "фінскі"
 
 # 	Finnish
 #: ../languages/dynamic_strings.php:199
 msgid "l-fi-fi"
-msgstr "Finnish (Finland)"
+msgstr "Фінскі (Фінляндыя)"
 
 # 	Faroese
 #: ../languages/dynamic_strings.php:200
 msgid "l-fo"
-msgstr "Faroese"
+msgstr "Фарэрская"
 
 # 	Faroese
 #: ../languages/dynamic_strings.php:201
 msgid "l-fo-fo"
-msgstr "Faroese (Faroe Islands)"
+msgstr "Фарэрская (Фарэрскія выспы)"
 
 # 	French
 #: ../languages/dynamic_strings.php:202
 msgid "l-fr"
-msgstr "French"
+msgstr "французская"
 
 # 	French
 #: ../languages/dynamic_strings.php:203
 msgid "l-fr-be"
-msgstr "French (Belgium)"
+msgstr "Французская (Бельгія)"
 
 # 	French
 #: ../languages/dynamic_strings.php:204
 msgid "l-fr-ca"
-msgstr "French (Canada)"
+msgstr "Французская (Канада)"
 
 # 	French
 #: ../languages/dynamic_strings.php:205
 msgid "l-fr-ch"
-msgstr "French (Switzerland)"
+msgstr "Французская (Швейцарыя)"
 
 # 	French
 #: ../languages/dynamic_strings.php:206
 msgid "l-fr-fr"
-msgstr "French (France)"
+msgstr "Французская (Францыя)"
 
 # 	French
 #: ../languages/dynamic_strings.php:207
 msgid "l-fr-lu"
-msgstr "French (Luxembourg)"
+msgstr "Французская (Люксембург)"
 
 # 	French
 #: ../languages/dynamic_strings.php:208
 msgid "l-fr-mc"
-msgstr "French (Monaco)"
+msgstr "Французская (Манака)"
 
 # 	Galician
 #: ../languages/dynamic_strings.php:209
 msgid "l-gl"
-msgstr "Galician"
+msgstr "Галіцкая"
 
 # 	Spanish; Castilian
 #: ../languages/dynamic_strings.php:210
 msgid "l-gl-es"
-msgstr "Galician (Spain)"
+msgstr "Галіцкая (Іспанія)"
 
 # 	Gujarati
 #: ../languages/dynamic_strings.php:211
 msgid "l-gu"
-msgstr "Gujarati"
+msgstr "гуяраці"
 
 # 	Gujarati
 #: ../languages/dynamic_strings.php:212
 msgid "l-gu-in"
-msgstr "Gujarati (India)"
+msgstr "гуяраці (Індыя) "
 
 # 	Hebrew
 #: ../languages/dynamic_strings.php:213
 msgid "l-he"
-msgstr "Hebrew"
+msgstr "іўрыт"
 
 # 	Hebrew
 #: ../languages/dynamic_strings.php:214
 msgid "l-he-il"
-msgstr "Hebrew (Israel)"
+msgstr "Іўрыт (Ізраіль)"
 
 # 	Hindi
 #: ../languages/dynamic_strings.php:215
 msgid "l-hi"
-msgstr "Hindi"
+msgstr "Хіндзі"
 
 # 	Hindi
 #: ../languages/dynamic_strings.php:216
 msgid "l-hi-in"
-msgstr "Hindi (India)"
+msgstr "Хіндзі (Індыя)"
 
 # 	Croatian
 #: ../languages/dynamic_strings.php:217
 msgid "l-hr"
-msgstr "Croatian"
+msgstr "харвацкая"
 
 # 	Croatian
 #: ../languages/dynamic_strings.php:218
 msgid "l-hr-ba"
-msgstr "Croatian (Bosnia)"
+msgstr "Харвацкая (баснійская)"
 
 # 	Croatian
 #: ../languages/dynamic_strings.php:219
 msgid "l-hr-hr"
-msgstr "Croatian (Croatia)"
+msgstr "Харвацкая (Харватыя)"
 
 # 	Hungarian
 #: ../languages/dynamic_strings.php:220
 msgid "l-hu"
-msgstr "Hungarian"
+msgstr "венгерская"
 
 # 	Hungarian
 #: ../languages/dynamic_strings.php:221
 msgid "l-hu-hu"
-msgstr "Hungarian (Hungary)"
+msgstr "Венгерская (Венгрыя)"
 
 # 	Armenian
 #: ../languages/dynamic_strings.php:222
 msgid "l-hy"
-msgstr "Armenian"
+msgstr "армянскі"
 
 # 	Armenian
 #: ../languages/dynamic_strings.php:223
 msgid "l-hy-am"
-msgstr "Armenian (Armenia)"
+msgstr "Армянскі (Арменія)"
 
 #: ../languages/dynamic_strings.php:224
 msgid "l-id"
-msgstr "Indonesian"
+msgstr "інданезійская"
 
 #: ../languages/dynamic_strings.php:225
 msgid "l-id-id"
-msgstr "Indonesian"
+msgstr "інданезійская"
 
 # 	Icelandic
 #: ../languages/dynamic_strings.php:226
 msgid "l-is"
-msgstr "Icelandic"
+msgstr "ісландская"
 
 # 	Icelandic
 #: ../languages/dynamic_strings.php:227
 msgid "l-is-is"
-msgstr "Icelandic (Iceland)"
+msgstr "Ісландская (Ісландыя)"
 
 # 	Italian
 #: ../languages/dynamic_strings.php:228
 msgid "l-it"
-msgstr "Italian"
+msgstr "італьянскі"
 
 # 	Italian
 #: ../languages/dynamic_strings.php:229
 msgid "l-it-ch"
-msgstr "Italian (Switzerland)"
+msgstr "Італьянская (Швейцарыя)"
 
 # 	Italian
 #: ../languages/dynamic_strings.php:230
 msgid "l-it-it"
-msgstr "Italian (Italy)"
+msgstr "Італьянская (Італія)"
 
 # 	Japanese
 #: ../languages/dynamic_strings.php:231
 msgid "l-ja"
-msgstr "Japanese"
+msgstr "японскі"
 
 # 	Japanese
 #: ../languages/dynamic_strings.php:232
 msgid "l-ja-jp"
-msgstr "Japanese (Japan)"
+msgstr "японскі (Японія)"
 
 # 	Georgian
 #: ../languages/dynamic_strings.php:233
 msgid "l-ka"
-msgstr "Georgian"
+msgstr "грузінскі"
 
 # 	Georgian
 #: ../languages/dynamic_strings.php:234
 msgid "l-ka-ge"
-msgstr "Georgian (Georgia)"
+msgstr "грузінскі (Грузія)"
 
 # 	Kazakh
 #: ../languages/dynamic_strings.php:235
 msgid "l-kk"
-msgstr "Kazakh"
+msgstr "казахскі"
 
 # 	Kazakh
 #: ../languages/dynamic_strings.php:236
 msgid "l-kk-kz"
-msgstr "Kazakh (Kazakhstan)"
+msgstr "Казахскі (Казахстан)"
 
 # 	Kannada
 #: ../languages/dynamic_strings.php:237
 msgid "l-kn"
-msgstr "Kannada"
+msgstr "Каннада"
 
 # 	Kannada
 #: ../languages/dynamic_strings.php:238
 msgid "l-kn-in"
-msgstr "Kannada (India)"
+msgstr "Каннада (Індыя)"
 
 # 	Korean
 #: ../languages/dynamic_strings.php:239
 msgid "l-ko"
-msgstr "Korean"
+msgstr "карэйская"
 
 # 	Korean
 #: ../languages/dynamic_strings.php:240
 msgid "l-ko-kr"
-msgstr "Korean (Korea)"
+msgstr "карэйская (Карэя)"
 
 # 	Korean
 #: ../languages/dynamic_strings.php:241
 msgid "l-kok"
-msgstr "Konkani"
+msgstr "Конкані"
 
 # 	Korean
 #: ../languages/dynamic_strings.php:242
 msgid "l-kok-in"
-msgstr "Konkani (India)"
+msgstr "Конкані (Індыя)"
 
 # 	Kirghiz; Kyrgyz
 #: ../languages/dynamic_strings.php:243
 msgid "l-ky"
-msgstr "Kirghiz"
+msgstr "кіргізы"
 
 # 	Kirghiz; Kyrgyz
 #: ../languages/dynamic_strings.php:244
 msgid "l-ky-kg"
-msgstr "Kirghiz (Kazakhstan)"
+msgstr "Кіргізы (Казахстан)"
 
 # 	Lithuanian
 #: ../languages/dynamic_strings.php:245
 msgid "l-lt"
-msgstr "Lithuanian"
+msgstr "літоўскі"
 
 # 	Lithuanian
 #: ../languages/dynamic_strings.php:246
 msgid "l-lt-lt"
-msgstr "Lithuanian (Lithuania)"
+msgstr "Літоўскі (Літва)"
 
 # 	Latvian
 #: ../languages/dynamic_strings.php:247
 msgid "l-lv"
-msgstr "Latvian"
+msgstr "латышская"
 
 # 	Latvian
 #: ../languages/dynamic_strings.php:248
 msgid "l-lv-lv"
-msgstr "Latvian (Latvia)"
+msgstr "Латышская (Латвія)"
 
 # 	Maori
 #: ../languages/dynamic_strings.php:249
 msgid "l-mi"
-msgstr "Maori"
+msgstr "маоры"
 
 # 	Maori
 #: ../languages/dynamic_strings.php:250
 msgid "l-mi-nz"
-msgstr "Maori (New Zealand)"
+msgstr "Маоры (Новая Зеландыя)"
 
 # 	Macedonian
 #: ../languages/dynamic_strings.php:251
 msgid "l-mk"
-msgstr "Macedonian"
+msgstr "македонская"
 
 # 	Macedonian
 #: ../languages/dynamic_strings.php:252
 msgid "l-mk-ml"
-msgstr "Macedonian (FYROM)"
+msgstr "Македонія (БЮРМ)"
 
 # 	Mongolian
 #: ../languages/dynamic_strings.php:253
 msgid "l-mn"
-msgstr "Mongolian"
+msgstr "мангольская"
 
 # 	Mongolian
 #: ../languages/dynamic_strings.php:254
 msgid "l-mn-mn"
-msgstr "Mongolian (Mongolia)"
+msgstr "Мангольскай (Манголія)"
 
 # 	Marathi
 #: ../languages/dynamic_strings.php:255
 msgid "l-mr"
-msgstr "Marathi"
+msgstr "маратхі"
 
 # 	Marathi
 #: ../languages/dynamic_strings.php:256
 msgid "l-mr-in"
-msgstr "Marathi (India)"
+msgstr "Маратхі (Індыя)"
 
 # 	Malay
 #: ../languages/dynamic_strings.php:257
 msgid "l-ms"
-msgstr "Malay"
+msgstr "малайская"
 
 # 	Malay
 #: ../languages/dynamic_strings.php:258
 msgid "l-ms-bn"
-msgstr "Malay (Brunei)"
+msgstr "Малайская (Бруней)"
 
 # 	Malay
 #: ../languages/dynamic_strings.php:259
 msgid "l-ms-my"
-msgstr "Malay (Malaysia)"
+msgstr "Малайская (Малайзія)"
 
 # 	Maltese
 #: ../languages/dynamic_strings.php:260
 msgid "l-mt"
-msgstr "Maltese"
+msgstr "мальтыйская"
 
 # 	Maltese
 #: ../languages/dynamic_strings.php:261
 msgid "l-mt-mt"
-msgstr "Maltese (Malta)"
+msgstr "Мальтыйская (Мальта)"
 
 # 	Norwegian Bokmål
 #: ../languages/dynamic_strings.php:262
 msgid "l-nb"
-msgstr "Norwegian; Bokmål"
+msgstr "нарвежская; букмал"
 
 # 	Norwegian Bokmål
 #: ../languages/dynamic_strings.php:263
 msgid "l-nb-no"
-msgstr "Norwegian (Norway)"
+msgstr "Нарвежская (Нарвегія)"
 
 # 	Dutch; Flemish
 #: ../languages/dynamic_strings.php:264
 msgid "l-nl"
-msgstr "Dutch; Flemish"
+msgstr "галандскі; фламандскі"
 
 # 	Belarusian
 #: ../languages/dynamic_strings.php:265
 msgid "l-nl-be"
-msgstr "Dutch (Belgium)"
+msgstr "Галандскі (Бельгія)"
 
 # 	Dutch; Flemish
 #: ../languages/dynamic_strings.php:266
 msgid "l-nl-nl"
-msgstr "Dutch (The Netherlands)"
+msgstr "Галандскі (Нідэрланды)"
 
 # 	Norwegian Nynorsk
 #: ../languages/dynamic_strings.php:267
 msgid "l-nn-no"
-msgstr "Norwegian; Nynorsk (Norway)"
+msgstr "нарвежская; Нюнорск (Нарвегія)"
 
 #: ../languages/dynamic_strings.php:268
 msgid "l-ns"
-msgstr "Northern Sotho"
+msgstr "Паўночны Сота"
 
 #: ../languages/dynamic_strings.php:269
 msgid "l-ns-za"
-msgstr "Northern Sotho (South Africa)"
+msgstr "Паўночны Сота (Паўднёвая Афрыка)"
 
 # 	Panjabi; Punjabi
 #: ../languages/dynamic_strings.php:270
 msgid "l-pa"
-msgstr "Panjabi; Punjabi"
+msgstr "пенджабі; панджабі"
 
 # 	Panjabi; Punjabi
 #: ../languages/dynamic_strings.php:271
 msgid "l-pa-in"
-msgstr "Panjabi (India)"
+msgstr "Панджабі (індыйскі)"
 
 # 	Polish
 #: ../languages/dynamic_strings.php:272
 msgid "l-pl"
-msgstr "Polish"
+msgstr "Польскі"
 
 # 	Polish
 #: ../languages/dynamic_strings.php:273
 msgid "l-pl-pl"
-msgstr "Polish (Poland)"
+msgstr "Польскі (Польшча)"
 
 # 	Pushto; Pashto
 #: ../languages/dynamic_strings.php:274
 msgid "l-ps"
-msgstr "Pushto; Pashto"
+msgstr "Пашто; Пушту"
 
 # 	Pushto; Pashto
 #: ../languages/dynamic_strings.php:275
 msgid "l-ps-ar"
-msgstr "Pashto (Afghanistan)"
+msgstr "Пашту (Афганістан)"
 
 # 	Portuguese
 #: ../languages/dynamic_strings.php:276
 msgid "l-pt"
-msgstr "Portuguese"
+msgstr "партугальская"
 
 # 	Portuguese
 #: ../languages/dynamic_strings.php:277
 msgid "l-pt-br"
-msgstr "Portuguese (Brazil)"
+msgstr "Партугальская (Бразілія)"
 
 # 	Portuguese
 #: ../languages/dynamic_strings.php:278
 msgid "l-pt-pt"
-msgstr "Portuguese (Portugal)"
+msgstr "Партугальская (Партугалія)"
 
 # 	Quechua
 #: ../languages/dynamic_strings.php:279
 msgid "l-qu"
-msgstr "Quechua"
+msgstr "кечуа"
 
 # 	Quechua
 #: ../languages/dynamic_strings.php:280
 msgid "l-qu-bo"
-msgstr "Quechua (Bolivia)"
+msgstr "Кечуа (Балівія)"
 
 # 	Quechua
 #: ../languages/dynamic_strings.php:281
 msgid "l-qu-ec"
-msgstr "Quechua (Ecuador)"
+msgstr "Кечуа (Эквадор)"
 
 # 	Quechua
 #: ../languages/dynamic_strings.php:282
 msgid "l-qu-pe"
-msgstr "Quechua (Peru)"
+msgstr "Кечуа (Перу)"
 
 # 	Romanian; Moldavian; Moldovan
 #: ../languages/dynamic_strings.php:283
 msgid "l-ro"
-msgstr "Romanian"
+msgstr "румынская"
 
 # 	Romanian; Moldavian; Moldovan
 #: ../languages/dynamic_strings.php:284
 msgid "l-ro-ro"
-msgstr "Romanian (Romania)"
+msgstr "Румынская (Румынія)"
 
 # 	Russian
 #: ../languages/dynamic_strings.php:285
 msgid "l-ru"
-msgstr "Russian"
+msgstr "руская"
 
 # 	Russian
 #: ../languages/dynamic_strings.php:286
 msgid "l-ru-ru"
-msgstr "Russian (Russia)"
+msgstr "руская (Расія)"
 
 # Sanskrit
 #: ../languages/dynamic_strings.php:287
 msgid "l-sa"
-msgstr "Sanskrit"
+msgstr "санскрыт"
 
 # Sanskrit (India)
 #: ../languages/dynamic_strings.php:288
 msgid "l-sa-in"
-msgstr "Sanskrit (India)"
+msgstr "Санскрыт (Індыя)"
 
 # 	Northern Sami
 #: ../languages/dynamic_strings.php:289
 msgid "l-se"
-msgstr "Northern Sami"
+msgstr "Паўночны Самі"
 
 # 	Northern Sami
 #: ../languages/dynamic_strings.php:290
 msgid "l-se-fi"
-msgstr "Northern Sami (Finland)"
+msgstr "Паўночны Самі (Фінляндыя)"
 
 # 	Northern Sami
 #: ../languages/dynamic_strings.php:291
 msgid "l-se-no"
-msgstr "Northern Sami (Norway)"
+msgstr "Паўночная Самі (Нарвегія)"
 
 # 	Northern Sami
 #: ../languages/dynamic_strings.php:292
 msgid "l-se-se"
-msgstr "Northern Sami (Sweden)"
+msgstr "Паўночная Самі (Швецыя)"
 
 # 	Slovak
 #: ../languages/dynamic_strings.php:293
 msgid "l-sk"
-msgstr "Slovak"
+msgstr "славацкая"
 
 # 	Slovak
 #: ../languages/dynamic_strings.php:294
 msgid "l-sk-sk"
-msgstr "Slovak (Slovakia)"
+msgstr "Славацкая (Славакія)"
 
 # 	Slovenian
 #: ../languages/dynamic_strings.php:295
 msgid "l-sl"
-msgstr "Slovenian"
+msgstr "славенская"
 
 # 	Slovenian
 #: ../languages/dynamic_strings.php:296
 msgid "l-sl-si"
-msgstr "Slovenian (Slovenia)"
+msgstr "Славенская (Славенія)"
 
 # 	Albanian
 #: ../languages/dynamic_strings.php:297
 msgid "l-sq"
-msgstr "Albanian"
+msgstr "албанская"
 
 # 	Albanian
 #: ../languages/dynamic_strings.php:298
 msgid "l-sq-al"
-msgstr "Albanian (Albania)"
+msgstr "Албанская (Албанія)"
 
 # 	Serbian
 #: ../languages/dynamic_strings.php:299
 msgid "l-sr-ba"
-msgstr "Serbian (Bosnia and Herzegovina)"
+msgstr "Сэрбская (Боснія і Герцагавіна)"
 
 # 	Serbian
 #: ../languages/dynamic_strings.php:300
 msgid "l-sr-sp"
-msgstr "Serbian (Serbia and Montenegro)"
+msgstr "Сербская (Сербія і Чарнагорыя)"
 
 # 	Swedish
 #: ../languages/dynamic_strings.php:301
 msgid "l-sv"
-msgstr "Swedish"
+msgstr "шведскі"
 
 # 	Swedish
 #: ../languages/dynamic_strings.php:302
 msgid "l-sv-fi"
-msgstr "Swedish (Finland)"
+msgstr "Шведскі (Фінляндыя)"
 
 # 	Swedish
 #: ../languages/dynamic_strings.php:303
 msgid "l-sv-se"
-msgstr "Swedish (Sweden)"
+msgstr "Шведскі (Швецыя)"
 
 # 	Swahili
 #: ../languages/dynamic_strings.php:304
@@ -5643,279 +5640,279 @@ msgstr "Swahili"
 # 	Swahili
 #: ../languages/dynamic_strings.php:305
 msgid "l-sw-ke"
-msgstr "Swahili (Kenya)"
+msgstr "Суахілі (Кенія)"
 
 # 	Tamil
 #: ../languages/dynamic_strings.php:306
 msgid "l-ta"
-msgstr "Tamil"
+msgstr "тамільская"
 
 # 	Tamil
 #: ../languages/dynamic_strings.php:307
 msgid "l-ta-in"
-msgstr "Tamil (India)"
+msgstr "Тамільская (Індыя)"
 
 # 	Telugu
 #: ../languages/dynamic_strings.php:308
 msgid "l-te"
-msgstr "Telugu"
+msgstr "тэлугу"
 
 # 	Telugu
 #: ../languages/dynamic_strings.php:309
 msgid "l-te-in"
-msgstr "Telugu (India)"
+msgstr "Тэлугу (Індыя)"
 
 # 	Thai
 #: ../languages/dynamic_strings.php:310
 msgid "l-th"
-msgstr "Thai"
+msgstr "тайская"
 
 # 	Thai
 #: ../languages/dynamic_strings.php:311
 msgid "l-th-th"
-msgstr "Thai (Thailand)"
+msgstr "Тайская (Тайланд)"
 
 # 	Tagalog
 #: ../languages/dynamic_strings.php:312
 msgid "l-tl"
-msgstr "Tagalog"
+msgstr "Тагалог"
 
 # 	Tagalog
 #: ../languages/dynamic_strings.php:313
 msgid "l-tl-ph"
-msgstr "Tagalog (Philippines)"
+msgstr "Тагалог (Філіпіны)"
 
 # 	Tswana
 #: ../languages/dynamic_strings.php:314
 msgid "l-tn"
-msgstr "Tswana"
+msgstr "тсвана"
 
 # 	Tswana
 #: ../languages/dynamic_strings.php:315
 msgid "l-tn-za"
-msgstr "Tswana (South Africa)"
+msgstr "Тсвана (Паўднёвая Афрыка)"
 
 # 	Turkish
 #: ../languages/dynamic_strings.php:316
 msgid "l-tr"
-msgstr "Turkish"
+msgstr "турэцкі"
 
 # 	Turkish
 #: ../languages/dynamic_strings.php:317
 msgid "l-tr-tr"
-msgstr "Turkish (Turkey)"
+msgstr "Турэцкі (Турцыя)"
 
 # 	Tatar
 #: ../languages/dynamic_strings.php:318
 msgid "l-tt"
-msgstr "Tatar"
+msgstr "татарскі"
 
 # 	Tatar
 #: ../languages/dynamic_strings.php:319
 msgid "l-tt-ru"
-msgstr "Tatar (Russia)"
+msgstr "Татарскі (Расія)"
 
 # 	Tsonga
 #: ../languages/dynamic_strings.php:320
 msgid "l-ts"
-msgstr "Tsonga"
+msgstr "Тсонга"
 
 # 	Ukrainian
 #: ../languages/dynamic_strings.php:321
 msgid "l-uk"
-msgstr "Ukrainian"
+msgstr "украінскі"
 
 # 	Ukrainian
 #: ../languages/dynamic_strings.php:322
 msgid "l-uk-ua"
-msgstr "Ukrainian (Ukraine)"
+msgstr "Украінскі (Украіна)"
 
 # 	Urdu
 #: ../languages/dynamic_strings.php:323
 msgid "l-ur"
-msgstr "Urdu"
+msgstr "урду"
 
 # 	Urdu
 #: ../languages/dynamic_strings.php:324
 msgid "l-ur-pk"
-msgstr "Urdu (Pakistan)"
+msgstr "Урду (Пакістан)"
 
 # 	Uzbek
 #: ../languages/dynamic_strings.php:325
 msgid "l-uz"
-msgstr "Uzbek"
+msgstr "Узбекская"
 
 # 	Uzbek
 #: ../languages/dynamic_strings.php:326
 msgid "l-uz-uz"
-msgstr "Uzbek (Uzbekistan)"
+msgstr "Узбекская (Узбекістан)"
 
 # 	Vietnamese
 #: ../languages/dynamic_strings.php:327
 msgid "l-vi"
-msgstr "Vietnamese"
+msgstr "В'етнамская"
 
 # 	Vietnamese
 #: ../languages/dynamic_strings.php:328
 msgid "l-vi-vn"
-msgstr "Vietnamese (Viet Nam)"
+msgstr "В'етнамская (В'етнам)"
 
 # 	Xhosa
 #: ../languages/dynamic_strings.php:329
 msgid "l-xh"
-msgstr "Xhosa"
+msgstr "Каса"
 
 # 	Xhosa
 #: ../languages/dynamic_strings.php:330
 msgid "l-xh-za"
-msgstr "Xhosa (South Africa)"
+msgstr "Каса (Паўднёвая Афрыка)"
 
 # 	Chinese
 #: ../languages/dynamic_strings.php:331
 msgid "l-zh"
-msgstr "Chinese"
+msgstr "кітайскі"
 
 # 	Chinese
 #: ../languages/dynamic_strings.php:332
 msgid "l-zh-cn"
-msgstr "Chinese (S)"
+msgstr "Кітайскі (S)"
 
 # 	Chinese
 #: ../languages/dynamic_strings.php:333
 msgid "l-zh-hk"
-msgstr "Chinese (Hong Kong)"
+msgstr "Кітайскі (Ганконг)"
 
 # 	Chinese
 #: ../languages/dynamic_strings.php:334
 msgid "l-zh-mo"
-msgstr "Chinese (Macau)"
+msgstr "Кітайскі (Макао)"
 
 # 	Chinese
 #: ../languages/dynamic_strings.php:335
 msgid "l-zh-sg"
-msgstr "Chinese (Singapore)"
+msgstr "Кітайскі (Сінгапур)"
 
 # 	Chinese
 #: ../languages/dynamic_strings.php:336
 msgid "l-zh-tw"
-msgstr "Chinese (T)"
+msgstr "Кітайскі (T)"
 
 # 	Zulu
 #: ../languages/dynamic_strings.php:337
 msgid "l-zu"
-msgstr "Zulu"
+msgstr "Зулускі"
 
 # 	Zulu
 #: ../languages/dynamic_strings.php:338
 msgid "l-zu-za"
-msgstr "Zulu (South Africa)"
+msgstr "Зулускі (Паўднёвая Афрыка)"
 
 # Unknown
 #: ../languages/dynamic_strings.php:340
 msgid "l-empty"
-msgstr "Unknown"
+msgstr "Невядомы"
 
 # Unknown
 #: ../languages/dynamic_strings.php:341
 msgid "l-xx"
-msgstr "Unknown"
+msgstr "Невядомы"
 
 #: ../languages/dynamic_strings.php:343
 msgid "c-xy"
-msgstr "Local IP"
+msgstr "Лакальны IP"
 
-#: ../wp-slimstat.php:243 ../wp-slimstat.php:530
+#: ../wp-slimstat.php:238 ../wp-slimstat.php:524
 msgid "Notice: Pageview filtered by third-party code"
 msgstr "Заўвага: Прагляд старонкі фільтруюцца іншым кодам"
 
-#: ../wp-slimstat.php:260
+#: ../wp-slimstat.php:255
 #, php-format
 msgid "Error: Malformed URL %s"
 msgstr "Памылка: Няправільны фармат URL% s"
 
-#: ../wp-slimstat.php:284
+#: ../wp-slimstat.php:279
 #, php-format
 msgid "Notice: Referrer %s is blacklisted"
 msgstr "Заўвага: реферр %s занесены ў чорны спіс"
 
-#: ../wp-slimstat.php:362
+#: ../wp-slimstat.php:356
 #, php-format
 msgid "Notice: Permalink %s is blacklisted"
 msgstr "Заўвага: Permalinks %s занесены ў чорны спіс"
 
-#: ../wp-slimstat.php:373
+#: ../wp-slimstat.php:367
 msgid "Error: Empty or not supported IP address format (IPv6)"
 msgstr "Памылка: пустая або не падтрымліваецца фармат IP-адрас (IPv6)"
 
-#: ../wp-slimstat.php:382
+#: ../wp-slimstat.php:376
 #, php-format
 msgid "Notice: Logged in user %s not tracked"
 msgstr "Заўвага: аўтарызаваны карыстальнік %s не адсочваецца"
 
-#: ../wp-slimstat.php:390
+#: ../wp-slimstat.php:384
 #, php-format
 msgid "Notice: User with capability %s not tracked"
 msgstr "Заўвага: Карыстальнік з магчымасцю %s не адсочваецца"
 
-#: ../wp-slimstat.php:400
+#: ../wp-slimstat.php:394
 #, php-format
 msgid "Notice: User %s is blacklisted"
 msgstr "Заўвага: Карыстальнік %s занесены ў чорны спіс"
 
-#: ../wp-slimstat.php:421
+#: ../wp-slimstat.php:415
 #, php-format
 msgid "Notice: Spammer %s not tracked"
 msgstr "Заўвага: Спамер %s не адсочваецца"
 
-#: ../wp-slimstat.php:450
+#: ../wp-slimstat.php:444
 #, php-format
 msgid "Notice: IP address %s is blacklisted"
 msgstr "Заўвага: IP-адрас %s занесены ў чорны спіс"
 
-#: ../wp-slimstat.php:479
+#: ../wp-slimstat.php:473
 #, php-format
 msgid "Notice: Country %s is blacklisted"
 msgstr "Заўвага: краіна  %s занесена  ў чорны спіс"
 
-#: ../wp-slimstat.php:488
+#: ../wp-slimstat.php:482
 msgid "Notice: Prefetch requests are ignored"
 msgstr "Заўвага: папярэднія запыты ігнаруюцца"
 
-#: ../wp-slimstat.php:504
+#: ../wp-slimstat.php:498
 msgid "Notice: Bot not tracked"
 msgstr "Заўвага: праграма-робат не адсочваецца"
 
-#: ../wp-slimstat.php:513
+#: ../wp-slimstat.php:507
 #, php-format
 msgid "Notice: Browser %s is blacklisted"
 msgstr "Заўвага: Браўзэры %s занесены ў чорны спіс"
 
-#: ../wp-slimstat.php:543
+#: ../wp-slimstat.php:537
 msgid "Error:"
 msgstr "Пасылка:"
 
-#: ../wp-slimstat.php:1161
+#: ../wp-slimstat.php:1155
 msgid "Invalid payload string. Try clearing your WordPress cache."
 msgstr ""
 "Недапушчальная радок карыснай нагрузкі. Паспрабуйце ачысціць кэш WordPress."
 
-#: ../wp-slimstat.php:1171
+#: ../wp-slimstat.php:1165
 msgid "Invalid data signature. Try clearing your WordPress cache."
 msgstr "Няправільная подпіс дадзеных. Паспрабуйце ачысціць кэш WordPress."
 
-#: ../wp-slimstat.php:1265
+#: ../wp-slimstat.php:1259
 msgid "There was an error downloading the MaxMind Geolite DB:"
 msgstr "Памылка загрузкі MaxMind Geolite DB:"
 
-#: ../wp-slimstat.php:1273 ../wp-slimstat.php:1282
+#: ../wp-slimstat.php:1267 ../wp-slimstat.php:1276
 msgid "There was an error opening the zipped MaxMind Geolite DB."
 msgstr "Памылка пры адкрыцці архіва MaxMind Geolite DB."
 
-#: ../wp-slimstat.php:1277
+#: ../wp-slimstat.php:1271
 msgid "Function gzopen not defined. Aborting."
 msgstr "Функцыя gzopen не вызначана. "
 
-#: ../wp-slimstat.php:1287
+#: ../wp-slimstat.php:1281
 msgid "There was an error opening the unzipped MaxMind Geolite DB."
 msgstr "Памылка пры адкрыцці архiва MaxMind Geolite DB."
 

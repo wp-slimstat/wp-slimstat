@@ -12,7 +12,7 @@ class wp_slimstat_admin {
 	 */
 	public static function init(){
 		if ( ( wp_slimstat::$options[ 'enable_ads_network' ] == 'yes' || wp_slimstat::$options[ 'enable_ads_network' ] == 'no' ) ) {
-			self::$admin_notice = "We are working on improving our social media presence and boosting our visibility on search engines and other websites. In the next few weeks we will officially open our blog, where we will publish news updates, articles about analytics and user tracking techniques, videos diving into the many features of Slimstat and so on. While we get ready, you can <a href='https://www.facebook.com/wpslimstatistics/' target='_blank'>like our Facebook page</a> or follow us on our <a href='https://twitter.com/wp_stats' target='_blank'>Twitter channel</a>.";
+			self::$admin_notice = "Just a quick note to let you know that we will be focusing on a major project in the next few weeks, so both development and customer support might be less responsive than usual. Please be patient, and refrain from submitting the same request more than once. Thank you!";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
