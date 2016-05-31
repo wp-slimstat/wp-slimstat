@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.5
-Stable tag: 4.3.2.2
+Stable tag: 4.3.2.3
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.3.2.3 =
+* [Note] Thanks to our user Boris, we were able to clarify some license issues with our partner IP2Location. We look forward to extending the functionality implemented by our IP2Location add-on to offer a better user experience, especially when exporting the data.
+* [Fix] When checking for spammers, if our Custom DB add-on was enabled, the plugin was generating a SQL error (thank you, [SGURYGF](https://wordpress.org/support/topic/custom-db-issue))
 
 = 4.3.2.2 =
 * [Note] Just a quick note to let you know that we will be focusing on a major project in the next few weeks, so both development and customer support might be less responsive than usual. Please be patient, and refrain from submitting the same request more than once. Thank you!

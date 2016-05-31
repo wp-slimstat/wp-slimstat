@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3.2.2
+Version: 4.3.2.3
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.3.2.2';
+	public static $version = '4.3.2.3';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -404,7 +404,7 @@ class wp_slimstat {
 			// Is this a spammer?
 			$spam_comment = self::$wpdb->get_row( self::$wpdb->prepare( "
 				SELECT comment_author, COUNT(*) comment_count
-				FROM {$GLOBALS['wpdb']->prefix}comments
+				FROM `{$GLOBALS['wpdb']->dbname}`.{$GLOBALS['wpdb']->comments}
 				WHERE comment_author_IP = %s AND comment_approved = 'spam'
 				GROUP BY comment_author
 				LIMIT 0,1", self::$stat[ 'ip' ] ), ARRAY_A );
