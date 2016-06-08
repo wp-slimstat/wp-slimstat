@@ -188,8 +188,19 @@ else {
 			$domain = parse_url( $results[ $i ] [ 'referer' ] );
 			$domain = !empty( $domain[ 'host' ] ) ? $domain[ 'host' ] : '';
 			$results[$i][ 'referer' ] = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> $domain":'';
-			$results[$i][ 'outbound_resource' ] = ( !empty( $results[ $i ][ 'outbound_resource' ] ) ) ? "<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$results[$i]['outbound_resource']}'></a> {$results[$i]['outbound_resource']}" : '';
 			$results[$i][ 'content_type' ] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
+
+			// The Outbound Links field might contain more than one link
+			if ( !empty( $results[ $i ][ 'outbound_resource' ] ) ) {
+				$exploded_outbound_resources = explode( ';;;', $results[ $i ][ 'outbound_resource' ] );
+				$results[$i][ 'outbound_resource' ] = '';
+				foreach ( $exploded_outbound_resources as $a_resource ) {
+					$results[ $i ][ 'outbound_resource' ] .= "<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$a_resource}'></a> {$a_resource}";
+				}
+			}
+			else {
+				$results[$i][ 'outbound_resource' ] = '';
+			}
 
 			if ( $current_user_can_delete ){
 				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this pageview','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";

@@ -12,7 +12,7 @@ class wp_slimstat_admin {
 	 */
 	public static function init(){
 		if ( ( wp_slimstat::$options[ 'enable_ads_network' ] == 'yes' || wp_slimstat::$options[ 'enable_ads_network' ] == 'no' ) ) {
-			self::$admin_notice = "Just a quick note to let you know that we will be focusing on a major project in the next few weeks, so both development and customer support might be less responsive than usual. Please be patient, and refrain from submitting the same request more than once. Thank you!";
+			self::$admin_notice = "Would you like to meet some of the people behind Slimstat? We will be attending the upcoming <a href='https://2016.nyc.wordcamp.org/' target='_blank'>WordCamp New York City 2016</a>, which is hosted at the United Nations this year. Feel free to contact us through our support platform for more information.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
