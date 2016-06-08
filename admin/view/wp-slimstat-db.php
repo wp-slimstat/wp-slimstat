@@ -835,7 +835,6 @@ class wp_slimstat_db {
 
 		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
-		//if ( $_column == 'id' || $_column == '*' ) {
 		$results = self::get_results( "
 			SELECT $columns
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
@@ -851,22 +850,6 @@ class wp_slimstat_db {
 		}
 
 		return $results;
-
-		//}
-		//else {
-		//	return self::get_results( "
-		//		SELECT t1.*
-		//		FROM (
-		//			SELECT $_column, MAX(id) maxid
-		//			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-		//			WHERE $_where
-		//			GROUP BY $_as_column $_having
-		//		) AS ts1 INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.maxid = t1.id
-		//		ORDER BY t1.dt DESC
-		//		LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
-		//		( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ).', blog_id',
-		//		't1.dt DESC' );
-		//}
 	}
 
 	public static function get_recent_events() {
@@ -885,6 +868,21 @@ class wp_slimstat_db {
 			WHERE $where
 			ORDER BY te.dt DESC"
 		);
+	}
+
+	public static function get_recent_outbound() {
+		$mixed_outbound_resources = self::get_recent( 'outbound_resource' );
+		$clean_outbound_resources = array();
+
+		foreach ( $mixed_outbound_resources as $a_mixed_resource ) {
+			$exploded_resources = explode( ';;;', $a_mixed_resource[ 'outbound_resource' ] );
+			foreach ( $exploded_resources as $a_exploded_resource ) {
+				$a_mixed_resource[ 'outbound_resource' ] = $a_exploded_resource;
+				$clean_outbound_resources[] = $a_mixed_resource;
+			}
+		}
+
+		return $clean_outbound_resources;
 	}
 
 	public static function get_top( $_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '' ){
@@ -973,6 +971,31 @@ class wp_slimstat_db {
 			GROUP BY te.notes, te.type
 			ORDER BY counthits DESC"
 		);
+	}
+
+	public static function get_top_outbound() {
+		$mixed_outbound_resources = self::get_recent( 'outbound_resource' );
+		$clean_outbound_resources = array();
+
+		foreach ( $mixed_outbound_resources as $a_mixed_resource ) {
+			$exploded_resources = explode( ';;;', $a_mixed_resource[ 'outbound_resource' ] );
+			foreach ( $exploded_resources as $a_exploded_resource ) {
+				$clean_outbound_resources[] = $a_exploded_resource;
+			}
+		}
+
+		$clean_outbound_resources = array_count_values( $clean_outbound_resources );
+		arsort( $clean_outbound_resources );
+
+		$sorted_outbound_resources = array();
+		foreach ( $clean_outbound_resources as $a_resource => $a_count ) {
+			$sorted_outbound_resources[] = array(
+				'outbound_resource' => $a_resource,
+				'counthits' => $a_count
+			);
+		}
+
+		return $sorted_outbound_resources;
 	}
 
 	protected static function array_column( $input = array(), $columns = array() ) {

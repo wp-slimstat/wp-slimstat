@@ -574,7 +574,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'outbound_resource',
-					'raw' => array( 'wp_slimstat_db', 'get_recent' )
+					'raw' => array( 'wp_slimstat_db', 'get_recent_outbound' )
 				),
 				'classes' => array( 'wide' ),
 				'screens' => array( 'slimview4' ),
@@ -785,7 +785,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'outbound_resource',
-					'raw' => array( 'wp_slimstat_db', 'get_top' ),
+					'raw' => array( 'wp_slimstat_db', 'get_top_outbound' ),
 					'criteria' => 'swap'
 				),
 				'classes' => array( 'normal', 'hidden' ),
@@ -841,7 +841,7 @@ class wp_slimstat_reports {
 				'screens' => array( 'slimview4' )
 			),
 			'slim_p4_26_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
-				'title' => __( 'Outbound Links', 'wp-slimstat' ),
+				'title' => __( 'Pages with Outbound Links', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
 					'id' => 'slim_p4_26_01',
@@ -1167,7 +1167,7 @@ class wp_slimstat_reports {
 
 					if ( $_args[ 'criteria' ] == 'swap' ) {
 						$percentage = ' <span>' . $counthits . '</span>';
-						$row_details = $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details;
+						$row_details = ( $column_not_calculated != 'outbound_resource' ) ? $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details : '';
 					}
 					else {
 						$percentage = ' <span>' . $percentage_value . '%</span>';

