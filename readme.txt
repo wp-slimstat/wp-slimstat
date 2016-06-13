@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.3.2.3
+Stable tag: 4.3.3
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.3.3 =
+* [New] The tracker can now record more than one outbound link per pageview. The corresponding reports have been updated to keep the new column structure into consideration when calculating the values. (thank you, [john](https://wordpress.org/support/topic/external-link-tracking-replace-with-another-link))
+* [Update] The default method for determining the browser from the user agent string will now be our proprietary heuristic function, not browscap anymore. If needed, you can change this under Settings > Tracker tab.
+* [Fix] A PHP warning was being returned after tracking a click event on an internal download (thank you, [Stephen S](https://wordpress.org/support/topic/php-notice-undefined-var-data_js)).
+* [Fix] The new version of Browscap bundled with Slimstat 4.3.2 was causing quite a few 500 Server Error messages for our users. The nature of the issue remains unclear, however we decided to roll back to the previous version of the data file, which was working without any problems.
+* [Fix] Adding a trailing comma to some of the text settings could trigger unexpected behaviors in the tracker. (thank you, [paronomasiaster](https://wordpress.org/support/topic/slimstat-not-recording-hits))
 
 = 4.3.2.3 =
 * [Note] Thanks to our user Boris, we were able to clarify some license issues with our partner IP2Location. We look forward to extending the functionality implemented by our IP2Location add-on to offer a better user experience, especially when exporting the data.
