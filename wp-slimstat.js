@@ -1,4 +1,3 @@
-
 var SlimStat = {
 	// Private Properties
 	_id: "undefined" != typeof SlimStatParams.id ? SlimStatParams.id : "-1.0",
@@ -468,7 +467,7 @@ SlimStat.add_event( window, "load", function() {
 			}
 
 			// Track downloads (internal)
-			extension_current_link = cur_link.pathname.split( '.' ).pop().replace( /[\/\-]/g, '' );
+			extension_current_link = cur_link.pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
 			if ( extensions_to_track.length > 0 && 2 == cur_link.getAttribute( "data-slimstat-type" ) && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
 				cur_link.setAttribute( "data-slimstat-tracking", "true" );
 				cur_link.setAttribute( "data-slimstat-type", 1 );

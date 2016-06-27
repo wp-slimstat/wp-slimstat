@@ -12,7 +12,7 @@ class wp_slimstat_admin {
 	 */
 	public static function init(){
 		if ( ( wp_slimstat::$options[ 'enable_ads_network' ] == 'yes' || wp_slimstat::$options[ 'enable_ads_network' ] == 'no' ) ) {
-			self::$admin_notice = "Would you like to meet some of the people behind Slimstat? We will be attending the upcoming <a href='https://2016.nyc.wordcamp.org/' target='_blank'>WordCamp New York City 2016</a>, which is hosted at the United Nations this year. Feel free to contact us through our support platform for more information.";
+			self::$admin_notice = "Thanks to our collaboration with a team of expert content editors, we are finally starting to work on our social media presence and content creation. <a href='https://www.facebook.com/wpslimstatistics/' target='_blank'>Follow us on Facebook</a> to stay up to date with the latest news, bug fixes and articles related to Slimstat. You might even be lucky enough to find a discount code to use on our online store (ssshh, don't tell anyone). See you there.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -757,9 +757,9 @@ class wp_slimstat_admin {
 		wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 	}
 	
-	public static function wp_slimstat_enqueue_config_scripts(){
-		wp_enqueue_script('slimstat_config_admin', plugins_url('/admin/js/slimstat.config.admin.js', dirname(__FILE__)), array( 'dashboard' ));
-	}
+	// public static function wp_slimstat_enqueue_config_scripts(){
+	// 	wp_enqueue_script('slimstat_config_admin', plugins_url('/admin/js/slimstat.config.admin.js', dirname(__FILE__)), array( 'dashboard' ));
+	// }
 
 	/**
 	 * Adds a new entry in the admin menu, to view the stats
@@ -870,16 +870,16 @@ class wp_slimstat_admin {
 			$minimum_capability = wp_slimstat::$options['capability_can_admin'];
 		}
 
-		if (wp_slimstat::$options['use_separate_menu'] == 'yes'){
-			$new_entry = add_submenu_page('slimview1', __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'slimconfig', array(__CLASS__, 'wp_slimstat_include_config'));
+		if ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' ) {
+			$new_entry = add_submenu_page( 'slimview1', __( 'Settings','wp-slimstat' ), __( 'Settings','wp-slimstat' ), $minimum_capability, 'slimconfig', array( __CLASS__, 'wp_slimstat_include_config' ) );
 		}
 		else {
-			$new_entry = add_submenu_page(null, __('Settings','wp-slimstat'), __('Settings','wp-slimstat'), $minimum_capability, 'slimconfig', array(__CLASS__, 'wp_slimstat_include_config'));
+			$new_entry = add_submenu_page( null, __( 'Settings','wp-slimstat' ), __( 'Settings','wp-slimstat' ), $minimum_capability, 'slimconfig', array( __CLASS__, 'wp_slimstat_include_config' ) );
 		}
 		
 		// Load styles and Javascript needed to make the reports look nice and interactive
-		add_action('load-'.$new_entry, array(__CLASS__, 'wp_slimstat_stylesheet'));
-		add_action('load-'.$new_entry, array(__CLASS__, 'wp_slimstat_enqueue_config_scripts'));
+		add_action( 'load-' . $new_entry, array( __CLASS__, 'wp_slimstat_stylesheet' ) );
+		//add_action('load-'.$new_entry, array(__CLASS__, 'wp_slimstat_enqueue_config_scripts'));
 
 		return $_s;
 	}
@@ -1137,25 +1137,29 @@ class wp_slimstat_admin {
 	/*
 	 * Updates the options 
 	 */
-	public static function update_options($_options = array()){
-		if (!isset($_POST['options']) || empty($_options)) return true;
+	public static function update_options( $_options = array() ) {
 
-		foreach($_options as $_option_name => $_option_details){
+		// Nothing to do, if there is no data to be parsed
+		if ( !isset( $_POST[ 'options' ] ) || empty( $_options ) ) {
+			return true;
+		}
+
+		foreach( $_options as $_option_name => $_option_details ) {
 			// Some options require a special treatment and are updated somewhere else
-			if (isset($_option_details['skip_update'])){
+			if ( isset( $_option_details[ 'skip_update' ] ) ) {
 				continue;
 			}
 
-			if (isset($_POST['options'][$_option_name])){
-				wp_slimstat::$options[$_option_name] = $_POST['options'][$_option_name];
+			if ( !empty( $_POST[ 'options' ][ $_option_name ] ) ) {
+				wp_slimstat::$options[ $_option_name ] = $_POST[ 'options' ][ $_option_name ];
 			}
 		}
 
-		if (!empty(self::$faulty_fields)){
-			self::show_alert_message(__('There was an error updating the following options:','wp-slimstat').' '.implode(', ', self::$faulty_fields), 'wp-ui-highlight below-h2');
+		if ( !empty( self::$faulty_fields ) ) {
+			self::show_alert_message( __( 'There was an error updating the following options:', 'wp-slimstat' ) . ' ' . implode( ', ', self::$faulty_fields ), 'wp-ui-highlight below-h2' );
 		}
 		else{
-			self::show_alert_message(__('Your changes have been saved.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			self::show_alert_message( __('Your changes have been saved.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 		}
 	}
 

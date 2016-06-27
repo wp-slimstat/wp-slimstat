@@ -6,35 +6,34 @@ if ( !function_exists( 'add_action' ) ) {
 }
 
 // Handle special options
-if (isset($_POST['options']['auto_purge'])){
-	if ($_POST['options']['auto_purge'] == 0){
-		wp_clear_scheduled_hook('wp_slimstat_purge');
+if ( isset( $_POST[ 'options' ][ 'auto_purge' ] ) ) {
+	if ( $_POST[ 'options' ][ 'auto_purge' ] == 0 ) {
+		wp_clear_scheduled_hook( 'wp_slimstat_purge' );
 	}
-	else if (wp_next_scheduled( 'my_schedule_hook' ) == 0){
-		wp_schedule_event(time(), 'daily', 'wp_slimstat_purge');
+	else if ( wp_next_scheduled( 'my_schedule_hook' ) == 0 ) {
+		wp_schedule_event( time(), 'daily', 'wp_slimstat_purge' );
 	}
 }
 
-if (!empty($_POST['options']['ignore_capabilities'])){
+if ( isset( $_POST[ 'options' ][ 'ignore_capabilities' ] ) ) {
 	// Make sure all the capabilities exist in the system 
-	$capability_array = wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']);
 	$capability_not_found = false;
-	foreach(wp_slimstat::string_to_array($_POST['options']['ignore_capabilities']) as $a_capability){
-		if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && !array_key_exists($a_capability, $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
+	foreach( wp_slimstat::string_to_array( $_POST[ 'options' ][ 'ignore_capabilities' ] ) as $a_capability ) {
+		if ( isset( $GLOBALS[ 'wp_roles' ]->role_objects[ 'administrator' ]->capabilities ) && !array_key_exists( $a_capability, $GLOBALS[ 'wp_roles' ]->role_objects[ 'administrator' ]->capabilities ) ) {
 			$capability_not_found = true;
 			break;
 		}
 	}
-	
-	if (!$capability_not_found){		
-		wp_slimstat::$options['ignore_capabilities'] = $_POST['options']['ignore_capabilities'];
+
+	if ( !$capability_not_found ) {
+		wp_slimstat::$options[ 'ignore_capabilities' ] = $_POST[ 'options' ][ 'ignore_capabilities' ];
 	}
 	else{
-		wp_slimstat_admin::$faulty_fields[] = __('Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information','wp-slimstat');
+		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information', 'wp-slimstat' );
 	}
 }
 
-if (!empty($_POST['options']['can_view'])){
+if ( isset( $_POST[ 'options' ][ 'can_view' ] ) ) {
 	// Make sure all the users exist in the system 
 	$post_data = trim($_POST['options']['can_view']);
 	$user_array = wp_slimstat::string_to_array($_POST['options']['can_view']);
@@ -50,7 +49,7 @@ if (!empty($_POST['options']['can_view'])){
 	}
 }
 
-if (!empty($_POST['options']['capability_can_view'])){
+if ( isset( $_POST[ 'options' ][ 'capability_can_view' ] ) ) {
 	if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_view'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
 		wp_slimstat::$options['capability_can_view'] = $_POST['options']['capability_can_view'];
 	}
@@ -59,7 +58,7 @@ if (!empty($_POST['options']['capability_can_view'])){
 	}
 }
 
-if (!empty($_POST['options']['can_admin'])){
+if ( isset( $_POST[ 'options' ][ 'can_admin' ] ) ) {
 	// Make sure all the users exist in the system
 	$post_data = trim($_POST['options']['can_admin']);
 	$user_array = wp_slimstat::string_to_array($_POST['options']['can_admin']);
@@ -75,7 +74,7 @@ if (!empty($_POST['options']['can_admin'])){
 	}
 }
 			
-if (!empty($_POST['options']['capability_can_admin'])){
+if ( isset( $_POST[ 'options' ][ 'capability_can_admin' ] ) ) {
 	if (isset($GLOBALS['wp_roles']->role_objects['administrator']->capabilities) && array_key_exists($_POST['options']['capability_can_admin'], $GLOBALS['wp_roles']->role_objects['administrator']->capabilities)){
 		wp_slimstat::$options['capability_can_admin'] = $_POST['options']['capability_can_admin'];
 	}
@@ -91,19 +90,19 @@ $options = array(
 	1 => array(
 		'title' => __( 'Basic', 'wp-slimstat' ),
 		'rows' => array(
-			'general_tracking_header' => array('description' => __('Tracker','wp-slimstat'), 'type' => 'section_header'),
+			'general_tracking_header' => array( 'description' => __( 'Tracker', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'is_tracking' => array( 'description' => __( 'Enable Tracking', 'wp-slimstat' ), 'type' => 'yesno', 'long_description' => __( 'Turn the tracker on or off, while keeping the reports accessible.', 'wp-slimstat' ) ),
 			'javascript_mode' => array( 'description' => __( 'Tracking Mode', 'wp-slimstat' ), 'type' => 'yesno', 'long_description' => __('Select <strong>Client</strong> if you are using a caching plugin (W3 Total Cache, WP SuperCache, HyperCache, etc). Slimstat will behave pretty much like Google Analytics, and visitors whose browser does not support Javascript will be ignored. A nice side effect is that <strong>most spammers, search engines and other crawlers</strong> will not be tracked.','wp-slimstat'), 'custom_label_yes' => __('Client Side','wp-slimstat'), 'custom_label_no' => __('Server Side','wp-slimstat') ),
 			'enable_javascript' => array('description' => __('Stealth Mode','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Do not add the javascript tracking code to your pages, if tracking mode is set to Server. Please note: if enabled, this will prevent the tracker from collecting information such as screen resolution, outbound links, downloads, etc. This option is ignored if Tracking Mode is set to Client.",'wp-slimstat'), 'custom_label_yes' => __('Off','wp-slimstat'), 'custom_label_no' => __('On','wp-slimstat') ),
 			'track_admin_pages' => array( 'description' => __('Admin Pages','wp-slimstat'), 'type' => 'yesno', 'long_description' => __("Enable this option to track your users' activity within the admin.",'wp-slimstat'), 'custom_label_yes' => __('Track','wp-slimstat'), 'custom_label_no' => __('Do not track','wp-slimstat') ),
 
-			'general_integration_header' => array('description' => __('WordPress Integration','wp-slimstat'), 'type' => 'section_header'),
+			'general_integration_header' => array( 'description' => __( 'WordPress Integration', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'add_dashboard_widgets' => array( 'description' => __('Dashboard Widgets','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose if you want to have the most important reports on your WordPress Dashboard. Use the Screen Options dropdown to select which ones to display.','wp-slimstat') ),
 			'use_separate_menu' => array( 'description' => __('Menu Position','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Choose between a standalone admin menu for Slimstat or a drop down in the admin bar (if visible).','wp-slimstat'), 'custom_label_yes' => __('Side Menu','wp-slimstat'), 'custom_label_no' => __('Admin Bar','wp-slimstat') ),
 			'add_posts_column' => array( 'description' => __('Posts and Pages','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Add a new column to the Edit Posts/Pages screens, with the number of hits per post within the timeframe specified here below.','wp-slimstat') ),
 			'posts_column_day_interval' => array( 'description' => __('Report Interval','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enter the time range, in days, that should be used to calculate the value here above.','wp-slimstat') ),
 			'posts_column_pageviews' => array( 'description' => __('Report Type','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Select what kind of information you would like to see displayed on the Posts admin screen. Pageviews include all the hits regardless of the user, Unique IPs consider only one hit per user in the given time range.','wp-slimstat'), 'custom_label_yes' => __('Pageviews','wp-slimstat'), 'custom_label_no' => __('Unique IPs','wp-slimstat') ),
-			'hide_addons' => array( 'description' => __('Hide Add-ons','wp-slimstat'), 'type' => 'yesno', 'long_description' => __('Enable this option to hide all your <strong>active</strong> premium add-ons from the list of plugins in WordPress. Please note that you will still receive updates for hidden add-ons.','wp-slimstat') ),
+			'hide_addons' => array( 'description' => __( 'Hide Add-ons', 'wp-slimstat' ), 'type' => 'yesno', 'long_description' => __( 'Enable this option to hide all your <strong>active</strong> premium add-ons from the list of plugins in WordPress. Please note that you will still receive updates for hidden add-ons.', 'wp-slimstat' ) ),
 
 			'general_database_header' => array('description' => __('Database','wp-slimstat'), 'type' => 'section_header'),
 			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Clean-up log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').( (wp_slimstat::$options[ 'auto_purge' ] > 0)?' '.__('Next clean-up on','wp-slimstat').' <strong>'.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'</strong>. '.sprintf(__('Entries logged on or before %s will be archived or deleted according to the option here below.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$options['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') ),
