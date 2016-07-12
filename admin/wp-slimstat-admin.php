@@ -12,7 +12,7 @@ class wp_slimstat_admin {
 	 */
 	public static function init(){
 		if ( ( wp_slimstat::$options[ 'enable_ads_network' ] == 'yes' || wp_slimstat::$options[ 'enable_ads_network' ] == 'no' ) ) {
-			self::$admin_notice = "Thanks to our collaboration with a team of expert content editors, we are finally starting to work on our social media presence and content creation. <a href='https://www.facebook.com/wpslimstatistics/' target='_blank'>Follow us on Facebook</a> to stay up to date with the latest news, bug fixes and articles related to Slimstat. You might even be lucky enough to find a discount code to use on our online store (ssshh, don't tell anyone). See you there.";
+			self::$admin_notice = "We extended the archive feature which has been available for the past few years, by adding the events table to it. This table stores information about outbound links, Javascript or client events (clicks, form submits, downloads, etc) and until now it was not part of the archival process as a way to improve performance and save space in the database. However, a few users have pointed out that the information stored in that table is crucial to determine things like a page's heatmap, or to count download links. Being able to restore it was, as such, a popular feature request. Feel free to test this new feature and contact us if you have any questions.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -258,11 +258,11 @@ class wp_slimstat_admin {
 	/**
 	 * Support for WP MU network activations
 	 */
-	public static function new_blog($_blog_id){
-		switch_to_blog($_blog_id);
+	public static function new_blog( $_blog_id ) {
+		switch_to_blog( $_blog_id );
 		self::init_environment();
 		restore_current_blog();
-		wp_slimstat::$options = get_option('slimstat_options', array());
+		wp_slimstat::$options = get_option( 'slimstat_options', array() );
 	}
 	// end new_blog
 	
@@ -367,10 +367,26 @@ class wp_slimstat_admin {
 			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
 			LIKE {$GLOBALS['wpdb']->prefix}slim_stats";
 
+		// This table will track outbound links (clicks on links to external sites)
+		$events_archive_table_sql = "
+			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
+				event_id INT(10) NOT NULL AUTO_INCREMENT,
+				type TINYINT UNSIGNED DEFAULT 0,
+				event_description VARCHAR(64) DEFAULT NULL,
+				notes VARCHAR(256) DEFAULT NULL,
+				position VARCHAR(32) DEFAULT NULL,
+				id INT UNSIGNED NOT NULL DEFAULT 0,
+				dt INT(10) UNSIGNED DEFAULT 0,
+				
+				CONSTRAINT PRIMARY KEY (event_id),
+				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events_archive (dt)
+			) COLLATE utf8_general_ci $use_innodb";
+
 		// Ok, let's create the table structure
-		self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats', $_wpdb);
-		self::_create_table($events_table_sql, $GLOBALS['wpdb']->prefix.'slim_events', $_wpdb);
-		self::_create_table($archive_table_sql, $GLOBALS['wpdb']->prefix.'slim_stats_archive', $_wpdb);
+		self::_create_table( $stats_table_sql, $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats', $_wpdb );
+		self::_create_table( $events_table_sql, $GLOBALS[ 'wpdb' ]->prefix . 'slim_events', $_wpdb );
+		self::_create_table( $archive_table_sql, $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats_archive', $_wpdb );
+		self::_create_table( $events_archive_table_sql, $GLOBALS[ 'wpdb' ]->prefix . 'slim_events_archive', $_wpdb );
 
 		// Let's save the version in the database
 		if (empty(wp_slimstat::$options['version'])){
@@ -653,6 +669,28 @@ class wp_slimstat_admin {
 		if ( version_compare( wp_slimstat::$options[ 'version' ], '4.2.6', '<' ) ) {
 			wp_slimstat::$options[ 'auto_purge_delete' ] = ( wp_slimstat::$options[ 'auto_purge_delete' ] == 'yes' ) ? 'no' : 'yes';
 		}
+		// --- END: Updates for version 4.2.6 ---
+
+		// --- Updates for version 4.3.5 ---
+		if ( version_compare( wp_slimstat::$options[ 'version' ], '4.3.5', '<' ) ) {
+			$use_innodb = ( !empty( $have_innodb[ 0 ] ) && $have_innodb[ 0 ][ 'Value' ] == 'YES' ) ? 'ENGINE=InnoDB' : '';
+			$events_archive_table_sql = "
+				CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
+					event_id INT(10) NOT NULL AUTO_INCREMENT,
+					type TINYINT UNSIGNED DEFAULT 0,
+					event_description VARCHAR(64) DEFAULT NULL,
+					notes VARCHAR(256) DEFAULT NULL,
+					position VARCHAR(32) DEFAULT NULL,
+					id INT UNSIGNED NOT NULL DEFAULT 0,
+					dt INT(10) UNSIGNED DEFAULT 0,
+					
+					CONSTRAINT PRIMARY KEY (event_id),
+					INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events_archive (dt)
+				) COLLATE utf8_general_ci $use_innodb";
+
+			self::_create_table( $events_archive_table_sql, $GLOBALS[ 'wpdb' ]->prefix . 'slim_events_archive', $my_wpdb );
+		}
+		// --- END: Updates for version 4.3.5 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$options[ 'version' ] = wp_slimstat::$version;
@@ -1150,7 +1188,7 @@ class wp_slimstat_admin {
 				continue;
 			}
 
-			if ( !empty( $_POST[ 'options' ][ $_option_name ] ) ) {
+			if ( isset( $_POST[ 'options' ][ $_option_name ] ) ) {
 				wp_slimstat::$options[ $_option_name ] = $_POST[ 'options' ][ $_option_name ];
 			}
 		}

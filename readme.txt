@@ -5,7 +5,7 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.3.4
+Stable tag: 4.3.5
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.3.5 =
+* [New] The slim_events table is now being archived along with the main slim_stats table.
+* [Update] qTip2 and SlimScroll jQuery libraries have been updated to version 3.0.3 and 1.3.8 respectively.
+* [Fix] The "out" timestamp was not being archived, when data was being copied over to the archive table.
+* [Fix] Fixed an issue with HTTPS and Cloudflare when enqueueing the javascript tracker (thank you, [wuboys](https://wordpress.org/support/topic/use-admin_url-without-second-parameter))
+* [Fix] Some more fields in the settings could not be reset to an empty value, if a non-empty value had been set (thank you, [codx26](https://wordpress.org/support/topic/slimstat-not-displaying-any-type-of-stats-after-switching-from-temporary-url)).
 
 = 4.3.4 =
 * [Update] [Browscap](http://browscap.org/) library updated to version 6015, released on June 20th, 2016.

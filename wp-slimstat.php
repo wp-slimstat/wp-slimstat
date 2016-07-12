@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3.4
+Version: 4.3.5
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$options ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.3.4';
+	public static $version = '4.3.5';
 	public static $options = array();
 
 	public static $wpdb = '';
@@ -1440,7 +1440,7 @@ class wp_slimstat {
 
 		// Pass some information to Javascript
 		$params = array(
-			'ajaxurl' => admin_url('admin-ajax.php', ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443)?'https':'http'),
+			'ajaxurl' => admin_url( 'admin-ajax.php' ),
 			'async_tracker' => 'false'
 		);
 
@@ -1463,7 +1463,7 @@ class wp_slimstat {
 			$params[ 'async_tracker' ] = 'true';
 		}
 
-		if (self::$options['javascript_mode'] != 'yes'){
+		if ( self::$options[ 'javascript_mode' ] != 'yes' ) {
 			if ( !empty( self::$stat[ 'id' ] ) ) {
 				$params[ 'id' ] = self::_get_id_with_checksum( self::$stat[ 'id' ] );
 			}
@@ -1471,7 +1471,7 @@ class wp_slimstat {
 				$params[ 'id' ] = self::_get_id_with_checksum( '-300' );
 			}
 		}
-		else{
+		else {
 			$encoded_ci = base64_encode( serialize( self::_get_content_info() ) );
 			$params[ 'ci' ] = self::_get_id_with_checksum( $encoded_ci );
 		}
@@ -1498,23 +1498,36 @@ class wp_slimstat {
 		// Copy entries to the archive table, if needed
 		if ( self::$options[ 'auto_purge_delete' ] != 'no' ) {
 			$is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt)
-				SELECT ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt)
+				SELECT id, ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
 				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
 				WHERE dt < $days_ago");
 				
 			if ( $is_copy_done !== false ) {
 				self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
 			}
+
+			$is_copy_done = self::$wpdb->query("
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events_archive (type, event_description, notes, position, id, dt)
+				SELECT type, event_description, notes, position, id, dt
+				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events
+				WHERE dt < $days_ago");
+	
+			if ( $is_copy_done !== false ) {
+				self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
+			}
 		}
 		else {
 			// Delete old entries
 			self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
+			self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
 		}
 
 		// Optimize tables
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
+		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
+		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive" );
 	}
 
 	/**
