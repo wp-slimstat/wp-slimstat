@@ -19,7 +19,7 @@
 			
 			$filter_value_html = '<input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">';
 			
-			if (wp_slimstat::$options['enable_sov'] == 'yes'){
+			if (wp_slimstat::$settings['enable_sov'] == 'yes'){
 				echo $filter_value_html.$filter_operator_html.$filter_name_html;
 			}
 			else{
@@ -38,15 +38,15 @@
 		<fieldset id="slimstat-date-filters" class="wp-ui-highlight">
 			<a href="#"><?php
 				if (!empty(wp_slimstat_db::$filters_normalized['date']['hour']) || !empty(wp_slimstat_db::$filters_normalized['date']['interval_hours'])){
-					echo gmdate(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], wp_slimstat_db::$filters_normalized['utime']['start']).' - ';
-					$end_format = (date('Ymd', wp_slimstat_db::$filters_normalized['utime']['start']) != date('Ymd', wp_slimstat_db::$filters_normalized['utime']['end']))?wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format']:wp_slimstat::$options['time_format'];
-					echo gmdate($end_format, wp_slimstat_db::$filters_normalized['utime']['end']);
+					echo gmdate( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], wp_slimstat_db::$filters_normalized['utime']['start']).' - ';
+					$end_format = (date('Ymd', wp_slimstat_db::$filters_normalized['utime']['start']) != date('Ymd', wp_slimstat_db::$filters_normalized['utime']['end']))?wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ] : wp_slimstat::$settings[ 'time_format' ];
+					echo gmdate( $end_format, wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] );
 				}
 				else if (!empty(wp_slimstat_db::$filters_normalized['date']['day']) && empty(wp_slimstat_db::$filters_normalized['date']['interval'])){
-					echo ucwords(gmdate(wp_slimstat::$options['date_format'], wp_slimstat_db::$filters_normalized['utime']['start']));
+					echo ucwords(gmdate(wp_slimstat::$settings['date_format'], wp_slimstat_db::$filters_normalized['utime']['start']));
 				}
 				else{
-					echo ucwords(gmdate(wp_slimstat::$options['date_format'], wp_slimstat_db::$filters_normalized['utime']['start']).' - '.gmdate(wp_slimstat::$options['date_format'], wp_slimstat_db::$filters_normalized['utime']['end']));
+					echo ucwords( gmdate( wp_slimstat::$settings[ 'date_format' ], wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) . ' - ' . gmdate( wp_slimstat::$settings[ 'date_format' ], wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] ) );
 				}
 			?></a>
 			<span>
@@ -115,11 +115,11 @@
 		<?php endif; endforeach; ?>
 	</form>
 	<?php
-		if ( !file_exists( wp_slimstat::$maxmind_path ) && ( empty( wp_slimstat::$options[ 'no_maxmind_warning' ] ) || wp_slimstat::$options[ 'no_maxmind_warning' ] != 'yes' ) ) {
+		if ( !file_exists( wp_slimstat::$maxmind_path ) && ( empty( wp_slimstat::$settings[ 'no_maxmind_warning' ] ) || wp_slimstat::$settings[ 'no_maxmind_warning' ] != 'yes' ) ) {
 			wp_slimstat_admin::show_alert_message( sprintf( __( "Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6' ) . '<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
 		}
 
-		if ( wp_slimstat::$advanced_cache_exists && ( empty( wp_slimstat::$options[ 'no_caching_warning' ] ) || wp_slimstat::$options[ 'no_caching_warning' ] != 'yes' ) && ( empty( wp_slimstat::$options[ 'javascript_mode' ] ) || wp_slimstat::$options[ 'javascript_mode' ] != 'yes' ) ) {
+		if ( wp_slimstat::$advanced_cache_exists && ( empty( wp_slimstat::$settings[ 'no_caching_warning' ] ) || wp_slimstat::$settings[ 'no_caching_warning' ] != 'yes' ) && ( empty( wp_slimstat::$settings[ 'javascript_mode' ] ) || wp_slimstat::$settings[ 'javascript_mode' ] != 'yes' ) ) {
 			wp_slimstat_admin::show_alert_message( sprintf( __( "A caching plugin has been detected on your website. Please <a href='%s' target='_blank'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat' ), 'https://slimstat.freshdesk.com/support/solutions/articles/5000528524-i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra' ) . '<a id="slimstat-hide-caching-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
 		}
 

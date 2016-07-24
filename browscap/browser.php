@@ -11,7 +11,7 @@ class slim_browser {
 			return $browser;
 		}
 
-		if ( wp_slimstat::$options[ 'browser_detection_mode' ] == 'no' ) {
+		if ( wp_slimstat::$settings[ 'browser_detection_mode' ] == 'no' ) {
 			include_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
 			$browser = slim_uadetector::get_browser( $browser[ 'user_agent' ] );
 
@@ -104,7 +104,7 @@ class slim_browser {
 			}
 		}
 
-		if ( wp_slimstat::$options[ 'browser_detection_mode' ] != 'no' ) {
+		if ( wp_slimstat::$settings[ 'browser_detection_mode' ] != 'no' ) {
 			include_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
 			$browser = slim_uadetector::get_browser( $browser[ 'user_agent' ] );
 

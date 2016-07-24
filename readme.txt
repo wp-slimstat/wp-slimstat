@@ -1,11 +1,11 @@
-﻿=== WP Slimstat Analytics ===
+=== WP Slimstat Analytics ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.3.5
+Stable tag: 4.3.6
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -62,6 +62,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.3.6 =
+* [New] In the last few weeks we've been working on revamping the Settings screens, by turning those boring radio buttons and text areas into more polished and modern switches and sortable tag lists. No more separating values with commas, when creating blacklists or configuring access control lists. Now you can type values as tokens, drag and drop them to reorganize your lists, and easily delete values. Pleae note: we had to rename some class variables to streamline our codebase, so if you're referencing them in your code, make sure to use the new names to avoid errors. Please report any issues or concern to our [support team](http://support.wp-slimstat.com).
+* [Update] New versions of our premium add-ons will be released in the next few hours, to update the compatibility to the latest version of Slimstat. If you are not upgrading the main plugin, please DO NOT upgrade the add-ons.
+* [Update] Introduced some PHP code optimizations to the tracker. Readability has also been improved, by retrofitting our existing code and applying our style guide to it.
+* [Update] [AmCharts Map](https://www.amcharts.com/javascript-maps/), the library used to render our geolocation map, has been updated to version 3.20.9.
+* [Update] Language files now contain all the new strings introduced in the last few updates. Please consider contributing to the project by submitting a translation in your language.
+* [Fix] Multiple data purges were being scheduled under certain circumstances.
 
 = 4.3.5 =
 * [New] The slim_events table is now being archived along with the main slim_stats table.

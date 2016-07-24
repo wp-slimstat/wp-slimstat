@@ -37,6 +37,7 @@ function slimstat_uninstall($_wpdb = '', $_options = array()){
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_outbound");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_events");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
+	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_3");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive_3");

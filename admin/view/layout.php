@@ -40,7 +40,7 @@
 	$already_seen = array();
 
 	$current_user = wp_get_current_user();
-	$page_location = ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
+	$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
 ?>
 
 <div class="wrap slimstat-layout">

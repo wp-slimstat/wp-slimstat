@@ -36,7 +36,7 @@ class wp_slimstat_reports {
 		}
 
 		// Hidden Filters
-		if ( wp_slimstat::$options[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) ) {
+		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) ) {
 			$filters[] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
 			self::$hidden_filters[ 'author' ] = 1;
 		}
@@ -890,7 +890,7 @@ class wp_slimstat_reports {
 
 		// Retrieve this user's list of active reports, 
 		$current_user = wp_get_current_user();
-		$page_location = ( wp_slimstat::$options[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
+		$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
 		self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
 
 		// Do this only if we are in one of our screens (no dashboard!)
@@ -952,7 +952,7 @@ class wp_slimstat_reports {
 	}
 
 	public static function report_pagination( $_count_page_results = 0, $_count_all_results = 0, $_show_refresh_countdown = false, $_results_per_page = -1 ) {
-		$_results_per_page = ( $_results_per_page < 0 ) ? wp_slimstat::$options[ 'rows_to_show' ] : $_results_per_page;
+		$_results_per_page = ( $_results_per_page < 0 ) ? wp_slimstat::$settings[ 'rows_to_show' ] : $_results_per_page;
 
 		$endpoint = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page);
 		$pagination_buttons = '';
@@ -978,8 +978,8 @@ class wp_slimstat_reports {
 			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals 0').'"></a> ';
 		}
 
-		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1, 0, '', wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, '', wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, '', wp_slimstat_db::$formats['thousand']) . ( ( $_count_all_results == wp_slimstat::$options[ 'limit_results' ] ) ? '+' : '') );
-		if ($_show_refresh_countdown && wp_slimstat::$options['refresh_interval'] > 0 && !wp_slimstat_db::$filters_normalized['date']['is_past']){
+		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1, 0, '', wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, '', wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, '', wp_slimstat_db::$formats['thousand']) . ( ( $_count_all_results == wp_slimstat::$settings[ 'limit_results' ] ) ? '+' : '') );
+		if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && !wp_slimstat_db::$filters_normalized['date']['is_past']){
 			$pagination .= ' ['.__('Refresh in','wp-slimstat').' <i class="refresh-timer"></i>]';
 		}
 		$pagination .= $pagination_buttons.'</p>';
@@ -993,7 +993,7 @@ class wp_slimstat_reports {
 	}
 
 	public static function raw_results_to_html( $_args = array() ) {
-		if ( wp_slimstat::$options[ 'async_load' ] == 'yes' && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
+		if ( wp_slimstat::$settings[ 'async_load' ] == 'yes' && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
 			return '';
 		}
 
@@ -1015,7 +1015,7 @@ class wp_slimstat_reports {
 				echo "{$a_result[ 'metric' ]} <span>{$a_result[ 'value' ]}</span>";
 
 				if ( !empty( $a_result[ 'details' ] ) ) {
-					$is_expanded = ( wp_slimstat::$options[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
+					$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
 					echo "<b class='slimstat-tooltip-content$is_expanded'>{$a_result[ 'details' ]}</b>";
 				}
 
@@ -1026,7 +1026,7 @@ class wp_slimstat_reports {
 			$results = array_slice(
 				$all_results,
 				wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
-				wp_slimstat::$options[ 'rows_to_show' ]
+				wp_slimstat::$settings[ 'rows_to_show' ]
 			);
 
 			// Count the results
@@ -1059,7 +1059,7 @@ class wp_slimstat_reports {
 
 			self::report_pagination( $count_page_results, count( $all_results ) );
 			
-			$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
+			$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
 			$permalinks_enabled = get_option( 'permalink_structure' );
 			$column_not_calculated = str_replace( '_calculated', '', $_args[ 'columns' ] );
 
@@ -1072,7 +1072,7 @@ class wp_slimstat_reports {
 				switch ( $column_not_calculated ){
 
 					case 'browser':
-						if (!empty($results[$i]['user_agent']) && wp_slimstat::$options['show_complete_user_agent_tooltip'] == 'yes'){
+						if ( !empty( $results[ $i ][ 'user_agent' ] ) && wp_slimstat::$settings[ 'show_complete_user_agent_tooltip' ] == 'yes' ) {
 							$element_pre_value = self::inline_help($results[$i]['user_agent'], false);
 						}
 						$element_value = $results[$i]['browser'].((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0)?' '.$results[$i]['browser_version']:'');
@@ -1089,7 +1089,7 @@ class wp_slimstat_reports {
 						break;
 
 					case 'ip':
-						if ( wp_slimstat::$options['convert_ip_addresses'] == 'yes' ) {
+						if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'yes' ) {
 							$element_value = gethostbyaddr( $results[ $i ][ $_args[ 'columns' ] ] );
 						}
 						else{
@@ -1138,10 +1138,12 @@ class wp_slimstat_reports {
 						break;
 
 					case 'username':
-						$element_value = $results[$i]['username'];
-						if (wp_slimstat::$options['show_display_name'] == 'yes'){
-							$element_custom_value = get_user_by('login', $results[$i]['username']);
-							if (is_object($element_custom_value)) $element_value = $element_custom_value->display_name;
+						$element_value = $results[ $i ][ 'username' ];
+						if ( wp_slimstat::$settings[ 'show_display_name' ] == 'yes' ) {
+							$element_custom_value = get_user_by( 'login', $results[ $i ][ 'username' ] );
+							if ( is_object( $element_custom_value ) ) {
+								$element_value = $element_custom_value->display_name;
+							}
 						}
 						break;
 
@@ -1158,7 +1160,7 @@ class wp_slimstat_reports {
 				$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $column_not_calculated. ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
 
 				if ( !empty( $_args['type'] ) && $_args['type'] == 'recent' ) {
-					$row_details = date_i18n(wp_slimstat::$options['date_format'].' '.wp_slimstat::$options['time_format'], $results[$i]['dt'], true) . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details;
+					$row_details = date_i18n(wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $results[ $i ][ 'dt' ], true ) . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details;
 				}
 
 				if ( !empty($_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
@@ -1195,10 +1197,10 @@ class wp_slimstat_reports {
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 				}
 				
-				if (!empty($results[$i]['ip']) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$options['convert_ip_addresses'] != 'yes'){
-					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url('ip equals '.$results[$i]['ip']).'">'.$results[$i]['ip'].'</a>'.(!empty($results[$i]['other_ip'])?' / '.$results[$i]['other_ip']:'').'<a title="WHOIS: '.$results[$i]['ip'].'" class="slimstat-font-location-1 whois" href="'.wp_slimstat::$options['ip_lookup_service'].$results[$i]['ip'].'"></a>';
+				if ( !empty( $results[ $i ][ 'ip' ]) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$settings[ 'convert_ip_addresses' ] != 'yes' ) {
+					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url( 'ip equals ' . $results[ $i ][ 'ip' ] ) . '">' . $results[ $i ][ 'ip' ] . '</a>' . ( !empty( $results[ $i ][ 'other_ip' ] ) ? ' / ' . $results[ $i ][ 'other_ip' ] : '' ) . '<a title="WHOIS: ' . $results[ $i ][ 'ip' ] . '" class="slimstat-font-location-1 whois" href="' . wp_slimstat::$settings[ 'ip_lookup_service' ] . $results[ $i ][ 'ip' ] . '"></a>';
 				}
-				if (!empty($row_details)){
+				if ( !empty( $row_details ) ) {
 					$row_details = "<b class='slimstat-tooltip-content$is_expanded'>$row_details</b>";
 				}
 
@@ -1338,22 +1340,22 @@ class wp_slimstat_reports {
 		$results[ 1 ][ 'value' ] = wp_slimstat_db::get_data_size();
 
 		$results[ 2 ][ 'metric' ] = __( 'Tracking Enabled', 'wp-slimstat' );
-		$results[ 2 ][ 'value' ] = __( ucfirst( wp_slimstat::$options[ 'is_tracking' ] ), 'wp-slimstat' );
+		$results[ 2 ][ 'value' ] = __( ucfirst( wp_slimstat::$settings[ 'is_tracking' ] ), 'wp-slimstat' );
 
 		$results[ 3 ][ 'metric' ] = __( 'Javascript Mode', 'wp-slimstat' );
-		$results[ 3 ][ 'value' ] = __( ucfirst( wp_slimstat::$options[ 'javascript_mode' ] ), 'wp-slimstat' );
+		$results[ 3 ][ 'value' ] = __( ucfirst( wp_slimstat::$settings[ 'javascript_mode' ] ), 'wp-slimstat' );
 
 		$results[ 4 ][ 'metric' ] = __( 'Tracking Browser Caps', 'wp-slimstat' );
-		$results[ 4 ][ 'value' ] = __( ucfirst( wp_slimstat::$options[ 'enable_javascript' ] ), 'wp-slimstat' );
+		$results[ 4 ][ 'value' ] = __( ucfirst( wp_slimstat::$settings[ 'enable_javascript' ] ), 'wp-slimstat' );
 
 		$results[ 5 ][ 'metric' ] = __( 'Auto purge', 'wp-slimstat' );
-		$results[ 5 ][ 'value' ] = ( wp_slimstat::$options[ 'auto_purge' ] > 0 ) ? wp_slimstat::$options[ 'auto_purge' ] . ' ' . __( 'days', 'wp-slimstat' ) : __( 'Off', 'wp-slimstat' );
+		$results[ 5 ][ 'value' ] = ( wp_slimstat::$settings[ 'auto_purge' ] > 0 ) ? wp_slimstat::$settings[ 'auto_purge' ] . ' ' . __( 'days', 'wp-slimstat' ) : __( 'Off', 'wp-slimstat' );
 
 		$results[ 6 ][ 'metric' ] = __( 'Oldest pageview', 'wp-slimstat' );
-		$results[ 6 ][ 'value' ] = ( $dt == null ) ? __( 'No visits', 'wp-slimstat' ) : date_i18n( wp_slimstat::$options[ 'date_format' ], $dt );
+		$results[ 6 ][ 'value' ] = ( $dt == null ) ? __( 'No visits', 'wp-slimstat' ) : date_i18n( wp_slimstat::$settings[ 'date_format' ], $dt );
 
 		$results[ 7 ][ 'metric' ] = __( 'Geolocation', 'wp-slimstat' );
-		$results[ 7 ][ 'value' ] = date_i18n( wp_slimstat::$options[ 'date_format' ], @filemtime( wp_slimstat::$maxmind_path ) );
+		$results[ 7 ][ 'value' ] = date_i18n( wp_slimstat::$settings[ 'date_format' ], @filemtime( wp_slimstat::$maxmind_path ) );
 		$results[ 7 ][ 'tooltip' ] = __( 'Date when the MaxMind Geolocation database was last updated.', 'wp-slimstat' );
 
 		return $results;
@@ -1609,13 +1611,13 @@ class wp_slimstat_reports {
 				)
 			);
 
-			if ( !empty( wp_slimstat::$options[ 'mozcom_access_id' ] ) && !empty( wp_slimstat::$options[ 'mozcom_secret_key' ] ) ) {
+			if ( !empty( wp_slimstat::$settings[ 'mozcom_access_id' ] ) && !empty( wp_slimstat::$settings[ 'mozcom_secret_key' ] ) ) {
 				$expiration_token = time() + 300;
-				$binary_signature = @hash_hmac( 'sha1', wp_slimstat::$options[ 'mozcom_access_id' ] . "\n" . $expiration_token, wp_slimstat::$options[ 'mozcom_secret_key' ], true );
+				$binary_signature = @hash_hmac( 'sha1', wp_slimstat::$settings[ 'mozcom_access_id' ] . "\n" . $expiration_token, wp_slimstat::$settings[ 'mozcom_secret_key' ], true );
 				$binary_signature = urlencode( base64_encode( $binary_signature ) );
 
 				// SeoMoz Equity Links (Backlinks) and MozRank		
-				$response = @wp_remote_get( 'http://lsapi.seomoz.com/linkscape/url-metrics/' . $site_url . '?Cols=16672&AccessID=' . wp_slimstat::$options[ 'mozcom_access_id' ] . '&Expires=' . $expiration_token . '&Signature=' . $binary_signature, $options );
+				$response = @wp_remote_get( 'http://lsapi.seomoz.com/linkscape/url-metrics/' . $site_url . '?Cols=16672&AccessID=' . wp_slimstat::$settings[ 'mozcom_access_id' ] . '&Expires=' . $expiration_token . '&Signature=' . $binary_signature, $options );
 				if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
 					$response = @json_decode( $response[ 'body' ] );
 					if ( is_object( $response ) ) {
@@ -1739,7 +1741,7 @@ class wp_slimstat_reports {
 		$results = array_slice(
 			$all_results,
 			wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
-			wp_slimstat::$options[ 'rows_to_show' ]
+			wp_slimstat::$settings[ 'rows_to_show' ]
 		);
 
 		// Count the results
@@ -1757,13 +1759,13 @@ class wp_slimstat_reports {
 		}
 
 		self::report_pagination( $count_page_results, count( $all_results ) );
-		$is_expanded = ( wp_slimstat::$options['expand_details'] == 'yes' ) ? ' expanded' : '';
+		$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
 
 		foreach ( $results as $a_result ) {
 			echo "<p class='slimstat-tooltip-trigger'>{$a_result[ 'notes' ]} <b class='slimstat-tooltip-content$is_expanded'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
 
 			if ( !empty( $a_result[ 'dt' ] ) ) {
-				$date_time = date_i18n( wp_slimstat::$options[ 'date_format' ] . ' ' . wp_slimstat::$options[ 'time_format' ], $a_result[ 'dt' ], true );
+				$date_time = date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $a_result[ 'dt' ], true );
 				echo '<br/>' . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br/>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
 			}
 			if ( !empty( $a_result[ 'counthits' ] ) ) {
@@ -1961,7 +1963,7 @@ class wp_slimstat_reports {
 	public static function get_resource_title( $_resource = '' ) {
 		$resource_title = $_resource;
 
-		if  ( wp_slimstat::$options[ 'convert_resource_urls_to_titles' ] != 'yes' ) {
+		if  ( wp_slimstat::$settings[ 'convert_resource_urls_to_titles' ] != 'yes' ) {
 			return htmlentities( urldecode( $resource_title ), ENT_QUOTES, 'UTF-8' );
 		}
 
@@ -2080,7 +2082,7 @@ class wp_slimstat_reports {
 			'outer_select_column' => '',
 			'aggr_function' => 'MAX',
 			'use_date_filters' => true,
-			'results_per_page' => wp_slimstat::$options[ 'rows_to_show' ],
+			'results_per_page' => wp_slimstat::$settings[ 'rows_to_show' ],
 			'criteria' => ''
 		), $_args[ 'callback_args' ] );
 

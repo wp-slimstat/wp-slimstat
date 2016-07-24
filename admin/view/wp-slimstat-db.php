@@ -24,7 +24,7 @@ class wp_slimstat_db {
 	 */
 	public static function init( $_filters = '' ){
 		// Decimal and thousand separators
-		if ( wp_slimstat::$options[ 'use_european_separators' ] == 'no' ){
+		if ( wp_slimstat::$settings[ 'use_european_separators' ] == 'no' ){
 			self::$formats[ 'decimal' ] = '.';
 			self::$formats[ 'thousand' ] = ',';
 		}
@@ -323,7 +323,7 @@ class wp_slimstat_db {
 	public static function get_results( $_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '' ) {
 		$_sql = apply_filters( 'slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add );
 
-		if ( wp_slimstat::$options[ 'show_sql_debug' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'show_sql_debug' ] == 'yes' ) {
 			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
@@ -333,7 +333,7 @@ class wp_slimstat_db {
 	public static function get_var( $_sql = '', $_aggregate_value = '' ) {
 		$_sql = apply_filters( 'slimstat_get_var_sql', $_sql, $_aggregate_value );
 
-		if ( wp_slimstat::$options[ 'show_sql_debug' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'show_sql_debug' ] == 'yes' ) {
 			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
@@ -349,7 +349,7 @@ class wp_slimstat_db {
 			),
 			'misc' => $_init_misc?array(
 				'direction' => 'DESC',
-				'limit_results' => wp_slimstat::$options[ 'limit_results' ],
+				'limit_results' => wp_slimstat::$settings[ 'limit_results' ],
 				'start_from' => 0
 			) : array(),
 			'utime' => array(
@@ -662,7 +662,7 @@ class wp_slimstat_db {
 		switch (self::$filters_normalized[ 'utime' ][ 'type' ]) {
 			case 'H':
 				$previous[ 'start' ] = self::$filters_normalized[ 'utime' ][ 'start' ] - 3600;
-				$label_date_format = wp_slimstat::$options[ 'time_format' ];
+				$label_date_format = wp_slimstat::$settings[ 'time_format' ];
 				$group_by = array( 'HOUR', 'MINUTE', 'i' );
 				$values_in_interval = array( 59, 59, 0, 60 ); 
 				break;

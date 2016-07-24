@@ -6,7 +6,7 @@ if ( !function_exists( 'add_action' ) ) {
 
 // Update license keys, if needed
 if ( !empty( $_POST[ 'licenses' ] ) ) {
-	wp_slimstat::$options[ 'addon_licenses' ] = $_POST[ 'licenses' ];
+	wp_slimstat::$settings[ 'addon_licenses' ] = $_POST[ 'licenses' ];
 }
 
 $response = get_transient( 'wp_slimstat_addon_list' );
@@ -88,9 +88,9 @@ if ( !is_array( $list_addons ) ) {
 			</th>
 			<td class="column-description desc">
 				<div class="plugin-description"><p><?php echo $a_addon['description'] ?></p></div>
-				<?php if ((is_plugin_active($a_addon['slug'].'/index.php') || is_plugin_active($a_addon['slug'].'/'.$a_addon['slug'].'.php'))): ?>
+				<?php if ( ( is_plugin_active( $a_addon[ 'slug' ] . '/index.php' ) || is_plugin_active( $a_addon[ 'slug' ] . '/' . $a_addon[ 'slug' ] . '.php' ) ) ): ?>
 				<div class="active second">
-					License Key: <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty(wp_slimstat::$options['addon_licenses'][$a_addon['slug']])?wp_slimstat::$options['addon_licenses'][$a_addon['slug']]:'' ?>" size="50"/>
+					License Key: <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty( wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] ) ? wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] : '' ?>" size="50">
 				</div>
 				<?php endif; ?>
 			</td>

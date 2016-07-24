@@ -17,7 +17,7 @@ if (!empty($_REQUEST['action'])){
 			break;
 
 		case 'activate-sql-debug-mode':
-			wp_slimstat::$options[ 'show_sql_debug' ] = 'yes';
+			wp_slimstat::$settings[ 'show_sql_debug' ] = 'yes';
 			break;
 
 		case 'deactivate-indexes':
@@ -28,7 +28,7 @@ if (!empty($_REQUEST['action'])){
 			break;
 
 		case 'deactivate-sql-debug-mode':
-			wp_slimstat::$options[ 'show_sql_debug' ] = 'no';
+			wp_slimstat::$settings[ 'show_sql_debug' ] = 'no';
 			break;
 
 		case 'delete-records':
@@ -60,17 +60,17 @@ if (!empty($_REQUEST['action'])){
 			break;
 
 		case 'import-settings':
-			$new_options = @unserialize(stripslashes($_POST['import-slimstat-settings']));
-			$new_options = array_intersect_key($new_options, wp_slimstat::$options);
-			if (!empty($new_options)){
-				foreach ($new_options as $a_option_name => $a_option_value){
-					wp_slimstat::$options[$a_option_name] = $a_option_value;
+			$new_settings = @unserialize( stripslashes( $_POST[ 'import-slimstat-settings' ] ) );
+			$new_settings = array_intersect_key( $new_settings, wp_slimstat::$settings );
+			if ( !empty( $new_settings ) ) {
+				foreach ( $new_settings as $a_setting_name => $a_setting_value ) {
+					wp_slimstat::$settings[ $a_setting_name ] = $a_setting_value;
 				}
 			}
 			break;
 
 		case 'reset-tracker-status':
-			wp_slimstat::$options[ 'last_tracker_error' ] = array();
+			wp_slimstat::$settings[ 'last_tracker_error' ] = array();
 			break;
 
 		case 'restore-views':
@@ -116,7 +116,8 @@ $check_index = wp_slimstat::$wpdb->get_results( "SHOW INDEX FROM {$GLOBALS[ 'wpd
 $details_wp_slim_tables = array_merge(
 	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats'", ARRAY_A ),
 	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_events'", ARRAY_A ),
-	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive'", ARRAY_A )
+	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive'", ARRAY_A ),
+	wp_slimstat::$wpdb->get_results( "SHOW TABLE STATUS LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive'", ARRAY_A )
 );
 $have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 $suffixes = array('bytes', 'KB', 'MB', 'GB', 'TB');
@@ -133,12 +134,12 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 	<tr>
 		<th scope="row"><?php _e('Tracker Status','wp-slimstat') ?></th>
 		<td>
-			<?php echo ( !empty( wp_slimstat::$options[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$options[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$options[ 'date_format' ], wp_slimstat::$options[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$options[ 'time_format' ], wp_slimstat::$options[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$options[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$options[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-delete-entry slimstat-font-cancel" title="' . htmlentities( __( 'Reset the tracker status', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
+			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$settings[ 'date_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$settings[ 'time_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-delete-entry slimstat-font-cancel" title="' . htmlentities( __( 'Reset the tracker status', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
 			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. It includes both <strong>errors</strong>, which are returned when the tracker could not record a pageview and are indicative of some kind of malfunction, and <strong>notices</strong>, which explain the reason why the most recent pageview was not recorded, based on your settings (filters, blackslists, etc). Please include the message here above when sending a support request.','wp-slimstat') ?></span>
 		</td>
 	</tr>
 	<tr  class="alternate">
-		<?php if ( wp_slimstat::$options[ 'show_sql_debug' ] != 'yes' ): ?>
+		<?php if ( wp_slimstat::$settings[ 'show_sql_debug' ] != 'yes' ): ?>
 		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-sql-debug-mode"><?php _e("Enable SQL Debug",'wp-slimstat'); ?></a>
 		</th>
@@ -262,7 +263,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />
-				<textarea name="import-slimstat-settings" style="width:100%" rows="5" onClick="this.select();"><?php echo serialize(wp_slimstat::$options) ?></textarea><br/>
+				<textarea name="import-slimstat-settings" style="width:100%" rows="5" onClick="this.select();"><?php echo serialize( wp_slimstat::$settings ) ?></textarea><br/>
 				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-secondary"
 					onclick="return(confirm('<?php _e('Are you sure you want to OVERWRITE your current settings?','wp-slimstat'); ?>'))">
 			</form>
