@@ -1305,6 +1305,7 @@ class wp_slimstat_admin {
 				}
 			?></tbody>
 			</table>
+			<input type="hidden" name="options[placeholder_do_not_use]" value="on">
 			<?php if ( empty( $_options[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
 		</form><?php
 	}

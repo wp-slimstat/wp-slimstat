@@ -3,6 +3,8 @@
 <div class="wrap slimstat">
 	<h2><?php echo wp_slimstat_admin::$screens_info[ $_GET[ 'page' ] ][ 'title' ] ?></h2>
 
+	<div class="notice slimstat-notice adblocker-enabled" style="padding:10px"><span><?php _e( '<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). Please make sure you add an exception to your configuration and allow the browser to load these assets.', 'wp-slimstat' ); ?></span></div>
+
 	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
 		<fieldset id="slimstat-filters"><?php
 			$filter_name_html = '<select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __( 'Filter', 'wp-slimstat' ) . '</option>';

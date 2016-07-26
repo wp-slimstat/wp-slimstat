@@ -235,6 +235,7 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 }
 
 echo '<div class="wrap slimstat-config"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$tabs_html.'</ul>';
+echo '<div class="notice slimstat-notice adblocker-enabled" style="padding:10px"><span>' . __( '<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). Please make sure you add an exception to your configuration and allow the browser to load these assets.', 'wp-slimstat' ) . '</span></div>';
 
 // The maintenance tab has its own separate file
 if ( !empty( $settings[ $current_tab ][ 'include' ] ) ) {
