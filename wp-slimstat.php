@@ -103,7 +103,7 @@ class wp_slimstat {
 
 			if ( self::$settings[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
 				add_action( 'init', array( __CLASS__, 'init_pidx' ), 10, 0 );
-				add_action( 'init', array( 'slim_browser', 'init_pidx_adj' ), 10, 0 );
+				//add_action( 'init', array( 'slim_browser', 'init_pidx_adj' ), 10, 0 );
 				add_action( 'wp_head', array( 'slim_browser', 'print_code' ) );
 				add_filter( 'the_content', array( 'slim_browser', 'print_code' ) );
 			}
