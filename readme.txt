@@ -5,19 +5,31 @@ Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, 
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.3.6
+Stable tag: 4.3.7
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
 
-= Key Features =
-* Real-time activity log, server latency, heatmaps, email reports, export data to Excel, full IPv6 support, and much more
-* Compatible with W3 Total Cache, WP SuperCache and most caching plugins
-* Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org))
-* Available in multiple languages: English, Belarusian ([UStarCash](https://www.ustarcash.com/)), Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
+= Feature Spotlight =
+* Real-time activity log, server latency, heatmaps, email reports, export data to Excel, full IPv6 support, and much more.
+* Compatible with W3 Total Cache, WP SuperCache and most caching plugins.
+* Support for hashing IP addresses in the database to protect your users privacy.
+* Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org)).
+* Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
+* Export your reports to CSV or get daily emails right in your mailbox (via premium add-on).
+* Add shortcodes to your website to display reports in widgets or directly in posts and pages.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
-= What are people saying about Slimstat Analytics? =
+= Premium Add-ons =
+Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available extensions.
+
+= Social Media =
+[Like Us](https://www.facebook.com/wpslimstatistics/) on Facebook and follow us on [Twitter](https://twitter.com/wp_stats) to get the latest news and updates about our plugin.
+
+= Translations =
+Slimstat is available in multiple languages: English, Belarusian ([UStarCash](https://www.ustarcash.com/)), Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
+
+= Reviews and Feedback =
 * This is by far the most accurate and in-depth tracking plugin I've encountered for WordPress [MiMango](https://wordpress.org/support/topic/excellent-plugin-and-service-9)
 * I have been relying on SlimStat to not only track all traffic to my sites accurately but also to present the stats in very useful graphic format [JJD3](https://wordpress.org/support/topic/an-essential-plugin-14)
 * Thanks you for such an excellent plugin. I am using it to kick Jetpack out of all the wordpress installations that I manage for myself and others - [robertwagnervt](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
@@ -32,9 +44,6 @@ Stable tag: 4.3.6
 * At least 5 MB of free DB space
 * At least 30 Mb of free PHP memory for the tracker (peak memory usage)
 * IE9+ or any browser supporting HTML5, to access the reports
-
-= Premium Add-ons =
-Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available extensions.
 
 == Installation ==
 
@@ -63,14 +72,22 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+= 4.3.7 =
+* [New] A few users have experienced a conflict between AdBlock (and friends) and our stylesheet and javascript files. Apparently an overzealous ad blocker can prevent our assets from loading, thus showing [a quite messy interface](https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work). A notice has been added to the plugin and it will be displayed if this behavior is detected. If you are getting the message but you're not using AdBlock, then make sure to refresh your browser cache (thank you, [acekin](https://wordpress.org/support/topic/interface-questions)). 
+* [New] Top and Recent Downloads will now show a preview thumbnail when hovering each entry, if the downloaded file's extension ends in JPG, PNG or GIF (thank you, [willfretwell](https://wordpress.org/support/topic/thumbnails-of-downloads)).
+* [New] If you configured Slimstat to display its menu in your admin bar, and you browse your website while logged in, the links to the various report screens will now automatically activate a filter for the current page.
+* [Update] The [Browscap](http://browscap.org/) database has been updated to version 6016, released on August 4th, 2016.
+* [Fix] The new Settings interface was saving more information than needed, specifically for backward compatibility with the Network Settings add-on, even if it was not installed.
+* [Fix] The Live Stream functionality (i.e. auto-refreshing the access log report every few seconds) could not be deactivated.
+* [Fix] Minor clean-up around the new Settings screens (thanks to all those who pointed out the glitches)
+* [Fix] Multiple data purges were being scheduled under certain circumstances (second attempt).
+
 = 4.3.6 =
 * [New] In the last few weeks we've been working on revamping the Settings screens, by turning those boring radio buttons and text areas into more polished and modern switches and sortable tag lists. No more separating values with commas, when creating blacklists or configuring access control lists. Now you can type values as tokens, drag and drop them to reorganize your lists, and easily delete values. Pleae note: we had to rename some class variables to streamline our codebase, so if you're referencing them in your code, make sure to use the new names to avoid errors. Please report any issues or concern to our [support team](http://support.wp-slimstat.com).
-* [New] A few users have experienced a conflict between AdBlock (and friends) and our stylesheet and javascript files. Apparently an overzealous ad blocker can prevent our assets from loading, thus showing [a quite messy interface](https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work). A notice has been added to the plugin and it will be displayed if this behavior is detected (thank you, [acekin](https://wordpress.org/support/topic/interface-questions)). 
 * [Update] New versions of our premium add-ons will be released in the next few hours, to update the compatibility to the latest version of Slimstat. If you are not upgrading the main plugin, please DO NOT upgrade the add-ons.
 * [Update] Introduced some PHP code optimizations to the tracker. Readability has also been improved, by retrofitting our existing code and applying our style guide to it.
 * [Update] [AmCharts Map](https://www.amcharts.com/javascript-maps/), the library used to render our geolocation map, has been updated to version 3.20.9.
 * [Update] Language files now contain all the new strings introduced in the last few updates. Please consider contributing to the project by submitting a translation in your language.
-* [Fix] Multiple data purges were being scheduled under certain circumstances.
 
 = 4.3.5 =
 * [New] The slim_events table is now being archived along with the main slim_stats table.
@@ -92,55 +109,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] A PHP warning was being returned after tracking a click event on an internal download (thank you, [Stephen S](https://wordpress.org/support/topic/php-notice-undefined-var-data_js)).
 * [Fix] The new version of Browscap bundled with Slimstat 4.3.2 was causing quite a few 500 Server Error messages for our users. The nature of the issue remains unclear, however we decided to roll back to the previous version of the data file, which was working without any problems.
 * [Fix] Adding a trailing comma to some of the text settings could trigger unexpected behaviors in the tracker. (thank you, [paronomasiaster](https://wordpress.org/support/topic/slimstat-not-recording-hits))
-
-= 4.3.2.3 =
-* [Note] Thanks to our user Boris, we were able to clarify some license issues with our partner IP2Location. We look forward to extending the functionality implemented by our IP2Location add-on to offer a better user experience, especially when exporting the data.
-* [Fix] When checking for spammers, if our Custom DB add-on was enabled, the plugin was generating a SQL error (thank you, [SGURYGF](https://wordpress.org/support/topic/custom-db-issue))
-
-= 4.3.2.2 =
-* [Note] Just a quick note to let you know that we will be focusing on a major project in the next few weeks, so both development and customer support might be less responsive than usual. Please be patient, and refrain from submitting the same request more than once. Thank you!
-* [New] Slimstat now speaks Belarusian thanks to Natasha from [UStarCash](https://www.ustarcash.com/).
-* [Fix] Bug in Javascript tracker with Async mode enabled was duplicating entries in the Access Log.
-* [Fix] Variable type mismatch was preventing scheduled posts from publishing (thank you, [Salpertriere](https://wordpress.org/support/topic/latest-version-stops-scheduled-posts-from-publishing?replies=5#post-8365376))
-* [Fix] Some Javascript strings (used to generate the charts) where not correctly encoded and were breaking the source code in certain localizations.
-
-= 4.3.2.1 =
-* [Fix] Some static text ( var_ ) sneaked into the source code. Apologies for the inconvenience.
-
-= 4.3.2 =
-* [Note] We are working on a new add-on, Slimstat Sentinel, which will alert you if suspicious activity is detected on your website. Stay tuned.
-* [New] Added support for "current post/page" to shortcodes. Now you won't need to write any PHP code to show, for example, the number of pageviews for a given page. Just use the following shortcode: `[slimstat f='count' w='id']content_id equals current[/slimstat]`. You can find more information on our [knowledge base](http://docs.wp-slimstat.com)
-* [Update] [Browscap](http://browscap.org/) library updated to version 6014, released on April 21th, 2016.
-* [Fix] When the Network Settings add-on was activated and subsequently deactivated, some of the original options would be lost.
-* [Fix] Text areas in the settings were not becoming read-only if the corresponding option was set "network wide" via the Network Settings add-on.
-
-= 4.3.1.2 =
-* [Update] Activity log entries are now grouped both by IP and by username.
-* [Fix] A PHP Warning was being returned by the new Rankings report.
-
-= 4.3.1.1 =
-* [Update] [Browscap](http://browscap.org/) library updated to version 6013, released on March 15th, 2016.
-* [Fix] Values in textarea setting fields were not being saved.
-
-= 4.3.1 =
-* [Note] A few users have pointed out issues upgrading from versions prior to 4.0, which introduced a new table structure (see changelog). About eight months after we released version 4.0, we removed the upgrade script to streamline our codebase and improve performance. Given all these requests for help, we now decided to restore that code, and extend it to include extra checks and warnings, if something goes wrong. Check Settings > Maintenance > Database to see if you have a notice recommending to remove table leftovers from your database.
-* [New] A warning will alert administrators if a caching plugin has been detected, so that they remember to configure Slimstat Analytics accordingly.
-* [Fix] Some users were getting a 403 Forbidden when trying to access the list of add-ons from our servers.
-* [Fix] A PHP Error was being returned by the new Rankings report.
-* [Fix] The Top Referring Domains export was missing one column.
-* [Fix] A bug in the customizer was preventing the reports from being displayed correctly, under certain circumstances.
-* [Fix] PHP warning being displayed in textareas (settings) under certain circumstances (thank you, [Chris](https://wordpress.org/support/topic/in-php-debug-mode-errors-appear-in-textareas))
-
-= 4.3 =
-* [Note] To celebrate Slimstat's 10th birthday, we decided to tweak its name, to better reflect what it does. A few users have pointed out over time that it hadn't been easy for them to find our plugin in the repository. With our limited resources, we have been working on giving our work more visibility, and we are convinced that adding the word "Analytics" to the plugin's name is a step in the right direction. In a few months, we hope to reap the benefits of our efforts.
-* [New] Please welcome our latest add-on [Author Overview](http://www.wp-slimstat.com/downloads/author-overview/). Now you can see how popular your blog authors are: this add-on will install a new report that tells you the number of pageviews, unique IPs and unique visits generated by the posts authored by each user in your blog. (thank you, [gh0stmichael](https://wordpress.org/support/topic/how-to-display-total-unique-views-per-author))
-* [Update] [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker), the third-party library we use to distribute updates for our premium add-ons, has been updated to version 3.0. In the next few days, we will release a dummy update of our most popular add-ons to give you a chance to verify that everything works as expected. If this is not the case, feel free to contact us to troubleshoot the issue.
-* [Update] [AmMap](https://www.amcharts.com/javascript-maps/), the library used to render the world map, has been updated to version 3.19.3, released on February 23, 2016.
-* [Update] All language files are now current. Please consider contributing your localization.
-* [Update] It turns out our message regarding Keyword Swarm and other fraudulent clones of Slimstat was confusing users. We updated it to better explain what the situation is. (thank you, [Multimastery](https://wordpress.org/support/topic/keyword-swarm-1))
-* [Fix] A bug in our heuristic browser detection functionality was triggering a PHP fatal error, in some cases. (thank you, [mkilian](https://wordpress.org/support/topic/typo-in-browscapuadetectorphp))
-* [Fix] Updated Rankings API queries (Alexa, Facebook) and replaced Google API with Mozscape's. One of our users pointed out that the Google Backlink count returned by the Google API is not accurate. Please make sure to [get your personal identification codes](https://moz.com/community/join?redirect=/products/api/keys) to access their API.
-* [Fix] Changed the language code for our Japanese localization files. Now Slimstat speaks Japanese! (thank you, [Yasui3](https://wordpress.org/support/topic/change-ja_jp-to-ja))
 
 == Supporters ==
 Slimstat Analytics is an open source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)

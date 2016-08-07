@@ -1118,6 +1118,12 @@ class wp_slimstat_reports {
 						if ( $resource_title != $results[ $i ][ $_args[ 'columns' ] ] ) {
 							$row_details = __( 'URL', 'wp-slimstat' ) . ': ' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' );
 						}
+						if ( strpos( $_args[ 'where' ], 'download' ) !== false ) {
+							$clean_extension = pathinfo( strtolower( parse_url( $results[ $i ][ $_args[ 'columns' ] ], PHP_URL_PATH ) ), PATHINFO_EXTENSION );
+							if ( in_array( $clean_extension, array( 'jpg', 'gif', 'png', 'jpeg', 'bmp' ) ) ) {
+								$row_details = '<br><img src="' . $results[ $i ][ $_args[ 'columns' ] ] . '" style="width:100px">';
+							}
+						}
 						$element_value = $resource_title;
 						break;
 
@@ -1169,7 +1175,7 @@ class wp_slimstat_reports {
 
 					if ( $_args[ 'criteria' ] == 'swap' ) {
 						$percentage = ' <span>' . $counthits . '</span>';
-						$row_details = ( $column_not_calculated != 'outbound_resource' ) ? $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details : '';
+						$row_details = __('Hits','wp-slimstat') . ': ' . ( ( $column_not_calculated != 'outbound_resource' ) ? $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details : '' );
 					}
 					else {
 						$percentage = ' <span>' . $percentage_value . '%</span>';

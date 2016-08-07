@@ -3,7 +3,7 @@
 Plugin Name: WP Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3.6
+Version: 4.3.7
 Author: Camu
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.3.6';
+	public static $version = '4.3.7';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -45,7 +45,7 @@ class wp_slimstat {
 			self::$settings = get_option( 'slimstat_options', array() );
 		}
 
-		self::$settings = array_merge( self::init_options(), array_filter( self::$settings ) );
+		self::$settings = array_merge( self::init_options(), self::$settings );
 
 		// Allow third party tools to edit the options
 		self::$settings = apply_filters( 'slimstat_init_options', self::$settings );
@@ -55,12 +55,12 @@ class wp_slimstat {
 
 		// Determine the options' signature: if it hasn't changed, there's no need to update/save them in the database
 		self::$settings_signature = md5( serialize( self::$settings ) );
-		
+
 		// Allow third-party tools to use a custom database for Slimstat
 		self::$wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
 		// Hook a DB clean-up routine to the daily cronjob
-		add_action( 'wp_slimstat_purge', array( __CLASS__, 'wp_slimstat_purge' ) );
+		add_action( 'wp_update_plugins', array( __CLASS__, 'wp_slimstat_purge' ) );
 
 		// Allow external domains on CORS requests
 		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
@@ -103,7 +103,7 @@ class wp_slimstat {
 
 			if ( self::$settings[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
 				add_action( 'init', array( __CLASS__, 'init_pidx' ), 10, 0 );
-				//add_action( 'init', array( 'slim_browser', 'init_pidx_adj' ), 10, 0 );
+				// add_action( 'init', array( 'slim_browser', 'init_pidx_adj' ), 10, 0 );
 				add_action( 'wp_head', array( 'slim_browser', 'print_code' ) );
 				add_filter( 'the_content', array( 'slim_browser', 'print_code' ) );
 			}
@@ -549,18 +549,24 @@ class wp_slimstat {
 		}
 
 		// Now let's save this information in the database
-		self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
+		self::$stat[ 'id' ] = self::insert_row( self::$stat, $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats' );
 
 		// Something went wrong during the insert
-		if (empty(self::$stat['id'])){
-			self::$stat['id'] = -215;
-			self::_set_error_array( __( 'Error:', 'wp-slimstat' ) . ' ' . self::$wpdb->last_error );
+		if ( empty( self::$stat[ 'id' ] ) ) {
 
-			// Attempt to init the environment (new blog in a MU network?)
-			// include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
-			// wp_slimstat_admin::init_environment( true );
-			
-			return $_argument;
+			// Attempt to init the environment (plugin just activated on a blog in a MU network?)
+			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
+			wp_slimstat_admin::init_environment( true );
+
+			// Now let's try again
+			self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
+
+			if ( empty( self::$stat[ 'id' ] ) ) {
+				self::$stat[ 'id' ] = -215;
+				self::_set_error_array( __( 'Error:', 'wp-slimstat' ) . ' ' . self::$wpdb->last_error );
+
+				return $_argument;
+			}
 		}
 
 		// Is this a new visitor?
@@ -1484,7 +1490,7 @@ class wp_slimstat {
 	/**
 	 * Removes old entries from the main table and performs other daily tasks
 	 */
-	public static function wp_slimstat_purge(){
+	public static function wp_slimstat_purge() {
 		$autopurge_interval = intval( self::$settings[ 'auto_purge' ] );
 		if ( $autopurge_interval <= 0 ) {
 			return;
@@ -1593,5 +1599,5 @@ if ( function_exists( 'add_action' ) ) {
 	}
 
 	// Add the appropriate actions
-	add_action( 'plugins_loaded', array( 'wp_slimstat', 'init' ), 10 );
+	add_action( 'plugins_loaded', array( 'wp_slimstat', 'init' ), 20 );
 }

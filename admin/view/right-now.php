@@ -209,6 +209,7 @@ else {
 			}
 
 			// Login / Logout Event
+			$login_logout = '';
 			if ( strpos( $results[ $i ][ 'notes' ], 'loggedin:' ) !== false ) {
 				$exploded_notes = explode( ';', $results[ $i ][ 'notes' ] );
 				foreach ( $exploded_notes as $a_note ) {
@@ -216,17 +217,17 @@ else {
 						continue;
 					}
 
-					$login_logout = "<i class='slimstat-font-user-plus spaced' title='" . __( 'User Logged In', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedin:', '', $a_note );
+					$login_logout .= "<i class='slimstat-font-user-plus spaced' title='" . __( 'User Logged In', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedin:', '', $a_note );
 				}
 			}
-			else if ( strpos( $results[ $i ][ 'notes' ], 'loggedout:' ) !== false ) {
+			if ( strpos( $results[ $i ][ 'notes' ], 'loggedout:' ) !== false ) {
 				$exploded_notes = explode( ';', $results[ $i ][ 'notes' ] );
 				foreach ( $exploded_notes as $a_note ) {
 					if ( strpos( $a_note, 'loggedout:' ) === false ) {
 						continue;
 					}
 
-					$login_logout = "<i class='slimstat-font-user-times spaced' title='" . __( 'User Logged Out', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedout:', '', $a_note );
+					$login_logout .= "<i class='slimstat-font-user-times spaced' title='" . __( 'User Logged Out', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedout:', '', $a_note );
 				}
 			}
 		}

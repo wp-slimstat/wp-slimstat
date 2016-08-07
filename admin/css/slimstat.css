@@ -23,9 +23,6 @@
 	overflow: auto;
 	padding: 0 20px 0 0;
 }
-.slimstat-notice.adblocker-enabled {
-	display: none;
-}
 
 /* Filters */
 #slimstat-filters-post{

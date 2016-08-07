@@ -10,9 +10,9 @@ class wp_slimstat_admin {
 	/**
 	 * Init -- Sets things up.
 	 */
-	public static function init(){
+	public static function init() {
 		if ( isset( wp_slimstat::$settings[ 'enable_ads_network' ] ) && ( wp_slimstat::$settings[ 'enable_ads_network' ] == 'yes' || wp_slimstat::$settings[ 'enable_ads_network' ] == 'no' ) ) {
-			self::$admin_notice = "In the last few weeks we've been working on revamping the Settings screens, by turning those boring radio buttons and text areas into more polished and modern switches and sortable tag lists. No more separating values with commas, when creating blacklists or configuring access control lists. Now you can type values as tokens, drag and drop them to reorganize your lists, and easily delete values. Pleae note: we had to rename some class variables to streamline our codebase, so if you're referencing them in your code, make sure to use the new names to avoid errors. Please report any issues or concern to our <a href='http://support.wp-slimstat.com' target='_blank'>support team</a>.";
+			self::$admin_notice = "It must be the sunny days that inspire our team to give coats of fresh paint around. After working on a new intuitive interface for the Settings screens, it was time to <a href='https://www.wp-slimstat.com/' target='_blank'>refresh our homepage</a> by lightening up the overall mood of the layout, and by adding a feed that highlights the latest news and articles written by our editorial team. We also included a new section which features some of our users: please feel free to contact our support team if you would like to be added to that list. We will review your submission and let you know.";
 			self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 		}
 		else {
@@ -269,10 +269,13 @@ class wp_slimstat_admin {
 	/**
 	 * Support for WP MU site deletion
 	 */
-	public static function drop_tables($_tables, $_blog_id){
-		$_tables['slim_events'] = $GLOBALS['wpdb']->prefix.'slim_events';
-		$_tables['slim_stats'] = $GLOBALS['wpdb']->prefix.'slim_stats';
+	public static function drop_tables( $_tables = array(), $_blog_id = 1) {
+		$_tables[ 'slim_events' ] = $GLOBALS[ 'wpdb' ]->prefix . 'slim_events';
+		$_tables[ 'slim_stats' ] = $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats';
 		
+		$_tables[ 'slim_events_archive' ] = $GLOBALS[ 'wpdb' ]->prefix . 'slim_events_archive';
+		$_tables[ 'slim_stats_archive' ] = $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats_archive';
+
 		return $_tables;
 	}
 	// end drop_tables
@@ -282,16 +285,11 @@ class wp_slimstat_admin {
 	 */
 	public static function init_environment() {
 		if ( function_exists( 'apply_filters' ) ) {
-			$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+			$my_wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 		}
 
 		// Create the tables
 		self::init_tables( $my_wpdb );
-
-		// Schedule the autopurge hook
-		if ( false === wp_next_scheduled( 'wp_slimstat_purge' ) ) {
-			wp_schedule_event( '1262311200', 'daily', 'wp_slimstat_purge' );
-		}
 
 		return true;
 	}
@@ -692,14 +690,13 @@ class wp_slimstat_admin {
 		}
 		// --- END: Updates for version 4.3.5 ---
 
-		// --- Updates for version 4.3.6 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.3.6', '<' ) ) {
+		// --- Updates for version 4.3.7 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.3.7', '<' ) ) {
 			
 			// Previous versions of Slimstat were scheduling multiple purges in some cases, let's clean this up
 			wp_clear_scheduled_hook( 'wp_slimstat_purge' );
-			wp_schedule_event( '1262311200', 'daily', 'wp_slimstat_purge' );
 		}
-		// --- END: Updates for version 4.3.6 ---
+		// --- END: Updates for version 4.3.7 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
@@ -708,13 +705,13 @@ class wp_slimstat_admin {
 	}
 	// end update_tables_and_options
 
-	public static function add_dashboard_widgets(){
+	public static function add_dashboard_widgets() {
 
 		// If this user is whitelisted, we use the minimum capability
-		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ){
+		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ) {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
-		else{
+		else {
 			$minimum_capability = 'read';
 		}
 
@@ -882,6 +879,11 @@ class wp_slimstat_admin {
 			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
 			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
 
+			$frontend_filter = '';
+			if ( !is_admin() ) {
+				$frontend_filter = '&amp;fs%5Bresource%5D=contains+' . urlencode( wp_slimstat::get_request_uri() ); 
+			}
+
 			$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
 				'id' => 'slimstat-header',
 				'title' => __( 'Slimstat', 'wp-slimstat' ),
@@ -892,7 +894,7 @@ class wp_slimstat_admin {
 				if ( $a_screen_info[ 'show_in_sidebar' ] && ( !is_array( $user_reports ) || !empty( $user_reports[ $a_screen_id ] ) || !$a_screen_info[ 'is_report_group' ] ) ) {
 					$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
 						'id' => $a_screen_id,
-						'href' => "{$slimstat_view_url}$a_screen_id",
+						'href' => "{$slimstat_view_url}$a_screen_id" . ( ( $a_screen_info[ 'callback' ] == array( __CLASS__, 'wp_slimstat_include_view' ) ) ? $frontend_filter : '' ),
 						'parent' => 'slimstat-header',
 						'title' => $a_screen_info[ 'title' ]
 					) );
@@ -1186,14 +1188,14 @@ class wp_slimstat_admin {
 	/*
 	 * Displays the options 
 	 */
-	public static function display_settings( $_options = array(), $_current_tab = 1 ) { ?>
+	public static function display_settings( $_settings = array(), $_current_tab = 1 ) { ?>
 		<form action="<?php echo self::$config_url.$_current_tab ?>" method="post" id="form-slimstat-options-tab-<?php echo $_current_tab ?>">
 			<table class="form-table widefat <?php echo $GLOBALS['wp_locale']->text_direction ?>">
 			<tbody><?php
 				$i = 0;
-				foreach( $_options as $_option_name => $_option_details ) {
+				foreach( $_settings as $_setting_slug => $_setting_info ) {
 					$i++;
-					$_option_details = array_merge( array(
+					$_setting_info = array_merge( array(
 						'description' =>'',
 						'type' => '',
 						'long_description' => '',
@@ -1203,100 +1205,101 @@ class wp_slimstat_admin {
 						'custom_label_no' => '',
 						'readonly' => false,
 						'use_tag_list' => true
-					), $_option_details );
+					), $_setting_info );
 
-					$is_readonly = ( !empty( $_option_details[ 'readonly' ] ) && $_option_details[ 'readonly' ] === true ) ? ' readonly' : '';
-					$use_tag_list = ( empty( $is_readonly ) && !empty( $_option_details[ 'use_tag_list' ] ) && $_option_details[ 'use_tag_list' ] === true ) ? ' slimstat-taglist' : '';
+					$is_readonly = ( !empty( $_setting_info[ 'readonly' ] ) && $_setting_info[ 'readonly' ] === true ) ? ' readonly' : '';
+					$use_tag_list = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_tag_list' ] ) && $_setting_info[ 'use_tag_list' ] === true ) ? ' slimstat-taglist' : '';
 
 					$network_override_checkbox = is_network_admin() ? '
 							<input class="slimstat-checkbox-toggle"
 								type="checkbox"
-								name="options[addon_network_settings_' . $_option_name . ']"' .
-								( ( !empty( wp_slimstat::$settings[ 'addon_network_settings_' . $_option_name ] ) && wp_slimstat::$settings[ 'addon_network_settings_' . $_option_name ] == 'yes' ) ? ' checked="checked"' : '' ) . '
-								id="addon_network_settings_' . $_option_name . '"
+								name="options[addon_network_settings_' . $_setting_slug . ']"' .
+								( ( !empty( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) && wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] == 'yes' ) ? ' checked="checked"' : '' ) . '
+								id="addon_network_settings_' . $_setting_slug . '"
 								data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
 
-					if ( !isset( wp_slimstat::$settings[ $_option_name ] ) ) {
-						wp_slimstat::$settings[ $_option_name ] = ''; 
+					if ( !isset( wp_slimstat::$settings[ $_setting_slug ] ) && !isset( $_setting_info[ 'skip_update' ] ) && !isset( $_setting_info[ 'readonly' ] ) && $_setting_info[ 'type' ] != 'section_header') {
+						wp_slimstat::$settings[ $_setting_slug ] = ''; 
 					}
 
 					echo '<tr' . ( $i % 2 == 0 ? ' class="alternate"' : '' ) . '>';
-					switch ( $_option_details[ 'type' ] ) {
+					switch ( $_setting_info[ 'type' ] ) {
 						case 'section_header':
-							echo '<td colspan="2" class="slimstat-options-section-header">' . $_option_details[ 'description' ] . '</td>';
+							echo '<td colspan="2" class="slimstat-options-section-header">' . $_setting_info[ 'description' ] . '</td>';
 							break;
 
 						case 'static':
-							echo '<td colspan="2">' . $_option_details[ 'description' ] . '<textarea rows="7" class="large-text code" readonly>' . $_option_details[ 'long_description' ] . '</textarea></td>';
+							echo '<td colspan="2">' . $_setting_info[ 'description' ] . '<textarea rows="7" class="large-text code" readonly>' . $_setting_info[ 'long_description' ] . '</textarea></td>';
 							break;
 
 						case 'toggle':
-							echo '<th scope="row"><label for="' . $_option_name . '">' . $_option_details[ 'description' ] . '</label></th>
+							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . '</label></th>
 							<td>
 								<span class="block-element">
 									<input class="slimstat-checkbox-toggle" type="checkbox"' . $is_readonly . '
-										name="options[' . $_option_name . ']"
-										id="' . $_option_name . '"
+										name="options[' . $_setting_slug . ']"
+										id="' . $_setting_slug . '"
 										data-size="mini" data-handle-width="50" data-on-color="success"' . 
-										( wp_slimstat::$settings[ $_option_name ] == 'yes' ? ' checked="checked"' : '' ) . '
-										data-on-text="' . ( !empty( $_option_details[ 'custom_label_on' ] ) ? $_option_details[ 'custom_label_on' ] : __( 'On', 'wp-slimstat' ) ) . '"
-										data-off-text="' . ( !empty( $_option_details[ 'custom_label_off' ] ) ? $_option_details[ 'custom_label_off' ] : __( 'Off', 'wp-slimstat' ) ) . '">' .
+										( ( isset( wp_slimstat::$settings[ $_setting_slug ] ) && wp_slimstat::$settings[ $_setting_slug ] == 'yes' ) ? ' checked="checked"' : '' ) . '
+										data-on-text="' . ( !empty( $_setting_info[ 'custom_label_on' ] ) ? $_setting_info[ 'custom_label_on' ] : __( 'On', 'wp-slimstat' ) ) . '"
+										data-off-text="' . ( !empty( $_setting_info[ 'custom_label_off' ] ) ? $_setting_info[ 'custom_label_off' ] : __( 'Off', 'wp-slimstat' ) ) . '">' .
 										$network_override_checkbox . '
 								</span>
-								<span class="description">' . $_option_details[ 'long_description' ] . '</span>
+								<span class="description">' . $_setting_info[ 'long_description' ] . '</span>
 							</td>';
 							// ( is_network_admin() ? ' data-indeterminate="true"' : '' ) . '>
 							break;
 
 						case 'select':
-							echo '<th scope="row"><label for="' . $_option_name . '">' . $_option_details[ 'description' ] . '</label></th>
+							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . '</label></th>
 							<td>
 								<span class="block-element">
-									<select' . $is_readonly .' name="options[' . $_option_name . ']" id="' . $_option_name .'">';
-										foreach ( $_option_details[ 'values' ] as $a_key => $a_value ) {
-											$is_selected = ( wp_slimstat::$settings[ $_option_name ] == $a_key ) ? ' selected' : '';
-											echo '<option' . $is_selected . 'value="' . $a_key . '">' . $a_value . '</option>';
+									<select' . $is_readonly .' name="options[' . $_setting_slug . ']" id="' . $_setting_slug .'">';
+										foreach ( $_setting_info[ 'values' ] as $a_key => $a_value ) {
+											$is_selected = ( !empty( wp_slimstat::$settings[ $_setting_slug ] ) && wp_slimstat::$settings[ $_setting_slug ] == $a_key ) ? ' selected' : '';
+											echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
 										}
 									echo '</select>' .
 									$network_override_checkbox . '
 								</span>
-								<span class="description">' . $_option_details[ 'long_description' ] . '</span>
+								<span class="description">' . $_setting_info[ 'long_description' ] . '</span>
 							</td>';
 							break;
 							
 						case 'text':
 						case 'integer':
-							echo '<th scope="row"><label for="' . $_option_name . '">' . $_option_details[ 'description' ] . '</label></th>
+							$empty_value = ( $_setting_info[ 'type' ] == 'text' ) ? '' : '0';
+							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . '</label></th>
 							<td>
 								<span class="block-element"> ' .
-									$_option_details[ 'before_input_field' ] . '
-									<input class="' . ( ( $_option_details[ 'type' ] == 'integer' ) ? 'small-text' : 'regular-text' ) . $is_readonly . '
-										type="' . ( ( $_option_details[ 'type' ] == 'integer' ) ? 'number' : 'text' ) . '"
-										name="options[' . $_option_name . ']"
-										id="' . $_option_name . '"
-										value="' . wp_slimstat::$settings[ $_option_name ] . '"> ' . $_option_details[ 'after_input_field' ] .
+									$_setting_info[ 'before_input_field' ] . '
+									<input class="' . ( ( $_setting_info[ 'type' ] == 'integer' ) ? 'small-text' : 'regular-text' ) . '"' . $is_readonly . '
+										type="' . ( ( $_setting_info[ 'type' ] == 'integer' ) ? 'number' : 'text' ) . '"
+										name="options[' . $_setting_slug . ']"
+										id="' . $_setting_slug . '"
+										value="' . ( !empty( wp_slimstat::$settings[ $_setting_slug ] ) ? wp_slimstat::$settings[ $_setting_slug ] : $empty_value ) . '"> ' . $_setting_info[ 'after_input_field' ] .
 										$network_override_checkbox . '
 								</span>
-								<span class="description">' . $_option_details[ 'long_description' ] . '</span>
+								<span class="description">' . $_setting_info[ 'long_description' ] . '</span>
 							</td>';
 							break;
 
 						case 'textarea':
 							echo '
 							<td colspan="2">
-								<label for="' . $_option_name . '">' . $_option_details[ 'description' ] . $network_override_checkbox . '</label>
-								<p class="description">' . $_option_details[ 'long_description' ] . '</p>
+								<label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . $network_override_checkbox . '</label>
+								<p class="description">' . $_setting_info[ 'long_description' ] . '</p>
 								<p>
 									<textarea class="large-text code' . $use_tag_list . '"' . $is_readonly . '
-										id="' . $_option_name . '"
-										name="options[' . $_option_name . ']">' . ( !empty( wp_slimstat::$settings[ $_option_name ] ) ? stripslashes( wp_slimstat::$settings[ $_option_name ] ) : '' ) . '</textarea>
-									<span class="description">' . $_option_details[ 'after_input_field' ] . '</span>
+										id="' . $_setting_slug . '"
+										name="options[' . $_setting_slug . ']">' . ( isset( wp_slimstat::$settings[ $_setting_slug ] ) ? stripslashes( wp_slimstat::$settings[ $_setting_slug ] ) : '' ) . '</textarea>
+									<span class="description">' . $_setting_info[ 'after_input_field' ] . '</span>
 								</p>
 							</td>';
 							break;
 
 						case 'custom':
-							echo '<td colspan="2">' . $_option_details[ 'description' ] . '<br/><br/>' . $_option_details[ 'markup' ] . '</td>';
+							echo '<td colspan="2">' . $_setting_info[ 'description' ] . '<br/><br/>' . $_setting_info[ 'markup' ] . '</td>';
 							break;
 
 						default:
@@ -1305,46 +1308,51 @@ class wp_slimstat_admin {
 				}
 			?></tbody>
 			</table>
-			<input type="hidden" name="options[placeholder_do_not_use]" value="on">
-			<?php if ( empty( $_options[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
+			<?php if ( empty( $_settings[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
 		</form><?php
 	}
 
 	/*
 	 * Updates the options 
 	 */
-	public static function update_settings( $_options = array() ) {
+	public static function update_settings( $_settings = array() ) {
 
 		// Nothing to do, if there is no data to be parsed
-		if ( !isset( $_POST[ 'options' ] ) || empty( $_options ) ) {
+		if ( !isset( $_POST[ 'options' ] ) || empty( $_settings ) ) {
 			return true;
 		}
-
-		foreach( $_options as $_option_name => $_option_details ) {
+//var_dump( $_POST['options']);
+		foreach( $_settings as $_setting_slug => $_setting_info ) {
 			// Some options require a special treatment and are updated somewhere else
-			if ( isset( $_option_details[ 'skip_update' ] ) || isset( $_option_details[ 'readonly' ] ) || $_option_details[ 'type' ] == 'section_header' ) {
+			if ( isset( $_setting_info[ 'skip_update' ] ) || isset( $_setting_info[ 'readonly' ] ) || $_setting_info[ 'type' ] == 'section_header' ) {
 				continue;
 			}
 
 			// For backward compatibility, we need to turn 'on' in 'yes'
-			if ( $_option_details[ 'type' ] == 'toggle' ) {
-				if ( isset( $_POST[ 'options' ][ $_option_name ] ) && strtolower( $_POST[ 'options' ][ $_option_name ] == 'on' ) ) {
-					wp_slimstat::$settings[ $_option_name ] = 'yes';
+			if ( $_setting_info[ 'type' ] == 'toggle' ) {
+				if ( isset( $_POST[ 'options' ][ $_setting_slug ] ) && strtolower( $_POST[ 'options' ][ $_setting_slug ] == 'on' ) ) {
+					wp_slimstat::$settings[ $_setting_slug ] = 'yes';
 				}
 				else {
-					wp_slimstat::$settings[ $_option_name ] = 'no';	
+					wp_slimstat::$settings[ $_setting_slug ] = 'no';	
 				}
 			}
-			else if ( isset( $_POST[ 'options' ][ $_option_name ] ) ) {
-				wp_slimstat::$settings[ $_option_name ] = $_POST[ 'options' ][ $_option_name ];
+			else if ( isset( $_POST[ 'options' ][ $_setting_slug ] ) ) {
+				wp_slimstat::$settings[ $_setting_slug ] = $_POST[ 'options' ][ $_setting_slug ];
 			}
 
 			// If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
-			if ( isset( $_POST[ 'options' ][ 'addon_network_settings_' . $_option_name ] ) && strtolower( $_POST[ 'options' ][ 'addon_network_settings_' . $_option_name ] == 'on' ) ) {
-				wp_slimstat::$settings[ 'addon_network_settings_' . $_option_name ] = 'yes';
+			if ( is_network_admin() ) {
+				if ( isset( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] ) && strtolower( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] == 'on' ) ) {
+					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'yes';
+				}
+				else {
+					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'no';	
+				}
 			}
-			else {
-				wp_slimstat::$settings[ 'addon_network_settings_' . $_option_name ] = 'no';	
+			else if ( isset( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) ) {
+				// Keep settings clean
+				unset( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] );
 			}
 		}
 

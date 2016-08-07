@@ -5,16 +5,6 @@ if ( !function_exists( 'add_action' ) ) {
 	exit(0);
 }
 
-// Handle special options
-if ( isset( $_POST[ 'options' ][ 'auto_purge' ] ) ) {
-	if ( $_POST[ 'options' ][ 'auto_purge' ] == 0 ) {
-		wp_clear_scheduled_hook( 'wp_slimstat_purge' );
-	}
-	else if ( wp_next_scheduled( 'my_schedule_hook' ) == 0 ) {
-		wp_schedule_event( time(), 'daily', 'wp_slimstat_purge' );
-	}
-}
-
 if ( isset( $_POST[ 'options' ][ 'ignore_capabilities' ] ) ) {
 	// Make sure all the capabilities exist in the system 
 	$capability_not_found = false;
@@ -105,7 +95,7 @@ $settings = array(
 			'hide_addons' => array( 'description' => __( 'Hide Add-ons', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Enable this option to hide all your <strong>active</strong> premium add-ons from the list of plugins in WordPress. Please note that you will still receive updates for hidden add-ons.', 'wp-slimstat' ) ),
 
 			'general_database_header' => array('description' => __('Database','wp-slimstat'), 'type' => 'section_header'),
-			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Clean-up log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').( (wp_slimstat::$settings[ 'auto_purge' ] > 0)?' '.__('Next clean-up on','wp-slimstat').' <strong>'.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled('wp_slimstat_purge')).'</strong>. '.sprintf(__('Entries logged on or before %s will be archived or deleted according to the option here below.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$settings['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') ),
+			'auto_purge' => array( 'description' => __('Retain data for','wp-slimstat'), 'type' => 'integer', 'long_description' => __("Clean-up log entries older than the number of days specified here above. Enter <strong>0</strong> (number zero) if you want to preserve your data regardless of its age.",'wp-slimstat').( (wp_slimstat::$settings[ 'auto_purge' ] > 0)?' '.__('Next clean-up on','wp-slimstat').' <strong>'.date_i18n(get_option('date_format').', '.get_option('time_format'), wp_next_scheduled( 'wp_update_plugins' ) ) . '</strong>. '.sprintf(__('Entries logged on or before %s will be archived or deleted according to the option here below.','wp-slimstat'), date_i18n(get_option('date_format'), strtotime('-'.wp_slimstat::$settings['auto_purge'].' days'))):''), 'after_input_field' => __('days','wp-slimstat') ),
 			'auto_purge_delete' => array( 'description' => __('Archive records','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('If DB space is not an issue, you can decide to archive older records in another table, instead of deleting them. This way performance is preserved, but you will still be able to access your data at a later time, if needed. Please note that the archive table (<code>wp_slim_stats_archive</code>) will be <strong>deleted</strong> along with all the other tables, when Slimstat is uninstalled. Make sure to backup your data before you proceed.','wp-slimstat') )
 		)
 	),
@@ -119,10 +109,10 @@ $settings = array(
 			'async_tracker' => array( 'description' => __( 'Async Tracker', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( "When the tracker is configured to record clicks on internal and / or outbound links, it needs to send this information back to the server <strong>before</strong> loading the actual page. This can result in a noticeable delay when someone clicks on one of your links, if your server takes a while to acknowledge the receipt of that information. You can set this option to instruct the tracker not to wait for the server, and load the target URL right away. This will remove the delay, but it might result in a less accurate logging of events. You can check your server latency under Site Analysis > Your Website. Values under 1000 milliseconds might allow you to use async mode.", 'wp-slimstat' ) ),
 			'ignore_outbound_classes_rel_href' => array( 'description' => __( 'No Callback', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Track the event but do not invoke the callback function on links marked with one of these class names, <em>rel</em> attribute or whose <em>href</em> attribute contains one of these strings. Useful to prevent conflicts with lightbox and similar libraries.", 'wp-slimstat' ) ),
 			'do_not_track_outbound_classes_rel_href' => array( 'description' => __( 'Do Not Track', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "The tracker will ignore links marked with one of these class names, <em>rel</em> attributes or whose <em>href</em> attribute contains one of these strings.", 'wp-slimstat' ) ),
-			
 
-			'advanced_tracker_header' => array('description' => __('Advanced Options','wp-slimstat'), 'type' => 'section_header'),
-			'session_duration' => array('description' => __('Session Duration','wp-slimstat'), 'type' => 'integer', 'long_description' => __('How many seconds should a human session last? Google Analytics sets it to 1800 seconds.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
+			'advanced_tracker_header' => array( 'description' => __( 'Advanced Options', 'wp-slimstat' ), 'type' => 'section_header' ),
+			'track_users' => array( 'description' => __( 'Track Registered Users', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Enable this option to track logged in users.', 'wp-slimstat' ) ),
+			'session_duration' => array('description' => __( 'Session Duration', 'wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'How many seconds should a human session last? Google Analytics sets it to 1800 seconds.', 'wp-slimstat' ), 'after_input_field' => __( 'seconds', 'wp-slimstat' ) ),
 			'extend_session' => array('description' => __('Extend Session','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('Extend the duration of a session each time the user visits a new page.','wp-slimstat')),
 			'browser_detection_mode' => array( 'description' => __( 'User Agent Accuracy', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( "Slimstat implements a heuristic function to determine the user's browser and operating system from his user agent string. This approach requires very little memory, but for uncommon user agent strings it might be less accurate, and produce a unreliable match. That's why we also include an alternative method which relies on Browscap, a third-party database containing even the most obscure user agent strings. You decide which one should be used first: the other one will only be invoked if the one you chose did not produce a match.", 'wp-slimstat' ), 'custom_label_on' => __( 'High', 'wp-slimstat' ), 'custom_label_off' => __( 'Normal', 'wp-slimstat' ) ),
 			'enable_cdn' => array('description' => __('Enable CDN','wp-slimstat'), 'type' => 'toggle', 'long_description' => __("Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).",'wp-slimstat')),
@@ -149,7 +139,6 @@ $settings = array(
 		'title' => __( 'Filters', 'wp-slimstat' ),
 		'rows' => array(
 			'filters_header' => array('description' => __('Do not track settings','wp-slimstat'), 'type' => 'section_header'),
-			'track_users' => array('description' => __('Track Registered Users','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('Enable this option to track logged in users.','wp-slimstat')),
 			'ignore_users' => array( 'description' => __( 'Blacklist by Username', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the usernames you don't want to track. Please be aware that spaces are <em>not</em> ignored and that usernames are case sensitive. Wildcards: <code>*</code> matches 'any string, including the empty string', <code>!</code> matches 'any character'. For example, <code>user*</code> will match user12 and userfoo, <code>u*100</code> will match user100 and uber100, <code>user!0</code> will match user10 and user90.", 'wp-slimstat' ) ),
 			'ignore_ip' => array('description' => __('Blacklist by IP Address','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the IP addresses you don't want to track. Each network <strong>must</strong> be defined using the <a href='http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing' target='_blank'>CIDR notation</a> (i.e. <em>192.168.0.0/24</em>). This filter applies both to the public IP and the originating IP, if available.",'wp-slimstat')),
 			'ignore_capabilities' => array('description' => __('Blacklist by Capability','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("Users having at least one of the <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capabilities</a> listed here below will not be tracked. Capabilities are case-insensitive.",'wp-slimstat'), 'skip_update' => true),
@@ -185,13 +174,13 @@ $settings = array(
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'toggle', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
 			'limit_results' => array( 'description' => __( 'Max Results','wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'Decide how many records should be retrieved from the database in total. Depending on your server configuration, you may want to fine tune this value to avoid exceeding your PHP memory limit.', 'wp-slimstat' ) ),
-			'ip_lookup_service' => array('description' => __( 'IP Lookup', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Customize the Geolocation service to be used in the reports.', 'wp-slimstat' ) ),
+			'ip_lookup_service' => array('description' => __( 'IP Lookup', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Customize the Geolocation service to be used in the reports. Default: <code>http://www.infosniper.net/?ip_address=</code>', 'wp-slimstat' ) ),
 			'mozcom_access_id' => array('description' => __( 'Mozscape Access ID', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Get accurate rankings for your website through the free <a href="https://moz.com/community/join?redirect=/products/api/keys" target="_blank">Mozscape API</a> service. Sign up for a free community account to get started. Then enter your personal identification code here.', 'wp-slimstat' ) ),
 			'mozcom_secret_key' => array('description' => __( 'Mozscape Secret Key', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Do not share your secret key with anyone or they will be able to make API requests on your account!', 'wp-slimstat' ) ),
 
-			'reports_right_now_header' => array('description' => __('Activity Log','wp-slimstat'), 'type' => 'section_header'),
-			'refresh_interval' => array('description' => __('Live Stream','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Enable the Live view, which refreshes the Activity Log every X seconds. Enter <strong>0</strong> (number zero) to deactivate this feature.','wp-slimstat'), 'after_input_field' => __('seconds','wp-slimstat')),
-			'number_results_raw_data' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in the Activity Log.','wp-slimstat')),
+			'reports_right_now_header' => array( 'description' => __( 'Access Log', 'wp-slimstat' ), 'type' => 'section_header' ),
+			'refresh_interval' => array( 'description' => __( 'Auto Refresh', 'wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'Enable the Live View, which refreshes the Access Log every X seconds. Enter <strong>0</strong> (number zero) to deactivate this feature.', 'wp-slimstat' ), 'after_input_field' => __( 'seconds', 'wp-slimstat' ) ),
+			'number_results_raw_data' => array('description' => __( 'Rows to Display', 'wp-slimstat'), 'type' => 'integer', 'long_description' => __( 'Specify the number of items in the Access Log.', 'wp-slimstat' ) ),
 
 			'reports_miscellaneous_header' => array('description' => __('Miscellaneous','wp-slimstat'), 'type' => 'section_header'),
 			'custom_css' => array( 'description' => __( 'Custom CSS', 'wp-slimstat' ), 'type' => 'textarea', 'rows' => 8, 'long_description' => __( "Paste here your custom stylesheet to personalize the way your reports look. <a href='https://slimstat.freshdesk.com/support/solutions/articles/5000528528-how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-e' target='_blank'>Check the FAQ</a> for more information on how to use this setting.", 'wp-slimstat' ), 'use_tag_list' => false ),
@@ -235,7 +224,7 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 }
 
 echo '<div class="wrap slimstat-config"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$tabs_html.'</ul>';
-echo '<div class="notice slimstat-notice adblocker-enabled" style="padding:10px"><span>' . __( '<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). Please make sure you add an exception to your configuration and allow the browser to load these assets.', 'wp-slimstat' ) . '</span></div>';
+echo '<div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px">' . __( '<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat' ) . '</div>';
 
 // The maintenance tab has its own separate file
 if ( !empty( $settings[ $current_tab ][ 'include' ] ) ) {
@@ -243,7 +232,7 @@ if ( !empty( $settings[ $current_tab ][ 'include' ] ) ) {
 }
 else if ( !empty( $settings[ $current_tab ][ 'rows' ] ) ) {
 	wp_slimstat_admin::update_settings( $settings[ $current_tab ][ 'rows' ] );
-	wp_slimstat_admin::display_settings( $settings[ $current_tab ][ 'rows' ], $current_tab); 
+	wp_slimstat_admin::display_settings( $settings[ $current_tab ][ 'rows' ], $current_tab ); 
 }
 
 echo '</div>';
