@@ -1308,6 +1308,7 @@ class wp_slimstat_admin {
 				}
 			?></tbody>
 			</table>
+			<input type="hidden" name="options[make_sure_post_is_not_empty]" id="make_sure_post_is_not_empty" value="make_sure_post_is_not_empty">
 			<?php if ( empty( $_settings[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes','wp-slimstat') ?>" class="button-primary" name="Submit"></p><?php endif ?>
 		</form><?php
 	}
@@ -1321,7 +1322,7 @@ class wp_slimstat_admin {
 		if ( !isset( $_POST[ 'options' ] ) || empty( $_settings ) ) {
 			return true;
 		}
-//var_dump( $_POST['options']);
+
 		foreach( $_settings as $_setting_slug => $_setting_info ) {
 			// Some options require a special treatment and are updated somewhere else
 			if ( isset( $_setting_info[ 'skip_update' ] ) || isset( $_setting_info[ 'readonly' ] ) || $_setting_info[ 'type' ] == 'section_header' ) {
