@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: WP Slimstat Analytics
+Plugin Name: WP Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
 Version: 4.3.7
