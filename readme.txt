@@ -72,7 +72,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
-== 4.4 ==
+= 4.4 =
 * [New] Number of matches for local search result pages will now be tracked in the notes as 'results:X' where X is the number of matches found. You can also use the Filter Bar to find, for example, "all the search queries that had NO results". Cool, huh? (thank you, [revisionsolar](https://wordpress.org/support/topic/show-search-results-where-there-was-no-answer)).
 * [New] Browsers are starting to [deprecate synchronous XHR requests](https://www.sitepoint.com/introduction-beacon-api/), and they run the corresponding call asynchronously. This was causing our tracker to not record certain events as expected. We followed [Google's lead](https://developers.google.com/analytics/devguides/collection/analyticsjs/sending-hits#specifying_different_transport_mechanisms) and implemented the Beacon API in our code. Please make sure to clear your server caches to allow Slimstat to append the new tracker to your pages.
 * [Update] The time to drop 'WP' from our plugin's name has come. Easier to remember, easier to find, easier to use. And yes, it will still remind you of that dietary supplement from the 80s.
