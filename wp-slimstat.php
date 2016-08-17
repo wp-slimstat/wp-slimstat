@@ -3,8 +3,8 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.3.7
-Author: Camu
+Version: 4.4
+Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -15,15 +15,15 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.3.7';
+	public static $version = '4.4';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
 	public static $wpdb = '';
 	public static $maxmind_path = '';
 	public static $advanced_cache_exists = false;
-	public static $pidx = array( array( 'id' => false, 'response' => '' ), array( 'id' => false, 'response' => '' ) );
 	public static $update_checker = array();
+	public static $raw_post_array = array();
 
 	protected static $data_js = array( 'id' => 0 );
 	protected static $stat = array();
@@ -35,7 +35,7 @@ class wp_slimstat {
 	/**
 	 * Initializes variables and actions
 	 */
-	public static function init(){
+	public static function init() {
 
 		// Load all the settings
 		if ( is_network_admin() && ( empty($_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'slimview' ) === false ) ) {
@@ -80,8 +80,9 @@ class wp_slimstat {
 
 		// Enable the tracker (both server- and client-side)
 		if ( !is_admin() || self::$settings[ 'track_admin_pages' ] == 'yes' ) {
+			
 			// Allow add-ons to turn off the tracker based on other conditions
-			$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', true );
+			$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', strpos( self::get_request_uri(), 'wp-admin/admin-ajax.php' ) === false );
 			$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
 
 			// Is server-side tracking active?
@@ -100,13 +101,6 @@ class wp_slimstat {
 					add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
 				}
 			}
-
-			if ( self::$settings[ 'enable_ads_network' ] == 'yes' && !is_user_logged_in() ) {
-				add_action( 'init', array( __CLASS__, 'init_pidx' ), 10, 0 );
-				// add_action( 'init', array( 'slim_browser', 'init_pidx_adj' ), 10, 0 );
-				add_action( 'wp_head', array( 'slim_browser', 'print_code' ) );
-				add_filter( 'the_content', array( 'slim_browser', 'print_code' ) );
-			}
 		}
 
 		// Shortcodes
@@ -121,16 +115,17 @@ class wp_slimstat {
 		add_action( 'wp_loaded', array( __CLASS__, 'update_checker' ) );
 
 		// Update the options before shutting down
-		add_action('shutdown', array(__CLASS__, 'slimstat_save_options'), 100);
+		add_action( 'shutdown', array( __CLASS__, 'slimstat_save_options' ), 100 );
 	}
 	// end init
 
 	/**
 	 * Ajax Tracking
 	 */
-	public static function slimtrack_ajax(){
+	public static function slimtrack_ajax() {
+
 		// This function also initializes self::$data_js and removes the checksum from self::$data_js['id']
-		self::_check_data_integrity( $_REQUEST );
+		self::_check_data_integrity( self::$raw_post_array );
 
 		// Is this a request to record a new pageview?
 		if ( self::$data_js[ 'op' ] == 'add' || empty( self::$data_js[ 'pos' ] ) ) {
@@ -159,7 +154,7 @@ class wp_slimstat {
 		if ( self::$data_js[ 'op' ] == 'add' ) {
 			self::slimtrack();
 		}
-		else{
+		else {
 			// Update an existing pageview with client-based information (resolution, plugins installed, etc)
 			self::_set_visit_id( true );
 
@@ -266,7 +261,7 @@ class wp_slimstat {
 		
 			// Is this a 'seriously malformed' URL?
 			$referer = parse_url( self::$stat[ 'referer' ] );
-			if ( !$referer ){
+			if ( !$referer ) {
 				self::$stat[ 'id' ] = -208;
 				self::_set_error_array( sprintf( __( 'Error: Malformed URL %s', 'wp-slimstat' ), self::$stat[ 'referer' ] ) );
 				return $_argument;
@@ -336,8 +331,9 @@ class wp_slimstat {
 			self::$stat['searchterms'] = self::_get_search_terms($referer);
 
 			// Was this an internal search?
-			if (empty(self::$stat['searchterms'])){
-				self::$stat['searchterms'] = self::_get_search_terms( $parsed_permalink );
+			if ( empty( self::$stat[ 'searchterms' ] ) ) {
+				self::$stat[ 'searchterms' ] = self::_get_search_terms( $parsed_permalink );
+
 			}
 
 			self::$stat['resource'] = !is_array( $parsed_permalink ) ? self::$data_js[ 'res' ] : urldecode( $parsed_permalink[ 'path' ] ) . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . urldecode( $parsed_permalink[ 'query' ] ) : '' );
@@ -350,6 +346,10 @@ class wp_slimstat {
 		}
 		else{
 			self::$stat[ 'searchterms' ] = str_replace( '\\', '', $_REQUEST[ 's' ] );
+			self::$stat[ 'referer' ] = self::get_request_uri();
+			if ( isset( $GLOBALS['wp_query']->found_posts ) ) {
+				self::$stat[ 'notes' ][] = 'results:' . intval( $GLOBALS['wp_query']->found_posts );
+			}
 		}
 
 		// Don't store empty values in the database
@@ -359,6 +359,7 @@ class wp_slimstat {
 
 		// Do not track report pages in the admin
 		if ( ( !empty( self::$stat[ 'resource' ] ) && strpos( self::$stat[ 'resource' ], 'wp-admin/admin-ajax.php' ) !== false ) || ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) ) {
+			self::$stat = array();
 			return $_argument;
 		}
 
@@ -1347,14 +1348,12 @@ class wp_slimstat {
 			'track_internal_links' => 'no',
 			'ignore_outbound_classes_rel_href' => '',
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
-			'async_tracker' => 'no',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
 			'browser_detection_mode' => 'no',
 			'enable_cdn' => 'yes',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'external_domains' => '',
-			'enable_ads_network' => 'null',
 
 			// Filters
 			'track_users' => 'yes',
@@ -1446,7 +1445,6 @@ class wp_slimstat {
 		// Pass some information to Javascript
 		$params = array(
 			'ajaxurl' => admin_url( 'admin-ajax.php' ),
-			'async_tracker' => 'false'
 		);
 
 		if ( self::$settings[ 'enable_outbound_tracking' ] == 'no' ) {
@@ -1463,9 +1461,6 @@ class wp_slimstat {
 		}
 		if ( !empty( self::$settings[ 'do_not_track_outbound_classes_rel_href' ] ) ) {
 			$params[ 'outbound_classes_rel_href_to_not_track' ] = str_replace( ' ', '', self::$settings[ 'do_not_track_outbound_classes_rel_href' ] );
-		}
-		if ( self::$settings[ 'async_tracker' ] == 'yes' ) {
-			$params[ 'async_tracker' ] = 'true';
 		}
 
 		if ( self::$settings[ 'javascript_mode' ] != 'yes' ) {
@@ -1552,41 +1547,32 @@ class wp_slimstat {
 			}
 		}
 	}
-
-	/**
-	 * Connects to the UAN
-	 */
-	public static function init_pidx( $_request_url = '', $_pidx_id = 0 ) {
-		if ( empty( self::$browser ) ) {
-			self::$browser = slim_browser::get_browser();
-		}
-
-		if ( $_pidx_id == 1 && self::$browser[ 'browser_type' ] != 1 ) {
-			return 0;
-		}
-
-		if ( !empty( self::$browser[ 'user_agent' ] ) ) {
-			if ( empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
-				$request_url = empty( $_request_url ) ? 'http://wp' . 'cdn.io/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( self::$browser[ 'user_agent' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : 11 ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=2' : $_request_url;
-				$options = stream_context_create( array( 'http' => array( 'method' => 'GET', 'timeout' => 2, 'ignore_errors' => true, 'header' => "Accept: application/json\r\n" ) ) ); 
-				self::$pidx[ $_pidx_id ][ 'response' ] = @file_get_contents( $request_url, 0, $options );
-			}
-
-			if ( !empty( self::$pidx[ $_pidx_id ][ 'response' ] ) ) {
-				self::$pidx[ $_pidx_id ][ 'response' ] = @json_decode( self::$pidx[ $_pidx_id ][ 'response' ] );
-			}
-		}
-	}
 }
 // end of class declaration
 
 // Ok, let's go, Sparky!
 if ( function_exists( 'add_action' ) ) {
+
 	// Include our browser detector library
 	include_once( plugin_dir_path( __FILE__ ) . 'browscap/browser.php' );
 
+	// Since we use sendBeacon, this function sends raw POST data, which does not populate the $_POST variable automatically
+	if ( ( !empty( $_SERVER[ 'HTTP_CONTENT_TYPE' ] ) || !empty( $_SERVER[ 'CONTENT_TYPE' ] ) ) && empty( $_POST ) ) {
+		$raw_post_string = file_get_contents( 'php://input' );
+		parse_str( $raw_post_string, wp_slimstat::$raw_post_array );
+	}
+	else if ( !empty( $_POST ) ) {
+		wp_slimstat::$raw_post_array = $_POST;
+	}
+
 	// Init the Ajax listener
-	if ( !empty( $_POST[ 'action' ] ) && $_POST[ 'action' ] == 'slimtrack' ) {
+	if ( !empty( wp_slimstat::$raw_post_array[ 'action' ] ) && wp_slimstat::$raw_post_array[ 'action' ] == 'slimtrack' ) {
+
+		// This is needed because admin-ajax.php is reading $_REQUEST to fire the corresponding action
+		if ( empty( $_POST[ 'action' ] ) ) {
+			$_POST[ 'action' ] = wp_slimstat::$raw_post_array[ 'action' ];
+		}
+
 		add_action( 'wp_ajax_nopriv_slimtrack', array( 'wp_slimstat', 'slimtrack_ajax' ) );
 		add_action( 'wp_ajax_slimtrack', array( 'wp_slimstat', 'slimtrack_ajax' ) ); 
 	}

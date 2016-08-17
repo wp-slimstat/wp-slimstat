@@ -271,9 +271,9 @@ jQuery(function(){
 		}
 	});
 	
-	// Filters: add form if not available (Dashboard)
-	if (!jQuery('#slimstat-filters-form').length){
-		jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo('body');
+	// Filters: add form markup to the Dashboard
+	if ( !jQuery( '#slimstat-filters-form' ).length && !SlimStatAdmin.get_query_string_value( 'page' ).match( /(slimconfig|slimaddons)/ ) ) {
+		jQuery( '<form id="slimstat-filters-form" method="post"/>' ).appendTo('body');
 	}
 
 	// Filters: Lock value input field based on operator drop down selection
@@ -332,26 +332,28 @@ jQuery(function(){
 		filters_to_remove = SlimStatAdmin.parse_url_filters('p0', jQuery(this).attr('href'));
 		SlimStatAdmin.remove_filters_from_form(filters_to_remove);
 
-		jQuery('#slimstat-filters-form').submit();
-		jQuery('.slimstat-temp-filter').remove();
+		jQuery( '#slimstat-filters-form' ).submit();
+		jQuery( '.slimstat-temp-filter' ).remove();
 		return false;
 	});
 
 	// Send filters as post requests
-	jQuery(document).on('click', '.slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a', function(e){
-		e.preventDefault();
+	if ( jQuery('#slimstat-filters-form').length ) {
+		jQuery(document).on('click', '.slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a', function(e){
+			e.preventDefault();
 
-		if (!jQuery('#slimstat-filters-form').length){
-			return true;
-		}
+			if (!jQuery('#slimstat-filters-form').length){
+				return true;
+			}
 
-		filters_parsed = SlimStatAdmin.parse_url_filters('p0', jQuery(this).attr('href'));
-		SlimStatAdmin.add_filters_to_form(filters_parsed, (typeof jQuery(this).attr('data-reset-filters') != 'undefined'));
+			filters_parsed = SlimStatAdmin.parse_url_filters('p0', jQuery(this).attr('href'));
+			SlimStatAdmin.add_filters_to_form(filters_parsed, (typeof jQuery(this).attr('data-reset-filters') != 'undefined'));
 
-		jQuery('#slimstat-filters-form').submit();
-		jQuery('.slimstat-temp-filter').remove();
-		return false;
-	});
+			jQuery('#slimstat-filters-form').submit();
+			jQuery('.slimstat-temp-filter').remove();
+			return false;
+		});
+	}
 
 	// Behavior associated to all the 'ajax-based' buttons
 	jQuery(document).on('click', '[id^=slim_] .button-ajax', function(e){

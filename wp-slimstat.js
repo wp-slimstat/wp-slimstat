@@ -157,7 +157,7 @@ var SlimStat = {
 		return slim_performance.timing.responseEnd - slim_performance.timing.connectEnd;
 	},
 
-	send_to_server : function ( data, callback, async ) {
+	send_to_server : function ( data, callback, use_beacon ) {
 		if ( "undefined" == typeof SlimStatParams.ajaxurl || "undefined" == typeof data ) {
 			if ( "function" == typeof callback ){
 				callback();
@@ -165,32 +165,39 @@ var SlimStat = {
 			return false;
 		}
 
-		if ( "undefined" == typeof async ) {
-			async = true;
+		if ( "undefined" == typeof use_beacon ) {
+			use_beacon = true;
 		}
 
-		try {
-			if ( window.XMLHttpRequest ) {
-				request = new XMLHttpRequest();
-			}
-			else if ( window.ActiveXObject ) { // code for IE6, IE5
-				request = new ActiveXObject( "Microsoft.XMLHTTP" );
-			}
-		} catch ( failed ) {
-			if ( "function" == typeof callback ){
+		slimstat_data_with_client_info = data + "&sw=" + screen.width + "&sh=" + screen.height + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&pl=" + SlimStat.detect_plugins();
+
+		if ( use_beacon && navigator.sendBeacon ) {
+			navigator.sendBeacon( SlimStatParams.ajaxurl, slimstat_data_with_client_info );
+
+			if ( "function" == typeof callback ) {
 				callback();
 			}
-			return false;
 		}
+		else {
+			try {
+				if ( window.XMLHttpRequest ) {
+					request = new XMLHttpRequest();
+				}
+				else if ( window.ActiveXObject ) { // code for IE6, IE5
+					request = new ActiveXObject( "Microsoft.XMLHTTP" );
+				}
+			} catch ( failed ) {
+				if ( "function" == typeof callback ){
+					callback();
+				}
+				return false;
+			}
 
-		slimstat_data_with_client_info = data + "&sw=" + screen.width + "&sh=" + screen.height + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&pl=" + SlimStat.detect_plugins()
+			if ( request ) {
+				request.open( "POST", SlimStatParams.ajaxurl, true );
+				request.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
+				request.send( slimstat_data_with_client_info );
 
-		if ( request ) {
-			request.open( "POST", SlimStatParams.ajaxurl, async );
-			request.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
-			request.send( slimstat_data_with_client_info );
-
-			if ( async ) {
 				request.onreadystatechange = function() {
 					if ( 4 == request.readyState ) {
 						if ( "undefined" == typeof SlimStatParams.id ) {
@@ -208,37 +215,22 @@ var SlimStat = {
 						}
 					}
 				}
-			}
-			else {
-				if ( "undefined" == typeof SlimStatParams.id ) {
-					parsed_id = parseInt( request.responseText );
-					if ( !isNaN( parsed_id ) && parsed_id > 0 ) {
-						SlimStat._id = request.responseText;
-					}
-				}
-				else {
-					SlimStat._id = SlimStatParams.id;
-				}
 
-				if ( "function" == typeof callback ) {
-					callback();
-				}
+				return true;
 			}
-
-			return true;
 		}
-
+		
 		return false;
 	},
 
-	ss_track : function ( e, c, note, callback, async ) {
+	ss_track : function ( e, c, note, callback, use_beacon ) {
 		// Check function params
 		e = e ? e : window.event;
 		type = ( "undefined" == typeof c ) ? 0 : parseInt( c );
 		note_array = [];
 
-		if ( "undefined" == typeof async ) {
-			async = true;
+		if ( "undefined" == typeof use_beacon ) {
+			use_beacon = true;
 		}
 
 		parsed_id = parseInt( SlimStat._id );
@@ -301,10 +293,10 @@ var SlimStat = {
 
 				// If this element has a title, we can record that as well
 				if ( "function" == typeof node.getAttribute){
-					if ( "undefined" != typeof node.getAttribute("title") && node.getAttribute("title") ) {
+					if ( "undefined" != typeof node.getAttribute("title") && node.getAttribute( "title" ) ) {
 						note_array.push( "Title:" + node.getAttribute( "title" ) );
 					}
-					if ( "undefined" != typeof node.getAttribute("id") && node.getAttribute("id") ) {
+					if ( "undefined" != typeof node.getAttribute("id") && node.getAttribute( "id" ) ) {
 						note_array.push( "ID:" + node.getAttribute( "id" ) );
 					}
 				}
@@ -354,7 +346,7 @@ var SlimStat = {
 			requested_op = "update";
 		}
 
-		SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, callback, async );
+		SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, callback, use_beacon );
 
 		return true;
 	},
@@ -375,7 +367,6 @@ var SlimStat = {
 
 	event_fire : function ( target, event_object ) {
 		if ( document.createEvent ) {
-
 			new_event = document.createEvent( 'MouseEvents' );
 			new_event.initEvent( event_object.type, true, false, document.defaultView, event_object.button );
 			target.dispatchEvent( new_event );
@@ -403,7 +394,7 @@ var SlimStat = {
 		}
 		return false;
 	}
-};
+}
 
 SlimStat.add_event( window, "load", function() {
 	if ( "undefined" == typeof SlimStatParams.disable_outbound_tracking ) {
@@ -423,8 +414,7 @@ SlimStat.add_event( window, "load", function() {
 			cur_link.setAttribute( "data-slimstat-clicked", "false" );
 			cur_link.setAttribute( "data-slimstat-type", ( cur_link.href && ( cur_link.hostname == location.hostname || cur_link.href.indexOf('://') == -1 ) ) ? 2 : 0 );
 			cur_link.setAttribute( "data-slimstat-tracking", "true" );
-			cur_link.setAttribute( "data-slimstat-async", !( "undefined" == typeof SlimStatParams.async_tracker || "false" == SlimStatParams.async_tracker ) ? "true" : "false" );
-			cur_link.setAttribute( "data-slimstat-callback", ( cur_link.getAttribute( "data-slimstat-async" ) == "false" ) ? "true" : "false" );
+			cur_link.setAttribute( "data-slimstat-callback", "true" );
 
 			// Track other internal links?
 			if ( 2 == cur_link.getAttribute( "data-slimstat-type" ) && ( "undefined" == typeof SlimStatParams.track_internal_links || "false" == SlimStatParams.track_internal_links ) ) {
@@ -476,7 +466,6 @@ SlimStat.add_event( window, "load", function() {
 			// Do not invoke the callback on links that open a new window
 			if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && cur_link.target && !cur_link.target.match( /^_(self|parent|top)$/i ) ) {
 				cur_link.setAttribute( "data-slimstat-callback", "false" );
-				cur_link.setAttribute( "data-slimstat-async", "true" );
 			}
 
 			// No callback if this link is not being tracked
@@ -492,14 +481,17 @@ SlimStat.add_event( window, "load", function() {
 						(function( node, event_object ) {
 							SlimStat.ss_track( event_object, node.getAttribute( "data-slimstat-type" ), "", function() {
 								SlimStat.event_fire( node, event_object );
-							}, ( node.getAttribute( "data-slimstat-async" ) == "true" || node.getAttribute( "data-slimstat-callback" ) == "false" ) );
+							}, ( node.getAttribute( "data-slimstat-callback" ) == "true" ) );
 						})( this, e );
 
 						return false;
 					}
 					else{
-						SlimStat.ss_track( e, this.getAttribute( "data-slimstat-type" ), "", function() {}, ( this.getAttribute( "data-slimstat-async" ) == "true" || this.getAttribute( "data-slimstat-callback" ) == "false" ) );
+						SlimStat.ss_track( e, this.getAttribute( "data-slimstat-type" ), "", function() {}, ( this.getAttribute( "data-slimstat-callback" ) == "true" ) );
 					}
+				}
+				else if ( "true" == this.getAttribute( "data-slimstat-clicked" ) ) {
+					this.setAttribute( "data-slimstat-clicked", "false" );
 				}
 			});
 		}
@@ -507,8 +499,11 @@ SlimStat.add_event( window, "load", function() {
 } );
 
 var slimstat_data = "action=slimtrack";
+var use_beacon = false;
+
 if ( "undefined" != typeof SlimStatParams.id && parseInt( SlimStatParams.id ) > 0 ) {
 	slimstat_data += "&op=update&id=" + SlimStatParams.id;
+	use_beacon = true;
 }
 else if ( "undefined" != typeof SlimStatParams.ci ) {
 	slimstat_data += "&op=add&id=" + SlimStatParams.ci + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( window.location.href );
@@ -521,7 +516,7 @@ else {
 if ( slimstat_data.length > 0 ) {
 	SlimStat.add_event( window, 'load', function(){
 		setTimeout( function(){
-			SlimStat.send_to_server(slimstat_data);
+			SlimStat.send_to_server( slimstat_data, '', use_beacon );
 		}, 0 );
 	} );
 }

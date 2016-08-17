@@ -1,22 +1,22 @@
 === Slim Stat Analytics ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
-Tags: analytics, tracking, reports, analyze, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress
+Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.3.7
+Stable tag: 4.3.8
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
 
 = Feature Spotlight =
-* Real-time activity log, server latency, heatmaps, email reports, export data to Excel, full IPv6 support, and much more.
-* Compatible with W3 Total Cache, WP SuperCache and most caching plugins.
-* Support for hashing IP addresses in the database to protect your users privacy.
-* Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org)).
+* Real-time access log, server latency, heatmaps, full IPv6 support, and much more.
 * Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
 * Export your reports to CSV or get daily emails right in your mailbox (via premium add-on).
+* Compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
+* Support for hashing IP addresses in the database to protect your users privacy.
+* Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org)).
 * Add shortcodes to your website to display reports in widgets or directly in posts and pages.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
@@ -24,7 +24,7 @@ Stable tag: 4.3.7
 Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available extensions.
 
 = Social Media =
-[Like Us](https://www.facebook.com/wpslimstatistics/) on Facebook and follow us on [Twitter](https://twitter.com/wp_stats) to get the latest news and updates about our plugin.
+[Like Us](https://www.facebook.com/slimstatistics/) on Facebook and [follow us](https://twitter.com/wp_stats) on Twitter to get the latest news and updates about our plugin.
 
 = Translations =
 Slimstat is available in multiple languages: English, Belarusian ([UStarCash](https://www.ustarcash.com/)), Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
@@ -71,6 +71,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+== 4.3.8 ==
+* [New] Number of matches for local search result pages will now be tracked in the notes as 'results:X' where X is the number of matches found. You can also use the Filter Bar to find, for example, "all the search queries that had NO results". Cool, huh? (thank you, [revisionsolar](https://wordpress.org/support/topic/show-search-results-where-there-was-no-answer)).
+* [New] Browsers are starting to [deprecate synchronous XHR requests](https://www.sitepoint.com/introduction-beacon-api/), and they run the corresponding call asynchronously. This was causing our tracker to not record certain events as expected. We followed [Google's lead](https://developers.google.com/analytics/devguides/collection/analyticsjs/sending-hits#specifying_different_transport_mechanisms) and implemented the Beacon API in our code. Please make sure to clear your server caches to allow Slimstat to append the new tracker to your pages.
+* [Update] The time to drop 'WP' from our plugin's name has come. Easier to remember, easier to find, easier to use. And yes, it will still remind you of that dietary supplement from the 80s.
+* [Fix] Settings were not being saved correctly under certain specific circumstances, when add-ons were enabled.
+* [Fix] Calls to admin-ajax.php were being tracked under certain circumstances.
+* [Fix] The javascript code used to run various functions in the admin has been cleaned up and optimized.
 
 = 4.3.7 =
 * [New] A few users have experienced a conflict between AdBlock (and friends) and our stylesheet and javascript files. Apparently an overzealous ad blocker can prevent our assets from loading, thus showing [a quite messy interface](https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work). A notice has been added to the plugin and it will be displayed if this behavior is detected. If you are getting the message but you're not using AdBlock, then make sure to refresh your browser cache (thank you, [acekin](https://wordpress.org/support/topic/interface-questions)). 
