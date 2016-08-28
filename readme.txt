@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.4
+Stable tag: 4.4.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -38,7 +38,7 @@ Slimstat is available in multiple languages: English, Belarusian ([UStarCash](ht
 
 = Requirements =
 * WordPress 3.8+
-* PHP 5.3+
+* PHP 5.2+
 * MySQL 5.0.3+
 * At least 15 MB of free web space
 * At least 5 MB of free DB space
@@ -71,6 +71,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.4.1 =
+* [Fix] The option to restrict authors to see only reports for their posts was affecting other filters in some of our add-ons.
 
 = 4.4 =
 * [New] Number of matches for local search result pages will now be tracked in the notes as 'results:X' where X is the number of matches found. You can also use the Filter Bar to find, for example, "all the search queries that had NO results". Cool, huh? (thank you, [revisionsolar](https://wordpress.org/support/topic/show-search-results-where-there-was-no-answer)).

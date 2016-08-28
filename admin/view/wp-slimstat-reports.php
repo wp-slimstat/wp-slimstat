@@ -36,7 +36,7 @@ class wp_slimstat_reports {
 		}
 
 		// Hidden Filters
-		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) ) {
+		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
 			$filters[] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
 			self::$hidden_filters[ 'author' ] = 1;
 		}

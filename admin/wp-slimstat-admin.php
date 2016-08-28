@@ -11,10 +11,8 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		//if ( isset( wp_slimstat::$settings[ 'enable_ads_network' ] ) && ( wp_slimstat::$settings[ 'enable_ads_network' ] == 'yes' || wp_slimstat::$settings[ 'enable_ads_network' ] == 'no' ) ) {
-		self::$admin_notice = "It must be the sunny days that inspire our team to give coats of fresh paint around. After working on a new intuitive interface for the Settings screens, it was time to <a href='https://www.wp-slimstat.com/' target='_blank'>refresh our homepage</a> by lightening up the overall mood of the layout, and by adding a feed that highlights the latest news and articles written by our editorial team. We also included a new section which features some of our users: please feel free to contact our support team if you would like to be added to that list. We will review your submission and let you know.";
+		self::$admin_notice = "Our team is working with <a href='http://browscap.org/' target='_blank'>Browscap</a> to implement a new feature that will automatically download the latest version of their database, just like we already do with the geolocation data file provided by <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind</a>. The main difference is that we pre-process the browser detection library to optimize it and make it faster, so we are working on a partnership to host our modified version on a server that can guarantee the best performance. Stay tuned!";
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
-		//}
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
