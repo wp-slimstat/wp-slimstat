@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Our team is working with <a href='http://browscap.org/' target='_blank'>Browscap</a> to implement a new feature that will automatically download the latest version of their database, just like we already do with the geolocation data file provided by <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind</a>. The main difference is that we pre-process the browser detection library to optimize it and make it faster, so we are working on a partnership to host our modified version on a server that can guarantee the best performance. Stay tuned!";
+		self::$admin_notice = "You may have noticed that our support service has become slightly less efficient in the last couple of months. Aside from having our (small) team use their summer vacation days, our support specialist Luigi found a full-time job and decided to start the next chapter of his career. We wish him the best of luck in his future endeavors. At the same time, we are investigating our options to keep providing the excellent level of support that many people mention when leaving a 5-star review for Slimstat. In order to scale up and attract new talent, we might decide to switch to a paid support model, where our users will need to purchase packages to get help for nontrivial requests. Please stay tuned while we discuss this internally.";
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
@@ -180,12 +180,13 @@ class wp_slimstat_admin {
 
 		// AJAX Handlers
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			add_action( 'wp_ajax_slimstat_hide_admin_notice', array( __CLASS__, 'hide_admin_notice' ) );
-			add_action( 'wp_ajax_slimstat_hide_geolite_notice', array( __CLASS__, 'hide_geolite_notice' ) );
-			add_action( 'wp_ajax_slimstat_hide_caching_notice', array( __CLASS__, 'hide_caching_notice' ) );
+			add_action( 'wp_ajax_slimstat_hide_admin_notice', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_hide_geolite_notice', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_hide_browscap_notice', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_hide_caching_notice', array( __CLASS__, 'notices_handler' ) );
+
 			add_action( 'wp_ajax_slimstat_manage_filters', array( __CLASS__, 'manage_filters' ) );
 			add_action( 'wp_ajax_slimstat_delete_pageview', array( __CLASS__, 'delete_pageview' ) );
-			//add_action( 'wp_ajax_slimstat_enable_ads_feature', array( __CLASS__, 'enable_ads_feature' ) );
 		}
 		
 		// Hide plugins
@@ -1028,24 +1029,40 @@ class wp_slimstat_admin {
 	/**
 	 * Handles the Ajax request to hide the admin notice
 	 */
-	public static function hide_admin_notice(){
-		wp_slimstat::$settings[ 'show_admin_notice' ] = wp_slimstat::$version;
+	public static function notices_handler() {
+		$tag = current_filter();
+
+		switch ( $tag ) {
+			case 'wp_ajax_slimstat_hide_admin_notice':
+				wp_slimstat::$settings[ 'show_admin_notice' ] = wp_slimstat::$version;
+				break;
+
+			case 'wp_ajax_slimstat_hide_geolite_notice':
+				wp_slimstat::$settings[ 'no_maxmind_warning' ] = 'yes';
+				break;
+
+			case 'wp_ajax_slimstat_hide_browscap_notice':
+				wp_slimstat::$settings[ 'no_browscap_warning' ] = 'yes';
+				break;
+
+			case 'wp_ajax_slimstat_hide_caching_notice':
+				wp_slimstat::$settings[ 'no_caching_warning' ] = 'yes';
+				break;
+
+			default:
+				break;
+		}
+		
 		die();
 	}
 
 	/**
-	 * Handles the Ajax request to hide the geolite notice
+	 * Deletes a given pageview from the database
 	 */
-	public static function hide_geolite_notice(){
-		wp_slimstat::$settings[ 'no_maxmind_warning' ] = 'yes';
-		die();
-	}
-
-	/**
-	 * Handles the Ajax request to hide the cache notice
-	 */
-	public static function hide_caching_notice(){
-		wp_slimstat::$settings[ 'no_caching_warning' ] = 'yes';
+	public static function delete_pageview(){
+		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+		$pageview_id = intval($_POST['pageview_id']);
+		$my_wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.id = $pageview_id");
 		die();
 	}
 
@@ -1114,24 +1131,6 @@ class wp_slimstat_admin {
 		}
 		die();
 	}
-	
-	/**
-	 * Deletes a given pageview from the database
-	 */
-	public static function delete_pageview(){
-		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
-		$pageview_id = intval($_POST['pageview_id']);
-		$my_wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.id = $pageview_id");
-		die();
-	}
-
-	/**
-	 * Handles the Ajax request to enable the UAN network
-	 */
-	// public static function enable_ads_feature(){
-	// 	wp_slimstat::$settings[ 'enable_ads_network' ] = 'yes';
-	// 	self::hide_admin_notice();
-	// }
 
 	/*
 	 * Displays the options 
@@ -1173,7 +1172,7 @@ class wp_slimstat_admin {
 					echo '<tr' . ( $i % 2 == 0 ? ' class="alternate"' : '' ) . '>';
 					switch ( $_setting_info[ 'type' ] ) {
 						case 'section_header':
-							echo '<td colspan="2" class="slimstat-options-section-header">' . $_setting_info[ 'description' ] . '</td>';
+							echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $_setting_info[ 'description' ] ). '">' . $_setting_info[ 'description' ] . '</td>';
 							break;
 
 						case 'static':

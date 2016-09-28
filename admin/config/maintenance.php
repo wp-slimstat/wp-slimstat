@@ -45,17 +45,36 @@ if (!empty($_REQUEST['action'])){
 
 		case 'delete-maxmind':
 			@unlink( wp_slimstat::$maxmind_path );
-			wp_slimstat_admin::show_alert_message(__('The geolocation database has been uninstalled from your server.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 			break;
 
 		case 'download-maxmind':
 			$error = wp_slimstat::download_maxmind_database();
 
 			if (!empty($error)){
-				wp_slimstat_admin::show_alert_message($error, 'wp-ui-notification below-h2');
+				wp_slimstat_admin::show_alert_message( $error, 'wp-ui-notification below-h2' );
 			}
 			else {
-				wp_slimstat_admin::show_alert_message(__('The geolocation database has been installed on your server.','wp-slimstat'), 'wp-ui-highlight below-h2');
+				wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been installed on your server.', 'wp-slimstat'), 'wp-ui-highlight below-h2' );
+			}
+			break;
+
+		case 'delete-browscap':
+			@unlink( wp_slimstat::$browscap_path );
+			if ( !empty( wp_slimstat::$settings[ 'enable_ads_network' ] ) ) {
+				unset( wp_slimstat::$settings[ 'enable_ads_network' ] );
+			}
+			wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			break;
+
+		case 'download-browscap':
+			$error = wp_slimstat::update_browscap_database();
+
+			if ( !empty( $error ) ) {
+				wp_slimstat_admin::show_alert_message( $error, 'wp-ui-notification below-h2' );
+			}
+			else {
+				wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been installed on your server.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
 			}
 			break;
 
@@ -129,7 +148,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 <table class="form-table widefat">
 <tbody>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Troubleshooting','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-troubleshooting"><?php _e('Troubleshooting','wp-slimstat') ?></td>
 	</tr>
 	<tr>
 		<th scope="row"><?php _e('Tracker Status','wp-slimstat') ?></th>
@@ -162,7 +181,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		</td>
 	</tr>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Data Maintenance','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-data-maintenance"><?php _e('Data Maintenance','wp-slimstat') ?></td>
 	</tr>
 	<tr>
 		<th scope="row" style="padding-top: 20px"><?php _e('Delete pageviews where','wp-slimstat') ?></th>
@@ -218,7 +237,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<span class="description"><?php _e("Erase all the archived records. This operation cannot be undone.",'wp-slimstat') ?></span>
 		</td>
 	</tr>
-	<tr  class="alternate">
+	<tr class="alternate">
 		<?php if (empty($check_index)): ?>
 		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-indexes"><?php _e("Improve Performance",'wp-slimstat'); ?></a>
@@ -237,7 +256,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		<?php endif ?>
 	</tr>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('MaxMind IP to Country','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-external-data-files"><?php _e('External Data Files','wp-slimstat') ?></td>
 	</tr>
 	<tr>
 		<th scope="row">
@@ -250,12 +269,25 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<?php endif; ?>
 		</th>
 		<td>
-			<span class="description"><?php _e("The <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind GeoLite library</a> used to geolocate visitors is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality.",'wp-slimstat') ?></span>
+			<span class="description"><?php _e("The <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind GeoLite library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality.", 'wp-slimstat' ) ?></span>
 		</td>
-			
+	</tr>
+	<tr class="alternate">
+		<th scope="row">
+			<?php if ( !file_exists( wp_slimstat::$browscap_path ) ) : ?>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=download-browscap"
+				onclick="return( confirm( '<?php _e( 'Do you want to download and install the Browscap data file from our server?', 'wp-slimstat' ); ?>' ) )"><?php _e( 'Install Browscap', 'wp-slimstat' ); ?></a>
+			<?php else: ?>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=delete-browscap"
+				onclick="return( confirm( '<?php _e( 'Do you want to uninstall the Browscap data file?', 'wp-slimstat' ); ?>' ) )"><?php _e( 'Uninstall Browscap', 'wp-slimstat' ); ?></a>
+			<?php endif; ?>
+		</th>
+		<td>
+			<span class="description"><?php _e( "We are contributing to the <a href='http://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an optimized version of their data structure, for improved performance. After you enable this feature, Slimstat will use this data file instead of the built-in heuristic function, to accurately determine your visitors' browser information. It will also automatically check for updates and download the latest version for you. Please feel free to <a href='http://s3.amazonaws.com/browscap/terms-conditions.html' target='_blank'>review our terms and conditions</a>, and do not hesitate to <a href='http://support.wp-slimstat.com' target='_blank'>contact our support team</a> if you have any questions.", 'wp-slimstat' ) ?></span>
+		</td>
 	</tr>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Configuration String','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-configuration-string"><?php _e('Configuration String','wp-slimstat') ?></td>
 	</tr>
 	<tr>
 		<td colspan="2">
@@ -270,7 +302,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		</td>
 	</tr>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header"><?php _e('Database Information','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-database-information"><?php _e('Database Information','wp-slimstat') ?></td>
 	</tr>
 	<tr>
 		<th scope="row"><?php _e('Engine','wp-slimstat') ?></th>

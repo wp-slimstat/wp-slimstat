@@ -1,120 +1,47 @@
 <?php
 
 class slim_browser {
+	public static $browser = array();
+	protected static $browscap_exists = false;
+
+	public static function init() {
+		self::$browser = array(
+			'browser' => 'Default Browser',
+			'browser_version' => '',
+			'browser_type' => 1,
+			'platform' => 'unknown',
+			'user_agent' => empty( $_user_agent ) ? self::_get_user_agent() : $_user_agent
+		);
+
+		self::$browscap_exists = ( file_exists( wp_slimstat::$browscap_path ) || ( !empty( wp_slimstat::$settings[ 'enable_ads_network' ] ) && wp_slimstat::$settings[ 'enable_ads_network' ] == 'yes' ) );
+
+		if ( self::$browscap_exists ) {
+			wp_slimstat::update_browscap_database();
+			include_once( wp_slimstat::$browscap_path );
+
+			self::$browser = slim_browscap_db::get_browser_from_browscap( self::$browser );
+		}
+	}
+
 	/**
 	 * Converts the USER AGENT string into a more user-friendly browser data structure, with name, version and operating system
 	 */
 	public static function get_browser( $_user_agent = '' ) {
-		$browser = array( 'browser' => 'Default Browser', 'browser_version' => '', 'browser_type' => 1, 'platform' => 'unknown', 'user_agent' => empty( $_user_agent ) ? self::_get_user_agent() : $_user_agent );
-
-		if ( empty( $browser[ 'user_agent' ] ) ) {
-			return $browser;
+		if ( empty( self::$browser[ 'user_agent' ] ) ) {
+			return self::$browser;
 		}
 
-		if ( wp_slimstat::$settings[ 'browser_detection_mode' ] == 'no' ) {
+		if ( !self::$browscap_exists ) {
 			include_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
-			$browser = slim_uadetector::get_browser( $browser[ 'user_agent' ] );
+			self::$browser = slim_uadetector::get_browser( self::$browser[ 'user_agent' ] );
 
 			// If we found a match...
-			if ( $browser[ 'browser' ] != 'Default Browser' ) {
-				return $browser;
+			if ( self::$browser[ 'browser' ] != 'Default Browser' ) {
+				return self::$browser;
 			}
 		}
 
-		// ... otherwise we need to resort to the bruteforce approach (browscap database)
-		$search = array();
-		@include( plugin_dir_path( __FILE__ ) . "browscap-db.php" );
-
-		foreach ( $patterns as $pattern => $pattern_data ) {
-			if ( preg_match( $pattern . 'i', $browser[ 'user_agent' ], $matches ) ) {
-				if ( 1 == count( $matches ) ) {
-					$key = $pattern_data;
-					$simple_match = true;
-				}
-				else{
-					$pattern_data = unserialize( $pattern_data );
-					array_shift( $matches );
-					
-					$match_string = '@' . implode( '|', $matches );
-
-					if ( !isset( $pattern_data[ $match_string ] ) ) {
-						continue;
-					}
-
-					$key = $pattern_data[ $match_string ];
-
-					$simple_match = false;
-				}
-
-				$search = array(
-					$browser[ 'user_agent' ],
-					trim( strtolower( $pattern ), '@' ),
-					self::_preg_unquote( $pattern, $simple_match ? false : $matches )
-				);
-
-				$search = $value = $search + unserialize( $browsers[ $key ] );
-
-				while ( array_key_exists( 3, $value ) ) {
-					$value = unserialize( $browsers[ $value[ 3 ] ] );
-					$search += $value;
-				}
-
-				if ( !empty( $search[ 3 ] ) && array_key_exists( $search[ 3 ], $userAgents ) ) {
-					$search[ 3 ] = $userAgents[ $search[ 3 ] ];
-				}
-
-				break;
-			}
-		}
-
-		unset( $browsers );
-		unset( $userAgents );
-		unset( $patterns );
-
-		// Add the keys for each property
-		$search_normalized = array();
-		foreach ($search as $key => $value) {
-			if ($value === 'true') {
-				$value = true;
-			} elseif ($value === 'false') {
-				$value = false;
-			}
-			$search_normalized[strtolower($properties[$key])] = $value;
-		}
-
-		if (!empty($search_normalized) && $search_normalized['browser'] != 'Default Browser' && $search_normalized['browser'] != 'unknown'){
-			$browser[ 'browser' ] = $search_normalized[ 'browser' ];
-			$browser[ 'browser_version' ] = floatval( $search_normalized[ 'version' ] );
-			$browser[ 'platform' ] = strtolower( $search_normalized[ 'platform' ] );
-			$browser[ 'user_agent' ] =  $search_normalized[ 'browser_name' ];
-
-			// Browser Types:
-			//		0: regular
-			//		1: crawler
-			//		2: mobile
-			if ($search_normalized['ismobiledevice'] || $search_normalized['istablet']){
-				$browser['browser_type'] = 2;
-			}
-			elseif (!$search_normalized['crawler']){
-				$browser['browser_type'] = 0;
-			}
-
-			if ( $browser[ 'browser_version' ] != 0 || $browser[ 'browser_type' ] != 0 ) {
-				return $browser;
-			}
-		}
-
-		if ( wp_slimstat::$settings[ 'browser_detection_mode' ] != 'no' ) {
-			include_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
-			$browser = slim_uadetector::get_browser( $browser[ 'user_agent' ] );
-
-			// If we found a match...
-			if ( $browser[ 'browser' ] != 'Default Browser' ) {
-				return $browser;
-			}
-		}
-
-		return $browser;
+		return self::$browser;
 	}
 	// end get_browser
 
@@ -139,24 +66,5 @@ class slim_browser {
 		}
 
 		return $user_agent;
-	}
-
-	/**
-	 * Helper function for get_browser [ courtesy of: GaretJax/PHPBrowsCap ]
-	 */
-	protected static function _preg_unquote($pattern, $matches){
-		$search = array('\\@', '\\.', '\\\\', '\\+', '\\[', '\\^', '\\]', '\\$', '\\(', '\\)', '\\{', '\\}', '\\=', '\\!', '\\<', '\\>', '\\|', '\\:', '\\-', '.*', '.', '\\?');
-		$replace = array('@', '\\?', '\\', '+', '[', '^', ']', '$', '(', ')', '{', '}', '=', '!', '<', '>', '|', ':', '-', '*', '?', '.');
-
-		$result = substr(str_replace($search, $replace, $pattern), 2, -2);
-
-		if (!empty($matches)){
-			foreach ($matches as $one_match){
-				$num_pos = strpos($result, '(\d)');
-				$result = substr_replace($result, $one_match, $num_pos, 4);
-			}
-		}
-
-		return $result;
 	}
 }

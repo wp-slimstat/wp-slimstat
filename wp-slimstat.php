@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.4.1
+Version: 4.4.2
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,12 +15,13 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.4.1';
+	public static $version = '4.4.2';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
 	public static $wpdb = '';
 	public static $maxmind_path = '';
+	public static $browscap_path = '';
 	public static $advanced_cache_exists = false;
 	public static $update_checker = array();
 	public static $raw_post_array = array();
@@ -73,6 +74,9 @@ class wp_slimstat {
 		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', self::$maxmind_path );
 		self::$maxmind_path = self::$maxmind_path[ 'basedir' ] . '/wp-slimstat/maxmind.dat';
 
+		// Path to the Browscap Database file
+		self::$browscap_path = trailingslashit( dirname( __FILE__ ) ) . 'browscap/browscap-db.php';
+
 		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
 		if ( file_exists( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) . '/advanced-cache.php' ) ) {
 			self::$advanced_cache_exists = true;
@@ -110,6 +114,10 @@ class wp_slimstat {
 			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
 			add_action( 'init', array( 'wp_slimstat_admin', 'init' ), 60 );
 		}
+
+		// Include our browser detector library
+		include_once( plugin_dir_path( __FILE__ ) . 'browscap/browser.php' );
+		add_action( 'init', array( 'slim_browser', 'init' ) );
 
 		// If add-ons are installed, check for updates
 		add_action( 'wp_loaded', array( __CLASS__, 'update_checker' ) );
@@ -1161,6 +1169,53 @@ class wp_slimstat {
 		return '';
 	}
 
+	/**
+	 * Downloads the Browscap User Agent database from our repository
+	 */
+	public static function update_browscap_database() {
+		// Create the folder, if it doesn't exist
+		if ( !file_exists( dirname( self::$browscap_path ) ) ) {
+			mkdir( dirname( self::$browscap_path ) );
+		}
+
+		$download_flag = false;
+
+		// Do we need to update the database?
+		if ( !file_exists( self::$browscap_path ) ) {
+			$download_flag = true;
+		}
+		// Check for updates once a week ( 604800 seconds )
+		else if ( false !== ( $file_stat = stat( self::$browscap_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = fopen( self::$browscap_path, "rb" ) ) ) {
+			
+			// Find the version of the local data file
+			while ( ( $buffer = fgets( $handle, 4096 ) ) !== false ) {
+				if ( strpos( $buffer, 'source_version' ) !== false ) {
+					$local_version = filter_var( $buffer, FILTER_SANITIZE_NUMBER_INT );
+					break;
+				}
+			}
+
+			// Now check the version number on the server
+			$remote_version = file_get_contents( 'http://s3.amazonaws.com/browscap/version.txt' );
+			if ( intval( $local_version ) != intval( $remote_version ) ) {
+				$download_flag = true;
+			}
+			
+			fclose( $handle );
+		}
+
+		// Download the most recent version of our pre-processed Browscap database
+		if ( $download_flag ) {
+			$response = wp_safe_remote_get( 'http://s3.amazonaws.com/browscap/browscap-db.php', array( 'timeout' => 300, 'stream' => true, 'filename' => self::$browscap_path ) );
+			if ( 200 != wp_remote_retrieve_response_code( $response ) ) {
+				unlink( self::$browscap_path );
+				return __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' );
+			}
+		}
+
+		return 0;
+	}
+
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ){
 		extract( shortcode_atts( array(
 			'f' => '',		// recent, popular, count
@@ -1350,7 +1405,6 @@ class wp_slimstat {
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
-			'browser_detection_mode' => 'no',
 			'enable_cdn' => 'yes',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'external_domains' => '',
@@ -1402,6 +1456,7 @@ class wp_slimstat {
 			'last_tracker_error' => array( 0, '', 0 ),
 			'show_sql_debug' => 'no',
 			'no_maxmind_warning' => 'no',
+			'no_browscap_warning' => 'no',
 
 			// Network-wide Settings
 			'locked_options' => ''
@@ -1552,10 +1607,6 @@ class wp_slimstat {
 
 // Ok, let's go, Sparky!
 if ( function_exists( 'add_action' ) ) {
-
-	// Include our browser detector library
-	include_once( plugin_dir_path( __FILE__ ) . 'browscap/browser.php' );
-
 	// Since we use sendBeacon, this function sends raw POST data, which does not populate the $_POST variable automatically
 	if ( ( !empty( $_SERVER[ 'HTTP_CONTENT_TYPE' ] ) || !empty( $_SERVER[ 'CONTENT_TYPE' ] ) ) && empty( $_POST ) ) {
 		$raw_post_string = file_get_contents( 'php://input' );

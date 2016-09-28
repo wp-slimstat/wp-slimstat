@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.4.1
+Stable tag: 4.4.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -71,6 +71,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.4.2 =
+* [Note] You may have noticed that our support service has become slightly less efficient in the last couple of months. Aside from having our (small) team use their summer vacation days, our support specialist Luigi found a full-time job and decided to start the next chapter of his career. We wish him the best of luck in his future endeavors. At the same time, we are investigating our options to keep providing the excellent level of support that many people mention when leaving a 5-star review for Slimstat. In order to scale up and attract new talent, we might decide to switch to a paid support model, where our users will need to purchase packages to get help for nontrivial requests. Please stay tuned while we discuss this internally.
+* [New] We’ve been working on optimizing the Browscap User Agent data file, and following the model we introduced a while ago, we implemented a feature that keeps the data file always up-to-date, by automatically downloading the latest version. So far, we were forced to release a Slimstat update in order to distribute a new version of the data file, which was not ideal. By switching to a dynamic workflow, you will not need to update Slimstat anymore in order to have the latest version of Browscap running on your server. Also, the plugin zip file is much smaller now. Cool, huh?
 
 = 4.4.1 =
 * [Fix] The option to restrict authors to see only reports for their posts was affecting other filters in some of our add-ons.

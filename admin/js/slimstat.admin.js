@@ -397,50 +397,15 @@ jQuery(function(){
 		});
 	}
 
-	// Hide Admin Notice
-	jQuery(document).on('click', '#slimstat-hide-admin-notice', function(e){
+	// Hide a notice and send the corresponding ajax request to the server
+	jQuery( document ).on( 'click', '[id^=slimstat-hide-]', function( e ) {
 		e.preventDefault();
-		jQuery(this).parents('.slimstat-notice').slideUp(1000);
-		data = {action: 'slimstat_hide_admin_notice', security: jQuery('#meta-box-order-nonce').val()};
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: true,
-			data: data
-		});
-	});
+		jQuery( this ).parents( '.wp-ui-notification' ).slideUp( 1000 );
+		data = {
+			action: jQuery( this ).attr('id').replace(/-/g, '_'),
+			security: jQuery( '#meta-box-order-nonce' ).val()
+		};
 
-	// Hide GeoLite Notice
-	jQuery(document).on('click', '#slimstat-hide-geolite-notice', function(e){
-		e.preventDefault();
-		jQuery(this).parents('.wp-ui-notification').slideUp(1000);
-		data = {action: 'slimstat_hide_geolite_notice', security: jQuery('#meta-box-order-nonce').val()};
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: true,
-			data: data
-		});
-	});
-
-	// Hide Cache Notice
-	jQuery(document).on('click', '#slimstat-hide-caching-notice', function(e){
-		e.preventDefault();
-		jQuery(this).parents('.wp-ui-notification').slideUp(1000);
-		data = {action: 'slimstat_hide_caching_notice', security: jQuery('#meta-box-order-nonce').val()};
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: true,
-			data: data
-		});
-	});
-
-	// Accept terms and conditions
-	jQuery(document).on('click', '#slimstat-accept-terms', function(e){
-		e.preventDefault();
-		jQuery('.slimstat-notice').slideUp(1000);
-		data = {action: 'slimstat_enable_ads_feature', security: jQuery('#meta-box-order-nonce').val()};
 		jQuery.ajax({
 			url: ajaxurl,
 			type: 'post',
