@@ -10,7 +10,7 @@ class slim_browser {
 			'browser_version' => '',
 			'browser_type' => 1,
 			'platform' => 'unknown',
-			'user_agent' => empty( $_user_agent ) ? self::_get_user_agent() : $_user_agent
+			'user_agent' => self::_get_user_agent()
 		);
 
 		self::$browscap_exists = ( file_exists( wp_slimstat::$browscap_path ) || ( !empty( wp_slimstat::$settings[ 'enable_ads_network' ] ) && wp_slimstat::$settings[ 'enable_ads_network' ] == 'yes' ) );
