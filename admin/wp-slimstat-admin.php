@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "You may have noticed that our support service has become slightly less efficient in the last couple of months. Aside from having our (small) team use their summer vacation days, our support specialist Luigi found a full-time job and decided to start the next chapter of his career. We wish him the best of luck in his future endeavors. At the same time, we are investigating our options to keep providing the excellent level of support that many people mention when leaving a 5-star review for Slimstat. In order to scale up and attract new talent, we might decide to switch to a paid support model, where our users will need to purchase packages to get help for nontrivial requests. Please stay tuned while we discuss this internally.";
+		self::$admin_notice = "The new Browscap Data caused a few white screens of death and related issues for a handful of users running PHP 5.6. We would like to thank all those who helped us narrow down the issue, for their patience and for understanding that regardless of how much you test your software, there's always a chance that you will hit a snag. We also moved the location of the data file to wp-content/uploads, as some other users were experiencing permission issues when Slimstat tried to update the file within the plugin's folder. So don't worry if you are asked to install the Browscap data file again. As usual, let us know if you experience any issues by contacting us through <a target='_blank' href='https://wordpress.org/support/plugin/wp-slimstat'>the official support forum</a>.";
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
@@ -641,11 +641,19 @@ class wp_slimstat_admin {
 
 		// --- Updates for version 4.3.7 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.3.7', '<' ) ) {
-			
+
 			// Previous versions of Slimstat were scheduling multiple purges in some cases, let's clean this up
 			wp_clear_scheduled_hook( 'wp_slimstat_purge' );
 		}
 		// --- END: Updates for version 4.3.7 ---
+
+		// --- Updates for version 4.4.3 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.4.3', '<' ) ) {
+
+			// Previous versions of Slimstat were scheduling multiple purges in some cases, let's clean this up
+			wp_slimstat::$settings[ 'enable_ads_network' ] = 'yes';
+		}
+		// --- END: Updates for version 4.4.3 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;

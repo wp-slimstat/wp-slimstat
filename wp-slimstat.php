@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.4.2
+Version: 4.4.3
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.4.2';
+	public static $version = '4.4.3';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -71,11 +71,12 @@ class wp_slimstat {
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() && defined( 'MULTISITE' ) ) ) {
 			self::$maxmind_path = str_replace( '/sites/' . get_current_blog_id(), '', self::$maxmind_path );
 		}
-		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', self::$maxmind_path );
 		self::$maxmind_path = self::$maxmind_path[ 'basedir' ] . '/wp-slimstat/maxmind.dat';
+		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', self::$maxmind_path );
 
 		// Path to the Browscap Database file
-		self::$browscap_path = trailingslashit( dirname( __FILE__ ) ) . 'browscap/browscap-db.php';
+		self::$browscap_path = dirname( self::$maxmind_path ) . '/browscap-db.php';
+		self::$browscap_path = apply_filters( 'slimstat_browscap_path', self::$browscap_path );
 
 		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
 		if ( file_exists( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) . '/advanced-cache.php' ) ) {
@@ -1200,16 +1201,20 @@ class wp_slimstat {
 			if ( intval( $local_version ) != intval( $remote_version ) ) {
 				$download_flag = true;
 			}
-			
+
 			fclose( $handle );
 		}
 
 		// Download the most recent version of our pre-processed Browscap database
 		if ( $download_flag ) {
 			$response = wp_safe_remote_get( 'http://s3.amazonaws.com/browscap/browscap-db.php', array( 'timeout' => 300, 'stream' => true, 'filename' => self::$browscap_path ) );
-			if ( 200 != wp_remote_retrieve_response_code( $response ) ) {
-				unlink( self::$browscap_path );
+			if ( is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
+				@unlink( self::$browscap_path );
 				return __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' );
+			}
+
+			if ( !file_exists( self::$browscap_path ) ) {
+				return __( 'There was an error saving the Browscap data file on your server. Please check your server permissions.', 'wp-slimstat' );
 			}
 		}
 

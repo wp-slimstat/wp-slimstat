@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.4.2
+Stable tag: 4.4.3
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -71,6 +71,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.4.3 =
+* [Fix] The new Browscap Data caused some Fatal Error issues for some users running PHP 5.6. We would like to thank all those who helped us narrow down the issue.
+* [Update] Moved the new Browscap Data file from the plugin's folder to `wp-content/uploads/wp-slimstat` to address concerns with permissions raised by some of our users.
 
 = 4.4.2 =
 * [Note] You may have noticed that our support service has become slightly less efficient in the last couple of months. Aside from having our (small) team use their summer vacation days, our support specialist Luigi found a full-time job and decided to start the next chapter of his career. We wish him the best of luck in his future endeavors. At the same time, we are investigating our options to keep providing the excellent level of support that many people mention when leaving a 5-star review for Slimstat. In order to scale up and attract new talent, we might decide to switch to a paid support model, where our users will need to purchase packages to get help for nontrivial requests. Please stay tuned while we discuss this internally.
