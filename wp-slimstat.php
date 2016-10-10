@@ -1201,6 +1201,9 @@ class wp_slimstat {
 			if ( intval( $local_version ) != intval( $remote_version ) ) {
 				$download_flag = true;
 			}
+			else {
+				touch( self::$browscap_path );
+			}
 
 			fclose( $handle );
 		}
