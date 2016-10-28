@@ -17,19 +17,9 @@ class slim_browser {
 
 		if ( self::$browscap_exists ) {
 			wp_slimstat::update_browscap_database();
-			@include_once( wp_slimstat::$browscap_path );
+			include_once( wp_slimstat::$browscap_path );
 
-			if ( function_exists( 'slimstat_get_browser_from_browscap' ) ) {
-				self::$browser = slimstat_get_browser_from_browscap( self::$browser, $browsers, $userAgents, $patterns, $properties );
-			}
-			else {
-				@unlink( wp_slimstat::$browscap_path );
-				wp_slimstat::update_browscap_database();
-
-				if ( function_exists( 'slimstat_get_browser_from_browscap' ) ) {
-					self::$browser = slimstat_get_browser_from_browscap( self::$browser, $browsers, $userAgents, $patterns, $properties );
-				}
-			}
+			self::$browser = slim_browscap_db::get_browser_from_browscap( self::$browser );
 		}
 	}
 
@@ -41,14 +31,9 @@ class slim_browser {
 			return self::$browser;
 		}
 
-		if ( !self::$browscap_exists ) {
+		if ( self::$browser[ 'browser' ] == 'Default Browser' ) {
 			include_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
 			self::$browser = slim_uadetector::get_browser( self::$browser[ 'user_agent' ] );
-
-			// If we found a match...
-			if ( self::$browser[ 'browser' ] != 'Default Browser' ) {
-				return self::$browser;
-			}
 		}
 
 		return self::$browser;

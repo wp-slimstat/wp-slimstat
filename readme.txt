@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.6
-Stable tag: 4.4.3
+Stable tag: 4.4.4
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -71,6 +71,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.4.4 =
+* [Fix] Certain fields in the settings were not accepting case sensitive values (thank you, [undertheboardwalk](https://wordpress.org/support/topic/access-control-whitelist-is-not-case-sensitive)).
+* [Fix] The heuristic browser detection functionality was failing to do its job under certain circumstances.
 
 = 4.4.3 =
 * [Fix] The new Browscap Data caused some Fatal Error issues for some users running PHP 5.6. We would like to thank all those who helped us narrow down the issue.

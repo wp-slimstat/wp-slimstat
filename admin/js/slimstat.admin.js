@@ -618,7 +618,7 @@ jQuery(function(){
 	} );
 
 	// Config tag lists
-	jQuery( 'textarea.slimstat-taglist' ).tagEditor();
+	jQuery( 'textarea.slimstat-taglist' ).tagEditor({ forceLowercase: false });
 });
 
 /* SlimScroll v1.3.8 | http://rocha.la | Copyright (c) 2011 Piotr Rochala. Released under the MIT and GPL licenses. */
