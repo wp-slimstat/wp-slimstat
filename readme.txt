@@ -4,8 +4,8 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 3.8
-Tested up to: 4.6
-Stable tag: 4.4.4
+Tested up to: 4.7
+Stable tag: 4.4.5
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -72,6 +72,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 
+= 4.4.5 =
+* [Update] Because of old settings stuck in the database, some people were not able to uninstall the Browscap data file as expected.
+
 = 4.4.4 =
 * [Fix] Certain fields in the settings were not accepting case sensitive values (thank you, [undertheboardwalk](https://wordpress.org/support/topic/access-control-whitelist-is-not-case-sensitive)).
 * [Fix] The heuristic browser detection functionality was failing to do its job under certain circumstances.
@@ -94,44 +97,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] Settings were not being saved correctly under certain specific circumstances, when add-ons were enabled.
 * [Fix] Calls to admin-ajax.php were being tracked under certain circumstances.
 * [Fix] The javascript code used to run various functions in the admin has been cleaned up and optimized.
-
-= 4.3.7 =
-* [New] A few users have experienced a conflict between AdBlock (and friends) and our stylesheet and javascript files. Apparently an overzealous ad blocker can prevent our assets from loading, thus showing [a quite messy interface](https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work). A notice has been added to the plugin and it will be displayed if this behavior is detected. If you are getting the message but you're not using AdBlock, then make sure to refresh your browser cache (thank you, [acekin](https://wordpress.org/support/topic/interface-questions)). 
-* [New] Top and Recent Downloads will now show a preview thumbnail when hovering each entry, if the downloaded file's extension ends in JPG, PNG or GIF (thank you, [willfretwell](https://wordpress.org/support/topic/thumbnails-of-downloads)).
-* [New] If you configured Slimstat to display its menu in your admin bar, and you browse your website while logged in, the links to the various report screens will now automatically activate a filter for the current page.
-* [Update] The [Browscap](http://browscap.org/) database has been updated to version 6016, released on August 4th, 2016.
-* [Fix] The new Settings interface was saving more information than needed, specifically for backward compatibility with the Network Settings add-on, even if it was not installed.
-* [Fix] The Live Stream functionality (i.e. auto-refreshing the access log report every few seconds) could not be deactivated.
-* [Fix] Minor clean-up around the new Settings screens (thanks to all those who pointed out the glitches)
-* [Fix] Multiple data purges were being scheduled under certain circumstances (second attempt).
-
-= 4.3.6 =
-* [New] In the last few weeks we've been working on revamping the Settings screens, by turning those boring radio buttons and text areas into more polished and modern switches and sortable tag lists. No more separating values with commas, when creating blacklists or configuring access control lists. Now you can type values as tokens, drag and drop them to reorganize your lists, and easily delete values. Pleae note: we had to rename some class variables to streamline our codebase, so if you're referencing them in your code, make sure to use the new names to avoid errors. Please report any issues or concern to our [support team](http://support.wp-slimstat.com).
-* [Update] New versions of our premium add-ons will be released in the next few hours, to update the compatibility to the latest version of Slimstat. If you are not upgrading the main plugin, please DO NOT upgrade the add-ons.
-* [Update] Introduced some PHP code optimizations to the tracker. Readability has also been improved, by retrofitting our existing code and applying our style guide to it.
-* [Update] [AmCharts Map](https://www.amcharts.com/javascript-maps/), the library used to render our geolocation map, has been updated to version 3.20.9.
-* [Update] Language files now contain all the new strings introduced in the last few updates. Please consider contributing to the project by submitting a translation in your language.
-
-= 4.3.5 =
-* [New] The slim_events table is now being archived along with the main slim_stats table.
-* [Update] qTip2 and SlimScroll jQuery libraries have been updated to version 3.0.3 and 1.3.8 respectively.
-* [Fix] The "out" timestamp was not being archived, when data was being copied over to the archive table.
-* [Fix] Fixed an issue with HTTPS and Cloudflare when enqueueing the javascript tracker (thank you, [wuboys](https://wordpress.org/support/topic/use-admin_url-without-second-parameter))
-* [Fix] Some more fields in the settings could not be reset to an empty value, if a non-empty value had been set (thank you, [codx26](https://wordpress.org/support/topic/slimstat-not-displaying-any-type-of-stats-after-switching-from-temporary-url)).
-
-= 4.3.4 =
-* [Update] [Browscap](http://browscap.org/) library updated to version 6015, released on June 20th, 2016.
-* [Fix] WordPress had changed a global variable we use in our code, and made it 'protected' (thank you, [chrisl27](https://wordpress.org/support/topic/slimstat-uses-wpdb-dbname-instead-of-wpdb-prefix))
-* [Fix] Some fields in the settings could not be reset to an empty value, if a non-empty value had been set (thank you, Christian)
-* [Fix] Switching the menu position in the settings from Sidebar to Admin Bar was returning a permission error (thank you, [janiesc](https://wordpress.org/support/topic/cant-move-menu-position-to-admin-bar))
-* [Fix] Download links with query string appended at the end of their URL were not being tracked as expected (thank you, [willfretwell](https://wordpress.org/support/topic/tracking-downloads-3)).
-
-= 4.3.3 =
-* [New] The tracker can now record more than one outbound link per pageview. The corresponding reports have been updated to keep the new column structure into consideration when calculating the values. (thank you, [john](https://wordpress.org/support/topic/external-link-tracking-replace-with-another-link))
-* [Update] The default method for determining the browser from the user agent string will now be our proprietary heuristic function, not browscap anymore. If needed, you can change this under Settings > Tracker tab.
-* [Fix] A PHP warning was being returned after tracking a click event on an internal download (thank you, [Stephen S](https://wordpress.org/support/topic/php-notice-undefined-var-data_js)).
-* [Fix] The new version of Browscap bundled with Slimstat 4.3.2 was causing quite a few 500 Server Error messages for our users. The nature of the issue remains unclear, however we decided to roll back to the previous version of the data file, which was working without any problems.
-* [Fix] Adding a trailing comma to some of the text settings could trigger unexpected behaviors in the tracker. (thank you, [paronomasiaster](https://wordpress.org/support/topic/slimstat-not-recording-hits))
 
 == Supporters ==
 Slimstat Analytics is an open source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)

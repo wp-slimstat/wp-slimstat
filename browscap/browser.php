@@ -2,7 +2,6 @@
 
 class slim_browser {
 	public static $browser = array();
-	protected static $browscap_exists = false;
 
 	public static function init() {
 		self::$browser = array(
@@ -13,10 +12,8 @@ class slim_browser {
 			'user_agent' => self::_get_user_agent()
 		);
 
-		self::$browscap_exists = ( file_exists( wp_slimstat::$browscap_path ) || ( !empty( wp_slimstat::$settings[ 'enable_ads_network' ] ) && wp_slimstat::$settings[ 'enable_ads_network' ] == 'yes' ) );
-
-		if ( self::$browscap_exists ) {
-			wp_slimstat::update_browscap_database();
+		if ( file_exists( wp_slimstat::$browscap_path ) ) {
+			$error = wp_slimstat::update_browscap_database( false );
 			include_once( wp_slimstat::$browscap_path );
 
 			self::$browser = slim_browscap_db::get_browser_from_browscap( self::$browser );

@@ -68,13 +68,10 @@ if (!empty($_REQUEST['action'])){
 			break;
 
 		case 'download-browscap':
-			$error = wp_slimstat::update_browscap_database();
+			$error = wp_slimstat::update_browscap_database( true );
 
-			if ( !empty( $error ) ) {
-				wp_slimstat_admin::show_alert_message( $error, 'wp-ui-notification below-h2' );
-			}
-			else {
-				wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been installed on your server.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			if ( is_array( $error ) ) {
+				wp_slimstat_admin::show_alert_message( $error[ 1 ], ( empty( $error[ 0 ] ) ? 'wp-ui-highlight below-h2': 'wp-ui-notification below-h2' ) );
 			}
 			break;
 

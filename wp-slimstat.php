@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.4.4
+Version: 4.4.5
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.4.4';
+	public static $version = '4.4.5';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -1127,10 +1127,10 @@ class wp_slimstat {
 		}
 
 		// Download the most recent database directly from MaxMind's repository
-		if (!function_exists('download_url')){
+		if ( !function_exists( 'download_url' ) ) {
 			require_once(ABSPATH . 'wp-admin/includes/file.php');
 		}
-		$maxmind_tmp = download_url('http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz', 5);
+		$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz', 5 );
 
 		if (is_wp_error($maxmind_tmp)){
 			return __('There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat').' '.$maxmind_tmp->get_error_message();
@@ -1173,20 +1173,16 @@ class wp_slimstat {
 	/**
 	 * Downloads the Browscap User Agent database from our repository
 	 */
-	public static function update_browscap_database() {
+	public static function update_browscap_database( $_force_download = false ) {
 		// Create the folder, if it doesn't exist
 		if ( !file_exists( dirname( self::$browscap_path ) ) ) {
 			mkdir( dirname( self::$browscap_path ) );
 		}
 
-		$download_flag = false;
+		$download_flag = $_force_download;
 
-		// Do we need to update the database?
-		if ( !file_exists( self::$browscap_path ) ) {
-			$download_flag = true;
-		}
 		// Check for updates once a week ( 604800 seconds )
-		else if ( false !== ( $file_stat = stat( self::$browscap_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = fopen( self::$browscap_path, "rb" ) ) ) {
+		if ( false !== ( $file_stat = stat( self::$browscap_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = fopen( self::$browscap_path, "rb" ) ) ) {
 			
 			// Find the version of the local data file
 			while ( ( $buffer = fgets( $handle, 4096 ) ) !== false ) {
@@ -1213,15 +1209,15 @@ class wp_slimstat {
 			$response = wp_safe_remote_get( 'http://s3.amazonaws.com/browscap/browscap-db.php', array( 'timeout' => 300, 'stream' => true, 'filename' => self::$browscap_path ) );
 			if ( is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
 				@unlink( self::$browscap_path );
-				return __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' );
+				return array( 1, __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' ) );
 			}
 
 			if ( !file_exists( self::$browscap_path ) ) {
-				return __( 'There was an error saving the Browscap data file on your server. Please check your server permissions.', 'wp-slimstat' );
+				return array( 2, __( 'There was an error saving the Browscap data file on your server. Please check your server permissions.', 'wp-slimstat' ) );
 			}
 		}
 
-		return 0;
+		return array( 0, __( 'The Browscap data file has been installed on your server.', 'wp-slimstat' ) );
 	}
 
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ){

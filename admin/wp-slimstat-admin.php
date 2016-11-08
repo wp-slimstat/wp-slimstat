@@ -647,14 +647,6 @@ class wp_slimstat_admin {
 		}
 		// --- END: Updates for version 4.3.7 ---
 
-		// --- Updates for version 4.4.3 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.4.3', '<' ) ) {
-
-			// Previous versions of Slimstat were scheduling multiple purges in some cases, let's clean this up
-			wp_slimstat::$settings[ 'enable_ads_network' ] = 'yes';
-		}
-		// --- END: Updates for version 4.4.3 ---
-
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
 
