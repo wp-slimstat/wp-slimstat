@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "The new Browscap Data caused a few white screens of death and related issues for a handful of users running PHP 5.6. We would like to thank all those who helped us narrow down the issue, for their patience and for understanding that regardless of how much you test your software, there's always a chance that you will hit a snag. We also moved the location of the data file to wp-content/uploads, as some other users were experiencing permission issues when Slimstat tried to update the file within the plugin's folder. So don't worry if you are asked to install the Browscap data file again. As usual, let us know if you experience any issues by contacting us through <a target='_blank' href='https://wordpress.org/support/plugin/wp-slimstat'>the official support forum</a>.";
+		self::$admin_notice = "The Browscap Project recently released a new version of their data file. Leveraging the new autoupdate feature introduced a few weeks ago, we will publish our optimized version on our repository. Even those who are not ready to upgrade to the latest version of Slimstat, should receive the update in the next few days. Please let us know if you experience any issues by contacting our support team.";
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
@@ -646,6 +646,13 @@ class wp_slimstat_admin {
 			wp_clear_scheduled_hook( 'wp_slimstat_purge' );
 		}
 		// --- END: Updates for version 4.3.7 ---
+
+		// --- Updates for version 4.4.5 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.4.5', '<' ) ) {
+			wp_slimstat::$settings[ 'last_tracker_error' ] = array();
+			wp_slimstat::$settings[ 'last_tracker_notice' ] = array();
+		}
+		// --- END: Updates for version 4.4.5 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
