@@ -75,6 +75,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 = 4.4.5 =
 * [New] We separated errors and notices in the log, to avoid confusion when users were trying to troubleshoot issues with the tracker.
 * [Update] Because of old settings stuck in the database, some people were not able to uninstall the Browscap data file as expected.
+* [Update] [AmMap](https://www.amcharts.com/javascript-maps/), the library used to render the world map, has been updated to version 3.20.17, released on October 24, 2016.
 
 = 4.4.4 =
 * [Fix] Certain fields in the settings were not accepting case sensitive values (thank you, [undertheboardwalk](https://wordpress.org/support/topic/access-control-whitelist-is-not-case-sensitive)).
