@@ -254,8 +254,8 @@ class wp_slimstat {
 
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if ( empty( self::$stat ) || empty( self::$stat[ 'dt' ] ) ) {
-			self::$stat[ 'id' ] = -213;
-			self::_set_error_array( __( 'Notice: Pageview filtered by third-party code', 'wp-slimstat' ) );
+			self::$stat[ 'id' ] = -300;
+			self::_set_error_array( __( 'Pageview filtered by third-party code', 'wp-slimstat' ), true );
 			return $_argument;
 		}
 
@@ -271,8 +271,8 @@ class wp_slimstat {
 			// Is this a 'seriously malformed' URL?
 			$referer = parse_url( self::$stat[ 'referer' ] );
 			if ( !$referer ) {
-				self::$stat[ 'id' ] = -208;
-				self::_set_error_array( sprintf( __( 'Error: Malformed URL %s', 'wp-slimstat' ), self::$stat[ 'referer' ] ) );
+				self::$stat[ 'id' ] = -201;
+				self::_set_error_array( sprintf( __( 'Malformed URL %s', 'wp-slimstat' ), self::$stat[ 'referer' ] ), false );
 				return $_argument;
 			}
 
@@ -295,8 +295,8 @@ class wp_slimstat {
 				foreach ( self::string_to_array( self::$settings[ 'ignore_referers' ] ) as $a_filter ) {
 					$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
 					if ( preg_match( "@^$pattern$@i", self::$stat[ 'referer' ] ) ) {
-						self::$stat[ 'id' ] = -207;
-						self::_set_error_array( sprintf( __( 'Notice: Referrer %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'referer' ] ) );
+						self::$stat[ 'id' ] = -301;
+						self::_set_error_array( sprintf( __( 'Referrer %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'referer' ] ), true );
 						return $_argument;
 					}
 				}
@@ -377,8 +377,8 @@ class wp_slimstat {
 			foreach ( self::string_to_array( self::$settings[ 'ignore_resources' ] ) as $a_filter ) {
 				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
 				if ( preg_match( "@^$pattern$@i", self::$stat[ 'resource' ] ) ) {
-					self::$stat['id'] = -209;
-					self::_set_error_array( sprintf( __( 'Notice: Permalink %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'resource' ] ) );
+					self::$stat['id'] = -302;
+					self::_set_error_array( sprintf( __( 'Permalink %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'resource' ] ), true );
 					return $_argument;
 				}
 			}
@@ -388,8 +388,8 @@ class wp_slimstat {
 		list ( self::$stat[ 'ip' ], self::$stat[ 'other_ip' ] ) = self::_get_remote_ip();
 
 		if ( empty( self::$stat[ 'ip' ] ) || self::$stat[ 'ip' ] == '0.0.0.0' ) {
-			self::$stat[ 'id' ] = -203;
-			self::_set_error_array( __( 'Error: Empty or not supported IP address format (IPv6)', 'wp-slimstat' ) );
+			self::$stat[ 'id' ] = -202;
+			self::_set_error_array( __( 'Empty or not supported IP address format (IPv6)', 'wp-slimstat' ), false );
 			return $_argument;
 		}
 
@@ -397,16 +397,16 @@ class wp_slimstat {
 		if ( !empty( $GLOBALS[ 'current_user' ]->ID ) ) {
 			// Don't track logged-in users, if the corresponding option is enabled
 			if ( self::$settings[ 'track_users' ] == 'no' ) {
-				self::$stat[ 'id' ] = -214;
-				self::_set_error_array( sprintf( __( 'Notice: Logged in user %s not tracked', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ) );
+				self::$stat[ 'id' ] = -303;
+				self::_set_error_array( sprintf( __( 'Logged in user %s not tracked', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ), true );
 				return $_argument;
 			}
 
 			// Don't track users with given capabilities
 			foreach ( self::string_to_array( self::$settings[ 'ignore_capabilities' ] ) as $a_capability ) {
 				if ( array_key_exists( strtolower( $a_capability ), $GLOBALS[ 'current_user' ]->allcaps ) ) {
-					self::$stat[ 'id' ] = -200;
-					self::_set_error_array( sprintf( __( 'Notice: User with capability %s not tracked', 'wp-slimstat' ), $a_capability ) );
+					self::$stat[ 'id' ] = -304;
+					self::_set_error_array( sprintf( __( 'User with capability %s not tracked', 'wp-slimstat' ), $a_capability ), true );
 					return $_argument;
 				}
 			}
@@ -415,8 +415,8 @@ class wp_slimstat {
 			foreach ( self::string_to_array( self::$settings[ 'ignore_users' ] ) as $a_filter ) {
 				$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
 				if ( preg_match( "~^$pattern$~i", $GLOBALS[ 'current_user' ]->data->user_login ) ) {
-					self::$stat['id'] = -201;
-					self::_set_error_array( sprintf( __( 'Notice: User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ) );
+					self::$stat['id'] = -305;
+					self::_set_error_array( sprintf( __( 'User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ), true );
 					return $_argument;
 				}
 			}
@@ -436,8 +436,8 @@ class wp_slimstat {
 
 			if ( !empty( $spam_comment[ 'comment_count' ] ) ) {
 				if ( self::$settings[ 'ignore_spammers' ] == 'yes' ){
-					self::$stat[ 'id' ] = -202;
-					self::_set_error_array( sprintf( __( 'Notice: Spammer %s not tracked', 'wp-slimstat' ), $spam_comment[ 'comment_author' ] ) );
+					self::$stat[ 'id' ] = -306;
+					self::_set_error_array( sprintf( __( 'Spammer %s not tracked', 'wp-slimstat' ), $spam_comment[ 'comment_author' ] ), true );
 					return $_argument;
 				}
 				else{
@@ -465,8 +465,8 @@ class wp_slimstat {
 			$long_masked_user_other_ip = substr( self::dtr_pton( self::$stat[ 'other_ip' ] ), 0 , $cidr_mask );
 
 			if ( $long_masked_user_ip === $long_masked_ip_to_ignore || $long_masked_user_other_ip === $long_masked_ip_to_ignore ) {
-				self::$stat['id'] = -204;
-				self::_set_error_array( sprintf( __('Notice: IP address %s is blacklisted', 'wp-slimstat'), self::$stat[ 'ip' ] . ( !empty( self::$stat[ 'other_ip' ] ) ? ' (' . self::$stat[ 'other_ip' ] . ')' : '' ) ) );
+				self::$stat['id'] = -307;
+				self::_set_error_array( sprintf( __('IP address %s is blacklisted', 'wp-slimstat'), self::$stat[ 'ip' ] . ( !empty( self::$stat[ 'other_ip' ] ) ? ' (' . self::$stat[ 'other_ip' ] . ')' : '' ) ), true );
 				return $_argument;
 			}
 		}
@@ -494,8 +494,8 @@ class wp_slimstat {
 
 		// Is this country blacklisted?
 		if ( is_string( self::$settings[ 'ignore_countries' ] ) && stripos( self::$settings[ 'ignore_countries' ], self::$stat[ 'country' ] ) !== false ) {
-			self::$stat['id'] = -206;
-			self::_set_error_array( sprintf( __('Notice: Country %s is blacklisted', 'wp-slimstat'), self::$stat[ 'country' ] ) );
+			self::$stat['id'] = -308;
+			self::_set_error_array( sprintf( __('Country %s is blacklisted', 'wp-slimstat'), self::$stat[ 'country' ] ), true );
 			return $_argument;
 		}
 
@@ -503,8 +503,8 @@ class wp_slimstat {
 		if ( ( isset( $_SERVER[ 'HTTP_X_MOZ' ] ) && ( strtolower( $_SERVER[ 'HTTP_X_MOZ' ] ) == 'prefetch' ) ) ||
 			( isset( $_SERVER[ 'HTTP_X_PURPOSE' ] ) && ( strtolower( $_SERVER[ 'HTTP_X_PURPOSE' ] ) == 'preview' ) ) ) {
 			if ( self::$settings[ 'ignore_prefetch' ] == 'yes' ) {
-				self::$stat[ 'id' ] = -210;
-				self::_set_error_array( __( 'Notice: Prefetch requests are ignored', 'wp-slimstat' ) );
+				self::$stat[ 'id' ] = -309;
+				self::_set_error_array( __( 'Prefetch requests are ignored', 'wp-slimstat' ), true );
 				return $_argument;
 			}
 			else{
@@ -519,8 +519,8 @@ class wp_slimstat {
 
 		// Are we ignoring bots?
 		if ( ( self::$settings[ 'javascript_mode' ] == 'yes' || self::$settings[ 'ignore_bots' ] == 'yes' ) && self::$browser[ 'browser_type' ] % 2 != 0 ) {
-			self::$stat[ 'id' ] = -211;
-			self::_set_error_array( __( 'Notice: Bot not tracked', 'wp-slimstat' ) );
+			self::$stat[ 'id' ] = -310;
+			self::_set_error_array( __( 'Bot not tracked', 'wp-slimstat' ), true );
 			return $_argument;
 		}
 
@@ -528,8 +528,8 @@ class wp_slimstat {
 		foreach ( self::string_to_array( self::$settings[ 'ignore_browsers' ] ) as $a_filter ) {
 			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
 			if ( preg_match( "~^$pattern$~i", self::$browser[ 'browser' ] . '/' . self::$browser[ 'version' ] ) || preg_match( "~^$pattern$~i", self::$browser[ 'browser' ] ) || preg_match( "~^$pattern$~i", self::$browser[ 'user_agent' ] ) ) {
-				self::$stat[ 'id' ] = -212;
-				self::_set_error_array( sprintf( __( 'Notice: Browser %s is blacklisted', 'wp-slimstat' ), self::$browser[ 'browser' ] ) );
+				self::$stat[ 'id' ] = -311;
+				self::_set_error_array( sprintf( __( 'Browser %s is blacklisted', 'wp-slimstat' ), self::$browser[ 'browser' ] ), true );
 				return $_argument;
 			}
 		}
@@ -545,8 +545,8 @@ class wp_slimstat {
 
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if (empty(self::$stat) || empty(self::$stat['dt'])){
-			self::$stat['id'] = -213;
-			self::_set_error_array( __( 'Notice: Pageview filtered by third-party code', 'wp-slimstat' ) );
+			self::$stat['id'] = -300;
+			self::_set_error_array( __( 'Pageview filtered by third-party code', 'wp-slimstat' ), true );
 			return $_argument;
 		}
 
@@ -572,9 +572,8 @@ class wp_slimstat {
 			self::$stat['id'] = self::insert_row(self::$stat, $GLOBALS['wpdb']->prefix.'slim_stats');
 
 			if ( empty( self::$stat[ 'id' ] ) ) {
-				self::$stat[ 'id' ] = -215;
-				self::_set_error_array( __( 'Error:', 'wp-slimstat' ) . ' ' . self::$wpdb->last_error );
-
+				self::$stat[ 'id' ] = -200;
+				self::_set_error_array( self::$wpdb->last_error, false );
 				return $_argument;
 			}
 		}
@@ -1028,8 +1027,8 @@ class wp_slimstat {
 		// Do we have an id for this request?
 		if ( empty( self::$data_js[ 'id' ] ) || empty( self::$data_js[ 'op' ] ) ) {
 			do_action( 'slimstat_track_exit_102' );
-			self::$stat[ 'id' ] = -102;
-			self::_set_error_array( __( 'Invalid payload string. Try clearing your WordPress cache.', 'wp-slimstat' ) );
+			self::$stat[ 'id' ] = -100;
+			self::_set_error_array( __( 'Invalid payload string. Try clearing your WordPress cache.', 'wp-slimstat' ), false );
 			self::slimstat_save_options();
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 		}
@@ -1038,8 +1037,8 @@ class wp_slimstat {
 		self::$data_js[ 'id' ] = self::_separate_id_from_checksum( self::$data_js[ 'id' ] );
 		if ( self::$data_js['id'] === false ) {
 			do_action( 'slimstat_track_exit_103' );
-			self::$stat[ 'id' ] = -103;
-			self::_set_error_array( __( 'Invalid data signature. Try clearing your WordPress cache.', 'wp-slimstat' ) );
+			self::$stat[ 'id' ] = -101;
+			self::_set_error_array( __( 'Invalid data signature. Try clearing your WordPress cache.', 'wp-slimstat' ), false );
 			self::slimstat_save_options();
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 		}
@@ -1054,10 +1053,15 @@ class wp_slimstat {
 	}
 	// end _check_data_integrity
 
-	protected static function _set_error_array( $_error_message = '' ) {
+	protected static function _set_error_array( $_error_message = '', $_is_notice = false ) {
 		$error_code = abs( self::$stat[ 'id' ] );
 		self::toggle_date_i18n_filters( false );
-		self::$settings[ 'last_tracker_error' ] = array( $error_code, $_error_message, date_i18n( 'U' ) );
+		if ( $_is_notice ) {
+			self::$settings[ 'last_tracker_notice' ] = array( $error_code, $_error_message, date_i18n( 'U' ) );
+		}
+		else {
+			self::$settings[ 'last_tracker_error' ] = array( $error_code, $_error_message, date_i18n( 'U' ) );
+		}
 		self::toggle_date_i18n_filters( true );
 	}
 
@@ -1182,7 +1186,7 @@ class wp_slimstat {
 		$download_flag = $_force_download;
 
 		// Check for updates once a week ( 604800 seconds )
-		if ( false !== ( $file_stat = stat( self::$browscap_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = fopen( self::$browscap_path, "rb" ) ) ) {
+		if ( false !== ( $file_stat = @stat( self::$browscap_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = @fopen( self::$browscap_path, "rb" ) ) ) {
 			
 			// Find the version of the local data file
 			while ( ( $buffer = fgets( $handle, 4096 ) ) !== false ) {

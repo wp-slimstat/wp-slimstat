@@ -85,8 +85,12 @@ if (!empty($_REQUEST['action'])){
 			}
 			break;
 
-		case 'reset-tracker-status':
+		case 'reset-tracker-error-status':
 			wp_slimstat::$settings[ 'last_tracker_error' ] = array();
+			break;
+
+		case 'reset-tracker-notice-status':
+			wp_slimstat::$settings[ 'last_tracker_notice' ] = array();
 			break;
 
 		case 'restore-views':
@@ -148,10 +152,17 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-troubleshooting"><?php _e('Troubleshooting','wp-slimstat') ?></td>
 	</tr>
 	<tr>
-		<th scope="row"><?php _e('Tracker Status','wp-slimstat') ?></th>
+		<th scope="row"><?php _e( 'Tracker Error', 'wp-slimstat' ) ?></th>
 		<td>
-			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$settings[ 'date_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$settings[ 'time_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-delete-entry slimstat-font-cancel" title="' . htmlentities( __( 'Reset the tracker status', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
-			<span class="description"><?php _e('The information here above is useful to troubleshoot issues with the tracker. It includes both <strong>errors</strong>, which are returned when the tracker could not record a pageview and are indicative of some kind of malfunction, and <strong>notices</strong>, which explain the reason why the most recent pageview was not recorded, based on your settings (filters, blackslists, etc). Please include the message here above when sending a support request.','wp-slimstat') ?></span>
+			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$settings[ 'date_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$settings[ 'time_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-delete-entry slimstat-font-cancel" title="' . htmlentities( __( 'Reset this error', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-error-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
+			<span class="description"><?php _e( 'The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction. Please include the message here above when sending a support request.', 'wp-slimstat' ) ?></span>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><?php _e( 'Tracker Notice', 'wp-slimstat' ) ?></th>
+		<td>
+			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_notice' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_notice' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$settings[ 'date_format' ], wp_slimstat::$settings[ 'last_tracker_notice' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$settings[ 'time_format' ], wp_slimstat::$settings[ 'last_tracker_notice' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_notice' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_notice' ][ 1 ] . '</strong><a class="slimstat-delete-entry slimstat-font-cancel" title="' . htmlentities( __( 'Reset this notice', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-notice-tatus"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
+			<span class="description"><?php _e( 'The message here above will indicate if a page view was not recorded because it matched at least one of the conditions you configured in your settings (filters, blackslists, etc).', 'wp-slimstat' ) ?></span>
 		</td>
 	</tr>
 	<tr  class="alternate">

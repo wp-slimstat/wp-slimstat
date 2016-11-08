@@ -73,6 +73,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 == Changelog ==
 
 = 4.4.5 =
+* [New] We separated errors and notices in the log, to avoid confusion when users were trying to troubleshoot issues with the tracker.
 * [Update] Because of old settings stuck in the database, some people were not able to uninstall the Browscap data file as expected.
 
 = 4.4.4 =
