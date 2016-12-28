@@ -655,12 +655,16 @@ class wp_slimstat_admin {
 		// --- END: Updates for version 4.4.5 ---
 
 		// --- Updates for version 4.5 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.5', '<' ) && file_exists( wp_slimstat::$upload_dir . '/browscap-db.php' ) ) {
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.5', '<' ) ) {
 			// Download the new Browscap data structure, if the old one was installed
-			slim_browser::update_browscap_database( true );	
+			if ( version_compare( PHP_VERSION, '5.3', '>=' ) ) {
+				slim_browser::update_browscap_database( true );
+			}
 
 			// Clean up after yourself, son!
-			@unlink( wp_slimstat::$upload_dir . '/browscap-db.php' );
+			if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db.php' ) ) {
+				@unlink( wp_slimstat::$upload_dir . '/browscap-db.php' );
+			}
 		}
 		// --- END: Updates for version 4.5 ---
 

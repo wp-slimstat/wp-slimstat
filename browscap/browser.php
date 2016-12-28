@@ -45,7 +45,7 @@ class slim_browser {
 	 * Downloads the Browscap User Agent database from our repository
 	 */
 	public static function update_browscap_database( $_force_download = false ) {
-		if ( version_compare( PHP_VERSION, '5.3', '>=' ) ) {
+		if ( version_compare( PHP_VERSION, '5.3', '<' ) ) {
 			return array( 4, __( 'This library requires at least PHP 5.3. Please ask your service provider to upgrade your server accordingly.', 'wp-slimstat' ) );
 		}
 
