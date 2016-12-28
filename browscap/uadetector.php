@@ -121,7 +121,7 @@ class slim_uadetector {
 			if ( !empty( $match[ 1 ] ) && stristr( $match[ 1 ], 'Version' ) === false ) {
 				$webkit_info = explode( '/', $match[ 1 ] );
 				$browser[ 'browser' ] = $webkit_info[ 0 ];
-				$browser[ 'browser_version' ] = floatval( $webkit_info[ 1 ] );
+				$browser[ 'browser_version' ] = !empty( $webkit_info[ 1 ] ) ? floatval( $webkit_info[ 1 ] ) : 0;
 			}
 		}
 		else if ( preg_match( '#^(E?Links|Lynx|(?:Emacs\-)?w3m)[^a-z0-9]+([0-9\.]+)?#i', $_user_agent, $match ) > 0 || preg_match( '#(?:^|[^a-z0-9])(ActiveWorlds|Dillo|OffByOne)[/\sv\.]*([0-9\.]+)?#i', $_user_agent, $match ) > 0 ) {

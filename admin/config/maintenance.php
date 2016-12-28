@@ -1,19 +1,19 @@
 <?php
 // Avoid direct access to this piece of code
-if (!function_exists('add_action') || (!empty($_POST) && !check_admin_referer('maintenance_wp_slimstat','maintenance_wp_slimstat_nonce'))){
-	exit(0);
+if ( !function_exists( 'add_action' ) || ( !empty( $_POST ) && !check_admin_referer( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce' ) ) ) {
+	exit( 0 );
 }
 
-include_once(dirname(dirname(__FILE__))."/view/wp-slimstat-reports.php");
+require_once( dirname( dirname( __FILE__ ) ) . '/view/wp-slimstat-reports.php' );
 wp_slimstat_reports::init();
 
-if (!empty($_REQUEST['action'])){
-	switch ($_REQUEST['action']){
+if ( !empty( $_REQUEST[ 'action' ] ) ) {
+	switch ( $_REQUEST[ 'action' ] ) {
 		case 'activate-indexes':
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )" );
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )" );
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
-			wp_slimstat_admin::show_alert_message( __( 'Congratulations! Slimstat Analytics is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			wp_slimstat_admin::show_alert_message( __( 'Congratulations! Slimstat Analytics is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' ) );
 			break;
 
 		case 'activate-sql-debug-mode':
@@ -24,7 +24,7 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx");
-			wp_slimstat_admin::show_alert_message( __( 'Indexing has been disabled. Enjoy the extra database space!', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			wp_slimstat_admin::show_alert_message( __( 'Indexing has been disabled. Enjoy the extra database space!', 'wp-slimstat' ) );
 			break;
 
 		case 'deactivate-sql-debug-mode':
@@ -40,38 +40,41 @@ if (!empty($_REQUEST['action'])){
 					FROM {$GLOBALS['wpdb']->prefix}slim_stats t1
 					WHERE ".wp_slimstat_db::get_combined_where('', '*', false));
 			}
-			wp_slimstat_admin::show_alert_message(intval($rows_affected).' '.__('records deleted from your database.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat_admin::show_alert_message( intval( $rows_affected ) . ' ' . __( 'records deleted from your database.', 'wp-slimstat' ) );
 			break;
 
 		case 'delete-maxmind':
 			@unlink( wp_slimstat::$maxmind_path );
-			wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
 			break;
 
 		case 'download-maxmind':
 			$error = wp_slimstat::download_maxmind_database();
 
 			if (!empty($error)){
-				wp_slimstat_admin::show_alert_message( $error, 'wp-ui-notification below-h2' );
+				wp_slimstat_admin::show_alert_message( $error, 'wp-ui-notification' );
 			}
 			else {
-				wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been installed on your server.', 'wp-slimstat'), 'wp-ui-highlight below-h2' );
+				wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been installed on your server.', 'wp-slimstat') );
 			}
 			break;
 
 		case 'delete-browscap':
-			@unlink( wp_slimstat::$browscap_path );
-			if ( !empty( wp_slimstat::$settings[ 'enable_ads_network' ] ) ) {
-				unset( wp_slimstat::$settings[ 'enable_ads_network' ] );
+			// Delete the existing folder, if there
+			WP_Filesystem();
+			if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( dirname( slim_browser::$browscap_autoload_path ) . '/', true ) ) {
+				wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ) );
 			}
-			wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			else {
+				wp_slimstat_admin::show_alert_message( __( 'There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat' ) );	
+			}
 			break;
 
 		case 'download-browscap':
-			$error = wp_slimstat::update_browscap_database( true );
+			$error = slim_browser::update_browscap_database( true );
 
 			if ( is_array( $error ) ) {
-				wp_slimstat_admin::show_alert_message( $error[ 1 ], ( empty( $error[ 0 ] ) ? 'wp-ui-highlight below-h2': 'wp-ui-notification below-h2' ) );
+				wp_slimstat_admin::show_alert_message( $error[ 1 ], ( empty( $error[ 0 ] ) ? 'wp-ui-highlight': 'wp-ui-notification' ) );
 			}
 			break;
 
@@ -99,7 +102,7 @@ if (!empty($_REQUEST['action'])){
 			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
 			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
 			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
-			wp_slimstat_admin::show_alert_message(__('Your reports were successfully restored to their default arrangement.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat_admin::show_alert_message( __( 'Your reports were successfully restored to their default arrangement.', 'wp-slimstat') );
 			break;
 
 		case 'switch-engine':
@@ -109,13 +112,13 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ENGINE = InnoDB");
 			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_events ENGINE = InnoDB");
 
-			wp_slimstat_admin::show_alert_message(__('Your Slimstat tables have been successfully converted to InnoDB.','wp-slimstat'), 'wp-ui-highlight below-h2');
+			wp_slimstat_admin::show_alert_message( __( 'Your Slimstat tables have been successfully converted to InnoDB.', 'wp-slimstat' ) );
 			break;
 
 		case 'truncate-archive':
 			wp_slimstat::$wpdb->query( "DELETE tsa FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive tsa" );
 			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
-			wp_slimstat_admin::show_alert_message( __( 'All the archived records were successfully deleted.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			wp_slimstat_admin::show_alert_message( __( 'All the archived records were successfully deleted.', 'wp-slimstat' ) );
 			break;
 
 		case 'truncate-table':
@@ -123,7 +126,7 @@ if (!empty($_REQUEST['action'])){
 			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
 			wp_slimstat::$wpdb->query( "DELETE t1 FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats t1" );
 			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
-			wp_slimstat_admin::show_alert_message( __( 'All the records were successfully deleted.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			wp_slimstat_admin::show_alert_message( __( 'All the records were successfully deleted.', 'wp-slimstat' ) );
 			break;
 
 		default:
@@ -282,7 +285,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 	</tr>
 	<tr class="alternate">
 		<th scope="row">
-			<?php if ( !file_exists( wp_slimstat::$browscap_path ) ) : ?>
+			<?php if ( !file_exists( slim_browser::$browscap_autoload_path ) ) : ?>
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=download-browscap"
 				onclick="return( confirm( '<?php _e( 'Do you want to download and install the Browscap data file from our server?', 'wp-slimstat' ); ?>' ) )"><?php _e( 'Install Browscap', 'wp-slimstat' ); ?></a>
 			<?php else: ?>

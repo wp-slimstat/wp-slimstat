@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.4.5
+Version: 4.5
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,13 +15,14 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.4.5';
+	public static $version = '4.5';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
 	public static $wpdb = '';
+	public static $upload_dir = '';
 	public static $maxmind_path = '';
-	public static $browscap_path = '';
+
 	public static $advanced_cache_exists = false;
 	public static $update_checker = array();
 	public static $raw_post_array = array();
@@ -67,16 +68,15 @@ class wp_slimstat {
 		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
 
 		// Define the folder where to store the geolocation database (shared among sites in a network, by default)
-		self::$maxmind_path = wp_upload_dir();
+		self::$upload_dir = wp_upload_dir();
+		self::$upload_dir = self::$upload_dir[ 'basedir' ];
 		if ( is_multisite() && ! ( is_main_network() && is_main_site() && defined( 'MULTISITE' ) ) ) {
-			self::$maxmind_path = str_replace( '/sites/' . get_current_blog_id(), '', self::$maxmind_path );
+			self::$upload_dir = str_replace( '/sites/' . get_current_blog_id(), '', self::$upload_dir );
 		}
-		self::$maxmind_path = self::$maxmind_path[ 'basedir' ] . '/wp-slimstat/maxmind.dat';
-		self::$maxmind_path = apply_filters( 'slimstat_maxmind_path', self::$maxmind_path );
+		self::$upload_dir .= '/wp-slimstat';
+		self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
 
-		// Path to the Browscap Database file
-		self::$browscap_path = dirname( self::$maxmind_path ) . '/browscap-db.php';
-		self::$browscap_path = apply_filters( 'slimstat_browscap_path', self::$browscap_path );
+		self::$maxmind_path = self::$upload_dir . '/maxmind.dat';
 
 		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
 		if ( file_exists( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) . '/advanced-cache.php' ) ) {
@@ -337,7 +337,9 @@ class wp_slimstat {
 		}
 		else if ( is_array( self::$data_js ) && isset( self::$data_js[ 'res' ] ) ) {
 			$parsed_permalink = parse_url( base64_decode( self::$data_js[ 'res' ] ) );
-			self::$stat['searchterms'] = self::_get_search_terms($referer);
+			if ( !empty( $referer ) ) {
+				self::$stat[ 'searchterms' ] = self::_get_search_terms( $referer );
+			}
 
 			// Was this an internal search?
 			if ( empty( self::$stat[ 'searchterms' ] ) ) {
@@ -421,11 +423,11 @@ class wp_slimstat {
 				}
 			}
 
-			self::$stat['username'] = $GLOBALS['current_user']->data->user_login;
-			self::$stat['notes'][] = 'user:' . $GLOBALS[ 'current_user' ]->data->ID;
+			self::$stat[ 'username' ] = $GLOBALS[ 'current_user' ]->data->user_login;
+			self::$stat[ 'notes' ][] = 'user:' . $GLOBALS[ 'current_user' ]->data->ID;
 			$not_spam = true;
 		}
-		elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])){
+		elseif ( isset( $_COOKIE[ 'comment_author_' . COOKIEHASH ] ) ) {
 			// Is this a spammer?
 			$spam_comment = self::$wpdb->get_row( self::$wpdb->prepare( "
 				SELECT comment_author, COUNT(*) comment_count
@@ -1002,7 +1004,7 @@ class wp_slimstat {
 			}
 
 		}
-		elseif ( $identifier > 0 ){
+		elseif ( $identifier > 0 ) {
 			self::$stat[ 'visit_id' ] = $identifier;
 		}
 
@@ -1172,56 +1174,6 @@ class wp_slimstat {
 		@unlink($maxmind_tmp);
 
 		return '';
-	}
-
-	/**
-	 * Downloads the Browscap User Agent database from our repository
-	 */
-	public static function update_browscap_database( $_force_download = false ) {
-		// Create the folder, if it doesn't exist
-		if ( !file_exists( dirname( self::$browscap_path ) ) ) {
-			mkdir( dirname( self::$browscap_path ) );
-		}
-
-		$download_flag = $_force_download;
-
-		// Check for updates once a week ( 604800 seconds )
-		if ( false !== ( $file_stat = @stat( self::$browscap_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = @fopen( self::$browscap_path, "rb" ) ) ) {
-			
-			// Find the version of the local data file
-			while ( ( $buffer = fgets( $handle, 4096 ) ) !== false ) {
-				if ( strpos( $buffer, 'source_version' ) !== false ) {
-					$local_version = filter_var( $buffer, FILTER_SANITIZE_NUMBER_INT );
-					break;
-				}
-			}
-
-			// Now check the version number on the server
-			$remote_version = file_get_contents( 'http://s3.amazonaws.com/browscap/version.txt' );
-			if ( intval( $local_version ) != intval( $remote_version ) ) {
-				$download_flag = true;
-			}
-			else {
-				touch( self::$browscap_path );
-			}
-
-			fclose( $handle );
-		}
-
-		// Download the most recent version of our pre-processed Browscap database
-		if ( $download_flag ) {
-			$response = wp_safe_remote_get( 'http://s3.amazonaws.com/browscap/browscap-db.php', array( 'timeout' => 300, 'stream' => true, 'filename' => self::$browscap_path ) );
-			if ( is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
-				@unlink( self::$browscap_path );
-				return array( 1, __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' ) );
-			}
-
-			if ( !file_exists( self::$browscap_path ) ) {
-				return array( 2, __( 'There was an error saving the Browscap data file on your server. Please check your server permissions.', 'wp-slimstat' ) );
-			}
-		}
-
-		return array( 0, __( 'The Browscap data file has been installed on your server.', 'wp-slimstat' ) );
 	}
 
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ){

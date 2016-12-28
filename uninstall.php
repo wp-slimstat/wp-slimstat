@@ -1,36 +1,38 @@
 <?php
 // Avoid direct access to this piece of code
-if (!defined('WP_UNINSTALL_PLUGIN')) exit;
+if ( !defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+	exit;
+}
 
-$slimstat_options = get_option('slimstat_options', array());
-if (!empty($slimstat_options['addon_custom_db_dbuser']) && !empty($slimstat_options['addon_custom_db_dbpass']) && !empty($slimstat_options['addon_custom_db_dbname']) && !empty($slimstat_options['addon_custom_db_dbhost'])){
-	$slimstat_wpdb = new wpdb($slimstat_options['addon_custom_db_dbuser'], $slimstat_options['addon_custom_db_dbpass'], $slimstat_options['addon_custom_db_dbname'], $slimstat_options['addon_custom_db_dbhost']);
+$slimstat_options = get_option( 'slimstat_options', array() );
+if ( !empty( $slimstat_options[ 'addon_custom_db_dbuser' ] ) && !empty( $slimstat_options[ 'addon_custom_db_dbpass' ] ) && !empty( $slimstat_options[ 'addon_custom_db_dbname' ] ) && !empty($slimstat_options[ 'addon_custom_db_dbhost' ] ) ) {
+	$slimstat_wpdb = new wpdb( $slimstat_options[ 'addon_custom_db_dbuser' ], $slimstat_options[ 'addon_custom_db_dbpass' ], $slimstat_options[ 'addon_custom_db_dbname' ], $slimstat_options[ 'addon_custom_db_dbhost' ] );
 }
 else {
-	$slimstat_wpdb = $GLOBALS['wpdb'];
+	$slimstat_wpdb = $GLOBALS[ 'wpdb' ];
 }
 
-if (function_exists('is_multisite') && is_multisite()) {
-	$blogids = $GLOBALS['wpdb']->get_col($GLOBALS['wpdb']->prepare("
+if ( function_exists( 'is_multisite' ) && is_multisite() ) {
+	$blogids = $GLOBALS[ 'wpdb' ]->get_col( $GLOBALS[ 'wpdb' ]->prepare( "
 		SELECT blog_id
-		FROM {$GLOBALS['wpdb']->blogs}
+		FROM {$GLOBALS[ 'wpdb' ]->blogs}
 		WHERE site_id = %d
 			AND deleted = 0
-			AND spam = 0", $GLOBALS['wpdb']->siteid));
+			AND spam = 0", $GLOBALS[ 'wpdb' ]->siteid ) );
 
-	foreach ($blogids as $blog_id) {
-		switch_to_blog($blog_id);
-		slimstat_uninstall($slimstat_wpdb, $slimstat_options);
+	foreach ( $blogids as $blog_id ) {
+		switch_to_blog( $blog_id );
+		slimstat_uninstall( $slimstat_wpdb, $slimstat_options );
 		restore_current_blog();
 	}
 }
-else{
-	slimstat_uninstall($slimstat_wpdb, $slimstat_options);
+else {
+	slimstat_uninstall( $slimstat_wpdb, $slimstat_options );
 }
 
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_browsers");
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_screenres");
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}slim_content_info");
+$slimstat_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}slim_browsers" );
+$slimstat_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}slim_screenres" );
+$slimstat_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}slim_content_info" );
 
 function slimstat_uninstall($_wpdb = '', $_options = array()){
 	// Goodbye data...
@@ -53,4 +55,10 @@ function slimstat_uninstall($_wpdb = '', $_options = array()){
 
 	// Remove scheduled autopurge events
 	wp_clear_scheduled_hook('wp_slimstat_purge');
+
+	// Delete the Browscap and MaxMind data files if they exist
+	$upload_path = wp_upload_dir();
+	$upload_path = $upload_path[ 'basedir' ] . '/wp-slimstat/';
+	@unlink( $upload_path . 'maxmind.dat' );
+	@unlink( $upload_path . 'browscap-db.php' );
 }

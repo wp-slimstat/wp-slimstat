@@ -420,9 +420,10 @@
 
 /* Settings */
 #slimstat-message{
-	border: 1px solid #ccc;
+	background-color: #555;
 	clear: both;
-	margin: 0;
+	color: #fff;
+	overflow: hidden;
 	padding: 0 10px;
 }
 #slimstat-message p:before{

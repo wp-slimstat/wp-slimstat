@@ -118,15 +118,15 @@
 	</form>
 	<?php
 		if ( !file_exists( wp_slimstat::$maxmind_path ) && ( empty( wp_slimstat::$settings[ 'no_maxmind_warning' ] ) || wp_slimstat::$settings[ 'no_maxmind_warning' ] != 'yes' ) ) {
-			wp_slimstat_admin::show_alert_message( sprintf( __( "Install MaxMind's <a href='%s'>GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
+			wp_slimstat_admin::show_alert_message( sprintf( __( "<a href='%s'>Install MaxMind's GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
 		}
 
-		if ( !file_exists( wp_slimstat::$browscap_path ) && ( empty( wp_slimstat::$settings[ 'no_browscap_warning' ] ) || wp_slimstat::$settings[ 'no_browscap_warning' ] != 'yes' ) ) {
-			wp_slimstat_admin::show_alert_message( sprintf( __( "Install the Browscap <a href='%s'>User Agent Database</a> to accurately determine your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-browscap-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
+		if ( !file_exists( slim_browser::$browscap_autoload_path ) && ( empty( wp_slimstat::$settings[ 'no_browscap_warning' ] ) || wp_slimstat::$settings[ 'no_browscap_warning' ] != 'yes' ) ) {
+			wp_slimstat_admin::show_alert_message( sprintf( __( "Install the Browscap <a href='%s'>User Agent Database</a> to accurately determine your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-browscap-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
 		}
 
 		if ( wp_slimstat::$advanced_cache_exists && ( empty( wp_slimstat::$settings[ 'no_caching_warning' ] ) || wp_slimstat::$settings[ 'no_caching_warning' ] != 'yes' ) && ( empty( wp_slimstat::$settings[ 'javascript_mode' ] ) || wp_slimstat::$settings[ 'javascript_mode' ] != 'yes' ) ) {
-			wp_slimstat_admin::show_alert_message( sprintf( __( "A caching plugin has been detected on your website. Please <a href='%s' target='_blank'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat' ), 'https://slimstat.freshdesk.com/support/solutions/articles/5000528524-i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra' ) . '<a id="slimstat-hide-caching-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-notification below-h2' );
+			wp_slimstat_admin::show_alert_message( sprintf( __( "A caching plugin has been detected on your website. Please <a href='%s' target='_blank'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat' ), 'https://slimstat.freshdesk.com/support/solutions/articles/5000528524-i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra' ) . '<a id="slimstat-hide-caching-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
 		}
 
 		$filters_html = wp_slimstat_reports::get_filters_html( wp_slimstat_db::$filters_normalized[ 'columns' ] );

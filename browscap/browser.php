@@ -2,6 +2,7 @@
 
 class slim_browser {
 	public static $browser = array();
+	public static $browscap_autoload_path = '';
 
 	public static function init() {
 		self::$browser = array(
@@ -12,11 +13,14 @@ class slim_browser {
 			'user_agent' => self::_get_user_agent()
 		);
 
-		if ( file_exists( wp_slimstat::$browscap_path ) ) {
-			$error = wp_slimstat::update_browscap_database( false );
-			include_once( wp_slimstat::$browscap_path );
+		// Path to the Browscap data and library
+		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db/autoload.php';
 
-			self::$browser = slim_browscap_db::get_browser_from_browscap( self::$browser );
+		if ( file_exists( self::$browscap_autoload_path ) ) {
+			// $error = self::update_browscap_database( false );
+			require_once( self::$browscap_autoload_path );
+
+			self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser );
 		}
 	}
 
@@ -29,13 +33,80 @@ class slim_browser {
 		}
 
 		if ( self::$browser[ 'browser' ] == 'Default Browser' ) {
-			include_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
+			require_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
 			self::$browser = slim_uadetector::get_browser( self::$browser[ 'user_agent' ] );
 		}
 
 		return self::$browser;
 	}
 	// end get_browser
+
+	/**
+	 * Downloads the Browscap User Agent database from our repository
+	 */
+	public static function update_browscap_database( $_force_download = false ) {
+		// Create the folder, if it doesn't exist
+		if ( !file_exists( wp_slimstat::$upload_dir ) ) {
+			@mkdir( wp_slimstat::$upload_dir );
+		}
+
+		$download_remote_file = $_force_download;
+		$local_version = 0;
+		$browscap_zip = wp_slimstat::$upload_dir . '/browscap-db.zip';
+
+		// Check for updates once a week ( 604800 seconds )
+		if ( false === $download_remote_file && false !== ( $file_stat = @stat( self::$browscap_autoload_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = @fopen( self::$browscap_autoload_path, "rb" ) ) ) {
+			
+			// Find the version of the local data file
+			while ( ( $buffer = fgets( $handle, 4096 ) ) !== false ) {
+				if ( strpos( $buffer, 'source_version' ) !== false ) {
+					$local_version = filter_var( $buffer, FILTER_SANITIZE_NUMBER_INT );
+					break;
+				}
+			}
+
+			// Now check the version number on the server
+			$remote_version = file_get_contents( 'http://s3.amazonaws.com/browscap/autoload.txt' );
+			if ( intval( $local_version ) != intval( $remote_version ) ) {
+				$download_remote_file = true;
+			}
+			else {
+				@touch( self::$browscap_autoload_path );
+			}
+
+			fclose( $handle );
+		}
+
+		// Download the most recent version of our pre-processed Browscap database
+		if ( $download_remote_file ) {
+			$response = wp_safe_remote_get( 'http://s3.amazonaws.com/browscap/browscap-db.zip', array( 'timeout' => 300, 'stream' => true, 'filename' => $browscap_zip ) );
+			if ( is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
+				@unlink( $browscap_zip );
+				return array( 1, __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' ) );
+			}
+
+			if ( !file_exists( $browscap_zip ) ) {
+				return array( 2, __( 'There was an error saving the Browscap data file on your server. Please check your folder permissions.', 'wp-slimstat' ) );
+			}
+
+			// Init the filesystem API
+			WP_Filesystem();
+
+			// Delete the existing folder, if there
+			$GLOBALS[ 'wp_filesystem' ]->rmdir( dirname( self::$browscap_autoload_path ) . '/', true );
+
+			// We're ready to unzip the file
+			$unzip_done = unzip_file( $browscap_zip, wp_slimstat::$upload_dir );
+
+			if ( !$unzip_done || !file_exists( self::$browscap_autoload_path ) ) {
+				return array( 3, __( 'There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration.', 'wp-slimstat' ) );
+			}
+
+			@unlink( $browscap_zip );
+		}
+
+		return array( 0, __( 'The Browscap data file has been installed on your server.', 'wp-slimstat' ) );
+	}
 
 	protected static function _get_user_agent() {
 		$user_agent = ( !empty( $_SERVER[ 'HTTP_USER_AGENT' ] ) ? trim( $_SERVER[ 'HTTP_USER_AGENT' ] ) : '' );

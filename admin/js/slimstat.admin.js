@@ -400,7 +400,7 @@ jQuery(function(){
 	// Hide a notice and send the corresponding ajax request to the server
 	jQuery( document ).on( 'click', '[id^=slimstat-hide-]', function( e ) {
 		e.preventDefault();
-		jQuery( this ).parents( '.wp-ui-notification' ).slideUp( 1000 );
+		jQuery( this ).parents( '.slimstat-notice' ).slideUp( 1000 );
 		data = {
 			action: jQuery( this ).attr('id').replace(/-/g, '_'),
 			security: jQuery( '#meta-box-order-nonce' ).val()
