@@ -16,7 +16,7 @@ class slim_browser {
 		// Path to the Browscap data and library
 		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db/autoload.php';
 
-		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.3', '>=' ) ) {
+		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.5', '>=' ) ) {
 			$error = self::update_browscap_database( false );
 			require_once( self::$browscap_autoload_path );
 
@@ -45,8 +45,8 @@ class slim_browser {
 	 * Downloads the Browscap User Agent database from our repository
 	 */
 	public static function update_browscap_database( $_force_download = false ) {
-		if ( version_compare( PHP_VERSION, '5.3', '<' ) ) {
-			return array( 4, __( 'This library requires at least PHP 5.3. Please ask your service provider to upgrade your server accordingly.', 'wp-slimstat' ) );
+		if ( version_compare( PHP_VERSION, '5.5', '<' ) ) {
+			return array( 4, __( 'This library requires at least PHP 5.5. Please ask your service provider to upgrade your server accordingly.', 'wp-slimstat' ) );
 		}
 
 		// Create the folder, if it doesn't exist

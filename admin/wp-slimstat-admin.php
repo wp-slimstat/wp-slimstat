@@ -657,9 +657,7 @@ class wp_slimstat_admin {
 		// --- Updates for version 4.5 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.5', '<' ) ) {
 			// Download the new Browscap data structure, if the old one was installed
-			if ( version_compare( PHP_VERSION, '5.3', '>=' ) ) {
-				slim_browser::update_browscap_database( true );
-			}
+			slim_browser::update_browscap_database( true );
 
 			// Clean up after yourself, son!
 			if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db.php' ) ) {
