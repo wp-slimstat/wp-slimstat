@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.7
-Stable tag: 4.5
+Stable tag: 4.5.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
@@ -71,6 +71,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.5.1 =
+* [New] Slimstat is now looking for custom HTTP headers like [CF-Connecting-IP](https://support.cloudflare.com/hc/en-us/articles/200170986-How-does-CloudFlare-handle-HTTP-Request-headers-) to determine your visitors' originating IP address when your website is behind reverse proxies like CloudFlare.
+* [New] By default, when the domain of the referrer for a given page view is the same as the current site, that information is not tracked to save space in the database. However, if you are running a multisite network with subfolders, you might need to track same-domain referrers from one site to another, as they are technically "separate" websites. A new option under Settings > Tracker was added to handle this situation (thank you, [chenryahts](https://wordpress.org/support/topic/referer-not-recorded-from-other-sites-in-same-multisite/)).
+* [Fix] A type in checking the PHP version was preventing some users from installing our new Browscap library.
+* [Fix] PHP warning of undefined offset in one of the reports when the database was empty.
+* [Fix] In some specific cases a function used to unzip the Browscap Library on the user's server was not defined (thank you, [victor50g, gdevic and others](https://wordpress.org/support/topic/white-screen-of-death-when-publishing-post/))
+* [Fix] A few users pointed out that using file_get_contents might not be ideal, if allow_url_fopen is turned off in PHP. Per [Per Dennis' suggestion](https://wordpress.org/support/topic/file_get_contents-problem-since-version-4-5/) that call was replaced with wp_remote_get. Thank you for your help!
 
 = 4.5 =
 * [Note] Can you believe it? It looks like it was yesterday that we were celebrating the new year with our loved ones, and here we are, getting ready to welcome 2017. For our team, 2016 was a very intense year: we celebrated Slimstat's 10th anniversary, released new add-ons, started community outreach initiatives on Facebook and on our website, implemented new features and much more. Now, with a smaller team, we need to find creative ways to keep providing the stellar support service which many of you appreciate so much in your reviews. For this reason, we need to slighly increase the price of our add-ons starting in early 2017. Don't worry, it will still be a very competitive and reasonable price point, affordable even for those of you who cannot spend hundreds of dollars on their website. However we encourage you to take advantage of these few remaining weeks and [buy our add-ons today](https://www.wp-slimstat.com/addons/), before prices go up in January!

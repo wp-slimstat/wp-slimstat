@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.5
+Version: 4.5.1
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.5';
+	public static $version = '4.5.1';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -276,8 +276,8 @@ class wp_slimstat {
 				return $_argument;
 			}
 
-			$parsed_site_url = parse_url( get_site_url(), PHP_URL_HOST );
-			if ( $referer[ 'host' ] == $parsed_site_url ) {
+			$parsed_site_url_host = parse_url( get_site_url(), PHP_URL_HOST );
+			if ( $referer[ 'host' ] == $parsed_site_url_host && self::$settings[ 'track_same_domain_referers' ] != 'yes' ) {
 				unset( self::$stat[ 'referer' ] );
 			}
 			else {
@@ -751,7 +751,7 @@ class wp_slimstat {
 			$ip_array[ 0 ] = $_SERVER["REMOTE_ADDR"];
 		}
 
-		$originating_ip_headers = array( 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
+		$originating_ip_headers = array( 'X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
 		foreach ( $originating_ip_headers as $a_header ) {
 			if ( !empty( $_SERVER[ $a_header ] ) ) {
 				foreach ( explode( ',', $_SERVER[ $a_header ] ) as $a_ip ) {
@@ -1363,6 +1363,7 @@ class wp_slimstat {
 			'track_internal_links' => 'no',
 			'ignore_outbound_classes_rel_href' => '',
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
+			'track_same_domain_referers' => 'no',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
 			'enable_cdn' => 'yes',

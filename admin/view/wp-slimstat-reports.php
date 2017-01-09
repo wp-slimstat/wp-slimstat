@@ -1423,6 +1423,9 @@ class wp_slimstat_reports {
 		$new_visitors = wp_slimstat_db::count_records_having( 'ip', 'visit_id > 0 AND browser_type <> 1', 'COUNT(visit_id) = 1' );
 		$new_visitors_rate = ( $total_human_hits > 0) ? ( 100 * $new_visitors / $total_human_hits ) : 0;
 		$metrics_per_visit = wp_slimstat_db::get_max_and_average_pages_per_visit();
+		if ( empty( $metrics_per_visit[ 0 ] ) ) {
+			 $metrics_per_visit[ 0 ] = array( 'avghits' => 0, 'maxhits' => 0);
+		}
 		if ( intval( $new_visitors_rate ) > 99 ) {
 			$new_visitors_rate = '100';
 		}
