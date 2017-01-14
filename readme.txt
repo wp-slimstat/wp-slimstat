@@ -8,7 +8,7 @@ Tested up to: 4.7
 Stable tag: 4.5.1
 
 == Description ==
-[youtube https://www.youtube.com/watch?v=iJCtjxArq4U]
+[youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
 
 = Feature Spotlight =
 * Real-time access log, server latency, heatmaps, full IPv6 support, and much more.
