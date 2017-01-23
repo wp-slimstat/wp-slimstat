@@ -37,7 +37,7 @@ if ( !is_array( $list_addons ) ) {
 <?php
 	if (empty($_GET['force_refresh'])){
 		echo ' ';
-		printf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true">click here</a> to clear the cache.','wp-slimstat'), $_SERVER['REQUEST_URI']);
+		printf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.','wp-slimstat'), $_SERVER['REQUEST_URI']);
 	}
 
 	if ( !empty( $error_message ) ) {

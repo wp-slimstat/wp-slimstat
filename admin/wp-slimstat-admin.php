@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Just a quick reminder to take advantage of our current promotion before it ends on January 15: use coupon <code>HAPPY2017</code> to get 17% off any <a href='https://www.wp-slimstat.com/addons/' target='_blank'>add-on purchase on our online store</a>! Prices will go up at the end of this month, so don't wait until the last minute.";
+		self::$admin_notice = "Would you like to spread the word and tell your friends how much you love Slimstat? Now you have one more reason to do that: win a $50 discount on our online store. Yes, you read that right: write a review highlighting some of the features you love in Slimstat, and we will send you a special code to take $50 off your add-on purchase on our website. The more reviews you write, the more coupons you can get. So, what are you waiting for? Contact our support team with the URL of where the review has been posted, and take advantage of this limited time offer today!";
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files

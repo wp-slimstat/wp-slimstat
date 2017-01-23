@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.5.1
+Version: 4.5.2
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.5.1';
+	public static $version = '4.5.2';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -331,12 +331,9 @@ class wp_slimstat {
 		self::$stat = self::$stat + $content_info;
 
 		// We want to record both hits and searches (performed through the site search form)
-		if ( self::$stat[ 'content_type' ] == 'external' ) {
-			self::$stat[ 'resource' ] = $_SERVER[ 'HTTP_REFERER' ];
-			self::$stat[ 'referer' ] = '';
-		}
-		else if ( is_array( self::$data_js ) && isset( self::$data_js[ 'res' ] ) ) {
-			$parsed_permalink = parse_url( base64_decode( self::$data_js[ 'res' ] ) );
+		if ( is_array( self::$data_js ) && isset( self::$data_js[ 'res' ] ) ) {
+			$decoded_permalink = base64_decode( self::$data_js[ 'res' ] );
+			$parsed_permalink = parse_url( $decoded_permalink );
 			if ( !empty( $referer ) ) {
 				self::$stat[ 'searchterms' ] = self::_get_search_terms( $referer );
 			}
@@ -344,10 +341,14 @@ class wp_slimstat {
 			// Was this an internal search?
 			if ( empty( self::$stat[ 'searchterms' ] ) ) {
 				self::$stat[ 'searchterms' ] = self::_get_search_terms( $parsed_permalink );
-
 			}
 
-			self::$stat['resource'] = !is_array( $parsed_permalink ) ? self::$data_js[ 'res' ] : urldecode( $parsed_permalink[ 'path' ] ) . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . urldecode( $parsed_permalink[ 'query' ] ) : '' );
+			if ( self::$stat[ 'content_type' ] == 'external' ) {
+				self::$stat['resource'] = $decoded_permalink;
+			}
+			else {
+				self::$stat['resource'] = !is_array( $parsed_permalink ) ? __( 'Malformed URL', 'wp-slimstat' ) : urldecode( $parsed_permalink[ 'path' ] ) . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . urldecode( $parsed_permalink[ 'query' ] ) : '' );
+			}
 		}
 		elseif ( empty( $_REQUEST[ 's' ] ) ) {
 			if ( !empty( $referer ) ) {
@@ -1037,6 +1038,7 @@ class wp_slimstat {
 
 		// Make sure that the control code is valid
 		self::$data_js[ 'id' ] = self::_separate_id_from_checksum( self::$data_js[ 'id' ] );
+
 		if ( self::$data_js['id'] === false ) {
 			do_action( 'slimstat_track_exit_103' );
 			self::$stat[ 'id' ] = -101;
@@ -1343,6 +1345,7 @@ class wp_slimstat {
 			'version' => self::$version,
 			'secret' => wp_hash( uniqid( time(), true ) ),
 			'show_admin_notice' => 0,
+			'browscap_last_modified' => 0,
 
 			// General
 			'is_tracking' => 'yes',

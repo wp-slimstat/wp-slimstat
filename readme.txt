@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.7
-Stable tag: 4.5.1
+Stable tag: 4.5.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -71,6 +71,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.5.2 =
+* [Note] Would you like to spread the word and tell your friends how much you love Slimstat? Now you have one more reason to do that: win a $50 discount on our online store. Yes, you read that right: write a review highlighting some of the features you love in Slimstat, and we will send you a special code to take $50 off your add-on purchase on our website. The more reviews you write, the more coupons you can get. So, what are you waiting for? Contact our support team with the URL of where the review has been posted, and take advantage of this limited time offer today!
+* [Fix] A fatal error was being experienced by users whose Browscap Library installation was corrupted (missing cache).
+* [Fix] More checks have been added to the source code to prevent Fatal Error issues in case the filesystem permissions are too restrictive for Slimstat. Also, we are now storing the "last modified date" in the database, instead of relying on "touch"-ing files and accessing the mtime there.
+* [Fix] A bug was preventing referrers from being properly recorded when handling external web pages (static tracking code).
+* [Fix] The date widget in the Filter Bar was not working when tracking admin pages (thank you, Colin).
 
 = 4.5.1 =
 * [New] Slimstat is now looking for custom HTTP headers like [CF-Connecting-IP](https://support.cloudflare.com/hc/en-us/articles/200170986-How-does-CloudFlare-handle-HTTP-Request-headers-) to determine your visitors' originating IP address when your website is behind reverse proxies like CloudFlare.

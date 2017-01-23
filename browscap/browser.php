@@ -51,6 +51,10 @@ class slim_browser {
 			return array( 1, __( 'This library requires at least PHP 5.5. Please ask your service provider to upgrade your server accordingly.', 'wp-slimstat' ) );
 		}
 
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			return array( 2, __( 'No updates are performed during AJAX requests.', 'wp-slimstat' ) );
+		}
+
 		// Create the folder, if it doesn't exist
 		if ( !file_exists( wp_slimstat::$upload_dir ) ) {
 			@mkdir( wp_slimstat::$upload_dir );
@@ -60,47 +64,79 @@ class slim_browser {
 		$local_version = 0;
 		$browscap_zip = wp_slimstat::$upload_dir . '/browscap-db.zip';
 
+		if ( empty( wp_slimstat::$settings[ 'browscap_last_modified' ] ) ) {
+
+			if ( file_exists( self::$browscap_autoload_path ) ) {
+				$file_stat = @stat( self::$browscap_autoload_path );
+				if ( false !== $file_stat ) {
+					wp_slimstat::$settings[ 'browscap_last_modified' ] = intval( $file_stat[ 'mtime' ] );
+				}
+			}
+			
+			// The variable could be still empty if the file does not exist or stat failed to open it
+			if ( empty( wp_slimstat::$settings[ 'browscap_last_modified' ] ) ) {
+				wp_slimstat::$settings[ 'browscap_last_modified' ] = date( 'U' );
+			}
+
+			wp_slimstat::slimstat_save_options();
+		}
+
 		// Check for updates once a week ( 604800 seconds ), if $_force_download is not true
-		if ( false === $_force_download && false !== ( $file_stat = @stat( self::$browscap_autoload_path ) ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 604800 ) && false !== ( $handle = @fopen( self::$browscap_autoload_path, "rb" ) ) ) {
+		if ( ( false === $_force_download ) && ( date( 'U' ) - wp_slimstat::$settings[ 'browscap_last_modified' ] > 604800 ) && file_exists( self::$browscap_autoload_path ) ) {
 
 			// Find the version of the local data file
-			while ( ( $buffer = fgets( $handle, 4096 ) ) !== false ) {
+			$handle = @fopen( self::$browscap_autoload_path, "rb" );
+			if ( false === $handle ) {
+				wp_slimstat::$settings[ 'browscap_last_modified' ] = date( 'U' );
+				wp_slimstat::slimstat_save_options();
+				return array( 3, __( 'The Browscap Library could not be opened on your filesystem. Please check your server permissions and try again.', 'wp-slimstat' ) );
+			}
+
+			while ( ( $buffer = @fgets( $handle, 4096 ) ) !== false ) {
 				if ( strpos( $buffer, 'source_version' ) !== false ) {
-					$local_version = filter_var( $buffer, FILTER_SANITIZE_NUMBER_INT );
+					$local_version = intval( filter_var( $buffer, FILTER_SANITIZE_NUMBER_INT ) );
 					break;
 				}
 			}
 
+			fclose( $handle );
+
 			// Now check the version number on the server
-			$remote_version = wp_remote_retrieve_body( wp_remote_get( 'http://s3.amazonaws.com/browscap/autoload.txt' ) );
-			if ( intval( $local_version ) != intval( $remote_version ) ) {
-				$download_remote_file = true;
-			}
-			else {
-				@touch( self::$browscap_autoload_path );
+			$response = wp_remote_get( 'http://s3.amazonaws.com/browscap/autoload.txt' );
+			if ( !is_array( $response ) || is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
+				wp_slimstat::$settings[ 'browscap_last_modified' ] = date( 'U' );
+				wp_slimstat::slimstat_save_options();
+				return array( 4, __( 'There was an error checking the remote library version. Please try again later.', 'wp-slimstat' ) );
 			}
 
-			fclose( $handle );
+			$remote_version = intval( wp_remote_retrieve_body( $response ) );
+			$download_remote_file = ( $local_version < $remote_version );
 		}
 
 		// Download the most recent version of our pre-processed Browscap database
 		if ( $download_remote_file ) {
 			$response = wp_safe_remote_get( 'http://s3.amazonaws.com/browscap/browscap-db.zip', array( 'timeout' => 300, 'stream' => true, 'filename' => $browscap_zip ) );
-			
+
 			if ( !file_exists( $browscap_zip ) ) {
-				return array( 2, __( 'There was an error saving the Browscap data file on your server. Please check your folder permissions.', 'wp-slimstat' ) );
+				wp_slimstat::$settings[ 'browscap_last_modified' ] = date( 'U' );
+				wp_slimstat::slimstat_save_options();
+				return array( 5, __( 'There was an error saving the Browscap data file on your server. Please check your folder permissions.', 'wp-slimstat' ) );
 			}
 
 			if ( is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
 				@unlink( $browscap_zip );
-				return array( 3, __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' ) );
+				wp_slimstat::$settings[ 'browscap_last_modified' ] = date( 'U' );
+				wp_slimstat::slimstat_save_options();
+				return array( 6, __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' ) );
 			}
 
 			// Init the filesystem API
 			require_once( ABSPATH . '/wp-admin/includes/file.php' );
 			if ( !function_exists( 'wp_filesystem' ) ) {
 				@unlink( $browscap_zip );
-				return array( 4, __( 'Could not initialize the WP Filesystem API. Please check your folder permissions and PHP configuration.', 'wp-slimstat' ) );
+				wp_slimstat::$settings[ 'browscap_last_modified' ] = date( 'U' );
+				wp_slimstat::slimstat_save_options();
+				return array( 7, __( 'Could not initialize the WP Filesystem API. Please check your folder permissions and PHP configuration.', 'wp-slimstat' ) );
 			}
 
 			wp_filesystem();
@@ -113,7 +149,10 @@ class slim_browser {
 
 			if ( !$unzip_done || !file_exists( self::$browscap_autoload_path ) ) {
 				@unlink( $browscap_zip );
-				return array( 5, __( 'There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration.', 'wp-slimstat' ) );
+				$GLOBALS[ 'wp_filesystem' ]->rmdir( dirname( self::$browscap_autoload_path ) . '/', true );
+				wp_slimstat::$settings[ 'browscap_last_modified' ] = date( 'U' );
+				wp_slimstat::slimstat_save_options();
+				return array( 8, __( 'There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration.', 'wp-slimstat' ) );
 			}
 
 			if ( file_exists( $browscap_zip ) ) {
