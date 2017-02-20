@@ -485,8 +485,8 @@ class wp_slimstat {
 		}
 
 		// Country and Language
-		self::$stat['language'] = self::_get_language();
-		self::$stat['country'] = self::get_country(self::$stat[ 'ip' ]);
+		self::$stat[ 'language' ] = self::_get_language();
+		self::$stat[ 'country' ] = self::get_country(self::$stat[ 'ip' ]);
 
 		// Anonymize IP Address?
 		if ( self::$settings[ 'anonymize_ip' ] == 'yes' ) {
