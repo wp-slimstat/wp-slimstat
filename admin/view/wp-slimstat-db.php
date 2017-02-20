@@ -180,7 +180,7 @@ class wp_slimstat_db {
 			elseif ( $_use_date_filters ) {
 				$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 			}
-			
+
 			// This could happen if we have custom filters (add-ons, third party tools)
 			if ( empty( $_where ) ) {
 				$_where = '1=1';
@@ -485,7 +485,7 @@ class wp_slimstat_db {
 		// Let's calculate our time range, based on date filters
 		if ( empty( $filters_normalized[ 'date' ][ 'interval' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_hours' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ) {
 			if ( !empty( $filters_normalized[ 'date' ][ 'minute' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime( 
+				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 					!empty( $filters_normalized[ 'date' ][ 'hour' ] )?$filters_normalized[ 'date' ][ 'hour' ]:0,
 					$filters_normalized[ 'date' ][ 'minute' ],
 					0,
@@ -497,7 +497,7 @@ class wp_slimstat_db {
 				$filters_normalized[ 'utime' ][ 'type' ] = 'H';
 			}
 			else if ( !empty( $filters_normalized[ 'date' ][ 'hour' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime( 
+				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 					$filters_normalized[ 'date' ][ 'hour' ],
 					0,
 					0,
@@ -509,7 +509,7 @@ class wp_slimstat_db {
 				$filters_normalized[ 'utime' ][ 'type' ] = 'H';
 			}
 			else if ( !empty( $filters_normalized[ 'date' ][ 'day' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime( 
+				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 					0,
 					0,
 					0,
@@ -526,7 +526,7 @@ class wp_slimstat_db {
 				$filters_normalized[ 'utime' ][ 'type' ] = 'Y';
 			}
 			else {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime( 
+				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 					0,
 					0,
 					0,
@@ -535,7 +535,7 @@ class wp_slimstat_db {
 					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
 				 );
 
-				$filters_normalized[ 'utime' ][ 'end' ] = strtotime( 
+				$filters_normalized[ 'utime' ][ 'end' ] = strtotime(
 					( !empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' ) ).'-'.
 					( !empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ) ).
 					'-01 00:00 +1 month UTC'
@@ -547,24 +547,24 @@ class wp_slimstat_db {
 			$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
 			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 'plus' ) ? '+' : '-';
 
-			$filters_normalized[ 'utime' ][ 'start' ] = mktime( 
+			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 				!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
 				!empty( $filters_normalized[ 'date' ][ 'minute' ] ) ? $filters_normalized[ 'date' ][ 'minute' ] : 0,
 				0,
 				!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
-				!empty( $filters_normalized[ 'date' ][ 'day' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'j' ), 
+				!empty( $filters_normalized[ 'date' ][ 'day' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'j' ),
 				!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
 			);
 
-			$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + intval( $sign.( 
-				( !empty( $filters_normalized[ 'date' ][ 'interval' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval' ] ) : 0 ) * 86400 + 
+			$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + intval( $sign.(
+				( !empty( $filters_normalized[ 'date' ][ 'interval' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval' ] ) : 0 ) * 86400 +
 				( !empty( $filters_normalized[ 'date' ][ 'interval_hours' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval_hours' ] ) : 0 ) * 3600 +
 				( !empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) : 0 ) * 60
 			) );
 
 			// Swap boundaries if we're going back in time
 			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 'minus' ) {
-				$adjustment = ( abs( $filters_normalized[ 'utime' ][ 'start' ] - $filters_normalized[ 'utime' ][ 'end' ] ) < 86400 ) ? 0 : 86400; 
+				$adjustment = ( abs( $filters_normalized[ 'utime' ][ 'start' ] - $filters_normalized[ 'utime' ][ 'end' ] ) < 86400 ) ? 0 : 86400;
 				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + $adjustment, $filters_normalized[ 'utime' ][ 'start' ] + $adjustment );
 			}
 
@@ -578,7 +578,7 @@ class wp_slimstat_db {
 
 		// If start is after end, set it to first of month
 		if ( $filters_normalized[ 'utime' ][ 'start' ] > $filters_normalized[ 'utime' ][ 'end' ] ) {
-			$filters_normalized[ 'utime' ][ 'start' ] = mktime( 
+			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 				0,
 				0,
 				0,
@@ -652,19 +652,19 @@ class wp_slimstat_db {
 			'SUM(counthits) AS counthits' ) );
 	}
 
-	// public static function get_data_for_chart( $_data1 = '', $_data2 = '', $_where = '' ) {
 	public static function get_data_for_chart( $_args = array() ) {
 		$previous = array( 'end' => self::$filters_normalized[ 'utime' ][ 'start' ] - 1 );
 		$label_date_format = '';
-		$output = array();
+		$has_previous = true;
+		$output = array( 'json' => '[]', 'json_count' => 0, 'current' => array( 'label' => '' ) );
 
 		// Each type has its own parameters
-		switch (self::$filters_normalized[ 'utime' ][ 'type' ]) {
+		switch ( self::$filters_normalized[ 'utime' ][ 'type' ] ) {
 			case 'H':
 				$previous[ 'start' ] = self::$filters_normalized[ 'utime' ][ 'start' ] - 3600;
 				$label_date_format = wp_slimstat::$settings[ 'time_format' ];
 				$group_by = array( 'HOUR', 'MINUTE', 'i' );
-				$values_in_interval = array( 59, 59, 0, 60 ); 
+				$values_in_interval = array( 59, 59, 0, 60 );
 				break;
 
 			case 'd':
@@ -682,15 +682,16 @@ class wp_slimstat_db {
 				break;
 
 			case 'interval':
+				$has_previous = false;
 				$group_by = array( 'MONTH', 'DAY', 'j' );
 				$values_in_interval = array( abs( self::$filters_normalized[ 'date' ][ 'interval' ] - 1 ), abs( self::$filters_normalized[ 'date' ][ 'interval' ] - 1 ), 0, 86400 );
 				break;
 
 			default:
-				$previous[ 'start' ] = mktime( 0, 0, 0, ( !empty( self::$filters_normalized[ 'date' ][ 'month' ] ) ? self::$filters_normalized[ 'date' ][ 'month' ] : date_i18n('n') ) - 1, 1, !empty( self::$filters_normalized[ 'date' ][ 'year' ]) ? self::$filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' ) );
-				$label_date_format = 'm/Y';
+				$previous[ 'start' ] = mktime( 0, 0, 0, ( !empty( self::$filters_normalized[ 'date' ][ 'month' ] ) ? self::$filters_normalized[ 'date' ][ 'month' ] : intval( date_i18n('n') ) ) - 1, 1, !empty( self::$filters_normalized[ 'date' ][ 'year' ]) ? self::$filters_normalized[ 'date' ][ 'year' ] : intval( date_i18n( 'Y' ) ) );
+				$label_date_format = 'm/y';
 				$group_by = array( 'MONTH', 'DAY', 'j' );
-				$values_in_interval = array( date( 't', $previous[ 'start' ] ), date( 't', self::$filters_normalized[ 'utime' ][ 'start' ] ), 1, 86400 );
+				$values_in_interval = array( intval( date( 't', $previous[ 'start' ] ) ), intval( date( 't', self::$filters_normalized[ 'utime' ][ 'start' ] ) ), 1, 86400 );
 				break;
 		}
 
@@ -724,24 +725,21 @@ class wp_slimstat_db {
 				$group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
 
 		// Fill the output array
-		$output[ 'current' ][ 'label' ] = '';
-		if ( !empty( $label_date_format ) ) {
+		if ( $has_previous ) {
 			$output[ 'current' ][ 'label' ] = gmdate( $label_date_format, self::$filters_normalized[ 'utime' ][ 'start' ] );
 			$output[ 'previous' ][ 'label' ] = gmdate( $label_date_format, $previous[ 'start' ] );
 		}
 
 		$output[ 'previous' ][ 'first_metric' ] = array_fill( $values_in_interval[ 2 ], $values_in_interval[ 0 ], 0 );
-		$output['previous']['second_metric'] = array_fill( $values_in_interval[ 2 ], $values_in_interval[ 0 ], 0 );
+		$output[ 'previous' ][ 'second_metric' ] = array_fill( $values_in_interval[ 2 ], $values_in_interval[ 0 ], 0 );
 
 		$today_limit = floatval( date_i18n( 'Ymd.Hi' ) );
-		for ( $i = $values_in_interval[ 2 ]; $i <= $values_in_interval[ 1 ]; $i++ ){
+		for ( $i = $values_in_interval[ 2 ]; $i <= $values_in_interval[ 1 ]; $i++ ) {
 			// Do not include dates in the future
-			if ( floatval( date( 'Ymd.Hi', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] + ( ( $i - $values_in_interval[ 2 ]) * $values_in_interval[ 3 ] ) ) ) > $today_limit ) {
-				continue;
+			if ( floatval( date( 'Ymd.Hi', self::$filters_normalized[ 'utime' ][ 'start' ] + ( ( $i - $values_in_interval[ 2 ]) * $values_in_interval[ 3 ] ) ) ) <= $today_limit ) {
+				$output[ 'current' ][ 'first_metric' ][ $i ] = 0;
+				$output[ 'current' ][ 'second_metric' ][ $i ] = 0;
 			}
-
-			$output[ 'current' ][ 'first_metric' ][ $i ] = 0;
-			$output[ 'current' ][ 'second_metric' ][ $i ] = 0;
 		}
 
 		// No data? No problem!
@@ -749,19 +747,37 @@ class wp_slimstat_db {
 			return $output;
 		}
 
-		// Rearrange the data and then format it for Flot
-		foreach  ($results as $i => $a_result ) {
-			$index = !empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ? floor( ( $a_result['dt'] - wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 ) : gmdate( $group_by[ 2 ], $a_result[ 'dt' ] );
+		// Rearrange the data
+		foreach ( $results as $i => $a_result ) {
+			$index = !empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ? floor( ( $a_result['dt'] - self::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 ) : gmdate( $group_by[ 2 ], $a_result[ 'dt' ] );
 
 			if ( empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) && gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $previous[ 'start' ] ) ){
-				$output[ 'previous' ][ 'first_metric' ][ $index ] = $a_result[ 'first_metric' ];
-				$output[ 'previous' ][ 'second_metric' ][ $index ] = $a_result[ 'second_metric' ];
+				$output[ 'previous' ][ 'first_metric' ][ $index ] = intval( $a_result[ 'first_metric' ] );
+				$output[ 'previous' ][ 'second_metric' ][ $index ] = intval( $a_result[ 'second_metric' ] );
 			}
 			if ( !empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) || gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], self::$filters_normalized[ 'utime' ][ 'start' ] ) ){
-				$output[ 'current' ][ 'first_metric' ][ $index ] = $a_result[ 'first_metric' ];
-				$output[ 'current' ][ 'second_metric' ][ $index ] = $a_result[ 'second_metric' ];
+				$output[ 'current' ][ 'first_metric' ][ $index ] = intval( $a_result[ 'first_metric' ] );
+				$output[ 'current' ][ 'second_metric' ][ $index ] = intval( $a_result[ 'second_metric' ] );
 			}
 		}
+
+		// Now we're ready to repackage the data for the chart
+		$js_chart_data = array();
+		$output[ 'json_count' ] = max( $values_in_interval[ 0 ], $values_in_interval[ 1 ] );
+		for ( $i = $values_in_interval[ 2 ]; $i <= $output[ 'json_count' ]; $i++ ) {
+			$js_chart_data[ $i ][ 'date' ] = ( self::$filters_normalized[ 'utime' ][ 'type' ] == 'interval' ) ? date_i18n( 'm/d', self::$filters_normalized[ 'utime' ][ 'start' ] + $i * 86400 ) : $i;
+
+			if ( isset( $output[ 'current' ][ 'first_metric' ][ $i ] ) ) {
+				$js_chart_data[ $i ][ 'v1' ] = $output[ 'current' ][ 'first_metric' ][ $i ];
+				$js_chart_data[ $i ][ 'v2' ] = $output[ 'current' ][ 'second_metric' ][ $i ];
+			}
+			if ( isset( $output[ 'previous' ][ 'first_metric' ][ $i ] ) ) {
+				$js_chart_data[ $i ][ 'v3' ] = $output[ 'previous' ][ 'first_metric' ][ $i ];
+				$js_chart_data[ $i ][ 'v4' ] = $output[ 'previous' ][ 'second_metric' ][ $i ];
+			}
+		}
+
+		$output[ 'json' ] = json_encode( array_values( $js_chart_data ) );
 
 		return $output;
 	}
@@ -910,7 +926,7 @@ class wp_slimstat_db {
 			WHERE $_where
 			GROUP BY $_as_column $_having
 			ORDER BY counthits DESC
-			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ], 
+			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
 			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ),
 			'counthits DESC',
 			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ),
@@ -944,7 +960,7 @@ class wp_slimstat_db {
 				FROM {$GLOBALS['wpdb']->prefix}slim_stats
 				WHERE $_where
 				GROUP BY $_column
-			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id 
+			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
 			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],

@@ -26,22 +26,33 @@ $results = array_slice(
 	wp_slimstat::$settings[ 'number_results_raw_data' ]
 );
 
+$count_all_results = count( $all_results );
+$count_page_results = count( $results );
+
 // Echo the debug message
 echo wp_slimstat_db::$debug_message;
 
 // Return the results if we are not echoing them (export, email, etc)
 if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
+
+	// Massage the data before returning it
+	if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'yes' ) {
+		for ( $i = 0; $i < $count_page_results; $i++ ) {
+			$gethostbyaddr = gethostbyaddr( $results[ $i ][ 'ip' ] );
+			if ( $gethostbyaddr != $host_by_ip && !empty( $gethostbyaddr ) ) {
+				$results[ $i ][ 'ip' ] .= ', ' . $gethostbyaddr;
+			}
+		}
+	}
+
 	return $results;
 }
-
-$count_all_results = count( $all_results );
-$count_page_results = count( $results );
 
 if ($count_page_results == 0){
 	echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
 }
 else {
-	
+
 	// Pagination
 	echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true, wp_slimstat::$settings[ 'number_results_raw_data' ] );
 
@@ -58,7 +69,7 @@ else {
 				$host_by_ip .= ', ' . $gethostbyaddr;
 			}
 		}
-		
+
 		$date_time = "<i class='spaced slimstat-font-clock' title='".__( 'Date and Time', 'wp-slimstat' )."'></i> " . date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $results[ $i ][ 'dt' ], true );
 
 		// Print visit header?
@@ -92,12 +103,6 @@ else {
 				$browser_type_filtered = "<a class='slimstat-filter-link inline-icon' href='".wp_slimstat_reports::fs_url('browser_type equals '.$results[$i]['browser_type'])."'><img class='slimstat-tooltip-trigger' src='$plugin_url/images/browsers/type{$results[$i]['browser_type']}.png' width='16' height='16'/><span class='slimstat-tooltip-content'>{$supported_browser_types[$results[$i]['browser_type']]}</span></a>";
 			}
 
-			$notes = '';
-			if (!empty($results[$i]['notes'])){
-				$notes = str_replace(array(';', ':'), array('<br/>', ': '), $results[$i]['notes']);
-				$notes = "<span class='pageview-notes'><i class='slimstat-font-edit inline-icon slimstat-tooltip-trigger'></i><b class='slimstat-tooltip-content'>{$notes}</b></span>";
-			}
-
 			// IP Address and user
 			if (empty($results[$i]['username'])){
 				$ip_address = "<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('ip equals '.$results[$i]['ip'])."'>$host_by_ip</a>";
@@ -111,7 +116,7 @@ else {
 				$ip_address = "<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('username equals '.$results[$i]['username'])."'>{$display_user_name}</a>";
 				$ip_address .= " <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('ip equals '.$results[$i]['ip'])."'>($host_by_ip)</a>";
 				$highlight_row = (strpos( $results[$i]['notes'], 'user:') !== false)?' is-known-user':' is-known-visitor';
-				
+
 			}
 			if ( !empty( wp_slimstat::$settings[ 'ip_lookup_service' ] ) ) {
 				$ip_address = "<a class='slimstat-font-location-1 whois' href='" . wp_slimstat::$settings[ 'ip_lookup_service' ] . "{$results[ $i ][ 'ip' ]}' target='_blank' title='WHOIS: {$results[ $i ][ 'ip' ]}'></a> $ip_address";
@@ -142,7 +147,7 @@ else {
 				$screen_resolution = "<span class='pageview-screenres'>{$results[ $i ][ 'screen_width' ]}x{$results[ $i ][ 'screen_height' ]}</span>";
 			}
 
-			echo "<p class='header$highlight_row'>{$results[$i]['country']} $browser_filtered $platform_filtered $browser_type_filtered $ip_address $other_ip_address $notes <span class='plugins'>$plugins</span> $screen_resolution</p>";
+			echo "<p class='header$highlight_row'>{$results[$i]['country']} $browser_filtered $platform_filtered $browser_type_filtered $ip_address $other_ip_address <span class='plugins'>$plugins</span> $screen_resolution</p>";
 		}
 
 		// Permalink: find post title, if available
@@ -197,6 +202,13 @@ else {
 			$time_on_page = "<i class='slimstat-font-stopwatch spaced' title='" . __( 'Time spent on this page', 'wp-slimstat' ) . "'></i> " . date( ( $duration > 3599 ? 'H:i:s' : 'i:s' ), $duration );
 		}
 
+		// Pageview Notes
+		$notes = '';
+		if (!empty($results[$i]['notes'])){
+			$notes = str_replace(array(';', ':'), array('<br/>', ': '), $results[$i]['notes']);
+			$notes = "<i class='slimstat-font-edit slimstat-tooltip-trigger'></i><b class='slimstat-tooltip-content'>{$notes}</b>";
+		}
+
 		// Avoid XSS attacks through the referer URL
 		$results[ $i ] [ 'referer' ] = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ] [ 'referer' ] ) );
 
@@ -220,7 +232,7 @@ else {
 			}
 
 			if ( $current_user_can_delete ){
-				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this pageview','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
+				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this entry from the database','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
 			}
 
 			// Login / Logout Event
@@ -250,9 +262,9 @@ else {
 			$results[$i]['referer'] = $results[$i][ 'outbound_resource' ] = $results[$i][ 'content_type' ] = '';
 		}
 
-		echo "<p>{$results[$i]['resource']} <span class='details'>$time_on_page $login_logout {$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance $date_time {$delete_row}</span></p>";
+		echo "<p>{$results[$i]['resource']} <span class='details'>$time_on_page $login_logout {$results[$i]['searchterms']} {$results[$i]['referer']} {$results[$i]['outbound_resource']} {$results[$i]['content_type']} $performance $date_time {$notes} {$delete_row}</span></p>";
 	}
-	
+
 	// Pagination
 	if ( $count_page_results > 20 ) {
 		echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true, wp_slimstat::$settings[ 'number_results_raw_data' ] );

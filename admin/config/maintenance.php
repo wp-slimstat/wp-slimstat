@@ -66,7 +66,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 				wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ) );
 			}
 			else {
-				wp_slimstat_admin::show_alert_message( __( 'There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat' ) );	
+				wp_slimstat_admin::show_alert_message( __( 'There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat' ) );
 			}
 			break;
 
@@ -80,11 +80,17 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 
 		case 'import-settings':
 			$new_settings = @unserialize( stripslashes( $_POST[ 'import-slimstat-settings' ] ) );
-			$new_settings = array_intersect_key( $new_settings, wp_slimstat::$settings );
-			if ( !empty( $new_settings ) ) {
-				foreach ( $new_settings as $a_setting_name => $a_setting_value ) {
-					wp_slimstat::$settings[ $a_setting_name ] = $a_setting_value;
+			if ( is_array( $new_settings ) ) {
+				$new_settings = array_intersect_key( $new_settings, wp_slimstat::$settings );
+				if ( !empty( $new_settings ) ) {
+					foreach ( $new_settings as $a_setting_name => $a_setting_value ) {
+						wp_slimstat::$settings[ $a_setting_name ] = $a_setting_value;
+					}
 				}
+				wp_slimstat_admin::show_alert_message( __( 'Your new Slimstat settings have been imported and installed.', 'wp-slimstat' ) );
+			}
+			else {
+				wp_slimstat_admin::show_alert_message( __( 'There was an error decoding your settings string. Please verify that it is a valid serialized string.', 'wp-slimstat' ) );
 			}
 			break;
 

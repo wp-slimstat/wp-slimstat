@@ -11,7 +11,10 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Would you like to spread the word and tell your friends how much you love Slimstat? Now you have one more reason to do that: win a $50 discount on our online store. Yes, you read that right: write a review highlighting some of the features you love in Slimstat, and we will send you a special code to take $50 off your add-on purchase on our website. The more reviews you write, the more coupons you can get. So, what are you waiting for? Contact our support team with the URL of where the review has been posted, and take advantage of this limited time offer today!";
+		self::$admin_notice = "Our development team has had the task of revamping Slimstat's charts on their to-do list for quite a while now. Given that the compatibility issues related to our Browscap library have been addressed and resolved, it was time to tackle this new challenge and offer a beautiful new interface to analyze and interact with visual reports and charts. Version 4.6 includes a new library, <a href='https://www.amcharts.com/' target='_blank'>courtesy of AmCharts</a>, that takes our charts <a href='https://www.youtube.com/watch?v=1zfCC-PED1o&from=admin' target='_blank'>to a whole new level (video)</a>. Also, as an added bonus, we are also working on extending the list of supported shortcodes to allow administrators to also share these brand-new charts with their visitors, by quickly placing them on any page of their website. The same will apply to the world map, which currently displays the total number of page views by Country. Lots of exciting new features will soon be available to all our users. Stay tuned!";
+
+		// self::$admin_notice = "A few releases ago, Slimstat contained a bug that would trigger a white screen of death under certain circumstances. We have already apologized for the inconvenience this might have caused to our users, and although we promptly released an update to patch the bug, we still receive requests (almost a month later) from users who don't know how to fix the problem. We understand your frustration when this happens. With a small team, we try our best to test various scenarios before releasing a new update. However, occasionally, something sneaks through our tests unnoticed. For this reason, we would like to renew our invitation to join our list of beta testers, and help us avoid this kind of bugaboos in the future. Please contact our <a href='http://support.wp-slimstat.com/' target='_blank'>support team</a> today if you would like to help. P.S.: how do you like the new charts?";
+
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
@@ -755,11 +758,11 @@ class wp_slimstat_admin {
 		wp_enqueue_script( 'dashboard' );
 		wp_enqueue_script( 'jquery-ui-datepicker' );
 		wp_enqueue_script( 'slimstat_admin', plugins_url( '/admin/js/slimstat.admin.js', dirname( __FILE__ ) ), array( 'jquery-ui-dialog' ), null, false );
+		// wp_enqueue_script( 'slimstat_chart', plugins_url( '/admin/js/slimstat.chart.js', dirname( __FILE__ ) ), array( 'jquery' ), null, false );
 
 		// Pass some information to Javascript
 		$params = array(
 			'async_load' => !empty( wp_slimstat::$settings[ 'async_load' ] ) ? wp_slimstat::$settings[ 'async_load' ] : 'no',
-			'chart_colors' => !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) : array( '#ccc', '#999', '#bbcc44', '#21759b' ),
 			'datepicker_image' => plugins_url( '/admin/images/datepicker.png', dirname( __FILE__ ) ),
 			'expand_details' => !empty( wp_slimstat::$settings[ 'expand_details' ] ) ? wp_slimstat::$settings[ 'expand_details' ] : 'no',
 			'refresh_interval' => intval( wp_slimstat::$settings[ 'refresh_interval' ] ),
@@ -768,10 +771,6 @@ class wp_slimstat_admin {
 		);
 		wp_localize_script( 'slimstat_admin', 'SlimStatAdminParams', $params );
 	}
-	
-	// public static function wp_slimstat_enqueue_config_scripts(){
-	// 	wp_enqueue_script('slimstat_config_admin', plugins_url('/admin/js/slimstat.config.admin.js', dirname(__FILE__)), array( 'dashboard' ));
-	// }
 
 	/**
 	 * Adds a new entry in the admin menu, to view the stats
@@ -808,7 +807,7 @@ class wp_slimstat_admin {
 		}
 
 		// Load styles and Javascript needed to make the reports look nice and interactive
-		foreach($new_entry as $a_entry){
+		foreach ( $new_entry as $a_entry ) {
 			add_action( 'load-' . $a_entry, array( __CLASS__, 'wp_slimstat_stylesheet' ) );
 			add_action( 'load-' . $a_entry, array( __CLASS__, 'wp_slimstat_enqueue_scripts' ) );
 			add_action( 'load-' . $a_entry, array( __CLASS__, 'contextual_help' ) );

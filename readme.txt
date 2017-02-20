@@ -1,11 +1,11 @@
-=== Slim Stat Analytics ===
+ Slim Stat Analytics ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 3.8
-Tested up to: 4.7
-Stable tag: 4.5.2
+Tested up to: 4.8
+Stable tag: 4.6
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -65,12 +65,20 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 == Screenshots ==
 
 1. **Overview** - Your website traffic at a glance
-2. **Activity Log** - A real-time view of your visitors' whereabouts 
+2. **Activity Log** - A real-time view of your visitors' whereabouts
 3. **Settings** - Plenty of options to customize the plugin's behavior
 4. **Interactive World Map** - See where your visitors are coming from
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+
+= 4.6 =
+* [New] Our development team has had the task of revamping the charts available in Slimstat on their to-do list for quite a while now. Now that the compatibility issues related to our Browscap library have been addressed and resolved, it was time to tackle this new challenge and offer a beautiful new interface to analyze and interact with visual reports and charts. As an added bonus, we are also working on extending the list of supported shortcodes to allow administrators to also share these brand-new charts with their visitors, by quickly placing them on any page of their website. The same will apply to the world map, which currently displays the total number of page views by Country. Lots of exciting new features will soon be available to all our users. Stay tuned!
+* [Update] Email and Excel reports now honor the setting to convert IP addresses to hostnames.
+* [Update] Various cosmetic upgrades to make your reports easier to read. Please make sure to clear your browser and server caches to load the new stylesheet.
+* [Fix] We patched a quite unique XSS vulnerability, responsibly disclosed by [the MITRE Corporation](https://www.mitre.org/) (thank you, guys).
+* [Fix] Some more buttons and links were added to the exclusion list of things to track on the admin, when this feature is enabled.
+* [Fix] Calling a function to decode an IPv6 address was failing if PHP did not support this protocol (thank you, [catmainax](https://wordpress.org/support/topic/warnings-in-debug-mode-9/))
 
 = 4.5.2 =
 * [Note] Would you like to spread the word and tell your friends how much you love Slimstat? Now you have one more reason to do that: win a $50 discount on our online store. Yes, you read that right: write a review highlighting some of the features you love in Slimstat, and we will send you a special code to take $50 off your add-on purchase on our website. The more reviews you write, the more coupons you can get. So, what are you waiting for? Contact our support team with the URL of where the review has been posted, and take advantage of this limited time offer today!

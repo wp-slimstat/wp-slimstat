@@ -24,7 +24,7 @@ class wp_slimstat_reports {
 			}
 		}
 
-		// Fields and drop downs 
+		// Fields and drop downs
 		if ( !empty( $_POST[ 'f' ] ) && !empty( $_POST[ 'o' ] ) ) {
 			$filters[] = "{$_POST[ 'f' ]} {$_POST[ 'o' ]} " . ( isset( $_POST[ 'v' ] ) ? $_POST[ 'v' ] : '' );
 		}
@@ -58,11 +58,12 @@ class wp_slimstat_reports {
 		// - title : report name
 		// - callback : function to use to render the report
 		// - callback_args : parameters to pass to the function
-		// - classes : determine the look and feel of this report ( tall, normal, wide, hidden )
+		// - classes : determine the look and feel of this report ( tall, large, extralarge, full-width, hidden )
 		// - screens : where should the report appear ( slimview1, .., slimview4, dashboard )
 		// - tooltip : contextual help to be displayed on hover
-		
+
 		$chart_tooltip = '<strong>' . __( 'Chart controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li></ul>';
+
 		self::$reports_info = array(
 			'slim_p7_02' => array(
 				'title' => __( 'Visitors Activity', 'wp-slimstat' ),
@@ -91,7 +92,7 @@ class wp_slimstat_reports {
 						__( 'Unique IPs', 'wp-slimstat' )
 					)
 				),
-				'classes' => array( 'wide', 'chart' ),
+				'classes' => array( 'extralarge', 'chart' ),
 				'screens' => array( 'slimview2', 'dashboard' ),
 				'tooltip' => $chart_tooltip
 			),
@@ -253,7 +254,7 @@ class wp_slimstat_reports {
 						__( 'Unique Terms', 'wp-slimstat' )
 					)
 				),
-				'classes' => array( 'wide', 'chart' ),
+				'classes' => array( 'extralarge', 'chart' ),
 				'screens' => array( 'slimview2' ),
 				'tooltip' => $chart_tooltip
 			),
@@ -285,7 +286,7 @@ class wp_slimstat_reports {
 						__( 'Unique IPs', 'wp-slimstat' )
 					)
 				),
-				'classes' => array( 'wide', 'chart' ),
+				'classes' => array( 'extralarge', 'chart' ),
 				'screens' => array( 'slimview3' ),
 				'tooltip' => $chart_tooltip
 			),
@@ -329,7 +330,7 @@ class wp_slimstat_reports {
 					'columns' => 'ip',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
-				'classes' => array( 'wide', 'hidden' ),
+				'classes' => array( 'extralarge', 'hidden' ),
 				'screens' => array( 'slimview3' ),
 				'tooltip' => __( 'Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat' )
 			),
@@ -506,7 +507,7 @@ class wp_slimstat_reports {
 						__( 'Unique Users', 'wp-slimstat' )
 					)
 				),
-				'classes' => array( 'wide', 'chart' ),
+				'classes' => array( 'extralarge', 'chart' ),
 				'screens' => array( 'slimview3' ),
 				'tooltip' => $chart_tooltip
 			),
@@ -526,7 +527,7 @@ class wp_slimstat_reports {
 						__( 'Unique IPs', 'wp-slimstat' )
 					)
 				),
-				'classes' => array( 'wide', 'chart' ),
+				'classes' => array( 'extralarge', 'chart' ),
 				'screens' => array( 'slimview5' ),
 				'tooltip' => $chart_tooltip
 			),
@@ -553,7 +554,7 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview5', 'dashboard' )
 			),
-			
+
 			/*
 			'slim_p3_11' => array(
 				'title' => __( 'Recent Exit Pages', 'wp-slimstat' ),
@@ -576,7 +577,7 @@ class wp_slimstat_reports {
 					'columns' => 'outbound_resource',
 					'raw' => array( 'wp_slimstat_db', 'get_recent_outbound' )
 				),
-				'classes' => array( 'wide' ),
+				'classes' => array( 'large' ),
 				'screens' => array( 'slimview4' ),
 				'tooltip' => ''
 			),
@@ -657,7 +658,7 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview4', 'dashboard' )
 			),
-			
+
 			'slim_p4_09' => array(
 				'title' => __( 'Top Downloads', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
@@ -668,7 +669,7 @@ class wp_slimstat_reports {
 					'raw' => array( 'wp_slimstat_db', 'get_top' ),
 					'criteria' => 'swap'
 				),
-				'classes' => array( 'wide', 'hidden' ),
+				'classes' => array( 'large', 'hidden' ),
 				'screens' => array( 'slimview4' ),
 				'tooltip' => __( 'You can configure Slimstat to track specific file extensions as downloads.', 'wp-slimstat' )
 			),
@@ -776,7 +777,7 @@ class wp_slimstat_reports {
 					'where' => 'content_type = "download"',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
-				'classes' => array( 'wide', 'hidden' ),
+				'classes' => array( 'large', 'hidden' ),
 				'screens' => array( 'slimview4' )
 			),
 			'slim_p4_21' => array(
@@ -824,7 +825,7 @@ class wp_slimstat_reports {
 					'aggr_function' => 'MAX',
 					'raw' => array( 'wp_slimstat_db', 'get_top_aggr' )
 				),
-				'classes' => array( 'normal', 'hidden' ),
+				'classes' => array( 'large', 'hidden' ),
 				'screens' => array( 'slimview4', 'dashboard' )
 			),
 			'slim_p4_25' => array(
@@ -837,7 +838,7 @@ class wp_slimstat_reports {
 					'aggr_function' => 'MIN',
 					'raw' => array( 'wp_slimstat_db', 'get_top_aggr' )
 				),
-				'classes' => array( 'normal', 'hidden' ),
+				'classes' => array( 'large', 'hidden' ),
 				'screens' => array( 'slimview4' )
 			),
 			'slim_p4_26_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
@@ -854,7 +855,7 @@ class wp_slimstat_reports {
 						__( 'Unique Outbound', 'wp-slimstat' )
 					)
 				),
-				'classes' => array( 'wide', 'chart' ),
+				'classes' => array( 'extralarge', 'chart' ),
 				'screens' => array( 'slimview4' ),
 				'tooltip' => $chart_tooltip
 			),
@@ -862,7 +863,7 @@ class wp_slimstat_reports {
 			'slim_p6_01' => array(
 				'title' => __( 'World Map', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_world_map' ),
-				'classes' => array( 'full-width tall' ),
+				'classes' => array( 'full-width', 'tall' ),
 				'screens' => array( 'slimview6' ),
 				'tooltip' => ''
 			)
@@ -888,7 +889,7 @@ class wp_slimstat_reports {
 			'slim_getsocial' => 1
 		);
 
-		// Retrieve this user's list of active reports, 
+		// Retrieve this user's list of active reports,
 		$current_user = wp_get_current_user();
 		$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
 		self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
@@ -941,7 +942,15 @@ class wp_slimstat_reports {
 
 	public static function report_header( $_report_id = '' ) {
 		$header_classes =  !empty( self::$reports_info[ $_report_id ][ 'classes' ] ) ? implode( ' ', self::$reports_info[ $_report_id ][ 'classes' ] ) : '';
-		$header_buttons = '<div class="slimstat-header-buttons">'.apply_filters('slimstat_report_header_buttons', '<a class="button-ajax noslimstat refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>', $_report_id).'</div>';
+		$header_buttons = '';
+
+		// Show the refresh button only if the time range is not in the past
+		if ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] >= date_i18n( 'U' ) - 300 ) {
+			$header_buttons = '<a class="button-ajax noslimstat refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>';
+		}
+
+		// Allow third-party code to add more buttons 
+		$header_buttons = '<div class="slimstat-header-buttons">' . apply_filters( 'slimstat_report_header_buttons', $header_buttons ) . '</div>';
 		$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>".self::$reports_info[ $_report_id ][ 'tooltip' ]."</span>" : '';
 
 		echo "<div class='postbox $header_classes' id='$_report_id'>$header_buttons<h3>".self::$reports_info[ $_report_id ][ 'title' ]." $header_tooltip</h3><div class='inside' id='{$_report_id}_inside'>";
@@ -1009,7 +1018,7 @@ class wp_slimstat_reports {
 				echo '<p class="slimstat-tooltip-trigger">';
 
 				if ( !empty( $a_result[ 'tooltip' ] ) ) {
-					self::inline_help( $a_result[ 'tooltip' ] ); 
+					self::inline_help( $a_result[ 'tooltip' ] );
 				}
 
 				echo "{$a_result[ 'metric' ]} <span>{$a_result[ 'value' ]}</span>";
@@ -1034,7 +1043,7 @@ class wp_slimstat_reports {
 
 			if ($count_page_results == 0){
 				echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
-				
+
 				if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 					die();
 				}
@@ -1058,7 +1067,7 @@ class wp_slimstat_reports {
 			}
 
 			self::report_pagination( $count_page_results, count( $all_results ) );
-			
+
 			$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
 			$permalinks_enabled = get_option( 'permalink_structure' );
 			$column_not_calculated = str_replace( '_calculated', '', $_args[ 'columns' ] );
@@ -1162,7 +1171,7 @@ class wp_slimstat_reports {
 						break;
 					default:
 				}
-				
+
 				$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $column_not_calculated. ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
 
 				if ( !empty( $_args['type'] ) && $_args['type'] == 'recent' ) {
@@ -1192,7 +1201,7 @@ class wp_slimstat_reports {
 					}
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
 				}
-				
+
 				if ( $_args[ 'columns' ] == 'referer_calculated' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
 					$element_url = 'http://' . htmlentities( $results[ $i ][ 'referer_calculated' ], ENT_QUOTES, 'UTF-8' );
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
@@ -1202,7 +1211,7 @@ class wp_slimstat_reports {
 					$element_url = htmlentities( $results[ $i ][ 'referer' ], ENT_QUOTES, 'UTF-8' );
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 				}
-				
+
 				if ( !empty( $results[ $i ][ 'ip' ]) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$settings[ 'convert_ip_addresses' ] != 'yes' ) {
 					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url( 'ip equals ' . $results[ $i ][ 'ip' ] ) . '">' . $results[ $i ][ 'ip' ] . '</a>' . ( !empty( $results[ $i ][ 'other_ip' ] ) ? ' / ' . $results[ $i ][ 'other_ip' ] : '' ) . '<a title="WHOIS: ' . $results[ $i ][ 'ip' ] . '" class="slimstat-font-location-1 whois" href="' . wp_slimstat::$settings[ 'ip_lookup_service' ] . $results[ $i ][ 'ip' ] . '"></a>';
 				}
@@ -1228,24 +1237,184 @@ class wp_slimstat_reports {
 		}
 	}
 
-	public static function show_chart( $_args = array() ){ 
+	public static function show_chart( $_args = array() ) {
+		if ( empty( $_args ) ) {
+			echo 'No data found';
+
+			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+				die();
+			}
+			else {
+				return 0;
+			}
+		}
+
+		// Enqueue all the Javascript and styles
+		$path_slimstat = dirname( dirname( __FILE__ ) );
+		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/amcharts.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_amcharts_serial', plugins_url( '/admin/js/amcharts/serial.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
+		wp_enqueue_script( 'slimstat_amcharts_plugins_export', plugins_url( '/admin/js/amcharts/plugins/export/export.min.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
+		wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
+
+		wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
+
+		// Pre-calculate all the values needed to render the charts
+		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
+		$chart_colors = !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) : array( '#bbcc44', '#21759b', '#ccc', '#999' );
+
+		?>
+		<div class="chart-placeholder" id="slim_chart_<?php echo $_args[ 'id' ]; ?>" style="min-height: 280px"></div>
+
+		<script type="text/javascript">
+<?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
+			jQuery(function() {
+<?php endif; ?>
+				var chart_<?php echo $_args[ 'id' ]; ?> = AmCharts.makeChart("slim_chart_<?php echo $_args[ 'id' ]; ?>", {
+					"type": "serial",
+					"zoomOutButtonPadding": 25,
+					"theme": "light",
+					"creditsPosition": "top-left",
+					"mouseWheelZoomEnabled": true,
+					"legend": {
+						"equalWidths": true,
+						"periodValueText": "[[value.sum]]",
+						"position": "bottom",
+						"align": "center"
+					},
+					"valueAxes": [ {
+						"id":"v1",
+						"axisAlpha": 0,
+						"integersOnly": true,
+						"position": "left"
+					} ],
+					"chartCursor": {
+						"cursorPosition": "mouse",
+						"pan": true,
+						"valueLineBalloonEnabled": true
+					},
+					"categoryField": "date",
+					"categoryAxis": {
+						"dashLength": 1,
+						"autoGridCount": <?php echo ( $chart_data[ 'json_count' ] > 31 || wp_slimstat_db::$filters_normalized[ 'utime' ][ 'type' ] == 'interval' ) ? 'true' : 'false' ?>,
+						"gridCount": <?php echo $chart_data[ 'json_count' ] ?>,
+						"position": "bottom"
+					},
+					"export": {
+						"enabled": true
+					},
+					"graphs": [
+<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
+						{
+							"id": "g3_<?php echo $_args[ 'id' ]; ?>",
+							"bullet": "round",
+							"bulletBorderAlpha": 1,
+							"bulletColor": "#00FF00",
+							"bulletSize": 4,
+							"hideBulletsCount": 50,
+							"lineThickness": 2,
+							"lineColor": "<?php echo $chart_colors[ 2 ] ?>",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"type": "line",
+							"useLineColorForBulletBorder": true,
+							"valueField": "v3"
+						}, {
+							"id": "g4_<?php echo $_args[ 'id' ]; ?>",
+							"bullet": "round",
+							"bulletBorderAlpha": 1,
+							"bulletColor": "#00FF00",
+							"bulletSize": 4,
+							"hideBulletsCount": 50,
+							"lineThickness": 2,
+							"lineColor": "<?php echo $chart_colors[ 3 ] ?>",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"type": "line",
+							"useLineColorForBulletBorder": true,
+							"valueField": "v4"
+						},
+<?php endif; ?>
+						{
+							"id": "g1_<?php echo $_args[ 'id' ]; ?>",
+							"bullet": "round",
+							"bulletBorderAlpha": 1,
+							"bulletColor": "#FFFFFF",
+							"bulletSize": 4,
+							"hideBulletsCount": 50,
+							"lineColor": "<?php echo $chart_colors[ 0 ] ?>",
+							"lineThickness": 2,
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"type": "line",
+							"useLineColorForBulletBorder": true,
+							"valueField": "v1"
+						}, {
+							"id": "g2_<?php echo $_args[ 'id' ]; ?>",
+							"bullet": "round",
+							"bulletBorderAlpha": 0.6,
+							"bulletColor": "#00FF00",
+							"bulletSize": 4,
+							"hideBulletsCount": 50,
+							"lineColor": "<?php echo $chart_colors[ 1 ] ?>",
+							"lineThickness": 2,
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"type": "line",
+							"useLineColorForBulletBorder": true,
+							"valueField": "v2"
+						} 
+
+					],
+					"dataProvider": <?php echo $chart_data[ 'json' ] ?>
+				});
+<?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
+			});
+<?php endif; ?>
+		</script>
+	<?php
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			die();
+		}
+	}
+
+	public static function show_chart_old( $_args = array() ){
 		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
 	?>
-		<div class="chart-placeholder"></div><div class="chart-legend"></div>
-		<script type="text/javascript">
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ] = [];
 
-			<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ].push({
+		<div class="chart-placeholder" id="<?php echo 'SlimChartParams_' . $_args[ 'id' ]; ?>" style="height: 300px"></div><div class="chart-legend"></div>
+		<script type="text/javascript">
+			var SlimChartParams_<?php echo $_args[ 'id' ] ?> = {
+				colors: [
+					<?php
+					if ( !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ) {
+						echo '"' . implode( '", "', wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) ) . '"';
+					}
+					else {
+						echo '"#ccc", "#999", "#bbcc44", "#21759b"';
+					}
+					?>
+				],
+				info: {},
+				data: {}
+			};
+
+<?php if ( in_array( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'type' ], array( 'm', 'interval' ) ) ): ?>
+			SlimChartParams_<?php echo $_args[ 'id' ] ?>.info = {
+				'current_year': <?php echo date( 'Y', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ); ?>,
+				'current_month': <?php echo date( 'm', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ); ?>,
+				'text_direction': '<?php echo $GLOBALS[ 'wp_locale' ]->text_direction ?>'
+			};
+<?php endif; ?>
+
+			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data = [];
+
+<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
+			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
 				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php 
+				data: [<?php
 					$tmp_serialize = array();
 					$j = 0;
 					foreach( $chart_data[ 'previous' ][ 'first_metric' ] as $a_value ) {
 						$tmp_serialize[] = "[$j, $a_value]";
 						$j++;
 					}
-					echo implode( ',', $tmp_serialize ); 
+					echo implode( ',', $tmp_serialize );
 				?>],
 				points: {
 					show: true,
@@ -1254,16 +1423,17 @@ class wp_slimstat_reports {
 					}
 				}
 			});
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>' ].push({
+
+			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
 				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php 
+				data: [<?php
 					$tmp_serialize = array();
 					$j = 0;
 					foreach( $chart_data[ 'previous' ][ 'second_metric' ] as $a_value ) {
 						$tmp_serialize[] = "[$j, $a_value]";
 						$j++;
 					}
-					echo implode( ',', $tmp_serialize ); 
+					echo implode( ',', $tmp_serialize );
 				?>],
 				points: {
 					show: true,
@@ -1272,18 +1442,18 @@ class wp_slimstat_reports {
 					}
 				}
 			});
-			<?php endif ?>
+<?php endif ?>
 
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>'  ].push({
+			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
 				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php 
+				data: [<?php
 					$tmp_serialize = array();
 					$j = 0;
 					foreach( $chart_data[ 'current' ][ 'first_metric' ] as $a_value ) {
 						$tmp_serialize[] = "[$j, $a_value]";
 						$j++;
 					}
-					echo implode( ',', $tmp_serialize ); 
+					echo implode( ',', $tmp_serialize );
 				?>],
 				points: {
 					show: true,
@@ -1292,9 +1462,10 @@ class wp_slimstat_reports {
 					}
 				}
 			});
-			SlimStatAdmin.chart_data[ '<?php echo  $_args[ 'id' ] ?>'  ].push({
+
+			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
 				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php 
+				data: [<?php
 					$tmp_serialize = array();
 					$j = 0;
 					foreach( $chart_data[ 'current' ][ 'second_metric' ] as $a_value ) {
@@ -1311,7 +1482,7 @@ class wp_slimstat_reports {
 				}
 			});
 
-			SlimStatAdmin.ticks = [<?php
+			SlimChartParams_<?php echo $_args[ 'id' ] ?>.ticks = [<?php
 				$tmp_serialize = array();
 				$max_ticks = max( count( $chart_data[ 'current' ][ 'first_metric' ]), count( $chart_data[ 'previous' ][ 'first_metric' ] ) );
 				if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] ) ) {
@@ -1325,7 +1496,7 @@ class wp_slimstat_reports {
 						$tmp_serialize[] = '['.($i-$min_idx).',"'.$i.'"]';
 					}
 				}
-				echo implode( ',', $tmp_serialize ); 
+				echo implode( ',', $tmp_serialize );
 			?>];
 		</script> <?php
 
@@ -1334,7 +1505,7 @@ class wp_slimstat_reports {
 		}
 	}
 
-	public static function get_about_wpslimstat() { 
+	public static function get_about_wpslimstat() {
 		$dt = wp_slimstat_db::get_oldest_visit( '1=1', false );
 		$results = array();
 
@@ -1368,7 +1539,7 @@ class wp_slimstat_reports {
 	}
 
 	public static function get_overview_summary() {
-		$days_in_range = ceil( ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] - wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 ); 
+		$days_in_range = ceil( ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] - wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 );
 		$results = array();
 
 		$results[ 0 ][ 'metric' ] = __( 'Pageviews', 'wp-slimstat' );
@@ -1429,7 +1600,7 @@ class wp_slimstat_reports {
 		if ( intval( $new_visitors_rate ) > 99 ) {
 			$new_visitors_rate = '100';
 		}
-		
+
 		$results[ 0 ][ 'metric' ] = __( 'Visits', 'wp-slimstat' );
 		$results[ 0 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'visit_id', 'visit_id > 0 AND browser_type <> 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 		$results[ 0 ][ 'tooltip' ] = __( 'A visit is a session of at most 30 minutes. Returning visitors are counted multiple times if they perform multiple visits.', 'wp-slimstat' );
@@ -1522,7 +1693,7 @@ class wp_slimstat_reports {
 
 		return $results;
 	}
-	
+
 	public static function get_traffic_sources_summary() {
 		$results = array();
 		$total_human_hits = wp_slimstat_db::count_records( 'id', 'visit_id > 0 AND browser_type <> 1' );
@@ -1603,7 +1774,7 @@ class wp_slimstat_reports {
 					__( 'Facebook Clicks', 'wp-slimstat' ),
 					__( 'How many times links to your website have been clicked on Facebook.', 'wp-slimstat' )
 				),
-				'alexa_world_rank' => array( 
+				'alexa_world_rank' => array(
 					0,
 					__( 'Alexa World Rank', 'wp-slimstat' ),
 					__( 'Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data.', 'wp-slimstat' )
@@ -1625,7 +1796,7 @@ class wp_slimstat_reports {
 				$binary_signature = @hash_hmac( 'sha1', wp_slimstat::$settings[ 'mozcom_access_id' ] . "\n" . $expiration_token, wp_slimstat::$settings[ 'mozcom_secret_key' ], true );
 				$binary_signature = urlencode( base64_encode( $binary_signature ) );
 
-				// SeoMoz Equity Links (Backlinks) and MozRank		
+				// SeoMoz Equity Links (Backlinks) and MozRank
 				$response = @wp_remote_get( 'http://lsapi.seomoz.com/linkscape/url-metrics/' . $site_url . '?Cols=16672&AccessID=' . wp_slimstat::$settings[ 'mozcom_access_id' ] . '&Expires=' . $expiration_token . '&Signature=' . $binary_signature, $options );
 				if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
 					$response = @json_decode( $response[ 'body' ] );
@@ -1726,10 +1897,10 @@ class wp_slimstat_reports {
 
 			$results[ 5 ][ 'metric' ] = __( 'Comments', 'wp-slimstat' );
 			$results[ 5 ][ 'value' ] = $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments}" );
-			
+
 			$results[ 6 ][ 'metric' ] = __( 'Avg Comments per Post', 'wp-slimstat' );
 			$results[ 6 ][ 'value' ] = number_format( !empty( $results[ 1 ][ 'value' ] ) ? $results[ 5 ][ 'value' ] / $results[ 1 ][ 'value' ] : 0, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
-			
+
 			$results[ 7 ][ 'metric' ] = __( 'Avg Server Latency', 'wp-slimstat' );
 			$results[ 7 ][ 'value' ] = number_format( wp_slimstat::$wpdb->get_var( "SELECT AVG(server_latency) FROM {$GLOBALS[ 'wpdb' ]->prefix }slim_stats WHERE server_latency <> 0" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 			$results[ 7 ][ 'tooltip' ] = __( 'Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server.', 'wp-slimstat' );
@@ -1758,7 +1929,7 @@ class wp_slimstat_reports {
 
 		if ($count_page_results == 0){
 			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
-			
+
 			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 				die();
 			}
@@ -1817,11 +1988,11 @@ class wp_slimstat_reports {
 				mapVar: AmCharts.maps.worldLow,
 				getAreasFromMap:true,
 				areas:[<?php echo implode(',', $data_areas) ?>]
-			}; 
+			};
 
 			// Create AmMap object
 			var map = new AmCharts.AmMap();
-			
+
 			<?php if ($max != 0): ?>
 			var legend = new AmCharts.ValueLegend();
 			legend.height = 20;
@@ -1848,8 +2019,8 @@ class wp_slimstat_reports {
 			map.colorSteps = 5;
 			map.mouseWheelZoomEnabled = true;
 			map.pathToImages = "<?php echo plugins_url('/js/ammap/images/', dirname(__FILE__)) ?>";
-			
-			
+
+
 			// Init Data
 			map.dataProvider = dataProvider;
 
@@ -1880,7 +2051,7 @@ class wp_slimstat_reports {
 			$query_details = "($query_details)";
 		}
 
-		if ( !empty( $_searchterms ) && $_searchterms != '_' ) {		
+		if ( !empty( $_searchterms ) && $_searchterms != '_' ) {
 			$search_terms_info = '<a class="slimstat-font-logout" target="_blank" title="' . htmlentities( __( 'Go to the referring page', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . $_referer . '"></a>' . htmlentities( $_searchterms, ENT_QUOTES, 'UTF-8' );
 			$search_terms_info = "$search_terms_info $query_details";
 		}
@@ -1917,10 +2088,10 @@ class wp_slimstat_reports {
 		return ($filters_html != "<span class='filters-title'>".__('Current filters:','wp-slimstat').'</span> ')?$filters_html:'';
 	}
 
-	public static function fs_url( $_filters = '' ){
+	public static function fs_url( $_filters = '' ) {
 
 		// Allow only legitimate requests
-		$request_uri = $_SERVER['REQUEST_URI'];
+		$request_uri = $_SERVER[ 'REQUEST_URI' ];
 		$request_page = 'slimview1';
 
 		// Are we on the Dashboard?
@@ -1934,32 +2105,40 @@ class wp_slimstat_reports {
 			return '';
 		}
 
-		$filtered_url = ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ? explode( '?', $_SERVER["HTTP_REFERER"] ) : explode( '?', $request_uri );
+		// Avoid XSS attacks (why would the owner attack him/herself?)
+		if ( !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
+			$parsed_referer = parse_url( $_SERVER[ 'HTTP_REFERER' ] );
+			if ( !$parsed_referer || ( !empty( $parsed_referer[ 'scheme' ] ) && !in_array( strtolower( $parsed_referer[ 'scheme' ] ), array( 'http', 'https' ) ) ) ) {
+				return '';
+			}
+		}
+
+		$filtered_url = explode( '?', ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ? $_SERVER[ 'HTTP_REFERER' ] : $request_uri );
 		$filtered_url = $filtered_url[ 0 ] . '?page=' . $request_page;
 
 		// Columns
 		$filters_normalized = wp_slimstat_db::parse_filters( $_filters, false );
 
-		if (!empty($filters_normalized['columns'])){
-			foreach($filters_normalized['columns'] as $a_key => $a_filter){
+		if ( !empty( $filters_normalized[ 'columns' ] ) ) {
+			foreach ( $filters_normalized[ 'columns' ] as $a_key => $a_filter ) {
 				$a_key = str_replace( '_calculated', '', $a_key );
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode($a_filter[0].' '.$a_filter[1]);
+				$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( $a_filter[ 0 ] . ' ' . $a_filter[ 1 ] );
 			}
 		}
 
 		// Date ranges
-		if (!empty($filters_normalized['date'])){
-			foreach($filters_normalized['date'] as $a_key => $a_filter){
-				if (!empty($a_filter) || $a_filter === 0){
-					$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
+		if ( !empty( $filters_normalized[ 'date' ] ) ) {
+			foreach ( $filters_normalized[ 'date' ] as $a_key => $a_filter ) {
+				if ( !empty( $a_filter ) || $a_filter === 0 ) {
+					$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
 				}
 			}
 		}
 
 		// Misc filters
-		if (!empty($filters_normalized['misc'])){
-			foreach($filters_normalized['misc'] as $a_key => $a_filter){
-				$filtered_url .= "&amp;fs%5B$a_key%5D=".urlencode('equals '.$a_filter);
+		if ( !empty( $filters_normalized[ 'misc' ] ) ) {
+			foreach ( $filters_normalized[ 'misc' ] as $a_key => $a_filter ) {
+				$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
 			}
 		}
 
@@ -2020,7 +2199,7 @@ class wp_slimstat_reports {
 
 		return $resource_title;
 	}
-	
+
 	public static function inline_help( $_text = '', $_echo = true ) {
 		if ( !empty( $_text ) ) {
 			$wrapped_text = "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>$_text</span>";
@@ -2034,7 +2213,7 @@ class wp_slimstat_reports {
 		else
 			return $wrapped_text;
 	}
-	
+
 	protected static function _check_args( $_args = array() ) {
 
 		// When called from the WP Dashboard, the action passes 2 arguments: post_id (empty) and array of arguments
@@ -2074,7 +2253,7 @@ class wp_slimstat_reports {
 				'title' => '',
 				'callback' => '',
 				'callback_args' => array(),
-				'classes' => array(), 
+				'classes' => array(),
 				'screens' => array(),
 				'tooltip' => ''
 			), self::$reports_info[ $report_id ] );
@@ -2083,9 +2262,9 @@ class wp_slimstat_reports {
 		// Default callback args
 		$_args[ 'callback_args' ] = array_merge( array(
 			'type' => '',
-			'columns' => '', 
+			'columns' => '',
 			'where' => '',
-			'having' => '', 
+			'having' => '',
 			'as_column' => '',
 			'filter_op' => 'equals',
 			'outer_select_column' => '',

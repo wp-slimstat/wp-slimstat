@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.5.2
+Version: 4.6
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.5.2';
+	public static $version = '4.6';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -85,7 +85,7 @@ class wp_slimstat {
 
 		// Enable the tracker (both server- and client-side)
 		if ( !is_admin() || self::$settings[ 'track_admin_pages' ] == 'yes' ) {
-			
+
 			// Allow add-ons to turn off the tracker based on other conditions
 			$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', strpos( self::get_request_uri(), 'wp-admin/admin-ajax.php' ) === false );
 			$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
@@ -111,6 +111,7 @@ class wp_slimstat {
 		// Shortcodes
 		add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
 
+		// Load the admin library
 		if ( is_user_logged_in() ) {
 			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
 			add_action( 'init', array( 'wp_slimstat_admin', 'init' ), 60 );
@@ -214,7 +215,7 @@ class wp_slimstat {
 				'dt' => date_i18n( 'U' )
 			);
 			self::toggle_date_i18n_filters( true );
-			
+
 			if ( !empty( self::$data_js[ 'ty' ] ) ) {
 				$event_info[ 'type' ] = abs( intval( self::$data_js[ 'ty' ] ) );
 			}
@@ -230,7 +231,7 @@ class wp_slimstat {
 
 		// Send the ID back to Javascript to track future interactions
 		do_action( 'slimstat_track_success' );
-		
+
 		// If we tracked an internal download, we return the original ID, not the new one
 		if ( self::$data_js[ 'op' ] == 'add' && !empty( self::$data_js[ 'pos' ] ) ) {
 			exit( self::_get_id_with_checksum( self::$data_js[ 'id' ] ) );
@@ -259,7 +260,17 @@ class wp_slimstat {
 			return $_argument;
 		}
 
-		if ( !empty( self::$data_js[ 'ref' ] ) ) { 
+		// User's IP address
+		list ( self::$stat[ 'ip' ], self::$stat[ 'other_ip' ] ) = self::_get_remote_ip();
+
+		if ( empty( self::$stat[ 'ip' ] ) || self::$stat[ 'ip' ] == '0.0.0.0' ) {
+			self::$stat[ 'id' ] = -202;
+			self::_set_error_array( __( 'Empty or not supported IP address format (IPv6)', 'wp-slimstat' ), false );
+			return $_argument;
+		}
+
+		// Referrer URL
+		if ( !empty( self::$data_js[ 'ref' ] ) ) {
 			self::$stat[ 'referer' ] = base64_decode( self::$data_js[ 'ref' ] );
 		}
 		else if ( !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
@@ -267,37 +278,45 @@ class wp_slimstat {
 		}
 
 		if ( !empty( self::$stat[ 'referer' ] ) ) {
-		
+
 			// Is this a 'seriously malformed' URL?
 			$referer = parse_url( self::$stat[ 'referer' ] );
 			if ( !$referer ) {
-				self::$stat[ 'id' ] = -201;
-				self::_set_error_array( sprintf( __( 'Malformed URL %s', 'wp-slimstat' ), self::$stat[ 'referer' ] ), false );
-				return $_argument;
-			}
-
-			$parsed_site_url_host = parse_url( get_site_url(), PHP_URL_HOST );
-			if ( $referer[ 'host' ] == $parsed_site_url_host && self::$settings[ 'track_same_domain_referers' ] != 'yes' ) {
+				self::_set_error_array( sprintf( __( 'Malformed referrer URL: %s (IP: %s)', 'wp-slimstat' ), self::$stat[ 'referer' ], self::$stat[ 'ip' ] ), false, 201 );
+				self::$stat[ 'notes' ][] = sprintf( __( 'Malformed referrer URL: %s', 'wp-slimstat' ), self::$stat[ 'referer' ] );
 				unset( self::$stat[ 'referer' ] );
 			}
-			else {
-				// Fix Google Images referring domain
-				if ( strpos(self::$stat[ 'referer' ], 'www.google' ) !== false ) { 
-					if ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) {
-						self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
-					}
-					if ( strpos( self::$stat[ 'referer' ], '/url?' ) !== false ) {
-						self::$stat[ 'referer' ] = str_replace( '/url?', '/search?', self::$stat[ 'referer' ] );
-					}
-				}
 
-				// Is this referer blacklisted?
-				foreach ( self::string_to_array( self::$settings[ 'ignore_referers' ] ) as $a_filter ) {
-					$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
-					if ( preg_match( "@^$pattern$@i", self::$stat[ 'referer' ] ) ) {
-						self::$stat[ 'id' ] = -301;
-						self::_set_error_array( sprintf( __( 'Referrer %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'referer' ] ), true );
-						return $_argument;
+			if ( !empty( $referer[ 'scheme' ] ) && !in_array( strtolower( $referer[ 'scheme' ] ), array( 'http', 'https' ) ) ) {
+				self::_set_error_array( sprintf( __( 'Attempted XSS Injection: %s (IP: %s)', 'wp-slimstat' ), self::$stat[ 'referer' ], self::$stat[ 'ip' ] ), false, 203 );
+				self::$stat[ 'notes' ][] = sprintf( __( 'Attempted XSS Injection: %s', 'wp-slimstat' ), self::$stat[ 'referer' ] );
+				unset( self::$stat[ 'referer' ] );
+			}
+
+			if ( !empty( self::$stat[ 'referer' ] ) ) {
+				$parsed_site_url_host = parse_url( get_site_url(), PHP_URL_HOST );
+				if ( !empty( $referer[ 'host' ] ) && $referer[ 'host' ] == $parsed_site_url_host && self::$settings[ 'track_same_domain_referers' ] != 'yes' ) {
+					unset( self::$stat[ 'referer' ] );
+				}
+				else {
+					// Fix Google Images referring domain
+					if ( strpos( self::$stat[ 'referer' ], 'www.google' ) !== false ) {
+						if ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) {
+							self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
+						}
+						if ( strpos( self::$stat[ 'referer' ], '/url?' ) !== false ) {
+							self::$stat[ 'referer' ] = str_replace( '/url?', '/search?', self::$stat[ 'referer' ] );
+						}
+					}
+
+					// Is this referer blacklisted?
+					foreach ( self::string_to_array( self::$settings[ 'ignore_referers' ] ) as $a_filter ) {
+						$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
+						if ( preg_match( "@^$pattern$@i", self::$stat[ 'referer' ] ) ) {
+							self::$stat[ 'id' ] = -301;
+							self::_set_error_array( sprintf( __( 'Referrer %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'referer' ] ), true );
+							return $_argument;
+						}
 					}
 				}
 			}
@@ -315,7 +334,7 @@ class wp_slimstat {
 					$content_info = array();
 				}
 			}
-			
+
 			// If pos is not empty and slimtrack was called, it means we are tracking a new internal download
 			else if ( !empty( self::$data_js[ 'res' ] ) ) {
 				$download_url = base64_decode( self::$data_js[ 'res' ] );
@@ -385,15 +404,6 @@ class wp_slimstat {
 					return $_argument;
 				}
 			}
-		}
-
-		// User's IP address
-		list ( self::$stat[ 'ip' ], self::$stat[ 'other_ip' ] ) = self::_get_remote_ip();
-
-		if ( empty( self::$stat[ 'ip' ] ) || self::$stat[ 'ip' ] == '0.0.0.0' ) {
-			self::$stat[ 'id' ] = -202;
-			self::_set_error_array( __( 'Empty or not supported IP address format (IPv6)', 'wp-slimstat' ), false );
-			return $_argument;
 		}
 
 		// Should we ignore this user?
@@ -627,7 +637,7 @@ class wp_slimstat {
 
 				// Do we need to update the file?
 				if (false !== ($file_stat = stat(self::$maxmind_path))){
-					
+
 					// Is the database more than 30 days old?
 					if ((date('U') - $file_stat['mtime'] > 2629740)){
 						fclose($handle);
@@ -706,7 +716,7 @@ class wp_slimstat {
 		}
 
 		self::$wpdb->query(self::$wpdb->prepare("
-			INSERT IGNORE INTO $_table (".implode(", ", $data_keys).') 
+			INSERT IGNORE INTO $_table (".implode(", ", $data_keys).')
 			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).")", $_data));
 
 		return intval(self::$wpdb->insert_id);
@@ -735,7 +745,7 @@ class wp_slimstat {
 		$_data['id'] = $id;
 
 		self::$wpdb->query(self::$wpdb->prepare("
-			UPDATE IGNORE $_table 
+			UPDATE IGNORE $_table
 			SET ".implode(' = %s, ', $data_keys)." = %s
 			WHERE id = %d", $_data));
 
@@ -1057,8 +1067,8 @@ class wp_slimstat {
 	}
 	// end _check_data_integrity
 
-	protected static function _set_error_array( $_error_message = '', $_is_notice = false ) {
-		$error_code = abs( self::$stat[ 'id' ] );
+	protected static function _set_error_array( $_error_message = '', $_is_notice = false, $_error_code = 0 ) {
+		$error_code = empty( $_error_code ) ? abs( self::$stat[ 'id' ] ) : $_error_code;
 		self::toggle_date_i18n_filters( false );
 		if ( $_is_notice ) {
 			self::$settings[ 'last_tracker_notice' ] = array( $error_code, $_error_message, date_i18n( 'U' ) );
@@ -1087,7 +1097,7 @@ class wp_slimstat {
 		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
 			$unpacked = unpack( 'A4', inet_pton( $ip ) );
 		}
-		else if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+		else if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) && defined( 'AF_INET6' ) ) {
 			$unpacked = unpack( 'A16', inet_pton( $ip ) );
 		}
 
@@ -1098,9 +1108,10 @@ class wp_slimstat {
 				$binary_ip .= str_pad( decbin( ord( $char ) ), 8, '0', STR_PAD_LEFT );
 			}
 		}
+
 		return $binary_ip;
 	}
-	
+
 	public static function get_mask_length( $ip ){
 		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
 			return 32;
@@ -1190,7 +1201,7 @@ class wp_slimstat {
 		$s = "<span class='slimstat-item-separator'>$s</span>";
 
 		// Load the database library
-		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
+		//include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
 
 		// Load the localization files (for languages, operating systems, etc)
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
@@ -1200,9 +1211,14 @@ class wp_slimstat {
 			return '<!-- Slimstat Shortcode Error: missing parameter -->';
 		}
 
+		// Include the Reports Library, but don't initialize the database, since we will do that separately later
+		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-reports.php' );
+		wp_slimstat_reports::init();
+
+		// Init the database library with the appropriate filters
 		if ( strpos ( $_content, 'WHERE:' ) !== false ) {
 			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
-			wp_slimstat_db::init();
+			// wp_slimstat_db::init();
 		}
 		else{
 			wp_slimstat_db::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
@@ -1212,6 +1228,14 @@ class wp_slimstat {
 			case 'count':
 			case 'count-all':
 				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all') === false ) + $o;
+				break;
+
+			case 'chart':
+				// wp_enqueue_script( 'slimstat_chart', plugins_url( '/admin/js/slimstat.chart.js', __FILE__ ), array( 'jquery' ), null, false );
+				ob_start();
+				wp_slimstat_reports::show_chart( wp_slimstat_reports::$reports_info[ 'slim_p1_01' ][ 'callback_args' ] );
+				$output = ob_get_contents();
+				ob_end_clean();
 				break;
 
 			case 'recent':
@@ -1282,7 +1306,7 @@ class wp_slimstat {
 							case 'post_link':
 								$post_id = url_to_postid( $a_result[ 'resource' ] );
 								if ($post_id > 0) {
-									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>" . get_the_title( $post_id ) . '</a>'; 
+									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>" . get_the_title( $post_id ) . '</a>';
 								}
 								else {
 									$output[ $result_idx ][ $a_column ] .= $a_result[ 'resource' ];
@@ -1494,7 +1518,7 @@ class wp_slimstat {
 			$encoded_ci = base64_encode( serialize( self::_get_content_info() ) );
 			$params[ 'ci' ] = self::_get_id_with_checksum( $encoded_ci );
 		}
-		
+
 		$params = apply_filters( 'slimstat_js_params', $params );
 
 		wp_enqueue_script( 'wp_slimstat' );
@@ -1521,7 +1545,7 @@ class wp_slimstat {
 				SELECT id, ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
 				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
 				WHERE dt < $days_ago");
-				
+
 			if ( $is_copy_done !== false ) {
 				self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
 			}
@@ -1531,7 +1555,7 @@ class wp_slimstat {
 				SELECT type, event_description, notes, position, id, dt
 				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events
 				WHERE dt < $days_ago");
-	
+
 			if ( $is_copy_done !== false ) {
 				self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
 			}
@@ -1589,7 +1613,7 @@ if ( function_exists( 'add_action' ) ) {
 		}
 
 		add_action( 'wp_ajax_nopriv_slimtrack', array( 'wp_slimstat', 'slimtrack_ajax' ) );
-		add_action( 'wp_ajax_slimtrack', array( 'wp_slimstat', 'slimtrack_ajax' ) ); 
+		add_action( 'wp_ajax_slimtrack', array( 'wp_slimstat', 'slimtrack_ajax' ) );
 	}
 
 	// From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
