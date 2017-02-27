@@ -961,7 +961,7 @@ class wp_slimstat_reports {
 			// Allow third-party code to add more buttons 
 			$header_buttons = apply_filters( 'slimstat_report_header_buttons', $header_buttons, $_report_id );
 			$header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
-			$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>".self::$reports_info[ $_report_id ][ 'tooltip' ]."</span>" : '';
+			$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? '<i class="slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">' . self::$reports_info[ $_report_id ][ 'tooltip' ] . '</span></i>' : '';
 		}
 
 		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} <h3 data-report-id='{$_report_id}'>" . self::$reports_info[ $_report_id ][ 'title' ] . " {$header_tooltip}</h3><div class='inside' id='{$_report_id}_inside'>";
@@ -2098,7 +2098,7 @@ class wp_slimstat_reports {
 
 	public static function inline_help( $_text = '', $_echo = true ) {
 		if ( is_admin() && !empty( $_text ) ) {
-			$wrapped_text = "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>$_text</span>";
+			$wrapped_text = "<i class='slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>$_text</span></i>";
 		}
 		else {
 			$wrapped_text = '';
