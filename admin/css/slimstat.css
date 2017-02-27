@@ -38,6 +38,10 @@
 	vertical-align: initial;
 	width: 15%;
 }
+#slimstat-filters-form label {
+	left:-9000px;
+	position: absolute;
+}
 #slimstat-date-filters{
 	padding: 4px 10px 6px 20px;
 	position: absolute;
@@ -56,7 +60,7 @@
 #slimstat-date-filters>a.open::after{
 	content: "\f142";
 }
-#slimstat-date-filters span{
+#slimstat-date-filters .dropdown {
 	background-color: #fff;
 	box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
 	color: #222;
@@ -68,7 +72,7 @@
 	width: 450px;
 	z-index: 120;
 }
-#slimstat-date-filters span a.slimstat-date-choice{
+#slimstat-date-filters .dropdown a.slimstat-date-choice{
 	background-color: #eee;
 	display: block;
 	float: left;
@@ -76,21 +80,21 @@
 	padding: 5px;
 	width: 135px;
 }
-#slimstat-date-filters span strong{
+#slimstat-date-filters .dropdown strong{
 	clear: both;
 	display: block;
 	font-weight: normal;
 	padding: 10px 5px 5px 0;
 	text-transform: uppercase;
 }
-#slimstat-date-filters span select, #slimstat-date-filters span input{
+#slimstat-date-filters .dropdown select, #slimstat-date-filters .dropdown input{
 	margin-bottom: 5px;
 	width: 80px;
 }
-#slimstat-date-filters span select.short, #slimstat-date-filters span input.short{
+#slimstat-date-filters .dropdown select.short, #slimstat-date-filters .dropdown input.short{
 	width: 50px;
 }
-#slimstat-date-filters span .ui-datepicker-trigger{
+#slimstat-date-filters .dropdown .ui-datepicker-trigger{
 	float: right;
 	margin: 2px 5px 0 0;
 }
@@ -159,9 +163,10 @@
 	margin: 0;
 	padding: 10px;
 }
-.wrap.slimstat .postbox h3 a{
-	font-size: 1em;
-	font-weight: 700;
+.wrap.slimstat .postbox h3:hover:after {
+	color: #bbb;
+	content: attr(data-report-id);
+	margin-left: 10px;
 }
 .wrap.slimstat .postbox.tall h3{
 	cursor:auto;
@@ -216,13 +221,13 @@
 .wrap.slimstat .postbox.tall .inside{
 	height: 900px;
 }
-[id^=slim_] p{
+[id^=slim_] p {
 	border-bottom: 1px solid #ddd;
 	line-height: 1.5em;
 	margin: 0;
 	min-height: 20px;
 	overflow: auto;
-	padding: 6px 10px;
+	padding: 7px 10px;
 	position: relative;
 	word-wrap: break-word;
 }
@@ -399,11 +404,14 @@
 }
 
 /* Dashboard Widgets */
-#dashboard-widgets .postbox .inside {
-	height: 415px;
+#dashboard-widgets [id*=slim_p].postbox .inside {
+	height: 281px;
 }
-#dashboard-widgets .postbox .inside .chart-placeholder {
-	height: 400px;
+#dashboard-widgets [id*=slim_p][id*=_01].postbox .inside {
+	height: 290px;
+}
+#dashboard-widgets #slim_p7_02.postbox .inside {
+	height: 320px;
 }
 .closed .slimScrollDiv{
 	height: 0 !important;
@@ -610,7 +618,7 @@
 	}
 	.wrap.slimstat .postbox p {
 		font-size: 1em;
-		line-height: 1.7em;
+		line-height: 1.5em;
 	}
 }
 

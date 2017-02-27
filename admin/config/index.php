@@ -167,7 +167,6 @@ $settings = array(
 
 			'reports_functionality_header' => array( 'description' => __( 'Functionality', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'async_load' => array( 'description' => __( 'Async Mode', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple requests, thus avoiding memory issues and performance problems.', 'wp-slimstat' ) ),
-			'use_slimscroll' => array('description' => __('SlimScroll','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('Enable SlimScroll, a slick jQuery library that replaces the built-in browser scrollbar.','wp-slimstat')),
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'toggle', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
 			'limit_results' => array( 'description' => __( 'Max Results','wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'Decide how many records should be retrieved from the database in total. Depending on your server configuration, you may want to fine tune this value to avoid exceeding your PHP memory limit.', 'wp-slimstat' ) ),

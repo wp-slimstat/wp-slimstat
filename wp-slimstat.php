@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6
+Version: 4.6.1
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6';
+	public static $version = '4.6.1';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -1191,8 +1191,8 @@ class wp_slimstat {
 
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ){
 		extract( shortcode_atts( array(
-			'f' => '',		// recent, popular, count
-			'w' => '',		// column to use
+			'f' => '',		// recent, popular, count, widget
+			'w' => '',		// column to use (for recent, popular and count) or widget to use
 			's' => ' ',		// separator
 			'o' => 0		// offset for counters
 		), $_attributes));
@@ -1230,10 +1230,14 @@ class wp_slimstat {
 				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all') === false ) + $o;
 				break;
 
-			case 'chart':
-				// wp_enqueue_script( 'slimstat_chart', plugins_url( '/admin/js/slimstat.chart.js', __FILE__ ), array( 'jquery' ), null, false );
+			case 'widget':
+				wp_register_style( 'wp-slimstat-frontend', plugins_url( '/admin/css/slimstat.frontend.css', __FILE__ ) );
+				wp_enqueue_style( 'wp-slimstat-frontend' );
+
 				ob_start();
-				wp_slimstat_reports::show_chart( wp_slimstat_reports::$reports_info[ 'slim_p1_01' ][ 'callback_args' ] );
+				echo wp_slimstat_reports::report_header( $w );
+				call_user_func( wp_slimstat_reports::$reports_info[ $w ][ 'callback' ], wp_slimstat_reports::$reports_info[ $w ][ 'callback_args' ] );
+				wp_slimstat_reports::report_footer();
 				$output = ob_get_contents();
 				ob_end_clean();
 				break;
@@ -1419,7 +1423,6 @@ class wp_slimstat {
 			'convert_resource_urls_to_titles' => 'yes',
 			'convert_ip_addresses' => 'no',
 			'async_load' => 'no',
-			'use_slimscroll' => 'yes',
 			'expand_details' => 'no',
 			'rows_to_show' => '20',
 			'limit_results' => '1000',
@@ -1593,6 +1596,78 @@ class wp_slimstat {
 }
 // end of class declaration
 
+class slimstat_widget extends WP_Widget {
+
+	/**
+	 * Sets up the widgets name etc
+	 */
+	public function __construct() {
+		parent::__construct( 'slimstat_widget', 'SlimStat', array( 
+			'classname' => 'slimstat_widget',
+			'description' => 'Add a SlimStat report to your sidebar',
+		) );
+	}
+
+	/**
+	 * Outputs the content of the widget
+	 *
+	 * @param array $args
+	 * @param array $instance
+	 */
+	public function widget( $args, $instance ) {
+		extract( $instance );
+		echo do_shortcode( "[slimstat f='widget' w='{$slimstat_widget_id}']{$slimstat_widget_filters}[/slimstat]" );
+	}
+
+	/**
+	 * Outputs the options form on admin
+	 *
+	 * @param array $instance The widget options
+	 */
+	public function form( $instance ) {
+		// Let's build the dropdown
+		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-reports.php' );
+		wp_slimstat_reports::init();
+		$select_options = '';
+		$slimstat_widget_id = !empty( $instance[ 'slimstat_widget_id' ] ) ? $instance[ 'slimstat_widget_id' ] : '';
+		$slimstat_widget_filters = !empty( $instance[ 'slimstat_widget_filters' ] ) ? $instance[ 'slimstat_widget_filters' ] : '';
+
+		foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
+			$select_options .= "<option value='$a_report_id' " . ( ( $slimstat_widget_id == $a_report_id ) ? 'selected="selected"' : '' ) . ">{$a_report_info[ 'title' ]}</option>";
+		}
+		?>
+
+		<p>
+		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>">Widget</label> 
+		<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'slimstat_widget_id' ) ); ?>">
+			<option value="">Select a widget</option>
+			<?php echo $select_options ?>
+		</select>
+		</p>
+
+		<p>
+		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_filters' ) ); ?>"><?php _e( 'Optional filters', 'wp-slimstat' ); ?></label> 
+		<a href="https://slimstat.freshdesk.com/solution/articles/5000631833-what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
+		<textarea class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_filters' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'slimstat_widget_filters' ) ); ?>"><?php echo trim( strip_tags( $slimstat_widget_filters ) ) ?></textarea>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Processing widget options on save
+	 *
+	 * @param array $new_instance The new options
+	 * @param array $old_instance The previous options
+	 */
+	public function update( $new_instance, $old_instance ) {
+		$instance = $old_instance;
+
+		$instance[ 'slimstat_widget_id' ] = $new_instance[ 'slimstat_widget_id' ];
+		$instance[ 'slimstat_widget_filters' ] = $new_instance[ 'slimstat_widget_filters' ];
+		return $instance;
+	}
+}
+
 // Ok, let's go, Sparky!
 if ( function_exists( 'add_action' ) ) {
 	// Since we use sendBeacon, this function sends raw POST data, which does not populate the $_POST variable automatically
@@ -1622,6 +1697,8 @@ if ( function_exists( 'add_action' ) ) {
 		register_activation_hook( __FILE__, array( 'wp_slimstat_admin', 'init_environment' ) );
 		register_deactivation_hook( __FILE__, array( 'wp_slimstat_admin', 'deactivate' ) );
 	}
+
+	add_action( 'widgets_init', create_function('', 'return register_widget( "slimstat_widget" );' ) );
 
 	// Add the appropriate actions
 	add_action( 'plugins_loaded', array( 'wp_slimstat', 'init' ), 20 );

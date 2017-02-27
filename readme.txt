@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6
+Stable tag: 4.6.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -27,7 +27,7 @@ Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available 
 [Like Us](https://www.facebook.com/slimstatistics/) on Facebook and [follow us](https://twitter.com/wp_stats) on Twitter to get the latest news and updates about our plugin.
 
 = Translations =
-Slimstat is available in multiple languages: English, Belarusian ([UStarCash](https://www.ustarcash.com/)), Chinese (沐熙工作室), Farsi ([Dean](http://www.mangallery.net)), French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian ([Vitaly](http://www.visbiz.org/)), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
+Slimstat is available in multiple languages: English, Belarusian (UStarCash), Chinese (沐熙工作室), Farsi, French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian (Vitaly), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
 
 = Reviews and Feedback =
 * This is by far the most accurate and in-depth tracking plugin I've encountered for WordPress [MiMango](https://wordpress.org/support/topic/excellent-plugin-and-service-9)
@@ -68,6 +68,17 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.1 =
+* [New] You spoke, we listened. Many users have been asking us over time to add a feature to display metrics and reports on their front-facing website. Although Slimstat has been supporting shortcodes for many years, they felt like they needed more than that basic feature. We are now extending the shortcode syntax to allow users to place widgets on their websites in just a few steps. Please [refer to our knowledge base](https://slimstat.freshdesk.com/support/solutions/folders/5000259023) to learn more about this new feature, or feel free to contact us if you need help implementing it on your website.
+* [New] Hovering a report's title will reveal its unique ID, which you can [use in your shortcode](https://slimstat.freshdesk.com/support/solutions/folders/5000259023) to display it on your website.
+* [Update] The update notice displayed in the admin is now only shown to site administrators (single installation) and super administrators (WP MU / network), to avoid any confusion for MU site administrators.
+* [Update] Improved the accessibility of our Filter Bar, by introducing (hidden) labels for all the fields. Please make sure to flush your client/server caches to load the new stylesheet.
+* [Update] Removed the option to deactivate Slimscroll as it did not play nice with some other features we recently introduced, and also because the incompatibility issues between Firefox and Slimscroll have been addressed.
+* [Fix] The icon to export a report as Excel comma separated value was not being visualized correctly, when the premium add-on was enabled.
+* [Fix] Addressed some Javascript warning being displayed in the browser console, returned by the qTip library.
+* [Fix] The height of all the Dashboard widgets (including the ones not related to Slimstat) was being affected by a typo in our CSS.
+* [Fix] Cleaned up minor layout glitches and improved rendering of charts after initial round of feedback from users.
+
 = 4.6 =
 * [New] Our development team has had the task of revamping the charts available in Slimstat on their to-do list for quite a while now. Now that the compatibility issues related to our Browscap library have been addressed and resolved, it was time to tackle this new challenge and offer a beautiful new interface to analyze and interact with visual reports and charts. As an added bonus, we are also working on extending the list of supported shortcodes to allow administrators to also share these brand-new charts with their visitors, by quickly placing them on any page of their website. The same will apply to the world map, which currently displays the total number of page views by Country. Lots of exciting new features will soon be available to all our users. Stay tuned!
 * [Update] Email and Excel reports now honor the setting to convert IP addresses to hostnames.
@@ -86,7 +97,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 = 4.5.1 =
 * [New] Slimstat is now looking for custom HTTP headers like [CF-Connecting-IP](https://support.cloudflare.com/hc/en-us/articles/200170986-How-does-CloudFlare-handle-HTTP-Request-headers-) to determine your visitors' originating IP address when your website is behind reverse proxies like CloudFlare.
 * [New] By default, when the domain of the referrer for a given page view is the same as the current site, that information is not tracked to save space in the database. However, if you are running a multisite network with subfolders, you might need to track same-domain referrers from one site to another, as they are technically "separate" websites. A new option under Settings > Tracker was added to handle this situation (thank you, [chenryahts](https://wordpress.org/support/topic/referer-not-recorded-from-other-sites-in-same-multisite/)).
-* [Fix] A type in checking the PHP version was preventing some users from installing our new Browscap library.
+* [Fix] A typo in checking the PHP version was preventing some users from installing our new Browscap library.
 * [Fix] PHP warning of undefined offset in one of the reports when the database was empty.
 * [Fix] In some specific cases a function used to unzip the Browscap Library on the user's server was not defined (thank you, [victor50g, gdevic and others](https://wordpress.org/support/topic/white-screen-of-death-when-publishing-post/))
 * [Fix] A few users pointed out that using file_get_contents might not be ideal, if allow_url_fopen is turned off in PHP. Per [Per Dennis' suggestion](https://wordpress.org/support/topic/file_get_contents-problem-since-version-4-5/) that call was replaced with wp_remote_get. Thank you for your help!
@@ -99,7 +110,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] Our release highlights, which are usually shown after updating to the latest version, were not disappearing when clicking on the corresponding button.
 * [Fix] PHP warning being returned under certain circumstances (thank you, [Sasa and computershowtopro](https://wordpress.org/support/topic/you-need-to-change-line-340-341-in-the-plugin/#post-8591529)).
 
-== Supporters ==
+== Support Our Work ==
 Slimstat Analytics is an open source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
 is for those who want to donate money - be it once, be it regularly, be it a small or a big amount. Everything is set up for an easy donation process.
-Try it out, you'll be amazed how good it feels! If you're on a tight budget, [a review](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) for Slimstat is still a nice way to say thank you!
+Try it out, you'll be amazed how good it feels! If you're on a tight budget, please consider writing [a review](https://wordpress.org/support/plugin/wp-slimstat/reviews/#new-post) for Slimstat as a token of appreciation for our hard work!

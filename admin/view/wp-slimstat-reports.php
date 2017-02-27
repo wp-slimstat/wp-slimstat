@@ -208,6 +208,9 @@ class wp_slimstat_reports {
 			'slim_p1_15' => array(
 				'title' => __( 'Rankings', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_rankings' ),
+				'callback_args' => array(
+					'id' => 'slim_p1_15'
+				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview2' ),
 				'tooltip' => __( "Slimstat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data.", 'wp-slimstat' )
@@ -863,6 +866,9 @@ class wp_slimstat_reports {
 			'slim_p6_01' => array(
 				'title' => __( 'World Map', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_world_map' ),
+				'callback_args' => array(
+					'id' => 'slim_p6_01'
+				),
 				'classes' => array( 'full-width', 'tall' ),
 				'screens' => array( 'slimview6' ),
 				'tooltip' => ''
@@ -895,7 +901,7 @@ class wp_slimstat_reports {
 		self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
 
 		// Do this only if we are in one of our screens (no dashboard!)
-		if ( !empty( $_REQUEST['page'] ) && strpos( $_REQUEST['page'], 'slimview' ) !== false ) {
+		if ( is_admin() && !empty( $_REQUEST['page'] ) && strpos( $_REQUEST['page'], 'slimview' ) !== false ) {
 
 			// If this list is not empty, we rearrange the order of our reports
 			if ( !empty( self::$user_reports[ $_REQUEST[ 'page' ] ] ) ) {
@@ -943,17 +949,22 @@ class wp_slimstat_reports {
 	public static function report_header( $_report_id = '' ) {
 		$header_classes =  !empty( self::$reports_info[ $_report_id ][ 'classes' ] ) ? implode( ' ', self::$reports_info[ $_report_id ][ 'classes' ] ) : '';
 		$header_buttons = '';
+		$header_tooltip = '';
 
-		// Show the refresh button only if the time range is not in the past
-		if ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] >= date_i18n( 'U' ) - 300 ) {
-			$header_buttons = '<a class="button-ajax noslimstat refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>';
+		// Don't show the header buttons on the frontend
+		if ( is_admin() ) {
+			// Show the refresh button only if the time range is not in the past
+			if ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] >= date_i18n( 'U' ) - 300 ) {
+				$header_buttons = '<a class="button-ajax noslimstat refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>';
+			}
+
+			// Allow third-party code to add more buttons 
+			$header_buttons = apply_filters( 'slimstat_report_header_buttons', $header_buttons, $_report_id );
+			$header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
+			$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>".self::$reports_info[ $_report_id ][ 'tooltip' ]."</span>" : '';
 		}
 
-		// Allow third-party code to add more buttons 
-		$header_buttons = '<div class="slimstat-header-buttons">' . apply_filters( 'slimstat_report_header_buttons', $header_buttons ) . '</div>';
-		$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>".self::$reports_info[ $_report_id ][ 'tooltip' ]."</span>" : '';
-
-		echo "<div class='postbox $header_classes' id='$_report_id'>$header_buttons<h3>".self::$reports_info[ $_report_id ][ 'title' ]." $header_tooltip</h3><div class='inside' id='{$_report_id}_inside'>";
+		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} <h3 data-report-id='{$_report_id}'>" . self::$reports_info[ $_report_id ][ 'title' ] . " {$header_tooltip}</h3><div class='inside' id='{$_report_id}_inside'>";
 	}
 
 	public static function report_footer(){
@@ -961,6 +972,10 @@ class wp_slimstat_reports {
 	}
 
 	public static function report_pagination( $_count_page_results = 0, $_count_all_results = 0, $_show_refresh_countdown = false, $_results_per_page = -1 ) {
+		if ( !is_admin() ) {
+			return '';
+		}
+
 		$_results_per_page = ( $_results_per_page < 0 ) ? wp_slimstat::$settings[ 'rows_to_show' ] : $_results_per_page;
 
 		$endpoint = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page);
@@ -993,7 +1008,7 @@ class wp_slimstat_reports {
 		}
 		$pagination .= $pagination_buttons.'</p>';
 
-		echo $pagination;
+		return $pagination;
 	}
 
 	public static function callback_wrapper() {
@@ -1015,7 +1030,7 @@ class wp_slimstat_reports {
 		// Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
 		if ( empty( $_args[ 'columns' ] ) ) {
 			foreach ( $all_results as $a_result ) {
-				echo '<p class="slimstat-tooltip-trigger">';
+				echo '<p>';
 
 				if ( !empty( $a_result[ 'tooltip' ] ) ) {
 					self::inline_help( $a_result[ 'tooltip' ] );
@@ -1066,9 +1081,9 @@ class wp_slimstat_reports {
 				$_args[ 'columns' ] = trim( $_args[ 'columns' ][ 0 ] );
 			}
 
-			self::report_pagination( $count_page_results, count( $all_results ) );
+			echo self::report_pagination( $count_page_results, count( $all_results ) );
 
-			$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
+			$is_expanded = ( is_admin() && wp_slimstat::$settings[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
 			$permalinks_enabled = get_option( 'permalink_structure' );
 			$column_not_calculated = str_replace( '_calculated', '', $_args[ 'columns' ] );
 
@@ -1127,7 +1142,7 @@ class wp_slimstat_reports {
 						if ( $resource_title != $results[ $i ][ $_args[ 'columns' ] ] ) {
 							$row_details = __( 'URL', 'wp-slimstat' ) . ': ' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' );
 						}
-						if ( strpos( $_args[ 'where' ], 'download' ) !== false ) {
+						if ( !empty( $_args[ 'where' ] ) && strpos( $_args[ 'where' ], 'download' ) !== false ) {
 							$clean_extension = pathinfo( strtolower( parse_url( $results[ $i ][ $_args[ 'columns' ] ], PHP_URL_PATH ) ), PATHINFO_EXTENSION );
 							if ( in_array( $clean_extension, array( 'jpg', 'gif', 'png', 'jpeg', 'bmp' ) ) ) {
 								$row_details = '<br><img src="' . $results[ $i ][ $_args[ 'columns' ] ] . '" style="width:100px">';
@@ -1172,7 +1187,9 @@ class wp_slimstat_reports {
 					default:
 				}
 
-				$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $column_not_calculated. ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
+				if ( is_admin() ) {
+					$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $column_not_calculated. ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
+				}
 
 				if ( !empty( $_args['type'] ) && $_args['type'] == 'recent' ) {
 					$row_details = date_i18n(wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $results[ $i ][ 'dt' ], true ) . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details;
@@ -1182,7 +1199,7 @@ class wp_slimstat_reports {
 					$percentage_value = ( ( self::$pageviews > 0 ) ? number_format( sprintf( "%01.2f", ( 100 * $results[ $i ][ 'counthits' ] / self::$pageviews ) ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 );
 					$counthits = number_format( $results[ $i ][ 'counthits' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 
-					if ( $_args[ 'criteria' ] == 'swap' ) {
+					if ( !empty( $_args[ 'criteria' ] ) && $_args[ 'criteria' ] == 'swap' ) {
 						$percentage = ' <span>' . $counthits . '</span>';
 						$row_details = __('Hits','wp-slimstat') . ': ' . ( ( $column_not_calculated != 'outbound_resource' ) ? $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details : '' );
 					}
@@ -1212,14 +1229,21 @@ class wp_slimstat_reports {
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 				}
 
-				if ( !empty( $results[ $i ][ 'ip' ]) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$settings[ 'convert_ip_addresses' ] != 'yes' ) {
+				if ( is_admin() && !empty( $results[ $i ][ 'ip' ]) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$settings[ 'convert_ip_addresses' ] != 'yes' ) {
 					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url( 'ip equals ' . $results[ $i ][ 'ip' ] ) . '">' . $results[ $i ][ 'ip' ] . '</a>' . ( !empty( $results[ $i ][ 'other_ip' ] ) ? ' / ' . $results[ $i ][ 'other_ip' ] : '' ) . '<a title="WHOIS: ' . $results[ $i ][ 'ip' ] . '" class="slimstat-font-location-1 whois" href="' . wp_slimstat::$settings[ 'ip_lookup_service' ] . $results[ $i ][ 'ip' ] . '"></a>';
 				}
 				if ( !empty( $row_details ) ) {
 					$row_details = "<b class='slimstat-tooltip-content$is_expanded'>$row_details</b>";
 				}
 
-				echo "<p class='slimstat-tooltip-trigger'>$element_pre_value$element_value$percentage $row_details</p>";
+				$row_output = "<p class='slimstat-tooltip-trigger'>$element_pre_value$element_value$percentage $row_details</p>";
+
+				// Strip all the filter links, if this information is shown on the frontend
+				if ( !is_admin() ) {
+					$row_output = preg_replace('/<a (.*?)>(.*?)<\/a>/', "\\2", $row_output);
+				}
+
+				echo $row_output;
 			}
 		}
 
@@ -1230,7 +1254,7 @@ class wp_slimstat_reports {
 
 	public static function show_activity_log( $_args = array() ) {
 		// This function is too long, so it was moved to a separate file
-		include_once( WP_PLUGIN_DIR."/wp-slimstat/admin/view/right-now.php" );
+		include( WP_PLUGIN_DIR . '/wp-slimstat/admin/view/right-now.php' );
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			die();
@@ -1295,7 +1319,7 @@ class wp_slimstat_reports {
 					"categoryField": "date",
 					"categoryAxis": {
 						"dashLength": 1,
-						"autoGridCount": <?php echo ( $chart_data[ 'json_count' ] > 31 || wp_slimstat_db::$filters_normalized[ 'utime' ][ 'type' ] == 'interval' ) ? 'true' : 'false' ?>,
+						"autoGridCount": <?php echo ( $chart_data[ 'json_count' ] > 31 || wp_slimstat_db::$filters_normalized[ 'utime' ][ 'type' ] == 'interval' || empty( $_REQUEST[ 'page' ] ) )  ? 'true' : 'false' ?>,
 						"gridCount": <?php echo $chart_data[ 'json_count' ] ?>,
 						"position": "bottom"
 					},
@@ -1368,138 +1392,6 @@ class wp_slimstat_reports {
 <?php endif; ?>
 		</script>
 	<?php
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			die();
-		}
-	}
-
-	public static function show_chart_old( $_args = array() ){
-		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
-	?>
-
-		<div class="chart-placeholder" id="<?php echo 'SlimChartParams_' . $_args[ 'id' ]; ?>" style="height: 300px"></div><div class="chart-legend"></div>
-		<script type="text/javascript">
-			var SlimChartParams_<?php echo $_args[ 'id' ] ?> = {
-				colors: [
-					<?php
-					if ( !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ) {
-						echo '"' . implode( '", "', wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) ) . '"';
-					}
-					else {
-						echo '"#ccc", "#999", "#bbcc44", "#21759b"';
-					}
-					?>
-				],
-				info: {},
-				data: {}
-			};
-
-<?php if ( in_array( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'type' ], array( 'm', 'interval' ) ) ): ?>
-			SlimChartParams_<?php echo $_args[ 'id' ] ?>.info = {
-				'current_year': <?php echo date( 'Y', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ); ?>,
-				'current_month': <?php echo date( 'm', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ); ?>,
-				'text_direction': '<?php echo $GLOBALS[ 'wp_locale' ]->text_direction ?>'
-			};
-<?php endif; ?>
-
-			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data = [];
-
-<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
-			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
-				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php
-					$tmp_serialize = array();
-					$j = 0;
-					foreach( $chart_data[ 'previous' ][ 'first_metric' ] as $a_value ) {
-						$tmp_serialize[] = "[$j, $a_value]";
-						$j++;
-					}
-					echo implode( ',', $tmp_serialize );
-				?>],
-				points: {
-					show: true,
-					symbol: function(ctx, x, y, radius, shadow){
-						ctx.arc(x, y, 2, 0, Math.PI * 2, false)
-					}
-				}
-			});
-
-			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
-				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php
-					$tmp_serialize = array();
-					$j = 0;
-					foreach( $chart_data[ 'previous' ][ 'second_metric' ] as $a_value ) {
-						$tmp_serialize[] = "[$j, $a_value]";
-						$j++;
-					}
-					echo implode( ',', $tmp_serialize );
-				?>],
-				points: {
-					show: true,
-					symbol: function(ctx, x, y, radius, shadow){
-						ctx.arc(x, y, 2, 0, Math.PI * 2, false)
-					}
-				}
-			});
-<?php endif ?>
-
-			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
-				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php
-					$tmp_serialize = array();
-					$j = 0;
-					foreach( $chart_data[ 'current' ][ 'first_metric' ] as $a_value ) {
-						$tmp_serialize[] = "[$j, $a_value]";
-						$j++;
-					}
-					echo implode( ',', $tmp_serialize );
-				?>],
-				points: {
-					show: true,
-					symbol: function(ctx, x, y, radius, shadow){
-						ctx.arc(x, y, 2, 0, Math.PI * 2, false)
-					}
-				}
-			});
-
-			SlimChartParams_<?php echo $_args[ 'id' ] ?>.data.push({
-				label: '<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>',
-				data: [<?php
-					$tmp_serialize = array();
-					$j = 0;
-					foreach( $chart_data[ 'current' ][ 'second_metric' ] as $a_value ) {
-						$tmp_serialize[] = "[$j, $a_value]";
-						$j++;
-					}
-					echo implode( ',', $tmp_serialize );
-				?>],
-				points: {
-					show: true,
-					symbol: function(ctx, x, y, radius, shadow){
-						ctx.arc(x, y, 2, 0, Math.PI * 2, false)
-					}
-				}
-			});
-
-			SlimChartParams_<?php echo $_args[ 'id' ] ?>.ticks = [<?php
-				$tmp_serialize = array();
-				$max_ticks = max( count( $chart_data[ 'current' ][ 'first_metric' ]), count( $chart_data[ 'previous' ][ 'first_metric' ] ) );
-				if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] ) ) {
-					for ( $i = 0; $i < $max_ticks; $i++ ) {
-						$tmp_serialize[] = "[$i,'".date('d/m', wp_slimstat_db::$filters_normalized['utime']['start'] + ( $i * 86400) )."']";
-					}
-				}
-				else{
-					$min_idx = min( array_keys( $chart_data[ 'current' ][ 'first_metric' ] ) );
-					for ($i = $min_idx; $i < $max_ticks+$min_idx; $i++){
-						$tmp_serialize[] = '['.($i-$min_idx).',"'.$i.'"]';
-					}
-				}
-				echo implode( ',', $tmp_serialize );
-			?>];
-		</script> <?php
-
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			die();
 		}
@@ -1938,7 +1830,7 @@ class wp_slimstat_reports {
 			}
 		}
 
-		self::report_pagination( $count_page_results, count( $all_results ) );
+		echo self::report_pagination( $count_page_results, count( $all_results ) );
 		$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'yes' ) ? ' expanded' : '';
 
 		foreach ( $results as $a_result ) {
@@ -2094,6 +1986,10 @@ class wp_slimstat_reports {
 		$request_uri = $_SERVER[ 'REQUEST_URI' ];
 		$request_page = 'slimview1';
 
+		if ( !is_admin() ) {
+			return '';
+		}
+
 		// Are we on the Dashboard?
 		if ( empty( $_REQUEST[ 'page' ] ) ) {
 			$request_uri = str_replace( 'index.php', 'admin.php', $request_uri );
@@ -2201,7 +2097,7 @@ class wp_slimstat_reports {
 	}
 
 	public static function inline_help( $_text = '', $_echo = true ) {
-		if ( !empty( $_text ) ) {
+		if ( is_admin() && !empty( $_text ) ) {
 			$wrapped_text = "<i class='slimstat-tooltip-trigger corner'></i><span class='slimstat-tooltip-content'>$_text</span>";
 		}
 		else {

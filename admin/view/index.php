@@ -7,19 +7,19 @@
 
 	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
 		<fieldset id="slimstat-filters"><?php
-			$filter_name_html = '<select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __( 'Filter', 'wp-slimstat' ) . '</option>';
+			$filter_name_html = '<label for="slimstat-filter-name">Filter by</label><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __( 'Filter', 'wp-slimstat' ) . '</option>';
 			foreach ( wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info ) {
 				$filter_name_html .= "<option value='$a_filter_label'>{$a_filter_info[0]}</option>";
 			}
 			$filter_name_html .= '</select>';
 
-			$filter_operator_html = '<select name="o" id="slimstat-filter-operator">';
+			$filter_operator_html = '<label for="slimstat-filter-operator">Filter operator</label><select name="o" id="slimstat-filter-operator">';
 			foreach ( wp_slimstat_db::$operator_names as $a_operator_label => $a_operator_name ){
 				$filter_operator_html .= "<option value='$a_operator_label'>$a_operator_name</option>";
 			}
 			$filter_operator_html .= '</select>';
 			
-			$filter_value_html = '<input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">';
+			$filter_value_html = '<label for="slimstat-filter-value">Filter value</label><input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">';
 			
 			if (wp_slimstat::$settings['enable_sov'] == 'yes'){
 				echo $filter_value_html.$filter_operator_html.$filter_name_html;
@@ -51,7 +51,7 @@
 					echo ucwords( gmdate( wp_slimstat::$settings[ 'date_format' ], wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) . ' - ' . gmdate( wp_slimstat::$settings[ 'date_format' ], wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] ) );
 				}
 			?></a>
-			<span>
+			<div class="dropdown">
 				<a class="slimstat-filter-link slimstat-date-choice noslimstat" href="<?php echo wp_slimstat_reports::fs_url('hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals 0') ?>"><?php _e('Today','wp-slimstat') ?></a>
 				<a class="slimstat-filter-link slimstat-date-choice noslimstat" href="<?php echo wp_slimstat_reports::fs_url('hour equals 0&&&day equals '.date_i18n('d', mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y'))).'&&&month equals '.date_i18n('m', mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y'))).'&&&year equals '.date_i18n('Y', mktime(0, 0, 0, date_i18n('m'), date_i18n('d')-1, date_i18n('Y'))).'&&&interval equals 0') ?>"><?php _e('Yesterday','wp-slimstat') ?></a>
 				<a class="slimstat-filter-link slimstat-date-choice noslimstat" href="<?php echo wp_slimstat_reports::fs_url('hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals 7&&&interval_direction equals minus') ?>"><?php _e('Last 7 Days','wp-slimstat') ?></a>
@@ -59,6 +59,8 @@
 				<a class="slimstat-filter-link slimstat-date-choice noslimstat" href="<?php echo wp_slimstat_reports::fs_url('hour equals 0&&&day equals '.date_i18n('d').'&&&month equals '.date_i18n('m').'&&&year equals '.date_i18n('Y').'&&&interval equals 90&&&interval_direction equals minus') ?>"><?php _e('Last 90 Days','wp-slimstat') ?></a>
 				<a class="slimstat-filter-link slimstat-date-choice noslimstat" href="<?php echo wp_slimstat_reports::fs_url('hour equals 0&&&day equals 0&&&month equals 0&&&year equals '.date_i18n('Y').'&&&interval equals 0') ?>"><?php _e('This Year So Far','wp-slimstat') ?></a>
 				<strong><?php _e('Date Range','wp-slimstat') ?></strong>
+
+				<label for="slimstat-filter-day">Day</label>
 				<select name="day" id="slimstat-filter-day">
 					<option value="0"><?php _e('Day','wp-slimstat') ?></option><?php
 					for($i=1;$i<=31;$i++){
@@ -68,7 +70,9 @@
 							echo "<option>$i</option>";
 					} 
 					?>
-				</select> 
+				</select>
+
+				<label for="slimstat-filter-month">Month</label>
 				<select name="month" id="slimstat-filter-month">
 					<option value="0"><?php _e('Month','wp-slimstat') ?></option><?php
 					for($i=1;$i<=12;$i++){
@@ -79,19 +83,36 @@
 					} 
 					?>
 				</select>
-				<input type="text" name="year" id="slimstat-filter-year" placeholder="<?php _e('Year','wp-slimstat') ?>" class="empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['year'])?wp_slimstat_db::$filters_normalized['date']['year']:'' ?>"> @
+
+				<label for="slimstat-filter-year">Year</label>
+				<input type="text" name="year" id="slimstat-filter-year" placeholder="<?php _e('Year','wp-slimstat') ?>" class="empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['year'])?wp_slimstat_db::$filters_normalized['date']['year']:'' ?>">
+
+				@
+				<label for="slimstat-filter-hour">Hour</label>
 				<input type="text" name="hour" id="slimstat-filter-hour" placeholder="<?php _e('Hour','wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['hour'])?wp_slimstat_db::$filters_normalized['date']['hour']:'' ?>">:
+
+				<label for="slimstat-filter-minute">Minute</label>
 				<input type="text" name="minute" id="slimstat-filter-minute" placeholder="<?php _e('Min','wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['minute'])?wp_slimstat_db::$filters_normalized['date']['minute']:'' ?>">
 				<input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
 				<br/>
+
+				<label for="slimstat-filter-interval_direction">Direction</label>
 				<select name="interval_direction" class="short" id="slimstat-filter-interval_direction">
 					<option value="minus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], 'minus') ?>>-</option>
 					<option value="plus" <?php selected(wp_slimstat_db::$filters_normalized['date']['interval_direction'], 'plus') ?>>+</option>
 				</select>
+
+				<label for="slimstat-filter-interval">Days in interval</label>
 				<input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('days', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval'])?wp_slimstat_db::$filters_normalized['date']['interval']:'' ?>">,
+
+				<label for="slimstat-filter-interval_hours">Hours in interval</label>
 				<input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('hours', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval_hours'])?wp_slimstat_db::$filters_normalized['date']['interval_hours']:'' ?>">:
+
+				<label for="slimstat-filter-interval_minutes">Minutes in interval</label>
 				<input type="text" name="interval_minutes" id="slimstat-filter-interval_minutes" placeholder="<?php _e('mins', 'wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['interval_minutes'])?wp_slimstat_db::$filters_normalized['date']['interval_minutes']:'' ?>">
+
 				<input type="submit" value="<?php _e('Apply','wp-slimstat') ?>" class="button-secondary noslimstat">
+
 				<?php 
 				if (!empty(wp_slimstat_db::$filters_normalized['date']['day']) ||
 							!(empty(wp_slimstat_db::$filters_normalized['date']['month']) || wp_slimstat_db::$filters_normalized['date']['month'] == date_i18n('n')) || 
@@ -101,7 +122,7 @@
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval_minutes'])): ?>
 				<a class="slimstat-filter-link button-secondary noslimstat" href="<?php echo wp_slimstat_reports::fs_url('minute equals 0&&&hour equals 0&&&day equals 0&&&month equals '.date_i18n('n').'&&&year equals 0&&&interval_direction equals plus&&&interval equals 0&&&interval_hours equals 0&&&interval_minutes equals 0') ?>"><?php _e('Reset Filters','wp-slimstat') ?></a>
 				<?php endif ?>
-			</span>
+			</div>
 		</fieldset><!-- .slimstat-date-filters -->
 
 		<?php foreach(wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details): ?>

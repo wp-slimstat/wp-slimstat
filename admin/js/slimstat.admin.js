@@ -3,8 +3,7 @@ if ( typeof SlimStatAdminParams == 'undefined' ) {
 		refresh_interval: 0,
 		expand_details: 'no',
 		datepicker_image: '',
-		text_direction: '',
-		use_slimscroll: 'yes'
+		text_direction: ''
 	};
 }
 
@@ -162,7 +161,7 @@ jQuery(function(){
 	// Show/Hide Date Dropdown Filters
 	jQuery('#slimstat-date-filters a').click(function(e){
 		e.preventDefault();
-		jQuery('#slimstat-date-filters span').slideToggle(300);
+		jQuery('#slimstat-date-filters .dropdown').slideToggle(300);
 		jQuery(this).toggleClass('open');
 	}).children().click(function(){
 	  return false;
@@ -237,10 +236,8 @@ jQuery(function(){
 		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) };
 		SlimStatAdmin.refresh_report(report_id, data);
 		
-		if (SlimStatAdminParams.use_slimscroll == 'yes'){
-			jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
-		}
-		
+		jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
+
 		if (typeof refresh_handle != 'undefined' && !jQuery('[name^="fs\[is_past\]"]').length){
 			window.clearTimeout(refresh_handle);
 			SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
@@ -292,30 +289,30 @@ jQuery(function(){
 	});
 
 	// SlimScroll init
-	if (SlimStatAdminParams.use_slimscroll == 'yes'){
-		jQuery('[id^=slim_]:not(.tall) .inside').slimScroll({
-			distance: '2px',
-			opacity: '0.15',
-			size: '5px',
-			wheelStep: 10
-		});
-		jQuery('[id^=slim_].tall .inside').slimScroll({
-			distance: '2px',
-			height: '630px',
-			opacity: '0.15',
-			size: '5px',
-			wheelStep: 10
-		});
-	}
+	jQuery('[id^=slim_]:not(.tall) .inside').slimScroll({
+		distance: '2px',
+		opacity: '0.15',
+		size: '5px',
+		wheelStep: 10
+	});
+	jQuery('[id^=slim_].tall .inside').slimScroll({
+		distance: '2px',
+		height: '630px',
+		opacity: '0.15',
+		size: '5px',
+		wheelStep: 10
+	});
 
 	// ToolTips
-	jQuery(document).on('mouseover', '.slimstat-tooltip-trigger', function(e){
-		var tooltip_content = jQuery( this ).next( '.slimstat-tooltip-content:not(.expanded)' );
-		var tooltip_relationship = 'sibling';
+	jQuery( document ).on( 'mouseover', '.slimstat-tooltip-trigger', function( e ) {
+		if ( typeof jQuery( this ).attr( 'data-hasqtip' ) != 'undefined' ) {
+			return true;
+		}
 
-		if ( tooltip_content.length == 0 ) {
-			tooltip_content = jQuery( this ).find( '.slimstat-tooltip-content:not(.expanded)' );
-			tooltip_relationship = 'child';
+		tooltip_content = jQuery( this ).next( '.slimstat-tooltip-content:not(.expanded)' );
+
+		if ( typeof tooltip_content == 'undefined' || tooltip_content.length  == 0 ) {
+			tooltip_content = jQuery( this ).attr( 'title' );
 		}
 
 		if ( tooltip_content.length ) {
@@ -329,14 +326,14 @@ jQuery(function(){
 					ready: true
 				},
 				hide: {
-	                delay: ( tooltip_relationship == 'child' ) ? 250 : 100,
+	                delay: 250,
 	                fixed: true
 	            },
 				position: {
-					my: 'top right',  // Position my top left...
+					my: 'bottom right',  // Position my top left...
 	        		at: 'top left',
 					adjust: {
-						x: ( tooltip_relationship == 'child' ) ? 0 : -15
+						x: 5
 					},
 					viewport: jQuery(window)
 				},
