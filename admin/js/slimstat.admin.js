@@ -309,10 +309,13 @@ jQuery(function(){
 			return true;
 		}
 
-		tooltip_content = jQuery( this ).next( '.slimstat-tooltip-content:not(.expanded)' );
+		tooltip_content = jQuery( this ).find( '.slimstat-tooltip-content:not(.expanded)' );
 
 		if ( typeof tooltip_content == 'undefined' || tooltip_content.length  == 0 ) {
 			tooltip_content = jQuery( this ).attr( 'title' );
+		}
+		else {
+			tooltip_content = tooltip_content[ 0 ].innerHTML;
 		}
 
 		if ( tooltip_content.length ) {
