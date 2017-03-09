@@ -397,104 +397,97 @@ var SlimStat = {
 }
 
 SlimStat.add_event( window, "load", function() {
-	if ( "undefined" == typeof SlimStatParams.disable_outbound_tracking ) {
-		all_links = document.getElementsByTagName( "a" );
-		var extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
-		var to_ignore = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_ignore && SlimStatParams.outbound_classes_rel_href_to_ignore ) ? SlimStatParams.outbound_classes_rel_href_to_ignore.split( ',' ) : [];
-		var to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
+	all_links = document.getElementsByTagName( "a" );
+	var extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
+	var to_ignore = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_ignore && SlimStatParams.outbound_classes_rel_href_to_ignore ) ? SlimStatParams.outbound_classes_rel_href_to_ignore.split( ',' ) : [];
+	var to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
 
-		for (var i = 0; i < all_links.length; i++) {
-			var cur_link = all_links[i];
+	for (var i = 0; i < all_links.length; i++) {
+		var cur_link = all_links[i];
 
-			// Types
-			// 0: external
-			// 1: download
-			// 2: internal
+		// Types
+		// 0: external
+		// 1: download
+		// 2: internal
 
-			cur_link.setAttribute( "data-slimstat-clicked", "false" );
-			cur_link.setAttribute( "data-slimstat-type", ( cur_link.href && ( cur_link.hostname == location.hostname || cur_link.href.indexOf('://') == -1 ) ) ? 2 : 0 );
-			cur_link.setAttribute( "data-slimstat-tracking", "true" );
-			cur_link.setAttribute( "data-slimstat-callback", "true" );
+		cur_link.setAttribute( "data-slimstat-clicked", "false" );
+		cur_link.setAttribute( "data-slimstat-type", ( cur_link.href && ( cur_link.hostname == location.hostname || cur_link.href.indexOf('://') == -1 ) ) ? 2 : 0 );
+		cur_link.setAttribute( "data-slimstat-tracking", "true" );
+		cur_link.setAttribute( "data-slimstat-callback", "true" );
 
-			// Track other internal links?
-			if ( 2 == cur_link.getAttribute( "data-slimstat-type" ) && ( "undefined" == typeof SlimStatParams.track_internal_links || "false" == SlimStatParams.track_internal_links ) ) {
+		// Do not invoke the callback or don't track links with given classes
+		if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && ( to_ignore.length > 0 || to_not_track.length > 0 ) ) {
+			classes_current_link = ( "undefined" != typeof cur_link.className && cur_link.className ) ? cur_link.className.split( " " ) : [];
+
+			for ( var cl = 0; cl < classes_current_link.length; cl++ ) {
+				if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_ignore ) ) {
+					cur_link.setAttribute( "data-slimstat-callback", "false" );
+				}
+				if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_not_track ) ) {
+					cur_link.setAttribute( "data-slimstat-tracking", "false" );
+					break;
+				}
+			}
+		}
+
+		// Do not invoke the callback on links with given rel
+		if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && "undefined" != typeof cur_link.attributes.rel && cur_link.attributes.rel.value ) {
+			if ( SlimStat.in_array_substring( cur_link.attributes.rel.value, to_ignore ) ) {
+				cur_link.setAttribute( "data-slimstat-callback", "false" );
+			}
+			if ( SlimStat.in_array_substring( cur_link.attributes.rel.value, to_not_track ) ) {
 				cur_link.setAttribute( "data-slimstat-tracking", "false" );
 			}
-
-			// Do not invoke the callback or don't track links with given classes
-			if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && ( to_ignore.length > 0 || to_not_track.length > 0 ) ) {
-				classes_current_link = ( "undefined" != typeof cur_link.className && cur_link.className ) ? cur_link.className.split( " " ) : [];
-
-				for ( var cl = 0; cl < classes_current_link.length; cl++ ) {
-					if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_ignore ) ) {
-						cur_link.setAttribute( "data-slimstat-callback", "false" );
-					}
-					if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_not_track ) ) {
-						cur_link.setAttribute( "data-slimstat-tracking", "false" );
-						break;
-					}
-				}
-			}
-
-			// Do not invoke the callback on links with given rel
-			if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && "undefined" != typeof cur_link.attributes.rel && cur_link.attributes.rel.value ) {
-				if ( SlimStat.in_array_substring( cur_link.attributes.rel.value, to_ignore ) ) {
-					cur_link.setAttribute( "data-slimstat-callback", "false" );
-				}
-				if ( SlimStat.in_array_substring( cur_link.attributes.rel.value, to_not_track ) ) {
-					cur_link.setAttribute( "data-slimstat-tracking", "false" );
-				}
-			}
-
-			// Do not invoke the callback on links with given href
-			if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && "undefined" != typeof cur_link.href && cur_link.href ) {
-				if ( SlimStat.in_array_substring( cur_link.href, to_ignore ) ) {
-					cur_link.setAttribute( "data-slimstat-callback", "false" );
-				}
-				if ( SlimStat.in_array_substring( cur_link.href, to_not_track ) ) {
-					cur_link.setAttribute( "data-slimstat-tracking", "false" );
-				}
-			}
-
-			// Track downloads (internal)
-			extension_current_link = cur_link.pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
-			if ( extensions_to_track.length > 0 && 2 == cur_link.getAttribute( "data-slimstat-type" ) && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
-				cur_link.setAttribute( "data-slimstat-tracking", "true" );
-				cur_link.setAttribute( "data-slimstat-type", 1 );
-			}
-	
-			// Do not invoke the callback on links that open a new window
-			if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && cur_link.target && !cur_link.target.match( /^_(self|parent|top)$/i ) ) {
-				cur_link.setAttribute( "data-slimstat-callback", "false" );
-			}
-
-			// No callback if this link is not being tracked
-			if ( "false" == cur_link.getAttribute( "data-slimstat-tracking" ) ) {
-				cur_link.setAttribute( "data-slimstat-callback", "false" );
-			}
-
-			SlimStat.add_event( cur_link, "click", function( e ) {
-				if ( "true" == this.getAttribute( "data-slimstat-tracking" ) && "false" == this.getAttribute( "data-slimstat-clicked" ) ) {
-					if ( "true" == this.getAttribute( "data-slimstat-callback" ) ) {
-						this.setAttribute( "data-slimstat-clicked", "true" );
-
-						(function( node, event_object ) {
-							SlimStat.ss_track( event_object, node.getAttribute( "data-slimstat-type" ), "", function() {
-								SlimStat.event_fire( node, event_object );
-							}, ( node.getAttribute( "data-slimstat-callback" ) == "true" ) );
-						})( this, e );
-
-						return false;
-					}
-					else{
-						SlimStat.ss_track( e, this.getAttribute( "data-slimstat-type" ), "", function() {}, ( this.getAttribute( "data-slimstat-callback" ) == "true" ) );
-					}
-				}
-				else if ( "true" == this.getAttribute( "data-slimstat-clicked" ) ) {
-					this.setAttribute( "data-slimstat-clicked", "false" );
-				}
-			});
 		}
+
+		// Do not invoke the callback on links with given href
+		if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && "undefined" != typeof cur_link.href && cur_link.href ) {
+			if ( SlimStat.in_array_substring( cur_link.href, to_ignore ) ) {
+				cur_link.setAttribute( "data-slimstat-callback", "false" );
+			}
+			if ( SlimStat.in_array_substring( cur_link.href, to_not_track ) ) {
+				cur_link.setAttribute( "data-slimstat-tracking", "false" );
+			}
+		}
+
+		// Downloadable extensions (internal)
+		extension_current_link = cur_link.pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
+		if ( extensions_to_track.length > 0 && 2 == cur_link.getAttribute( "data-slimstat-type" ) && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
+			cur_link.setAttribute( "data-slimstat-tracking", "true" );
+			cur_link.setAttribute( "data-slimstat-type", 1 );
+		}
+
+		// Do not invoke the callback on links that open a new window
+		if ( "true" == cur_link.getAttribute( "data-slimstat-tracking" ) && cur_link.target && !cur_link.target.match( /^_(self|parent|top)$/i ) ) {
+			cur_link.setAttribute( "data-slimstat-callback", "false" );
+		}
+
+		// No callback if this link is not being tracked
+		if ( "false" == cur_link.getAttribute( "data-slimstat-tracking" ) ) {
+			cur_link.setAttribute( "data-slimstat-callback", "false" );
+		}
+
+		SlimStat.add_event( cur_link, "click", function( e ) {
+			if ( "true" == this.getAttribute( "data-slimstat-tracking" ) && "false" == this.getAttribute( "data-slimstat-clicked" ) ) {
+				if ( "true" == this.getAttribute( "data-slimstat-callback" ) ) {
+					this.setAttribute( "data-slimstat-clicked", "true" );
+
+					(function( node, event_object ) {
+						SlimStat.ss_track( event_object, node.getAttribute( "data-slimstat-type" ), "", function() {
+							SlimStat.event_fire( node, event_object );
+						}, ( node.getAttribute( "data-slimstat-callback" ) == "true" ) );
+					})( this, e );
+
+					return false;
+				}
+				else{
+					SlimStat.ss_track( e, this.getAttribute( "data-slimstat-type" ), "", function() {}, ( this.getAttribute( "data-slimstat-callback" ) == "true" ) );
+				}
+			}
+			else if ( "true" == this.getAttribute( "data-slimstat-clicked" ) ) {
+				this.setAttribute( "data-slimstat-clicked", "false" );
+			}
+		});
 	}
 } );
 

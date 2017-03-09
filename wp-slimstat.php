@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.1
+Version: 4.6.2
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.1';
+	public static $version = '4.6.2';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -1306,6 +1306,7 @@ class wp_slimstat {
 
 							case 'platform':
 								$output[ $result_idx ][ $a_column ] .= __( $a_result[ $a_column ], 'wp-slimstat' );
+								break;
 
 							case 'post_link':
 								$post_id = url_to_postid( $a_result[ 'resource' ] );
@@ -1355,12 +1356,14 @@ class wp_slimstat {
 		if ( $_turn_on && !empty( self::$date_i18n_filters ) && is_array( self::$date_i18n_filters ) ) {
 			foreach ( self::$date_i18n_filters as $i18n_priority => $i18n_func_list ) {
 				foreach ( $i18n_func_list as $func_name => $func_args ) {
-					add_filter( 'date_i8n', $func_args[ 'function' ], $i18n_priority, $func_args[ 'accepted_args' ] );
+					if ( !empty( $func_args[ 'function' ] ) && is_string( $func_args[ 'function' ] ) ) {
+						add_filter( 'date_i8n', $func_args[ 'function' ], $i18n_priority, intval( $func_args[ 'accepted_args' ] ) );
+					}
 				}
 			}
 		}
-		else if ( !empty( $GLOBALS[ 'wp_filter' ][ 'date_i18n' ] ) ) {
-			self::$date_i18n_filters = $GLOBALS[ 'wp_filter' ][ 'date_i18n' ];
+		else if ( !empty( $GLOBALS[ 'wp_filter' ][ 'date_i18n' ][ 'callbacks' ] ) && is_array( $GLOBALS[ 'wp_filter' ][ 'date_i18n' ][ 'callbacks' ] ) ) {
+			self::$date_i18n_filters = $GLOBALS[ 'wp_filter' ][ 'date_i18n' ][ 'callbacks' ];
 			remove_all_filters( 'date_i18n' );
 		}
 	}
@@ -1390,8 +1393,6 @@ class wp_slimstat {
 			'auto_purge_delete' => 'yes',
 
 			// Tracker
-			'enable_outbound_tracking' => 'yes',
-			'track_internal_links' => 'no',
 			'ignore_outbound_classes_rel_href' => '',
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'track_same_domain_referers' => 'no',
@@ -1493,12 +1494,6 @@ class wp_slimstat {
 			'ajaxurl' => admin_url( 'admin-ajax.php' ),
 		);
 
-		if ( self::$settings[ 'enable_outbound_tracking' ] == 'no' ) {
-			$params[ 'disable_outbound_tracking' ] = 'true';
-		}
-		if ( self::$settings[ 'track_internal_links' ] == 'yes' ) {
-			$params[ 'track_internal_links' ] = 'true';
-		}
 		if ( !empty( self::$settings[ 'extensions_to_track' ] ) ) {
 			$params[ 'extensions_to_track' ] = str_replace( ' ', '', self::$settings[ 'extensions_to_track' ] );
 		}
@@ -1616,7 +1611,15 @@ class slimstat_widget extends WP_Widget {
 	 */
 	public function widget( $args, $instance ) {
 		extract( $instance );
-		echo do_shortcode( "[slimstat f='widget' w='{$slimstat_widget_id}']{$slimstat_widget_filters}[/slimstat]" );
+
+		$slimstat_widget_filters = empty( $slimstat_widget_filters ) ? '' : $slimstat_widget_filters;
+
+		if ( !empty( $slimstat_widget_id ) ) {
+			echo do_shortcode( "[slimstat f='widget' w='{$slimstat_widget_id}']{$slimstat_widget_filters}[/slimstat]" );
+		}
+		else {
+			echo '';
+		}
 	}
 
 	/**

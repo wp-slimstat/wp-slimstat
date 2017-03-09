@@ -73,7 +73,7 @@ else {
 		$date_time = "<i class='spaced slimstat-font-clock' title='".__( 'Date and Time', 'wp-slimstat' )."'></i> " . date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $results[ $i ][ 'dt' ], true );
 
 		// Print visit header?
-		if ( $i == 0 || $results[ $i - 1 ][ 'visit_id' ] != $results[ $i ][ 'visit_id' ] || ( $results[ $i ][ 'visit_id' ] == 0 && ( $results[ $i - 1 ][ 'ip' ] != $results[ $i ][ 'ip' ] || $results[ $i - 1 ][ 'browser' ] != $results[ $i ][ 'browser' ] || $results[ $i - 1 ][ 'platform' ] != $results[ $i ][ 'platform' ] || $results[ $i - 1 ][ 'username' ] != $results[ $i ][ 'username' ] ) ) ) {
+		if ( $i == 0 || $results[ $i - 1 ][ 'visit_id' ] != $results[ $i ][ 'visit_id' ] || $results[ $i - 1 ][ 'ip' ] != $results[ $i ][ 'ip' ] || $results[ $i - 1 ][ 'browser' ] != $results[ $i ][ 'browser' ] || $results[ $i - 1 ][ 'platform' ] != $results[ $i ][ 'platform' ] || $results[ $i - 1 ][ 'username' ] != $results[ $i ][ 'username' ] ) {
 
 			// Color-coded headers
 			$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(($results[$i]['browser_type'] != 1)?' is-direct':'');
@@ -213,7 +213,7 @@ else {
 		$notes = '';
 		if ( is_admin() && !empty( $results[ $i ][ 'notes' ] ) ) {
 			$notes = str_replace(array(';', ':'), array('<br/>', ': '), $results[$i]['notes']);
-			$notes = "<i class='slimstat-font-edit slimstat-tooltip-trigger'></i><b class='slimstat-tooltip-content'>{$notes}</b>";
+			$notes = "<i class='slimstat-font-edit slimstat-tooltip-trigger'><b class='slimstat-tooltip-content'>{$notes}</b></i>";
 		}
 
 		// Avoid XSS attacks through the referer URL

@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.1
+Stable tag: 4.6.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -68,6 +68,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.2 =
+* [Update] Removed options to enable or disable tracking of "internal" and outbound links, as they were confusing many users, based on the feedback we received. Now all links are tracked, regardless of their type. This will increase the size of the "events" table, however it will also make your reports more accurate, and track data needed to generate heatmaps and other metrics.
+* [Fix] The Activity Log will now group page views not just by session, but also by other events: change of IP, user logged out, etc (thank you, [catmaniax](https://wordpress.org/support/topic/cant-tell-which-user-is-which/)).
+* [Fix] The Browscap Library could not be installed if the FS_METHOD constant was not set to 'direct' in wp-config.php (thank you [computershowtopro](https://wordpress.org/support/topic/browscap-dp-php-is-present-but-not-seen-by-slimstat)).
+* [Fix] A PHP notice was being displayed if the widget_id for the new Slimstat Widget element was not set.
+* [Fix] In order to calculate its internal timestamps without any conflicts with other plugins, Slimstat was supposed to temporarily deactivate any WordPress filters on the function `date_i18n`. It turns out something had changed in the way WordPress was structuring that information, with the side effect that Slimstat was not able to restore those filters (thank you, [catmaniax](https://wordpress.org/support/topic/slimstat-month-name-issue)).
+
 = 4.6.1 =
 * [New] You spoke, we listened. Many users have been asking us over time to add a feature to display metrics and reports on their front-facing website. Although Slimstat has been supporting shortcodes for many years, they felt like they needed more than that basic feature. We are now extending the shortcode syntax to allow users to place widgets on their websites in just a few steps. Please [refer to our knowledge base](https://slimstat.freshdesk.com/support/solutions/folders/5000259023) to learn more about this new feature, or feel free to contact us if you need help implementing it on your website.
 * [New] Hovering a report's title will reveal its unique ID, which you can [use in your shortcode](https://slimstat.freshdesk.com/support/solutions/folders/5000259023) to display it on your website.

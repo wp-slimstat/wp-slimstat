@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "We received many positive comments regarding the new chart interface we released last week. Please keep those messages coming, as they help us understand what functionality to plan for future releases. This update introduces a feature that many of you have been requesting for a while: the ability to display our reports as widgets and shortcodes on your website. You can now add any report, including the charts and the world map, to any page on your website (not just sidebars). Please <strong><a href='https://slimstat.freshdesk.com/solution/articles/5000631833-what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators' target='_blank'>take a look at our knowledge base</a></strong> to learn more about the new parameters added to our shortcode. Or simply head over to your Appearance > Widgets admin screen and add the Slimstat widget to any of your sidebars. Note that widget styles will depend on how your theme defines certain elements (headings, paragraphs, spans, etc). Also, keep in mind that this feature is still experimental: please do not hesitate to contact us if you have any questions or to let us know about a bug you might have found.";
+		self::$admin_notice = "Have you tested our new widget/shortcode feature yet? Version 4.6.1 introduced the ability to display your reports as widgets and shortcodes on your website. You can now add any report (including the charts and the world map!) to any page on your website. Please <strong><a href='https://slimstat.freshdesk.com/solution/articles/5000631833-what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators' target='_blank'>take a look at our knowledge base</a></strong> to learn more about the new syntax. Or simply head over to your Appearance > Widgets admin screen and add the Slimstat widget to any of your sidebars. Please keep in mind that this feature is still experimental, and do not hesitate to contact us if you have any questions or to let us know about a bug you might have found.";
 
 		// self::$admin_notice = "A few releases ago, Slimstat contained a bug that would trigger a white screen of death under certain circumstances. We have already apologized for the inconvenience this might have caused to our users, and although we promptly released an update to patch the bug, we still receive requests (almost a month later) from users who don't know how to fix the problem. We understand your frustration when this happens. With a small team, we try our best to test various scenarios before releasing a new update. However, occasionally, something sneaks through our tests unnoticed. For this reason, we would like to renew our invitation to join our list of beta testers, and help us avoid this kind of bugaboos in the future. Please contact our <a href='http://support.wp-slimstat.com/' target='_blank'>support team</a> today if you would like to help. P.S.: how do you like the new charts?";
 
@@ -656,18 +656,6 @@ class wp_slimstat_admin {
 			wp_slimstat::$settings[ 'last_tracker_notice' ] = array();
 		}
 		// --- END: Updates for version 4.4.5 ---
-
-		// --- Updates for version 4.5 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.5', '<' ) ) {
-			// Download the new Browscap data structure, if the old one was installed
-			slim_browser::update_browscap_database( true );
-
-			// Clean up after yourself, son!
-			if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db.php' ) ) {
-				@unlink( wp_slimstat::$upload_dir . '/browscap-db.php' );
-			}
-		}
-		// --- END: Updates for version 4.5 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
