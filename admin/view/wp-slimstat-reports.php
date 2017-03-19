@@ -1983,7 +1983,7 @@ class wp_slimstat_reports {
 	public static function fs_url( $_filters = '' ) {
 
 		// Allow only legitimate requests
-		$request_uri = $_SERVER[ 'REQUEST_URI' ];
+		$request_uri =  htmlspecialchars( $_SERVER[ 'REQUEST_URI' ], ENT_QUOTES, 'UTF-8' );
 		$request_page = 'slimview1';
 
 		if ( !is_admin() ) {

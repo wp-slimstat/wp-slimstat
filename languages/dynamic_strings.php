@@ -90,6 +90,7 @@ __('director','wp-slimstat'), // Macromedia Director
 __('flash','wp-slimstat'), // Adobe Flash Player
 __('mediaplayer','wp-slimstat'), // Microsoft Media Player
 __('quicktime','wp-slimstat'), // QuickTime
+__('pdfviewer','wp-slimstat'), // PDF Viewer (Acrobat or built-in)
 __('real','wp-slimstat'), // Real Player
 __('silverlight','wp-slimstat'), // Microsoft Silverlight
 

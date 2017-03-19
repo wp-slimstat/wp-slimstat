@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.2
+Stable tag: 4.6.3
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -68,6 +68,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.3 =
+* [Note] We would like to thank all the people who stepped forward to offer their help and test this new version before it was officially released. We worked with our users to identify the many different scenarios related to lightbox libraries, jQuery animations and so forth. It was a great team effort! You guys are terrific!
+* [Update] Say goodbye to incompatibility issues with lightbox libraries, jQuery drop down menus, fancy animations and the like. We worked on the tracking algorithm to make it less intrusive, and to FINALLY play nice with any other event handlers attached to your DOM elements. As an added bonus, the new tracker is performing from 10 to 30 percent faster in our tests. Not bad, huh?
+* [Update] If you are using the CDN service offered by our partners at jsDelivr, the tracker will now reference your current version of Slimstat, not the "trunk". This will avoid issues in the future to those who don't want to upgrade to the latest version right away (thank you, [mth75](https://wordpress.org/support/topic/new-version-56/#post-8896049)).
+* [Update] The tracker is no longer looking for Shockwave Director or Real Player when detecting browser plugins (is anyone still using them?). On the other side, it is now detecting the Java Virtual Machine and any PDF viewer (either Adobe plugin or built into the browser).
+* [Update] One of our users thought that all the inline data-slimstat attributes appended by our tracker to all his links looked ugly and might affect performance (no, they do not). That struck a cord in our perfectionist developer, and he decided to rewrite that functionality to minimize the intrusiveness of our algorithm.
+* [Fix] Apparently the XSS vulnerability discovered by the Mitre Corporation had not been completely fixed in version 4.6, according to them. Now they confirmed that the issue has been resolved.
+
 = 4.6.2 =
 * [Update] Removed options to enable or disable tracking of "internal" and outbound links, as they were confusing many users, based on the feedback we received. Now all links are tracked, regardless of their type. This will increase the size of the "events" table, however it will also make your reports more accurate, and track data needed to generate heatmaps and other metrics.
 * [Fix] The Activity Log will now group page views not just by session, but also by other events: change of IP, user logged out, etc (thank you, [catmaniax](https://wordpress.org/support/topic/cant-tell-which-user-is-which/)).

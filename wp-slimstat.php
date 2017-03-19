@@ -3,7 +3,7 @@
 Plugin Name: Slim Stat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.2
+Version: 4.6.3
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.2';
+	public static $version = '4.6.3';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -1393,13 +1393,12 @@ class wp_slimstat {
 			'auto_purge_delete' => 'yes',
 
 			// Tracker
-			'ignore_outbound_classes_rel_href' => '',
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
+			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'track_same_domain_referers' => 'no',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
 			'enable_cdn' => 'yes',
-			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'external_domains' => '',
 
 			// Filters
@@ -1483,7 +1482,7 @@ class wp_slimstat {
 	public static function wp_slimstat_enqueue_tracking_script() {
 		if ( self::$settings[ 'enable_cdn' ] == 'yes' ) {
 			$schema = is_ssl() ? 'https' : 'http';
-			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js', array(), null, true );
+			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
 		}
 		else{
 			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), array(), null, true);
@@ -1496,9 +1495,6 @@ class wp_slimstat {
 
 		if ( !empty( self::$settings[ 'extensions_to_track' ] ) ) {
 			$params[ 'extensions_to_track' ] = str_replace( ' ', '', self::$settings[ 'extensions_to_track' ] );
-		}
-		if ( !empty( self::$settings[ 'ignore_outbound_classes_rel_href' ] ) ) {
-			$params[ 'outbound_classes_rel_href_to_ignore' ] = str_replace( ' ', '', self::$settings[ 'ignore_outbound_classes_rel_href' ] );
 		}
 		if ( !empty( self::$settings[ 'do_not_track_outbound_classes_rel_href' ] ) ) {
 			$params[ 'outbound_classes_rel_href_to_not_track' ] = str_replace( ' ', '', self::$settings[ 'do_not_track_outbound_classes_rel_href' ] );
