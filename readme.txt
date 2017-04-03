@@ -1,11 +1,11 @@
-=== Slim Stat Analytics ===
+=== Slimstat Analytics ===
 Contributors: coolmann
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.3
+Stable tag: 4.6.4
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -68,6 +68,12 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.4 =
+* [Update] When the tracker was set to work in "Client mode", the Javascript code was being added to those pages that matched one of the blacklists, even though the subsequent request would have been ignored. By avoiding this, we were able to optimize our code and improve the overall performance.
+* [Fix] A conflict with a Google Maps Javascript API call was causing other scripts to not work as expected (thank you, Fulp2121).
+* [Fix] A bug was preventing the tracker from detecting certain mobile devices as expected in "Client Mode".
+* [Fix] Empty search terms were being counted in the Top/Recent Search Terms reports (thank you, Per).
+
 = 4.6.3 =
 * [Note] We would like to thank all the people who stepped forward to offer their help and test this new version before it was officially released. We worked with our users to identify the many different scenarios related to lightbox libraries, jQuery animations and so forth. It was a great team effort! You guys are terrific!
 * [Update] Say goodbye to incompatibility issues with lightbox libraries, jQuery drop down menus, fancy animations and the like. We worked on the tracking algorithm to make it less intrusive, and to FINALLY play nice with any other event handlers attached to your DOM elements. As an added bonus, the new tracker is performing from 10 to 30 percent faster in our tests. Not bad, huh?

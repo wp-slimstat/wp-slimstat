@@ -134,7 +134,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'searchterms',
-					'where' => 'searchterms <> "_"',
+					'where' => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
 					'more_columns' => 'referer, resource',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
@@ -187,7 +187,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'searchterms',
-					'where' => 'searchterms <> "_"',
+					'where' => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
@@ -250,7 +250,7 @@ class wp_slimstat_reports {
 					'chart_data' => array(
 						'data1' => 'COUNT( searchterms )',
 						'data2' => 'COUNT( DISTINCT searchterms )',
-						'where' => 'searchterms <> "_"'
+						'where' => 'searchterms <> "_" AND searchterms IS NOT NULL AND searchterms <> ""'
 					),
 					'chart_labels' => array(
 						__( 'Search Terms', 'wp-slimstat' ),
@@ -551,7 +551,7 @@ class wp_slimstat_reports {
 					'columns' => 'REPLACE( SUBSTRING_INDEX( SUBSTRING_INDEX( SUBSTRING_INDEX( referer, "://", -1 ), "/", 1 ), ".", -5 ), "www.", "" )',
 					'as_column' => 'referer_calculated',
 					'filter_op' => 'contains',
-					'where' => 'searchterms IS NOT NULL AND referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
+					'where' => 'searchterms IS NOT NULL searchterms <> "" AND searchterms <> "_" AND referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
@@ -642,7 +642,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'searchterms',
-					'where' => 'content_type LIKE "%search%"',
+					'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
@@ -718,7 +718,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'searchterms',
-					'where' => 'content_type LIKE "%search%"',
+					'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal', 'hidden' ),
@@ -1926,7 +1926,7 @@ class wp_slimstat_reports {
 		}
 	}
 
-	public static function get_search_terms_info($_searchterms = '', $_referer = '', $_serp_only = false){
+	public static function get_search_terms_info( $_searchterms = '', $_referer = '', $_serp_only = false ) {
 		$query_details = '';
 		$search_terms_info = '';
 		parse_str( $_referer, $query_parse_str );

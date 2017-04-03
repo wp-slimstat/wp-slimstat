@@ -17,15 +17,13 @@ class slim_browser {
 		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db/autoload.php';
 
 		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.5', '>=' ) ) {
-			$return_code = self::update_browscap_database( false );
+			self::update_browscap_database( false );
+			require_once( self::$browscap_autoload_path );
 
-			if ( is_array( $return_code ) && $return_code[ 0 ] === 0 ) {
-				require_once( self::$browscap_autoload_path );
-
-				if ( method_exists( 'slimBrowscapConnector', 'get_browser_from_browscap' ) ) {
-					self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser );
-				}
+			if ( method_exists( 'slimBrowscapConnector', 'get_browser_from_browscap' ) ) {
+				self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser );
 			}
+
 		}
 	}
 

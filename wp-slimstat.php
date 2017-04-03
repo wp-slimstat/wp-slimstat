@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: Slim Stat Analytics
+Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.3
+Version: 4.6.4
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.3';
+	public static $version = '4.6.4';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -133,7 +133,6 @@ class wp_slimstat {
 	 * Ajax Tracking
 	 */
 	public static function slimtrack_ajax() {
-
 		// This function also initializes self::$data_js and removes the checksum from self::$data_js['id']
 		self::_check_data_integrity( self::$raw_post_array );
 
@@ -251,7 +250,7 @@ class wp_slimstat {
 		self::toggle_date_i18n_filters( true );
 
 		// Allow third-party tools to initialize the stat array
-		self::$stat = apply_filters('slimstat_filter_pageview_stat_init', self::$stat);
+		self::$stat = apply_filters( 'slimstat_filter_pageview_stat_init', self::$stat );
 
 		// Third-party tools can decide that this pageview should not be tracked, by setting its datestamp to zero
 		if ( empty( self::$stat ) || empty( self::$stat[ 'dt' ] ) ) {
@@ -310,11 +309,13 @@ class wp_slimstat {
 					}
 
 					// Is this referer blacklisted?
-					foreach ( self::string_to_array( self::$settings[ 'ignore_referers' ] ) as $a_filter ) {
-						$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
-						if ( preg_match( "@^$pattern$@i", self::$stat[ 'referer' ] ) ) {
-							self::$stat[ 'id' ] = -301;
-							self::_set_error_array( sprintf( __( 'Referrer %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'referer' ] ), true );
+					if ( !empty( self::$settings[ 'ignore_referers' ] ) ) {
+						$return_error_code = array(
+							-301,
+							sprintf( __( 'Referrer %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'referer' ] ),
+							true
+						);
+						if ( self::_is_blacklisted( self::$stat[ 'referer' ], self::$settings[ 'ignore_referers' ], $return_error_code ) ) {
 							return $_argument;
 						}
 					}
@@ -375,7 +376,8 @@ class wp_slimstat {
 			}
 			self::$stat[ 'resource' ] = self::get_request_uri();
 		}
-		else{
+		else {
+			self::$stat[ 'resource' ] = parse_url( self::get_request_uri(), PHP_URL_PATH );
 			self::$stat[ 'searchterms' ] = str_replace( '\\', '', $_REQUEST[ 's' ] );
 			self::$stat[ 'referer' ] = self::get_request_uri();
 			if ( isset( $GLOBALS['wp_query']->found_posts ) ) {
@@ -395,14 +397,14 @@ class wp_slimstat {
 		}
 
 		// Is this resource blacklisted?
-		if ( !empty( self::$stat[ 'resource' ] ) ) {
-			foreach ( self::string_to_array( self::$settings[ 'ignore_resources' ] ) as $a_filter ) {
-				$pattern = str_replace( array('\*', '\!') , array('(.*)', '.'), preg_quote($a_filter, '/'));
-				if ( preg_match( "@^$pattern$@i", self::$stat[ 'resource' ] ) ) {
-					self::$stat['id'] = -302;
-					self::_set_error_array( sprintf( __( 'Permalink %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'resource' ] ), true );
-					return $_argument;
-				}
+		if ( !empty( self::$settings[ 'ignore_resources' ] ) ) {
+			$return_error_code = array(
+				-302,
+				sprintf( __( 'Permalink %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'resource' ] ),
+				true
+			);
+			if ( self::_is_blacklisted( self::$stat[ 'resource' ], self::$settings[ 'ignore_resources' ], $return_error_code ) ) {
+				return $_argument;
 			}
 		}
 
@@ -425,11 +427,13 @@ class wp_slimstat {
 			}
 
 			// Is this user blacklisted?
-			foreach ( self::string_to_array( self::$settings[ 'ignore_users' ] ) as $a_filter ) {
-				$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
-				if ( preg_match( "~^$pattern$~i", $GLOBALS[ 'current_user' ]->data->user_login ) ) {
-					self::$stat['id'] = -305;
-					self::_set_error_array( sprintf( __( 'User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ), true );
+			if ( !empty( self::$stat[ 'ignore_users' ] ) ) {
+				$return_error_code = array(
+					-305,
+					sprintf( __( 'User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ),
+					true
+				);
+				if ( self::_is_blacklisted( $GLOBALS[ 'current_user' ]->data->user_login, self::$stat[ 'ignore_users' ], $return_error_code ) ) {
 					return $_argument;
 				}
 			}
@@ -538,16 +542,24 @@ class wp_slimstat {
 		}
 
 		// Is this browser blacklisted?
-		foreach ( self::string_to_array( self::$settings[ 'ignore_browsers' ] ) as $a_filter ) {
-			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_filter, '/' ) );
-			if ( preg_match( "~^$pattern$~i", self::$browser[ 'browser' ] . '/' . self::$browser[ 'version' ] ) || preg_match( "~^$pattern$~i", self::$browser[ 'browser' ] ) || preg_match( "~^$pattern$~i", self::$browser[ 'user_agent' ] ) ) {
-				self::$stat[ 'id' ] = -311;
-				self::_set_error_array( sprintf( __( 'Browser %s is blacklisted', 'wp-slimstat' ), self::$browser[ 'browser' ] ), true );
+		if ( !empty( self::$stat[ 'ignore_browsers' ] ) ) {
+			$return_error_code = array(
+				-311,
+				sprintf( __( 'Browser %s is blacklisted', 'wp-slimstat' ), self::$browser[ 'browser' ] ),
+				true
+			);
+			if ( self::_is_blacklisted( array( self::$browser[ 'browser' ], self::$browser[ 'user_agent' ] ), self::$stat[ 'ignore_browsers' ], $return_error_code ) ) {
 				return $_argument;
 			}
 		}
 
 		self::$stat = self::$stat + self::$browser;
+
+		// This function can be called in "simulate" mode: no data will be actually saved in the database
+		if ( is_array( $_argument ) && isset( $_argument[ 'slimtrack_simulate' ] ) ) {
+			$_argument[ 'slimtrack_would_track' ] = true;
+			return ( $_argument );
+		}
 
 		// Do we need to assign a visit_id to this user?
 		$cookie_has_been_set = self::_set_visit_id( false );
@@ -1093,6 +1105,27 @@ class wp_slimstat {
 		return false;
 	}
 
+	protected static function _is_blacklisted( $_needles = array(), $_haystack_string = '', $_return_error_code = array( 0, '', false ) ) {
+		foreach ( self::string_to_array( $_haystack_string ) as $a_item ) {
+			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_item, '/' ) );
+
+			if ( !is_array( $_needles ) ) {
+				$_needles = array( $_needles );
+			}
+
+			foreach ( $_needles as $a_needle ) {
+				if ( preg_match( "@^$pattern$@i", $a_needle ) ) {
+
+					self::$stat[ 'id' ] = $_return_error_code[ 0 ];
+					self::_set_error_array( $_return_error_code[ 1 ], $_return_error_code[ 2 ] );
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	public static function dtr_pton( $ip ){
 		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
 			$unpacked = unpack( 'A4', inet_pton( $ip ) );
@@ -1480,14 +1513,6 @@ class wp_slimstat {
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_enqueue_tracking_script() {
-		if ( self::$settings[ 'enable_cdn' ] == 'yes' ) {
-			$schema = is_ssl() ? 'https' : 'http';
-			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
-		}
-		else{
-			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), array(), null, true);
-		}
-
 		// Pass some information to Javascript
 		$params = array(
 			'ajaxurl' => admin_url( 'admin-ajax.php' ),
@@ -1501,6 +1526,11 @@ class wp_slimstat {
 		}
 
 		if ( self::$settings[ 'javascript_mode' ] != 'yes' ) {
+			// Do not enqueue the tracker if this page view was not tracked for some reason
+			if ( intval( self::$stat[ 'id' ] ) < 0 ) {
+				return false;
+			}
+
 			if ( !empty( self::$stat[ 'id' ] ) ) {
 				$params[ 'id' ] = self::_get_id_with_checksum( self::$stat[ 'id' ] );
 			}
@@ -1509,11 +1539,25 @@ class wp_slimstat {
 			}
 		}
 		else {
+			// Check filters and blacklists to see if this page should be tracked
+			$simulate = self::slimtrack( array( 'slimtrack_simulate' => true ) );
+			if ( empty( $simulate[ 'slimtrack_would_track' ] ) ) {
+				return false;
+			}
+
 			$encoded_ci = base64_encode( serialize( self::_get_content_info() ) );
 			$params[ 'ci' ] = self::_get_id_with_checksum( $encoded_ci );
 		}
 
 		$params = apply_filters( 'slimstat_js_params', $params );
+
+		if ( self::$settings[ 'enable_cdn' ] == 'yes' ) {
+			$schema = is_ssl() ? 'https' : 'http';
+			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
+		}
+		else{
+			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), array(), null, true);
+		}
 
 		wp_enqueue_script( 'wp_slimstat' );
 		wp_localize_script( 'wp_slimstat', 'SlimStatParams', $params );

@@ -122,7 +122,7 @@ class wp_slimstat_admin {
 		}
 
 		if ( function_exists( 'is_network_admin' ) && !is_network_admin() ) {
-			// Add the appropriate entries to the admin menu, if this user can view/admin WP SlimStats
+			// Add the appropriate entries to the admin menu, if this user can view/admin  Slimstat
 			add_action( 'admin_menu', array( __CLASS__, 'wp_slimstat_add_view_menu' ) );
 			add_action( 'admin_menu', array( __CLASS__, 'wp_slimstat_add_config_menu' ) );
 
@@ -142,7 +142,7 @@ class wp_slimstat_admin {
 				}
 			}
 			
-			// Add some inline CSS to customize the icon associated to SlimStat in the sidebar
+			// Add some inline CSS to customize the icon associated to Slimstat in the sidebar
 			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'wp_slimstat_stylesheet_icon' ) );
 
 			// Update the table structure and options, if needed
@@ -775,7 +775,7 @@ class wp_slimstat_admin {
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' || is_network_admin() ) {
 			$parent = 'slimview1';
 			$page_location = 'slimstat';
-			$new_entry[] = add_menu_page(__('SlimStat','wp-slimstat'), __('SlimStat','wp-slimstat'), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
+			$new_entry[] = add_menu_page(__('Slimstat','wp-slimstat'), __('Slimstat','wp-slimstat'), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
 		}
 		else {
 			$parent = 'admin.php';
@@ -860,7 +860,7 @@ class wp_slimstat_admin {
 	}
 
 	/**
-	 * Adds a new entry in the admin menu, to manage SlimStat options
+	 * Adds a new entry in the admin menu, to manage Slimstat options
 	 */
 	public static function wp_slimstat_add_config_menu($_s){
 		wp_slimstat::$settings[ 'capability_can_admin' ] = empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ? 'activate_plugins' : wp_slimstat::$settings[ 'capability_can_admin' ];

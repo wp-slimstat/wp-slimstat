@@ -221,6 +221,7 @@ var SlimStat = {
 			if ( request ) {
 				request.open( "POST", SlimStatParams.ajaxurl, true );
 				request.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
+				request.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
 				request.send( slimstat_data_with_client_info );
 
 				request.onreadystatechange = function() {
@@ -375,20 +376,18 @@ SlimStat.add_event( window, "load", function() {
 	var to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
 
 	for (var i = 0; i < all_links.length; i++) {
-		var cur_link = all_links[i];
-
 		// Types
 		// 0: external
 		// 1: download
 		// 2: internal (track coordinates only)
 
-		type = ( cur_link.href && ( cur_link.hostname == location.hostname || cur_link.href.indexOf('://') == -1 ) ) ? 2 : 0;
+		linktype = ( all_links[ i ].href && ( all_links[ i ].hostname == location.hostname || all_links[ i ].href.indexOf( '://' ) == -1 ) ) ? 2 : 0;
 		tracking = 1;
 
 		// Do not track links with given class names...
 		if ( to_not_track.length > 0 ) {
 			if ( 1 == tracking ) {
-				classes_current_link = ( "undefined" != typeof cur_link.className && cur_link.className ) ? cur_link.className.split( " " ) : [];
+				classes_current_link = ( "undefined" != typeof all_links[ i ].className && all_links[ i ].className ) ? all_links[ i ].className.split( " " ) : [];
 
 				for ( var cl = 0; cl < classes_current_link.length; cl++ ) {
 					if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_not_track ) ) {
@@ -399,36 +398,36 @@ SlimStat.add_event( window, "load", function() {
 			}
 
 			// ... or rel attribute
-			if ( 1 == tracking && "undefined" != typeof cur_link.attributes.rel && cur_link.attributes.rel.value ) {
-				if ( SlimStat.in_array_substring( cur_link.attributes.rel.value, to_not_track ) ) {
+			if ( 1 == tracking && "undefined" != typeof all_links[ i ].attributes.rel && all_links[ i ].attributes.rel.value ) {
+				if ( SlimStat.in_array_substring( all_links[ i ].attributes.rel.value, to_not_track ) ) {
 					tracking = 0;
 				}
 			}
 
 			// ... or HREF attribute
-			if ( 1 == tracking && "undefined" != typeof cur_link.href && cur_link.href ) {
-				if ( SlimStat.in_array_substring( cur_link.href, to_not_track ) ) {
+			if ( 1 == tracking && "undefined" != typeof all_links[ i ].href && all_links[ i ].href ) {
+				if ( SlimStat.in_array_substring( all_links[ i ].href, to_not_track ) ) {
 					tracking = 0;
 				}
 			}
 		}
 
 		// Downloads
-		extension_current_link = cur_link.pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
-		if ( 2 == type && extensions_to_track.length > 0 && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
+		extension_current_link = all_links[ i ].pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
+		if ( 2 == linktype && extensions_to_track.length > 0 && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
 			tracking = 1;
-			type = 1;
+			linktype = 1;
 		}
 
-		cur_link.setAttribute( "data-slimstat", ( type << 1 ) + tracking );
+		all_links[ i ].setAttribute( "data-slimstat", ( linktype << 1 ) + tracking );
 
-		SlimStat.add_event( cur_link, "click", function( e ) {
+		SlimStat.add_event( all_links[ i ], "click", function( e ) {
 			link_info = parseInt( this.getAttribute( "data-slimstat" ) );
 			if ( isNaN ( link_info ) ) {
 				link_info = 0;
 			}
 
-			// tracking: link_info & 1 --- type: link_info >> 1;
+			// tracking: link_info & 1 --- linktype: link_info >> 1;
 			if ( link_info & 1 == 1 ) {
 				SlimStat.ss_track( e, link_info >> 1, "" );
 			}
