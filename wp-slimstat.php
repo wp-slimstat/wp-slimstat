@@ -427,13 +427,13 @@ class wp_slimstat {
 			}
 
 			// Is this user blacklisted?
-			if ( !empty( self::$stat[ 'ignore_users' ] ) ) {
+			if ( !empty( self::$settings[ 'ignore_users' ] ) ) {
 				$return_error_code = array(
 					-305,
 					sprintf( __( 'User %s is blacklisted', 'wp-slimstat' ), $GLOBALS[ 'current_user' ]->data->user_login ),
 					true
 				);
-				if ( self::_is_blacklisted( $GLOBALS[ 'current_user' ]->data->user_login, self::$stat[ 'ignore_users' ], $return_error_code ) ) {
+				if ( self::_is_blacklisted( $GLOBALS[ 'current_user' ]->data->user_login, self::$settings[ 'ignore_users' ], $return_error_code ) ) {
 					return $_argument;
 				}
 			}
@@ -542,13 +542,13 @@ class wp_slimstat {
 		}
 
 		// Is this browser blacklisted?
-		if ( !empty( self::$stat[ 'ignore_browsers' ] ) ) {
+		if ( !empty( self::$settings[ 'ignore_browsers' ] ) ) {
 			$return_error_code = array(
 				-311,
 				sprintf( __( 'Browser %s is blacklisted', 'wp-slimstat' ), self::$browser[ 'browser' ] ),
 				true
 			);
-			if ( self::_is_blacklisted( array( self::$browser[ 'browser' ], self::$browser[ 'user_agent' ] ), self::$stat[ 'ignore_browsers' ], $return_error_code ) ) {
+			if ( self::_is_blacklisted( array( self::$browser[ 'browser' ], self::$browser[ 'user_agent' ] ), self::$settings[ 'ignore_browsers' ], $return_error_code ) ) {
 				return $_argument;
 			}
 		}
