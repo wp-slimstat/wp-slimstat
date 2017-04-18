@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.4
+Version: 4.6.5
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.4';
+	public static $version = '4.6.5';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -535,7 +535,7 @@ class wp_slimstat {
 		}
 
 		// Are we ignoring bots?
-		if ( ( self::$settings[ 'javascript_mode' ] == 'yes' || self::$settings[ 'ignore_bots' ] == 'yes' ) && self::$browser[ 'browser_type' ] % 2 != 0 ) {
+		if ( ( self::$settings[ 'javascript_mode' ] == 'yes' || self::$settings[ 'ignore_bots' ] == 'yes' ) && self::$browser[ 'browser_type' ] == 1 ) {
 			self::$stat[ 'id' ] = -310;
 			self::_set_error_array( __( 'Bot not tracked', 'wp-slimstat' ), true );
 			return $_argument;
@@ -1159,7 +1159,7 @@ class wp_slimstat {
 	/**
 	 * Opens given domains during CORS requests to admin-ajax.php
 	 */
-	public static function open_cors_admin_ajax( $_allowed_origins ){
+	public static function open_cors_admin_ajax( $_allowed_origins = array() ){
 		$exploded_domains = self::string_to_array( self::$settings[ 'external_domains' ] );
 
 		if ( !empty( $exploded_domains ) && !empty( $exploded_domains[ 0 ] ) ) {
@@ -1515,7 +1515,7 @@ class wp_slimstat {
 	public static function wp_slimstat_enqueue_tracking_script() {
 		// Pass some information to Javascript
 		$params = array(
-			'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			'ajaxurl' => admin_url( 'admin-ajax.php' )
 		);
 
 		if ( !empty( self::$settings[ 'extensions_to_track' ] ) ) {

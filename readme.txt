@@ -5,12 +5,14 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.4
+Stable tag: 4.6.5
 
 == Description ==
-[youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
+The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 = Feature Spotlight =
+[youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
+
 * Real-time access log, server latency, heatmaps, full IPv6 support, and much more.
 * Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
 * Export your reports to CSV or get daily emails right in your mailbox (via premium add-on).
@@ -27,7 +29,7 @@ Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available 
 [Like Us](https://www.facebook.com/slimstatistics/) on Facebook and [follow us](https://twitter.com/wp_stats) on Twitter to get the latest news and updates about our plugin.
 
 = Translations =
-Slimstat is available in multiple languages: English, Belarusian (UStarCash), Chinese (沐熙工作室), Farsi, French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Italian, Japanese (h_a_l_f), Portuguese, Russian (Vitaly), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
+Slimstat is available in multiple languages: English, Belarusian (UStarCash), Chinese (沐熙工作室), Farsi, French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Indonesian ([ChameleonJohn](https://www.chameleonjohn.com/)), Italian ([Slimstat Dev Team](https://www.wp-slimstat.com)), Japanese (h_a_l_f), Portuguese, Russian (Vitaly), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
 
 = Reviews and Feedback =
 * This is by far the most accurate and in-depth tracking plugin I've encountered for WordPress [MiMango](https://wordpress.org/support/topic/excellent-plugin-and-service-9)
@@ -68,6 +70,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.5 =
+* [New] The new Browscap Library we introduced a few versions ago added some new interesting fields to the list of information available for each browser. One of them allows to distinguish between touch and non-touch devices, even when they are not mobile devices (think touchscreen all-in-one desktop computers). Inspired by one of our most active beta testers, we decided to expose this information in the admin (Activity Log). Now you will be able to segment your metrics based on this new value for the browser type dimension.
+* [New] Added Indonesian localization (thank you, [ChameleonJohn](https://www.chameleonjohn.com/)).
+* [Fix] SQL error being returned for the Top/Recent Keywords report (thank you, pepe).
+* [Fix] A regression bug was affecting the blacklist by username functionality (thank you, Ursula).
+
+
 = 4.6.4 =
 * [Update] When the tracker was set to work in "Client mode", the Javascript code was being added to those pages that matched one of the blacklists, even though the subsequent request would have been ignored. By avoiding this, we were able to optimize our code and improve the overall performance.
 * [Fix] A conflict with a Google Maps Javascript API call was causing other scripts to not work as expected (thank you, Fulp2121).
@@ -107,29 +116,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] We patched a quite unique XSS vulnerability, responsibly disclosed by [the MITRE Corporation](https://www.mitre.org/) (thank you, guys).
 * [Fix] Some more buttons and links were added to the exclusion list of things to track on the admin, when this feature is enabled.
 * [Fix] Calling a function to decode an IPv6 address was failing if PHP did not support this protocol (thank you, [catmainax](https://wordpress.org/support/topic/warnings-in-debug-mode-9/))
-
-= 4.5.2 =
-* [Note] Would you like to spread the word and tell your friends how much you love Slimstat? Now you have one more reason to do that: win a $50 discount on our online store. Yes, you read that right: write a review highlighting some of the features you love in Slimstat, and we will send you a special code to take $50 off your add-on purchase on our website. The more reviews you write, the more coupons you can get. So, what are you waiting for? Contact our support team with the URL of where the review has been posted, and take advantage of this limited time offer today!
-* [Fix] A fatal error was being experienced by users whose Browscap Library installation was corrupted (missing cache).
-* [Fix] More checks have been added to the source code to prevent Fatal Error issues in case the filesystem permissions are too restrictive for Slimstat. Also, we are now storing the "last modified date" in the database, instead of relying on "touch"-ing files and accessing the mtime there.
-* [Fix] A bug was preventing referrers from being properly recorded when handling external web pages (static tracking code).
-* [Fix] The date widget in the Filter Bar was not working when tracking admin pages (thank you, Colin).
-
-= 4.5.1 =
-* [New] Slimstat is now looking for custom HTTP headers like [CF-Connecting-IP](https://support.cloudflare.com/hc/en-us/articles/200170986-How-does-CloudFlare-handle-HTTP-Request-headers-) to determine your visitors' originating IP address when your website is behind reverse proxies like CloudFlare.
-* [New] By default, when the domain of the referrer for a given page view is the same as the current site, that information is not tracked to save space in the database. However, if you are running a multisite network with subfolders, you might need to track same-domain referrers from one site to another, as they are technically "separate" websites. A new option under Settings > Tracker was added to handle this situation (thank you, [chenryahts](https://wordpress.org/support/topic/referer-not-recorded-from-other-sites-in-same-multisite/)).
-* [Fix] A typo in checking the PHP version was preventing some users from installing our new Browscap library.
-* [Fix] PHP warning of undefined offset in one of the reports when the database was empty.
-* [Fix] In some specific cases a function used to unzip the Browscap Library on the user's server was not defined (thank you, [victor50g, gdevic and others](https://wordpress.org/support/topic/white-screen-of-death-when-publishing-post/))
-* [Fix] A few users pointed out that using file_get_contents might not be ideal, if allow_url_fopen is turned off in PHP. Per [Per Dennis' suggestion](https://wordpress.org/support/topic/file_get_contents-problem-since-version-4-5/) that call was replaced with wp_remote_get. Thank you for your help!
-
-= 4.5 =
-* [Note] Can you believe it? It looks like it was yesterday that we were celebrating the new year with our loved ones, and here we are, getting ready to welcome 2017. For our team, 2016 was a very intense year: we celebrated Slimstat's 10th anniversary, released new add-ons, started community outreach initiatives on Facebook and on our website, implemented new features and much more. Now, with a smaller team, we need to find creative ways to keep providing the stellar support service which many of you appreciate so much in your reviews. For this reason, we need to slighly increase the price of our add-ons starting in early 2017. Don't worry, it will still be a very competitive and reasonable price point, affordable even for those of you who cannot spend hundreds of dollars on their website. However we encourage you to take advantage of these few remaining weeks and [buy our add-ons today](https://www.wp-slimstat.com/addons/), before prices go up in January!
-* [New] You spoke up, we listened. The third-party Browscap data file has been increasing in size over time, forcing some users to uninstall it from their server because it was causing issues with the PHP memory limit set by the administrator. Although Slimstat provides a built-in heuristic function as a workaround for this issue, we wanted to find a better solution. Replacing the obsolete Browscap parser with the [shiny new version 3.0](https://github.com/browscap/browscap-php), our tests show a big improvement in terms of performance and use of resources. The only caveat is that the new parser **requires PHP 5.5 or newer**, so please make sure your server environment is compatible before enabling this feature.
-* [Update] Minor touches to the look and feel to make our admin color scheme more consistent throughout the various screens.
-* [Fix] Uninstall procedure was not deleting the Browscap and MaxMind data files from the server.
-* [Fix] Our release highlights, which are usually shown after updating to the latest version, were not disappearing when clicking on the corresponding button.
-* [Fix] PHP warning being returned under certain circumstances (thank you, [Sasa and computershowtopro](https://wordpress.org/support/topic/you-need-to-change-line-340-341-in-the-plugin/#post-8591529)).
 
 == Support Our Work ==
 Slimstat Analytics is an open source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)

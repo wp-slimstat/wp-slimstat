@@ -551,7 +551,7 @@ class wp_slimstat_reports {
 					'columns' => 'REPLACE( SUBSTRING_INDEX( SUBSTRING_INDEX( SUBSTRING_INDEX( referer, "://", -1 ), "/", 1 ), ".", -5 ), "www.", "" )',
 					'as_column' => 'referer_calculated',
 					'filter_op' => 'contains',
-					'where' => 'searchterms IS NOT NULL searchterms <> "" AND searchterms <> "_" AND referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
+					'where' => 'searchterms IS NOT NULL AND searchterms <> "" AND searchterms <> "_" AND referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
