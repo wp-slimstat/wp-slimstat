@@ -13,6 +13,7 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 = Feature Spotlight =
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
 
+Main features:
 * Real-time access log, server latency, heatmaps, full IPv6 support, and much more.
 * Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
 * Export your reports to CSV or get daily emails right in your mailbox (via premium add-on).
