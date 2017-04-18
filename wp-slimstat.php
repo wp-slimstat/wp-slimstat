@@ -1230,11 +1230,8 @@ class wp_slimstat {
 			'o' => 0		// offset for counters
 		), $_attributes));
 
-		$output = $where = '';
+		$output = $where = $as_column = '';
 		$s = "<span class='slimstat-item-separator'>$s</span>";
-
-		// Load the database library
-		//include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
 
 		// Load the localization files (for languages, operating systems, etc)
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
@@ -1288,21 +1285,26 @@ class wp_slimstat {
 				$w = self::string_to_array( $w );
 
 				// Some columns are 'special' and need be removed from the list
-				$w_clean = array_diff( $w, array( 'count', 'display_name', 'hostname', 'post_link', 'dt' ) );
+				$w_clean = array_diff( $w, array( 'count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt' ) );
 
 				// The special value 'display_name' requires the username to be retrieved
 				if ( in_array( 'display_name', $w ) ) {
 					$w_clean[] = 'username';
 				}
 
-				// The special value 'post_list' requires the permalink to be retrieved
+				// The special value 'post_list' requires the resource to be retrieved
 				if ( in_array( 'post_link', $w ) ) {
 					$w_clean[] = 'resource';
 				}
 
+				// The special value 'post_list_no_qs' requires a substring to be calculated
+				if ( in_array( 'post_link_no_qs', $w ) ) {
+					$w_clean =  array( 'SUBSTRING_INDEX( resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1 )' );
+					$as_column = 'resource_calculated';
+				}
 
 				// Retrieve the data
-				$results = wp_slimstat_db::$function( implode( ', ', $w_clean ), $where, '', strpos( $f, 'all') === false );
+				$results = wp_slimstat_db::$function( implode( ', ', $w_clean ), $where, '', strpos( $f, 'all' ) === false, $as_column );
 
 				// No data? No problem!
 				if ( empty( $results ) ) {
@@ -1310,7 +1312,7 @@ class wp_slimstat {
 				}
 
 				// Are nice permalinks enabled?
-				$permalinks_enabled = get_option('permalink_structure');
+				$permalinks_enabled = get_option( 'permalink_structure' );
 
 				// Format results
 				$output = array();
@@ -1318,9 +1320,9 @@ class wp_slimstat {
 					foreach( $w as $a_column ) {
 						$output[ $result_idx ][ $a_column ] = "<span class='col-$a_column'>";
 
-						if ( $permalinks_enabled && !empty( $a_result[ 'resource' ] ) ) {
-							$a_result[ 'resource' ] = strtok( $a_result[ 'resource' ], '?' );
-						}
+						// if ( $permalinks_enabled && !empty( $a_result[ 'resource' ] ) ) {
+						// 	$a_result[ 'resource' ] = strtok( $a_result[ 'resource' ], '?' );
+						// }
 
 						switch( $a_column ) {
 							case 'count':
@@ -1359,12 +1361,14 @@ class wp_slimstat {
 								break;
 
 							case 'post_link':
-								$post_id = url_to_postid( $a_result[ 'resource' ] );
+							case 'post_link_no_qs':
+								$resource_key = ( $a_column == 'post_link' ) ? 'resource' : 'resource_calculated';
+								$post_id = url_to_postid( $a_result[ $resource_key ] );
 								if ($post_id > 0) {
-									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>" . get_the_title( $post_id ) . '</a>';
+									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ $resource_key ]}'>" . get_the_title( $post_id ) . '</a>';
 								}
 								else {
-									$output[ $result_idx ][ $a_column ] .= $a_result[ 'resource' ];
+									$output[ $result_idx ][ $a_column ] .= $a_result[ $resource_key ];
 								}
 								break;
 
