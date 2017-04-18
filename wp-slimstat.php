@@ -1288,12 +1288,18 @@ class wp_slimstat {
 				$w = self::string_to_array( $w );
 
 				// Some columns are 'special' and need be removed from the list
-				$w_clean = array_diff( $w, array( 'count', 'hostname', 'post_link', 'dt' ) );
+				$w_clean = array_diff( $w, array( 'count', 'display_name', 'hostname', 'post_link', 'dt' ) );
 
-				// The special value 'post_list' requires the permalink to be generated
+				// The special value 'display_name' requires the username to be retrieved
+				if ( in_array( 'display_name', $w ) ) {
+					$w_clean[] = 'username';
+				}
+
+				// The special value 'post_list' requires the permalink to be retrieved
 				if ( in_array( 'post_link', $w ) ) {
 					$w_clean[] = 'resource';
 				}
+
 
 				// Retrieve the data
 				$results = wp_slimstat_db::$function( implode( ', ', $w_clean ), $where, '', strpos( $f, 'all') === false );
@@ -1323,6 +1329,17 @@ class wp_slimstat {
 
 							case 'country':
 								$output[ $result_idx ][ $a_column ] .= __( 'c-' . $a_result[ $a_column ], 'wp-slimstat' );
+								break;
+
+							case 'display_name':
+								$user_details = get_user_by( 'login', $a_result[ 'username' ] );
+								if ( !empty( $user_details ) ) {
+									$output[ $result_idx ][ $a_column ] .= $user_details->display_name;
+								}
+								else {
+									$output[ $result_idx ][ $a_column ] .=  $a_result[ 'username' ];
+								}
+								
 								break;
 
 							case 'dt':
