@@ -73,6 +73,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 = 4.6.5 =
 * [New] The new Browscap Library we introduced a few versions ago added some new interesting fields to the list of information available for each browser. One of them allows to distinguish between touch and non-touch devices, even when they are not mobile devices (think touchscreen all-in-one desktop computers). Inspired by one of our most active beta testers, we decided to expose this information in the admin (Activity Log). Now you will be able to segment your metrics based on this new value for the browser type dimension.
 * [New] Added Indonesian localization (thank you, [ChameleonJohn](https://www.chameleonjohn.com/)).
+* [Update] You can now show display names instead of usernames when generating shortcodes. Check our documentation for more information (thank you, pepe).
 * [Fix] SQL error being returned for the Top/Recent Keywords report (thank you, pepe).
 * [Fix] A regression bug was affecting the blacklist by username functionality (thank you, Ursula).
 
