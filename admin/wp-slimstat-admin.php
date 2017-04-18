@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "A few releases ago, Slimstat contained a bug that would trigger a white screen of death under certain circumstances. Although we promptly released an update to patch the bug, we still receive requests (almost two months later) from users who don't know how to fix the problem. We understand your frustration when problems like this happen. With a small team, we try our best to test various scenarios before releasing a new update. However, occasionally, something sneaks through our tests unnoticed. For this reason, we would like to renew our invitation to join our list of beta testers, and help us avoid this kind of bugaboos in the future. Please contact our <a href='http://support.wp-slimstat.com/' target='_blank'>support team</a> today if you would like to help.";
+		self::$admin_notice = "Three. Million. Downloads. Can you believe it? Just a few days ago we passed this monumental milestone, and it's all thanks to all of you! We have one of the best user communities out there, no doubt abou that. Your support has taken our plugin to the next level: your feedback, your support requests, your reviews. Every little bit of information has helped us create the piece of code you all enjoy on a daily basis. A real team effort. With a team of more than one hundred thousand people. Keep up the good work.";
 
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
