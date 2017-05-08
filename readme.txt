@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.5
+Stable tag: 4.6.6
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -13,7 +13,7 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 = Feature Spotlight =
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
 
-Main features:
+= Main features =
 * Real-time access log, server latency, heatmaps, full IPv6 support, and much more.
 * Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
 * Export your reports to CSV or get daily emails right in your mailbox (via premium add-on).
@@ -71,6 +71,11 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.6 =
+* [New] Super administrators can now decide what reports users will see, and their arrangement both on the dashboard and Slimstat screens (thank you, [ac1643](https://wordpress.org/support/topic/specifying-the-settings-by-user/)). You will need our premium add-on [Network Analysis](https://www.wp-slimstat.com/downloads/network-view/) to unlock this feature.
+* [Fix] The `post_link` shortcode attribute was not working as expected when downloads were being listed (thank you, [tophr](https://wordpress.org/support/topic/top-downloads-shortcodewidget-not-working-as-expected)).
+* [Fix] Updated Track Client Info option description to make it less confusing (thank you, [Bjarne](https://wordpress.org/support/topic/track-client-info-setting-confusion/)).
+
 = 4.6.5 =
 * [New] The new Browscap Library we introduced a few versions ago added some new interesting fields to the list of information available for each browser. One of them allows to distinguish between touch and non-touch devices, even when they are not mobile devices (think touchscreen all-in-one desktop computers). Inspired by one of our most active beta testers, we decided to expose this information in the admin (Activity Log). Now you will be able to segment your metrics based on this new value for the browser type dimension.
 * [New] Added Indonesian localization (thank you, [ChameleonJohn](https://www.chameleonjohn.com/)).
@@ -78,7 +83,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Update] You can now group resources in shortcodes while ignoring any query string attached to them (thank you, [dragolcho](https://wordpress.org/support/topic/problem-with-short-code-2/)).
 * [Fix] SQL error being returned for the Top/Recent Keywords report (thank you, pepe).
 * [Fix] A regression bug was affecting the blacklist by username functionality (thank you, Ursula).
-
 
 = 4.6.4 =
 * [Update] When the tracker was set to work in "Client mode", the Javascript code was being added to those pages that matched one of the blacklists, even though the subsequent request would have been ignored. By avoiding this, we were able to optimize our code and improve the overall performance.

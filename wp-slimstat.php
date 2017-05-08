@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.5
+Version: 4.6.6
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.5';
+	public static $version = '4.6.6';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -1320,10 +1320,6 @@ class wp_slimstat {
 					foreach( $w as $a_column ) {
 						$output[ $result_idx ][ $a_column ] = "<span class='col-$a_column'>";
 
-						// if ( $permalinks_enabled && !empty( $a_result[ 'resource' ] ) ) {
-						// 	$a_result[ 'resource' ] = strtok( $a_result[ 'resource' ], '?' );
-						// }
-
 						switch( $a_column ) {
 							case 'count':
 								$output[ $result_idx ][ $a_column ] .= $a_result[ 'counthits' ];
@@ -1364,11 +1360,11 @@ class wp_slimstat {
 							case 'post_link_no_qs':
 								$resource_key = ( $a_column == 'post_link' ) ? 'resource' : 'resource_calculated';
 								$post_id = url_to_postid( $a_result[ $resource_key ] );
-								if ($post_id > 0) {
+								if ( $post_id > 0 ) {
 									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ $resource_key ]}'>" . get_the_title( $post_id ) . '</a>';
 								}
 								else {
-									$output[ $result_idx ][ $a_column ] .= $a_result[ $resource_key ];
+									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ $resource_key ]}'>{$a_result[ $resource_key ]}</a>";
 								}
 								break;
 

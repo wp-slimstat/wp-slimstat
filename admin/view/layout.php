@@ -5,16 +5,27 @@
 	// Get default report placements
 	$report_locations = array(
 		'inactive' => array(),
+		'dashboard' => array(),
 		'slimview1' => array(),
 		'slimview2' => array(),
 		'slimview3' => array(),
 		'slimview4' => array(),
 		'slimview5' => array(),
-		'slimview6' => array(),
-		'dashboard' => array()	
+		'slimview6' => array()
 	);
 
-	if ( empty( wp_slimstat_reports::$user_reports ) ) {
+	$reset_link = '';
+	$is_report_reset = false;
+	if ( !empty( $_GET[ 'action' ] ) && $_GET[ 'action' ] == 'restore-views' ) {
+		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'");
+		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'");
+		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
+		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
+		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
+		$is_report_reset = true;
+	}
+
+	if ( empty( wp_slimstat_reports::$user_reports ) || $is_report_reset ) {
 		foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
 			if ( !empty( $a_report_info[ 'screens' ] ) ) {
 				foreach ( $a_report_info[ 'screens' ] as $a_report_screen ) {
@@ -34,6 +45,10 @@
 				$report_locations[ $a_location_id ] = array();
 			}
 		}
+
+		if ( is_network_admin() ) {
+			$reset_link = sprintf( __( 'By using the network-wide customizer, all your users will be seeing the same layout and will not be able to further customize it. You can reset this feature by <a href="%s">clicking here</a>.', 'wp-slimstat' ), 'admin.php?page=slimlayout&&amp;action=restore-views' );
+		}
 	}
 
 	// Keep track of multiple occurrences of the same report, to allow users to delete duplicates
@@ -45,7 +60,11 @@
 
 <div class="wrap slimstat-layout">
 <h2><?php _e( 'Customize and organize your reports','wp-slimstat' ) ?></h2>
-<p><?php _e( 'Drag and drop report placeholders from one container to another, to customize the information you want to see right away when you open Slimstat. Place two or more charts on the same view, clone reports or move them to the Inactive Reports container for improved performance. It is your website, and you know how metrics should be combined to get a clear picture of the traffic it generates.<br/><br/><strong>Note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden (Screen Options tab).', 'wp-slimstat') ?></p>
+<p><?php 
+	_e( 'Drag and drop report placeholders from one container to another, to customize the information you want to see right away when you open Slimstat. Place two or more charts on the same view, clone reports or move them to the Inactive Reports container for improved performance. It is your website, and you know how metrics should be combined to get a clear picture of the traffic it generates.', 'wp-slimstat' );
+	echo ' ' . $reset_link . '<br/><br/>';
+	_e( '<strong>Note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden (Screen Options tab).', 'wp-slimstat');
+?></p>
 
 <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form>
 

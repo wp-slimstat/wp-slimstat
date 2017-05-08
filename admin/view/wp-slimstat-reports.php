@@ -898,10 +898,17 @@ class wp_slimstat_reports {
 		// Retrieve this user's list of active reports,
 		$current_user = wp_get_current_user();
 		$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
-		self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
+
+		// Superadmins can customize the layout at network level, to override per-site settings
+		self::$user_reports = get_user_option( "meta-box-order_slimstat_page_slimlayout-network", 1 );
+
+		// No network-wide settings exist
+		if ( empty( self::$user_reports ) ) {
+			self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
+		}
 
 		// Do this only if we are in one of our screens (no dashboard!)
-		if ( is_admin() && !empty( $_REQUEST['page'] ) && strpos( $_REQUEST['page'], 'slimview' ) !== false ) {
+		if ( is_admin() && !empty( $_REQUEST[ 'page' ] ) && strpos( $_REQUEST[ 'page' ], 'slimview' ) !== false ) {
 
 			// If this list is not empty, we rearrange the order of our reports
 			if ( !empty( self::$user_reports[ $_REQUEST[ 'page' ] ] ) ) {

@@ -24,6 +24,7 @@ class wp_slimstat_admin {
 		}
 
 		// Define the default screens
+		$has_network_reports = get_user_option( "meta-box-order_slimstat_page_slimlayout-network", 1 );
 		self::$screens_info = array(
 			'slimview1' => array(
 				'is_report_group' => false,
@@ -63,7 +64,7 @@ class wp_slimstat_admin {
 			),
 			'slimlayout' => array(
 				'is_report_group' => false,
-				'show_in_sidebar' => true,
+				'show_in_sidebar' => ( empty( $has_network_reports ) || current_user_can( 'manage_options' ) ),
 				'title' => __( 'Customize', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'wp_slimstat_include_layout' )
 			),
