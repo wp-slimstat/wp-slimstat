@@ -551,9 +551,9 @@ class wp_slimstat_db {
 					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
 				 );
 
-				$filters_normalized[ 'utime' ][ 'start' ] = $filters_normalized[ 'utime' ][ 'end' ] - 1728000;
+				$filters_normalized[ 'utime' ][ 'start' ] = $filters_normalized[ 'utime' ][ 'end' ] - 2592000;
 				$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
-				$filters_normalized[ 'date' ][ 'interval' ] = isset( $filters_normalized[ 'date' ][ 'interval' ] ) ? $filters_normalized[ 'date' ][ 'interval' ] : 20;
+				$filters_normalized[ 'date' ][ 'interval' ] = isset( $filters_normalized[ 'date' ][ 'interval' ] ) ? $filters_normalized[ 'date' ][ 'interval' ] : 30;
 				$filters_normalized[ 'date' ][ 'interval_direction' ] = 0;
 			}
 		}
