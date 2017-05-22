@@ -11,7 +11,9 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Three. Million. Downloads. Can you believe it? Just a few days ago we passed this monumental milestone, and it's all thanks to all of you! We have one of the best user communities out there, no doubt abou that. Your support has taken our plugin to the next level: your feedback, your support requests, your reviews. Every little bit of information has helped us create the piece of code you all enjoy on a daily basis. A real team effort. With a team of more than one hundred thousand people. Keep up the good work.";
+		self::$admin_notice = "Every first of the month we get at least one or two support requests from alarmed users who think their data has disappeared. Some of them end up leaving <a href='https://wordpress.org/support/topic/limited-service/' target='_blank'>negative reviews</a> because of this, which really sends the wrong message about our plugin. The fundamental misunderstanding has been related to the fact that Slimstat uses the <strong>current month</strong> as the default time range for calculating its reports and metrics. So every first of the month all the reports can look <strong>empty</strong> because there is not much data to be crunched, since the month has just started. In order to address this problem, we've changed the default time range from the current month to the last 20 days. Hopefully this will avoid further negative reviews and take care of those recurring misunderstandings. Please feel free to contact our support team if you have any questions.";
+
+		// "This has been an incredible year so far for our team. To celebrate all the great achievements, we've decided to launch our Summer Madness Discounts season. From June to September we are offering a crazy FIFTY PERCENT discount on all our premium add-ons. Including the bundles! Extend Slimstat with features like Excel exports, email reports, heatmaps and more, for just a fraction of the price you would normally pay. Not only: if you purchased a premium add-on in April or May, you are eligible for getting back FIFTY PERCENT of what you paid in discounts on future purchases. <strong>ON TOP</strong> of the Summer Madness Discount. Stack both to get basically free add-ons for your website! Please <a href='http://support.wp-slimstat.com' target='_blank'>contact us</a> to get your personal RollBack coupon today or for any questions you might have regarding this promo!"
 
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
@@ -213,7 +215,7 @@ class wp_slimstat_admin {
 		switch_to_blog( $_blog_id );
 		self::init_environment();
 		restore_current_blog();
-		wp_slimstat::$settings = get_option( 'slimstat_options', array() );
+		// wp_slimstat::$settings = get_option( 'slimstat_options', array() );
 	}
 	// end new_blog
 	

@@ -298,7 +298,7 @@ var SlimStat = {
 				if ( "undefined" != typeof node.hash && node.hash && node.hostname == location.hostname ) {
 					resource_url = node.hash;
 				}
-				else if ( "undefined" != typeof node.href ) {
+				else if ( "undefined" != typeof node.href && node.href.indexOf( 'javascript:' ) == -1 ) {
 					resource_url = node.href;
 				}
 
@@ -381,7 +381,7 @@ SlimStat.add_event( window, "load", function() {
 		// 1: download
 		// 2: internal (track coordinates only)
 
-		linktype = ( all_links[ i ].href && ( all_links[ i ].hostname == location.hostname || all_links[ i ].href.indexOf( '://' ) == -1 ) ) ? 2 : 0;
+		linktype = ( all_links[ i ].href && ( all_links[ i ].hostname == location.hostname || all_links[ i ].href.indexOf( '://' ) == -1 ) || all_links[ i ].href.indexOf( 'javascript:' ) == -1 ) ? 2 : 0;
 		tracking = 1;
 
 		// Do not track links with given class names...

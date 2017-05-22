@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.6
+Version: 4.6.7
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.6';
+	public static $version = '4.6.7';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -490,7 +490,7 @@ class wp_slimstat {
 
 		// Country and Language
 		self::$stat[ 'language' ] = self::_get_language();
-		self::$stat[ 'country' ] = self::get_country(self::$stat[ 'ip' ]);
+		self::$stat[ 'country' ] = self::get_country( self::$stat[ 'ip' ] );
 
 		// Anonymize IP Address?
 		if ( self::$settings[ 'anonymize_ip' ] == 'yes' ) {
@@ -633,18 +633,19 @@ class wp_slimstat {
 	 * Searches for the country code associated to a given IP address
 	 */
 	public static function get_country( $_ip_address = '0.0.0.0' ){
-		$float_ipnum = (float) sprintf( "%u", bindec( self::dtr_pton( $_ip_address ) ) );
+		$ipnum = ip2long( $_ip_address );
 		$country_output = 'xx';
 
 		// Is this a RFC1918 (local) IP?
-		if ($float_ipnum == 2130706433 || // 127.0.0.1
-			($float_ipnum >= 167772160 && $float_ipnum <= 184549375) || // 10.0.0.1 - 10.255.255.255
-			($float_ipnum >= 2886729728 && $float_ipnum <= 2887778303) || // 172.16.0.1 - 172.31.255.255
-			($float_ipnum >= 3232235521 && $float_ipnum <= 3232301055) ){ // 192.168.0.1 - 192.168.255.255
+		if ( $ipnum == 2130706433 || // 127.0.0.1
+			( $ipnum >= 167772160 && $ipnum <= 184549375 ) || // 10.0.0.1 - 10.255.255.255
+			( $ipnum >= 2886729728 && $ipnum <= 2887778303 ) || // 172.16.0.1 - 172.31.255.255
+			( $ipnum >= 3232235521 && $ipnum <= 3232301055 ) ) { // 192.168.0.1 - 192.168.255.255
 				$country_output = 'xy';
 		}
 		else {
 			$country_codes = array("","ap","eu","ad","ae","af","ag","ai","al","am","cw","ao","aq","ar","as","at","au","aw","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","fi","fj","fk","fm","fo","fr","sx","ga","gb","gd","ge","gf","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","in","io","iq","ir","is","it","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","st","sv","sy","sz","tc","td","tf","tg","th","tj","tk","tm","tn","to","tl","tr","tt","tv","tw","tz","ua","ug","um","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","rs","za","zm","me","zw","a1","a2","o1","ax","gg","im","je","bl","mf","bq","ss","o1");
+
 			if ( file_exists( self::$maxmind_path ) && ( $handle = fopen( self::$maxmind_path, "rb" ) ) ) {
 
 				// Do we need to update the file?
@@ -663,11 +664,11 @@ class wp_slimstat {
 				}
 
 				$offset = 0;
-				for ($depth = 31; $depth >= 0; --$depth) {
-					if (fseek($handle, 6 * $offset, SEEK_SET) != 0){
+				for ( $depth = 31; $depth >= 0; --$depth ) {
+					if ( fseek($handle, 6 * $offset, SEEK_SET ) != 0 ) {
 						break;
 					}
-					$buf = fread($handle, 6);
+					$buf = fread( $handle, 6 );
 					$x = array(0,0);
 					for ($i = 0; $i < 2; ++$i) {
 						for ($j = 0; $j < 3; ++$j) {
@@ -675,7 +676,7 @@ class wp_slimstat {
 						}
 					}
 
-					if ( $float_ipnum & ( 1 << $depth ) ) {
+					if ( $ipnum & ( 1 << $depth ) ) {
 						if ($x[1] >= 16776960 && !empty($country_codes[$x[1] - 16776960])) {
 							$country_output = $country_codes[$x[1] - 16776960];
 							break;
@@ -692,7 +693,6 @@ class wp_slimstat {
 				fclose($handle);
 			}
 		}
-
 		return apply_filters( 'slimstat_get_country', $country_output, $_ip_address );
 	}
 	// end get_country
@@ -771,7 +771,7 @@ class wp_slimstat {
 		$ip_array = array( '', '' );
 
 		if ( !empty( $_SERVER[ 'REMOTE_ADDR' ] ) && filter_var( $_SERVER[ 'REMOTE_ADDR' ], FILTER_VALIDATE_IP ) !== false ) {
-			$ip_array[ 0 ] = $_SERVER["REMOTE_ADDR"];
+			$ip_array[ 0 ] = $_SERVER[ 'REMOTE_ADDR' ];
 		}
 
 		$originating_ip_headers = array( 'X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
@@ -852,7 +852,7 @@ class wp_slimstat {
 		}
 
 		if ( !empty( $_url[ 'host' ] ) ) {
-			preg_match( "/($regex_match)./i", $_url[ 'host' ], $matches );
+			preg_match( "~($regex_match).~i", $_url[ 'host' ], $matches );
 		}
 
 		if ( !empty( $matches[ 1 ] ) ) {
@@ -1107,7 +1107,7 @@ class wp_slimstat {
 
 	protected static function _is_blacklisted( $_needles = array(), $_haystack_string = '', $_return_error_code = array( 0, '', false ) ) {
 		foreach ( self::string_to_array( $_haystack_string ) as $a_item ) {
-			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_item, '/' ) );
+			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_item, '@' ) );
 
 			if ( !is_array( $_needles ) ) {
 				$_needles = array( $_needles );
@@ -1445,7 +1445,7 @@ class wp_slimstat {
 			// Tracker
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
-			'track_same_domain_referers' => 'no',
+			'track_same_domain_referers' => 'yes',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
 			'enable_cdn' => 'yes',

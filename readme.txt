@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.6
+Stable tag: 4.6.7
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.7 =
+* [Update] Same-domain referrers are now tracked by default, when Slimstat is activated for the first time. Pre-existing installations are not affected. This change will allow us to introduce  new features as suggested [by one of our users](https://wordpress.org/support/topic/can-we-see-top-visitor-path/). Stay tuned.
+* [Update] Every first of the month we get at least one or two support requests from alarmed users who think their data has disappeared. Some of them end up leaving [negative reviews](https://wordpress.org/support/topic/limited-service/) because of this. The fundamental misunderstanding was related to the fact that Slimstat uses the CURRENT MONTH time span as the default range for calculating its reports and metrics. So every first of the month all the reports can look "empty" because there is not much data to be crunched. In order to address this problem, we've changed the default time range from the current month to the last 20 days. Hopefully this will avoid further negative reviews in the future!
+* [Fix] There was an incompatibility issue between our premium add-ons Custom DB and Network Settings, causing the network-wide configuration to be reset when a new blog was being created in the network.
+* [Fix] The tracker was not working as expected if the blacklist by usernames contained a @ character (thank you, Eugenio).
+* [Fix] A bug was affecting the way the geolocation function would calculate the country parameter from certain given IP addresses (thank you, Carsten).
+* [Fix] Links with "javascript:" value were being tracked as outbound clicks (thank you, [Luna](https://wordpress.org/support/topic/javascriptvoid0-2)).
+
 = 4.6.6 =
 * [New] Super administrators can now decide what reports users will see, and their arrangement both on the dashboard and Slimstat screens (thank you, [ac1643](https://wordpress.org/support/topic/specifying-the-settings-by-user/)). You will need our premium add-on [Network Analysis](https://www.wp-slimstat.com/downloads/network-view/) to unlock this feature.
 * [Fix] The `post_link` shortcode attribute was not working as expected when downloads were being listed (thank you, [tophr](https://wordpress.org/support/topic/top-downloads-shortcodewidget-not-working-as-expected)).

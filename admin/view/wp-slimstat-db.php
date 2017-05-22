@@ -344,7 +344,7 @@ class wp_slimstat_db {
 		$filters_normalized = array(
 			'columns' => array(),
 			'date' => array(
-				'interval_direction' => '',
+				'interval_direction' => 0,
 				'is_past' => false
 			),
 			'misc' => $_init_misc?array(
@@ -354,8 +354,7 @@ class wp_slimstat_db {
 			) : array(),
 			'utime' => array(
 				'start' => 0,
-				'end' => 0,
-				'type' => 'm'
+				'end' => 0
 			)
 		);
 
@@ -451,12 +450,12 @@ class wp_slimstat_db {
 						$intval_filter = intval( $a_filter[ 3 ] );
 						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = abs( $intval_filter );
 						if ( $intval_filter < 0 ) {
-							$filters_normalized[ 'date' ][ 'interval_direction' ] = 'minus';
+							$filters_normalized[ 'date' ][ 'interval_direction' ] = 0;
 						}
 						break;
 
 					case 'interval_direction':
-						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = in_array( $a_filter[ 3 ], array( 'plus', 'minus' ) ) ? $a_filter[ 3 ] : 'plus';
+						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = in_array( $a_filter[ 3 ], array( 0, 1 ) ) ? $a_filter[ 3 ] : 1;
 						break;
 
 					case 'direction':
@@ -486,12 +485,12 @@ class wp_slimstat_db {
 		if ( empty( $filters_normalized[ 'date' ][ 'interval' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_hours' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ) {
 			if ( !empty( $filters_normalized[ 'date' ][ 'minute' ] ) ) {
 				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-					!empty( $filters_normalized[ 'date' ][ 'hour' ] )?$filters_normalized[ 'date' ][ 'hour' ]:0,
+					!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
 					$filters_normalized[ 'date' ][ 'minute' ],
 					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ),
-					!empty( $filters_normalized[ 'date' ][ 'day' ] )?$filters_normalized[ 'date' ][ 'day' ]:date_i18n( 'j' ),
-					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
+					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
+					!empty( $filters_normalized[ 'date' ][ 'day' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'j' ),
+					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
 				 );
 				$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + 60;
 				$filters_normalized[ 'utime' ][ 'type' ] = 'H';
@@ -501,9 +500,9 @@ class wp_slimstat_db {
 					$filters_normalized[ 'date' ][ 'hour' ],
 					0,
 					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ),
-					!empty( $filters_normalized[ 'date' ][ 'day' ] )?$filters_normalized[ 'date' ][ 'day' ]:date_i18n( 'j' ),
-					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
+					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
+					!empty( $filters_normalized[ 'date' ][ 'day' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'j' ),
+					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
 				 );
 				$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + 3599;
 				$filters_normalized[ 'utime' ][ 'type' ] = 'H';
@@ -522,30 +521,47 @@ class wp_slimstat_db {
 			}
 			else if( !empty( $filters_normalized[ 'date' ][ 'year' ] ) && empty( $filters_normalized[ 'date' ][ 'month' ] ) ) {
 				$filters_normalized[ 'utime' ][ 'start' ] = mktime( 0, 0, 0, 1, 1, $filters_normalized[ 'date' ][ 'year' ] );
-				$filters_normalized[ 'utime' ][ 'end' ] = mktime( 0, 0, 0, 1, 1, $filters_normalized[ 'date' ][ 'year' ]+1 )-1;
+				$filters_normalized[ 'utime' ][ 'end' ] = mktime( 0, 0, 0, 1, 1, $filters_normalized[ 'date' ][ 'year' ] + 1 ) - 1;
 				$filters_normalized[ 'utime' ][ 'type' ] = 'Y';
 			}
-			else {
+			else if ( !empty( $filters_normalized[ 'date' ][ 'month' ] ) ) {
 				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 					0,
 					0,
 					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ),
+					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
 					1,
-					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
+					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
 				 );
 
 				$filters_normalized[ 'utime' ][ 'end' ] = strtotime(
-					( !empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' ) ).'-'.
-					( !empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ) ).
+					( !empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' ) ) . '-' .
+					( !empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ) ) .
 					'-01 00:00 +1 month UTC'
-				 )-1;
+				 ) - 1;
 				$filters_normalized[ 'utime' ][ 'type' ] = 'm';
+			}
+			else {
+				$filters_normalized[ 'utime' ][ 'end' ] = mktime(
+					date_i18n( 'H' ),
+					date_i18n( 'i' ),
+					date_i18n( 's' ),
+					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
+					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'd' ),
+					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
+				 );
+
+				$filters_normalized[ 'utime' ][ 'start' ] = $filters_normalized[ 'utime' ][ 'end' ] - 1728000;
+				$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
+				$filters_normalized[ 'date' ][ 'interval' ] = isset( $filters_normalized[ 'date' ][ 'interval' ] ) ? $filters_normalized[ 'date' ][ 'interval' ] : 20;
+				$filters_normalized[ 'date' ][ 'interval_direction' ] = 0;
 			}
 		}
 		else { // An interval was specified
 			$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
-			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 'plus' ) ? '+' : '-';
+
+			// Interval Direction: 0 = past, 1 = future
+			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 0 ) ? '-' : '+';
 
 			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 				!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
@@ -556,14 +572,14 @@ class wp_slimstat_db {
 				!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
 			);
 
-			$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + intval( $sign.(
+			$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + intval( $sign . (
 				( !empty( $filters_normalized[ 'date' ][ 'interval' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval' ] ) : 0 ) * 86400 +
 				( !empty( $filters_normalized[ 'date' ][ 'interval_hours' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval_hours' ] ) : 0 ) * 3600 +
 				( !empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) : 0 ) * 60
 			) );
 
 			// Swap boundaries if we're going back in time
-			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 'minus' ) {
+			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 0 ) {
 				$adjustment = ( abs( $filters_normalized[ 'utime' ][ 'start' ] - $filters_normalized[ 'utime' ][ 'end' ] ) < 86400 ) ? 0 : 86400;
 				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + $adjustment, $filters_normalized[ 'utime' ][ 'start' ] + $adjustment );
 			}

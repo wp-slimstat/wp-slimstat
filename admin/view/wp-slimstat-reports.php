@@ -20,24 +20,24 @@ class wp_slimstat_reports {
 		$filters = array();
 		if ( !empty( $_REQUEST[ 'fs' ] ) && is_array( $_REQUEST[ 'fs' ] ) ) {
 			foreach( $_REQUEST[ 'fs' ] as $a_request_filter_name => $a_request_filter_value ) {
-				$filters[] = "$a_request_filter_name $a_request_filter_value";
+				$filters[ htmlspecialchars( $a_request_filter_name ) ] = "$a_request_filter_name $a_request_filter_value";
 			}
 		}
 
 		// Fields and drop downs
 		if ( !empty( $_POST[ 'f' ] ) && !empty( $_POST[ 'o' ] ) ) {
-			$filters[] = "{$_POST[ 'f' ]} {$_POST[ 'o' ]} " . ( isset( $_POST[ 'v' ] ) ? $_POST[ 'v' ] : '' );
+			$filters[ htmlspecialchars( $_POST[ 'f' ] ) ] = "{$_POST[ 'f' ]} {$_POST[ 'o' ]} " . ( isset( $_POST[ 'v' ] ) ? $_POST[ 'v' ] : '' );
 		}
 
 		foreach ( array( 'minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes' ) as $a_date_time_filter_name ) {
-			if ( !empty( $_POST[ $a_date_time_filter_name ] ) ) {
-				$filters[] = "$a_date_time_filter_name equals {$_POST[ $a_date_time_filter_name ]}";
+			if ( isset( $_POST[ $a_date_time_filter_name ] ) ) {
+				$filters[ $a_date_time_filter_name ] = "$a_date_time_filter_name equals " . intval( $_POST[ $a_date_time_filter_name ] );
 			}
 		}
 
 		// Hidden Filters
 		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
-			$filters[] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
+			$filters[ 'author' ] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
 			self::$hidden_filters[ 'author' ] = 1;
 		}
 
@@ -1279,6 +1279,12 @@ class wp_slimstat_reports {
 				return 0;
 			}
 		}
+
+		
+//<div class="one-third"></div>
+//<div class="one-third"></div>
+//<div class="one-third"></div>
+//		return 0;
 
 		// Enqueue all the Javascript and styles
 		$path_slimstat = dirname( dirname( __FILE__ ) );
