@@ -541,7 +541,7 @@ class wp_slimstat_db {
 				 ) - 1;
 				$filters_normalized[ 'utime' ][ 'type' ] = 'm';
 			}
-			else {
+			else if ( !empty( wp_slimstat::$settings[ 'use_current_month_timespan' ] ) && wp_slimstat::$settings[ 'use_current_month_timespan' ] == 'no' ) {
 				$filters_normalized[ 'utime' ][ 'end' ] = mktime(
 					date_i18n( 'H' ),
 					date_i18n( 'i' ),
@@ -555,6 +555,23 @@ class wp_slimstat_db {
 				$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
 				$filters_normalized[ 'date' ][ 'interval' ] = isset( $filters_normalized[ 'date' ][ 'interval' ] ) ? $filters_normalized[ 'date' ][ 'interval' ] : 30;
 				$filters_normalized[ 'date' ][ 'interval_direction' ] = 0;
+			}
+			else {
+				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
+					0,
+					0,
+					0,
+					!empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ),
+					1,
+					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
+				 );
+
+				$filters_normalized[ 'utime' ][ 'end' ] = strtotime(
+					( !empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' ) ).'-'.
+					( !empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ) ).
+					'-01 00:00 +1 month UTC'
+				 )-1;
+				$filters_normalized[ 'utime' ][ 'type' ] = 'm';
 			}
 		}
 		else { // An interval was specified

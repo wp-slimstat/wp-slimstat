@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.7
+Stable tag: 4.6.8
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,12 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.8 =
+* [Update] We should have known better: for every naysayer there is always a yaysayer that will [ask for just the opposite feature](https://wordpress.org/support/topic/recent-month-change/), right? Fair enough: that's what the settings panels are for, after all. In order to make everybody happy, we introduced a new option (under Slimstat > Settings > Reports) that will allow you to decide what the default time span should be: current month or past 30 days, it's totally up to you.
+* [Update] We implemented Chris' idea to use a transient when recording the visit_id, to improve performance (thank you, [Chris](https://wordpress.org/support/topic/recommend-switching-slimstat_visit_id-to-use-a-transient/)).
+* [Fix] If your website is using a caching plugin, the tracking code might still be appended to the page, even if the user turned off tracking. Slimstat now checks if Tracking is enabled in the settings, before processing any request it receives from the browser (thank you, Chris).
+* [Fix] A false positive alert of attempted XSS injection was being returned when the 'android-app' scheme was being used to access the website (thank you, [Sasa](https://wordpress.org/support/topic/false-positive-tracker-error-attempted-xss-injection/)).
+
 = 4.6.7 =
 * [Update] Same-domain referrers are now tracked by default, when Slimstat is activated for the first time. Pre-existing installations are not affected. This change will allow us to introduce  new features as suggested [by one of our users](https://wordpress.org/support/topic/can-we-see-top-visitor-path/). Stay tuned.
 * [Update] Every first of the month we get at least one or two support requests from alarmed users who think their data has disappeared. Some of them end up leaving [negative reviews](https://wordpress.org/support/topic/limited-service/) because of this. The fundamental misunderstanding was related to the fact that Slimstat uses the CURRENT MONTH time span as the default range for calculating its reports and metrics. So every first of the month all the reports can look "empty" because there is not much data to be crunched. In order to address this problem, we've changed the default time range from the current month to the last 20 days. Hopefully this will avoid further negative reviews in the future!

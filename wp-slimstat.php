@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.7
+Version: 4.6.8
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.7';
+	public static $version = '4.6.8';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -133,6 +133,14 @@ class wp_slimstat {
 	 * Ajax Tracking
 	 */
 	public static function slimtrack_ajax() {
+		// If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
+		if ( self::$settings[ 'is_tracking' ] != 'yes' ) {
+			self::$stat[ 'id' ] = -204;
+			self::_set_error_array( __( 'Tracker is turned off, but client-side tracking code is still running.', 'wp-slimstat' ), true );
+			self::slimstat_save_options();
+			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
+		}
+
 		// This function also initializes self::$data_js and removes the checksum from self::$data_js['id']
 		self::_check_data_integrity( self::$raw_post_array );
 
@@ -244,6 +252,13 @@ class wp_slimstat {
 	 * Core tracking functionality
 	 */
 	public static function slimtrack( $_argument = '' ) {
+		// If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
+		if ( self::$settings['is_tracking'] != 'yes' ) {
+			self::$stat[ 'id' ] = -204;
+			self::_set_error_array( __( 'Tracker is turned off, but client-side tracking code is still running.', 'wp-slimstat' ), true );
+			return $_argument;
+		}
+
 		self::toggle_date_i18n_filters( false );
 		self::$stat[ 'dt' ] = date_i18n( 'U' );
 		self::$stat[ 'notes' ] = array();
@@ -286,7 +301,7 @@ class wp_slimstat {
 				unset( self::$stat[ 'referer' ] );
 			}
 
-			if ( !empty( $referer[ 'scheme' ] ) && !in_array( strtolower( $referer[ 'scheme' ] ), array( 'http', 'https' ) ) ) {
+			if ( !empty( $referer[ 'scheme' ] ) && !in_array( strtolower( $referer[ 'scheme' ] ), array( 'http', 'https', 'android-app' ) ) ) {
 				self::_set_error_array( sprintf( __( 'Attempted XSS Injection: %s (IP: %s)', 'wp-slimstat' ), self::$stat[ 'referer' ], self::$stat[ 'ip' ] ), false, 203 );
 				self::$stat[ 'notes' ][] = sprintf( __( 'Attempted XSS Injection: %s', 'wp-slimstat' ), self::$stat[ 'referer' ] );
 				unset( self::$stat[ 'referer' ] );
@@ -1007,14 +1022,16 @@ class wp_slimstat {
 
 		// User doesn't have an active session
 		if ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'yes' ) ) {
-			if ( empty( self::$settings[ 'session_duration' ] ) ) self::$settings[ 'session_duration' ] = 1800;
+			if ( empty( self::$settings[ 'session_duration' ] ) ) {
+				self::$settings[ 'session_duration' ] = 1800;
+			}
 
-			self::$stat[ 'visit_id' ] = get_option( 'slimstat_visit_id', -1 );
-			if ( self::$stat[ 'visit_id' ] == -1 ) {
+			self::$stat[ 'visit_id' ] = get_transient( 'slimstat_visit_id' );
+			if ( self::$stat[ 'visit_id' ] === false ) {
 				self::$stat[ 'visit_id' ] = intval( self::$wpdb->get_var( "SELECT MAX( visit_id ) FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" ) );
 			}
 			self::$stat[ 'visit_id' ]++;
-			update_option( 'slimstat_visit_id', self::$stat[ 'visit_id' ] );
+			set_transient( 'slimstat_visit_id', self::$stat[ 'visit_id' ] );
 
 			$is_set_cookie = apply_filters( 'slimstat_set_visit_cookie', true );
 			if ( $is_set_cookie ) {
@@ -1473,6 +1490,7 @@ class wp_slimstat {
 			'convert_resource_urls_to_titles' => 'yes',
 			'convert_ip_addresses' => 'no',
 			'async_load' => 'no',
+			'use_current_month_timespan' => 'no',
 			'expand_details' => 'no',
 			'rows_to_show' => '20',
 			'limit_results' => '1000',

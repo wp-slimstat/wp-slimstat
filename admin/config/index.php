@@ -154,8 +154,8 @@ $settings = array(
 	4 => array(
 		'title' => __( 'Reports', 'wp-slimstat' ),
 		'rows' => array(
-			'reports_basic_header' => array('description' => __('Formats and Conversions','wp-slimstat'), 'type' => 'section_header'),
-			'use_european_separators' => array('description' => __('Number Format','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('Choose the number format you want to use for your reports.','wp-slimstat'), 'custom_label_on' => '1.234,5', 'custom_label_off' => '1,234.5'),
+			'reports_basic_header' => array( 'description' => __( 'Data Formats and Conversion', 'wp-slimstat' ), 'type' => 'section_header' ),
+			'use_european_separators' => array( 'description' => __( 'Number Format', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Choose the number format you want to use for your reports.','wp-slimstat' ), 'custom_label_on' => '1.234,5', 'custom_label_off' => '1,234.5' ),
 			'date_format' => array('description' => __('Date Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's date.", 'wp-slimstat')),
 			'time_format' => array('description' => __('Time Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's time.", 'wp-slimstat')),
 			'show_display_name' => array('description' => __('Use Display Name','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('By default, users are listed by their usernames. Use this option to visualize their display names instead.','wp-slimstat')),
@@ -164,6 +164,7 @@ $settings = array(
 
 			'reports_functionality_header' => array( 'description' => __( 'Functionality', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'async_load' => array( 'description' => __( 'Async Mode', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple requests, thus avoiding memory issues and performance problems.', 'wp-slimstat' ) ),
+			'use_current_month_timespan' => array( 'description' => __( 'Default Time Span', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Determine what is the default time period for calculating all the data in each report: current month or past 30 days. You can always use the time filter dropdown to customize this value even further.', 'wp-slimstat' ), 'custom_label_on' => 'Month', 'custom_label_off' => '30 Days' ),
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'toggle', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
 			'limit_results' => array( 'description' => __( 'Max Results','wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'Decide how many records should be retrieved from the database in total. Depending on your server configuration, you may want to fine tune this value to avoid exceeding your PHP memory limit.', 'wp-slimstat' ) ),
