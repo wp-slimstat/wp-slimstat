@@ -10,6 +10,7 @@ Stable tag: 4.6.8
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
+
 = Feature Spotlight =
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
 
