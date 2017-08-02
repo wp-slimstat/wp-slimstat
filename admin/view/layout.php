@@ -72,6 +72,13 @@
 <div id="postbox-container-<?php echo $a_location_id ?>" class="postbox-container">
 <h2 class="slimstat-options-section-header"><?php echo wp_slimstat_admin::$screens_info[ $a_location_id ][ 'title' ] ?></h2>
 <div id="<?php echo $a_location_id ?>-sortables" class="meta-box-sortables"><?php
+	if ( $a_location_id != 'inactive' ) {
+		$move_to_inactive = ' <a class="slimstat-font-minus-circled" href="#" title="' . __( 'Move to Inactive', 'wp-slimstat' ) . '"></a>';
+	}
+	else {
+		$move_to_inactive = '';
+	}
+
 	foreach( $a_location_list as $a_report_id ) {
 		if ( empty( wp_slimstat_reports::$reports_info[ $a_report_id ] ) ) {
 			continue;
@@ -94,7 +101,10 @@
 
 		echo "
 			<div class='postbox$placeholder_classes' id='$a_report_id'>
-				<div class='slimstat-header-buttons'><a class='slimstat-font-$icon' href='#' title='$title'></a></div>
+				<div class='slimstat-header-buttons'>
+					<a class='slimstat-font-$icon' href='#' title='$title'></a>
+					$move_to_inactive
+				</div>
 				<h3 class='hndle'>" . wp_slimstat_reports::$reports_info[ $a_report_id ][ 'title' ] . "</h3>
 			</div>";
 	} ?>

@@ -98,8 +98,8 @@
 
 				<label for="slimstat-filter-interval_direction">Direction</label>
 				<select name="interval_direction" class="short" id="slimstat-filter-interval_direction">
-					<option value="0" <?php selected( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_direction' ], 0 ) ?>>-</option>
-					<option value="1" <?php selected( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_direction' ], 1 ) ?>>+</option>
+					<option value="1" <?php selected( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_direction' ], 1 ) ?>>-</option>
+					<option value="2" <?php selected( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_direction' ], 2 ) ?>>+</option>
 				</select>
 
 				<label for="slimstat-filter-interval">Days in interval</label>

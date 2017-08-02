@@ -118,10 +118,10 @@ var SlimStatAdmin = {
 
 jQuery(function(){
 	// Refresh page every X seconds
-	if (SlimStatAdminParams.refresh_interval > 0 && !jQuery('[name^="fs\[is_past\]"]').length){
-		SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
-		SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
-		refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
+	if ( SlimStatAdminParams.refresh_interval > 0 && jQuery( '.refresh-timer' ).length ) {
+		SlimStatAdmin._refresh_timer[ 0 ] = parseInt( SlimStatAdminParams.refresh_interval / 60 );
+		SlimStatAdmin._refresh_timer[ 1 ] = SlimStatAdminParams.refresh_interval % 60;
+		refresh_handle = window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
 	}
 
 	// Refresh report if (re)activated via the checkbox under Screen Options
@@ -238,11 +238,11 @@ jQuery(function(){
 		
 		jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
 
-		if (typeof refresh_handle != 'undefined' && !jQuery('[name^="fs\[is_past\]"]').length){
+		if ( typeof refresh_handle != 'undefined' && jQuery( '.refresh-timer' ).length ) {
 			window.clearTimeout(refresh_handle);
-			SlimStatAdmin._refresh_timer[0] = parseInt(SlimStatAdminParams.refresh_interval/60);
-			SlimStatAdmin._refresh_timer[1] = SlimStatAdminParams.refresh_interval%60;
-			refresh_handle = window.setTimeout("SlimStatAdmin.refresh_countdown();", 1000);
+			SlimStatAdmin._refresh_timer[ 0 ] = parseInt( SlimStatAdminParams.refresh_interval / 60 );
+			SlimStatAdmin._refresh_timer[ 1 ] = SlimStatAdminParams.refresh_interval % 60;
+			refresh_handle = window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
 		}
 	});
 
@@ -443,6 +443,9 @@ jQuery(function(){
 			jQuery( this ).removeClass( 'slimstat-font-docs' ).addClass( 'slimstat-font-trash' ).parents( '.postbox' ).clone(true).appendTo( jQuery( this ).parents( '.meta-box-sortables' ) );
 			jQuery( this ).removeClass( 'slimstat-font-trash' ).addClass( 'slimstat-font-docs' );
 		}
+		else if ( jQuery( this ).hasClass( 'slimstat-font-minus-circled' ) ) {
+			jQuery( this ).removeClass( 'slimstat-font-minus-circled' ).parents( '.postbox' ).appendTo( jQuery( '#postbox-container-inactive .meta-box-sortables' ) );
+		}
 		else {
 			jQuery( this ).parents( '.postbox' ).remove();
 		}
@@ -452,7 +455,7 @@ jQuery(function(){
 		jQuery( '.meta-box-sortables' ).each( function() {
 			data[ 'order[' + this.id.split("-")[0] + ']' ] = jQuery( this ).sortable( 'toArray' ).join( ',' );
 		});
-		
+
 		jQuery.ajax({
 			url: ajaxurl,
 			type: 'post',

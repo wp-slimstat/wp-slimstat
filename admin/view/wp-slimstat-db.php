@@ -22,16 +22,11 @@ class wp_slimstat_db {
 	/*
 	 * Sets the filters and other structures needed to store the data retrieved from the DB
 	 */
-	public static function init( $_filters = '' ){
+	public static function init( $_filters = '' ) {
 		// Decimal and thousand separators
 		if ( wp_slimstat::$settings[ 'use_european_separators' ] == 'no' ){
 			self::$formats[ 'decimal' ] = '.';
 			self::$formats[ 'thousand' ] = ',';
-		}
-
-		// Filters are defined as: browser equals Chrome|country starts_with en
-		if ( !is_string( $_filters ) || empty( $_filters ) ){
-			$_filters = '';
 		}
 
 		// List of supported filters and their friendly names
@@ -128,14 +123,45 @@ class wp_slimstat_db {
 		// Allow third party plugins to add even more column names to the array
 		self::$all_columns_names = apply_filters( 'slimstat_column_names', self::$all_columns_names );
 
+		// Filters use the following format: browser equals Firefox&&&country contains gb
+		$filters_array = array();
+		if ( !empty( $_REQUEST[ 'fs' ] ) && is_array( $_REQUEST[ 'fs' ] ) ) {
+			foreach( $_REQUEST[ 'fs' ] as $a_request_filter_name => $a_request_filter_value ) {
+				$filters_array[ htmlspecialchars( $a_request_filter_name ) ] = "$a_request_filter_name $a_request_filter_value";
+			}
+		}
+
+		// Fields and drop downs
+		if ( !empty( $_POST[ 'f' ] ) && !empty( $_POST[ 'o' ] ) ) {
+			$filters_array[ htmlspecialchars( $_POST[ 'f' ] ) ] = "{$_POST[ 'f' ]} {$_POST[ 'o' ]} " . ( isset( $_POST[ 'v' ] ) ? $_POST[ 'v' ] : '' );
+		}
+
+		foreach ( array( 'minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes' ) as $a_date_time_filter_name ) {
+			if ( isset( $_POST[ $a_date_time_filter_name ] ) ) {
+				$filters_array[ $a_date_time_filter_name ] = "$a_date_time_filter_name equals " . intval( $_POST[ $a_date_time_filter_name ] );
+			}
+		}
+
+		// Hidden Filters
+		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
+			$filters_array[ 'author' ] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
+			self::$hidden_filters[ 'author' ] = 1;
+		}
+
+		if ( !empty( $filters_array ) ) {
+			$filters_raw = implode( '&&&', $filters_array );
+		}
+
+		// Filters are defined as: browser equals Chrome&&&country starts_with en
+		if ( !isset( $filters_raw ) || !is_string( $filters_raw ) ) {
+			$filters_raw = '';
+		}
+
 		// Hook for the... filters
-		$_filters = apply_filters( 'slimstat_db_pre_filters', $_filters );
+		$filters_raw = apply_filters( 'slimstat_db_pre_filters', $filters_raw );
 
-		// Normalize the input (filters)
-		self::$filters_normalized = self::parse_filters( $_filters );
-
-		// Hook for the array of normalized filters
-		self::$filters_normalized = apply_filters( 'slimstat_db_filters_normalized', self::$filters_normalized, $_filters );
+		// Normalize the filters
+		self::$filters_normalized = self::get_filters_normalized( $filters_raw );
 	}
 	// end init
 
@@ -340,18 +366,15 @@ class wp_slimstat_db {
 		return wp_slimstat::$wpdb->get_var( $_sql );
 	}
 
-	public static function parse_filters( $_filters = '', $_init_misc = true ) {
+	public static function get_filters_normalized( $_filters = '', $_init_misc = true ) {
 		$filters_normalized = array(
 			'columns' => array(),
-			'date' => array(
-				'interval_direction' => 0,
-				'is_past' => false
-			),
-			'misc' => $_init_misc?array(
+			'date' => array(),
+			'misc' => array(
 				'direction' => 'DESC',
 				'limit_results' => wp_slimstat::$settings[ 'limit_results' ],
 				'start_from' => 0
-			) : array(),
+			),
 			'utime' => array(
 				'start' => 0,
 				'end' => 0
@@ -360,6 +383,7 @@ class wp_slimstat_db {
 
 		if ( !empty( $_filters ) ) {
 			$matches = explode( '&&&', $_filters );
+
 			foreach( $matches as $idx => $a_match ) {
 				preg_match( '/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode( $a_match ), $a_filter );
 
@@ -391,12 +415,10 @@ class wp_slimstat_db {
 							switch( $a_filter[ 1 ] ) {
 								case 'minute':
 									$filters_normalized[ 'date' ][ 'minute' ] = intval( date( 'i', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
-									$filters_normalized[ 'date' ][ 'is_past' ] = true;
 									break;
 
 								case 'hour':
 									$filters_normalized[ 'date' ][ 'hour' ] = intval( date( 'H', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
-									$filters_normalized[ 'date' ][ 'is_past' ] = true;
 									break;
 
 								case 'day':
@@ -419,29 +441,6 @@ class wp_slimstat_db {
 								unset( $filters_normalized[ 'date' ][ $a_filter[ 1 ] ] );
 							}
 						}
-
-						switch( $a_filter[ 1 ] ) {
-							case 'day':
-								if ( $filters_normalized[ 'date' ][ 'day' ] != date_i18n( 'j' ) ) {
-									$filters_normalized[ 'date' ][ 'is_past' ] = true;
-								}
-								break;
-
-							case 'month':
-								if ( $filters_normalized[ 'date' ][ 'month' ] != date_i18n( 'n' ) ) {
-									$filters_normalized[ 'date' ][ 'is_past' ] = true;
-								}
-								break;
-
-							case 'year':
-								if ( $filters_normalized[ 'date' ][ 'year' ] != date_i18n( 'Y' ) ) {
-									$filters_normalized[ 'date' ][ 'is_past' ] = true;
-								}
-								break;
-
-							default:
-								break;
-						}
 						break;
 
 					case 'interval':
@@ -450,12 +449,12 @@ class wp_slimstat_db {
 						$intval_filter = intval( $a_filter[ 3 ] );
 						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = abs( $intval_filter );
 						if ( $intval_filter < 0 ) {
-							$filters_normalized[ 'date' ][ 'interval_direction' ] = 0;
+							$filters_normalized[ 'date' ][ 'interval_direction' ] = 1;
 						}
 						break;
 
 					case 'interval_direction':
-						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = in_array( $a_filter[ 3 ], array( 0, 1 ) ) ? $a_filter[ 3 ] : 1;
+						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = in_array( $a_filter[ 3 ], array( 1, 2 ) ) ? $a_filter[ 3 ] : 1;
 						break;
 
 					case 'direction':
@@ -553,8 +552,11 @@ class wp_slimstat_db {
 
 				$filters_normalized[ 'utime' ][ 'start' ] = $filters_normalized[ 'utime' ][ 'end' ] - 2592000;
 				$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
-				$filters_normalized[ 'date' ][ 'interval' ] = isset( $filters_normalized[ 'date' ][ 'interval' ] ) ? $filters_normalized[ 'date' ][ 'interval' ] : 30;
-				$filters_normalized[ 'date' ][ 'interval_direction' ] = 0;
+
+				if ( isset( $filters_normalized[ 'date' ][ 'interval' ] ) ) {
+					$filters_normalized[ 'date' ][ 'interval' ] = $filters_normalized[ 'date' ][ 'interval' ];
+					$filters_normalized[ 'date' ][ 'interval_direction' ] = 1;
+				}
 			}
 			else {
 				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
@@ -578,7 +580,7 @@ class wp_slimstat_db {
 			$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
 
 			// Interval Direction: 0 = past, 1 = future
-			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 0 ) ? '-' : '+';
+			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 1 ) ? '-' : '+';
 
 			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 				!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
@@ -596,7 +598,7 @@ class wp_slimstat_db {
 			) );
 
 			// Swap boundaries if we're going back in time
-			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 0 ) {
+			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 1 ) {
 				$adjustment = ( abs( $filters_normalized[ 'utime' ][ 'start' ] - $filters_normalized[ 'utime' ][ 'end' ] ) < 86400 ) ? 0 : 86400;
 				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + $adjustment, $filters_normalized[ 'utime' ][ 'start' ] + $adjustment );
 			}
@@ -624,6 +626,9 @@ class wp_slimstat_db {
 
 		// Restore filters on date_i18n
 		wp_slimstat::toggle_date_i18n_filters( true );
+
+		// Apply third-party filters
+		$filters_normalized = apply_filters( 'slimstat_db_filters_normalized', $filters_normalized, $_filters );
 
 		return $filters_normalized;
 	}

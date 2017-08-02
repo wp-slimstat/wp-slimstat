@@ -16,38 +16,10 @@ class wp_slimstat_reports {
 	 * Initalize class properties
 	 */
 	public static function init(){
-		// Filters use the following format: browser equals Firefox&&&country contains gb
-		$filters = array();
-		if ( !empty( $_REQUEST[ 'fs' ] ) && is_array( $_REQUEST[ 'fs' ] ) ) {
-			foreach( $_REQUEST[ 'fs' ] as $a_request_filter_name => $a_request_filter_value ) {
-				$filters[ htmlspecialchars( $a_request_filter_name ) ] = "$a_request_filter_name $a_request_filter_value";
-			}
-		}
-
-		// Fields and drop downs
-		if ( !empty( $_POST[ 'f' ] ) && !empty( $_POST[ 'o' ] ) ) {
-			$filters[ htmlspecialchars( $_POST[ 'f' ] ) ] = "{$_POST[ 'f' ]} {$_POST[ 'o' ]} " . ( isset( $_POST[ 'v' ] ) ? $_POST[ 'v' ] : '' );
-		}
-
-		foreach ( array( 'minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes' ) as $a_date_time_filter_name ) {
-			if ( isset( $_POST[ $a_date_time_filter_name ] ) ) {
-				$filters[ $a_date_time_filter_name ] = "$a_date_time_filter_name equals " . intval( $_POST[ $a_date_time_filter_name ] );
-			}
-		}
-
-		// Hidden Filters
-		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
-			$filters[ 'author' ] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
-			self::$hidden_filters[ 'author' ] = 1;
-		}
-
-		if ( !empty( $filters ) ) {
-			$filters = implode( '&&&', $filters );
-		}
-
+		
 		// Include and initialize the API to interact with the database
 		include_once( 'wp-slimstat-db.php' );
-		wp_slimstat_db::init( $filters );
+		wp_slimstat_db::init();
 
 		// Retrieve data that will be used by multiple reports
 		self::$pageviews = wp_slimstat_db::count_records();
@@ -904,7 +876,7 @@ class wp_slimstat_reports {
 
 		// No network-wide settings exist
 		if ( empty( self::$user_reports ) ) {
-			self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
+			self::$user_reports = get_user_option( "meta-box-order_slimstat_page_slimlayout", $current_user->ID );
 		}
 
 		// Do this only if we are in one of our screens (no dashboard!)
@@ -985,21 +957,21 @@ class wp_slimstat_reports {
 
 		$_results_per_page = ( $_results_per_page < 0 ) ? wp_slimstat::$settings[ 'rows_to_show' ] : $_results_per_page;
 
-		$endpoint = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page);
+		$endpoint = min( $_count_all_results, wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ] + $_results_per_page );
 		$pagination_buttons = '';
 		$direction_prev = is_rtl() ? 'right' : 'left';
 		$direction_next = is_rtl() ? 'left' : 'right';
 
-		if ($endpoint + $_results_per_page < $_count_all_results && $_count_page_results > 0){
+		if ( $endpoint + $_results_per_page < $_count_all_results && $_count_page_results > 0 ) {
 			$startpoint = $_count_all_results - $_count_all_results % $_results_per_page;
-			if ($startpoint == $_count_all_results) {
+			if ( $startpoint == $_count_all_results ) {
 				$startpoint -= $_results_per_page;
 			}
-			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-'.$direction_next.'" href="'.wp_slimstat_reports::fs_url('start_from equals '.$startpoint).'"></a> ';
+			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url( 'start_from equals ' . $startpoint ) . '"></a> ';
 		}
 		if ($endpoint < $_count_all_results && $_count_page_results > 0){
 			$startpoint = wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page;
-			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-'.$direction_next.'" href="'.wp_slimstat_reports::fs_url('start_from equals '.$startpoint).'"></a> ';
+			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-'.$direction_next.'" href="' . wp_slimstat_reports::fs_url( 'start_from equals ' . $startpoint ) . '"></a> ';
 		}
 		if (wp_slimstat_db::$filters_normalized['misc']['start_from'] > 0){
 			$startpoint = (wp_slimstat_db::$filters_normalized['misc']['start_from'] > $_results_per_page)?wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page : 0;
@@ -1009,9 +981,10 @@ class wp_slimstat_reports {
 			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals 0').'"></a> ';
 		}
 
-		$pagination = '<p class="pagination">'.sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1, 0, '', wp_slimstat_db::$formats['thousand']), number_format($endpoint, 0, '', wp_slimstat_db::$formats['thousand']), number_format($_count_all_results, 0, '', wp_slimstat_db::$formats['thousand']) . ( ( $_count_all_results == wp_slimstat::$settings[ 'limit_results' ] ) ? '+' : '') );
-		if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && !wp_slimstat_db::$filters_normalized['date']['is_past']){
-			$pagination .= ' ['.__('Refresh in','wp-slimstat').' <i class="refresh-timer"></i>]';
+		$pagination = '<p class="pagination">' . sprintf( __( 'Results %s - %s of %s', 'wp-slimstat' ), number_format( wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ] + 1, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ), number_format( $endpoint, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ), number_format( $_count_all_results, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ) . ( ( $_count_all_results == wp_slimstat::$settings[ 'limit_results' ] ) ? '+' : '') );
+
+		if ( $_show_refresh_countdown && wp_slimstat::$settings[ 'refresh_interval' ] > 0 && wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] >= date_i18n( 'U' ) - 300 ) {
+			$pagination .= ' [' . __( 'Refresh in', 'wp-slimstat' ) . ' <i class="refresh-timer"></i>]';
 		}
 		$pagination .= $pagination_buttons.'</p>';
 
@@ -1314,7 +1287,7 @@ class wp_slimstat_reports {
 					"mouseWheelZoomEnabled": true,
 					"legend": {
 						"equalWidths": true,
-						"periodValueText": "[[value.sum]]",
+						"periodValueText": "[[value.average]]",
 						"position": "bottom",
 						"align": "center"
 					},
@@ -1339,6 +1312,9 @@ class wp_slimstat_reports {
 					"export": {
 						"enabled": true
 					},
+					"numberFormatter": {
+						"precision": 0
+					},
 					"graphs": [
 <?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
 						{
@@ -1350,7 +1326,7 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineThickness": 2,
 							"lineColor": "<?php echo $chart_colors[ 2 ] ?>",
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v3"
@@ -1363,7 +1339,7 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineThickness": 2,
 							"lineColor": "<?php echo $chart_colors[ 3 ] ?>",
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v4"
@@ -1378,7 +1354,7 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineColor": "<?php echo $chart_colors[ 0 ] ?>",
 							"lineThickness": 2,
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v1"
@@ -1391,7 +1367,7 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineColor": "<?php echo $chart_colors[ 1 ] ?>",
 							"lineThickness": 2,
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?>",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v2"
@@ -1455,7 +1431,7 @@ class wp_slimstat_reports {
 		$results[ 1 ][ 'value' ] = $days_in_range;
 
 		$results[ 2 ][ 'metric' ] = __( 'Average Daily Pageviews', 'wp-slimstat' );
-		$results[ 2 ][ 'value' ] = number_format( intval( self::$pageviews/$days_in_range ), 0, '', wp_slimstat_db::$formats['thousand'] );
+		$results[ 2 ][ 'value' ] = number_format( round( self::$pageviews / $days_in_range, 0 ), 0, '', wp_slimstat_db::$formats['thousand'] );
 		$results[ 2 ][ 'tooltip' ] = __( 'How many pages have been visited on average every day during the current period.', 'wp-slimstat' );
 
 		$results[ 3 ][ 'metric' ] = __( 'From Search Results', 'wp-slimstat' );
@@ -2026,28 +2002,30 @@ class wp_slimstat_reports {
 		$filtered_url = $filtered_url[ 0 ] . '?page=' . $request_page;
 
 		// Columns
-		$filters_normalized = wp_slimstat_db::parse_filters( $_filters, false );
+		$url_filters = wp_slimstat_db::get_filters_normalized( $_filters, false );
 
-		if ( !empty( $filters_normalized[ 'columns' ] ) ) {
-			foreach ( $filters_normalized[ 'columns' ] as $a_key => $a_filter ) {
+		if ( !empty( $url_filters[ 'columns' ] ) ) {
+			foreach ( $url_filters[ 'columns' ] as $a_key => $a_filter ) {
 				$a_key = str_replace( '_calculated', '', $a_key );
 				$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( $a_filter[ 0 ] . ' ' . $a_filter[ 1 ] );
 			}
 		}
 
 		// Date ranges
-		if ( !empty( $filters_normalized[ 'date' ] ) ) {
-			foreach ( $filters_normalized[ 'date' ] as $a_key => $a_filter ) {
-				if ( !empty( $a_filter ) || $a_filter === 0 ) {
+		if ( !empty( $url_filters[ 'date' ] ) ) {
+			foreach ( $url_filters[ 'date' ] as $a_key => $a_filter ) {
+				if ( isset( $a_filter ) ) {
 					$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
 				}
 			}
 		}
 
 		// Misc filters
-		if ( !empty( $filters_normalized[ 'misc' ] ) ) {
-			foreach ( $filters_normalized[ 'misc' ] as $a_key => $a_filter ) {
-				$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
+		if ( !empty( $url_filters[ 'misc' ] ) ) {
+			foreach ( $url_filters[ 'misc' ] as $a_key => $a_filter ) {
+				if ( strpos( $_filters, "$a_key equals" ) !== false ) {
+					$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
+				}
 			}
 		}
 

@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.8
+Stable tag: 4.6.9
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.9 =
+* [New] Added operating systems to the column you can use to blacklist certain pageviews. Please refer to [this page](https://slimstat.freshdesk.com/solution/articles/12000031504-what-are-the-operating-system-codes-used-by-slimstat-) to learn more about what codes Slimstat uses to represent operating systems internally.
+* [New] In the Customizer, you can now quickly move your reports to the Inactive bucket with just one simple click, instead of dragging and dropping them all the way to the top (thank you, [ac1643](https://wordpress.org/support/topic/customizing-the-reports/)).
+* [Update] We partially rewrote the code that handles our Filter Bar, specifically when it comes to handling date ranges. A few minor bugs were squashed in the process, but please don't report us to PETA! (thank you, Boris)
+* [Fix] The customizer was not working if the Slimstat menu was being displayed in the admin bar instead of as a separate menu. Please report any issues you experience in using the customizer.
+* [Fix] Our charts are calculating the sum of all the data points, day by day. However other reports show a cumulative sum (let's say of Unique IPs) for the whole month. If a given IP visits your website on two different days, it will be counted twice in the Unique IPs chart, but only once in Traffic at Glance. In order to avoid any confusion, we are changing the chart legend to display the AVERAGE value, instead of the sum. 
+
 = 4.6.8 =
 * [Update] We should have known better: for every naysayer there is always a yaysayer that will [ask for just the opposite feature](https://wordpress.org/support/topic/recent-month-change/), right? Fair enough: that's what the settings panels are for, after all. In order to make everybody happy, we introduced a new option (under Slimstat > Settings > Reports) that will allow you to decide what the default time span should be: current month or past 30 days, it's totally up to you.
 * [Update] We implemented Chris' idea to use a transient when recording the visit_id, to improve performance (thank you, [Chris](https://wordpress.org/support/topic/recommend-switching-slimstat_visit_id-to-use-a-transient/)).
@@ -83,7 +90,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] There was an incompatibility issue between our premium add-ons Custom DB and Network Settings, causing the network-wide configuration to be reset when a new blog was being created in the network.
 * [Fix] The tracker was not working as expected if the blacklist by usernames contained a @ character (thank you, Eugenio).
 * [Fix] A bug was affecting the way the geolocation function would calculate the country parameter from certain given IP addresses (thank you, Carsten).
-* [Fix] Links with "javascript:" value were being tracked as outbound clicks (thank you, [Luna](https://wordpress.org/support/topic/javascriptvoid0-2)).
 
 = 4.6.6 =
 * [New] Super administrators can now decide what reports users will see, and their arrangement both on the dashboard and Slimstat screens (thank you, [ac1643](https://wordpress.org/support/topic/specifying-the-settings-by-user/)). You will need our premium add-on [Network Analysis](https://www.wp-slimstat.com/downloads/network-view/) to unlock this feature.
