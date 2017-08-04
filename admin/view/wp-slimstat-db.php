@@ -157,6 +157,10 @@ class wp_slimstat_db {
 			$filters_raw = '';
 		}
 
+		if ( !empty( $_filters ) && is_string( $_filters ) ) {
+			$filters_raw = empty( $filters_raw ) ? $_filters : $_filters . $filters_raw;
+		}
+
 		// Hook for the... filters
 		$filters_raw = apply_filters( 'slimstat_db_pre_filters', $filters_raw );
 
@@ -579,8 +583,8 @@ class wp_slimstat_db {
 		else { // An interval was specified
 			$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
 
-			// Interval Direction: 0 = past, 1 = future
-			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 1 ) ? '-' : '+';
+			// Interval Direction: 1 = past, 2 = future
+			$sign = ( !empty( $filters_normalized[ 'date' ][ 'interval_direction' ] ) && $filters_normalized[ 'date' ][ 'interval_direction' ] == 2 ) ? '+' : '-';
 
 			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 				!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
