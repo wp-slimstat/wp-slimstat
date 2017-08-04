@@ -157,6 +157,10 @@ class wp_slimstat_db {
 			$filters_raw = '';
 		}
 
+		if ( !empty( $_filters ) && is_string( $_filters ) ) {
+			$filters_raw = empty( $filters_raw ) ? $_filters : $_filters . $filters_raw;
+		}
+
 		// Hook for the... filters
 		$filters_raw = apply_filters( 'slimstat_db_pre_filters', $filters_raw );
 
@@ -550,7 +554,8 @@ class wp_slimstat_db {
 					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
 				 );
 
-				$filters_normalized[ 'utime' ][ 'start' ] = $filters_normalized[ 'utime' ][ 'end' ] - 2592000;
+				$filters_normalized[ 'utime' ][ 'start' ] = $filters_normalized[ 'utime' ][ 'end' ] - ( intval( wp_slimstat::$settings[ 'posts_column_day_interval' ] ) * 86400 );
+				$filters_normalized[ 'date' ][ 'interval' ] = wp_slimstat::$settings[ 'posts_column_day_interval' ];
 				$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
 
 				if ( isset( $filters_normalized[ 'date' ][ 'interval' ] ) ) {
@@ -579,8 +584,8 @@ class wp_slimstat_db {
 		else { // An interval was specified
 			$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
 
-			// Interval Direction: 0 = past, 1 = future
-			$sign = ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 1 ) ? '-' : '+';
+			// Interval Direction: 1 = past, 2 = future
+			$sign = ( !empty( $filters_normalized[ 'date' ][ 'interval_direction' ] ) && $filters_normalized[ 'date' ][ 'interval_direction' ] == 2 ) ? '+' : '-';
 
 			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 				!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
@@ -693,7 +698,6 @@ class wp_slimstat_db {
 	public static function get_data_for_chart( $_args = array() ) {
 		$previous = array( 'end' => self::$filters_normalized[ 'utime' ][ 'start' ] - 1 );
 		$label_date_format = '';
-		$has_previous = true;
 		$output = array( 'json' => '[]', 'json_count' => 0, 'current' => array( 'label' => '' ) );
 
 		// Each type has its own parameters
@@ -720,7 +724,6 @@ class wp_slimstat_db {
 				break;
 
 			case 'interval':
-				$has_previous = false;
 				$group_by = array( 'MONTH', 'DAY', 'j' );
 				$values_in_interval = array( abs( self::$filters_normalized[ 'date' ][ 'interval' ] - 1 ), abs( self::$filters_normalized[ 'date' ][ 'interval' ] - 1 ), 0, 86400 );
 				break;
@@ -738,7 +741,7 @@ class wp_slimstat_db {
 		}
 
 		// Custom intervals don't have a comparison chart ('previous' range)
-		if ( empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ) {
+		if ( !empty( $previous[ 'start' ] ) ) {
 			$_args[ 'where' ] = self::get_combined_where( $_args[ 'where' ], '*', false );
 			$previous_time_range = ' AND (dt BETWEEN '.$previous[ 'start' ].' AND '.$previous[ 'end' ].' OR dt BETWEEN '.self::$filters_normalized[ 'utime' ][ 'start' ].' AND '.self::$filters_normalized[ 'utime' ][ 'end' ].')';
 		}
@@ -763,7 +766,7 @@ class wp_slimstat_db {
 				$group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
 
 		// Fill the output array
-		if ( $has_previous ) {
+		if ( !empty( $previous[ 'start' ] ) ) {
 			$output[ 'current' ][ 'label' ] = gmdate( $label_date_format, self::$filters_normalized[ 'utime' ][ 'start' ] );
 			$output[ 'previous' ][ 'label' ] = gmdate( $label_date_format, $previous[ 'start' ] );
 		}

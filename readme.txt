@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8
-Stable tag: 4.6.9
+Stable tag: 4.6.9.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,11 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.6.9.1 =
+* [New] You can now customize the "past days" interval to be used as the default time range to calculate your metrics, which was previously fixed to 30 days.
+* [Fix] The Overview chart was not working as expected for some users, because of a bug in one of the revised SQL queries.
+* [Fix] The pageview count on the Edit Posts/Pages screens was also affected by the same bug mentioned here above.
+
 = 4.6.9 =
 * [New] Added operating systems to the column you can use to blacklist certain pageviews. Please refer to [this page](https://slimstat.freshdesk.com/solution/articles/12000031504-what-are-the-operating-system-codes-used-by-slimstat-) to learn more about what codes Slimstat uses to represent operating systems internally.
 * [New] In the Customizer, you can now quickly move your reports to the Inactive bucket with just one simple click, instead of dragging and dropping them all the way to the top (thank you, [ac1643](https://wordpress.org/support/topic/customizing-the-reports/)).
