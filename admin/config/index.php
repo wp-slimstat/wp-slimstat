@@ -28,7 +28,7 @@ if ( isset( $_POST[ 'options' ][ 'can_view' ] ) ) {
 	$post_data = trim( $_POST[ 'options' ][ 'can_view' ] );
 	$user_array = wp_slimstat::string_to_array( $_POST[ 'options' ][ 'can_view' ] );
 
-	if ( is_array( $user_array ) && !empty( $post_data ) ) {
+	if ( !empty( $post_data ) ) {
 		$sql_user_placeholders = implode( ', ', array_fill( 0, count( $user_array ), '%s' ) );
 		if ( $GLOBALS[ 'wpdb' ]->get_var( $GLOBALS[ 'wpdb' ]->prepare( "SELECT COUNT( * ) FROM {$GLOBALS[ 'wpdb' ]->users} WHERE user_login IN ( $sql_user_placeholders )", $user_array ) ) == count( $user_array ) ) {
 			wp_slimstat::$settings[ 'can_view' ] = $_POST[ 'options' ][ 'can_view' ];
@@ -36,6 +36,9 @@ if ( isset( $_POST[ 'options' ][ 'can_view' ] ) ) {
 		else{
 			wp_slimstat_admin::$faulty_fields[] = __( 'Read access: username not found', 'wp-slimstat' );
 		}
+	}
+	else {
+		wp_slimstat::$settings[ 'can_view' ] = '';
 	}
 }
 
@@ -193,6 +196,7 @@ $settings = array(
 			'restrict_authors_view' => array('description' => __('Restrict Authors','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('Enable this option if you want your authors to only see stats related to their own content.','wp-slimstat')),
 			'capability_can_view' => array('description' => __('Capability','wp-slimstat'), 'type' => 'text', 'long_description' => __("Specify the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to access the reports (default: <code>activate_plugins</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here below. In this case, the list has precedence over the capability.",'wp-slimstat')),
 			'can_view' => array('description' => __('Whitelist','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("List all the users who should have access to the reports. Administrators are implicitly allowed, so you don't need to list them in here. Usernames are case sensitive.",'wp-slimstat'), 'skip_update' => true),
+			'rest_api_tokens' => array( 'description' => __( 'REST API Tokens', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "In order to send requests to the Slimstat REST API, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, to distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens.", 'wp-slimstat' ) ),
 
 			'permissions_config_header' => array('description' => __('Settings','wp-slimstat'), 'type' => 'section_header'),
 			'capability_can_admin' => array('description' => __('Capability','wp-slimstat'), 'type' => 'text', 'long_description' => __("Specify the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> required to configure Slimstat (default: <code>activate_plugins</code>). The whitelist here below can be used to override this option for specific users.",'wp-slimstat')),

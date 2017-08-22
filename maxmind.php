@@ -1,10 +1,10 @@
 <?php
 
-class maxmind_geolite2 {
+class maxmind_geolite2_connector {
 	public static $upload_dir = '';
 	public static $maxmind_path = '';
 
-	public function get_geolocation_info( $_ip = '' ) {
+	public static function get_geolocation_info( $_ip = '' ) {
 
 		self::$upload_dir = wp_upload_dir();
 		self::$upload_dir = self::$upload_dir[ 'basedir' ];
@@ -18,7 +18,7 @@ class maxmind_geolite2 {
 
 		self::$maxmind_path = self::$upload_dir . '/GeoLite2-City.mmdb';
 
-		$reader = new Reader( self::$maxmind_path );
+		$reader = new MaxMindReader( self::$maxmind_path );
 		$record = $reader->get( $_ip );
 
 		if ( !empty( $record[ 'city' ][ 'names' ][ 'en' ] ) ) {
@@ -35,8 +35,7 @@ class maxmind_geolite2 {
  * Instances of this class provide a reader for the MaxMind DB format. IP
  * addresses can be looked up using the <code>get</code> method.
  */
-class Reader
-{
+class MaxMindReader {
     private static $DATA_SECTION_SEPARATOR_SIZE = 16;
     private static $METADATA_START_MARKER = "\xAB\xCD\xEFMaxMind.com";
     private static $METADATA_START_MARKER_LENGTH = 14;
@@ -49,7 +48,7 @@ class Reader
     private $metadata;
 
     /**
-     * Constructs a Reader for the MaxMind DB format. The file passed to it must
+     * Constructs a MaxMindReader for the MaxMind DB format. The file passed to it must
      * be a valid MaxMind DB file such as a GeoIp2 database file.
      *
      * @param string $database
@@ -86,10 +85,10 @@ class Reader
         }
 
         $start = $this->findMetadataStart($database);
-        $metadataDecoder = new Decoder($this->fileHandle, $start);
+        $metadataDecoder = new MaxMindDecoder($this->fileHandle, $start);
         list($metadataArray) = $metadataDecoder->decode($start);
-        $this->metadata = new Metadata($metadataArray);
-        $this->decoder = new Decoder(
+        $this->metadata = new MaxMindMetadata($metadataArray);
+        $this->decoder = new MaxMindDecoder(
             $this->fileHandle,
             $this->metadata->searchTreeSize + self::$DATA_SECTION_SEPARATOR_SIZE
         );
@@ -210,22 +209,22 @@ class Reader
         // XXX - probably could condense this.
         switch ($this->metadata->recordSize) {
             case 24:
-                $bytes = Util::read($this->fileHandle, $baseOffset + $index * 3, 3);
+                $bytes = MaxMindUtil::read($this->fileHandle, $baseOffset + $index * 3, 3);
                 list(, $node) = unpack('N', "\x00" . $bytes);
                 return $node;
             case 28:
-                $middleByte = Util::read($this->fileHandle, $baseOffset + 3, 1);
+                $middleByte = MaxMindUtil::read($this->fileHandle, $baseOffset + 3, 1);
                 list(, $middle) = unpack('C', $middleByte);
                 if ($index == 0) {
                     $middle = (0xF0 & $middle) >> 4;
                 } else {
                     $middle = 0x0F & $middle;
                 }
-                $bytes = Util::read($this->fileHandle, $baseOffset + $index * 4, 3);
+                $bytes = MaxMindUtil::read($this->fileHandle, $baseOffset + $index * 4, 3);
                 list(, $node) = unpack('N', chr($middle) . $bytes);
                 return $node;
             case 32:
-                $bytes = Util::read($this->fileHandle, $baseOffset + $index * 4, 4);
+                $bytes = MaxMindUtil::read($this->fileHandle, $baseOffset + $index * 4, 4);
                 list(, $node) = unpack('N', $bytes);
                 return $node;
             default:
@@ -322,9 +321,7 @@ class Reader
     }
 }
 
-class Decoder
-{
-
+class MaxMindDecoder {
     private $fileStream;
     private $pointerBase;
     // This is only used for unit testing
@@ -367,7 +364,7 @@ class Decoder
     {
         list(, $ctrlByte) = unpack(
             'C',
-            Util::read($this->fileStream, $offset, 1)
+            MaxMindUtil::read($this->fileStream, $offset, 1)
         );
         $offset++;
 
@@ -392,7 +389,7 @@ class Decoder
         if ($type == 'extended') {
             list(, $nextByte) = unpack(
                 'C',
-                Util::read($this->fileStream, $offset, 1)
+                MaxMindUtil::read($this->fileStream, $offset, 1)
             );
 
             $typeNum = $nextByte + 7;
@@ -427,7 +424,7 @@ class Decoder
         }
 
         $newOffset = $offset + $size;
-        $bytes = Util::read($this->fileStream, $offset, $size);
+        $bytes = MaxMindUtil::read($this->fileStream, $offset, $size);
         switch ($type) {
             case 'utf8_string':
                 return array($this->decodeString($bytes), $newOffset);
@@ -526,7 +523,7 @@ class Decoder
     {
         $pointerSize = (($ctrlByte >> 3) & 0x3) + 1;
 
-        $buffer = Util::read($this->fileStream, $offset, $pointerSize);
+        $buffer = MaxMindUtil::read($this->fileStream, $offset, $pointerSize);
         $offset = $offset + $pointerSize;
 
         $packed = $pointerSize == 4
@@ -592,7 +589,7 @@ class Decoder
     {
         $size = $ctrlByte & 0x1f;
         $bytesToRead = $size < 29 ? 0 : $size - 28;
-        $bytes = Util::read($this->fileStream, $offset, $bytesToRead);
+        $bytes = MaxMindUtil::read($this->fileStream, $offset, $bytesToRead);
         $decoded = $this->decodeUint($bytes);
 
         if ($size == 29) {
@@ -669,8 +666,7 @@ class InvalidDatabaseException extends \Exception
  * values will be a description in that language as a UTF-8 string. May be
  * undefined for some databases.
  */
-class Metadata
-{
+class MaxMindDecoder {
     private $binaryFormatMajorVersion;
     private $binaryFormatMinorVersion;
     private $buildEpoch;
@@ -683,8 +679,7 @@ class Metadata
     private $recordSize;
     private $searchTreeSize;
 
-    public function __construct($metadata)
-    {
+    public function __construct($metadata) {
         $this->binaryFormatMajorVersion =
             $metadata['binary_format_major_version'];
         $this->binaryFormatMinorVersion =
@@ -700,26 +695,23 @@ class Metadata
         $this->searchTreeSize = $this->nodeCount * $this->nodeByteSize;
     }
 
-    public function __get($var)
-    {
+    public function __get($var) {
         return $this->$var;
     }
 }
 
-class Util
-{
-    public static function read($stream, $offset, $numberOfBytes)
-    {
-        if ($numberOfBytes == 0) {
+class MaxMindUtil {
+    public static function read( $stream, $offset, $numberOfBytes ) {
+        if ( $numberOfBytes == 0 ) {
             return '';
         }
-        if (fseek($stream, $offset) == 0) {
-            $value = fread($stream, $numberOfBytes);
+        if ( fseek( $stream, $offset ) == 0 ) {
+            $value = fread( $stream, $numberOfBytes );
 
             // We check that the number of bytes read is equal to the number
             // asked for. We use ftell as getting the length of $value is
             // much slower.
-            if (ftell($stream) - $offset === $numberOfBytes) {
+            if ( ftell( $stream ) - $offset === $numberOfBytes ) {
                 return $value;
             }
         }

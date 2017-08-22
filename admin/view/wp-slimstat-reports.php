@@ -6,9 +6,6 @@ class wp_slimstat_reports {
 	public static $reports_info = array();
 	public static $user_reports = array();
 
-	// Hidden filters are not displayed to the user, but are applied to the reports
-	public static $hidden_filters = array();
-
 	// Useful data for the reports
 	protected static $pageviews = 0;
 
@@ -1942,31 +1939,29 @@ class wp_slimstat_reports {
 	/**
 	 * Generate the HTML that lists all the filters currently used
 	 */
-	public static function get_filters_html($_filters_array = array()){
+	public static function get_filters_html( $_filters_array = array() ) {
 		$filters_html = '';
 
-		// Don't display direction and limit results
-		$filters_dropdown = array_diff_key($_filters_array, self::$hidden_filters);
-
-		if (!empty($filters_dropdown)){
-			foreach($filters_dropdown as $a_filter_label => $a_filter_details){
-				if (!array_key_exists($a_filter_label, wp_slimstat_db::$columns_names) || strpos($a_filter_label, 'no_filter') !== false){
+		if ( !empty( $_filters_array ) ) {
+			foreach( $_filters_array as $a_filter_label => $a_filter_details ) {
+				if ( !array_key_exists( $a_filter_label, wp_slimstat_db::$columns_names ) || strpos( $a_filter_label, 'no_filter' ) !== false ) {
 					continue;
 				}
 
-				$a_filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-				$filters_html .= "<li>".strtolower(wp_slimstat_db::$columns_names[$a_filter_label][ 0 ]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat')." $a_filter_value_no_slashes <a class='slimstat-remove-filter slimstat-font-cancel' title='".htmlentities(__('Remove filter for','wp-slimstat'), ENT_QUOTES, 'UTF-8').' '.wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ]."' href='".self::fs_url("$a_filter_label equals ")."'></a></li>";
+				$a_filter_value_no_slashes = htmlentities( str_replace( '\\','', $a_filter_details[ 1 ] ), ENT_QUOTES, 'UTF-8' );
+				$filters_html .= '<li>' . strtolower( wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] ) . ' ' . __( str_replace( '_', ' ', $a_filter_details[ 0 ] ), 'wp-slimstat' ) . " $a_filter_value_no_slashes <a class='slimstat-remove-filter slimstat-font-cancel' title='" . htmlentities( __( 'Remove filter for', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . ' ' . wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] . "' href='" . self::fs_url( "$a_filter_label equals " ) . "'></a></li>";
 			}
 		}
-		if (!empty($filters_html)){
-			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='".htmlentities(serialize($_filters_array), ENT_QUOTES, 'UTF-8')."'>".__('Save','wp-slimstat')."</a>";
-		}
-		if(count($filters_dropdown) > 1){
-			$filters_html .= '<a href="'.self::fs_url().'" id="slimstat-remove-all-filters" class="button-secondary slimstat-filter-action-button noslimstat">'.__('Reset All','wp-slimstat').'</a>';
-		}
-		$filters_html .= '';
 
-		return ($filters_html != "<span class='filters-title'>".__('Current filters:','wp-slimstat').'</span> ')?$filters_html:'';
+		if ( !empty( $filters_html ) ) {
+			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='" . htmlentities( serialize( $_filters_array ), ENT_QUOTES, 'UTF-8' ) . "'>" . __( 'Save', 'wp-slimstat' ) . '</a>';
+		}
+
+		if ( count( $_filters_array ) > 1 ) {
+			$filters_html .= '<a href="' . self::fs_url() . '" id="slimstat-remove-all-filters" class="button-secondary slimstat-filter-action-button noslimstat">' . __( 'Reset All', 'wp-slimstat' ) . '</a>';
+		}
+
+		return $filters_html;
 	}
 
 	public static function fs_url( $_filters = '' ) {

@@ -222,6 +222,7 @@ var SlimStat = {
 				request.open( "POST", SlimStatParams.ajaxurl, true );
 				request.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
 				request.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
+				request.withCredentials = true;
 				request.send( slimstat_data_with_client_info );
 
 				request.onreadystatechange = function() {

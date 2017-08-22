@@ -4,8 +4,8 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 3.8
-Tested up to: 4.8
-Stable tag: 4.6.9.1
+Tested up to: 4.8.2
+Stable tag: 4.7
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,10 +71,19 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7 =
+* [New] After receiving a few requests to implement a REST API within Slimstat, and given that WordPress now offers a mature and stable interface for extending its built-in REST API, we decided to finally move forward and implement this feature. Please refer to our [online knowledge base](https://slimstat.freshdesk.com/solution/articles/12000033661-slimstat-rest-api) to learn more about how to use it.
+* [Update] The [Add-on Update Checker library](https://github.com/YahnisElsts/plugin-update-checker) has been updated to version 4.2, to solve an incompatibility issue with PHP 7.0 (thank you, [Sasa](https://wordpress.org/support/topic/possible-incompatibility-with-php-7-0/) and Per).
+* [Update] Bootstrap Switch (which we use on our Settings panels) has been updated to version 3.3.4.
+* [Fix] Apparently, there was an issue where our XMLHttpRequest didn't send the cookie for Cross-Origin URLs (thank you, Sasa).
+* [Fix] Solved issue with pagination, triggered when certain long time ranges were being selected.
+* [Fix] The autorefresh countdown timer was not working as expected if Async Mode was enabled (thank you, [scruffy1 and service4](https://wordpress.org/support/topic/odd-visitors-activity-heading)).
+
 = 4.6.9.1 =
 * [New] You can now customize the "past days" interval to be used as the default time range to calculate your metrics, which was previously fixed to 30 days.
 * [Fix] The Overview chart was not working as expected for some users, because of a bug in one of the revised SQL queries.
 * [Fix] The pageview count on the Edit Posts/Pages screens was also affected by the same bug mentioned here above.
+* [Fix] A PHP warning of undefined variable $hidden_filters was being logged and/or displayed under certain circumstances.
 
 = 4.6.9 =
 * [New] Added operating systems to the column you can use to blacklist certain pageviews. Please refer to [this page](https://slimstat.freshdesk.com/solution/articles/12000031504-what-are-the-operating-system-codes-used-by-slimstat-) to learn more about what codes Slimstat uses to represent operating systems internally.

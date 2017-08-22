@@ -145,7 +145,6 @@ class wp_slimstat_db {
 		// Hidden Filters
 		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
 			$filters_array[ 'author' ] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
-			self::$hidden_filters[ 'author' ] = 1;
 		}
 
 		if ( !empty( $filters_array ) ) {
@@ -166,6 +165,7 @@ class wp_slimstat_db {
 
 		// Normalize the filters
 		self::$filters_normalized = self::get_filters_normalized( $filters_raw );
+
 	}
 	// end init
 
@@ -555,7 +555,6 @@ class wp_slimstat_db {
 				 );
 
 				$filters_normalized[ 'utime' ][ 'start' ] = $filters_normalized[ 'utime' ][ 'end' ] - ( intval( wp_slimstat::$settings[ 'posts_column_day_interval' ] ) * 86400 );
-				$filters_normalized[ 'date' ][ 'interval' ] = wp_slimstat::$settings[ 'posts_column_day_interval' ];
 				$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
 
 				if ( isset( $filters_normalized[ 'date' ][ 'interval' ] ) ) {
@@ -725,7 +724,8 @@ class wp_slimstat_db {
 
 			case 'interval':
 				$group_by = array( 'MONTH', 'DAY', 'j' );
-				$values_in_interval = array( abs( self::$filters_normalized[ 'date' ][ 'interval' ] - 1 ), abs( self::$filters_normalized[ 'date' ][ 'interval' ] - 1 ), 0, 86400 );
+				$default_interval = empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ? intval(  wp_slimstat::$settings[ 'posts_column_day_interval' ] ) : self::$filters_normalized[ 'date' ][ 'interval' ];
+				$values_in_interval = array( abs( $default_interval - 1 ), abs( $default_interval - 1 ), 0, 86400 );
 				break;
 
 			default:
@@ -792,11 +792,11 @@ class wp_slimstat_db {
 		foreach ( $results as $i => $a_result ) {
 			$index = !empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ? floor( ( $a_result['dt'] - self::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 ) : gmdate( $group_by[ 2 ], $a_result[ 'dt' ] );
 
-			if ( empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) && gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $previous[ 'start' ] ) ){
+			if ( !empty( $previous[ 'start' ] ) && gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $previous[ 'start' ] ) ) {
 				$output[ 'previous' ][ 'first_metric' ][ $index ] = intval( $a_result[ 'first_metric' ] );
 				$output[ 'previous' ][ 'second_metric' ][ $index ] = intval( $a_result[ 'second_metric' ] );
 			}
-			if ( !empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) || gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], self::$filters_normalized[ 'utime' ][ 'start' ] ) ){
+			if ( empty( $previous[ 'start' ] ) || gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], self::$filters_normalized[ 'utime' ][ 'start' ] ) ) {
 				$output[ 'current' ][ 'first_metric' ][ $index ] = intval( $a_result[ 'first_metric' ] );
 				$output[ 'current' ][ 'second_metric' ][ $index ] = intval( $a_result[ 'second_metric' ] );
 			}

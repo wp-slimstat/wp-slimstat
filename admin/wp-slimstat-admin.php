@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "This has been an incredible year so far for our team. To celebrate all the great achievements, we've decided to launch our Summer Madness Discounts season. From June to September we are <strong>discounting by 50%</strong> all our <a href='http://www.wp-slimstat.com/addons/' target='_blank'>premium add-ons</a>. Including the bundles! No special codes are required: all discounts are automatically applied during checkout. Extend Slimstat with features like Excel exports, email reports, heatmaps and more, for just a fraction of the price you would normally pay. Not only: if you purchased a premium add-on in April or May, you are eligible for getting back FIFTY PERCENT of what you paid in discounts on future purchases. <strong>ON TOP</strong> of the Summer Madness Discount. Stack both to get basically free add-ons for your website! Please <a href='http://support.wp-slimstat.com' target='_blank'>contact us</a> to get your personal RollBack coupon today or for any questions you might have regarding this promo!";
+		self::$admin_notice = "After WordPress rolled out their official REST API, we had received a few requests asking to add support for this feature to Slimstat. In an age where headless applications are all the rage, and given that WordPress has reached a stable state in implementing this functionality, we decided that it was time for us to move forward on this project. Starting with Slimstat 4.7, you can now access your metrics from any external application. Just follow these <a href='https://slimstat.freshdesk.com/solution/articles/12000033661-slimstat-rest-api' target='_blank'>simple steps</a> to get started (or contact our support team). Our REST API implementation is still experimental, so please do not hesitate to report any issues or concerns you might have. Also, don't forget that our Summer Madness Discount promotion continues. Get your <a href='http://www.wp-slimstat.com/addons/' target='_blank'>favorite Slimstat add-ons</a> (including the bundles) and pay only half the original price. Note that prices at checkout already factor in the discount; you don't need any special code or cryptic URL to participate!";
 
 		// "As those who have been using Slimstat for a while know, we never stop doing our good share of research and development to imrpove this plugin. One request that has been sitting on our wishlist for a while is to make our geolocation functionality more accurate, and track not just a user's Country of origin, but possibly his State (where applicable) and city. In order to geolocate visitors, our code has been leveraging a third-party data file provided by <a href='https://www.maxmind.com/en/home' target='_blank'>MaxMind.com</a>. A while ago, they launched a new data format, which improves performance and offers a way to determine the city of origin. However, the new library required a higher version of PHP, and up until now we had preferred allowing more people to use our plugin, over the chance of offering this feature. Now, we found a way to get the best of both worlds: by customizing their PHP library, we were able to make it work with PHP 5.3! Which means that soon Slimstat will be able to tell you your visitors' city of origin right out of the box. Please contact us if you would like to test this feature in advance."
 
@@ -668,11 +668,9 @@ class wp_slimstat_admin {
 	public static function add_dashboard_widgets() {
 
 		// If this user is whitelisted, we use the minimum capability
-		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ) {
+		$minimum_capability = 'read';
+		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false &&  !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
-		}
-		else {
-			$minimum_capability = 'read';
 		}
 
 		if ( !current_user_can( $minimum_capability ) ) {
@@ -769,7 +767,7 @@ class wp_slimstat_admin {
 		if ( is_network_admin() ) {
 			$minimum_capability = 'manage_network';
 		}
-		else if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ) {
+		else if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false && !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
 
@@ -811,13 +809,13 @@ class wp_slimstat_admin {
 	public static function wp_slimstat_adminbar(){
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability_view = 'read';
-		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false ) {
+		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false && !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
 			$minimum_capability_view = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
 
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability_config = 'read';
-		if ( ( strpos( wp_slimstat::$settings[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) === false) && $GLOBALS[ 'current_user' ]->user_login != 'slimstatadmin' ) {
+		if ( ( strpos( wp_slimstat::$settings[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) === false) && $GLOBALS[ 'current_user' ]->user_login != 'slimstatadmin' && !empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ) {
 			$minimum_capability_config = wp_slimstat::$settings[ 'capability_can_admin' ];
 		}
 
@@ -870,7 +868,7 @@ class wp_slimstat_admin {
 		
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability = 'read';
-		if ( ( strpos( wp_slimstat::$settings[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) === false ) && ( $GLOBALS[ 'current_user' ]->user_login != 'slimstatadmin' ) ) {
+		if ( ( strpos( wp_slimstat::$settings[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) === false ) && ( $GLOBALS[ 'current_user' ]->user_login != 'slimstatadmin' ) && !empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ) {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_admin' ];
 		}
 

@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.6.9.1
+Version: 4.7
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.6.9.1';
+	public static $version = '4.7';
 	public static $settings = array();
 	public static $options = array(); // To be removed, here just for backward compatibility
 
@@ -126,6 +126,9 @@ class wp_slimstat {
 
 		// Update the options before shutting down
 		add_action( 'shutdown', array( __CLASS__, 'slimstat_save_options' ), 100 );
+
+		// REST API Support
+		add_action( 'rest_api_init', array( __CLASS__, 'register_rest_route' ) );
 	}
 	// end init
 
@@ -1416,6 +1419,95 @@ class wp_slimstat {
 		return $output;
 	}
 
+	public static function rest_api_response( $_request = array() ) {
+		$filters = '';
+		if ( !empty( $_request[ 'filters' ] ) ) {
+			$filters = $_request[ 'filters' ];
+		}
+
+		if ( empty( $_request[ 'dimension' ] ) ) {
+			return new WP_Error( 'rest_invalid', esc_html__( 'The dimension parameter is required. Please review your request and try again.', 'wp-slimstat' ), array( 'status' => 400 ) );
+		}
+
+		if ( empty( $_request[ 'function' ] ) ) {
+			return new WP_Error( 'rest_invalid', esc_html__( 'The function parameter is required. Please review your request and try again.', 'wp-slimstat' ), array( 'status' => 400 ) );
+		}
+
+		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
+		wp_slimstat_db::init( $filters );
+
+		$response = array(
+			'function' => htmlentities( $_request[ 'function' ], ENT_QUOTES, 'UTF-8' ),
+			'dimension' => htmlentities( $_request[ 'dimension' ], ENT_QUOTES, 'UTF-8' ),
+
+			'data' => 0
+		);
+
+		switch( $_request[ 'function' ] ) {
+			case 'count':
+			case 'count-all':
+				$response[ 'data' ] = wp_slimstat_db::count_records( $_request[ 'dimension' ], '', strpos( $_request[ 'function' ], '-all') === false );
+				break;
+
+			case 'recent':
+			case 'recent-all':
+			case 'top':
+			case 'top-all':
+				$function = 'get_' . str_replace( '-all', '', $_request[ 'function' ] );
+
+				// Retrieve the data
+				$response[ 'data' ] = array_values( wp_slimstat_db::$function( $_request[ 'dimension' ], '', '', strpos( $_request[ 'function' ], '-all' ) === false ) );
+				break;
+
+			default:
+				// This should never happen, because of the 'enum' condition for this parameter. But never say never...
+				$response[ 'data' ] = new WP_Error( 'rest_invalid', esc_html__( 'Valid function values are count, count-all, recent, recent-all, top and top-all. Please review your request and try again.', 'wp-slimstat' ), array( 'status' => 400 ) );
+				break;
+		}
+
+		return rest_ensure_response( $response );
+	}
+
+	public static function rest_api_authorization( $_request = array() ) {
+		if ( empty( $_request[ 'token' ] ) ) {
+			return new WP_Error( 'rest_invalid', esc_html__( 'Please specify a valid token in order to access this REST API.', 'wp-slimstat' ), array( 'status' => 400 ) );
+		}
+
+		if ( !in_array( $_request[ 'token' ], self::string_to_array( self::$settings['rest_api_tokens'] ) ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public static function register_rest_route() {
+		register_rest_route( 'slimstat/v1', '/get', array(
+			'methods' => WP_REST_Server::READABLE,
+			'callback' => array( __CLASS__, 'rest_api_response' ),
+			'permission_callback' => array( __CLASS__, 'rest_api_authorization' ),
+			'args' => array(
+				'token' => array(
+					'description' => __( 'You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control.', 'wp-slimstat' ),
+					'type' => 'string'
+				),
+				'function' => array(
+					'description' => __( 'This parameter specifies the type of QUERY for the dimension. Valid values are: count, count-all, recent, recent-all, top and top-all.', 'wp-slimstat' ),
+					'type' => 'string',
+					'enum' => array( 'count', 'count-all', 'recent', 'recent-all', 'top', 'top-all' )
+				),
+				'dimension' => array(
+					'description' => __( 'This parameter indicates what dimension to return: * (all data), ip, resource, browser, operating system, etc. You can only specify one dimension at a time.', 'wp-slimstat' ),
+					'type' => 'string',
+					'enum' => array( '*', 'id', 'ip', 'username', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'outbound_resource' )
+				),
+				'filters' => array(
+					'description' => __( 'This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)', 'wp-slimstat' ),
+					'type' => 'string'
+				)
+			)
+		) );
+	}
+
 	/**
 	 * Converts a series of comma separated values into an array
 	 */
@@ -1520,6 +1612,7 @@ class wp_slimstat {
 			'restrict_authors_view' => 'yes',
 			'capability_can_view' => 'activate_plugins',
 			'can_view' => '',
+			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
 			'capability_can_admin' => 'activate_plugins',
 			'can_admin' => '',
 
@@ -1670,8 +1763,11 @@ class wp_slimstat {
 		foreach ( self::$update_checker as $a_slug ) {
 			$a_clean_slug = str_replace( array( 'wp_slimstat_', '_' ), array( '', '-' ), $a_slug );
 			if ( !empty( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ) ) {
+
+				// This is only included if add-ons are installed
 				include_once( plugin_dir_path( __FILE__ ) . 'admin/update-checker/plugin-update-checker.php' );
-				$update_checker_objects[] = PucFactory::buildUpdateChecker( 'http://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( wp_slimstat::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ), dirname( dirname( __FILE__ ) ) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug );
+
+				$update_checker_objects[] = Puc_v4_Factory::buildUpdateChecker( 'http://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ), dirname( dirname( __FILE__ ) ) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug );
 			}
 		}
 	}
