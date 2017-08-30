@@ -123,13 +123,6 @@ if ( !class_exists('Puc_v4p2_UpdateChecker', false) ):
 
 			//Allow HTTP requests to the metadata URL even if it's on a local host.
 			add_filter('http_request_host_is_external', array($this, 'allowMetadataHost'), 10, 2);
-
-			//DebugBar integration.
-			if ( did_action('plugins_loaded') ) {
-				$this->maybeInitDebugBar();
-			} else {
-				add_action('plugins_loaded', array($this, 'maybeInitDebugBar'));
-			}
 		}
 
 		/**
@@ -794,34 +787,6 @@ if ( !class_exists('Puc_v4p2_UpdateChecker', false) ):
 		 * @return array Format: ['HeaderKey' => 'Header Name']
 		 */
 		abstract protected function getHeaderNames();
-
-		/* -------------------------------------------------------------------
-		 * DebugBar integration
-		 * -------------------------------------------------------------------
-		 */
-
-		/**
-		 * Initialize the update checker Debug Bar plugin/add-on thingy.
-		 */
-		public function maybeInitDebugBar() {
-			if ( class_exists('Debug_Bar', false) && file_exists(dirname(__FILE__ . '/DebugBar')) ) {
-				$this->createDebugBarExtension();
-			}
-		}
-
-		protected function createDebugBarExtension() {
-			return new Puc_v4p2_DebugBar_Extension($this);
-		}
-
-		/**
-		 * Display additional configuration details in the Debug Bar panel.
-		 *
-		 * @param Puc_v4p2_DebugBar_Panel $panel
-		 */
-		public function onDisplayConfiguration($panel) {
-			//Do nothing. Subclasses can use this to add additional info to the panel.
-		}
-
 	}
 
 endif;

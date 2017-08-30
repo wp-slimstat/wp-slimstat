@@ -79,7 +79,8 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			break;
 
 		case 'import-settings':
-			$new_settings = @unserialize( stripslashes( $_POST[ 'import-slimstat-settings' ] ) );
+			$new_settings = @json_decode( stripslashes( $_POST[ 'import-slimstat-settings' ] ), true );
+
 			if ( is_array( $new_settings ) ) {
 				$new_settings = array_intersect_key( $new_settings, wp_slimstat::$settings );
 				if ( !empty( $new_settings ) ) {
@@ -312,7 +313,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />
-				<textarea name="import-slimstat-settings" style="width:100%" rows="5" onClick="this.select();"><?php echo serialize( wp_slimstat::$settings ) ?></textarea><br/>
+				<textarea name="import-slimstat-settings" style="width:100%" rows="5" onClick="this.select();"><?php echo json_encode( wp_slimstat::$settings ) ?></textarea><br/>
 				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-secondary"
 					onclick="return(confirm('<?php _e('Are you sure you want to OVERWRITE your current settings?','wp-slimstat'); ?>'))">
 			</form>

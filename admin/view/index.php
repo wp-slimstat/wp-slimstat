@@ -120,7 +120,7 @@
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval']) ||
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval_hours']) ||
 							!empty(wp_slimstat_db::$filters_normalized['date']['interval_minutes'])): ?>
-				<a class="slimstat-filter-link button-secondary noslimstat" href="<?php echo wp_slimstat_reports::fs_url('minute equals 0&&&hour equals 0&&&day equals 0&&&month equals 0&&&year equals 0&&&interval_direction equals 1&&&interval equals 0&&&interval_hours equals 0&&&interval_minutes equals 0') ?>"><?php _e('Reset Filters','wp-slimstat') ?></a>
+				<a class="slimstat-filter-link button-secondary noslimstat" href="<?php echo wp_slimstat_reports::fs_url('minute equals 0&&&hour equals 0&&&day equals 0&&&month equals 0&&&year equals 0&&&interval_direction equals 1&&&interval equals 0&&&interval_hours equals 0&&&interval_minutes equals 0') ?>"><?php _e( 'Reset Filters', 'wp-slimstat' ) ?></a>
 				<?php endif ?>
 			</div>
 		</fieldset><!-- .slimstat-date-filters -->

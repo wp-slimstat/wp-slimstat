@@ -923,6 +923,10 @@ class wp_slimstat_reports {
 	// end init
 
 	public static function report_header( $_report_id = '' ) {
+		if ( empty( self::$reports_info[ $_report_id ] ) ) {
+			return false;
+		}
+
 		$header_classes =  !empty( self::$reports_info[ $_report_id ][ 'classes' ] ) ? implode( ' ', self::$reports_info[ $_report_id ][ 'classes' ] ) : '';
 		$header_buttons = '';
 		$header_tooltip = '';
@@ -1954,7 +1958,7 @@ class wp_slimstat_reports {
 		}
 
 		if ( !empty( $filters_html ) ) {
-			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='" . htmlentities( serialize( $_filters_array ), ENT_QUOTES, 'UTF-8' ) . "'>" . __( 'Save', 'wp-slimstat' ) . '</a>';
+			$filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='" . htmlentities( json_encode( $_filters_array ), ENT_QUOTES, 'UTF-8' ) . "'>" . __( 'Save', 'wp-slimstat' ) . '</a>';
 		}
 
 		if ( count( $_filters_array ) > 1 ) {

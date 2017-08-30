@@ -188,13 +188,6 @@ if ( !class_exists('Puc_v4p2_Vcs_PluginUpdateChecker') ):
 
 			return $update;
 		}
-
-		public function onDisplayConfiguration($panel) {
-			parent::onDisplayConfiguration($panel);
-			$panel->row('Branch', $this->branch);
-			$panel->row('Authentication enabled', $this->api->isAuthenticationEnabled() ? 'Yes' : 'No');
-			$panel->row('API client', get_class($this->api));
-		}
 	}
 
 endif;

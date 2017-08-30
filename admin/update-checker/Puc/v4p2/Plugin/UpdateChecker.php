@@ -537,10 +537,6 @@ if ( !class_exists('Puc_v4p2_Plugin_UpdateChecker', false) ):
 		public function addResultFilter($callback) {
 			$this->addFilter('request_info_result', $callback, 10, 2);
 		}
-
-		protected function createDebugBarExtension() {
-			return new Puc_v4p2_DebugBar_PluginExtension($this);
-		}
 	}
 
 endif;

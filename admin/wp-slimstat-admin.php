@@ -1084,7 +1084,7 @@ class wp_slimstat_admin {
 
 		switch( $_POST[ 'type' ] ) {
 			case 'save':
-				$new_filter = unserialize( stripslashes_deep( $_POST[ 'filter_array' ] ) );
+				$new_filter = json_decode( stripslashes_deep( $_POST[ 'filter_array' ] ), true );
 
 				// Check if this filter is already saved
 				foreach ( $saved_filters as $a_saved_filter ) {
@@ -1113,8 +1113,8 @@ class wp_slimstat_admin {
 				break;
 
 			case 'delete':
-				unset($saved_filters[intval($_POST['filter_id'])]);
-				update_option('slimstat_filters', $saved_filters);
+				unset( $saved_filters[ intval( $_POST[ 'filter_id' ] ) ] );
+				update_option( 'slimstat_filters', $saved_filters );
 
 				// No break here - We want to return the new list of filters!
 

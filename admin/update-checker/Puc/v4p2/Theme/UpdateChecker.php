@@ -92,10 +92,6 @@ if ( !class_exists('Puc_v4p2_Theme_UpdateChecker', false) ):
 			return $this->upgraderStatus->isThemeBeingUpgraded($this->stylesheet, $upgrader);
 		}
 
-		protected function createDebugBarExtension() {
-			return new Puc_v4p2_DebugBar_Extension($this, 'Puc_v4p2_DebugBar_ThemePanel');
-		}
-
 		/**
 		 * Register a callback for filtering query arguments.
 		 *

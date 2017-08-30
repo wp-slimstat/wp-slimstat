@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8.2
-Stable tag: 4.7
+Stable tag: 4.7.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,11 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.1 =
+* [Fix] The new feature introduced in version 4.6.9.1 to allow our users to customize the default time range for the reports, had introduced a regression bug. Thank you to all our users who volunteered to test the bugfix.
+* [Fix] A vulnerability has been disclosed by [Pluginvulnerabilities.com](pluginvulnerabilities.com): an attacker with admin credentials could leverage the import/export mechanism for the plugin's settings to inject some malicious code. We recommend that you upgrade to the latest version of Slimstat as soon as possible.
+* [Fix] The new version of the [Add-on Update Checker library](https://github.com/YahnisElsts/plugin-update-checker), bundled with the previous release, was returning a fatal error under certain circumstances (thank you, Pepe).
+
 = 4.7 =
 * [New] After receiving a few requests to implement a REST API within Slimstat, and given that WordPress now offers a mature and stable interface for extending its built-in REST API, we decided to finally move forward and implement this feature. Please refer to our [online knowledge base](https://slimstat.freshdesk.com/solution/articles/12000033661-slimstat-rest-api) to learn more about how to use it.
 * [Update] The [Add-on Update Checker library](https://github.com/YahnisElsts/plugin-update-checker) has been updated to version 4.2, to solve an incompatibility issue with PHP 7.0 (thank you, [Sasa](https://wordpress.org/support/topic/possible-incompatibility-with-php-7-0/) and Per).
