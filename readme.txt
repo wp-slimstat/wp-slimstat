@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8.2
-Stable tag: 4.7.1
+Stable tag: 4.7.2
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,12 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.2 =
+* [New] As those who have been using Slimstat for a while know, we never stop doing our good share of research and development to improve our plugin. One feature on our wishlist was to make the geolocation functionality more accurate. Specifically, users have been asking us to track not just the Country of origin, but possibly the state and city. In order to geolocate visitors, our code has been leveraging a third-party data file provided by [MaxMind.com](https://www.maxmind.com/en/home). A while ago, they launched a new data format, which improves performance and offers a way to quickly determine the city of origin. However, the new library required a higher version of PHP, and up until now we had been hesitant to adopt it, to allow more people to use our plugin, over the chance of offering this feature. Now, after spending some time combing through their code, we found a way to get the best of both worlds: by customizing their PHP library, we were able to make it work with PHP 5.3! Which means that now Slimstat is able to tell you your visitors' city of origin (and State, when applicable) right out of the box. This information is available in the Access Log report and in a new 'Top Cities' report under the Audience tab. Please note: the MaxMind data file to enable this feature is approximately 60 Mb, and for this reason <strong>this new functionality is not enabled by default</strong>. You must go to Slimstat > Settings > Tracker and turn on the corresponding option. Then go to Slimstat > Settings > Maintenance and uninstall/install the GeoLite file to download the one that contains the city data. Please feel free to contact us if you have any questions.
+* [Update] Removed backward compatibility code for those updating from a version prior to 4.2. Hopefully most of our users are using a newer version that that. If you're not, please contact our support service for instructions on how to upgrade.
+* [Update] The format used to save your settings in the database has been changed. You MUST update your premium add-ons as soon as possible, and get the version compatible with this new format, or you might notice unexpected behaviors. Please contact us if you experience difficulties updating your add-ons.
+* [Update] Cleaned up some old CSS code affecting the reports.
+
 = 4.7.1 =
 * [Fix] The new feature introduced in version 4.6.9.1 to allow our users to customize the default time range for the reports, had introduced a regression bug. Thank you to all our users who volunteered to test the bugfix.
 * [Fix] A vulnerability has been disclosed by [Pluginvulnerabilities.com](pluginvulnerabilities.com): an attacker with admin credentials could leverage the import/export mechanism for the plugin's settings to inject some malicious code. We recommend that you upgrade to the latest version of Slimstat as soon as possible.

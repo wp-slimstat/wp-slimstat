@@ -265,11 +265,10 @@
 	background-position: 0 0;
 	background-repeat: no-repeat;
 	display: inline-block;
-	font-size: 18px;
 	height: 18px;
 	line-height: 18px;
 	margin-right: 5px;
-	vertical-align: top;
+	vertical-align: middle;
 	width: 16px;
 }
 [id^=slim_] .spaced{

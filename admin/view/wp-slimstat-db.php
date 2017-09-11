@@ -48,6 +48,8 @@ class wp_slimstat_db {
 			'browser_version' => array( __( 'Browser Version', 'wp-slimstat' ), 'varchar' ),
 			'browser_type' => array( __( 'Browser Type', 'wp-slimstat' ), 'int' ),
 			'user_agent' => array( __( 'User Agent', 'wp-slimstat' ), 'varchar' ),
+			'city' => array( __( 'City', 'wp-slimstat' ), 'varchar' ),
+			'location' => array( __( 'Coordinates', 'wp-slimstat' ), 'varchar' ),
 			'notes' => array( __( 'Annotations', 'wp-slimstat' ), 'varchar' ),
 			'server_latency' => array( __( 'Server Latency', 'wp-slimstat' ), 'int' ),
 			'author' => array( __( 'Post Author', 'wp-slimstat' ), 'varchar' ),
@@ -60,6 +62,11 @@ class wp_slimstat_db {
 			'resolution' => array( __( 'Viewport Size', 'wp-slimstat' ), 'varchar' ),
 			'visit_id' => array( __( 'Visit ID', 'wp-slimstat' ), 'int' )
 		);
+
+		if ( wp_slimstat::$settings[ 'geolocation_country' ] == 'on' ) {
+			unset( self::$columns_names[ 'city' ] );
+			unset( self::$columns_names[ 'location' ] );
+		}
 
 		// List of supported filters and their friendly names
 		self::$operator_names = array(
@@ -143,7 +150,7 @@ class wp_slimstat_db {
 		}
 
 		// Hidden Filters
-		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'yes' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
+		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'on' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
 			$filters_array[ 'author' ] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
 		}
 
@@ -281,7 +288,7 @@ class wp_slimstat_db {
 		$where = array( '', $_value );
 		switch ( $_operator ) {
 			case 'is_not_equal_to':
-				$where[0] = "$column_with_alias <> %s";
+				$where[ 0 ] = "$column_with_alias <> %s";
 				break;
 
 			case 'contains':
@@ -289,7 +296,7 @@ class wp_slimstat_db {
 				break;
 
 			case 'includes_in_set':
-				$where[0] = "FIND_IN_SET(%s, $column_with_alias) > 0";
+				$where[ 0 ] = "FIND_IN_SET(%s, $column_with_alias) > 0";
 				break;
 
 			case 'does_not_contain':
@@ -305,7 +312,7 @@ class wp_slimstat_db {
 				break;
 
 			case 'sounds_like':
-				$where[0] = "SOUNDEX($column_with_alias) = SOUNDEX(%s)";
+				$where[ 0 ] = "SOUNDEX($column_with_alias) = SOUNDEX(%s)";
 				break;
 
 			case 'is_empty':
@@ -317,32 +324,32 @@ class wp_slimstat_db {
 				break;
 
 			case 'is_greater_than':
-				$where[0] = "$column_with_alias > %d";
+				$where[ 0 ] = "$column_with_alias > %d";
 				break;
 
 			case 'is_less_than':
-				$where[0] = "$column_with_alias < %d";
+				$where[ 0 ] = "$column_with_alias < %d";
 				break;
 
 			case 'between':
-				$range = explode(',', $_value);
-				$where = array( "$column_with_alias BETWEEN %d AND %d", array( $range[0], $range[1] ) );
+				$range = explode( ',', $_value );
+				$where = array( "$column_with_alias BETWEEN %d AND %d", array( $range[ 0 ], $range[ 1 ] ) );
 				break;
 
 			case 'matches':
-				$where[0] = "$column_with_alias REGEXP %s";
+				$where[ 0 ] = "$column_with_alias REGEXP %s";
 				break;
 
 			case 'does_not_match':
-				$where[0] = "$column_with_alias NOT REGEXP %s";
+				$where[ 0 ] = "$column_with_alias NOT REGEXP %s";
 				break;
 
 			default:
-				$where[0] = "$column_with_alias = %s";
+				$where[ 0 ] = "$column_with_alias = %s";
 				break;
 		}
 
-		if ( isset( $where[ 1 ] ) ) {
+		if ( !empty( $where[ 1 ] ) ) {
 			return $GLOBALS[ 'wpdb' ]->prepare( $where[ 0 ], $where[ 1 ] );
 		}
 		else {
@@ -353,7 +360,7 @@ class wp_slimstat_db {
 	public static function get_results( $_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '' ) {
 		$_sql = apply_filters( 'slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add );
 
-		if ( wp_slimstat::$settings[ 'show_sql_debug' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'show_sql_debug' ] == 'on' ) {
 			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
@@ -363,7 +370,7 @@ class wp_slimstat_db {
 	public static function get_var( $_sql = '', $_aggregate_value = '' ) {
 		$_sql = apply_filters( 'slimstat_get_var_sql', $_sql, $_aggregate_value );
 
-		if ( wp_slimstat::$settings[ 'show_sql_debug' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'show_sql_debug' ] == 'on' ) {
 			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
@@ -482,7 +489,7 @@ class wp_slimstat_db {
 		}
 
 		// If the setting to use the last X days as default time span is enabled, we need to setup the "interval" variables
-		if ( ( empty( wp_slimstat::$settings[ 'use_current_month_timespan' ] ) || wp_slimstat::$settings[ 'use_current_month_timespan' ] != 'yes' ) ) {
+		if ( ( empty( wp_slimstat::$settings[ 'use_current_month_timespan' ] ) || wp_slimstat::$settings[ 'use_current_month_timespan' ] != 'on' ) ) {
 			// Do not set the interval if another date filter has already been set
 			$is_date_filter_empty = true;
 			if ( !empty( $filters_normalized[ 'date' ] ) ) {
@@ -884,7 +891,7 @@ class wp_slimstat_db {
 			$columns .= ', ip, dt';
 		}
 		else {
-			$columns = 'id, ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
+			$columns = 'id, ip, other_ip, username, country, city, location, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
 		}
 
 		if ( !empty( $_more_columns ) ) {

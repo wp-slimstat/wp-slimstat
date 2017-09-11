@@ -17,7 +17,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			break;
 
 		case 'activate-sql-debug-mode':
-			wp_slimstat::$settings[ 'show_sql_debug' ] = 'yes';
+			wp_slimstat::$settings[ 'show_sql_debug' ] = 'on';
 			break;
 
 		case 'deactivate-indexes':
@@ -81,12 +81,9 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 		case 'import-settings':
 			$new_settings = @json_decode( stripslashes( $_POST[ 'import-slimstat-settings' ] ), true );
 
-			if ( is_array( $new_settings ) ) {
-				$new_settings = array_intersect_key( $new_settings, wp_slimstat::$settings );
-				if ( !empty( $new_settings ) ) {
-					foreach ( $new_settings as $a_setting_name => $a_setting_value ) {
-						wp_slimstat::$settings[ $a_setting_name ] = $a_setting_value;
-					}
+			if ( is_array( $new_settings ) && !empty( $new_settings ) ) {
+				foreach ( $new_settings as $a_setting_name => $a_setting_value ) {
+					wp_slimstat::$settings[ $a_setting_name ] = $a_setting_value;
 				}
 				wp_slimstat_admin::show_alert_message( __( 'Your new Slimstat settings have been imported and installed.', 'wp-slimstat' ) );
 			}
@@ -176,7 +173,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		</td>
 	</tr>
 	<tr  class="alternate">
-		<?php if ( wp_slimstat::$settings[ 'show_sql_debug' ] != 'yes' ): ?>
+		<?php if ( wp_slimstat::$settings[ 'show_sql_debug' ] != 'on' ): ?>
 		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-sql-debug-mode"><?php _e("Enable SQL Debug",'wp-slimstat'); ?></a>
 		</th>
@@ -313,7 +310,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />
-				<textarea name="import-slimstat-settings" style="width:100%" rows="5" onClick="this.select();"><?php echo json_encode( wp_slimstat::$settings ) ?></textarea><br/>
+				<textarea name="import-slimstat-settings" style="width:100%" rows="10"><?php echo json_encode( wp_slimstat::$settings ) ?></textarea><br/>
 				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-secondary"
 					onclick="return(confirm('<?php _e('Are you sure you want to OVERWRITE your current settings?','wp-slimstat'); ?>'))">
 			</form>

@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.1
+Version: 4.7.2
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.1';
+	public static $version = '4.7.2';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -72,7 +72,7 @@ class wp_slimstat {
 		self::$upload_dir .= '/wp-slimstat';
 		self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
 
-		self::$maxmind_path = self::$upload_dir . '/maxmind.dat';
+		self::$maxmind_path = self::$upload_dir . '/maxmind.mmdb';
 
 		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
 		if ( file_exists( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) . '/advanced-cache.php' ) ) {
@@ -80,25 +80,25 @@ class wp_slimstat {
 		}
 
 		// Enable the tracker (both server- and client-side)
-		if ( !is_admin() || self::$settings[ 'track_admin_pages' ] == 'yes' ) {
+		if ( !is_admin() || self::$settings[ 'track_admin_pages' ] == 'on' ) {
 
 			// Allow add-ons to turn off the tracker based on other conditions
 			$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', strpos( self::get_request_uri(), 'wp-admin/admin-ajax.php' ) === false );
 			$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
 
 			// Is server-side tracking active?
-			if ( self::$settings[ 'javascript_mode' ] != 'yes' && self::$settings[ 'is_tracking' ] == 'yes' && $is_tracking_filter ) {
+			if ( self::$settings[ 'javascript_mode' ] != 'on' && self::$settings[ 'is_tracking' ] == 'on' && $is_tracking_filter ) {
 				add_action( is_admin() ? 'admin_init' : 'wp', array( __CLASS__, 'slimtrack' ), 5 );
 
-				if ( self::$settings[ 'track_users' ] == 'yes' ) {
+				if ( self::$settings[ 'track_users' ] == 'on' ) {
 					add_action( 'login_init', array( __CLASS__, 'slimtrack' ), 10 );
 				}
 			}
 
 			// Slimstat tracks screen resolutions, outbound links and other client-side information using javascript
-			if ((self::$settings['enable_javascript'] == 'yes' || self::$settings['javascript_mode'] == 'yes') && self::$settings['is_tracking'] == 'yes' && $is_tracking_filter_js){
+			if ( ( self::$settings[ 'enable_javascript' ] == 'on' || self::$settings[ 'javascript_mode' ] == 'on' ) && self::$settings[ 'is_tracking' ] == 'on' && $is_tracking_filter_js ) {
 				add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
-				if ( self::$settings[ 'track_users' ] == 'yes' ) {
+				if ( self::$settings[ 'track_users' ] == 'on' ) {
 					add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
 				}
 			}
@@ -133,7 +133,7 @@ class wp_slimstat {
 	 */
 	public static function slimtrack_ajax() {
 		// If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
-		if ( self::$settings[ 'is_tracking' ] != 'yes' ) {
+		if ( self::$settings[ 'is_tracking' ] != 'on' ) {
 			self::$stat[ 'id' ] = -204;
 			self::_set_error_array( __( 'Tracker is turned off, but client-side tracking code is still running.', 'wp-slimstat' ), true );
 			self::slimstat_save_options();
@@ -252,7 +252,7 @@ class wp_slimstat {
 	 */
 	public static function slimtrack( $_argument = '' ) {
 		// If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
-		if ( self::$settings['is_tracking'] != 'yes' ) {
+		if ( self::$settings[ 'is_tracking' ] != 'on' ) {
 			self::$stat[ 'id' ] = -204;
 			self::_set_error_array( __( 'Tracker is turned off, but client-side tracking code is still running.', 'wp-slimstat' ), true );
 			return $_argument;
@@ -308,7 +308,7 @@ class wp_slimstat {
 
 			if ( !empty( self::$stat[ 'referer' ] ) ) {
 				$parsed_site_url_host = parse_url( get_site_url(), PHP_URL_HOST );
-				if ( !empty( $referer[ 'host' ] ) && $referer[ 'host' ] == $parsed_site_url_host && self::$settings[ 'track_same_domain_referers' ] != 'yes' ) {
+				if ( !empty( $referer[ 'host' ] ) && $referer[ 'host' ] == $parsed_site_url_host && self::$settings[ 'track_same_domain_referers' ] != 'on' ) {
 					unset( self::$stat[ 'referer' ] );
 				}
 				else {
@@ -466,7 +466,7 @@ class wp_slimstat {
 				LIMIT 0,1", self::$stat[ 'ip' ] ), ARRAY_A );
 
 			if ( !empty( $spam_comment[ 'comment_count' ] ) ) {
-				if ( self::$settings[ 'ignore_spammers' ] == 'yes' ){
+				if ( self::$settings[ 'ignore_spammers' ] == 'on' ){
 					self::$stat[ 'id' ] = -306;
 					self::_set_error_array( sprintf( __( 'Spammer %s not tracked', 'wp-slimstat' ), $spam_comment[ 'comment_author' ] ), true );
 					return $_argument;
@@ -502,12 +502,33 @@ class wp_slimstat {
 			}
 		}
 
-		// Country and Language
+		// Language
 		self::$stat[ 'language' ] = self::_get_language();
-		self::$stat[ 'country' ] = self::get_country( self::$stat[ 'ip' ] );
+
+		// Geolocation 
+		include_once ( plugin_dir_path( __FILE__ ) . 'maxmind.php' );
+		$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
+
+		if ( !empty( $geolocation_data[ 'country' ][ 'iso_code' ] ) ) {
+			self::$stat[ 'country' ] = strtolower( $geolocation_data[ 'country' ][ 'iso_code' ] );
+		}
+
+		if ( !empty( $geolocation_data[ 'city' ][ 'names' ][ 'en' ] ) ) {
+			self::$stat[ 'city' ] = $geolocation_data[ 'city' ][ 'names' ][ 'en' ];
+		}
+
+		if ( !empty( $geolocation_data[ 'subdivisions' ][ 0 ][ 'iso_code' ] ) && !empty( self::$stat[ 'city' ] ) ) {
+			self::$stat[ 'city' ] .= ' (' . $geolocation_data[ 'subdivisions' ][ 0 ][ 'iso_code' ] . ')';
+		}
+
+		if ( !empty( $geolocation_data[ 'location' ][ 'latitude' ] ) && !empty( $geolocation_data[ 'location' ][ 'longitude' ] ) ) {
+			self::$stat[ 'location' ] = $geolocation_data[ 'location' ][ 'latitude' ] . ',' .  $geolocation_data[ 'location' ][ 'longitude' ];
+		}
+
+		unset( $geolocation_data );
 
 		// Anonymize IP Address?
-		if ( self::$settings[ 'anonymize_ip' ] == 'yes' ) {
+		if ( self::$settings[ 'anonymize_ip' ] == 'on' ) {
 			// IPv4 or IPv6
 			$needle = '.';
 			$replace = '.0';
@@ -533,7 +554,7 @@ class wp_slimstat {
 		// Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
 		if ( ( isset( $_SERVER[ 'HTTP_X_MOZ' ] ) && ( strtolower( $_SERVER[ 'HTTP_X_MOZ' ] ) == 'prefetch' ) ) ||
 			( isset( $_SERVER[ 'HTTP_X_PURPOSE' ] ) && ( strtolower( $_SERVER[ 'HTTP_X_PURPOSE' ] ) == 'preview' ) ) ) {
-			if ( self::$settings[ 'ignore_prefetch' ] == 'yes' ) {
+			if ( self::$settings[ 'ignore_prefetch' ] == 'on' ) {
 				self::$stat[ 'id' ] = -309;
 				self::_set_error_array( __( 'Prefetch requests are ignored', 'wp-slimstat' ), true );
 				return $_argument;
@@ -549,7 +570,7 @@ class wp_slimstat {
 		}
 
 		// Are we ignoring bots?
-		if ( ( self::$settings[ 'javascript_mode' ] == 'yes' || self::$settings[ 'ignore_bots' ] == 'yes' ) && self::$browser[ 'browser_type' ] == 1 ) {
+		if ( ( self::$settings[ 'javascript_mode' ] == 'on' || self::$settings[ 'ignore_bots' ] == 'on' ) && self::$browser[ 'browser_type' ] == 1 ) {
 			self::$stat[ 'id' ] = -310;
 			self::_set_error_array( __( 'Bot not tracked', 'wp-slimstat' ), true );
 			return $_argument;
@@ -641,7 +662,7 @@ class wp_slimstat {
 					COOKIEPATH
 				);
 			}
-			elseif ( !$cookie_has_been_set && self::$settings[ 'extend_session' ] == 'yes' && self::$stat[ 'visit_id' ] > 0 ) {
+			elseif ( !$cookie_has_been_set && self::$settings[ 'extend_session' ] == 'on' && self::$stat[ 'visit_id' ] > 0 ) {
 				@setcookie(
 					'slimstat_tracking_code',
 					self::_get_id_with_checksum( self::$stat[ 'visit_id' ] ),
@@ -654,74 +675,6 @@ class wp_slimstat {
 		return $_argument;
 	}
 	// end slimtrack
-
-	/**
-	 * Searches for the country code associated to a given IP address
-	 */
-	public static function get_country( $_ip_address = '0.0.0.0' ){
-		$ipnum = ip2long( $_ip_address );
-		$country_output = 'xx';
-
-		// Is this a RFC1918 (local) IP?
-		if ( $ipnum == 2130706433 || // 127.0.0.1
-			( $ipnum >= 167772160 && $ipnum <= 184549375 ) || // 10.0.0.1 - 10.255.255.255
-			( $ipnum >= 2886729728 && $ipnum <= 2887778303 ) || // 172.16.0.1 - 172.31.255.255
-			( $ipnum >= 3232235521 && $ipnum <= 3232301055 ) ) { // 192.168.0.1 - 192.168.255.255
-				$country_output = 'xy';
-		}
-		else {
-			$country_codes = array("","ap","eu","ad","ae","af","ag","ai","al","am","cw","ao","aq","ar","as","at","au","aw","az","ba","bb","bd","be","bf","bg","bh","bi","bj","bm","bn","bo","br","bs","bt","bv","bw","by","bz","ca","cc","cd","cf","cg","ch","ci","ck","cl","cm","cn","co","cr","cu","cv","cx","cy","cz","de","dj","dk","dm","do","dz","ec","ee","eg","eh","er","es","et","fi","fj","fk","fm","fo","fr","sx","ga","gb","gd","ge","gf","gh","gi","gl","gm","gn","gp","gq","gr","gs","gt","gu","gw","gy","hk","hm","hn","hr","ht","hu","id","ie","il","in","io","iq","ir","is","it","jm","jo","jp","ke","kg","kh","ki","km","kn","kp","kr","kw","ky","kz","la","lb","lc","li","lk","lr","ls","lt","lu","lv","ly","ma","mc","md","mg","mh","mk","ml","mm","mn","mo","mp","mq","mr","ms","mt","mu","mv","mw","mx","my","mz","na","nc","ne","nf","ng","ni","nl","no","np","nr","nu","nz","om","pa","pe","pf","pg","ph","pk","pl","pm","pn","pr","ps","pt","pw","py","qa","re","ro","ru","rw","sa","sb","sc","sd","se","sg","sh","si","sj","sk","sl","sm","sn","so","sr","st","sv","sy","sz","tc","td","tf","tg","th","tj","tk","tm","tn","to","tl","tr","tt","tv","tw","tz","ua","ug","um","us","uy","uz","va","vc","ve","vg","vi","vn","vu","wf","ws","ye","yt","rs","za","zm","me","zw","a1","a2","o1","ax","gg","im","je","bl","mf","bq","ss","o1");
-
-			if ( file_exists( self::$maxmind_path ) && ( $handle = fopen( self::$maxmind_path, "rb" ) ) ) {
-
-				// Do we need to update the file?
-				if (false !== ($file_stat = stat(self::$maxmind_path))){
-
-					// Is the database more than 30 days old?
-					if ((date('U') - $file_stat['mtime'] > 2629740)){
-						fclose($handle);
-
-						add_action('shutdown', array(__CLASS__, 'download_maxmind_database'));
-
-						if (false === ($handle = fopen(self::$maxmind_path, "rb"))){
-							return apply_filters( 'slimstat_get_country', 'xx', $_ip_address );
-						}
-					}
-				}
-
-				$offset = 0;
-				for ( $depth = 31; $depth >= 0; --$depth ) {
-					if ( fseek($handle, 6 * $offset, SEEK_SET ) != 0 ) {
-						break;
-					}
-					$buf = fread( $handle, 6 );
-					$x = array(0,0);
-					for ($i = 0; $i < 2; ++$i) {
-						for ($j = 0; $j < 3; ++$j) {
-							$x[$i] += ord(substr($buf, 3 * $i + $j, 1)) << ($j * 8);
-						}
-					}
-
-					if ( $ipnum & ( 1 << $depth ) ) {
-						if ($x[1] >= 16776960 && !empty($country_codes[$x[1] - 16776960])) {
-							$country_output = $country_codes[$x[1] - 16776960];
-							break;
-						}
-						$offset = $x[1];
-					} else {
-						if ($x[0] >= 16776960 && !empty($country_codes[$x[0] - 16776960])) {
-							$country_output = $country_codes[$x[0] - 16776960];
-							break;
-						}
-						$offset = $x[0];
-					}
-				}
-				fclose($handle);
-			}
-		}
-		return apply_filters( 'slimstat_get_country', $country_output, $_ip_address );
-	}
-	// end get_country
 
 	/**
 	 * Decodes the permalink
@@ -1032,7 +985,7 @@ class wp_slimstat {
 		}
 
 		// User doesn't have an active session
-		if ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'yes' ) ) {
+		if ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'on' ) ) {
 			if ( empty( self::$settings[ 'session_duration' ] ) ) {
 				self::$settings[ 'session_duration' ] = 1800;
 			}
@@ -1066,7 +1019,7 @@ class wp_slimstat {
 				WHERE id = %d AND visit_id = 0", self::$stat[ 'visit_id' ], $identifier
 			) );
 		}
-		return ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'yes' ) );
+		return ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'on' ) );
 	}
 	// end _set_visit_id
 
@@ -1187,7 +1140,7 @@ class wp_slimstat {
 	/**
 	 * Opens given domains during CORS requests to admin-ajax.php
 	 */
-	public static function open_cors_admin_ajax( $_allowed_origins = array() ){
+	public static function open_cors_admin_ajax( $_allowed_origins = array() ) {
 		$exploded_domains = self::string_to_array( self::$settings[ 'external_domains' ] );
 
 		if ( !empty( $exploded_domains ) && !empty( $exploded_domains[ 0 ] ) ) {
@@ -1200,7 +1153,7 @@ class wp_slimstat {
 	/**
 	 * Downloads the MaxMind geolocation database from their repository
 	 */
-	public static function download_maxmind_database(){
+	public static function download_maxmind_database() {
 		// Create the folder, if it doesn't exist
 		if ( !file_exists( dirname( self::$maxmind_path ) ) ) {
 			mkdir( dirname( self::$maxmind_path ) );
@@ -1208,12 +1161,18 @@ class wp_slimstat {
 
 		// Download the most recent database directly from MaxMind's repository
 		if ( !function_exists( 'download_url' ) ) {
-			require_once(ABSPATH . 'wp-admin/includes/file.php');
+			require_once( ABSPATH . 'wp-admin/includes/file.php' );
 		}
-		$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz', 5 );
 
-		if (is_wp_error($maxmind_tmp)){
-			return __('There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat').' '.$maxmind_tmp->get_error_message();
+		if ( self::$settings[ 'geolocation_country' ] == 'on' ) {
+			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz', 5 );
+		}
+		else {
+			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz', 25 );	
+		}
+
+		if ( is_wp_error( $maxmind_tmp ) ) {
+			return __( 'There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat' ) . ' ' . $maxmind_tmp->get_error_message();
 		}
 
 		$zh = false;
@@ -1235,22 +1194,22 @@ class wp_slimstat {
 		}
 
 		if ( false === ( $fh = fopen( self::$maxmind_path, 'wb' ) ) ) {
-			return __('There was an error opening the unzipped MaxMind Geolite DB.','wp-slimstat');
+			return __( 'There was an error opening the MaxMind Geolite DB.', 'wp-slimstat' );
 		}
 
-		while(($data = gzread($zh, 4096)) != false){
-			fwrite($fh, $data);
+		while ( ( $data = gzread( $zh, 4096 ) ) != false ) {
+			fwrite( $fh, $data );
 		}
 
-		@gzclose($zh);
-		@fclose($fh);
+		@gzclose( $zh );
+		@fclose( $fh );
 
-		@unlink($maxmind_tmp);
+		@unlink( $maxmind_tmp );
 
 		return '';
 	}
 
-	public static function slimstat_shortcode( $_attributes = '', $_content = '' ){
+	public static function slimstat_shortcode( $_attributes = '', $_content = '' ) {
 		extract( shortcode_atts( array(
 			'f' => '',		// recent, popular, count, widget
 			'w' => '',		// column to use (for recent, popular and count) or widget to use
@@ -1550,48 +1509,49 @@ class wp_slimstat {
 			'browscap_last_modified' => 0,
 
 			// General
-			'is_tracking' => 'yes',
-			'javascript_mode' => 'yes',
-			'enable_javascript' => 'yes',
+			'is_tracking' => 'on',
+			'javascript_mode' => 'on',
+			'enable_javascript' => 'on',
 			'track_admin_pages' => 'no',
-			'use_separate_menu' => 'yes',
+			'use_separate_menu' => 'on',
 			'add_posts_column' => 'no',
 			'posts_column_day_interval' => 30,
-			'posts_column_pageviews' => 'yes',
-			'add_dashboard_widgets' => 'yes',
+			'posts_column_pageviews' => 'on',
+			'add_dashboard_widgets' => 'on',
 			'hide_addons' => 'no',
 			'auto_purge' => 0,
-			'auto_purge_delete' => 'yes',
+			'auto_purge_delete' => 'on',
 
 			// Tracker
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
-			'track_same_domain_referers' => 'yes',
+			'track_same_domain_referers' => 'on',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
-			'enable_cdn' => 'yes',
+			'geolocation_country' => 'on',
+			'enable_cdn' => 'on',
 			'external_domains' => '',
 
 			// Filters
-			'track_users' => 'yes',
+			'track_users' => 'on',
 			'ignore_users' => '',
 			'ignore_ip' => '',
 			'ignore_capabilities' => '',
-			'ignore_spammers' => 'yes',
+			'ignore_spammers' => 'on',
 			'ignore_bots' => 'no',
 			'ignore_resources' => '',
 			'ignore_countries' => '',
 			'ignore_browsers' => '',
 			'ignore_referers' => '',
 			'anonymize_ip' => 'no',
-			'ignore_prefetch' => 'yes',
+			'ignore_prefetch' => 'on',
 
 			// Reports
-			'use_european_separators' => 'yes',
+			'use_european_separators' => 'on',
 			'date_format' => 'm-d-y',
 			'time_format' => 'h:i a',
 			'show_display_name' => 'no',
-			'convert_resource_urls_to_titles' => 'yes',
+			'convert_resource_urls_to_titles' => 'on',
 			'convert_ip_addresses' => 'no',
 			'async_load' => 'no',
 			'use_current_month_timespan' => 'no',
@@ -1609,7 +1569,7 @@ class wp_slimstat {
 			'enable_sov' => 'no',
 
 			// Access Control
-			'restrict_authors_view' => 'yes',
+			'restrict_authors_view' => 'on',
 			'capability_can_view' => 'activate_plugins',
 			'can_view' => '',
 			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
@@ -1665,7 +1625,7 @@ class wp_slimstat {
 			$params[ 'outbound_classes_rel_href_to_not_track' ] = str_replace( ' ', '', self::$settings[ 'do_not_track_outbound_classes_rel_href' ] );
 		}
 
-		if ( self::$settings[ 'javascript_mode' ] != 'yes' ) {
+		if ( self::$settings[ 'javascript_mode' ] != 'on' ) {
 			// Do not enqueue the tracker if this page view was not tracked for some reason
 			if ( intval( self::$stat[ 'id' ] ) < 0 ) {
 				return false;
@@ -1691,12 +1651,12 @@ class wp_slimstat {
 
 		$params = apply_filters( 'slimstat_js_params', $params );
 
-		if ( self::$settings[ 'enable_cdn' ] == 'yes' ) {
+		if ( self::$settings[ 'enable_cdn' ] == 'on' ) {
 			$schema = is_ssl() ? 'https' : 'http';
 			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
 		}
 		else{
-			wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), array(), null, true);
+			wp_register_script( 'wp_slimstat', plugins_url( '/wp-slimstat.min.js', __FILE__ ), array(), null, true );
 		}
 
 		wp_enqueue_script( 'wp_slimstat' );

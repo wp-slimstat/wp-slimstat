@@ -11,9 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "After WordPress rolled out their official REST API, we had received a few requests asking to add support for this feature to Slimstat. In an age where headless applications are all the rage, and given that WordPress has reached a stable state in implementing this functionality, we decided that it was time for us to move forward on this project. Starting with Slimstat 4.7, you can now access your metrics from any external application. Just follow these <a href='https://slimstat.freshdesk.com/solution/articles/12000033661-slimstat-rest-api' target='_blank'>simple steps</a> to get started (or contact our support team). Our REST API implementation is still experimental, so please do not hesitate to report any issues or concerns you might have. Also, don't forget that our Summer Madness Discount promotion continues. Get your <a href='http://www.wp-slimstat.com/addons/' target='_blank'>favorite Slimstat add-ons</a> (including the bundles) and pay only half the original price. Note that prices at checkout already factor in the discount; you don't need any special code or cryptic URL to participate!";
-
-		// "As those who have been using Slimstat for a while know, we never stop doing our good share of research and development to imrpove this plugin. One request that has been sitting on our wishlist for a while is to make our geolocation functionality more accurate, and track not just a user's Country of origin, but possibly his State (where applicable) and city. In order to geolocate visitors, our code has been leveraging a third-party data file provided by <a href='https://www.maxmind.com/en/home' target='_blank'>MaxMind.com</a>. A while ago, they launched a new data format, which improves performance and offers a way to determine the city of origin. However, the new library required a higher version of PHP, and up until now we had preferred allowing more people to use our plugin, over the chance of offering this feature. Now, we found a way to get the best of both worlds: by customizing their PHP library, we were able to make it work with PHP 5.3! Which means that soon Slimstat will be able to tell you your visitors' city of origin right out of the box. Please contact us if you would like to test this feature in advance."
+		self::$admin_notice = "As those who have been using Slimstat for a while know, we never stop doing our good share of research and development to improve our plugin. One feature on our wishlist was to make the geolocation functionality more accurate. Specifically, users have been asking us to track not just the Country of origin, but possibly the state and city. In order to geolocate visitors, our code has been leveraging a third-party data file provided by <a href='https://www.maxmind.com/en/home' target='_blank'>MaxMind.com</a>. A while ago, they launched a new data format, which improves performance and offers a way to quickly determine the city of origin. However, the new library required a higher version of PHP, and up until now we had been hesitant to adopt it, to allow more people to use our plugin, over the chance of offering this feature. Now, after spending some time combing through their code, we found a way to get the best of both worlds: by customizing their PHP library, we were able to make it work with PHP 5.3! Which means that now Slimstat is able to tell you your visitors' city of origin (and State, when applicable) right out of the box. This information is available in the Access Log report and in a new 'Top Cities' report under the Audience tab. Please note: the MaxMind data file to enable this feature is approximately 60 Mb, and for this reason <strong>this new functionality is not enabled by default</strong>. You must go to Slimstat > Settings > Tracker and turn on the corresponding option. Then go to Slimstat > Settings > Maintenance and uninstall/install the GeoLite file to download the one that contains the city data. Please feel free to contact us if you have any questions.";
 
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
@@ -115,12 +113,12 @@ class wp_slimstat_admin {
 		}
 
 		// Remove spammers from the database
-		if (wp_slimstat::$settings['ignore_spammers'] == 'yes'){
+		if ( wp_slimstat::$settings[ 'ignore_spammers' ] == 'on' ) {
 			add_action('transition_comment_status', array(__CLASS__, 'remove_spam'), 15, 3);
 		}
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'yes' && is_admin_bar_showing() ) {
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'on' && is_admin_bar_showing() ) {
 			add_action( 'admin_bar_menu', array( __CLASS__, 'wp_slimstat_adminbar' ), 100 );
 		}
 
@@ -130,7 +128,7 @@ class wp_slimstat_admin {
 			add_action( 'admin_menu', array( __CLASS__, 'wp_slimstat_add_config_menu' ) );
 
 			// Display the column in the Edit Posts / Pages screen
-			if ( wp_slimstat::$settings[ 'add_posts_column' ] == 'yes' ) {
+			if ( wp_slimstat::$settings[ 'add_posts_column' ] == 'on' ) {
 				$post_types = get_post_types( array( 'public' => true, 'show_ui'  => true ), 'names' );
 				include_once( dirname( __FILE__ ) . '/view/wp-slimstat-reports.php' );
 				include_once( dirname( __FILE__ ) . '/view/wp-slimstat-db.php' );
@@ -169,7 +167,7 @@ class wp_slimstat_admin {
 		}
 
 		// Dashboard Widgets
-		if ( wp_slimstat::$settings[ 'add_dashboard_widgets' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'add_dashboard_widgets' ] == 'on' ) {
 			$temp = strlen( $_SERVER['REQUEST_URI'] ) - 10;
 
 			if( strpos( $_SERVER['REQUEST_URI'], 'index.php' ) !== false || ( $temp >= 0 && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false ) ) {
@@ -194,7 +192,7 @@ class wp_slimstat_admin {
 		}
 		
 		// Hide plugins
-		if ( wp_slimstat::$settings[ 'hide_addons' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'hide_addons' ] == 'on' ) {
 			add_filter( 'all_plugins', array( __CLASS__, 'hide_addons' ) );
 		}
 	}
@@ -352,245 +350,11 @@ class wp_slimstat_admin {
 	public static function update_tables_and_options(){
 		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
-		// --- Updates for version 3.8.4 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '3.8.4', '<' ) ) {
-			$my_wpdb->query( "CREATE TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive LIKE {$GLOBALS['wpdb']->prefix}slim_stats" );
-		}
-		// --- END: Updates for version 3.8.4 ---
-
-		// --- Updates for version 3.9.6 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '3.9.6', '<' ) ) {
-			// Consolidate some settings
-			$classes = wp_slimstat::string_to_array( wp_slimstat::$settings[ 'ignore_outbound_classes' ] );
-			$rel = wp_slimstat::string_to_array( wp_slimstat::$settings[ 'ignore_outbound_rel' ] );
-			$href = wp_slimstat::string_to_array( wp_slimstat::$settings[ 'ignore_outbound_href' ] );
-			wp_slimstat::$settings[ 'ignore_outbound_classes_rel_href' ] = implode( ',', array_merge( $classes, $rel, $href ) );
-
-			$classes = wp_slimstat::string_to_array( wp_slimstat::$settings[ 'do_not_track_outbound_classes' ] );
-			$rel = wp_slimstat::string_to_array( wp_slimstat::$settings[ 'do_not_track_outbound_rel' ] );
-			$href = wp_slimstat::string_to_array( wp_slimstat::$settings[ 'do_not_track_outbound_href' ] );
-			wp_slimstat::$settings[ 'do_not_track_outbound_classes_rel_href' ] = implode( ',', array_merge( $classes, $rel, $href ) );
-			
-			// Make secret key really... secret!
-			wp_slimstat::$settings[ 'secret' ] = wp_hash( uniqid( time(), true ) );
-		}
-		// --- END: Updates for version 3.9.6 ---
-
-		// --- Updates for version 3.9.8.2 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '3.9.8.2', '<' ) ) {
-			// The GeoLite DB is already installed, let's unzip it to improve the tracker's performance
-			if ( file_exists( wp_slimstat::$maxmind_path.'.gz' ) ) {
-				@unlink( wp_slimstat::$maxmind_path.'.gz' );
-				wp_slimstat::download_maxmind_database();
-			}
-		}
-		// --- END: Updates for version 3.9.8.2 ---
-
-		// --- Updates for version 4.0 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.0', '<' ) ) {
-			$GLOBALS['wpdb']->query( "DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE 'meta-box-order_slimstat%'" );
-
-			$have_innodb = $GLOBALS[ 'wpdb' ]->get_results( "SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A );
-			$use_innodb = ( !empty( $have_innodb[ 0 ] ) && $have_innodb[ 0 ][ 'Value' ] == 'YES' ) ? 'ENGINE=InnoDB' : '';
-
-			// Create the new table
-			self::_create_table ("
-				CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_4 (
-					id INT UNSIGNED NOT NULL auto_increment,
-					ip INT UNSIGNED DEFAULT 0,
-					other_ip INT UNSIGNED DEFAULT 0,
-					username VARCHAR(255) DEFAULT NULL,
-					country VARCHAR(16) DEFAULT NULL,
-					referer VARCHAR(2048) DEFAULT NULL,
-					resource VARCHAR(2048) DEFAULT NULL,
-					searchterms VARCHAR(2048) DEFAULT NULL,
-					plugins VARCHAR(255) DEFAULT NULL,
-					notes VARCHAR(2048) DEFAULT NULL,
-					visit_id INT UNSIGNED NOT NULL DEFAULT 0,
-					server_latency INT(10) UNSIGNED DEFAULT 0,
-					page_performance INT(10) UNSIGNED DEFAULT 0,
-
-					browser VARCHAR(40) DEFAULT NULL,
-					browser_version VARCHAR(15) DEFAULT NULL,
-					browser_type TINYINT UNSIGNED DEFAULT 0,
-					platform VARCHAR(15) DEFAULT NULL,
-					language VARCHAR(5) DEFAULT NULL,
-					user_agent VARCHAR(2048) DEFAULT NULL,
-
-					resolution VARCHAR(12) DEFAULT NULL,
-					screen_width SMALLINT UNSIGNED DEFAULT 0,
-					screen_height SMALLINT UNSIGNED DEFAULT 0,
-
-					content_type VARCHAR(64) DEFAULT NULL,
-					category VARCHAR(256) DEFAULT NULL,
-					author VARCHAR(64) DEFAULT NULL,
-					content_id BIGINT(20) UNSIGNED DEFAULT 0,
-					
-					outbound_resource VARCHAR(2048) DEFAULT NULL,
-
-					dt INT(10) UNSIGNED DEFAULT 0,
-
-					CONSTRAINT PRIMARY KEY (id),
-					INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stats_dt (dt)
-				) COLLATE utf8_general_ci $use_innodb", $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats_4', $my_wpdb );
-
-			// Create the archive table
-			$my_wpdb->query( "CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive_4 LIKE {$GLOBALS['wpdb']->prefix}slim_stats_4" );
-
-			// Rename old and new tables
-			$my_wpdb->query( "SET foreign_key_checks = 0" );
-			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_3" );
-			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_4 TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
-			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive_3" );
-			$my_wpdb->query( "RENAME TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive_4 TO {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
-
-			// Sometimes db users are not granted the capability to rename tables
-			$slim_stats_4_exists = $my_wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats_4'", 0 );
-			$resolution_exists = $my_wpdb->get_results( "SHOW COLUMNS FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats LIKE 'resolution'" );
-
-			// Something went wrong during the upgrade
-			if ( !empty( $slim_stats_4_exists ) && empty( $resolution_exists ) ) {
-				self::$admin_notice = __( "Slimstat attempted to upgrade your database structure, but the procedure might not have been completed (temporary tables were detected in your database). This might be caused by restrictive user permissions that don't grant commands like RENAME, ALTER/CHANGE and others. You might need to manually consolidate your tables. No worries, we wrote a <a href='https://slimstat.freshdesk.com/support/solutions/articles/12000003148-how-do-i-update-the-table-structure-if-i-upgraded-from-a-version-prior-to-4-0' target='_blank'>step by step guide</a> on how to do that. Please feel free to contact our support team if you have any questions.", 'wp-slimstat' );
-				self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
-				return 0;
-			}
-
-			// Create the new events table
-			$my_wpdb->query( "
-				CREATE TABLE IF NOT EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_events (
-					event_id INT(10) NOT NULL AUTO_INCREMENT,
-					type TINYINT UNSIGNED DEFAULT 0,
-					event_description VARCHAR(64) DEFAULT NULL,
-					notes VARCHAR(256) DEFAULT NULL,
-					position VARCHAR(32) DEFAULT NULL,
-					id INT UNSIGNED NOT NULL DEFAULT 0,
-					dt INT(10) UNSIGNED DEFAULT 0,
-					
-					CONSTRAINT PRIMARY KEY (event_id),
-					INDEX idx_{$GLOBALS['wpdb']->prefix}slim_events (dt),
-					CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
-				) COLLATE utf8_general_ci $use_innodb" );
-			
-			$my_wpdb->query( "
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats (
-					id,
-					ip,
-					other_ip,
-					username,
-					country,
-					referer,
-					resource,
-					searchterms,
-					plugins,
-					notes,
-					visit_id,
-					server_latency,
-					page_performance,
-
-					browser,
-					browser_version,
-					browser_type,
-					platform,
-					language,
-					user_agent,
-
-					screen_width,
-					screen_height,
-
-					content_type,
-					category,
-					author,
-					content_id,
-
-					outbound_resource,
-
-					dt
-				)
-				SELECT 
-					t1.id,
-					t1.ip,
-					t1.other_ip,
-					NULLIF(t1.user, ''),
-					NULLIF(t1.country, ''),
-					NULLIF(t1.referer, ''),
-					NULLIF(t1.resource, ''),
-					NULLIF(t1.searchterms, ''),
-					NULLIF(t1.plugins, ''),
-					NULLIF(t1.notes, ''),
-					t1.visit_id,
-					t1.server_latency,
-					t1.page_performance,
-
-					NULLIF(tb.browser, ''),
-					NULLIF(tb.version, ''),
-					tb.type,
-					NULLIF(tb.platform, ''),
-					NULLIF(t1.language, ''),
-					NULLIF(tb.user_agent, ''),
-
-					9812,
-					9812,
-
-					NULLIF(tci.content_type, ''),
-					NULLIF(tci.category, ''),
-					NULLIF(tci.author, ''),
-					tci.content_id,
-
-					NULL,
-
-					t1.dt
-
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats_3 AS t1
-				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_browsers AS tb ON t1.browser_id = tb.browser_id
-				INNER JOIN {$GLOBALS['wpdb']->base_prefix}slim_content_info AS tci ON t1.content_info_id = tci.content_info_id" );
-			
-			// Copy the events
-			$my_wpdb->query( "
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events (
-					type,
-					event_description,
-					notes,
-					position,
-					id,
-					dt
-				)
-				SELECT
-					tob.type,
-					SUBSTRING(tob.notes, LOCATE('Event:', tob.notes)+6, LOCATE(',', tob.notes, LOCATE('Event:', tob.notes)+6) - LOCATE('Event:', tob.notes)-6),
-					SUBSTRING(tob.notes, 1, LOCATE('Event:', tob.notes) - 3),
-					tob.position,
-					tob.id,
-					tob.dt
-				FROM {$GLOBALS['wpdb']->prefix}slim_outbound AS tob" );
-
-			$my_wpdb->query( "SET foreign_key_checks = 1" );
-		}
-		// --- END: Updates for version 4.0 ---
-
-		// --- Updates for version 4.1.3 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.1.3', '<' ) ) {
-			// Change column type to add IPv6 support
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD ip_temp VARCHAR(39) DEFAULT NULL AFTER outbound_resource, ADD other_ip_temp VARCHAR(39) DEFAULT NULL AFTER id" );
-			$my_wpdb->query( "UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET ip_temp = INET_NTOA(ip), other_ip_temp = INET_NTOA(other_ip)" );
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE ip ip_num INT UNSIGNED DEFAULT 0" );
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE other_ip other_ip_num INT UNSIGNED DEFAULT 0" );
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE ip_temp ip VARCHAR(39) DEFAULT NULL AFTER id" );
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats CHANGE other_ip_temp other_ip VARCHAR(39) DEFAULT NULL AFTER ip" );
-		}
-		// --- END: Updates for version 4.1.3 ---
-
-		// --- Updates for version 4.1.7 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.1.7', '<' ) ) {
-			// Change column type to add IPv6 support
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD dt_out INT(10) UNSIGNED DEFAULT 0 AFTER outbound_resource" );
-		}
-		// --- END: Updates for version 4.1.7 ---
-
 		// --- Updates for version 4.2 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.2', '<' ) ) {
 			// Report arrangements are now stored as a global usermeta value. Migrate old values to new variable
 			$current_user = wp_get_current_user();
-			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
+			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) ? 'slimstat' : 'admin';
 			$new_user_reports = array();
 
 			for ( $i = 2; $i <= 5; $i++ ) {
@@ -618,7 +382,7 @@ class wp_slimstat_admin {
 
 		// --- Updates for version 4.2.6 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.2.6', '<' ) ) {
-			wp_slimstat::$settings[ 'auto_purge_delete' ] = ( wp_slimstat::$settings[ 'auto_purge_delete' ] == 'yes' ) ? 'no' : 'yes';
+			wp_slimstat::$settings[ 'auto_purge_delete' ] = ( wp_slimstat::$settings[ 'auto_purge_delete' ] == 'on' ) ? 'no' : 'on';
 		}
 		// --- END: Updates for version 4.2.6 ---
 
@@ -657,6 +421,26 @@ class wp_slimstat_admin {
 			wp_slimstat::$settings[ 'last_tracker_notice' ] = array();
 		}
 		// --- END: Updates for version 4.4.5 ---
+
+		// --- Updates for version 4.7.2 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.2', '<' ) ) {
+			// Changing our toggle option values from 'yes' to 'on'
+			foreach ( wp_slimstat::$settings as $a_key => $a_value ) {
+				if ( $a_value == 'yes' ) {
+					wp_slimstat::$settings[ $a_key ] = 'on';
+				}
+			}
+
+			// If MaxMind DB is enabled, download the new GeoLite 2 data file
+			$old_maxmind_path =  str_replace( '.mmdb', '.dat', wp_slimstat::$maxmind_path );
+			if ( file_exists( $old_maxmind_path ) ) {
+				@unlink( $old_maxmind_path );
+				wp_slimstat::download_maxmind_database();
+			}
+
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN city VARCHAR(255) DEFAULT NULL AFTER country, ADD COLUMN location VARCHAR(36) DEFAULT NULL AFTER country" );
+		}
+		// --- END: Updates for version 4.7.2 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
@@ -773,7 +557,7 @@ class wp_slimstat_admin {
 
 		// Get the current report assignments
 		$new_entry = array();
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' || is_network_admin() ) {
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' || is_network_admin() ) {
 			$parent = 'slimview1';
 			$page_location = 'slimstat';
 			$new_entry[] = add_menu_page(__('Slimstat','wp-slimstat'), __('Slimstat','wp-slimstat'), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
@@ -829,7 +613,7 @@ class wp_slimstat_admin {
 			$slimstat_view_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=");
 			$slimstat_config_url = get_admin_url($GLOBALS['blog_id'], "admin.php?page=slimconfig");
 
-			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) ? 'slimstat' : 'admin';
+			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) ? 'slimstat' : 'admin';
 			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
 
 			$frontend_filter = '';
@@ -872,7 +656,7 @@ class wp_slimstat_admin {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_admin' ];
 		}
 
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) {
 			$new_entry = add_submenu_page( 'slimview1', __( 'Settings','wp-slimstat' ), __( 'Settings','wp-slimstat' ), $minimum_capability, 'slimconfig', array( __CLASS__, 'wp_slimstat_include_config' ) );
 		}
 		else {
@@ -928,7 +712,7 @@ class wp_slimstat_admin {
 			wp_slimstat::$settings[ 'posts_column_day_interval' ] = 30;
 		}
 
-		if ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) {
 			$_columns[ 'wp-slimstat' ] = '<span class="slimstat-icon" title="' . __( 'Pageviews in the last ' . wp_slimstat::$settings[ 'posts_column_day_interval' ] . ' days', 'wp-slimstat' ) . '"></span>';
 		}
 		else {
@@ -955,7 +739,7 @@ class wp_slimstat_admin {
 		$parsed_permalink = $parsed_permalink[ 'path' ] . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . $parsed_permalink[ 'query' ] : '' );
 		wp_slimstat_db::init( 'resource contains ' . $parsed_permalink . '&&&interval equals ' . wp_slimstat::$settings[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' );
 
-		if ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'yes' ) {
+		if ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) {
 			$count = wp_slimstat_db::count_records();
 		}
 		else{
@@ -1042,15 +826,15 @@ class wp_slimstat_admin {
 				break;
 
 			case 'wp_ajax_slimstat_hide_geolite_notice':
-				wp_slimstat::$settings[ 'no_maxmind_warning' ] = 'yes';
+				wp_slimstat::$settings[ 'no_maxmind_warning' ] = 'on';
 				break;
 
 			case 'wp_ajax_slimstat_hide_browscap_notice':
-				wp_slimstat::$settings[ 'no_browscap_warning' ] = 'yes';
+				wp_slimstat::$settings[ 'no_browscap_warning' ] = 'on';
 				break;
 
 			case 'wp_ajax_slimstat_hide_caching_notice':
-				wp_slimstat::$settings[ 'no_caching_warning' ] = 'yes';
+				wp_slimstat::$settings[ 'no_caching_warning' ] = 'on';
 				break;
 
 			default:
@@ -1165,7 +949,7 @@ class wp_slimstat_admin {
 							<input class="slimstat-checkbox-toggle"
 								type="checkbox"
 								name="options[addon_network_settings_' . $_setting_slug . ']"' .
-								( ( !empty( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) && wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] == 'yes' ) ? ' checked="checked"' : '' ) . '
+								( ( !empty( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) && wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
 								id="addon_network_settings_' . $_setting_slug . '"
 								data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
 
@@ -1191,7 +975,7 @@ class wp_slimstat_admin {
 										name="options[' . $_setting_slug . ']"
 										id="' . $_setting_slug . '"
 										data-size="mini" data-handle-width="50" data-on-color="success"' . 
-										( ( isset( wp_slimstat::$settings[ $_setting_slug ] ) && wp_slimstat::$settings[ $_setting_slug ] == 'yes' ) ? ' checked="checked"' : '' ) . '
+										( ( isset( wp_slimstat::$settings[ $_setting_slug ] ) && wp_slimstat::$settings[ $_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
 										data-on-text="' . ( !empty( $_setting_info[ 'custom_label_on' ] ) ? $_setting_info[ 'custom_label_on' ] : __( 'On', 'wp-slimstat' ) ) . '"
 										data-off-text="' . ( !empty( $_setting_info[ 'custom_label_off' ] ) ? $_setting_info[ 'custom_label_off' ] : __( 'Off', 'wp-slimstat' ) ) . '">' .
 										$network_override_checkbox . '
@@ -1280,14 +1064,9 @@ class wp_slimstat_admin {
 				continue;
 			}
 
-			// For backward compatibility, we need to turn 'on' in 'yes'
-			if ( $_setting_info[ 'type' ] == 'toggle' ) {
-				if ( isset( $_POST[ 'options' ][ $_setting_slug ] ) && strtolower( $_POST[ 'options' ][ $_setting_slug ] == 'on' ) ) {
-					wp_slimstat::$settings[ $_setting_slug ] = 'yes';
-				}
-				else {
-					wp_slimstat::$settings[ $_setting_slug ] = 'no';	
-				}
+			// An empty toggle option is saved in the database as 'no'
+			if ( $_setting_info[ 'type' ] == 'toggle' && ( !isset( $_POST[ 'options' ][ $_setting_slug ] ) || strtolower( $_POST[ 'options' ][ $_setting_slug ] != 'on' ) ) ) {
+				wp_slimstat::$settings[ $_setting_slug ] = 'no';
 			}
 			else if ( isset( $_POST[ 'options' ][ $_setting_slug ] ) ) {
 				wp_slimstat::$settings[ $_setting_slug ] = $_POST[ 'options' ][ $_setting_slug ];
@@ -1295,11 +1074,8 @@ class wp_slimstat_admin {
 
 			// If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
 			if ( is_network_admin() ) {
-				if ( isset( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] ) && strtolower( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] == 'on' ) ) {
-					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'yes';
-				}
-				else {
-					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'no';	
+				if ( !isset( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] ) || strtolower( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] != 'on' ) ) {
+					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'no';
 				}
 			}
 			else if ( isset( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) ) {
