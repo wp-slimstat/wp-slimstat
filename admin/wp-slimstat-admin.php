@@ -261,7 +261,11 @@ class wp_slimstat_admin {
 				ip VARCHAR(39) DEFAULT NULL,
 				other_ip VARCHAR(39) DEFAULT NULL,
 				username VARCHAR(255) DEFAULT NULL,
+
 				country VARCHAR(16) DEFAULT NULL,
+				location VARCHAR(36) DEFAULT NULL,
+				city VARCHAR(255) DEFAULT NULL,
+
 				referer VARCHAR(2048) DEFAULT NULL,
 				resource VARCHAR(2048) DEFAULT NULL,
 				searchterms VARCHAR(2048) DEFAULT NULL,

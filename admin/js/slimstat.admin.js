@@ -256,7 +256,7 @@ jQuery(function(){
 	});
 
 	// Asynchronous Reports
-	if (SlimStatAdminParams.async_load == 'yes'){
+	if (SlimStatAdminParams.async_load == 'on'){
 		jQuery('div[id^=slim_]').each(function(){
 			report_id = jQuery(this).attr('id');
 			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), current_tab: SlimStatAdminParams.current_tab}

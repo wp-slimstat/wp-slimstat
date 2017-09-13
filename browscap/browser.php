@@ -160,7 +160,7 @@ class slim_browser {
 			$unzip_done = unzip_file( $browscap_zip, wp_slimstat::$upload_dir );
 
 			if ( !$unzip_done || !file_exists( self::$browscap_autoload_path ) ) {
-				@unlink( $browscap_zip );
+				//@unlink( $browscap_zip );
 				$GLOBALS[ 'wp_filesystem' ]->rmdir( dirname( self::$browscap_autoload_path ) . '/', true );
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
 				wp_slimstat::slimstat_save_options();

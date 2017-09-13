@@ -35,7 +35,7 @@ $slimstat_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}sl
 $slimstat_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}slim_content_info" );
 
 function slimstat_uninstall($_wpdb = '', $_options = array()){
-	// Goodbye data...
+	// Bye bye data...
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_outbound");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_events");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
@@ -44,7 +44,7 @@ function slimstat_uninstall($_wpdb = '', $_options = array()){
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_3");
 	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive_3");
 
-	// Goodbye options...
+	// Bye bye options...
 	delete_option('slimstat_options');
 	delete_option('slimstat_visit_id');
 	delete_option('slimstat_filters');
@@ -59,6 +59,6 @@ function slimstat_uninstall($_wpdb = '', $_options = array()){
 	// Delete the Browscap and MaxMind data files if they exist
 	$upload_path = wp_upload_dir();
 	$upload_path = $upload_path[ 'basedir' ] . '/wp-slimstat/';
-	@unlink( $upload_path . 'maxmind.dat' );
+	@unlink( $upload_path . 'maxmind.mmdb' );
 	@unlink( $upload_path . 'browscap-db.php' );
 }
