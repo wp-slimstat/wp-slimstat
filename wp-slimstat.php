@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.2.1
+Version: 4.7.2.2
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.2.1';
+	public static $version = '4.7.2.2';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -1526,14 +1526,16 @@ class wp_slimstat {
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'track_same_domain_referers' => 'on',
+			'geolocation_country' => 'on',
+			'track_users' => 'on',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
-			'geolocation_country' => 'on',
 			'enable_cdn' => 'on',
+			'ajax_relative_path' => 'no',
 			'external_domains' => '',
 
 			// Filters
-			'track_users' => 'on',
+			
 			'ignore_users' => '',
 			'ignore_ip' => '',
 			'ignore_capabilities' => '',
@@ -1614,9 +1616,11 @@ class wp_slimstat {
 	 */
 	public static function wp_slimstat_enqueue_tracking_script() {
 		// Pass some information to Javascript
-		$params = array(
-			'ajaxurl' => admin_url( 'admin-ajax.php' )
-		);
+		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
+
+		if ( self::$settings[ 'ajax_relative_path' ] == 'on' ) {	
+			$params[ 'ajaxurl' ] = admin_url( 'admin-ajax.php', 'relative' );
+		}
 
 		if ( !empty( self::$settings[ 'extensions_to_track' ] ) ) {
 			$params[ 'extensions_to_track' ] = str_replace( ' ', '', self::$settings[ 'extensions_to_track' ] );
@@ -1651,12 +1655,14 @@ class wp_slimstat {
 
 		$params = apply_filters( 'slimstat_js_params', $params );
 
+		$jstracker_suffix = ( defined( 'SCRIPT_DEBUG' ) && is_bool( SCRIPT_DEBUG ) && SCRIPT_DEBUG ) ? '' : '.min';
+
 		if ( self::$settings[ 'enable_cdn' ] == 'on' ) {
 			$schema = is_ssl() ? 'https' : 'http';
 			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
 		}
 		else{
-			wp_register_script( 'wp_slimstat', plugins_url( '/wp-slimstat.min.js', __FILE__ ), array(), null, true );
+			wp_register_script( 'wp_slimstat', plugins_url( "/wp-slimstat{$jstracker_suffix}.js", __FILE__ ), array(), null, true );
 		}
 
 		wp_enqueue_script( 'wp_slimstat' );

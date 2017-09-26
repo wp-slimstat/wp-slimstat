@@ -446,6 +446,12 @@ class wp_slimstat_admin {
 		}
 		// --- END: Updates for version 4.7.2 ---
 
+		// --- Updates for version 4.7.2.2 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.2.2', '<' ) ) {
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN city VARCHAR(255) DEFAULT NULL AFTER country, ADD COLUMN location VARCHAR(36) DEFAULT NULL AFTER country" );
+		}
+		// --- END: Updates for version 4.7.2.2 ---
+
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
 
@@ -1080,6 +1086,9 @@ class wp_slimstat_admin {
 			if ( is_network_admin() ) {
 				if ( !isset( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] ) || strtolower( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] != 'on' ) ) {
 					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'no';
+				}
+				else {
+					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'on';
 				}
 			}
 			else if ( isset( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) ) {
