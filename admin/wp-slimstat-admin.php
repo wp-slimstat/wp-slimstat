@@ -11,9 +11,9 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "As those who have been using Slimstat for a while know, we never stop doing our good share of research and development to improve our plugin. One feature on our wishlist was to make the geolocation functionality more accurate. Specifically, users have been asking us to track not just the Country of origin, but possibly the state and city. In order to geolocate visitors, our code has been leveraging a third-party data file provided by <a href='https://www.maxmind.com/en/home' target='_blank'>MaxMind.com</a>. A while ago, they launched a new data format, which improves performance and offers a way to quickly determine the city of origin. However, the new library required a higher version of PHP, and up until now we had been hesitant to adopt it, to allow more people to use our plugin, over the chance of offering this feature. Now, after spending some time combing through their code, we found a way to get the best of both worlds: by customizing their PHP library, we were able to make it work with PHP 5.3! Which means that now Slimstat is able to tell you your visitors' city of origin (and State, when applicable) right out of the box. This information is available in the Access Log report and in a new 'Top Cities' report under the Audience tab. Please note: the MaxMind data file to enable this feature is approximately 60 Mb, and for this reason <strong>this new functionality is not enabled by default</strong>. You must go to Slimstat > Settings > Tracker and turn on the corresponding option. Then go to Slimstat > Settings > Maintenance and uninstall/install the GeoLite file to download the one that contains the city data. Please feel free to contact us if you have any questions.";
+		self::$admin_notice = "";
 
-		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
+		//self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
@@ -449,6 +449,15 @@ class wp_slimstat_admin {
 		// --- Updates for version 4.7.2.2 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.2.2', '<' ) ) {
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN city VARCHAR(255) DEFAULT NULL AFTER country, ADD COLUMN location VARCHAR(36) DEFAULT NULL AFTER country" );
+		}
+		// --- END: Updates for version 4.7.2.2 ---
+
+		// --- Updates for version 4.7.2.3 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.2.3', '<' ) ) {
+			// Some users have reported that the MaxMind DB file has been created as an empty folder on their server
+			if ( file_exists( wp_slimstat::$maxmind_path ) && !is_file( wp_slimstat::$maxmind_path ) ) {
+				@rmdir( wp_slimstat::$maxmind_path );
+			}
 		}
 		// --- END: Updates for version 4.7.2.2 ---
 

@@ -2,7 +2,6 @@
 
 class maxmind_geolite2_connector {
 	public static function get_geolocation_info( $_ip_address = '' ) {
-
 		$ipnum = sprintf( '%u', ip2long( $_ip_address ) );
 		$geo_output = array( 'country' => array( 'iso_code' => 'xx' ) );
 
@@ -13,7 +12,7 @@ class maxmind_geolite2_connector {
 			( $ipnum >= 3232235521 && $ipnum <= 3232301055 ) ) { // 192.168.0.1 - 192.168.255.255
 				$geo_output[ 'country' ][ 'iso_code' ] = 'xy';
 		}
-		else if ( file_exists( wp_slimstat::$maxmind_path ) ) {
+		else if ( file_exists( wp_slimstat::$maxmind_path ) && is_file( wp_slimstat::$maxmind_path ) ) {
 			// Do we need to update our data file?
 			if ( false !== ( $file_stat = stat( wp_slimstat::$maxmind_path ) ) ) {
 				// Is the database more than 30 days old?
@@ -28,6 +27,9 @@ class maxmind_geolite2_connector {
 			if ( !empty( $geo_maxmind ) ) {
 				$geo_output = $geo_maxmind;
 			}
+		}
+		else if ( !is_file( wp_slimstat::$maxmind_path ) ) {
+			return array( 'country' => array( 'iso_code' => '99' ) );
 		}
 
 		return apply_filters( 'slimstat_get_country', $geo_output, $_ip_address );

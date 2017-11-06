@@ -44,8 +44,22 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			break;
 
 		case 'delete-maxmind':
-			@unlink( wp_slimstat::$maxmind_path );
-			wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
+			$is_deleted = @unlink( wp_slimstat::$maxmind_path );
+			
+			if ( $is_deleted ) {
+				wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
+			}
+			else {
+				// Some users have reported that a directory is created, instead of a file
+				$is_deleted = @rmdir( wp_slimstat::$maxmind_path );
+
+				if ( $is_deleted ) {
+					wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
+				}
+				else {
+					wp_slimstat_admin::show_alert_message( __( "The geolocation database could not be removed from your server. Please check your folder's permissions and try again.", 'wp-slimstat' ) );	
+				}
+			}
 			break;
 
 		case 'download-maxmind':
@@ -162,7 +176,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		<th scope="row"><?php _e( 'Tracker Error', 'wp-slimstat' ) ?></th>
 		<td>
 			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$settings[ 'date_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$settings[ 'time_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities( __( 'Reset this error', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-error-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
-			<span class="description"><?php _e( 'The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction. Please include the message here above when sending a support request.', 'wp-slimstat' ) ?></span>
+			<span class="description"><?php _e( 'The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction. Please include the message here above when sending a <a href="http://support.wp-slimstat.com" target="_blank">support request</a>.', 'wp-slimstat' ) ?></span>
 		</td>
 	</tr>
 	<tr>

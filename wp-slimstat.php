@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.2.2
+Version: 4.7.3
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.2.2';
+	public static $version = '4.7.3';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -496,8 +496,8 @@ class wp_slimstat {
 			$long_masked_user_other_ip = substr( self::dtr_pton( self::$stat[ 'other_ip' ] ), 0 , $cidr_mask );
 
 			if ( $long_masked_user_ip === $long_masked_ip_to_ignore || $long_masked_user_other_ip === $long_masked_ip_to_ignore ) {
-				self::$stat['id'] = -307;
-				self::_set_error_array( sprintf( __('IP address %s is blacklisted', 'wp-slimstat'), self::$stat[ 'ip' ] . ( !empty( self::$stat[ 'other_ip' ] ) ? ' (' . self::$stat[ 'other_ip' ] . ')' : '' ) ), true );
+				self::$stat[ 'id' ] = -307;
+				self::_set_error_array( sprintf( __( 'IP address %s is blacklisted', 'wp-slimstat' ), self::$stat[ 'ip' ] . ( !empty( self::$stat[ 'other_ip' ] ) ? ' (' . self::$stat[ 'other_ip' ] . ')' : '' ) ), true );
 				return $_argument;
 			}
 		}
@@ -509,20 +509,31 @@ class wp_slimstat {
 		include_once ( plugin_dir_path( __FILE__ ) . 'maxmind.php' );
 		$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
 
+		// Invalid MaxMind data file		
+
 		if ( !empty( $geolocation_data[ 'country' ][ 'iso_code' ] ) ) {
-			self::$stat[ 'country' ] = strtolower( $geolocation_data[ 'country' ][ 'iso_code' ] );
-		}
+			
+			if ( $geolocation_data[ 'country' ][ 'iso_code' ] == '99' ) {
+				self::$stat[ 'id' ] = -205;
+				self::_set_error_array( __( 'Your MaxMind data file is invalid', 'wp-slimstat' ), false );
+				return $_argument;
+			}
+			else {
+				self::$stat[ 'country' ] = strtolower( $geolocation_data[ 'country' ][ 'iso_code' ] );
+			
 
-		if ( !empty( $geolocation_data[ 'city' ][ 'names' ][ 'en' ] ) ) {
-			self::$stat[ 'city' ] = $geolocation_data[ 'city' ][ 'names' ][ 'en' ];
-		}
+				if ( !empty( $geolocation_data[ 'city' ][ 'names' ][ 'en' ] ) ) {
+					self::$stat[ 'city' ] = $geolocation_data[ 'city' ][ 'names' ][ 'en' ];
+				}
 
-		if ( !empty( $geolocation_data[ 'subdivisions' ][ 0 ][ 'iso_code' ] ) && !empty( self::$stat[ 'city' ] ) ) {
-			self::$stat[ 'city' ] .= ' (' . $geolocation_data[ 'subdivisions' ][ 0 ][ 'iso_code' ] . ')';
-		}
+				if ( !empty( $geolocation_data[ 'subdivisions' ][ 0 ][ 'iso_code' ] ) && !empty( self::$stat[ 'city' ] ) ) {
+					self::$stat[ 'city' ] .= ' (' . $geolocation_data[ 'subdivisions' ][ 0 ][ 'iso_code' ] . ')';
+				}
 
-		if ( !empty( $geolocation_data[ 'location' ][ 'latitude' ] ) && !empty( $geolocation_data[ 'location' ][ 'longitude' ] ) ) {
-			self::$stat[ 'location' ] = $geolocation_data[ 'location' ][ 'latitude' ] . ',' .  $geolocation_data[ 'location' ][ 'longitude' ];
+				if ( !empty( $geolocation_data[ 'location' ][ 'latitude' ] ) && !empty( $geolocation_data[ 'location' ][ 'longitude' ] ) ) {
+					self::$stat[ 'location' ] = $geolocation_data[ 'location' ][ 'latitude' ] . ',' .  $geolocation_data[ 'location' ][ 'longitude' ];
+				}
+			}
 		}
 
 		unset( $geolocation_data );
@@ -1159,16 +1170,30 @@ class wp_slimstat {
 			mkdir( dirname( self::$maxmind_path ) );
 		}
 
+		if ( file_exists( self::$maxmind_path ) ) {
+			if ( is_file( self::$maxmind_path ) ) {
+				$is_deleted = @unlink( self::$maxmind_path );
+			}
+			else {
+				// This should not happen, but hey...
+				$is_deleted = @rmdir( self::$maxmind_path );
+			}
+
+			if ( !$is_deleted ) {
+				return __( "The geolocation database cannot be updated. Please check your server's file permissions and try again.", 'wp-slimstat' );
+			}
+		}
+
 		// Download the most recent database directly from MaxMind's repository
 		if ( !function_exists( 'download_url' ) ) {
 			require_once( ABSPATH . 'wp-admin/includes/file.php' );
 		}
 
 		if ( self::$settings[ 'geolocation_country' ] == 'on' ) {
-			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz', 5 );
+			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz', 10 );
 		}
 		else {
-			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz', 25 );	
+			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz', 30 );	
 		}
 
 		if ( is_wp_error( $maxmind_tmp ) ) {
@@ -1203,6 +1228,12 @@ class wp_slimstat {
 
 		@gzclose( $zh );
 		@fclose( $fh );
+
+		if ( !is_file( self::$maxmind_path ) ) {
+			// Something went wrong, maybe a folder was created instead of a regular file
+			@rmdir( self::$maxmind_path );
+			return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' );
+		}
 
 		@unlink( $maxmind_tmp );
 

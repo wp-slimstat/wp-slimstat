@@ -349,7 +349,7 @@ class wp_slimstat_db {
 				break;
 		}
 
-		if ( !empty( $where[ 1 ] ) ) {
+		if ( isset( $where[ 1 ] ) ) {
 			return $GLOBALS[ 'wpdb' ]->prepare( $where[ 0 ], $where[ 1 ] );
 		}
 		else {
@@ -475,8 +475,9 @@ class wp_slimstat_db {
 						break;
 
 					case 'content_id':
-						if ( !empty( $a_filter[ 3 ] ) && $a_filter[ 3 ] == 'current' && !empty( $GLOBALS[ 'post' ]->ID ) ) {
-							$filters_normalized[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], $GLOBALS[ 'post' ]->ID );
+						if ( !empty( $a_filter[ 3 ] ) ) {
+							$content_id = ( $a_filter[ 3 ] == 'current' && !empty( $GLOBALS[ 'post' ]->ID ) ) ? $GLOBALS[ 'post' ]->ID : intval(  $a_filter[ 3 ] );
+							$filters_normalized[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], $content_id );
 							break;
 						}
 						// no break here: if value IS numeric, go to the default parser here below
