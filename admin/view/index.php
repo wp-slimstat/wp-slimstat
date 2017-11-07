@@ -74,14 +74,12 @@
 
 				<label for="slimstat-filter-month">Month</label>
 				<select name="month" id="slimstat-filter-month">
-					<option value="0"><?php _e( 'Month', 'wp-slimstat' ) ?></option><?php
-					for ( $i=1; $i<=12; $i++ ) {
-						if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'month' ] ) && wp_slimstat_db::$filters_normalized[ 'date' ][ 'month' ] == $i ) {
-							echo "<option value='$i' selected='selected'>" . $GLOBALS[ 'wp_locale' ]->get_month_abbrev( $GLOBALS[ 'wp_locale' ]->get_month( $i ) ) . "</option>";
-						}
-						else {
-							echo "<option value='$i'>" . $GLOBALS[ 'wp_locale' ]->get_month_abbrev( $GLOBALS[ 'wp_locale' ]->get_month( $i ) ) . "</option>";
-						}
+					<option value="0"><?php _e('Month','wp-slimstat') ?></option><?php
+					for($i=1;$i<=12;$i++){
+						if(!empty(wp_slimstat_db::$filters_normalized['date']['month']) && wp_slimstat_db::$filters_normalized['date']['month'] == $i)
+							echo "<option value='$i' selected='selected'>".substr($GLOBALS['month'][zeroise($i, 2)], 0, 3)."</option>";
+						else
+							echo "<option value='$i'>".substr($GLOBALS['month'][zeroise($i, 2)], 0, 3)."</option>";
 					} 
 					?>
 				</select>

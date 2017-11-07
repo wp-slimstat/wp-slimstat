@@ -29,7 +29,7 @@ class maxmind_geolite2_connector {
 			}
 		}
 		else if ( !is_file( wp_slimstat::$maxmind_path ) ) {
-			return array( 'country' => array( 'iso_code' => '99' ) );
+			return $geo_output;
 		}
 
 		return apply_filters( 'slimstat_get_country', $geo_output, $_ip_address );

@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.3
+Version: 4.7.3.1
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.3';
+	public static $version = '4.7.3.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -513,10 +513,8 @@ class wp_slimstat {
 
 		if ( !empty( $geolocation_data[ 'country' ][ 'iso_code' ] ) ) {
 			
-			if ( $geolocation_data[ 'country' ][ 'iso_code' ] == '99' ) {
-				self::$stat[ 'id' ] = -205;
-				self::_set_error_array( __( 'Your MaxMind data file is invalid', 'wp-slimstat' ), false );
-				return $_argument;
+			if ( $geolocation_data[ 'country' ][ 'iso_code' ] == 'xx' ) {
+				self::_set_error_array( __( 'Your MaxMind data file is invalid. Please uninstall it using the button in Settings > Maintenance.', 'wp-slimstat' ), false, 205 );
 			}
 			else {
 				self::$stat[ 'country' ] = strtolower( $geolocation_data[ 'country' ][ 'iso_code' ] );

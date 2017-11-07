@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8.2
-Stable tag: 4.7.3
+Stable tag: 4.7.3.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.3.1 =
+* [Fix] Apparently more people than we initially thought have issues with the MaxMind data file not being saved as expected. We are introducing a temporary fix while we try to investigate this issue further.
+
 = 4.7.3 =
 * [Fix] A [few users](https://wordpress.org/support/topic/cannot-install-maxmind-geolite-db/) pointed out a weird behavior when installing the MaxMind Geolocation data file, where an empty folder would be created instead of the actual file. If you still experience issues related to this problem, please make sure to delete the empty folder "maxmind.mmdb" under `wp-content/uploads/wp-slimstat/`.
 * [Fix] Apparently Microsoft Security Essentials [was not pleased with our code](https://wordpress.org/support/topic/trojandownloader097m-donoff-detected-in-archive/), and was returning a false positive alert that a virus was included with the source code (thank you, Sasa).

@@ -79,7 +79,8 @@ else {
 			$highlight_row = !empty($results[$i]['searchterms'])?' is-search-engine':(($results[$i]['browser_type'] != 1)?' is-direct':'');
 
 			// Country
-			if ( !empty( $results[ $i ][ 'country' ] ) ) {
+			$country_filtered = '';
+			if ( !empty( $results[ $i ][ 'country' ] ) && $results[ $i ][ 'country' ] != 'xx' ) {
 				$country_filtered = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country equals ' . $results[ $i ][ 'country' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/images/flags/{$results[$i]['country']}.png' width='16' height='16' title='" . __( 'c-' . $results[ $i ][ 'country' ], 'wp-slimstat' ) . "'></a>";
 			}
 
@@ -128,7 +129,7 @@ else {
 			}
 
 			$whois_pin = '';
-			if ( is_admin() && !empty( wp_slimstat::$settings[ 'ip_lookup_service' ] ) && !in_array( $results[ $i ][ 'country' ], array( 'xx', 'xy' ) ) ) {
+			if ( is_admin() && !empty( wp_slimstat::$settings[ 'ip_lookup_service' ] ) && !in_array( $results[ $i ][ 'country' ], array( '', 'xx', 'xy' ) ) ) {
 				$whois_pin = "<a class='slimstat-font-location-1 whois' href='" . wp_slimstat::$settings[ 'ip_lookup_service' ] . "{$results[ $i ][ 'ip' ]}' target='_blank' title='WHOIS: {$results[ $i ][ 'ip' ]}'></a>";
 			}
 

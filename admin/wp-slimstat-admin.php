@@ -452,14 +452,14 @@ class wp_slimstat_admin {
 		}
 		// --- END: Updates for version 4.7.2.2 ---
 
-		// --- Updates for version 4.7.2.3 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.2.3', '<' ) ) {
+		// --- Updates for version 4.7.3.1 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.3.1', '<' ) ) {
 			// Some users have reported that the MaxMind DB file has been created as an empty folder on their server
 			if ( file_exists( wp_slimstat::$maxmind_path ) && !is_file( wp_slimstat::$maxmind_path ) ) {
 				@rmdir( wp_slimstat::$maxmind_path );
 			}
 		}
-		// --- END: Updates for version 4.7.2.2 ---
+		// --- END: Updates for version 4.7.3.1 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
