@@ -180,7 +180,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'id' => 'slim_p1_15'
 				),
-				'classes' => array( 'normal' ),
+				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'slimview2' ),
 				'tooltip' => __( "Slimstat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data.", 'wp-slimstat' )
 			),

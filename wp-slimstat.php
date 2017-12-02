@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.3.1
+Version: 4.7.4
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,14 +15,13 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.3.1';
+	public static $version = '4.7.4';
 	public static $settings = array();
 
 	public static $wpdb = '';
 	public static $upload_dir = '';
 	public static $maxmind_path = '';
 
-	public static $advanced_cache_exists = false;
 	public static $update_checker = array();
 	public static $raw_post_array = array();
 
@@ -73,11 +72,6 @@ class wp_slimstat {
 		self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
 
 		self::$maxmind_path = self::$upload_dir . '/maxmind.mmdb';
-
-		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
-		if ( file_exists( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) . '/advanced-cache.php' ) ) {
-			self::$advanced_cache_exists = true;
-		}
 
 		// Enable the tracker (both server- and client-side)
 		if ( !is_admin() || self::$settings[ 'track_admin_pages' ] == 'on' ) {
@@ -554,7 +548,7 @@ class wp_slimstat {
 		}
 
 		// Is this country blacklisted?
-		if ( is_string( self::$settings[ 'ignore_countries' ] ) && stripos( self::$settings[ 'ignore_countries' ], self::$stat[ 'country' ] ) !== false ) {
+		if ( !empty( self::$stat[ 'country' ] ) && !empty( self::$settings[ 'ignore_countries' ] ) && stripos( self::$settings[ 'ignore_countries' ], self::$stat[ 'country' ] ) !== false ) {
 			self::$stat['id'] = -308;
 			self::_set_error_array( sprintf( __('Country %s is blacklisted', 'wp-slimstat'), self::$stat[ 'country' ] ), true );
 			return $_argument;

@@ -63,30 +63,33 @@
 				<label for="slimstat-filter-day">Day</label>
 				<select name="day" id="slimstat-filter-day">
 					<option value="0"><?php _e('Day','wp-slimstat') ?></option><?php
-					for($i=1;$i<=31;$i++){
-						if(!empty(wp_slimstat_db::$filters_normalized['date']['day']) && wp_slimstat_db::$filters_normalized['date']['day'] == $i)
+					for ( $i = 1; $i <= 31; $i++ ) {
+						if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'day' ]) && wp_slimstat_db::$filters_normalized[ 'date' ][ 'day' ] == $i ) {
 							echo "<option selected='selected'>$i</option>";
-						else
+						}
+						else {
 							echo "<option>$i</option>";
-					} 
+						}
+					}
 					?>
 				</select>
 
 				<label for="slimstat-filter-month">Month</label>
 				<select name="month" id="slimstat-filter-month">
-					<option value="0"><?php _e('Month','wp-slimstat') ?></option><?php
-					for($i=1;$i<=12;$i++){
-						if(!empty(wp_slimstat_db::$filters_normalized['date']['month']) && wp_slimstat_db::$filters_normalized['date']['month'] == $i)
-							echo "<option value='$i' selected='selected'>".substr($GLOBALS['month'][zeroise($i, 2)], 0, 3)."</option>";
-						else
-							echo "<option value='$i'>".substr($GLOBALS['month'][zeroise($i, 2)], 0, 3)."</option>";
-					} 
+					<option value="0"><?php _e( 'Month', 'wp-slimstat' ) ?></option><?php
+					for ( $i = 1; $i <= 12; $i++ ) {
+						if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'month' ]) && wp_slimstat_db::$filters_normalized[ 'date' ][ 'month' ] == $i ) {
+							echo "<option value='$i' selected='selected'>" . $GLOBALS[ 'wp_locale' ]->get_month_abbrev( $GLOBALS[ 'wp_locale' ]->get_month( $i ) ) . "</option>";
+						}
+						else{
+							echo "<option value='$i'>" . $GLOBALS[ 'wp_locale' ]->get_month_abbrev( $GLOBALS[ 'wp_locale' ]->get_month( $i ) ) . "</option>";
+						}
+					}
 					?>
 				</select>
 
 				<label for="slimstat-filter-year">Year</label>
 				<input type="text" name="year" id="slimstat-filter-year" placeholder="<?php _e('Year','wp-slimstat') ?>" class="empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['year'])?wp_slimstat_db::$filters_normalized['date']['year']:'' ?>">
-
 				@
 				<label for="slimstat-filter-hour">Hour</label>
 				<input type="text" name="hour" id="slimstat-filter-hour" placeholder="<?php _e('Hour','wp-slimstat') ?>" class="short empty-on-focus" value="<?php echo !empty(wp_slimstat_db::$filters_normalized['date']['hour'])?wp_slimstat_db::$filters_normalized['date']['hour']:'' ?>">:
@@ -146,7 +149,8 @@
 			wp_slimstat_admin::show_alert_message( sprintf( __( "Install the Browscap <a href='%s' class='noslimstat'>User Agent Database</a> to accurately determine your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-browscap-notice" class="slimstat-font-cancel slimstat-float-right noslimstat" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
 		}
 
-		if ( wp_slimstat::$advanced_cache_exists && ( empty( wp_slimstat::$settings[ 'no_caching_warning' ] ) || wp_slimstat::$settings[ 'no_caching_warning' ] != 'on' ) && ( empty( wp_slimstat::$settings[ 'javascript_mode' ] ) || wp_slimstat::$settings[ 'javascript_mode' ] != 'on' ) ) {
+		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
+		if ( file_exists( dirname( dirname( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) ) ) . '/advanced-cache.php' ) && ( empty( wp_slimstat::$settings[ 'no_caching_warning' ] ) || wp_slimstat::$settings[ 'no_caching_warning' ] != 'on' ) && ( empty( wp_slimstat::$settings[ 'javascript_mode' ] ) || wp_slimstat::$settings[ 'javascript_mode' ] != 'on' ) ) {
 			wp_slimstat_admin::show_alert_message( sprintf( __( "A caching plugin has been detected on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat' ), 'https://slimstat.freshdesk.com/support/solutions/articles/5000528524-i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra' ) . '<a id="slimstat-hide-caching-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
 		}
 

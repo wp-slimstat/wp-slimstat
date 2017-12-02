@@ -95,7 +95,7 @@
 	width: 50px;
 }
 #slimstat-date-filters .dropdown .ui-datepicker-trigger{
-	float: right;
+	float: left;
 	margin: 2px 5px 0 0;
 }
 #slimstat-current-filters{

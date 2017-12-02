@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8.2
-Stable tag: 4.7.3.1
+Stable tag: 4.7.4
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.4 =
+* [Update] New fields added to the Email Report and Export to Excel add-ons, by extending how certain reports are defined in core.
+* [Fix] The [false positive](https://www.virustotal.com/#/file/43f69d9c4028f857b5b5544ea4559c03b4d58e02d75617482db517c626164363/detection) alert related to a virus in our code was fixed by updating [AmChart](https://www.amcharts.com/) to the latest version available (thank you, Sasa).
+* [Fix] Removed a PHP warning of undefined index (thank you, [slewis1000 and Sasa](https://wordpress.org/support/topic/php-notice-undefined-index-country/))
+* [Fix] The MozScape report was causing connectivity issues for some users, and it is now set as "hidden" by default.
+* [Fix] Regression bug related to our Export to Excel add-on.
+
 = 4.7.3.1 =
 * [Fix] Apparently more people than we initially thought have issues with the MaxMind data file not being saved as expected. We are introducing a temporary fix while we try to investigate this issue further.
 

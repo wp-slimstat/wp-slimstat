@@ -110,6 +110,8 @@ class wp_slimstat_db {
 			'referer_calculated' => array( __( 'Referer', 'wp-slimstat' ), 'varchar' ),
 			'metric' => array( __( 'Metric', 'wp-slimstat' ), 'varchar' ),
 			'value' => array( __( 'Value', 'wp-slimstat' ), 'varchar' ),
+			'counthits' => array( __( 'Hits', 'wp-slimstat' ), 'int' ),
+			'percentage' => array( __( 'Percentage', 'wp-slimstat' ), 'int' ),
 			'tooltip' => array( __( 'Notes', 'wp-slimstat' ), 'varchar' ),
 			'details' => array( __( 'Notes', 'wp-slimstat' ), 'varchar' ),
 

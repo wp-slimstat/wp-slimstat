@@ -76,7 +76,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 		case 'delete-browscap':
 			// Delete the existing folder, if there
 			WP_Filesystem();
-			if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( dirname( slim_browser::$browscap_autoload_path ) . '/', true ) ) {
+			if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db/', true ) ) {
 				wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ) );
 			}
 			else {
