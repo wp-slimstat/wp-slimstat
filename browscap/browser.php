@@ -15,6 +15,15 @@ class slim_browser {
 
 		// Path to the Browscap data and library
 		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db/autoload.php';
+	}
+
+	/**
+	 * Converts the USER AGENT string into a more user-friendly browser data structure, with name, version and operating system
+	 */
+	public static function get_browser( $_user_agent = '' ) {
+		if ( empty( self::$browser[ 'user_agent' ] ) ) {
+			return self::$browser;
+		}
 
 		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.5', '>=' ) ) {
 			self::update_browscap_database( false );
@@ -24,15 +33,6 @@ class slim_browser {
 				self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser );
 			}
 
-		}
-	}
-
-	/**
-	 * Converts the USER AGENT string into a more user-friendly browser data structure, with name, version and operating system
-	 */
-	public static function get_browser( $_user_agent = '' ) {
-		if ( empty( self::$browser[ 'user_agent' ] ) ) {
-			return self::$browser;
 		}
 
 		if ( self::$browser[ 'browser' ] == 'Default Browser' ) {

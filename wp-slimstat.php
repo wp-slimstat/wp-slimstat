@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.4
+Version: 4.7.4.1
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.4';
+	public static $version = '4.7.4.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -1110,6 +1110,14 @@ class wp_slimstat {
 		return false;
 	}
 
+	public static function is_local_ip_address( $ip_address = '' ) {
+		if ( !filter_var( $ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
 	public static function dtr_pton( $ip ){
 		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
 			$unpacked = unpack( 'A4', inet_pton( $ip ) );
@@ -1760,6 +1768,10 @@ class wp_slimstat {
 			}
 		}
 	}
+
+	public static function register_widget() {
+		return register_widget( "slimstat_widget" );
+	}
 }
 // end of class declaration
 
@@ -1873,7 +1885,7 @@ if ( function_exists( 'add_action' ) ) {
 		register_deactivation_hook( __FILE__, array( 'wp_slimstat_admin', 'deactivate' ) );
 	}
 
-	add_action( 'widgets_init', create_function('', 'return register_widget( "slimstat_widget" );' ) );
+	add_action( 'widgets_init', array( 'wp_slimstat', 'register_widget' ) );
 
 	// Add the appropriate actions
 	add_action( 'plugins_loaded', array( 'wp_slimstat', 'init' ), 20 );

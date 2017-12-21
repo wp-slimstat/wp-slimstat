@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8.2
-Stable tag: 4.7.4
+Stable tag: 4.7.4.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,12 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.4.1 =
+* [Update] The Browscap data file is now loaded only when needed, thus removing its inherent overhead when unnecessary.
+* [Update] The Browscap data file has been updated to the latest version available on their repository (ver 6026).
+* [Fix] Addressed a remote XSS Vulnerability responsibly disclosed by one of our customers. Thank you, [riscybusiness](https://wordpress.org/support/topic/security-vulnerability-affecting-slimstat/).
+* [Fix] Reintroduced the WHOIS pin, which has been removed by mistake because of a regression bug. Thank you, [brachialis](https://wordpress.org/support/topic/whois-location-icon-disappear/).
+
 = 4.7.4 =
 * [Update] New fields added to the Email Report and Export to Excel add-ons, by extending how certain reports are defined in core.
 * [Fix] The [false positive](https://www.virustotal.com/#/file/43f69d9c4028f857b5b5544ea4559c03b4d58e02d75617482db517c626164363/detection) alert related to a virus in our code was fixed by updating [AmChart](https://www.amcharts.com/) to the latest version available (thank you, Sasa).

@@ -375,12 +375,12 @@ jQuery(function(){
 	}
 
 	// Modal Window / Whois
-	jQuery(document).on('click', '.whois', function(e){
+	jQuery( document ).on( 'click', '.whois', function( e ) {
 		e.preventDefault();
-		
+
 		// If admin is using HTTPS and IP lookup service is not, open a new window/tab, instead of an overlay dialog
-        if (document.location.href.substr(0, document.location.href.indexOf("://")).toLowerCase() == 'https' &&  jQuery(this).attr('href').substr(0, jQuery(this).attr('href').indexOf("://")).toLowerCase() == 'http'){
-			window.open(jQuery(this).attr('href'), '_blank');
+        if ( document.location.href.substr( 0, document.location.href.indexOf( "://" ) ).toLowerCase() == 'https' &&  jQuery( this ).attr( 'href' ).substr( 0, jQuery( this ).attr( 'href' ).indexOf( "://" ) ).toLowerCase() == 'http' ) {
+			window.open( jQuery( this ).attr( 'href' ), '_blank' );
 			return -1;
 		}
 		

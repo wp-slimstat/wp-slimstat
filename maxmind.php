@@ -2,15 +2,11 @@
 
 class maxmind_geolite2_connector {
 	public static function get_geolocation_info( $_ip_address = '' ) {
-		$ipnum = sprintf( '%u', ip2long( $_ip_address ) );
 		$geo_output = array( 'country' => array( 'iso_code' => 'xx' ) );
 
 		// Is this a RFC1918 (local) IP?
-		if ( $ipnum == 2130706433 || // 127.0.0.1
-			( $ipnum >= 167772160 && $ipnum <= 184549375 ) || // 10.0.0.1 - 10.255.255.255
-			( $ipnum >= 2886729728 && $ipnum <= 2887778303 ) || // 172.16.0.1 - 172.31.255.255
-			( $ipnum >= 3232235521 && $ipnum <= 3232301055 ) ) { // 192.168.0.1 - 192.168.255.255
-				$geo_output[ 'country' ][ 'iso_code' ] = 'xy';
+		if ( wp_slimstat::is_local_ip_address( $_ip_address ) ) {
+			$geo_output[ 'country' ][ 'iso_code' ] = 'xy';
 		}
 		else if ( file_exists( wp_slimstat::$maxmind_path ) && is_file( wp_slimstat::$maxmind_path ) ) {
 			// Do we need to update our data file?
