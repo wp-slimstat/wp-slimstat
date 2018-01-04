@@ -72,7 +72,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 = 4.7.5 =
-* [New] Updated the tracking script to handle events triggered by external libraries, like the (Vimeo API)[https://github.com/vimeo/player.js/#events]. Thank you, Max.
+* [New] Updated the tracking script to handle events triggered by external libraries, like the [Vimeo API](https://github.com/vimeo/player.js/#events). Thank you, Max.
 * [New] Added new operator "included_in_set", which allows you to list multiple values to match against, when composing a shortcode.
 * [New] Added new option to avoid that Slimstat assigns a COOKIE to your visitors. Thank you, [dragon013](https://wordpress.org/support/topic/disable-cookies-2/).
 * [Fix] A bug was preventing the feature to "restrict users" to only see their reports from working as expected.
