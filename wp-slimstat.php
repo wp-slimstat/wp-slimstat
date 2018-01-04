@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.4.1
+Version: 4.7.5
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.4.1';
+	public static $version = '4.7.5';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -138,7 +138,7 @@ class wp_slimstat {
 		self::_check_data_integrity( self::$raw_post_array );
 
 		// Is this a request to record a new pageview?
-		if ( self::$data_js[ 'op' ] == 'add' || empty( self::$data_js[ 'pos' ] ) ) {
+		if ( self::$data_js[ 'op' ] == 'add' || self::$data_js[ 'op' ] == 'update' ) {
 
 			// Track client-side information (screen resolution, plugins, etc)
 			if ( !empty( self::$data_js[ 'bw' ] ) ) {
@@ -164,7 +164,7 @@ class wp_slimstat {
 		if ( self::$data_js[ 'op' ] == 'add' ) {
 			self::slimtrack();
 		}
-		else {
+		else if ( self::$data_js[ 'op' ] == 'update' ) {
 			// Update an existing pageview with client-based information (resolution, plugins installed, etc)
 			self::_set_visit_id( true );
 
@@ -197,17 +197,11 @@ class wp_slimstat {
 
 			self::update_row( self::$stat, $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats' );
 		}
+		
+		// Are we tracking events, coordinates and other details?
+		if ( self::$data_js[ 'op' ] == 'event' || !empty( self::$data_js[ 'pos' ] ) ) {
+			self::$stat[ 'id' ] = abs( intval( self::$data_js[ 'id' ] ) );
 
-		// Was this pageview tracked?
-		if ( self::$stat[ 'id' ] <= 0 ) {
-			$abs_error_code = abs( self::$stat[ 'id' ] );
-			do_action( 'slimstat_track_exit_' . $abs_error_code, self::$stat );
-			self::slimstat_save_options();
-			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
-		}
-
-		// Is an event associated to this request?
-		if ( !empty( self::$data_js[ 'pos' ] ) ) {
 			self::toggle_date_i18n_filters( false );
 			$event_info = array(
 				'position' => strip_tags( trim( self::$data_js[ 'pos' ] ) ),
@@ -229,16 +223,19 @@ class wp_slimstat {
 			self::insert_row( $event_info, $GLOBALS[ 'wpdb' ]->prefix . 'slim_events' );
 		}
 
+		// Was this pageview tracked?
+		if ( self::$stat[ 'id' ] <= 0 ) {
+			$abs_error_code = abs( self::$stat[ 'id' ] );
+			do_action( 'slimstat_track_exit_' . $abs_error_code, self::$stat );
+			self::slimstat_save_options();
+			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
+		}
+
 		// Send the ID back to Javascript to track future interactions
 		do_action( 'slimstat_track_success' );
 
 		// If we tracked an internal download, we return the original ID, not the new one
-		if ( self::$data_js[ 'op' ] == 'add' && !empty( self::$data_js[ 'pos' ] ) ) {
-			exit( self::_get_id_with_checksum( self::$data_js[ 'id' ] ) );
-		}
-		else{
-			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
-		}
+		exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 	}
 
 	/**
@@ -466,12 +463,12 @@ class wp_slimstat {
 					return $_argument;
 				}
 				else{
-					self::$stat['notes'][] = 'spam:yes';
-					self::$stat['username'] = $spam_comment['comment_author'];
+					self::$stat[ 'notes' ][] = 'spam:yes';
+					self::$stat[ 'username' ] = $spam_comment[ 'comment_author' ];
 				}
 			}
 			else
-				self::$stat['username'] = $_COOKIE['comment_author_'.COOKIEHASH];
+				self::$stat[ 'username' ] = $_COOKIE[ 'comment_author_' . COOKIEHASH ];
 		}
 
 		// Should we ignore this IP address?
@@ -654,7 +651,7 @@ class wp_slimstat {
 		}
 
 		// Is this a new visitor?
-		$is_set_cookie = apply_filters( 'slimstat_set_visit_cookie', true );
+		$is_set_cookie = apply_filters( 'slimstat_set_visit_cookie', ( !empty( self::$settings[ 'set_tracker_cookie' ] ) && self::$settings[ 'set_tracker_cookie' ] == 'on' ) );
 		if ( $is_set_cookie ) {
 			if ( empty( self::$stat[ 'visit_id' ] ) && !empty( self::$stat[ 'id' ] ) ) {
 				// Set a cookie to track this visit (Google and other non-human engines will just ignore it)
@@ -1561,6 +1558,7 @@ class wp_slimstat {
 			'track_users' => 'on',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
+			'set_tracker_cookie' => 'on',
 			'enable_cdn' => 'on',
 			'ajax_relative_path' => 'no',
 			'external_domains' => '',

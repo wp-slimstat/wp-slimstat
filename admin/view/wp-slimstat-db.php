@@ -166,7 +166,12 @@ class wp_slimstat_db {
 		}
 
 		if ( !empty( $_filters ) && is_string( $_filters ) ) {
-			$filters_raw = empty( $filters_raw ) ? $_filters : $_filters . $filters_raw;
+			if ( !empty( $filters_raw ) ) {
+				$filters_raw = empty( $filters_raw ) ? $_filters : $_filters . '&&&' . $filters_raw;
+			}
+			else {
+				$filters_raw = $_filters;
+			}
 		}
 
 		// Hook for the... filters
@@ -298,7 +303,8 @@ class wp_slimstat_db {
 				break;
 
 			case 'includes_in_set':
-				$where[ 0 ] = "FIND_IN_SET(%s, $column_with_alias) > 0";
+			case 'included_in_set':
+				$where[ 0 ] = "FIND_IN_SET($column_with_alias, %s) > 0";
 				break;
 
 			case 'does_not_contain':
@@ -584,10 +590,10 @@ class wp_slimstat_db {
 					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
 				 );
 
-				$filters_normalized[ 'utime' ][ 'end' ] = strtotime(
+				$filters_normalized[ 'utime' ][ 'end' ] = intval( strtotime(
 					( !empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' ) ) . '-' .
 					( !empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ) ) . '-01 00:00 +1 month UTC'
-				 ) - 1;
+				 ) - 1 );
 				$filters_normalized[ 'utime' ][ 'type' ] = 'm';
 			}
 		}
@@ -623,7 +629,7 @@ class wp_slimstat_db {
 
 		// If end is in the future, set it to now
 		if ( $filters_normalized[ 'utime' ][ 'end' ] > date_i18n( 'U' ) ) {
-			$filters_normalized[ 'utime' ][ 'end' ] = date_i18n( 'U' );
+			$filters_normalized[ 'utime' ][ 'end' ] = intval( date_i18n( 'U' ) );
 		}
 
 		// If start is after end, set it to first of month

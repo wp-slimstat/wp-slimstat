@@ -335,12 +335,14 @@ var SlimStat = {
 		}
 
 		// Event description and button pressed
-		event_description = e.type;
-		if ( "keypress" == e.type ) {
-			event_description += '; keypress:' + String.fromCharCode( parseInt( e.which ) );
-		}
-		else if ( "click" == e.type ) {
-			event_description += '; which:' + e.which;
+		if ( "undefined" !=  typeof e.type ) {
+			event_description = e.type;
+			if ( "keypress" == e.type ) {
+				event_description += '; keypress:' + String.fromCharCode( parseInt( e.which ) );
+			}
+			else if ( "click" == e.type ) {
+				event_description += '; which:' + e.which;
+			}
 		}
 
 		// Custom description for this event
@@ -356,6 +358,9 @@ var SlimStat = {
 		}
 		else if ( 0 == type || 2 == type ) {
 			requested_op = "update";
+		}
+		else {
+			requested_op = "event";
 		}
 
 		SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, use_beacon );

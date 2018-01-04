@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8.2
-Stable tag: 4.7.4.1
+Stable tag: 4.7.5
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,12 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.5 =
+* [New] Updated the tracking script to handle events triggered by external libraries, like the (Vimeo API)[https://github.com/vimeo/player.js/#events]. Thank you, Max.
+* [New] Added new operator "included_in_set", which allows you to list multiple values to match against, when composing a shortcode.
+* [New] Added new option to avoid that Slimstat assigns a COOKIE to your visitors. Thank you, [dragon013](https://wordpress.org/support/topic/disable-cookies-2/).
+* [Fix] A bug was preventing the feature to "restrict users" to only see their reports from working as expected.
+
 = 4.7.4.1 =
 * [Update] The Browscap data file is now loaded only when needed, thus removing its inherent overhead when unnecessary.
 * [Update] The Browscap data file has been updated to the latest version available on their repository (ver 6026).
