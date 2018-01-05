@@ -72,6 +72,7 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 == Changelog ==
 = 4.7.5 =
+* [New] Now that Slimstat is capable of geolocating visitors at the city level, wouldn't it make sense to display those visitors on the map? Well, of course! Go check out this new feature by accessing the Geolocation tab in Slimstat.
 * [New] Updated the tracking script to handle events triggered by external libraries, like the [Vimeo API](https://github.com/vimeo/player.js/#events). Thank you, Max.
 * [New] Added new operator "included_in_set", which allows you to list multiple values to match against, when composing a shortcode.
 * [New] Added new option to avoid that Slimstat assigns a COOKIE to your visitors. Thank you, [dragon013](https://wordpress.org/support/topic/disable-cookies-2/).
@@ -129,85 +130,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] Apparently, there was an issue where our XMLHttpRequest didn't send the cookie for Cross-Origin URLs (thank you, Sasa).
 * [Fix] Solved issue with pagination, triggered when certain long time ranges were being selected.
 * [Fix] The autorefresh countdown timer was not working as expected if Async Mode was enabled (thank you, [scruffy1 and service4](https://wordpress.org/support/topic/odd-visitors-activity-heading)).
-
-= 4.6.9.1 =
-* [New] You can now customize the "past days" interval to be used as the default time range to calculate your metrics, which was previously fixed to 30 days.
-* [Fix] The Overview chart was not working as expected for some users, because of a bug in one of the revised SQL queries.
-* [Fix] The pageview count on the Edit Posts/Pages screens was also affected by the same bug mentioned here above.
-* [Fix] A PHP warning of undefined variable $hidden_filters was being logged and/or displayed under certain circumstances.
-
-= 4.6.9 =
-* [New] Added operating systems to the column you can use to blacklist certain pageviews. Please refer to [this page](https://slimstat.freshdesk.com/solution/articles/12000031504-what-are-the-operating-system-codes-used-by-slimstat-) to learn more about what codes Slimstat uses to represent operating systems internally.
-* [New] In the Customizer, you can now quickly move your reports to the Inactive bucket with just one simple click, instead of dragging and dropping them all the way to the top (thank you, [ac1643](https://wordpress.org/support/topic/customizing-the-reports/)).
-* [Update] We partially rewrote the code that handles our Filter Bar, specifically when it comes to handling date ranges. A few minor bugs were squashed in the process, but please don't report us to PETA! (thank you, Boris)
-* [Fix] The customizer was not working if the Slimstat menu was being displayed in the admin bar instead of as a separate menu. Please report any issues you experience in using the customizer.
-* [Fix] Our charts are calculating the sum of all the data points, day by day. However other reports show a cumulative sum (let's say of Unique IPs) for the whole month. If a given IP visits your website on two different days, it will be counted twice in the Unique IPs chart, but only once in Traffic at Glance. In order to avoid any confusion, we are changing the chart legend to display the AVERAGE value, instead of the sum. 
-
-= 4.6.8 =
-* [Update] We should have known better: for every naysayer there is always a yaysayer that will [ask for just the opposite feature](https://wordpress.org/support/topic/recent-month-change/), right? Fair enough: that's what the settings panels are for, after all. In order to make everybody happy, we introduced a new option (under Slimstat > Settings > Reports) that will allow you to decide what the default time span should be: current month or past 30 days, it's totally up to you.
-* [Update] We implemented Chris' idea to use a transient when recording the visit_id, to improve performance (thank you, [Chris](https://wordpress.org/support/topic/recommend-switching-slimstat_visit_id-to-use-a-transient/)).
-* [Fix] If your website is using a caching plugin, the tracking code might still be appended to the page, even if the user turned off tracking. Slimstat now checks if Tracking is enabled in the settings, before processing any request it receives from the browser (thank you, Chris).
-* [Fix] A false positive alert of attempted XSS injection was being returned when the 'android-app' scheme was being used to access the website (thank you, [Sasa](https://wordpress.org/support/topic/false-positive-tracker-error-attempted-xss-injection/)).
-
-= 4.6.7 =
-* [Update] Same-domain referrers are now tracked by default, when Slimstat is activated for the first time. Pre-existing installations are not affected. This change will allow us to introduce  new features as suggested [by one of our users](https://wordpress.org/support/topic/can-we-see-top-visitor-path/). Stay tuned.
-* [Update] Every first of the month we get at least one or two support requests from alarmed users who think their data has disappeared. Some of them end up leaving [negative reviews](https://wordpress.org/support/topic/limited-service/) because of this. The fundamental misunderstanding was related to the fact that Slimstat uses the CURRENT MONTH time span as the default range for calculating its reports and metrics. So every first of the month all the reports can look "empty" because there is not much data to be crunched. In order to address this problem, we've changed the default time range from the current month to the last 20 days. Hopefully this will avoid further negative reviews in the future!
-* [Fix] There was an incompatibility issue between our premium add-ons Custom DB and Network Settings, causing the network-wide configuration to be reset when a new blog was being created in the network.
-* [Fix] The tracker was not working as expected if the blacklist by usernames contained a @ character (thank you, Eugenio).
-* [Fix] A bug was affecting the way the geolocation function would calculate the country parameter from certain given IP addresses (thank you, Carsten).
-
-= 4.6.6 =
-* [New] Super administrators can now decide what reports users will see, and their arrangement both on the dashboard and Slimstat screens (thank you, [ac1643](https://wordpress.org/support/topic/specifying-the-settings-by-user/)). You will need our premium add-on [Network Analysis](https://www.wp-slimstat.com/downloads/network-view/) to unlock this feature.
-* [Fix] The `post_link` shortcode attribute was not working as expected when downloads were being listed (thank you, [tophr](https://wordpress.org/support/topic/top-downloads-shortcodewidget-not-working-as-expected)).
-* [Fix] Updated Track Client Info option description to make it less confusing (thank you, [Bjarne](https://wordpress.org/support/topic/track-client-info-setting-confusion/)).
-
-= 4.6.5 =
-* [New] The new Browscap Library we introduced a few versions ago added some new interesting fields to the list of information available for each browser. One of them allows to distinguish between touch and non-touch devices, even when they are not mobile devices (think touchscreen all-in-one desktop computers). Inspired by one of our most active beta testers, we decided to expose this information in the admin (Activity Log). Now you will be able to segment your metrics based on this new value for the browser type dimension.
-* [New] Added Indonesian localization (thank you, [ChameleonJohn](https://www.chameleonjohn.com/)).
-* [Update] You can now show display names instead of usernames when generating shortcodes. Check our documentation for more information (thank you, pepe).
-* [Update] You can now group resources in shortcodes while ignoring any query string attached to them (thank you, [dragolcho](https://wordpress.org/support/topic/problem-with-short-code-2/)).
-* [Fix] SQL error being returned for the Top/Recent Keywords report (thank you, pepe).
-* [Fix] A regression bug was affecting the blacklist by username functionality (thank you, Ursula).
-
-= 4.6.4 =
-* [Update] When the tracker was set to work in "Client mode", the Javascript code was being added to those pages that matched one of the blacklists, even though the subsequent request would have been ignored. By avoiding this, we were able to optimize our code and improve the overall performance.
-* [Fix] A conflict with a Google Maps Javascript API call was causing other scripts to not work as expected (thank you, Fulp2121).
-* [Fix] A bug was preventing the tracker from detecting certain mobile devices as expected in "Client Mode".
-* [Fix] Empty search terms were being counted in the Top/Recent Search Terms reports (thank you, Per).
-
-= 4.6.3 =
-* [Note] We would like to thank all the people who stepped forward to offer their help and test this new version before it was officially released. We worked with our users to identify the many different scenarios related to lightbox libraries, jQuery animations and so forth. It was a great team effort! You guys are terrific!
-* [Update] Say goodbye to incompatibility issues with lightbox libraries, jQuery drop down menus, fancy animations and the like. We worked on the tracking algorithm to make it less intrusive, and to FINALLY play nice with any other event handlers attached to your DOM elements. As an added bonus, the new tracker is performing from 10 to 30 percent faster in our tests. Not bad, huh?
-* [Update] If you are using the CDN service offered by our partners at jsDelivr, the tracker will now reference your current version of Slimstat, not the "trunk". This will avoid issues in the future to those who don't want to upgrade to the latest version right away (thank you, [mth75](https://wordpress.org/support/topic/new-version-56/#post-8896049)).
-* [Update] The tracker is no longer looking for Shockwave Director or Real Player when detecting browser plugins (is anyone still using them?). On the other side, it is now detecting the Java Virtual Machine and any PDF viewer (either Adobe plugin or built into the browser).
-* [Update] One of our users thought that all the inline data-slimstat attributes appended by our tracker to all his links looked ugly and might affect performance (no, they do not). That struck a cord in our perfectionist developer, and he decided to rewrite that functionality to minimize the intrusiveness of our algorithm.
-* [Fix] Apparently the XSS vulnerability discovered by the Mitre Corporation had not been completely fixed in version 4.6, according to them. Now they confirmed that the issue has been resolved.
-
-= 4.6.2 =
-* [Update] Removed options to enable or disable tracking of "internal" and outbound links, as they were confusing many users, based on the feedback we received. Now all links are tracked, regardless of their type. This will increase the size of the "events" table, however it will also make your reports more accurate, and track data needed to generate heatmaps and other metrics.
-* [Fix] The Activity Log will now group page views not just by session, but also by other events: change of IP, user logged out, etc (thank you, [catmaniax](https://wordpress.org/support/topic/cant-tell-which-user-is-which/)).
-* [Fix] The Browscap Library could not be installed if the FS_METHOD constant was not set to 'direct' in wp-config.php (thank you [computershowtopro](https://wordpress.org/support/topic/browscap-dp-php-is-present-but-not-seen-by-slimstat)).
-* [Fix] A PHP notice was being displayed if the widget_id for the new Slimstat Widget element was not set.
-* [Fix] In order to calculate its internal timestamps without any conflicts with other plugins, Slimstat was supposed to temporarily deactivate any WordPress filters on the function `date_i18n`. It turns out something had changed in the way WordPress was structuring that information, with the side effect that Slimstat was not able to restore those filters (thank you, [catmaniax](https://wordpress.org/support/topic/slimstat-month-name-issue)).
-
-= 4.6.1 =
-* [New] You spoke, we listened. Many users have been asking us over time to add a feature to display metrics and reports on their front-facing website. Although Slimstat has been supporting shortcodes for many years, they felt like they needed more than that basic feature. We are now extending the shortcode syntax to allow users to place widgets on their websites in just a few steps. Please [refer to our knowledge base](https://slimstat.freshdesk.com/support/solutions/folders/5000259023) to learn more about this new feature, or feel free to contact us if you need help implementing it on your website.
-* [New] Hovering a report's title will reveal its unique ID, which you can [use in your shortcode](https://slimstat.freshdesk.com/support/solutions/folders/5000259023) to display it on your website.
-* [Update] The update notice displayed in the admin is now only shown to site administrators (single installation) and super administrators (WP MU / network), to avoid any confusion for MU site administrators.
-* [Update] Improved the accessibility of our Filter Bar, by introducing (hidden) labels for all the fields. Please make sure to flush your client/server caches to load the new stylesheet.
-* [Update] Removed the option to deactivate Slimscroll as it did not play nice with some other features we recently introduced, and also because the incompatibility issues between Firefox and Slimscroll have been addressed.
-* [Fix] The icon to export a report as Excel comma separated value was not being visualized correctly, when the premium add-on was enabled.
-* [Fix] Addressed some Javascript warning being displayed in the browser console, returned by the qTip library.
-* [Fix] The height of all the Dashboard widgets (including the ones not related to Slimstat) was being affected by a typo in our CSS.
-* [Fix] Cleaned up minor layout glitches and improved rendering of charts after initial round of feedback from users.
-
-= 4.6 =
-* [New] Our development team has had the task of revamping the charts available in Slimstat on their to-do list for quite a while now. Now that the compatibility issues related to our Browscap library have been addressed and resolved, it was time to tackle this new challenge and offer a beautiful new interface to analyze and interact with visual reports and charts. As an added bonus, we are also working on extending the list of supported shortcodes to allow administrators to also share these brand-new charts with their visitors, by quickly placing them on any page of their website. The same will apply to the world map, which currently displays the total number of page views by Country. Lots of exciting new features will soon be available to all our users. Stay tuned!
-* [Update] Email and Excel reports now honor the setting to convert IP addresses to hostnames.
-* [Update] Various cosmetic upgrades to make your reports easier to read. Please make sure to clear your browser and server caches to load the new stylesheet.
-* [Fix] We patched a quite unique XSS vulnerability, responsibly disclosed by [the MITRE Corporation](https://www.mitre.org/) (thank you, guys).
-* [Fix] Some more buttons and links were added to the exclusion list of things to track on the admin, when this feature is enabled.
-* [Fix] Calling a function to decode an IPv6 address was failing if PHP did not support this protocol (thank you, [catmainax](https://wordpress.org/support/topic/warnings-in-debug-mode-9/))
 
 == Support Our Work ==
 Slimstat Analytics is an open source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)

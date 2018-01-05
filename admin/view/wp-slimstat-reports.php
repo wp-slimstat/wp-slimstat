@@ -1837,8 +1837,9 @@ class wp_slimstat_reports {
 			foreach ( $recent_visits as $a_recent_visit ) {
 				if ( !empty( $a_recent_visit[ 'city' ] ) &&  !empty( $a_recent_visit[ 'location' ] ) ) {
 					list( $latitude, $longitude ) = explode( ',', $a_recent_visit[ 'location' ] );
+					$clean_city_name = htmlentities( $a_recent_visit[ 'city' ], ENT_QUOTES, 'UTF-8' );
 					$date_time = date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $a_recent_visit[ 'dt' ], true );
-					$data_points[] = "{zoomLevel:7,type:'circle',title:'{$a_recent_visit[ 'city' ]}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
+					$data_points[] = "{zoomLevel:7,type:'circle',title:'{$clean_city_name}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
 				}
 			}
 		}
