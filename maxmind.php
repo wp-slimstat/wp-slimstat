@@ -12,7 +12,7 @@ class maxmind_geolite2_connector {
 			// Do we need to update our data file?
 			if ( false !== ( $file_stat = stat( wp_slimstat::$maxmind_path ) ) ) {
 				// Is the database more than 30 days old?
-				if ( ( date( 'U' ) - $file_stat[ 'mtime' ] > 2629740 ) ) {
+				if ( !empty( $file_stat ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 2629740 ) ) {
 					add_action( 'shutdown', array( 'wp_slimstat', 'download_maxmind_database' ) );
 				}
 			}
