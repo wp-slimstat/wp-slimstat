@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.8.2
-Stable tag: 4.7.5
+Stable tag: 4.7.5.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -14,13 +14,13 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
 
 = Main features =
-* Real-time access log, server latency, heatmaps, full IPv6 support, and much more.
+* Get access to real-time access log, measure server latency, track page events, keep an eye on your bounce rate and much more.
+* Add shortcodes to your website to display reports in widgets or directly in posts and pages.
 * Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
-* Export your reports to CSV or get daily emails right in your mailbox (via premium add-on).
+* Export your reports to CSV, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
 * Compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
 * Support for hashing IP addresses in the database to protect your users privacy.
 * Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org)).
-* Add shortcodes to your website to display reports in widgets or directly in posts and pages.
 * World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
 
 = Premium Add-ons =
@@ -71,6 +71,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.5.1 =
+* [Update] Implemented a workaround to try and fix the "Forbidden" error that a few users are experiencing when trying to download the MaxMind Geolite2 data file.
+* [Fix] Updated the link to manually download the MaxMind data file from their servers, and added a new page to our knowledge base to explain how to manually install it.
+
 = 4.7.5 =
 * [New] Now that Slimstat is capable of geolocating visitors at the city level, wouldn't it make sense to display those visitors on the map? Well, of course! Go check out this new feature by accessing the Geolocation tab in Slimstat.
 * [New] Updated the tracking script to handle events triggered by external libraries, like the [Vimeo API](https://github.com/vimeo/player.js/#events). Thank you, Max.

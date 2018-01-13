@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.5
+Version: 4.7.5.1
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.5';
+	public static $version = '4.7.5.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -1182,15 +1182,11 @@ class wp_slimstat {
 		}
 
 		// Download the most recent database directly from MaxMind's repository
-		if ( !function_exists( 'download_url' ) ) {
-			require_once( ABSPATH . 'wp-admin/includes/file.php' );
-		}
-
 		if ( self::$settings[ 'geolocation_country' ] == 'on' ) {
-			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz', 10 );
+			$maxmind_tmp = self::download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz' );
 		}
 		else {
-			$maxmind_tmp = download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz', 30 );	
+			$maxmind_tmp = self::download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz' );
 		}
 
 		if ( is_wp_error( $maxmind_tmp ) ) {
@@ -1235,6 +1231,38 @@ class wp_slimstat {
 		@unlink( $maxmind_tmp );
 
 		return '';
+	}
+
+	public static function download_url( $url ) {
+		// Include the FILE API, if it's not defined
+		if ( !function_exists( 'download_url' ) ) {
+			require_once( ABSPATH . 'wp-admin/includes/file.php' );
+		}
+
+		if ( !$url ) {
+			return new WP_Error('http_no_url', __('Invalid URL Provided.'));
+		}
+
+		$url_filename = basename( parse_url( $url, PHP_URL_PATH ) );
+
+		$tmpfname = wp_tempnam( $url_filename );
+		if ( ! $tmpfname ) {
+			return new WP_Error('http_no_file', __('Could not create Temporary file.'));
+		}
+
+		$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'stream' => true, 'filename' => $tmpfname, 'user-agent'  => 'Slimstat Analytics/' . self::$version . '; ' . home_url() ) );
+
+		if ( is_wp_error( $response ) ) {
+		        unlink( $tmpfname );
+		        return $response;
+		}
+
+		if ( 200 != wp_remote_retrieve_response_code( $response ) ){
+		        unlink( $tmpfname );
+		        return new WP_Error( 'http_404', trim( wp_remote_retrieve_response_message( $response ) ) );
+		}
+
+		return $tmpfname;
 	}
 
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ) {

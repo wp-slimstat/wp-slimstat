@@ -298,7 +298,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<?php endif; ?>
 		</th>
 		<td>
-			<span class="description"><?php _e("The <a href='http://dev.maxmind.com/geoip/legacy/geolite/' target='_blank'>MaxMind GeoLite library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality.", 'wp-slimstat' ) ?></span>
+			<span class="description"><?php _e("The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality. If you're experiencing issues, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ) ?></span>
 		</td>
 	</tr>
 	<tr class="alternate">

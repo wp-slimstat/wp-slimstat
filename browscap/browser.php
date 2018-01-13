@@ -15,6 +15,11 @@ class slim_browser {
 
 		// Path to the Browscap data and library
 		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db/autoload.php';
+
+		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.5', '>=' ) ) {
+			self::update_browscap_database( false );
+			require_once( self::$browscap_autoload_path );
+		}
 	}
 
 	/**
@@ -25,14 +30,8 @@ class slim_browser {
 			return self::$browser;
 		}
 
-		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.5', '>=' ) ) {
-			self::update_browscap_database( false );
-			require_once( self::$browscap_autoload_path );
-
-			if ( method_exists( 'slimBrowscapConnector', 'get_browser_from_browscap' ) ) {
-				self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser );
-			}
-
+		if ( method_exists( 'slimBrowscapConnector', 'get_browser_from_browscap' ) ) {
+			self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser );
 		}
 
 		if ( self::$browser[ 'browser' ] == 'Default Browser' ) {
