@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 3.8
-Tested up to: 4.8.2
+Tested up to: 4.9
 Stable tag: 4.7.5.1
 
 == Description ==
