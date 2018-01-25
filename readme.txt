@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.9
-Stable tag: 4.7.5.1
+Stable tag: 4.7.5.2
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,11 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.5.2 =
+* [Update] You can now customize the amount of dots displayed on the World Map, under Slimstat > Settings > Reports > Access Log and World Map. Thank you, [service4](https://wordpress.org/support/topic/new-geolocation-map-with-cities/).
+* [Fix] A dependency error was being highlighted for one of our premium add-ons under certain circumstances. Thank you, Peter.
+* [Fix] The option to not set the session cookie was not working as expected. Thank you, [Bjarne](https://wordpress.org/support/topic/disable-cookies-2/#post-9887099).
+
 = 4.7.5.1 =
 * [Update] Implemented a workaround to try and fix the "Forbidden" error that a few users are experiencing when trying to download the MaxMind Geolite2 data file.
 * [Fix] Updated the link to manually download the MaxMind data file from their servers, and added a new page to our knowledge base to explain how to manually install it.

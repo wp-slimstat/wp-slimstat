@@ -1829,9 +1829,9 @@ class wp_slimstat_reports {
 
 	public static function show_world_map() {
 		$countries = wp_slimstat_db::get_top('country');
-		$recent_visits = wp_slimstat_db::get_recent('*', 'location IS NOT NULL');
+		$recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
 		if ( !empty( $recent_visits ) ) {
-			$recent_visits = array_slice( $recent_visits, 0, 50 );
+			$recent_visits = array_slice( $recent_visits, 0, wp_slimstat::$settings[ 'max_dots_on_map' ] );
 			$data_points = array();
 
 			foreach ( $recent_visits as $a_recent_visit ) {

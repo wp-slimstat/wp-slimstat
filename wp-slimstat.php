@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.5.1
+Version: 4.7.5.2
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.5.1';
+	public static $version = '4.7.5.2';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -89,12 +89,10 @@ class wp_slimstat {
 				}
 			}
 
-			// Slimstat tracks screen resolutions, outbound links and other client-side information using javascript
-			if ( ( self::$settings[ 'enable_javascript' ] == 'on' || self::$settings[ 'javascript_mode' ] == 'on' ) && self::$settings[ 'is_tracking' ] == 'on' && $is_tracking_filter_js ) {
-				add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array(__CLASS__, 'wp_slimstat_enqueue_tracking_script'), 15);
-				if ( self::$settings[ 'track_users' ] == 'on' ) {
-					add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
-				}
+			// Slimstat tracks screen resolutions, outbound links and other client-side information using a client-side tracker
+			add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 15 );
+			if ( self::$settings[ 'track_users' ] == 'on' ) {
+				add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
 			}
 		}
 
@@ -651,8 +649,8 @@ class wp_slimstat {
 		}
 
 		// Is this a new visitor?
-		$is_set_cookie = apply_filters( 'slimstat_set_visit_cookie', ( !empty( self::$settings[ 'set_tracker_cookie' ] ) && self::$settings[ 'set_tracker_cookie' ] == 'on' ) );
-		if ( $is_set_cookie ) {
+		$set_cookie = apply_filters( 'slimstat_set_visit_cookie', ( !empty( self::$settings[ 'set_tracker_cookie' ] ) && self::$settings[ 'set_tracker_cookie' ] == 'on' ) );
+		if ( $set_cookie ) {
 			if ( empty( self::$stat[ 'visit_id' ] ) && !empty( self::$stat[ 'id' ] ) ) {
 				// Set a cookie to track this visit (Google and other non-human engines will just ignore it)
 				@setcookie(
@@ -997,8 +995,8 @@ class wp_slimstat {
 			self::$stat[ 'visit_id' ]++;
 			set_transient( 'slimstat_visit_id', self::$stat[ 'visit_id' ] );
 
-			$is_set_cookie = apply_filters( 'slimstat_set_visit_cookie', true );
-			if ( $is_set_cookie ) {
+			$set_cookie = apply_filters( 'slimstat_set_visit_cookie', ( !empty( self::$settings[ 'set_tracker_cookie' ] ) && self::$settings[ 'set_tracker_cookie' ] == 'on' ) );
+			if ( $set_cookie ) {
 				@setcookie(
 					'slimstat_tracking_code',
 					self::_get_id_with_checksum( self::$stat[ 'visit_id' ] ),
@@ -1622,6 +1620,7 @@ class wp_slimstat {
 			'mozcom_secret_key' => '',
 			'refresh_interval' => '60',
 			'number_results_raw_data' => '50',
+			'max_dots_on_map' => '50',
 			'custom_css' => '',
 			'chart_colors' => '',
 			'show_complete_user_agent_tooltip' => 'no',
@@ -1672,7 +1671,24 @@ class wp_slimstat {
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_enqueue_tracking_script() {
-		// Pass some information to Javascript
+		// Register the script in WordPress
+		$jstracker_suffix = ( defined( 'SCRIPT_DEBUG' ) && is_bool( SCRIPT_DEBUG ) && SCRIPT_DEBUG ) ? '' : '.min';
+
+		if ( self::$settings[ 'enable_cdn' ] == 'on' ) {
+			$schema = is_ssl() ? 'https' : 'http';
+			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
+		}
+		else{
+			wp_register_script( 'wp_slimstat', plugins_url( "/wp-slimstat{$jstracker_suffix}.js", __FILE__ ), array(), null, true );
+		}
+
+		// Do not enqueue the script if the corresponding options are turned off
+		$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
+		if ( ( self::$settings[ 'enable_javascript' ] != 'on' && self::$settings[ 'javascript_mode' ] != 'on' ) || self::$settings[ 'is_tracking' ] != 'on' || !$is_tracking_filter_js ) {
+			return 0;
+		}
+
+		// Pass some information to the tracker
 		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
 
 		if ( self::$settings[ 'ajax_relative_path' ] == 'on' ) {	
@@ -1711,16 +1727,6 @@ class wp_slimstat {
 		}
 
 		$params = apply_filters( 'slimstat_js_params', $params );
-
-		$jstracker_suffix = ( defined( 'SCRIPT_DEBUG' ) && is_bool( SCRIPT_DEBUG ) && SCRIPT_DEBUG ) ? '' : '.min';
-
-		if ( self::$settings[ 'enable_cdn' ] == 'on' ) {
-			$schema = is_ssl() ? 'https' : 'http';
-			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
-		}
-		else{
-			wp_register_script( 'wp_slimstat', plugins_url( "/wp-slimstat{$jstracker_suffix}.js", __FILE__ ), array(), null, true );
-		}
 
 		wp_enqueue_script( 'wp_slimstat' );
 		wp_localize_script( 'wp_slimstat', 'SlimStatParams', $params );

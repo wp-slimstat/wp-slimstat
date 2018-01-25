@@ -11,9 +11,8 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Happy New Year, everyone! While you are all busy trying to stick to your new year's resolutions, we can't help but look back at 2017 and what it meant for our team and our ecosystem. We've been hard at work improving our <a href='https://www.wp-slimstat.com/addons/' target='_blank'>online store</a> and updating our premium add-ons. As always, your feedback has played a key role in setting up our feature roadmap and priorities. Among other things, Slimstat now supports the new version of the geolocation data files made available by MaxMind (even though we are still ironing out a few minor issues); it now implements a new optimized Browscap data structure (courtesy of James Titcumb and his team); it provides user-friendly charts and maps that can also be displayed on your front-facing web pages (courtesy of AmMap.com); it has top-notch security features to prevent XSS attacks and various malicious SQL injection techniques. We've also handled more than 1,500 tickets (between forum and support site), and released various updates for our premium add-ons. This year, we look forward to getting more feedback from our user community, while we consider adding new reports and a more flexible filter system to our code. Thank you for being part of this journey.";
-
-		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
+		//self::$admin_notice = "";
+		//self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
@@ -436,7 +435,7 @@ class wp_slimstat_admin {
 			}
 
 			// If MaxMind DB is enabled, download the new GeoLite 2 data file
-			$old_maxmind_path =  str_replace( '.mmdb', '.dat', wp_slimstat::$maxmind_path );
+			$old_maxmind_path = str_replace( '.mmdb', '.dat', wp_slimstat::$maxmind_path );
 			if ( file_exists( $old_maxmind_path ) ) {
 				@unlink( $old_maxmind_path );
 				wp_slimstat::download_maxmind_database();

@@ -484,7 +484,7 @@ class wp_slimstat_db {
 
 					case 'content_id':
 						if ( !empty( $a_filter[ 3 ] ) ) {
-							$content_id = ( $a_filter[ 3 ] == 'current' && !empty( $GLOBALS[ 'post' ]->ID ) ) ? $GLOBALS[ 'post' ]->ID : intval(  $a_filter[ 3 ] );
+							$content_id = ( $a_filter[ 3 ] == 'current' && !empty( $GLOBALS[ 'post' ]->ID ) ) ? $GLOBALS[ 'post' ]->ID : $a_filter[ 3 ];
 							$filters_normalized[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], $content_id );
 							break;
 						}
