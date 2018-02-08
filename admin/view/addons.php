@@ -90,7 +90,7 @@ if ( !is_array( $list_addons ) ) {
 				<div class="plugin-description"><p><?php echo $a_addon['description'] ?></p></div>
 				<?php if ( ( is_plugin_active( $a_addon[ 'slug' ] . '/index.php' ) || is_plugin_active( $a_addon[ 'slug' ] . '/' . $a_addon[ 'slug' ] . '.php' ) ) ): ?>
 				<div class="active second">
-					License Key: <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty( wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] ) ? wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] : '' ?>" size="50">
+					License Key <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty( wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] ) ? wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] : '' ?>" size="50">
 				</div>
 				<?php endif; ?>
 			</td>

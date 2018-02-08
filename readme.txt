@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.9
-Stable tag: 4.7.5.2
+Stable tag: 4.7.5.3
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,11 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.5.3 =
+* [New] For those who can't manage to automatically update their local copy of our premium add-ons, we've added a link to manually download the zip file. You'll find it under the Plugins screen, once you've entered and saved the corresponding license key under Slimstat > Add-ons.
+* [Update] The [Update Checker](https://github.com/YahnisElsts/plugin-update-checker) library has been updated to version 4.4.
+* [Fix] The world map was not being displayed correctly if no data points were available for the selected time range (thank you, Michel).
+
 = 4.7.5.2 =
 * [Update] You can now customize the amount of dots displayed on the World Map, under Slimstat > Settings > Reports > Access Log and World Map. Thank you, [service4](https://wordpress.org/support/topic/new-geolocation-map-with-cities/).
 * [Fix] A dependency error was being highlighted for one of our premium add-ons under certain circumstances. Thank you, Peter.

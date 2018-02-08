@@ -11,8 +11,8 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		//self::$admin_notice = "";
-		//self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
+		self::$admin_notice = "We just launched our <a href='https://www.wp-slimstat.com' target='_blank'>redesigned website</a>, to promote our plugin in a cleaner and simpler way. And we are also looking for <strong>sponsors</strong>: if you can donate your time, your talent or your money to support the development of Slimstat, please <a href='http://support.wp-slimstat.com/' target='_blank'>contact our support team</a> today to learn more.";
+		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );

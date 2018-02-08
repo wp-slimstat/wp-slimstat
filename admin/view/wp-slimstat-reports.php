@@ -1871,8 +1871,8 @@ class wp_slimstat_reports {
 			var dataProvider = {
 				map: "worldLow",
 				getAreasFromMap: true,
-				areas:[ <?php echo implode(',', $data_areas) ?> ],
-				images: [ <?php echo implode(',', $data_points) ?> ]
+				areas:[ <?php echo implode( ',', $data_areas ) ?> ],
+				images: [ <?php if ( !empty( $data_points ) ) echo implode( ',', $data_points ) ?> ]
 			};
 
 			// Create AmMap object

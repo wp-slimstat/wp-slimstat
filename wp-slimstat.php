@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.5.2
+Version: 4.7.5.3
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.5.2';
+	public static $version = '4.7.5.3';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -1789,16 +1789,42 @@ class wp_slimstat {
 		}
 
 		$update_checker_objects = array();
+		
+		// This is only included if add-ons are installed
+		include_once( plugin_dir_path( __FILE__ ) . 'admin/update-checker/plugin-update-checker.php' );
+
 		foreach ( self::$update_checker as $a_slug ) {
 			$a_clean_slug = str_replace( array( 'wp_slimstat_', '_' ), array( '', '-' ), $a_slug );
+			
 			if ( !empty( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ) ) {
+				$update_checker_objects[ $a_clean_slug ] = Puc_v4_Factory::buildUpdateChecker( 'http://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ), dirname( dirname( __FILE__ ) ) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug );
 
-				// This is only included if add-ons are installed
-				include_once( plugin_dir_path( __FILE__ ) . 'admin/update-checker/plugin-update-checker.php' );
-
-				$update_checker_objects[] = Puc_v4_Factory::buildUpdateChecker( 'http://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ), dirname( dirname( __FILE__ ) ) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug );
+				add_filter( "plugin_action_links_wp-slimstat-{$a_clean_slug}/index.php", array( __CLASS__, 'add_plugin_manual_download_link' ), 10, 2 );
 			}
 		}
+	}
+
+	public static function add_plugin_manual_download_link( $_links = array(), $_plugin_file = '' ) {
+		$a_clean_slug = str_replace( array( 'wp-slimstat-', '/index.php' ), array( '', '' ), $_plugin_file );
+
+		if ( false !== ( $download_url = get_transient( 'wp-slimstat-download-link-' . $a_clean_slug ) ) ) {
+			$_links[] = '<a href="' . $download_url . '">Download ZIP</a>';
+		}
+		else {
+			$url = 'http://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] );
+			$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'user-agent'  => 'Slimstat Analytics/' . self::$version . '; ' . home_url() ) );
+
+			if ( !is_wp_error( $response ) && 200 == wp_remote_retrieve_response_code( $response ) ) {
+				$data = @json_decode( $response[ 'body' ] );
+
+				if ( is_object( $data ) ) {
+					$_links[] = '<a href="' . $data->download_url . '">Download ZIP</a>';
+					set_transient( 'wp-slimstat-download-link-' . $a_clean_slug, $data->download_url, 172800 ); // 48 hours
+				}
+			}
+		}
+
+		return $_links;
 	}
 
 	public static function register_widget() {
