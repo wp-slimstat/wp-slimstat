@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Tested up to: 4.9
-Stable tag: 4.7.5.3
+Stable tag: 4.7.6
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -71,6 +71,14 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.6 =
+* [Note] As we mentioned earlier, we've been working on streamlining and cleaning up our source code. It's incredible how layers of code can deposit on top of each other, until they form a thick layer that prevents developers from seeing clearly what's happening. It was time to apply some virtual citric acid to descale our code. If you're using any kind of server caching functionality, please make sure to clear your cache before opening a support request. Also, do not hesitate to reach out to us if you notice any strange or unusual behaviors.
+* [New] You can now download the geolocation map as a PDF file or PNG image. Thank you, Steve, for suggesting this feature!
+* [New] You can now exclude pageviews by content type, like 404, taxonomy, search, etc. Thank you, [victor50g](https://wordpress.org/support/topic/suggestion-enable-filtering-on-content-404/).
+* [Update] Deprecated the 'direction' filter, which was a leftover from over 5 years ago, when we used our old interface.
+* [Fix] The cron job to archive old records was not firing as expected under certain circumstances.
+* [Fix] Charts did not render correctly, if no data was available for that specific view.
+
 = 4.7.5.3 =
 * [New] For those who can't manage to automatically update their local copy of our premium add-ons, we've added a link to manually download the zip file. You'll find it under the Plugins screen, once you've entered and saved the corresponding license key under Slimstat > Add-ons.
 * [Update] The [Update Checker](https://github.com/YahnisElsts/plugin-update-checker) library has been updated to version 4.4.
@@ -136,14 +144,6 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 * [Fix] The new feature introduced in version 4.6.9.1 to allow our users to customize the default time range for the reports, had introduced a regression bug. Thank you to all our users who volunteered to test the bugfix.
 * [Fix] A vulnerability has been disclosed by [Pluginvulnerabilities.com](pluginvulnerabilities.com): an attacker with admin credentials could leverage the import/export mechanism for the plugin's settings to inject some malicious code. We recommend that you upgrade to the latest version of Slimstat as soon as possible.
 * [Fix] The new version of the [Add-on Update Checker library](https://github.com/YahnisElsts/plugin-update-checker), bundled with the previous release, was returning a fatal error under certain circumstances (thank you, Pepe).
-
-= 4.7 =
-* [New] After receiving a few requests to implement a REST API within Slimstat, and given that WordPress now offers a mature and stable interface for extending its built-in REST API, we decided to finally move forward and implement this feature. Please refer to our [online knowledge base](https://slimstat.freshdesk.com/solution/articles/12000033661-slimstat-rest-api) to learn more about how to use it.
-* [Update] The [Add-on Update Checker library](https://github.com/YahnisElsts/plugin-update-checker) has been updated to version 4.2, to solve an incompatibility issue with PHP 7.0 (thank you, [Sasa](https://wordpress.org/support/topic/possible-incompatibility-with-php-7-0/) and Per).
-* [Update] Bootstrap Switch (which we use on our Settings panels) has been updated to version 3.3.4.
-* [Fix] Apparently, there was an issue where our XMLHttpRequest didn't send the cookie for Cross-Origin URLs (thank you, Sasa).
-* [Fix] Solved issue with pagination, triggered when certain long time ranges were being selected.
-* [Fix] The autorefresh countdown timer was not working as expected if Async Mode was enabled (thank you, [scruffy1 and service4](https://wordpress.org/support/topic/odd-visitors-activity-heading)).
 
 == Support Our Work ==
 Slimstat Analytics is an open source project, dependent in large parts on donations. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)

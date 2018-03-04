@@ -121,7 +121,6 @@ class wp_slimstat_db {
 			'event_description' => array( __( 'Event Description', 'wp-slimstat' ), 'varchar' ),
 			'position' => array( __( 'Event Coordinates', 'wp-slimstat' ), 'int' ),
 
-			'direction' => array( __( 'Direction', 'wp-slimstat' ), 'varchar' ),
 			'limit_results' => array( __( 'Max Results', 'wp-slimstat' ), 'int' ),
 			'start_from' => array( __( 'Offset', 'wp-slimstat' ), 'int' ),
 
@@ -134,9 +133,18 @@ class wp_slimstat_db {
 
 		// Filters use the following format: browser equals Firefox&&&country contains gb
 		$filters_array = array();
-		if ( !empty( $_REQUEST[ 'fs' ] ) && is_array( $_REQUEST[ 'fs' ] ) ) {
-			foreach( $_REQUEST[ 'fs' ] as $a_request_filter_name => $a_request_filter_value ) {
+
+		// Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
+		if ( !empty( $_POST[ 'fs' ] ) && is_array( $_POST[ 'fs' ] ) ) {
+			foreach( $_POST[ 'fs' ] as $a_request_filter_name => $a_request_filter_value ) {
 				$filters_array[ htmlspecialchars( $a_request_filter_name ) ] = "$a_request_filter_name $a_request_filter_value";
+			}
+		}
+
+		// Date filters (input fields)
+		foreach ( array( 'minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes' ) as $a_date_time_filter_name ) {
+			if ( !empty( $_POST[ $a_date_time_filter_name ] ) ) {
+				$filters_array[ $a_date_time_filter_name ] = "$a_date_time_filter_name equals " . intval( $_POST[ $a_date_time_filter_name ] );
 			}
 		}
 
@@ -145,13 +153,7 @@ class wp_slimstat_db {
 			$filters_array[ htmlspecialchars( $_POST[ 'f' ] ) ] = "{$_POST[ 'f' ]} {$_POST[ 'o' ]} " . ( isset( $_POST[ 'v' ] ) ? $_POST[ 'v' ] : '' );
 		}
 
-		foreach ( array( 'minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes' ) as $a_date_time_filter_name ) {
-			if ( isset( $_POST[ $a_date_time_filter_name ] ) ) {
-				$filters_array[ $a_date_time_filter_name ] = "$a_date_time_filter_name equals " . intval( $_POST[ $a_date_time_filter_name ] );
-			}
-		}
-
-		// Hidden Filters
+		// Filters set via the plugin options
 		if ( wp_slimstat::$settings[ 'restrict_authors_view' ] == 'on' && !current_user_can( 'manage_options' ) && !empty( $GLOBALS[ 'current_user' ]->user_login ) ) {
 			$filters_array[ 'author' ] = 'author equals ' . $GLOBALS[ 'current_user' ]->user_login;
 		}
@@ -178,8 +180,7 @@ class wp_slimstat_db {
 		$filters_raw = apply_filters( 'slimstat_db_pre_filters', $filters_raw );
 
 		// Normalize the filters
-		self::$filters_normalized = self::get_filters_normalized( $filters_raw );
-
+		self::$filters_normalized = self::init_filters( $filters_raw );
 	}
 	// end init
 
@@ -357,7 +358,7 @@ class wp_slimstat_db {
 				break;
 		}
 
-		if ( isset( $where[ 1 ] ) ) {
+		if ( isset( $where[ 1 ] ) && $where[ 1 ] != '' ) {
 			return $GLOBALS[ 'wpdb' ]->prepare( $where[ 0 ], $where[ 1 ] );
 		}
 		else {
@@ -385,23 +386,14 @@ class wp_slimstat_db {
 		return wp_slimstat::$wpdb->get_var( $_sql );
 	}
 
-	public static function get_filters_normalized( $_filters = '', $_init_misc = true ) {
+	public static function parse_filters( $_filters_raw ) {
 		$filters_normalized = array(
 			'columns' => array(),
-			'date' => array(),
-			'misc' => array(
-				'direction' => 'DESC',
-				'limit_results' => wp_slimstat::$settings[ 'limit_results' ],
-				'start_from' => 0
-			),
-			'utime' => array(
-				'start' => 0,
-				'end' => 0
-			)
+			'date' => array()
 		);
 
-		if ( !empty( $_filters ) ) {
-			$matches = explode( '&&&', $_filters );
+		if ( !empty( $_filters_raw ) ) {
+			$matches = explode( '&&&', $_filters_raw );
 
 			foreach( $matches as $idx => $a_match ) {
 				preg_match( '/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode( $a_match ), $a_filter );
@@ -476,7 +468,6 @@ class wp_slimstat_db {
 						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = in_array( $a_filter[ 3 ], array( 1, 2 ) ) ? $a_filter[ 3 ] : 1;
 						break;
 
-					case 'direction':
 					case 'limit_results':
 					case 'start_from':
 						$filters_normalized[ 'misc' ][ $a_filter[ 1 ] ] = str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) );
@@ -497,6 +488,25 @@ class wp_slimstat_db {
 			}
 		}
 
+		return $filters_normalized;
+	}
+
+	public static function init_filters( $_filters_raw = '' ) {
+		$filters_normalized = self::parse_filters( $_filters_raw );
+
+		// Initialize default values
+		if ( empty( $filters_normalized[ 'misc' ][ 'limit_results' ] ) ) {
+			$filters_normalized[ 'misc' ][ 'limit_results' ] = wp_slimstat::$settings[ 'limit_results' ];
+		}
+		if ( empty( $filters_normalized[ 'misc' ][ 'start_from' ] ) ) {
+			$filters_normalized[ 'misc' ][ 'start_from' ] = 0;
+		}
+
+		$filters_normalized[ 'utime' ] = array(
+			'start' => 0,
+			'end' => 0
+		);
+
 		// If the setting to use the last X days as default time span is enabled, we need to setup the "interval" variables
 		if ( ( empty( wp_slimstat::$settings[ 'use_current_month_timespan' ] ) || wp_slimstat::$settings[ 'use_current_month_timespan' ] != 'on' ) ) {
 			// Do not set the interval if another date filter has already been set
@@ -504,7 +514,7 @@ class wp_slimstat_db {
 			if ( !empty( $filters_normalized[ 'date' ] ) ) {
 				$filters_to_check = array_diff( $filters_normalized[ 'date' ], array( 'interval_direction' => 1 ) );
 				foreach( $filters_to_check as $a_filter ) {
-					if ( !empty( $a_filter ) ) {
+					if ( isset( $a_filter ) ) {
 						$is_date_filter_empty = false;
 						break;
 					}
@@ -521,7 +531,7 @@ class wp_slimstat_db {
 		wp_slimstat::toggle_date_i18n_filters( false );
 
 		// Let's calculate our time range, based on date filters
-		if ( empty( $filters_normalized[ 'date' ][ 'interval' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_hours' ] ) && empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ) {
+		if ( !isset( $filters_normalized[ 'date' ][ 'interval' ] ) && !isset( $filters_normalized[ 'date' ][ 'interval_hours' ] ) && !isset( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ) {
 			if ( !empty( $filters_normalized[ 'date' ][ 'minute' ] ) ) {
 				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
 					!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
@@ -649,7 +659,7 @@ class wp_slimstat_db {
 		wp_slimstat::toggle_date_i18n_filters( true );
 
 		// Apply third-party filters
-		$filters_normalized = apply_filters( 'slimstat_db_filters_normalized', $filters_normalized, $_filters );
+		$filters_normalized = apply_filters( 'slimstat_db_filters_normalized', $filters_normalized, $_filters_raw );
 
 		return $filters_normalized;
 	}

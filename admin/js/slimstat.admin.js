@@ -7,181 +7,86 @@ if ( typeof SlimStatAdminParams == 'undefined' ) {
 	};
 }
 
-var SlimStatAdmin = {
-	_refresh_timer: [0, 0],
+// ----- TABLE OF CONTENTS -----------------------------------------------------------
+// 
+// 1. Data refresh
+// 2. Filters
+// 3. Activity log
+// 4. Customizer
+// 5. Miscellaneous
+// 6. Init third-party libraries
+//
+// -----------------------------------------------------------------------------------
 
-	parse_url_filters: function(report_id, href){
-		filters_parsed = [];
-		filters_to_add = href.split('&');
-		jQuery('#slimstat-filters-form').attr('action', filters_to_add[0]);
+jQuery( function() {
 
-		for (i in filters_to_add){
-			if (filters_to_add[i].indexOf('fs\%5B') != 0) continue;
-			
-			filter_components = filters_to_add[i].split('=');
-			filter_components[0] = decodeURIComponent(filter_components[0]);
-			jQuery('input[name="'+filter_components[0]+'"]').remove();
+	// ----- BEGIN: DATA REFRESH -----------------------------------------------------
+	//
 
-			filters_parsed[filter_components[0]] = [report_id, filter_components[1].replace('+', ' ')];
+	// Reload a report's data if it is (re)activated via the checkbox under Screen Options
+	jQuery( 'input.hide-postbox-tog[id^=slim_p]' ).on( 'click.postboxes', function () {
+		if ( jQuery( this ).prop( "checked" ) && jQuery( '#' + jQuery( this ).val() ).length ) {
+			SlimStatAdmin.refresh_report( jQuery( this ).val() );
 		}
-		return filters_parsed;
-	},
+	});
 
-	add_filters_to_form: function(filters_parsed, reset_existing_filters){
-		if (reset_existing_filters){
-			jQuery('.slimstat-post-filter').remove();
+	// Reload a report's data if the corresponding refresh/pagination button is clicked
+	jQuery( document ).on( 'click', '[id^=slim_] .refresh', function( e ) {
+		e.preventDefault();
+
+		var id = jQuery( this ).parents( '.postbox' ).attr( 'id' );
+
+		// Is this a pagination link?
+		if ( typeof jQuery( this ).attr( 'href' ).split( '?' )[ 1 ] == 'string' ) {
+			clean_filters = SlimStatAdmin.get_query_string_filters( jQuery( this ).attr( 'href' ).split( '?' )[ 1 ].substring( 1 ) );
+			if ( typeof clean_filters[ 'fs[start_from]' ] == 'string' ) {
+				jQuery( '<input type="hidden" name="fs[start_from]" class="slimstat-post-filter slimstat-temp-filter" value="' + clean_filters[ 'fs[start_from]' ] + '">' ).appendTo( '#slimstat-filters-form' );
+			}
 		}
+
+		SlimStatAdmin.refresh_report( id );
 		
-		for (i in filters_parsed){
-			if (jQuery.inArray(i, ['fs[minute]','fs[hour]','fs[day]','fs[month]','fs[year]','fs[interval_direction]','fs[interval]','fs[interval_hours]','fs[interval_minutes]']) == -1){
-				jQuery('<input>').attr('type', 'hidden').attr('name', i).attr('class', 'slimstat-post-filter slimstat-temp-filter '+filters_parsed[i][0]).val(filters_parsed[i][1]).appendTo('#slimstat-filters-form');
-			}
-			else{
-				field_id = i.replace('fs[', '#slimstat-filter-').replace(']', '');
-				field_val = filters_parsed[i][1].split(' ');
-				jQuery(field_id).val(field_val[1]);
-			}
-		}
-	},
-	
-	remove_filters_from_form: function(filters_parsed){
-		for (i in filters_parsed){
-			jQuery('input[name="'+i.replace('[', '\\[').replace(']', '\\]')+'"]').remove();
-		}
-	},
+		// Remove any temporary filters (pagination) set here above
+		jQuery( '.slimstat-temp-filter' ).remove();
 
-	refresh_countdown: function() {
-		SlimStatAdmin._refresh_timer[ 1 ]--;
-		if (SlimStatAdmin._refresh_timer[ 1 ] == -1){
-			SlimStatAdmin._refresh_timer[ 1 ] = 59;
-			SlimStatAdmin._refresh_timer[ 0 ] = SlimStatAdmin._refresh_timer[ 0 ] - 1;
-		}
-		jQuery( '.refresh-timer' ).html( SlimStatAdmin._refresh_timer[ 0 ] + ':' + ( ( SlimStatAdmin._refresh_timer[ 1 ] < 10 ) ? '0' : '' ) + SlimStatAdmin._refresh_timer[ 1 ] );
-		if ( SlimStatAdmin._refresh_timer[ 0 ] > 0 || SlimStatAdmin._refresh_timer[ 1 ] > 0 ) {
-			refresh_handle = window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
+		// Re-initialize SlimScroll on the new content
+		jQuery( '#' + id + ' .inside' ).slimScroll( {
+			scrollTo : '0px'
+		} );
+	} );
+
+	// Asynchronous reports are loaded dynamically after the page loads
+	if ( SlimStatAdminParams.async_load == 'on' ) {
+		jQuery( 'div[id^=slim_]' ).each( function() {
+			SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) );
+		} );
+	}
+
+	//
+	// ----- END: DATA REFRESH -------------------------------------------------------
+
+	// ----- BEGIN: FILTERS ----------------------------------------------------------
+	//
+
+	// Make input field read-only if certain operators are selected
+	jQuery( '#slimstat-filter-operator' ).on( 'change', function() {
+		if ( this.value == 'is_empty' || this.value == 'is_not_empty' ) {
+			jQuery( '#slimstat-filter-value' ).attr( 'readonly', 'readonly' );
 		}
 		else {
-			report_id = 'slim_p7_02';
-			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) };
-			jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
-			SlimStatAdmin.refresh_report(report_id, data);
-
-			window.clearTimeout(refresh_handle);
-			SlimStatAdmin._refresh_timer[ 0 ] = parseInt( SlimStatAdminParams.refresh_interval / 60 );
-			SlimStatAdmin._refresh_timer[ 1 ] = SlimStatAdminParams.refresh_interval % 60;
-			refresh_handle = window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
+			jQuery( '#slimstat-filter-value' ).removeAttr( 'readonly' );
 		}
-	},
-	
-	refresh_report: function( report_id, data ) {
-		// Get the data from the hidden form
-		filters_input = jQuery( '#slimstat-filters-form .slimstat-post-filter' ).toArray();
-		for ( i in filters_input ) {
-			data[ filters_input[ i ][ 'name' ] ] = filters_input[ i ][ 'value' ];
-		}
+	} );
 
-		jQuery('#'+report_id+' .inside').html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
-
-		jQuery.post(ajaxurl, data, function(response){
-			if (report_id.indexOf('_01') > 0){
-				jQuery('#'+report_id + ' .inside').html( response );
-			}
-			else{
-				jQuery( '#' + report_id + ' .inside' ).fadeOut( 700, function() {
-					jQuery( this ).html( response ).fadeIn( 700, function() {
-						if ( jQuery( '.refresh-timer' ).length > 0 ) {
-							if ( typeof refresh_handle !== 'undefined' ) {
-								window.clearTimeout( refresh_handle );
-							}
-							SlimStatAdmin._refresh_timer[ 0 ] = parseInt( SlimStatAdminParams.refresh_interval / 60 );
-							SlimStatAdmin._refresh_timer[ 1 ] = SlimStatAdminParams.refresh_interval % 60;
-							refresh_handle = window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
-						}
-					});
-				});
-			}
-		});
-
-		// Remove filters set by other Ajax buttons
-		jQuery('.slimstat-temp-filter').remove();
-
-		// if ( jQuery( '.refresh-timer' ).length > 0 ) {
-		// 	SlimStatAdmin.refresh_countdown();
-		// }
-	},
-	
-	get_query_string_value: function( key ) {
-		query_string = window.location.search.substring( 1 );
-	 
-		// Split into key/value pairs
-		pairs = query_string.split("&");
-	 
-		// Convert the array of strings into an object
-		for ( i in pairs ) {
-			pair_array = pairs[i].split('=');
-			if ( pair_array[ 0 ] == key ) {
-				return pair_array[ 1 ];
-			}
-		}
-	 
-		return '';
-	}
-}
-
-jQuery(function(){
-	// Refresh page every X seconds
-	if ( SlimStatAdminParams.refresh_interval > 0 && jQuery( '.refresh-timer' ).length > 0 ) {
-		SlimStatAdmin._refresh_timer[ 0 ] = parseInt( SlimStatAdminParams.refresh_interval / 60 );
-		SlimStatAdmin._refresh_timer[ 1 ] = SlimStatAdminParams.refresh_interval % 60;
-		refresh_handle = window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
-	}
-
-	// Refresh report if (re)activated via the checkbox under Screen Options
-	jQuery( 'input.hide-postbox-tog[id^=slim_]' ).bind( 'click.postboxes', function () {
-		if ( jQuery( this ).prop( "checked" ) && jQuery( '#' + jQuery( this ).val() ).length ) {
-			var report_id = jQuery( this ).val();
-			var data = { action: 'slimstat_load_report', report_id: report_id, security: jQuery( '#meta-box-order-nonce' ).val() }
-			jQuery( '#' + report_id ).removeClass( 'hidden' );
-			jQuery( '#' + report_id + ' .inside' ).html( '<p class="loading"></p>' );
-			SlimStatAdmin.refresh_report( report_id, data );
-		}
-	});
-	
-	// Filters: add form markup to the Dashboard
-	if ( !jQuery( '#slimstat-filters-form' ).length && !SlimStatAdmin.get_query_string_value( 'page' ).match( /(slimconfig|slimaddons)/ ) ) {
-		jQuery( '<form id="slimstat-filters-form" method="post"/>' ).appendTo('body');
-	}
-
-	// Filters: Lock value input field based on operator drop down selection
-	jQuery('#slimstat-filter-operator').change(function(){
-		if (this.value=='is_empty'||this.value=='is_not_empty'){
-			jQuery('#slimstat-filter-value').attr('readonly', 'readonly');
-		}
-		else{
-			jQuery('#slimstat-filter-value').removeAttr('readonly');
-		}
-	});
-
-	// Filters: empty on focus
-	jQuery('.empty-on-focus').focus(function(){
-		if (this.value == this.defaultValue) this.value = '';
-	});
-	jQuery('.empty-on-focus').blur(function(){
-		if (this.value == '') this.value = this.defaultValue;
-	});
-
-	// Show/Hide Date Dropdown Filters
-	jQuery('#slimstat-date-filters a').click(function(e){
+	// Toggle the Date Filters dropdown menu
+	jQuery( '#slimstat-date-filters > a' ).on( 'click', function( e ) {
 		e.preventDefault();
-		jQuery('#slimstat-date-filters .dropdown').slideToggle(300);
-		jQuery(this).toggleClass('open');
-	}).children().click(function(){
-	  return false;
-	});
-	
-	// Date Filters: Datepicker
-	if (typeof jQuery('.slimstat-filter-date').datepicker == 'function'){
-		jQuery('.slimstat-filter-date').datepicker({
+		jQuery( '#slimstat-date-filters > .dropdown' ).slideToggle( 250 );
+	} );
+
+	// Initialize the datepicker library and button (built-in)
+	if ( typeof jQuery( '.slimstat-filter-date' ).datepicker == 'function' ) {
+		jQuery( '.slimstat-filter-date' ).datepicker( {
 			buttonImage: SlimStatAdminParams.datepicker_image,
 			buttonImageOnly: true,
 			changeMonth: true,
@@ -191,78 +96,186 @@ jQuery(function(){
 			nextText: '&raquo;',
 			prevText: '&laquo;',
 			showOn: 'both',
-			
-			onClose: function(dateText, inst) {
-				if (!dateText.length) return true;
-				jQuery('#slimstat-filter-day').val( dateText.split('-')[2] );
-				jQuery('#slimstat-filter-month').val( dateText.split('-')[1] );
-				jQuery('#slimstat-filter-year').val( dateText.split('-')[0] );
+
+			onClose: function( dateText, inst ) {
+				if ( dateText.length ) {
+					jQuery( '#slimstat-filter-day' ).val( dateText.split( '-' )[ 2 ] );
+					jQuery( '#slimstat-filter-month' ).val( dateText.split( '-' )[ 1 ] );
+					jQuery( '#slimstat-filter-year' ).val( dateText.split( '-' )[ 0 ] );
+				}
 			}
-		});
+		} );
 	}
 
-	// Filters: Remove selected when X is clicked
-	jQuery('a.slimstat-remove-filter').click(function(e){
+	// Save filters
+	jQuery( document ).on( 'click', '#slimstat-save-filter', function( e ) {
+		e.preventDefault();
+		
+		data = {
+			action: 'slimstat_manage_filters',
+			security: jQuery( '#meta-box-order-nonce' ).val(),
+			type: 'save',
+			filter_array: jQuery( this ).attr( 'data-filter-array' )
+		};
+
+		var element = jQuery( this );
+		jQuery.post( ajaxurl, data, function( response ) {
+			element.text( response ).fadeOut( 1500 );
+		} );
+	} );
+
+	// Load saved filters: open a dialog with a list of filters
+	jQuery( document ).on( 'click', '#slimstat-load-saved-filters', function( e ) {
+		e.preventDefault();
+		var inner_html = '';
+		
+		data = {
+			action: 'slimstat_manage_filters',
+			security: jQuery( '#meta-box-order-nonce' ).val(),
+			type: 'load',
+			page: SlimStatAdmin.get_current_tab()
+		};
+
+		var dialog_title = jQuery( this ).attr( 'title' ); // passed as an attribute so that it can be localized
+		jQuery.post( ajaxurl, data, function( response ) {
+			jQuery( '#slimstat-modal-dialog' ).dialog( {
+				dialogClass: 'slimstat',
+				title: dialog_title
+			} ).html( response ).dialog( 'open' );
+		} );
+	} );
+
+	// Delete saved filters
+	jQuery( document ).on( 'click', '.slimstat-delete-filter', function( e ) {
 		e.preventDefault();
 
-		filters_to_remove = SlimStatAdmin.parse_url_filters('p0', jQuery(this).attr('href'));
-		SlimStatAdmin.remove_filters_from_form(filters_to_remove);
+		data = {
+			action: 'slimstat_manage_filters',
+			security: jQuery( '#meta-box-order-nonce' ).val(),
+			page: SlimStatAdmin.get_current_tab(),
+			type: 'delete',
+			filter_id: jQuery( this ).attr( 'data-filter-id' )
+		};
 
-		jQuery( '#slimstat-filters-form' ).submit();
-		jQuery( '.slimstat-temp-filter' ).remove();
-		return false;
-	});
+		jQuery.post( ajaxurl, data, function( response ) {
+			jQuery( '#slim_filters_overlay' ).parent().html( response );
+		} );
+	} );
 
-	// Send filters as post requests
-	if ( jQuery( '#slimstat-filters-form' ).length ) {
+	// Certain links enable filters throughout the interface. These links trigger a form submission, where all the filters are stored.
+	// Using a "POST" request allows us to handle much larger filter values across the various screens
+	if ( jQuery( 'form#slimstat-filters-form' ).length ) {
 		jQuery( document ).on( 'click', '.slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a', function( e ) {
+			url = jQuery( this ).attr( 'href' );
+
+			// If this link doesn't have a valid HREF attribute, bail
+			if ( typeof url != 'string' ) {
+				return true;
+			}
+
 			e.preventDefault();
 
-			filters_parsed = SlimStatAdmin.parse_url_filters( 'p0', jQuery( this ).attr( 'href' ) );
-			SlimStatAdmin.add_filters_to_form(filters_parsed, (typeof jQuery(this).attr('data-reset-filters') != 'undefined'));
+			jQuery( 'form#slimstat-filters-form' ).attr( 'action', url.split( '?' )[ 0 ] + '?page=' + SlimStatAdmin.get_current_tab( url.split( '?' )[ 1 ] ) );
 
-			jQuery('#slimstat-filters-form').submit();
-			jQuery('.slimstat-temp-filter').remove();
+			SlimStatAdmin.add_url_filters_to_form( url, typeof jQuery( this ).attr( 'data-reset-filters' ) != 'undefined' );
+
+			jQuery( '#slimstat-filters-form' ).submit();
+
 			return false;
 		});
 	}
 
-	// Behavior associated to all the 'ajax-based' buttons
-	jQuery(document).on('click', '[id^=slim_] .button-ajax', function(e){
+	// Since we handle all "filter links" as POST requests (see code here above), we need to add dummy form tag to the dashboard,
+	// for when our reports are displayed on that page
+	if ( !jQuery( '#slimstat-filters-form' ).length && !SlimStatAdmin.get_current_tab().match( /(slimconfig|slimaddons)/ ) ) {
+		jQuery( '<form id="slimstat-filters-form" method="post"/>' ).appendTo('body');
+	}
+
+	//
+	// ----- END: FILTERS ------------------------------------------------------------
+
+	// ----- BEGIN: ACTIVITY LOG -----------------------------------------------------
+	//
+
+	// Reload the Activity Log every X seconds
+	if ( SlimStatAdminParams.refresh_interval > 0 && jQuery( '.refresh-timer' ).length > 0 ) {
+		SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
+		window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
+	}
+
+	// Delete a pageview when the corresponding button is clicked.
+	// Since this content can be reloaded dynamically, we use the .on call with the classname
+	jQuery( document ).on( 'click', '.slimstat-delete-entry', function( e ) {
 		e.preventDefault();
-		report_id = jQuery(this).parents('.postbox').attr('id');
 
-		if (typeof jQuery(this).attr('href') != 'undefined'){
-			filters_parsed = SlimStatAdmin.parse_url_filters(report_id, jQuery(this).attr('href'));
-			SlimStatAdmin.add_filters_to_form(filters_parsed);
+		data = {
+			action: 'slimstat_delete_pageview',
+			security: jQuery( '#meta-box-order-nonce' ).val(),
+			pageview_id : jQuery( this ).attr( 'data-pageview-id' )
+		};
 
-			// Remember the new filter for when the report is refreshed
-			if (typeof filters_parsed['fs[start_from]'] != 'undefined' && jQuery('#'+report_id+' .refresh').length){
-				href = jQuery('#'+report_id+' .refresh').attr('href');
-				href_clean = href.substring(0, href.indexOf('&fs%5Bstart_from'));
-				if (href_clean != '') href = href_clean;
-				jQuery('#'+report_id+' .refresh').attr('href', href+'&fs%5Bstart_from%5D='+filters_parsed['fs[start_from]']);
-			}
+		var parent = jQuery( this ).parents( 'p' );
+		jQuery.post( ajaxurl, data, function( response ) {
+			parent.fadeOut( 500 );
+		} );
+	} );
+
+	// // Modal Window / Whois
+	jQuery( document ).on( 'click', '.whois', function( e ) {
+		e.preventDefault();
+
+		// If admin is using HTTPS and IP lookup service is not, open a new window/tab, instead of an overlay dialog
+		if ( document.location.href.substr( 0, document.location.href.indexOf( "://" ) ).toLowerCase() == 'https' &&  jQuery( this ).attr( 'href' ).substr( 0, jQuery( this ).attr( 'href' ).indexOf( "://" ) ).toLowerCase() == 'http' ) {
+			window.open( jQuery( this ).attr( 'href' ), '_blank' );
+			return -1;
 		}
 
-		data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), page: SlimStatAdmin.get_query_string_value( 'page' ) };
-		SlimStatAdmin.refresh_report(report_id, data);
-		
-		jQuery('#'+report_id+' .inside').slimScroll({scrollTo : '0px'});
-
-		if ( typeof refresh_handle !== 'undefined' ) {
-			window.clearTimeout( refresh_handle );
-		}
+		jQuery('#slimstat-modal-dialog').dialog({
+			dialogClass: 'slimstat',
+			title: jQuery(this).attr('title')
+		}).html('<iframe id="ip2location" src="'+jQuery(this).attr('href')+'" width="100%" height="630"></iframe>');
+		jQuery('#slimstat-modal-dialog').dialog('open');
 	});
 
-	// Asynchronous Reports
-	if (SlimStatAdminParams.async_load == 'on'){
-		jQuery('div[id^=slim_]').each(function(){
-			report_id = jQuery(this).attr('id');
-			data = {action: 'slimstat_load_report', report_id: report_id, security: jQuery('#meta-box-order-nonce').val(), current_tab: SlimStatAdminParams.current_tab}
-			SlimStatAdmin.refresh_report(report_id, data);
+	//
+	// ----- END: ACTIVITY LOG -------------------------------------------------------
+
+	// ----- BEGIN: CUSTOMIZER -------------------------------------------------------
+	//
+
+	// Clone and delete report placeholders
+	jQuery( '.slimstat-layout .slimstat-header-buttons a' ).on( 'click', function() {
+		if ( jQuery( this ).hasClass( 'slimstat-font-docs' ) ) {
+			jQuery( this ).removeClass( 'slimstat-font-docs' ).addClass( 'slimstat-font-trash' ).parents( '.postbox' ).clone( true ).appendTo( jQuery( this ).parents( '.meta-box-sortables' ) );
+			jQuery( this ).removeClass( 'slimstat-font-trash' ).addClass( 'slimstat-font-docs' );
+		}
+		else if ( jQuery( this ).hasClass( 'slimstat-font-minus-circled' ) ) {
+			jQuery( this ).removeClass( 'slimstat-font-minus-circled' ).parents( '.postbox' ).appendTo( jQuery( '#postbox-container-inactive .meta-box-sortables' ) );
+		}
+		else {
+			jQuery( this ).parents( '.postbox' ).remove();
+		}
+
+		// Save the new groups
+		var data = { 
+			action: 'meta-box-order',
+			_ajax_nonce: jQuery( '#meta-box-order-nonce' ).val(),
+			page: 'slimstat_page_slimlayout',
+			page_columns: 0
+		};
+		
+		jQuery( '.meta-box-sortables' ).each( function() {
+			data[ 'order[' + this.id.split("-")[0] + ']' ] = jQuery( this ).sortable( 'toArray' ).join( ',' );
 		});
-	}
+
+		jQuery.post( ajaxurl, data );
+	} );
+
+	//
+	// ----- END: CUSTOMIZER ---------------------------------------------------------
+	
+	// ----- BEGIN: MISCELLANEOUS ----------------------------------------------------
+	//
 
 	// Hide a notice and send the corresponding ajax request to the server
 	jQuery( document ).on( 'click', '[id^=slimstat-hide-]', function( e ) {
@@ -281,38 +294,21 @@ jQuery(function(){
 		});
 	});
 
-	// Delete Pageview
-	jQuery(document).on('click', '.slimstat-delete-entry', function(e){
-		var target = jQuery(this);
+	//
+	// ----- END: MISCELLANEOUS ------------------------------------------------------
 
-		e.preventDefault();
-		data = {action: 'slimstat_delete_pageview', security: jQuery('#meta-box-order-nonce').val(), pageview_id : target.attr('data-pageview-id')};
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: true,
-			data: data
-		}).done(function(){
-			target.parents('p').fadeOut(1000);
-		});
-	});
+	// ----- BEGIN: INIT THIRD-PARTY LIBRARIES ---------------------------------------
+	//
 
-	// SlimScroll init
-	jQuery('[id^=slim_]:not(.tall) .inside').slimScroll({
+	// SlimScroll 
+	jQuery( '[id^=slim_] .inside' ).slimScroll( {
 		distance: '2px',
 		opacity: '0.15',
 		size: '5px',
 		wheelStep: 10
-	});
-	jQuery('[id^=slim_].tall .inside').slimScroll({
-		distance: '2px',
-		height: '630px',
-		opacity: '0.15',
-		size: '5px',
-		wheelStep: 10
-	});
+	} );
 
-	// ToolTips
+	// QTip
 	jQuery( document ).on( 'mouseover', '.slimstat-tooltip-trigger', function( e ) {
 		if ( typeof jQuery( this ).attr( 'data-hasqtip' ) != 'undefined' ) {
 			return true;
@@ -328,7 +324,7 @@ jQuery(function(){
 		}
 
 		if ( tooltip_content.length ) {
-			jQuery(this).qtip({
+			jQuery(this).qtip( {
 				overwrite: false,
 				content: {
 					text: tooltip_content
@@ -338,155 +334,176 @@ jQuery(function(){
 					ready: true
 				},
 				hide: {
-	                delay: 250,
-	                fixed: true
-	            },
+					delay: 250,
+					fixed: true
+				},
 				position: {
-					my: 'bottom right',  // Position my top left...
-	        		at: 'top left',
+					my: 'bottom right',
+					at: 'top left',
 					adjust: {
 						x: 5
 					},
-					viewport: jQuery(window)
+					viewport: jQuery( window )
 				},
 				style: {
 					classes: 'qtip-light'
 				}
-			}, e);
+			}, e );
 		}
-	});
+	} );
 
-	// Modal Window / Overlay: Setup
-	if (typeof jQuery('#slimstat-modal-dialog').dialog == 'function'){
-		jQuery('#slimstat-modal-dialog').dialog({
+	// Modal Window
+	if ( typeof jQuery( '#slimstat-modal-dialog' ).dialog == 'function' ) {
+		jQuery( '#slimstat-modal-dialog' ).dialog( {
 			autoOpen: false,
 			closeOnEscape: true,
 			closeText: '',
 			draggable: true,
 			modal: true,
 			open: function(){
-				jQuery('.ui-widget-overlay,.close-dialog').bind('click',function(){
-					jQuery('#slimstat-modal-dialog').dialog('close');
-				});
+				jQuery( '.ui-widget-overlay, .close-dialog' ).on( 'click', function() {
+					jQuery( '#slimstat-modal-dialog' ).dialog( 'close' );
+				} );
 			},
 			position: { my: "top center" },
 			resizable: false
-		});
+		} );
 	}
 
-	// Modal Window / Whois
-	jQuery( document ).on( 'click', '.whois', function( e ) {
-		e.preventDefault();
-
-		// If admin is using HTTPS and IP lookup service is not, open a new window/tab, instead of an overlay dialog
-        if ( document.location.href.substr( 0, document.location.href.indexOf( "://" ) ).toLowerCase() == 'https' &&  jQuery( this ).attr( 'href' ).substr( 0, jQuery( this ).attr( 'href' ).indexOf( "://" ) ).toLowerCase() == 'http' ) {
-			window.open( jQuery( this ).attr( 'href' ), '_blank' );
-			return -1;
-		}
-		
-		jQuery('#slimstat-modal-dialog').dialog({
-			dialogClass: 'slimstat',
-			title: jQuery(this).attr('title')
-		}).html('<iframe id="ip2location" src="'+jQuery(this).attr('href')+'" width="100%" height="600"></iframe>');
-		jQuery('#slimstat-modal-dialog').dialog('open');
-	});
-
-	// Modal Window / Load & Save Filters
-	jQuery(document).on('click', '#slimstat-load-saved-filters', function(e){
-		e.preventDefault();
-		var inner_html = '';
-		
-		data = {action: 'slimstat_manage_filters', security: jQuery('#meta-box-order-nonce').val(), type: 'load', page: SlimStatAdmin.get_query_string_value( 'page' ) };
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: false,
-			data: data,
-			success: function(response){
-				inner_html = response;
-			}
-		});
-		
-		jQuery('#slimstat-modal-dialog').dialog({
-			dialogClass: 'slimstat',
-			title: jQuery(this).attr('title')
-		}).html(inner_html);
-		jQuery('#slimstat-modal-dialog').dialog('open');
-	});
-
-	// Save Filters
-	jQuery(document).on('click', '#slimstat-save-filter', function(e){
-		e.preventDefault();
-		
-		data = {action: 'slimstat_manage_filters', security: jQuery('#meta-box-order-nonce').val(), type: 'save', filter_array: jQuery(this).attr('data-filter-array')};
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: false,
-			data: data,
-			success: function(response){
-				jQuery('#slimstat-save-filter').text(response).fadeOut(1500);
-			}
-		});
-	});
-
-	// Delete saved filters
-	jQuery(document).on('click', '.slimstat-delete-filter', function(e){
-		e.preventDefault();
-
-		data = {action: 'slimstat_manage_filters', security: jQuery('#meta-box-order-nonce').val(), type: 'delete', filter_id: jQuery(this).attr('data-filter-id'), page: SlimStatAdmin.get_query_string_value( 'page' ) };
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: false,
-			data: data,
-			success: function(response){
-				jQuery('#slim_filters_overlay').parent().html(response);
-			}
-		});
-	});
-
-	// Customizer: clone and delete report placeholders
-	jQuery( '.slimstat-layout .slimstat-header-buttons a' ).on( 'click', function() {
-		if ( jQuery( this ).hasClass( 'slimstat-font-docs') ) {
-			jQuery( this ).removeClass( 'slimstat-font-docs' ).addClass( 'slimstat-font-trash' ).parents( '.postbox' ).clone(true).appendTo( jQuery( this ).parents( '.meta-box-sortables' ) );
-			jQuery( this ).removeClass( 'slimstat-font-trash' ).addClass( 'slimstat-font-docs' );
-		}
-		else if ( jQuery( this ).hasClass( 'slimstat-font-minus-circled' ) ) {
-			jQuery( this ).removeClass( 'slimstat-font-minus-circled' ).parents( '.postbox' ).appendTo( jQuery( '#postbox-container-inactive .meta-box-sortables' ) );
-		}
-		else {
-			jQuery( this ).parents( '.postbox' ).remove();
-		}
-
-		// Save the new groups
-		data = { action: 'meta-box-order', _ajax_nonce: jQuery('#meta-box-order-nonce').val(), page_columns: 0, page: 'slimstat_page_slimlayout' };
-		jQuery( '.meta-box-sortables' ).each( function() {
-			data[ 'order[' + this.id.split("-")[0] + ']' ] = jQuery( this ).sortable( 'toArray' ).join( ',' );
-		});
-
-		jQuery.ajax({
-			url: ajaxurl,
-			type: 'post',
-			async: true,
-			data: data
-		});
-
-		return false;
-	});
-
-	// Config toggles
+	// BootstrapSwitch (pretty checkboxes in settings)
 	jQuery( 'input.slimstat-checkbox-toggle' ).not( '[data-switch-no-init]' ).bootstrapSwitch();
-	jQuery( 'label' ).click( function( e ) {
-		target_id = '#' + jQuery( this ).attr( 'for' );
-		if ( jQuery( target_id ).length && typeof jQuery( target_id ).attr( 'readonly' ) != 'undefined' ) {
-			e.preventDefault();
-		}
+	
+	// TagEditor
+	jQuery( 'textarea.slimstat-taglist' ).tagEditor( {
+		forceLowercase: false
 	} );
 
-	// Config tag lists
-	jQuery( 'textarea.slimstat-taglist' ).tagEditor({ forceLowercase: false });
-});
+	//
+	// ----- END: INIT THIRD-PARTY LIBRARIES -----------------------------------------
+} );
+
+// ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------
+var SlimStatAdmin = {
+	_refresh_timer: 0,
+
+	refresh_countdown: function() {
+		SlimStatAdmin._refresh_timer--;
+		minutes = parseInt( SlimStatAdmin._refresh_timer / 60 );
+		seconds = parseInt( SlimStatAdmin._refresh_timer % 60 );
+
+		jQuery( '.refresh-timer' ).html( minutes + ':' + ( ( seconds < 10 ) ? '0' : '' ) + seconds );
+
+		if ( SlimStatAdmin._refresh_timer > 0 ) {
+			window.setTimeout( SlimStatAdmin.refresh_countdown, 1000 );
+		}
+		else {
+			// Request the data from the server
+			SlimStatAdmin.refresh_report( 'slim_p7_02' );
+
+			// Reset the countdown timer
+			SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
+			window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
+		}
+	},
+	
+	refresh_report: function( id ) {
+		var inner_content = '#' + id + ' .inside';
+		jQuery( inner_content ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
+		data = {
+			action: 'slimstat_load_report',
+			security: jQuery( '#meta-box-order-nonce' ).val(),
+			page: SlimStatAdmin.get_current_tab(),
+			report_id: id
+		};
+
+		// Append the data from the hidden form
+		filters_input = jQuery( '#slimstat-filters-form .slimstat-post-filter' ).toArray();
+		for ( i in filters_input ) {
+			data[ filters_input[ i ][ 'name' ] ] = filters_input[ i ][ 'value' ];
+		}
+
+		jQuery.post( ajaxurl, data, function( response ) {
+			// Charts don't play nice with the "fade" animation we have for the other reports
+			if ( id.indexOf( '_01' ) > 0 ) {
+				jQuery( inner_content ).html( response );
+			}
+			else{
+				jQuery( inner_content ).fadeOut( 500, function() { jQuery( this ).html( response ).fadeIn( 500 ); } );
+
+				// If we are refreshing the Activity Log, let's reset the countdown timer
+				if ( id == 'slim_p7_02' ) {
+					SlimStatAdmin._refresh_timer = SlimStatAdminParams.refresh_interval;
+				}
+			}
+		} );
+	},
+
+	get_query_string_filters: function( url ) {
+
+		// Parse the URL and update the form_filters object accordingly
+		query_string_pairs = url.substring( url.indexOf( '?' ) + 1 ).split( '&' );
+		clean_filters = {};
+
+		for ( i in query_string_pairs ) {
+			decoded_pair = decodeURIComponent( query_string_pairs[ i ].replace( /\+/g, '%20' ) );
+
+			if ( decoded_pair.indexOf( 'fs[' ) == -1 ) {
+				continue;
+			}
+
+			a_pair = decoded_pair.split( '=' );
+			if ( a_pair[ 0 ].length ) {
+				clean_filters[ a_pair[ 0 ] ] = a_pair[ 1 ];
+			}
+		}
+
+		return clean_filters;
+	},
+
+	add_url_filters_to_form: function( url, delete_existing_filters ) {
+		clean_filters = SlimStatAdmin.get_query_string_filters( url );
+
+		// Manipulate the existing list of filters (hidden input fields), if we don't want to delete them
+		if ( typeof delete_existing_filters == 'undefined' || !delete_existing_filters ) {
+
+			for( i in clean_filters ) {
+				// If value is empty (length is 1, meaning that it just has the operator but no value), delete corresponding input field
+				if ( clean_filters[ i ].trim().split( ' ' ).length == 1 ) {
+					jQuery( 'input[name="' + i + '"]' ).remove();
+				}
+				else if ( jQuery( 'input[name="' + i + '"]' ).length > 0 ) {
+					jQuery( 'input[name="' + i + '"]' ).attr( 'value', clean_filters[ i ] );
+				}
+				else {
+					jQuery( '<input type="hidden" name="' + i + '" class="slimstat-post-filter" value="' + clean_filters[ i ] + '">' ).appendTo( '#slimstat-filters-form' );
+				}
+			}
+		}
+		// Start from a clean slate
+		else {
+			jQuery( '.slimstat-post-filter' ).remove();
+
+			for( i in clean_filters ) {
+				jQuery( '<input type="hidden" name="' + i + '" class="slimstat-post-filter" value="' + clean_filters[ i ] + '">' ).appendTo( '#slimstat-filters-form' );
+			}
+		}
+	},
+
+	// Get the value of a given key in the query string passed via the URL
+	get_current_tab: function( query_string ) {
+		query_string = typeof query_string == 'undefined' ? window.location.search.substring( 1 ) : query_string;
+		var regex = new RegExp( "page(=([^&#]*)|&|#|$)" );
+		
+		values = regex.exec( query_string );
+
+		if ( typeof values[ 2 ] == 'string' ) {
+			return decodeURIComponent( values[ 2 ].replace( /\+/g, " " ) );
+		}
+
+		return '';
+	}
+}
+// ----- END: SLIMSTATADMIN HELPER FUNCTIONS -----------------------------------------
 
 /* SlimScroll v1.3.8 | http://rocha.la | Copyright (c) 2011 Piotr Rochala. Released under the MIT and GPL licenses. */
 !function(e){e.fn.extend({slimScroll:function(i){var s={width:"auto",size:"7px",color:"#000",position:"right",distance:"1px",start:"top",opacity:.4,alwaysVisible:!1,disableFadeOut:!1,railVisible:!1,railColor:"#333",railOpacity:.2,railDraggable:!0,railClass:"slimScrollRail",barClass:"slimScrollBar",wrapperClass:"slimScrollDiv",allowPageScroll:!1,wheelStep:20,touchScrollStep:200,borderRadius:"7px",railBorderRadius:"7px"},o=e.extend(s,i);return this.each(function(){function s(t){if(h){var t=t||window.event,i=0;t.wheelDelta&&(i=-t.wheelDelta/120),t.detail&&(i=t.detail/3);var s=t.target||t.srcTarget||t.srcElement;e(s).closest("."+o.wrapperClass).is(x.parent())&&r(i,!0),t.preventDefault&&!y&&t.preventDefault(),y||(t.returnValue=!1)}}function r(e,t,i){y=!1;var s=e,r=x.outerHeight()-D.outerHeight();if(t&&(s=parseInt(D.css("top"))+e*parseInt(o.wheelStep)/100*D.outerHeight(),s=Math.min(Math.max(s,0),r),s=e>0?Math.ceil(s):Math.floor(s),D.css({top:s+"px"})),v=parseInt(D.css("top"))/(x.outerHeight()-D.outerHeight()),s=v*(x[0].scrollHeight-x.outerHeight()),i){s=e;var a=s/x[0].scrollHeight*x.outerHeight();a=Math.min(Math.max(a,0),r),D.css({top:a+"px"})}x.scrollTop(s),x.trigger("slimscrolling",~~s),n(),c()}function a(e){window.addEventListener?(e.addEventListener("DOMMouseScroll",s,!1),e.addEventListener("mousewheel",s,!1)):document.attachEvent("onmousewheel",s)}function l(){f=Math.max(x.outerHeight()/x[0].scrollHeight*x.outerHeight(),m),D.css({height:f+"px"});var e=f==x.outerHeight()?"none":"block";D.css({display:e})}function n(){if(l(),clearTimeout(p),v==~~v){if(y=o.allowPageScroll,b!=v){var e=0==~~v?"top":"bottom";x.trigger("slimscroll",e)}}else y=!1;return b=v,f>=x.outerHeight()?void(y=!0):(D.stop(!0,!0).fadeIn("fast"),void(o.railVisible&&R.stop(!0,!0).fadeIn("fast")))}function c(){o.alwaysVisible||(p=setTimeout(function(){o.disableFadeOut&&h||u||d||(D.fadeOut("slow"),R.fadeOut("slow"))},1e3))}var h,u,d,p,g,f,v,b,w="<div></div>",m=30,y=!1,x=e(this);if(x.parent().hasClass(o.wrapperClass)){var C=x.scrollTop();if(D=x.siblings("."+o.barClass),R=x.siblings("."+o.railClass),l(),e.isPlainObject(i)){if("height"in i&&"auto"==i.height){x.parent().css("height","auto"),x.css("height","auto");var H=x.parent().parent().height();x.parent().css("height",H),x.css("height",H)}else if("height"in i){var S=i.height;x.parent().css("height",S),x.css("height",S)}if("scrollTo"in i)C=parseInt(o.scrollTo);else if("scrollBy"in i)C+=parseInt(o.scrollBy);else if("destroy"in i)return D.remove(),R.remove(),void x.unwrap();r(C,!1,!0)}}else if(!(e.isPlainObject(i)&&"destroy"in i)){o.height="auto"==o.height?x.parent().height():o.height;var E=e(w).addClass(o.wrapperClass).css({position:"relative",overflow:"hidden",width:o.width,height:o.height});x.css({overflow:"hidden",width:o.width,height:o.height});var R=e(w).addClass(o.railClass).css({width:o.size,height:"100%",position:"absolute",top:0,display:o.alwaysVisible&&o.railVisible?"block":"none","border-radius":o.railBorderRadius,background:o.railColor,opacity:o.railOpacity,zIndex:90}),D=e(w).addClass(o.barClass).css({background:o.color,width:o.size,position:"absolute",top:0,opacity:o.opacity,display:o.alwaysVisible?"block":"none","border-radius":o.borderRadius,BorderRadius:o.borderRadius,MozBorderRadius:o.borderRadius,WebkitBorderRadius:o.borderRadius,zIndex:99}),M="right"==o.position?{right:o.distance}:{left:o.distance};R.css(M),D.css(M),x.wrap(E),x.parent().append(D),x.parent().append(R),o.railDraggable&&D.bind("mousedown",function(i){var s=e(document);return d=!0,t=parseFloat(D.css("top")),pageY=i.pageY,s.bind("mousemove.slimscroll",function(e){currTop=t+e.pageY-pageY,D.css("top",currTop),r(0,D.position().top,!1)}),s.bind("mouseup.slimscroll",function(e){d=!1,c(),s.unbind(".slimscroll")}),!1}).bind("selectstart.slimscroll",function(e){return e.stopPropagation(),e.preventDefault(),!1}),R.hover(function(){n()},function(){c()}),D.hover(function(){u=!0},function(){u=!1}),x.hover(function(){h=!0,n(),c()},function(){h=!1,c()}),x.bind("touchstart",function(e,t){e.originalEvent.touches.length&&(g=e.originalEvent.touches[0].pageY)}),x.bind("touchmove",function(e){if(y||e.originalEvent.preventDefault(),e.originalEvent.touches.length){var t=(g-e.originalEvent.touches[0].pageY)/o.touchScrollStep;r(t,!0),g=e.originalEvent.touches[0].pageY}}),l(),"bottom"===o.start?(D.css({top:x.outerHeight()-D.outerHeight()}),r(0,!0)):"top"!==o.start&&(r(e(o.start).position().top,null,!0),o.alwaysVisible||D.hide()),a(this)}}),this}}),e.fn.extend({slimscroll:e.fn.slimScroll})}(jQuery);

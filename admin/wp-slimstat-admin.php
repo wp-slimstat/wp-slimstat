@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "We just launched our <a href='https://www.wp-slimstat.com' target='_blank'>redesigned website</a>, to promote our plugin in a cleaner and simpler way. And we are also looking for <strong>sponsors</strong>: if you can donate your time, your talent or your money to support the development of Slimstat, please <a href='http://support.wp-slimstat.com/' target='_blank'>contact our support team</a> today to learn more.";
+		self::$admin_notice = "We would like to thank all of those who replied to our appeal for help. It really meant a lot to us. In order to provide a way to contribute updates and bugfixes, we setup a <a href='https://github.com/slimstat/wp-slimstat' target='_blank'>public Github repository</a>, where you can submit your pull requests and point out bugs and other issues. If you would like Slimstat to speak your language (or to extend any existing partial localization), please do not hesitate to submit your language files either via Github or directly to our support team. In the meanwhile, we will keep working on our documentation, videos and on polishing our code even more. For example, this release includes a completely rewritten Javascript library to handle all the features available in the admin, from the Filter Bar to the Customizer. Let us know if you notice anything out of the ordinary, and feel free to submit a pull request to fix any bugs you might find.";
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
@@ -176,9 +176,6 @@ class wp_slimstat_admin {
 			add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widgets' ) );
 		}
 
-		// WordPress Widget
-		// FIX ME: To be implemented
-
 		// AJAX Handlers
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			add_action( 'wp_ajax_slimstat_hide_admin_notice', array( __CLASS__, 'notices_handler' ) );
@@ -193,6 +190,11 @@ class wp_slimstat_admin {
 		// Hide plugins
 		if ( wp_slimstat::$settings[ 'hide_addons' ] == 'on' ) {
 			add_filter( 'all_plugins', array( __CLASS__, 'hide_addons' ) );
+		}
+
+		// Schedule a daily cron job to purge the data
+		if ( !wp_next_scheduled( 'wp_slimstat_purge' ) ) {
+			wp_schedule_event( time(), 'twicedaily', 'wp_slimstat_purge' );
 		}
 	}
 	// end init
@@ -319,7 +321,6 @@ class wp_slimstat_admin {
 			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
 			LIKE {$GLOBALS['wpdb']->prefix}slim_stats";
 
-		// This table will track outbound links (clicks on links to external sites)
 		$events_archive_table_sql = "
 			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
 				event_id INT(10) NOT NULL AUTO_INCREMENT,
@@ -348,75 +349,10 @@ class wp_slimstat_admin {
 	// end init_tables
 
 	/**
-	 * Updates the DB schema as needed
+	 * Updates stuff around as needed (table schema, options, settings, files, etc)
 	 */
-	public static function update_tables_and_options(){
-		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
-
-		// --- Updates for version 4.2 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.2', '<' ) ) {
-			// Report arrangements are now stored as a global usermeta value. Migrate old values to new variable
-			$current_user = wp_get_current_user();
-			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) ? 'slimstat' : 'admin';
-			$new_user_reports = array();
-
-			for ( $i = 2; $i <= 5; $i++ ) {
-				$user_reports = get_user_option( "meta-box-order_{$page_location}_page_wp-slim-view-$i", $current_user->ID );
-
-				if ( !empty( $user_reports ) ) {
-					$new_user_reports[ "slimview$i" ] = $user_reports[ 0 ];
-					delete_user_option( $current_user->ID, "meta-box-order_{$page_location}_page_wp-slim-view-$i", true );
-				}
-			}
-
-			if ( !empty( $new_user_reports ) ) {
-				update_user_option( $current_user->ID, "meta-box-order_{$page_location}_page_slimlayout", $new_user_reports, true );
-			}
-		}
-		// --- END: Updates for version 4.2 ---
-
-		// --- Updates for version 4.2.1 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.2.1', '<' ) ) {
-			// Remove old unused columns, if still there.
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP COLUMN ip_temp, DROP COLUMN other_ip_temp, DROP COLUMN ip_num, DROP COLUMN other_ip_num" );
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive DROP COLUMN ip_temp, DROP COLUMN other_ip_temp, DROP COLUMN ip_num, DROP COLUMN other_ip_num" );
-		}
-		// --- END: Updates for version 4.2.1 ---
-
-		// --- Updates for version 4.2.6 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.2.6', '<' ) ) {
-			wp_slimstat::$settings[ 'auto_purge_delete' ] = ( wp_slimstat::$settings[ 'auto_purge_delete' ] == 'on' ) ? 'no' : 'on';
-		}
-		// --- END: Updates for version 4.2.6 ---
-
-		// --- Updates for version 4.3.5 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.3.5', '<' ) ) {
-			$use_innodb = ( !empty( $have_innodb[ 0 ] ) && $have_innodb[ 0 ][ 'Value' ] == 'YES' ) ? 'ENGINE=InnoDB' : '';
-			$events_archive_table_sql = "
-				CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
-					event_id INT(10) NOT NULL AUTO_INCREMENT,
-					type TINYINT UNSIGNED DEFAULT 0,
-					event_description VARCHAR(64) DEFAULT NULL,
-					notes VARCHAR(256) DEFAULT NULL,
-					position VARCHAR(32) DEFAULT NULL,
-					id INT UNSIGNED NOT NULL DEFAULT 0,
-					dt INT(10) UNSIGNED DEFAULT 0,
-					
-					CONSTRAINT PRIMARY KEY (event_id),
-					INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events_archive (dt)
-				) COLLATE utf8_general_ci $use_innodb";
-
-			self::_create_table( $events_archive_table_sql, $GLOBALS[ 'wpdb' ]->prefix . 'slim_events_archive', $my_wpdb );
-		}
-		// --- END: Updates for version 4.3.5 ---
-
-		// --- Updates for version 4.3.7 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.3.7', '<' ) ) {
-
-			// Previous versions of Slimstat were scheduling multiple purges in some cases, let's clean this up
-			wp_clear_scheduled_hook( 'wp_slimstat_purge' );
-		}
-		// --- END: Updates for version 4.3.7 ---
+	public static function update_tables_and_options() {
+		$my_wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
 		// --- Updates for version 4.4.5 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.4.5', '<' ) ) {
@@ -875,14 +811,13 @@ class wp_slimstat_admin {
 	/**
 	 * Handles the Ajax requests to load, save or delete existing filters
 	 */
-	public static function manage_filters(){
+	public static function manage_filters() {
 		check_ajax_referer( 'meta-box-order', 'security' );
 
 		include_once( dirname( __FILE__ ) . '/view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 
 		$saved_filters = get_option( 'slimstat_filters', array() );
-		$filter_found = 0;
 
 		switch( $_POST[ 'type' ] ) {
 			case 'save':
@@ -897,17 +832,17 @@ class wp_slimstat_admin {
 						continue;
 					}
 
-					foreach ($a_saved_filter as $a_key => $a_value){
-						$filter_found += ($a_value == $new_filter[$a_key])?0:1;
+					foreach ( $a_saved_filter as $a_key => $a_value ) {
+						$filter_found += ( $a_value == $new_filter[ $a_key ] ) ? 0 : 1;
 					}
 
-					if ($filter_found == 0){
-						echo __('Already saved','wp-slimstat');
+					if ( $filter_found == 0 ) {
+						echo __( 'Already saved', 'wp-slimstat' );
 						break;
 					}
 				}
 
-				if ( empty( $saved_filters) || $filter_found > 0 ) {
+				if ( empty( $saved_filters ) || $filter_found > 0 ) {
 					$saved_filters[] = $new_filter;
 					update_option( 'slimstat_filters', $saved_filters );
 					echo __( 'Saved', 'wp-slimstat' );
@@ -922,15 +857,15 @@ class wp_slimstat_admin {
 
 			default:
 				echo '<div id="slim_filters_overlay">';
-				foreach ($saved_filters as $a_filter_id => $a_filter_data){
+				foreach ( $saved_filters as $a_filter_id => $a_filter_data ) {
 
 					$filter_html = $filter_strings = array();
-					foreach ($a_filter_data as $a_filter_label => $a_filter_details){
-						$filter_value_no_slashes = htmlentities(str_replace('\\','', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-						$filter_html[] = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]).' '.__(str_replace('_', ' ', $a_filter_details[0]),'wp-slimstat').' '.$filter_value_no_slashes;
+					foreach ( $a_filter_data as $a_filter_label => $a_filter_details ) {
+						$filter_value_no_slashes = htmlentities( str_replace( '\\', '', $a_filter_details[ 1 ] ), ENT_QUOTES, 'UTF-8' );
+						$filter_html[] = strtolower( wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] ) . ' ' . __( str_replace( '_', ' ', $a_filter_details[ 0 ] ), 'wp-slimstat' ) . ' ' . $filter_value_no_slashes;
 						$filter_strings[] = "$a_filter_label {$a_filter_details[0]} $filter_value_no_slashes";
 					}
-					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="'.$a_filter_id.'" title="'.__('Delete this filter','wp-slimstat').'" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url( implode( '&&&', $filter_strings ) ).'">'.implode(', ', $filter_html).'</a> <a href="#"></a></p>';
+					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . $a_filter_id . '" title="' . __( 'Delete this filter', 'wp-slimstat' ) . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url( implode( '&&&', $filter_strings ) ).'">' . implode( ', ', $filter_html ) . '</a></p>';
 				}
 				echo '</div>';
 				break;

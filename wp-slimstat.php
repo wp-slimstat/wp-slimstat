@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.5.3
+Version: 4.7.6
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.5.3';
+	public static $version = '4.7.6';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -57,7 +57,7 @@ class wp_slimstat {
 		self::$wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
 		// Hook a DB clean-up routine to the daily cronjob
-		add_action( 'wp_update_plugins', array( __CLASS__, 'wp_slimstat_purge' ) );
+		add_action( 'wp_slimstat_purge', array( __CLASS__, 'wp_slimstat_purge' ) );
 
 		// Allow external domains on CORS requests
 		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
@@ -327,6 +327,18 @@ class wp_slimstat {
 		}
 
 		$content_info = self::_get_content_info();
+
+		// Is this content type blacklisted?
+		if ( !empty( self::$settings[ 'ignore_content_types' ] ) ) {
+			$return_error_code = array(
+				-313,
+				sprintf( __( 'Content Type %s is blacklisted', 'wp-slimstat' ), $content_info[ 'content_type' ] ),
+				true
+			);
+			if ( self::_is_blacklisted( $content_info[ 'content_type' ], self::$settings[ 'ignore_content_types' ], $return_error_code ) ) {
+				return $_argument;
+			}
+		}
 
 		// Did we receive data from an Ajax request?
 		if ( !empty( self::$data_js[ 'id' ] ) ) {
@@ -1581,7 +1593,6 @@ class wp_slimstat {
 			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'track_same_domain_referers' => 'on',
 			'geolocation_country' => 'on',
-			'track_users' => 'on',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
 			'set_tracker_cookie' => 'on',
@@ -1590,18 +1601,22 @@ class wp_slimstat {
 			'external_domains' => '',
 
 			// Filters
-			
-			'ignore_users' => '',
-			'ignore_ip' => '',
-			'ignore_capabilities' => '',
+			'track_users' => 'on',
 			'ignore_spammers' => 'on',
 			'ignore_bots' => 'no',
-			'ignore_resources' => '',
+			'ignore_prefetch' => 'on',
+			'anonymize_ip' => 'no',
+
+			'ignore_users' => '',
+			'ignore_ip' => '',
 			'ignore_countries' => '',
 			'ignore_browsers' => '',
+			'ignore_platforms' => '',
+			'ignore_capabilities' => '',
+
+			'ignore_resources' => '',
 			'ignore_referers' => '',
-			'anonymize_ip' => 'no',
-			'ignore_prefetch' => 'on',
+			'ignore_content_types' => '',
 
 			// Reports
 			'use_european_separators' => 'on',
@@ -1671,22 +1686,14 @@ class wp_slimstat {
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_enqueue_tracking_script() {
-		// Register the script in WordPress
-		$jstracker_suffix = ( defined( 'SCRIPT_DEBUG' ) && is_bool( SCRIPT_DEBUG ) && SCRIPT_DEBUG ) ? '' : '.min';
-
-		if ( self::$settings[ 'enable_cdn' ] == 'on' ) {
-			$schema = is_ssl() ? 'https' : 'http';
-			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
-		}
-		else{
-			wp_register_script( 'wp_slimstat', plugins_url( "/wp-slimstat{$jstracker_suffix}.js", __FILE__ ), array(), null, true );
-		}
-
 		// Do not enqueue the script if the corresponding options are turned off
 		$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
 		if ( ( self::$settings[ 'enable_javascript' ] != 'on' && self::$settings[ 'javascript_mode' ] != 'on' ) || self::$settings[ 'is_tracking' ] != 'on' || !$is_tracking_filter_js ) {
 			return 0;
 		}
+
+		// Register the script in WordPress
+		$jstracker_suffix = ( defined( 'SCRIPT_DEBUG' ) && is_bool( SCRIPT_DEBUG ) && SCRIPT_DEBUG ) ? '' : '.min';
 
 		// Pass some information to the tracker
 		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
@@ -1728,6 +1735,14 @@ class wp_slimstat {
 
 		$params = apply_filters( 'slimstat_js_params', $params );
 
+		if ( self::$settings[ 'enable_cdn' ] == 'on' ) {
+			$schema = is_ssl() ? 'https' : 'http';
+			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
+		}
+		else{
+			wp_register_script( 'wp_slimstat', plugins_url( "/wp-slimstat{$jstracker_suffix}.js", __FILE__ ), array(), null, true );
+		}
+
 		wp_enqueue_script( 'wp_slimstat' );
 		wp_localize_script( 'wp_slimstat', 'SlimStatParams', $params );
 	}
@@ -1737,6 +1752,7 @@ class wp_slimstat {
 	 */
 	public static function wp_slimstat_purge() {
 		$autopurge_interval = intval( self::$settings[ 'auto_purge' ] );
+
 		if ( $autopurge_interval <= 0 ) {
 			return;
 		}
@@ -1748,8 +1764,8 @@ class wp_slimstat {
 		// Copy entries to the archive table, if needed
 		if ( self::$settings[ 'auto_purge_delete' ] != 'no' ) {
 			$is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt)
-				SELECT id, ip, other_ip, username, country, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt)
+				SELECT id, ip, other_ip, username, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
 				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
 				WHERE dt < $days_ago");
 

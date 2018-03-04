@@ -36,29 +36,28 @@ $slimstat_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}sl
 
 function slimstat_uninstall($_wpdb = '', $_options = array()){
 	// Bye bye data...
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_outbound");
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_events");
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats");
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive");
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive");
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_3");
-	$_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive_3");
+	$_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_outbound" );
+	$_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
+	$_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
+	$_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive" );
+	$_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
+	$_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_3" );
+	$_wpdb->query( "DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive_3" );
 
 	// Bye bye options...
-	delete_option('slimstat_options');
-	delete_option('slimstat_visit_id');
-	delete_option('slimstat_filters');
+	delete_option( 'slimstat_options' );
+	delete_option( 'slimstat_visit_id' );
+	delete_option( 'slimstat_filters' );
 
-	$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
-	$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
-	$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
+	$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'" );
+	$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'" );
+	$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'" );
 
 	// Remove scheduled autopurge events
-	wp_clear_scheduled_hook('wp_slimstat_purge');
+	wp_clear_scheduled_hook( 'wp_slimstat_purge' );
 
-	// Delete the Browscap and MaxMind data files if they exist
+	// Delete the MaxMind data file
 	$upload_path = wp_upload_dir();
 	$upload_path = $upload_path[ 'basedir' ] . '/wp-slimstat/';
 	@unlink( $upload_path . 'maxmind.mmdb' );
-	@unlink( $upload_path . 'browscap-db.php' );
 }

@@ -3,8 +3,8 @@
 	outline: none;
 	text-decoration: none;
 }
-[id^=slim_] a.slimstat-delete-entry{
-	color: #bbb;
+[id^=slim_] a.slimstat-delete-entry:before{
+	color: #e22;
 }
 .slimstat-float-right{
 	float: right;
@@ -72,7 +72,7 @@
 	width: 450px;
 	z-index: 120;
 }
-#slimstat-date-filters .dropdown a.slimstat-date-choice{
+#slimstat-date-filters .dropdown #slimstat-quick-filters a {
 	background-color: #eee;
 	display: block;
 	float: left;
@@ -219,7 +219,7 @@
 	padding: 0 !important;
 }
 .wrap.slimstat .postbox.tall .inside{
-	height: 900px;
+	height: 650px;
 }
 [id^=slim_] p {
 	border-bottom: 1px solid #ddd;

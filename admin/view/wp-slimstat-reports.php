@@ -920,7 +920,7 @@ class wp_slimstat_reports {
 		if ( is_admin() ) {
 			// Show the refresh button only if the time range is not in the past
 			if ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] >= date_i18n( 'U' ) - 300 ) {
-				$header_buttons = '<a class="button-ajax noslimstat refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>';
+				$header_buttons = '<a class="noslimstat refresh slimstat-font-arrows-cw" title="'.__('Refresh','wp-slimstat').'" href="'.self::fs_url().'"></a>';
 			}
 
 			// Allow third-party code to add more buttons 
@@ -929,7 +929,7 @@ class wp_slimstat_reports {
 			$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? '<i class="slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">' . self::$reports_info[ $_report_id ][ 'tooltip' ] . '</span></i>' : '';
 		}
 
-		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} <h3 data-report-id='{$_report_id}'>" . self::$reports_info[ $_report_id ][ 'title' ] . " {$header_tooltip}</h3><div class='inside' id='{$_report_id}_inside'>";
+		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} <h3 data-report-id='{$_report_id}'>" . self::$reports_info[ $_report_id ][ 'title' ] . " {$header_tooltip}</h3><div class='inside'>";
 	}
 
 	public static function report_footer(){
@@ -953,18 +953,18 @@ class wp_slimstat_reports {
 			if ( $startpoint == $_count_all_results ) {
 				$startpoint -= $_results_per_page;
 			}
-			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url( 'start_from equals ' . $startpoint ) . '"></a> ';
+			$pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url( 'start_from equals ' . $startpoint ) . '"></a> ';
 		}
 		if ($endpoint < $_count_all_results && $_count_page_results > 0){
 			$startpoint = wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page;
-			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-'.$direction_next.'" href="' . wp_slimstat_reports::fs_url( 'start_from equals ' . $startpoint ) . '"></a> ';
+			$pagination_buttons .= '<a class="refresh slimstat-font-angle-'.$direction_next.'" href="' . wp_slimstat_reports::fs_url( 'start_from equals ' . $startpoint ) . '"></a> ';
 		}
 		if (wp_slimstat_db::$filters_normalized['misc']['start_from'] > 0){
 			$startpoint = (wp_slimstat_db::$filters_normalized['misc']['start_from'] > $_results_per_page)?wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page : 0;
-			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals '.$startpoint).'"></a> ';
+			$pagination_buttons .= '<a class="refresh slimstat-font-angle-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals '.$startpoint).'"></a> ';
 		}
 		if (wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page > 0){
-			$pagination_buttons .= '<a class="button-ajax slimstat-font-angle-double-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals 0').'"></a> ';
+			$pagination_buttons .= '<a class="refresh slimstat-font-angle-double-'.$direction_prev.'" href="'.wp_slimstat_reports::fs_url('start_from equals 0').'"></a> ';
 		}
 
 		$pagination = '<p class="pagination">' . sprintf( __( 'Results %s - %s of %s', 'wp-slimstat' ), number_format( wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ] + 1, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ), number_format( $endpoint, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ), number_format( $_count_all_results, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ) . ( ( $_count_all_results == wp_slimstat::$settings[ 'limit_results' ] ) ? '+' : '') );
@@ -1023,7 +1023,7 @@ class wp_slimstat_reports {
 			$count_page_results = count( $results );
 
 			if ($count_page_results == 0){
-				echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
+				echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat' ) . '</p>';
 
 				if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 					die();
@@ -1228,8 +1228,15 @@ class wp_slimstat_reports {
 	}
 
 	public static function show_chart( $_args = array() ) {
-		if ( empty( $_args ) ) {
-			echo 'No data found';
+		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
+
+		if ( empty( $chart_data[ 'json_count' ] ) ) {
+			if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] ) && wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] == 1 ) {
+				echo '<p class="nodata">' . __( 'Chart is not displayed when the selected time range is comprised of a single day', 'wp-slimstat') . '</p>';
+			}
+			else {
+				echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat') . '</p>';
+			}
 
 			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 				die();
@@ -1238,12 +1245,6 @@ class wp_slimstat_reports {
 				return 0;
 			}
 		}
-
-		
-//<div class="one-third"></div>
-//<div class="one-third"></div>
-//<div class="one-third"></div>
-//		return 0;
 
 		// Enqueue all the Javascript and styles
 		$path_slimstat = dirname( dirname( __FILE__ ) );
@@ -1255,17 +1256,17 @@ class wp_slimstat_reports {
 		wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
 
 		// Pre-calculate all the values needed to render the charts
-		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
+		
 		$chart_colors = !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) : array( '#bbcc44', '#21759b', '#ccc', '#999' );
 
 		?>
-		<div class="chart-placeholder" id="slim_chart_<?php echo $_args[ 'id' ]; ?>" style="min-height: 280px"></div>
+		<div class="chart-placeholder" id="chart_<?php echo $_args[ 'id' ]; ?>" style="min-height: 280px"></div>
 
 		<script type="text/javascript">
 <?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
 			jQuery(function() {
 <?php endif; ?>
-				var chart_<?php echo $_args[ 'id' ]; ?> = AmCharts.makeChart("slim_chart_<?php echo $_args[ 'id' ]; ?>", {
+				var chart_<?php echo $_args[ 'id' ]; ?> = AmCharts.makeChart("chart_<?php echo $_args[ 'id' ]; ?>", {
 					"type": "serial",
 					"zoomOutButtonPadding": 25,
 					"theme": "light",
@@ -1795,7 +1796,7 @@ class wp_slimstat_reports {
 		$count_page_results = count( $results );
 
 		if ($count_page_results == 0){
-			echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
+			echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat' ) . '</p>';
 
 			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 				die();
@@ -1828,11 +1829,12 @@ class wp_slimstat_reports {
 	}
 
 	public static function show_world_map() {
-		$countries = wp_slimstat_db::get_top('country');
-		$recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
+		$countries = wp_slimstat_db::get_top( 'country' );
+		$recent_visits = wp_slimstat_db::get_recent( 'location', '', '', true, '', 'city' );
+
+		$data_points = array();
 		if ( !empty( $recent_visits ) ) {
 			$recent_visits = array_slice( $recent_visits, 0, wp_slimstat::$settings[ 'max_dots_on_map' ] );
-			$data_points = array();
 
 			foreach ( $recent_visits as $a_recent_visit ) {
 				if ( !empty( $a_recent_visit[ 'city' ] ) &&  !empty( $a_recent_visit[ 'location' ] ) ) {
@@ -1845,82 +1847,107 @@ class wp_slimstat_reports {
 		}
 
 		$data_areas = array('xx'=>'{id:"XX",balloonText:"'.__('c-xx','wp-slimstat').': 0",value:0,color:"#ededed"}','af'=>'{id:"AF",balloonText:"'.__('c-af','wp-slimstat').': 0",value:0,color:"#ededed"}','ax'=>'{id:"AX",balloonText:"'.__('c-ax','wp-slimstat').': 0",value:0,color:"#ededed"}','al'=>'{id:"AL",balloonText:"'.__('c-al','wp-slimstat').': 0",value:0,color:"#ededed"}','dz'=>'{id:"DZ",balloonText:"'.__('c-dz','wp-slimstat').': 0",value:0,color:"#ededed"}','ad'=>'{id:"AD",balloonText:"'.__('c-ad','wp-slimstat').': 0",value:0,color:"#ededed"}','ao'=>'{id:"AO",balloonText:"'.__('c-ao','wp-slimstat').': 0",value:0,color:"#ededed"}','ai'=>'{id:"AI",balloonText:"'.__('c-ai','wp-slimstat').': 0",value:0,color:"#ededed"}','ag'=>'{id:"AG",balloonText:"'.__('c-ag','wp-slimstat').': 0",value:0,color:"#ededed"}','ar'=>'{id:"AR",balloonText:"'.__('c-ar','wp-slimstat').': 0",value:0,color:"#ededed"}','am'=>'{id:"AM",balloonText:"'.__('c-am','wp-slimstat').': 0",value:0,color:"#ededed"}','aw'=>'{id:"AW",balloonText:"'.__('c-aw','wp-slimstat').': 0",value:0,color:"#ededed"}','au'=>'{id:"AU",balloonText:"'.__('c-au','wp-slimstat').': 0",value:0,color:"#ededed"}','at'=>'{id:"AT",balloonText:"'.__('c-at','wp-slimstat').': 0",value:0,color:"#ededed"}','az'=>'{id:"AZ",balloonText:"'.__('c-az','wp-slimstat').': 0",value:0,color:"#ededed"}','bs'=>'{id:"BS",balloonText:"'.__('c-bs','wp-slimstat').': 0",value:0,color:"#ededed"}','bh'=>'{id:"BH",balloonText:"'.__('c-bh','wp-slimstat').': 0",value:0,color:"#ededed"}','bd'=>'{id:"BD",balloonText:"'.__('c-bd','wp-slimstat').': 0",value:0,color:"#ededed"}','bb'=>'{id:"BB",balloonText:"'.__('c-bb','wp-slimstat').': 0",value:0,color:"#ededed"}','by'=>'{id:"BY",balloonText:"'.__('c-by','wp-slimstat').': 0",value:0,color:"#ededed"}','be'=>'{id:"BE",balloonText:"'.__('c-be','wp-slimstat').': 0",value:0,color:"#ededed"}','bz'=>'{id:"BZ",balloonText:"'.__('c-bz','wp-slimstat').': 0",value:0,color:"#ededed"}','bj'=>'{id:"BJ",balloonText:"'.__('c-bj','wp-slimstat').': 0",value:0,color:"#ededed"}','bm'=>'{id:"BM",balloonText:"'.__('c-bm','wp-slimstat').': 0",value:0,color:"#ededed"}','bt'=>'{id:"BT",balloonText:"'.__('c-bt','wp-slimstat').': 0",value:0,color:"#ededed"}','bo'=>'{id:"BO",balloonText:"'.__('c-bo','wp-slimstat').': 0",value:0,color:"#ededed"}','ba'=>'{id:"BA",balloonText:"'.__('c-ba','wp-slimstat').': 0",value:0,color:"#ededed"}','bw'=>'{id:"BW",balloonText:"'.__('c-bw','wp-slimstat').': 0",value:0,color:"#ededed"}','br'=>'{id:"BR",balloonText:"'.__('c-br','wp-slimstat').': 0",value:0,color:"#ededed"}','bn'=>'{id:"BN",balloonText:"'.__('c-bn','wp-slimstat').': 0",value:0,color:"#ededed"}','bg'=>'{id:"BG",balloonText:"'.__('c-bg','wp-slimstat').': 0",value:0,color:"#ededed"}','bf'=>'{id:"BF",balloonText:"'.__('c-bf','wp-slimstat').': 0",value:0,color:"#ededed"}','bi'=>'{id:"BI",balloonText:"'.__('c-bi','wp-slimstat').': 0",value:0,color:"#ededed"}','kh'=>'{id:"KH",balloonText:"'.__('c-kh','wp-slimstat').': 0",value:0,color:"#ededed"}','cm'=>'{id:"CM",balloonText:"'.__('c-cm','wp-slimstat').': 0",value:0,color:"#ededed"}','ca'=>'{id:"CA",balloonText:"'.__('c-ca','wp-slimstat').': 0",value:0,color:"#ededed"}','cv'=>'{id:"CV",balloonText:"'.__('c-cv','wp-slimstat').': 0",value:0,color:"#ededed"}','ky'=>'{id:"KY",balloonText:"'.__('c-ky','wp-slimstat').': 0",value:0,color:"#ededed"}','cf'=>'{id:"CF",balloonText:"'.__('c-cf','wp-slimstat').': 0",value:0,color:"#ededed"}','td'=>'{id:"TD",balloonText:"'.__('c-td','wp-slimstat').': 0",value:0,color:"#ededed"}','cl'=>'{id:"CL",balloonText:"'.__('c-cl','wp-slimstat').': 0",value:0,color:"#ededed"}','cn'=>'{id:"CN",balloonText:"'.__('c-cn','wp-slimstat').': 0",value:0,color:"#ededed"}','co'=>'{id:"CO",balloonText:"'.__('c-co','wp-slimstat').': 0",value:0,color:"#ededed"}','km'=>'{id:"KM",balloonText:"'.__('c-km','wp-slimstat').': 0",value:0,color:"#ededed"}','cg'=>'{id:"CG",balloonText:"'.__('c-cg','wp-slimstat').': 0",value:0,color:"#ededed"}','cd'=>'{id:"CD",balloonText:"'.__('c-cd','wp-slimstat').': 0",value:0,color:"#ededed"}','cr'=>'{id:"CR",balloonText:"'.__('c-cr','wp-slimstat').': 0",value:0,color:"#ededed"}','ci'=>'{id:"CI",balloonText:"'.__('c-ci','wp-slimstat').': 0",value:0,color:"#ededed"}','hr'=>'{id:"HR",balloonText:"'.__('c-hr','wp-slimstat').': 0",value:0,color:"#ededed"}','cu'=>'{id:"CU",balloonText:"'.__('c-cu','wp-slimstat').': 0",value:0,color:"#ededed"}','cy'=>'{id:"CY",balloonText:"'.__('c-cy','wp-slimstat').': 0",value:0,color:"#ededed"}','cz'=>'{id:"CZ",balloonText:"'.__('c-cz','wp-slimstat').': 0",value:0,color:"#ededed"}','dk'=>'{id:"DK",balloonText:"'.__('c-dk','wp-slimstat').': 0",value:0,color:"#ededed"}','dj'=>'{id:"DJ",balloonText:"'.__('c-dj','wp-slimstat').': 0",value:0,color:"#ededed"}','dm'=>'{id:"DM",balloonText:"'.__('c-dm','wp-slimstat').': 0",value:0,color:"#ededed"}','do'=>'{id:"DO",balloonText:"'.__('c-do','wp-slimstat').': 0",value:0,color:"#ededed"}','ec'=>'{id:"EC",balloonText:"'.__('c-ec','wp-slimstat').': 0",value:0,color:"#ededed"}','eg'=>'{id:"EG",balloonText:"'.__('c-eg','wp-slimstat').': 0",value:0,color:"#ededed"}','sv'=>'{id:"SV",balloonText:"'.__('c-sv','wp-slimstat').': 0",value:0,color:"#ededed"}','gq'=>'{id:"GQ",balloonText:"'.__('c-gq','wp-slimstat').': 0",value:0,color:"#ededed"}','er'=>'{id:"ER",balloonText:"'.__('c-er','wp-slimstat').': 0",value:0,color:"#ededed"}','ee'=>'{id:"EE",balloonText:"'.__('c-ee','wp-slimstat').': 0",value:0,color:"#ededed"}','et'=>'{id:"ET",balloonText:"'.__('c-et','wp-slimstat').': 0",value:0,color:"#ededed"}','fo'=>'{id:"FO",balloonText:"'.__('c-fo','wp-slimstat').': 0",value:0,color:"#ededed"}','fk'=>'{id:"FK",balloonText:"'.__('c-fk','wp-slimstat').': 0",value:0,color:"#ededed"}','fj'=>'{id:"FJ",balloonText:"'.__('c-fj','wp-slimstat').': 0",value:0,color:"#ededed"}','fi'=>'{id:"FI",balloonText:"'.__('c-fi','wp-slimstat').': 0",value:0,color:"#ededed"}','fr'=>'{id:"FR",balloonText:"'.__('c-fr','wp-slimstat').': 0",value:0,color:"#ededed"}','gf'=>'{id:"GF",balloonText:"'.__('c-gf','wp-slimstat').': 0",value:0,color:"#ededed"}','ga'=>'{id:"GA",balloonText:"'.__('c-ga','wp-slimstat').': 0",value:0,color:"#ededed"}','gm'=>'{id:"GM",balloonText:"'.__('c-gm','wp-slimstat').': 0",value:0,color:"#ededed"}','ge'=>'{id:"GE",balloonText:"'.__('c-ge','wp-slimstat').': 0",value:0,color:"#ededed"}','de'=>'{id:"DE",balloonText:"'.__('c-de','wp-slimstat').': 0",value:0,color:"#ededed"}','gh'=>'{id:"GH",balloonText:"'.__('c-gh','wp-slimstat').': 0",value:0,color:"#ededed"}','gr'=>'{id:"GR",balloonText:"'.__('c-gr','wp-slimstat').': 0",value:0,color:"#ededed"}','gl'=>'{id:"GL",balloonText:"'.__('c-gl','wp-slimstat').': 0",value:0,color:"#ededed"}','gd'=>'{id:"GD",balloonText:"'.__('c-gd','wp-slimstat').': 0",value:0,color:"#ededed"}','gp'=>'{id:"GP",balloonText:"'.__('c-gp','wp-slimstat').': 0",value:0,color:"#ededed"}','gt'=>'{id:"GT",balloonText:"'.__('c-gt','wp-slimstat').': 0",value:0,color:"#ededed"}','gn'=>'{id:"GN",balloonText:"'.__('c-gn','wp-slimstat').': 0",value:0,color:"#ededed"}','gw'=>'{id:"GW",balloonText:"'.__('c-gw','wp-slimstat').': 0",value:0,color:"#ededed"}','gy'=>'{id:"GY",balloonText:"'.__('c-gy','wp-slimstat').': 0",value:0,color:"#ededed"}','ht'=>'{id:"HT",balloonText:"'.__('c-ht','wp-slimstat').': 0",value:0,color:"#ededed"}','hn'=>'{id:"HN",balloonText:"'.__('c-hn','wp-slimstat').': 0",value:0,color:"#ededed"}','hk'=>'{id:"HK",balloonText:"'.__('c-hk','wp-slimstat').': 0",value:0,color:"#ededed"}','hu'=>'{id:"HU",balloonText:"'.__('c-hu','wp-slimstat').': 0",value:0,color:"#ededed"}','is'=>'{id:"IS",balloonText:"'.__('c-is','wp-slimstat').': 0",value:0,color:"#ededed"}','in'=>'{id:"IN",balloonText:"'.__('c-in','wp-slimstat').': 0",value:0,color:"#ededed"}','id'=>'{id:"ID",balloonText:"'.__('c-id','wp-slimstat').': 0",value:0,color:"#ededed"}','ir'=>'{id:"IR",balloonText:"'.__('c-ir','wp-slimstat').': 0",value:0,color:"#ededed"}','iq'=>'{id:"IQ",balloonText:"'.__('c-iq','wp-slimstat').': 0",value:0,color:"#ededed"}','ie'=>'{id:"IE",balloonText:"'.__('c-ie','wp-slimstat').': 0",value:0,color:"#ededed"}','il'=>'{id:"IL",balloonText:"'.__('c-il','wp-slimstat').': 0",value:0,color:"#ededed"}','it'=>'{id:"IT",balloonText:"'.__('c-it','wp-slimstat').': 0",value:0,color:"#ededed"}','jm'=>'{id:"JM",balloonText:"'.__('c-jm','wp-slimstat').': 0",value:0,color:"#ededed"}','jp'=>'{id:"JP",balloonText:"'.__('c-jp','wp-slimstat').': 0",value:0,color:"#ededed"}','jo'=>'{id:"JO",balloonText:"'.__('c-jo','wp-slimstat').': 0",value:0,color:"#ededed"}','kz'=>'{id:"KZ",balloonText:"'.__('c-kz','wp-slimstat').': 0",value:0,color:"#ededed"}','ke'=>'{id:"KE",balloonText:"'.__('c-ke','wp-slimstat').': 0",value:0,color:"#ededed"}','nr'=>'{id:"NR",balloonText:"'.__('c-nr','wp-slimstat').': 0",value:0,color:"#ededed"}','kp'=>'{id:"KP",balloonText:"'.__('c-kp','wp-slimstat').': 0",value:0,color:"#ededed"}','kr'=>'{id:"KR",balloonText:"'.__('c-kr','wp-slimstat').': 0",value:0,color:"#ededed"}','kv'=>'{id:"KV",balloonText:"'.__('c-kv','wp-slimstat').': 0",value:0,color:"#ededed"}','kw'=>'{id:"KW",balloonText:"'.__('c-kw','wp-slimstat').': 0",value:0,color:"#ededed"}','kg'=>'{id:"KG",balloonText:"'.__('c-kg','wp-slimstat').': 0",value:0,color:"#ededed"}','la'=>'{id:"LA",balloonText:"'.__('c-la','wp-slimstat').': 0",value:0,color:"#ededed"}','lv'=>'{id:"LV",balloonText:"'.__('c-lv','wp-slimstat').': 0",value:0,color:"#ededed"}','lb'=>'{id:"LB",balloonText:"'.__('c-lb','wp-slimstat').': 0",value:0,color:"#ededed"}','ls'=>'{id:"LS",balloonText:"'.__('c-ls','wp-slimstat').': 0",value:0,color:"#ededed"}','lr'=>'{id:"LR",balloonText:"'.__('c-lr','wp-slimstat').': 0",value:0,color:"#ededed"}','ly'=>'{id:"LY",balloonText:"'.__('c-ly','wp-slimstat').': 0",value:0,color:"#ededed"}','li'=>'{id:"LI",balloonText:"'.__('c-li','wp-slimstat').': 0",value:0,color:"#ededed"}','lt'=>'{id:"LT",balloonText:"'.__('c-lt','wp-slimstat').': 0",value:0,color:"#ededed"}','lu'=>'{id:"LU",balloonText:"'.__('c-lu','wp-slimstat').': 0",value:0,color:"#ededed"}','mk'=>'{id:"MK",balloonText:"'.__('c-mk','wp-slimstat').': 0",value:0,color:"#ededed"}','mg'=>'{id:"MG",balloonText:"'.__('c-mg','wp-slimstat').': 0",value:0,color:"#ededed"}','mw'=>'{id:"MW",balloonText:"'.__('c-mw','wp-slimstat').': 0",value:0,color:"#ededed"}','my'=>'{id:"MY",balloonText:"'.__('c-my','wp-slimstat').': 0",value:0,color:"#ededed"}','ml'=>'{id:"ML",balloonText:"'.__('c-ml','wp-slimstat').': 0",value:0,color:"#ededed"}','mt'=>'{id:"MT",balloonText:"'.__('c-mt','wp-slimstat').': 0",value:0,color:"#ededed"}','mq'=>'{id:"MQ",balloonText:"'.__('c-mq','wp-slimstat').': 0",value:0,color:"#ededed"}','mr'=>'{id:"MR",balloonText:"'.__('c-mr','wp-slimstat').': 0",value:0,color:"#ededed"}','mu'=>'{id:"MU",balloonText:"'.__('c-mu','wp-slimstat').': 0",value:0,color:"#ededed"}','mx'=>'{id:"MX",balloonText:"'.__('c-mx','wp-slimstat').': 0",value:0,color:"#ededed"}','md'=>'{id:"MD",balloonText:"'.__('c-md','wp-slimstat').': 0",value:0,color:"#ededed"}','mn'=>'{id:"MN",balloonText:"'.__('c-mn','wp-slimstat').': 0",value:0,color:"#ededed"}','me'=>'{id:"ME",balloonText:"'.__('c-me','wp-slimstat').': 0",value:0,color:"#ededed"}','ms'=>'{id:"MS",balloonText:"'.__('c-ms','wp-slimstat').': 0",value:0,color:"#ededed"}','ma'=>'{id:"MA",balloonText:"'.__('c-ma','wp-slimstat').': 0",value:0,color:"#ededed"}','mz'=>'{id:"MZ",balloonText:"'.__('c-mz','wp-slimstat').': 0",value:0,color:"#ededed"}','mm'=>'{id:"MM",balloonText:"'.__('c-mm','wp-slimstat').': 0",value:0,color:"#ededed"}','na'=>'{id:"NA",balloonText:"'.__('c-na','wp-slimstat').': 0",value:0,color:"#ededed"}','np'=>'{id:"NP",balloonText:"'.__('c-np','wp-slimstat').': 0",value:0,color:"#ededed"}','nl'=>'{id:"NL",balloonText:"'.__('c-nl','wp-slimstat').': 0",value:0,color:"#ededed"}','nc'=>'{id:"NC",balloonText:"'.__('c-nc','wp-slimstat').': 0",value:0,color:"#ededed"}','nz'=>'{id:"NZ",balloonText:"'.__('c-nz','wp-slimstat').': 0",value:0,color:"#ededed"}','ni'=>'{id:"NI",balloonText:"'.__('c-ni','wp-slimstat').': 0",value:0,color:"#ededed"}','ne'=>'{id:"NE",balloonText:"'.__('c-ne','wp-slimstat').': 0",value:0,color:"#ededed"}','ng'=>'{id:"NG",balloonText:"'.__('c-ng','wp-slimstat').': 0",value:0,color:"#ededed"}','no'=>'{id:"NO",balloonText:"'.__('c-no','wp-slimstat').': 0",value:0,color:"#ededed"}','om'=>'{id:"OM",balloonText:"'.__('c-om','wp-slimstat').': 0",value:0,color:"#ededed"}','pk'=>'{id:"PK",balloonText:"'.__('c-pk','wp-slimstat').': 0",value:0,color:"#ededed"}','pw'=>'{id:"PW",balloonText:"'.__('c-pw','wp-slimstat').': 0",value:0,color:"#ededed"}','ps'=>'{id:"PS",balloonText:"'.__('c-ps','wp-slimstat').': 0",value:0,color:"#ededed"}','pa'=>'{id:"PA",balloonText:"'.__('c-pa','wp-slimstat').': 0",value:0,color:"#ededed"}','pg'=>'{id:"PG",balloonText:"'.__('c-pg','wp-slimstat').': 0",value:0,color:"#ededed"}','py'=>'{id:"PY",balloonText:"'.__('c-py','wp-slimstat').': 0",value:0,color:"#ededed"}','pe'=>'{id:"PE",balloonText:"'.__('c-pe','wp-slimstat').': 0",value:0,color:"#ededed"}','ph'=>'{id:"PH",balloonText:"'.__('c-ph','wp-slimstat').': 0",value:0,color:"#ededed"}','pl'=>'{id:"PL",balloonText:"'.__('c-pl','wp-slimstat').': 0",value:0,color:"#ededed"}','pt'=>'{id:"PT",balloonText:"'.__('c-pt','wp-slimstat').': 0",value:0,color:"#ededed"}','pr'=>'{id:"PR",balloonText:"'.__('c-pr','wp-slimstat').': 0",value:0,color:"#ededed"}','qa'=>'{id:"QA",balloonText:"'.__('c-qa','wp-slimstat').': 0",value:0,color:"#ededed"}','re'=>'{id:"RE",balloonText:"'.__('c-re','wp-slimstat').': 0",value:0,color:"#ededed"}','ro'=>'{id:"RO",balloonText:"'.__('c-ro','wp-slimstat').': 0",value:0,color:"#ededed"}','ru'=>'{id:"RU",balloonText:"'.__('c-ru','wp-slimstat').': 0",value:0,color:"#ededed"}','rw'=>'{id:"RW",balloonText:"'.__('c-rw','wp-slimstat').': 0",value:0,color:"#ededed"}','kn'=>'{id:"KN",balloonText:"'.__('c-kn','wp-slimstat').': 0",value:0,color:"#ededed"}','lc'=>'{id:"LC",balloonText:"'.__('c-lc','wp-slimstat').': 0",value:0,color:"#ededed"}','mf'=>'{id:"MF",balloonText:"'.__('c-mf','wp-slimstat').': 0",value:0,color:"#ededed"}','vc'=>'{id:"VC",balloonText:"'.__('c-vc','wp-slimstat').': 0",value:0,color:"#ededed"}','ws'=>'{id:"WS",balloonText:"'.__('c-ws','wp-slimstat').': 0",value:0,color:"#ededed"}','st'=>'{id:"ST",balloonText:"'.__('c-st','wp-slimstat').': 0",value:0,color:"#ededed"}','sa'=>'{id:"SA",balloonText:"'.__('c-sa','wp-slimstat').': 0",value:0,color:"#ededed"}','sn'=>'{id:"SN",balloonText:"'.__('c-sn','wp-slimstat').': 0",value:0,color:"#ededed"}','rs'=>'{id:"RS",balloonText:"'.__('c-rs','wp-slimstat').': 0",value:0,color:"#ededed"}','sl'=>'{id:"SL",balloonText:"'.__('c-sl','wp-slimstat').': 0",value:0,color:"#ededed"}','sg'=>'{id:"SG",balloonText:"'.__('c-sg','wp-slimstat').': 0",value:0,color:"#ededed"}','sk'=>'{id:"SK",balloonText:"'.__('c-sk','wp-slimstat').': 0",value:0,color:"#ededed"}','si'=>'{id:"SI",balloonText:"'.__('c-si','wp-slimstat').': 0",value:0,color:"#ededed"}','sb'=>'{id:"SB",balloonText:"'.__('c-sb','wp-slimstat').': 0",value:0,color:"#ededed"}','so'=>'{id:"SO",balloonText:"'.__('c-so','wp-slimstat').': 0",value:0,color:"#ededed"}','za'=>'{id:"ZA",balloonText:"'.__('c-za','wp-slimstat').': 0",value:0,color:"#ededed"}','gs'=>'{id:"GS",balloonText:"'.__('c-gs','wp-slimstat').': 0",value:0,color:"#ededed"}','es'=>'{id:"ES",balloonText:"'.__('c-es','wp-slimstat').': 0",value:0,color:"#ededed"}','lk'=>'{id:"LK",balloonText:"'.__('c-lk','wp-slimstat').': 0",value:0,color:"#ededed"}','sc'=>'{id:"SC",balloonText:"'.__('c-sc','wp-slimstat').': 0",value:0,color:"#ededed"}','sd'=>'{id:"SD",balloonText:"'.__('c-sd','wp-slimstat').': 0",value:0,color:"#ededed"}','ss'=>'{id:"SS",balloonText:"'.__('c-ss','wp-slimstat').': 0",value:0,color:"#ededed"}','sr'=>'{id:"SR",balloonText:"'.__('c-sr','wp-slimstat').': 0",value:0,color:"#ededed"}','sj'=>'{id:"SJ",balloonText:"'.__('c-sj','wp-slimstat').': 0",value:0,color:"#ededed"}','sz'=>'{id:"SZ",balloonText:"'.__('c-sz','wp-slimstat').': 0",value:0,color:"#ededed"}','se'=>'{id:"SE",balloonText:"'.__('c-se','wp-slimstat').': 0",value:0,color:"#ededed"}','ch'=>'{id:"CH",balloonText:"'.__('c-ch','wp-slimstat').': 0",value:0,color:"#ededed"}','sy'=>'{id:"SY",balloonText:"'.__('c-sy','wp-slimstat').': 0",value:0,color:"#ededed"}','tw'=>'{id:"TW",balloonText:"'.__('c-tw','wp-slimstat').': 0",value:0,color:"#ededed"}','tj'=>'{id:"TJ",balloonText:"'.__('c-tj','wp-slimstat').': 0",value:0,color:"#ededed"}','tz'=>'{id:"TZ",balloonText:"'.__('c-tz','wp-slimstat').': 0",value:0,color:"#ededed"}','th'=>'{id:"TH",balloonText:"'.__('c-th','wp-slimstat').': 0",value:0,color:"#ededed"}','tl'=>'{id:"TL",balloonText:"'.__('c-tl','wp-slimstat').': 0",value:0,color:"#ededed"}','tg'=>'{id:"TG",balloonText:"'.__('c-tg','wp-slimstat').': 0",value:0,color:"#ededed"}','to'=>'{id:"TO",balloonText:"'.__('c-to','wp-slimstat').': 0",value:0,color:"#ededed"}','tt'=>'{id:"TT",balloonText:"'.__('c-tt','wp-slimstat').': 0",value:0,color:"#ededed"}','tn'=>'{id:"TN",balloonText:"'.__('c-tn','wp-slimstat').': 0",value:0,color:"#ededed"}','tr'=>'{id:"TR",balloonText:"'.__('c-tr','wp-slimstat').': 0",value:0,color:"#ededed"}','tm'=>'{id:"TM",balloonText:"'.__('c-tm','wp-slimstat').': 0",value:0,color:"#ededed"}','tc'=>'{id:"TC",balloonText:"'.__('c-tc','wp-slimstat').': 0",value:0,color:"#ededed"}','ug'=>'{id:"UG",balloonText:"'.__('c-ug','wp-slimstat').': 0",value:0,color:"#ededed"}','ua'=>'{id:"UA",balloonText:"'.__('c-ua','wp-slimstat').': 0",value:0,color:"#ededed"}','ae'=>'{id:"AE",balloonText:"'.__('c-ae','wp-slimstat').': 0",value:0,color:"#ededed"}','gb'=>'{id:"GB",balloonText:"'.__('c-gb','wp-slimstat').': 0",value:0,color:"#ededed"}','us'=>'{id:"US",balloonText:"'.__('c-us','wp-slimstat').': 0",value:0,color:"#ededed"}','uy'=>'{id:"UY",balloonText:"'.__('c-uy','wp-slimstat').': 0",value:0,color:"#ededed"}','uz'=>'{id:"UZ",balloonText:"'.__('c-uz','wp-slimstat').': 0",value:0,color:"#ededed"}','vu'=>'{id:"VU",balloonText:"'.__('c-vu','wp-slimstat').': 0",value:0,color:"#ededed"}','ve'=>'{id:"VE",balloonText:"'.__('c-ve','wp-slimstat').': 0",value:0,color:"#ededed"}','vn'=>'{id:"VN",balloonText:"'.__('c-vn','wp-slimstat').': 0",value:0,color:"#ededed"}','vg'=>'{id:"VG",balloonText:"'.__('c-vg','wp-slimstat').': 0",value:0,color:"#ededed"}','vi'=>'{id:"VI",balloonText:"'.__('c-vi','wp-slimstat').': 0",value:0,color:"#ededed"}','eh'=>'{id:"EH",balloonText:"'.__('c-eh','wp-slimstat').': 0",value:0,color:"#ededed"}','ye'=>'{id:"YE",balloonText:"'.__('c-ye','wp-slimstat').': 0",value:0,color:"#ededed"}','zm'=>'{id:"ZM",balloonText:"'.__('c-zm','wp-slimstat').': 0",value:0,color:"#ededed"}','zw'=>'{id:"ZW",balloonText:"'.__('c-zw','wp-slimstat').': 0",value:0,color:"#ededed"}','gg'=>'{id:"GG",balloonText:"'.__('c-gg','wp-slimstat').': 0",value:0,color:"#ededed"}','je'=>'{id:"JE",balloonText:"'.__('c-je','wp-slimstat').': 0",value:0,color:"#ededed"}','im'=>'{id:"IM",balloonText:"'.__('c-im','wp-slimstat').': 0",value:0,color:"#ededed"}','mv'=>'{id:"MV",balloonText:"'.__('c-mv','wp-slimstat').': 0",value:0,color:"#ededed"}');
-		$countries_not_represented = array( __('c-eu','wp-slimstat') );
+		$countries_not_represented = array( __( 'c-eu', 'wp-slimstat' ) );
 		$max = 0;
 
-		foreach($countries as $a_country){
-			if (!array_key_exists($a_country['country'], $data_areas)) continue;
+		foreach ( $countries as $a_country ) {
+			if ( !array_key_exists( $a_country[ 'country' ], $data_areas ) ) {
+				continue;
+			}
 
-			$percentage = (self::$pageviews > 0)?sprintf("%01.2f", (100*$a_country['counthits']/self::$pageviews)) : 0;
-			$percentage_format = number_format($percentage, 2, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']);
-			$balloon_text = __('c-'.$a_country['country'], 'wp-slimstat').': '.$percentage_format.'% ('.number_format($a_country['counthits'], 0, wp_slimstat_db::$formats['decimal'], wp_slimstat_db::$formats['thousand']).')';
-			$data_areas[$a_country['country']] = '{id:"'.strtoupper($a_country['country']).'",balloonText:"'.$balloon_text.'",value:'.$percentage.'}';
+			$percentage = ( self::$pageviews > 0 ) ? sprintf( "%01.2f", ( 100 * $a_country[ 'counthits' ] / self::$pageviews ) ) : 0;
+			$percentage_format = number_format( $percentage, 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+			$balloon_text = __( 'c-' . $a_country[ 'country' ], 'wp-slimstat' ) . ': ' . $percentage_format . '% (' . number_format( $a_country[ 'counthits' ], 0, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) . ')';
+			$data_areas[ $a_country[ 'country' ] ] = '{id:"' . strtoupper( $a_country[ 'country' ] ) . '",balloonText:"' . $balloon_text . '",value:' . $percentage . '}';
 
 			if ( $percentage > $max ) {
 				$max = $percentage;
 			}
 		}
+
+		$path_slimstat = dirname( dirname( __FILE__ ) );
+		wp_enqueue_script( 'slimstat_ammap', plugins_url( '/admin/js/ammap/ammap.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_ammap_world', plugins_url( '/admin/js/ammap/world.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_amcharts_plugins_export', plugins_url( '/admin/js/amcharts/plugins/export/export.min.js', $path_slimstat ), array( 'slimstat_ammap' ), null, false );
+		wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_ammap' ), null, false );
+
+		wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
+
 		?>
 
-		<script src="<?php echo plugins_url('/js/ammap/ammap.js', dirname(__FILE__)) ?>" type="text/javascript"></script>
-		<script src="<?php echo plugins_url('/js/ammap/world.js', dirname(__FILE__)) ?>" type="text/javascript"></script>
+		<div id="map_slim_p6_01" style="height: 100%"></div>
 
 		<script type="text/javascript">
-			var targetSVG = "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z";
+			jQuery( function() {
+				var targetSVG = "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z";
 
-			var dataProvider = {
-				map: "worldLow",
-				getAreasFromMap: true,
-				areas:[ <?php echo implode( ',', $data_areas ) ?> ],
-				images: [ <?php if ( !empty( $data_points ) ) echo implode( ',', $data_points ) ?> ]
-			};
+				var dataProvider = {
+					map: "worldLow",
+					getAreasFromMap: true,
+					areas:[ <?php echo implode( ',', $data_areas ) ?> ],
+					images: [ <?php if ( !empty( $data_points ) ) echo implode( ',', $data_points ) ?> ]
+				};
 
-			// Create AmMap object
-			var map = new AmCharts.AmMap();
+				// Create AmMap object
+				var map = new AmCharts.AmMap();
 
-			<?php if ($max != 0): ?>
-			var legend = new AmCharts.ValueLegend();
-			legend.height = 20;
-			legend.minValue = "0.01";
-			legend.maxValue = "<?php echo $max ?>%";
-			legend.right = 20;
-			legend.showAsGradient = true;
-			legend.width = 300;
-			map.valueLegend = legend;
-			<?php endif; ?>
+				<?php if ($max != 0): ?>
+				var legend = new AmCharts.ValueLegend();
+				legend.height = 20;
+				legend.minValue = "0.01";
+				legend.maxValue = "<?php echo $max ?>%";
+				legend.right = 20;
+				legend.showAsGradient = true;
+				legend.width = 300;
+				map.valueLegend = legend;
+				<?php endif; ?>
 
-			// Configuration
-			map.areasSettings = {
-				autoZoom: false,
-				color: "#9dff98",
-				colorSolid: "#fa8a50",
-				outlineColor: "#888888",
-				selectedColor: "#ffb739"
-			};
-			map.imagesSettings = {
-				rollOverColor: "#089282",
-				rollOverScale: 2,
-				selectedScale: 2,
-				selectedColor: "#089282",
-				color: "#13564e"
-			};
-			map.zoomControl = {
-				zoomControlEnabled: true,
-				zoomFactor: 3
-			};
-			map.backgroundAlpha = .9;
-			map.backgroundColor = "#7adafd";
-			map.backgroundZoomsToTop = false;
-			map.balloon.color = "#000000";
-			map.colorSteps = 5;
-			map.mouseWheelZoomEnabled = true;
-			map.pathToImages = "<?php echo plugins_url('/js/ammap/images/', dirname(__FILE__)) ?>";
+				// Configuration
+				map.areasSettings = {
+					autoZoom: false,
+					color: "#9dff98",
+					colorSolid: "#fa8a50",
+					outlineColor: "#888888",
+					selectedColor: "#ffb739"
+				};
+				map.imagesSettings = {
+					rollOverColor: "#089282",
+					rollOverScale: 2,
+					selectedScale: 2,
+					selectedColor: "#089282",
+					color: "#13564e"
+				};
+				map.zoomControl = {
+					zoomControlEnabled: true,
+					zoomFactor: 3
+				};
+				map.export = {
+					"enabled": true,
+					"libs": {
+						"path": "<?php echo plugins_url('/js/amcharts/plugins/export/libs/', dirname(__FILE__)) ?>"
+					},
+					"menu": [ {
+						"class": "export-main",
+						"menu": [ {
+							"label": "Download as...",
+							"menu": [ "PNG", "PDF" ]
+						} ]
+					} ]
+				};
+				map.backgroundAlpha = .9;
+				map.backgroundColor = "#7adafd";
+				map.backgroundZoomsToTop = false;
+				map.balloon.color = "#000000";
+				map.colorSteps = 5;
+				map.mouseWheelZoomEnabled = true;
+				map.pathToImages = "<?php echo plugins_url('/js/ammap/images/', dirname(__FILE__)) ?>";
 
-			// Init Data
-			map.dataProvider = dataProvider;
+				// Init Data
+				map.dataProvider = dataProvider;
 
-			// Display Map
-			map.write("slim_p6_01_inside");
+				// Display Map
+				map.write( "map_slim_p6_01" );
+			});
 		</script><?php
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
@@ -1965,7 +1992,7 @@ class wp_slimstat_reports {
 				}
 
 				$a_filter_value_no_slashes = htmlentities( str_replace( '\\','', $a_filter_details[ 1 ] ), ENT_QUOTES, 'UTF-8' );
-				$filters_html .= '<li>' . strtolower( wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] ) . ' ' . __( str_replace( '_', ' ', $a_filter_details[ 0 ] ), 'wp-slimstat' ) . " $a_filter_value_no_slashes <a class='slimstat-remove-filter slimstat-font-cancel' title='" . htmlentities( __( 'Remove filter for', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . ' ' . wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] . "' href='" . self::fs_url( "$a_filter_label equals " ) . "'></a></li>";
+				$filters_html .= '<li>' . strtolower( wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] ) . ' ' . __( str_replace( '_', ' ', $a_filter_details[ 0 ] ), 'wp-slimstat' ) . " $a_filter_value_no_slashes <a class='slimstat-filter-link slimstat-font-cancel' title='" . htmlentities( __( 'Remove filter for', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . ' ' . wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] . "' href='" . self::fs_url( "$a_filter_label equals " ) . "'></a></li>";
 			}
 		}
 
@@ -1980,28 +2007,26 @@ class wp_slimstat_reports {
 		return $filters_html;
 	}
 
-	public static function fs_url( $_filters = '' ) {
-
+	public static function fs_url( $_filters_string = '' ) {
 		// Allow only legitimate requests
-		$request_uri =  htmlspecialchars( $_SERVER[ 'REQUEST_URI' ], ENT_QUOTES, 'UTF-8' );
-		$request_page = 'slimview1';
-
 		if ( !is_admin() ) {
 			return '';
 		}
 
-		// Are we on the Dashboard?
-		if ( empty( $_REQUEST[ 'page' ] ) ) {
-			$request_uri = str_replace( 'index.php', 'admin.php', $request_uri );
-		}
-		else if ( array_key_exists( $_REQUEST[ 'page' ], wp_slimstat_admin::$screens_info ) ) {
+		$request_uri = admin_url( 'admin.php' );
+		
+		$request_page = 'slimview1';
+		if ( !empty( $_REQUEST[ 'page' ] ) ) {
+			if ( !array_key_exists( $_REQUEST[ 'page' ], wp_slimstat_admin::$screens_info ) ) {
+				return '';
+			}
+
 			$request_page = $_REQUEST[ 'page' ];
 		}
-		else {
-			return '';
-		}
 
-		// Avoid XSS attacks (why would the owner attack him/herself?)
+		$request_uri .= '?page=' . $request_page;
+
+		// Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
 		if ( !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
 			$parsed_referer = parse_url( $_SERVER[ 'HTTP_REFERER' ] );
 			if ( !$parsed_referer || ( !empty( $parsed_referer[ 'scheme' ] ) && !in_array( strtolower( $parsed_referer[ 'scheme' ] ), array( 'http', 'https' ) ) ) ) {
@@ -2009,38 +2034,33 @@ class wp_slimstat_reports {
 			}
 		}
 
-		$filtered_url = explode( '?', ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ? $_SERVER[ 'HTTP_REFERER' ] : $request_uri );
-		$filtered_url = $filtered_url[ 0 ] . '?page=' . $request_page;
+		$filters_normalized = wp_slimstat_db::parse_filters( $_filters_string );
 
 		// Columns
-		$url_filters = wp_slimstat_db::get_filters_normalized( $_filters, false );
-
-		if ( !empty( $url_filters[ 'columns' ] ) ) {
-			foreach ( $url_filters[ 'columns' ] as $a_key => $a_filter ) {
+		if ( !empty( $filters_normalized[ 'columns' ] ) ) {
+			foreach ( $filters_normalized[ 'columns' ] as $a_key => $a_filter ) {
 				$a_key = str_replace( '_calculated', '', $a_key );
-				$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( $a_filter[ 0 ] . ' ' . $a_filter[ 1 ] );
+				$request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode( $a_filter[ 0 ] . ' ' . $a_filter[ 1 ] );
 			}
 		}
 
 		// Date ranges
-		if ( !empty( $url_filters[ 'date' ] ) ) {
-			foreach ( $url_filters[ 'date' ] as $a_key => $a_filter ) {
+		if ( !empty( $filters_normalized[ 'date' ] ) ) {
+			foreach ( $filters_normalized[ 'date' ] as $a_key => $a_filter ) {
 				if ( isset( $a_filter ) ) {
-					$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
+					$request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
 				}
 			}
 		}
 
 		// Misc filters
-		if ( !empty( $url_filters[ 'misc' ] ) ) {
-			foreach ( $url_filters[ 'misc' ] as $a_key => $a_filter ) {
-				if ( strpos( $_filters, "$a_key equals" ) !== false ) {
-					$filtered_url .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
-				}
+		if ( !empty( $filters_normalized[ 'misc' ] ) ) {
+			foreach ( $filters_normalized[ 'misc' ] as $a_key => $a_filter ) {
+				$request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
 			}
 		}
 
-		return $filtered_url;
+		return $request_uri;
 	}
 
 	/**
