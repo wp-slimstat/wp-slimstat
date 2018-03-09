@@ -162,34 +162,31 @@ jQuery( function() {
 		} );
 	} );
 
-	// Certain links enable filters throughout the interface. These links trigger a form submission, where all the filters are stored.
-	// Using a "POST" request allows us to handle much larger filter values across the various screens
-	if ( jQuery( 'form#slimstat-filters-form' ).length ) {
-		jQuery( document ).on( 'click', '.slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a', function( e ) {
-			url = jQuery( this ).attr( 'href' );
-
-			// If this link doesn't have a valid HREF attribute, bail
-			if ( typeof url != 'string' ) {
-				return true;
-			}
-
-			e.preventDefault();
-
-			jQuery( 'form#slimstat-filters-form' ).attr( 'action', url.split( '?' )[ 0 ] + '?page=' + SlimStatAdmin.get_current_tab( url.split( '?' )[ 1 ] ) );
-
-			SlimStatAdmin.add_url_filters_to_form( url, typeof jQuery( this ).attr( 'data-reset-filters' ) != 'undefined' );
-
-			jQuery( '#slimstat-filters-form' ).submit();
-
-			return false;
-		});
-	}
-
 	// Since we handle all "filter links" as POST requests (see code here above), we need to add dummy form tag to the dashboard,
 	// for when our reports are displayed on that page
-	if ( !jQuery( '#slimstat-filters-form' ).length && !SlimStatAdmin.get_current_tab().match( /(slimconfig|slimaddons)/ ) ) {
+	if ( !jQuery( '#slimstat-filters-form' ).length ) {
 		jQuery( '<form id="slimstat-filters-form" method="post"/>' ).appendTo('body');
 	}
+
+
+	jQuery( document ).on( 'click', '.slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a', function( e ) {
+		url = jQuery( this ).attr( 'href' );
+
+		// If this link doesn't have a valid HREF attribute, bail
+		if ( typeof url != 'string' ) {
+			return true;
+		}
+
+		e.preventDefault();
+
+		jQuery( 'form#slimstat-filters-form' ).attr( 'action', url.split( '?' )[ 0 ] + '?page=' + SlimStatAdmin.get_current_tab( url.split( '?' )[ 1 ] ) );
+
+		SlimStatAdmin.add_url_filters_to_form( url, typeof jQuery( this ).attr( 'data-reset-filters' ) != 'undefined' );
+
+		jQuery( '#slimstat-filters-form' ).submit();
+
+		return false;
+	});
 
 	//
 	// ----- END: FILTERS ------------------------------------------------------------
@@ -316,14 +313,14 @@ jQuery( function() {
 
 		tooltip_content = jQuery( this ).find( '.slimstat-tooltip-content:not(.expanded)' );
 
-		if ( typeof tooltip_content == 'undefined' || tooltip_content.length  == 0 ) {
+		if ( typeof tooltip_content == 'undefined' || tooltip_content == null || tooltip_content.length  == 0 ) {
 			tooltip_content = jQuery( this ).attr( 'title' );
 		}
 		else {
 			tooltip_content = tooltip_content[ 0 ].innerHTML;
 		}
 
-		if ( tooltip_content.length ) {
+		if ( typeof tooltip_content != 'undefined' && tooltip_content.length ) {
 			jQuery(this).qtip( {
 				overwrite: false,
 				content: {
@@ -496,7 +493,7 @@ var SlimStatAdmin = {
 		
 		values = regex.exec( query_string );
 
-		if ( typeof values[ 2 ] == 'string' ) {
+		if ( typeof values != 'undefined' && values != null && typeof values[ 2 ] == 'string' ) {
 			return decodeURIComponent( values[ 2 ].replace( /\+/g, " " ) );
 		}
 

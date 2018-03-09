@@ -5,7 +5,7 @@
 Text Domain: wp-slimstat
 **Requires at least:** 3.8  
 **Tested up to:** 4.9  
-**Stable tag:** 4.7.6  
+**Stable tag:** 4.7.6.1  
 
 
 ## Description 
@@ -94,6 +94,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 
 ## Changelog 
+
+### 4.7.6.1 
+* [Fix] The new Javascript library was interfering with the dropdown menus on the WordPress Dashboard. Thanks to all of those who helped us troubleshoot the issue.
+
 
 ### 4.7.6 
 * [Note] As we mentioned earlier, we've been working on streamlining and cleaning up our source code. It's incredible how layers of code can deposit on top of each other, until they form a thick layer that prevents developers from seeing clearly what's happening. It was time to apply some virtual citric acid to descale our code. If you're using any kind of server caching functionality, please make sure to clear your cache before opening a support request. Also, do not hesitate to reach out to us if you notice any strange or unusual behaviors.
