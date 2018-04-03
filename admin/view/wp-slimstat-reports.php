@@ -1228,15 +1228,10 @@ class wp_slimstat_reports {
 	}
 
 	public static function show_chart( $_args = array() ) {
-		$chart_data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
+		$data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
 
-		if ( empty( $chart_data[ 'json_count' ] ) ) {
-			if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] ) && wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] == 1 ) {
-				echo '<p class="nodata">' . __( 'Chart is not displayed when the selected time range is comprised of a single day', 'wp-slimstat') . '</p>';
-			}
-			else {
-				echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat') . '</p>';
-			}
+		if ( empty( $data[ 'keys' ] ) ) {
+			echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat') . '</p>';
 
 			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 				die();
@@ -1254,8 +1249,6 @@ class wp_slimstat_reports {
 		wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
 
 		wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
-
-		// Pre-calculate all the values needed to render the charts
 		
 		$chart_colors = !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) : array( '#bbcc44', '#21759b', '#ccc', '#999' );
 
@@ -1266,7 +1259,7 @@ class wp_slimstat_reports {
 <?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
 			jQuery(function() {
 <?php endif; ?>
-				var chart_<?php echo $_args[ 'id' ]; ?> = AmCharts.makeChart("chart_<?php echo $_args[ 'id' ]; ?>", {
+				var chart_<?php echo $_args[ 'id' ]; ?> = AmCharts.makeChart( "chart_<?php echo $_args[ 'id' ]; ?>", {
 					"type": "serial",
 					"zoomOutButtonPadding": 25,
 					"theme": "light",
@@ -1274,7 +1267,6 @@ class wp_slimstat_reports {
 					"mouseWheelZoomEnabled": true,
 					"legend": {
 						"equalWidths": true,
-						"periodValueText": "[[value.average]]",
 						"position": "bottom",
 						"align": "center"
 					},
@@ -1282,18 +1274,18 @@ class wp_slimstat_reports {
 						"id":"v1",
 						"axisAlpha": 0,
 						"integersOnly": true,
-						"position": "left"
+						"position": "left",
 					} ],
 					"chartCursor": {
 						"cursorPosition": "mouse",
 						"pan": true,
 						"valueLineBalloonEnabled": true
 					},
-					"categoryField": "date",
+					"categoryField": "v1_label",
 					"categoryAxis": {
 						"dashLength": 1,
-						"autoGridCount": <?php echo ( $chart_data[ 'json_count' ] > 31 || wp_slimstat_db::$filters_normalized[ 'utime' ][ 'type' ] == 'interval' || empty( $_REQUEST[ 'page' ] ) )  ? 'true' : 'false' ?>,
-						"gridCount": <?php echo $chart_data[ 'json_count' ] ?>,
+						"minHorizontalGap": <?php echo ( !empty( $data[ 'keys' ] ) && strlen( $data[ 0 ][ 'v1_label' ] ) > 5 ) ? 150 : 100; ?>,
+						"parseDates": false,
 						"position": "bottom"
 					},
 					"export": {
@@ -1303,9 +1295,10 @@ class wp_slimstat_reports {
 						"precision": 0
 					},
 					"graphs": [
-<?php if ( !empty( $chart_data[ 'previous' ][ 'label' ] ) ) : ?>
+<?php if ( wp_slimstat::$settings[ 'comparison_chart' ] == 'on' ): ?>
 						{
 							"id": "g3_<?php echo $_args[ 'id' ]; ?>",
+							"balloonText": "[[v3_label]]: [[value]]",
 							"bullet": "round",
 							"bulletBorderAlpha": 1,
 							"bulletColor": "#00FF00",
@@ -1313,12 +1306,13 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineThickness": 2,
 							"lineColor": "<?php echo $chart_colors[ 2 ] ?>",
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ) . ' ' . __( '(previous)', 'wp-slimstat' ); ?>",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v3"
 						}, {
 							"id": "g4_<?php echo $_args[ 'id' ]; ?>",
+							"balloonText": "[[v3_label]]: [[value]]",
 							"bullet": "round",
 							"bulletBorderAlpha": 1,
 							"bulletColor": "#00FF00",
@@ -1326,7 +1320,7 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineThickness": 2,
 							"lineColor": "<?php echo $chart_colors[ 3 ] ?>",
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'previous' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ], ENT_QUOTES, 'UTF-8' ) . ' ' . __( '(previous)', 'wp-slimstat' ); ?>",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v4"
@@ -1334,6 +1328,7 @@ class wp_slimstat_reports {
 <?php endif; ?>
 						{
 							"id": "g1_<?php echo $_args[ 'id' ]; ?>",
+							"balloonText": "<?php echo ( wp_slimstat::$settings[ 'comparison_chart' ] == 'on' ) ? '[[v1_label]]: [[value]]' : '[[value]]'; ?>",
 							"bullet": "round",
 							"bulletBorderAlpha": 1,
 							"bulletColor": "#FFFFFF",
@@ -1341,12 +1336,13 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineColor": "<?php echo $chart_colors[ 0 ] ?>",
 							"lineThickness": 2,
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ); ?>",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v1"
 						}, {
 							"id": "g2_<?php echo $_args[ 'id' ]; ?>",
+							"balloonText": "<?php echo ( wp_slimstat::$settings[ 'comparison_chart' ] == 'on' ) ? '[[v1_label]]: [[value]]' : '[[value]]'; ?>",
 							"bullet": "round",
 							"bulletBorderAlpha": 0.6,
 							"bulletColor": "#00FF00",
@@ -1354,14 +1350,13 @@ class wp_slimstat_reports {
 							"hideBulletsCount": 50,
 							"lineColor": "<?php echo $chart_colors[ 1 ] ?>",
 							"lineThickness": 2,
-							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ] . ' ' . $chart_data[ 'current' ][ 'label' ], ENT_QUOTES, 'UTF-8' ); ?> (avg)",
+							"title": "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ], ENT_QUOTES, 'UTF-8' ); ?>",
 							"type": "line",
 							"useLineColorForBulletBorder": true,
 							"valueField": "v2"
-						} 
-
+						}
 					],
-					"dataProvider": <?php echo $chart_data[ 'json' ] ?>
+					"dataProvider": <?php unset( $data[ 'keys' ] ); echo json_encode( $data ) ?>
 				});
 <?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
 			});

@@ -70,7 +70,7 @@ else {
 			}
 		}
 
-		$date_time = "<i class='spaced slimstat-font-clock' title='".__( 'Date and Time', 'wp-slimstat' )."'></i> " . date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $results[ $i ][ 'dt' ], true );
+		$date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='".__( 'Date and Time', 'wp-slimstat' )."'></i> " . date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $results[ $i ][ 'dt' ], true );
 
 		// Print visit header?
 		if ( $i == 0 || $results[ $i - 1 ][ 'visit_id' ] != $results[ $i ][ 'visit_id' ] || $results[ $i - 1 ][ 'ip' ] != $results[ $i ][ 'ip' ] || $results[ $i - 1 ][ 'browser' ] != $results[ $i ][ 'browser' ] || $results[ $i - 1 ][ 'platform' ] != $results[ $i ][ 'platform' ] || $results[ $i - 1 ][ 'username' ] != $results[ $i ][ 'username' ] ) {
@@ -177,7 +177,7 @@ else {
 			if (!empty($results[$i]['blog_id'])){
 				$base_url = $parse_url['scheme'].'://'.$base_host;
 			}
-			$results[$i]['resource'] = "<a class='slimstat-font-logout' target='_blank' title='".htmlentities(__('Open this URL in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='".$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8')."'></a> $base_url<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('resource equals ' . htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8') ) . "'>".wp_slimstat_reports::get_resource_title( $results[$i][ 'resource' ], $results[$i][ 'category' ] ).'</a>';
+			$results[$i]['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='".htmlentities(__('Open this URL in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='".$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8')."'></a> $base_url<a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('resource equals ' . htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8') ) . "'>".wp_slimstat_reports::get_resource_title( $results[$i][ 'resource' ], $results[$i][ 'category' ] ).'</a>';
 		}
 		else {
 			if ( !empty( $results[$i][ 'notes' ] ) ) {
@@ -210,14 +210,14 @@ else {
 		// Server Latency and Page Speed
 		$performance = '';
 		if ( !$is_dashboard && ( !empty( $results[ $i ][ 'server_latency' ] ) || !empty( $results[ $i ][ 'page_performance' ] ) ) ) {
-			$performance = "<i class='slimstat-font-gauge spaced' title='".__('Server Latency and Page Speed in milliseconds','wp-slimstat')."'></i> ".__('SL','wp-slimstat').": {$results[$i]['server_latency']} / ".__('PS','wp-slimstat').": {$results[$i]['page_performance']}";
+			$performance = "<i class='slimstat-font-gauge spaced slimstat-tooltip-trigger' title='".__('Server Latency and Page Speed in milliseconds','wp-slimstat')."'></i> ".__('SL','wp-slimstat').": {$results[$i]['server_latency']} / ".__('PS','wp-slimstat').": {$results[$i]['page_performance']}";
 		}
 
 		// Time on page
 		$time_on_page = '';
 		if ( !$is_dashboard && !empty( $results[ $i ][ 'dt_out' ] ) ) {
 			$duration = $results[ $i ][ 'dt_out' ] - $results[ $i ][ 'dt' ];
-			$time_on_page = "<i class='slimstat-font-stopwatch spaced' title='" . __( 'Time spent on this page', 'wp-slimstat' ) . "'></i> " . date( ( $duration > 3599 ? 'H:i:s' : 'i:s' ), $duration );
+			$time_on_page = "<i class='slimstat-font-stopwatch spaced slimstat-tooltip-trigger' title='" . __( 'Time spent on this page', 'wp-slimstat' ) . "'></i> " . date( ( $duration > 3599 ? 'H:i:s' : 'i:s' ), $duration );
 		}
 
 		// Pageview Notes
@@ -234,15 +234,15 @@ else {
 		if ( !$is_dashboard ) {
 			$domain = parse_url( $results[ $i ] [ 'referer' ] );
 			$domain = !empty( $domain[ 'host' ] ) ? $domain[ 'host' ] : __( 'Invalid Referrer', 'wp-slimstat' );
-			$results[$i][ 'referer' ] = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> $domain":'';
-			$results[$i][ 'content_type' ] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
+			$results[$i][ 'referer' ] = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms']))?"<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='".htmlentities(__('Open this referrer in a new window','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='{$results[$i]['referer']}'></a> $domain":'';
+			$results[$i][ 'content_type' ] = !empty($results[$i]['content_type'])?"<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='".__('Content Type','wp-slimstat')."'></i> <a class='slimstat-filter-link' href='".wp_slimstat_reports::fs_url('content_type equals '.$results[$i]['content_type'])."'>{$results[$i]['content_type']}</a> ":'';
 
 			// The Outbound Links field might contain more than one link
 			if ( !empty( $results[ $i ][ 'outbound_resource' ] ) ) {
 				$exploded_outbound_resources = explode( ';;;', $results[ $i ][ 'outbound_resource' ] );
 				$results[$i][ 'outbound_resource' ] = '';
 				foreach ( $exploded_outbound_resources as $a_resource ) {
-					$results[ $i ][ 'outbound_resource' ] .= "<a class='inline-icon spaced slimstat-font-logout' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$a_resource}'></a> {$a_resource}";
+					$results[ $i ][ 'outbound_resource' ] .= "<a class='inline-icon spaced slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='".htmlentities( __( 'Open this outbound link in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='{$a_resource}'></a> {$a_resource}";
 				}
 			}
 			else {
@@ -250,7 +250,7 @@ else {
 			}
 
 			if ( $current_user_can_delete ){
-				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this entry from the database','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
+				$delete_row = "<a class='slimstat-delete-entry slimstat-font-cancel slimstat-tooltip-trigger' data-pageview-id='{$results[$i]['id']}' title='".htmlentities(__('Delete this entry from the database','wp-slimstat'), ENT_QUOTES, 'UTF-8')."' href='#'></a>";
 			}
 
 			// Login / Logout Event
@@ -262,7 +262,7 @@ else {
 						continue;
 					}
 
-					$login_logout .= "<i class='slimstat-font-user-plus spaced' title='" . __( 'User Logged In', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedin:', '', $a_note );
+					$login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __( 'User Logged In', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedin:', '', $a_note );
 				}
 			}
 			if ( strpos( $results[ $i ][ 'notes' ], 'loggedout:' ) !== false ) {
@@ -272,7 +272,7 @@ else {
 						continue;
 					}
 
-					$login_logout .= "<i class='slimstat-font-user-times spaced' title='" . __( 'User Logged Out', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedout:', '', $a_note );
+					$login_logout .= "<i class='slimstat-font-user-times spaced slimstat-tooltip-trigger' title='" . __( 'User Logged Out', 'wp-slimstat' ) . "'></i> " . str_replace( 'loggedout:', '', $a_note );
 				}
 			}
 		}

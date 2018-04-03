@@ -67,12 +67,16 @@
 				</div>
 
 				<strong><?php _e( 'Date Range', 'wp-slimstat' ) ?></strong>
+
+				<label for="slimstat-filter-hour">Hour</label>
+				<input type="text" name="hour" id="slimstat-filter-hour" placeholder="<?php _e('Hour','wp-slimstat') ?>" class="short" value="">
+
 				<label for="slimstat-filter-day">Day</label>
-				<input type="text" name="day" id="slimstat-filter-day" placeholder="<?php _e( 'Day', 'wp-slimstat' ) ?>" value="">
+				<input type="text" name="day" id="slimstat-filter-day" placeholder="<?php _e( 'Day', 'wp-slimstat' ) ?>" class="short" value="">
 
 				<label for="slimstat-filter-month">Month</label>
 				<select name="month" id="slimstat-filter-month">
-					<option value="0"><?php _e( 'Month', 'wp-slimstat' ) ?></option><?php
+					<option value=""><?php _e( 'Month', 'wp-slimstat' ) ?></option><?php
 					for ( $i = 1; $i <= 12; $i++ ) {
 						echo "<option value='$i'>" . $GLOBALS[ 'wp_locale' ]->get_month( $i ) . "</option>";
 					}
@@ -80,35 +84,26 @@
 				</select>
 
 				<label for="slimstat-filter-year">Year</label>
-				<input type="text" name="year" id="slimstat-filter-year" placeholder="<?php _e('Year','wp-slimstat') ?>" value="">
-				@
-				<label for="slimstat-filter-hour">Hour</label>
-				<input type="text" name="hour" id="slimstat-filter-hour" placeholder="<?php _e('Hour','wp-slimstat') ?>" class="short" value="">:
+				<input type="text" name="year" id="slimstat-filter-year" placeholder="<?php _e('Year','wp-slimstat') ?>" class="short" value="">
 
-				<label for="slimstat-filter-minute">Minute</label>
-				<input type="text" name="minute" id="slimstat-filter-minute" placeholder="<?php _e('Min','wp-slimstat') ?>" class="short" value="">
 				<input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
 				<br/>
 
-				<label for="slimstat-filter-interval_direction">Direction</label>
-				<select name="interval_direction" class="short" id="slimstat-filter-interval_direction">
-					<option value="1" <?php selected( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_direction' ], 1 ) ?>>-</option>
-					<option value="2" <?php selected( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_direction' ], 2 ) ?>>+</option>
-				</select>
-
 				<label for="slimstat-filter-interval">Days in interval</label>
-				<input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('days', 'wp-slimstat') ?>" class="short" value="">,
+				<input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('&plusmn; days', 'wp-slimstat') ?>" class="short" value="" title="<?php _e( 'To define an interval, enter the number of days (negative to go back in time).', 'wp-slimstat' ) ?>">
 
 				<label for="slimstat-filter-interval_hours">Hours in interval</label>
-				<input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('hours', 'wp-slimstat') ?>" class="short" value="">:
+				<input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('&plusmn; hours', 'wp-slimstat') ?>" class="short" value="">
 
-				<label for="slimstat-filter-interval_minutes">Minutes in interval</label>
-				<input type="text" name="interval_minutes" id="slimstat-filter-interval_minutes" placeholder="<?php _e('mins', 'wp-slimstat') ?>" class="short" value="">
+				<input type="submit" value="<?php _e( 'Apply', 'wp-slimstat' ) ?>" class="button button-primary noslimstat right">
 
-				<input type="submit" value="<?php _e( 'Apply', 'wp-slimstat' ) ?>" class="button button-primary noslimstat">
+				<?php
+				wp_slimstat::toggle_date_i18n_filters( false );
 
-				<?php 
-				if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'day' ] ) || !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'month' ] ) || !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'year' ] ) || !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] ) || !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_hours' ] ) || !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_minutes' ] ) ) {
+				if ( wp_slimstat_db::$filters_normalized[ 'date' ][ 'day' ] != intval( date_i18n( 'j' ) ) ||
+					wp_slimstat_db::$filters_normalized[ 'date' ][ 'month' ] != intval( date_i18n( 'n' ) ) ||
+					wp_slimstat_db::$filters_normalized[ 'date' ][ 'year' ] != intval( date_i18n( 'Y' ) ) ||
+					( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] != - abs( wp_slimstat::$settings[ 'posts_column_day_interval' ] ) && wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] != - intval( date_i18n( 'j' ) ) + 1 ) ) {
 					echo '<a class="slimstat-filter-link button button-secondary noslimstat" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url() . '">' . __( 'Reset Filters', 'wp-slimstat' ) . '</a>';
 				}
 				?>

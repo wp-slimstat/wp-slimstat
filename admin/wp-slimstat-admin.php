@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "We would like to thank all of those who replied to our appeal for help. It really meant a lot to us. In order to provide a way to contribute updates and bugfixes, we setup a <a href='https://github.com/slimstat/wp-slimstat' target='_blank'>public Github repository</a>, where you can submit your pull requests and point out bugs and other issues. If you would like Slimstat to speak your language (or to extend any existing partial localization), please do not hesitate to submit your language files either via Github or directly to our support team. In the meanwhile, we will keep working on our documentation, videos and on polishing our code even more. For example, this release includes a completely rewritten Javascript library to handle all the features available in the admin, from the Filter Bar to the Customizer. Let us know if you notice anything out of the ordinary, and feel free to submit a pull request to fix any bugs you might find.";
+		self::$admin_notice = "We've completely rewritten the portion of code that handles the date ranges in the Filter Bar. In order to simplify things, <strong>we have deprecated</strong> the shortcode filter <code>interval_direction</code>, which is now expressed by the sign in front of the interval value (positive for going forward from a given start date, and negative for going back in time). Please note that this change affect your existing shortcodes, if they use the aforementioned filter. We will update our documentation in the next few days to remove any reference to this filter, and to avoid any confusion. We've also reintroduced the various levels of granularity for our charts: hourly (when a single day is selected), daily (for ranges up to 120 days) and monthly. Last but not least, the comparison chart is now <strong>always</strong> displayed, using new criteria to determine the range to use. You may want to change your settings (Settings > Reports > Default Time Span > Days, and Reports > Comparison Chart) to mimic the old behavior or hide the comparison chart altogether, if you like. Please feel free to contact us if you have any questions or to report any issues.";
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
@@ -691,7 +691,7 @@ class wp_slimstat_admin {
 
 		$parsed_permalink = parse_url( get_permalink( $_post_id ) );
 		$parsed_permalink = $parsed_permalink[ 'path' ] . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . $parsed_permalink[ 'query' ] : '' );
-		wp_slimstat_db::init( 'resource contains ' . $parsed_permalink . '&&&interval equals ' . wp_slimstat::$settings[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' );
+		wp_slimstat_db::init( 'resource contains ' . $parsed_permalink . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] );
 
 		if ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) {
 			$count = wp_slimstat_db::count_records();
@@ -699,7 +699,7 @@ class wp_slimstat_admin {
 		else{
 			$count = wp_slimstat_db::count_records( 'ip' );
 		}
-		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource contains ' . $parsed_permalink . '&&&interval equals ' . wp_slimstat::$settings[ 'posts_column_day_interval' ] . '&&&interval_direction equals minus' ). '">'.$count.'</a>';
+		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource contains ' . $parsed_permalink . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] ). '">'.$count.'</a>';
 	}
 	// end add_column
 

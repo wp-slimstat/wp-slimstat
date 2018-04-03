@@ -91,15 +91,12 @@ class wp_slimstat_db {
 		self::$all_columns_names = array_merge( array(
 
 			// Date and Time
-			'minute' => array( __( 'Minute', 'wp-slimstat' ), 'int' ),
 			'hour' => array( __( 'Hour', 'wp-slimstat' ), 'int' ),
 			'day' => array( __( 'Day', 'wp-slimstat' ), 'int' ),
 			'month' => array( __( 'Month', 'wp-slimstat' ), 'int' ),
 			'year' => array( __( 'Year', 'wp-slimstat' ), 'int' ),
-			'interval_direction' => array( __( '+/-', 'wp-slimstat' ), 'int' ),
 			'interval' => array( __( 'days', 'wp-slimstat' ), 'int' ),
 			'interval_hours' => array( __( 'hours', 'wp-slimstat' ), 'int' ),
-			'interval_minutes' => array( __( 'minutes', 'wp-slimstat' ), 'int' ),
 			'dt' => array( __( 'Timestamp', 'wp-slimstat' ), 'int' ),
 			'dt_out' => array( __( 'Exit Timestamp', 'wp-slimstat' ), 'int' ),
 
@@ -142,8 +139,8 @@ class wp_slimstat_db {
 		}
 
 		// Date filters (input fields)
-		foreach ( array( 'minute', 'hour', 'day', 'month', 'year', 'interval_direction', 'interval', 'interval_hours', 'interval_minutes' ) as $a_date_time_filter_name ) {
-			if ( !empty( $_POST[ $a_date_time_filter_name ] ) ) {
+		foreach ( array( 'hour', 'day', 'month', 'year', 'interval', 'interval_hours' ) as $a_date_time_filter_name ) {
+			if ( isset( $_POST[ $a_date_time_filter_name ] ) && strlen( $_POST[ $a_date_time_filter_name ] ) > 0 ) { // here we use isset instead of !empty to handle ZERO as a valid input value
 				$filters_array[ $a_date_time_filter_name ] = "$a_date_time_filter_name equals " . intval( $_POST[ $a_date_time_filter_name ] );
 			}
 		}
@@ -387,7 +384,7 @@ class wp_slimstat_db {
 	}
 
 	public static function parse_filters( $_filters_raw ) {
-		$filters_normalized = array(
+		$filters_parsed = array(
 			'columns' => array(),
 			'date' => array()
 		);
@@ -406,262 +403,189 @@ class wp_slimstat_db {
 					case 'strtotime':
 						$custom_date = strtotime( $a_filter[ 3 ], date_i18n( 'U' ) );
 
-						$filters_normalized[ 'date' ][ 'minute' ] = intval( date( 'i', $custom_date ) );
-						$filters_normalized[ 'date' ][ 'hour' ] = intval( date( 'H', $custom_date ) );
-						$filters_normalized[ 'date' ][ 'day' ] = intval( date( 'j', $custom_date ) );
-						$filters_normalized[ 'date' ][ 'month' ] = intval( date( 'n', $custom_date ) );
-						$filters_normalized[ 'date' ][ 'year' ] = intval( date( 'Y', $custom_date ) );
+						$filters_parsed[ 'date' ][ 'hour' ] = intval( date( 'H', $custom_date ) );
+						$filters_parsed[ 'date' ][ 'day' ] = intval( date( 'j', $custom_date ) );
+						$filters_parsed[ 'date' ][ 'month' ] = intval( date( 'n', $custom_date ) );
+						$filters_parsed[ 'date' ][ 'year' ] = intval( date( 'Y', $custom_date ) );
 						break;
 
-					case 'minute':
 					case 'hour':
 					case 'day':
 					case 'month':
 					case 'year':
 						if ( is_numeric( $a_filter[ 3 ] ) ) {
-							$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = intval( $a_filter[ 3 ] );
+							$filters_parsed[ 'date' ][ $a_filter[ 1 ] ] = intval( $a_filter[ 3 ] );
 						}
 						else{
 							// Try to apply strtotime to value
 							switch( $a_filter[ 1 ] ) {
-								case 'minute':
-									$filters_normalized[ 'date' ][ 'minute' ] = intval( date( 'i', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
-									break;
-
 								case 'hour':
-									$filters_normalized[ 'date' ][ 'hour' ] = intval( date( 'H', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
+									$filters_parsed[ 'date' ][ 'hour' ] = intval( date( 'H', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									break;
 
 								case 'day':
-									$filters_normalized[ 'date' ][ 'day' ] = intval( date( 'j', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
+									$filters_parsed[ 'date' ][ 'day' ] = intval( date( 'j', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									break;
 
 								case 'month':
-									$filters_normalized[ 'date' ][ 'month' ] = intval( date( 'n', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
+									$filters_parsed[ 'date' ][ 'month' ] = intval( date( 'n', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									break;
 
 								case 'year':
-									$filters_normalized[ 'date' ][ 'year' ] = intval( date( 'Y', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
+									$filters_parsed[ 'date' ][ 'year' ] = intval( date( 'Y', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
 									break;
 
 								default:
 									break;
 							}
 
-							if ( $filters_normalized[ 'date' ][ $a_filter[ 1 ] ] === false ) {
-								unset( $filters_normalized[ 'date' ][ $a_filter[ 1 ] ] );
+							if ( $filters_parsed[ 'date' ][ $a_filter[ 1 ] ] === false ) {
+								unset( $filters_parsed[ 'date' ][ $a_filter[ 1 ] ] );
 							}
 						}
 						break;
 
 					case 'interval':
 					case 'interval_hours':
-					case 'interval_minutes':
 						$intval_filter = intval( $a_filter[ 3 ] );
-						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = abs( $intval_filter );
-						if ( $intval_filter < 0 ) {
-							$filters_normalized[ 'date' ][ 'interval_direction' ] = 1;
-						}
-						break;
-
-					case 'interval_direction':
-						$filters_normalized[ 'date' ][ $a_filter[ 1 ] ] = in_array( $a_filter[ 3 ], array( 1, 2 ) ) ? $a_filter[ 3 ] : 1;
+						$filters_parsed[ 'date' ][ $a_filter[ 1 ] ] = $intval_filter;
 						break;
 
 					case 'limit_results':
 					case 'start_from':
-						$filters_normalized[ 'misc' ][ $a_filter[ 1 ] ] = str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) );
+						$filters_parsed[ 'misc' ][ $a_filter[ 1 ] ] = str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) );
 						break;
 
 					case 'content_id':
 						if ( !empty( $a_filter[ 3 ] ) ) {
 							$content_id = ( $a_filter[ 3 ] == 'current' && !empty( $GLOBALS[ 'post' ]->ID ) ) ? $GLOBALS[ 'post' ]->ID : $a_filter[ 3 ];
-							$filters_normalized[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], $content_id );
+							$filters_parsed[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], $content_id );
 							break;
 						}
 						// no break here: if value IS numeric, go to the default parser here below
 
 					default:
-						$filters_normalized[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], isset( $a_filter[ 3 ] ) ? str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) ) : '' );
+						$filters_parsed[ 'columns' ][ $a_filter[ 1 ] ] = array( $a_filter[ 2 ], isset( $a_filter[ 3 ] ) ? str_replace( '\\', '', htmlspecialchars_decode( $a_filter[ 3 ] ) ) : '' );
 						break;
 				}
 			}
 		}
 
-		return $filters_normalized;
+		return $filters_parsed;
 	}
 
 	public static function init_filters( $_filters_raw = '' ) {
-		$filters_normalized = self::parse_filters( $_filters_raw );
+		$fn = self::parse_filters( $_filters_raw );
 
 		// Initialize default values
-		if ( empty( $filters_normalized[ 'misc' ][ 'limit_results' ] ) ) {
-			$filters_normalized[ 'misc' ][ 'limit_results' ] = wp_slimstat::$settings[ 'limit_results' ];
+		if ( empty( $fn[ 'misc' ][ 'limit_results' ] ) ) {
+			$fn[ 'misc' ][ 'limit_results' ] = wp_slimstat::$settings[ 'limit_results' ];
 		}
-		if ( empty( $filters_normalized[ 'misc' ][ 'start_from' ] ) ) {
-			$filters_normalized[ 'misc' ][ 'start_from' ] = 0;
+		if ( empty( $fn[ 'misc' ][ 'start_from' ] ) ) {
+			$fn[ 'misc' ][ 'start_from' ] = 0;
 		}
 
-		$filters_normalized[ 'utime' ] = array(
+		$fn[ 'utime' ] = array(
 			'start' => 0,
 			'end' => 0
 		);
 
-		// If the setting to use the last X days as default time span is enabled, we need to setup the "interval" variables
-		if ( ( empty( wp_slimstat::$settings[ 'use_current_month_timespan' ] ) || wp_slimstat::$settings[ 'use_current_month_timespan' ] != 'on' ) ) {
-			// Do not set the interval if another date filter has already been set
-			$is_date_filter_empty = true;
-			if ( !empty( $filters_normalized[ 'date' ] ) ) {
-				$filters_to_check = array_diff( $filters_normalized[ 'date' ], array( 'interval_direction' => 1 ) );
-				foreach( $filters_to_check as $a_filter ) {
-					if ( isset( $a_filter ) ) {
-						$is_date_filter_empty = false;
-						break;
-					}
-				}
-			}
-
-			if ( $is_date_filter_empty ) {
-				$filters_normalized[ 'date' ][ 'interval' ] = abs( wp_slimstat::$settings[ 'posts_column_day_interval' ] );
-				$filters_normalized[ 'date' ][ 'interval_direction' ] = 1;
-			}
-		}
-
 		// Temporarily disable any filters on date_i18n
 		wp_slimstat::toggle_date_i18n_filters( false );
 
-		// Let's calculate our time range, based on date filters
-		if ( !isset( $filters_normalized[ 'date' ][ 'interval' ] ) && !isset( $filters_normalized[ 'date' ][ 'interval_hours' ] ) && !isset( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ) {
-			if ( !empty( $filters_normalized[ 'date' ][ 'minute' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-					!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
-					$filters_normalized[ 'date' ][ 'minute' ],
-					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
-					!empty( $filters_normalized[ 'date' ][ 'day' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'j' ),
-					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
-				 );
-				$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + 60;
-				$filters_normalized[ 'utime' ][ 'type' ] = 'H';
-			}
-			else if ( !empty( $filters_normalized[ 'date' ][ 'hour' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-					$filters_normalized[ 'date' ][ 'hour' ],
-					0,
-					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
-					!empty( $filters_normalized[ 'date' ][ 'day' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'j' ),
-					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
-				 );
-				$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + 3599;
-				$filters_normalized[ 'utime' ][ 'type' ] = 'H';
-			}
-			else if ( !empty( $filters_normalized[ 'date' ][ 'day' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-					0,
-					0,
-					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ),
-					$filters_normalized[ 'date' ][ 'day' ],
-					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
-				 );
-				$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + 86399;
-				$filters_normalized[ 'utime' ][ 'type' ] = 'd';
-			}
-			else if( !empty( $filters_normalized[ 'date' ][ 'year' ] ) && empty( $filters_normalized[ 'date' ][ 'month' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime( 0, 0, 0, 1, 1, $filters_normalized[ 'date' ][ 'year' ] );
-				$filters_normalized[ 'utime' ][ 'end' ] = mktime( 0, 0, 0, 1, 1, $filters_normalized[ 'date' ][ 'year' ] + 1 ) - 1;
-				$filters_normalized[ 'utime' ][ 'type' ] = 'Y';
-			}
-			else if ( !empty( $filters_normalized[ 'date' ][ 'month' ] ) ) {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-					0,
-					0,
-					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
-					1,
-					!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
-				 );
+		// Normalize the various date values
 
-				$filters_normalized[ 'utime' ][ 'end' ] = strtotime(
-					( !empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' ) ) . '-' .
-					( !empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ) ) .
-					'-01 00:00 +1 month UTC'
-				 ) - 1;
-				$filters_normalized[ 'utime' ][ 'type' ] = 'm';
+		// Intervals
+		// If neither an interval nor interval_hours were specified...
+		if ( !isset( $fn[ 'date' ][ 'interval_hours' ] ) && empty( $fn[ 'date' ][ 'interval' ] ) ) {
+			$fn[ 'date' ][ 'interval_hours' ] = 0;
+
+			// If a day has been specified, then interval = 1 (show only that day)
+			if ( !empty( $fn[ 'date' ][ 'day' ] ) ) {
+				$fn[ 'date' ][ 'interval' ] = -1;
 			}
+			// Show last X days, if the corresponding setting is enabled
+			else if ( empty( wp_slimstat::$settings[ 'use_current_month_timespan' ] ) || wp_slimstat::$settings[ 'use_current_month_timespan' ] != 'on' ) {
+				$fn[ 'date' ][ 'interval' ] = - abs( wp_slimstat::$settings[ 'posts_column_day_interval' ] );
+			}
+			// Otherwise, the interval is the number of days from the beginning of the month (current month view)
 			else {
-				$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-					0,
-					0,
-					0,
-					!empty( $filters_normalized[ 'date' ][ 'month' ] )?$filters_normalized[ 'date' ][ 'month' ]:date_i18n( 'n' ),
-					1,
-					!empty( $filters_normalized[ 'date' ][ 'year' ] )?$filters_normalized[ 'date' ][ 'year' ]:date_i18n( 'Y' )
-				 );
-
-				$filters_normalized[ 'utime' ][ 'end' ] = intval( strtotime(
-					( !empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' ) ) . '-' .
-					( !empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ) ) . '-01 00:00 +1 month UTC'
-				 ) - 1 );
-				$filters_normalized[ 'utime' ][ 'type' ] = 'm';
+				$fn[ 'date' ][ 'interval' ] = - intval( date_i18n( 'j' ) );
 			}
 		}
-		else { // An interval was specified
-			$filters_normalized[ 'utime' ][ 'type' ] = 'interval';
+		else if ( empty( $fn[ 'date' ][ 'interval_hours' ] ) ) {
+			// interval was set, but not interval_hours
+			$fn[ 'date' ][ 'interval_hours' ] = 0;
+		}
+		else if ( empty( $fn[ 'date' ][ 'interval' ] ) ) {
+			// interval_hours was set, but not interval
+			$fn[ 'date' ][ 'interval' ] = 0;
+		}
 
-			// Interval Direction: 1 = past, 2 = future
-			$sign = ( !empty( $filters_normalized[ 'date' ][ 'interval_direction' ] ) && $filters_normalized[ 'date' ][ 'interval_direction' ] == 2 ) ? '+' : '-';
+		$fn[ 'utime' ][ 'range' ] = $fn[ 'date' ][ 'interval' ] * 86400 + $fn[ 'date' ][ 'interval_hours' ] * 3600;
 
-			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-				!empty( $filters_normalized[ 'date' ][ 'hour' ] ) ? $filters_normalized[ 'date' ][ 'hour' ] : 0,
-				!empty( $filters_normalized[ 'date' ][ 'minute' ] ) ? $filters_normalized[ 'date' ][ 'minute' ] : 0,
-				0,
-				!empty( $filters_normalized[ 'date' ][ 'month' ] ) ? $filters_normalized[ 'date' ][ 'month' ] : date_i18n( 'n' ),
-				!empty( $filters_normalized[ 'date' ][ 'day' ] ) ? $filters_normalized[ 'date' ][ 'day' ] : date_i18n( 'j' ),
-				!empty( $filters_normalized[ 'date' ][ 'year' ] ) ? $filters_normalized[ 'date' ][ 'year' ] : date_i18n( 'Y' )
+		// Day
+		if ( empty( $fn[ 'date' ][ 'day' ] ) ) {
+			$fn[ 'date' ][ 'day' ] = intval( date_i18n( 'j' ) );
+		}
+
+		// Month
+		if ( empty( $fn[ 'date' ][ 'month' ] ) ) {
+			$fn[ 'date' ][ 'month' ] = intval( date_i18n( 'n' ) );
+		}
+
+		// Year
+		if ( empty( $fn[ 'date' ][ 'year' ] ) ) {
+			$fn[ 'date' ][ 'year' ] = intval( date_i18n( 'Y' ) );
+		}
+
+		if ( $fn[ 'utime' ][ 'range' ] < 0 ) {
+			$fn[ 'utime' ][ 'end' ] = mktime(
+				!empty( $fn[ 'date' ][ 'hour' ] ) ? $fn[ 'date' ][ 'hour' ] : 23,
+				59,
+				59,
+				$fn[ 'date' ][ 'month' ],
+				$fn[ 'date' ][ 'day' ],
+				$fn[ 'date' ][ 'year' ]
 			);
 
-			$filters_normalized[ 'utime' ][ 'end' ] = $filters_normalized[ 'utime' ][ 'start' ] + intval( $sign . (
-				( !empty( $filters_normalized[ 'date' ][ 'interval' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval' ] ) : 0 ) * 86400 +
-				( !empty( $filters_normalized[ 'date' ][ 'interval_hours' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval_hours' ] ) : 0 ) * 3600 +
-				( !empty( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) ? intval( $filters_normalized[ 'date' ][ 'interval_minutes' ] ) : 0 ) * 60
-			) );
-
-			// Swap boundaries if we're going back in time
-			if ( $filters_normalized[ 'date' ][ 'interval_direction' ] == 1 ) {
-				$adjustment = ( abs( $filters_normalized[ 'utime' ][ 'start' ] - $filters_normalized[ 'utime' ][ 'end' ] ) < 86400 ) ? 0 : 86400;
-				list( $filters_normalized[ 'utime' ][ 'start' ], $filters_normalized[ 'utime' ][ 'end' ] ) = array( $filters_normalized[ 'utime' ][ 'end' ] + $adjustment, $filters_normalized[ 'utime' ][ 'start' ] + $adjustment );
+			// If end is in the future and the level of granularity is hours, set it to now
+			if ( !empty( $fn[ 'date' ][ 'interval_hours' ] ) && $fn[ 'utime' ][ 'end' ] > date_i18n( 'U' ) ) {
+				$fn[ 'utime' ][ 'end' ] = intval( date_i18n( 'U' ) );
 			}
 
-			$filters_normalized[ 'utime' ][ 'end' ]--;
+			$fn[ 'utime' ][ 'range' ] = $fn[ 'utime' ][ 'range' ] + 1;
+			$fn[ 'utime' ][ 'start' ] = $fn[ 'utime' ][ 'end' ] + $fn[ 'utime' ][ 'range' ];
+
+			// Store the absolute value for later (chart)
+			$fn[ 'utime' ][ 'range' ] = - $fn[ 'utime' ][ 'range' ];
+		}
+		else {
+			$fn[ 'utime' ][ 'start' ] = mktime(
+				!empty( $fn[ 'date' ][ 'hour' ] ) ? $fn[ 'date' ][ 'hour' ] : 0,
+				0,
+				0,
+				$fn[ 'date' ][ 'month' ],
+				$fn[ 'date' ][ 'day' ],
+				$fn[ 'date' ][ 'year' ]
+			);
+
+			$fn[ 'utime' ][ 'range' ] = $fn[ 'utime' ][ 'range' ] - 1;
+			$fn[ 'utime' ][ 'end' ] = $fn[ 'utime' ][ 'start' ] + $fn[ 'utime' ][ 'range' ];
 		}
 
 		// If end is in the future, set it to now
-		if ( $filters_normalized[ 'utime' ][ 'end' ] > date_i18n( 'U' ) ) {
-			$filters_normalized[ 'utime' ][ 'end' ] = intval( date_i18n( 'U' ) );
-		}
-
-		// If start is after end, set it to first of month
-		if ( $filters_normalized[ 'utime' ][ 'start' ] > $filters_normalized[ 'utime' ][ 'end' ] ) {
-			$filters_normalized[ 'utime' ][ 'start' ] = mktime(
-				0,
-				0,
-				0,
-				date_i18n( 'n', $filters_normalized[ 'utime' ][ 'end' ] ),
-				1,
-				date_i18n( 'Y', $filters_normalized[ 'utime' ][ 'end' ] )
-			 );
-			$filters_normalized[ 'date' ][ 'hour' ] = $filters_normalized[ 'date' ][ 'day' ] = $filters_normalized[ 'date' ][ 'month' ] = $filters_normalized[ 'date' ][ 'year' ] = 0;
+		if ( $fn[ 'utime' ][ 'end' ] > date_i18n( 'U' ) ) {
+			$fn[ 'utime' ][ 'end' ] = intval( date_i18n( 'U' ) );
 		}
 
 		// Restore filters on date_i18n
 		wp_slimstat::toggle_date_i18n_filters( true );
 
 		// Apply third-party filters
-		$filters_normalized = apply_filters( 'slimstat_db_filters_normalized', $filters_normalized, $_filters_raw );
+		$fn = apply_filters( 'slimstat_db_filters_normalized', $fn, $_filters_raw );
 
-		return $filters_normalized;
+		return $fn;
 	}
 
 	// The following methods retrieve the information from the database
@@ -722,130 +646,100 @@ class wp_slimstat_db {
 	}
 
 	public static function get_data_for_chart( $_args = array() ) {
-		$previous = array( 'end' => self::$filters_normalized[ 'utime' ][ 'start' ] - 1 );
-		$label_date_format = '';
-		$output = array( 'json' => '[]', 'json_count' => 0, 'current' => array( 'label' => '' ) );
+		// Determine the chart granularity based on the date range
+		// - Up to 24 hours (86400 seconds): HOURLY
+		// - Up to 120 days (10368000 seconds): DAILY
+		// - Otherwise: MONTHLY
+		$params = array();
 
-		// Each type has its own parameters
-		switch ( self::$filters_normalized[ 'utime' ][ 'type' ] ) {
-			case 'H':
-				$previous[ 'start' ] = self::$filters_normalized[ 'utime' ][ 'start' ] - 3600;
-				$label_date_format = wp_slimstat::$settings[ 'time_format' ];
-				$group_by = array( 'HOUR', 'MINUTE', 'i' );
-				$values_in_interval = array( 59, 59, 0, 60 );
-				break;
-
-			case 'd':
-				$previous[ 'start' ] = self::$filters_normalized[ 'utime' ][ 'start' ] - 86400;
-				$label_date_format = ( self::$formats[ 'decimal' ] == '.' ) ? 'm/d' : 'd/m';
-				$group_by = array( 'DAY', 'HOUR', 'G' );
-				$values_in_interval = array( 23, 23, 0, 3600 );
-				break;
-
-			case 'Y':
-				$previous[ 'start' ] = mktime( 0, 0, 0, 1, 1, self::$filters_normalized[ 'date' ][ 'year' ] - 1 );
-				$label_date_format = 'Y';
-				$group_by = array( 'YEAR', 'MONTH', 'n' );
-				$values_in_interval = array( 12, 12, 1, 2678400 );
-				break;
-
-			case 'interval':
-				$group_by = array( 'MONTH', 'DAY', 'j' );
-				$default_interval = empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ? intval(  wp_slimstat::$settings[ 'posts_column_day_interval' ] ) : self::$filters_normalized[ 'date' ][ 'interval' ];
-				$values_in_interval = array( abs( $default_interval - 1 ), abs( $default_interval - 1 ), 0, 86400 );
-				break;
-
-			default:
-				$previous[ 'start' ] = mktime( 0, 0, 0, ( !empty( self::$filters_normalized[ 'date' ][ 'month' ] ) ? self::$filters_normalized[ 'date' ][ 'month' ] : intval( date_i18n('n') ) ) - 1, 1, !empty( self::$filters_normalized[ 'date' ][ 'year' ]) ? self::$filters_normalized[ 'date' ][ 'year' ] : intval( date_i18n( 'Y' ) ) );
-				$label_date_format = 'm/y';
-				$group_by = array( 'MONTH', 'DAY', 'j' );
-				$values_in_interval = array( intval( date( 't', $previous[ 'start' ] ) ), intval( date( 't', self::$filters_normalized[ 'utime' ][ 'start' ] ) ), 1, 86400 );
-				break;
+		if ( self::$filters_normalized[ 'utime' ][ 'range' ] < 86400 ) {
+			$params[ 'group_by' ] = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+			$params[ 'data_points_label' ] = ( self::$formats[ 'decimal' ] == '.' ) ? 'm/d - h a' : 'd/m - H';
+			$params[ 'data_points_count' ] = ceil( self::$filters_normalized[ 'utime' ][ 'range' ] / 3600 );
+			$params[ 'granularity' ] = 'HOUR';
+		}
+		else if ( self::$filters_normalized[ 'utime' ][ 'range' ] < 10368000 ) {
+			$params[ 'group_by' ] = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+			$params[ 'data_points_label' ] = ( self::$formats[ 'decimal' ] == '.' ) ? 'm/d' : 'd/m';
+			$params[ 'data_points_count' ] = ceil( self::$filters_normalized[ 'utime' ][ 'range' ] / 86400 );
+			$params[ 'granularity' ] = 'DAY';
+		}
+		else {
+			$params[ 'group_by' ] = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+			$params[ 'data_points_label' ] = 'm/y';
+			$params[ 'data_points_count' ] = self::count_months_between( self::$filters_normalized[ 'utime' ][ 'start' ], self::$filters_normalized[ 'utime' ][ 'end' ] );
+			$params[ 'granularity' ] = 'MONTH';
 		}
 
+		// Calculate the "previous/comparison" time range
+		$params[ 'previous_end' ] = self::$filters_normalized[ 'utime' ][ 'start' ] - 1;
+		$params[ 'previous_start' ] = $params[ 'previous_end' ] - self::$filters_normalized[ 'utime' ][ 'range' ];
+
+		// Build the SQL query
 		if ( empty( $_args[ 'where' ] ) ) {
 			$_args[ 'where' ] = '';
 		}
 
-		// Custom intervals don't have a comparison chart ('previous' range)
-		if ( self::$filters_normalized[ 'utime' ][ 'type' ] == 'interval' ) {
-			$_args[ 'where' ] = self::get_combined_where( $_args[ 'where' ] );
-			$previous_time_range = '';			
-		}
-		else {
-			$_args[ 'where' ] = self::get_combined_where( $_args[ 'where' ], '*', false );
-			$previous_time_range = ' AND (dt BETWEEN '.$previous[ 'start' ].' AND '.$previous[ 'end' ].' OR dt BETWEEN '.self::$filters_normalized[ 'utime' ][ 'start' ].' AND '.self::$filters_normalized[ 'utime' ][ 'end' ].')';
-		}
-
-		// Build the SQL query
-		$group_by_string = "{$group_by[0]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), {$group_by[1]}(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
 		$sql = "
-			SELECT dt, {$_args[ 'data1' ]} first_metric, {$_args[ 'data2' ]} second_metric
+			SELECT MIN(dt) AS dt, {$_args[ 'data1' ]} AS v1, {$_args[ 'data2' ]} AS v2
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE {$_args[ 'where' ]} $previous_time_range
-			GROUP BY $group_by_string";
+			WHERE " . self::get_combined_where( $_args[ 'where' ], '*', false ) . " AND (dt BETWEEN {$params[ 'previous_start' ]} AND {$params[ 'previous_end' ]} OR dt BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ] . ")
+			GROUP BY {$params[ 'group_by' ]}";
 
 		// Get the data
 		$results = self::get_results(
-				$sql,
-				'dt',
-				'',
-				$group_by_string, 'SUM(first_metric) AS first_metric, SUM(second_metric) AS second_metric' );
+			$sql,
+			'dt',
+			'',
+			$params[ 'group_by' ], 'SUM(v1) AS v1, SUM(v2) AS v2'
+		);
 
-		// Fill the output array
-		if ( self::$filters_normalized[ 'utime' ][ 'type' ] != 'interval' ) {
-			$output[ 'current' ][ 'label' ] = gmdate( $label_date_format, self::$filters_normalized[ 'utime' ][ 'start' ] );
-			$output[ 'previous' ][ 'label' ] = gmdate( $label_date_format, $previous[ 'start' ] );
-
-			$output[ 'previous' ][ 'first_metric' ] = array_fill( $values_in_interval[ 2 ], $values_in_interval[ 0 ], 0 );
-			$output[ 'previous' ][ 'second_metric' ] = array_fill( $values_in_interval[ 2 ], $values_in_interval[ 0 ], 0 );
-		}
-
-		$today_limit = floatval( date_i18n( 'Ymd.Hi' ) );
-		for ( $i = $values_in_interval[ 2 ]; $i <= $values_in_interval[ 1 ]; $i++ ) {
-			// Do not include dates in the future
-			if ( floatval( date( 'Ymd.Hi', self::$filters_normalized[ 'utime' ][ 'start' ] + ( ( $i - $values_in_interval[ 2 ]) * $values_in_interval[ 3 ] ) ) ) <= $today_limit ) {
-				$output[ 'current' ][ 'first_metric' ][ $i ] = 0;
-				$output[ 'current' ][ 'second_metric' ][ $i ] = 0;
-			}
-		}
+		$output = array(
+			'keys' => array()
+		);
 
 		// No data? No problem!
 		if ( !is_array( $results ) || empty( $results ) ) {
 			return $output;
 		}
 
-		// Rearrange the data
-		foreach ( $results as $i => $a_result ) {
-			$index = !empty( self::$filters_normalized[ 'date' ][ 'interval' ] ) ? floor( ( $a_result['dt'] - self::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 ) : gmdate( $group_by[ 2 ], $a_result[ 'dt' ] );
+		// Generate the output array (sent to the chart library) by combining all the data collected so far
+		
+		// Let's start by initializing all the data points to zero
+		for ( $i = 0; $i < $params[ 'data_points_count' ]; $i++ ) {
+			$v1_label = date( $params[ 'data_points_label' ], strtotime( "+$i {$params[ 'granularity' ]}", self::$filters_normalized[ 'utime' ][ 'start' ] ) );
+			$v3_label = date( $params[ 'data_points_label' ], strtotime( "+$i {$params[ 'granularity' ]}", $params[ 'previous_start' ] ) );
 
-			if ( !empty( $previous[ 'start' ] ) && gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $previous[ 'start' ] ) ) {
-				$output[ 'previous' ][ 'first_metric' ][ $index ] = intval( $a_result[ 'first_metric' ] );
-				$output[ 'previous' ][ 'second_metric' ][ $index ] = intval( $a_result[ 'second_metric' ] );
-			}
-			if ( empty( $previous[ 'start' ] ) || gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], $a_result[ 'dt' ] ) == gmdate( self::$filters_normalized[ 'utime' ][ 'type' ], self::$filters_normalized[ 'utime' ][ 'start' ] ) ) {
-				$output[ 'current' ][ 'first_metric' ][ $index ] = intval( $a_result[ 'first_metric' ] );
-				$output[ 'current' ][ 'second_metric' ][ $index ] = intval( $a_result[ 'second_metric' ] );
-			}
+			$output[ 'keys' ][ $v1_label ] = $i;
+			$output[ 'keys' ][ $v3_label ] = $i;
+
+			// This is how AmCharts expects the data to be formatted
+			$output[ $i ][ 'v1_label' ] = $v1_label;
+			$output[ $i ][ 'v3_label' ] = $v3_label;
+			$output[ $i ][ 'v4' ] = $output[ $i ][ 'v3' ] = $output[ $i ][ 'v2' ] = $output[ $i ][ 'v1' ] = 0;
 		}
 
-		// Now we're ready to repackage the data for the chart
-		$js_chart_data = array();
-		$output[ 'json_count' ] = max( $values_in_interval[ 0 ], $values_in_interval[ 1 ] );
-		for ( $i = $values_in_interval[ 2 ]; $i <= $output[ 'json_count' ]; $i++ ) {
-			$js_chart_data[ $i ][ 'date' ] = ( self::$filters_normalized[ 'utime' ][ 'type' ] == 'interval' ) ? date_i18n( 'm/d', self::$filters_normalized[ 'utime' ][ 'start' ] + $i * 86400 ) : $i;
+		
 
-			if ( isset( $output[ 'current' ][ 'first_metric' ][ $i ] ) ) {
-				$js_chart_data[ $i ][ 'v1' ] = $output[ 'current' ][ 'first_metric' ][ $i ];
-				$js_chart_data[ $i ][ 'v2' ] = $output[ 'current' ][ 'second_metric' ][ $i ];
+		// Now populate all the data points
+		foreach ( $results as $a_result ) {
+			$label = date( $params[ 'data_points_label' ], $a_result[ 'dt' ] );
+
+			// Data out of range?
+			if ( !isset( $output[ 'keys' ][ $label ] ) ) {
+				continue;
 			}
-			if ( isset( $output[ 'previous' ][ 'first_metric' ][ $i ] ) ) {
-				$js_chart_data[ $i ][ 'v3' ] = $output[ 'previous' ][ 'first_metric' ][ $i ];
-				$js_chart_data[ $i ][ 'v4' ] = $output[ 'previous' ][ 'second_metric' ][ $i ];
+
+			// Does this value belong to the "current" range?
+			if ( $a_result[ 'dt' ] >= self::$filters_normalized[ 'utime' ][ 'start' ] && $a_result[ 'dt' ] <= self::$filters_normalized[ 'utime' ][ 'end' ] ) {
+				$output[ $output[ 'keys' ][ $label ] ][ 'v1' ] = intval( $a_result[ 'v1' ] );
+				$output[ $output[ 'keys' ][ $label ] ][ 'v2' ] = intval( $a_result[ 'v2' ] );
+			}
+			else {
+				$output[ $output[ 'keys' ][ $label ] ][ 'v3' ] = intval( $a_result[ 'v1' ] );
+				$output[ $output[ 'keys' ][ $label ] ][ 'v4' ] = intval( $a_result[ 'v2' ] );
 			}
 		}
-
-		$output[ 'json' ] = json_encode( array_values( $js_chart_data ) );
 
 		return $output;
 	}
@@ -1095,5 +989,19 @@ class wp_slimstat_db {
 		}
 
 		return $output;
+	}
+
+	protected static function count_months_between( $min_timestamp = 0, $max_timestamp = 0 ) {
+		$i = 0;
+		$min_month = date( 'Ym', $min_timestamp );
+		$max_month = date( 'Ym', $max_timestamp );
+
+		while ( $min_month <= $max_month ) {
+			$min_timestamp = strtotime( "+1 month", $min_timestamp );
+			$min_month = date( 'Ym', $min_timestamp );
+			$i++;
+		}
+
+		return $i;
 	}
 }

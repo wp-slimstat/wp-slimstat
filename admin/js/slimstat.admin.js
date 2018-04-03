@@ -99,9 +99,11 @@ jQuery( function() {
 
 			onClose: function( dateText, inst ) {
 				if ( dateText.length ) {
+					jQuery( '#slimstat-filter-hour' ).val( 0 );
 					jQuery( '#slimstat-filter-day' ).val( dateText.split( '-' )[ 2 ] );
 					jQuery( '#slimstat-filter-month' ).val( dateText.split( '-' )[ 1 ] );
 					jQuery( '#slimstat-filter-year' ).val( dateText.split( '-' )[ 0 ] );
+					jQuery( '#slimstat-filter-interval' ).val( -1 );
 				}
 			}
 		} );
@@ -343,7 +345,7 @@ jQuery( function() {
 					viewport: jQuery( window )
 				},
 				style: {
-					classes: 'qtip-light'
+					classes: 'qtip-dark qtip-rounded'
 				}
 			}, e );
 		}
@@ -372,7 +374,8 @@ jQuery( function() {
 	
 	// TagEditor
 	jQuery( 'textarea.slimstat-taglist' ).tagEditor( {
-		forceLowercase: false
+		forceLowercase: false,
+		maxLength: 1000
 	} );
 
 	//
