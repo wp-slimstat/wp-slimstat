@@ -11,7 +11,10 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "We've completely rewritten the portion of code that handles the date ranges in the Filter Bar. In order to simplify things, <strong>we have deprecated</strong> the shortcode filter <code>interval_direction</code>, which is now expressed by the sign in front of the interval value (positive for going forward from a given start date, and negative for going back in time). Please note that this change affect your existing shortcodes, if they use the aforementioned filter. We will update our documentation in the next few days to remove any reference to this filter, and to avoid any confusion. We've also reintroduced the various levels of granularity for our charts: hourly (when a single day is selected), daily (for ranges up to 120 days) and monthly. Last but not least, the comparison chart is now <strong>always</strong> displayed, using new criteria to determine the range to use. You may want to change your settings (Settings > Reports > Default Time Span > Days, and Reports > Comparison Chart) to mimic the old behavior or hide the comparison chart altogether, if you like. Please feel free to contact us if you have any questions or to report any issues.";
+		self::$admin_notice = "A few users have reached out to us to ask if Slimstat would be compliant with the upcoming <a href='https://en.wikipedia.org/wiki/General_Data_Protection_Regulation' target='_blank'>General Data Protection Regulation (GDPR)</a> guidelines and regulations that are about to be activated all across Europe. Based on our understanding of this new law, as long as the hosting provider where you are storing the information collected by Slimstat is GDPR compliant, then you won't have to worry about any extra layers of compliance offered by software like ours. One of our primary goals is to make sure that you and only you are the sole owner of the data collected by our plugin. This has always been what makes Slimstat stand out from the crowd: while Jetpack, Google Analytics and many other services have full unrestricted access to the data they collect on your website, we at Slimstat don't treat our users as <em>the product</em> that we sell to other companies. Also, starting with this update, our plugin honors the <a href='https://en.wikipedia.org/wiki/Do_Not_Track' target='_blank'>Do Not Track header</a> (this feature can be turned off in the settings), and we introduced an experimental option to allow your users to opt out of tracking via a text box displayed. Please let us know if you notice any issues with these new features.";
+
+		// self::$admin_notice = "Now that we have a cleaner foundation to build on, it's time to start introducing new reports and new ways to segment your audience and the traffic they generate. While our users test the latest changes and updates (to confirm that the foundation is indeed solid and bug-free), we are hard at work implementing the first batch of new reports. Some of them will be made available in the free version, while others will be added to our premium add-on, <a href='http://www.wp-slimstat.com/downloads/user-overview/' target='_blank'>User Overview</a>. And we need your help! If you think that a specific report should be added to Slimstat, please do not hesitate <a href='http://support.wp-slimstat.com' target='_blank'>to let us know</a>.";
+		
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
@@ -26,7 +29,7 @@ class wp_slimstat_admin {
 		$has_network_reports = get_user_option( "meta-box-order_slimstat_page_slimlayout-network", 1 );
 		self::$screens_info = array(
 			'slimview1' => array(
-				'is_report_group' => false,
+				'is_report_group' => true,
 				'show_in_sidebar' => true,
 				'title' => __( 'Access Log', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
@@ -53,12 +56,6 @@ class wp_slimstat_admin {
 				'is_report_group' => true,
 				'show_in_sidebar' => true,
 				'title' => __( 'Traffic Sources', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
-			),
-			'slimview6' => array(
-				'is_report_group' => true,
-				'show_in_sidebar' => true,
-				'title' => __( 'Geolocation', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
 			),
 			'slimlayout' => array(
@@ -395,6 +392,25 @@ class wp_slimstat_admin {
 			}
 		}
 		// --- END: Updates for version 4.7.3.1 ---
+
+		// --- Updates for version 4.7.8 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.8', '<' ) ) {
+			// The Geolocation screen has been removed, and the World Map has been moved to the Audience tab
+			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) ? 'slimstat' : 'admin';
+			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
+
+			if ( !empty( $user_reports[ 'slimview6' ] ) ) {
+				if ( !empty( $user_reports[ 'slimview3' ] ) ) {
+					$user_reports[ 'slimview3' ] = $user_reports[ 'slimview3' ] . ',' . $user_reports[ 'slimview6' ];
+				}
+				else {
+					$user_reports[ 'slimview3' ] = $user_reports[ 'slimview6' ];	
+				}
+			}
+
+			update_user_option( $GLOBALS[ 'current_user' ]->ID, "meta-box-order_{$page_location}_page_slimlayout", $user_reports );
+		}
+		// --- END: Updates for version 4.7.8 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
@@ -886,6 +902,7 @@ class wp_slimstat_admin {
 					$_setting_info = array_merge( array(
 						'description' =>'',
 						'type' => '',
+						'rows' => 4,
 						'long_description' => '',
 						'before_input_field' => '',
 						'after_input_field' => '',
@@ -980,6 +997,7 @@ class wp_slimstat_admin {
 								<p>
 									<textarea class="large-text code' . $use_tag_list . '"' . $is_readonly . '
 										id="' . $_setting_slug . '"
+										rows="' . $_setting_info[ 'rows' ] . '"
 										name="options[' . $_setting_slug . ']">' . ( isset( wp_slimstat::$settings[ $_setting_slug ] ) ? stripslashes( wp_slimstat::$settings[ $_setting_slug ] ) : '' ) . '</textarea>
 									<span class="description">' . $_setting_info[ 'after_input_field' ] . '</span>
 								</p>

@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 4.9
-Stable tag: 4.7.7
+Stable tag: 4.7.8
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -77,6 +77,19 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.8 =
+* [Note] A few users have reached out to us to ask if Slimstat would be compliant with the upcoming [General Data Protection Regulation (GDPR)](https://en.wikipedia.org/wiki/General_Data_Protection_Regulation) guidelines and regulations that are about to be activated all across Europe. Based on our understanding of this new law, as long as the hosting provider where you are storing the information collected by Slimstat is GDPR compliant, then you won't have to worry about any extra layers of compliance offered by software like ours. One of our primary goals is to make sure that you and only you are the sole owner of the data collected by our plugin. This has always been what makes Slimstat stand out from the crowd: while Jetpack, Google Analytics and many other services have full unrestricted access to the data they collect on your website, we at Slimstat don't treat our users as *the product* that we sell to other companies.
+* [New] Our plugin now honors the [Do Not Track header](https://en.wikipedia.org/wiki/Do_Not_Track). Please note that this feature can be turned off in the settings, and will be enabled by default.
+* [New] We introduced an experimental option to allow your users to opt out of tracking via a text box displayed at the bottom of your website. Please go to Settings > Filters to customize the behavior and the message to suit your needs and website layout. You can also use third-party solutions to let your visitors opt out, and then configure Slimstat to read the corresponding cookie they set.
+* [New] You can now add reports to the Access Log screen, and customize it just like any other screen in Slimstat.
+* [Update] Reintroduced the `interval_minutes` filter, which had been temporarily removed from our code as a side effect of our code clean-up process. Thank you, [mth75](https://wordpress.org/support/topic/wrong-currently-online-value-shortcode/).
+* [Update] Moved the button to reset the report layouts to the Customizer screen.
+* [Update] Deprecated the Geolocation screen. The World Map report has been moved to the Audience tab. If for some reason you cannot find the World Map, please go to Slimstat > Customize and click the Reset All button.
+* [Fix] Filters were not being set when opening the corresponding links in a new window. Thank you, [forumaad](https://wordpress.org/support/topic/bug-empty-filter-line-then-open-at-new-windows/)
+* [Fix] Bug affecting the report "Currently Online".
+* [Fix] Bug affecting all the filter links after the Export to Excel add-on had been enabled.
+* [Fix] Bug affecting the resource filter when "nice permalinks" are not enabled.
+
 = 4.7.7 =
 * [New] We've completely rewritten the portion of code that handles the date ranges in the Filter Bar. In order to simplify things, **we have deprecated** the `interval_direction` filter, which is now expressed by the sign in front of the interval value (positive for going forward from a given start date, and negative for going back in time). Please note that this change affect your existing shortcodes, if they use the aforementioned filter. We will update our documentation in the next few days to remove any reference to this filter, and to avoid any confusion. Please feel free to contact us if you have any questions or to report any issues.
 * [New] The comparison chart is now always displayed, using new criteria to determine the range to use. You may want to update your settings (Settings > Reports > Default Time Span > Days, and Reports > Comparison Chart) to mimic the old behavior or hide the comparison chart altogether, if you like.

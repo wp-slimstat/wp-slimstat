@@ -46,7 +46,7 @@ jQuery( function() {
 
 		SlimStatAdmin.refresh_report( id );
 		
-		// Remove any temporary filters (pagination) set here above
+		// Remove any temporary filters set here above
 		jQuery( '.slimstat-temp-filter' ).remove();
 
 		// Re-initialize SlimScroll on the new content
@@ -183,9 +183,12 @@ jQuery( function() {
 
 		jQuery( 'form#slimstat-filters-form' ).attr( 'action', url.split( '?' )[ 0 ] + '?page=' + SlimStatAdmin.get_current_tab( url.split( '?' )[ 1 ] ) );
 
-		SlimStatAdmin.add_url_filters_to_form( url, typeof jQuery( this ).attr( 'data-reset-filters' ) != 'undefined' );
+		SlimStatAdmin.add_url_filters_to_form( url, typeof jQuery( this ).attr( 'data-reset-filters' ) != 'undefined', jQuery( this ).hasClass( 'slimstat-filter-temp' ) );
 
 		jQuery( '#slimstat-filters-form' ).submit();
+
+		// Remove any temporary filters set here above
+		jQuery( '.slimstat-temp-filter' ).remove();
 
 		return false;
 	});
@@ -460,8 +463,13 @@ var SlimStatAdmin = {
 		return clean_filters;
 	},
 
-	add_url_filters_to_form: function( url, delete_existing_filters ) {
+	add_url_filters_to_form: function( url, delete_existing_filters, is_temporary ) {
 		clean_filters = SlimStatAdmin.get_query_string_filters( url );
+
+		is_temporary_class = '';
+		if ( typeof is_temporary != 'undefined' ) {
+			is_temporary_class = ' slimstat-temp-filter';
+		}
 
 		// Manipulate the existing list of filters (hidden input fields), if we don't want to delete them
 		if ( typeof delete_existing_filters == 'undefined' || !delete_existing_filters ) {
@@ -475,7 +483,7 @@ var SlimStatAdmin = {
 					jQuery( 'input[name="' + i + '"]' ).attr( 'value', clean_filters[ i ] );
 				}
 				else {
-					jQuery( '<input type="hidden" name="' + i + '" class="slimstat-post-filter" value="' + clean_filters[ i ] + '">' ).appendTo( '#slimstat-filters-form' );
+					jQuery( '<input type="hidden" name="' + i + '" class="slimstat-post-filter' + is_temporary_class + '" value="' + clean_filters[ i ] + '">' ).appendTo( '#slimstat-filters-form' );
 				}
 			}
 		}
@@ -484,7 +492,7 @@ var SlimStatAdmin = {
 			jQuery( '.slimstat-post-filter' ).remove();
 
 			for( i in clean_filters ) {
-				jQuery( '<input type="hidden" name="' + i + '" class="slimstat-post-filter" value="' + clean_filters[ i ] + '">' ).appendTo( '#slimstat-filters-form' );
+				jQuery( '<input type="hidden" name="' + i + '" class="slimstat-post-filter' + is_temporary_class + '" value="' + clean_filters[ i ] + '">' ).appendTo( '#slimstat-filters-form' );
 			}
 		}
 	},

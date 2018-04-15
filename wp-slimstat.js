@@ -366,6 +366,71 @@ var SlimStat = {
 		SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, use_beacon );
 
 		return true;
+	},
+
+	attach_tracker: function() {
+		all_links = document.getElementsByTagName( "a" );
+		var extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
+		var to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
+
+		for ( var i = 0; i < all_links.length; i++ ) {
+			// Types
+			// 0: external
+			// 1: download
+			// 2: internal (track coordinates only)
+
+			linktype = ( all_links[ i ].href && ( all_links[ i ].hostname == location.hostname || all_links[ i ].href.indexOf( '://' ) == -1 ) || all_links[ i ].href.indexOf( 'javascript:' ) == -1 ) ? 2 : 0;
+			tracking = 1;
+
+			// Do not track links with given class names...
+			if ( to_not_track.length > 0 ) {
+				if ( 1 == tracking ) {
+					classes_current_link = ( "undefined" != typeof all_links[ i ].className && all_links[ i ].className ) ? all_links[ i ].className.split( " " ) : [];
+
+					for ( var cl = 0; cl < classes_current_link.length; cl++ ) {
+						if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_not_track ) ) {
+							tracking = 0;
+							break;
+						}
+					}
+				}
+
+				// ... or rel attribute
+				if ( 1 == tracking && "undefined" != typeof all_links[ i ].attributes.rel && all_links[ i ].attributes.rel.value ) {
+					if ( SlimStat.in_array_substring( all_links[ i ].attributes.rel.value, to_not_track ) ) {
+						tracking = 0;
+					}
+				}
+
+				// ... or HREF attribute
+				if ( 1 == tracking && "undefined" != typeof all_links[ i ].href && all_links[ i ].href ) {
+					if ( SlimStat.in_array_substring( all_links[ i ].href, to_not_track ) ) {
+						tracking = 0;
+					}
+				}
+			}
+
+			// Downloads
+			extension_current_link = all_links[ i ].pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
+			if ( 2 == linktype && extensions_to_track.length > 0 && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
+				tracking = 1;
+				linktype = 1;
+			}
+
+			all_links[ i ].setAttribute( "data-slimstat", ( linktype << 1 ) + tracking );
+
+			SlimStat.add_event( all_links[ i ], "click", function( e ) {
+				link_info = parseInt( this.getAttribute( "data-slimstat" ) );
+				if ( isNaN ( link_info ) ) {
+					link_info = 0;
+				}
+
+				// tracking: link_info & 1 --- linktype: link_info >> 1;
+				if ( link_info & 1 == 1 ) {
+					SlimStat.ss_track( e, link_info >> 1, "" );
+				}
+			});
+		}
 	}
 }
 
@@ -377,68 +442,10 @@ if ( typeof String.prototype.trim !== 'function' ) {
 }
 
 SlimStat.add_event( window, "load", function() {
-	all_links = document.getElementsByTagName( "a" );
-	var extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
-	var to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
+	// Attach an event tracker to all the links on the page that satisfy the criteria set by the admin
+	SlimStat.attach_tracker();
 
-	for (var i = 0; i < all_links.length; i++) {
-		// Types
-		// 0: external
-		// 1: download
-		// 2: internal (track coordinates only)
-
-		linktype = ( all_links[ i ].href && ( all_links[ i ].hostname == location.hostname || all_links[ i ].href.indexOf( '://' ) == -1 ) || all_links[ i ].href.indexOf( 'javascript:' ) == -1 ) ? 2 : 0;
-		tracking = 1;
-
-		// Do not track links with given class names...
-		if ( to_not_track.length > 0 ) {
-			if ( 1 == tracking ) {
-				classes_current_link = ( "undefined" != typeof all_links[ i ].className && all_links[ i ].className ) ? all_links[ i ].className.split( " " ) : [];
-
-				for ( var cl = 0; cl < classes_current_link.length; cl++ ) {
-					if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_not_track ) ) {
-						tracking = 0;
-						break;
-					}
-				}
-			}
-
-			// ... or rel attribute
-			if ( 1 == tracking && "undefined" != typeof all_links[ i ].attributes.rel && all_links[ i ].attributes.rel.value ) {
-				if ( SlimStat.in_array_substring( all_links[ i ].attributes.rel.value, to_not_track ) ) {
-					tracking = 0;
-				}
-			}
-
-			// ... or HREF attribute
-			if ( 1 == tracking && "undefined" != typeof all_links[ i ].href && all_links[ i ].href ) {
-				if ( SlimStat.in_array_substring( all_links[ i ].href, to_not_track ) ) {
-					tracking = 0;
-				}
-			}
-		}
-
-		// Downloads
-		extension_current_link = all_links[ i ].pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
-		if ( 2 == linktype && extensions_to_track.length > 0 && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
-			tracking = 1;
-			linktype = 1;
-		}
-
-		all_links[ i ].setAttribute( "data-slimstat", ( linktype << 1 ) + tracking );
-
-		SlimStat.add_event( all_links[ i ], "click", function( e ) {
-			link_info = parseInt( this.getAttribute( "data-slimstat" ) );
-			if ( isNaN ( link_info ) ) {
-				link_info = 0;
-			}
-
-			// tracking: link_info & 1 --- linktype: link_info >> 1;
-			if ( link_info & 1 == 1 ) {
-				SlimStat.ss_track( e, link_info >> 1, "" );
-			}
-		});
-	}
+	// 
 } );
 
 var slimstat_data = "";

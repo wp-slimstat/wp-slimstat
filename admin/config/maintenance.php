@@ -114,15 +114,6 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			wp_slimstat::$settings[ 'last_tracker_notice' ] = array();
 			break;
 
-		case 'restore-views':
-			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'");
-			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'");
-			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
-			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
-			$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
-			wp_slimstat_admin::show_alert_message( __( 'Your reports were successfully restored to their default arrangement.', 'wp-slimstat') );
-			break;
-
 		case 'switch-engine':
 			$have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
 			if ($have_innodb[0]['Value'] != 'YES') return;
@@ -186,7 +177,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<span class="description"><?php _e( 'The message here above will indicate if a page view was not recorded because it matched at least one of the conditions you configured in your settings (filters, blackslists, etc).', 'wp-slimstat' ) ?></span>
 		</td>
 	</tr>
-	<tr  class="alternate">
+	<tr>
 		<?php if ( wp_slimstat::$settings[ 'show_sql_debug' ] != 'on' ): ?>
 		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-sql-debug-mode"><?php _e("Enable SQL Debug",'wp-slimstat'); ?></a>
@@ -202,12 +193,6 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<span class="description"><?php _e("Deactivate the SQL output on top of each report.",'wp-slimstat') ?></span>
 		</td>
 		<?php endif ?>
-	</tr>
-	<tr>
-		<th scope="row"><a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=restore-views" onclick="return(confirm('<?php _e('Are you sure you want to restore the default arrangement of your reports?','wp-slimstat'); ?>'))"><?php _e('No Panic Button','wp-slimstat'); ?></a></th>
-		<td>
-			<span class="description"><?php _e("Reset the default arrangement of your reports. Helpful when, for some reason, reports disappear from your panels or something doesn't look right in your views.",'wp-slimstat') ?></span>
-		</td>
 	</tr>
 	<tr>
 		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-data-maintenance"><?php _e('Data Maintenance','wp-slimstat') ?></td>

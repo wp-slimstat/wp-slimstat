@@ -10,18 +10,16 @@
 		'slimview2' => array(),
 		'slimview3' => array(),
 		'slimview4' => array(),
-		'slimview5' => array(),
-		'slimview6' => array()
+		'slimview5' => array()
 	);
 
-	$reset_link = '';
 	$is_report_reset = false;
 	if ( !empty( $_GET[ 'action' ] ) && $_GET[ 'action' ] == 'restore-views' ) {
-		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'");
-		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'");
-		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
-		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
-		$GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
+		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'" );
+		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'" );
+		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'" );
+		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'" );
+		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'" );
 		$is_report_reset = true;
 	}
 
@@ -45,10 +43,6 @@
 				$report_locations[ $a_location_id ] = array();
 			}
 		}
-
-		if ( is_network_admin() ) {
-			$reset_link = sprintf( __( 'By using the network-wide customizer, all your users will be seeing the same layout and will not be able to further customize it. You can reset this feature by <a href="%s">clicking here</a>.', 'wp-slimstat' ), 'admin.php?page=slimlayout&&amp;action=restore-views' );
-		}
 	}
 
 	// Keep track of multiple occurrences of the same report, to allow users to delete duplicates
@@ -62,11 +56,17 @@
 <h2><?php _e( 'Customize and organize your reports','wp-slimstat' ) ?></h2>
 <p><?php 
 	_e( 'Drag and drop report placeholders from one container to another, to customize the information you want to see right away when you open Slimstat. Place two or more charts on the same view, clone reports or move them to the Inactive Reports container for improved performance. It is your website, and you know how metrics should be combined to get a clear picture of the traffic it generates.', 'wp-slimstat' );
-	echo ' ' . $reset_link . '<br/><br/>';
+	echo ' ';
+	if ( is_network_admin() ) {
+		_e( 'By using the network-wide customizer, all your users will be seeing the same layout and will not be able to further customize it.', 'wp-slimstat' );
+		echo ' ';
+	}
 	_e( '<strong>Note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden (Screen Options tab).', 'wp-slimstat');
 ?></p>
 
 <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form>
+
+<a href="admin.php?page=slimlayout&&amp;action=restore-views" class="button"><?php _e( 'Reset All', 'wp-slimstat' ) ?></a>
 
 <?php foreach ( $report_locations as $a_location_id => $a_location_list ): $hidden_reports = get_user_option( "metaboxhidden_{$page_location}_page_{$a_location_id}", $current_user->ID ); if ( !is_array( $hidden_reports ) ) $hidden_reports = array(); ?>
 <div id="postbox-container-<?php echo $a_location_id ?>" class="postbox-container">

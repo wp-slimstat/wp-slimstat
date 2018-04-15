@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.7
+Version: 4.7.8
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.7';
+	public static $version = '4.7.8';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -56,12 +56,6 @@ class wp_slimstat {
 		// Allow third-party tools to use a custom database for Slimstat
 		self::$wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
-		// Hook a DB clean-up routine to the daily cronjob
-		add_action( 'wp_slimstat_purge', array( __CLASS__, 'wp_slimstat_purge' ) );
-
-		// Allow external domains on CORS requests
-		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
-
 		// Define the folder where to store the geolocation database (shared among sites in a network, by default)
 		self::$upload_dir = wp_upload_dir();
 		self::$upload_dir = self::$upload_dir[ 'basedir' ];
@@ -94,16 +88,41 @@ class wp_slimstat {
 			if ( self::$settings[ 'track_users' ] == 'on' ) {
 				add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
 			}
+
+			// GDPR Compliance: opt-out text box and handling
+			$is_cookie_empty = !isset( $_COOKIE[ 'slimstat_optout_' . COOKIEHASH ] );
+			if ( $is_cookie_empty && !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
+				foreach ( self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] ) as $a_cookie_pair ) {
+					list( $name, $value ) = explode( '=', $a_cookie_pair );
+
+					if ( !empty( $name ) && isset( $_COOKIE[ $name ] ) ) {
+						$is_cookie_empty = false;
+						break;
+					}
+				}
+			}
+			if ( self::$settings[ 'display_opt_out' ] == 'on' && $is_cookie_empty && !isset( $_GET[ 'slimstat-opt-out' ] ) ) {
+				add_action( 'wp_footer', array( __CLASS__, 'opt_out_box' ) );
+			}
+
+			if ( isset( $_GET[ 'slimstat-opt-out' ] ) ) {
+				@setcookie(
+					'slimstat_optout_' . COOKIEHASH,
+					$_GET[ 'slimstat-opt-out' ],
+					time() + 31557600, // 365 days
+					COOKIEPATH
+				);
+			}
 		}
+
+		// Hook a DB clean-up routine to the daily cronjob
+		add_action( 'wp_slimstat_purge', array( __CLASS__, 'wp_slimstat_purge' ) );
+
+		// Allow external domains on CORS requests
+		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
 
 		// Shortcodes
 		add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
-
-		// Load the admin library
-		if ( is_user_logged_in() ) {
-			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
-			add_action( 'init', array( 'wp_slimstat_admin', 'init' ), 60 );
-		}
 
 		// Include our browser detector library
 		include_once( plugin_dir_path( __FILE__ ) . 'browscap/browser.php' );
@@ -117,6 +136,12 @@ class wp_slimstat {
 
 		// REST API Support
 		add_action( 'rest_api_init', array( __CLASS__, 'register_rest_route' ) );
+
+		// Load the admin library
+		if ( is_user_logged_in() ) {
+			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
+			add_action( 'init', array( 'wp_slimstat_admin', 'init' ), 60 );
+		}
 	}
 	// end init
 
@@ -262,12 +287,43 @@ class wp_slimstat {
 			return $_argument;
 		}
 
+		// Honor the Do Not Track HTTP header - https://en.wikipedia.org/wiki/Do_Not_Track
+		if ( self::$settings[ 'honor_dnt_header' ] == 'on' && !empty( $_SERVER[ 'HTTP_DNT' ] ) ) {
+			self::$stat[ 'id' ] = -314;
+			self::_set_error_array( __( 'Browser sent DNT header request', 'wp-slimstat' ), true );
+			return $_argument;
+		}
+
+		// Opt-out of tracking via cookie
+		$cookie_names = array( 'slimstat_optout_' . COOKIEHASH => 'true' );
+
+		if ( !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
+			$cookie_names = array();
+			$opt_out_cookie_names = self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] );
+
+			foreach ( $opt_out_cookie_names as $a_cookie_pair ) {
+				list( $name, $value ) = explode( '=', $a_cookie_pair );
+
+				if ( !empty( $name ) && !empty( $value ) ) {
+					$cookie_names[ $name ] = $value;
+				}
+			}
+		}
+
+		foreach ( $cookie_names as $a_name => $a_value ) {
+			if ( isset( $_COOKIE[ $a_name ] ) && $_COOKIE[ $a_name ] == $a_value ) {
+				self::$stat[ 'id' ] = -315;
+				self::_set_error_array( __( 'Visitor has opted out of tracking', 'wp-slimstat' ), true );
+				return $_argument;	
+			}
+		}
+
 		// User's IP address
 		list ( self::$stat[ 'ip' ], self::$stat[ 'other_ip' ] ) = self::_get_remote_ip();
 
 		if ( empty( self::$stat[ 'ip' ] ) || self::$stat[ 'ip' ] == '0.0.0.0' ) {
 			self::$stat[ 'id' ] = -202;
-			self::_set_error_array( __( 'Empty or not supported IP address format (IPv6)', 'wp-slimstat' ), false );
+			self::_set_error_array( __( 'Empty or not supported IP address format', 'wp-slimstat' ), false );
 			return $_argument;
 		}
 
@@ -1606,6 +1662,10 @@ class wp_slimstat {
 			'ignore_bots' => 'no',
 			'ignore_prefetch' => 'on',
 			'anonymize_ip' => 'no',
+			'honor_dnt_header' => 'yes',
+			'display_opt_out' => 'no',
+			'opt_out_cookie_names' => '',
+			'opt_out_message' => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="{{accept_url}}">Accept</a> or <a href="{{deny_url}}">Deny</a></p>',
 
 			'ignore_users' => '',
 			'ignore_ip' => '',
@@ -1712,7 +1772,7 @@ class wp_slimstat {
 
 		if ( self::$settings[ 'javascript_mode' ] != 'on' ) {
 			// Do not enqueue the tracker if this page view was not tracked for some reason
-			if ( intval( self::$stat[ 'id' ] ) < 0 ) {
+			if ( !isset( self::$stat[ 'id' ] ) || intval( self::$stat[ 'id' ] ) < 0 ) {
 				return false;
 			}
 
@@ -1771,23 +1831,24 @@ class wp_slimstat {
 				WHERE dt < $days_ago");
 
 			if ( $is_copy_done !== false ) {
-				self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
+				self::$wpdb->query( "DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago" );
 			}
 
-			$is_copy_done = self::$wpdb->query("
+			$is_copy_done = self::$wpdb->query( "
 				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events_archive (type, event_description, notes, position, id, dt)
 				SELECT type, event_description, notes, position, id, dt
 				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events
-				WHERE dt < $days_ago");
+				WHERE dt < $days_ago"
+			);
 
 			if ( $is_copy_done !== false ) {
-				self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
+				self::$wpdb->query( "DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago" );
 			}
 		}
 		else {
 			// Delete old entries
-			self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
-			self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
+			self::$wpdb->query( "DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago" );
+			self::$wpdb->query( "DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago" );
 		}
 
 		// Optimize tables
@@ -1795,6 +1856,23 @@ class wp_slimstat {
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
 		self::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive" );
+	}
+
+	/**
+	 * Allow users to opt-out of tracking
+	 */
+	public static function opt_out_box() {
+		if ( strpos( $_SERVER[ 'REQUEST_URI' ], '?' ) !== false ) {
+			$concat_char = '&';
+		}
+		else {
+			$concat_char = '?';
+		}
+
+		$opt_out_url = '//' . $_SERVER[ 'HTTP_HOST' ] .  $_SERVER[ 'REQUEST_URI' ] . $concat_char . 'slimstat-opt-out=';
+
+		$message = str_replace( '{{accept_url}}', $opt_out_url . 'false', stripslashes( self::$settings[ 'opt_out_message' ] ) );
+		echo str_replace( '{{deny_url}}', $opt_out_url . 'true', $message );
 	}
 
 	/**

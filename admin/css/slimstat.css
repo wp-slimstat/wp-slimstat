@@ -90,7 +90,7 @@
 #slimstat-date-filters .dropdown select, #slimstat-date-filters .dropdown input{
 	margin: 0 5px 5px 0;
 	height: 27px;
-	width: 135px;
+	width: 130px;
 }
 #slimstat-date-filters .dropdown select.short, #slimstat-date-filters .dropdown input.short{
 	width: 65px;
@@ -220,7 +220,7 @@
 	padding: 0 !important;
 }
 .wrap.slimstat .postbox.tall .inside{
-	height: 650px;
+	height: 605px;
 }
 [id^=slim_] p {
 	border-bottom: 1px solid #ddd;
@@ -568,7 +568,7 @@
 .slimstat-layout .postbox-container {
 	border: 1px solid #ccc;
 	float: none;
-	margin-bottom: 20px;
+	margin-top: 20px;
 	overflow: hidden;
 }
 .slimstat-layout .meta-box-sortables {
@@ -596,9 +596,6 @@
 	font-size: 1.1em;
 	margin: 0;
 	padding: 5px 10px;
-}
-.slimstat-layout #postbox-container-slimview1 {
-	display: none;
 }
 
 /* Responsive */
