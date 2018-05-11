@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 4.9
-Stable tag: 4.7.8
+Stable tag: 4.7.8.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -17,6 +17,7 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 = Main features =
 * Get access to real-time access log, measure server latency, track page events, keep an eye on your bounce rate and much more.
 * Add shortcodes to your website to display reports in widgets or directly in posts and pages.
+* Fully compliant with the European GDPR guidelines. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
 * Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
 * Export your reports to CSV, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
 * Compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
@@ -77,6 +78,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.8.1 =
+* [New] The Customizer now has its own access control settings. This allows admins to control in a more granular way who can do what.
+* [Update] If you have an existing opt-in mechanism, asking your users if they want to be tracked, you can now configure Slimstat to use that cookie to determine if a given pageview should be recorded or not.
+
 = 4.7.8 =
 * [Note] A few users have reached out to us to ask if Slimstat would be compliant with the upcoming [General Data Protection Regulation (GDPR)](https://en.wikipedia.org/wiki/General_Data_Protection_Regulation) guidelines and regulations that are about to be activated all across Europe. Based on our understanding of this new law, as long as the hosting provider where you are storing the information collected by Slimstat is GDPR compliant, then you won't have to worry about any extra layers of compliance offered by software like ours. One of our primary goals is to make sure that you and only you are the sole owner of the data collected by our plugin. This has always been what makes Slimstat stand out from the crowd: while Jetpack, Google Analytics and many other services have full unrestricted access to the data they collect on your website, we at Slimstat don't treat our users as *the product* that we sell to other companies.
 * [New] Our plugin now honors the [Do Not Track header](https://en.wikipedia.org/wiki/Do_Not_Track). Please note that this feature can be turned off in the settings, and will be enabled by default.

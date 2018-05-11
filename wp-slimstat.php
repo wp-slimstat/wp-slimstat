@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.8
+Version: 4.7.8.1
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.8';
+	public static $version = '4.7.8.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -101,7 +101,7 @@ class wp_slimstat {
 					}
 				}
 			}
-			if ( self::$settings[ 'display_opt_out' ] == 'on' && $is_cookie_empty && !isset( $_GET[ 'slimstat-opt-out' ] ) ) {
+			if ( $is_cookie_empty && self::$settings[ 'display_opt_out' ] == 'on' && !isset( $_GET[ 'slimstat-opt-out' ] ) ) {
 				add_action( 'wp_footer', array( __CLASS__, 'opt_out_box' ) );
 			}
 
@@ -314,7 +314,34 @@ class wp_slimstat {
 			if ( isset( $_COOKIE[ $a_name ] ) && $_COOKIE[ $a_name ] == $a_value ) {
 				self::$stat[ 'id' ] = -315;
 				self::_set_error_array( __( 'Visitor has opted out of tracking', 'wp-slimstat' ), true );
-				return $_argument;	
+				return $_argument;
+			}
+		}
+
+		// Opt-in tracking via cookie (only those who have a cookie will be tracked)
+		if ( !empty( self::$settings[ 'opt_in_cookie_names' ] ) ) {
+			$cookie_names = array();
+			$opt_in_cookie_names = self::string_to_array( self::$settings[ 'opt_in_cookie_names' ] );
+
+			foreach ( $opt_in_cookie_names as $a_cookie_pair ) {
+				list( $name, $value ) = explode( '=', $a_cookie_pair );
+
+				if ( !empty( $name ) && !empty( $value ) ) {
+					$cookie_names[ $name ] = $value;
+				}
+			}
+		
+			$cookie_found = false;
+			foreach ( $cookie_names as $a_name => $a_value ) {
+				if ( isset( $_COOKIE[ $a_name ] ) && $_COOKIE[ $a_name ] == $a_value ) {
+					$cookie_found = true;
+				}
+			}
+
+			if ( !$cookie_found ) {
+				self::$stat[ 'id' ] = -316;
+				self::_set_error_array( __( 'Visitor has not opted in to be tracked', 'wp-slimstat' ), true );
+				return $_argument;
 			}
 		}
 
@@ -1706,9 +1733,11 @@ class wp_slimstat {
 			'restrict_authors_view' => 'on',
 			'capability_can_view' => 'activate_plugins',
 			'can_view' => '',
-			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
+			'capability_can_customize' => 'activate_plugins',
+			'can_customize' => '',
 			'capability_can_admin' => 'activate_plugins',
 			'can_admin' => '',
+			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
 
 			// Maintenance
 			'last_tracker_error' => array( 0, '', 0 ),
