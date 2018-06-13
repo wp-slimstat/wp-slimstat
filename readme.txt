@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 4.9
-Stable tag: 4.7.8.2
+Stable tag: 4.7.8.3
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -78,6 +78,9 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.8.3 =
+* [Fix] The opt-out message was being displayed even if the corresponding setting was turned off. Apologies for the inconvenience.
+
 = 4.7.8.2 =
 * [New] The IP to hostname conversion feature now stores in the database the information it calculates, to avoid querying the DNS server over and over again.
 * [Update] The opt-out banner is now loaded dynamically, to address HTML caching issues. Thank you, [fuchsws](https://wordpress.org/support/topic/opt-out-message-vs-html-cache).

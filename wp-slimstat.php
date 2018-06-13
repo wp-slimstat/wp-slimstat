@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.8.2
+Version: 4.7.8.3
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.8.2';
+	public static $version = '4.7.8.3';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -286,9 +286,9 @@ class wp_slimstat {
 			$opt_out_cookie_names = self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] );
 
 			foreach ( $opt_out_cookie_names as $a_cookie_pair ) {
-				list( $name, $value ) = explode( '=', $a_cookie_pair );
+				$pair = explode( '=', $a_cookie_pair );
 
-				if ( !empty( $name ) && !empty( $value ) ) {
+				if ( !empty( $pair[ 0 ] ) && !empty( $pair[ 1 ] ) ) {
 					$cookie_names[ $name ] = $value;
 				}
 			}
@@ -1659,7 +1659,7 @@ class wp_slimstat {
 
 			// Tracker
 			'anonymize_ip' => 'no',
-			'honor_dnt_header' => 'yes',
+			'honor_dnt_header' => 'on',
 			'set_tracker_cookie' => 'on',
 			'display_opt_out' => 'no',
 			'opt_out_message' => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>',
@@ -1796,13 +1796,16 @@ class wp_slimstat {
 		}
 
 		// GDPR Compliance: test for third-party cookies to see if we need to display the opt-out message
-		$params[ 'opt_out_cookies' ] = array( 'slimstat_optout_tracking' );
-		if ( !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
-			foreach( self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] ) as $a_cookie_pair ) {
-				$params[ 'opt_out_cookies' ][] = substr( $a_cookie_pair, 0, strpos( $a_cookie_pair, '=' ) );
+		if ( self::$settings[ 'display_opt_out' ] == 'on' ) {
+			$params[ 'opt_out_cookies' ] = array( 'slimstat_optout_tracking' );
+			if ( !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
+				foreach( self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] ) as $a_cookie_pair ) {
+					$params[ 'opt_out_cookies' ][] = substr( $a_cookie_pair, 0, strpos( $a_cookie_pair, '=' ) );
+				}
 			}
+
+			$params[ 'opt_out_cookies' ] = implode( ',', $params[ 'opt_out_cookies' ] );
 		}
-		$params[ 'opt_out_cookies' ] = implode( ',', $params[ 'opt_out_cookies' ] );
 
 		if ( !empty( self::$settings[ 'opt_in_cookie_names' ] ) ) {
 			$params[ 'opt_in_cookies' ] = array();

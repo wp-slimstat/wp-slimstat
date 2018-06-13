@@ -172,8 +172,8 @@ var SlimStat = {
 
 	show_optout_message : function() {
 		var opt_out_cookies = ( "undefined" != typeof SlimStatParams.opt_out_cookies && SlimStatParams.opt_out_cookies ) ? SlimStatParams.opt_out_cookies.split( ',' ) : [];
+		var show_optout = ( opt_out_cookies.length > 0 );
 
-		var show_optout = true;
 		for ( var i = 0; i < opt_out_cookies.length; i++ ) {
 			if ( SlimStat.get_cookie( opt_out_cookies[ i ] ) != "" ) {
 				show_optout = false;
