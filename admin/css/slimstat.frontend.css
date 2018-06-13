@@ -1,0 +1,24 @@
+[id*=slim_p].postbox {
+	box-sizing: border-box;
+	margin-bottom: 2em;
+	width: 100%;
+}
+[id*=slim_p].postbox h3 {
+	display: none;
+}
+[id*=slim_p].postbox .inside {
+	height: 20em;
+	overflow: auto;
+}
+[id*=slim_p].postbox p {
+	border-bottom: 1px solid #ccc;
+	padding: 5px 10px;
+	margin: 0;
+}
+[id*=slim_p].postbox p span {
+	float: right;
+	margin-left: 0.5em;
+}
+[id*=slim_p].postbox p .slimstat-tooltip-content {
+	display: none;
+}
