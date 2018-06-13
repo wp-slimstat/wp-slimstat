@@ -407,6 +407,12 @@ class wp_slimstat_admin {
 		}
 		// --- END: Updates for version 4.7.8 ---
 
+		// --- Updates for version 4.7.8.2 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.8.2', '<' ) ) {
+			wp_slimstat::$settings[ 'opt_out_message' ] = '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>';
+		}
+		// --- END: Updates for version 4.7.8.2 ---
+
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
 

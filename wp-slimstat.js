@@ -160,6 +160,48 @@ var SlimStat = {
 		return slim_performance.timing.responseEnd - slim_performance.timing.connectEnd;
 	},
 
+	optout: function( event, cookie_value ) {
+		event.preventDefault();
+
+		expiration = new Date();
+		expiration.setTime( expiration.getTime() + 31536000000 );
+		document.cookie = "slimstat_optout_tracking=" + cookie_value + ";expires=" + expiration.toGMTString();
+
+		event.target.parentNode.parentNode.removeChild( event.target.parentNode );
+	},
+
+	show_optout_message : function() {
+		var opt_out_cookies = ( "undefined" != typeof SlimStatParams.opt_out_cookies && SlimStatParams.opt_out_cookies ) ? SlimStatParams.opt_out_cookies.split( ',' ) : [];
+
+		var show_optout = true;
+		for ( var i = 0; i < opt_out_cookies.length; i++ ) {
+			if ( SlimStat.get_cookie( opt_out_cookies[ i ] ) != "" ) {
+				show_optout = false;
+			}
+		}
+
+		if ( show_optout ) {
+			// Retrieve the message from the server
+			xhr = new XMLHttpRequest();
+
+			if ( xhr ) {
+				xhr.open( "POST", SlimStatParams.ajaxurl, true );
+				xhr.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
+				xhr.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
+				xhr.withCredentials = true;
+				xhr.send( "action=slimstat_optout_html" );
+
+				xhr.onreadystatechange = function() {
+					if ( 4 == xhr.readyState ) {
+						document.body.insertAdjacentHTML( 'beforeend', xhr.responseText );
+					}
+				}
+
+				return true;
+			}
+		}
+	},
+
 	add_event : function( obj, type, fn ) {
 		if ( obj && obj.addEventListener ) {
 			obj.addEventListener( type, fn, false );
@@ -190,6 +232,15 @@ var SlimStat = {
 			}
 		}
 		return false;
+	},
+
+	get_cookie : function( name ) {
+		var value = "; " + document.cookie;
+		var parts = value.split( "; " + name + "=" );
+		if ( parts.length == 2 ) {
+			return parts.pop().split( ";" ).shift();
+		}
+		return "";
 	},
 
 	send_to_server : function( data, use_beacon ) {
@@ -445,7 +496,8 @@ SlimStat.add_event( window, "load", function() {
 	// Attach an event tracker to all the links on the page that satisfy the criteria set by the admin
 	SlimStat.attach_tracker();
 
-	// 
+	// GDPR: display the Opt-Out box, if needed
+	SlimStat.show_optout_message();
 } );
 
 var slimstat_data = "";

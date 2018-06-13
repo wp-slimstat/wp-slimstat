@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: http://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.7.8.1
+Version: 4.7.8.2
 Author: Jason Crouse
 Author URI: http://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.7.8.1';
+	public static $version = '4.7.8.2';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -57,13 +57,18 @@ class wp_slimstat {
 		self::$wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
 		// Define the folder where to store the geolocation database (shared among sites in a network, by default)
-		self::$upload_dir = wp_upload_dir();
-		self::$upload_dir = self::$upload_dir[ 'basedir' ];
-		if ( is_multisite() && ! ( is_main_network() && is_main_site() && defined( 'MULTISITE' ) ) ) {
-			self::$upload_dir = str_replace( '/sites/' . get_current_blog_id(), '', self::$upload_dir );
+		if ( defined( 'UPLOADS' ) ) {
+			self::$upload_dir = ABSPATH . UPLOADS;
 		}
-		self::$upload_dir .= '/wp-slimstat';
-		self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
+		else {
+			self::$upload_dir = wp_upload_dir();
+			self::$upload_dir = self::$upload_dir[ 'basedir' ];
+			if ( is_multisite() && ! ( is_main_network() && is_main_site() && defined( 'MULTISITE' ) ) ) {
+				self::$upload_dir = str_replace( '/sites/' . get_current_blog_id(), '', self::$upload_dir );
+			}
+			self::$upload_dir .= '/wp-slimstat';
+			self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
+		}
 
 		self::$maxmind_path = self::$upload_dir . '/maxmind.mmdb';
 
@@ -88,31 +93,6 @@ class wp_slimstat {
 			if ( self::$settings[ 'track_users' ] == 'on' ) {
 				add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
 			}
-
-			// GDPR Compliance: opt-out text box and handling
-			$is_cookie_empty = !isset( $_COOKIE[ 'slimstat_optout_' . COOKIEHASH ] );
-			if ( $is_cookie_empty && !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
-				foreach ( self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] ) as $a_cookie_pair ) {
-					list( $name, $value ) = explode( '=', $a_cookie_pair );
-
-					if ( !empty( $name ) && isset( $_COOKIE[ $name ] ) ) {
-						$is_cookie_empty = false;
-						break;
-					}
-				}
-			}
-			if ( $is_cookie_empty && self::$settings[ 'display_opt_out' ] == 'on' && !isset( $_GET[ 'slimstat-opt-out' ] ) ) {
-				add_action( 'wp_footer', array( __CLASS__, 'opt_out_box' ) );
-			}
-
-			if ( isset( $_GET[ 'slimstat-opt-out' ] ) ) {
-				@setcookie(
-					'slimstat_optout_' . COOKIEHASH,
-					$_GET[ 'slimstat-opt-out' ],
-					time() + 31557600, // 365 days
-					COOKIEPATH
-				);
-			}
 		}
 
 		// Hook a DB clean-up routine to the daily cronjob
@@ -121,8 +101,12 @@ class wp_slimstat {
 		// Allow external domains on CORS requests
 		add_filter( 'allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax' ) );
 
+		// GDPR: Opt-out Ajax Handler
+		add_action( 'wp_ajax_slimstat_optout_html', array( __CLASS__, 'get_optout_html' ) );
+		add_action( 'wp_ajax_nopriv_slimstat_optout_html', array( __CLASS__, 'get_optout_html' ) );
+
 		// Shortcodes
-		add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
+		add_shortcode( 'slimstat', array( __CLASS__, 'slimstat_shortcode' ), 15 );
 
 		// Include our browser detector library
 		include_once( plugin_dir_path( __FILE__ ) . 'browscap/browser.php' );
@@ -295,7 +279,7 @@ class wp_slimstat {
 		}
 
 		// Opt-out of tracking via cookie
-		$cookie_names = array( 'slimstat_optout_' . COOKIEHASH => 'true' );
+		$cookie_names = array( 'slimstat_optout_tracking' => 'true' );
 
 		if ( !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
 			$cookie_names = array();
@@ -695,7 +679,7 @@ class wp_slimstat {
 
 		self::$stat = self::$stat + self::$browser;
 
-		// This function can be called in "simulate" mode: no data will be actually saved in the database
+		// This function can be called in "simulation" mode: no data will be actually saved in the database
 		if ( is_array( $_argument ) && isset( $_argument[ 'slimtrack_simulate' ] ) ) {
 			$_argument[ 'slimtrack_would_track' ] = true;
 			return ( $_argument );
@@ -772,15 +756,15 @@ class wp_slimstat {
 	/**
 	 * Decodes the permalink
 	 */
-	public static function get_request_uri(){
-		if (isset($_SERVER['REQUEST_URI'])){
-			return urldecode($_SERVER['REQUEST_URI']);
+	public static function get_request_uri() {
+		if ( isset( $_SERVER[ 'REQUEST_URI' ] ) ) {
+			return urldecode( $_SERVER[ 'REQUEST_URI' ] );
 		}
-		elseif (isset($_SERVER['SCRIPT_NAME'])){
-			return isset($_SERVER['QUERY_STRING'])?$_SERVER['SCRIPT_NAME']."?".$_SERVER['QUERY_STRING']:$_SERVER['SCRIPT_NAME'];
+		elseif ( isset( $_SERVER[ 'SCRIPT_NAME' ] ) ) {
+			return isset( $_SERVER[ 'QUERY_STRING' ] ) ? $_SERVER[ 'SCRIPT_NAME' ] . '?' . $_SERVER[ 'QUERY_STRING' ] : $_SERVER[ 'SCRIPT_NAME' ];
 		}
 		else{
-			return isset($_SERVER['QUERY_STRING'])?$_SERVER['PHP_SELF']."?".$_SERVER['QUERY_STRING']:$_SERVER['PHP_SELF'];
+			return isset( $_SERVER[ 'QUERY_STRING' ] ) ? $_SERVER[ 'PHP_SELF' ] . '?' . $_SERVER[ 'QUERY_STRING' ] : $_SERVER[ 'PHP_SELF' ];
 		}
 	}
 	// end get_request_uri
@@ -788,22 +772,22 @@ class wp_slimstat {
 	/**
 	 * Stores the information (array) in the appropriate table and returns the corresponding ID
 	 */
-	public static function insert_row($_data = array(), $_table = ''){
+	public static function insert_row( $_data = array(), $_table = '' ) {
 		if ( empty( $_data ) || empty( $_table ) ) {
 			return -1;
 		}
 
 		// Remove unwanted characters (SQL injections, anyone?)
 		$data_keys = array();
-		foreach (array_keys($_data) as $a_key){
-			$data_keys[] = sanitize_key($a_key);
+		foreach ( array_keys( $_data ) as $a_key ) {
+			$data_keys[] = sanitize_key( $a_key );
 		}
 
-		self::$wpdb->query(self::$wpdb->prepare("
-			INSERT IGNORE INTO $_table (".implode(", ", $data_keys).')
-			VALUES ('.substr(str_repeat('%s,', count($_data)), 0, -1).")", $_data));
+		self::$wpdb->query( self::$wpdb->prepare( "
+			INSERT IGNORE INTO $_table (" . implode (", ", $data_keys) . ')
+			VALUES (' . substr( str_repeat( '%s,', count( $_data ) ), 0, -1 ) . ")", $_data ) );
 
-		return intval(self::$wpdb->insert_id);
+		return intval( self::$wpdb->insert_id );
 	}
 	// end insert_row
 
@@ -1662,25 +1646,36 @@ class wp_slimstat {
 			'javascript_mode' => 'on',
 			'enable_javascript' => 'on',
 			'track_admin_pages' => 'no',
-			'use_separate_menu' => 'on',
-			'add_posts_column' => 'no',
-			'posts_column_day_interval' => 30,
-			'posts_column_pageviews' => 'on',
+
 			'add_dashboard_widgets' => 'on',
+			'use_separate_menu' => 'on',
+			'posts_column_day_interval' => 30,
+			'add_posts_column' => 'no',
+			'posts_column_pageviews' => 'on',
 			'hide_addons' => 'no',
+
 			'auto_purge' => 0,
 			'auto_purge_delete' => 'on',
 
 			// Tracker
+			'anonymize_ip' => 'no',
+			'honor_dnt_header' => 'yes',
+			'set_tracker_cookie' => 'on',
+			'display_opt_out' => 'no',
+			'opt_out_message' => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>',
+			'opt_out_cookie_names' => '',
+			'opt_in_cookie_names' => '',
+
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
 			'track_same_domain_referers' => 'on',
+
 			'geolocation_country' => 'on',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
-			'set_tracker_cookie' => 'on',
 			'enable_cdn' => 'on',
 			'ajax_relative_path' => 'no',
+
 			'external_domains' => '',
 
 			// Filters
@@ -1688,11 +1683,6 @@ class wp_slimstat {
 			'ignore_spammers' => 'on',
 			'ignore_bots' => 'no',
 			'ignore_prefetch' => 'on',
-			'anonymize_ip' => 'no',
-			'honor_dnt_header' => 'yes',
-			'display_opt_out' => 'no',
-			'opt_out_cookie_names' => '',
-			'opt_out_message' => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="{{accept_url}}">Accept</a> or <a href="{{deny_url}}">Deny</a></p>',
 
 			'ignore_users' => '',
 			'ignore_ip' => '',
@@ -1712,6 +1702,7 @@ class wp_slimstat {
 			'show_display_name' => 'no',
 			'convert_resource_urls_to_titles' => 'on',
 			'convert_ip_addresses' => 'no',
+
 			'async_load' => 'no',
 			'use_current_month_timespan' => 'no',
 			'expand_details' => 'no',
@@ -1720,9 +1711,11 @@ class wp_slimstat {
 			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
 			'mozcom_access_id' => '',
 			'mozcom_secret_key' => '',
+
 			'refresh_interval' => '60',
 			'number_results_raw_data' => '50',
 			'max_dots_on_map' => '50',
+
 			'custom_css' => '',
 			'chart_colors' => '',
 			'comparison_chart' => 'on',
@@ -1733,10 +1726,13 @@ class wp_slimstat {
 			'restrict_authors_view' => 'on',
 			'capability_can_view' => 'activate_plugins',
 			'can_view' => '',
+
 			'capability_can_customize' => 'activate_plugins',
 			'can_customize' => '',
+
 			'capability_can_admin' => 'activate_plugins',
 			'can_admin' => '',
+
 			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
 
 			// Maintenance
@@ -1797,6 +1793,23 @@ class wp_slimstat {
 		}
 		if ( !empty( self::$settings[ 'do_not_track_outbound_classes_rel_href' ] ) ) {
 			$params[ 'outbound_classes_rel_href_to_not_track' ] = str_replace( ' ', '', self::$settings[ 'do_not_track_outbound_classes_rel_href' ] );
+		}
+
+		// GDPR Compliance: test for third-party cookies to see if we need to display the opt-out message
+		$params[ 'opt_out_cookies' ] = array( 'slimstat_optout_tracking' );
+		if ( !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
+			foreach( self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] ) as $a_cookie_pair ) {
+				$params[ 'opt_out_cookies' ][] = substr( $a_cookie_pair, 0, strpos( $a_cookie_pair, '=' ) );
+			}
+		}
+		$params[ 'opt_out_cookies' ] = implode( ',', $params[ 'opt_out_cookies' ] );
+
+		if ( !empty( self::$settings[ 'opt_in_cookie_names' ] ) ) {
+			$params[ 'opt_in_cookies' ] = array();
+			foreach( self::string_to_array( self::$settings[ 'opt_in_cookie_names' ] ) as $a_cookie_pair ) {
+				$params[ 'opt_in_cookies' ][] = substr( $a_cookie_pair, 0, strpos( $a_cookie_pair, '=' ) );
+			}
+			$params[ 'opt_in_cookies' ] = implode( ',', $params[ 'opt_in_cookies' ] );
 		}
 
 		if ( self::$settings[ 'javascript_mode' ] != 'on' ) {
@@ -1888,20 +1901,10 @@ class wp_slimstat {
 	}
 
 	/**
-	 * Allow users to opt-out of tracking
+	 * Displays the opt-out box via Ajax request
 	 */
-	public static function opt_out_box() {
-		if ( strpos( $_SERVER[ 'REQUEST_URI' ], '?' ) !== false ) {
-			$concat_char = '&';
-		}
-		else {
-			$concat_char = '?';
-		}
-
-		$opt_out_url = '//' . $_SERVER[ 'HTTP_HOST' ] .  $_SERVER[ 'REQUEST_URI' ] . $concat_char . 'slimstat-opt-out=';
-
-		$message = str_replace( '{{accept_url}}', $opt_out_url . 'false', stripslashes( self::$settings[ 'opt_out_message' ] ) );
-		echo str_replace( '{{deny_url}}', $opt_out_url . 'true', $message );
+	public static function get_optout_html() {
+		die( stripslashes( self::$settings[ 'opt_out_message' ] ) );
 	}
 
 	/**

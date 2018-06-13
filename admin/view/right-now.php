@@ -11,11 +11,11 @@ if ( wp_slimstat::$settings[ 'async_load' ] == 'on' && ( !defined( 'DOING_AJAX' 
 $is_dashboard = empty( $_REQUEST[ 'page' ] ) || $_REQUEST[ 'page' ] != 'slimview1';
 
 // Available icons
-$supported_browser_icons = array('Android','Anonymouse','Baiduspider','BlackBerry','BingBot','CFNetwork','Chrome','Chromium','Default Browser','Edge','Exabot/BiggerBetter','FacebookExternalHit','FeedBurner','Feedfetcher-Google','Firefox','Internet Archive','Googlebot','Google Bot','Google Feedfetcher','Google Web Preview','IE','IEMobile','iPad','iPhone','iPod Touch','Maxthon','Mediapartners-Google','Microsoft-WebDAV','msnbot','Mozilla','NewsGatorOnline','Netscape','Nokia','Opera','Opera Mini','Opera Mobi','Pingdom','Python','PycURL','Safari','W3C_Validator','WordPress','Yahoo! Slurp','YandexBot');
-$supported_os_icons = array('android','blackberry os','cellos','chromeos','ios','iphone osx','java','linux','macosx','rim os','symbianos','win7','win8','win8.1','win10','winphone7','winphone7.5','winphone8','winphone8.1','winvista','winxp','unknown');
-$supported_browser_types = array(__('Human','wp-slimstat'),__('Bot/Crawler','wp-slimstat'),__('Mobile Device','wp-slimstat'),__('Syndication Reader','wp-slimstat'));
+$supported_browser_icons = array( 'Android', 'Anonymouse', 'Baiduspider', 'BlackBerry', 'BingBot', 'CFNetwork', 'Chrome', 'Chromium', 'Default Browser', 'Edge', 'Exabot/BiggerBetter', 'FacebookExternalHit', 'FeedBurner', 'Feedfetcher-Google', 'Firefox', 'Internet Archive', 'Googlebot', 'Google Bot', 'Google Feedfetcher', 'Google Web Preview', 'IE', 'IEMobile', 'iPad', 'iPhone', 'iPod Touch', 'Maxthon', 'Mediapartners-Google', 'Microsoft-WebDAV', 'msnbot', 'Mozilla', 'NewsGatorOnline', 'Netscape', 'Nokia', 'Opera', 'Opera Mini', 'Opera Mobi', 'Pingdom', 'Python', 'PycURL', 'Safari', 'W3C_Validator', 'WordPress', 'Yahoo! Slurp', 'YandexBot' );
+$supported_os_icons = array( 'android',' blackberry os', 'cellos', 'chromeos', 'ios', 'iphone osx', 'java', 'linux', 'macosx', 'rim os', 'symbianos', 'win7', 'win8', 'win8.1', 'win10', 'winphone7', 'winphone7.5', 'winphone8', 'winphone8.1', 'winvista', 'winxp', 'unknown' );
+$supported_browser_types = array( __( 'Human', 'wp-slimstat' ), __( 'Bot/Crawler', 'wp-slimstat' ), __( 'Mobile Device', 'wp-slimstat' ), __( 'Syndication Reader', 'wp-slimstat' ) );
 
-$plugin_url = plugins_url('', dirname(__FILE__));
+$plugin_url = plugins_url( '', dirname( __FILE__ ) );
 
 // Get the data
 wp_slimstat_db::$debug_message = '';
@@ -35,12 +35,31 @@ echo wp_slimstat_db::$debug_message;
 // Return the results if we are not echoing them (export, email, etc)
 if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
 
-	// Massage the data before returning it
+	// Process the data before returning it
 	if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
-		for ( $i = 0; $i < $count_page_results; $i++ ) {
-			$gethostbyaddr = gethostbyaddr( $results[ $i ][ 'ip' ] );
-			if ( $gethostbyaddr != $host_by_ip && !empty( $gethostbyaddr ) ) {
-				$results[ $i ][ 'ip' ] .= ', ' . $gethostbyaddr;
+		for ( $i=0; $i < $count_page_results; $i++ ) {
+			// When the IP conversion feature is enabled, data is stored in the "notes" field, so that it doesn't need to be calculated over and over again
+			$gethostbyaddr = '';
+			if ( strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) === false ) {
+				$gethostbyaddr = gethostbyaddr( $results[ $i ][ 'ip' ] );
+				if ( $gethostbyaddr != $results[ $i ][ 'ip' ] && !empty( $gethostbyaddr ) ) {
+					wp_slimstat::$wpdb->query( wp_slimstat::$wpdb->prepare( "
+						UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
+						SET notes = %s
+						WHERE id = %s", ( empty( $results[ $i ][ 'notes' ] ) ? '' : $results[ $i ][ 'notes' ] . ';' ) . "hostbyaddr:$gethostbyaddr", $results[ $i ][ 'id' ]
+					) );
+
+					$results[ $i ][ 'ip' ] .= ', ' . $gethostbyaddr;
+				}
+			}
+			else {
+				$gethostbyaddr = substr( $results[ $i ][ 'notes' ], strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) + 11 );
+				
+				$length = strpos( $gethostbyaddr, ';' );
+				if ( $length == 0 ) {
+					$length = strlen( $gethostbyaddr );
+				}
+				$results[ $i ][ 'ip' ] .= ', ' . substr( $gethostbyaddr, 0, $length );
 			}
 		}
 	}
@@ -48,8 +67,8 @@ if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
 	return $results;
 }
 
-if ($count_page_results == 0){
-	echo '<p class="nodata">'.__('No data to display','wp-slimstat').'</p>';
+if ( $count_page_results == 0 ) {
+	echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat' ) . '</p>';
 	return 0;
 }
 
@@ -63,10 +82,30 @@ $delete_row = '';
 // Loop through the results
 for ( $i=0; $i < $count_page_results; $i++ ) {
 	$host_by_ip = $results[ $i ][ 'ip' ];
+
 	if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
-		$gethostbyaddr = gethostbyaddr( $results[ $i ][ 'ip' ] );
-		if ( $gethostbyaddr != $host_by_ip && !empty( $gethostbyaddr ) ) {
-			$host_by_ip .= ', ' . $gethostbyaddr;
+		// When the IP conversion feature is enabled, data is stored in the "notes" field, so that it doesn't need to be calculated over and over again
+		$gethostbyaddr = '';
+		if ( strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) === false ) {
+			$gethostbyaddr = gethostbyaddr( $results[ $i ][ 'ip' ] );
+			if ( $gethostbyaddr != $results[ $i ][ 'ip' ] && !empty( $gethostbyaddr ) ) {
+				wp_slimstat::$wpdb->query( wp_slimstat::$wpdb->prepare( "
+					UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
+					SET notes = %s
+					WHERE id = %s", ( empty( $results[ $i ][ 'notes' ] ) ? '' : $results[ $i ][ 'notes' ] . ';' ) . "hostbyaddr:$gethostbyaddr", $results[ $i ][ 'id' ]
+				) );
+
+				$host_by_ip .= ', ' . $gethostbyaddr;
+			}
+		}
+		else {
+			$gethostbyaddr = substr( $results[ $i ][ 'notes' ], strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) + 11 );
+			
+			$length = strpos( $gethostbyaddr, ';' );
+			if ( $length == 0 ) {
+				$length = strlen( $gethostbyaddr );
+			}
+			$host_by_ip .= ', ' . substr( $gethostbyaddr, 0, $length );
 		}
 	}
 

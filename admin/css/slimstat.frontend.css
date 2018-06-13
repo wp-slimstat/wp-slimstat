@@ -19,3 +19,6 @@
 	float: right;
 	margin-left: 0.5em;
 }
+[id*=slim_p].postbox p .slimstat-tooltip-content {
+	display: none;
+}
