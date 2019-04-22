@@ -11,7 +11,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "A few users have reached out to us to ask if Slimstat would be compliant with the upcoming <a href='https://en.wikipedia.org/wiki/General_Data_Protection_Regulation' target='_blank'>General Data Protection Regulation (GDPR)</a> guidelines and regulations that are about to be activated all across Europe. Based on our understanding of this new law, as long as the hosting provider where you are storing the information collected by Slimstat is GDPR compliant, then you won't have to worry about any extra layers of compliance offered by software like ours. One of our primary goals is to make sure that you and only you are the sole owner of the data collected by our plugin. This has always been what makes Slimstat stand out from the crowd: while Jetpack, Google Analytics and many other services have full unrestricted access to the data they collect on your website, we at Slimstat don't treat our users as <em>the product</em> that we sell to other companies. Also, starting with this update, our plugin honors the <a href='https://en.wikipedia.org/wiki/Do_Not_Track' target='_blank'>Do Not Track header</a> (this feature can be turned off in the settings), and we introduced an experimental option to allow your users to opt out of tracking via a text box displayed. Please let us know if you notice any issues with these new features.";
+		self::$admin_notice = "Jason is back! Apologies for the radio silence in the last few months, due to personal reasons. Please know that this plugin is still very much alive and kicking. I'm working on cleaning up my development environment, updating the Git repository and streamlining coding workflows. I'm catching up on past and new feature requests and pending bugfixes. As always, thank you for your continued support.<br><br><strong>Please note</strong>: this new version uses our new optimized Browscap Library <a href='https://github.com/slimstat/browscap-db' target='_blank'>published on Github</a>, to streamline our deployment workflow. Feel free to contact us if you experience any issues with the new data file.";
 
 		// self::$admin_notice = "Now that we have a cleaner foundation to build on, it's time to start introducing new reports and new ways to segment your audience and the traffic they generate. While our users test the latest changes and updates (to confirm that the foundation is indeed solid and bug-free), we are hard at work implementing the first batch of new reports. Some of them will be made available in the free version, while others will be added to our premium add-on, <a href='http://www.wp-slimstat.com/downloads/user-overview/' target='_blank'>User Overview</a>. And we need your help! If you think that a specific report should be added to Slimstat, please do not hesitate <a href='http://support.wp-slimstat.com' target='_blank'>to let us know</a>.";
 		
@@ -412,6 +412,17 @@ class wp_slimstat_admin {
 			wp_slimstat::$settings[ 'opt_out_message' ] = '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>';
 		}
 		// --- END: Updates for version 4.7.8.2 ---
+
+		// --- Updates for version 4.7.9 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.9', '<' ) ) {
+			// Delete the old Browscap Library and install the new one
+			if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db/autoload.php' ) ) {
+				WP_Filesystem();
+				$GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db/', true );
+				slim_browser::update_browscap_database( true );
+			}
+		}
+		// --- END: Updates for version 4.7.9 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;

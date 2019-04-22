@@ -10,9 +10,9 @@ wp_slimstat_reports::init();
 if ( !empty( $_REQUEST[ 'action' ] ) ) {
 	switch ( $_REQUEST[ 'action' ] ) {
 		case 'activate-indexes':
-			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )" );
-			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )" );
-			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) )" );
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) )" );
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
 			wp_slimstat_admin::show_alert_message( __( 'Congratulations! Slimstat Analytics is now optimized for <a href="http://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' ) );
 			break;
 
@@ -21,9 +21,9 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			break;
 
 		case 'deactivate-indexes':
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx");
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx" );
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx");
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx");
 			wp_slimstat_admin::show_alert_message( __( 'Indexing has been disabled. Enjoy the extra database space!', 'wp-slimstat' ) );
 			break;
 
@@ -34,7 +34,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 		case 'delete-records':
 			$rows_affected = 0;
 
-			if (key_exists($_REQUEST['f'], wp_slimstat_db::$columns_names)){
+			if ( key_exists( $_REQUEST[ 'f' ], wp_slimstat_db::$columns_names ) ) {
 				$rows_affected = wp_slimstat::$wpdb->query("
 					DELETE t1.* 
 					FROM {$GLOBALS['wpdb']->prefix}slim_stats t1
@@ -76,7 +76,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 		case 'delete-browscap':
 			// Delete the existing folder, if there
 			WP_Filesystem();
-			if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db/', true ) ) {
+			if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db-master/', true ) ) {
 				wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ) );
 			}
 			else {
@@ -115,11 +115,13 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			break;
 
 		case 'switch-engine':
-			$have_innodb = wp_slimstat::$wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
-			if ($have_innodb[0]['Value'] != 'YES') return;
+			$have_innodb = wp_slimstat::$wpdb->get_results( "SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A );
+			if ( $have_innodb[ 0 ][ 'Value' ] != 'YES' ) {
+				return 0;
+			}
 
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ENGINE = InnoDB");
-			wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_events ENGINE = InnoDB");
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ENGINE = InnoDB" );
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events ENGINE = InnoDB" );
 
 			wp_slimstat_admin::show_alert_message( __( 'Your Slimstat tables have been successfully converted to InnoDB.', 'wp-slimstat' ) );
 			break;

@@ -5,8 +5,8 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
-Tested up to: 4.9
-Stable tag: 4.7.8.3
+Tested up to: 5.1
+Stable tag: 4.7.9
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -28,9 +28,6 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 = Premium Add-ons =
 Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available extensions.
 
-= Social Media =
-[Like Us](https://www.facebook.com/slimstatistics/) on Facebook and [follow us](https://twitter.com/wp_stats) on Twitter to get the latest news and updates about our plugin.
-
 = Contribute =
 Slimstat Analytics is an open source project, dependent in large parts on community support. You can fork our [Github repository](https://github.com/slimstat/wp-slimstat) and submit code enhancements, bugfixes or provide localization files to let our plugin speak even more languages. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
 is for those who would like to donate money - be it once, be it regularly, be it a small or a big amount. Everything is set up for an easy donation process.
@@ -50,7 +47,7 @@ Slimstat is available in multiple languages: English, Belarusian (UStarCash), Ch
 * WordPress 3.8+
 * PHP 5.2+ (or 5.5+ if you use the Browscap data file)
 * MySQL 5.0.3+
-* At least 20 MB of free web space
+* At least 40 MB of free web space
 * At least 5 MB of free DB space
 * At least 32 Mb of free PHP memory for the tracker (peak memory usage)
 * IE9+ or any browser supporting HTML5, to access the reports
@@ -78,6 +75,10 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.7.9 =
+* [Note] Jason is back! Apologies for the radio silence in the last few months, due to personal reasons. Please know that this plugin is still very much alive and kicking. I'm working on cleaning up my development environment, updating the Git repository and streamlining coding workflows. I'm catching up on past and new feature requests and pending bugfixes. As always, thank you for your continued support.
+* [Update] Our optimized fork of the Browscap Library is now available as a public Github repository. Slimstat will now check for updates on Github directly, which streamlines our deployment workflow. Feel free to contact us if you experience any issues with the new data file.
+
 = 4.7.8.3 =
 * [Fix] The opt-out message was being displayed even if the corresponding setting was turned off. Apologies for the inconvenience.
 

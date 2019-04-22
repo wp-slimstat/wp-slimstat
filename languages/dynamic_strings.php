@@ -29,6 +29,7 @@ __('knoppix','wp-slimstat'), // Knoppix Linux
 __('linux','wp-slimstat'), // Linux Generic
 __('mac','wp-slimstat'), // Mac
 __('mac68k','wp-slimstat'), // Mac 68k
+__('macos','wp-slimstat'), // Mac OS X
 __('macosx','wp-slimstat'), // Mac OS X
 __('macppc','wp-slimstat'), // Mac PowerPC
 __('mandrake','wp-slimstat'), // Mandrake Linux

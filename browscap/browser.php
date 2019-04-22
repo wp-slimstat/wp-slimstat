@@ -14,7 +14,7 @@ class slim_browser {
 		);
 
 		// Path to the Browscap data and library
-		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db/autoload.php';
+		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db-master/composer/autoload_real.php';
 
 		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.5', '>=' ) ) {
 			self::update_browscap_database( false );
@@ -31,7 +31,7 @@ class slim_browser {
 		}
 
 		if ( method_exists( 'slimBrowscapConnector', 'get_browser_from_browscap' ) ) {
-			self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser );
+			self::$browser = slimBrowscapConnector::get_browser_from_browscap( self::$browser, wp_slimstat::$upload_dir . '/browscap-db-master/cache/' );
 		}
 
 		if ( self::$browser[ 'browser' ] == 'Default Browser' ) {
@@ -110,7 +110,7 @@ class slim_browser {
 				fclose( $handle );
 
 				// Now check the version number on the server
-				$response = wp_remote_get( 'http://s3.amazonaws.com/browscap/autoload.txt' );
+				$response = wp_remote_get( 'https://raw.githubusercontent.com/slimstat/browscap-db/master/version.txt' );
 				if ( !is_array( $response ) || is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
 					wp_slimstat::slimstat_save_options();
 					return array( 5, __( 'There was an error checking the remote library version. Please try again later.', 'wp-slimstat' ) );
@@ -126,7 +126,7 @@ class slim_browser {
 
 		// Download the most recent version of our pre-processed Browscap database
 		if ( $download_remote_file ) {
-			$response = wp_safe_remote_get( 'http://s3.amazonaws.com/browscap/browscap-db.zip', array( 'timeout' => 300, 'stream' => true, 'filename' => $browscap_zip ) );
+			$response = wp_safe_remote_get( 'https://github.com/slimstat/browscap-db/archive/master.zip', array( 'timeout' => 300, 'stream' => true, 'filename' => $browscap_zip ) );
 
 			if ( !file_exists( $browscap_zip ) ) {
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
