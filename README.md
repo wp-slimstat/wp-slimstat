@@ -14,6 +14,8 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 
 
 ### Feature Spotlight
+Click on the preview here below to watch an introductory video to our plugin.
+
 [![Introduction to Slimstat Analytics](https://img.youtube.com/vi/zEKP9yC8x6g/maxresdefault.jpg)](https://youtu.be/zEKP9yC8x6g)
 
 
