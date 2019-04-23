@@ -16,7 +16,7 @@ class slim_browser {
 		// Path to the Browscap data and library
 		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db-master/composer/autoload_real.php';
 
-		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '5.5', '>=' ) ) {
+		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '7.1', '>=' ) ) {
 			self::update_browscap_database( false );
 			require_once( self::$browscap_autoload_path );
 		}
