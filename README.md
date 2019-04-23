@@ -6,14 +6,14 @@ Text Domain: wp-slimstat
 **Requires at least:** 3.8  
 Requires PHP: 5.2
 **Tested up to:** 5.1  
-**Stable tag:** 4.7.9  
+**Stable tag:** 4.7.9.1  
 
 
 ## Description 
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 
-### Feature Spotlight
+### Feature Spotlight 
 Click on the preview here below to watch an introductory video to our plugin.
 
 [![Introduction to Slimstat Analytics](https://img.youtube.com/vi/zEKP9yC8x6g/maxresdefault.jpg)](https://youtu.be/zEKP9yC8x6g)
@@ -83,8 +83,13 @@ Our knowledge base is available on our [support center](http://docs.wp-slimstat.
 
 ## Changelog 
 
+### 4.7.9.1 
+* [Fix] It turns out the new [Browscap Library](https://github.com/slimstat/browscap-db) we introduced requires PHP 7.x, not 5.6 as stated in their documentation. Added some code to prevent fatal errors for those still using an older version of PHP.
+
+
 ### 4.7.9 
 * [Note] Jason is back! Apologies for the radio silence in the last few months, due to personal reasons. Please know that this plugin is still very much alive and kicking. I'm working on cleaning up my development environment, updating the Git repository and streamlining coding workflows. I'm catching up on past and new feature requests and pending bugfixes. As always, thank you for your continued support.
+* [Note] Happy birthday, Slimstat: April 2019 marks your 9th year in the [WordPress repository](https://plugins.trac.wordpress.org/changeset/227217) and your 13th year overall. Not many plugins out there can brag about that!
 * [Update] Our optimized fork of the Browscap Library is now available as a public Github repository. Slimstat will now check for updates on Github directly, which streamlines our deployment workflow. Feel free to contact us if you experience any issues with the new data file.
 
 
