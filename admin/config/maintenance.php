@@ -285,7 +285,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<?php endif; ?>
 		</th>
 		<td>
-			<span class="description"><?php _e("The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 3.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality. If you're experiencing issues, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ) ?></span>
+			<span class="description"><?php _e("The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality. If you're experiencing issues, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ) ?></span>
 		</td>
 	</tr>
 	<tr class="alternate">
@@ -293,13 +293,14 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<?php if ( !file_exists( slim_browser::$browscap_autoload_path ) ) : ?>
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=download-browscap"
 				onclick="return( confirm( '<?php _e( 'Do you want to download and install the Browscap data file from our server?', 'wp-slimstat' ); ?>' ) )"><?php _e( 'Install Browscap', 'wp-slimstat' ); ?></a>
+				<br><br>&nbsp;<strong><?php _e( 'Requires PHP 7.1', 'wp-slimstat' ) ?></strong>
 			<?php else: ?>
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=delete-browscap"
 				onclick="return( confirm( '<?php _e( 'Do you want to uninstall the Browscap data file?', 'wp-slimstat' ); ?>' ) )"><?php _e( 'Uninstall Browscap', 'wp-slimstat' ); ?></a>
 			<?php endif; ?>
 		</th>
 		<td>
-			<span class="description"><?php _e( "We are contributing to the <a href='http://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an optimized version of their data structure, for improved performance. After you enable this feature, Slimstat will use this data file instead of the built-in heuristic function, to accurately determine your visitors' browser information. It will also automatically check for updates and download the latest version for you. Please feel free to <a href='http://s3.amazonaws.com/browscap/terms-conditions.html' target='_blank'>review our terms and conditions</a>, and do not hesitate to <a href='http://support.wp-slimstat.com' target='_blank'>contact our support team</a> if you have any questions.", 'wp-slimstat' ) ?></span>
+			<span class="description"><?php _e( "We are contributing to the <a href='http://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-db' target='_blank'>optimized version of their data structure</a>, for improved performance. Slimstat can use this data file instead of the built-in heuristic function, to accurately determine your visitors' browser information. It also checks for updates and downloads the latest version for you. Do not hesitate to <a href='http://support.wp-slimstat.com' target='_blank'>contact our support team</a> if you have any questions.", 'wp-slimstat' ) ?></span>
 		</td>
 	</tr>
 	<tr>
@@ -307,7 +308,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 	</tr>
 	<tr>
 		<td colspan="2">
-			<strong><?php _e("Here below you can find the current configuration string for Slimstat. You can update your settings by pasting a new string inside the text area and clicking the Import button.",'wp-slimstat') ?></strong>
+			<strong><?php _e( 'You can update your settings by importing a new configuration string inside the text area here below.', 'wp-slimstat' ) ?></strong><br>
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />

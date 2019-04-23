@@ -45,7 +45,7 @@ Slimstat is available in multiple languages: English, Belarusian (UStarCash), Ch
 
 = Requirements =
 * WordPress 3.8+
-* PHP 5.2+ (or 5.5+ if you use the Browscap data file)
+* PHP 5.2+ (or 7.1+ if you use the Browscap data file)
 * MySQL 5.0.3+
 * At least 40 MB of free web space
 * At least 5 MB of free DB space
