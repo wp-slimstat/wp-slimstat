@@ -165,7 +165,7 @@ var SlimStat = {
 
 		expiration = new Date();
 		expiration.setTime( expiration.getTime() + 31536000000 );
-		document.cookie = "slimstat_optout_tracking=" + cookie_value + ";expires=" + expiration.toGMTString();
+		document.cookie = "slimstat_optout_tracking=" + cookie_value + ";path=" + SlimStatParams.baseurl + ";expires=" + expiration.toGMTString();
 
 		event.target.parentNode.parentNode.removeChild( event.target.parentNode );
 	},
