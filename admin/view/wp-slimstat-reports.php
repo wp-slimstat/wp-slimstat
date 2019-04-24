@@ -1233,7 +1233,7 @@ class wp_slimstat_reports {
 
 	public static function show_chart( $_args = array() ) {
 		$data = wp_slimstat_db::get_data_for_chart( $_args[ 'chart_data' ] );
-
+//var_dump($data);
 		if ( empty( $data[ 'keys' ] ) ) {
 			echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat') . '</p>';
 
@@ -1255,7 +1255,11 @@ class wp_slimstat_reports {
 		// wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
 		wp_enqueue_script( 'slimstat_amcharts_core', plugins_url( '/admin/js/amcharts/core.js', $path_slimstat ), array(), null, false );
 		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/charts.js', $path_slimstat ), array(), null, false );
-		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/themes/material.js', $path_slimstat ), array(), null, false );
+
+		
+
+		
+		// wp_enqueue_script( 'slimstat_amcharts_theme', plugins_url( '/admin/js/amcharts/themes/material.js', $path_slimstat ), array(), null, false );
 		
 
 		
@@ -1268,37 +1272,78 @@ class wp_slimstat_reports {
 <?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
 			jQuery(function() {
 <?php endif; ?>
-				var chart_<?php echo $_args[ 'id' ]; ?> = am4core.create( "chart_<?php echo $_args[ 'id' ]; ?>", am4charts.XYChart );
+
+// am4core.useTheme(am4themes_material);
+var chart_<?php echo $_args[ 'id' ]; ?> = am4core.create( "chart_<?php echo $_args[ 'id' ]; ?>", am4charts.XYChart );
 
 // Add data
 chart_<?php echo $_args[ 'id' ]; ?>.data = <?php unset( $data[ 'keys' ] ); echo json_encode( $data ) ?>;
 
 // Create axes
 var categoryAxis = chart_<?php echo $_args[ 'id' ]; ?>.xAxes.push(new am4charts.CategoryAxis());
-categoryAxis.dataFields.category = "v3_label";
+categoryAxis.dataFields.category = "v1_label";
 categoryAxis.renderer.minGridDistance = 50;
-categoryAxis.renderer.grid.template.location = 1;
-categoryAxis.startLocation = 1;
+// categoryAxis.renderer.grid.template.location = 1;
+categoryAxis.startLocation = 0;
 categoryAxis.endLocation = 1;
+categoryAxis.renderer.grid.template.disabled = true;
+
 
 // Create value axis
 var valueAxis = chart_<?php echo $_args[ 'id' ]; ?>.yAxes.push(new am4charts.ValueAxis());
 valueAxis.baseValue = 0;
+// valueAxis.renderer.line.strokeOpacity = 0.3;
+//   valueAxis.renderer.line.strokeWidth = 1;
+  //valueAxis.renderer.grid.template.disabled = true;
 
 // Create series
-var series = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
-series.dataFields.valueY = "v2";
-series.dataFields.categoryX = "v3_label";
-series.strokeWidth = 2;
-series.tensionX = 0.85;
+var series1 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
+series1.name = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ); ?>";
+series1.dataFields.valueY = "v1";
+series1.dataFields.categoryX = "v1_label";
+series1.strokeWidth = 2;
+series1.tooltipText = "{name} {v1_label}: [bold]{valueY}[/]";
+series1.tensionX = 0.9;
 
-var range = valueAxis.createSeriesRange(series);
-range.value = 0;
-range.endValue = 1000;
-range.contents.stroke = am4core.color("#FF0000");
-range.contents.fill = range.contents.stroke;
+<?php if ( wp_slimstat::$settings[ 'comparison_chart' ] == 'on' ): ?>
+var series2 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
+series2.name = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ); ?>";
+series2.dataFields.valueY = "v3";
+series2.dataFields.categoryX = "v1_label";
+series2.strokeWidth = 2;
+series2.tooltipText = "{name} {v3_label}: [bold]{valueY}[/]";
+series2.tensionX = 0.9;
+<?php endif; ?>
 
+// var interfaceColors = new am4core.InterfaceColorSet();
+// var bullet = series.bullets.push(new am4charts.CircleBullet());
+// bullet.circle.stroke = interfaceColors.getFor("background");
+// bullet.circle.strokeWidth = 0.5;
+
+
+//   valueAxis.renderer.line.stroke = series.stroke;
+//   valueAxis.renderer.labels.template.fill = series.stroke;
+//   valueAxis.renderer.opposite = false;
+  //valueAxis.renderer.grid.template.disabled = true;
+
+// Add legend
+//chart_<?php echo $_args[ 'id' ]; ?>.legend = new am4charts.Legend();
+
+// Add cursor
 chart_<?php echo $_args[ 'id' ]; ?>.cursor = new am4charts.XYCursor();
+chart_<?php echo $_args[ 'id' ]; ?>.cursor.lineX.disabled = true;
+
+chart_<?php echo $_args[ 'id' ]; ?>.cursor.lineY.stroke = am4core.color("#444");
+chart_<?php echo $_args[ 'id' ]; ?>.cursor.lineY.strokeWidth = 2;
+chart_<?php echo $_args[ 'id' ]; ?>.cursor.lineY.strokeOpacity = 0.2;
+chart_<?php echo $_args[ 'id' ]; ?>.cursor.lineY.strokeDasharray = "";
+
+
+//var range = valueAxis.createSeriesRange(series);
+//range.value = 0;
+//range.endValue = 1000;
+//range.contents.stroke = am4core.color("#FF0000");
+//range.contents.fill = range.contents.stroke;
 
 
 				/* {
