@@ -312,7 +312,7 @@ class slim_uadetector {
 		else if ( preg_match( '#^Mozilla/\d\.\d[^a-z0-9_\-]+(Yahoo[\-\!\s_]+[a-z]+)/?([0-9\.]+)?[^a-z0-9_\-]+.+yahoo.*\.com#i', $_user_agent, $match ) > 0 ||
 					preg_match( '#^((?:[a-z]|\%20)+)\/?([0-9\.]+).*[^a-z0-9]CFNetwork\/?([0-9\.]+)#' , $_user_agent, $match ) > 0 ||
 					preg_match( '/^Mozilla\/\d\.\d\s\(compatible\;\s(HTTrack|ICS)(?:\s(\d\.[a-z0-9]+))?[^a-z0-9\s]/', $_user_agent, $match ) > 0 ||
-					preg_match( '#^Mozilla\/\d\.\d\s\(compatible;\s([a-z_ ]+)(?:[-/](\d+\.\d+))?;\s.?http://(?:www\.)?[a-z]+(?:[a-z\.]+)\.(?:[a-z]{2,4})/?[a-z/]*(?:\.s?html?|\.php|\.aspx?)?\)$#i', $_user_agent, $match ) > 0 ||
+					preg_match( '#^Mozilla\/\d\.\d\s\(compatible;\s([a-z_ ]+)(?:[-/](\d+\.\d+))?;\s.?https://(?:www\.)?[a-z]+(?:[a-z\.]+)\.(?:[a-z]{2,4})/?[a-z/]*(?:\.s?html?|\.php|\.aspx?)?\)$#i', $_user_agent, $match ) > 0 ||
 					preg_match( '/([a-z\_\s\.]+)[\s\/\-_]?(v?[0-9\.]+)?.*(?:http\:\/\/|www\.)(\1)\.[a-z0-9_\-]+/i', $_user_agent, $match ) > 0 ||
 					preg_match( '/^([a-z\_\.]+)[\s\/\-_]?(v?[0-9\.]+)?[\s\(\+]*(?:http\:\/\/|www\.)[a-z0-9_\-]+\.[a-z0-9_\-\.]+\)?/i', $_user_agent, $match ) > 0 ||
 					preg_match( '/([a-z]+[a-z0-9]{2,})[\s\/\-]?([0-9\.]+)?[^a-z]+[^0-9]*http\:.*\/(\1)[^a-z]/i', $_user_agent, $match ) > 0 ||

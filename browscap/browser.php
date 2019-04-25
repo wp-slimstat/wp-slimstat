@@ -8,14 +8,13 @@ class slim_browser {
 		self::$browser = array(
 			'browser' => 'Default Browser',
 			'browser_version' => '',
-			'browser_type' => 1,
+			'browser_type' => 0,
 			'platform' => 'unknown',
 			'user_agent' => self::_get_user_agent()
 		);
 
 		// Path to the Browscap data and library
 		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db-master/composer/autoload_real.php';
-
 		if ( file_exists( self::$browscap_autoload_path ) && version_compare( PHP_VERSION, '7.1', '>=' ) ) {
 			self::update_browscap_database( false );
 			require_once( self::$browscap_autoload_path );
