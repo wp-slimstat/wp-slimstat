@@ -178,7 +178,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		// Originating IP Address
 		$other_ip_address = intval( $results[ $i ][ 'other_ip' ] );
 		if ( !empty( $other_ip_address ) ) {
-			$other_ip_address = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url( 'other_ip equals '. $results[ $i ][ 'other_ip' ] ) . "'>(" . __( 'Originating IP', 'wp-slimstat' ) . ": {$results[$i]['other_ip']})</a>";
+			$other_ip_address = "(<a class='slimstat-font-location-1 whois' href='" . wp_slimstat::$settings[ 'ip_lookup_service' ] . "{$results[ $i ][ 'other_ip' ]}' target='_blank' title='WHOIS: {$results[ $i ][ 'other_ip' ]}'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url( 'other_ip equals '. $results[ $i ][ 'other_ip' ] ) . "'>" . __( 'Originating IP', 'wp-slimstat' ) . ": {$results[$i]['other_ip']})</a>";
 		}
 		else {
 			$other_ip_address = '';

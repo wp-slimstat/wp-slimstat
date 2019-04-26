@@ -83,9 +83,11 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] If you're using our partner's CDN functionality (JsDelivr) to load the tracker, their link is now always loaded over HTTPS for added security.
 * [Update] Switched the Add-on Update checker URL to HTTPS, for added security (thank you, Peter).
 * [Update] Changed the protocol of all the URLs used within Slimstat, including references to our documentation, to HTTPS.
+* [Update] Added icon to geolocate Originating IP addresses, when detected.
 * [Fix] The optout cookie path was not being set correctly (thank you, [ralfkerkhoff](https://wordpress.org/support/topic/opt-out-cookie-per-page/)).
 * [Fix] Google seems to be using a new User Agent string for its "mobile" crawler, which was causing Slimstat from incorrectly identifying visits as coming from mobile devices, instead of bots (thank you, Ron).
 * [Fix] An error was being returned if SVG elements were using the A tag on a page (thank you, [snaphappyme](https://wordpress.org/support/topic/uncaught-typeerror-all_linksn-href-indexof/)).
+* [Fix] A bug was causing Slimstat to incorrectly geolocate visits to websites behind a Cloudflare load balancer. Please update the IP Address Fix add-on as well.
 
 = 4.7.9.1 =
 * [Fix] It turns out the new [Browscap Library](https://github.com/slimstat/browscap-db) we introduced requires PHP 7.x, not 5.6 as stated in their documentation. Added some code to prevent fatal errors for those still using an older version of PHP.
