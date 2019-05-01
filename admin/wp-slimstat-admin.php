@@ -252,6 +252,7 @@ class wp_slimstat_admin {
 				ip VARCHAR(39) DEFAULT NULL,
 				other_ip VARCHAR(39) DEFAULT NULL,
 				username VARCHAR(255) DEFAULT NULL,
+				email VARCHAR(255) DEFAULT NULL,
 
 				country VARCHAR(16) DEFAULT NULL,
 				location VARCHAR(36) DEFAULT NULL,
@@ -421,6 +422,13 @@ class wp_slimstat_admin {
 			}
 		}
 		// --- END: Updates for version 4.7.9 ---
+
+		// --- Updates for version 4.8.1 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.8.1', '<' ) ) {
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username" );
+		}
+		// --- END: Updates for version 4.8.1 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;

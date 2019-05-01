@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 5.1
-Stable tag: 4.8
+Stable tag: 4.8.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.

@@ -43,6 +43,7 @@ class wp_slimstat_db {
 			'resource' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
 			'referer' => array( __( 'Referer', 'wp-slimstat' ), 'varchar' ),
 			'username' => array( __( 'Visitor\'s Username', 'wp-slimstat' ), 'varchar' ),
+			'email' => array( __( 'Visitor\'s Email', 'wp-slimstat' ), 'varchar' ),
 			'outbound_resource' => array( __( 'Outbound Link', 'wp-slimstat' ), 'varchar' ),
 			'page_performance' => array( __( 'Page Speed', 'wp-slimstat' ), 'int' ),
 			'no_filter_selected_2' => array( '', 'none' ),

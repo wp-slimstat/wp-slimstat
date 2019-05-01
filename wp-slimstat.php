@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.8
+Version: 4.8.1
 Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8';
+	public static $version = '4.8.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -521,6 +521,7 @@ class wp_slimstat {
 			}
 
 			self::$stat[ 'username' ] = $GLOBALS[ 'current_user' ]->data->user_login;
+			self::$stat[ 'email' ] = $GLOBALS[ 'current_user' ]->data->user_email;
 			self::$stat[ 'notes' ][] = 'user:' . $GLOBALS[ 'current_user' ]->data->ID;
 			$not_spam = true;
 		}
@@ -1865,8 +1866,8 @@ class wp_slimstat {
 		// Copy entries to the archive table, if needed
 		if ( self::$settings[ 'auto_purge_delete' ] != 'no' ) {
 			$is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt)
-				SELECT id, ip, other_ip, username, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt)
+				SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
 				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
 				WHERE dt < $days_ago");
 
