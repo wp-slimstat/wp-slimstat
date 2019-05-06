@@ -1779,10 +1779,7 @@ class wp_slimstat {
 		// Pass some information to the tracker
 		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
 
-		$baseurl = parse_url( get_home_url() );		
-		$params[ 'baseurl' ] = empty( $baseurl[ 'path' ] ) ? '/' : $baseurl[ 'path' ];
-
-		if ( self::$settings[ 'ajax_relative_path' ] == 'on' ) {	
+		if ( self::$settings[ 'ajax_relative_path' ] == 'on' ) {
 			$params[ 'ajaxurl' ] = admin_url( 'admin-ajax.php', 'relative' );
 		}
 
