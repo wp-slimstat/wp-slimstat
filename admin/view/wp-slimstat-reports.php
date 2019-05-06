@@ -1247,23 +1247,8 @@ class wp_slimstat_reports {
 
 		// Enqueue all the Javascript and styles
 		$path_slimstat = dirname( dirname( __FILE__ ) );
-		// wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/amcharts.js', $path_slimstat ), array(), null, false );
-		// wp_enqueue_script( 'slimstat_amcharts_serial', plugins_url( '/admin/js/amcharts/serial.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
-		// wp_enqueue_script( 'slimstat_amcharts_plugins_export', plugins_url( '/admin/js/amcharts/plugins/export/export.min.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
-		// wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
-
-		// wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
 		wp_enqueue_script( 'slimstat_amcharts_core', plugins_url( '/admin/js/amcharts/core.js', $path_slimstat ), array(), null, false );
 		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/charts.js', $path_slimstat ), array(), null, false );
-
-		
-
-		
-		// wp_enqueue_script( 'slimstat_amcharts_theme', plugins_url( '/admin/js/amcharts/themes/material.js', $path_slimstat ), array(), null, false );
-		
-		// echo '<pre>';
-		// var_dump($data);
-		// echo '</pre>';
 		
 		$chart_colors = !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) : array( '#bbcc44', '#21759b', '#ccc', '#999' );
 
