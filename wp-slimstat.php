@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: Slimstat Analytics
-Plugin URI: http://wordpress.org/plugins/wp-slimstat/
+Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
 Version: 4.7.9.1
 Author: Jason Crouse
-Author URI: http://www.wp-slimstat.com/
+Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
 */
@@ -1258,10 +1258,10 @@ class wp_slimstat {
 
 		// Download the most recent database directly from MaxMind's repository
 		if ( self::$settings[ 'geolocation_country' ] == 'on' ) {
-			$maxmind_tmp = self::download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz' );
+			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz' );
 		}
 		else {
-			$maxmind_tmp = self::download_url( 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz' );
+			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz' );
 		}
 
 		if ( is_wp_error( $maxmind_tmp ) ) {
@@ -1706,7 +1706,7 @@ class wp_slimstat {
 			'expand_details' => 'no',
 			'rows_to_show' => '20',
 			'limit_results' => '1000',
-			'ip_lookup_service' => 'http://www.infosniper.net/?ip_address=',
+			'ip_lookup_service' => 'https://www.infosniper.net/?ip_address=',
 			'mozcom_access_id' => '',
 			'mozcom_secret_key' => '',
 
@@ -1776,9 +1776,6 @@ class wp_slimstat {
 			return 0;
 		}
 
-		// Register the script in WordPress
-		$jstracker_suffix = ( defined( 'SCRIPT_DEBUG' ) && is_bool( SCRIPT_DEBUG ) && SCRIPT_DEBUG ) ? '' : '.min';
-
 		// Pass some information to the tracker
 		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
 
@@ -1840,10 +1837,10 @@ class wp_slimstat {
 		$params = apply_filters( 'slimstat_js_params', $params );
 
 		if ( self::$settings[ 'enable_cdn' ] == 'on' ) {
-			$schema = is_ssl() ? 'https' : 'http';
-			wp_register_script( 'wp_slimstat', $schema . '://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
+			wp_register_script( 'wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true );
 		}
 		else{
+			$jstracker_suffix = ( defined( 'SCRIPT_DEBUG' ) && is_bool( SCRIPT_DEBUG ) && SCRIPT_DEBUG ) ? '' : '.min';
 			wp_register_script( 'wp_slimstat', plugins_url( "/wp-slimstat{$jstracker_suffix}.js", __FILE__ ), array(), null, true );
 		}
 
@@ -1925,7 +1922,7 @@ class wp_slimstat {
 			$a_clean_slug = str_replace( array( 'wp_slimstat_', '_' ), array( '', '-' ), $a_slug );
 			
 			if ( !empty( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ) ) {
-				$update_checker_objects[ $a_clean_slug ] = Puc_v4_Factory::buildUpdateChecker( 'http://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ), dirname( dirname( __FILE__ ) ) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug );
+				$update_checker_objects[ $a_clean_slug ] = Puc_v4_Factory::buildUpdateChecker( 'https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ), dirname( dirname( __FILE__ ) ) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug );
 
 				add_filter( "plugin_action_links_wp-slimstat-{$a_clean_slug}/index.php", array( __CLASS__, 'add_plugin_manual_download_link' ), 10, 2 );
 			}
@@ -1939,7 +1936,7 @@ class wp_slimstat {
 			$_links[] = '<a href="' . $download_url . '">Download ZIP</a>';
 		}
 		else {
-			$url = 'http://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] );
+			$url = 'https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] );
 			$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'user-agent'  => 'Slimstat Analytics/' . self::$version . '; ' . home_url() ) );
 
 			if ( !is_wp_error( $response ) && 200 == wp_remote_retrieve_response_code( $response ) ) {

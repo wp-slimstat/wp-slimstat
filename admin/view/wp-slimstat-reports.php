@@ -1247,12 +1247,17 @@ class wp_slimstat_reports {
 
 		// Enqueue all the Javascript and styles
 		$path_slimstat = dirname( dirname( __FILE__ ) );
-		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/amcharts.js', $path_slimstat ), array(), null, false );
-		wp_enqueue_script( 'slimstat_amcharts_serial', plugins_url( '/admin/js/amcharts/serial.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
-		wp_enqueue_script( 'slimstat_amcharts_plugins_export', plugins_url( '/admin/js/amcharts/plugins/export/export.min.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
-		wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
+		// wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/amcharts.js', $path_slimstat ), array(), null, false );
+		// wp_enqueue_script( 'slimstat_amcharts_serial', plugins_url( '/admin/js/amcharts/serial.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
+		// wp_enqueue_script( 'slimstat_amcharts_plugins_export', plugins_url( '/admin/js/amcharts/plugins/export/export.min.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
+		// wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_amcharts' ), null, false );
 
-		wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
+		// wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
+		wp_enqueue_script( 'slimstat_amcharts_core', plugins_url( '/admin/js/amcharts/core.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/charts.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/themes/material.js', $path_slimstat ), array(), null, false );
+		
+
 		
 		$chart_colors = !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) : array( '#bbcc44', '#21759b', '#ccc', '#999' );
 
@@ -1263,7 +1268,40 @@ class wp_slimstat_reports {
 <?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
 			jQuery(function() {
 <?php endif; ?>
-				var chart_<?php echo $_args[ 'id' ]; ?> = AmCharts.makeChart( "chart_<?php echo $_args[ 'id' ]; ?>", {
+				var chart_<?php echo $_args[ 'id' ]; ?> = am4core.create( "chart_<?php echo $_args[ 'id' ]; ?>", am4charts.XYChart );
+
+// Add data
+chart_<?php echo $_args[ 'id' ]; ?>.data = <?php unset( $data[ 'keys' ] ); echo json_encode( $data ) ?>;
+
+// Create axes
+var categoryAxis = chart_<?php echo $_args[ 'id' ]; ?>.xAxes.push(new am4charts.CategoryAxis());
+categoryAxis.dataFields.category = "v3_label";
+categoryAxis.renderer.minGridDistance = 50;
+categoryAxis.renderer.grid.template.location = 1;
+categoryAxis.startLocation = 1;
+categoryAxis.endLocation = 1;
+
+// Create value axis
+var valueAxis = chart_<?php echo $_args[ 'id' ]; ?>.yAxes.push(new am4charts.ValueAxis());
+valueAxis.baseValue = 0;
+
+// Create series
+var series = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
+series.dataFields.valueY = "v2";
+series.dataFields.categoryX = "v3_label";
+series.strokeWidth = 2;
+series.tensionX = 0.85;
+
+var range = valueAxis.createSeriesRange(series);
+range.value = 0;
+range.endValue = 1000;
+range.contents.stroke = am4core.color("#FF0000");
+range.contents.fill = range.contents.stroke;
+
+chart_<?php echo $_args[ 'id' ]; ?>.cursor = new am4charts.XYCursor();
+
+
+				/* {
 					"type": "serial",
 					"zoomOutButtonPadding": 25,
 					"theme": "light",
@@ -1361,7 +1399,7 @@ class wp_slimstat_reports {
 						}
 					],
 					"dataProvider": <?php unset( $data[ 'keys' ] ); echo json_encode( $data ) ?>
-				});
+				}); */
 <?php if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ): ?>
 			});
 <?php endif; ?>

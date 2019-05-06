@@ -19,7 +19,7 @@ if ( isset( $_POST[ 'options' ][ 'ignore_capabilities' ] ) ) {
 		wp_slimstat::$settings[ 'ignore_capabilities' ] = $_POST[ 'options' ][ 'ignore_capabilities' ];
 	}
 	else{
-		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information', 'wp-slimstat' );
+		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. Please check <a href="https://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information', 'wp-slimstat' );
 	}
 }
 
@@ -47,7 +47,7 @@ if ( isset( $_POST[ 'options' ][ 'capability_can_view' ] ) ) {
 		wp_slimstat::$settings[ 'capability_can_view' ] = $_POST[ 'options' ][ 'capability_can_view' ];
 	}
 	else{
-		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information', 'wp-slimstat' );
+		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. Please check <a href="https://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information', 'wp-slimstat' );
 	}
 }
 
@@ -72,7 +72,7 @@ if ( isset( $_POST[ 'options' ][ 'capability_can_admin' ] ) ) {
 		wp_slimstat::$settings[ 'capability_can_admin' ] = $_POST[ 'options' ][ 'capability_can_admin' ];
 	}
 	else{
-		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. Please check <a href="http://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information', 'wp-slimstat' );
+		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. Please check <a href="https://codex.wordpress.org/Roles_and_Capabilities" target="_new">this page</a> for more information', 'wp-slimstat' );
 	}
 }
 
@@ -126,7 +126,7 @@ $settings = array(
 			'geolocation_country' => array( 'description' => __( 'Geolocation Precision', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( "When Slimstat determines your visitors' Country of origin, it uses a third-party data file <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>provided by MaxMind</a>. They offer two precision levels: country and city. By default, Slimstat will install the smaller one (country), and you can decide to use the other one, if you don't mind its 60 Mb average size. After you change this option, please <strong>go to the Maintenance tab</strong> and reload (uninstall/install) the MaxMind GeoLite DB by clicking on the corresponding button.", 'wp-slimstat' ), 'custom_label_on' => __( 'Country', 'wp-slimstat' ), 'custom_label_off' => __( 'City', 'wp-slimstat' ) ),
 			'session_duration' => array('description' => __( 'Session Duration', 'wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'How many seconds should a human session last? Google Analytics sets it to 1800 seconds.', 'wp-slimstat' ), 'after_input_field' => __( 'seconds', 'wp-slimstat' ) ),
 			'extend_session' => array( 'description' => __( 'Extend Session', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Extend the duration of a session each time the user visits a new page.', 'wp-slimstat' ) ),
-			'enable_cdn' => array( 'description' => __( 'Enable CDN', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( "Use <a href='http://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).", 'wp-slimstat' ) ),
+			'enable_cdn' => array( 'description' => __( 'Enable CDN', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( "Use <a href='https://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).", 'wp-slimstat' ) ),
 			'ajax_relative_path' => array( 'description' => __( 'Relative Ajax', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'If you are experiencing issues related to the header field X-Requested-With not being allowed by Access-Control-Allow-Headers in preflight response (or similar), try enabling this option to make that <code>admin-ajax.php</code> URL relative.', 'wp-slimstat' ) ),
 
 			'advanced_external_pages_header' => array('description' => __('External Pages','wp-slimstat'), 'type' => 'section_header'),
@@ -139,8 +139,8 @@ $settings = array(
 	};
 	/* ]]&gt; */
 	&lt;/script&gt;
-	&lt;script type="text/javascript" src="http://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;', 'use_tag_list' => false ),
-			'external_domains' => array('description' => __('Allow Domains','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme) you would like to allow. For example: <code>http://my.domain.ext</code> (no trailing slash). Please see <a href='http://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.",'wp-slimstat'))
+	&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;', 'use_tag_list' => false ),
+			'external_domains' => array('description' => __('Allow Domains','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme) you would like to allow. For example: <code>https://my.domain.ext</code> (no trailing slash). Please see <a href='https://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.",'wp-slimstat'))
 		)
 	),
 
@@ -158,11 +158,11 @@ $settings = array(
 			'ignore_countries' => array( 'description' => __( 'Countries', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Country codes (i.e.: <code>en-us, it, es</code>) that you don't want to track.", 'wp-slimstat' ) ),
 			'ignore_browsers' => array('description' => __( 'User Agents', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Browsers (user agents) you don't want to track. You can specify the browser's version adding a slash after the name  (i.e. <em>Firefox/3.6</em>). Wildcards: <code>*</code> matches 'any string, including the empty string', <code>!</code> matches 'any character'. For example, <code>Chr*</code> will match Chrome and Chromium, <code>IE/!.0</code> will match IE/7.0 and IE/8.0. Strings are case-insensitive.", 'wp-slimstat' ) ),
 			'ignore_platforms' => array( 'description' => __( 'Operating Systems', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Operating system codes you don't want to track. Please refer to <a href='https://slimstat.freshdesk.com/solution/articles/12000031504-what-are-the-operating-system-codes-used-by-slimstat-' target='_blank'>this page</a> in our knowledge base to learn more about what codes you can use. Usual rules for using wildcards apply (see fields here above).", 'wp-slimstat' ) ),
-			'ignore_capabilities' => array( 'description' => __( 'Capabilities', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Users having at least one of the <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capabilities</a> listed here below will not be tracked. Capabilities are case-insensitive.", 'wp-slimstat' ), 'skip_update' => true ),
+			'ignore_capabilities' => array( 'description' => __( 'Capabilities', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Users having at least one of the <a href='https://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capabilities</a> listed here below will not be tracked. Capabilities are case-insensitive.", 'wp-slimstat' ), 'skip_update' => true ),
 
 			'filters_pageview_header' => array( 'description' => __( 'Page Properties', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'ignore_resources' => array( 'description' => __( 'Permalinks', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the URLs on your website that you don't want to track. Don't include the domain name: <em>/about, ?p=1</em>, etc. Wildcards: <code>*</code> matches 'any string, including the empty string', <code>!</code> matches 'any character'. For example, <code>/abou*</code> will match /about and /abound, <code>/abo*t</code> will match /aboundant and /about, <code>/abo!t</code> will match /about and /abort. Strings are case-insensitive.", 'wp-slimstat' ) ),
-			'ignore_referers' => array( 'description' => __( 'Referring Sites', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Referring URLs that you don't want to track: <code>http://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. Wildcards: <code>*</code> matches 'any string, including the empty string', <code>!</code> matches 'any character'. Strings are case-insensitive. Please include either a wildcard or the protocol you want to filter (http://, https://).", 'wp-slimstat' ) ),
+			'ignore_referers' => array( 'description' => __( 'Referring Sites', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Referring URLs that you don't want to track: <code>https://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. Wildcards: <code>*</code> matches 'any string, including the empty string', <code>!</code> matches 'any character'. Strings are case-insensitive. Please include either a wildcard or the protocol you want to filter (https://, https://).", 'wp-slimstat' ) ),
 			'ignore_content_types' => array( 'description' => __( 'Content Types', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Slimstat categorizes pageviews by the associated WordPress content type: post, page, attachment, tag, 404, taxonomy, author, archive, search, feed, login and others. You can use this field to avoid tracking pages whose content type matches the ones you set here below.", 'wp-slimstat' ) )
 		)
 	),
@@ -172,8 +172,8 @@ $settings = array(
 		'rows' => array(
 			'reports_basic_header' => array( 'description' => __( 'Data Formats and Conversion', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'use_european_separators' => array( 'description' => __( 'Number Format', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Choose the number format you want to use for your reports.','wp-slimstat' ), 'custom_label_on' => '1.234,5', 'custom_label_off' => '1,234.5' ),
-			'date_format' => array('description' => __('Date Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's date.", 'wp-slimstat')),
-			'time_format' => array('description' => __('Time Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='http://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's time.", 'wp-slimstat')),
+			'date_format' => array('description' => __('Date Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='https://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's date.", 'wp-slimstat')),
+			'time_format' => array('description' => __('Time Format','wp-slimstat'), 'type' => 'text', 'long_description' => __("<a href='https://php.net/manual/en/function.date.php' target='_blank'>PHP Format</a> to use when displaying a pageview's time.", 'wp-slimstat')),
 			'show_display_name' => array('description' => __('Use Display Name','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('By default, users are listed by their usernames. Use this option to visualize their display names instead.','wp-slimstat')),
 			'convert_resource_urls_to_titles' => array('description' => __('Use Titles','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('Slimstat converts your permalinks into post, page and category titles. Disable this feature if you need to see the URL in your reports.', 'wp-slimstat')),
 			'convert_ip_addresses' => array('description' => __('Convert IP Addresses','wp-slimstat'), 'type' => 'toggle', 'long_description' => __('Display provider names instead of IP addresses.','wp-slimstat')),
@@ -184,7 +184,7 @@ $settings = array(
 			'expand_details' => array('description' => __('Expand Details','wp-slimstat'), 'type' => 'toggle', 'long_description' => __("Expand each row's details by default, insted of on mousehover.",'wp-slimstat')),
 			'rows_to_show' => array('description' => __('Rows to Display','wp-slimstat'), 'type' => 'integer', 'long_description' => __('Specify the number of items in each report.','wp-slimstat')),
 			'limit_results' => array( 'description' => __( 'Max Results','wp-slimstat' ), 'type' => 'integer', 'long_description' => __( 'Decide how many records should be retrieved from the database in total. Depending on your server configuration, you may want to fine tune this value to avoid exceeding your PHP memory limit.', 'wp-slimstat' ) ),
-			'ip_lookup_service' => array('description' => __( 'IP Lookup', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Customize the Geolocation service to be used in the reports. Default: <code>http://www.infosniper.net/?ip_address=</code>', 'wp-slimstat' ) ),
+			'ip_lookup_service' => array('description' => __( 'IP Lookup', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Customize the Geolocation service to be used in the reports. Default: <code>https://www.infosniper.net/?ip_address=</code>', 'wp-slimstat' ) ),
 			'mozcom_access_id' => array('description' => __( 'Mozscape Access ID', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Get accurate rankings for your website through the free <a href="https://moz.com/community/join?redirect=/products/api/keys" target="_blank">Mozscape API</a> service. Sign up for a free community account to get started. Then enter your personal identification code here.', 'wp-slimstat' ) ),
 			'mozcom_secret_key' => array('description' => __( 'Mozscape Secret Key', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( 'Do not share your secret key with anyone or they will be able to make API requests on your account!', 'wp-slimstat' ) ),
 
@@ -207,15 +207,15 @@ $settings = array(
 		'rows' => array(
 			'permissions_reports_header' => array( 'description' => __( 'Reports', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'restrict_authors_view' => array( 'description' => __( 'Restrict Authors', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Enable this option if you want your authors to only see stats related to their own content.', 'wp-slimstat' ) ),
-			'capability_can_view' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to access the reports (default: <code>activate_plugins</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here below. In this case, the list has precedence over the capability.", 'wp-slimstat' ) ),
+			'capability_can_view' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to access the reports (default: <code>activate_plugins</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here below. In this case, the list has precedence over the capability.", 'wp-slimstat' ) ),
 			'can_view' => array( 'description' => __( 'Whitelist', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the users who should have access to the reports. Administrators are implicitly allowed, so you don't need to list them in here. Usernames are case sensitive.", 'wp-slimstat' ), 'skip_update' => true ),
 
 			'permissions_customize_header' => array( 'description' => __( 'Customizer', 'wp-slimstat' ), 'type' => 'section_header' ),
-			'capability_can_customize' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to be able to customize the reports layout (default: <code>activate_plugins</code>). If this field is empty, your users will be permitted to use this features.", 'wp-slimstat' ) ),
+			'capability_can_customize' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> needed to be able to customize the reports layout (default: <code>activate_plugins</code>). If this field is empty, your users will be permitted to use this features.", 'wp-slimstat' ) ),
 			'can_customize' => array( 'description' => __( 'Whitelist', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the users who should be allowed to customize their report layout. Administrators are implicitly allowed, so you don't need to list them in here. Usernames are case sensitive.", 'wp-slimstat' ), 'skip_update' => true ),
 
 			'permissions_config_header' => array( 'description' => __( 'Settings', 'wp-slimstat' ), 'type' => 'section_header' ),
-			'capability_can_admin' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> required to configure Slimstat (default: <code>activate_plugins</code>). The whitelist here below can be used to override this option for specific users.", 'wp-slimstat' ) ),
+			'capability_can_admin' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://codex.wordpress.org/Roles_and_Capabilities' target='_new'>capability</a> required to configure Slimstat (default: <code>activate_plugins</code>). The whitelist here below can be used to override this option for specific users.", 'wp-slimstat' ) ),
 			'can_admin' => array( 'description' => __( 'Whitelist', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the users who can edit these options. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! Usernames are case sensitive.", 'wp-slimstat' ), 'skip_update' => true ),
 
 			'rest_api_header' => array( 'description' => __( 'Rest API', 'wp-slimstat' ), 'type' => 'section_header' ),
