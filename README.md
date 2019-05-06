@@ -75,7 +75,6 @@ Slimstat is available in multiple languages: English, Belarusian (UStarCash), Ch
 Our knowledge base is available on our [support center](https://docs.wp-slimstat.com/) website.
 
 
-
 ## Changelog 
 
 ### 4.8 
@@ -87,6 +86,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Switched the Add-on Update checker URL to HTTPS, for added security (thank you, Peter).
 * [Update] Changed the protocol of all the URLs used within Slimstat, including references to our documentation, to HTTPS.
 * [Fix] The optout cookie path was not being set correctly (thank you, [ralfkerkhoff](https://wordpress.org/support/topic/opt-out-cookie-per-page/)).
+* [Fix] Google seems to be using a new User Agent string for its "mobile" crawler, which was causing Slimstat from incorrectly identifying visits as coming from mobile devices, instead of bots (thank you, Ron).
 * [Fix] An error was being returned if SVG elements were using the A tag on a page (thank you, [snaphappyme](https://wordpress.org/support/topic/uncaught-typeerror-all_linksn-href-indexof/)).
 
 
