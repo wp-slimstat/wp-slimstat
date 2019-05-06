@@ -342,6 +342,7 @@
 /* Single Report: Chart */
 .chart-placeholder{
 	height: 280px;
+	overflow: hidden;
 }
 
 /* Single Report: Modal Window */
