@@ -75,6 +75,7 @@ Slimstat is available in multiple languages: English, Belarusian (UStarCash), Ch
 Our knowledge base is available on our [support center](https://docs.wp-slimstat.com/) website.
 
 
+
 ## Changelog 
 
 ### 4.8 
@@ -85,6 +86,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] If you're using our partner's CDN functionality (JsDelivr) to load the tracker, their link is now always loaded over HTTPS for added security.
 * [Update] Switched the Add-on Update checker URL to HTTPS, for added security (thank you, Peter).
 * [Update] Changed the protocol of all the URLs used within Slimstat, including references to our documentation, to HTTPS.
+* [Fix] The optout cookie path was not being set correctly (thank you, [ralfkerkhoff](https://wordpress.org/support/topic/opt-out-cookie-per-page/)).
 * [Fix] An error was being returned if SVG elements were using the A tag on a page (thank you, [snaphappyme](https://wordpress.org/support/topic/uncaught-typeerror-all_linksn-href-indexof/)).
 
 
