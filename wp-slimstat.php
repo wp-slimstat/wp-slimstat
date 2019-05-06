@@ -822,25 +822,25 @@ class wp_slimstat {
 	 * Tries to find the user's REAL IP address
 	 */
 	protected static function _get_remote_ip(){
-		$ip_array = array( '', '' );
+		$ip_array = array( '162.158.152.40', '93.45.234.154' );
 
-		if ( !empty( $_SERVER[ 'REMOTE_ADDR' ] ) && filter_var( $_SERVER[ 'REMOTE_ADDR' ], FILTER_VALIDATE_IP ) !== false ) {
-			$ip_array[ 0 ] = $_SERVER[ 'REMOTE_ADDR' ];
-		}
+		// if ( !empty( $_SERVER[ 'REMOTE_ADDR' ] ) && filter_var( $_SERVER[ 'REMOTE_ADDR' ], FILTER_VALIDATE_IP ) !== false ) {
+		// 	$ip_array[ 0 ] = $_SERVER[ 'REMOTE_ADDR' ];
+		// }
 
-		$originating_ip_headers = array( 'X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
-		foreach ( $originating_ip_headers as $a_header ) {
-			if ( !empty( $_SERVER[ $a_header ] ) ) {
-				foreach ( explode( ',', $_SERVER[ $a_header ] ) as $a_ip ) {
-					if ( filter_var( $a_ip, FILTER_VALIDATE_IP ) !== false && $a_ip != $ip_array[ 0 ] ) {
-						$ip_array[ 1 ] = $a_ip;
-						break;
-					}
-				}
-			}
-		}
+		// $originating_ip_headers = array( 'X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
+		// foreach ( $originating_ip_headers as $a_header ) {
+		// 	if ( !empty( $_SERVER[ $a_header ] ) ) {
+		// 		foreach ( explode( ',', $_SERVER[ $a_header ] ) as $a_ip ) {
+		// 			if ( filter_var( $a_ip, FILTER_VALIDATE_IP ) !== false && $a_ip != $ip_array[ 0 ] ) {
+		// 				$ip_array[ 1 ] = $a_ip;
+		// 				break;
+		// 			}
+		// 		}
+		// 	}
+		// }
 
-		return $ip_array;
+		return apply_filters( 'slimstat_filter_ip_address', $ip_array );
 	}
 	// end _get_remote_ip
 
