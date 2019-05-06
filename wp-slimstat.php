@@ -577,13 +577,10 @@ class wp_slimstat {
 		include_once ( plugin_dir_path( __FILE__ ) . 'maxmind.php' );
 		$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
 
-		// Invalid MaxMind data file
 		if ( !empty( $geolocation_data[ 'country' ][ 'iso_code' ] ) ) {
-			
-			if ( $geolocation_data[ 'country' ][ 'iso_code' ] == 'xx' ) {
-				self::_set_error_array( __( 'Your MaxMind data file is invalid. Please uninstall it using the button in Settings > Maintenance.', 'wp-slimstat' ), false, 205 );
-			}
-			else {
+
+			// Invalid MaxMind data file
+			if ( $geolocation_data[ 'country' ][ 'iso_code' ] != 'xx' ) {
 				self::$stat[ 'country' ] = strtolower( $geolocation_data[ 'country' ][ 'iso_code' ] );
 
 				if ( !empty( $geolocation_data[ 'city' ][ 'names' ][ 'en' ] ) ) {
