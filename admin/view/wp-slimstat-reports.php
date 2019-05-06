@@ -1616,10 +1616,10 @@ class wp_slimstat_reports {
 		$path_slimstat = dirname( dirname( __FILE__ ) );
 		wp_enqueue_script( 'slimstat_ammap', plugins_url( '/admin/js/ammap/ammap.js', $path_slimstat ), array(), null, false );
 		wp_enqueue_script( 'slimstat_ammap_world', plugins_url( '/admin/js/ammap/world.js', $path_slimstat ), array(), null, false );
-		wp_enqueue_script( 'slimstat_amcharts_plugins_export', plugins_url( '/admin/js/amcharts/plugins/export/export.min.js', $path_slimstat ), array( 'slimstat_ammap' ), null, false );
-		wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_ammap' ), null, false );
+		//wp_enqueue_script( 'slimstat_amcharts_plugins_export', plugins_url( '/admin/js/amcharts/plugins/export/export.min.js', $path_slimstat ), array( 'slimstat_ammap' ), null, false );
+		//wp_enqueue_script( 'slimstat_amcharts_theme_light', plugins_url( '/admin/js/amcharts/themes/light.js', $path_slimstat ), array( 'slimstat_ammap' ), null, false );
 
-		wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
+		//wp_enqueue_style( 'slimstat_amcharts_plugins_export_css', plugins_url( '/admin/js/amcharts/plugins/export/export.css', $path_slimstat ) );
 
 		?>
 
