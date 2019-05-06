@@ -127,7 +127,7 @@
 			wp_slimstat_admin::show_alert_message( sprintf( __( "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right noslimstat" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
 		}
 
-		if ( !file_exists( slim_browser::$browscap_autoload_path ) && ( empty( wp_slimstat::$settings[ 'no_browscap_warning' ] ) || wp_slimstat::$settings[ 'no_browscap_warning' ] != 'on' ) ) {
+		if ( version_compare( PHP_VERSION, '7.1', '>=' ) && !file_exists( slim_browser::$browscap_autoload_path ) && ( empty( wp_slimstat::$settings[ 'no_browscap_warning' ] ) || wp_slimstat::$settings[ 'no_browscap_warning' ] != 'on' ) ) {
 			wp_slimstat_admin::show_alert_message( sprintf( __( "Install the Browscap <a href='%s' class='noslimstat'>User Agent Database</a> to accurately determine your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-browscap-notice" class="slimstat-font-cancel slimstat-float-right noslimstat" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
 		}
 
