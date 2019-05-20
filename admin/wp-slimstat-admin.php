@@ -149,7 +149,7 @@ class wp_slimstat_admin {
 				$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
 				
 				if ( !empty( wp_slimstat_reports::$reports_info[ $report_id ] ) ) {
-					add_action('wp_ajax_slimstat_load_report', array( 'wp_slimstat_reports', 'callback_wrapper' ), 10, 2 );
+					add_action( 'wp_ajax_slimstat_load_report', array( 'wp_slimstat_reports', 'callback_wrapper' ), 10, 2 );
 				}
 			}
 		}
