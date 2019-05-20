@@ -186,10 +186,10 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 
 		// Plugins
 		$plugins = '';
-		if (!empty($results[$i]['plugins'])){
-			$results[$i]['plugins'] = explode(',', $results[$i]['plugins']);
-			foreach($results[$i]['plugins'] as $a_plugin){
-				$a_plugin = trim($a_plugin);
+		if ( !empty( $results[ $i ][ 'plugins' ] ) ) {
+			$results[ $i ][ 'plugins' ] = explode( ',', $results[ $i ][ 'plugins' ] );
+			foreach( $results[ $i ][ 'plugins' ] as $a_plugin ) {
+				$a_plugin = str_replace( array( "'", '"' ), '', trim( $a_plugin ) );
 				$plugins .= "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'plugins contains ' . $a_plugin ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/images/plugins/$a_plugin.png' width='16' height='16' title='" . __( $a_plugin, 'wp-slimstat' ) . "'></a> ";
 			}
 		}

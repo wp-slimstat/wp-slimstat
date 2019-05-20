@@ -128,8 +128,8 @@ var SlimStat = {
 	detect_plugins : function() {
 		var a_plugin, plugins = [];
 
-		for (a_plugin in SlimStat._plugins) {
-			if (SlimStat._detect_single_plugin(a_plugin)) {
+		for ( a_plugin in SlimStat._plugins ) {
+			if ( SlimStat._detect_single_plugin( a_plugin ) ) {
 				plugins.push( a_plugin );
 			}
 		}
@@ -139,7 +139,7 @@ var SlimStat = {
 			plugins.push( 'java' );
 		}
 
-		return plugins.join( "," );
+		return plugins.join( ',' );
 	},
 
 	get_page_performance : function() {
