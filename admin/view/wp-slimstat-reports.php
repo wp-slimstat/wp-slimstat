@@ -1299,7 +1299,7 @@ class wp_slimstat_reports {
 				series2.dataFields.valueY = "v2";
 				series2.dataFields.categoryX = "v1_label";
 				series2.strokeWidth = 2;
-				series2.tooltipText = "{name} {v3_label}: [bold]{valueY}[/]";
+				series2.tooltipText = "{name} {v1_label}: [bold]{valueY}[/]";
 				series2.tensionX = 0.9;
 
 <?php if ( wp_slimstat::$settings[ 'comparison_chart' ] == 'on' ): ?>
@@ -1308,7 +1308,7 @@ class wp_slimstat_reports {
 				series3.dataFields.valueY = "v3";
 				series3.dataFields.categoryX = "v1_label";
 				series3.strokeWidth = 2;
-				series3.tooltipText = "{name} {v3_label}: [bold]{valueY}[/]";
+				series3.tooltipText = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ); ?> {v3_label}: [bold]{valueY}[/]";
 				series3.tensionX = 0.9;
 
 				var series4 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
@@ -1316,7 +1316,7 @@ class wp_slimstat_reports {
 				series4.dataFields.valueY = "v4";
 				series4.dataFields.categoryX = "v1_label";
 				series4.strokeWidth = 2;
-				series4.tooltipText = "{name} {v3_label}: [bold]{valueY}[/]";
+				series4.tooltipText = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ], ENT_QUOTES, 'UTF-8' ); ?> {v3_label}: [bold]{valueY}[/]";
 				series4.tensionX = 0.9;
 <?php endif; ?>
 				// Export

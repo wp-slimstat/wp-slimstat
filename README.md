@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 **Requires at least:** 3.8  
 Requires PHP: 5.2
 **Tested up to:** 5.1  
-**Stable tag:** 4.8  
+**Stable tag:** 4.8.1  
 
 
 ## Description 
@@ -76,6 +76,10 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 
 ## Changelog 
+
+### 4.8.1 
+* [Fix] Charts were displaying the wrong label for certain values (thank you, Alex).
+
 
 ### 4.8 
 * [Note] Now that we have a cleaner foundation to build on, it's time to start introducing new reports and new ways to segment your audience and the traffic they generate. While our users test the latest changes and updates (to confirm that the foundation is indeed solid and bug-free), we are hard at work implementing the first batch of new reports. Some of them will be made available in the free version, while others will be added to our premium add-on, [User Overview](http://www.wp-slimstat.com/downloads/user-overview/). And we need your help! If you think that a specific report should be added to Slimstat, please do not hesitate to let us know!
