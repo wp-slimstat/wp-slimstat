@@ -77,6 +77,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 == Changelog ==
 = 4.8.1 =
 * [Update] Async mode will now serialize concurrent requests to the backend to optimize performance and reduce server load.
+* [Fix] Addressed a remote XSS vulnerability disclosed by Sucuri/GoDaddy.
 * [Fix] Charts were displaying the wrong label for certain values (thank you, Alex).
 
 = 4.8 =

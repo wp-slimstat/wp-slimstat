@@ -13,6 +13,10 @@ Requires PHP: 5.2
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 
+### Feature Spotlight 
+[youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
+
+
 ### Main features 
 * Get access to real-time access log, measure server latency, track page events, keep an eye on your bounce rate and much more.
 * Add shortcodes to your website to display reports in widgets or directly in posts and pages.
@@ -75,10 +79,29 @@ Slimstat is available in multiple languages: English, Belarusian (UStarCash), Ch
 Our knowledge base is available on our [support center](https://docs.wp-slimstat.com/) website.
 
 
+## Screenshots 
+### 1. **Overview** - Your website traffic at a glance
+[missing image]
+
+### 2. **Activity Log** - A real-time view of your visitors' whereabouts
+[missing image]
+
+### 3. **Settings** - Plenty of options to customize the plugin's behavior
+[missing image]
+
+### 4. **Interactive World Map** - See where your visitors are coming from
+[missing image]
+
+### 5. **Responsive layout** - Keep an eye on your reports on the go
+[missing image]
+
+
+
 ## Changelog 
 
 ### 4.8.1 
-* [Update] Async mode will now serialize concurrent requests to the backend to optimize performance and server load.
+* [Update] Async mode will now serialize concurrent requests to the backend to optimize performance and reduce server load.
+* [Fix] Addressed a remote XSS vulnerability disclosed by Sucuri/GoDaddy.
 * [Fix] Charts were displaying the wrong label for certain values (thank you, Alex).
 
 
