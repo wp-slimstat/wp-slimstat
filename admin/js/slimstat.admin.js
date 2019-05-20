@@ -26,7 +26,7 @@ jQuery( function() {
 	// Reload a report's data if it is (re)activated via the checkbox under Screen Options
 	jQuery( 'input.hide-postbox-tog[id^=slim_p]' ).on( 'click.postboxes', function () {
 		if ( jQuery( this ).prop( "checked" ) && jQuery( '#' + jQuery( this ).val() ).length ) {
-			SlimStatAdmin.refresh_report( jQuery( this ).val() );
+			SlimStatAdmin.refresh_report( jQuery( this ).val(), true );
 		}
 	});
 
@@ -44,7 +44,7 @@ jQuery( function() {
 			}
 		}
 
-		SlimStatAdmin.refresh_report( id );
+		SlimStatAdmin.refresh_report( id, true );
 		
 		// Remove any temporary filters set here above
 		jQuery( '.slimstat-temp-filter' ).remove();
@@ -58,7 +58,7 @@ jQuery( function() {
 	// Asynchronous reports are loaded dynamically after the page loads
 	if ( SlimStatAdminParams.async_load == 'on' ) {
 		jQuery( 'div[id^=slim_]' ).each( function() {
-			SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) );
+			SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ), true );
 		} );
 	}
 
@@ -388,6 +388,7 @@ jQuery( function() {
 // ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------
 var SlimStatAdmin = {
 	_refresh_timer: 0,
+	_async_semaphor: false,
 
 	refresh_countdown: function() {
 		SlimStatAdmin._refresh_timer--;
@@ -401,7 +402,7 @@ var SlimStatAdmin = {
 		}
 		else {
 			// Request the data from the server
-			SlimStatAdmin.refresh_report( 'slim_p7_02' );
+			SlimStatAdmin.refresh_report( 'slim_p7_02', true );
 
 			// Reset the countdown timer
 			SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
@@ -409,9 +410,20 @@ var SlimStatAdmin = {
 		}
 	},
 	
-	refresh_report: function( id ) {
+	refresh_report: function( id, show_wheel ) {
 		var inner_content = '#' + id + ' .inside';
-		jQuery( inner_content ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
+		if ( jQuery( inner_content ).html().length == 0 || show_wheel ) {
+			jQuery( inner_content ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
+		}
+
+		if ( SlimStatAdmin._async_semaphor ) {
+			random_wait = parseInt( ( Math.random() * 500 ) + 200 );
+			window.setTimeout( function() { SlimStatAdmin.refresh_report( id, false ); }, random_wait );
+			return false;
+		}
+
+		SlimStatAdmin._async_semaphor = true;
+
 		data = {
 			action: 'slimstat_load_report',
 			security: jQuery( '#meta-box-order-nonce' ).val(),
@@ -438,6 +450,8 @@ var SlimStatAdmin = {
 					SlimStatAdmin._refresh_timer = SlimStatAdminParams.refresh_interval;
 				}
 			}
+
+			SlimStatAdmin._async_semaphor = false;
 		} );
 	},
 

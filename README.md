@@ -78,6 +78,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 ## Changelog 
 
 ### 4.8.1 
+* [Update] Async mode will now serialize concurrent requests to the backend to optimize performance and server load.
 * [Fix] Charts were displaying the wrong label for certain values (thank you, Alex).
 
 
