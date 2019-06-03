@@ -11,8 +11,8 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		// self::$admin_notice = "Now that we finally have a cleaner code foundation to build on, it's time to start introducing new reports and new ways to segment your audience and the traffic they generate. While our users test the latest changes and updates (to confirm that the foundation is indeed solid and bug-free), we are hard at work implementing the first batch of new reports. Some of them will be made available in the free version, while others will be added to our premium add-on, <a href='https://www.wp-slimstat.com/downloads/user-overview/' target='_blank'>User Overview</a>. And we need your help! If you think that a specific report should be added to Slimstat, please do not hesitate <a href='https://support.wp-slimstat.com' target='_blank'>to let us know</a>.";
-		// self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
+		self::$admin_notice = "Our team has been contemplating the idea of deprecating the information collected about your visitors' <em>browser plugins</em> (Java, PDF reader, RealView player, Silverlight, etc). In this day and age, where browsers use either built-in functionality to provide those features, or extensions that cannot be tracked for privacy purposes, it feels anachronistic to continue collecting this outdated information. By getting rid of this specific feature, we can streamline our code, improve performance, and reduce the database size. However, we wanted to hear from our users before anything is actually implemented. Please do not hesitate <a href='https://support.wp-slimstat.com' target='_blank'>to let us know</a> if you are using the 'browser plugins' field for your reporting needs.";
+		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );

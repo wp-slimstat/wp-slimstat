@@ -26,7 +26,7 @@ jQuery( function() {
 	// Reload a report's data if it is (re)activated via the checkbox under Screen Options
 	jQuery( 'input.hide-postbox-tog[id^=slim_p]' ).on( 'click.postboxes', function () {
 		if ( jQuery( this ).prop( "checked" ) && jQuery( '#' + jQuery( this ).val() ).length ) {
-			refresh = SlimStatAdmin.refresh_report( jQuery( this ).val(), true );
+			refresh = SlimStatAdmin.refresh_report( jQuery( this ).val() );
 			refresh();
 		}
 	});
@@ -45,7 +45,7 @@ jQuery( function() {
 			}
 		}
 
-		refresh = SlimStatAdmin.refresh_report( id, true );
+		refresh = SlimStatAdmin.refresh_report( id );
 		refresh();
 		
 		// Remove any temporary filters set here above
@@ -62,7 +62,7 @@ jQuery( function() {
 		var base = jQuery.when({});
 		jQuery( 'div[id^=slim_]' ).each( function() {
 			jQuery( '#' + jQuery( this ).attr( 'id' ) + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
-			base = base.then( SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ), true ) );
+			base = base.then( SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) ) );
 		} );
 	}
 
@@ -204,8 +204,8 @@ jQuery( function() {
 	//
 
 	// Reload the Activity Log every X seconds
-	if ( SlimStatAdminParams.refresh_interval > 0 && jQuery( '.refresh-timer' ).length > 0 ) {
-		SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
+	SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
+	if ( SlimStatAdmin._refresh_timer > 0 ) {
 		window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
 	}
 
@@ -405,7 +405,8 @@ var SlimStatAdmin = {
 		}
 		else {
 			// Request the data from the server
-			SlimStatAdmin.refresh_report( 'slim_p7_02' );
+			refresh = SlimStatAdmin.refresh_report( 'slim_p7_02' );
+			refresh();
 
 			// Reset the countdown timer
 			SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
@@ -413,14 +414,12 @@ var SlimStatAdmin = {
 		}
 	},
 
-	refresh_report: function( id, show_wheel ) {
+	refresh_report: function( id ) {
 		return function() {
 			var inner_content = '#' + id + ' .inside';
 			var defer = jQuery.Deferred();
 
-			if ( show_wheel ) {
-				jQuery( '#' + id + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
-			}
+			jQuery( '#' + id + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
 
 			data = {
 				action: 'slimstat_load_report',
