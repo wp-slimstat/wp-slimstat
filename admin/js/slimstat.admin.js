@@ -58,11 +58,14 @@ jQuery( function() {
 	} );
 
 	// Asynchronous reports are loaded dynamically after the page loads
-	if ( SlimStatAdminParams.async_load == 'on' ) {
+	if ( SlimStatAdminParams.async_load == 'on' ) { 
 		var base = jQuery.when({});
 		jQuery( 'div[id^=slim_]' ).each( function() {
-			jQuery( '#' + jQuery( this ).attr( 'id' ) + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
-			base = base.then( SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) ) );
+			// Skip Charts
+			if ( jQuery( this ).attr( 'id' ).indexOf( '_01' ) == -1 ) {
+				jQuery( '#' + jQuery( this ).attr( 'id' ) + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
+				base = base.then( SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) ) );
+			}
 		} );
 	}
 

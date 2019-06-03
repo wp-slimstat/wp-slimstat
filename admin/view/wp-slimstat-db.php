@@ -43,6 +43,7 @@ class wp_slimstat_db {
 			'resource' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
 			'referer' => array( __( 'Referer', 'wp-slimstat' ), 'varchar' ),
 			'username' => array( __( 'Visitor\'s Username', 'wp-slimstat' ), 'varchar' ),
+			'email' => array( __( 'Visitor\'s Email', 'wp-slimstat' ), 'varchar' ),
 			'outbound_resource' => array( __( 'Outbound Link', 'wp-slimstat' ), 'varchar' ),
 			'page_performance' => array( __( 'Page Speed', 'wp-slimstat' ), 'int' ),
 			'no_filter_selected_2' => array( '', 'none' ),
@@ -931,7 +932,7 @@ class wp_slimstat_db {
 			$dimensions .= ', ip, dt';
 		}
 		else {
-			$dimensions = 'id, ip, other_ip, username, country, city, location, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
+			$dimensions = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
 		}
 
 		if ( !empty( $_more_dimensions ) ) {

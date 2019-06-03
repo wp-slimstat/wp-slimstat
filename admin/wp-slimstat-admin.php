@@ -251,6 +251,7 @@ class wp_slimstat_admin {
 				ip VARCHAR(39) DEFAULT NULL,
 				other_ip VARCHAR(39) DEFAULT NULL,
 				username VARCHAR(255) DEFAULT NULL,
+				email VARCHAR(255) DEFAULT NULL,
 
 				country VARCHAR(16) DEFAULT NULL,
 				location VARCHAR(36) DEFAULT NULL,
@@ -343,48 +344,6 @@ class wp_slimstat_admin {
 	public static function update_tables_and_options() {
 		$my_wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
-		// --- Updates for version 4.4.5 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.4.5', '<' ) ) {
-			wp_slimstat::$settings[ 'last_tracker_error' ] = array();
-			wp_slimstat::$settings[ 'last_tracker_notice' ] = array();
-		}
-		// --- END: Updates for version 4.4.5 ---
-
-		// --- Updates for version 4.7.2 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.2', '<' ) ) {
-			// Changing our toggle option values from 'yes' to 'on'
-			foreach ( wp_slimstat::$settings as $a_key => $a_value ) {
-				if ( $a_value == 'yes' ) {
-					wp_slimstat::$settings[ $a_key ] = 'on';
-				}
-			}
-
-			// If MaxMind DB is enabled, download the new GeoLite 2 data file
-			$old_maxmind_path = str_replace( '.mmdb', '.dat', wp_slimstat::$maxmind_path );
-			if ( file_exists( $old_maxmind_path ) ) {
-				@unlink( $old_maxmind_path );
-				wp_slimstat::download_maxmind_database();
-			}
-
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN city VARCHAR(255) DEFAULT NULL AFTER country, ADD COLUMN location VARCHAR(36) DEFAULT NULL AFTER country" );
-		}
-		// --- END: Updates for version 4.7.2 ---
-
-		// --- Updates for version 4.7.2.2 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.2.2', '<' ) ) {
-			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN city VARCHAR(255) DEFAULT NULL AFTER country, ADD COLUMN location VARCHAR(36) DEFAULT NULL AFTER country" );
-		}
-		// --- END: Updates for version 4.7.2.2 ---
-
-		// --- Updates for version 4.7.3.1 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.3.1', '<' ) ) {
-			// Some users have reported that the MaxMind DB file has been created as an empty folder on their server
-			if ( file_exists( wp_slimstat::$maxmind_path ) && !is_file( wp_slimstat::$maxmind_path ) ) {
-				@rmdir( wp_slimstat::$maxmind_path );
-			}
-		}
-		// --- END: Updates for version 4.7.3.1 ---
-
 		// --- Updates for version 4.7.8 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.8', '<' ) ) {
 			// The Geolocation screen has been removed, and the World Map has been moved to the Audience tab
@@ -420,6 +379,14 @@ class wp_slimstat_admin {
 			}
 		}
 		// --- END: Updates for version 4.7.9 ---
+
+		// --- Updates for version 4.8.2 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.8.2', '<' ) ) {
+			// Add new email column to database
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username" );
+		}
+		// --- END: Updates for version 4.8.2 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;

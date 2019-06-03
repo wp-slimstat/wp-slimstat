@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.8.1.1
+Version: 4.8.2
 Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8.1.1';
+	public static $version = '4.8.2';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -521,13 +521,14 @@ class wp_slimstat {
 			}
 
 			self::$stat[ 'username' ] = $GLOBALS[ 'current_user' ]->data->user_login;
+			self::$stat[ 'email' ] = $GLOBALS[ 'current_user' ]->data->user_email;
 			self::$stat[ 'notes' ][] = 'user:' . $GLOBALS[ 'current_user' ]->data->ID;
 			$not_spam = true;
 		}
 		elseif ( isset( $_COOKIE[ 'comment_author_' . COOKIEHASH ] ) ) {
 			// Is this a spammer?
 			$spam_comment = self::$wpdb->get_row( self::$wpdb->prepare( "
-				SELECT comment_author, COUNT(*) comment_count
+				SELECT comment_author, comment_author_email, COUNT(*) comment_count
 				FROM `" . DB_NAME . "`.{$GLOBALS['wpdb']->comments}
 				WHERE comment_author_IP = %s AND comment_approved = 'spam'
 				GROUP BY comment_author
@@ -539,13 +540,20 @@ class wp_slimstat {
 					self::_set_error_array( sprintf( __( 'Spammer %s not tracked', 'wp-slimstat' ), $spam_comment[ 'comment_author' ] ), true );
 					return $_argument;
 				}
-				else{
+				else {
 					self::$stat[ 'notes' ][] = 'spam:yes';
 					self::$stat[ 'username' ] = $spam_comment[ 'comment_author' ];
+					self::$stat[ 'email' ] = $spam_comment[ 'comment_author_email' ];
 				}
 			}
-			else
-				self::$stat[ 'username' ] = $_COOKIE[ 'comment_author_' . COOKIEHASH ];
+			else {
+				if ( !empty( $_COOKIE[ 'comment_author_' . COOKIEHASH ] ) ) {
+					self::$stat[ 'username' ] = sanitize_user( $_COOKIE[ 'comment_author_' . COOKIEHASH ] );
+				}
+				if ( !empty( $_COOKIE[ 'comment_author_email_' . COOKIEHASH ] ) ) {
+					self::$stat[ 'email' ] = sanitize_email( $_COOKIE[ 'comment_author_email_' . COOKIEHASH ] );
+				}
+			}
 		}
 
 		// Should we ignore this IP address?
@@ -1585,7 +1593,7 @@ class wp_slimstat {
 				'dimension' => array(
 					'description' => __( 'This parameter indicates what dimension to return: * (all data), ip, resource, browser, operating system, etc. You can only specify one dimension at a time.', 'wp-slimstat' ),
 					'type' => 'string',
-					'enum' => array( '*', 'id', 'ip', 'username', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'outbound_resource' )
+					'enum' => array( '*', 'id', 'ip', 'username', 'email', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'outbound_resource' )
 				),
 				'filters' => array(
 					'description' => __( 'This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)', 'wp-slimstat' ),
@@ -1644,7 +1652,7 @@ class wp_slimstat {
 
 			'add_dashboard_widgets' => 'on',
 			'use_separate_menu' => 'on',
-			'posts_column_day_interval' => 30,
+			'posts_column_day_interval' => 28,
 			'add_posts_column' => 'no',
 			'posts_column_pageviews' => 'on',
 			'hide_addons' => 'no',
@@ -1865,8 +1873,8 @@ class wp_slimstat {
 		// Copy entries to the archive table, if needed
 		if ( self::$settings[ 'auto_purge_delete' ] != 'no' ) {
 			$is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt)
-				SELECT id, ip, other_ip, username, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
+				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt)
+				SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt
 				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
 				WHERE dt < $days_ago");
 

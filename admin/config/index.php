@@ -128,18 +128,18 @@ $settings = array(
 			'enable_cdn' => array( 'description' => __( 'Enable CDN', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( "Use <a href='https://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).", 'wp-slimstat' ) ),
 			'ajax_relative_path' => array( 'description' => __( 'Relative Ajax', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'If you are experiencing issues related to the header field X-Requested-With not being allowed by Access-Control-Allow-Headers in preflight response (or similar), try enabling this option to make that <code>admin-ajax.php</code> URL relative.', 'wp-slimstat' ) ),
 
-			'advanced_external_pages_header' => array('description' => __('External Pages','wp-slimstat'), 'type' => 'section_header'),
+			'advanced_external_pages_header' => array( 'description' => __( 'External Pages', 'wp-slimstat' ), 'type' => 'section_header' ),
 			'external_pages_script' => array('type' => 'static', 'skip_update' => 'yes', 'description' => __('Add the following code to all the non-WP pages you want to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is served over a secure channel.','wp-slimstat'), 'long_description' => '&lt;script type="text/javascript"&gt;
 	/* &lt;![CDATA[ */
 	var SlimStatParams = {
 		ajaxurl: "'.admin_url('admin-ajax.php').'",
 		ci: "YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=.' . md5('YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=' . wp_slimstat::$settings[ 'secret' ] ).'",
-		extensions_to_track: "'.wp_slimstat::$settings['extensions_to_track'].'"
+		extensions_to_track: "'.wp_slimstat::$settings[ 'extensions_to_track' ].'"
 	};
 	/* ]]&gt; */
 	&lt;/script&gt;
 	&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;', 'use_tag_list' => false ),
-			'external_domains' => array('description' => __('Allow Domains','wp-slimstat'), 'type' => 'textarea', 'long_description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme) you would like to allow. For example: <code>https://my.domain.ext</code> (no trailing slash). Please see <a href='https://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.",'wp-slimstat'))
+			'external_domains' => array( 'description' => __( 'Allow Domains', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme) you would like to allow. For example: <code>https://my.domain.ext</code> (no trailing slash). Please see <a href='https://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.", 'wp-slimstat' ) )
 		)
 	),
 
