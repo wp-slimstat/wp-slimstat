@@ -61,9 +61,9 @@
 					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -1' ) ?>"><?php _e( 'Today', 'wp-slimstat' ) ?></a>
 					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals yesterday&&&interval equals -1' ) ?>"><?php _e( 'Yesterday', 'wp-slimstat' ) ?></a>
 					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -7' ) ?>"><?php _e( 'Last 7 Days', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -30' ) ?>"><?php _e( 'Last 30 Days', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -90' ) ?>"><?php _e( 'Last 90 Days', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -365' ) ?>"><?php _e( 'Last 365 Days', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -28' ) ?>"><?php _e( 'Last 4 weeks', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -84' ) ?>"><?php _e( 'Last 12 weeks', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -364' ) ?>"><?php _e( 'Last Year', 'wp-slimstat' ) ?></a>
 				</div>
 
 				<strong><?php _e( 'Date Range', 'wp-slimstat' ) ?></strong>

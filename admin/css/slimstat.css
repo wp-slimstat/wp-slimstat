@@ -207,6 +207,7 @@
 [id^=slim_] p.pagination a{
 	color: #444;
 	float: right;
+	margin-left: 5px;
 }
 [id^=slim_] p.pagination a:hover{
 	text-shadow: 0 0 2px #000;
@@ -612,7 +613,7 @@
 	}
 	.wrap.slimstat .postbox h3 {
 		font-size: 1em;
-		line-height: 1.5em;
+		line-height: 1.2em;
 	}
 	.wrap.slimstat .postbox p {
 		font-size: 1em;

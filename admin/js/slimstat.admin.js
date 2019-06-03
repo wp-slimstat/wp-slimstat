@@ -62,7 +62,7 @@ jQuery( function() {
 		var base = jQuery.when({});
 		jQuery( 'div[id^=slim_]' ).each( function() {
 			// Skip Charts
-			if ( jQuery( this ).attr( 'id' ).indexOf( '_01' ) == -1 ) {
+			if ( !jQuery( this ).hasClass( 'chart' ) ) {
 				jQuery( '#' + jQuery( this ).attr( 'id' ) + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
 				base = base.then( SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) ) );
 			}
@@ -397,6 +397,10 @@ var SlimStatAdmin = {
 	_refresh_timer: 0,
 
 	refresh_countdown: function() {
+		if ( jQuery( '.refresh-timer' ).length == 0 ) {
+			return false;
+		}
+
 		SlimStatAdmin._refresh_timer--;
 		minutes = parseInt( SlimStatAdmin._refresh_timer / 60 );
 		seconds = parseInt( SlimStatAdmin._refresh_timer % 60 );
@@ -440,7 +444,7 @@ var SlimStatAdmin = {
 			jQuery.ajax( { method: 'POST', url: ajaxurl, data: data } )
 				.done( function( response ) {
 					// Charts don't play nice with the "fade" animation we have for the other reports
-					if ( id.indexOf( '_01' ) > 0 ) {
+					if ( jQuery( '#' + id ).hasClass( 'chart' ) ) {
 						jQuery( inner_content ).html( response );
 					}
 					else{
