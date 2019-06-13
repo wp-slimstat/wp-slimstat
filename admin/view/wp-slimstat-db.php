@@ -48,7 +48,6 @@ class wp_slimstat_db {
 			'page_performance' => array( __( 'Page Speed', 'wp-slimstat' ), 'int' ),
 			'no_filter_selected_2' => array( '', 'none' ),
 			'no_filter_selected_3' => array( __( '-- Advanced filters --', 'wp-slimstat' ), 'none' ),
-			'plugins' => array( __( 'Browser Capabilities', 'wp-slimstat' ), 'varchar' ),
 			'browser_version' => array( __( 'Browser Version', 'wp-slimstat' ), 'varchar' ),
 			'browser_type' => array( __( 'Browser Type', 'wp-slimstat' ), 'int' ),
 			'user_agent' => array( __( 'User Agent', 'wp-slimstat' ), 'varchar' ),
@@ -892,21 +891,6 @@ class wp_slimstat_db {
 
 		$results[ 7 ][ 'metric' ] = __( 'Yesterday', 'wp-slimstat' );
 		$results[ 7 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'dt BETWEEN ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ) . ' AND ' . ( date_i18n( 'U', mktime( 23, 59, 59, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ), false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
-
-		return $results;
-	}
-
-	public static function get_plugins() {
-		$wp_slim_plugins = array( 'flash', 'silverlight', 'acrobat', 'java', 'mediaplayer', 'director', 'real', 'quicktime' );
-		$total_human_hits = wp_slimstat_db::count_records( 'id', 'visit_id > 0 AND browser_type <> 1' );
-		$results = array();
-
-		foreach ( $wp_slim_plugins as $i => $a_plugin ) {
-			$count_results = wp_slimstat_db::count_records( 'id', "plugins LIKE '%{$a_plugin}%'" );
-			$results[ $i ][ 'metric' ] = ucfirst( $a_plugin );
-			$results[ $i ][ 'value' ] = ( $total_human_hits > 0 ) ? number_format( ( 100 * $count_results / $total_human_hits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0;
-			$results[ $i ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
-		}
 
 		return $results;
 	}

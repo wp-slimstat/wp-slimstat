@@ -2,32 +2,6 @@ var SlimStat = {
 	// Private Properties
 	_id: "undefined" != typeof SlimStatParams.id ? SlimStatParams.id : "-1.0",
 	_base64_key_str: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
-	_plugins: {
-		acrobat: {
-			substrings: ["Adobe", "Acrobat"],
-			active_x_strings: ["AcroPDF.PDF", "PDF.PDFCtrl.5"]
-		},
-		pdfviewer: {
-			substrings: ["PDF"],
-			active_x_strings: ["AcroPDF.PDF"]
-		},
-		flash: {
-			substrings: ["Shockwave", "Flash"],
-			active_x_strings: ["ShockwaveFlash.ShockwaveFlash"]
-		},
-		mediaplayer: {
-			substrings: ["Windows Media"],
-			active_x_strings: ["WMPlayer.OCX"]
-		},
-		quicktime: {
-			substrings: ["QuickTime"],
-			active_x_strings: ["QuickTime.QuickTime"]
-		},
-		silverlight: {
-			substrings: ["Silverlight"],
-			active_x_strings: ["AgControl.AgControl"]
-		}
-	},
 
 	_utf8_encode : function( string ) {
 		var n, c, utftext = "";
@@ -79,67 +53,6 @@ var SlimStat = {
 			output = output + SlimStat._base64_key_str.charAt( enc1 ) + SlimStat._base64_key_str.charAt( enc2 ) + SlimStat._base64_key_str.charAt( enc3 ) + SlimStat._base64_key_str.charAt( enc4 );
 		}
 		return output;
-	},
-
-	_detect_single_plugin_not_ie : function( plugin_name ) {
-		var plugin, haystack, found, i, j;
-
-		for ( i in navigator.plugins ) {
-			haystack = '' + navigator.plugins[ i ].name + navigator.plugins[ i ].description;
-			found = 0;
-
-			for ( j in SlimStat._plugins[ plugin_name ].substrings ) {
-				if ( haystack.indexOf( SlimStat._plugins[ plugin_name ].substrings[ j ] ) != -1 ) {
-					found++;
-				}
-			}
-
-			if ( found == SlimStat._plugins[ plugin_name ].substrings.length ) {
-				return true;
-			}
-		}
-		return false;
-	},
-
-	_detect_single_plugin_ie : function( plugin_name ) {
-		var i = '', found = false;
-
-		for ( i in SlimStat._plugins[plugin_name].active_x_strings ) {
-			try {
-				new ActiveXObject( SlimStat._plugins[plugin_name].active_x_strings[i] );
-				found = true;
-			}
-			catch( e ) { }
-		}
-
-		return found;
-	},
-	
-	_detect_single_plugin : function( plugin_name ) {
-		if ( navigator.plugins.length ) {
-			this.detect = SlimStat._detect_single_plugin_not_ie;
-		}
-		else {
-			this.detect = SlimStat._detect_single_plugin_ie;
-		}
-		return this.detect( plugin_name );
-	},
-
-	detect_plugins : function() {
-		var a_plugin, plugins = [];
-
-		for ( a_plugin in SlimStat._plugins ) {
-			if ( SlimStat._detect_single_plugin( a_plugin ) ) {
-				plugins.push( a_plugin );
-			}
-		}
-
-		// Detect Java
-		if ( typeof navigator.javaEnabled == "function" && navigator.javaEnabled() ) {
-			plugins.push( 'java' );
-		}
-
-		return plugins.join( ',' );
 	},
 
 	get_page_performance : function() {
@@ -252,7 +165,7 @@ var SlimStat = {
 			use_beacon = true;
 		}
 
-		slimstat_data_with_client_info = data + "&sw=" + screen.width + "&sh=" + screen.height + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&pl=" + SlimStat.detect_plugins();
+		slimstat_data_with_client_info = data + "&sw=" + screen.width + "&sh=" + screen.height + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance();
 
 		if ( use_beacon && navigator.sendBeacon ) {
 			navigator.sendBeacon( SlimStatParams.ajaxurl, slimstat_data_with_client_info );

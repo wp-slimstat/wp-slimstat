@@ -147,7 +147,7 @@ class wp_slimstat {
 		// Is this a request to record a new pageview?
 		if ( self::$data_js[ 'op' ] == 'add' || self::$data_js[ 'op' ] == 'update' ) {
 
-			// Track client-side information (screen resolution, plugins, etc)
+			// Track client-side information (screen resolution, server latency, etc)
 			if ( !empty( self::$data_js[ 'bw' ] ) ) {
 				self::$stat[ 'resolution' ] = strip_tags( trim( self::$data_js[ 'bw' ] . 'x' . self::$data_js[ 'bh' ] ) );
 			}
@@ -156,9 +156,6 @@ class wp_slimstat {
 			}
 			if ( !empty( self::$data_js[ 'sh' ] ) ) {
 				self::$stat[ 'screen_height' ] = intval( self::$data_js[ 'sh' ] );
-			}
-			if ( !empty( self::$data_js[ 'pl' ] ) ) {
-				self::$stat[ 'plugins' ] = strip_tags( trim( self::$data_js[ 'pl' ] ) );
 			}
 			if ( !empty( self::$data_js[ 'sl' ] ) && self::$data_js[ 'sl' ] > 0 && self::$data_js[ 'sl' ] < 60000 ) {
 				self::$stat[ 'server_latency' ] = intval( self::$data_js[ 'sl' ] );
@@ -172,7 +169,7 @@ class wp_slimstat {
 			self::slimtrack();
 		}
 		else if ( self::$data_js[ 'op' ] == 'update' ) {
-			// Update an existing pageview with client-based information (resolution, plugins installed, etc)
+			// Update an existing pageview with client-based information (resolution, server latency, etc)
 			self::_set_visit_id( true );
 
 			// ID of the pageview to update

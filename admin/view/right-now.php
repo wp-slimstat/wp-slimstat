@@ -1,5 +1,5 @@
 <?php
-// Avoid direct access to this piece of code
+// Avoid direct access
 if ( !function_exists( 'add_action' ) ) {
 	exit(0);
 }
@@ -184,23 +184,13 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 			$other_ip_address = '';
 		}
 
-		// Plugins
-		$plugins = '';
-		if ( !empty( $results[ $i ][ 'plugins' ] ) ) {
-			$results[ $i ][ 'plugins' ] = explode( ',', $results[ $i ][ 'plugins' ] );
-			foreach( $results[ $i ][ 'plugins' ] as $a_plugin ) {
-				$a_plugin = str_replace( array( "'", '"' ), '', trim( $a_plugin ) );
-				$plugins .= "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'plugins contains ' . $a_plugin ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/images/plugins/$a_plugin.png' width='16' height='16' title='" . __( $a_plugin, 'wp-slimstat' ) . "'></a> ";
-			}
-		}
-
 		// Screen Resolution
 		$screen_resolution = '';
 		if ( !empty( $results[ $i ][ 'screen_width' ] ) && !empty( $results[ $i ][ 'screen_height' ] ) ) {
 			$screen_resolution = "<span class='pageview-screenres'>{$results[ $i ][ 'screen_width' ]}x{$results[ $i ][ 'screen_height' ]}</span>";
 		}
 
-		$row_output = "<p class='header$highlight_row'>$browser_filtered $platform_filtered $browser_type_filtered $country_filtered $whois_pin $city_filtered $ip_address $other_ip_address <span class='plugins'>$plugins</span> $screen_resolution</p>";
+		$row_output = "<p class='header$highlight_row'>$browser_filtered $platform_filtered $browser_type_filtered $country_filtered $whois_pin $city_filtered $ip_address $other_ip_address $screen_resolution</p>";
 
 		// Strip all the filter links, if this information is shown on the frontend
 		if ( !is_admin() ) {

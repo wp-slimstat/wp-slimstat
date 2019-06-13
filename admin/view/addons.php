@@ -13,7 +13,7 @@ $response = get_transient( 'wp_slimstat_addon_list' );
 $error_message = '';
 
 if ( !empty( $_GET[ 'force_refresh' ] ) || false === $response ) {
-	$response = wp_remote_get( 'http://www.wp-slimstat.com/update-checker/', array( 'headers' => array( 'referer' => get_site_url() ) ) );
+	$response = wp_remote_get( 'https://www.wp-slimstat.com/update-checker/', array( 'headers' => array( 'referer' => get_site_url() ) ) );
 	if ( is_wp_error( $response ) || $response[ 'response' ][ 'code' ] != 200 ) {
 		$error_message = is_wp_error( $response ) ? $response->get_error_message() : $response[ 'response' ][ 'code' ] . ' ' . $response[ 'response' ][ 'message' ];
 		$error_message = sprintf( __( 'There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s', 'wp-slimstat' ), $error_message );
@@ -35,9 +35,9 @@ if ( !is_array( $list_addons ) ) {
 <h2><?php _e('Add-ons','wp-slimstat') ?></h2>
 <p><?php _e('Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.','wp-slimstat') ?>
 <?php
-	if (empty($_GET['force_refresh'])){
+	if ( empty( $_GET[ 'force_refresh' ] ) ) {
 		echo ' ';
-		printf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.','wp-slimstat'), $_SERVER['REQUEST_URI']);
+		printf( __( 'This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.', 'wp-slimstat' ), $_SERVER[ 'REQUEST_URI' ] );
 	}
 
 	if ( !empty( $error_message ) ) {
@@ -56,21 +56,21 @@ if ( !is_array( $list_addons ) ) {
 	</thead>
 
 	<tbody id="the-list">
-		<?php foreach ($list_addons as $a_addon): $is_active = is_plugin_active($a_addon['slug'].'/index.php') || is_plugin_active($a_addon['slug'].'/'.$a_addon['slug'].'.php'); ?>
-		<tr id="<?php echo $a_addon['slug'] ?>" <?php echo $is_active?'class="active"':'' ?>>
+		<?php foreach ( $list_addons as $a_addon ): $is_active = is_plugin_active( $a_addon[ 'slug' ] . '/index.php' ) || is_plugin_active( $a_addon[ 'slug' ] . '/' . $a_addon[ 'slug' ] . '.php'); ?>
+		<tr id="<?php echo $a_addon[ 'slug' ] ?>" <?php echo $is_active ? 'class="active"' : '' ?>>
 			<th scope="row" class="plugin-title">
-				<strong><a target="_blank" href="<?php echo $a_addon['download_url'] ?>"><?php echo $a_addon['name'] ?></a></strong>
+				<strong><a target="_blank" href="<?php echo $a_addon[ 'download_url' ] ?>"><?php echo $a_addon[ 'name' ] ?></a></strong>
 				<div class="row-actions-visible"><?php 
-					if ( !empty( $a_addon['version'] ) ) {
+					if ( !empty( $a_addon[ 'version' ] ) ) {
 						echo ( $is_active ? __( 'Repo Version', 'wp-slimstat' ) : __( 'Version', 'wp-slimstat' ) ) . ': ' . $a_addon[ 'version' ].'<br/>';
 					}
 
 					if ( $is_active ){
 						if ( is_plugin_active($a_addon['slug'].'/index.php') ) {
-							$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $a_addon['slug'] . '/index.php' );
+							$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $a_addon[ 'slug' ] . '/index.php' );
 						}
 						else {
-							$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $a_addon['slug'] . '/' . $a_addon['slug'] );
+							$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $a_addon[ 'slug' ] . '/' . $a_addon[ 'slug' ] );
 						}
 
 						if ( !empty( $plugin_data[ 'Version' ] ) ) {
@@ -82,12 +82,12 @@ if ( !is_array( $list_addons ) ) {
 						$at_least_one_add_on_active = true;
 					}
 					else{
-						echo 'Price: '.(is_numeric($a_addon['price'])?'$'.$a_addon['price']:$a_addon['price']);
+						echo 'Price: ' . ( is_numeric( $a_addon[ 'price' ] ) ? '$' . $a_addon[ 'price' ] : $a_addon[ 'price' ] );
 					}  ?>
 				</div>
 			</th>
 			<td class="column-description desc">
-				<div class="plugin-description"><p><?php echo $a_addon['description'] ?></p></div>
+				<div class="plugin-description"><p><?php echo $a_addon[ 'description' ] ?></p></div>
 				<?php if ( ( is_plugin_active( $a_addon[ 'slug' ] . '/index.php' ) || is_plugin_active( $a_addon[ 'slug' ] . '/' . $a_addon[ 'slug' ] . '.php' ) ) ): ?>
 				<div class="active second">
 					License Key <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty( wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] ) ? wp_slimstat::$settings[ 'addon_licenses' ][ $a_addon[ 'slug' ] ] : '' ?>" size="50">

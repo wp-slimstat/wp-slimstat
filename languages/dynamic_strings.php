@@ -85,16 +85,6 @@ __('winxp','wp-slimstat'), // Windows XP
 __('wyderos','wp-slimstat'), // WyderOS
 __('zaurus','wp-slimstat'), // Zaurus WAP
 
-// Browser Extensions
-__('acrobat','wp-slimstat'), // Acrobat Reader
-__('director','wp-slimstat'), // Macromedia Director
-__('flash','wp-slimstat'), // Adobe Flash Player
-__('mediaplayer','wp-slimstat'), // Microsoft Media Player
-__('quicktime','wp-slimstat'), // QuickTime
-__('pdfviewer','wp-slimstat'), // PDF Viewer (Acrobat or built-in)
-__('real','wp-slimstat'), // Real Player
-__('silverlight','wp-slimstat'), // Microsoft Silverlight
-
 // Operating System Families
 __('p-and','wp-slimstat'), // Android
 __('p-bla','wp-slimstat'), // BlackBerry
