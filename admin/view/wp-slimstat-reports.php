@@ -1440,7 +1440,7 @@ class wp_slimstat_reports {
 	}
 
 	public static function show_rankings(){
-		$options = array( 'timeout' => 1, 'headers' => array( 'Accept' => 'application/json' ) );
+		$options = array( 'timeout' => 30, 'headers' => array( 'Accept' => 'application/json' ) );
 		$site_url = parse_url( home_url(), PHP_URL_HOST );
 		if ( !empty( wp_slimstat_db::$filters_normalized[ 'resource' ] ) && wp_slimstat_db::$filters_normalized[ 'resource' ][ 0 ] == 'equals' ) {
 			$site_url .= wp_slimstat_db::$filters_normalized[ 'resource' ][ 1 ];
@@ -1479,16 +1479,6 @@ class wp_slimstat_reports {
 					0,
 					__( 'Alexa Popularity', 'wp-slimstat' ),
 					''
-				),
-				'facebook_shares' => array(
-					0,
-					__( 'Facebook Shares', 'wp-slimstat' ),
-					''
-				),
-				'facebook_clicks' => array(
-					0,
-					__( 'Facebook Clicks', 'wp-slimstat' ),
-					__( 'How many times links to your website have been clicked on Facebook.', 'wp-slimstat' )
 				)
 			);
 
