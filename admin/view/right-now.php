@@ -31,12 +31,17 @@ $count_page_results = count( $results );
 // Echo the debug message
 echo wp_slimstat_db::$debug_message;
 
+if ( $count_page_results == 0 ) {
+	echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat' ) . '</p>';
+	return 0;
+}
+
 // Return the results if we are not echoing them (export, email, etc)
 if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
 
 	// Process the data before returning it
 	if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
-		for ( $i=0; $i < $count_page_results; $i++ ) {
+		for ( $i = 0; $i < $count_page_results; $i++ ) {
 			// When the IP conversion feature is enabled, data is stored in the "notes" field, so that it doesn't need to be calculated over and over again
 			$gethostbyaddr = '';
 			if ( strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) === false ) {
@@ -64,11 +69,6 @@ if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
 	}
 
 	return $results;
-}
-
-if ( $count_page_results == 0 ) {
-	echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat' ) . '</p>';
-	return 0;
 }
 
 // Pagination

@@ -38,7 +38,7 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'full-width', 'tall' ),
 				'screens' => array( 'slimview1', 'dashboard' ),
-				'tooltip' => __( 'Color codes', 'wp-slimstat' ).'</strong><p><span class="little-color-box is-search-engine"></span> '.__( 'From search result page', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-visitor"></span> '.__( 'Known Visitor', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-user"></span> '.__( 'Known Users', 'wp-slimstat' ).'</p><p><span class="little-color-box is-direct"></span> '.__( 'Other Humans', 'wp-slimstat' ).'</p><p><span class="little-color-box"></span> '.__( 'Bot or Crawler', 'wp-slimstat' ).'</p>'
+				'tooltip' => __( 'Color codes', 'wp-slimstat' ).'</strong><p><span class="little-color-box is-search-engine"></span> '.__( 'From search result page', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-visitor"></span> '.__( 'Has Left Comments', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-user"></span> '.__( 'WP User', 'wp-slimstat' ).'</p><p><span class="little-color-box is-direct"></span> '.__( 'Other Human', 'wp-slimstat' ).'</p><p><span class="little-color-box"></span> '.__( 'Bot or Crawler', 'wp-slimstat' ).'</p>'
 			),
 
 			'slim_p1_01' => array(
