@@ -499,7 +499,7 @@ class wp_slimstat_admin {
 		if ( is_network_admin() ) {
 			$minimum_capability = 'manage_network';
 		}
-		else if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false && !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
+		else if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
 
@@ -508,7 +508,7 @@ class wp_slimstat_admin {
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' || is_network_admin() ) {
 			$parent = 'slimview1';
 			$page_location = 'slimstat';
-			$new_entry[] = add_menu_page(__('Slimstat','wp-slimstat'), __('Slimstat','wp-slimstat'), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
+			$new_entry[] = add_menu_page( __( 'Slimstat', 'wp-slimstat' ), __( 'Slimstat', 'wp-slimstat' ), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
 		}
 		else {
 			$parent = 'admin.php';
@@ -615,7 +615,7 @@ class wp_slimstat_admin {
 	 * Adds a new entry in the admin menu, to manage Slimstat options
 	 */
 	public static function add_customize_menu( $_s ) {
-		wp_slimstat::$settings[ 'capability_can_customize' ] = empty( wp_slimstat::$settings[ 'capability_can_customize' ] ) ? 'activate_plugins' : wp_slimstat::$settings[ 'capability_can_customize' ];
+		wp_slimstat::$settings[ 'capability_can_customize' ] = empty( wp_slimstat::$settings[ 'capability_can_customize' ] ) ? 'manage_options' : wp_slimstat::$settings[ 'capability_can_customize' ];
 		
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability = 'read';
@@ -642,7 +642,7 @@ class wp_slimstat_admin {
 	 * Adds a new entry in the admin menu, to manage Slimstat options
 	 */
 	public static function add_config_menu( $_s ) {
-		wp_slimstat::$settings[ 'capability_can_admin' ] = empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ? 'activate_plugins' : wp_slimstat::$settings[ 'capability_can_admin' ];
+		wp_slimstat::$settings[ 'capability_can_admin' ] = empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ? 'manage_options' : wp_slimstat::$settings[ 'capability_can_admin' ];
 		
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability = 'read';

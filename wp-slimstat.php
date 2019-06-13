@@ -1727,13 +1727,13 @@ class wp_slimstat {
 
 			// Access Control
 			'restrict_authors_view' => 'on',
-			'capability_can_view' => 'activate_plugins',
+			'capability_can_view' => 'manage_options',
 			'can_view' => '',
 
-			'capability_can_customize' => 'activate_plugins',
+			'capability_can_customize' => 'manage_options',
 			'can_customize' => '',
 
-			'capability_can_admin' => 'activate_plugins',
+			'capability_can_admin' => 'manage_options',
 			'can_admin' => '',
 
 			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
