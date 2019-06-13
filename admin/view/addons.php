@@ -41,7 +41,7 @@ if ( !is_array( $list_addons ) ) {
 	}
 
 	if ( !empty( $error_message ) ) {
-		wp_slimstat_admin::show_alert_message( $error_message, 'wp-ui-text-notification below-h2' );
+		wp_slimstat_admin::show_message( $error_message, 'warning' );
 		return;
 	}
 ?>

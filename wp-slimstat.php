@@ -1643,7 +1643,6 @@ class wp_slimstat {
 		return array(
 			'version' => self::$version,
 			'secret' => wp_hash( uniqid( time(), true ) ),
-			'show_admin_notice' => 0,
 			'browscap_last_modified' => 0,
 
 			// General
@@ -1745,6 +1744,13 @@ class wp_slimstat {
 			'show_sql_debug' => 'no',
 			'no_maxmind_warning' => 'no',
 			'no_browscap_warning' => 'no',
+
+			// Notices
+			'notice_latest_news' => 'on',
+			'notice_browscap' => 'on',
+			'notice_geolite' => 'on',
+			'notice_caching' => 'on',
+			'notice_translate' => 'on',
 
 			// Network-wide Settings
 			'locked_options' => ''

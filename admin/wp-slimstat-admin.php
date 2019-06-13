@@ -11,10 +11,9 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		// self::$admin_notice = "Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.";
-		// // self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage these tools in Slimstat. Stay tuned!"
-		// self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
-
+		self::$admin_notice = "Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.";
+		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage these tools in Slimstat. Stay tuned!"
+		
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
 
@@ -94,15 +93,20 @@ class wp_slimstat_admin {
 
 		// Display a notice that hightlights this version's features
 		if ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) {
-			// if ( !empty( self::$admin_notice ) && wp_slimstat::$settings[ 'show_admin_notice' ] != wp_slimstat::$version && is_super_admin() ) {
-				add_action( 'admin_notices', array( __CLASS__, 'show_admin_notice' ) );
-			// }
+			if ( !empty( self::$admin_notice ) && wp_slimstat::$settings[ 'notice_latest_news' ] == 'on' && is_super_admin() ) {
+				add_action( 'admin_notices', array( __CLASS__, 'show_latest_news' ) );
+			}
+
+			if ( wp_slimstat::$settings[ 'notice_translate' ] == 'on' && is_super_admin() ) {
+				add_filter( 'admin_notices', array( __CLASS__, 'show_translate_notice' ) );
+			}
+
 			add_filter( 'admin_footer_text', array( __CLASS__, 'admin_footer_text' ) );
 		}
 
 		// Remove spammers from the database
 		if ( wp_slimstat::$settings[ 'ignore_spammers' ] == 'on' ) {
-			add_action('transition_comment_status', array(__CLASS__, 'remove_spam'), 15, 3);
+			add_action( 'transition_comment_status', array( __CLASS__, 'remove_spam' ), 15, 3 );
 		}
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
@@ -168,15 +172,16 @@ class wp_slimstat_admin {
 
 		// AJAX Handlers
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			add_action( 'wp_ajax_slimstat_hide_admin_notice', array( __CLASS__, 'notices_handler' ) );
-			add_action( 'wp_ajax_slimstat_hide_geolite_notice', array( __CLASS__, 'notices_handler' ) );
-			add_action( 'wp_ajax_slimstat_hide_browscap_notice', array( __CLASS__, 'notices_handler' ) );
-			add_action( 'wp_ajax_slimstat_hide_caching_notice', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_notice_latest_news', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_notice_geolite', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_notice_browscap', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_notice_caching', array( __CLASS__, 'notices_handler' ) );
+			add_action( 'wp_ajax_slimstat_notice_translate', array( __CLASS__, 'notices_handler' ) );
 
 			add_action( 'wp_ajax_slimstat_manage_filters', array( __CLASS__, 'manage_filters' ) );
 			add_action( 'wp_ajax_slimstat_delete_pageview', array( __CLASS__, 'delete_pageview' ) );
 		}
-		
+
 		// Hide plugins
 		if ( wp_slimstat::$settings[ 'hide_addons' ] == 'on' ) {
 			add_filter( 'all_plugins', array( __CLASS__, 'hide_addons' ) );
@@ -391,6 +396,7 @@ class wp_slimstat_admin {
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
+		wp_slimstat::$settings[ 'notice_latest_news' ] = 'on';
 
 		return true;
 	}
@@ -795,32 +801,33 @@ class wp_slimstat_admin {
 	/**
 	 * Displays an alert message
 	 */
-	public static function show_alert_message( $_message = '', $_type = 'wp-ui-highlight' ){
-		echo "<div id='slimstat-message' class='$_type below-h2'><p>$_message</p></div>";
+	public static function show_message( $_message = '', $_type = 'info', $_dismiss_handle = '' ) {
+		if ( empty( $_message ) ) {
+			return 0;
+		}
+
+		$_message = wpautop( $_message );
+
+		if ( !empty( $_dismiss_handle ) ) {
+			echo '<div id="slimstat-notice-' . $_dismiss_handle .'" class="notice is-dismissible notice-' . $_type . '">' . $_message . '</div>';
+		}
+		else {
+			echo '<div class="notice notice-' . $_type . '">' . $_message . '</div>';
+		}
 	}
 
 	/**
 	 * Displays a message related to the current version of Slimstat
 	 */
-	public static function show_admin_notice() {
-		// echo '<div class="notice slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span></div>';
-		include_once( plugin_dir_path( __FILE__ ) . '../languages/i18n-v3.php' );
-		include_once( plugin_dir_path( __FILE__ ) . '../languages/i18n-wordpressorg-v3.php' );
-		$i18n_module = new Yoast_I18n_WordPressOrg_v3(
-			array(
-				'textdomain' => 'wp-slimstat',
-				'plugin_name' => 'Slimstat Analytics'
-			),
-			false
-		);
-
-		echo '<div class="notice slimstat-notice"><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">X</a>' . $i18n_module->get_promo_message() . '</div>';
+	public static function show_latest_news() {
+		self::show_message( self::$admin_notice, 'info', 'latest-news' );
 	}
 
-	public static function show_translation() {
+	public static function show_translate_notice() {
 		// echo '<div class="notice slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span></div>';
 		include_once( plugin_dir_path( __FILE__ ) . '../languages/i18n-v3.php' );
 		include_once( plugin_dir_path( __FILE__ ) . '../languages/i18n-wordpressorg-v3.php' );
+
 		$i18n_module = new Yoast_I18n_WordPressOrg_v3(
 			array(
 				'textdomain' => 'wp-slimstat',
@@ -829,7 +836,7 @@ class wp_slimstat_admin {
 			false
 		);
 
-		echo '<div class="notice slimstat-notice">' . $i18n_module->get_promo_message() . '<p><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a></p></div>';
+		self::show_message( $i18n_module->get_promo_message(), 'warning', 'translate' );
 	}
 	
 	/**
@@ -838,28 +845,12 @@ class wp_slimstat_admin {
 	public static function notices_handler() {
 		$tag = current_filter();
 
-		switch ( $tag ) {
-			case 'wp_ajax_slimstat_hide_admin_notice':
-				wp_slimstat::$settings[ 'show_admin_notice' ] = wp_slimstat::$version;
-				break;
-
-			case 'wp_ajax_slimstat_hide_geolite_notice':
-				wp_slimstat::$settings[ 'no_maxmind_warning' ] = 'on';
-				break;
-
-			case 'wp_ajax_slimstat_hide_browscap_notice':
-				wp_slimstat::$settings[ 'no_browscap_warning' ] = 'on';
-				break;
-
-			case 'wp_ajax_slimstat_hide_caching_notice':
-				wp_slimstat::$settings[ 'no_caching_warning' ] = 'on';
-				break;
-
-			default:
-				break;
+		if ( !empty( $tag ) ) {
+			$tag = str_replace( 'wp_ajax_slimstat_', '', $tag );
+			wp_slimstat::$settings[ $tag ] = 'no';
 		}
-		
-		die();
+
+		exit();
 	}
 
 	/**
@@ -869,7 +860,7 @@ class wp_slimstat_admin {
 		$my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 		$pageview_id = intval($_POST['pageview_id']);
 		$my_wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.id = $pageview_id");
-		die();
+		exit();
 	}
 
 	/**
@@ -934,7 +925,7 @@ class wp_slimstat_admin {
 				echo '</div>';
 				break;
 		}
-		die();
+		exit();
 	}
 
 	/*
@@ -1107,10 +1098,10 @@ class wp_slimstat_admin {
 		}
 
 		if ( !empty( self::$faulty_fields ) ) {
-			self::show_alert_message( __( 'There was an error updating the following options:', 'wp-slimstat' ) . ' ' . implode( ', ', self::$faulty_fields ), 'wp-ui-highlight below-h2' );
+			self::show_message( __( 'There was an error updating the following options:', 'wp-slimstat' ) . ' ' . implode( ', ', self::$faulty_fields ), 'warning' );
 		}
 		else{
-			self::show_alert_message( __('Your changes have been saved.', 'wp-slimstat' ), 'wp-ui-highlight below-h2' );
+			self::show_message( __( 'Your changes have been saved.', 'wp-slimstat' ), 'info' );
 		}
 	}
 

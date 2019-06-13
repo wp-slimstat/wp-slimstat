@@ -13,7 +13,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) )" );
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) )" );
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
-			wp_slimstat_admin::show_alert_message( __( 'Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' ) );
+			wp_slimstat_admin::show_message( __( 'Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' ) );
 			break;
 
 		case 'activate-sql-debug-mode':
@@ -24,7 +24,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx" );
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx");
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx");
-			wp_slimstat_admin::show_alert_message( __( 'Indexing has been disabled. Enjoy the extra database space!', 'wp-slimstat' ) );
+			wp_slimstat_admin::show_message( __( 'Indexing has been disabled. Enjoy the extra database space!', 'wp-slimstat' ) );
 			break;
 
 		case 'deactivate-sql-debug-mode':
@@ -40,24 +40,24 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 					FROM {$GLOBALS['wpdb']->prefix}slim_stats t1
 					WHERE ".wp_slimstat_db::get_combined_where('', '*', false));
 			}
-			wp_slimstat_admin::show_alert_message( intval( $rows_affected ) . ' ' . __( 'records deleted from your database.', 'wp-slimstat' ) );
+			wp_slimstat_admin::show_message( intval( $rows_affected ) . ' ' . __( 'records deleted from your database.', 'wp-slimstat' ) );
 			break;
 
 		case 'delete-maxmind':
 			$is_deleted = @unlink( wp_slimstat::$maxmind_path );
 			
 			if ( $is_deleted ) {
-				wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
+				wp_slimstat_admin::show_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
 			}
 			else {
 				// Some users have reported that a directory is created, instead of a file
 				$is_deleted = @rmdir( wp_slimstat::$maxmind_path );
 
 				if ( $is_deleted ) {
-					wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
+					wp_slimstat_admin::show_message( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
 				}
 				else {
-					wp_slimstat_admin::show_alert_message( __( "The geolocation database could not be removed from your server. Please check your folder's permissions and try again.", 'wp-slimstat' ) );	
+					wp_slimstat_admin::show_message( __( "The geolocation database could not be removed from your server. Please check your folder's permissions and try again.", 'wp-slimstat' ) );	
 				}
 			}
 			break;
@@ -66,10 +66,10 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			$error = wp_slimstat::download_maxmind_database();
 
 			if (!empty($error)){
-				wp_slimstat_admin::show_alert_message( $error, 'wp-ui-notification' );
+				wp_slimstat_admin::show_message( $error, 'warning' );
 			}
 			else {
-				wp_slimstat_admin::show_alert_message( __( 'The geolocation database has been installed on your server.', 'wp-slimstat') );
+				wp_slimstat_admin::show_message( __( 'The geolocation database has been installed on your server.', 'wp-slimstat') );
 			}
 			break;
 
@@ -77,10 +77,10 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			// Delete the existing folder, if there
 			WP_Filesystem();
 			if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db-master/', true ) ) {
-				wp_slimstat_admin::show_alert_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ) );
+				wp_slimstat_admin::show_message( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ) );
 			}
 			else {
-				wp_slimstat_admin::show_alert_message( __( 'There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat' ) );
+				wp_slimstat_admin::show_message( __( 'There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat' ) );
 			}
 			break;
 
@@ -88,7 +88,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			$error = slim_browser::update_browscap_database( true );
 
 			if ( is_array( $error ) ) {
-				wp_slimstat_admin::show_alert_message( $error[ 1 ], ( empty( $error[ 0 ] ) ? 'wp-ui-highlight': 'wp-ui-notification' ) );
+				wp_slimstat_admin::show_message( $error[ 1 ], ( empty( $error[ 0 ] ) ? 'info': 'alert' ) );
 			}
 			break;
 
@@ -99,10 +99,10 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 				foreach ( $new_settings as $a_setting_name => $a_setting_value ) {
 					wp_slimstat::$settings[ $a_setting_name ] = $a_setting_value;
 				}
-				wp_slimstat_admin::show_alert_message( __( 'Your new Slimstat settings have been imported and installed.', 'wp-slimstat' ) );
+				wp_slimstat_admin::show_message( __( 'Your new Slimstat settings have been imported and installed.', 'wp-slimstat' ) );
 			}
 			else {
-				wp_slimstat_admin::show_alert_message( __( 'There was an error decoding your settings string. Please verify that it is a valid serialized string.', 'wp-slimstat' ) );
+				wp_slimstat_admin::show_message( __( 'There was an error decoding your settings string. Please verify that it is a valid serialized string.', 'wp-slimstat' ) );
 			}
 			break;
 
@@ -123,13 +123,13 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ENGINE = InnoDB" );
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events ENGINE = InnoDB" );
 
-			wp_slimstat_admin::show_alert_message( __( 'Your Slimstat tables have been successfully converted to InnoDB.', 'wp-slimstat' ) );
+			wp_slimstat_admin::show_message( __( 'Your Slimstat tables have been successfully converted to InnoDB.', 'wp-slimstat' ) );
 			break;
 
 		case 'truncate-archive':
 			wp_slimstat::$wpdb->query( "DELETE tsa FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive tsa" );
 			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive" );
-			wp_slimstat_admin::show_alert_message( __( 'All the archived records were successfully deleted.', 'wp-slimstat' ) );
+			wp_slimstat_admin::show_message( __( 'All the archived records were successfully deleted.', 'wp-slimstat' ) );
 			break;
 
 		case 'truncate-table':
@@ -137,7 +137,7 @@ if ( !empty( $_REQUEST[ 'action' ] ) ) {
 			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
 			wp_slimstat::$wpdb->query( "DELETE t1 FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats t1" );
 			wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
-			wp_slimstat_admin::show_alert_message( __( 'All the records were successfully deleted.', 'wp-slimstat' ) );
+			wp_slimstat_admin::show_message( __( 'All the records were successfully deleted.', 'wp-slimstat' ) );
 			break;
 
 		default:

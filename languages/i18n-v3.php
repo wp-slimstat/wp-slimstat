@@ -242,7 +242,7 @@ class Yoast_I18n_v3 {
 		}
 
 		$registration_link = sprintf(
-			'<a href="%1$s">%2$s</a>',
+			'<a target="_blank" href="%1$s">%2$s</a>',
 			esc_url( $this->register_url ),
 			esc_html( $this->glotpress_name )
 		);
@@ -256,7 +256,7 @@ class Yoast_I18n_v3 {
 		);
 
 		if ( $message ) {
-			$message = '<p>' . $message . '</p><p><a href="' . esc_url( $this->register_url ) . '">' . esc_html__( 'Register now &raquo;', $this->textdomain ) . '</a></p>';
+			$message = '<p>' . $message . '</p><p><a target="_blank" href="' . esc_url( $this->register_url ) . '">' . esc_html__( 'Register now &raquo;', $this->textdomain ) . '</a></p>';
 		}
 
 		return $message;

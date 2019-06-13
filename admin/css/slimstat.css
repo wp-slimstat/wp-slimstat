@@ -10,19 +10,6 @@
 	float: right;
 }
 
-/* Admin Notice */
-.slimstat-notice{
-	overflow: hidden;
-	padding: 10px;
-	position: relative;
-}
-.slimstat-notice #slimstat-hide-admin-notice {
-	float: right;
-}
-.slimstat-notice p {
-	margin-top: 0;
-}
-
 /* Filters */
 #slimstat-filters-post{
 	display: none;
@@ -418,29 +405,6 @@
 	height: 0 !important;
 }
 
-/* Settings */
-#slimstat-message{
-	background-color: #555;
-	clear: both;
-	color: #fff;
-	overflow: hidden;
-	padding: 0 10px;
-}
-#slimstat-message p:before{
-	content: "\f339";
-	font-family: 'dashicons';
-	margin-right: 10px;
-	vertical-align: bottom;
-}
-#slimstat-message.wp-ui-notification p:before{
-	content: "\f160";
-}
-#slimstat-message p{
-	line-height: 1em;
-}
-#slimstat-message a{
-	color: #fc0;
-}
 .nav-tabs{
 	margin: 20px 1px 0;
 }

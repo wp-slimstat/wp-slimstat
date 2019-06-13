@@ -286,11 +286,9 @@ jQuery( function() {
 	//
 
 	// Hide a notice and send the corresponding ajax request to the server
-	jQuery( document ).on( 'click', '[id^=slimstat-hide-]', function( e ) {
-		e.preventDefault();
-		jQuery( this ).parents( '.slimstat-notice' ).slideUp( 1000 );
+	jQuery( document ).on( 'click', '[id^=slimstat-notice-] button', function( e ) {
 		data = {
-			action: jQuery( this ).attr('id').replace(/-/g, '_'),
+			action: jQuery( this ).parent().attr( 'id' ).replace(/-/g, '_'),
 			security: jQuery( '#meta-box-order-nonce' ).val()
 		};
 

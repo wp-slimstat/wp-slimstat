@@ -122,18 +122,19 @@
 			<input type="hidden" name="fs[<?php echo $a_key ?>]" class="slimstat-post-filter" value="equals <?php echo htmlspecialchars( $a_value ) ?>"/>
 		<?php endif; endforeach; ?>
 	</form>
+
 	<?php
-		if ( !file_exists( wp_slimstat::$maxmind_path ) && ( empty( wp_slimstat::$settings[ 'no_maxmind_warning' ] ) || wp_slimstat::$settings[ 'no_maxmind_warning' ] != 'on' ) ) {
-			wp_slimstat_admin::show_alert_message( sprintf( __( "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-geolite-notice" class="slimstat-font-cancel slimstat-float-right noslimstat" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
+		if ( !file_exists( wp_slimstat::$maxmind_path ) && wp_slimstat::$settings[ 'notice_geolite' ] == 'on' ) {
+			wp_slimstat_admin::show_message( sprintf( __( "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ), 'warning', 'geolite' );
 		}
 
-		if ( version_compare( PHP_VERSION, '7.1', '>=' ) && !file_exists( slim_browser::$browscap_autoload_path ) && ( empty( wp_slimstat::$settings[ 'no_browscap_warning' ] ) || wp_slimstat::$settings[ 'no_browscap_warning' ] != 'on' ) ) {
-			wp_slimstat_admin::show_alert_message( sprintf( __( "Install the Browscap <a href='%s' class='noslimstat'>User Agent Database</a> to accurately determine your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ) . '<a id="slimstat-hide-browscap-notice" class="slimstat-font-cancel slimstat-float-right noslimstat" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
+		if ( version_compare( PHP_VERSION, '7.1', '>=' ) && !file_exists( slim_browser::$browscap_autoload_path ) && wp_slimstat::$settings[ 'notice_browscap' ] == 'on' ) {
+			wp_slimstat_admin::show_message( sprintf( __( "Install the Browscap <a href='%s' class='noslimstat'>User Agent Database</a> to accurately determine your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ), 'warning', 'browscap' );
 		}
 
 		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php
-		if ( file_exists( dirname( dirname( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) ) ) . '/advanced-cache.php' ) && ( empty( wp_slimstat::$settings[ 'no_caching_warning' ] ) || wp_slimstat::$settings[ 'no_caching_warning' ] != 'on' ) && ( empty( wp_slimstat::$settings[ 'javascript_mode' ] ) || wp_slimstat::$settings[ 'javascript_mode' ] != 'on' ) ) {
-			wp_slimstat_admin::show_alert_message( sprintf( __( "A caching plugin might be enabled on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat' ), 'https://slimstat.freshdesk.com/support/solutions/articles/5000528524-i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra' ) . '<a id="slimstat-hide-caching-notice" class="slimstat-font-cancel slimstat-float-right" title="Hide this notice" href="#"></a>', 'wp-ui-text-notification below-h2' );
+		if ( file_exists( dirname( dirname( dirname( dirname( plugin_dir_path( __FILE__ ) ) ) ) ) . '/advanced-cache.php' ) && wp_slimstat::$settings[ 'notice_caching' ] == 'on' && ( empty( wp_slimstat::$settings[ 'javascript_mode' ] ) || wp_slimstat::$settings[ 'javascript_mode' ] != 'on' ) ) {
+			wp_slimstat_admin::show_message( sprintf( __( "A caching plugin might be enabled on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat' ), 'https://slimstat.freshdesk.com/support/solutions/articles/5000528524-i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra' ), 'warning', 'caching' );
 		}
 
 		$filters_html = wp_slimstat_reports::get_filters_html( wp_slimstat_db::$filters_normalized[ 'columns' ] );
