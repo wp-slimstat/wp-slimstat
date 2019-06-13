@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 **Requires at least:** 3.8  
 Requires PHP: 5.2
 **Tested up to:** 5.1  
-**Stable tag:** 4.8.2  
+**Stable tag:** 4.8.2.1  
 
 
 ## Description 
@@ -76,6 +76,11 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 
 ## Changelog 
+
+## 4.8.2.1 
+* [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. Initially, we will remove the portion of code that tracks this information, and keep the existing data intact. In a couple of releases, code will be added to actually drop this column from the database.
+* [Fix] Changed the default minimum capability to access the reports from 'activate_plugins' to 'manage_options', so that regular administrators (a.k.a. non-super admins) in a multisite environment can still see their own reports (thank you, [homepageware](https://wordpress.org/support/topic/slimstat-and-multisite/)). This update does not affect existing installations: if you want regular admins to see their own stats, please go to Slimstat > Settings > Access Control and change the values in the corresponding fields.
+
 
 ### 4.8.2 
 * [Note] Our team has been contemplating the idea of deprecating the information collected about your visitors' *browser plugins* (Java, PDF reader, RealView player, Silverlight, etc). In this day and age, where browsers use either built-in functionality to provide those features, or extensions that cannot be tracked for privacy purposes, it feels anachronistic to continue collecting this outdated information. By getting rid of this specific feature, we can streamline our code, improve performance, and reduce the database size. However, we wanted to hear from our users before anything is actually implemented. Please do not hesitate [to let us know](https://support.wp-slimstat.com) if you are using the 'browser plugins' field for your reporting needs.
