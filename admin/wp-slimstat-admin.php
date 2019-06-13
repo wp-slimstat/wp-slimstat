@@ -119,8 +119,8 @@ class wp_slimstat_admin {
 			// Display the column in the Edit Posts / Pages screen
 			if ( wp_slimstat::$settings[ 'add_posts_column' ] == 'on' ) {
 				$post_types = get_post_types( array( 'public' => true, 'show_ui'  => true ), 'names' );
-				include_once( dirname( __FILE__ ) . '/view/wp-slimstat-reports.php' );
-				include_once( dirname( __FILE__ ) . '/view/wp-slimstat-db.php' );
+				include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
+				include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-db.php' );
 
 				foreach ( $post_types as $a_post_type ) {
 					add_filter( "manage_{$a_post_type}_posts_columns", array( __CLASS__, 'add_column_header' ) );
@@ -142,8 +142,8 @@ class wp_slimstat_admin {
 		}
 
 		// Load the library of functions to generate the reports
-		if ( ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) || (!empty($_POST['action']) && $_POST['action'] == 'slimstat_load_report')){
-			include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
+		if ( ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) || ( !empty( $_POST[ 'action' ] ) && $_POST[ 'action' ] == 'slimstat_load_report' ) ) {
+			include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
 			wp_slimstat_reports::init();
 			
 			if ( !empty( $_POST[ 'report_id' ] ) ) {
@@ -408,7 +408,7 @@ class wp_slimstat_admin {
 			return;
 		}
 
-		include_once(dirname(__FILE__).'/view/wp-slimstat-reports.php');
+		include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 
 		if ( !empty( wp_slimstat_reports::$user_reports[ 'dashboard' ] ) ) {
@@ -484,9 +484,7 @@ class wp_slimstat_admin {
 		$params = array(
 			'async_load' => !empty( wp_slimstat::$settings[ 'async_load' ] ) ? wp_slimstat::$settings[ 'async_load' ] : 'no',
 			'datepicker_image' => plugins_url( '/admin/images/datepicker.png', dirname( __FILE__ ) ),
-			'expand_details' => !empty( wp_slimstat::$settings[ 'expand_details' ] ) ? wp_slimstat::$settings[ 'expand_details' ] : 'no',
-			'refresh_interval' => intval( wp_slimstat::$settings[ 'refresh_interval' ] ),
-			'text_direction' => $GLOBALS[ 'wp_locale' ]->text_direction
+			'refresh_interval' => intval( wp_slimstat::$settings[ 'refresh_interval' ] )
 		);
 		wp_localize_script( 'slimstat_admin', 'SlimStatAdminParams', $params );
 	}
@@ -537,7 +535,7 @@ class wp_slimstat_admin {
 	// end add_view_menu
 
 	/**
-	 * Adds a new entry to the Wordpress Toolbar
+	 * Adds a new entry to the WordPress Toolbar
 	 */
 	public static function add_menu_to_adminbar() {
 		// If this user is whitelisted, we use the minimum capability
@@ -854,7 +852,7 @@ class wp_slimstat_admin {
 	public static function manage_filters() {
 		check_ajax_referer( 'meta-box-order', 'security' );
 
-		include_once( dirname( __FILE__ ) . '/view/wp-slimstat-reports.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 
 		$saved_filters = get_option( 'slimstat_filters', array() );
@@ -1109,7 +1107,7 @@ class wp_slimstat_admin {
 <ul>
 <li><b>'.__('Pageview','wp-slimstat').'</b>: '.__('A request to load a single HTML file ("page"). This should be contrasted with a "hit", which refers to a request for any file from a web server. Slimstat logs a pageview each time the tracking code is executed','wp-slimstat').'</li>
 <li><b>'.__('(Human) Visit','wp-slimstat').'</b>: '.__("A period of interaction between a visitor's browser and your website, ending when the browser is closed or when the user has been inactive on that site for 30 minutes",'wp-slimstat').'</li>
-<li><b>'.__('Known Visitor','wp-slimstat').'</b>: '.__('Any user who has left a comment on your blog, and is thus identified by Wordpress as a returning visitor','wp-slimstat').'</li>
+<li><b>'.__('Known Visitor','wp-slimstat').'</b>: '.__('Any user who has left a comment on your blog, and is thus identified by WordPress as a returning visitor','wp-slimstat').'</li>
 <li><b>'.__('Unique IP','wp-slimstat').'</b>: '.__('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses; since this measurement looks only at the internet address a pageview came from, it is useful, but not perfect','wp-slimstat').'</li>
 <li><b>'.__('Originating IP','wp-slimstat').'</b>: '.__('the originating IP address of a client connecting to a web server through an HTTP proxy or load balancer','wp-slimstat').'</li>
 <li><b>'.__('Direct Traffic','wp-slimstat').'</b>: '.__('All those people showing up to your Web site by typing in the URL of your Web site coming or from a bookmark; some people also call this "default traffic" or "ambient traffic"','wp-slimstat').'</li>
@@ -1135,7 +1133,7 @@ class wp_slimstat_admin {
 <li><b>'.__('Operating System','wp-slimstat').'</b>: '.__('Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="_blank" href="https://php.net/manual/en/function.get-browser.php">this manual page</a> for more information','wp-slimstat').'</li>
 <li><b>'.__('Permalink','wp-slimstat').'</b>: '.__('URL accessed on your site','wp-slimstat').'</li>
 <li><b>'.__('Referer','wp-slimstat').'</b>: '.__('Complete address of the referrer page','wp-slimstat').'</li>
-<li><b>'.__('Visitor\'s Name','wp-slimstat').'</b>: '.__('Visitors\' names according to the cookie set by Wordpress after they leave a comment','wp-slimstat').'</li>
+<li><b>'.__('Visitor\'s Name','wp-slimstat').'</b>: '.__('Visitors\' names according to the cookie set by WordPress after they leave a comment','wp-slimstat').'</li>
 </ul>'
 			)
 		);

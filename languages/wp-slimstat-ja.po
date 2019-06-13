@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WP Slimstat\n"
-"POT-Creation-Date: 2019-04-26 13:34-0400\n"
-"PO-Revision-Date: 2019-04-26 13:34-0400\n"
+"POT-Creation-Date: 2019-06-10 15:36-0400\n"
+"PO-Revision-Date: 2019-06-10 15:36-0400\n"
 "Last-Translator: WP Slimstat <support@wp-slimstat.com>\n"
 "Language-Team: 半月\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.2.1\n"
+"X-Generator: Poedit 2.2.3\n"
 "X-Poedit-KeywordsList: __;_e\n"
 "X-Poedit-Basepath: .\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -180,13 +180,13 @@ msgid ""
 msgstr ""
 
 #: ../admin/config/index.php:98 ../admin/view/wp-slimstat-db.php:115
-#: ../admin/view/wp-slimstat-db.php:906 ../admin/view/wp-slimstat-db.php:1157
-#: ../admin/view/wp-slimstat-db.php:1163 ../admin/view/wp-slimstat-db.php:1169
-#: ../admin/view/wp-slimstat-db.php:1175 ../admin/view/wp-slimstat-db.php:1181
-#: ../admin/view/wp-slimstat-db.php:1187 ../admin/view/wp-slimstat-db.php:1193
-#: ../admin/view/wp-slimstat-reports.php:1174
-#: ../admin/view/wp-slimstat-reports.php:1178
-#: ../admin/view/wp-slimstat-reports.php:1381
+#: ../admin/view/wp-slimstat-db.php:1143 ../admin/view/wp-slimstat-db.php:1149
+#: ../admin/view/wp-slimstat-db.php:1155 ../admin/view/wp-slimstat-db.php:1161
+#: ../admin/view/wp-slimstat-db.php:1167 ../admin/view/wp-slimstat-db.php:1173
+#: ../admin/view/wp-slimstat-db.php:1179
+#: ../admin/view/wp-slimstat-reports.php:1176
+#: ../admin/view/wp-slimstat-reports.php:1180
+#: ../admin/view/wp-slimstat-reports.php:1383
 msgid "Hits"
 msgstr "ヒット"
 
@@ -237,7 +237,7 @@ msgid ""
 msgstr "%s 以前に記録されたログは完全に削除されます。"
 
 #: ../admin/config/index.php:102 ../admin/view/wp-slimstat-db.php:102
-#: ../admin/view/wp-slimstat-db.php:691
+#: ../admin/view/wp-slimstat-db.php:692
 msgid "days"
 msgstr "日間"
 
@@ -454,7 +454,7 @@ msgstr ""
 "セッション時間の最大値を指定します。Google アナリティクスはこの値を 1800 秒に"
 "設定しています。"
 
-#: ../admin/config/index.php:126 ../admin/config/index.php:190
+#: ../admin/config/index.php:126 ../admin/config/index.php:189
 msgid "seconds"
 msgstr "秒"
 
@@ -763,7 +763,7 @@ msgid ""
 "content type matches the ones you set here below."
 msgstr ""
 
-#: ../admin/config/index.php:170 ../admin/config/index.php:207
+#: ../admin/config/index.php:170 ../admin/config/index.php:206
 msgid "Reports"
 msgstr "レポート"
 
@@ -864,39 +864,31 @@ msgid ""
 "and performance problems."
 msgstr ""
 
-#: ../admin/config/index.php:183
-msgid "Expand Details"
-msgstr "詳細の展開"
-
-#: ../admin/config/index.php:183
-msgid "Expand each row's details by default, insted of on mousehover."
-msgstr "マウスオーバー中に表示される詳細を常に表示します。"
-
-#: ../admin/config/index.php:184 ../admin/config/index.php:191
+#: ../admin/config/index.php:183 ../admin/config/index.php:190
 msgid "Rows to Display"
 msgstr "表示する項目数"
 
-#: ../admin/config/index.php:184
+#: ../admin/config/index.php:183
 msgid "Specify the number of items in each report."
 msgstr "各レポートで表示する項目の数を指定します。"
 
-#: ../admin/config/index.php:185 ../admin/view/wp-slimstat-db.php:127
+#: ../admin/config/index.php:184 ../admin/view/wp-slimstat-db.php:127
 #, fuzzy
 msgid "Max Results"
 msgstr "結果の制限"
 
-#: ../admin/config/index.php:185
+#: ../admin/config/index.php:184
 msgid ""
 "Decide how many records should be retrieved from the database in total. "
 "Depending on your server configuration, you may want to fine tune this value "
 "to avoid exceeding your PHP memory limit."
 msgstr ""
 
-#: ../admin/config/index.php:186
+#: ../admin/config/index.php:185
 msgid "IP Lookup"
 msgstr "IP Lookup"
 
-#: ../admin/config/index.php:186
+#: ../admin/config/index.php:185
 #, fuzzy
 #| msgid "Customize the Geolocation service to be used in the reports."
 msgid ""
@@ -904,27 +896,27 @@ msgid ""
 "<code>https://www.infosniper.net/?ip_address=</code>"
 msgstr "レポート内で使用する位置情報サービスを変更できます。"
 
-#: ../admin/config/index.php:187
+#: ../admin/config/index.php:186
 msgid "Comparison Chart"
 msgstr ""
 
-#: ../admin/config/index.php:187
+#: ../admin/config/index.php:186
 msgid ""
 "Disable this option if you find the four line charts confusing, and prefer "
 "seeing only the selected time range."
 msgstr ""
 
-#: ../admin/config/index.php:189
+#: ../admin/config/index.php:188
 msgid "Access Log and World Map"
 msgstr ""
 
-#: ../admin/config/index.php:190
+#: ../admin/config/index.php:189
 #, fuzzy
 #| msgid "Refresh"
 msgid "Auto Refresh"
 msgstr "更新"
 
-#: ../admin/config/index.php:190
+#: ../admin/config/index.php:189
 #, fuzzy
 msgid ""
 "Enable the Live View, which refreshes the Access Log every X seconds. Enter "
@@ -933,32 +925,32 @@ msgstr ""
 "ライブビューを有効にすると、リアルタイム解析は X 秒ごとに自動でリロードされま"
 "す。この機能を無効にしたい場合は、<strong>0</strong> (数字の0) を入力します。"
 
-#: ../admin/config/index.php:191
+#: ../admin/config/index.php:190
 #, fuzzy
 #| msgid "Specify the number of items in the Activity Log."
 msgid "Specify the number of items in the Access Log."
 msgstr "リアルタイム解析で表示する項目の数を指定します。"
 
-#: ../admin/config/index.php:192
+#: ../admin/config/index.php:191
 msgid "Map Data Points"
 msgstr ""
 
-#: ../admin/config/index.php:192
+#: ../admin/config/index.php:191
 msgid ""
 "Customize the maximum number of dots displayed on the world map. Please note "
 "that large numbers might increase the amount of time needed to render the "
 "map."
 msgstr ""
 
-#: ../admin/config/index.php:194
+#: ../admin/config/index.php:193
 msgid "Miscellaneous"
 msgstr "その他"
 
-#: ../admin/config/index.php:195
+#: ../admin/config/index.php:194
 msgid "Custom CSS"
 msgstr "カスタム CSS"
 
-#: ../admin/config/index.php:195
+#: ../admin/config/index.php:194
 #, fuzzy
 msgid ""
 "Paste here your custom stylesheet to personalize the way your reports look. "
@@ -971,12 +963,12 @@ msgstr ""
 "い使い方は <a href='http://wordpress.org/plugins/wp-slimstat/faq/' "
 "target='_blank'>FAQ</a> をご覧ください。"
 
-#: ../admin/config/index.php:196
+#: ../admin/config/index.php:195
 #, fuzzy
 msgid "Chart Colors"
 msgstr "チャートの操作"
 
-#: ../admin/config/index.php:196
+#: ../admin/config/index.php:195
 msgid ""
 "Customize the look and feel of your charts by assigning personalized colors "
 "to each metric. List 4 hex colors, strictly in the following order: metric 1 "
@@ -984,11 +976,11 @@ msgid ""
 "example: <code>#ccc, #999, #bbcc44, #21759b</code>."
 msgstr ""
 
-#: ../admin/config/index.php:197
+#: ../admin/config/index.php:196
 msgid "Mozscape Access ID"
 msgstr ""
 
-#: ../admin/config/index.php:197
+#: ../admin/config/index.php:196
 msgid ""
 "Get accurate rankings for your website through the free <a href=\"https://"
 "moz.com/community/join?redirect=/products/api/keys\" target=\"_blank"
@@ -996,21 +988,21 @@ msgid ""
 "started. Then enter your personal identification code here."
 msgstr ""
 
-#: ../admin/config/index.php:198
+#: ../admin/config/index.php:197
 msgid "Mozscape Secret Key"
 msgstr ""
 
-#: ../admin/config/index.php:198
+#: ../admin/config/index.php:197
 msgid ""
 "Do not share your secret key with anyone or they will be able to make API "
 "requests on your account!"
 msgstr ""
 
-#: ../admin/config/index.php:199
+#: ../admin/config/index.php:198
 msgid "Show User Agent"
 msgstr "User Agent を表示"
 
-#: ../admin/config/index.php:199
+#: ../admin/config/index.php:198
 #, fuzzy
 #| msgid ""
 #| "Choose if you want to see the browser name or a complete user agent "
@@ -1021,39 +1013,39 @@ msgid ""
 msgstr ""
 "ブラウザアイコンにカーソルを合わせた際、完全な User Agent を表示します。"
 
-#: ../admin/config/index.php:200
+#: ../admin/config/index.php:199
 #, fuzzy
 msgid "Enable SOV"
 msgstr "CDN を有効化"
 
-#: ../admin/config/index.php:200
+#: ../admin/config/index.php:199
 msgid ""
 "In linguistic typology, a subject-object-verb (SOV) language is one in which "
 "the subject, object, and verb of a sentence appear in that order, like in "
 "Japanese."
 msgstr ""
 
-#: ../admin/config/index.php:205
+#: ../admin/config/index.php:204
 msgid "Access Control"
 msgstr ""
 
-#: ../admin/config/index.php:208
+#: ../admin/config/index.php:207
 msgid "Restrict Authors"
 msgstr "投稿者の制限"
 
-#: ../admin/config/index.php:208
+#: ../admin/config/index.php:207
 msgid ""
 "Enable this option if you want your authors to only see stats related to "
 "their own content."
 msgstr ""
 "投稿者が自分のコンテンツに関連したレポートのみを閲覧できるようにします。"
 
-#: ../admin/config/index.php:209 ../admin/config/index.php:213
-#: ../admin/config/index.php:217
+#: ../admin/config/index.php:208 ../admin/config/index.php:212
+#: ../admin/config/index.php:216
 msgid "Capability"
 msgstr "機能"
 
-#: ../admin/config/index.php:209
+#: ../admin/config/index.php:208
 #, fuzzy
 #| msgid ""
 #| "Specify the minimum <a href='http://codex.wordpress.org/"
@@ -1063,24 +1055,24 @@ msgstr "機能"
 #| "to the reports, unless a 'Read access' whitelist has been specified here "
 #| "below. In this case, the list has precedence over the capability."
 msgid ""
-"Specify the minimum <a href='https://codex.wordpress.org/"
-"Roles_and_Capabilities' target='_new'>capability</a> needed to access the "
-"reports (default: <code>activate_plugins</code>). If this field is empty, "
-"<strong>all your users</strong> (including subscribers) will have access to "
-"the reports, unless a 'Read access' whitelist has been specified here below. "
-"In this case, the list has precedence over the capability."
+"Specify the minimum <a href='https://wordpress.org/support/article/roles-and-"
+"capabilities/' target='_new'>capability</a> needed to access the reports "
+"(default: <code>manage_options</code>). If this field is empty, <strong>all "
+"your users</strong> (including subscribers) will have access to the reports, "
+"unless a 'Read access' whitelist has been specified here below. In this "
+"case, the list has precedence over the capability."
 msgstr ""
 "レポートのアクセスに必要な最低限の<a href='http://codex.wordpress.org/"
 "Roles_and_Capabilities' target='_new'>機能</a>を指定します。このフィールドを"
 "空にすると、下のホワイトリストでユーザーを指定しない限り、購読者を含むあらゆ"
 "るユーザーがレポートにアクセスできるようになります。"
 
-#: ../admin/config/index.php:210 ../admin/config/index.php:214
-#: ../admin/config/index.php:218
+#: ../admin/config/index.php:209 ../admin/config/index.php:213
+#: ../admin/config/index.php:217
 msgid "Whitelist"
 msgstr "ホワイトリスト"
 
-#: ../admin/config/index.php:210
+#: ../admin/config/index.php:209
 #, fuzzy
 msgid ""
 "List all the users who should have access to the reports. Administrators are "
@@ -1091,12 +1083,12 @@ msgstr ""
 "者への権限は自動で付与されるため、入力する必要はありません。ユーザー名の大文"
 "字と小文字は区別されます。"
 
-#: ../admin/config/index.php:212
+#: ../admin/config/index.php:211
 #, fuzzy
 msgid "Customizer"
 msgstr "カスタム CSS"
 
-#: ../admin/config/index.php:213
+#: ../admin/config/index.php:212
 #, fuzzy
 #| msgid ""
 #| "Specify the minimum <a href='http://codex.wordpress.org/"
@@ -1105,17 +1097,17 @@ msgstr "カスタム CSS"
 #| "whitelist here below can be used to override this option for specific "
 #| "users."
 msgid ""
-"Specify the minimum <a href='https://codex.wordpress.org/"
-"Roles_and_Capabilities' target='_new'>capability</a> needed to be able to "
-"customize the reports layout (default: <code>activate_plugins</code>). If "
-"this field is empty, your users will be permitted to use this features."
+"Specify the minimum <a href='https://wordpress.org/support/article/roles-and-"
+"capabilities/' target='_new'>capability</a> needed to be able to customize "
+"the reports layout (default: <code>manage_options</code>). If this field is "
+"empty, your users will be permitted to use this features."
 msgstr ""
 "SlimStat の設定を変更するために必要な最低限の<a href='http://codex.wordpress."
 "org/Roles_and_Capabilities' target='_new'>機能</a>を指定します(初期設定: "
 "<code>activate_plugins</code>)。下のホワイトリストで指定されたユーザーはこの"
 "オプションを無視することができます。"
 
-#: ../admin/config/index.php:214
+#: ../admin/config/index.php:213
 #, fuzzy
 msgid ""
 "List all the users who should be allowed to customize their report layout. "
@@ -1126,13 +1118,13 @@ msgstr ""
 "者への権限は自動で付与されるため、入力する必要はありません。ユーザー名の大文"
 "字と小文字は区別されます。"
 
-#: ../admin/config/index.php:216 ../admin/config/index.php:244
-#: ../admin/wp-slimstat-admin.php:643 ../admin/wp-slimstat-admin.php:689
-#: ../admin/wp-slimstat-admin.php:692
+#: ../admin/config/index.php:215 ../admin/config/index.php:243
+#: ../admin/wp-slimstat-admin.php:607 ../admin/wp-slimstat-admin.php:653
+#: ../admin/wp-slimstat-admin.php:656
 msgid "Settings"
 msgstr "設定"
 
-#: ../admin/config/index.php:217
+#: ../admin/config/index.php:216
 #, fuzzy
 #| msgid ""
 #| "Specify the minimum <a href='http://codex.wordpress.org/"
@@ -1141,17 +1133,17 @@ msgstr "設定"
 #| "whitelist here below can be used to override this option for specific "
 #| "users."
 msgid ""
-"Specify the minimum <a href='https://codex.wordpress.org/"
-"Roles_and_Capabilities' target='_new'>capability</a> required to configure "
-"Slimstat (default: <code>activate_plugins</code>). The whitelist here below "
-"can be used to override this option for specific users."
+"Specify the minimum <a href='https://wordpress.org/support/article/roles-and-"
+"capabilities/' target='_new'>capability</a> required to configure Slimstat "
+"(default: <code>manage_options</code>). The whitelist here below can be used "
+"to override this option for specific users."
 msgstr ""
 "SlimStat の設定を変更するために必要な最低限の<a href='http://codex.wordpress."
 "org/Roles_and_Capabilities' target='_new'>機能</a>を指定します(初期設定: "
 "<code>activate_plugins</code>)。下のホワイトリストで指定されたユーザーはこの"
 "オプションを無視することができます。"
 
-#: ../admin/config/index.php:218
+#: ../admin/config/index.php:217
 #, fuzzy
 msgid ""
 "List all the users who can edit these options. Please be advised that admins "
@@ -1162,15 +1154,15 @@ msgstr ""
 "の権限は自動で付与<strong>されない</strong>ため、<strong>絶対に</strong>管理"
 "者名の入力を忘れないでください。ユーザー名の大文字と小文字は区別されます。"
 
-#: ../admin/config/index.php:220
+#: ../admin/config/index.php:219
 msgid "Rest API"
 msgstr ""
 
-#: ../admin/config/index.php:221
+#: ../admin/config/index.php:220
 msgid "Tokens"
 msgstr ""
 
-#: ../admin/config/index.php:221
+#: ../admin/config/index.php:220
 msgid ""
 "In order to send requests to <a href='https://slimstat.freshdesk.com/support/"
 "solutions/articles/12000033661-slimstat-rest-api' target='_blank'>the "
@@ -1183,16 +1175,16 @@ msgid ""
 "tokens."
 msgstr ""
 
-#: ../admin/config/index.php:226
+#: ../admin/config/index.php:225
 msgid "Maintenance"
 msgstr "メンテナンス"
 
-#: ../admin/config/index.php:231 ../admin/view/addons.php:35
+#: ../admin/config/index.php:230 ../admin/view/addons.php:35
 #: ../admin/wp-slimstat-admin.php:62
 msgid "Add-ons"
 msgstr "アドオン"
 
-#: ../admin/config/index.php:245 ../admin/view/index.php:6
+#: ../admin/config/index.php:244 ../admin/view/index.php:6
 msgid ""
 "<strong>AdBlock browser extension detected</strong> - If you see this "
 "notice, it means that your browser is not loading our stylesheet and/or "
@@ -1518,7 +1510,8 @@ msgid ""
 msgstr ""
 
 #: ../admin/config/maintenance.php:291
-msgid "Your data file was last downloaded on"
+#, php-format
+msgid "Your data file was last downloaded on <strong>%s</strong>"
 msgstr ""
 
 #: ../admin/config/maintenance.php:299
@@ -1676,11 +1669,11 @@ msgstr "CSS バージョン"
 msgid "Load"
 msgstr ""
 
-#: ../admin/view/index.php:61 ../admin/view/wp-slimstat-db.php:888
+#: ../admin/view/index.php:61 ../admin/view/wp-slimstat-db.php:889
 msgid "Today"
 msgstr "今日"
 
-#: ../admin/view/index.php:62 ../admin/view/wp-slimstat-db.php:891
+#: ../admin/view/index.php:62 ../admin/view/wp-slimstat-db.php:892
 msgid "Yesterday"
 msgstr "昨日"
 
@@ -1690,19 +1683,19 @@ msgstr "過去 7 日"
 
 #: ../admin/view/index.php:64
 #, fuzzy
-#| msgid "Last 60 Days"
-msgid "Last 30 Days"
-msgstr "過去 60 日"
+#| msgid "Last 5 minutes"
+msgid "Last 4 weeks"
+msgstr "過去 5 分"
 
 #: ../admin/view/index.php:65
-msgid "Last 90 Days"
-msgstr "過去 90 日"
+msgid "Last 12 weeks"
+msgstr ""
 
 #: ../admin/view/index.php:66
 #, fuzzy
-#| msgid "Last 60 Days"
-msgid "Last 365 Days"
-msgstr "過去 60 日"
+#| msgid "Year"
+msgid "Last Year"
+msgstr "年"
 
 #: ../admin/view/index.php:69
 msgid "Date Range"
@@ -1790,7 +1783,7 @@ msgid ""
 "corresponding report is currently hidden (Screen Options tab)."
 msgstr ""
 
-#: ../admin/view/layout.php:69 ../admin/view/wp-slimstat-reports.php:1752
+#: ../admin/view/layout.php:69 ../admin/view/wp-slimstat-reports.php:1738
 msgid "Reset All"
 msgstr "全てのフィルターをリセット"
 
@@ -1823,99 +1816,94 @@ msgstr "携帯端末"
 msgid "Syndication Reader"
 msgstr "RSS リーダー"
 
-#: ../admin/view/right-now.php:71 ../admin/view/wp-slimstat-reports.php:1030
-#: ../admin/view/wp-slimstat-reports.php:1238
-#: ../admin/view/wp-slimstat-reports.php:1360
-#: ../admin/view/wp-slimstat-reports.php:1405
+#: ../admin/view/right-now.php:74 ../admin/view/wp-slimstat-reports.php:1030
+#: ../admin/view/wp-slimstat-reports.php:1240
+#: ../admin/view/wp-slimstat-reports.php:1362
+#: ../admin/view/wp-slimstat-reports.php:1407
 msgid "No data to display"
 msgstr "表示するデータがありません"
 
-#: ../admin/view/right-now.php:112
+#: ../admin/view/right-now.php:115
 msgid "Date and Time"
 msgstr "日付と時間"
 
-#: ../admin/view/right-now.php:123 ../admin/view/wp-slimstat-reports.php:1082
-#: ../admin/view/wp-slimstat-reports.php:1608 ../wp-slimstat.php:1451
-msgid "c-"
-msgstr "不明"
-
-#: ../admin/view/right-now.php:181 ../admin/view/wp-slimstat-db.php:60
-#: ../admin/wp-slimstat-admin.php:1148 ../admin/wp-slimstat-admin.php:1188
+#: ../admin/view/right-now.php:184 ../admin/view/wp-slimstat-db.php:60
+#: ../admin/wp-slimstat-admin.php:1112 ../admin/wp-slimstat-admin.php:1152
 msgid "Originating IP"
 msgstr "送信元 IP"
 
-#: ../admin/view/right-now.php:222 ../admin/view/wp-slimstat-reports.php:1189
-#: ../admin/view/wp-slimstat-reports.php:1194
-#: ../admin/view/wp-slimstat-reports.php:1199
-#: ../admin/view/wp-slimstat-reports.php:1423
+#: ../admin/view/right-now.php:215 ../admin/view/wp-slimstat-reports.php:1191
+#: ../admin/view/wp-slimstat-reports.php:1196
+#: ../admin/view/wp-slimstat-reports.php:1201
+#: ../admin/view/wp-slimstat-reports.php:1425
 msgid "Open this URL in a new window"
 msgstr "この URL を新規ウィンドウで開く"
 
-#: ../admin/view/right-now.php:234
+#: ../admin/view/right-now.php:227
 msgid "Local search results page"
 msgstr "サイト内検索結果ページ"
 
-#: ../admin/view/right-now.php:243 ../admin/view/wp-slimstat-db.php:40
+#: ../admin/view/right-now.php:236 ../admin/view/wp-slimstat-db.php:40
 #: ../admin/view/wp-slimstat-reports.php:209
 #: ../admin/view/wp-slimstat-reports.php:219
-#: ../admin/wp-slimstat-admin.php:1151 ../admin/wp-slimstat-admin.php:1167
+#: ../admin/wp-slimstat-admin.php:1115 ../admin/wp-slimstat-admin.php:1131
 msgid "Search Terms"
 msgstr "検索キーワード"
 
-#: ../admin/view/right-now.php:255
+#: ../admin/view/right-now.php:248
 msgid "Server Latency and Page Speed in milliseconds"
 msgstr ""
 
-#: ../admin/view/right-now.php:255
+#: ../admin/view/right-now.php:248
 msgid "SL"
 msgstr ""
 
-#: ../admin/view/right-now.php:255
+#: ../admin/view/right-now.php:248
 msgid "PS"
 msgstr ""
 
-#: ../admin/view/right-now.php:262
+#: ../admin/view/right-now.php:255
 #, fuzzy
 msgid "Time spent on this page"
 msgstr "削除する PV を指定"
 
-#: ../admin/view/right-now.php:278
+#: ../admin/view/right-now.php:271
 #, fuzzy
 #| msgid "Unique Referrers"
 msgid "Invalid Referrer"
 msgstr "ユニーク リファラー"
 
-#: ../admin/view/right-now.php:279
+#: ../admin/view/right-now.php:272
 msgid "Open this referrer in a new window"
 msgstr "この参照元を新規ウィンドウで開く"
 
-#: ../admin/view/right-now.php:280
+#: ../admin/view/right-now.php:273
 msgid "Content Type"
 msgstr "コンテンツの種類"
 
-#: ../admin/view/right-now.php:287
+#: ../admin/view/right-now.php:280
 msgid "Open this outbound link in a new window"
 msgstr "この外部リンクを新規ウィンドウで開く"
 
-#: ../admin/view/right-now.php:295
+#: ../admin/view/right-now.php:288
 msgid "Delete this entry from the database"
 msgstr ""
 
-#: ../admin/view/right-now.php:307
+#: ../admin/view/right-now.php:300
 #, fuzzy
 msgid "User Logged In"
 msgstr "User Agent"
 
-#: ../admin/view/right-now.php:317
+#: ../admin/view/right-now.php:310
 #, fuzzy
 msgid "User Logged Out"
 msgstr "User Agent"
 
-#: ../admin/view/wp-slimstat-db.php:37 ../admin/wp-slimstat-admin.php:1164
+#: ../admin/view/wp-slimstat-db.php:37 ../admin/wp-slimstat-admin.php:1128
 msgid "Browser"
 msgstr "ブラウザ"
 
-#: ../admin/view/wp-slimstat-db.php:38 ../admin/wp-slimstat-admin.php:1165
+#: ../admin/view/wp-slimstat-db.php:38 ../admin/wp-slimstat-admin.php:1129
 msgid "Country Code"
 msgstr "国コード"
 
@@ -1923,22 +1911,22 @@ msgstr "国コード"
 msgid "IP Address"
 msgstr "IP アドレス"
 
-#: ../admin/view/wp-slimstat-db.php:41 ../admin/wp-slimstat-admin.php:1168
+#: ../admin/view/wp-slimstat-db.php:41 ../admin/wp-slimstat-admin.php:1132
 msgid "Language Code"
 msgstr "言語コード"
 
 #: ../admin/view/wp-slimstat-db.php:42 ../admin/view/wp-slimstat-db.php:110
-#: ../admin/wp-slimstat-admin.php:1169
+#: ../admin/wp-slimstat-admin.php:1133
 msgid "Operating System"
 msgstr "OS"
 
 #: ../admin/view/wp-slimstat-db.php:43 ../admin/view/wp-slimstat-db.php:111
-#: ../admin/wp-slimstat-admin.php:1170
+#: ../admin/wp-slimstat-admin.php:1134
 msgid "Permalink"
 msgstr "パーマリンク"
 
 #: ../admin/view/wp-slimstat-db.php:44 ../admin/view/wp-slimstat-db.php:112
-#: ../admin/wp-slimstat-admin.php:1171
+#: ../admin/wp-slimstat-admin.php:1135
 msgid "Referer"
 msgstr "リファラー"
 
@@ -1947,37 +1935,38 @@ msgstr "リファラー"
 msgid "Visitor's Username"
 msgstr "訪問者名"
 
-#: ../admin/view/wp-slimstat-db.php:46 ../admin/wp-slimstat-admin.php:1154
+#: ../admin/view/wp-slimstat-db.php:46
+#, fuzzy
+#| msgid "Visitor's Name"
+msgid "Visitor's Email"
+msgstr "訪問者名"
+
+#: ../admin/view/wp-slimstat-db.php:47 ../admin/wp-slimstat-admin.php:1118
 msgid "Outbound Link"
 msgstr "外部リンク"
 
-#: ../admin/view/wp-slimstat-db.php:47
+#: ../admin/view/wp-slimstat-db.php:48
 msgid "Page Speed"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:49
+#: ../admin/view/wp-slimstat-db.php:50
 msgid "-- Advanced filters --"
 msgstr "-- 詳細フィルター --"
 
-#: ../admin/view/wp-slimstat-db.php:50
-#: ../admin/view/wp-slimstat-reports.php:339
-msgid "Browser Capabilities"
-msgstr "ブラウザの機能"
-
-#: ../admin/view/wp-slimstat-db.php:51 ../admin/wp-slimstat-admin.php:1183
+#: ../admin/view/wp-slimstat-db.php:51 ../admin/wp-slimstat-admin.php:1147
 msgid "Browser Version"
 msgstr "ブラウザのバージョン"
 
-#: ../admin/view/wp-slimstat-db.php:52 ../admin/wp-slimstat-admin.php:1184
+#: ../admin/view/wp-slimstat-db.php:52 ../admin/wp-slimstat-admin.php:1148
 msgid "Browser Type"
 msgstr "ブラウザの種類"
 
-#: ../admin/view/wp-slimstat-db.php:53 ../admin/wp-slimstat-admin.php:1153
+#: ../admin/view/wp-slimstat-db.php:53 ../admin/wp-slimstat-admin.php:1117
 msgid "User Agent"
 msgstr "User Agent"
 
 #: ../admin/view/wp-slimstat-db.php:55
-#: ../admin/view/wp-slimstat-reports.php:1378
+#: ../admin/view/wp-slimstat-reports.php:1380
 #, fuzzy
 msgid "Coordinates"
 msgstr "解析モード"
@@ -1990,15 +1979,15 @@ msgstr ""
 msgid "Server Latency"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:58 ../admin/wp-slimstat-admin.php:1186
+#: ../admin/view/wp-slimstat-db.php:58 ../admin/wp-slimstat-admin.php:1150
 msgid "Post Author"
 msgstr "投稿者"
 
-#: ../admin/view/wp-slimstat-db.php:59 ../admin/wp-slimstat-admin.php:1187
+#: ../admin/view/wp-slimstat-db.php:59 ../admin/wp-slimstat-admin.php:1151
 msgid "Post Category ID"
 msgstr "投稿カテゴリ ID"
 
-#: ../admin/view/wp-slimstat-db.php:61 ../admin/wp-slimstat-admin.php:1189
+#: ../admin/view/wp-slimstat-db.php:61 ../admin/wp-slimstat-admin.php:1153
 msgid "Resource Content Type"
 msgstr "リソース コンテンツの種類"
 
@@ -2019,7 +2008,7 @@ msgstr "モニタ解像度"
 msgid "Viewport Size"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:66 ../admin/wp-slimstat-admin.php:1191
+#: ../admin/view/wp-slimstat-db.php:66 ../admin/wp-slimstat-admin.php:1155
 msgid "Visit ID"
 msgstr "訪問 ID"
 
@@ -2080,7 +2069,7 @@ msgid "Event ID"
 msgstr ""
 
 #: ../admin/view/wp-slimstat-db.php:123
-#: ../admin/view/wp-slimstat-reports.php:1374
+#: ../admin/view/wp-slimstat-reports.php:1376
 msgid "Type"
 msgstr ""
 
@@ -2098,64 +2087,64 @@ msgstr "解析モード"
 msgid "Offset"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:674
+#: ../admin/view/wp-slimstat-db.php:675
 #, fuzzy
 msgid "Dataset Size"
 msgstr "DB サイズ"
 
-#: ../admin/view/wp-slimstat-db.php:676
+#: ../admin/view/wp-slimstat-db.php:677
 msgid "Total number of records stored in the database."
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:678
+#: ../admin/view/wp-slimstat-db.php:679
 msgid "DB Size"
 msgstr "DB サイズ"
 
-#: ../admin/view/wp-slimstat-db.php:681
+#: ../admin/view/wp-slimstat-db.php:682
 #, fuzzy
 msgid "Tracking Enabled"
 msgstr "解析モード"
 
-#: ../admin/view/wp-slimstat-db.php:684
+#: ../admin/view/wp-slimstat-db.php:685
 msgid "Javascript Mode"
 msgstr "JavaScript モード"
 
-#: ../admin/view/wp-slimstat-db.php:687
+#: ../admin/view/wp-slimstat-db.php:688
 msgid "Tracking Browser Caps"
 msgstr "ブラウザの機能を解析"
 
-#: ../admin/view/wp-slimstat-db.php:690
+#: ../admin/view/wp-slimstat-db.php:691
 msgid "Auto purge"
 msgstr "データの保存期間"
 
-#: ../admin/view/wp-slimstat-db.php:691 ../admin/wp-slimstat-admin.php:1008
+#: ../admin/view/wp-slimstat-db.php:692 ../admin/wp-slimstat-admin.php:972
 msgid "Off"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:693
+#: ../admin/view/wp-slimstat-db.php:694
 msgid "Oldest pageview"
 msgstr "最も古いページビュー"
 
-#: ../admin/view/wp-slimstat-db.php:694
+#: ../admin/view/wp-slimstat-db.php:695
 msgid "No visits"
 msgstr "訪問なし"
 
-#: ../admin/view/wp-slimstat-db.php:696
+#: ../admin/view/wp-slimstat-db.php:697
 #, fuzzy
 msgid "Geolocation"
 msgstr "並べ替え"
 
-#: ../admin/view/wp-slimstat-db.php:698
+#: ../admin/view/wp-slimstat-db.php:699
 msgid "Date when the MaxMind Geolocation database was last updated."
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:866 ../admin/view/wp-slimstat-db.php:1114
+#: ../admin/view/wp-slimstat-db.php:867 ../admin/view/wp-slimstat-db.php:1100
 #: ../admin/view/wp-slimstat-reports.php:45
 #: ../admin/view/wp-slimstat-reports.php:54
 msgid "Pageviews"
 msgstr "PV"
 
-#: ../admin/view/wp-slimstat-db.php:868 ../admin/view/wp-slimstat-db.php:1116
+#: ../admin/view/wp-slimstat-db.php:869 ../admin/view/wp-slimstat-db.php:1102
 msgid ""
 "A request to load a single HTML file. Slimstat logs a \"pageview\" each time "
 "the tracking code is executed."
@@ -2163,56 +2152,56 @@ msgstr ""
 "サイト内に存在する HTML ファイルが読み込まれた回数の合計です。SlimStat は解析"
 "コードが実行されるたび \"pageview\" を記録します。"
 
-#: ../admin/view/wp-slimstat-db.php:870
+#: ../admin/view/wp-slimstat-db.php:871
 #, fuzzy
 msgid "Days in Range"
 msgstr "期間を指定"
 
-#: ../admin/view/wp-slimstat-db.php:873
+#: ../admin/view/wp-slimstat-db.php:874
 #, fuzzy
 msgid "Average Daily Pageviews"
 msgstr "平均 PV"
 
-#: ../admin/view/wp-slimstat-db.php:875
+#: ../admin/view/wp-slimstat-db.php:876
 #, fuzzy
 msgid ""
 "How many pages have been visited on average every day during the current "
 "period."
 msgstr "訪問者が 1 回のセッション中に表示したページ数の平均を表します。"
 
-#: ../admin/view/wp-slimstat-db.php:877
+#: ../admin/view/wp-slimstat-db.php:878
 msgid "From Search Results"
 msgstr "検索結果からの訪問"
 
-#: ../admin/view/wp-slimstat-db.php:879
+#: ../admin/view/wp-slimstat-db.php:880
 msgid ""
 "Visitors who landed on your site after searching for a keyword on Google, "
 "Yahoo, etc."
 msgstr ""
 "Google や Yahoo などの検索結果ページからサイトを訪れた訪問者の数を表します。"
 
-#: ../admin/view/wp-slimstat-db.php:881 ../admin/view/wp-slimstat-db.php:1227
+#: ../admin/view/wp-slimstat-db.php:882 ../admin/view/wp-slimstat-db.php:1214
 #: ../admin/view/wp-slimstat-reports.php:55
 #: ../admin/view/wp-slimstat-reports.php:252
 #: ../admin/view/wp-slimstat-reports.php:493
 msgid "Unique IPs"
 msgstr "ユニーク IP"
 
-#: ../admin/view/wp-slimstat-db.php:883
+#: ../admin/view/wp-slimstat-db.php:884
 msgid ""
 "Used to differentiate between multiple requests to download a file from one "
 "internet address (IP) and requests originating from many distinct addresses"
 msgstr "サイトを訪れた全ての IP アドレスから重複を除いた値を表します。"
 
-#: ../admin/view/wp-slimstat-db.php:885
+#: ../admin/view/wp-slimstat-db.php:886
 msgid "Last 30 minutes"
 msgstr "過去 30 分"
 
-#: ../admin/view/wp-slimstat-db.php:1118
+#: ../admin/view/wp-slimstat-db.php:1104
 msgid "Unique Referrers"
 msgstr "ユニーク リファラー"
 
-#: ../admin/view/wp-slimstat-db.php:1120
+#: ../admin/view/wp-slimstat-db.php:1106
 msgid ""
 "A referrer (or referring site) is the site that a visitor previously visited "
 "before following a link to your site."
@@ -2220,11 +2209,11 @@ msgstr ""
 "リファラー (または参照元サイト) とは訪問者があなたのサイトへのリンクをクリッ"
 "クする前に訪問していたサイトです。"
 
-#: ../admin/view/wp-slimstat-db.php:1122
+#: ../admin/view/wp-slimstat-db.php:1108
 msgid "Direct Pageviews"
 msgstr "直接 PV"
 
-#: ../admin/view/wp-slimstat-db.php:1124
+#: ../admin/view/wp-slimstat-db.php:1110
 msgid ""
 "Visitors who visited the site by typing the URL directly into their browser. "
 "<em>Direct</em> can also refer to the visitors who clicked on the links from "
@@ -2235,11 +2224,11 @@ msgstr ""
 "ク／お気に入り、またはリファラーを含まないローカルドキュメントや Eメール 内の"
 "リンクのクリックを経由してサイトを訪れた訪問者が含まれます。"
 
-#: ../admin/view/wp-slimstat-db.php:1126
+#: ../admin/view/wp-slimstat-db.php:1112
 msgid "From a search result"
 msgstr "検索結果からの訪問"
 
-#: ../admin/view/wp-slimstat-db.php:1128
+#: ../admin/view/wp-slimstat-db.php:1114
 msgid ""
 "Visitors who came to your site via searches on Google or some other search "
 "engine."
@@ -2247,11 +2236,11 @@ msgstr ""
 "Google やその他の検索エンジンの検索を用いてあなたのサイトに訪れた訪問者の数で"
 "す。"
 
-#: ../admin/view/wp-slimstat-db.php:1130
+#: ../admin/view/wp-slimstat-db.php:1116
 msgid "Unique Landing Pages"
 msgstr "ユニーク ランディングページ"
 
-#: ../admin/view/wp-slimstat-db.php:1132
+#: ../admin/view/wp-slimstat-db.php:1118
 msgid ""
 "The first page that a user views during a session. This is also known as the "
 "<em>entrance page</em>. For example, if they search for 'Brooklyn Office "
@@ -2263,135 +2252,144 @@ msgstr ""
 "してあなたのブログを訪れた時、表示されたページはランディングページとしてカウ"
 "ントされます。"
 
-#: ../admin/view/wp-slimstat-db.php:1134
+#: ../admin/view/wp-slimstat-db.php:1120
 msgid "Bounce Pages"
 msgstr "直帰ページ"
 
-#: ../admin/view/wp-slimstat-db.php:1136
+#: ../admin/view/wp-slimstat-db.php:1122
 #, fuzzy
 msgid "Number of single page visits to your site over the selected period."
 msgstr "1 ページのみを閲覧してサイトを去った訪問者の割合です。"
 
-#: ../admin/view/wp-slimstat-db.php:1138
+#: ../admin/view/wp-slimstat-db.php:1124
 msgid "New Visitors Rate"
 msgstr "新規の訪問者の割合"
 
-#: ../admin/view/wp-slimstat-db.php:1140
+#: ../admin/view/wp-slimstat-db.php:1126
 #, fuzzy
 msgid ""
 "Percentage of single page visits, i.e. visits in which the person left your "
 "site from the entrance page."
 msgstr "1 ページのみを閲覧してサイトを去った訪問者の割合です。"
 
-#: ../admin/view/wp-slimstat-db.php:1142
+#: ../admin/view/wp-slimstat-db.php:1128
 msgid "Currently from search engines"
 msgstr "最新 検索エンジンからの訪問"
 
-#: ../admin/view/wp-slimstat-db.php:1144
+#: ../admin/view/wp-slimstat-db.php:1130
 msgid ""
 "Visitors who visited the site in the last 5 minutes coming from a search "
 "engine."
 msgstr "過去 5 分の間に検索エンジンからサイトに訪れた訪問者の数です。"
 
-#: ../admin/view/wp-slimstat-db.php:1155
+#: ../admin/view/wp-slimstat-db.php:1141
 msgid "0 - 30 seconds"
 msgstr "0 - 30 秒"
 
-#: ../admin/view/wp-slimstat-db.php:1161
+#: ../admin/view/wp-slimstat-db.php:1147
 msgid "31 - 60 seconds"
 msgstr "31 - 61 秒"
 
-#: ../admin/view/wp-slimstat-db.php:1167
+#: ../admin/view/wp-slimstat-db.php:1153
 msgid "1 - 3 minutes"
 msgstr "1 - 3 分"
 
-#: ../admin/view/wp-slimstat-db.php:1173
+#: ../admin/view/wp-slimstat-db.php:1159
 msgid "3 - 5 minutes"
 msgstr "3 - 5 分"
 
-#: ../admin/view/wp-slimstat-db.php:1179
+#: ../admin/view/wp-slimstat-db.php:1165
 msgid "5 - 7 minutes"
 msgstr "5 - 7 分"
 
-#: ../admin/view/wp-slimstat-db.php:1185
+#: ../admin/view/wp-slimstat-db.php:1171
 msgid "7 - 10 minutes"
 msgstr "7 - 10 分"
 
-#: ../admin/view/wp-slimstat-db.php:1191
+#: ../admin/view/wp-slimstat-db.php:1177
 msgid "More than 10 minutes"
 msgstr "10 分以上"
 
-#: ../admin/view/wp-slimstat-db.php:1203
+#: ../admin/view/wp-slimstat-db.php:1189
 #, fuzzy
 msgid "Average visit duration"
 msgstr "滞在時間"
 
-#: ../admin/view/wp-slimstat-db.php:1223
-#: ../admin/view/wp-slimstat-reports.php:251
-msgid "Visits"
-msgstr "訪問"
+#: ../admin/view/wp-slimstat-db.php:1210
+#, fuzzy
+#| msgid "Permissions"
+msgid "Sessions"
+msgstr "権限"
 
-#: ../admin/view/wp-slimstat-db.php:1225
+#: ../admin/view/wp-slimstat-db.php:1212
+#, fuzzy
+#| msgid ""
+#| "A visit is a session of at most 30 minutes. Returning visitors are "
+#| "counted multiple times if they perform multiple visits."
 msgid ""
-"A visit is a session of at most 30 minutes. Returning visitors are counted "
-"multiple times if they perform multiple visits."
+"A session is a group of visits lasting at most 30 minutes. Returning "
+"visitors are counted multiple times if they start a new session."
 msgstr ""
 "1 回の訪問は最長で 30 分まで計算されます。サイトを去った訪問者が 30 分以内に"
 "再度サイトを訪れた場合、その訪問は以前の訪問とは別のものとしてカウントされま"
 "す。"
 
-#: ../admin/view/wp-slimstat-db.php:1229
+#: ../admin/view/wp-slimstat-db.php:1216
 msgid "It includes only traffic generated by human visitors."
 msgstr "この値は人間の訪問者によって生成されたトラフィックのみを含みます。"
 
-#: ../admin/view/wp-slimstat-db.php:1231
+#: ../admin/view/wp-slimstat-db.php:1218
 msgid "Bounce rate"
 msgstr "直帰率"
 
-#: ../admin/view/wp-slimstat-db.php:1233
+#: ../admin/view/wp-slimstat-db.php:1220
 msgid ""
-"Percentage of single-page visits, i.e. visits in which the person left your "
-"site from the entrance page."
-msgstr "1 ページのみを閲覧してサイトを去った訪問者の割合です。"
+"Total number of one-page visits divided by the total number of entries to a "
+"website. Please see the <a href=\"https://support.google.com/analytics/"
+"answer/1009409?hl=en\" target=\"_blank\">official Google docs</a> for more "
+"information."
+msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:1235
+#: ../admin/view/wp-slimstat-db.php:1222
 msgid "Known visitors"
 msgstr "既知の訪問者"
 
-#: ../admin/view/wp-slimstat-db.php:1237
-msgid "Visitors who had previously left a comment on your blog."
+#: ../admin/view/wp-slimstat-db.php:1224
+#, fuzzy
+#| msgid "Visitors who had previously left a comment on your blog."
+msgid "Visitors who have previously left a comment on your blog."
 msgstr "以前にブログにコメントを残したことのある訪問者の数です。"
 
-#: ../admin/view/wp-slimstat-db.php:1239
-msgid "New visitors"
-msgstr "新規の訪問者"
+#: ../admin/view/wp-slimstat-db.php:1226
+msgid "Single-page Sessions"
+msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:1241
-msgid "Human users who visited your site only once."
-msgstr "現在までに一度だけサイトを訪れたユーザーの数です。"
+#: ../admin/view/wp-slimstat-db.php:1228
+msgid "Human users that generated one single page view on your website."
+msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:1243
+#: ../admin/view/wp-slimstat-db.php:1230
 msgid "Bots"
 msgstr "ボット"
 
-#: ../admin/view/wp-slimstat-db.php:1246
+#: ../admin/view/wp-slimstat-db.php:1233
 #, fuzzy
 msgid "Pageviews per visit"
 msgstr "平均 PV"
 
-#: ../admin/view/wp-slimstat-db.php:1249
+#: ../admin/view/wp-slimstat-db.php:1236
 msgid "Longest visit"
 msgstr "最多 PV"
 
-#: ../admin/view/wp-slimstat-db.php:1250
+#: ../admin/view/wp-slimstat-db.php:1237
 msgid "hits"
 msgstr "ヒット"
 
-#: ../admin/view/wp-slimstat-db.php:1259
+#: ../admin/view/wp-slimstat-db.php:1246
 msgid "Content Items"
 msgstr "コンテンツ"
 
-#: ../admin/view/wp-slimstat-db.php:1261
+#: ../admin/view/wp-slimstat-db.php:1248
 msgid ""
 "This value includes not only posts, but also custom post types, regardless "
 "of their status"
@@ -2399,40 +2397,40 @@ msgstr ""
 "この値は投稿だけでなく、カスタム投稿タイプも含まれます。下書き・公開などの状"
 "態は考慮されません。"
 
-#: ../admin/view/wp-slimstat-db.php:1263
+#: ../admin/view/wp-slimstat-db.php:1250
 #, fuzzy
 msgid "Posts"
 msgstr "トップ 投稿"
 
-#: ../admin/view/wp-slimstat-db.php:1266
+#: ../admin/view/wp-slimstat-db.php:1253
 #, fuzzy
 msgid "Pages"
 msgstr "トップ ページ"
 
-#: ../admin/view/wp-slimstat-db.php:1269
+#: ../admin/view/wp-slimstat-db.php:1256
 msgid "Attachments"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:1272
+#: ../admin/view/wp-slimstat-db.php:1259
 #, fuzzy
 msgid "Revisions"
 msgstr "権限"
 
-#: ../admin/view/wp-slimstat-db.php:1275
+#: ../admin/view/wp-slimstat-db.php:1262
 #, fuzzy
 msgid "Comments"
 msgstr "総コメント数"
 
-#: ../admin/view/wp-slimstat-db.php:1278
+#: ../admin/view/wp-slimstat-db.php:1265
 #, fuzzy
 msgid "Avg Comments per Post"
 msgstr "平均コメント数 / 投稿"
 
-#: ../admin/view/wp-slimstat-db.php:1281
+#: ../admin/view/wp-slimstat-db.php:1268
 msgid "Avg Server Latency"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-db.php:1283
+#: ../admin/view/wp-slimstat-db.php:1270
 msgid ""
 "Latency is the amount of time it takes for the host server to receive and "
 "process a request for a page object. The amount of latency depends largely "
@@ -2465,7 +2463,7 @@ msgstr "カラーコード"
 msgid "From search result page"
 msgstr "検索結果ページからの訪問"
 
-#: ../admin/view/wp-slimstat-reports.php:41 ../admin/wp-slimstat-admin.php:1146
+#: ../admin/view/wp-slimstat-reports.php:41 ../admin/wp-slimstat-admin.php:1110
 msgid "Known Visitor"
 msgstr "既知の訪問者"
 
@@ -2592,6 +2590,10 @@ msgstr "参照元サイト"
 msgid "Human Visits"
 msgstr "人間の訪問"
 
+#: ../admin/view/wp-slimstat-reports.php:251
+msgid "Visits"
+msgstr "訪問"
+
 #: ../admin/view/wp-slimstat-reports.php:260
 #, fuzzy
 msgid "Audience Overview"
@@ -2640,6 +2642,10 @@ msgstr "トップ モニタ解像度"
 #, fuzzy
 msgid "Top Viewport Sizes"
 msgstr "トップ カテゴリ"
+
+#: ../admin/view/wp-slimstat-reports.php:339
+msgid "Browser Capabilities"
+msgstr "ブラウザの機能"
 
 #: ../admin/view/wp-slimstat-reports.php:348
 msgid "Visit Duration"
@@ -2896,1002 +2902,109 @@ msgstr "結果 %s - %s / %s"
 msgid "Refresh in"
 msgstr "更新まで"
 
-#: ../admin/view/wp-slimstat-reports.php:1076
+#: ../admin/view/wp-slimstat-reports.php:1079
 msgid "Category ID"
 msgstr "カテゴリ ID"
 
-#: ../admin/view/wp-slimstat-reports.php:1081
-#: ../admin/view/wp-slimstat-reports.php:1095
-#: ../admin/view/wp-slimstat-reports.php:1100
+#: ../admin/view/wp-slimstat-reports.php:1084
+#: ../admin/view/wp-slimstat-reports.php:1098
+#: ../admin/view/wp-slimstat-reports.php:1103
 #, fuzzy
 msgid "Code"
 msgstr "OSコード"
 
-#: ../admin/view/wp-slimstat-reports.php:1096
-#: ../languages/dynamic_strings.php:341 ../wp-slimstat.php:1474
-msgid "l-"
-msgstr "不明"
-
-#: ../admin/view/wp-slimstat-reports.php:1113
+#: ../admin/view/wp-slimstat-reports.php:1115
 msgid "URL"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-reports.php:1132
+#: ../admin/view/wp-slimstat-reports.php:1134
 msgid "Referrer"
 msgstr "リファラー"
 
-#: ../admin/view/wp-slimstat-reports.php:1307
-#: ../admin/view/wp-slimstat-reports.php:1315
+#: ../admin/view/wp-slimstat-reports.php:1309
+#: ../admin/view/wp-slimstat-reports.php:1317
 msgid "(previous)"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-reports.php:1378
+#: ../admin/view/wp-slimstat-reports.php:1380
 msgid "Date"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-reports.php:1430
+#: ../admin/view/wp-slimstat-reports.php:1432
 msgid "Filter by element in a group"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-reports.php:1455
+#: ../admin/view/wp-slimstat-reports.php:1457
+msgid "Moz Domain Authority"
+msgstr ""
+
+#: ../admin/view/wp-slimstat-reports.php:1458
+msgid ""
+"A normalized 100-point score representing the likelihood of a domain to rank "
+"well in search engine results."
+msgstr ""
+
+#: ../admin/view/wp-slimstat-reports.php:1462
 #, fuzzy
-msgid "Backlinks"
+msgid "Moz Backlinks"
 msgstr "Google 被リンク"
 
-#: ../admin/view/wp-slimstat-reports.php:1456
+#: ../admin/view/wp-slimstat-reports.php:1463
 #, fuzzy
 msgid "Number of external equity links to your website."
 msgstr "Google が検出したあなたのサイトへのリンクが存在するページの数です。"
 
-#: ../admin/view/wp-slimstat-reports.php:1460
-msgid "MozRank"
-msgstr ""
-
-#: ../admin/view/wp-slimstat-reports.php:1461
-msgid ""
-"MozRank of the URL, in a normalized 10-point score. MozRank represents a "
-"link popularity score. It reflects the importance of any given web page on "
-"the Internet."
-msgstr ""
-
-#: ../admin/view/wp-slimstat-reports.php:1465
+#: ../admin/view/wp-slimstat-reports.php:1467
 #, fuzzy
-msgid "Equity Links"
+msgid "Moz Links"
 msgstr "外部リンク"
 
-#: ../admin/view/wp-slimstat-reports.php:1466
+#: ../admin/view/wp-slimstat-reports.php:1468
+#, fuzzy
 msgid ""
-"Number of authority-passing links (including followed links and redirects, "
-"internal or external) to your website. Set the permalink filter here above "
-"to get the corresponding metrics in this report."
-msgstr ""
+"The number of links (external, equity or nonequity or not) to your homepage."
+msgstr "Google が検出したあなたのサイトへのリンクが存在するページの数です。"
 
-#: ../admin/view/wp-slimstat-reports.php:1470
-msgid "Facebook Shares"
-msgstr "Facebook シェア"
-
-#: ../admin/view/wp-slimstat-reports.php:1475
-msgid "Facebook Clicks"
-msgstr "Facebook クリック"
-
-#: ../admin/view/wp-slimstat-reports.php:1476
-msgid "How many times links to your website have been clicked on Facebook."
-msgstr ""
-"Facebook 上で現在までにあなたの Web サイトへのリンクがクリックされた回数で"
-"す。"
-
-#: ../admin/view/wp-slimstat-reports.php:1480
+#: ../admin/view/wp-slimstat-reports.php:1472
 msgid "Alexa World Rank"
 msgstr "Alexa 世界ランク"
 
-#: ../admin/view/wp-slimstat-reports.php:1481
+#: ../admin/view/wp-slimstat-reports.php:1473
 msgid ""
 "Alexa is a subsidiary company of Amazon.com which provides commercial web "
 "traffic data."
 msgstr ""
 "Alexa は商業的な Web トラフィックデータを提供する Amazon.com の子会社です。"
 
-#: ../admin/view/wp-slimstat-reports.php:1485
+#: ../admin/view/wp-slimstat-reports.php:1477
 msgid "Alexa Country Rank"
 msgstr "Alexa 国別ランク"
 
-#: ../admin/view/wp-slimstat-reports.php:1490
+#: ../admin/view/wp-slimstat-reports.php:1482
 msgid "Alexa Popularity"
 msgstr "Alexa 人気度"
 
-#: ../admin/view/wp-slimstat-reports.php:1549
+#: ../admin/view/wp-slimstat-reports.php:1542
 msgid "Alexa Delta"
 msgstr ""
 
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-xx"
-msgstr "Unkwnon"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-af"
-msgstr "アフガニスタン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ax"
-msgstr "オーランド諸島 (フィンランド領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-al"
-msgstr "アルバニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-dz"
-msgstr "アルジェリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ad"
-msgstr "アンドラ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ao"
-msgstr "アンゴラ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ai"
-msgstr "アンギラ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ag"
-msgstr "アンティグア・バーブーダ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ar"
-msgstr "アルゼンチン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-am"
-msgstr "アルメニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-aw"
-msgstr "アルバ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-au"
-msgstr "オーストラリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-at"
-msgstr "オーストリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-az"
-msgstr "アゼルバイジャン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bs"
-msgstr "バハマ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bh"
-msgstr "バーレーン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bd"
-msgstr "バングラデシュ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bb"
-msgstr "バルバドス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-by"
-msgstr "ベラルーシ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-be"
-msgstr "ベルギー"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bz"
-msgstr "ベリーズ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bj"
-msgstr "ベナン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bm"
-msgstr "バミューダ諸島 (イギリス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bt"
-msgstr "ブータン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bo"
-msgstr "ボリビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ba"
-msgstr "ボスニア・ヘルツェゴヴィナ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bw"
-msgstr "ボツワナ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-br"
-msgstr "ブラジル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bn"
-msgstr "ブルネイ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bg"
-msgstr "ブルガリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bf"
-msgstr "ブルキナファソ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-bi"
-msgstr "ブルンジ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kh"
-msgstr "カンボジア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cm"
-msgstr "カメルーン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ca"
-msgstr "カナダ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cv"
-msgstr "カーボベルデ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ky"
-msgstr "ケイマン諸島"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cf"
-msgstr "中央アフリカ共和国"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-td"
-msgstr "チャド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cl"
-msgstr "チリ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cn"
-msgstr "中国"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-co"
-msgstr "コロンビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-km"
-msgstr "コモロ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cg"
-msgstr "コンゴ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cd"
-msgstr "コンゴ民主共和国"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cr"
-msgstr "コスタリカ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ci"
-msgstr "コートジボワール"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-hr"
-msgstr "クロアチア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cu"
-msgstr "キューバ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cy"
-msgstr "キプロス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-cz"
-msgstr "チェコ共和国"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-dk"
-msgstr "デンマーク"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-dj"
-msgstr "ジブチ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-dm"
-msgstr "ドミニカ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-do"
-msgstr "ドミニカ共和国"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ec"
-msgstr "エクアドル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-eg"
-msgstr "エジプト"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sv"
-msgstr "エルサルバドル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gq"
-msgstr "赤道ギニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-er"
-msgstr "エリトリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ee"
-msgstr "エストニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-et"
-msgstr "エチオピア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-fo"
-msgstr "フェロー諸島"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-fk"
-msgstr "フォークランド諸島 (マルビナス諸島)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-fj"
-msgstr "フィジー"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-fi"
-msgstr "フィンランド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-fr"
-msgstr "フランス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gf"
-msgstr "フランス領ギアナ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ga"
-msgstr "ガボン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gm"
-msgstr "ガンビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ge"
-msgstr "グルジア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-de"
-msgstr "ドイツ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gh"
-msgstr "ガーナ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gr"
-msgstr "ギリシャ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gl"
-msgstr "グリーンランド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gd"
-msgstr "グレナダ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gp"
-msgstr "グアドループ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gt"
-msgstr "グアテマラ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gn"
-msgstr "ギニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gw"
-msgstr "ギニアビサオ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gy"
-msgstr "ガイアナ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ht"
-msgstr "ハイチ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-hn"
-msgstr "ホンジュラス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-hk"
-msgstr "香港"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-hu"
-msgstr "ハンガリー"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-is"
-msgstr "アイスランド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-in"
-msgstr "インド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-id"
-msgstr "インドネシア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ir"
-msgstr "イラン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-iq"
-msgstr "イラク"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ie"
-msgstr "アイルランド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-il"
-msgstr "イスラエル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-it"
-msgstr "イタリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-jm"
-msgstr "ジャマイカ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-jp"
-msgstr "日本"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-jo"
-msgstr "ヨルダン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kz"
-msgstr "カザフスタン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ke"
-msgstr "ケニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-nr"
-msgstr "ナウル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kp"
-msgstr "北朝鮮"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kr"
-msgstr "韓国"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kv"
-msgstr "コソボ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kw"
-msgstr "クウェート"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kg"
-msgstr "キルギスタン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-la"
-msgstr "ラオス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-lv"
-msgstr "ラトビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-lb"
-msgstr "レバノン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ls"
-msgstr "レソト"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-lr"
-msgstr "リベリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ly"
-msgstr "リビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-li"
-msgstr "リヒテンシュタイン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-lt"
-msgstr "リトアニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-lu"
-msgstr "ルクセンブルク"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mk"
-msgstr "マケドニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mg"
-msgstr "マダガスカル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mw"
-msgstr "マラウイ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-my"
-msgstr "マレーシア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ml"
-msgstr "マリ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mt"
-msgstr "マルタ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mq"
-msgstr "マルチニーク (フランス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mr"
-msgstr "モーリタニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mu"
-msgstr "モーリシャス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mx"
-msgstr "メキシコ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-md"
-msgstr "モルドバ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mn"
-msgstr "モンゴル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-me"
-msgstr "モンテネグロ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ms"
-msgstr "モントセラト (イギリス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ma"
-msgstr "モロッコ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mz"
-msgstr "モザンビーク"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mm"
-msgstr "ミャンマー"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-na"
-msgstr "ナミビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-np"
-msgstr "ネパール"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-nl"
-msgstr "オランダ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-nc"
-msgstr "ニューカレドニア (フランス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-nz"
-msgstr "ニュージーランド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ni"
-msgstr "ニカラグア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ne"
-msgstr "ニジェール"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ng"
-msgstr "ナイジェリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-no"
-msgstr "ノルウェー"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-om"
-msgstr "オマーン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pk"
-msgstr "パキスタン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pw"
-msgstr "パラオ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ps"
-msgstr "パレスチナ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pa"
-msgstr "パナマ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pg"
-msgstr "パプアニューギニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-py"
-msgstr "パラグアイ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pe"
-msgstr "ペルー"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ph"
-msgstr "フィリピン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pl"
-msgstr "ポーランド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pt"
-msgstr "ポルトガル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-pr"
-msgstr "プエルトリコ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-qa"
-msgstr "カタール"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-re"
-msgstr "レユニオン島 (フランス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ro"
-msgstr "ルーマニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ru"
-msgstr "ロシア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-rw"
-msgstr "ルワンダ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-kn"
-msgstr "セントクリストファー・ネイビス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-lc"
-msgstr "セントルシア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mf"
-msgstr "サン・マルタン (フランス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-vc"
-msgstr "セントビンセントおよびグレナディン諸島"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ws"
-msgstr "西サモア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-st"
-msgstr "サントメ・プリンシペ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sa"
-msgstr "サウジアラビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sn"
-msgstr "セネガル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-rs"
-msgstr "セルビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sl"
-msgstr "シエラレオネ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sg"
-msgstr "シンガポール"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sk"
-msgstr "スロバキア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-si"
-msgstr "スロベニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sb"
-msgstr "ソロモン諸島"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-so"
-msgstr "ソマリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-za"
-msgstr "南アフリカ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gs"
-msgstr "サウスジョージア・サウスサンドイッチ島 (イギリス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-es"
-msgstr "スペイン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-lk"
-msgstr "スリランカ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sc"
-msgstr "セイシェル"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sd"
-msgstr "スーダン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ss"
-msgstr "南スーダン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sr"
-msgstr "スリナム"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sj"
-msgstr "スバールバル・ヤンマイエン島 (ノルウェー領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sz"
-msgstr "スワジランド"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-se"
-msgstr "スウェーデン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ch"
-msgstr "スイス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-sy"
-msgstr "シリア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tw"
-msgstr "台湾"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tj"
-msgstr "タジキスタン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tz"
-msgstr "タンザニア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-th"
-msgstr "タイ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tl"
-msgstr "東ティモール"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tg"
-msgstr "トーゴ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-to"
-msgstr "トンガ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tt"
-msgstr "トリニダード・トバゴ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tn"
-msgstr "チュニジア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tr"
-msgstr "トルコ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tm"
-msgstr "トルクメニスタン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-tc"
-msgstr "タークス・カイコス諸島"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ug"
-msgstr "ウガンダ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ua"
-msgstr "ウクライナ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ae"
-msgstr "アラブ首長国連邦"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gb"
-msgstr "イギリス"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-us"
-msgstr "アメリカ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-uy"
-msgstr "ウルグアイ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-uz"
-msgstr "ウズベキスタン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-vu"
-msgstr "バヌアツ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ve"
-msgstr "ベネズエラ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-vn"
-msgstr "ベトナム"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-vg"
-msgstr "ヴァージン諸島 (イギリス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-vi"
-msgstr "ヴァージン諸島 (アメリカ領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-eh"
-msgstr "西サモア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-ye"
-msgstr "イエメン"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-zm"
-msgstr "ザンビア"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-zw"
-msgstr "ジンバブエ"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-gg"
-msgstr "ガーンジー島 (イギリス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-je"
-msgstr "ジャージー島 (イギリス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-im"
-msgstr "マン島 (イギリス領)"
-
-#: ../admin/view/wp-slimstat-reports.php:1597
-msgid "c-mv"
-msgstr "モルディブ"
-
-#: ../admin/view/wp-slimstat-reports.php:1598
-msgid "c-eu"
-msgstr "EU"
-
-#: ../admin/view/wp-slimstat-reports.php:1712
+#: ../admin/view/wp-slimstat-reports.php:1698
 msgid "src"
 msgstr "src"
 
-#: ../admin/view/wp-slimstat-reports.php:1716
+#: ../admin/view/wp-slimstat-reports.php:1702
 msgid "serp"
 msgstr "serp"
 
-#: ../admin/view/wp-slimstat-reports.php:1724
+#: ../admin/view/wp-slimstat-reports.php:1710
 msgid "Go to the referring page"
 msgstr "参照元ページを開く"
 
-#: ../admin/view/wp-slimstat-reports.php:1743
+#: ../admin/view/wp-slimstat-reports.php:1729
 msgid "Remove filter for"
 msgstr "フィルターを除去:"
 
-#: ../admin/view/wp-slimstat-reports.php:1748
+#: ../admin/view/wp-slimstat-reports.php:1734
 msgid "Save"
 msgstr ""
 
@@ -3921,75 +3034,75 @@ msgstr "WordPress との統合"
 msgid "Inactive Reports"
 msgstr "レポートの配置をリセット"
 
-#: ../admin/wp-slimstat-admin.php:546 ../admin/wp-slimstat-admin.php:614
+#: ../admin/wp-slimstat-admin.php:510 ../admin/wp-slimstat-admin.php:578
 #, fuzzy
 msgid "Slimstat"
 msgstr "SlimStat"
 
-#: ../admin/wp-slimstat-admin.php:634 ../admin/wp-slimstat-admin.php:662
-#: ../admin/wp-slimstat-admin.php:665
+#: ../admin/wp-slimstat-admin.php:598 ../admin/wp-slimstat-admin.php:626
+#: ../admin/wp-slimstat-admin.php:629
 #, fuzzy
 msgid "Customize"
 msgstr "カスタム CSS"
 
-#: ../admin/wp-slimstat-admin.php:744
+#: ../admin/wp-slimstat-admin.php:708
 #, fuzzy
 msgid "Pageviews in the last "
 msgstr "過去 365 日のページビュー"
 
-#: ../admin/wp-slimstat-admin.php:747
+#: ../admin/wp-slimstat-admin.php:711
 #, fuzzy
 msgid "Unique IPs in the last "
 msgstr "ユニーク IP"
 
-#: ../admin/wp-slimstat-admin.php:781
+#: ../admin/wp-slimstat-admin.php:745
 #, php-format
 msgid ""
 " And for keeping an eye on your web traffic with %sSlimStat Analytics%s."
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:806
+#: ../admin/wp-slimstat-admin.php:770
 msgid "Show on screen"
 msgstr "表示する項目"
 
-#: ../admin/wp-slimstat-admin.php:914
+#: ../admin/wp-slimstat-admin.php:878
 msgid "Already saved"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:922
+#: ../admin/wp-slimstat-admin.php:886
 msgid "Saved"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:942
+#: ../admin/wp-slimstat-admin.php:906
 #, fuzzy
 msgid "Delete this filter"
 msgstr "削除する PV を指定"
 
-#: ../admin/wp-slimstat-admin.php:1007
+#: ../admin/wp-slimstat-admin.php:971
 msgid "On"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1076
+#: ../admin/wp-slimstat-admin.php:1040
 msgid "Save Changes"
 msgstr "変更を保存"
 
-#: ../admin/wp-slimstat-admin.php:1120
+#: ../admin/wp-slimstat-admin.php:1084
 msgid "There was an error updating the following options:"
 msgstr "以下の理由でアップデートにエラーが発生しました:"
 
-#: ../admin/wp-slimstat-admin.php:1123
+#: ../admin/wp-slimstat-admin.php:1087
 msgid "Your changes have been saved."
 msgstr "変更を保存しました。"
 
-#: ../admin/wp-slimstat-admin.php:1141
+#: ../admin/wp-slimstat-admin.php:1105
 msgid "Definitions"
 msgstr "定義"
 
-#: ../admin/wp-slimstat-admin.php:1144
+#: ../admin/wp-slimstat-admin.php:1108
 msgid "Pageview"
 msgstr "PV"
 
-#: ../admin/wp-slimstat-admin.php:1144
+#: ../admin/wp-slimstat-admin.php:1108
 msgid ""
 "A request to load a single HTML file (\"page\"). This should be contrasted "
 "with a \"hit\", which refers to a request for any file from a web server. "
@@ -4000,11 +3113,11 @@ msgstr ""
 "は別物と考えてください。SlimStat は解析コードが実行されるたびに PV を記録しま"
 "す。"
 
-#: ../admin/wp-slimstat-admin.php:1145
+#: ../admin/wp-slimstat-admin.php:1109
 msgid "(Human) Visit"
 msgstr "(人間の) 訪問"
 
-#: ../admin/wp-slimstat-admin.php:1145
+#: ../admin/wp-slimstat-admin.php:1109
 msgid ""
 "A period of interaction between a visitor's browser and your website, ending "
 "when the browser is closed or when the user has been inactive on that site "
@@ -4013,19 +3126,23 @@ msgstr ""
 "SlimStat は、訪問者がページを離脱する、ブラウザを閉じる、または 30 分以上滞在"
 "するまでを 1 回の訪問としてカウントします。"
 
-#: ../admin/wp-slimstat-admin.php:1146
+#: ../admin/wp-slimstat-admin.php:1110
+#, fuzzy
+#| msgid ""
+#| "Any user who has left a comment on your blog, and is thus identified by "
+#| "Wordpress as a returning visitor"
 msgid ""
 "Any user who has left a comment on your blog, and is thus identified by "
-"Wordpress as a returning visitor"
+"WordPress as a returning visitor"
 msgstr ""
 "ブログにコメントを残したユーザーと、WordPress によってリピーターとして確認さ"
 "れた訪問者を表します。"
 
-#: ../admin/wp-slimstat-admin.php:1147
+#: ../admin/wp-slimstat-admin.php:1111
 msgid "Unique IP"
 msgstr "ユニーク IP"
 
-#: ../admin/wp-slimstat-admin.php:1147
+#: ../admin/wp-slimstat-admin.php:1111
 msgid ""
 "Used to differentiate between multiple requests to download a file from one "
 "internet address (IP) and requests originating from many distinct addresses; "
@@ -4037,7 +3154,7 @@ msgstr ""
 "ありません。例えば、同じ人物が職場と自宅から同じサイトを訪れると、ユニーク "
 "IP は 2 としてカウントされます。"
 
-#: ../admin/wp-slimstat-admin.php:1148
+#: ../admin/wp-slimstat-admin.php:1112
 msgid ""
 "the originating IP address of a client connecting to a web server through an "
 "HTTP proxy or load balancer"
@@ -4045,11 +3162,11 @@ msgstr ""
 "HTTP プロキシまたはロードバランサーを通して Web サーバーに接続したクライアン"
 "トの IP アドレスです。"
 
-#: ../admin/wp-slimstat-admin.php:1149
+#: ../admin/wp-slimstat-admin.php:1113
 msgid "Direct Traffic"
 msgstr "直接アクセス"
 
-#: ../admin/wp-slimstat-admin.php:1149
+#: ../admin/wp-slimstat-admin.php:1113
 msgid ""
 "All those people showing up to your Web site by typing in the URL of your "
 "Web site coming or from a bookmark; some people also call this \"default "
@@ -4058,11 +3175,11 @@ msgstr ""
 "アドレスバーにサイト URL を直接打ち込んだ、またはブックマークからサイトを表示"
 "した訪問者を表します。"
 
-#: ../admin/wp-slimstat-admin.php:1150
+#: ../admin/wp-slimstat-admin.php:1114
 msgid "Search Engine"
 msgstr "検索エンジン"
 
-#: ../admin/wp-slimstat-admin.php:1150
+#: ../admin/wp-slimstat-admin.php:1114
 msgid ""
 "Google, Yahoo, MSN, Ask, others; this bucket will include both your organic "
 "as well as your paid (PPC/SEM) traffic, so be aware of that"
@@ -4070,17 +3187,17 @@ msgstr ""
 "Google、Yahoo、MSN、Ask などの検索エンジンです。この値にはオーガニック検索お"
 "よび有料の検索トラフィックが含まれます。"
 
-#: ../admin/wp-slimstat-admin.php:1151 ../admin/wp-slimstat-admin.php:1167
+#: ../admin/wp-slimstat-admin.php:1115 ../admin/wp-slimstat-admin.php:1131
 msgid "Keywords used by your visitors to find your website on a search engine"
 msgstr ""
 "訪問者が検索エンジン上で Web サイトを見つけるために使用したキーワードを入力し"
 "ます。"
 
-#: ../admin/wp-slimstat-admin.php:1152
+#: ../admin/wp-slimstat-admin.php:1116
 msgid "SERP"
 msgstr "SERP"
 
-#: ../admin/wp-slimstat-admin.php:1152
+#: ../admin/wp-slimstat-admin.php:1116
 msgid ""
 "Short for search engine results page, the Web page that a search engine "
 "returns with the results of its search. The value shown represents your rank "
@@ -4090,7 +3207,7 @@ msgstr ""
 "する検索キーワードによって生成される検索結果ページ内で、あなたのサイトがどの"
 "ランク (または位置) に表示されているかを表します。"
 
-#: ../admin/wp-slimstat-admin.php:1153
+#: ../admin/wp-slimstat-admin.php:1117
 msgid ""
 "Any program used for accessing a website; this includes browsers, robots, "
 "spiders and any other program that was used to retrieve information from the "
@@ -4100,7 +3217,7 @@ msgstr ""
 "します。この値にはブラウザのほか、ロボット、スパイダー、クローラーなど、サイ"
 "トから情報を取得するために使用されたあらゆるプログラムが含まれます。"
 
-#: ../admin/wp-slimstat-admin.php:1154
+#: ../admin/wp-slimstat-admin.php:1118
 msgid ""
 "A link from one domain to another is said to be outbound from its source "
 "anchor and inbound to its target. This report lists all the links to other "
@@ -4109,27 +3226,27 @@ msgstr ""
 "外部サイトへの URL が指定されたリンクを表します。このレポートは訪問者によって"
 "クリックされた外部サイトへのリンクを一覧表示します。"
 
-#: ../admin/wp-slimstat-admin.php:1161
+#: ../admin/wp-slimstat-admin.php:1125
 msgid "Basic Filters"
 msgstr "基本フィルター"
 
-#: ../admin/wp-slimstat-admin.php:1164
+#: ../admin/wp-slimstat-admin.php:1128
 msgid "User agent (Firefox, Chrome, ...)"
 msgstr "User Agent (Firefox、Chrome、etc) を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1165
+#: ../admin/wp-slimstat-admin.php:1129
 msgid "2-letter code (us, ru, de, it, ...)"
 msgstr "2桁の国コード (us、ru、de、it、jp、etc) を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1166
+#: ../admin/wp-slimstat-admin.php:1130
 msgid "IP"
 msgstr "IP"
 
-#: ../admin/wp-slimstat-admin.php:1166
+#: ../admin/wp-slimstat-admin.php:1130
 msgid "Visitor's public IP address"
 msgstr "訪問者のグローバル IP アドレスを入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1168
+#: ../admin/wp-slimstat-admin.php:1132
 #, fuzzy
 #| msgid ""
 #| "Please refer to this <a target=\"_blank\" href=\"http://msdn.microsoft."
@@ -4143,7 +3260,7 @@ msgstr ""
 "詳細については<a target=\"_blank\" href=\"http://msdn.microsoft.com/en-us/"
 "library/ee825488(v=cs.20).aspx\">このページ</a>の最初の列を参照してください。"
 
-#: ../admin/wp-slimstat-admin.php:1169
+#: ../admin/wp-slimstat-admin.php:1133
 #, fuzzy
 #| msgid ""
 #| "Accepts identifiers like win7, win98, macosx, ...; please refer to <a "
@@ -4158,45 +3275,49 @@ msgstr ""
 "\"_blank\" href=\"http://php.net/manual/en/function.get-browser.php\">この"
 "ページ</a>を参照してください。"
 
-#: ../admin/wp-slimstat-admin.php:1170
+#: ../admin/wp-slimstat-admin.php:1134
 msgid "URL accessed on your site"
 msgstr "サイト上でアクセスされた URL を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1171
+#: ../admin/wp-slimstat-admin.php:1135
 msgid "Complete address of the referrer page"
 msgstr "参照元ページの URL を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1172
+#: ../admin/wp-slimstat-admin.php:1136
 msgid "Visitor's Name"
 msgstr "訪問者名"
 
-#: ../admin/wp-slimstat-admin.php:1172
+#: ../admin/wp-slimstat-admin.php:1136
+#, fuzzy
+#| msgid ""
+#| "Visitors' names according to the cookie set by Wordpress after they leave "
+#| "a comment"
 msgid ""
-"Visitors' names according to the cookie set by Wordpress after they leave a "
+"Visitors' names according to the cookie set by WordPress after they leave a "
 "comment"
 msgstr ""
 "訪問者がコメントを残した際に保存される cookie に基づく訪問者名を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1180
+#: ../admin/wp-slimstat-admin.php:1144
 msgid "Advanced Filters"
 msgstr "詳細フィルター"
 
-#: ../admin/wp-slimstat-admin.php:1183
+#: ../admin/wp-slimstat-admin.php:1147
 msgid "user agent version (9.0, 11, ...)"
 msgstr "User Agent のバージョン (9.0、11、etc) を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1184
+#: ../admin/wp-slimstat-admin.php:1148
 msgid ""
 "1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = "
 "all others"
 msgstr ""
 "1 = 検索エンジンのクローラー、2 = 携帯端末、3 = RSSリーダー、0 = その他全て"
 
-#: ../admin/wp-slimstat-admin.php:1185
+#: ../admin/wp-slimstat-admin.php:1149
 msgid "Pageview Attributes"
 msgstr "PV 属性"
 
-#: ../admin/wp-slimstat-admin.php:1185
+#: ../admin/wp-slimstat-admin.php:1149
 msgid ""
 "this field is set to <em>[pre]</em> if the resource has been accessed "
 "through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
@@ -4207,19 +3328,19 @@ msgstr ""
 "した機能を通じてリソースがアクセスされた場合、<code>[pre]</code> にセットされ"
 "ます。"
 
-#: ../admin/wp-slimstat-admin.php:1186
+#: ../admin/wp-slimstat-admin.php:1150
 msgid "author associated to that post/page when the resource was accessed"
 msgstr "アクセスされた投稿/ページに関連した投稿者を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1187
+#: ../admin/wp-slimstat-admin.php:1151
 msgid "ID of the category/term associated to the resource, when available"
 msgstr "リソースに紐づくカテゴリー/キーワード IDを入力します (有効な場合)。"
 
-#: ../admin/wp-slimstat-admin.php:1188
+#: ../admin/wp-slimstat-admin.php:1152
 msgid "visitor's originating IP address, if available"
 msgstr "訪問者の送信元 IP を入力します (有効な場合)。"
 
-#: ../admin/wp-slimstat-admin.php:1189
+#: ../admin/wp-slimstat-admin.php:1153
 #, fuzzy
 #| msgid ""
 #| "post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
@@ -4240,16 +3361,16 @@ msgstr ""
 "\" href=\"http://wpdocs.sourceforge.jp/Conditional_Tags\">条件分岐タグ</a>マ"
 "ニュアルページを参照してください。"
 
-#: ../admin/wp-slimstat-admin.php:1190
+#: ../admin/wp-slimstat-admin.php:1154
 msgid "Screen Resolution"
 msgstr "モニタ解像度"
 
-#: ../admin/wp-slimstat-admin.php:1190
+#: ../admin/wp-slimstat-admin.php:1154
 msgid "viewport width and height (1024x768, 800x600, ...)"
 msgstr ""
 "モニタ解像度の幅と高さ (1024x768、800x600、1920x1080、etc) を入力します。"
 
-#: ../admin/wp-slimstat-admin.php:1191
+#: ../admin/wp-slimstat-admin.php:1155
 msgid ""
 "generally used in conjunction with <em>is not empty</em>, identifies human "
 "visitors"
@@ -4257,11 +3378,11 @@ msgstr ""
 "一般的に、人間の訪問者を確認する際 <em>is not empy</em> と合わせて使用されま"
 "す。"
 
-#: ../admin/wp-slimstat-admin.php:1192
+#: ../admin/wp-slimstat-admin.php:1156
 msgid "Date Filters"
 msgstr "期間指定"
 
-#: ../admin/wp-slimstat-admin.php:1192
+#: ../admin/wp-slimstat-admin.php:1156
 msgid ""
 "you can specify the timeframe by entering a number in the <em>interval</em> "
 "field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, "
@@ -4271,11 +3392,11 @@ msgstr ""
 "期間を指定したい場合は、-1 を入力します (例: 日=1、月=1、年=空白、日間=-1で元"
 "旦から現在までのフィルターがセットされる)。"
 
-#: ../admin/wp-slimstat-admin.php:1193
+#: ../admin/wp-slimstat-admin.php:1157
 msgid "SERP Position"
 msgstr "SERP ランキング"
 
-#: ../admin/wp-slimstat-admin.php:1193
+#: ../admin/wp-slimstat-admin.php:1157
 msgid ""
 "set the filter to Referer contains cd=N&, where N is the position you are "
 "looking for"
@@ -4291,7 +3412,7 @@ msgstr ""
 
 #: ../browscap/browser.php:61
 msgid ""
-"This library requires at least PHP 5.5. Please ask your service provider to "
+"This library requires at least PHP 7.1. Please ask your service provider to "
 "upgrade your server accordingly."
 msgstr ""
 
@@ -4362,1537 +3483,2361 @@ msgstr ""
 msgid "The Browscap data file has been installed on your server."
 msgstr ""
 
-#: ../languages/dynamic_strings.php:3
-msgid "xx"
+#: ../languages/dynamic_strings.php:5 ../languages/dynamic_strings.php:8
+#: ../languages/dynamic_strings.php:457 ../languages/dynamic_strings.php:458
+#: ../languages/dynamic_strings.php:459 ../languages/dynamic_strings.php:515
+#: ../languages/dynamic_strings.php:557
+#, fuzzy
+#| msgid "unknown"
+msgid "Unknown"
 msgstr "不明"
 
-#: ../languages/dynamic_strings.php:6
-msgid "aix"
-msgstr "IBM AIX"
-
-#: ../languages/dynamic_strings.php:7
-msgid "amiga"
-msgstr "Amiga"
-
-#: ../languages/dynamic_strings.php:8
-msgid "android"
-msgstr "Android"
-
 #: ../languages/dynamic_strings.php:9
-msgid "beos"
-msgstr "Be OS"
-
-#: ../languages/dynamic_strings.php:10
-msgid "blackberry os"
-msgstr "BlackBerry OS"
+#, fuzzy
+#| msgid "IP Address"
+msgid "Local IP Address"
+msgstr "IP アドレス"
 
 #: ../languages/dynamic_strings.php:11
-#, fuzzy
-msgid "centos"
-msgstr "最新 投稿"
+msgid "Afghanistan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:12
-msgid "chromeos"
+msgid "Aland Islands"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:13
-msgid "commodore64"
+msgid "Albania"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:14
-msgid "cygwin"
-msgstr "Cygwin"
+msgid "Algeria"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:15
-msgid "debian"
-msgstr "Debian"
+msgid "Andorra"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:16
-msgid "digital unix"
-msgstr "Digital Unix"
+msgid "Angola"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:17
-msgid "fedora"
+msgid "Anguilla"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:18
-msgid "firefoxos"
+msgid "Antigua and Barbuda"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:19
-msgid "freebsd"
-msgstr "FreeBSD"
+msgid "Argentina"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:20
-msgid "gentoo"
+msgid "Armenia"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:21
-msgid "hp-ux"
-msgstr "HP-UX"
+msgid "Aruba"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:22
-msgid "ios"
-msgstr "iOS"
+msgid "Australia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:23
-#, fuzzy
-msgid "iphone os"
-msgstr "iPhone OSX"
+msgid "Austria"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:24
-msgid "iphone osx"
-msgstr "iPhone OSX"
+msgid "Azerbaijan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:25
-msgid "irix"
-msgstr "IRIX"
+msgid "Bahamas"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:26
-msgid "java"
-msgstr "Java"
+msgid "Bahrain"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:27
-msgid "kanotix"
+msgid "Bangladesh"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:28
-msgid "knoppix"
+msgid "Barbados"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:29
-msgid "linux"
-msgstr "Linux"
+msgid "Belarus"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:30
-msgid "mac"
-msgstr "Mac"
+msgid "Belgium"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:31
-msgid "mac68k"
-msgstr "Mac 68K"
+msgid "Belize"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:32
-#, fuzzy
-#| msgid "macosx"
-msgid "macos"
-msgstr "Mac OS X"
+msgid "Benin"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:33
-msgid "macosx"
-msgstr "Mac OS X"
+msgid "Bermuda"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:34
-msgid "macppc"
-msgstr "Mac PowerPC"
+msgid "Bhutan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:35
-msgid "mandrake"
+msgid "Bolivia"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:36
-#, fuzzy
-msgid "mandriva"
-msgstr "Android"
-
-#: ../languages/dynamic_strings.php:37
-msgid "mepis"
+msgid "Bosnia and Herzegovina"
 msgstr ""
 
-#: ../languages/dynamic_strings.php:38
+#: ../languages/dynamic_strings.php:37
 #, fuzzy
-msgid "ms-dos"
-msgstr "スペイン語 (ドミニカ共和国)"
+#| msgid "Bots"
+msgid "Botswana"
+msgstr "ボット"
+
+#: ../languages/dynamic_strings.php:38
+msgid "Brazil"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:39
-msgid "netbsd"
-msgstr "NetBSD"
+msgid "Brunei Darussalam"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:40
-msgid "nintendo"
+msgid "Bulgaria"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:41
-msgid "openbsd"
-msgstr "OpenBSD"
+msgid "Burkina Faso"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:42
-msgid "openvms"
-msgstr "Open VMS"
+msgid "Burundi"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:43
-msgid "os/2"
-msgstr "IBM OS/2"
+msgid "Cambodia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:44
-msgid "palm"
-msgstr "Palm"
+msgid "Cameroon"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:45
-#, fuzzy
-msgid "palmos"
-msgstr "Palm"
+msgid "Canada"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:46
-#, fuzzy
-msgid "pclinuxos"
-msgstr "Linux"
+msgid "Cape Verde"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:47
-msgid "playstation"
+msgid "Cayman Islands"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:48
-msgid "powertv"
-msgstr "PowerTV"
+msgid "Central African Republic"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:49
-msgid "redhat"
+msgid "Chad"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:50
-msgid "rim os"
+msgid "Chile"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:51
-msgid "risc os"
-msgstr "Risc OS"
+msgid "China"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:52
-msgid "slackware"
+msgid "Colombia"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:53
-msgid "solaris"
-msgstr "Solaris"
+msgid "Comoros"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:54
-msgid "sunos"
-msgstr "Sun OS"
+msgid "Congo"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:55
-msgid "suse"
+msgid "The Democratic Republic of the Congo"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:56
-msgid "symbianos"
-msgstr "Symbian OS"
+msgid "Costa Rica"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:57
-msgid "ubuntu"
+msgid "Côte d'Ivoire"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:58
-msgid "unix"
-msgstr "Unix"
-
-#: ../languages/dynamic_strings.php:59
-msgid "unknown"
-msgstr "不明"
-
-#: ../languages/dynamic_strings.php:60
-#, fuzzy
-msgid "xandros"
-msgstr "Android"
-
-#: ../languages/dynamic_strings.php:61
-msgid "wap"
-msgstr "WAO"
-
-#: ../languages/dynamic_strings.php:62
-msgid "webos"
-msgstr "Web OS"
-
-#: ../languages/dynamic_strings.php:63
-#, fuzzy
-msgid "win10"
-msgstr "Windows 16-bit"
-
-#: ../languages/dynamic_strings.php:64
-msgid "win16"
-msgstr "Windows 16-bit"
-
-#: ../languages/dynamic_strings.php:65
-msgid "win2000"
-msgstr "Windows 2000"
-
-#: ../languages/dynamic_strings.php:66
-msgid "win2003"
-msgstr "Windows 2003"
-
-#: ../languages/dynamic_strings.php:67
-msgid "win31"
-msgstr "Windows 3.1"
-
-#: ../languages/dynamic_strings.php:68
-msgid "win32"
-msgstr "Windows 32-bit"
-
-#: ../languages/dynamic_strings.php:69 ../languages/dynamic_strings.php:70
-msgid "win7"
-msgstr "Windows 7"
-
-#: ../languages/dynamic_strings.php:71
-msgid "win8"
-msgstr "Windows 8"
-
-#: ../languages/dynamic_strings.php:72
-msgid "win8.1"
-msgstr "Windows 8.1"
-
-#: ../languages/dynamic_strings.php:73
-msgid "win95"
-msgstr "Windows 95"
-
-#: ../languages/dynamic_strings.php:74
-msgid "win98"
-msgstr "Windows 98"
-
-#: ../languages/dynamic_strings.php:75
-msgid "wince"
-msgstr "Windows CE"
-
-#: ../languages/dynamic_strings.php:76
-msgid "winme"
-msgstr "Windows ME"
-
-#: ../languages/dynamic_strings.php:77
-msgid "winnt"
-msgstr "Windows NT"
-
-#: ../languages/dynamic_strings.php:78
-msgid "winphone7"
-msgstr "Windows Phone 7"
-
-#: ../languages/dynamic_strings.php:79
-#, fuzzy
-msgid "winphone7.5"
-msgstr "Windows Phone 7"
-
-#: ../languages/dynamic_strings.php:80
-#, fuzzy
-msgid "winphone8"
-msgstr "Windows Phone 7"
-
-#: ../languages/dynamic_strings.php:81
-#, fuzzy
-msgid "winphone8.1"
-msgstr "Windows Phone 7"
-
-#: ../languages/dynamic_strings.php:82
-msgid "winrt"
+msgid "Croatia"
 msgstr ""
 
+#: ../languages/dynamic_strings.php:59
+msgid "Cuba"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:60
+msgid "Cyprus"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:61
+msgid "Czech Republic"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:62
+msgid "Denmark"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:63
+msgid "Djibouti"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:64
+msgid "Dominica"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:65
+msgid "Dominican Republic"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:66
+msgid "Ecuador"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:67
+msgid "Egypt"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:68
+msgid "El Salvador"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:69
+msgid "Equatorial Guinea"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:70
+msgid "Eritrea"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:71
+msgid "Estonia"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:72
+msgid "Ethiopia"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:73
+msgid "Faroe Islands"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:74
+msgid "Falkland Islands (Malvinas)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:75
+msgid "Fiji"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:76
+msgid "Finland"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:77
+msgid "France"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:78
+msgid "French Guiana"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:79
+msgid "Gabon"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:80
+msgid "Gambia"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:81
+msgid "Georgia"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:82
+#, fuzzy
+#| msgid "Permalink"
+msgid "Germany"
+msgstr "パーマリンク"
+
 #: ../languages/dynamic_strings.php:83
-msgid "winvista"
-msgstr "Windows Vista"
+msgid "Ghana"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:84
-msgid "winxp"
-msgstr "Windows XP"
+msgid "Greece"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:85
-msgid "wyderos"
-msgstr "WyderOS"
+msgid "Greenland"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:86
-msgid "zaurus"
+msgid "Grenada"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:87
+msgid "Guadeloupe"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:88
+msgid "Guatemala"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:89
-msgid "acrobat"
-msgstr "Acrobat"
+msgid "Guinea"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:90
-msgid "director"
-msgstr "Director"
+msgid "Guinea-Bissau"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:91
-msgid "flash"
-msgstr "Flash"
+msgid "Guyana"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:92
-msgid "mediaplayer"
-msgstr "Media Player"
+msgid "Haiti"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:93
-msgid "quicktime"
-msgstr "QuickTime"
+msgid "Honduras"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:94
-msgid "pdfviewer"
+msgid "Hong Kong"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:95
-msgid "real"
-msgstr "Real"
+msgid "Hungary"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:96
-msgid "silverlight"
-msgstr "Silverlight"
+msgid "Iceland"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:97
+msgid "India"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:98
+msgid "Indonesia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:99
-msgid "p-and"
-msgstr "Android"
+msgid "Islamic Republic of Iran"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:100
-msgid "p-bla"
-msgstr "BlackBerry"
+msgid "Iraq"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:101
-msgid "p-chr"
-msgstr "Chrome OS"
+msgid "Ireland"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:102
-msgid "p-fir"
+msgid "Israel"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:103
-msgid "p-fre"
-msgstr "Linux FreeBSD"
+msgid "Italy"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:104
-msgid "p-ios"
-msgstr "Apple iOS"
+msgid "Jamaica"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:105
-msgid "p-jav"
-msgstr "Java-Based OS"
+msgid "Japan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:106
-msgid "p-lin"
-msgstr "Linux"
+msgid "Jordan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:107
-msgid "p-mac"
-msgstr "Apple"
+msgid "Kazakhstan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:108
-msgid "p-rim"
+msgid "Kenya"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:109
-msgid "p-sym"
-msgstr "Symbian OS"
+msgid "Nauru"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:110
-msgid "p-ubu"
+msgid "Democratic People's Republic of Korea"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:111
-msgid "p-unk"
-msgstr "不明"
+msgid "Republic of Korea"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:112
-msgid "p-win"
-msgstr "Microsoft"
+msgid "Kosovo"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:113
+msgid "Kuwait"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:114
+msgid "Kyrgyzstan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:115
-msgid "l-af"
-msgstr "アフリカーンス語"
+msgid "Lao People's Democratic Republic"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:116
-msgid "l-af-za"
-msgstr "アフリカーンス語 (南アフリカ)"
+msgid "Latvia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:117
-msgid "l-ar"
-msgstr "アラビア語"
+msgid "Lebanon"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:118
-msgid "l-ar-ae"
-msgstr "アラビア語 (UAE)"
+msgid "Lesotho"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:119
-msgid "l-ar-bh"
-msgstr "アラビア語 (バーレーン)"
+msgid "Liberia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:120
-msgid "l-ar-dz"
-msgstr "アラビア語 (アルジェリア)"
+msgid "Libyan Arab Jamahiriya"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:121
-msgid "l-ar-eg"
-msgstr "アラビア語 (エジプト)"
+msgid "Liechtenstein"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:122
-msgid "l-ar-iq"
-msgstr "アラビア語 (イラク)"
+msgid "Lithuania"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:123
-msgid "l-ar-jo"
-msgstr "アラビア語 (ヨルダン)"
+msgid "Luxembourg"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:124
-msgid "l-ar-kw"
-msgstr "アラビア語 (クウェート)"
+msgid "The Former Yugoslav Republic of Macedonia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:125
-msgid "l-ar-lb"
-msgstr "アラビア語 (レバノン)"
+msgid "Madagascar"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:126
-msgid "l-ar-ly"
-msgstr "アラビア語 (リビア)"
+msgid "Malawi"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:127
-msgid "l-ar-ma"
-msgstr "アラビア語 (モロッコ)"
+msgid "Malaysia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:128
-msgid "l-ar-om"
-msgstr "アラビア語 (オマーン)"
+msgid "Mali"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:129
-msgid "l-ar-qa"
-msgstr "アラビア語 (カタール)"
+msgid "Malta"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:130
-msgid "l-ar-sa"
-msgstr "アラビア語 (サウジアラビア)"
+msgid "Martinique"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:131
-msgid "l-ar-sy"
-msgstr "アラビア語 (シリア)"
+msgid "Mauritania"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:132
-msgid "l-ar-tn"
-msgstr "アラビア語 (チュニジア)"
+msgid "Mauritius"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:133
-msgid "l-ar-ye"
-msgstr "アラビア語 (イエメン)"
+msgid "Mexico"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:134
-msgid "l-az"
-msgstr "アゼルバイジャン語"
+msgid "Moldova"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:135
-msgid "l-az-az"
-msgstr "アゼルバイジャン語 (ラテン)"
+msgid "Mongolia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:136
-msgid "l-be"
-msgstr "ベラルーシ語"
+msgid "Montenegro"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:137
-msgid "l-be-by"
-msgstr "ベラルーシ語 (ベラルーシ)"
+msgid "Montserrat"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:138
-msgid "l-bg"
-msgstr "ブルガリア語"
+msgid "Morocco"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:139
-msgid "l-bg-bg"
-msgstr "ブルガリア語 (ブルガリア)"
+msgid "Mozambique"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:140
-msgid "l-bs-ba"
-msgstr "ボスニア語"
+msgid "Myanmar"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:141
-msgid "l-ca"
-msgstr "カタルーニャ語"
+msgid "Namibia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:142
-msgid "l-ca-es"
-msgstr "バレンシア語"
+msgid "Nepal"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:143
-msgid "l-cs"
-msgstr "チェコ語"
+#, fuzzy
+#| msgid "Other Humans"
+msgid "Netherlands"
+msgstr "その他の人間"
 
 #: ../languages/dynamic_strings.php:144
-msgid "l-cs-cz"
-msgstr "チェコ語 (チェコ共和国)"
+msgid "New Caledonia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:145
-msgid "l-cy"
-msgstr "ウェールズ語"
+msgid "New Zealand"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:146
-msgid "l-cy-gb"
-msgstr "ウェールズ語 (イギリス)"
+msgid "Nicaragua"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:147
-msgid "l-da"
-msgstr "デンマーク語"
+msgid "Niger"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:148
-msgid "l-da-dk"
-msgstr "デンマーク語 (デンマーク)"
+msgid "Nigeria"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:149
-msgid "l-de"
-msgstr "ドイツ語"
+msgid "Norway"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:150
-msgid "l-de-at"
-msgstr "ドイツ語 (オーストリア)"
+msgid "Oman"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:151
-msgid "l-de-ch"
-msgstr "ドイツ語 (スイス)"
+msgid "Pakistan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:152
-msgid "l-de-de"
-msgstr "ドイツ語 (ドイツ)"
+msgid "Palau"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:153
-msgid "l-de-li"
-msgstr "ドイツ語 (リヒテンシュタイン)"
+msgid "Occupied Palestinian Territory"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:154
-msgid "l-de-lu"
-msgstr "ドイツ語 (ルクセンブルク)"
+msgid "Panama"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:155
-msgid "l-dv"
-msgstr "ディベヒ語"
+msgid "Papua New Guinea"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:156
-msgid "l-dv-mv"
-msgstr "ディベヒ語 (モルディブ)"
+msgid "Paraguay"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:157
-msgid "l-el"
-msgstr "ギリシャ語"
+msgid "Peru"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:158
-msgid "l-el-gr"
-msgstr "ギリシャ語 (ギリシャ)"
+msgid "Philippines"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:159
-msgid "l-en"
-msgstr "英語"
+msgid "Poland"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:160
-msgid "l-en-au"
-msgstr "英語 (オーストラリア)"
+msgid "Portugal"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:161
-msgid "l-en-bz"
-msgstr "英語 (ベリゼ)"
+msgid "Puerto Rico"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:162
-msgid "l-en-ca"
-msgstr "英語 (カナダ)"
+msgid "Qatar"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:163
-msgid "l-en-cb"
-msgstr "英語 (西インド諸島)"
+msgid "Réunion"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:164
-msgid "l-en-gb"
-msgstr "英語 (イギリス)"
+msgid "Romania"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:165
-msgid "l-en-ie"
-msgstr "英語 (アイルランド)"
+#, fuzzy
+#| msgid "Session Duration"
+msgid "Russian Federation"
+msgstr "セッション時間"
 
 #: ../languages/dynamic_strings.php:166
-msgid "l-en-jm"
-msgstr "英語 (ジャマイカ)"
+msgid "Rwanda"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:167
-msgid "l-en-nz"
-msgstr "英語 (ニュージーランド)"
+msgid "Saint Kitts and Nevis"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:168
-msgid "l-en-ph"
-msgstr "英語 (フィリピン)"
+msgid "Saint Lucia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:169
-msgid "l-en-tt"
-msgstr "英語 (トリニダード・トバゴ)"
+msgid "Saint Martin"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:170
-msgid "l-en-us"
-msgstr "英語 (アメリカ合衆国)"
+msgid "Saint Vincent and the Grenadines"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:171
-msgid "l-en-za"
-msgstr "英語 (南アフリカ)"
+msgid "Samoa"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:172
-msgid "l-en-zw"
-msgstr "英語 (ジンバブエ)"
+msgid "Sao Tome and Principe"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:173
-msgid "l-eo"
-msgstr "エスペラント語"
+msgid "Saudi Arabia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:174
-msgid "l-es"
-msgstr "スペイン語"
+msgid "Senegal"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:175
-msgid "l-es-ar"
-msgstr "スペイン語 (アルゼンチン)"
+msgid "Serbia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:176
-msgid "l-es-bo"
-msgstr "スペイン語 (ボリビア)"
+msgid "Sierra Leone"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:177
-msgid "l-es-cl"
-msgstr "スペイン語 (チリ)"
+msgid "Singapore"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:178
-msgid "l-es-co"
-msgstr "スペイン語 (コロンビア)"
+msgid "Slovakia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:179
-msgid "l-es-cr"
-msgstr "スペイン語 (コスタリカ)"
+msgid "Slovenia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:180
-msgid "l-es-do"
-msgstr "スペイン語 (ドミニカ共和国)"
+msgid "Solomon Islands"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:181
-msgid "l-es-ec"
-msgstr "スペイン語 (エクアドル)"
+msgid "Somalia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:182
-msgid "l-es-es"
-msgstr "スペイン語 (スペイン)"
+msgid "South Africa"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:183
-msgid "l-es-gt"
-msgstr "スペイン語 (グアテマラ)"
+msgid "South Georgia and the South Sandwich Islands"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:184
-msgid "l-es-hn"
-msgstr "スペイン語 (ホンジュラス)"
+msgid "Spain"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:185
-msgid "l-es-mx"
-msgstr "スペイン語 (メキシコ)"
+msgid "Sri Lanka"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:186
-msgid "l-es-ni"
-msgstr "スペイン語 (ニカラグア)"
+msgid "Seychelles"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:187
-msgid "l-es-pa"
-msgstr "スペイン語 (パナマ)"
+msgid "Sudan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:188
-msgid "l-es-pe"
-msgstr "スペイン語 (ペルー)"
+msgid "South Sudan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:189
-msgid "l-es-pr"
-msgstr "スペイン語 (プエルトリコ)"
+msgid "Suriname"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:190
-msgid "l-es-py"
-msgstr "スペイン語 (パラグアイ)"
+msgid "Svalbard and Jan Mayen"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:191
-msgid "l-es-sv"
-msgstr "スペイン語 (エルサルバドル)"
+msgid "Swaziland"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:192
-msgid "l-es-uy"
-msgstr "スペイン語 (ウルグアイ)"
+msgid "Sweden"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:193
-msgid "l-es-ve"
-msgstr "スペイン語 (ベネズエラ)"
+msgid "Switzerland"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:194
-msgid "l-et"
-msgstr "エストニア語"
+msgid "Syrian Arab Republic"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:195
-msgid "l-et-ee"
-msgstr "エストニア語 (エストニア)"
+msgid "Taiwan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:196
-msgid "l-eu"
-msgstr "バスク語"
+msgid "Tajikistan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:197
-msgid "l-eu-es"
-msgstr "バスク語 (スペイン)"
+msgid "United Republic of Tanzania"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:198
-msgid "l-fa"
-msgstr "ペルシャ語"
+msgid "Thailand"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:199
-msgid "l-fa-ir"
-msgstr "ペルシャ語 (イラン)"
+msgid "Timor-Leste"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:200
-msgid "l-fi"
-msgstr "フィンランド語"
+msgid "Togo"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:201
-msgid "l-fi-fi"
-msgstr "フィンランド語 (フィンランド)"
+msgid "Tonga"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:202
-msgid "l-fo"
-msgstr "フェロー語"
+msgid "Trinidad and Tobago"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:203
-msgid "l-fo-fo"
-msgstr "フェロー語 (フェロー諸島)"
+msgid "Tunisia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:204
-msgid "l-fr"
-msgstr "フランス語"
+msgid "Turkey"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:205
-msgid "l-fr-be"
-msgstr "フランス語 (ベルギー)"
+msgid "Turkmenistan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:206
-msgid "l-fr-ca"
-msgstr "フランス語 (カナダ)"
+msgid "Turks and Caicos Islands"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:207
-msgid "l-fr-ch"
-msgstr "フランス語 (スイス)"
+msgid "Uganda"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:208
-msgid "l-fr-fr"
-msgstr "フランス語 (フランス)"
+msgid "Ukraine"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:209
-msgid "l-fr-lu"
-msgstr "フランス語 (ルクセンブルク)"
+msgid "United Arab Emirates"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:210
-msgid "l-fr-mc"
-msgstr "フランス語 (モナコ)"
+msgid "United Kingdom"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:211
-msgid "l-gl"
-msgstr "ガリシア語"
+msgid "United States"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:212
-msgid "l-gl-es"
-msgstr "ガリシア語 (スペイン)"
+msgid "Uruguay"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:213
-msgid "l-gu"
-msgstr "グジャラティ語"
+msgid "Uzbekistan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:214
-msgid "l-gu-in"
-msgstr "グジャラティ語 (インド)"
+msgid "Vanuatu"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:215
-msgid "l-he"
-msgstr "ヘブライ語"
+msgid "Venezuela"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:216
-msgid "l-he-il"
-msgstr "ヘブライ語 (イスラエル)"
+#, fuzzy
+#| msgid "Visitor's Name"
+msgid "Viet Nam"
+msgstr "訪問者名"
 
 #: ../languages/dynamic_strings.php:217
-msgid "l-hi"
-msgstr "ヒンディー語"
+msgid "British Virgin Islands"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:218
-msgid "l-hi-in"
-msgstr "ヒンディー語 (インド)"
+msgid "U.S. Virgin Islands"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:219
-msgid "l-hr"
-msgstr "クロアチア語"
+msgid "Western Sahara"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:220
-msgid "l-hr-ba"
-msgstr "クロアチア語 (ボスニア)"
+msgid "Yemen"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:221
-msgid "l-hr-hr"
-msgstr "クロアチア語 (クロアチア)"
+msgid "Zambia"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:222
-msgid "l-hu"
-msgstr "ハンガリー語"
+msgid "Zimbabwe"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:223
-msgid "l-hu-hu"
-msgstr "ハンガリー語 (ハンガリー)"
+msgid "Guernsey"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:224
-msgid "l-hy"
-msgstr "アルメニア語"
+msgid "Jersey"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:225
-msgid "l-hy-am"
-msgstr "アルメニア語 (アルメニア)"
+msgid "Isle of Man"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:226
-msgid "l-id"
-msgstr "インドネシア語"
+msgid "Maldives"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:227
-msgid "l-id-id"
-msgstr "インドネシア語 (インドネシア)"
-
-#: ../languages/dynamic_strings.php:228
-msgid "l-is"
-msgstr "アイスランド語"
-
-#: ../languages/dynamic_strings.php:229
-msgid "l-is-is"
-msgstr "アイスランド語 (アイスランド)"
+msgid "Europe"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:230
-msgid "l-it"
-msgstr "イタリア語"
+msgid "Afrikaans"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:231
-msgid "l-it-ch"
-msgstr "イタリア語 (スイス)"
+msgid "Afrikaans (South Africa)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:232
-msgid "l-it-it"
-msgstr "イタリア語 (イタリア)"
+msgid "Arabic"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:233
-msgid "l-ja"
-msgstr "日本語"
+msgid "Arabic (U.A.E.)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:234
-msgid "l-ja-jp"
-msgstr "日本語 (日本)"
+msgid "Arabic (Bahrain)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:235
-msgid "l-ka"
-msgstr "グルジア語"
+msgid "Arabic (Algeria)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:236
-msgid "l-ka-ge"
-msgstr "グルジア語 (グルジア)"
+msgid "Arabic (Egypt)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:237
-msgid "l-kk"
-msgstr "カザフ語"
+msgid "Arabic (Iraq)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:238
-msgid "l-kk-kz"
-msgstr "カザフ語 (カザフスタン)"
+msgid "Arabic (Jordan)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:239
-msgid "l-kn"
-msgstr "カンナダ語"
+msgid "Arabic (Kuwait)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:240
-msgid "l-kn-in"
-msgstr "カンナダ語 (インド)"
+msgid "Arabic (Lebanon)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:241
-msgid "l-ko"
-msgstr "韓国語"
+msgid "Arabic (Libya)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:242
-msgid "l-ko-kr"
-msgstr "韓国語 (韓国)"
+msgid "Arabic (Morocco)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:243
-msgid "l-kok"
-msgstr "コンカニ語"
+msgid "Arabic (Oman)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:244
-msgid "l-kok-in"
-msgstr "コンカニ語 (インド)"
+msgid "Arabic (Qatar)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:245
-msgid "l-ky"
-msgstr "キルギス語"
+msgid "Arabic (Saudi Arabia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:246
-msgid "l-ky-kg"
-msgstr "キルギス語 (カザフスタン)"
+msgid "Arabic (Syria)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:247
-msgid "l-lt"
-msgstr "リトアニア語"
+msgid "Arabic (Tunisia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:248
-msgid "l-lt-lt"
-msgstr "リトアニア語 (リトアニア)"
+msgid "Arabic (Yemen)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:249
-msgid "l-lv"
-msgstr "ラトビア語"
+msgid "Azeri (Latin)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:250
-msgid "l-lv-lv"
-msgstr "ラトビア語 (ラトビア)"
+msgid "Azeri (Latin) (Azerbaijan)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:251
-msgid "l-mi"
-msgstr "マオリ語"
+msgid "Belarusian"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:252
-msgid "l-mi-nz"
-msgstr "マオリ語 (ニュージーランド)"
+msgid "Belarusian (Belarus)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:253
-msgid "l-mk"
-msgstr "マケドニア語"
+msgid "Bulgarian"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:254
-msgid "l-mk-ml"
-msgstr "マケドニア語 (マケドニア)"
+msgid "Bulgarian (Bulgaria)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:255
-msgid "l-mn"
-msgstr "モンゴル語"
+msgid "Bosnian (Bosnia and Herzegovina)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:256
-msgid "l-mn-mn"
-msgstr "モンゴル語 (モンゴル)"
+msgid "Catalan"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:257
-msgid "l-mr"
-msgstr "マラーティー語"
+msgid "Catalan (Spain)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:258
-msgid "l-mr-in"
-msgstr "マラーティー語 (インド)"
+msgid "Czech"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:259
-msgid "l-ms"
-msgstr "マレー語"
+msgid "Czech (Czech Republic)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:260
-msgid "l-ms-bn"
-msgstr "マレー語 (ブルネイ)"
+msgid "Welsh"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:261
-msgid "l-ms-my"
-msgstr "マレー語 (マレーシア)"
+msgid "Welsh (United Kingdom)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:262
-msgid "l-mt"
-msgstr "マルタ語"
+msgid "Danish"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:263
-msgid "l-mt-mt"
-msgstr "マルタ語 (マルタ)"
+msgid "Danish (Denmark)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:264
-msgid "l-nb"
-msgstr "ノルウェー語"
+#, fuzzy
+#| msgid "Permalink"
+msgid "German"
+msgstr "パーマリンク"
 
 #: ../languages/dynamic_strings.php:265
-msgid "l-nb-no"
-msgstr "ノルウェー語 (ノルウェー)"
+msgid "German (Austria)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:266
-msgid "l-nl"
-msgstr "オランダ語"
+msgid "German (Switzerland)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:267
-msgid "l-nl-be"
-msgstr "オランダ語 (ベルギー)"
+msgid "German (Germany)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:268
-msgid "l-nl-nl"
-msgstr "オランダ語 (オランダ)"
+msgid "German (Liechtenstein)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:269
-msgid "l-nn-no"
-msgstr "ノルウェー語 (ノルウェー)"
+msgid "German (Luxembourg)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:270
-msgid "l-ns"
+msgid "Divehi"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:271
-msgid "l-ns-za"
+msgid "Divehi (Maldives)"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:272
-msgid "l-pa"
-msgstr "パンジャーブ語"
+msgid "Greek"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:273
-msgid "l-pa-in"
-msgstr "パンジャーブ語 (インド)"
+msgid "Greek (Greece)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:274
-msgid "l-pl"
-msgstr "ポーランド語"
+msgid "English"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:275
-msgid "l-pl-pl"
-msgstr "ポーランド語 (ポーランド)"
+msgid "English (Australia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:276
-msgid "l-ps"
-msgstr "パシュトー語"
+msgid "English (Belize)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:277
-msgid "l-ps-ar"
-msgstr "パシュトー語 (アフガニスタン)"
+msgid "English (Canada)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:278
-msgid "l-pt"
-msgstr "ポルトガル語"
+msgid "English (Caribbean)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:279
-msgid "l-pt-br"
-msgstr "ポルトガル語 (ブラジル)"
+msgid "English (United Kingdom)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:280
-msgid "l-pt-pt"
-msgstr "ポルトガル語 (ポルトガル)"
+msgid "English (Ireland)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:281
-msgid "l-qu"
-msgstr "ケチュア語"
+msgid "English (Jamaica)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:282
-msgid "l-qu-bo"
-msgstr "ケチュア語 (ボリビア)"
+msgid "English (New Zealand)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:283
-msgid "l-qu-ec"
-msgstr "ケチュア語 (エクアドル)"
+msgid "English (Republic of the Philippines)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:284
-msgid "l-qu-pe"
-msgstr "ケチュア語 (ペルー)"
+msgid "English (Trinidad and Tobago)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:285
-msgid "l-ro"
-msgstr "ルーマニア語"
+msgid "English (United States)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:286
-msgid "l-ro-ro"
-msgstr "ルーマニア語 (ルーマニア)"
+msgid "English (South Africa)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:287
-msgid "l-ru"
-msgstr "ロシア語"
+msgid "English (Zimbabwe)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:288
-msgid "l-ru-ru"
-msgstr "ロシア語 (ロシア)"
+msgid "Esperanto"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:289
-msgid "l-sa"
+msgid "Spanish"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:290
-msgid "l-sa-in"
+msgid "Spanish (Argentina)"
 msgstr ""
 
 #: ../languages/dynamic_strings.php:291
-msgid "l-se"
-msgstr "北部サーミ語"
+msgid "Spanish (Bolivia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:292
-msgid "l-se-fi"
-msgstr "北部サーミ語 (フィンランド)"
+msgid "Spanish (Chile)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:293
-msgid "l-se-no"
-msgstr "北部サーミ語 (ノルウェー)"
+msgid "Spanish (Colombia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:294
-msgid "l-se-se"
-msgstr "北部サーミ語 (スウェーデン)"
+msgid "Spanish (Costa Rica)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:295
-msgid "l-sk"
-msgstr "スロバキア語"
+msgid "Spanish (Dominican Republic)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:296
-msgid "l-sk-sk"
-msgstr "スロバキア語 (スロバキア)"
+msgid "Spanish (Ecuador)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:297
-msgid "l-sl"
-msgstr "スロベニア語"
+msgid "Spanish (Spain)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:298
-msgid "l-sl-si"
-msgstr "スロベニア語 (スロベニア)"
+msgid "Spanish (Guatemala)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:299
-msgid "l-sq"
-msgstr "アルバニア語"
+msgid "Spanish (Honduras)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:300
-msgid "l-sq-al"
-msgstr "アルバニア語 (アルバニア)"
+msgid "Spanish (Mexico)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:301
-msgid "l-sr-ba"
-msgstr "セルビア語 (ボスニア・ヘルツェゴヴィナ)"
+msgid "Spanish (Nicaragua)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:302
-msgid "l-sr-sp"
-msgstr "セルビア語 (セルビア・モンテネグロ)"
+msgid "Spanish (Panama)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:303
-msgid "l-sv"
-msgstr "スウェーデン語"
+msgid "Spanish (Peru)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:304
-msgid "l-sv-fi"
-msgstr "スウェーデン語 (フィンランド)"
+msgid "Spanish (Puerto Rico)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:305
-msgid "l-sv-se"
-msgstr "スウェーデン語 (スウェーデン)"
+msgid "Spanish (Paraguay)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:306
-msgid "l-sw"
-msgstr "スワヒリ語"
+msgid "Spanish (El Salvador)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:307
-msgid "l-sw-ke"
-msgstr "スワヒリ語 (ケニア)"
+msgid "Spanish (Uruguay)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:308
-msgid "l-ta"
-msgstr "タミル語"
+msgid "Spanish (Venezuela)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:309
-msgid "l-ta-in"
-msgstr "タミル語 (インド)"
+msgid "Estonian"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:310
-msgid "l-te"
-msgstr "テルグ語"
+msgid "Estonian (Estonia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:311
-msgid "l-te-in"
-msgstr "テルグ語 (インド)"
+msgid "Basque"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:312
-msgid "l-th"
-msgstr "タイ語"
+msgid "Basque (Spain)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:313
-msgid "l-th-th"
-msgstr "タイ語 (タイ)"
+msgid "Farsi"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:314
-msgid "l-tl"
-msgstr "タガログ語"
+msgid "Farsi (Iran)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:315
-msgid "l-tl-ph"
-msgstr "タガログ語 (フィリピン)"
+msgid "Finnish"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:316
-msgid "l-tn"
-msgstr "ツワナ語"
+msgid "Finnish (Finland)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:317
-msgid "l-tn-za"
-msgstr "ツワナ語 (南アフリカ)"
+msgid "Faroese"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:318
-msgid "l-tr"
-msgstr "トルコ語"
+msgid "Faroese (Faroe Islands)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:319
-msgid "l-tr-tr"
-msgstr "トルコ語 (トルコ)"
+msgid "French"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:320
-msgid "l-tt"
-msgstr "タタール語"
+msgid "French (Belgium)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:321
-msgid "l-tt-ru"
-msgstr "タタール語 (ロシア)"
+msgid "French (Canada)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:322
-msgid "l-ts"
-msgstr "ツォンガ語"
+msgid "French (Switzerland)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:323
-msgid "l-uk"
-msgstr "ウクライナ語"
+msgid "French (France)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:324
-msgid "l-uk-ua"
-msgstr "ウクライナ語 (ウクライナ)"
+msgid "French (Luxembourg)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:325
-msgid "l-ur"
-msgstr "ウルドゥー語"
+msgid "French (Principality of Monaco)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:326
-msgid "l-ur-pk"
-msgstr "ウルドゥー語 (パキスタン)"
+msgid "Galician"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:327
-msgid "l-uz"
-msgstr "ウズベク語"
+msgid "Galician (Spain)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:328
-msgid "l-uz-uz"
-msgstr "ウズベク語 (ウズベキスタン)"
+msgid "Gujarati"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:329
-msgid "l-vi"
-msgstr "ベトナム語"
+msgid "Gujarati (India)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:330
-msgid "l-vi-vn"
-msgstr "ベトナム語 (ベトナム)"
+msgid "Hebrew"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:331
-msgid "l-xh"
-msgstr "コサ語"
+msgid "Hebrew (Israel)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:332
-msgid "l-xh-za"
-msgstr "コサ語 (南アフリカ)"
+msgid "Hindi"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:333
-msgid "l-zh"
-msgstr "中国語"
+msgid "Hindi (India)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:334
-msgid "l-zh-cn"
-msgstr "中国語 (簡体字)"
+msgid "Croatian"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:335
-msgid "l-zh-hk"
-msgstr "中国語 (香港)"
+msgid "Croatian (Bosnia and Herzegovina)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:336
-msgid "l-zh-mo"
-msgstr "中国語 (マカオ)"
+msgid "Croatian (Croatia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:337
-msgid "l-zh-sg"
-msgstr "中国語 (シンガポール)"
+msgid "Hungarian"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:338
-msgid "l-zh-tw"
-msgstr "中国語 (繁体字)"
+msgid "Hungarian (Hungary)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:339
-msgid "l-zu"
-msgstr "ズールー語"
+msgid "Armenian"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:340
-msgid "l-zu-za"
-msgstr "ズールー語 (南アフリカ)"
+msgid "Armenian (Armenia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:341
+msgid "Indonesian"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:342
-msgid "l-empty"
-msgstr "不明"
+msgid "Indonesian (Indonesia)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:343
-msgid "l-xx"
-msgstr "不明"
+msgid "Icelandic"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:344
+msgid "Icelandic (Iceland)"
+msgstr ""
 
 #: ../languages/dynamic_strings.php:345
-msgid "c-xy"
-msgstr "ローカル IP"
+msgid "Italian"
+msgstr ""
 
-#: ../wp-slimstat.php:139 ../wp-slimstat.php:255
+#: ../languages/dynamic_strings.php:346
+msgid "Italian (Switzerland)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:347
+msgid "Italian (Italy)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:348
+msgid "Japanese"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:349
+msgid "Japanese (Japan)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:350
+msgid "Georgian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:351
+msgid "Georgian (Georgia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:352
+msgid "Kazakh"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:353
+msgid "Kazakh (Kazakhstan)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:354
+msgid "Kannada"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:355
+msgid "Kannada (India)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:356
+msgid "Korean"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:357
+msgid "Korean (Korea)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:358
+msgid "Konkani"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:359
+msgid "Konkani (India)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:360
+msgid "Kyrgyz"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:361
+msgid "Kyrgyz (Kyrgyzstan)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:362
+msgid "Lithuanian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:363
+msgid "Lithuanian (Lithuania)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:364
+msgid "Latvian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:365
+msgid "Latvian (Latvia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:366
+msgid "Maori"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:367
+msgid "Maori (New Zealand)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:368
+msgid "FYRO Macedonian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:369
+msgid "FYRO Macedonian (Former Yugoslav Republic of Macedonia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:370
+msgid "Mongolian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:371
+msgid "Mongolian (Mongolia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:372
+msgid "Marathi"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:373
+msgid "Marathi (India)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:374
+msgid "Malay"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:375
+msgid "Malay (Brunei Darussalam)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:376
+msgid "Malay (Malaysia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:377
+msgid "Maltese"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:378
+msgid "Maltese (Malta)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:379
+msgid "Norwegian (Bokm?l)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:380
+msgid "Norwegian (Bokm?l) (Norway)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:381
+msgid "Dutch"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:382
+msgid "Dutch (Belgium)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:383
+msgid "Dutch (Netherlands)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:384
+msgid "Norwegian (Nynorsk) (Norway)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:385
+msgid "Northern Sotho"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:386
+msgid "Northern Sotho (South Africa)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:387
+msgid "Punjabi"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:388
+msgid "Punjabi (India)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:389
+msgid "Polish"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:390
+msgid "Polish (Poland)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:391
+msgid "Pashto"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:392
+msgid "Pashto (Afghanistan)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:393
+msgid "Portuguese"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:394
+msgid "Portuguese (Brazil)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:395
+msgid "Portuguese (Portugal)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:396
+msgid "Quechua"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:397
+msgid "Quechua (Bolivia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:398
+msgid "Quechua (Ecuador)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:399
+msgid "Quechua (Peru)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:400
+msgid "Romanian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:401
+msgid "Romanian (Romania)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:402
+msgid "Russian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:403
+msgid "Russian (Russia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:404
+msgid "Sanskrit"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:405
+msgid "Sanskrit (India)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:406
+msgid "Sami (Northern)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:407
+msgid "Sami (Northern) (Finland)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:408
+msgid "Sami (Northern) (Norway)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:409
+msgid "Sami (Northern) (Sweden)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:410
+msgid "Slovak"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:411
+msgid "Slovak (Slovakia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:412
+msgid "Slovenian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:413
+msgid "Slovenian (Slovenia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:414
+msgid "Albanian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:415
+msgid "Albanian (Albania)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:416
+msgid "Serbian (Latin) (Bosnia and Herzegovina)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:417
+msgid "Serbian (Serbia and Montenegro)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:418
+msgid "Serbian (Latin) (Serbia and Montenegro)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:419
+msgid "Swedish"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:420
+msgid "Swedish (Finland)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:421
+msgid "Swedish (Sweden)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:422
+msgid "Swahili"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:423
+msgid "Swahili (Kenya)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:424
+msgid "Tamil"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:425
+msgid "Tamil (India)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:426
+msgid "Telugu"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:427
+msgid "Telugu (India)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:428
+msgid "Thai"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:429
+msgid "Thai (Thailand)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:430
+msgid "Tagalog"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:431
+msgid "Tagalog (Philippines)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:432
+msgid "Tswana"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:433
+msgid "Tswana (South Africa)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:434
+msgid "Turkish"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:435
+msgid "Turkish (Turkey)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:436
+msgid "Tatar"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:437
+msgid "Tatar (Russia)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:438
+msgid "Tsonga"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:439
+msgid "Ukrainian"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:440
+msgid "Ukrainian (Ukraine)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:441
+msgid "Urdu"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:442
+msgid "Urdu (Islamic Republic of Pakistan)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:443
+msgid "Uzbek (Latin)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:444
+msgid "Uzbek (Cyrillic) (Uzbekistan)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:445
+#, fuzzy
+msgid "Vietnamese"
+msgstr "トップ ユーザー"
+
+#: ../languages/dynamic_strings.php:446
+msgid "Vietnamese (Viet Nam)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:447
+msgid "Xhosa"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:448
+msgid "Xhosa (South Africa)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:449
+msgid "Chinese"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:450
+msgid "Chinese (S)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:451
+msgid "Chinese (Hong Kong)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:452
+msgid "Chinese (Macau)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:453
+msgid "Chinese (Singapore)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:454
+msgid "Chinese (T)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:455
+msgid "Zulu"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:456
+msgid "Zulu (South Africa)"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:462
+msgid "IBM AIX"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:463
+#, fuzzy
+#| msgid "amiga"
+msgid "Amiga"
+msgstr "Amiga"
+
+#: ../languages/dynamic_strings.php:464 ../languages/dynamic_strings.php:545
+#, fuzzy
+#| msgid "android"
+msgid "Android"
+msgstr "Android"
+
+#: ../languages/dynamic_strings.php:465
+msgid "BeOS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:466
+#, fuzzy
+#| msgid "blackberry os"
+msgid "BlackBerry OS"
+msgstr "BlackBerry OS"
+
+#: ../languages/dynamic_strings.php:467
+msgid "CentOS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:468
+msgid "ChromeOS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:469
+msgid "Commodore 64"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:470
+#, fuzzy
+#| msgid "cygwin"
+msgid "Cygwin"
+msgstr "Cygwin"
+
+#: ../languages/dynamic_strings.php:471
+#, fuzzy
+#| msgid "debian"
+msgid "Debian"
+msgstr "Debian"
+
+#: ../languages/dynamic_strings.php:472
+#, fuzzy
+#| msgid "digital unix"
+msgid "Digital Unix"
+msgstr "Digital Unix"
+
+#: ../languages/dynamic_strings.php:473
+msgid "Fedora"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:474
+msgid "Firefox OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:475
+msgid "FreeBSD"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:476
+#, fuzzy
+msgid "Gentoo"
+msgstr "最新 投稿"
+
+#: ../languages/dynamic_strings.php:477
+msgid "HP-UX"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:478 ../languages/dynamic_strings.php:479
+#, fuzzy
+msgid "iPhone OS"
+msgstr "iPhone OSX"
+
+#: ../languages/dynamic_strings.php:480
+#, fuzzy
+msgid "iPhone OS X"
+msgstr "iPhone OSX"
+
+#: ../languages/dynamic_strings.php:481
+msgid "SGI / IRIX"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:482 ../languages/dynamic_strings.php:513
+msgid "Java"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:483
+msgid "Kanotix Linux"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:484
+msgid "Knoppix Linux"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:485
+msgid "Linux Generic"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:486
+#, fuzzy
+#| msgid "mac"
+msgid "Mac"
+msgstr "Mac"
+
+#: ../languages/dynamic_strings.php:487
+msgid "Mac 68k"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:488 ../languages/dynamic_strings.php:489
+msgid "Mac OS X"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:490
+msgid "Mac PowerPC"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:491
+msgid "Mandrake Linux"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:492 ../languages/dynamic_strings.php:494
+msgid "MS-DOS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:493
+msgid "MEPIS Linux"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:495
+msgid "NetBSD"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:496
+msgid "Nintendo"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:497
+msgid "OpenBSD"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:498
+msgid "OpenVMS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:499
+msgid "IBM OS/2"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:500 ../languages/dynamic_strings.php:501
+msgid "Palm OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:502
+msgid "PCLinux OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:503
+msgid "Playstation"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:504
+msgid "PowerTV"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:505
+msgid "RedHat Linux"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:506 ../languages/dynamic_strings.php:554
+#, fuzzy
+#| msgid "blackberry os"
+msgid "Blackberry"
+msgstr "BlackBerry OS"
+
+#: ../languages/dynamic_strings.php:507
+msgid "Risc OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:508
+msgid "Slackware Linux"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:509
+#, fuzzy
+#| msgid "solaris"
+msgid "Solaris"
+msgstr "Solaris"
+
+#: ../languages/dynamic_strings.php:510
+msgid "Sun OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:511
+msgid "SuSE Linux"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:512 ../languages/dynamic_strings.php:555
+#, fuzzy
+#| msgid "symbianos"
+msgid "Symbian OS"
+msgstr "Symbian OS"
+
+#: ../languages/dynamic_strings.php:514
+msgid "Unix"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:516
+#, fuzzy
+msgid "Xandros Linux"
+msgstr "Android"
+
+#: ../languages/dynamic_strings.php:517
+msgid "WAP"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:518
+msgid "WebOS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:519
+#, fuzzy
+msgid "Windows 10"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:520
+msgid "Windows 16-bit"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:521
+#, fuzzy
+#| msgid "win2000"
+msgid "Windows 2000"
+msgstr "Windows 2000"
+
+#: ../languages/dynamic_strings.php:522
+#, fuzzy
+#| msgid "win2003"
+msgid "Windows 2003"
+msgstr "Windows 2003"
+
+#: ../languages/dynamic_strings.php:523
+msgid "Windows 3.1"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:524
+msgid "Windows 32-bit"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:525 ../languages/dynamic_strings.php:526
+#, fuzzy
+msgid "Windows 7"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:527
+#, fuzzy
+msgid "Windows 8"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:528
+msgid "Windows 8.1"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:529
+#, fuzzy
+msgid "Windows 95"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:530
+#, fuzzy
+msgid "Windows 98"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:531
+#, fuzzy
+msgid "Windows CE"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:532
+#, fuzzy
+msgid "Windows ME"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:533
+#, fuzzy
+msgid "Windows NT"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:534 ../languages/dynamic_strings.php:535
+#: ../languages/dynamic_strings.php:536 ../languages/dynamic_strings.php:538
+#, fuzzy
+msgid "Windows Phone"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:537
+msgid "Windows RT / Runtime"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:539
+#, fuzzy
+#| msgid "Known Visitor"
+msgid "Windows Vista"
+msgstr "既知の訪問者"
+
+#: ../languages/dynamic_strings.php:540
+#, fuzzy
+msgid "Windows XP"
+msgstr "Windows Phone 7"
+
+#: ../languages/dynamic_strings.php:541
+msgid "WyderOS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:542
+msgid "Zaurus WAP"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:546
+#, fuzzy
+#| msgid "blackberry os"
+msgid "BlackBerry"
+msgstr "BlackBerry OS"
+
+#: ../languages/dynamic_strings.php:547
+msgid "Chrome OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:548
+msgid "Fire OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:549
+msgid "Linux FreeBSD"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:550
+msgid "Apple iOS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:551
+msgid "Java-based OS"
+msgstr ""
+
+#: ../languages/dynamic_strings.php:552 ../languages/dynamic_strings.php:556
+#, fuzzy
+#| msgid "linux"
+msgid "Linux"
+msgstr "Linux"
+
+#: ../languages/dynamic_strings.php:553
+#, fuzzy
+#| msgid "Apply"
+msgid "Apple"
+msgstr "適用"
+
+#: ../languages/dynamic_strings.php:558
+msgid "Microsoft"
+msgstr ""
+
+#: ../wp-slimstat.php:139 ../wp-slimstat.php:252
 msgid "Tracker is turned off, but client-side tracking code is still running."
 msgstr ""
 
-#: ../wp-slimstat.php:270 ../wp-slimstat.php:696
+#: ../wp-slimstat.php:267 ../wp-slimstat.php:698
 msgid "Pageview filtered by third-party code"
 msgstr ""
 
-#: ../wp-slimstat.php:277
+#: ../wp-slimstat.php:274
 msgid "Browser sent DNT header request"
 msgstr ""
 
-#: ../wp-slimstat.php:300
+#: ../wp-slimstat.php:297
 msgid "Visitor has opted out of tracking"
 msgstr ""
 
-#: ../wp-slimstat.php:327
+#: ../wp-slimstat.php:324
 msgid "Visitor has not opted in to be tracked"
 msgstr ""
 
-#: ../wp-slimstat.php:337
+#: ../wp-slimstat.php:334
 msgid "Empty or not supported IP address format"
 msgstr ""
 
-#: ../wp-slimstat.php:354
+#: ../wp-slimstat.php:351
 #, php-format
 msgid "Malformed referrer URL: %s (IP: %s)"
 msgstr ""
 
-#: ../wp-slimstat.php:355
+#: ../wp-slimstat.php:352
 #, php-format
 msgid "Malformed referrer URL: %s"
 msgstr ""
 
-#: ../wp-slimstat.php:360
+#: ../wp-slimstat.php:357
 #, php-format
 msgid "Attempted XSS Injection: %s (IP: %s)"
 msgstr ""
 
-#: ../wp-slimstat.php:361
+#: ../wp-slimstat.php:358
 #, php-format
 msgid "Attempted XSS Injection: %s"
 msgstr ""
 
-#: ../wp-slimstat.php:385
+#: ../wp-slimstat.php:382
 #, php-format
 msgid "Referrer %s is blacklisted"
 msgstr ""
 
-#: ../wp-slimstat.php:402
+#: ../wp-slimstat.php:399
 #, php-format
 msgid "Content Type %s is blacklisted"
 msgstr ""
 
-#: ../wp-slimstat.php:452
+#: ../wp-slimstat.php:449
 msgid "Malformed URL"
 msgstr ""
 
-#: ../wp-slimstat.php:485
+#: ../wp-slimstat.php:482
 #, php-format
 msgid "Permalink %s is blacklisted"
 msgstr ""
 
-#: ../wp-slimstat.php:498
+#: ../wp-slimstat.php:495
 #, fuzzy, php-format
 msgid "Logged in user %s not tracked"
 msgstr "と一致しない"
 
-#: ../wp-slimstat.php:506
+#: ../wp-slimstat.php:503
 #, php-format
 msgid "User with capability %s not tracked"
 msgstr ""
 
-#: ../wp-slimstat.php:515
+#: ../wp-slimstat.php:512
 #, php-format
 msgid "User %s is blacklisted"
 msgstr ""
 
-#: ../wp-slimstat.php:539
+#: ../wp-slimstat.php:537
 #, fuzzy, php-format
 msgid "Spammer %s not tracked"
 msgstr "と一致しない"
 
-#: ../wp-slimstat.php:568
+#: ../wp-slimstat.php:573
 #, php-format
 msgid "IP address %s is blacklisted"
 msgstr ""
 
-#: ../wp-slimstat.php:584
-msgid ""
-"Your MaxMind data file is invalid. Please uninstall it using the button in "
-"Settings > Maintenance."
-msgstr ""
-
-#: ../wp-slimstat.php:625
+#: ../wp-slimstat.php:627
 #, php-format
 msgid "Country %s is blacklisted"
 msgstr ""
 
-#: ../wp-slimstat.php:634
+#: ../wp-slimstat.php:636
 #, fuzzy
 msgid "Prefetch requests are ignored"
 msgstr "リンクの先読みを無視"
 
-#: ../wp-slimstat.php:650
+#: ../wp-slimstat.php:652
 #, fuzzy
 msgid "Bot not tracked"
 msgstr "と一致しない"
 
-#: ../wp-slimstat.php:658
+#: ../wp-slimstat.php:660
 #, php-format
 msgid "Browser %s is blacklisted"
 msgstr ""
 
-#: ../wp-slimstat.php:670
+#: ../wp-slimstat.php:672
 #, fuzzy, php-format
 #| msgid "Operating System"
 msgid "Operating System %s is blacklisted"
 msgstr "OS"
 
-#: ../wp-slimstat.php:1112
+#: ../wp-slimstat.php:1114
 msgid "Invalid payload string. Try clearing your WordPress cache."
 msgstr ""
 
-#: ../wp-slimstat.php:1123
+#: ../wp-slimstat.php:1125
 msgid "Invalid data signature. Try clearing your WordPress cache."
 msgstr ""
 
-#: ../wp-slimstat.php:1255
+#: ../wp-slimstat.php:1257
 msgid ""
 "The geolocation database cannot be updated. Please check your server's file "
 "permissions and try again."
 msgstr ""
 
-#: ../wp-slimstat.php:1268
+#: ../wp-slimstat.php:1270
 #, fuzzy
 msgid "There was an error downloading the MaxMind Geolite DB:"
 msgstr "以下の理由でアップデートにエラーが発生しました:"
 
-#: ../wp-slimstat.php:1276 ../wp-slimstat.php:1285
+#: ../wp-slimstat.php:1278 ../wp-slimstat.php:1287
 #, fuzzy
 msgid "There was an error opening the zipped MaxMind Geolite DB."
 msgstr "以下の理由でアップデートにエラーが発生しました:"
 
-#: ../wp-slimstat.php:1280
+#: ../wp-slimstat.php:1282
 msgid "Function gzopen not defined. Aborting."
 msgstr ""
 
-#: ../wp-slimstat.php:1290
+#: ../wp-slimstat.php:1292
 #, fuzzy
 msgid "There was an error opening the MaxMind Geolite DB."
 msgstr "以下の理由でアップデートにエラーが発生しました:"
 
-#: ../wp-slimstat.php:1303
+#: ../wp-slimstat.php:1305
 #, fuzzy
 msgid "There was an error creating the MaxMind Geolite DB."
 msgstr "以下の理由でアップデートにエラーが発生しました:"
 
-#: ../wp-slimstat.php:1318
+#: ../wp-slimstat.php:1320
 msgid "Invalid URL Provided."
 msgstr ""
 
-#: ../wp-slimstat.php:1325
+#: ../wp-slimstat.php:1327
 msgid "Could not create Temporary file."
 msgstr ""
 
-#: ../wp-slimstat.php:1383
+#: ../wp-slimstat.php:1384
 msgid "Undefined report ID"
 msgstr ""
 
-#: ../wp-slimstat.php:1580
+#: ../wp-slimstat.php:1587
 msgid ""
 "You will need to specify a valid token to be able to query the data. Tokens "
 "are defined in Slimstat > Settings > Access Control."
 msgstr ""
 
-#: ../wp-slimstat.php:1584
+#: ../wp-slimstat.php:1591
 msgid ""
 "This parameter specifies the type of QUERY for the dimension. Valid values "
 "are: count, count-all, recent, recent-all, top and top-all."
 msgstr ""
 
-#: ../wp-slimstat.php:1589
+#: ../wp-slimstat.php:1596
 msgid ""
 "This parameter indicates what dimension to return: * (all data), ip, "
 "resource, browser, operating system, etc. You can only specify one dimension "
 "at a time."
 msgstr ""
 
-#: ../wp-slimstat.php:1594
+#: ../wp-slimstat.php:1601
 msgid ""
 "This parameter is used to filter a given dimension (resources, browsers, "
 "operating systems, etc) so that it satisfies certain conditions (i.e.: "
@@ -5901,9 +5846,1594 @@ msgid ""
 "(encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)"
 msgstr ""
 
-#: ../wp-slimstat.php:2022
+#: ../wp-slimstat.php:2029
 msgid "Optional filters"
 msgstr ""
+
+#~ msgid "Expand Details"
+#~ msgstr "詳細の展開"
+
+#~ msgid "Expand each row's details by default, insted of on mousehover."
+#~ msgstr "マウスオーバー中に表示される詳細を常に表示します。"
+
+#~ msgid "c-"
+#~ msgstr "不明"
+
+#~ msgid "l-"
+#~ msgstr "不明"
+
+#~ msgid "c-xx"
+#~ msgstr "Unkwnon"
+
+#~ msgid "c-af"
+#~ msgstr "アフガニスタン"
+
+#~ msgid "c-ax"
+#~ msgstr "オーランド諸島 (フィンランド領)"
+
+#~ msgid "c-al"
+#~ msgstr "アルバニア"
+
+#~ msgid "c-dz"
+#~ msgstr "アルジェリア"
+
+#~ msgid "c-ad"
+#~ msgstr "アンドラ"
+
+#~ msgid "c-ao"
+#~ msgstr "アンゴラ"
+
+#~ msgid "c-ai"
+#~ msgstr "アンギラ"
+
+#~ msgid "c-ag"
+#~ msgstr "アンティグア・バーブーダ"
+
+#~ msgid "c-ar"
+#~ msgstr "アルゼンチン"
+
+#~ msgid "c-am"
+#~ msgstr "アルメニア"
+
+#~ msgid "c-aw"
+#~ msgstr "アルバ"
+
+#~ msgid "c-au"
+#~ msgstr "オーストラリア"
+
+#~ msgid "c-at"
+#~ msgstr "オーストリア"
+
+#~ msgid "c-az"
+#~ msgstr "アゼルバイジャン"
+
+#~ msgid "c-bs"
+#~ msgstr "バハマ"
+
+#~ msgid "c-bh"
+#~ msgstr "バーレーン"
+
+#~ msgid "c-bd"
+#~ msgstr "バングラデシュ"
+
+#~ msgid "c-bb"
+#~ msgstr "バルバドス"
+
+#~ msgid "c-by"
+#~ msgstr "ベラルーシ"
+
+#~ msgid "c-be"
+#~ msgstr "ベルギー"
+
+#~ msgid "c-bz"
+#~ msgstr "ベリーズ"
+
+#~ msgid "c-bj"
+#~ msgstr "ベナン"
+
+#~ msgid "c-bm"
+#~ msgstr "バミューダ諸島 (イギリス領)"
+
+#~ msgid "c-bt"
+#~ msgstr "ブータン"
+
+#~ msgid "c-bo"
+#~ msgstr "ボリビア"
+
+#~ msgid "c-ba"
+#~ msgstr "ボスニア・ヘルツェゴヴィナ"
+
+#~ msgid "c-bw"
+#~ msgstr "ボツワナ"
+
+#~ msgid "c-br"
+#~ msgstr "ブラジル"
+
+#~ msgid "c-bn"
+#~ msgstr "ブルネイ"
+
+#~ msgid "c-bg"
+#~ msgstr "ブルガリア"
+
+#~ msgid "c-bf"
+#~ msgstr "ブルキナファソ"
+
+#~ msgid "c-bi"
+#~ msgstr "ブルンジ"
+
+#~ msgid "c-kh"
+#~ msgstr "カンボジア"
+
+#~ msgid "c-cm"
+#~ msgstr "カメルーン"
+
+#~ msgid "c-ca"
+#~ msgstr "カナダ"
+
+#~ msgid "c-cv"
+#~ msgstr "カーボベルデ"
+
+#~ msgid "c-ky"
+#~ msgstr "ケイマン諸島"
+
+#~ msgid "c-cf"
+#~ msgstr "中央アフリカ共和国"
+
+#~ msgid "c-td"
+#~ msgstr "チャド"
+
+#~ msgid "c-cl"
+#~ msgstr "チリ"
+
+#~ msgid "c-cn"
+#~ msgstr "中国"
+
+#~ msgid "c-co"
+#~ msgstr "コロンビア"
+
+#~ msgid "c-km"
+#~ msgstr "コモロ"
+
+#~ msgid "c-cg"
+#~ msgstr "コンゴ"
+
+#~ msgid "c-cd"
+#~ msgstr "コンゴ民主共和国"
+
+#~ msgid "c-cr"
+#~ msgstr "コスタリカ"
+
+#~ msgid "c-ci"
+#~ msgstr "コートジボワール"
+
+#~ msgid "c-hr"
+#~ msgstr "クロアチア"
+
+#~ msgid "c-cu"
+#~ msgstr "キューバ"
+
+#~ msgid "c-cy"
+#~ msgstr "キプロス"
+
+#~ msgid "c-cz"
+#~ msgstr "チェコ共和国"
+
+#~ msgid "c-dk"
+#~ msgstr "デンマーク"
+
+#~ msgid "c-dj"
+#~ msgstr "ジブチ"
+
+#~ msgid "c-dm"
+#~ msgstr "ドミニカ"
+
+#~ msgid "c-do"
+#~ msgstr "ドミニカ共和国"
+
+#~ msgid "c-ec"
+#~ msgstr "エクアドル"
+
+#~ msgid "c-eg"
+#~ msgstr "エジプト"
+
+#~ msgid "c-sv"
+#~ msgstr "エルサルバドル"
+
+#~ msgid "c-gq"
+#~ msgstr "赤道ギニア"
+
+#~ msgid "c-er"
+#~ msgstr "エリトリア"
+
+#~ msgid "c-ee"
+#~ msgstr "エストニア"
+
+#~ msgid "c-et"
+#~ msgstr "エチオピア"
+
+#~ msgid "c-fo"
+#~ msgstr "フェロー諸島"
+
+#~ msgid "c-fk"
+#~ msgstr "フォークランド諸島 (マルビナス諸島)"
+
+#~ msgid "c-fj"
+#~ msgstr "フィジー"
+
+#~ msgid "c-fi"
+#~ msgstr "フィンランド"
+
+#~ msgid "c-fr"
+#~ msgstr "フランス"
+
+#~ msgid "c-gf"
+#~ msgstr "フランス領ギアナ"
+
+#~ msgid "c-ga"
+#~ msgstr "ガボン"
+
+#~ msgid "c-gm"
+#~ msgstr "ガンビア"
+
+#~ msgid "c-ge"
+#~ msgstr "グルジア"
+
+#~ msgid "c-de"
+#~ msgstr "ドイツ"
+
+#~ msgid "c-gh"
+#~ msgstr "ガーナ"
+
+#~ msgid "c-gr"
+#~ msgstr "ギリシャ"
+
+#~ msgid "c-gl"
+#~ msgstr "グリーンランド"
+
+#~ msgid "c-gd"
+#~ msgstr "グレナダ"
+
+#~ msgid "c-gp"
+#~ msgstr "グアドループ"
+
+#~ msgid "c-gt"
+#~ msgstr "グアテマラ"
+
+#~ msgid "c-gn"
+#~ msgstr "ギニア"
+
+#~ msgid "c-gw"
+#~ msgstr "ギニアビサオ"
+
+#~ msgid "c-gy"
+#~ msgstr "ガイアナ"
+
+#~ msgid "c-ht"
+#~ msgstr "ハイチ"
+
+#~ msgid "c-hn"
+#~ msgstr "ホンジュラス"
+
+#~ msgid "c-hk"
+#~ msgstr "香港"
+
+#~ msgid "c-hu"
+#~ msgstr "ハンガリー"
+
+#~ msgid "c-is"
+#~ msgstr "アイスランド"
+
+#~ msgid "c-in"
+#~ msgstr "インド"
+
+#~ msgid "c-id"
+#~ msgstr "インドネシア"
+
+#~ msgid "c-ir"
+#~ msgstr "イラン"
+
+#~ msgid "c-iq"
+#~ msgstr "イラク"
+
+#~ msgid "c-ie"
+#~ msgstr "アイルランド"
+
+#~ msgid "c-il"
+#~ msgstr "イスラエル"
+
+#~ msgid "c-it"
+#~ msgstr "イタリア"
+
+#~ msgid "c-jm"
+#~ msgstr "ジャマイカ"
+
+#~ msgid "c-jp"
+#~ msgstr "日本"
+
+#~ msgid "c-jo"
+#~ msgstr "ヨルダン"
+
+#~ msgid "c-kz"
+#~ msgstr "カザフスタン"
+
+#~ msgid "c-ke"
+#~ msgstr "ケニア"
+
+#~ msgid "c-nr"
+#~ msgstr "ナウル"
+
+#~ msgid "c-kp"
+#~ msgstr "北朝鮮"
+
+#~ msgid "c-kr"
+#~ msgstr "韓国"
+
+#~ msgid "c-kv"
+#~ msgstr "コソボ"
+
+#~ msgid "c-kw"
+#~ msgstr "クウェート"
+
+#~ msgid "c-kg"
+#~ msgstr "キルギスタン"
+
+#~ msgid "c-la"
+#~ msgstr "ラオス"
+
+#~ msgid "c-lv"
+#~ msgstr "ラトビア"
+
+#~ msgid "c-lb"
+#~ msgstr "レバノン"
+
+#~ msgid "c-ls"
+#~ msgstr "レソト"
+
+#~ msgid "c-lr"
+#~ msgstr "リベリア"
+
+#~ msgid "c-ly"
+#~ msgstr "リビア"
+
+#~ msgid "c-li"
+#~ msgstr "リヒテンシュタイン"
+
+#~ msgid "c-lt"
+#~ msgstr "リトアニア"
+
+#~ msgid "c-lu"
+#~ msgstr "ルクセンブルク"
+
+#~ msgid "c-mk"
+#~ msgstr "マケドニア"
+
+#~ msgid "c-mg"
+#~ msgstr "マダガスカル"
+
+#~ msgid "c-mw"
+#~ msgstr "マラウイ"
+
+#~ msgid "c-my"
+#~ msgstr "マレーシア"
+
+#~ msgid "c-ml"
+#~ msgstr "マリ"
+
+#~ msgid "c-mt"
+#~ msgstr "マルタ"
+
+#~ msgid "c-mq"
+#~ msgstr "マルチニーク (フランス領)"
+
+#~ msgid "c-mr"
+#~ msgstr "モーリタニア"
+
+#~ msgid "c-mu"
+#~ msgstr "モーリシャス"
+
+#~ msgid "c-mx"
+#~ msgstr "メキシコ"
+
+#~ msgid "c-md"
+#~ msgstr "モルドバ"
+
+#~ msgid "c-mn"
+#~ msgstr "モンゴル"
+
+#~ msgid "c-me"
+#~ msgstr "モンテネグロ"
+
+#~ msgid "c-ms"
+#~ msgstr "モントセラト (イギリス領)"
+
+#~ msgid "c-ma"
+#~ msgstr "モロッコ"
+
+#~ msgid "c-mz"
+#~ msgstr "モザンビーク"
+
+#~ msgid "c-mm"
+#~ msgstr "ミャンマー"
+
+#~ msgid "c-na"
+#~ msgstr "ナミビア"
+
+#~ msgid "c-np"
+#~ msgstr "ネパール"
+
+#~ msgid "c-nl"
+#~ msgstr "オランダ"
+
+#~ msgid "c-nc"
+#~ msgstr "ニューカレドニア (フランス領)"
+
+#~ msgid "c-nz"
+#~ msgstr "ニュージーランド"
+
+#~ msgid "c-ni"
+#~ msgstr "ニカラグア"
+
+#~ msgid "c-ne"
+#~ msgstr "ニジェール"
+
+#~ msgid "c-ng"
+#~ msgstr "ナイジェリア"
+
+#~ msgid "c-no"
+#~ msgstr "ノルウェー"
+
+#~ msgid "c-om"
+#~ msgstr "オマーン"
+
+#~ msgid "c-pk"
+#~ msgstr "パキスタン"
+
+#~ msgid "c-pw"
+#~ msgstr "パラオ"
+
+#~ msgid "c-ps"
+#~ msgstr "パレスチナ"
+
+#~ msgid "c-pa"
+#~ msgstr "パナマ"
+
+#~ msgid "c-pg"
+#~ msgstr "パプアニューギニア"
+
+#~ msgid "c-py"
+#~ msgstr "パラグアイ"
+
+#~ msgid "c-pe"
+#~ msgstr "ペルー"
+
+#~ msgid "c-ph"
+#~ msgstr "フィリピン"
+
+#~ msgid "c-pl"
+#~ msgstr "ポーランド"
+
+#~ msgid "c-pt"
+#~ msgstr "ポルトガル"
+
+#~ msgid "c-pr"
+#~ msgstr "プエルトリコ"
+
+#~ msgid "c-qa"
+#~ msgstr "カタール"
+
+#~ msgid "c-re"
+#~ msgstr "レユニオン島 (フランス領)"
+
+#~ msgid "c-ro"
+#~ msgstr "ルーマニア"
+
+#~ msgid "c-ru"
+#~ msgstr "ロシア"
+
+#~ msgid "c-rw"
+#~ msgstr "ルワンダ"
+
+#~ msgid "c-kn"
+#~ msgstr "セントクリストファー・ネイビス"
+
+#~ msgid "c-lc"
+#~ msgstr "セントルシア"
+
+#~ msgid "c-mf"
+#~ msgstr "サン・マルタン (フランス領)"
+
+#~ msgid "c-vc"
+#~ msgstr "セントビンセントおよびグレナディン諸島"
+
+#~ msgid "c-ws"
+#~ msgstr "西サモア"
+
+#~ msgid "c-st"
+#~ msgstr "サントメ・プリンシペ"
+
+#~ msgid "c-sa"
+#~ msgstr "サウジアラビア"
+
+#~ msgid "c-sn"
+#~ msgstr "セネガル"
+
+#~ msgid "c-rs"
+#~ msgstr "セルビア"
+
+#~ msgid "c-sl"
+#~ msgstr "シエラレオネ"
+
+#~ msgid "c-sg"
+#~ msgstr "シンガポール"
+
+#~ msgid "c-sk"
+#~ msgstr "スロバキア"
+
+#~ msgid "c-si"
+#~ msgstr "スロベニア"
+
+#~ msgid "c-sb"
+#~ msgstr "ソロモン諸島"
+
+#~ msgid "c-so"
+#~ msgstr "ソマリア"
+
+#~ msgid "c-za"
+#~ msgstr "南アフリカ"
+
+#~ msgid "c-gs"
+#~ msgstr "サウスジョージア・サウスサンドイッチ島 (イギリス領)"
+
+#~ msgid "c-es"
+#~ msgstr "スペイン"
+
+#~ msgid "c-lk"
+#~ msgstr "スリランカ"
+
+#~ msgid "c-sc"
+#~ msgstr "セイシェル"
+
+#~ msgid "c-sd"
+#~ msgstr "スーダン"
+
+#~ msgid "c-ss"
+#~ msgstr "南スーダン"
+
+#~ msgid "c-sr"
+#~ msgstr "スリナム"
+
+#~ msgid "c-sj"
+#~ msgstr "スバールバル・ヤンマイエン島 (ノルウェー領)"
+
+#~ msgid "c-sz"
+#~ msgstr "スワジランド"
+
+#~ msgid "c-se"
+#~ msgstr "スウェーデン"
+
+#~ msgid "c-ch"
+#~ msgstr "スイス"
+
+#~ msgid "c-sy"
+#~ msgstr "シリア"
+
+#~ msgid "c-tw"
+#~ msgstr "台湾"
+
+#~ msgid "c-tj"
+#~ msgstr "タジキスタン"
+
+#~ msgid "c-tz"
+#~ msgstr "タンザニア"
+
+#~ msgid "c-th"
+#~ msgstr "タイ"
+
+#~ msgid "c-tl"
+#~ msgstr "東ティモール"
+
+#~ msgid "c-tg"
+#~ msgstr "トーゴ"
+
+#~ msgid "c-to"
+#~ msgstr "トンガ"
+
+#~ msgid "c-tt"
+#~ msgstr "トリニダード・トバゴ"
+
+#~ msgid "c-tn"
+#~ msgstr "チュニジア"
+
+#~ msgid "c-tr"
+#~ msgstr "トルコ"
+
+#~ msgid "c-tm"
+#~ msgstr "トルクメニスタン"
+
+#~ msgid "c-tc"
+#~ msgstr "タークス・カイコス諸島"
+
+#~ msgid "c-ug"
+#~ msgstr "ウガンダ"
+
+#~ msgid "c-ua"
+#~ msgstr "ウクライナ"
+
+#~ msgid "c-ae"
+#~ msgstr "アラブ首長国連邦"
+
+#~ msgid "c-gb"
+#~ msgstr "イギリス"
+
+#~ msgid "c-us"
+#~ msgstr "アメリカ"
+
+#~ msgid "c-uy"
+#~ msgstr "ウルグアイ"
+
+#~ msgid "c-uz"
+#~ msgstr "ウズベキスタン"
+
+#~ msgid "c-vu"
+#~ msgstr "バヌアツ"
+
+#~ msgid "c-ve"
+#~ msgstr "ベネズエラ"
+
+#~ msgid "c-vn"
+#~ msgstr "ベトナム"
+
+#~ msgid "c-vg"
+#~ msgstr "ヴァージン諸島 (イギリス領)"
+
+#~ msgid "c-vi"
+#~ msgstr "ヴァージン諸島 (アメリカ領)"
+
+#~ msgid "c-eh"
+#~ msgstr "西サモア"
+
+#~ msgid "c-ye"
+#~ msgstr "イエメン"
+
+#~ msgid "c-zm"
+#~ msgstr "ザンビア"
+
+#~ msgid "c-zw"
+#~ msgstr "ジンバブエ"
+
+#~ msgid "c-gg"
+#~ msgstr "ガーンジー島 (イギリス領)"
+
+#~ msgid "c-je"
+#~ msgstr "ジャージー島 (イギリス領)"
+
+#~ msgid "c-im"
+#~ msgstr "マン島 (イギリス領)"
+
+#~ msgid "c-mv"
+#~ msgstr "モルディブ"
+
+#~ msgid "c-eu"
+#~ msgstr "EU"
+
+#~ msgid "xx"
+#~ msgstr "不明"
+
+#~ msgid "aix"
+#~ msgstr "IBM AIX"
+
+#~ msgid "beos"
+#~ msgstr "Be OS"
+
+#~ msgid "freebsd"
+#~ msgstr "FreeBSD"
+
+#~ msgid "hp-ux"
+#~ msgstr "HP-UX"
+
+#~ msgid "ios"
+#~ msgstr "iOS"
+
+#~ msgid "iphone osx"
+#~ msgstr "iPhone OSX"
+
+#~ msgid "irix"
+#~ msgstr "IRIX"
+
+#~ msgid "java"
+#~ msgstr "Java"
+
+#~ msgid "mac68k"
+#~ msgstr "Mac 68K"
+
+#, fuzzy
+#~| msgid "macosx"
+#~ msgid "macos"
+#~ msgstr "Mac OS X"
+
+#~ msgid "macosx"
+#~ msgstr "Mac OS X"
+
+#~ msgid "macppc"
+#~ msgstr "Mac PowerPC"
+
+#, fuzzy
+#~ msgid "mandriva"
+#~ msgstr "Android"
+
+#, fuzzy
+#~ msgid "ms-dos"
+#~ msgstr "スペイン語 (ドミニカ共和国)"
+
+#~ msgid "netbsd"
+#~ msgstr "NetBSD"
+
+#~ msgid "openbsd"
+#~ msgstr "OpenBSD"
+
+#~ msgid "openvms"
+#~ msgstr "Open VMS"
+
+#~ msgid "os/2"
+#~ msgstr "IBM OS/2"
+
+#~ msgid "palm"
+#~ msgstr "Palm"
+
+#, fuzzy
+#~ msgid "palmos"
+#~ msgstr "Palm"
+
+#, fuzzy
+#~ msgid "pclinuxos"
+#~ msgstr "Linux"
+
+#~ msgid "powertv"
+#~ msgstr "PowerTV"
+
+#~ msgid "risc os"
+#~ msgstr "Risc OS"
+
+#~ msgid "sunos"
+#~ msgstr "Sun OS"
+
+#~ msgid "unix"
+#~ msgstr "Unix"
+
+#~ msgid "wap"
+#~ msgstr "WAO"
+
+#~ msgid "webos"
+#~ msgstr "Web OS"
+
+#, fuzzy
+#~ msgid "win10"
+#~ msgstr "Windows 16-bit"
+
+#~ msgid "win16"
+#~ msgstr "Windows 16-bit"
+
+#~ msgid "win31"
+#~ msgstr "Windows 3.1"
+
+#~ msgid "win32"
+#~ msgstr "Windows 32-bit"
+
+#~ msgid "win7"
+#~ msgstr "Windows 7"
+
+#~ msgid "win8"
+#~ msgstr "Windows 8"
+
+#~ msgid "win8.1"
+#~ msgstr "Windows 8.1"
+
+#~ msgid "win95"
+#~ msgstr "Windows 95"
+
+#~ msgid "win98"
+#~ msgstr "Windows 98"
+
+#~ msgid "wince"
+#~ msgstr "Windows CE"
+
+#~ msgid "winme"
+#~ msgstr "Windows ME"
+
+#~ msgid "winnt"
+#~ msgstr "Windows NT"
+
+#~ msgid "winphone7"
+#~ msgstr "Windows Phone 7"
+
+#, fuzzy
+#~ msgid "winphone7.5"
+#~ msgstr "Windows Phone 7"
+
+#, fuzzy
+#~ msgid "winphone8"
+#~ msgstr "Windows Phone 7"
+
+#, fuzzy
+#~ msgid "winphone8.1"
+#~ msgstr "Windows Phone 7"
+
+#~ msgid "winvista"
+#~ msgstr "Windows Vista"
+
+#~ msgid "winxp"
+#~ msgstr "Windows XP"
+
+#~ msgid "wyderos"
+#~ msgstr "WyderOS"
+
+#~ msgid "p-and"
+#~ msgstr "Android"
+
+#~ msgid "p-bla"
+#~ msgstr "BlackBerry"
+
+#~ msgid "p-chr"
+#~ msgstr "Chrome OS"
+
+#~ msgid "p-fre"
+#~ msgstr "Linux FreeBSD"
+
+#~ msgid "p-ios"
+#~ msgstr "Apple iOS"
+
+#~ msgid "p-jav"
+#~ msgstr "Java-Based OS"
+
+#~ msgid "p-lin"
+#~ msgstr "Linux"
+
+#~ msgid "p-mac"
+#~ msgstr "Apple"
+
+#~ msgid "p-sym"
+#~ msgstr "Symbian OS"
+
+#~ msgid "p-unk"
+#~ msgstr "不明"
+
+#~ msgid "p-win"
+#~ msgstr "Microsoft"
+
+#~ msgid "l-af"
+#~ msgstr "アフリカーンス語"
+
+#~ msgid "l-af-za"
+#~ msgstr "アフリカーンス語 (南アフリカ)"
+
+#~ msgid "l-ar"
+#~ msgstr "アラビア語"
+
+#~ msgid "l-ar-ae"
+#~ msgstr "アラビア語 (UAE)"
+
+#~ msgid "l-ar-bh"
+#~ msgstr "アラビア語 (バーレーン)"
+
+#~ msgid "l-ar-dz"
+#~ msgstr "アラビア語 (アルジェリア)"
+
+#~ msgid "l-ar-eg"
+#~ msgstr "アラビア語 (エジプト)"
+
+#~ msgid "l-ar-iq"
+#~ msgstr "アラビア語 (イラク)"
+
+#~ msgid "l-ar-jo"
+#~ msgstr "アラビア語 (ヨルダン)"
+
+#~ msgid "l-ar-kw"
+#~ msgstr "アラビア語 (クウェート)"
+
+#~ msgid "l-ar-lb"
+#~ msgstr "アラビア語 (レバノン)"
+
+#~ msgid "l-ar-ly"
+#~ msgstr "アラビア語 (リビア)"
+
+#~ msgid "l-ar-ma"
+#~ msgstr "アラビア語 (モロッコ)"
+
+#~ msgid "l-ar-om"
+#~ msgstr "アラビア語 (オマーン)"
+
+#~ msgid "l-ar-qa"
+#~ msgstr "アラビア語 (カタール)"
+
+#~ msgid "l-ar-sa"
+#~ msgstr "アラビア語 (サウジアラビア)"
+
+#~ msgid "l-ar-sy"
+#~ msgstr "アラビア語 (シリア)"
+
+#~ msgid "l-ar-tn"
+#~ msgstr "アラビア語 (チュニジア)"
+
+#~ msgid "l-ar-ye"
+#~ msgstr "アラビア語 (イエメン)"
+
+#~ msgid "l-az"
+#~ msgstr "アゼルバイジャン語"
+
+#~ msgid "l-az-az"
+#~ msgstr "アゼルバイジャン語 (ラテン)"
+
+#~ msgid "l-be"
+#~ msgstr "ベラルーシ語"
+
+#~ msgid "l-be-by"
+#~ msgstr "ベラルーシ語 (ベラルーシ)"
+
+#~ msgid "l-bg"
+#~ msgstr "ブルガリア語"
+
+#~ msgid "l-bg-bg"
+#~ msgstr "ブルガリア語 (ブルガリア)"
+
+#~ msgid "l-bs-ba"
+#~ msgstr "ボスニア語"
+
+#~ msgid "l-ca"
+#~ msgstr "カタルーニャ語"
+
+#~ msgid "l-ca-es"
+#~ msgstr "バレンシア語"
+
+#~ msgid "l-cs"
+#~ msgstr "チェコ語"
+
+#~ msgid "l-cs-cz"
+#~ msgstr "チェコ語 (チェコ共和国)"
+
+#~ msgid "l-cy"
+#~ msgstr "ウェールズ語"
+
+#~ msgid "l-cy-gb"
+#~ msgstr "ウェールズ語 (イギリス)"
+
+#~ msgid "l-da"
+#~ msgstr "デンマーク語"
+
+#~ msgid "l-da-dk"
+#~ msgstr "デンマーク語 (デンマーク)"
+
+#~ msgid "l-de"
+#~ msgstr "ドイツ語"
+
+#~ msgid "l-de-at"
+#~ msgstr "ドイツ語 (オーストリア)"
+
+#~ msgid "l-de-ch"
+#~ msgstr "ドイツ語 (スイス)"
+
+#~ msgid "l-de-de"
+#~ msgstr "ドイツ語 (ドイツ)"
+
+#~ msgid "l-de-li"
+#~ msgstr "ドイツ語 (リヒテンシュタイン)"
+
+#~ msgid "l-de-lu"
+#~ msgstr "ドイツ語 (ルクセンブルク)"
+
+#~ msgid "l-dv"
+#~ msgstr "ディベヒ語"
+
+#~ msgid "l-dv-mv"
+#~ msgstr "ディベヒ語 (モルディブ)"
+
+#~ msgid "l-el"
+#~ msgstr "ギリシャ語"
+
+#~ msgid "l-el-gr"
+#~ msgstr "ギリシャ語 (ギリシャ)"
+
+#~ msgid "l-en"
+#~ msgstr "英語"
+
+#~ msgid "l-en-au"
+#~ msgstr "英語 (オーストラリア)"
+
+#~ msgid "l-en-bz"
+#~ msgstr "英語 (ベリゼ)"
+
+#~ msgid "l-en-ca"
+#~ msgstr "英語 (カナダ)"
+
+#~ msgid "l-en-cb"
+#~ msgstr "英語 (西インド諸島)"
+
+#~ msgid "l-en-gb"
+#~ msgstr "英語 (イギリス)"
+
+#~ msgid "l-en-ie"
+#~ msgstr "英語 (アイルランド)"
+
+#~ msgid "l-en-jm"
+#~ msgstr "英語 (ジャマイカ)"
+
+#~ msgid "l-en-nz"
+#~ msgstr "英語 (ニュージーランド)"
+
+#~ msgid "l-en-ph"
+#~ msgstr "英語 (フィリピン)"
+
+#~ msgid "l-en-tt"
+#~ msgstr "英語 (トリニダード・トバゴ)"
+
+#~ msgid "l-en-us"
+#~ msgstr "英語 (アメリカ合衆国)"
+
+#~ msgid "l-en-za"
+#~ msgstr "英語 (南アフリカ)"
+
+#~ msgid "l-en-zw"
+#~ msgstr "英語 (ジンバブエ)"
+
+#~ msgid "l-eo"
+#~ msgstr "エスペラント語"
+
+#~ msgid "l-es"
+#~ msgstr "スペイン語"
+
+#~ msgid "l-es-ar"
+#~ msgstr "スペイン語 (アルゼンチン)"
+
+#~ msgid "l-es-bo"
+#~ msgstr "スペイン語 (ボリビア)"
+
+#~ msgid "l-es-cl"
+#~ msgstr "スペイン語 (チリ)"
+
+#~ msgid "l-es-co"
+#~ msgstr "スペイン語 (コロンビア)"
+
+#~ msgid "l-es-cr"
+#~ msgstr "スペイン語 (コスタリカ)"
+
+#~ msgid "l-es-do"
+#~ msgstr "スペイン語 (ドミニカ共和国)"
+
+#~ msgid "l-es-ec"
+#~ msgstr "スペイン語 (エクアドル)"
+
+#~ msgid "l-es-es"
+#~ msgstr "スペイン語 (スペイン)"
+
+#~ msgid "l-es-gt"
+#~ msgstr "スペイン語 (グアテマラ)"
+
+#~ msgid "l-es-hn"
+#~ msgstr "スペイン語 (ホンジュラス)"
+
+#~ msgid "l-es-mx"
+#~ msgstr "スペイン語 (メキシコ)"
+
+#~ msgid "l-es-ni"
+#~ msgstr "スペイン語 (ニカラグア)"
+
+#~ msgid "l-es-pa"
+#~ msgstr "スペイン語 (パナマ)"
+
+#~ msgid "l-es-pe"
+#~ msgstr "スペイン語 (ペルー)"
+
+#~ msgid "l-es-pr"
+#~ msgstr "スペイン語 (プエルトリコ)"
+
+#~ msgid "l-es-py"
+#~ msgstr "スペイン語 (パラグアイ)"
+
+#~ msgid "l-es-sv"
+#~ msgstr "スペイン語 (エルサルバドル)"
+
+#~ msgid "l-es-uy"
+#~ msgstr "スペイン語 (ウルグアイ)"
+
+#~ msgid "l-es-ve"
+#~ msgstr "スペイン語 (ベネズエラ)"
+
+#~ msgid "l-et"
+#~ msgstr "エストニア語"
+
+#~ msgid "l-et-ee"
+#~ msgstr "エストニア語 (エストニア)"
+
+#~ msgid "l-eu"
+#~ msgstr "バスク語"
+
+#~ msgid "l-eu-es"
+#~ msgstr "バスク語 (スペイン)"
+
+#~ msgid "l-fa"
+#~ msgstr "ペルシャ語"
+
+#~ msgid "l-fa-ir"
+#~ msgstr "ペルシャ語 (イラン)"
+
+#~ msgid "l-fi"
+#~ msgstr "フィンランド語"
+
+#~ msgid "l-fi-fi"
+#~ msgstr "フィンランド語 (フィンランド)"
+
+#~ msgid "l-fo"
+#~ msgstr "フェロー語"
+
+#~ msgid "l-fo-fo"
+#~ msgstr "フェロー語 (フェロー諸島)"
+
+#~ msgid "l-fr"
+#~ msgstr "フランス語"
+
+#~ msgid "l-fr-be"
+#~ msgstr "フランス語 (ベルギー)"
+
+#~ msgid "l-fr-ca"
+#~ msgstr "フランス語 (カナダ)"
+
+#~ msgid "l-fr-ch"
+#~ msgstr "フランス語 (スイス)"
+
+#~ msgid "l-fr-fr"
+#~ msgstr "フランス語 (フランス)"
+
+#~ msgid "l-fr-lu"
+#~ msgstr "フランス語 (ルクセンブルク)"
+
+#~ msgid "l-fr-mc"
+#~ msgstr "フランス語 (モナコ)"
+
+#~ msgid "l-gl"
+#~ msgstr "ガリシア語"
+
+#~ msgid "l-gl-es"
+#~ msgstr "ガリシア語 (スペイン)"
+
+#~ msgid "l-gu"
+#~ msgstr "グジャラティ語"
+
+#~ msgid "l-gu-in"
+#~ msgstr "グジャラティ語 (インド)"
+
+#~ msgid "l-he"
+#~ msgstr "ヘブライ語"
+
+#~ msgid "l-he-il"
+#~ msgstr "ヘブライ語 (イスラエル)"
+
+#~ msgid "l-hi"
+#~ msgstr "ヒンディー語"
+
+#~ msgid "l-hi-in"
+#~ msgstr "ヒンディー語 (インド)"
+
+#~ msgid "l-hr"
+#~ msgstr "クロアチア語"
+
+#~ msgid "l-hr-ba"
+#~ msgstr "クロアチア語 (ボスニア)"
+
+#~ msgid "l-hr-hr"
+#~ msgstr "クロアチア語 (クロアチア)"
+
+#~ msgid "l-hu"
+#~ msgstr "ハンガリー語"
+
+#~ msgid "l-hu-hu"
+#~ msgstr "ハンガリー語 (ハンガリー)"
+
+#~ msgid "l-hy"
+#~ msgstr "アルメニア語"
+
+#~ msgid "l-hy-am"
+#~ msgstr "アルメニア語 (アルメニア)"
+
+#~ msgid "l-id"
+#~ msgstr "インドネシア語"
+
+#~ msgid "l-id-id"
+#~ msgstr "インドネシア語 (インドネシア)"
+
+#~ msgid "l-is"
+#~ msgstr "アイスランド語"
+
+#~ msgid "l-is-is"
+#~ msgstr "アイスランド語 (アイスランド)"
+
+#~ msgid "l-it"
+#~ msgstr "イタリア語"
+
+#~ msgid "l-it-ch"
+#~ msgstr "イタリア語 (スイス)"
+
+#~ msgid "l-it-it"
+#~ msgstr "イタリア語 (イタリア)"
+
+#~ msgid "l-ja"
+#~ msgstr "日本語"
+
+#~ msgid "l-ja-jp"
+#~ msgstr "日本語 (日本)"
+
+#~ msgid "l-ka"
+#~ msgstr "グルジア語"
+
+#~ msgid "l-ka-ge"
+#~ msgstr "グルジア語 (グルジア)"
+
+#~ msgid "l-kk"
+#~ msgstr "カザフ語"
+
+#~ msgid "l-kk-kz"
+#~ msgstr "カザフ語 (カザフスタン)"
+
+#~ msgid "l-kn"
+#~ msgstr "カンナダ語"
+
+#~ msgid "l-kn-in"
+#~ msgstr "カンナダ語 (インド)"
+
+#~ msgid "l-ko"
+#~ msgstr "韓国語"
+
+#~ msgid "l-ko-kr"
+#~ msgstr "韓国語 (韓国)"
+
+#~ msgid "l-kok"
+#~ msgstr "コンカニ語"
+
+#~ msgid "l-kok-in"
+#~ msgstr "コンカニ語 (インド)"
+
+#~ msgid "l-ky"
+#~ msgstr "キルギス語"
+
+#~ msgid "l-ky-kg"
+#~ msgstr "キルギス語 (カザフスタン)"
+
+#~ msgid "l-lt"
+#~ msgstr "リトアニア語"
+
+#~ msgid "l-lt-lt"
+#~ msgstr "リトアニア語 (リトアニア)"
+
+#~ msgid "l-lv"
+#~ msgstr "ラトビア語"
+
+#~ msgid "l-lv-lv"
+#~ msgstr "ラトビア語 (ラトビア)"
+
+#~ msgid "l-mi"
+#~ msgstr "マオリ語"
+
+#~ msgid "l-mi-nz"
+#~ msgstr "マオリ語 (ニュージーランド)"
+
+#~ msgid "l-mk"
+#~ msgstr "マケドニア語"
+
+#~ msgid "l-mk-ml"
+#~ msgstr "マケドニア語 (マケドニア)"
+
+#~ msgid "l-mn"
+#~ msgstr "モンゴル語"
+
+#~ msgid "l-mn-mn"
+#~ msgstr "モンゴル語 (モンゴル)"
+
+#~ msgid "l-mr"
+#~ msgstr "マラーティー語"
+
+#~ msgid "l-mr-in"
+#~ msgstr "マラーティー語 (インド)"
+
+#~ msgid "l-ms"
+#~ msgstr "マレー語"
+
+#~ msgid "l-ms-bn"
+#~ msgstr "マレー語 (ブルネイ)"
+
+#~ msgid "l-ms-my"
+#~ msgstr "マレー語 (マレーシア)"
+
+#~ msgid "l-mt"
+#~ msgstr "マルタ語"
+
+#~ msgid "l-mt-mt"
+#~ msgstr "マルタ語 (マルタ)"
+
+#~ msgid "l-nb"
+#~ msgstr "ノルウェー語"
+
+#~ msgid "l-nb-no"
+#~ msgstr "ノルウェー語 (ノルウェー)"
+
+#~ msgid "l-nl"
+#~ msgstr "オランダ語"
+
+#~ msgid "l-nl-be"
+#~ msgstr "オランダ語 (ベルギー)"
+
+#~ msgid "l-nl-nl"
+#~ msgstr "オランダ語 (オランダ)"
+
+#~ msgid "l-nn-no"
+#~ msgstr "ノルウェー語 (ノルウェー)"
+
+#~ msgid "l-pa"
+#~ msgstr "パンジャーブ語"
+
+#~ msgid "l-pa-in"
+#~ msgstr "パンジャーブ語 (インド)"
+
+#~ msgid "l-pl"
+#~ msgstr "ポーランド語"
+
+#~ msgid "l-pl-pl"
+#~ msgstr "ポーランド語 (ポーランド)"
+
+#~ msgid "l-ps"
+#~ msgstr "パシュトー語"
+
+#~ msgid "l-ps-ar"
+#~ msgstr "パシュトー語 (アフガニスタン)"
+
+#~ msgid "l-pt"
+#~ msgstr "ポルトガル語"
+
+#~ msgid "l-pt-br"
+#~ msgstr "ポルトガル語 (ブラジル)"
+
+#~ msgid "l-pt-pt"
+#~ msgstr "ポルトガル語 (ポルトガル)"
+
+#~ msgid "l-qu"
+#~ msgstr "ケチュア語"
+
+#~ msgid "l-qu-bo"
+#~ msgstr "ケチュア語 (ボリビア)"
+
+#~ msgid "l-qu-ec"
+#~ msgstr "ケチュア語 (エクアドル)"
+
+#~ msgid "l-qu-pe"
+#~ msgstr "ケチュア語 (ペルー)"
+
+#~ msgid "l-ro"
+#~ msgstr "ルーマニア語"
+
+#~ msgid "l-ro-ro"
+#~ msgstr "ルーマニア語 (ルーマニア)"
+
+#~ msgid "l-ru"
+#~ msgstr "ロシア語"
+
+#~ msgid "l-ru-ru"
+#~ msgstr "ロシア語 (ロシア)"
+
+#~ msgid "l-se"
+#~ msgstr "北部サーミ語"
+
+#~ msgid "l-se-fi"
+#~ msgstr "北部サーミ語 (フィンランド)"
+
+#~ msgid "l-se-no"
+#~ msgstr "北部サーミ語 (ノルウェー)"
+
+#~ msgid "l-se-se"
+#~ msgstr "北部サーミ語 (スウェーデン)"
+
+#~ msgid "l-sk"
+#~ msgstr "スロバキア語"
+
+#~ msgid "l-sk-sk"
+#~ msgstr "スロバキア語 (スロバキア)"
+
+#~ msgid "l-sl"
+#~ msgstr "スロベニア語"
+
+#~ msgid "l-sl-si"
+#~ msgstr "スロベニア語 (スロベニア)"
+
+#~ msgid "l-sq"
+#~ msgstr "アルバニア語"
+
+#~ msgid "l-sq-al"
+#~ msgstr "アルバニア語 (アルバニア)"
+
+#~ msgid "l-sr-ba"
+#~ msgstr "セルビア語 (ボスニア・ヘルツェゴヴィナ)"
+
+#~ msgid "l-sr-sp"
+#~ msgstr "セルビア語 (セルビア・モンテネグロ)"
+
+#~ msgid "l-sv"
+#~ msgstr "スウェーデン語"
+
+#~ msgid "l-sv-fi"
+#~ msgstr "スウェーデン語 (フィンランド)"
+
+#~ msgid "l-sv-se"
+#~ msgstr "スウェーデン語 (スウェーデン)"
+
+#~ msgid "l-sw"
+#~ msgstr "スワヒリ語"
+
+#~ msgid "l-sw-ke"
+#~ msgstr "スワヒリ語 (ケニア)"
+
+#~ msgid "l-ta"
+#~ msgstr "タミル語"
+
+#~ msgid "l-ta-in"
+#~ msgstr "タミル語 (インド)"
+
+#~ msgid "l-te"
+#~ msgstr "テルグ語"
+
+#~ msgid "l-te-in"
+#~ msgstr "テルグ語 (インド)"
+
+#~ msgid "l-th"
+#~ msgstr "タイ語"
+
+#~ msgid "l-th-th"
+#~ msgstr "タイ語 (タイ)"
+
+#~ msgid "l-tl"
+#~ msgstr "タガログ語"
+
+#~ msgid "l-tl-ph"
+#~ msgstr "タガログ語 (フィリピン)"
+
+#~ msgid "l-tn"
+#~ msgstr "ツワナ語"
+
+#~ msgid "l-tn-za"
+#~ msgstr "ツワナ語 (南アフリカ)"
+
+#~ msgid "l-tr"
+#~ msgstr "トルコ語"
+
+#~ msgid "l-tr-tr"
+#~ msgstr "トルコ語 (トルコ)"
+
+#~ msgid "l-tt"
+#~ msgstr "タタール語"
+
+#~ msgid "l-tt-ru"
+#~ msgstr "タタール語 (ロシア)"
+
+#~ msgid "l-ts"
+#~ msgstr "ツォンガ語"
+
+#~ msgid "l-uk"
+#~ msgstr "ウクライナ語"
+
+#~ msgid "l-uk-ua"
+#~ msgstr "ウクライナ語 (ウクライナ)"
+
+#~ msgid "l-ur"
+#~ msgstr "ウルドゥー語"
+
+#~ msgid "l-ur-pk"
+#~ msgstr "ウルドゥー語 (パキスタン)"
+
+#~ msgid "l-uz"
+#~ msgstr "ウズベク語"
+
+#~ msgid "l-uz-uz"
+#~ msgstr "ウズベク語 (ウズベキスタン)"
+
+#~ msgid "l-vi"
+#~ msgstr "ベトナム語"
+
+#~ msgid "l-vi-vn"
+#~ msgstr "ベトナム語 (ベトナム)"
+
+#~ msgid "l-xh"
+#~ msgstr "コサ語"
+
+#~ msgid "l-xh-za"
+#~ msgstr "コサ語 (南アフリカ)"
+
+#~ msgid "l-zh"
+#~ msgstr "中国語"
+
+#~ msgid "l-zh-cn"
+#~ msgstr "中国語 (簡体字)"
+
+#~ msgid "l-zh-hk"
+#~ msgstr "中国語 (香港)"
+
+#~ msgid "l-zh-mo"
+#~ msgstr "中国語 (マカオ)"
+
+#~ msgid "l-zh-sg"
+#~ msgstr "中国語 (シンガポール)"
+
+#~ msgid "l-zh-tw"
+#~ msgstr "中国語 (繁体字)"
+
+#~ msgid "l-zu"
+#~ msgstr "ズールー語"
+
+#~ msgid "l-zu-za"
+#~ msgstr "ズールー語 (南アフリカ)"
+
+#~ msgid "l-empty"
+#~ msgstr "不明"
+
+#~ msgid "l-xx"
+#~ msgstr "不明"
+
+#~ msgid "c-xy"
+#~ msgstr "ローカル IP"
+
+#, fuzzy
+#~| msgid "Last 60 Days"
+#~ msgid "Last 30 Days"
+#~ msgstr "過去 60 日"
+
+#~ msgid "Last 90 Days"
+#~ msgstr "過去 90 日"
+
+#, fuzzy
+#~| msgid "Last 60 Days"
+#~ msgid "Last 365 Days"
+#~ msgstr "過去 60 日"
+
+#~ msgid ""
+#~ "Percentage of single-page visits, i.e. visits in which the person left "
+#~ "your site from the entrance page."
+#~ msgstr "1 ページのみを閲覧してサイトを去った訪問者の割合です。"
+
+#~ msgid "New visitors"
+#~ msgstr "新規の訪問者"
+
+#~ msgid "Human users who visited your site only once."
+#~ msgstr "現在までに一度だけサイトを訪れたユーザーの数です。"
+
+#, fuzzy
+#~ msgid "Equity Links"
+#~ msgstr "外部リンク"
+
+#~ msgid "Facebook Shares"
+#~ msgstr "Facebook シェア"
+
+#~ msgid "Facebook Clicks"
+#~ msgstr "Facebook クリック"
+
+#~ msgid "How many times links to your website have been clicked on Facebook."
+#~ msgstr ""
+#~ "Facebook 上で現在までにあなたの Web サイトへのリンクがクリックされた回数で"
+#~ "す。"
+
+#~ msgid "acrobat"
+#~ msgstr "Acrobat"
+
+#~ msgid "director"
+#~ msgstr "Director"
+
+#~ msgid "flash"
+#~ msgstr "Flash"
+
+#~ msgid "mediaplayer"
+#~ msgstr "Media Player"
+
+#~ msgid "quicktime"
+#~ msgstr "QuickTime"
+
+#~ msgid "real"
+#~ msgstr "Real"
+
+#~ msgid "silverlight"
+#~ msgstr "Silverlight"
 
 #, fuzzy
 #~ msgid "Track Outbound Clicks"
@@ -6139,10 +7669,6 @@ msgstr ""
 #~ msgid "Top Traffic Sources"
 #~ msgstr "トップ 参照元"
 
-#, fuzzy
-#~ msgid "windows phone"
-#~ msgstr "Windows Phone 7"
-
 #~ msgid "Ignore users (username not found)"
 #~ msgstr "無効なユーザー (ユーザー名が見つかりません)"
 
@@ -6163,9 +7689,6 @@ msgstr ""
 #~ msgstr ""
 #~ "解析から除外したいユーザー名を、カンマで区切って入力します。スペースは無視"
 #~ "されず、ユーザー名の大文字と小文字は区別されます。"
-
-#~ msgid "Permissions"
-#~ msgstr "権限"
 
 #~ msgid "Advanced"
 #~ msgstr "詳細"
@@ -6380,9 +7903,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Link Details"
 #~ msgstr "詳細の展開"
-
-#~ msgid "Last 5 minutes"
-#~ msgstr "過去 5 分"
 
 #~ msgid "Human visits"
 #~ msgstr "人間の訪問"

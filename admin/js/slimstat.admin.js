@@ -1,9 +1,8 @@
 if ( typeof SlimStatAdminParams == 'undefined' ) {
 	SlimStatAdminParams = {
+		async_load : 'no',
 		refresh_interval: 0,
-		expand_details: 'no',
-		datepicker_image: '',
-		text_direction: ''
+		datepicker_image: ''
 	};
 }
 

@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.8.2
+Version: 4.8.3
 Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8.2';
+	public static $version = '4.8.3';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -1330,13 +1330,13 @@ class wp_slimstat {
 		$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'stream' => true, 'filename' => $tmpfname, 'user-agent'  => 'Slimstat Analytics/' . self::$version . '; ' . home_url() ) );
 
 		if ( is_wp_error( $response ) ) {
-		        unlink( $tmpfname );
-		        return $response;
+			unlink( $tmpfname );
+			return $response;
 		}
 
 		if ( 200 != wp_remote_retrieve_response_code( $response ) ){
-		        unlink( $tmpfname );
-		        return new WP_Error( 'http_404', trim( wp_remote_retrieve_response_message( $response ) ) );
+			unlink( $tmpfname );
+			return new WP_Error( 'http_404', trim( wp_remote_retrieve_response_message( $response ) ) );
 		}
 
 		return $tmpfname;
@@ -1368,7 +1368,6 @@ class wp_slimstat {
 		// Init the database library with the appropriate filters
 		if ( strpos ( $_content, 'WHERE:' ) !== false ) {
 			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
-			// wp_slimstat_db::init();
 		}
 		else{
 			wp_slimstat_db::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
@@ -1387,6 +1386,8 @@ class wp_slimstat {
 
 				wp_register_style( 'wp-slimstat-frontend', plugins_url( '/admin/css/slimstat.frontend.css', __FILE__ ) );
 				wp_enqueue_style( 'wp-slimstat-frontend' );
+
+				wp_slimstat_reports::$reports_info[ $w ][ 'callback_args' ][ 'is_widget' ] = true;
 
 				ob_start();
 				echo wp_slimstat_reports::report_header( $w );
@@ -1440,6 +1441,10 @@ class wp_slimstat {
 
 				// Format results
 				$output = array();
+
+				// Load localization strings
+				include_once( plugin_dir_path( __FILE__ ) . 'languages/dynamic_strings.php' );
+
 				foreach( $results as $result_idx => $a_result ) {
 					foreach( $w as $a_column ) {
 						$output[ $result_idx ][ $a_column ] = "<span class='col-$a_column'>";
@@ -1450,7 +1455,7 @@ class wp_slimstat {
 								break;
 
 							case 'country':
-								$output[ $result_idx ][ $a_column ] .= __( 'c-' . $a_result[ $a_column ], 'wp-slimstat' );
+								$output[ $result_idx ][ $a_column ] .= slim_i18n::get_string( 'c-' . $a_result[ $a_column ] );
 								break;
 
 							case 'display_name':
@@ -1473,11 +1478,11 @@ class wp_slimstat {
 								break;
 
 							case 'language':
-								$output[ $result_idx ][ $a_column ] .= __( 'l-' . $a_result[ $a_column ], 'wp-slimstat' );
+								$output[ $result_idx ][ $a_column ] .= slim_i18n::get_string( 'l-' . $a_result[ $a_column ] );
 								break;
 
 							case 'platform':
-								$output[ $result_idx ][ $a_column ] .= __( $a_result[ $a_column ], 'wp-slimstat' );
+								$output[ $result_idx ][ $a_column ] .= slim_i18n::get_string( $a_result[ $a_column ] );
 								break;
 
 							case 'post_link':
@@ -2001,7 +2006,7 @@ class slimstat_widget extends WP_Widget {
 	 */
 	public function form( $instance ) {
 		// Let's build the dropdown
-		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-reports.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 		$select_options = '';
 		$slimstat_widget_id = !empty( $instance[ 'slimstat_widget_id' ] ) ? $instance[ 'slimstat_widget_id' ] : '';

@@ -71,7 +71,7 @@ class slim_uadetector {
 			$browser[ 'browser_type' ] = 3;
 		}
 		else if ( preg_match( '#^WordPress/(?:wordpress(\-mu)\-)?(\d\.\d+)(?:\.\d+)*(?:\-[a-z]+)?(?:\;\shttp\://[a-z0-9_\.\:\/]+)?$#', $_user_agent, $match ) > 0 ) {
-			$browser[ 'browser' ] = 'Wordpress';
+			$browser[ 'browser' ] = 'WordPress';
 			if ( !empty( $match[ 1 ] ) ) {
 				$browser[ 'browser' ] .= $match[ 1 ];
 			}
