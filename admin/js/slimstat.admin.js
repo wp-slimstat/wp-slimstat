@@ -398,6 +398,7 @@ var SlimStatAdmin = {
 
 	refresh_countdown: function() {
 		if ( jQuery( '.refresh-timer' ).length == 0 ) {
+			window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
 			return false;
 		}
 
