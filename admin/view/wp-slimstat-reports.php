@@ -1266,7 +1266,7 @@ class wp_slimstat_reports {
 				chart_<?php echo $_args[ 'id' ]; ?>.data = <?php unset( $data[ 'keys' ] ); echo json_encode( $data ) ?>;
 
 				// Create axes
-				var categoryAxis = chart_<?php echo $_args[ 'id' ]; ?>.xAxes.push(new am4charts.CategoryAxis());
+				var categoryAxis = chart_<?php echo $_args[ 'id' ]; ?>.xAxes.push( new am4charts.CategoryAxis() );
 				categoryAxis.dataFields.category = "v1_label";
 				categoryAxis.renderer.minGridDistance = 50;
 				categoryAxis.startLocation = 0;
@@ -1274,7 +1274,7 @@ class wp_slimstat_reports {
 				categoryAxis.renderer.grid.template.disabled = true;
 
 				// Create value axis
-				var valueAxis = chart_<?php echo $_args[ 'id' ]; ?>.yAxes.push(new am4charts.ValueAxis());
+				var valueAxis = chart_<?php echo $_args[ 'id' ]; ?>.yAxes.push( new am4charts.ValueAxis() );
 				valueAxis.baseValue = 0;
 
 				// Colors

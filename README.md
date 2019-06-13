@@ -2,9 +2,9 @@
 **Contributors:** coolmann  
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38  
 **Tags:** analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit  
-Text Domain: wp-slimstat
+**Text Domain**: wp-slimstat
 **Requires at least:** 3.8  
-Requires PHP: 5.2
+**Requires PHP**: 5.2
 **Tested up to:** 5.1  
 **Stable tag:** 4.8.2.1  
 

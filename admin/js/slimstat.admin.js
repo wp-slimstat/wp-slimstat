@@ -62,7 +62,7 @@ jQuery( function() {
 		var base = jQuery.when({});
 		jQuery( 'div[id^=slim_]' ).each( function() {
 			// Skip Charts
-			if ( !jQuery( this ).hasClass( 'chart' ) ) {
+			if ( jQuery( this ).find( '.chart-placeholder' ).length == 0 ) {
 				jQuery( '#' + jQuery( this ).attr( 'id' ) + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
 				base = base.then( SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) ) );
 			}
