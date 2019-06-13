@@ -4,10 +4,6 @@ if ( !function_exists( 'add_action' ) ) {
 	exit(0);
 }
 
-if ( wp_slimstat::$settings[ 'async_load' ] == 'on' && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
-	return '';
-}
-
 $is_dashboard = empty( $_REQUEST[ 'page' ] ) || $_REQUEST[ 'page' ] != 'slimview1';
 
 // Available icons
@@ -329,3 +325,34 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 if ( $count_page_results > 20 ) {
 	echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true, wp_slimstat::$settings[ 'number_results_raw_data' ] );
 }
+
+?>
+
+<script type="text/javascript">
+var slimstat_refresh_timer = 0;
+
+function slimstat_refresh_countdown() {
+	slimstat_refresh_timer--;
+	minutes = parseInt( slimstat_refresh_timer / 60 );
+	seconds = parseInt( slimstat_refresh_timer % 60 );
+
+	jQuery( '.refresh-timer' ).html( minutes + ':' + ( ( seconds < 10 ) ? '0' : '' ) + seconds );
+
+	if ( slimstat_refresh_timer == 0 ) {
+		// Request the data from the server
+		refresh = SlimStatAdmin.refresh_report( 'slim_p7_02' );
+		refresh();
+
+		// Reset the countdown timer
+		slimstat_refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
+	}
+	else {
+		window.setTimeout( slimstat_refresh_countdown, 1000 );
+	}
+}
+
+if ( jQuery( '.refresh-timer' ).length > 0 && typeof SlimStatAdminParams.refresh_interval != 'undefined' ) {
+	slimstat_refresh_timer = SlimStatAdminParams.refresh_interval;
+	window.setTimeout( slimstat_refresh_countdown, 1000 );
+}
+</script>

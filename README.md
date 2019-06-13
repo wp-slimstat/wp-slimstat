@@ -1,4 +1,10 @@
 # Slimstat Analytics 
+**Contributors:** coolmann  
+**Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38  
+**Tags:** analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit  
+**Requires at least:** 3.8  
+**Tested up to:** 5.2  
+**Stable tag:** 4.8.3  
 
 
 ## Description 
@@ -70,12 +76,17 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 ## Changelog 
 
 
-## 4.8.2.1 
+## 4.8.3 
 * [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.
+* [New] If English is not your primary languge, Slimstat will now display a notice asking for your help to [translate our plugin](https://translate.wordpress.org/projects/wp-plugins/wp-slimstat/) in your language. Please consider volunteering for this great opportunity to help our community!
+* [Update] We are working with the GlotPress community to improve the way Slimstat speaks your language. We had to change the way certain strings are defined in our source code. Please let us know if you notice any unexpected behavior when analyzing languages, countries and operating systems.
 * [Update] Removed Facebook rankings metrics, as the API has been deprecated and the new one is not accessible without a private token.
 * [Update] MozRank has been deprecated, we have replaced it with the Domain Authority metric.
+* [Update] Spring cleaning in the 'admin notices' department: removed some obsolete CSS code, replaced by built-in WP classes and definitions.
 * [Fix] Changed the default minimum capability to access the reports from 'activate_plugins' to 'manage_options', so that regular administrators (a.k.a. non-super admins) in a multisite environment can still see their own reports (thank you, [homepageware](https://wordpress.org/support/topic/slimstat-and-multisite/)). This update does not affect existing installations: if you want regular admins to see their own stats, please go to Slimstat > Settings > Access Control and change the values in the corresponding fields.
+* [Fix] The autorefresh feature for the Activity Log was not working as expected. Thank you to all the users who patiently worked with us to identify the issue.
 * [Fix] A conflict between the Async loader and AmCharts 4 was causing the Screen Options tab to not work as expected (thank you, [softfully](https://wordpress.org/support/topic/screen-options-doesnt-open/)).
+* [Fix] Removed unused setting 'Expand Reports'
 
 
 ### 4.8.2 

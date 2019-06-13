@@ -32,8 +32,8 @@ if ( !is_array( $list_addons ) ) {
 ?>
 
 <div class="wrap slimstat">
-<h2><?php _e('Add-ons','wp-slimstat') ?></h2>
-<p><?php _e('Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.','wp-slimstat') ?>
+<h2><?php _e( 'Add-ons', 'wp-slimstat' ) ?></h2>
+<p><?php _e( 'Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.', 'wp-slimstat' ) ?>
 <?php
 	if ( empty( $_GET[ 'force_refresh' ] ) ) {
 		echo ' ';
@@ -51,7 +51,7 @@ if ( !is_array( $list_addons ) ) {
 <table class="wp-list-table widefat plugins slimstat-addons" cellspacing="0">
 	<thead>
 	<tr>
-		<th scope="col" id="name" class="manage-column column-name"><?php _e('Add-on','wp-slimstat') ?></th><th scope="col" id="description" class="manage-column column-description" style=""><?php _e('Description','wp-slimstat') ?></th>
+		<th scope="col" id="name" class="manage-column column-name"><?php _e( 'Add-on', 'wp-slimstat' ) ?></th><th scope="col" id="description" class="manage-column column-description" style=""><?php _e( 'Description', 'wp-slimstat' ) ?></th>
 	</tr>
 	</thead>
 

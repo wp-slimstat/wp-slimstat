@@ -59,9 +59,9 @@ jQuery( function() {
 	// Asynchronous reports are loaded dynamically after the page loads
 	if ( SlimStatAdminParams.async_load == 'on' ) { 
 		var base = jQuery.when({});
-		jQuery( 'div[id^=slim_]' ).each( function() {
+		jQuery( 'div[id^=slim_p]' ).each( function() {
 			// Skip Charts
-			if ( jQuery( this ).find( '.chart-placeholder' ).length == 0 ) {
+			if ( jQuery( this ).find( '.chart-placeholder, .refresh-timer' ).length == 0 ) {
 				jQuery( '#' + jQuery( this ).attr( 'id' ) + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
 				base = base.then( SlimStatAdmin.refresh_report( jQuery( this ).attr( 'id' ) ) );
 			}
@@ -204,12 +204,6 @@ jQuery( function() {
 
 	// ----- BEGIN: ACTIVITY LOG -----------------------------------------------------
 	//
-
-	// Reload the Activity Log every X seconds
-	SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
-	if ( SlimStatAdmin._refresh_timer > 0 ) {
-		window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
-	}
 
 	// Delete a pageview when the corresponding button is clicked.
 	// Since this content can be reloaded dynamically, we use the .on call with the classname
@@ -391,34 +385,6 @@ jQuery( function() {
 
 // ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------
 var SlimStatAdmin = {
-	_refresh_timer: 0,
-
-	refresh_countdown: function() {
-		if ( jQuery( '.refresh-timer' ).length == 0 ) {
-			window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
-			return false;
-		}
-
-		SlimStatAdmin._refresh_timer--;
-		minutes = parseInt( SlimStatAdmin._refresh_timer / 60 );
-		seconds = parseInt( SlimStatAdmin._refresh_timer % 60 );
-
-		jQuery( '.refresh-timer' ).html( minutes + ':' + ( ( seconds < 10 ) ? '0' : '' ) + seconds );
-
-		if ( SlimStatAdmin._refresh_timer > 0 ) {
-			window.setTimeout( SlimStatAdmin.refresh_countdown, 1000 );
-		}
-		else {
-			// Request the data from the server
-			refresh = SlimStatAdmin.refresh_report( 'slim_p7_02' );
-			refresh();
-
-			// Reset the countdown timer
-			SlimStatAdmin._refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
-			window.setTimeout( "SlimStatAdmin.refresh_countdown();", 1000 );
-		}
-	},
-
 	refresh_report: function( id ) {
 		return function() {
 			var inner_content = '#' + id + ' .inside';
