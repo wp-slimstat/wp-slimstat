@@ -1455,15 +1455,15 @@ class wp_slimstat_reports {
 					__( 'Backlinks', 'wp-slimstat' ),
 					__( 'Number of external equity links to your website.', 'wp-slimstat' )
 				),
-				'seomoz_mozrank' => array(
+				'seomoz_links' => array(
 					0,
-					__( 'MozRank', 'wp-slimstat' ),
-					__( 'MozRank of the URL, in a normalized 10-point score. MozRank represents a link popularity score. It reflects the importance of any given web page on the Internet.', 'wp-slimstat' )
+					__( 'Links', 'wp-slimstat' ),
+					__( 'The number of links (external, equity or nonequity or not,) to your homepage.', 'wp-slimstat' )
 				),
-				'seomoz_equity_links' => array(
+				'seomoz_domain_authority' => array(
 					0,
-					__( 'Equity Links', 'wp-slimstat' ),
-					__( 'Number of authority-passing links (including followed links and redirects, internal or external) to your website. Set the permalink filter here above to get the corresponding metrics in this report.', 'wp-slimstat' )
+					__( 'Domain Authority', 'wp-slimstat' ),
+					__( 'A normalized 100-point score representing the likelihood of a domain to rank well in search engine results.', 'wp-slimstat' )
 				),
 				'facebook_shares' => array(
 					0,
@@ -1498,20 +1498,21 @@ class wp_slimstat_reports {
 				$binary_signature = urlencode( base64_encode( $binary_signature ) );
 
 				// SeoMoz Equity Links (Backlinks) and MozRank
-				$response = @wp_remote_get( 'http://lsapi.seomoz.com/linkscape/url-metrics/' . $site_url . '?Cols=16672&AccessID=' . wp_slimstat::$settings[ 'mozcom_access_id' ] . '&Expires=' . $expiration_token . '&Signature=' . $binary_signature, $options );
+				$response = @wp_remote_get( 'https://lsapi.seomoz.com/linkscape/url-metrics/' . $site_url . '?Cols=68719478816&AccessID=' . wp_slimstat::$settings[ 'mozcom_access_id' ] . '&Expires=' . $expiration_token . '&Signature=' . $binary_signature, $options );
+
 				if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
 					$response = @json_decode( $response[ 'body' ] );
 					if ( is_object( $response ) ) {
-						if ( !empty( $response->ujid ) ) {
-							$rankings[ 'seomoz_equity_links' ][ 0 ] = number_format( intval( $response->ujid ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+						if ( !empty( $response->pda ) ) {
+							$rankings[ 'seomoz_domain_authority' ][ 0 ] = number_format( intval( $response->pda ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 						}
 
 						if ( !empty( $response->ueid ) ) {
 							$rankings[ 'seomoz_equity_backlinks' ][ 0 ] = number_format( intval( $response->ueid ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
 						}
 
-						if ( !empty( $response->umrp ) ) {
-							$rankings[ 'seomoz_mozrank' ][ 0 ] = number_format( floatval( $response->umrp ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+						if ( !empty( $response->uid ) ) {
+							$rankings[ 'seomoz_links' ][ 0 ] = number_format( floatval( $response->uid ), 0, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
 						}
 					}
 				}
@@ -1551,20 +1552,6 @@ class wp_slimstat_reports {
 					}
 				}
 			}
-
-			// Facebook
-			$options[ 'headers' ][ 'Accept' ] = 'text/xml';
-			$response = @wp_remote_get( 'http://api.facebook.com/restserver.php?method=links.getStats&urls=' . $site_url, $options );
-			if ( !is_wp_error( $response ) && isset( $response[ 'response' ][ 'code' ] ) && ( $response[ 'response' ][ 'code' ] == 200 ) && !empty( $response[ 'body' ] ) ) {
-				$response = @simplexml_load_string( $response[ 'body' ] );
-				if ( is_object( $response ) && is_object( $response->link_stat ) ) {
-					$rankings[ 'facebook_shares' ][ 0 ] = number_format( intval( $response->link_stat->share_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
-					$rankings[ 'facebook_clicks' ][ 0 ] = number_format( intval( $response->link_stat->click_count ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
-				}
-			}
-
-			// Store rankings as transients for 12 hours
-			//set_transient('slimstat_ranking_values', $rankings, 43200);
 		}
 
 		foreach ( $rankings as $a_ranking ) {

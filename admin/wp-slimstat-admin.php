@@ -12,6 +12,7 @@ class wp_slimstat_admin {
 	 */
 	public static function init() {
 		self::$admin_notice = "Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.";
+		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage these tools in Slimstat. Stay tuned!"
 		self::$admin_notice .= '<br/><br/><a id="slimstat-hide-admin-notice" href="#" class="button-secondary">Got it, thanks</a>';
 
 		// Load language files
