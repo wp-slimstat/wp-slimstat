@@ -13,15 +13,14 @@
 /* Admin Notice */
 .slimstat-notice{
 	overflow: hidden;
+	padding: 10px;
+	position: relative;
 }
-.slimstat-notice span{
-	width: 97%;
+.slimstat-notice #slimstat-hide-admin-notice {
+	float: right;
 }
-.slimstat-notice .fixed-height {
-	height: 120px;
-	margin-bottom: 20px;
-	overflow: auto;
-	padding: 0 20px 0 0;
+.slimstat-notice p {
+	margin-top: 0;
 }
 
 /* Filters */
@@ -630,9 +629,6 @@
 	}
 }
 @media screen and (max-width: 800px){
-	.slimstat-notice span {
-		width: 90%;
-	}
 	#slimstat-filters input.text, #slimstat-filters select {
 		margin: 0 .5% 0 0;
 		width: 26%;

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WP SlimStat\n"
-"POT-Creation-Date: 2019-06-10 15:36-0400\n"
+"POT-Creation-Date: 2019-06-11 16:40-0400\n"
 "PO-Revision-Date: \n"
 "Last-Translator: WP Slimstat <support@wp-slimstat.com>\n"
 "Language-Team: camu <info@duechiacchiere.it>\n"
@@ -1646,7 +1646,7 @@ msgid "Date and Time"
 msgstr "Data e ora"
 
 #: ../admin/view/right-now.php:184 ../admin/view/wp-slimstat-db.php:60
-#: ../admin/wp-slimstat-admin.php:1112 ../admin/wp-slimstat-admin.php:1152
+#: ../admin/wp-slimstat-admin.php:1123 ../admin/wp-slimstat-admin.php:1163
 msgid "Originating IP"
 msgstr "IP originante"
 
@@ -1664,7 +1664,7 @@ msgstr "Ricerca locale"
 #: ../admin/view/right-now.php:236 ../admin/view/wp-slimstat-db.php:40
 #: ../admin/view/wp-slimstat-reports.php:209
 #: ../admin/view/wp-slimstat-reports.php:219
-#: ../admin/wp-slimstat-admin.php:1115 ../admin/wp-slimstat-admin.php:1131
+#: ../admin/wp-slimstat-admin.php:1126 ../admin/wp-slimstat-admin.php:1142
 msgid "Search Terms"
 msgstr "Parole chiave"
 
@@ -1717,11 +1717,11 @@ msgstr "Browser"
 msgid "User Logged Out"
 msgstr "Browser"
 
-#: ../admin/view/wp-slimstat-db.php:37 ../admin/wp-slimstat-admin.php:1128
+#: ../admin/view/wp-slimstat-db.php:37 ../admin/wp-slimstat-admin.php:1139
 msgid "Browser"
 msgstr "Browser"
 
-#: ../admin/view/wp-slimstat-db.php:38 ../admin/wp-slimstat-admin.php:1129
+#: ../admin/view/wp-slimstat-db.php:38 ../admin/wp-slimstat-admin.php:1140
 msgid "Country Code"
 msgstr "Codice Paese"
 
@@ -1729,22 +1729,22 @@ msgstr "Codice Paese"
 msgid "IP Address"
 msgstr "Indirizzo IP"
 
-#: ../admin/view/wp-slimstat-db.php:41 ../admin/wp-slimstat-admin.php:1132
+#: ../admin/view/wp-slimstat-db.php:41 ../admin/wp-slimstat-admin.php:1143
 msgid "Language Code"
 msgstr "Codice Lingua"
 
 #: ../admin/view/wp-slimstat-db.php:42 ../admin/view/wp-slimstat-db.php:110
-#: ../admin/wp-slimstat-admin.php:1133
+#: ../admin/wp-slimstat-admin.php:1144
 msgid "Operating System"
 msgstr "Sistema operativo"
 
 #: ../admin/view/wp-slimstat-db.php:43 ../admin/view/wp-slimstat-db.php:111
-#: ../admin/wp-slimstat-admin.php:1134
+#: ../admin/wp-slimstat-admin.php:1145
 msgid "Permalink"
 msgstr "Permalink"
 
 #: ../admin/view/wp-slimstat-db.php:44 ../admin/view/wp-slimstat-db.php:112
-#: ../admin/wp-slimstat-admin.php:1135
+#: ../admin/wp-slimstat-admin.php:1146
 msgid "Referer"
 msgstr "Riferimento"
 
@@ -1759,7 +1759,7 @@ msgstr "Nome del visitatore"
 msgid "Visitor's Email"
 msgstr "Nome del visitatore"
 
-#: ../admin/view/wp-slimstat-db.php:47 ../admin/wp-slimstat-admin.php:1118
+#: ../admin/view/wp-slimstat-db.php:47 ../admin/wp-slimstat-admin.php:1129
 msgid "Outbound Link"
 msgstr "Link in uscita"
 
@@ -1771,15 +1771,15 @@ msgstr "Velocit&agrave; Pagina"
 msgid "-- Advanced filters --"
 msgstr "-- Filtri avanzati --"
 
-#: ../admin/view/wp-slimstat-db.php:51 ../admin/wp-slimstat-admin.php:1147
+#: ../admin/view/wp-slimstat-db.php:51 ../admin/wp-slimstat-admin.php:1158
 msgid "Browser Version"
 msgstr "Versione Browser"
 
-#: ../admin/view/wp-slimstat-db.php:52 ../admin/wp-slimstat-admin.php:1148
+#: ../admin/view/wp-slimstat-db.php:52 ../admin/wp-slimstat-admin.php:1159
 msgid "Browser Type"
 msgstr "Tipo di browser"
 
-#: ../admin/view/wp-slimstat-db.php:53 ../admin/wp-slimstat-admin.php:1117
+#: ../admin/view/wp-slimstat-db.php:53 ../admin/wp-slimstat-admin.php:1128
 msgid "User Agent"
 msgstr "Browser"
 
@@ -1798,15 +1798,15 @@ msgstr "Annotazioni sui grafici"
 msgid "Server Latency"
 msgstr "Latenza Server"
 
-#: ../admin/view/wp-slimstat-db.php:58 ../admin/wp-slimstat-admin.php:1150
+#: ../admin/view/wp-slimstat-db.php:58 ../admin/wp-slimstat-admin.php:1161
 msgid "Post Author"
 msgstr "Autore articolo"
 
-#: ../admin/view/wp-slimstat-db.php:59 ../admin/wp-slimstat-admin.php:1151
+#: ../admin/view/wp-slimstat-db.php:59 ../admin/wp-slimstat-admin.php:1162
 msgid "Post Category ID"
 msgstr "ID Categoria"
 
-#: ../admin/view/wp-slimstat-db.php:61 ../admin/wp-slimstat-admin.php:1153
+#: ../admin/view/wp-slimstat-db.php:61 ../admin/wp-slimstat-admin.php:1164
 msgid "Resource Content Type"
 msgstr "Tipo di contenuto"
 
@@ -1827,7 +1827,7 @@ msgstr "Risoluzione schermo"
 msgid "Viewport Size"
 msgstr "Dimensione Viewport"
 
-#: ../admin/view/wp-slimstat-db.php:66 ../admin/wp-slimstat-admin.php:1155
+#: ../admin/view/wp-slimstat-db.php:66 ../admin/wp-slimstat-admin.php:1166
 msgid "Visit ID"
 msgstr "ID Visita"
 
@@ -1933,7 +1933,7 @@ msgstr "Traccia Capacità Browser"
 msgid "Auto purge"
 msgstr "Pulizia DB"
 
-#: ../admin/view/wp-slimstat-db.php:692 ../admin/wp-slimstat-admin.php:972
+#: ../admin/view/wp-slimstat-db.php:692 ../admin/wp-slimstat-admin.php:983
 msgid "Off"
 msgstr "Off"
 
@@ -2258,7 +2258,7 @@ msgstr "Significato dei colori"
 msgid "From search result page"
 msgstr "Da una pagina di ricerca"
 
-#: ../admin/view/wp-slimstat-reports.php:41 ../admin/wp-slimstat-admin.php:1110
+#: ../admin/view/wp-slimstat-reports.php:41 ../admin/wp-slimstat-admin.php:1121
 msgid "Known Visitor"
 msgstr "Visitatore noto"
 
@@ -2835,72 +2835,72 @@ msgstr ""
 msgid "Show on screen"
 msgstr "Scegli cosa visualizzare"
 
-#: ../admin/wp-slimstat-admin.php:878
+#: ../admin/wp-slimstat-admin.php:889
 msgid "Already saved"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:886
+#: ../admin/wp-slimstat-admin.php:897
 msgid "Saved"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:906
+#: ../admin/wp-slimstat-admin.php:917
 msgid "Delete this filter"
 msgstr "Rimuovi questo filtro"
 
-#: ../admin/wp-slimstat-admin.php:971
+#: ../admin/wp-slimstat-admin.php:982
 msgid "On"
 msgstr "On"
 
-#: ../admin/wp-slimstat-admin.php:1040
+#: ../admin/wp-slimstat-admin.php:1051
 msgid "Save Changes"
 msgstr "Salva"
 
-#: ../admin/wp-slimstat-admin.php:1084
+#: ../admin/wp-slimstat-admin.php:1095
 msgid "There was an error updating the following options:"
 msgstr ""
 "Si è verificato un errore nell'aggiornamento delle seguente impostazioni:"
 
-#: ../admin/wp-slimstat-admin.php:1087
+#: ../admin/wp-slimstat-admin.php:1098
 msgid "Your changes have been saved."
 msgstr "Le impostazioni sono state salvate."
 
-#: ../admin/wp-slimstat-admin.php:1105
+#: ../admin/wp-slimstat-admin.php:1116
 msgid "Definitions"
 msgstr "Definizioni"
 
-#: ../admin/wp-slimstat-admin.php:1108
+#: ../admin/wp-slimstat-admin.php:1119
 msgid "Pageview"
 msgstr "Accesso"
 
-#: ../admin/wp-slimstat-admin.php:1108
+#: ../admin/wp-slimstat-admin.php:1119
 msgid ""
 "A request to load a single HTML file (\"page\"). This should be contrasted "
 "with a \"hit\", which refers to a request for any file from a web server. "
 "Slimstat logs a pageview each time the tracking code is executed"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1109
+#: ../admin/wp-slimstat-admin.php:1120
 msgid "(Human) Visit"
 msgstr "Visita umana"
 
-#: ../admin/wp-slimstat-admin.php:1109
+#: ../admin/wp-slimstat-admin.php:1120
 msgid ""
 "A period of interaction between a visitor's browser and your website, ending "
 "when the browser is closed or when the user has been inactive on that site "
 "for 30 minutes"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1110
+#: ../admin/wp-slimstat-admin.php:1121
 msgid ""
 "Any user who has left a comment on your blog, and is thus identified by "
 "WordPress as a returning visitor"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1111
+#: ../admin/wp-slimstat-admin.php:1122
 msgid "Unique IP"
 msgstr "IP unico"
 
-#: ../admin/wp-slimstat-admin.php:1111
+#: ../admin/wp-slimstat-admin.php:1122
 msgid ""
 "Used to differentiate between multiple requests to download a file from one "
 "internet address (IP) and requests originating from many distinct addresses; "
@@ -2908,83 +2908,83 @@ msgid ""
 "from, it is useful, but not perfect"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1112
+#: ../admin/wp-slimstat-admin.php:1123
 msgid ""
 "the originating IP address of a client connecting to a web server through an "
 "HTTP proxy or load balancer"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1113
+#: ../admin/wp-slimstat-admin.php:1124
 msgid "Direct Traffic"
 msgstr "Visita diretta"
 
-#: ../admin/wp-slimstat-admin.php:1113
+#: ../admin/wp-slimstat-admin.php:1124
 msgid ""
 "All those people showing up to your Web site by typing in the URL of your "
 "Web site coming or from a bookmark; some people also call this \"default "
 "traffic\" or \"ambient traffic\""
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1114
+#: ../admin/wp-slimstat-admin.php:1125
 msgid "Search Engine"
 msgstr "Motore di ricerca"
 
-#: ../admin/wp-slimstat-admin.php:1114
+#: ../admin/wp-slimstat-admin.php:1125
 msgid ""
 "Google, Yahoo, MSN, Ask, others; this bucket will include both your organic "
 "as well as your paid (PPC/SEM) traffic, so be aware of that"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1115 ../admin/wp-slimstat-admin.php:1131
+#: ../admin/wp-slimstat-admin.php:1126 ../admin/wp-slimstat-admin.php:1142
 msgid "Keywords used by your visitors to find your website on a search engine"
 msgstr "Parole chiave che i visitatori hanno inserito nel motore di ricerca"
 
-#: ../admin/wp-slimstat-admin.php:1116
+#: ../admin/wp-slimstat-admin.php:1127
 msgid "SERP"
 msgstr "SERP"
 
-#: ../admin/wp-slimstat-admin.php:1116
+#: ../admin/wp-slimstat-admin.php:1127
 msgid ""
 "Short for search engine results page, the Web page that a search engine "
 "returns with the results of its search. The value shown represents your rank "
 "(or position) within that list of results"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1117
+#: ../admin/wp-slimstat-admin.php:1128
 msgid ""
 "Any program used for accessing a website; this includes browsers, robots, "
 "spiders and any other program that was used to retrieve information from the "
 "site"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1118
+#: ../admin/wp-slimstat-admin.php:1129
 msgid ""
 "A link from one domain to another is said to be outbound from its source "
 "anchor and inbound to its target. This report lists all the links to other "
 "websites followed by your visitors."
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1125
+#: ../admin/wp-slimstat-admin.php:1136
 msgid "Basic Filters"
 msgstr "Filtri di base"
 
-#: ../admin/wp-slimstat-admin.php:1128
+#: ../admin/wp-slimstat-admin.php:1139
 msgid "User agent (Firefox, Chrome, ...)"
 msgstr "programma usato per visualizzare il sito (Firefox, Chrome, ...)"
 
-#: ../admin/wp-slimstat-admin.php:1129
+#: ../admin/wp-slimstat-admin.php:1140
 msgid "2-letter code (us, ru, de, it, ...)"
 msgstr "codice di 2 lettere (us, ru, it, de, ...)"
 
-#: ../admin/wp-slimstat-admin.php:1130
+#: ../admin/wp-slimstat-admin.php:1141
 msgid "IP"
 msgstr "IP"
 
-#: ../admin/wp-slimstat-admin.php:1130
+#: ../admin/wp-slimstat-admin.php:1141
 msgid "Visitor's public IP address"
 msgstr "indirizzo pubblico del visitatore"
 
-#: ../admin/wp-slimstat-admin.php:1132
+#: ../admin/wp-slimstat-admin.php:1143
 #, fuzzy
 #| msgid ""
 #| "Please refer to this <a target=\"_blank\" href=\"http://msdn.microsoft."
@@ -2999,7 +2999,7 @@ msgstr ""
 "href=\"http://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx"
 "\">pagina su linguaggi e culture</a> (prima colonna)"
 
-#: ../admin/wp-slimstat-admin.php:1133
+#: ../admin/wp-slimstat-admin.php:1144
 #, fuzzy
 #| msgid ""
 #| "Accepts identifiers like win7, win98, macosx, ...; please refer to <a "
@@ -3014,19 +3014,19 @@ msgstr ""
 "visita <a target=\"_blank\" href=\"http://php.net/manual/en/function.get-"
 "browser.php\">questa pagina</a>"
 
-#: ../admin/wp-slimstat-admin.php:1134
+#: ../admin/wp-slimstat-admin.php:1145
 msgid "URL accessed on your site"
 msgstr "URL acceduta sul sito"
 
-#: ../admin/wp-slimstat-admin.php:1135
+#: ../admin/wp-slimstat-admin.php:1146
 msgid "Complete address of the referrer page"
 msgstr "Indirizzo completo della pagina di riferimento"
 
-#: ../admin/wp-slimstat-admin.php:1136
+#: ../admin/wp-slimstat-admin.php:1147
 msgid "Visitor's Name"
 msgstr "Nome del visitatore"
 
-#: ../admin/wp-slimstat-admin.php:1136
+#: ../admin/wp-slimstat-admin.php:1147
 #, fuzzy
 #| msgid ""
 #| "Visitors' names according to the cookie set by Wordpress after they leave "
@@ -3038,15 +3038,15 @@ msgstr ""
 "Nome del visitatore come impostato da Wordpress durante l'inserimento di un "
 "commento"
 
-#: ../admin/wp-slimstat-admin.php:1144
+#: ../admin/wp-slimstat-admin.php:1155
 msgid "Advanced Filters"
 msgstr "Filtri avanzati"
 
-#: ../admin/wp-slimstat-admin.php:1147
+#: ../admin/wp-slimstat-admin.php:1158
 msgid "user agent version (9.0, 11, ...)"
 msgstr "versione del browser (9.0, 11, ...)"
 
-#: ../admin/wp-slimstat-admin.php:1148
+#: ../admin/wp-slimstat-admin.php:1159
 msgid ""
 "1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = "
 "all others"
@@ -3054,30 +3054,30 @@ msgstr ""
 "1 = motore di ricerca, 2 = dispositivo mobile, 3 = lettore RSS, 0 = tutti "
 "gli altri"
 
-#: ../admin/wp-slimstat-admin.php:1149
+#: ../admin/wp-slimstat-admin.php:1160
 msgid "Pageview Attributes"
 msgstr "Attributi visita"
 
-#: ../admin/wp-slimstat-admin.php:1149
+#: ../admin/wp-slimstat-admin.php:1160
 msgid ""
 "this field is set to <em>[pre]</em> if the resource has been accessed "
 "through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/"
 "Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1150
+#: ../admin/wp-slimstat-admin.php:1161
 msgid "author associated to that post/page when the resource was accessed"
 msgstr "autore associato al post quando la risorsa &egrave; stata acceduta"
 
-#: ../admin/wp-slimstat-admin.php:1151
+#: ../admin/wp-slimstat-admin.php:1162
 msgid "ID of the category/term associated to the resource, when available"
 msgstr "ID della categoria associata alla risorsa, se disponibile"
 
-#: ../admin/wp-slimstat-admin.php:1152
+#: ../admin/wp-slimstat-admin.php:1163
 msgid "visitor's originating IP address, if available"
 msgstr "indirizzo IP privato del visitatore, se disponibile"
 
-#: ../admin/wp-slimstat-admin.php:1153
+#: ../admin/wp-slimstat-admin.php:1164
 #, fuzzy
 #| msgid ""
 #| "post, page, cpt:<em>custom-post-type</em>, attachment, singular, "
@@ -3098,15 +3098,15 @@ msgstr ""
 "\"_blank\" href=\"http://codex.wordpress.org/Conditional_Tags\">Conditional "
 "Tag</a> del Codex"
 
-#: ../admin/wp-slimstat-admin.php:1154
+#: ../admin/wp-slimstat-admin.php:1165
 msgid "Screen Resolution"
 msgstr "Risoluzione schermo"
 
-#: ../admin/wp-slimstat-admin.php:1154
+#: ../admin/wp-slimstat-admin.php:1165
 msgid "viewport width and height (1024x768, 800x600, ...)"
 msgstr "dimensioni della finestra del browser (1024x768, 800x600, ...)"
 
-#: ../admin/wp-slimstat-admin.php:1155
+#: ../admin/wp-slimstat-admin.php:1166
 msgid ""
 "generally used in conjunction with <em>is not empty</em>, identifies human "
 "visitors"
@@ -3114,22 +3114,22 @@ msgstr ""
 "generalmente usato con l'operatore <em>non &egrave; vuoto</em>, identifica i "
 "visitatori umani"
 
-#: ../admin/wp-slimstat-admin.php:1156
+#: ../admin/wp-slimstat-admin.php:1167
 msgid "Date Filters"
 msgstr "Filtri sulla data"
 
-#: ../admin/wp-slimstat-admin.php:1156
+#: ../admin/wp-slimstat-admin.php:1167
 msgid ""
 "you can specify the timeframe by entering a number in the <em>interval</em> "
 "field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, "
 "year=blank, interval=-1 will set a year-to-date filter)"
 msgstr ""
 
-#: ../admin/wp-slimstat-admin.php:1157
+#: ../admin/wp-slimstat-admin.php:1168
 msgid "SERP Position"
 msgstr "SERP"
 
-#: ../admin/wp-slimstat-admin.php:1157
+#: ../admin/wp-slimstat-admin.php:1168
 msgid ""
 "set the filter to Referer contains cd=N&, where N is the position you are "
 "looking for"
@@ -5394,6 +5394,31 @@ msgstr "Applica"
 
 #: ../languages/dynamic_strings.php:558
 msgid "Microsoft"
+msgstr ""
+
+#: ../languages/i18n-v3.php:233
+#, php-format
+msgid ""
+"As you can see, there is a translation of this plugin in %1$s. This "
+"translation is currently %3$d%% complete. We need your help to make it "
+"complete and to fix any errors. Please register at %4$s to help complete the "
+"translation to %1$s!"
+msgstr ""
+
+#: ../languages/i18n-v3.php:237
+#, php-format
+msgid ""
+"You're using WordPress in %1$s. While %2$s has been translated to %1$s for "
+"%3$d%%, it's not been shipped with the plugin yet. You can help! Register at "
+"%4$s to help complete the translation to %1$s!"
+msgstr ""
+
+#: ../languages/i18n-v3.php:241
+#, php-format
+msgid ""
+"You're using WordPress in a language we don't support yet. We'd love for "
+"%2$s to be translated in that language too, but unfortunately, it isn't "
+"right now. You can change that! Register at %4$s to help translate it!"
 msgstr ""
 
 #: ../wp-slimstat.php:139 ../wp-slimstat.php:252
