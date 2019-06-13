@@ -1450,30 +1450,20 @@ class wp_slimstat_reports {
 		// Check if we have a valied transient
 		if ( false === ( $rankings = get_transient( 'slimstat_ranking_values' ) ) ) {
 			$rankings = array(
+				'seomoz_domain_authority' => array(
+					0,
+					__( 'Moz Domain Authority', 'wp-slimstat' ),
+					__( 'A normalized 100-point score representing the likelihood of a domain to rank well in search engine results.', 'wp-slimstat' )
+				),
 				'seomoz_equity_backlinks' => array(
 					0,
-					__( 'Backlinks', 'wp-slimstat' ),
+					__( 'Moz Backlinks', 'wp-slimstat' ),
 					__( 'Number of external equity links to your website.', 'wp-slimstat' )
 				),
 				'seomoz_links' => array(
 					0,
-					__( 'Links', 'wp-slimstat' ),
-					__( 'The number of links (external, equity or nonequity or not,) to your homepage.', 'wp-slimstat' )
-				),
-				'seomoz_domain_authority' => array(
-					0,
-					__( 'Domain Authority', 'wp-slimstat' ),
-					__( 'A normalized 100-point score representing the likelihood of a domain to rank well in search engine results.', 'wp-slimstat' )
-				),
-				'facebook_shares' => array(
-					0,
-					__( 'Facebook Shares', 'wp-slimstat' ),
-					''
-				),
-				'facebook_clicks' => array(
-					0,
-					__( 'Facebook Clicks', 'wp-slimstat' ),
-					__( 'How many times links to your website have been clicked on Facebook.', 'wp-slimstat' )
+					__( 'Moz Links', 'wp-slimstat' ),
+					__( 'The number of links (external, equity or nonequity or not) to your homepage.', 'wp-slimstat' )
 				),
 				'alexa_world_rank' => array(
 					0,
@@ -1489,6 +1479,16 @@ class wp_slimstat_reports {
 					0,
 					__( 'Alexa Popularity', 'wp-slimstat' ),
 					''
+				),
+				'facebook_shares' => array(
+					0,
+					__( 'Facebook Shares', 'wp-slimstat' ),
+					''
+				),
+				'facebook_clicks' => array(
+					0,
+					__( 'Facebook Clicks', 'wp-slimstat' ),
+					__( 'How many times links to your website have been clicked on Facebook.', 'wp-slimstat' )
 				)
 			);
 
