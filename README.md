@@ -12,15 +12,15 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 
 
 ### Main features 
-* Get access to real-time access log, measure server latency, track page events, keep an eye on your bounce rate and much more.
-* Add shortcodes to your website to display reports in widgets or directly in posts and pages.
-* Fully compliant with the European GDPR guidelines. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
-* Exclude users from statistics collection based on various criteria, including; user roles, common robots, IP subnets, admin pages, country, etc.
-* Export your reports to CSV, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
-* Compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
-* Support for hashing IP addresses in the database to protect your users privacy.
-* Accurate IP geolocation, browser and platform detection (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org)).
-* World Map that works on your mobile device, too (courtesy of [amMap](http://www.ammap.com/)).
+* **Real-time access log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
+* **Shortcodes**: display reports in widgets or directly in posts and pages.
+* **GDPR guidelines**: fully compliant with the European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
+* **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
+* **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
+* **Cache Friendly**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
+* **Privacy**: support for hashing IP addresses in the database to protect your users privacy.
+* **Detailed information**: geolocate your visitors by city and country, browser type and operating system (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org)).
+* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](http://www.ammap.com/)).
 
 
 ### Premium Add-ons 
@@ -28,21 +28,9 @@ Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available 
 
 
 ### Contribute 
-Slimstat Analytics is an open source project, dependent in large parts on community support. You can fork our [Github repository](https://github.com/slimstat/wp-slimstat) and submit code enhancements, bugfixes or provide localization files to let our plugin speak even more languages. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
+Slimstat Analytics is an open source project, dependent in large part on community support. You can fork our [Github repository](https://github.com/slimstat/wp-slimstat) and submit code enhancements, bugfixes or provide localization files to let our plugin speak even more languages. [This page](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38)
 is for those who would like to donate money - be it once, be it regularly, be it a small or a big amount. Everything is set up for an easy donation process.
 Try it out, you'll be amazed how good it feels! If you're on a tight budget, and coding is not your thing, please consider writing [a review](https://wordpress.org/support/plugin/wp-slimstat/reviews/#new-post) for Slimstat as a token of appreciation for our hard work!
-
-
-### Translations 
-Slimstat is available in multiple languages: English, Belarusian (UStarCash), Chinese (沐熙工作室), Farsi, French (Michael Bastin, Jean-Michel Venet, Yves Pouplard, Henrick Kac), German (TechnoViel), Indonesian ([ChameleonJohn](https://www.chameleonjohn.com/)), Italian ([Slimstat Dev Team](https://www.wp-slimstat.com)), Japanese (h_a_l_f), Portuguese, Russian (Vitaly), Spanish ([WebHostingHub](http://www.webhostinghub.com/)), Swedish (Per Soderman) and Turkish (Seyit Mehmet Çoban). Is your language missing or incomplete? [Contact us](http://support.wp-slimstat.com/) today.
-
-
-### Reviews and Feedback 
-* This is by far the most accurate and in-depth tracking plugin I've encountered for WordPress [MiMango](https://wordpress.org/support/topic/excellent-plugin-and-service-9)
-* I have been relying on SlimStat to not only track all traffic to my sites accurately but also to present the stats in very useful graphic format [JJD3](https://wordpress.org/support/topic/an-essential-plugin-14)
-* Thanks you for such an excellent plugin. I am using it to kick Jetpack out of all the wordpress installations that I manage for myself and others - [robertwagnervt](http://wordpress.org/support/topic/plugin-wp-slimstat-excellent-but-some-errors-on-activating)
-* I like Slimstat very much and so I decided to use it instead of Piwik - [Joannes](http://wordpress.org/support/topic/plugin-wp-slimstat-slimstat-and-privacy)
-* Read all the [reviews](http://wordpress.org/support/view/plugin-reviews/wp-slimstat) and feel free to post your own!
 
 
 ### Requirements 
@@ -61,12 +49,12 @@ Slimstat is available in multiple languages: English, Belarusian (UStarCash), Ch
 3. Click on **Install Now** under WP Slimstat Analytics and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 5. Go to Slimstat > Settings > Maintenance tab > MaxMind IP to Country section and click on "Install GeoLite DB" to detect your visitors' countries based on their IP addresses
-6. If your `wp-admin` folder is not publicly accessible, make sure to check the [FAQs](http://wordpress.org/extend/plugins/wp-slimstat/faq/) to see if there's anything else you need to do
+6. If your `wp-admin` folder is not publicly accessible, make sure to check our [knowledge base](https://docs.wp-slimstat.com/) to see if there's anything else you need to do
 
 
 ## Please note 
 * If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
-* If you are upgrading from a version prior to 4.0, please install version 4.0 first to upgrade the database structure and download the new Geolocation data.
+* If you are upgrading from a version prior to 4.0, please [install version 4.0](https://downloads.wordpress.org/plugin/wp-slimstat.4.0.zip) first to upgrade the database structure and download the new Geolocation data.
 
 
 ## Frequently Asked Questions 
@@ -74,7 +62,6 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 
 ## Changelog 
-
 
 ### 4.8.3 
 * [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.
