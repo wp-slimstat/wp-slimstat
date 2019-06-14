@@ -385,12 +385,19 @@ jQuery( function() {
 
 // ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------
 var SlimStatAdmin = {
+	refresh_handle: null,
+
 	refresh_report: function( id ) {
 		return function() {
 			var inner_content = '#' + id + ' .inside';
 			var defer = jQuery.Deferred();
 
 			jQuery( '#' + id + ' .inside' ).html( '<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>' );
+
+			// Clear the autorefresh timer, if set
+			if ( SlimStatAdmin.refresh_handle != null ) {
+				clearTimeout( SlimStatAdmin.refresh_handle );
+			}
 
 			data = {
 				action: 'slimstat_load_report',

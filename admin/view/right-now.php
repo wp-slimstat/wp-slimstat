@@ -72,7 +72,7 @@ if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
 }
 
 // Pagination
-echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, true, wp_slimstat::$settings[ 'number_results_raw_data' ] );
+echo wp_slimstat_reports::report_pagination( $count_page_results, $count_all_results, !$is_dashboard, wp_slimstat::$settings[ 'number_results_raw_data' ] );
 
 // Show delete button? (only those who can access the settings can see it)
 $current_user_can_delete = ( current_user_can( wp_slimstat::$settings[ 'capability_can_admin' ] ) && !is_network_admin() );
@@ -346,13 +346,10 @@ function slimstat_refresh_countdown() {
 		// Reset the countdown timer
 		slimstat_refresh_timer = parseInt( SlimStatAdminParams.refresh_interval );
 	}
-	else {
-		window.setTimeout( slimstat_refresh_countdown, 1000 );
-	}
 }
 
 if ( jQuery( '.refresh-timer' ).length > 0 && typeof SlimStatAdminParams.refresh_interval != 'undefined' ) {
 	slimstat_refresh_timer = SlimStatAdminParams.refresh_interval;
-	window.setTimeout( slimstat_refresh_countdown, 1000 );
+	SlimStatAdmin.refresh_handle = window.setInterval( slimstat_refresh_countdown, 1000 );
 }
 </script>
