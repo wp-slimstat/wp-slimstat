@@ -1022,7 +1022,7 @@ class wp_slimstat_admin {
 					echo '<tr' . ( $i % 2 == 0 ? ' class="alternate"' : '' ) . '>';
 					switch ( $_setting_info[ 'type' ] ) {
 						case 'section_header':
-							echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $_setting_info[ 'description' ] ). '">' . $_setting_info[ 'description' ] . '</td>';
+							echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $_setting_info[ 'description' ] ) . '">' . $_setting_info[ 'description' ] . '</td>';
 							break;
 
 						case 'static':
