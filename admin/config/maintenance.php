@@ -173,13 +173,6 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		</td>
 	</tr>
 	<tr>
-		<th scope="row"><?php _e( 'Tracker Notice', 'wp-slimstat' ) ?></th>
-		<td>
-			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_notice' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_notice' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$settings[ 'date_format' ], wp_slimstat::$settings[ 'last_tracker_notice' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$settings[ 'time_format' ], wp_slimstat::$settings[ 'last_tracker_notice' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_notice' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_notice' ][ 1 ] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities( __( 'Reset this notice', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-notice-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
-			<span class="description"><?php _e( 'The message here above will indicate if a page view was not recorded because it matched at least one of the conditions you configured in your settings (filters, blackslists, etc).', 'wp-slimstat' ) ?></span>
-		</td>
-	</tr>
-	<tr>
 		<?php if ( wp_slimstat::$settings[ 'show_sql_debug' ] != 'on' ): ?>
 		<th scope="row">
 			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-sql-debug-mode"><?php _e("Enable SQL Debug",'wp-slimstat'); ?></a>
