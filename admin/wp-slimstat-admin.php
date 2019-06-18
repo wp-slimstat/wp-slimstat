@@ -6,7 +6,11 @@ class wp_slimstat_admin {
 	public static $faulty_fields = array();
 
 	protected static $admin_notice = '';
-	protected static $data_for_column = array();
+	protected static $data_for_column = array(
+		'url' => array(),
+		'sql' => array(),
+		'count' => array()
+	);
 	
 	/**
 	 * Init -- Sets things up.
@@ -709,6 +713,51 @@ class wp_slimstat_admin {
 	// END: wp_slimstat_include_config
 
 	/**
+	 * Retrieves all the information to be used in the custom column on posts, pages and CPTs
+	 */
+	public static function init_data_for_column() {
+		if ( !is_array( $GLOBALS[ 'wp_query' ]->posts ) ) {
+			return 0;
+		}
+
+		foreach ( $GLOBALS[ 'wp_query' ]->posts as $a_post ) {
+			self::$data_for_column[ 'url' ][ $a_post->ID ] = parse_url( get_permalink( $a_post->ID ) );
+			self::$data_for_column[ 'url' ][ $a_post->ID ] = self::$data_for_column[ 'url' ][ $a_post->ID ][ 'path' ] . ( !empty( self::$data_for_column[ 'url' ][ $a_post->ID ][ 'query' ] ) ? '?' . self::$data_for_column[ 'url' ][ $a_post->ID ][ 'query' ] : '' );
+			self::$data_for_column[ 'sql' ][ $a_post->ID ] = self::$data_for_column[ 'url' ][ $a_post->ID ] . '%';
+		}
+
+		if ( empty( self::$data_for_column ) ) {
+			return 0;
+		}
+
+		wp_slimstat_db::init( 'interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] );
+
+		$column = ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) ? 'id' : 'ip';
+		$where = wp_slimstat_db::get_combined_where( '(' . implode( ' OR ', array_fill( 1, count( self::$data_for_column[ 'url' ] ), 'resource LIKE %s' ) ) . ')', '*', true );
+
+		$sql = wp_slimstat::$wpdb->prepare( "
+			SELECT resource, COUNT( DISTINCT $column ) as counthits 
+			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+			WHERE " . $where . "
+			GROUP BY resource
+			LIMIT 0, " . wp_slimstat_db::$filters_normalized[ 'misc' ][ 'limit_results' ], self::$data_for_column[ 'sql' ] );
+
+		$results = wp_slimstat_db::get_results( $sql );
+
+		foreach ( self::$data_for_column[ 'url' ] as $post_id => $a_url ) {
+			self::$data_for_column[ 'count' ][ $post_id ] = 0;
+
+			foreach( $results as $i => $a_row ) {
+				if ( strpos( $a_row[ 'resource' ], $a_url ) !== false ) {
+					self::$data_for_column[ 'count' ][ $post_id ] += $a_row[ 'counthits' ];
+					unset( $results[ $i ] );
+				}
+			}
+		}
+	}
+	// END: init_data_for_column
+
+	/**
 	 * Adds a new column header to the Posts panel (to show the number of pageviews for each post)
 	 */
 	public static function add_column_header( $_columns = array() ) {
@@ -728,47 +777,6 @@ class wp_slimstat_admin {
 	// END: add_comment_column_header
 
 	/**
-	 * Retrieves all the information to be used in the custom column on posts, pages and CPTs
-	 */
-	public static function init_data_for_column() {
-		if ( !is_array( $GLOBALS[ 'wp_query' ]->posts ) ) {
-			return 0;
-		}
-
-		self::$data_for_column = array();
-
-		foreach ( $GLOBALS[ 'wp_query' ]->posts as $a_post ) {
-			self::$data_for_column[ 'url' ][ $a_post->ID ] = parse_url( get_permalink( $a_post->ID ) );
-			self::$data_for_column[ 'url' ][ $a_post->ID ] = self::$data_for_column[ 'url' ][ $a_post->ID ][ 'path' ] . ( !empty( self::$data_for_column[ 'url' ][ $a_post->ID ][ 'query' ] ) ? '?' . self::$data_for_column[ 'url' ][ $a_post->ID ][ 'query' ] : '' );
-		}
-
-		if ( empty( self::$data_for_column ) ) {
-			return 0;
-		}
-
-		wp_slimstat_db::init( 'interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] );
-
-		$column = ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) ? 'id' : 'ip';
-
-		$sql = wp_slimstat::$wpdb->prepare("
-			SELECT resource, COUNT( DISTINCT $column ) as counthits 
-			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-			WHERE resource IN (" . implode( ',', array_fill( 1, count( self::$data_for_column[ 'url' ] ), '%s' ) ). ")
-			GROUP BY resource", self::$data_for_column[ 'url' ] );
-
-		$results = wp_slimstat_db::get_results( $sql );
-
-		foreach ( $results as $a_row ) {
-			$post_id = array_search( $a_row[ 'resource' ], self::$data_for_column[ 'url' ], true );
-
-			if ( !empty( $post_id ) ) {
-				self::$data_for_column[ 'count' ][ $post_id ] = $a_row[ 'counthits' ];
-			}
-		}
-	}
-	// END: init_data_for_column
-
-	/**
 	 * Adds a new column to the Posts management panel
 	 */
 	public static function add_post_column( $_column_name, $_post_id ) {
@@ -778,7 +786,7 @@ class wp_slimstat_admin {
 
 		$count = empty( self::$data_for_column[ 'count' ][ $_post_id ] ) ? 0 : self::$data_for_column[ 'count' ][ $_post_id ];
 
-		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource equals ' . self::$data_for_column[ 'url' ][ $_post_id ] . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] ). '">' . $count . '</a>';
+		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource starts_with ' . self::$data_for_column[ 'url' ][ $_post_id ] . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] ). '">' . $count . '</a>';
 	}
 	// END: add_column
 
