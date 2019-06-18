@@ -25,7 +25,7 @@ class wp_slimstat_reports {
 		// - screens : where should the report appear ( slimview1, .., slimview4, dashboard )
 		// - tooltip : contextual help to be displayed on hover
 
-		$chart_tooltip = '<strong>' . __( 'Chart controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li></ul>';
+		$chart_tooltip = '<strong>' . __( 'Chart Controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li></ul>';
 
 		self::$reports_info = array(
 			'slim_p7_02' => array(
@@ -38,7 +38,7 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'full-width', 'tall' ),
 				'screens' => array( 'slimview1', 'dashboard' ),
-				'tooltip' => __( 'Color codes', 'wp-slimstat' ).'</strong><p><span class="little-color-box is-search-engine"></span> '.__( 'From search result page', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-visitor"></span> '.__( 'Has Left Comments', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-user"></span> '.__( 'WP User', 'wp-slimstat' ).'</p><p><span class="little-color-box is-direct"></span> '.__( 'Other Human', 'wp-slimstat' ).'</p><p><span class="little-color-box"></span> '.__( 'Bot or Crawler', 'wp-slimstat' ).'</p>'
+				'tooltip' => __( 'Color Codes', 'wp-slimstat' ).'</strong><p><span class="little-color-box is-search-engine"></span> '.__( 'From search result page', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-visitor"></span> '.__( 'Has Left Comments', 'wp-slimstat' ).'</p><p><span class="little-color-box is-known-user"></span> '.__( 'WP User', 'wp-slimstat' ).'</p><p><span class="little-color-box is-direct"></span> '.__( 'Other Human', 'wp-slimstat' ).'</p><p><span class="little-color-box"></span> '.__( 'Bot or Crawler', 'wp-slimstat' ).'</p>'
 			),
 
 			'slim_p1_01' => array(
@@ -59,18 +59,8 @@ class wp_slimstat_reports {
 				'screens' => array( 'slimview2', 'dashboard' ),
 				'tooltip' => $chart_tooltip
 			),
-			'slim_p1_02' => array(
-				'title' => __( 'About Slimstat', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'raw_results_to_html' ),
-				'callback_args' => array(
-					'raw' => array( 'wp_slimstat_db', 'get_about_wpslimstat' )
-				),
-				'classes' => array( 'normal', 'hidden' ),
-				'screens' => array( 'slimview2' )
-			),
 			'slim_p1_03' => array(
 				'title' => __( 'Traffic at a Glance', 'wp-slimstat' ),
-				// 'callback' => array( __CLASS__, 'show_overview_summary' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'raw' => array( 'wp_slimstat_db', 'get_overview_summary' )
@@ -117,10 +107,10 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview2', 'dashboard' ),
-				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and so on. You can set the corresponding filter where Resource Content Type equals cpt:you_cpt_slug_here to get top web pages for a specific custom post type you have.', 'wp-slimstat' )
+				'tooltip' => __( 'Here a "page" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and any other custom post type. For example, you can set the corresponding filter where Resource Content Type equals cpt:you_cpt_slug_here to get top web pages for a specific custom post type you have.', 'wp-slimstat' )
 			),
 			'slim_p1_10' => array(
-				'title' => __('Top Referring Domains', 'wp-slimstat'),
+				'title' => __( 'Top Referring Domains', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
@@ -166,7 +156,7 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'slimview2', 'slimview3', 'slimview5', 'dashboard' ),
-				'tooltip' => __( 'You can configure Slimstat to ignore a specific Country by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat' )
+				'tooltip' => __( 'You can configure Slimstat to not track specific Countries by setting the corresponding filter in Settings > Slimstat > Filters.', 'wp-slimstat' )
 			),
 			'slim_p1_15' => array(
 				'title' => __( 'Rankings', 'wp-slimstat' ),
@@ -855,7 +845,7 @@ class wp_slimstat_reports {
 
 		// Retrieve this user's list of active reports,
 		$current_user = wp_get_current_user();
-		$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) ? 'slimstat' : 'admin';
+		$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) ? 'slimstat' : 'admin';
 
 		// Superadmins can customize the layout at network level, to override per-site settings
 		self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout-network", 1 );
