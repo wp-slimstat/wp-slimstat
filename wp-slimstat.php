@@ -1585,41 +1585,63 @@ class wp_slimstat {
 			'browscap_last_modified' => 0,
 
 			// General
+			// -----------------------------------------------------------------------
+
+			// General - Tracker
 			'is_tracking' => 'on',
 			'track_admin_pages' => 'no',
 			'javascript_mode' => 'on',
 
+			// General - WordPress Integration
 			'add_dashboard_widgets' => 'on',
 			'use_separate_menu' => 'on',
 			'add_posts_column' => 'no',
 			'posts_column_pageviews' => 'on',
 			'hide_addons' => 'no',
 
+			// General - Database
 			'auto_purge' => 0,
 			'auto_purge_delete' => 'on',
 
 			// Tracker
+			// -----------------------------------------------------------------------
+
+			// Tracker - Data Protection
 			'anonymize_ip' => 'no',
 			'set_tracker_cookie' => 'on',
 			'display_opt_out' => 'no',
-			'opt_out_message' => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>',
 			'opt_out_cookie_names' => '',
 			'opt_in_cookie_names' => '',
+			'opt_out_message' => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>',
 
+			// Tracker - Link Tracking
+			'track_same_domain_referers' => 'no',
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
-			'track_same_domain_referers' => 'no',
 
+			// Tracker - Advanced Options
 			'geolocation_country' => 'on',
 			'session_duration' => 1800,
 			'extend_session' => 'no',
 			'enable_cdn' => 'on',
 			'ajax_relative_path' => 'no',
 
+			// Tracker - External Pages
 			'external_domains' => '',
 
 			// Reports
+			// -----------------------------------------------------------------------
+
+			// Reports - Functionality
 			'posts_column_day_interval' => 28,
+			'use_current_month_timespan' => 'no',
+			'async_load' => 'no',
+			'rows_to_show' => '20',
+			'limit_results' => '1000',
+			'ip_lookup_service' => 'https://www.infosniper.net/?ip_address=',
+			'comparison_chart' => 'on',
+
+			// Reports - Data Formats
 			'use_european_separators' => 'on',
 			'date_format' => 'm-d-y',
 			'time_format' => 'h:i a',
@@ -1627,31 +1649,27 @@ class wp_slimstat {
 			'convert_resource_urls_to_titles' => 'on',
 			'convert_ip_addresses' => 'no',
 
-			'async_load' => 'no',
-			'use_current_month_timespan' => 'no',
-			'expand_details' => 'no',
-			'rows_to_show' => '20',
-			'limit_results' => '1000',
-			'ip_lookup_service' => 'https://www.infosniper.net/?ip_address=',
-			'mozcom_access_id' => '',
-			'mozcom_secret_key' => '',
-
+			// Reports - Access Log and World Map
 			'refresh_interval' => '60',
 			'number_results_raw_data' => '50',
 			'max_dots_on_map' => '50',
 
+			// Reports - Miscellaneous
 			'custom_css' => '',
 			'chart_colors' => '',
-			'comparison_chart' => 'on',
+			'mozcom_access_id' => '',
+			'mozcom_secret_key' => '',
 			'show_complete_user_agent_tooltip' => 'no',
 			'enable_sov' => 'no',
 
-			// Filters
+			// Exclusions
+			// -----------------------------------------------------------------------
+
+			// Exclusions - User Properties
 			'track_users' => 'on',
 			'ignore_spammers' => 'on',
 			'ignore_bots' => 'no',
 			'ignore_prefetch' => 'on',
-
 			'ignore_users' => '',
 			'ignore_ip' => '',
 			'ignore_countries' => '',
@@ -1659,30 +1677,37 @@ class wp_slimstat {
 			'ignore_platforms' => '',
 			'ignore_capabilities' => '',
 
+			// Exclusions - Page Properties
 			'ignore_resources' => '',
 			'ignore_referers' => '',
 			'ignore_content_types' => '',
 
 			// Access Control
+			// -----------------------------------------------------------------------
+
+			// Access Control - Reports
 			'restrict_authors_view' => 'on',
 			'capability_can_view' => 'manage_options',
 			'can_view' => '',
 
+			// Access Control - Customizer
 			'capability_can_customize' => 'manage_options',
 			'can_customize' => '',
 
+			// Access Control - Settings
 			'capability_can_admin' => 'manage_options',
 			'can_admin' => '',
 
+			// Access Control - REST API
 			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
 
 			// Maintenance
+			// -----------------------------------------------------------------------
 			'last_tracker_error' => array( 0, '', 0 ),
 			'show_sql_debug' => 'no',
-			'no_maxmind_warning' => 'no',
-			'no_browscap_warning' => 'no',
 
 			// Notices
+			// -----------------------------------------------------------------------
 			'notice_latest_news' => 'on',
 			'notice_browscap' => 'on',
 			'notice_geolite' => 'on',

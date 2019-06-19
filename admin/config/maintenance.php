@@ -175,22 +175,22 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 	<tr>
 		<?php if ( wp_slimstat::$settings[ 'show_sql_debug' ] != 'on' ): ?>
 		<th scope="row">
-			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-sql-debug-mode"><?php _e("Enable SQL Debug",'wp-slimstat'); ?></a>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=activate-sql-debug-mode"><?php _e( 'Enable SQL Debug', 'wp-slimstat' ); ?></a>
 		</th>
 		<td>
-			<span class="description"><?php _e("Display the SQL code used to retrieve the data from the database. Useful to troubleshoot issues with data consistency or missing pageviews.",'wp-slimstat') ?></span>
+			<span class="description"><?php _e( 'Display the SQL code used to retrieve the data from the database. Useful to troubleshoot issues with data consistency or missing pageviews.', 'wp-slimstat' ) ?></span>
 		</td>
 		<?php else: ?>
 		<th scope="row">
-			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=deactivate-sql-debug-mode"><?php _e('Disable SQL Debug','wp-slimstat'); ?></a>
+			<a class="button-secondary" href="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>&amp;action=deactivate-sql-debug-mode"><?php _e( 'Disable SQL Debug', 'wp-slimstat' ); ?></a>
 		</th>
 		<td>
-			<span class="description"><?php _e("Deactivate the SQL output on top of each report.",'wp-slimstat') ?></span>
+			<span class="description"><?php _e( 'Deactivate the SQL output on top of each report.', 'wp-slimstat' ) ?></span>
 		</td>
 		<?php endif ?>
 	</tr>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-data-maintenance"><?php _e('Data Maintenance','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-data-maintenance"><?php _e( 'Database', 'wp-slimstat' ) ?></td>
 	</tr>
 	<tr>
 		<th scope="row" style="padding-top: 20px"><?php _e('Delete pageviews where','wp-slimstat') ?></th>
@@ -281,7 +281,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 				$maxmind_last_modified = date_i18n( wp_slimstat::$settings[ 'date_format' ], $file_stat[ 'mtime' ] );
 			} 
 			?>
-			<span class="description"><?php _e("The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality. If you're experiencing issues, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ); if ( !empty( $maxmind_last_modified ) ) { echo ' ' . sprintf ( __( 'Your data file was last downloaded on <strong>%s</strong>', 'wp-slimstat' ), $maxmind_last_modified ); } ?></span>
+			<span class="description"><?php _e( "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality. If you're experiencing issues, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ); if ( !empty( $maxmind_last_modified ) ) { echo ' ' . sprintf ( __( 'Your data file was last downloaded on <strong>%s</strong>', 'wp-slimstat' ), $maxmind_last_modified ); } ?></span>
 		</td>
 	</tr>
 	<?php 
