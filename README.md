@@ -1,7 +1,7 @@
 # Slimstat Analytics 
 **Contributors:** coolmann  
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38  
-**Tags:** analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit  
+**Tags:** analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 **Requires at least:** 3.8  
 **Tested up to:** 5.2  
 **Stable tag:** 4.8.3  
@@ -63,13 +63,26 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 ## Changelog 
 
-### 4.8.3.1 
+### 4.8.4 
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.
+<<<<<<< 0f4fad989a94427e6164f556a752d43be99a4e48
 <<<<<<< 6ed344e9900308c1ede7b0dd418bcda47fd41105
 * [Update] Implemented a new optimized function to retrieve the post count on the Edit Posts/Pages/CPTs screens. Thank you, Lance.
 =======
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
 >>>>>>> Merged branch to update AmCharts to version 4.5.3
+=======
+* [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
+* [Update] Removed tracker notice field under Settings > Maintenance as it was confusing many people and generating extra work for our customer service team.
+* [Update] Removed option to not track "client properties" like screen resolution, etc. Also, removed option to not honor DNT headers, as we received complaints from privacy activists on this matter.
+* [Update] Removed 'About Slimstat' report, given that some of the information in it has been moved to the Settings.
+* [Update] Removed unused strings, improved contextual descriptions and applied consistent naming conventions across our codebase (first pass).
+* [Update] The Slimstat admin menu is now added to the Admin Bar by default. Please go to Settings > Basic > WordPress Integration and change the corresponding option, if you prefer to use the side menu instead.
+* [Update] Enabled code editor in Settings.
+* [Update] Implemented a new optimized function to retrieve the post count on the Edit Posts/Pages/CPTs screens. Thank you, Lance.
+* [Update] Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser. This usually happens whenever a new browser version is released, which is not yet included in the data file.
+* [Update] Option to track same-domain referrers is now deactivated by default on new installations.
+>>>>>>> Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser.
 
 
 ### 4.8.3 

@@ -828,6 +828,7 @@ class wp_slimstat_reports {
 
 		// Define what reports have been deprecated over time, to remove them from the user's settings
 		$deprecated_reports = array(
+			'slim_p1_02' => 1,
 			'slim_p1_05' => 1,
 			'slim_p1_18' => 1,
 			'slim_p2_10' => 1,
