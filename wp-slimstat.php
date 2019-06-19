@@ -1608,7 +1608,7 @@ class wp_slimstat {
 
 			'do_not_track_outbound_classes_rel_href' => 'noslimstat,ab-item',
 			'extensions_to_track' => 'pdf,doc,xls,zip',
-			'track_same_domain_referers' => 'on',
+			'track_same_domain_referers' => 'no',
 
 			'geolocation_country' => 'on',
 			'session_duration' => 1800,

@@ -48,6 +48,11 @@ class slim_browser {
 			require_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
 			self::$browser = slim_uadetector::get_browser( self::$browser[ 'user_agent' ] );
 		}
+		else if ( empty( self::$browser[ 'browser_version' ] ) ) {
+			require_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
+			$browser_version = slim_uadetector::get_browser( self::$browser[ 'user_agent' ] );
+			self::$browser[ 'browser_version' ] = $browser_version[ 'browser_version' ];
+		}
 
 		return self::$browser;
 	}
