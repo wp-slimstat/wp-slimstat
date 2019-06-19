@@ -267,12 +267,6 @@ class wp_slimstat {
 			return $_argument;
 		}
 
-		// Honor the Do Not Track HTTP header - https://en.wikipedia.org/wiki/Do_Not_Track
-		if ( self::$settings[ 'honor_dnt_header' ] == 'on' && !empty( $_SERVER[ 'HTTP_DNT' ] ) ) {
-			self::$stat[ 'id' ] = -314;
-			return $_argument;
-		}
-
 		// Opt-out of tracking via cookie
 		$cookie_names = array( 'slimstat_optout_tracking' => 'true' );
 
@@ -802,13 +796,13 @@ class wp_slimstat {
 	 * Extracts the accepted language from browser headers
 	 */
 	protected static function _get_language(){
-		if(isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])){
+		if ( isset( $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ] ) ) {
 
 			// Capture up to the first delimiter (, found in Safari)
-			preg_match("/([^,;]*)/", $_SERVER["HTTP_ACCEPT_LANGUAGE"], $array_languages);
+			preg_match( "/([^,;]*)/", $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ], $array_languages );
 
 			// Fix some codes, the correct syntax is with minus (-) not underscore (_)
-			return str_replace( "_", "-", strtolower( $array_languages[0] ) );
+			return str_replace( '_', '-', strtolower( $array_languages[ 0 ] ) );
 		}
 		return 'xx';  // Indeterminable language
 	}
@@ -1597,7 +1591,6 @@ class wp_slimstat {
 
 			'add_dashboard_widgets' => 'on',
 			'use_separate_menu' => 'on',
-			'posts_column_day_interval' => 28,
 			'add_posts_column' => 'no',
 			'posts_column_pageviews' => 'on',
 			'hide_addons' => 'no',
@@ -1607,7 +1600,6 @@ class wp_slimstat {
 
 			// Tracker
 			'anonymize_ip' => 'no',
-			'honor_dnt_header' => 'on',
 			'set_tracker_cookie' => 'on',
 			'display_opt_out' => 'no',
 			'opt_out_message' => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>',
@@ -1626,24 +1618,8 @@ class wp_slimstat {
 
 			'external_domains' => '',
 
-			// Filters
-			'track_users' => 'on',
-			'ignore_spammers' => 'on',
-			'ignore_bots' => 'no',
-			'ignore_prefetch' => 'on',
-
-			'ignore_users' => '',
-			'ignore_ip' => '',
-			'ignore_countries' => '',
-			'ignore_browsers' => '',
-			'ignore_platforms' => '',
-			'ignore_capabilities' => '',
-
-			'ignore_resources' => '',
-			'ignore_referers' => '',
-			'ignore_content_types' => '',
-
 			// Reports
+			'posts_column_day_interval' => 28,
 			'use_european_separators' => 'on',
 			'date_format' => 'm-d-y',
 			'time_format' => 'h:i a',
@@ -1669,6 +1645,23 @@ class wp_slimstat {
 			'comparison_chart' => 'on',
 			'show_complete_user_agent_tooltip' => 'no',
 			'enable_sov' => 'no',
+
+			// Filters
+			'track_users' => 'on',
+			'ignore_spammers' => 'on',
+			'ignore_bots' => 'no',
+			'ignore_prefetch' => 'on',
+
+			'ignore_users' => '',
+			'ignore_ip' => '',
+			'ignore_countries' => '',
+			'ignore_browsers' => '',
+			'ignore_platforms' => '',
+			'ignore_capabilities' => '',
+
+			'ignore_resources' => '',
+			'ignore_referers' => '',
+			'ignore_content_types' => '',
 
 			// Access Control
 			'restrict_authors_view' => 'on',

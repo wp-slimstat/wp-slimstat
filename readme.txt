@@ -68,9 +68,9 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 = 4.8.4 =
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
-* [Update] Removed the tracker notice field under Settings > Maintenance as it was confusing many people and generating extra work for our customer service team.
-* [Update] Removed the option to not track "client properties" like screen resolution, etc.
-* [Update] Removed the 'About Slimstat' report, given that some of the information in it has been moved to the Settings.
+* [Update] Removed tracker notice field under Settings > Maintenance as it was confusing many people and generating extra work for our customer service team.
+* [Update] Removed option to not track "client properties" like screen resolution, etc. Also, removed option to not honor DNT headers, as we received complaints from privacy activists on this matter.
+* [Update] Removed 'About Slimstat' report, given that some of the information in it has been moved to the Settings.
 * [Update] Removed unused strings, improved contextual descriptions and applied consistent naming conventions across our codebase (first pass).
 * [Update] The Slimstat admin menu is now added to the Admin Bar by default. Please go to Settings > Basic > WordPress Integration and change the corresponding option, if you prefer to use the side menu instead.
 

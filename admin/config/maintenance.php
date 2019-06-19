@@ -299,7 +299,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		}
 	?>
 	<tr>
-		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-configuration-string"><?php _e('Configuration String','wp-slimstat') ?></td>
+		<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-configuration-string"><?php _e( 'Configuration String', 'wp-slimstat' ) ?></td>
 	</tr>
 	<tr>
 		<td colspan="2">
@@ -307,7 +307,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 			<form action="<?php echo wp_slimstat_admin::$config_url.$current_tab ?>" method="post">
 				<?php wp_nonce_field( 'maintenance_wp_slimstat', 'maintenance_wp_slimstat_nonce', true, true ) ?>
 				<input type="hidden" name="action" value="import-settings" />
-				<textarea name="import-slimstat-settings" style="width:100%" rows="10"><?php echo json_encode( wp_slimstat::$settings ) ?></textarea><br/>
+				<textarea name="import-slimstat-settings" style="width:100%" rows="10" data-code-editor="json"><?php echo defined( 'JSON_PRETTY_PRINT' ) ? json_encode( wp_slimstat::$settings, JSON_PRETTY_PRINT ) : json_encode( wp_slimstat::$settings ) ?></textarea><br/>
 				<input type="submit" value="<?php _e('Import','wp-slimstat') ?>" class="button-secondary"
 					onclick="return(confirm('<?php _e('Are you sure you want to OVERWRITE your current settings?','wp-slimstat'); ?>'))">
 			</form>
