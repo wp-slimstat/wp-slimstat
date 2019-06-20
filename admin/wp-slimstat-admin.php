@@ -1173,7 +1173,7 @@ class wp_slimstat_admin {
 		}
 
 		if ( !empty( self::$faulty_fields ) ) {
-			self::show_message( __( 'There was an error updating the following options:',  'wp-slimstat' ) . ' ' . implode( ', ', self::$faulty_fields ), 'warning' );
+			self::show_message( implode( ', ', self::$faulty_fields ), 'warning' );
 		}
 		else{
 			self::show_message( __( 'Your new settings have been saved.', 'wp-slimstat' ), 'info' );
