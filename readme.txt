@@ -59,7 +59,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 == Screenshots ==
 1. **Overview** - Your website traffic at a glance
-2. **Activity Log** - A real-time view of your visitors' whereabouts
+2. **Access Log** - A real-time view of your visitors' whereabouts
 3. **Settings** - Plenty of options to customize the plugin's behavior
 4. **Interactive World Map** - See where your visitors are coming from
 5. **Responsive layout** - Keep an eye on your reports on the go
@@ -81,8 +81,12 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Implemented a new optimized function to retrieve the post count on the Edit Posts/Pages/CPTs screens. Thank you, Lance.
 * [Update] Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser. This usually happens whenever a new browser version is released, which is not yet included in the data file.
 * [Update] Option to track same-domain referrers is now deactivated by default on new installations.
+<<<<<<< 8f3397e837fadff1202a9e6b647cb4c0a28c76f7
 >>>>>>> Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser.
 
+=======
+* [Update] Enabled wildcards on the exclusion rule by capability.
+>>>>>>> Committing a new batch of string updates (Settings)
 
 = 4.8.3 =
 * [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.
@@ -92,7 +96,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] MozRank has been deprecated, we have replaced it with the Domain Authority metric.
 * [Update] Spring cleaning in the 'admin notices' department: removed some obsolete CSS code, replaced by built-in WP classes and definitions.
 * [Fix] Changed the default minimum capability to access the reports from 'activate_plugins' to 'manage_options', so that regular administrators (a.k.a. non-super admins) in a multisite environment can still see their own reports (thank you, [homepageware](https://wordpress.org/support/topic/slimstat-and-multisite/)). This update does not affect existing installations: if you want regular admins to see their own stats, please go to Slimstat > Settings > Access Control and change the values in the corresponding fields.
-* [Fix] The autorefresh feature for the Activity Log was not working as expected. Thank you to all the users who patiently worked with us to identify the issue.
+* [Fix] The autorefresh feature for the Access Log was not working as expected. Thank you to all the users who patiently worked with us to identify the issue.
 * [Fix] A conflict between the Async loader and AmCharts 4 was causing the Screen Options tab to not work as expected (thank you, [softfully](https://wordpress.org/support/topic/screen-options-doesnt-open/)).
 * [Fix] Removed unused setting 'Expand Reports'
 
@@ -101,7 +105,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [New] Many CRM integration plugins rely mostly on the user emails, not usernames. For this reason, a new email field has been added to the database (thank you, [sandrodz](https://github.com/sandrodz)).
 * [Update] Changed the preset intervals in the date filter dropdown so that you can get a day over day comparison (Monday over Monday, etc) for improved accuracy.
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.4.9.
-* [Fix] The countdown timer on the Activity Log was not working as expected (thank you, [anniest](https://wordpress.org/support/topic/no-refresh-2/)).
+* [Fix] The countdown timer on the Access Log was not working as expected (thank you, [anniest](https://wordpress.org/support/topic/no-refresh-2/)).
 * [Fix] The countdown timer was causing an warning message to appear on other screens.
 * [Fix] Minor aesthetic improvements.
 

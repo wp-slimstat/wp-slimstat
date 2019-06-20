@@ -8,12 +8,12 @@ if ( typeof SlimStatAdminParams == 'undefined' ) {
 
 // ----- TABLE OF CONTENTS -----------------------------------------------------------
 // 
-// 1. Data refresh
+// 1. Data Refresh
 // 2. Filters
-// 3. Activity log
+// 3. Access Log
 // 4. Customizer
 // 5. Miscellaneous
-// 6. Init third-party libraries
+// 6. Init Third-party Libraries
 //
 // -----------------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ jQuery( function() {
 		} );
 	}
 
-	// Save filters
+	// Save silters
 	jQuery( document ).on( 'click', '#slimstat-save-filter', function( e ) {
 		e.preventDefault();
 		
@@ -201,7 +201,7 @@ jQuery( function() {
 	//
 	// ----- END: FILTERS ------------------------------------------------------------
 
-	// ----- BEGIN: ACTIVITY LOG -----------------------------------------------------
+	// ----- BEGIN: ACCESS LOG -----------------------------------------------------
 	//
 
 	// Delete a pageview when the corresponding button is clicked.
@@ -239,7 +239,7 @@ jQuery( function() {
 	});
 
 	//
-	// ----- END: ACTIVITY LOG -------------------------------------------------------
+	// ----- END: ACCESS LOG -------------------------------------------------------
 
 	// ----- BEGIN: CUSTOMIZER -------------------------------------------------------
 	//
@@ -439,7 +439,7 @@ var SlimStatAdmin = {
 					else{
 						jQuery( inner_content ).fadeOut( 500, function() { jQuery( this ).html( response ).fadeIn( 500 ); } );
 
-						// If we are refreshing the Activity Log, let's reset the countdown timer
+						// If we are refreshing the Access Log, let's reset the countdown timer
 						if ( id == 'slim_p7_02' ) {
 							SlimStatAdmin._refresh_timer = SlimStatAdminParams.refresh_interval;
 						}

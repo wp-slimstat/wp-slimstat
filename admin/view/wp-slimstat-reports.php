@@ -29,8 +29,8 @@ class wp_slimstat_reports {
 
 		self::$reports_info = array(
 			'slim_p7_02' => array(
-				'title' => __( 'Visitors Activity', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'show_activity_log' ),
+				'title' => __( 'Access Log', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'show_access_log' ),
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => '*',
@@ -802,8 +802,8 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'id' => 'slim_p6_01'
 				),
-				'classes' => array( 'large', 'tall' ),
-				'screens' => array( 'slimview3' ),
+				'classes' => array( 'full-width', 'tall' ),
+				'screens' => array( 'slimview1' ),
 				'tooltip' => __( 'Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat' )
 			)
 		);
@@ -1215,7 +1215,7 @@ class wp_slimstat_reports {
 		}
 	}
 
-	public static function show_activity_log( $_args = array() ) {
+	public static function show_access_log( $_args = array() ) {
 		// This function is too long, so it was moved to a separate file
 		include( WP_PLUGIN_DIR . '/wp-slimstat/admin/view/right-now.php' );
 

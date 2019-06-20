@@ -34,7 +34,7 @@ class wp_slimstat_admin {
 			'slimview1' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => true,
-				'title' => __( 'Access Log',  'wp-slimstat' ),
+				'title' => __( 'Real-time',  'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
 			),
 			'slimview2' => array(
