@@ -70,6 +70,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
 * [Update] Removed tracker notice field under Settings > Maintenance as it was confusing many people and generating extra work for our customer service team.
 * [Update] Removed option to not track "client properties" like screen resolution, etc. Also, removed option to not honor DNT headers, as we received complaints from privacy activists on this matter.
+* [Update] Removed option to change date/time formats and numeric separators: Slimstat will now use the WordPress settings to adjust its behavior.
 * [Update] Removed 'About Slimstat' report, given that some of the information in it has been moved to the Settings.
 * [Update] Removed unused strings, improved contextual descriptions and applied consistent naming conventions across our codebase (first pass).
 * [Update] The Slimstat admin menu is now added to the Admin Bar by default. Please go to Settings > Basic > WordPress Integration and change the corresponding option, if you prefer to use the side menu instead.
@@ -77,6 +78,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Implemented a new optimized function to retrieve the post count on the Edit Posts/Pages/CPTs screens. Thank you, Lance.
 * [Update] Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser. This usually happens whenever a new browser version is released, which is not yet included in the data file.
 * [Update] Option to track same-domain referrers is now deactivated by default on new installations.
+
 
 = 4.8.3 =
 * [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.

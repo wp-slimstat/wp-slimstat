@@ -39,14 +39,14 @@
 		<fieldset id="slimstat-date-filters" class="wp-ui-highlight">
 			<a href="#" class="noslimstat"><?php
 				if ( !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'hour' ] ) || !empty( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval_hours' ] ) ) {
-					echo gmdate( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], wp_slimstat_db::$filters_normalized['utime']['start']).' - ';
+					echo gmdate( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) . ' - ';
 
-					$end_format = ( date( 'Ymd', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) != date( 'Ymd', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] ) ) ? wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ] : wp_slimstat::$settings[ 'time_format' ];
+					$end_format = ( date( 'Ymd', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) != date( 'Ymd', wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] ) ) ? get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) : get_option( 'time_format' );
 					echo gmdate( $end_format, wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] );
 				}
 				else {
-					$start_date =  gmdate( wp_slimstat::$settings[ 'date_format' ], wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] );
-					$end_date = gmdate( wp_slimstat::$settings[ 'date_format' ], wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] );
+					$start_date =  gmdate( get_option( 'date_format' ), wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] );
+					$end_date = gmdate( get_option( 'date_format' ), wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] );
 
 					if ( $start_date == $end_date ) {
 						echo ucwords( $start_date );	

@@ -1409,7 +1409,7 @@ class wp_slimstat {
 								break;
 
 							case 'dt':
-								$output[ $result_idx ][ $a_column ] .= date_i18n( self::$settings[ 'date_format' ] . ' ' . self::$settings[ 'time_format' ], $a_result[ 'dt' ] );
+								$output[ $result_idx ][ $a_column ] .= date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $a_result[ 'dt' ] );
 								break;
 
 							case 'hostname':
@@ -1640,11 +1640,6 @@ class wp_slimstat {
 			'limit_results' => '1000',
 			'ip_lookup_service' => 'https://www.infosniper.net/?ip_address=',
 			'comparison_chart' => 'on',
-
-			// Reports - Data Formats
-			'use_european_separators' => 'on',
-			'date_format' => 'm-d-y',
-			'time_format' => 'h:i a',
 			'show_display_name' => 'no',
 			'convert_resource_urls_to_titles' => 'on',
 			'convert_ip_addresses' => 'no',
@@ -1666,7 +1661,7 @@ class wp_slimstat {
 			// -----------------------------------------------------------------------
 
 			// Exclusions - User Properties
-			'track_users' => 'on',
+			'ignore_wp_users' => 'no',
 			'ignore_spammers' => 'on',
 			'ignore_bots' => 'no',
 			'ignore_prefetch' => 'on',
