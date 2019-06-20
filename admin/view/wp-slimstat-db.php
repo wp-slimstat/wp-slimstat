@@ -7,9 +7,6 @@ class wp_slimstat_db {
 	public static $operator_names = array();
 	public static $filters_normalized = array();
 
-	// Number and date formats
-	public static $formats = array( 'decimal' => ',', 'thousand' => '.' );
-
 	// Structure that maps filters to SQL information (table names, clauses, lookup tables, etc)
 	public static $sql_where = array( 'columns' => '', 'time_range' => '' );
 
@@ -26,12 +23,6 @@ class wp_slimstat_db {
 	 * Sets the filters and other structures needed to store the data retrieved from the DB
 	 */
 	public static function init( $_filters = '' ) {
-		// Decimal and thousand separators
-		if ( wp_slimstat::$settings[ 'use_european_separators' ] == 'no' ){
-			self::$formats[ 'decimal' ] = '.';
-			self::$formats[ 'thousand' ] = ',';
-		}
-
 		// List of supported filters and their friendly names
 		self::$columns_names = array(
 			'browser' => array( __( 'Browser', 'wp-slimstat' ), 'varchar' ),
@@ -677,13 +668,13 @@ class wp_slimstat_db {
 
 		if ( self::$filters_normalized[ 'utime' ][ 'range' ] < 86400 ) {
 			$params[ 'group_by' ] = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-			$params[ 'data_points_label' ] = ( self::$formats[ 'decimal' ] == '.' ) ? 'm/d - h a' : 'd/m - H';
+			$params[ 'data_points_label' ] = ( strpos( number_format_i18n( 1000 ), '.' ) === false ) ? 'm/d - h a' : 'd/m - H';
 			$params[ 'data_points_count' ] = ceil( self::$filters_normalized[ 'utime' ][ 'range' ] / 3600 );
 			$params[ 'granularity' ] = 'HOUR';
 		}
 		else if ( self::$filters_normalized[ 'utime' ][ 'range' ] < 10368000 ) {
 			$params[ 'group_by' ] = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-			$params[ 'data_points_label' ] = ( self::$formats[ 'decimal' ] == '.' ) ? 'm/d' : 'd/m';
+			$params[ 'data_points_label' ] = ( strpos( number_format_i18n( 1000 ), '.' ) === false ) ? 'm/d' : 'd/m';
 			$params[ 'data_points_count' ] = ceil( self::$filters_normalized[ 'utime' ][ 'range' ] / 86400 );
 			$params[ 'granularity' ] = 'DAY';
 		}
@@ -777,7 +768,7 @@ class wp_slimstat_db {
 			$table_size /= 1024;
 			$suffix = 'MB';
 		}
-		return number_format( $table_size, 2, self::$formats[ 'decimal' ], self::$formats[ 'thousand' ] ).' '.$suffix;
+		return number_format_i18n( $table_size, 2 ) . ' ' . $suffix;
 	}
 
 	public static function get_group_by( $_args = array() ) {
@@ -832,32 +823,32 @@ class wp_slimstat_db {
 		$results = array();
 
 		$results[ 0 ][ 'metric' ] = __( 'Pageviews', 'wp-slimstat' );
-		$results[ 0 ][ 'value' ] = number_format( self::$pageviews, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 0 ][ 'value' ] = number_format_i18n( self::$pageviews, 0 );
 		$results[ 0 ][ 'tooltip' ] = __( 'A pageview is a request to load a single HTML page on your website.', 'wp-slimstat' );
 
 		$results[ 1 ][ 'metric' ] = __( 'Days in Range', 'wp-slimstat' );
 		$results[ 1 ][ 'value' ] = $days_in_range;
 
 		$results[ 2 ][ 'metric' ] = __( 'Average Daily Pageviews', 'wp-slimstat' );
-		$results[ 2 ][ 'value' ] = number_format( round( self::$pageviews / $days_in_range, 0 ), 0, '', wp_slimstat_db::$formats['thousand'] );
+		$results[ 2 ][ 'value' ] = number_format_i18n( round( self::$pageviews / $days_in_range, 0 ) );
 		$results[ 2 ][ 'tooltip' ] = __( 'How many daily pageviews have been generated on average.', 'wp-slimstat' );
 
 		$results[ 3 ][ 'metric' ] = __( 'From Search Results', 'wp-slimstat' );
-		$results[ 3 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'searchterms IS NOT NULL' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 3 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'searchterms IS NOT NULL' ) );
 		$results[ 3 ][ 'tooltip' ] = __( 'Visitors who landed on your site after searching for a keyword on a search engine and clicking on the corresponding search result link.', 'wp-slimstat' );
 
 		$results[ 4 ][ 'metric' ] = __( 'Unique IPs', 'wp-slimstat' );
-		$results[ 4 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'ip' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 4 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'ip' ) );
 		$results[ 4 ][ 'tooltip' ] = __( 'Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses.', 'wp-slimstat' );
 
 		$results[ 5 ][ 'metric' ] = __( 'Last 30 minutes', 'wp-slimstat' );
-		$results[ 5 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'dt > ' . ( date_i18n( 'U' ) - 1800 ), false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 5 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'dt > ' . ( date_i18n( 'U' ) - 1800 ), false ) );
 
 		$results[ 6 ][ 'metric' ] = __( 'Today', 'wp-slimstat' );
-		$results[ 6 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'dt > ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ), date_i18n( 'Y' ) ) ) ), false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 6 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'dt > ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ), date_i18n( 'Y' ) ) ) ), false ) );
 
 		$results[ 7 ][ 'metric' ] = __( 'Yesterday', 'wp-slimstat' );
-		$results[ 7 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'dt BETWEEN ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ) . ' AND ' . ( date_i18n( 'U', mktime( 23, 59, 59, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ), false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 7 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'dt BETWEEN ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ) . ' AND ' . ( date_i18n( 'U', mktime( 23, 59, 59, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ), false ) );
 
 		return $results;
 	}
@@ -1065,35 +1056,35 @@ class wp_slimstat_db {
 		}
 
 		$results[ 0 ][ 'metric' ] = __( 'Pageviews', 'wp-slimstat' );
-		$results[ 0 ][ 'value' ] = number_format( self::$pageviews, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 0 ][ 'value' ] = number_format_i18n( self::$pageviews );
 		$results[ 0 ][ 'tooltip' ] = __( 'A pageview is a request to load a single HTML page on your website.', 'wp-slimstat' );
 
 		$results[ 1 ][ 'metric' ] = __( 'Unique Referrers', 'wp-slimstat' );
-		$results[ 1 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'referer', "referer NOT LIKE '%{$_SERVER['SERVER_NAME']}%'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 1 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'referer', "referer NOT LIKE '%{$_SERVER['SERVER_NAME']}%'" ) );
 		$results[ 1 ][ 'tooltip' ] = __( 'A referrer (or referring site) is a site that a visitor previously visited before following a link to your site.', 'wp-slimstat' );
 
 		$results[ 2 ][ 'metric' ] = __( 'Direct Pageviews', 'wp-slimstat' );
-		$results[ 2 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'resource IS NULL' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 2 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'resource IS NULL' ) );
 		$results[ 2 ][ 'tooltip' ] = __( "Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat' );
 
 		$results[ 3 ][ 'metric' ] = __( 'From a search result', 'wp-slimstat' );
-		$results[ 3 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', "searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 3 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', "searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%'" ) );
 		$results[ 3 ][ 'tooltip' ] = __( "Visitors who clicked on a link to your website listed on a search engine result page (SERP).", 'wp-slimstat' );
 
 		$results[ 4 ][ 'metric' ] = __( 'Unique Landing Pages', 'wp-slimstat' );
-		$results[ 4 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'resource' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 4 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'resource' ) );
 		$results[ 4 ][ 'tooltip' ] = __( "A landing page is the first page on your website that a visitors opens, also known as <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on a page on your website, this page gets counted (for that visit) as a landing page.", 'wp-slimstat' );
 
 		$results[ 5 ][ 'metric' ] = __( 'Bounce Pages', 'wp-slimstat' );
-		$results[ 5 ][ 'value' ] = number_format( wp_slimstat_db::count_bouncing_pages(), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 5 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_bouncing_pages() );
 		$results[ 5 ][ 'tooltip' ] = __( 'Number of single-page visits tracked over the selected period of time.', 'wp-slimstat' );
 
 		$results[ 6 ][ 'metric' ] = __( 'New Visitors Rate', 'wp-slimstat' );
-		$results[ 6 ][ 'value' ] = number_format( $new_visitors_rate, 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 6 ][ 'value' ] = number_format_i18n( $new_visitors_rate, 2 );
 		$results[ 6 ][ 'tooltip' ] = __( 'Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.', 'wp-slimstat' );
 
 		$results[ 7 ][ 'metric' ] = __( 'Currently from search engines', 'wp-slimstat' );
-		$results[ 7 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', "searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%' AND dt > UNIX_TIMESTAMP() - 300", false ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 7 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', "searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%' AND dt > UNIX_TIMESTAMP() - 300", false ) );
 		$results[ 7 ][ 'tooltip' ] = __( 'Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes.', 'wp-slimstat' );
 
 		return $results;
@@ -1106,43 +1097,43 @@ class wp_slimstat_db {
 		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', '	GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) >= 0 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 30' );
 		$average_time = 30 * $count_results;
 		$results[ 0 ][ 'metric' ] = __( '0 - 30 seconds', 'wp-slimstat' );
-		$results[ 0 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 ) . '%';
+		$results[ 0 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format_i18n( ( 100 * $count_results / $total_human_visits ), 2 ) : 0 ) . '%';
 		$results[ 0 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
 		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 30 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 60' );
 		$average_time += 60 * $count_results;
 		$results[ 1 ][ 'metric' ] = __( '31 - 60 seconds', 'wp-slimstat' );
-		$results[ 1 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 ) . '%';
+		$results[ 1 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format_i18n( ( 100 * $count_results / $total_human_visits ), 2 ) : 0 ) . '%';
 		$results[ 1 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
 		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 60 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 180' );
 		$average_time += 180 * $count_results;
 		$results[ 2 ][ 'metric' ] = __( '1 - 3 minutes', 'wp-slimstat' );
-		$results[ 2 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 ) . '%';
+		$results[ 2 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format_i18n( ( 100 * $count_results / $total_human_visits ), 2 ) : 0 ) . '%';
 		$results[ 2 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
 		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 180 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 300' );
 		$average_time += 300 * $count_results;
 		$results[ 3 ][ 'metric' ] = __( '3 - 5 minutes', 'wp-slimstat' );
-		$results[ 3 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 ) . '%';
+		$results[ 3 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format_i18n( ( 100 * $count_results / $total_human_visits ), 2 ) : 0 ) . '%';
 		$results[ 3 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
 		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 300 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 420' );
 		$average_time += 420 * $count_results;
 		$results[ 4 ][ 'metric' ] = __( '5 - 7 minutes', 'wp-slimstat' );
-		$results[ 4 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 ) . '%';
+		$results[ 4 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format_i18n( ( 100 * $count_results / $total_human_visits ), 2 ) : 0 ) . '%';
 		$results[ 4 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
 		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 420 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 600' );
 		$average_time += 600* $count_results;
 		$results[ 5 ][ 'metric' ] = __( '7 - 10 minutes', 'wp-slimstat' );
-		$results[ 5 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 ) . '%';
+		$results[ 5 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format_i18n( ( 100 * $count_results / $total_human_visits ), 2 ) : 0 ) . '%';
 		$results[ 5 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
 		$count_results = wp_slimstat_db::count_records_having( 'visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 600' );
 		$average_time += 900 * $count_results;
 		$results[ 6 ][ 'metric' ] = __( 'More than 10 minutes', 'wp-slimstat' );
-		$results[ 6 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format( ( 100 * $count_results / $total_human_visits ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 ) . '%';
+		$results[ 6 ][ 'value' ] = ( ( $total_human_visits > 0 ) ? number_format_i18n( ( 100 * $count_results / $total_human_visits ), 2 ) : 0 ) . '%';
 		$results[ 6 ][ 'details' ] = __( 'Hits', 'wp-slimstat' ) . ": $count_results";
 
 		if ( $total_human_visits > 0 ) {
@@ -1175,33 +1166,33 @@ class wp_slimstat_db {
 		}
 
 		$results[ 0 ][ 'metric' ] = __( 'Visits', 'wp-slimstat' );
-		$results[ 0 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'visit_id', 'visit_id > 0 AND browser_type <> 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 0 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'visit_id', 'visit_id > 0 AND browser_type <> 1' ) );
 		$results[ 0 ][ 'tooltip' ] = __( 'A visit is a group of pageviews within a 30-minute time span. Returning visitors are counted multiple times if they start a new visit.', 'wp-slimstat' );
 
 		$results[ 1 ][ 'metric' ] = __( 'Unique IPs', 'wp-slimstat' );
-		$results[ 1 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'ip', 'visit_id > 0 AND browser_type <> 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 1 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'ip', 'visit_id > 0 AND browser_type <> 1' ) );
 		$results[ 1 ][ 'tooltip' ] = __( 'It includes only traffic generated by human visitors.', 'wp-slimstat' );
 
 		$results[ 2 ][ 'metric' ] = __( 'Bounce rate', 'wp-slimstat' );
-		$results[ 2 ][ 'value' ] = number_format( $bounce_rate, 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 2 ][ 'value' ] = number_format_i18n( $bounce_rate, 2 );
 		$results[ 2 ][ 'tooltip' ] = __( 'Total number of one-page visits divided by the total number of entries to a website. Please see the <a href="https://support.google.com/analytics/answer/1009409?hl=en" target="_blank">official Google docs</a> for more information.', 'wp-slimstat' );
 
 		$results[ 3 ][ 'metric' ] = __( 'Known visitors', 'wp-slimstat' );
-		$results[ 3 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'username' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 3 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'username' ) );
 		$results[ 3 ][ 'tooltip' ] = __( 'Visitors who have previously left a comment on your blog.', 'wp-slimstat' );
 
 		$results[ 4 ][ 'metric' ] = __( 'Single-page Visits', 'wp-slimstat' );
-		$results[ 4 ][ 'value' ] = number_format( $single_page_visits, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 4 ][ 'value' ] = number_format_i18n( $single_page_visits );
 		$results[ 4 ][ 'tooltip' ] = __( 'Human users that generated one single page view on your website.', 'wp-slimstat' );
 
 		$results[ 5 ][ 'metric' ] = __( 'Bots', 'wp-slimstat' );
-		$results[ 5 ][ 'value' ] = number_format( wp_slimstat_db::count_records( 'id', 'browser_type = 1' ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 5 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'browser_type = 1' ) );
 
 		$results[ 6 ][ 'metric' ] = __( 'Pageviews per visit', 'wp-slimstat' );
-		$results[ 6 ][ 'value' ] = number_format( $metrics_per_visit[ 0 ][ 'avghits' ], 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+		$results[ 6 ][ 'value' ] = number_format_i18n( $metrics_per_visit[ 0 ][ 'avghits' ], 2 );
 
 		$results[ 7 ][ 'metric' ] = __( 'Longest visit', 'wp-slimstat' );
-		$results[ 7 ][ 'value' ] = number_format( $metrics_per_visit[ 0 ][ 'maxhits' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] ) . ' ' . __( 'hits', 'wp-slimstat' );
+		$results[ 7 ][ 'value' ] = number_format_i18n( $metrics_per_visit[ 0 ][ 'maxhits' ] ) . ' ' . __( 'hits', 'wp-slimstat' );
 
 		return $results;
 	}
@@ -1211,33 +1202,33 @@ class wp_slimstat_db {
 			$results = array();
 
 			$results[ 0 ][ 'metric' ] = __( 'Content Items', 'wp-slimstat' );
-			$results[ 0 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type <> 'revision' AND post_status <> 'auto-draft'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 0 ][ 'value' ] = number_format_i18n( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type <> 'revision' AND post_status <> 'auto-draft'" ) );
 			$results[ 0 ][ 'tooltip' ] = __( 'This value includes not only posts and pages, but any custom post type, regardless of their status.', 'wp-slimstat' );
 
 			$results[ 1 ][ 'metric' ] = __( 'Posts', 'wp-slimstat' );
 			$results[ 1 ][ 'value' ] = $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'post'" );
 
 			$results[ 2 ][ 'metric' ] = __( 'Pages', 'wp-slimstat' );
-			$results[ 2 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'page'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 2 ][ 'value' ] = number_format_i18n( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'page'" ) );
 
 			$results[ 3 ][ 'metric' ] = __( 'Attachments', 'wp-slimstat' );
-			$results[ 3 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'attachment'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 3 ][ 'value' ] = number_format_i18n( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'attachment'" ) );
 
 			$results[ 4 ][ 'metric' ] = __( 'Revisions', 'wp-slimstat' );
-			$results[ 4 ][ 'value' ] = number_format( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'revision'" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 4 ][ 'value' ] = number_format_i18n( $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} WHERE post_type = 'revision'" ) );
 
 			$results[ 5 ][ 'metric' ] = __( 'Comments', 'wp-slimstat' );
-			$results[ 5 ][ 'value' ] = $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->comments}" );
+			$results[ 5 ][ 'value' ] = $GLOBALS[ 'wpdb' ]->get_var( "SELECT COUNT( * ) FROM {$GLOBALS[ 'wpdb' ]->comments}" );
 
 			$results[ 6 ][ 'metric' ] = __( 'Avg Comments per Post', 'wp-slimstat' );
-			$results[ 6 ][ 'value' ] = number_format( !empty( $results[ 1 ][ 'value' ] ) ? $results[ 5 ][ 'value' ] / $results[ 1 ][ 'value' ] : 0, 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 6 ][ 'value' ] = !empty( $results[ 1 ][ 'value' ] ) ? number_format_i18n( $results[ 5 ][ 'value' ] / $results[ 1 ][ 'value' ] ) : 0;
 
 			$results[ 7 ][ 'metric' ] = __( 'Avg Server Latency', 'wp-slimstat' );
-			$results[ 7 ][ 'value' ] = number_format( wp_slimstat::$wpdb->get_var( "SELECT AVG(server_latency) FROM {$GLOBALS[ 'wpdb' ]->prefix }slim_stats WHERE server_latency <> 0" ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 7 ][ 'value' ] = number_format_i18n( wp_slimstat::$wpdb->get_var( "SELECT AVG(server_latency) FROM {$GLOBALS[ 'wpdb' ]->prefix }slim_stats WHERE server_latency <> 0" ) );
 			$results[ 7 ][ 'tooltip' ] = __( 'Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server.', 'wp-slimstat' );
 
-			$results[ 1 ][ 'value' ] = number_format( $results[ 1 ][ 'value' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
-			$results[ 5 ][ 'value' ] = number_format( $results[ 5 ][ 'value' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+			$results[ 1 ][ 'value' ] = number_format_i18n( $results[ 1 ][ 'value' ] );
+			$results[ 5 ][ 'value' ] = number_format_i18n( $results[ 5 ][ 'value' ] );
 
 			// Store values as transients for 30 minutes
 			set_transient( 'slimstat_your_content', $results, 1800 );

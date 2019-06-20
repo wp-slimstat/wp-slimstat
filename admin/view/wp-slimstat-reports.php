@@ -962,7 +962,7 @@ class wp_slimstat_reports {
 			$pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url( 'start_from equals 0' ) . '"></a> ';
 		}
 
-		$pagination = '<p class="pagination">' . sprintf( __( 'Results %s - %s of %s', 'wp-slimstat' ), number_format( wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ] + 1, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ), number_format( $endpoint, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ), number_format( $_count_all_results, 0, '', wp_slimstat_db::$formats[ 'thousand' ] ) . ( ( $_count_all_results == wp_slimstat::$settings[ 'limit_results' ] ) ? '+' : '' ) );
+		$pagination = '<p class="pagination">' . sprintf( __( 'Results %s - %s of %s', 'wp-slimstat' ), number_format_i18n( wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ] + 1 ), number_format_i18n( $endpoint ), number_format_i18n( $_count_all_results ) . ( ( $_count_all_results == wp_slimstat::$settings[ 'limit_results' ] ) ? '+' : '' ) );
 
 		if ( $_show_refresh_countdown && wp_slimstat::$settings[ 'refresh_interval' ] > 0 && wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] >= date_i18n( 'U' ) - 300 ) {
 			$pagination .= ' [' . __( 'Refresh in', 'wp-slimstat' ) . ' <i class="refresh-timer"></i>]';
@@ -1155,12 +1155,12 @@ class wp_slimstat_reports {
 				}
 
 				if ( !empty( $_args['type'] ) && $_args['type'] == 'recent' ) {
-					$row_details = date_i18n(wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $results[ $i ][ 'dt' ], true ) . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details;
+					$row_details = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $results[ $i ][ 'dt' ], true ) . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details;
 				}
 
 				if ( !empty($_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
-					$percentage_value = ( ( wp_slimstat_db::$pageviews > 0 ) ? number_format( sprintf( "%01.2f", ( 100 * $results[ $i ][ 'counthits' ] / wp_slimstat_db::$pageviews ) ), 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) : 0 );
-					$counthits = number_format( $results[ $i ][ 'counthits' ], 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+					$percentage_value = ( ( wp_slimstat_db::$pageviews > 0 ) ? number_format_i18n( sprintf( "%01.2f", ( 100 * $results[ $i ][ 'counthits' ] / wp_slimstat_db::$pageviews ) ), 2 ) : 0 );
+					$counthits = number_format_i18n( $results[ $i ][ 'counthits' ] );
 
 					if ( !empty( $_args[ 'criteria' ] ) && $_args[ 'criteria' ] == 'swap' ) {
 						$percentage = ' <span>' . $counthits . '</span>';
@@ -1367,7 +1367,7 @@ class wp_slimstat_reports {
 			echo "<p class='slimstat-tooltip-trigger'>{$a_result[ 'notes' ]} <b class='slimstat-tooltip-content$is_expanded'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
 
 			if ( !empty( $a_result[ 'dt' ] ) ) {
-				$date_time = date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $a_result[ 'dt' ], true );
+				$date_time = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $a_result[ 'dt' ], true );
 				echo '<br/>' . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br/>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
 			}
 			if ( !empty( $a_result[ 'counthits' ] ) ) {
@@ -1487,15 +1487,15 @@ class wp_slimstat_reports {
 					$response = @json_decode( $response[ 'body' ] );
 					if ( is_object( $response ) ) {
 						if ( !empty( $response->pda ) ) {
-							$rankings[ 'seomoz_domain_authority' ][ 0 ] = number_format( intval( $response->pda ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'seomoz_domain_authority' ][ 0 ] = number_format_i18n( intval( $response->pda ) );
 						}
 
 						if ( !empty( $response->ueid ) ) {
-							$rankings[ 'seomoz_equity_backlinks' ][ 0 ] = number_format( intval( $response->ueid ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'seomoz_equity_backlinks' ][ 0 ] = number_format_i18n( intval( $response->ueid ) );
 						}
 
 						if ( !empty( $response->uid ) ) {
-							$rankings[ 'seomoz_links' ][ 0 ] = number_format( floatval( $response->uid ), 0, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'seomoz_links' ][ 0 ] = number_format_i18n( floatval( $response->uid ) );
 						}
 					}
 				}
@@ -1509,27 +1509,27 @@ class wp_slimstat_reports {
 					if ( $response->SD[ 1 ]->POPULARITY && $response->SD[ 1 ]->POPULARITY->attributes() ) {
 						$popularity = $response->SD[ 1 ]->POPULARITY->attributes();
 						if ( !empty( $popularity ) ) {
-							$rankings[ 'alexa_popularity' ][ 0 ] = number_format( floatval( $popularity[ 'TEXT' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'alexa_popularity' ][ 0 ] = number_format_i18n( floatval( $popularity[ 'TEXT' ] ) );
 						}
 					}
 
 					if ( $response->SD[ 1 ]->REACH && $response->SD[ 1 ]->REACH->attributes() ) {
 						$reach = $response->SD[ 1 ]->REACH->attributes();
 						if ( !empty( $reach ) ) {
-							$rankings[ 'alexa_world_rank' ][ 0 ] = number_format( floatval( $reach[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'alexa_world_rank' ][ 0 ] = number_format_i18n( floatval( $reach[ 'RANK' ] ) );
 						}
 					}
 
 					if ( $response->SD[ 1 ]->COUNTRY && $response->SD[ 1 ]->COUNTRY->attributes() ) {
 						$country = $response->SD[ 1 ]->COUNTRY->attributes();
 						if ( !empty( $country ) ) {
-							$rankings[ 'alexa_country_rank' ][ 0 ] = number_format( floatval( $country[ 'RANK' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'alexa_country_rank' ][ 0 ] = number_format_i18n( floatval( $country[ 'RANK' ] ) );
 						}
 					}
 					else if ( $response->SD[ 1 ]->RANK && $response->SD[ 1 ]->RANK->attributes() ) {
 						$rank = $response->SD[ 1 ]->RANK->attributes();
 						if ( !empty( $rank ) ) {
-							$rankings[ 'alexa_country_rank' ][ 0 ] = number_format( floatval( $rank[ 'DELTA' ] ), 0, '', wp_slimstat_db::$formats[ 'thousand' ] );
+							$rankings[ 'alexa_country_rank' ][ 0 ] = number_format_i18n( floatval( $rank[ 'DELTA' ] ) );
 							$rankings[ 'alexa_country_rank' ][ 1 ] = __( 'Alexa Delta', 'wp-slimstat' );
 						}
 					}
@@ -1558,7 +1558,7 @@ class wp_slimstat_reports {
 				if ( !empty( $a_recent_visit[ 'city' ] ) &&  !empty( $a_recent_visit[ 'location' ] ) ) {
 					list( $latitude, $longitude ) = explode( ',', $a_recent_visit[ 'location' ] );
 					$clean_city_name = htmlentities( $a_recent_visit[ 'city' ], ENT_QUOTES, 'UTF-8' );
-					$date_time = date_i18n( wp_slimstat::$settings[ 'date_format' ] . ' ' . wp_slimstat::$settings[ 'time_format' ], $a_recent_visit[ 'dt' ], true );
+					$date_time = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $a_recent_visit[ 'dt' ], true );
 					$data_points[] = "{zoomLevel:7,type:'circle',title:'{$clean_city_name}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
 				}
 			}
@@ -1585,8 +1585,8 @@ class wp_slimstat_reports {
 			}
 
 			$percentage = ( wp_slimstat_db::$pageviews > 0 ) ? sprintf( "%01.2f", ( 100 * $a_country[ 'counthits' ] / wp_slimstat_db::$pageviews ) ) : 0;
-			$percentage_format = number_format( $percentage, 2, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] );
-			$balloon_text = slim_i18n::get_string( 'c-' . $a_country[ 'country' ], 'wp-slimstat' ) . ': ' . $percentage_format . '% (' . number_format( $a_country[ 'counthits' ], 0, wp_slimstat_db::$formats[ 'decimal' ], wp_slimstat_db::$formats[ 'thousand' ] ) . ')';
+			$percentage_format = number_format_i18n( $percentage, 2 );
+			$balloon_text = slim_i18n::get_string( 'c-' . $a_country[ 'country' ], 'wp-slimstat' ) . ': ' . $percentage_format . '% (' . number_format_i18n( $a_country[ 'counthits' ] ) . ')';
 			$data_areas[ $a_country[ 'country' ] ] = '{id:"' . strtoupper( $a_country[ 'country' ] ) . '",balloonText:"' . $balloon_text . '",value:' . $percentage . '}';
 
 			if ( $percentage > $max ) {
