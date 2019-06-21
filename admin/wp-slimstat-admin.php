@@ -249,10 +249,10 @@ class wp_slimstat_admin {
 	/**
 	 * Creates and populates tables, if they aren't already there.
 	 */
-	public static function init_tables($_wpdb = ''){
+	public static function init_tables( $_wpdb = '' ) {
 		// Is InnoDB available?
-		$have_innodb = $_wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
-		$use_innodb = (!empty($have_innodb[0]) && $have_innodb[0]['Value'] == 'YES')?'ENGINE=InnoDB':'';
+		$have_innodb = $_wpdb->get_results( "SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A );
+		$use_innodb = ( !empty( $have_innodb[ 0 ] ) && $have_innodb[ 0 ][ 'Value' ] == 'YES' ) ? 'ENGINE=InnoDB' : '';
 
 		// Table that stores the actual data about visits
 		$stats_table_sql = "
@@ -298,7 +298,10 @@ class wp_slimstat_admin {
 				dt INT(10) UNSIGNED DEFAULT 0,
 
 				CONSTRAINT PRIMARY KEY (id),
-				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stats_dt (dt)
+				INDEX {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_dt_idx (dt),
+				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) ),
+				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) ),
+				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
@@ -313,7 +316,7 @@ class wp_slimstat_admin {
 				dt INT(10) UNSIGNED DEFAULT 0,
 
 				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events (dt),
+				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_idx (dt),
 				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
 			) COLLATE utf8_general_ci $use_innodb";
 			
@@ -332,7 +335,7 @@ class wp_slimstat_admin {
 				dt INT(10) UNSIGNED DEFAULT 0,
 
 				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events_archive (dt)
+				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_archive_idx (dt)
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// Ok, let's create the table structure
@@ -412,6 +415,17 @@ class wp_slimstat_admin {
 			unset( wp_slimstat::$settings[ 'use_european_separators' ] );
 			unset( wp_slimstat::$settings[ 'date_format' ] );
 			unset( wp_slimstat::$settings[ 'time_format' ] );
+			unset( wp_slimstat::$settings[ 'expand_details' ] );
+
+			// Add table indexes for improved performance
+			$check_index = wp_slimstat::$wpdb->get_results( "SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'" );
+			if ( empty( $check_index ) ) {
+				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) )" );
+				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) )" );
+				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
+			}
+
+			wp_slimstat::$settings[ 'db_indexes' ] = 'on';
 		}
 		// --- END: Updates for version 4.8.4 ---
 
@@ -1004,29 +1018,35 @@ class wp_slimstat_admin {
 	 * Displays the options 
 	 */
 	public static function display_settings( $_settings = array(), $_current_tab = 1 ) { ?>
-		<form action="<?php echo self::$config_url.$_current_tab ?>" method="post" id="form-slimstat-options-tab-<?php echo $_current_tab ?>">
-			<table class="form-table widefat <?php echo $GLOBALS['wp_locale']->text_direction ?>">
+		<form action="<?php echo self::$config_url . $_current_tab ?>" method="post" id="form-slimstat-options-tab-<?php echo $_current_tab ?>">
+			<table class="form-table widefat <?php echo $GLOBALS[ 'wp_locale' ]->text_direction ?>">
 			<tbody><?php
 				$i = 0;
 				foreach( $_settings as $_setting_slug => $_setting_info ) {
 					$i++;
 					$_setting_info = array_merge( array(
-						'description' =>'',
+						'title' =>'',
 						'type' => '',
 						'rows' => 4,
-						'long_description' => '',
+						'description' => '',
 						'before_input_field' => '',
 						'after_input_field' => '',
 						'custom_label_yes' => '',
 						'custom_label_no' => '',
 						'readonly' => false,
 						'use_tag_list' => true,
-						'use_code_editor' => ''
+						'use_code_editor' => '',
+						'select_values' => array(),
+						'default_value' => ''
 					), $_setting_info );
 
 					$is_readonly = ( !empty( $_setting_info[ 'readonly' ] ) && $_setting_info[ 'readonly' ] === true ) ? ' readonly' : '';
 					$use_tag_list = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_tag_list' ] ) && $_setting_info[ 'use_tag_list' ] === true ) ? ' slimstat-taglist' : '';
 					$use_code_editor = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_code_editor' ] ) ) ? ' data-code-editor="' . $_setting_info[ 'use_code_editor' ] . '"': '';
+
+					if ( empty( $_setting_info[ 'default_value' ] ) && isset( wp_slimstat::$settings[ $_setting_slug ] ) ) {
+						$_setting_info[ 'default_value' ] = wp_slimstat::$settings[ $_setting_slug ];
+					}
 
 					$network_override_checkbox = is_network_admin() ? '
 							<input class="slimstat-checkbox-toggle"
@@ -1036,58 +1056,54 @@ class wp_slimstat_admin {
 								id="addon_network_settings_' . $_setting_slug . '"
 								data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
 
-					if ( !isset( wp_slimstat::$settings[ $_setting_slug ] ) && !isset( $_setting_info[ 'skip_update' ] ) && !isset( $_setting_info[ 'readonly' ] ) && $_setting_info[ 'type' ] != 'section_header') {
-						wp_slimstat::$settings[ $_setting_slug ] = ''; 
-					}
-
 					echo '<tr' . ( $i % 2 == 0 ? ' class="alternate"' : '' ) . '>';
 					switch ( $_setting_info[ 'type' ] ) {
 						case 'section_header':
-							echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $_setting_info[ 'description' ] ) . '">' . $_setting_info[ 'description' ] . '</td>';
+							echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $_setting_info[ 'title' ] ) . '">' . $_setting_info[ 'title' ] . '</td>';
 							break;
 
 						case 'static':
-							echo '<td colspan="2">' . $_setting_info[ 'description' ] . '<textarea rows="7" class="large-text code" readonly>' . $_setting_info[ 'long_description' ] . '</textarea></td>';
+							echo '<td colspan="2">' . $_setting_info[ 'title' ] . '<textarea rows="7" class="large-text code" readonly>' . $_setting_info[ 'description' ] . '</textarea></td>';
 							break;
 
 						case 'toggle':
-							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . '</label></th>
+							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
 							<td>
 								<span class="block-element">
 									<input class="slimstat-checkbox-toggle" type="checkbox"' . $is_readonly . '
 										name="options[' . $_setting_slug . ']"
 										id="' . $_setting_slug . '"
 										data-size="mini" data-handle-width="50" data-on-color="success"' . 
-										( ( isset( wp_slimstat::$settings[ $_setting_slug ] ) && wp_slimstat::$settings[ $_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
+										( ( $_setting_info[ 'default_value' ] == 'on' ) ? ' checked="checked"' : '' ) . '
 										data-on-text="' . ( !empty( $_setting_info[ 'custom_label_on' ] ) ? $_setting_info[ 'custom_label_on' ] : __( 'On',  'wp-slimstat' ) ) . '"
 										data-off-text="' . ( !empty( $_setting_info[ 'custom_label_off' ] ) ? $_setting_info[ 'custom_label_off' ] : __( 'Off',  'wp-slimstat' ) ) . '">' .
 										$network_override_checkbox . '
 								</span>
-								<span class="description">' . $_setting_info[ 'long_description' ] . '</span>
+								<span class="description">' . $_setting_info[ 'description' ] . '</span>
 							</td>';
 							// ( is_network_admin() ? ' data-indeterminate="true"' : '' ) . '>
 							break;
 
 						case 'select':
-							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . '</label></th>
+							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
 							<td>
 								<span class="block-element">
 									<select' . $is_readonly .' name="options[' . $_setting_slug . ']" id="' . $_setting_slug .'">';
-										foreach ( $_setting_info[ 'values' ] as $a_key => $a_value ) {
-											$is_selected = ( !empty( wp_slimstat::$settings[ $_setting_slug ] ) && wp_slimstat::$settings[ $_setting_slug ] == $a_key ) ? ' selected' : '';
+										foreach ( $_setting_info[ 'select_values' ] as $a_key => $a_value ) {
+											$is_selected = ( $_setting_info[ 'default_value' ] == $a_key ) ? ' selected' : '';
 											echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
 										}
 									echo '</select>' .
 									$network_override_checkbox . '
 								</span>
-								<span class="description">' . $_setting_info[ 'long_description' ] . '</span>
+								<span class="description">' . $_setting_info[ 'description' ] . '</span>
 							</td>';
 							break;
 							
 						case 'text':
 						case 'integer':
 							$empty_value = ( $_setting_info[ 'type' ] == 'text' ) ? '' : '0';
-							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . '</label></th>
+							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
 							<td>
 								<span class="block-element"> ' .
 									$_setting_info[ 'before_input_field' ] . '
@@ -1095,30 +1111,38 @@ class wp_slimstat_admin {
 										type="' . ( ( $_setting_info[ 'type' ] == 'integer' ) ? 'number' : 'text' ) . '"
 										name="options[' . $_setting_slug . ']"
 										id="' . $_setting_slug . '"
-										value="' . ( !empty( wp_slimstat::$settings[ $_setting_slug ] ) ? wp_slimstat::$settings[ $_setting_slug ] : $empty_value ) . '"> ' . $_setting_info[ 'after_input_field' ] .
+										value="' . ( !empty( $_setting_info[ 'default_value' ] ) ? $_setting_info[ 'default_value' ] : $empty_value ) . '"> ' . $_setting_info[ 'after_input_field' ] .
 										$network_override_checkbox . '
 								</span>
-								<span class="description">' . $_setting_info[ 'long_description' ] . '</span>
+								<span class="description">' . $_setting_info[ 'description' ] . '</span>
 							</td>';
 							break;
 
 						case 'textarea':
 							echo '
 							<td colspan="2">
-								<label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . $network_override_checkbox . '</label>
-								<p class="description">' . $_setting_info[ 'long_description' ] . '</p>
+								<label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . $network_override_checkbox . '</label>
+								<p class="description">' . $_setting_info[ 'description' ] . '</p>
 								<p>
 									<textarea class="large-text code' . $use_tag_list . '"' . $is_readonly . $use_code_editor . '
 										id="' . $_setting_slug . '"
 										rows="' . $_setting_info[ 'rows' ] . '"
-										name="options[' . $_setting_slug . ']">' . ( isset( wp_slimstat::$settings[ $_setting_slug ] ) ? stripslashes( wp_slimstat::$settings[ $_setting_slug ] ) : '' ) . '</textarea>
+										name="options[' . $_setting_slug . ']">' . ( !empty( $_setting_info[ 'default_value' ] ) ? stripslashes( $_setting_info[ 'default_value' ] ) : '' ) . '</textarea>
 									<span class="description">' . $_setting_info[ 'after_input_field' ] . '</span>
 								</p>
 							</td>';
 							break;
 
+						case 'plain-text':
+							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
+							<td>
+								<span class="block-element">' . $_setting_info[ 'after_input_field' ] . '</span>
+								<span class="description">' . $_setting_info[ 'description' ] . '</span>
+							</td>';
+							break;
+
 						case 'custom':
-							echo '<td colspan="2">' . $_setting_info[ 'description' ] . '<br/><br/>' . $_setting_info[ 'markup' ] . '</td>';
+							echo '<td colspan="2">' . $_setting_info[ 'title' ] . '<br/><br/>' . $_setting_info[ 'markup' ] . '</td>';
 							break;
 
 						default:
@@ -1145,7 +1169,7 @@ class wp_slimstat_admin {
 
 		foreach( $_settings as $_setting_slug => $_setting_info ) {
 			// Some options require a special treatment and are updated somewhere else
-			if ( isset( $_setting_info[ 'skip_update' ] ) || isset( $_setting_info[ 'readonly' ] ) || $_setting_info[ 'type' ] == 'section_header' ) {
+			if ( isset( $_setting_info[ 'skip_update' ] ) || isset( $_setting_info[ 'readonly' ] ) || $_setting_info[ 'type' ] == 'section_header' || $_setting_info[ 'type' ] == 'plain-text' ) {
 				continue;
 			}
 
