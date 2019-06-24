@@ -57,6 +57,9 @@ class slim_browser {
 			self::$browser[ 'browser_version' ] = $browser_version[ 'browser_version' ];
 		}
 
+		// Let third-party tools manipulate the data
+		self::$browser = apply_filters( 'slimstat_filter_browscap', self::$browser );
+
 		return self::$browser;
 	}
 	// end get_browser

@@ -82,6 +82,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Enabled wildcards on the exclusion rule by capability.
 * [Update] Improved the overall source code readability level. Now you don't have any other excuses to not contribute to this project!
 * [Update] Table indexes are now enabled by default in the database.
+* [Update] Added new WordPress filter to the Browscap Library, so that third-party tools can manipulate the data before it's returned to the tracker.
 
 = 4.8.3 =
 * [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.
