@@ -18,10 +18,13 @@ class slim_browser {
 		self::$browscap_autoload_path = wp_slimstat::$upload_dir . '/browscap-db-master/composer/autoload_real.php';
 		
 		// Determine the local version of the data file
-		self::$browscap_local_version = @file_get_contents( wp_slimstat::$upload_dir . '/browscap-db-master/version.txt' );
-		if ( false === self::$browscap_local_version ) {
-			wp_slimstat::slimstat_save_options();
-			return array( 4, __( 'The Browscap Library could not be opened on your filesystem. Please check your server permissions and try again.', 'wp-slimstat' ) );
+		self::$browscap_local_version = 0;
+		if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db-master/version.txt' ) ) {
+			self::$browscap_local_version = @file_get_contents( wp_slimstat::$upload_dir . '/browscap-db-master/version.txt' );
+			if ( false === self::$browscap_local_version ) {
+				wp_slimstat::slimstat_save_options();
+				return array( 4, __( 'The Browscap Library could not be opened on your filesystem. Please check your server permissions and try again.', 'wp-slimstat' ) );
+			}
 		}
 
 		self::$browscap_local_version = intval( filter_var( self::$browscap_local_version, FILTER_SANITIZE_NUMBER_INT ) );
