@@ -72,26 +72,26 @@ class wp_slimstat {
 
 		self::$maxmind_path = self::$upload_dir . '/maxmind.mmdb';
 
-		// Enable the tracker (both server- and client-side)
-		if ( !is_admin() || self::$settings[ 'track_admin_pages' ] == 'on' ) {
+		// Allow add-ons to turn off the tracker based on other conditions
+		$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', strpos( self::get_request_uri(), 'wp-admin/admin-ajax.php' ) === false );
+		$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
 
-			// Allow add-ons to turn off the tracker based on other conditions
-			$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', strpos( self::get_request_uri(), 'wp-admin/admin-ajax.php' ) === false );
-			$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
+		// Enable the tracker (both server- and client-side)
+		if ( ( !is_admin() || self::$settings[ 'track_admin_pages' ] == 'on' ) && self::$settings[ 'is_tracking' ] == 'on' && $is_tracking_filter ) {
 
 			// Is server-side tracking active?
-			if ( self::$settings[ 'is_tracking' ] == 'on' && $is_tracking_filter ) {
+			if ( self::$settings[ 'javascript_mode' ] != 'on' ) {
 				add_action( is_admin() ? 'admin_init' : 'wp', array( __CLASS__, 'slimtrack' ), 5 );
 
 				if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
 					add_action( 'login_init', array( __CLASS__, 'slimtrack' ), 10 );
 				}
+			}
 
-				// Slimstat tracks screen resolutions, outbound links and other client-side information using a client-side tracker
-				add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 15 );
-				if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
-					add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
-				}
+			// Slimstat tracks screen resolutions, outbound links and other client-side information using a client-side tracker
+			add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 15 );
+			if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
+				add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
 			}
 		}
 
