@@ -123,7 +123,7 @@ class wp_slimstat {
 
 		// Load the admin library
 		if ( is_user_logged_in() ) {
-			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
+			include_once ( plugin_dir_path( __FILE__ ) . 'admin/index.php' );
 			add_action( 'init', array( 'wp_slimstat_admin', 'init' ), 60 );
 		}
 	}
@@ -660,7 +660,7 @@ class wp_slimstat {
 		if ( empty( self::$stat[ 'id' ] ) ) {
 
 			// Attempt to init the environment (plugin just activated on a blog in a MU network?)
-			include_once ( plugin_dir_path( __FILE__ ) . 'admin/wp-slimstat-admin.php' );
+			include_once ( plugin_dir_path( __FILE__ ) . 'admin/index.php' );
 			wp_slimstat_admin::init_environment( true );
 
 			// Now let's try again
@@ -1301,7 +1301,7 @@ class wp_slimstat {
 		}
 
 		// Include the Reports Library, but don't initialize the database, since we will do that separately later
-		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-reports.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 
 		// Init the database library with the appropriate filters
@@ -1469,7 +1469,7 @@ class wp_slimstat {
 			return new WP_Error( 'rest_invalid', esc_html__( '[REST API] The <code>function</code> parameter is required. Please review your request and try again.', 'wp-slimstat' ), array( 'status' => 400 ) );
 		}
 
-		include_once( dirname(__FILE__) . '/admin/view/wp-slimstat-db.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-db.php' );
 		wp_slimstat_db::init( $filters );
 
 		$response = array(
@@ -2033,7 +2033,7 @@ if ( function_exists( 'add_action' ) ) {
 
 	// From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
 	if ( is_admin() ) {
-		include_once( WP_PLUGIN_DIR . '/wp-slimstat/admin/wp-slimstat-admin.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'admin/index.php' );
 		register_activation_hook( __FILE__, array( 'wp_slimstat_admin', 'init_environment' ) );
 		register_deactivation_hook( __FILE__, array( 'wp_slimstat_admin', 'deactivate' ) );
 	}
