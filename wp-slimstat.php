@@ -109,7 +109,7 @@ class wp_slimstat {
 		add_shortcode( 'slimstat', array( __CLASS__, 'slimstat_shortcode' ), 15 );
 
 		// Include our browser detector library
-		include_once( plugin_dir_path( __FILE__ ) . 'browscap/browser.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/browscap.php' );
 		add_action( 'init', array( 'slim_browser', 'init' ) );
 
 		// If add-ons are installed, check for updates
@@ -541,7 +541,7 @@ class wp_slimstat {
 		self::$stat[ 'language' ] = self::_get_language();
 
 		// Geolocation 
-		include_once ( plugin_dir_path( __FILE__ ) . 'maxmind.php' );
+		include_once ( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
 		$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
 
 		if ( !empty( $geolocation_data[ 'country' ][ 'iso_code' ] ) ) {
