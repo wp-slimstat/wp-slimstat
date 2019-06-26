@@ -5,6 +5,7 @@ class wp_slimstat_reports {
 	// Structures to store all the information about what screens and reports are available
 	public static $reports_info = array();
 	public static $user_reports = array();
+	public static $resource_titles = array();
 
 	/**
 	 * Initalize class properties
@@ -854,6 +855,12 @@ class wp_slimstat_reports {
 		// No network-wide settings exist
 		if ( empty( self::$user_reports ) ) {
 			self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
+		}
+
+		// We store page titles in a transient for improved performance
+		self::$resource_titles = get_transient( 'slimstat_resource_titles' );
+		if ( self::$resource_titles === false ) {
+			self::$resource_titles = array();
 		}
 
 		// Do this only if we are in one of our screens (no dashboard!)
@@ -1789,21 +1796,27 @@ class wp_slimstat_reports {
 	 * Attempts to convert a permalink into a post title
 	 */
 	public static function get_resource_title( $_resource = '' ) {
-		$resource_title = $_resource;
-
 		if  ( wp_slimstat::$settings[ 'convert_resource_urls_to_titles' ] != 'on' ) {
 			return htmlentities( urldecode( $resource_title ), ENT_QUOTES, 'UTF-8' );
 		}
+
+		// Do we already have this value in our transient cache?
+		$cache_index = md5( $_resource );
+		if ( !empty( self::$resource_titles ) && !empty( self::$resource_titles[ $cache_index ] ) ) {
+			return self::$resource_titles[ $cache_index ];
+		}
+
+		self::$resource_titles[ $cache_index ] = $_resource;
 
 		// Is this a post or a page?
 		$post_id = url_to_postid( $_resource );
 
 		if ( $post_id > 0 ) {
-			$resource_title = the_title_attribute( array( 'post' => $post_id, 'echo' => false ) );
+			self::$resource_titles[ $cache_index ] = the_title_attribute( array( 'post' => $post_id, 'echo' => false ) );
 
 			// Encode URLs to avoid XSS attacks
-			if ( $resource_title == $_resource ) {
-				$resource_title = htmlspecialchars( $resource_title, ENT_QUOTES, 'UTF-8' );
+			if ( self::$resource_titles[ $cache_index ] == $_resource ) {
+				self::$resource_titles[ $cache_index ] = htmlspecialchars( self::$resource_titles[ $cache_index ], ENT_QUOTES, 'UTF-8' );
 			}
 		}
 
@@ -1830,14 +1843,17 @@ class wp_slimstat_reports {
 			}
 
 			if ( !empty( $term_names ) ) {
-				$resource_title = implode( ',', $term_names );
+				self::$resource_titles[ $cache_index ] = implode( ',', $term_names );
 			}
 			else {
-				$resource_title = htmlspecialchars( $resource_title, ENT_QUOTES, 'UTF-8' );
+				self::$resource_titles[ $cache_index ] = htmlspecialchars( self::$resource_titles[ $cache_index ], ENT_QUOTES, 'UTF-8' );
 			}
 		}
 
-		return $resource_title;
+		// Save new value in cache
+		set_transient( 'slimstat_resource_titles', self::$resource_titles, 1800 );
+
+		return self::$resource_titles[ $cache_index ];
 	}
 
 	public static function inline_help( $_text = '', $_echo = true ) {

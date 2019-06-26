@@ -81,7 +81,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser. This usually happens whenever a new browser version is released, which is not yet included in the data file.
 * [Update] Option to track same-domain referrers is now deactivated by default on new installations.
 * [Update] Enabled wildcards on the exclusion rule by capability.
-* [Update] Improved the overall source code readability level. Now you don't have any other excuses to not contribute to this project!
+* [Update] Improved the overall source code readability score. Now you don't have any other excuses to not contribute to this project!
 * [Update] Table indexes are now enabled by default in the database.
 * [Update] Added new WordPress filter to the Browscap Library, so that third-party tools can manipulate the data before it's returned to the tracker.
 
