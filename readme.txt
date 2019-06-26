@@ -66,6 +66,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 == Changelog ==
 = 4.8.4 =
+* [Note] If you're using any of our premium add-ons, please make sure to update them to the latest version available (see Slimstat > Add-ons) as we've updated some references in our code.
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.
 * [Update] Renamed a few files in the admin. If you're including Slimstat libraries in your custom code, please make sure to check that your references are up-to-date. Also, make sure to clear your cache if you page layout doesn't look right.
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
@@ -84,6 +85,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Improved the overall source code readability score. Now you don't have any other excuses to not contribute to this project!
 * [Update] Table indexes are now enabled by default in the database.
 * [Update] Added new WordPress filter to the Browscap Library, so that third-party tools can manipulate the data before it's returned to the tracker.
+* [Update] Added [nonce](https://wordpress.org/support/article/glossary/#nonce) to Settings page for improved security.
 
 = 4.8.3 =
 * [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.

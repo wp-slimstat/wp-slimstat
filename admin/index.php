@@ -1018,7 +1018,8 @@ class wp_slimstat_admin {
 	 * Displays the options 
 	 */
 	public static function display_settings( $_settings = array(), $_current_tab = 1 ) { ?>
-		<form action="<?php echo self::$config_url . $_current_tab ?>" method="post" id="form-slimstat-options-tab-<?php echo $_current_tab ?>">
+		<form action="<?php echo self::$config_url . $_current_tab ?>" method="post" id="slimstat-options-<?php echo $_current_tab ?>">
+			<?php wp_nonce_field( 'slimstat_update_settings', 'slimstat_update_settings' ); ?>
 			<table class="form-table widefat <?php echo $GLOBALS[ 'wp_locale' ]->text_direction ?>">
 			<tbody><?php
 				$i = 0;
@@ -1161,9 +1162,8 @@ class wp_slimstat_admin {
 	 * Updates the options 
 	 */
 	public static function update_settings( $_settings = array() ) {
-
-		// Nothing to do, if there is no data to be parsed
-		if ( !isset( $_POST[ 'options' ] ) || empty( $_settings ) ) {
+		// Nothing to do, if there is no data to be parsed or the nonce is not valid
+		if ( !isset( $_POST[ 'options' ] ) || empty( $_settings ) || !isset( $_POST[ 'slimstat_update_settings' ] ) || !wp_verify_nonce( $_POST[ 'slimstat_update_settings' ], 'slimstat_update_settings' ) ) {
 			return true;
 		}
 
@@ -1178,7 +1178,7 @@ class wp_slimstat_admin {
 				wp_slimstat::$settings[ $_setting_slug ] = 'no';
 			}
 			else if ( isset( $_POST[ 'options' ][ $_setting_slug ] ) ) {
-				wp_slimstat::$settings[ $_setting_slug ] = $_POST[ 'options' ][ $_setting_slug ];
+				wp_slimstat::$settings[ $_setting_slug ] = sanitize_text_field( $_POST[ 'options' ][ $_setting_slug ] );
 			}
 
 			// If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
