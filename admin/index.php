@@ -487,7 +487,7 @@ class wp_slimstat_admin {
 	 * Loads a custom stylesheet file for the administration panels
 	 */
 	public static function wp_slimstat_stylesheet( $_hook = '' ) {
-		wp_register_style(  'wp-slimstat', plugins_url( '/admin/css/admin.css', dirname( __FILE__ ) ) );
+		wp_register_style(  'wp-slimstat', plugins_url( '/admin/assets/css/admin.css', dirname( __FILE__ ) ) );
 		wp_enqueue_style(  'wp-slimstat' );
 
 		if ( !empty( wp_slimstat::$settings[ 'custom_css' ] ) ) {
@@ -512,7 +512,7 @@ class wp_slimstat_admin {
 	 * Loads user-defined stylesheet code
 	 */
 	public static function wp_slimstat_userdefined_stylesheet(){
-		echo '<style type="text/css" media="screen">'.wp_slimstat::$settings['custom_css'].'</style>';
+		echo '<style type="text/css" media="screen">' . wp_slimstat::$settings[ 'custom_css' ] . '</style>';
 	}
 	// END: wp_slimstat_userdefined_stylesheet
 
@@ -528,12 +528,12 @@ class wp_slimstat_admin {
 			wp_enqueue_code_editor( array( 'type' => 'text/html' ) );
 		}
 		
-		wp_enqueue_script( 'slimstat_admin', plugins_url( '/admin/js/admin.js', dirname( __FILE__ ) ), array( 'jquery-ui-dialog' ), null, false );
+		wp_enqueue_script( 'slimstat_admin', plugins_url( '/admin/assets/js/admin.js', dirname( __FILE__ ) ), array( 'jquery-ui-dialog' ), null, false );
 
 		// Pass some information to Javascript
 		$params = array(
 			'async_load' => !empty( wp_slimstat::$settings[ 'async_load' ] ) ? wp_slimstat::$settings[ 'async_load' ] : 'no',
-			'datepicker_image' => plugins_url( '/admin/images/datepicker.png', dirname( __FILE__ ) ),
+			'datepicker_image' => plugins_url( '/admin/assets/images/datepicker.png', dirname( __FILE__ ) ),
 			'refresh_interval' => intval( wp_slimstat::$settings[ 'refresh_interval' ] )
 		);
 		wp_localize_script( 'slimstat_admin', 'SlimStatAdminParams', $params );

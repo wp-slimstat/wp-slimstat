@@ -1323,7 +1323,7 @@ class wp_slimstat {
 					return __( 'Invalid Report ID', 'wp-slimstat' );
 				}
 
-				wp_register_style( 'wp-slimstat-frontend', plugins_url( '/admin/css/slimstat.css', __FILE__ ) );
+				wp_register_style( 'wp-slimstat-frontend', plugins_url( '/admin/assets/css/slimstat.css', __FILE__ ) );
 				wp_enqueue_style( 'wp-slimstat-frontend' );
 
 				wp_slimstat_reports::$reports_info[ $w ][ 'callback_args' ][ 'is_widget' ] = true;
