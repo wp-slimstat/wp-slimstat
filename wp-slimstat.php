@@ -1323,7 +1323,7 @@ class wp_slimstat {
 					return __( 'Invalid Report ID', 'wp-slimstat' );
 				}
 
-				wp_register_style( 'wp-slimstat-frontend', plugins_url( '/admin/css/slimstat.frontend.css', __FILE__ ) );
+				wp_register_style( 'wp-slimstat-frontend', plugins_url( '/admin/css/slimstat.css', __FILE__ ) );
 				wp_enqueue_style( 'wp-slimstat-frontend' );
 
 				wp_slimstat_reports::$reports_info[ $w ][ 'callback_args' ][ 'is_widget' ] = true;
@@ -1886,7 +1886,7 @@ class wp_slimstat {
 		$update_checker_objects = array();
 		
 		// This is only included if add-ons are installed
-		include_once( plugin_dir_path( __FILE__ ) . 'admin/update-checker/plugin-update-checker.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/update-checker/plugin-update-checker.php' );
 
 		foreach ( self::$update_checker as $a_slug ) {
 			$a_clean_slug = str_replace( array( 'wp_slimstat_', '_' ), array( '', '-' ), $a_slug );
@@ -1934,9 +1934,9 @@ class slimstat_widget extends WP_Widget {
 	 * Sets up the widgets name etc
 	 */
 	public function __construct() {
-		parent::__construct( 'slimstat_widget', 'SlimStat', array( 
+		parent::__construct( 'slimstat_widget', 'Slimstat', array( 
 			'classname' => 'slimstat_widget',
-			'description' => 'Add a SlimStat report to your sidebar',
+			'description' => 'Add a Slimstat report to your sidebar',
 		) );
 	}
 
