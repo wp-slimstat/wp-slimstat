@@ -15,9 +15,9 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
 
 = Main features =
-* **Real-time access log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
+* **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
-* **GDPR guidelines**: fully compliant with the European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
+* **GDPR**: fully compliant with the GDPR European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
