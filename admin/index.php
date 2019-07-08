@@ -487,7 +487,7 @@ class wp_slimstat_admin {
 	 * Loads a custom stylesheet file for the administration panels
 	 */
 	public static function wp_slimstat_stylesheet( $_hook = '' ) {
-		wp_register_style(  'wp-slimstat', plugins_url( '/admin/css/slimstat.css', dirname( __FILE__ ) ) );
+		wp_register_style(  'wp-slimstat', plugins_url( '/admin/css/admin.css', dirname( __FILE__ ) ) );
 		wp_enqueue_style(  'wp-slimstat' );
 
 		if ( !empty( wp_slimstat::$settings[ 'custom_css' ] ) ) {
