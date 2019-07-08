@@ -1,10 +1,10 @@
 # Slimstat Analytics 
 **Contributors:** coolmann  
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38  
-**Tags:** analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
+**Tags:** analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit  
 **Requires at least:** 3.8  
 **Tested up to:** 5.2  
-**Stable tag:** 4.8.3  
+**Stable tag:** 4.8.4  
 
 
 ## Description 
@@ -17,14 +17,14 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 * **GDPR guidelines**: fully compliant with the European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
-* **Cache Friendly**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
-* **Privacy**: support for hashing IP addresses in the database to protect your users privacy.
-* **Detailed information**: geolocate your visitors by city and country, browser type and operating system (courtesy of [MaxMind](http://www.maxmind.com/) and [Browscap](http://browscap.org)).
-* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](http://www.ammap.com/)).
+* **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
+* **Privacy**: hash IP addresses to protect your users' privacy.
+* **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
+* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](https://www.ammap.com/)).
 
 
 ### Premium Add-ons 
-Visit [our website](http://www.wp-slimstat.com/addons/) for a list of available extensions.
+Visit [our website](https://www.wp-slimstat.com/addons/) for a list of available extensions.
 
 
 ### Contribute 
@@ -94,7 +94,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] MozRank has been deprecated, we have replaced it with the Domain Authority metric.
 * [Update] Spring cleaning in the 'admin notices' department: removed some obsolete CSS code, replaced by built-in WP classes and definitions.
 * [Fix] Changed the default minimum capability to access the reports from 'activate_plugins' to 'manage_options', so that regular administrators (a.k.a. non-super admins) in a multisite environment can still see their own reports (thank you, [homepageware](https://wordpress.org/support/topic/slimstat-and-multisite/)). This update does not affect existing installations: if you want regular admins to see their own stats, please go to Slimstat > Settings > Access Control and change the values in the corresponding fields.
-* [Fix] The autorefresh feature for the Activity Log was not working as expected. Thank you to all the users who patiently worked with us to identify the issue.
+* [Fix] The autorefresh feature for the Access Log was not working as expected. Thank you to all the users who patiently worked with us to identify the issue.
 * [Fix] A conflict between the Async loader and AmCharts 4 was causing the Screen Options tab to not work as expected (thank you, [softfully](https://wordpress.org/support/topic/screen-options-doesnt-open/)).
 * [Fix] Removed unused setting 'Expand Reports'
 
@@ -104,7 +104,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [New] Many CRM integration plugins rely mostly on the user emails, not usernames. For this reason, a new email field has been added to the database (thank you, [sandrodz](https://github.com/sandrodz)).
 * [Update] Changed the preset intervals in the date filter dropdown so that you can get a day over day comparison (Monday over Monday, etc) for improved accuracy.
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.4.9.
-* [Fix] The countdown timer on the Activity Log was not working as expected (thank you, [anniest](https://wordpress.org/support/topic/no-refresh-2/)).
+* [Fix] The countdown timer on the Access Log was not working as expected (thank you, [anniest](https://wordpress.org/support/topic/no-refresh-2/)).
 * [Fix] The countdown timer was causing an warning message to appear on other screens.
 * [Fix] Minor aesthetic improvements.
 
@@ -116,7 +116,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 
 ### 4.8 
-* [Note] Now that we have a cleaner foundation to build on, it's time to start introducing new reports and new ways to segment your audience and the traffic they generate. While our users test the latest changes and updates (to confirm that the foundation is indeed solid and bug-free), we are hard at work implementing the first batch of new reports. Some of them will be made available in the free version, while others will be added to our premium add-on, [User Overview](http://www.wp-slimstat.com/downloads/user-overview/). And we need your help! If you think that a specific report should be added to Slimstat, please do not hesitate to let us know!
+* [Note] Now that we have a cleaner foundation to build on, it's time to start introducing new reports and new ways to segment your audience and the traffic they generate. While our users test the latest changes and updates (to confirm that the foundation is indeed solid and bug-free), we are hard at work implementing the first batch of new reports. Some of them will be made available in the free version, while others will be added to our premium add-on, [User Overview](https://www.wp-slimstat.com/downloads/user-overview/). And we need your help! If you think that a specific report should be added to Slimstat, please do not hesitate to let us know!
 * [Note] Worried about the recent [news regarding jQuery vulnerabilities](https://www.zdnet.com/article/popular-jquery-javascript-library-impacted-by-prototype-pollution-flaw/)? Slimstat doesn't use jQuery as a dependency, so you can sleep tight knowing that your website will not be affected.
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4. This new release is not backward compatible, so the code to integrate it with Slimstat had to be completely rewritten. Please let us know if you notice any issues.
 * [Update] [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker), the library we use to check if a new version of our premium add-ons is available for download, has been update to version 4.6.
@@ -129,48 +129,3 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] An error was being returned if SVG elements were using the A tag on a page (thank you, [snaphappyme](https://wordpress.org/support/topic/uncaught-typeerror-all_linksn-href-indexof/)).
 * [Fix] A bug was causing Slimstat to incorrectly geolocate visits to websites behind a Cloudflare load balancer. Please update the IP Address Fix add-on as well.
 * [Fix] Tweaked the formula to determine your website bounce rate, and updated the associated description to better reflect the underlying calculations.
-
-
-### 4.7.9.1 
-* [Fix] It turns out the new [Browscap Library](https://github.com/slimstat/browscap-db) we introduced requires PHP 7.x, not 5.6 as stated in their documentation. Added some code to prevent fatal errors for those still using an older version of PHP.
-
-
-### 4.7.9 
-* [Note] Jason is back! Apologies for the radio silence in the last few months, due to personal reasons. Please know that this plugin is still very much alive and kicking. I'm working on cleaning up my development environment, updating the Git repository and streamlining coding workflows. I'm catching up on past and new feature requests and pending bugfixes. As always, thank you for your continued support.
-* [Note] Happy birthday, Slimstat: April 2019 marks your 9th year in the [WordPress repository](https://plugins.trac.wordpress.org/changeset/227217) and your 13th year overall. Not many plugins out there can brag about that!
-* [Update] Our optimized fork of the Browscap Library is now available as a public Github repository. Slimstat will now check for updates on Github directly, which streamlines our deployment workflow. Feel free to contact us if you experience any issues with the new data file.
-
-
-### 4.7.8.3 
-* [Fix] The opt-out message was being displayed even if the corresponding setting was turned off. Apologies for the inconvenience.
-
-
-### 4.7.8.2 
-* [New] The IP to hostname conversion feature now stores in the database the information it calculates, to avoid querying the DNS server over and over again.
-* [Update] The opt-out banner is now loaded dynamically, to address HTML caching issues. Thank you, [fuchsws](https://wordpress.org/support/topic/opt-out-message-vs-html-cache).
-
-
-### 4.7.8.1 
-* [New] The Customizer now has its own access control settings. This allows admins to control in a more granular way who can do what.
-* [Update] If you have an existing opt-in mechanism, asking your users if they want to be tracked, you can now configure Slimstat to use that cookie to determine if a given pageview should be recorded or not.
-
-
-### 4.7.8 
-* [Note] A few users have reached out to us to ask if Slimstat would be compliant with the upcoming [General Data Protection Regulation (GDPR)](https://en.wikipedia.org/wiki/General_Data_Protection_Regulation) guidelines and regulations that are about to be activated all across Europe. Based on our understanding of this new law, as long as the hosting provider where you are storing the information collected by Slimstat is GDPR compliant, then you won't have to worry about any extra layers of compliance offered by software like ours. One of our primary goals is to make sure that you and only you are the sole owner of the data collected by our plugin. This has always been what makes Slimstat stand out from the crowd: while Jetpack, Google Analytics and many other services have full unrestricted access to the data they collect on your website, we at Slimstat don't treat our users as *the product* that we sell to other companies.
-* [New] Our plugin now honors the [Do Not Track header](https://en.wikipedia.org/wiki/Do_Not_Track). Please note that this feature can be turned off in the settings, and will be enabled by default.
-* [New] We introduced an experimental option to allow your users to opt out of tracking via a text box displayed at the bottom of your website. Please go to Settings > Filters to customize the behavior and the message to suit your needs and website layout. You can also use third-party solutions to let your visitors opt out, and then configure Slimstat to read the corresponding cookie they set.
-* [New] You can now add reports to the Access Log screen, and customize it just like any other screen in Slimstat.
-* [Update] Reintroduced the `interval_minutes` filter, which had been temporarily removed from our code as a side effect of our code clean-up process. Thank you, [mth75](https://wordpress.org/support/topic/wrong-currently-online-value-shortcode/).
-* [Update] Moved the button to reset the report layouts to the Customizer screen.
-* [Update] Deprecated the Geolocation screen. The World Map report has been moved to the Audience tab. If for some reason you cannot find the World Map, please go to Slimstat > Customize and click the Reset All button.
-* [Fix] Filters were not being set when opening the corresponding links in a new window. Thank you, [forumaad](https://wordpress.org/support/topic/bug-empty-filter-line-then-open-at-new-windows/)
-* [Fix] Bug affecting the report "Currently Online".
-* [Fix] Bug affecting all the filter links after the Export to Excel add-on had been enabled.
-* [Fix] Bug affecting the resource filter when "nice permalinks" are not enabled.
-
-
-### 4.7.7 
-* [New] We've completely rewritten the portion of code that handles the date ranges in the Filter Bar. In order to simplify things, **we have deprecated** the `interval_direction` filter, which is now expressed by the sign in front of the interval value (positive for going forward from a given start date, and negative for going back in time). Please note that this change affect your existing shortcodes, if they use the aforementioned filter. We will update our documentation in the next few days to remove any reference to this filter, and to avoid any confusion. Please feel free to contact us if you have any questions or to report any issues.
-* [New] The comparison chart is now always displayed, using new criteria to determine the range to use. You may want to update your settings (Settings > Reports > Default Time Span > Days, and Reports > Comparison Chart) to mimic the old behavior or hide the comparison chart altogether, if you like.
-* [Update] We've reintroduced the various levels of granularity for our charts: hourly (when a single day is selected), daily (for ranges up to 120 days) and monthly. Also, the comparison chart is now always available, regardless of the selected time range. Thank you, [WebsiteOpzetten](https://wordpress.org/support/topic/char-is-not-displayed-when-the-selected-time-range-is-comprised-of-a-single-day/).
-* [Update] Tooltips across the interface have a more uniform behavior.
