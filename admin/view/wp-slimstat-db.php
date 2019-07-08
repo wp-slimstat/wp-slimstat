@@ -668,7 +668,7 @@ class wp_slimstat_db {
 
 		if ( self::$filters_normalized[ 'utime' ][ 'range' ] < 86400 ) {
 			$params[ 'group_by' ] = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-			$params[ 'data_points_label' ] = ( strpos( number_format_i18n( 1000 ), '.' ) === false ) ? 'm/d - h a' : 'd/m - H';
+			$params[ 'data_points_label' ] = ( strpos( number_format_i18n( 1000 ), '.' ) === false ) ? 'h a' : 'H';
 			$params[ 'data_points_count' ] = ceil( self::$filters_normalized[ 'utime' ][ 'range' ] / 3600 );
 			$params[ 'granularity' ] = 'HOUR';
 		}
