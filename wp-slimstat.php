@@ -1586,8 +1586,8 @@ class wp_slimstat {
 
 			// General
 			'is_tracking' => 'on',
-			'javascript_mode' => 'on',
 			'track_admin_pages' => 'no',
+			'javascript_mode' => 'on',
 
 			'add_dashboard_widgets' => 'on',
 			'use_separate_menu' => 'on',
