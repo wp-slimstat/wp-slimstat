@@ -28,7 +28,6 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 * At least 40 MB of free web space
 * At least 5 MB of free DB space
 * At least 32 Mb of free PHP memory for the tracker (peak memory usage)
-* IE9+ or any browser supporting HTML5, to access the reports
 
 ## Installation ##
 1. In your WordPress admin, go to Plugins > Add New
@@ -43,4 +42,3 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 
 ## Frequently Asked Questions ##
 Our knowledge base is available on our [support center](https://docs.wp-slimstat.com/) website.
-
