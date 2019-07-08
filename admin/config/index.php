@@ -34,7 +34,7 @@ if ( isset( $_POST[ 'options' ][ 'can_view' ] ) ) {
 			wp_slimstat::$settings[ 'can_view' ] = $_POST[ 'options' ][ 'can_view' ];
 		}
 		else{
-			wp_slimstat_admin::$faulty_fields[] = __( 'Read access: username not found', 'wp-slimstat' );
+			wp_slimstat_admin::$faulty_fields[] = __( '[Reports] Username not found', 'wp-slimstat' );
 		}
 	}
 	else {
@@ -47,7 +47,32 @@ if ( isset( $_POST[ 'options' ][ 'capability_can_view' ] ) ) {
 		wp_slimstat::$settings[ 'capability_can_view' ] = $_POST[ 'options' ][ 'capability_can_view' ];
 	}
 	else{
-		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. You may want to take a look at the official <a href="https://wordpress.org/support/article/roles-and-capabilities/" target="_new">WordPress documentation</a> on roles and capabilities.', 'wp-slimstat' );
+		wp_slimstat_admin::$faulty_fields[] = __( '[Reports] Invalid capability. You may want to take a look at the official <a href="https://wordpress.org/support/article/roles-and-capabilities/" target="_new">WordPress documentation</a> on roles and capabilities.', 'wp-slimstat' );
+	}
+}
+
+if ( isset( $_POST[ 'options' ][ 'can_customize' ] ) ) {
+	// Make sure all the users exist in the system
+	$post_data = trim( $_POST[ 'options' ][ 'can_customize' ] );
+	$user_array = wp_slimstat::string_to_array( $_POST[ 'options' ][ 'can_customize' ] );
+
+	if ( is_array( $user_array ) && !empty( $post_data ) ) {
+		$sql_user_placeholders = implode( ', ', array_fill( 0, count( $user_array ), '%s' ) );
+		if ( $GLOBALS[ 'wpdb' ]->get_var( $GLOBALS[ 'wpdb' ]->prepare( "SELECT COUNT( * ) FROM {$GLOBALS[ 'wpdb' ]->users} WHERE user_login IN ( $sql_user_placeholders )", $user_array ) ) == count( $user_array ) ) {
+			wp_slimstat::$settings[ 'can_customize' ] = $_POST[ 'options' ][ 'can_customize' ];
+		}
+		else{
+			wp_slimstat_admin::$faulty_fields[] = __( '[Customize] Username not found', 'wp-slimstat' );
+		}
+	}
+}
+
+if ( isset( $_POST[ 'options' ][ 'capability_can_customize' ] ) ) {
+	if ( isset( $GLOBALS[ 'wp_roles' ]->role_objects[ 'administrator' ]->capabilities ) && array_key_exists( $_POST[ 'options' ][ 'capability_can_customize' ], $GLOBALS[ 'wp_roles' ]->role_objects[ 'administrator' ]->capabilities ) ) {
+		wp_slimstat::$settings[ 'capability_can_customize' ] = $_POST[ 'options' ][ 'capability_can_customize' ];
+	}
+	else{
+		wp_slimstat_admin::$faulty_fields[] = __( '[Customize] Invalid capability. You may want to take a look at the official <a href="https://wordpress.org/support/article/roles-and-capabilities/" target="_new">WordPress documentation</a> on roles and capabilities.', 'wp-slimstat' );
 	}
 }
 
@@ -62,7 +87,7 @@ if ( isset( $_POST[ 'options' ][ 'can_admin' ] ) ) {
 			wp_slimstat::$settings[ 'can_admin' ] = $_POST[ 'options' ][ 'can_admin' ];
 		}
 		else{
-			wp_slimstat_admin::$faulty_fields[] = __( 'Config access: username not found', 'wp-slimstat' );
+			wp_slimstat_admin::$faulty_fields[] = __( '[Settings] Username not found', 'wp-slimstat' );
 		}
 	}
 }
@@ -72,7 +97,7 @@ if ( isset( $_POST[ 'options' ][ 'capability_can_admin' ] ) ) {
 		wp_slimstat::$settings[ 'capability_can_admin' ] = $_POST[ 'options' ][ 'capability_can_admin' ];
 	}
 	else{
-		wp_slimstat_admin::$faulty_fields[] = __( 'Invalid capability. You may want to take a look at the official <a href="https://wordpress.org/support/article/roles-and-capabilities/" target="_new">WordPress documentation</a> on roles and capabilities.', 'wp-slimstat' );
+		wp_slimstat_admin::$faulty_fields[] = __( '[Settings] Invalid capability. You may want to take a look at the official <a href="https://wordpress.org/support/article/roles-and-capabilities/" target="_new">WordPress documentation</a> on roles and capabilities.', 'wp-slimstat' );
 	}
 }
 
@@ -196,20 +221,20 @@ var SlimStatParams = {
 		'title' => __( 'Access Control', 'wp-slimstat' ),
 		'rows' => array(
 			'permissions_reports_header' => array( 'description' => __( 'Reports', 'wp-slimstat' ), 'type' => 'section_header' ),
-			'restrict_authors_view' => array( 'description' => __( 'Restrict Authors', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Enable this option if you want your authors to only see stats related to their own content.', 'wp-slimstat' ) ),
-			'capability_can_view' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> needed to access the reports (default: <code>manage_options</code>). If this field is empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a 'Read access' whitelist has been specified here below. In this case, the list has precedence over the capability.", 'wp-slimstat' ) ),
-			'can_view' => array( 'description' => __( 'Whitelist', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the users who should have access to the reports. Administrators are implicitly allowed, so you don't need to list them in here. Usernames are case sensitive.", 'wp-slimstat' ), 'skip_update' => true ),
+			'restrict_authors_view' => array( 'description' => __( 'Restrict Authors', 'wp-slimstat' ), 'type' => 'toggle', 'long_description' => __( 'Enable this option if you want your authors to only see statistics related to their own content.', 'wp-slimstat' ) ),
+			'capability_can_view' => array( 'description' => __( 'Minimum Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> your WordPress users need to have to access the reports (default: <code>manage_options</code>). If this field is left empty, <strong>all your users</strong> (including subscribers) will have access to the reports, unless a the Usernames field here below is not empty. In this case, that list has precedence over the capability, and only those users will have access to the statistics.", 'wp-slimstat' ), 'skip_update' => true ),
+			'can_view' => array( 'description' => __( 'Usernames', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Enter a list of usernames who should have access to the statistics. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat' ), 'skip_update' => true ),
 
 			'permissions_customize_header' => array( 'description' => __( 'Customizer', 'wp-slimstat' ), 'type' => 'section_header' ),
-			'capability_can_customize' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> needed to be able to customize the reports layout (default: <code>manage_options</code>). If this field is empty, your users will be permitted to use this features.", 'wp-slimstat' ) ),
-			'can_customize' => array( 'description' => __( 'Whitelist', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the users who should be allowed to customize their report layout. Administrators are implicitly allowed, so you don't need to list them in here. Usernames are case sensitive.", 'wp-slimstat' ), 'skip_update' => true ),
+			'capability_can_customize' => array( 'description' => __( 'Minimum Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> your WordPress users need to access the Customizer (default: <code>manage_options</code>). If this field is empty, all your users will be allowed to access the Customizer.", 'wp-slimstat' ), 'skip_update' => true ),
+			'can_customize' => array( 'description' => __( 'Usernames', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Enter a list of usernames who should have access to the Customizer. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat' ), 'skip_update' => true ),
 
 			'permissions_config_header' => array( 'description' => __( 'Settings', 'wp-slimstat' ), 'type' => 'section_header' ),
-			'capability_can_admin' => array( 'description' => __( 'Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> required to configure Slimstat (default: <code>manage_options</code>). The whitelist here below can be used to override this option for specific users.", 'wp-slimstat' ) ),
-			'can_admin' => array( 'description' => __( 'Whitelist', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "List all the users who can edit these options. Please be advised that admins <strong>are not</strong> implicitly allowed, so do not forget to include yourself! Usernames are case sensitive.", 'wp-slimstat' ), 'skip_update' => true ),
+			'capability_can_admin' => array( 'description' => __( 'Minimum Capability', 'wp-slimstat' ), 'type' => 'text', 'long_description' => __( "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> your WordPress users need to configure Slimstat (default: <code>manage_options</code>). The field here below can be used to override this option, and allow specific users to access the settings.", 'wp-slimstat' ), 'skip_update' => true ),
+			'can_admin' => array( 'description' => __( 'Usernames', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "Enter a list of usernames who should have access to the plugin settings. Please be advised that administrators <strong>are not</strong> implicitly allowed, so do not forget to include yourself! Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat' ), 'skip_update' => true ),
 
 			'rest_api_header' => array( 'description' => __( 'REST API', 'wp-slimstat' ), 'type' => 'section_header' ),
-			'rest_api_tokens' => array( 'description' => __( 'Tokens', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "In order to send requests to <a href='https://slimstat.freshdesk.com/support/solutions/articles/12000033661-slimstat-rest-api' target='_blank'>the Slimstat REST API</a>, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, to distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens.", 'wp-slimstat' ) )
+			'rest_api_tokens' => array( 'description' => __( 'Tokens', 'wp-slimstat' ), 'type' => 'textarea', 'long_description' => __( "In order to send requests to <a href='https://slimstat.freshdesk.com/support/solutions/articles/12000033661-slimstat-rest-api' target='_blank'>the Slimstat REST API</a>, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens.", 'wp-slimstat' ) )
 		)
 	),
 
