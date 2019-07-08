@@ -168,7 +168,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 	<tr>
 		<th scope="row"><?php _e( 'Tracker Error', 'wp-slimstat' ) ?></th>
 		<td>
-			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( wp_slimstat::$settings[ 'date_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( wp_slimstat::$settings[ 'time_format' ], wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities( __( 'Reset this error', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-error-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
+			<?php echo ( !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( get_option( 'date_format' ), wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( get_option( 'time_format' ), wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities( __( 'Reset this error', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-error-status"></a>' : __( 'So far so good.', 'wp-slimstat' ); ?>
 			<span class="description"><?php _e( 'The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction. Please include the message here above when sending a <a href="https://support.wp-slimstat.com" target="_blank">support request</a>.', 'wp-slimstat' ) ?></span>
 		</td>
 	</tr>
@@ -278,7 +278,7 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		<td><?php
 			$maxmind_last_modified = '';
 			if ( file_exists( wp_slimstat::$maxmind_path ) && false !== ( $file_stat = @stat( wp_slimstat::$maxmind_path ) ) ) { 
-				$maxmind_last_modified = date_i18n( wp_slimstat::$settings[ 'date_format' ], $file_stat[ 'mtime' ] );
+				$maxmind_last_modified = date_i18n( get_option( 'date_format' ), $file_stat[ 'mtime' ] );
 			} 
 			?>
 			<span class="description"><?php _e( "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. We are mandated to have the user take an affirmative action in order to enable this functionality. If you're experiencing issues, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ); if ( !empty( $maxmind_last_modified ) ) { echo ' ' . sprintf ( __( 'Your data file was last downloaded on <strong>%s</strong>', 'wp-slimstat' ), $maxmind_last_modified ); } ?></span>
@@ -326,13 +326,13 @@ $slim_browsers_exists =wp_slimstat::$wpdb->get_col( "SHOW TABLES LIKE '{$GLOBALS
 		?></td>
 	</tr>
 	<?php
-		foreach ($details_wp_slim_tables as $i => $a_table){
-			$base = ($a_table['Data_length'] != 0)?(log($a_table['Data_length']) / log(1024)):0;
-			$a_table['Data_length_with_suffix'] = round(pow(1024, $base - floor($base)), 2).' '.$suffixes[floor($base)];
+		foreach ( $details_wp_slim_tables as $i => $a_table ) {
+			$base = ( $a_table[ 'Data_length' ] != 0 ) ? ( log( $a_table[ 'Data_length' ] ) / log( 1024 ) ) : 0;
+			$a_table[ 'Data_length_with_suffix' ] = round( pow( 1024, $base - floor( $base ) ), 2 ) . ' ' . $suffixes[ floor( $base ) ];
 			
-			echo '<tr '.(($i%2==0)?'class="alternate"':'').">
-					<th scope='row'>{$a_table['Name']}</th>
-					<td>".$a_table['Data_length_with_suffix'].' ('.number_format($a_table['Rows'], 0).' '.__('records','wp-slimstat').')</td>
+			echo '<tr ' . ( ( $i % 2 == 0 ) ? 'class="alternate"' : '' ) . '>
+					<th scope="row">' . $a_table[ 'Name' ] . '</th>
+					<td>' . $a_table[ 'Data_length_with_suffix' ] . ' (' . number_format_i18n( $a_table[ 'Rows' ]  ) . ' ' . _n( 'record', 'records', $a_table[ 'Rows' ], 'wp-slimstat' ) .')</td>
 				  </tr>';
 		}
 		$i++;

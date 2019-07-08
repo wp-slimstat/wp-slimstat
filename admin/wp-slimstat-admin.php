@@ -398,6 +398,23 @@ class wp_slimstat_admin {
 		}
 		// --- END: Updates for version 4.8.2 ---
 
+		// --- Updates for version 4.8.4 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.8.4', '<' ) ) {
+			// Switch option to track WP users (from track to ignore)
+			wp_slimstat::$settings[ 'ignore_wp_users' ] = ( !empty( wp_slimstat::$settings[ 'track_users' ] ) && wp_slimstat::$settings[ 'track_users' ] == 'no' ) ? 'on' : 'no';
+
+			// Remove unused options
+			unset( wp_slimstat::$settings[ 'track_users' ] );
+			unset( wp_slimstat::$settings[ 'enable_javascript' ] );
+			unset( wp_slimstat::$settings[ 'honor_dnt_header' ] );
+			unset( wp_slimstat::$settings[ 'no_maxmind_warning' ] );
+			unset( wp_slimstat::$settings[ 'no_browscap_warning' ] );
+			unset( wp_slimstat::$settings[ 'use_european_separators' ] );
+			unset( wp_slimstat::$settings[ 'date_format' ] );
+			unset( wp_slimstat::$settings[ 'time_format' ] );
+		}
+		// --- END: Updates for version 4.8.4 ---
+
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
 		wp_slimstat::$settings[ 'notice_latest_news' ] = 'on';
