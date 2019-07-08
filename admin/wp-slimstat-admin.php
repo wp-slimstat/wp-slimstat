@@ -16,7 +16,8 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with <strong>bar charts</strong>, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by <a href='https://support.wp-slimstat.com/' target='_blank'>sending us a message</a> on our support platform. Thank you.";
+		self::$admin_notice = "Hey, where did Slimstat go? No worries, our team is reorganizing and removing unused settings, options, contextual descriptions. One of the most visible changes is that the Slimstat menu is now <strong>added to the Admin Bar by default</strong>. Please go to Settings > Basic > WordPress Integration and change the corresponding option, if you prefer to use the side menu instead.";
+		// self::$admin_notice = "We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with <strong>bar charts</strong>, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by <a href='https://support.wp-slimstat.com/' target='_blank'>sending us a message</a> on our support platform. Thank you.";
 		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage these tools in Slimstat. Stay tuned!";
 
 		// Load language files
@@ -75,7 +76,7 @@ class wp_slimstat_admin {
 			'inactive' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => false,
-				'title' => __( 'Inactive Reports'),
+				'title' => __( 'Inactive Reports' ),
 				'callback' => '' // No callback if show_in_sidebar is false
 			)
 		);
@@ -105,8 +106,6 @@ class wp_slimstat_admin {
 			if ( wp_slimstat::$settings[ 'notice_translate' ] == 'on' && is_super_admin() ) {
 				add_filter( 'admin_notices', array( __CLASS__, 'show_translate_notice' ) );
 			}
-
-			add_filter( 'admin_footer_text', array( __CLASS__, 'admin_footer_text' ) );
 		}
 
 		// Remove spammers from the database
@@ -115,7 +114,7 @@ class wp_slimstat_admin {
 		}
 
 		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'on' && is_admin_bar_showing() ) {
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'no' && is_admin_bar_showing() ) {
 			add_action( 'admin_bar_menu', array( __CLASS__, 'add_menu_to_adminbar' ), 100 );
 		}
 
@@ -358,7 +357,7 @@ class wp_slimstat_admin {
 		// --- Updates for version 4.7.8 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.8', '<' ) ) {
 			// The Geolocation screen has been removed, and the World Map has been moved to the Audience tab
-			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) ? 'slimstat' : 'admin';
+			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) ? 'slimstat' : 'admin';
 			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
 
 			if ( !empty( $user_reports[ 'slimview6' ] ) ) {
@@ -519,7 +518,7 @@ class wp_slimstat_admin {
 
 		// Get the current report assignments
 		$new_entry = array();
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' || is_network_admin() ) {
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' || is_network_admin() ) {
 			$parent = 'slimview1';
 			$page_location = 'slimstat';
 			$new_entry[] = add_menu_page( __( 'Slimstat',  'wp-slimstat' ), __( 'Slimstat',  'wp-slimstat' ), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
@@ -580,7 +579,7 @@ class wp_slimstat_admin {
 		if ( empty( wp_slimstat::$settings[ 'can_view' ]) || strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login ) !== false || current_user_can( 'manage_options' ) ) {
 			$slimstat_view_url = get_admin_url( $GLOBALS[ 'blog_id' ], "admin.php?page=" );
 
-			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) ? 'slimstat' : 'admin';
+			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) ? 'slimstat' : 'admin';
 			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
 
 			$frontend_filter = '';
@@ -638,7 +637,7 @@ class wp_slimstat_admin {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_customize' ];
 		}
 
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) {
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) {
 			$new_entry = add_submenu_page( 'slimview1', __( 'Customize', 'wp-slimstat' ), __( 'Customize', 'wp-slimstat' ), $minimum_capability, 'slimlayout', array( __CLASS__, 'wp_slimstat_include_layout' ) );
 		}
 		else {
@@ -665,7 +664,7 @@ class wp_slimstat_admin {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_admin' ];
 		}
 
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'on' ) {
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) {
 			$new_entry = add_submenu_page( 'slimview1', __( 'Settings', 'wp-slimstat' ), __( 'Settings', 'wp-slimstat' ), $minimum_capability, 'slimconfig', array( __CLASS__, 'wp_slimstat_include_config' ) );
 		}
 		else {
@@ -766,10 +765,10 @@ class wp_slimstat_admin {
 		}
 
 		if ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) {
-			$_columns[  'wp-slimstat' ] = '<span class="slimstat-icon" title="' . __( 'Pageviews in the last ' . wp_slimstat::$settings[ 'posts_column_day_interval' ] . ' days',  'wp-slimstat' ) . '"></span>';
+			$_columns[ 'wp-slimstat' ] = '<span class="slimstat-icon" title="' . sprintf( __( 'Pageviews in the last %s days', 'wp-slimstat' ), wp_slimstat::$settings[ 'posts_column_day_interval' ] ) . '"></span>';
 		}
 		else {
-			$_columns[  'wp-slimstat' ] = '<span class="slimstat-icon" title="' . __( 'Unique IPs in the last ' . wp_slimstat::$settings[ 'posts_column_day_interval' ] . ' days',  'wp-slimstat' ) . '"></span>';
+			$_columns[ 'wp-slimstat' ] = '<span class="slimstat-icon" title="' . sprintf(__( 'Unique IPs in the last %s days', 'wp-slimstat' ), wp_slimstat::$settings[ 'posts_column_day_interval' ] ) . '"></span>';
 		}
 
 		return $_columns;
@@ -790,17 +789,6 @@ class wp_slimstat_admin {
 	}
 	// END: add_column
 
-	/**
-	 * Displays a note in the WP admin footer
-	 */
-	public static function admin_footer_text( $_text = '' ) {
-		return $_text . sprintf( __( ' And for keeping an eye on your web traffic with %sSlimStat Analytics%s.',  'wp-slimstat' ), '<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38" target="_blank">', '</a>' );
-	}
-	// END: admin_footer_text
-
-	/**
-	 * Hides all the add-ons from the list of plugins, if the corresponding option is enabled in the settings
-	 */
 	public static function hide_addons( $_plugins = array() ) {
 		if ( !is_array( $_plugins ) ) {
 			return $_plugins;
@@ -824,7 +812,7 @@ class wp_slimstat_admin {
 			return $_current;
 		}
 
-		$current = '<form id="adv-settings" action="" method="post"><h5>'. __( 'Show on screen', 'wp-slimstat' ).'</h5><div class="metabox-prefs">';
+		$current = '<form id="adv-settings" action="" method="post"><h5>' . __( 'Show on screen', 'wp-slimstat') . '</h5><div class="metabox-prefs">';
 
 		// The Reports Library wp_slimstat_reports has already been loaded at this point
 		foreach( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
@@ -839,10 +827,10 @@ class wp_slimstat_admin {
 					<input class='hide-postbox-tog' name='$a_report_id-hide' type='checkbox' id='$a_report_id-hide' value='$a_report_id'$checked />{$a_report_info[ 'title' ]}
 				</label>";
 		}
-		$current .= wp_nonce_field('closedpostboxes', 'closedpostboxesnonce', true, false)."</div></form>";
+		$current .= wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', true, false ) . "</div></form>";
 
 		// Some panels don't have any screen options
-		if (strpos($current, 'label') === false){
+		if ( strpos( $current, 'label' ) === false) {
 			return $_current;
 		}
 
@@ -1115,7 +1103,7 @@ class wp_slimstat_admin {
 			?></tbody>
 			</table>
 			<input type="hidden" name="options[make_sure_post_is_not_empty]" id="make_sure_post_is_not_empty" value="make_sure_post_is_not_empty">
-			<?php if ( empty( $_settings[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e('Save Changes', 'wp-slimstat' ) ?>" class="button-primary" name="Submit"></p><?php endif ?>
+			<?php if ( empty( $_settings[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e( 'Save Changes', 'wp-slimstat' ) ?>" class="button-primary" name="Submit"></p><?php endif ?>
 		</form><?php
 	}
 	// END: display_settings
@@ -1163,7 +1151,7 @@ class wp_slimstat_admin {
 			self::show_message( __( 'There was an error updating the following options:',  'wp-slimstat' ) . ' ' . implode( ', ', self::$faulty_fields ), 'warning' );
 		}
 		else{
-			self::show_message( __( 'Your changes have been saved.',  'wp-slimstat' ), 'info' );
+			self::show_message( __( 'Your new settings have been saved.', 'wp-slimstat' ), 'info' );
 		}
 	}
 	// END: update_settings
@@ -1202,7 +1190,7 @@ class wp_slimstat_admin {
 		$screen->add_help_tab(
 			array(
 				'id' => 'wp-slimstat-basic-filters',
-				'title' => __( 'Basic Filters',  'wp-slimstat' ),
+				'title' => __( 'Basic Filters', 'wp-slimstat' ),
 				'content' => '
 <ul>
 <li><b>' . __( 'Browser', 'wp-slimstat' ) . '</b>: '. __( 'User agent (Firefox, Chrome, ...)', 'wp-slimstat' ) . '</li>
