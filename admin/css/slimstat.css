@@ -244,10 +244,6 @@
 [id^=slim_] a:hover{
 	text-shadow: 0 0 2px #bbb;
 }
-[id^=slim_] .slimstat-tooltip-content.expanded{
-	display: block;
-	font-weight: normal;
-}
 [id^=slim_] .inline-icon{
 	background-color: transparent;
 	background-position: 0 0;

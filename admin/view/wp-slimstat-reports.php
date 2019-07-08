@@ -1000,8 +1000,7 @@ class wp_slimstat_reports {
 				echo "{$a_result[ 'metric' ]} <span>{$a_result[ 'value' ]}</span>";
 
 				if ( !empty( $a_result[ 'details' ] ) ) {
-					$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'on' ) ? ' expanded' : '';
-					echo "<b class='slimstat-tooltip-content$is_expanded'>{$a_result[ 'details' ]}</b>";
+					echo "<b class='slimstat-tooltip-content'>{$a_result[ 'details' ]}</b>";
 				}
 
 				echo '</p>';
@@ -1044,7 +1043,6 @@ class wp_slimstat_reports {
 
 			echo self::report_pagination( $count_page_results, count( $all_results ) );
 
-			$is_expanded = ( is_admin() && wp_slimstat::$settings[ 'expand_details' ] == 'on' ) ? ' expanded' : '';
 			$permalinks_enabled = get_option( 'permalink_structure' );
 			$column_not_calculated = str_replace( '_calculated', '', $_args[ 'columns' ] );
 
@@ -1196,7 +1194,7 @@ class wp_slimstat_reports {
 					$row_details .= '<br> IP: <a class="slimstat-filter-link" href="'.self::fs_url( 'ip equals ' . $results[ $i ][ 'ip' ] ) . '">' . $results[ $i ][ 'ip' ] . '</a>' . ( !empty( $results[ $i ][ 'other_ip' ] ) ? ' / ' . $results[ $i ][ 'other_ip' ] : '' ) . '<a title="WHOIS: ' . $results[ $i ][ 'ip' ] . '" class="slimstat-font-location-1 whois" href="' . wp_slimstat::$settings[ 'ip_lookup_service' ] . $results[ $i ][ 'ip' ] . '"></a>';
 				}
 				if ( !empty( $row_details ) ) {
-					$row_details = "<b class='slimstat-tooltip-content$is_expanded'>$row_details</b>";
+					$row_details = "<b class='slimstat-tooltip-content'>$row_details</b>";
 				}
 
 				$row_output = "<p class='slimstat-tooltip-trigger'>$element_pre_value$element_value$percentage $row_details</p>";
@@ -1361,10 +1359,9 @@ class wp_slimstat_reports {
 		}
 
 		echo self::report_pagination( $count_page_results, count( $all_results ) );
-		$is_expanded = ( wp_slimstat::$settings[ 'expand_details' ] == 'on' ) ? ' expanded' : '';
 
 		foreach ( $results as $a_result ) {
-			echo "<p class='slimstat-tooltip-trigger'>{$a_result[ 'notes' ]} <b class='slimstat-tooltip-content$is_expanded'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
+			echo "<p class='slimstat-tooltip-trigger'>{$a_result[ 'notes' ]} <b class='slimstat-tooltip-content'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
 
 			if ( !empty( $a_result[ 'dt' ] ) ) {
 				$date_time = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $a_result[ 'dt' ], true );

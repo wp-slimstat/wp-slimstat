@@ -125,11 +125,11 @@
 
 	<?php
 		if ( !file_exists( wp_slimstat::$maxmind_path ) && wp_slimstat::$settings[ 'notice_geolite' ] == 'on' ) {
-			wp_slimstat_admin::show_message( sprintf( __( "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to determine your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ), 'warning', 'geolite' );
+			wp_slimstat_admin::show_message( sprintf( __( "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to identify your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-third-party-libraries' ), 'warning', 'geolite' );
 		}
 
 		if ( version_compare( PHP_VERSION, '7.1', '>=' ) && !file_exists( slim_browser::$browscap_autoload_path ) && wp_slimstat::$settings[ 'notice_browscap' ] == 'on' ) {
-			wp_slimstat_admin::show_message( sprintf( __( "Install the Browscap <a href='%s' class='noslimstat'>User Agent Database</a> to accurately determine your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-external-data-files' ), 'warning', 'browscap' );
+			wp_slimstat_admin::show_message( sprintf( __( "Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-third-party-libraries' ), 'warning', 'browscap' );
 		}
 
 		// Path to wp-content folder, used to detect caching plugins via advanced-cache.php

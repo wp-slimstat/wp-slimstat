@@ -1700,6 +1700,9 @@ class wp_slimstat {
 			// -----------------------------------------------------------------------
 			'last_tracker_error' => array( 0, '', 0 ),
 			'show_sql_debug' => 'no',
+			'db_indexes' => 'on',
+			'enable_maxmind' => 'no',
+			'enable_browscap' => 'no',
 
 			// Notices
 			// -----------------------------------------------------------------------
