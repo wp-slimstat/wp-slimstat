@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Slimstat Analytics #
 **Contributors:** coolmann
 **Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd###_s-xclick&hosted_button_id###BNJR5EZNY3W38
@@ -9,6 +10,18 @@
 **Stable tag:** 4.8.4
 
 ## Description ##
+=======
+# Slimstat Analytics 
+**Contributors:** coolmann  
+**Donate link:** https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38  
+**Tags:** analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit  
+**Requires at least:** 3.8  
+**Tested up to:** 5.2  
+**Stable tag:** 4.8.4  
+
+
+## Description 
+>>>>>>> 203461ade39aba498906c182bf6727bbb425b10e
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 ### Feature Spotlight ###
@@ -24,6 +37,13 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 * **Privacy**: hash IP addresses to protect your users' privacy.
 * **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
 * **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](https://www.ammap.com/)).
+<<<<<<< HEAD
+=======
+
+
+### Premium Add-ons 
+Visit [our website](https://www.wp-slimstat.com/addons/) for a list of available extensions.
+>>>>>>> 203461ade39aba498906c182bf6727bbb425b10e
 
 ### Premium Add-ons ###
 Visit [our website](https://www.wp-slimstat.com/addons/) for a list of available extensions.
@@ -58,8 +78,14 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 Our knowledge base is available on our [support center](https://docs.wp-slimstat.com/) website.
 
 
+<<<<<<< HEAD
 ## Changelog ##
 ### 4.8.4 ###
+=======
+## Changelog 
+
+### 4.8.4 
+>>>>>>> 203461ade39aba498906c182bf6727bbb425b10e
 * [Note] If you're using any of our premium add-ons, please make sure to update them to the latest version available (see Slimstat > Add-ons) as we've updated some references in our code.
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.
 * [Update] Renamed a few files in the admin. If you're including Slimstat libraries in your custom code, please make sure to check that your references are up-to-date. Also, make sure to clear your cache if you page layout doesn't look right.
@@ -81,7 +107,12 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Added new WordPress filter to the Browscap Library, so that third-party tools can manipulate the data before it's returned to the tracker.
 * [Update] Added [nonce](https://wordpress.org/support/article/glossary/#nonce) to Settings page for improved security.
 
+<<<<<<< HEAD
 ### 4.8.3 ###
+=======
+
+### 4.8.3 
+>>>>>>> 203461ade39aba498906c182bf6727bbb425b10e
 * [Note] Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a couple of releases, code will be added to actually drop this column from the database.
 * [New] If English is not your primary languge, Slimstat will now display a notice asking for your help to [translate our plugin](https://translate.wordpress.org/projects/wp-plugins/wp-slimstat/) in your language. Please consider volunteering for this great opportunity to help our community!
 * [Update] We are working with the GlotPress community to improve the way Slimstat speaks your language. We had to change the way certain strings are defined in our source code. Please let us know if you notice any unexpected behavior when analyzing languages, countries and operating systems.
@@ -107,7 +138,12 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] Addressed a remote XSS vulnerability disclosed by Sucuri/GoDaddy.
 * [Fix] Charts were displaying the wrong label for certain values (thank you, Alex).
 
+<<<<<<< HEAD
 ### 4.8 ###
+=======
+
+### 4.8 
+>>>>>>> 203461ade39aba498906c182bf6727bbb425b10e
 * [Note] Now that we have a cleaner foundation to build on, it's time to start introducing new reports and new ways to segment your audience and the traffic they generate. While our users test the latest changes and updates (to confirm that the foundation is indeed solid and bug-free), we are hard at work implementing the first batch of new reports. Some of them will be made available in the free version, while others will be added to our premium add-on, [User Overview](https://www.wp-slimstat.com/downloads/user-overview/). And we need your help! If you think that a specific report should be added to Slimstat, please do not hesitate to let us know!
 * [Note] Worried about the recent [news regarding jQuery vulnerabilities](https://www.zdnet.com/article/popular-jquery-javascript-library-impacted-by-prototype-pollution-flaw/)? Slimstat doesn't use jQuery as a dependency, so you can sleep tight knowing that your website will not be affected.
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4. This new release is not backward compatible, so the code to integrate it with Slimstat had to be completely rewritten. Please let us know if you notice any issues.
@@ -120,4 +156,8 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] Google seems to be using a new User Agent string for its "mobile" crawler, which was causing Slimstat from incorrectly identifying visits as coming from mobile devices, instead of bots (thank you, Ron).
 * [Fix] An error was being returned if SVG elements were using the A tag on a page (thank you, [snaphappyme](https://wordpress.org/support/topic/uncaught-typeerror-all_linksn-href-indexof/)).
 * [Fix] A bug was causing Slimstat to incorrectly geolocate visits to websites behind a Cloudflare load balancer. Please update the IP Address Fix add-on as well.
+<<<<<<< HEAD
 * [Fix] Tweaked the formula to determine your website bounce rate, and updated the associated description to better reflect the underlying calculations.
+=======
+* [Fix] Tweaked the formula to determine your website bounce rate, and updated the associated description to better reflect the underlying calculations.
+>>>>>>> 203461ade39aba498906c182bf6727bbb425b10e
