@@ -1238,8 +1238,8 @@ class wp_slimstat_reports {
 
 		// Enqueue all the Javascript and styles
 		$path_slimstat = dirname( dirname( __FILE__ ) );
-		wp_enqueue_script( 'slimstat_amcharts_core', plugins_url( '/admin/js/amcharts/core.js', $path_slimstat ), array(), null, false );
-		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/js/amcharts/charts.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_amcharts_core', plugins_url( '/admin/assets/js/amcharts/core.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_amcharts', plugins_url( '/admin/assets/js/amcharts/charts.js', $path_slimstat ), array(), null, false );
 		
 		$chart_colors = !empty( wp_slimstat::$settings[ 'chart_colors' ] ) ? wp_slimstat::string_to_array( wp_slimstat::$settings[ 'chart_colors' ] ) : array( '#bbcc44', '#21759b', '#ccc', '#999' );
 
@@ -1592,8 +1592,8 @@ class wp_slimstat_reports {
 		}
 
 		$path_slimstat = dirname( dirname( __FILE__ ) );
-		wp_enqueue_script( 'slimstat_ammap', plugins_url( '/admin/js/ammap/ammap.js', $path_slimstat ), array(), null, false );
-		wp_enqueue_script( 'slimstat_ammap_world', plugins_url( '/admin/js/ammap/world.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_ammap', plugins_url( '/admin/assets/js/ammap/ammap.js', $path_slimstat ), array(), null, false );
+		wp_enqueue_script( 'slimstat_ammap_world', plugins_url( '/admin/assets/js/ammap/world.js', $path_slimstat ), array(), null, false );
 
 		?>
 
@@ -1646,7 +1646,7 @@ class wp_slimstat_reports {
 				map.export = {
 					"enabled": true,
 					"libs": {
-						"path": "<?php echo plugins_url( '/js/amcharts/plugins/export/libs/', dirname(__FILE__) ) ?>"
+						"path": "<?php echo plugins_url( '/assets/js/amcharts/plugins/export/libs/', dirname(__FILE__) ) ?>"
 					},
 					"menu": [ {
 						"class": "export-main",
@@ -1662,7 +1662,7 @@ class wp_slimstat_reports {
 				map.balloon.color = "#000000";
 				map.colorSteps = 5;
 				map.mouseWheelZoomEnabled = true;
-				map.pathToImages = "<?php echo plugins_url( '/js/ammap/images/', dirname(__FILE__) ) ?>";
+				map.pathToImages = "<?php echo plugins_url( '/assets/js/ammap/images/', dirname(__FILE__) ) ?>";
 
 				// Init Data
 				map.dataProvider = dataProvider;
