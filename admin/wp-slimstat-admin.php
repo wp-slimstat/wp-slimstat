@@ -4,8 +4,9 @@ class wp_slimstat_admin {
 	public static $screens_info = array();
 	public static $config_url = '';
 	public static $faulty_fields = array();
-	
+
 	protected static $admin_notice = '';
+	protected static $data_for_column = array();
 	
 	/**
 	 * Init -- Sets things up.
@@ -131,8 +132,9 @@ class wp_slimstat_admin {
 					add_action( "manage_{$a_post_type}_posts_custom_column", array( __CLASS__, 'add_post_column' ), 10, 2 );
 				}
 
-				if ( strpos( $_SERVER['REQUEST_URI'], 'edit.php' ) !== false ) {
+				if ( strpos( $_SERVER[ 'REQUEST_URI' ], 'edit.php' ) !== false ) {
 					add_action( 'admin_enqueue_scripts', array( __CLASS__, 'wp_slimstat_stylesheet' ) );
+					add_action( 'wp', array( __CLASS__, 'init_data_for_column' ) );
 				}
 			}
 
@@ -403,7 +405,6 @@ class wp_slimstat_admin {
 	// end update_tables_and_options
 
 	public static function add_dashboard_widgets() {
-
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability = 'read';
 		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false &&  !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
@@ -722,28 +723,56 @@ class wp_slimstat_admin {
 	// end add_comment_column_header
 
 	/**
+	 * Retrieves all the information to be used in the custom column on posts, pages and CPTs
+	 */
+	public static function init_data_for_column() {
+		if ( !is_array( $GLOBALS[ 'wp_query' ]->posts ) ) {
+			return 0;
+		}
+
+		self::$data_for_column = array();
+
+		foreach ( $GLOBALS[ 'wp_query' ]->posts as $a_post ) {
+			self::$data_for_column[ 'url' ][ $a_post->ID ] = parse_url( get_permalink( $a_post->ID ) );
+			self::$data_for_column[ 'url' ][ $a_post->ID ] = self::$data_for_column[ 'url' ][ $a_post->ID ][ 'path' ] . ( !empty( self::$data_for_column[ 'url' ][ $a_post->ID ][ 'query' ] ) ? '?' . self::$data_for_column[ 'url' ][ $a_post->ID ][ 'query' ] : '' );
+		}
+
+		if ( empty( self::$data_for_column ) ) {
+			return 0;
+		}
+
+		wp_slimstat_db::init( 'interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] );
+
+		$column = ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) ? 'id' : 'ip';
+
+		$sql = wp_slimstat::$wpdb->prepare("
+			SELECT resource, COUNT( DISTINCT $column ) as counthits 
+			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+			WHERE resource IN (" . implode( ',', array_fill( 1, count( self::$data_for_column[ 'url' ] ), '%s' ) ). ")
+			GROUP BY resource", self::$data_for_column[ 'url' ] );
+
+		$results = wp_slimstat_db::get_results( $sql );
+
+		foreach ( $results as $a_row ) {
+			$post_id = array_search( $a_row[ 'resource' ], self::$data_for_column[ 'url' ], true );
+
+			if ( !empty( $post_id ) ) {
+				self::$data_for_column[ 'count' ][ $post_id ] = $a_row[ 'counthits' ];
+			}
+		}
+	}
+
+	/**
 	 * Adds a new column to the Posts management panel
 	 */
-	public static function add_post_column($_column_name, $_post_id){
-		if ( 'wp-slimstat' != $_column_name ) {
-			return;
+	public static function add_post_column( $_column_name, $_post_id ) {
+		if ( 'wp-slimstat' != $_column_name || empty( self::$data_for_column[ 'url' ][ $_post_id ] ) ) {
+			return 0;
 		}
 
-		if ( empty( wp_slimstat::$settings[ 'posts_column_day_interval' ] ) ) {
-			wp_slimstat::$settings[ 'posts_column_day_interval' ] = 30;
-		}
+		$count = empty( self::$data_for_column[ 'count' ][ $_post_id ] ) ? 0 : self::$data_for_column[ 'count' ][ $_post_id ];
 
-		$parsed_permalink = parse_url( get_permalink( $_post_id ) );
-		$parsed_permalink = $parsed_permalink[ 'path' ] . ( !empty( $parsed_permalink[ 'query' ] ) ? '?' . $parsed_permalink[ 'query' ] : '' );
-		wp_slimstat_db::init( 'resource contains ' . $parsed_permalink . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] );
-
-		if ( wp_slimstat::$settings[ 'posts_column_pageviews' ] == 'on' ) {
-			$count = wp_slimstat_db::count_records();
-		}
-		else{
-			$count = wp_slimstat_db::count_records( 'ip' );
-		}
-		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource contains ' . $parsed_permalink . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] ). '">'.$count.'</a>';
+		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource equals ' . self::$data_for_column[ 'url' ][ $_post_id ] . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] ). '">' . $count . '</a>';
 	}
 	// end add_column
 
