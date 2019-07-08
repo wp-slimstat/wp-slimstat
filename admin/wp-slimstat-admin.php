@@ -11,10 +11,9 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Thank you for all the great feedback you provided to our unofficial survey about retiring the 'browser plugins' feature. The vast majority of those who replied confirmed what we already thought. Please consider backing up your database if you would like to preserve this information for future analysis. With this update, we removed the portion of code that tracks that information, but kept the existing data untouched. In a few releases, code will be added to actually drop this column from the database.";
-		// self::$admin_notice = "We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with <strong>bar charts</strong>, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by <a href='https://support.wp-slimstat.com/' target='_blank'>sending us a message</a> on our support platform. Thank you.";
+		self::$admin_notice = "We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with <strong>bar charts</strong>, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by <a href='https://support.wp-slimstat.com/' target='_blank'>sending us a message</a> on our support platform. Thank you.";
 		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage these tools in Slimstat. Stay tuned!";
-		
+
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
 
@@ -136,7 +135,7 @@ class wp_slimstat_admin {
 					add_action( 'admin_enqueue_scripts', array( __CLASS__, 'wp_slimstat_stylesheet' ) );
 				}
 			}
-			
+
 			// Add some inline CSS to customize the icon associated to Slimstat in the sidebar
 			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'wp_slimstat_stylesheet_icon' ) );
 
@@ -150,10 +149,10 @@ class wp_slimstat_admin {
 		if ( ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) || ( !empty( $_POST[ 'action' ] ) && $_POST[ 'action' ] == 'slimstat_load_report' ) ) {
 			include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
 			wp_slimstat_reports::init();
-			
+
 			if ( !empty( $_POST[ 'report_id' ] ) ) {
 				$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
-				
+
 				if ( !empty( wp_slimstat_reports::$reports_info[ $report_id ] ) ) {
 					add_action( 'wp_ajax_slimstat_load_report', array( 'wp_slimstat_reports', 'callback_wrapper' ), 10, 2 );
 				}
@@ -288,7 +287,7 @@ class wp_slimstat_admin {
 				category VARCHAR(256) DEFAULT NULL,
 				author VARCHAR(64) DEFAULT NULL,
 				content_id BIGINT(20) UNSIGNED DEFAULT 0,
-				
+
 				outbound_resource VARCHAR(2048) DEFAULT NULL,
 
 				dt_out INT(10) UNSIGNED DEFAULT 0,
@@ -308,7 +307,7 @@ class wp_slimstat_admin {
 				position VARCHAR(32) DEFAULT NULL,
 				id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
-				
+
 				CONSTRAINT PRIMARY KEY (event_id),
 				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events (dt),
 				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
@@ -327,7 +326,7 @@ class wp_slimstat_admin {
 				position VARCHAR(32) DEFAULT NULL,
 				id INT UNSIGNED NOT NULL DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
-				
+
 				CONSTRAINT PRIMARY KEY (event_id),
 				INDEX idx_{$GLOBALS['wpdb']->prefix}slim_stat_events_archive (dt)
 			) COLLATE utf8_general_ci $use_innodb";
@@ -461,7 +460,7 @@ class wp_slimstat_admin {
 	   	}
 	}
 	// end wp_slimstat_stylesheet
-	
+
 	/**
 	 * Customizes the icon associated to Slimstat in the sidebar
 	 */
