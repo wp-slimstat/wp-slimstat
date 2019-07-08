@@ -80,18 +80,18 @@ class wp_slimstat {
 			$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
 
 			// Is server-side tracking active?
-			if ( self::$settings[ 'javascript_mode' ] != 'on' && self::$settings[ 'is_tracking' ] == 'on' && $is_tracking_filter ) {
+			if ( self::$settings[ 'is_tracking' ] == 'on' && $is_tracking_filter ) {
 				add_action( is_admin() ? 'admin_init' : 'wp', array( __CLASS__, 'slimtrack' ), 5 );
 
-				if ( self::$settings[ 'track_users' ] == 'on' ) {
+				if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
 					add_action( 'login_init', array( __CLASS__, 'slimtrack' ), 10 );
 				}
-			}
 
-			// Slimstat tracks screen resolutions, outbound links and other client-side information using a client-side tracker
-			add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 15 );
-			if ( self::$settings[ 'track_users' ] == 'on' ) {
-				add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
+				// Slimstat tracks screen resolutions, outbound links and other client-side information using a client-side tracker
+				add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 15 );
+				if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
+					add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
+				}
 			}
 		}
 
@@ -462,7 +462,7 @@ class wp_slimstat {
 		// Should we ignore this user?
 		if ( !empty( $GLOBALS[ 'current_user' ]->ID ) ) {
 			// Don't track logged-in users, if the corresponding option is enabled
-			if ( self::$settings[ 'track_users' ] == 'no' ) {
+			if ( self::$settings[ 'ignore_wp_users' ] == 'on' ) {
 				self::$stat[ 'id' ] = -303;
 				return $_argument;
 			}
@@ -607,7 +607,7 @@ class wp_slimstat {
 		}
 
 		// Are we ignoring bots?
-		if ( ( self::$settings[ 'javascript_mode' ] == 'on' || self::$settings[ 'ignore_bots' ] == 'on' ) && self::$browser[ 'browser_type' ] == 1 ) {
+		if ( self::$settings[ 'ignore_bots' ] == 'on' && self::$browser[ 'browser_type' ] == 1 ) {
 			self::$stat[ 'id' ] = -310;
 			return $_argument;
 		}
@@ -1743,12 +1743,6 @@ class wp_slimstat {
 	 * Enqueue a javascript to track users' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_enqueue_tracking_script() {
-		// Do not enqueue the script if the corresponding options are turned off
-		$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
-		if ( self::$settings[ 'javascript_mode' ] != 'on' || self::$settings[ 'is_tracking' ] != 'on' || !$is_tracking_filter_js ) {
-			return 0;
-		}
-
 		// Pass some information to the tracker
 		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
 
