@@ -469,7 +469,7 @@ class wp_slimstat {
 
 			// Don't track users with given capabilities
 			foreach ( self::string_to_array( self::$settings[ 'ignore_capabilities' ] ) as $a_capability ) {
-				if ( array_key_exists( strtolower( $a_capability ), $GLOBALS[ 'current_user' ]->allcaps ) ) {
+				if ( self::_is_blacklisted( $a_capability, self::$settings[ 'ignore_capabilities' ] ) ) {
 					self::$stat[ 'id' ] = -304;
 					return $_argument;
 				}
