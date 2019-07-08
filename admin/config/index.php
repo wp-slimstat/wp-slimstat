@@ -12,14 +12,14 @@ if ( !empty( $_REQUEST[ 'options' ][ 'db_indexes' ] ) && wp_slimstat::$settings[
 	wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) )" );
 	wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) )" );
 	wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
-	wp_slimstat_admin::$faulty_fields = array( __( 'Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' ) );
+	wp_slimstat_admin::$faulty_fields[] = __( 'Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' );
 }
 else if ( !empty( $_REQUEST[ 'options' ] ) && empty( $_REQUEST[ 'options' ][ 'db_indexes' ] ) && wp_slimstat::$settings[ 'db_indexes' ] == 'on' ) {
 	// An empty value means that the toggle has been switched to "Off"
 	wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx" );
 	wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx");
 	wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx");
-	wp_slimstat_admin::$faulty_fields = array( __( 'Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat' ) );
+	wp_slimstat_admin::$faulty_fields[] = __( 'Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat' );
 }
 
 // MaxMind Data File
@@ -27,27 +27,27 @@ if ( !empty( $_REQUEST[ 'options' ][ 'enable_maxmind' ] ) && wp_slimstat::$setti
 	$error = wp_slimstat::download_maxmind_database();
 
 	if ( !empty( $error ) ) {
-		wp_slimstat_admin::$faulty_fields = array( $error );
+		wp_slimstat_admin::$faulty_fields[] = $error;
 	}
 	else {
-		wp_slimstat_admin::$faulty_fields = array( __( 'The geolocation database has been installed on your server.', 'wp-slimstat' ) );
+		wp_slimstat_admin::$faulty_fields[] = __( 'The geolocation database has been installed on your server.', 'wp-slimstat' );
 	}
 }
 else if ( !empty( $_REQUEST[ 'options' ] ) && empty( $_REQUEST[ 'options' ][ 'enable_maxmind' ] ) && wp_slimstat::$settings[ 'enable_maxmind' ] == 'on' ) {
 	$is_deleted = @unlink( wp_slimstat::$maxmind_path );
 			
 	if ( $is_deleted ) {
-		wp_slimstat_admin::$faulty_fields = array( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
+		wp_slimstat_admin::$faulty_fields[] = __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' );
 	}
 	else {
 		// Some users have reported that a directory is created, instead of a file
 		$is_deleted = @rmdir( wp_slimstat::$maxmind_path );
 
 		if ( $is_deleted ) {
-			wp_slimstat_admin::$faulty_fields = array( __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' ) );
+			wp_slimstat_admin::$faulty_fields[] = __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' );
 		}
 		else {
-			wp_slimstat_admin::$faulty_fields = array( __( "The geolocation database could not be uninstalled from your server. Please make sure Slimstat can save files in your <code>wp-content/uploads</code> folder.", 'wp-slimstat' ) );	
+			wp_slimstat_admin::$faulty_fields[] = __( "The geolocation database could not be uninstalled from your server. Please make sure Slimstat can save files in your <code>wp-content/uploads</code> folder.", 'wp-slimstat' );
 		}
 	}
 }
@@ -57,17 +57,17 @@ if ( !empty( $_REQUEST[ 'options' ][ 'enable_browscap' ] ) && wp_slimstat::$sett
 	$error = slim_browser::update_browscap_database( true );
 
 	if ( is_array( $error ) ) {
-		wp_slimstat_admin::$faulty_fields = array( $error[ 1 ] );
+		wp_slimstat_admin::$faulty_fields[] = $error[ 1 ];
 	}
 }
 else if ( !empty( $_REQUEST[ 'options' ] ) && empty( $_REQUEST[ 'options' ][ 'enable_browscap' ] ) && wp_slimstat::$settings[ 'enable_browscap' ] == 'on' ) {
 	WP_Filesystem();
 
 	if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db-master/', true ) ) {
-		wp_slimstat_admin::$faulty_fields = array( __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' ) );
+		wp_slimstat_admin::$faulty_fields[] = __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' );
 	}
 	else {
-		wp_slimstat_admin::$faulty_fields = array( __( 'There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat' ) );
+		wp_slimstat_admin::$faulty_fields[] = __( 'There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat' );
 	}
 }
 
