@@ -65,7 +65,11 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 ### 4.8.3.1 
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.
+<<<<<<< 6ed344e9900308c1ede7b0dd418bcda47fd41105
 * [Update] Implemented a new optimized function to retrieve the post count on the Edit Posts/Pages/CPTs screens. Thank you, Lance.
+=======
+* [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
+>>>>>>> Merged branch to update AmCharts to version 4.5.3
 
 
 ### 4.8.3 
