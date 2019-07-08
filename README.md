@@ -1,4 +1,5 @@
 # Slimstat Analytics #
+
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 ### Main features ###
@@ -31,11 +32,10 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 
 ## Installation ##
 1. In your WordPress admin, go to Plugins > Add New
-2. Search for WP Slimstat Analytics
-3. Click on **Install Now** under WP Slimstat Analytics and then activate the plugin
+2. Search for limstat Analytics
+3. Click on **Install Now** next to Slimstat Analytics and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-5. Go to Slimstat > Settings > Maintenance tab > MaxMind IP to Country section and click on "Install GeoLite DB" to detect your visitors' countries based on their IP addresses
-6. If your `wp-admin` folder is not publicly accessible, make sure to check our [knowledge base](https://docs.wp-slimstat.com/) to see if there's anything else you need to do
+5. If your `wp-admin` folder is not publicly accessible, make sure to check our [knowledge base](https://docs.wp-slimstat.com/) to see if there's anything else you need to do
 
 ## Please note ##
 * If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
