@@ -64,17 +64,14 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 ## Changelog 
 
 ### 4.8.4 
+* [Note] If you're using any of our premium add-ons, please make sure to update them to the latest version available (see Slimstat > Add-ons) as we've updated some references in our code.
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.
-<<<<<<< 0f4fad989a94427e6164f556a752d43be99a4e48
-<<<<<<< 6ed344e9900308c1ede7b0dd418bcda47fd41105
-* [Update] Implemented a new optimized function to retrieve the post count on the Edit Posts/Pages/CPTs screens. Thank you, Lance.
-=======
+* [Update] Renamed a few files in the admin. If you're including Slimstat libraries in your custom code, please make sure to check that your references are up-to-date. Also, make sure to clear your cache if you page layout doesn't look right.
 * [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
->>>>>>> Merged branch to update AmCharts to version 4.5.3
-=======
-* [Update] [AmCharts](https://www.amcharts.com/javascript-charts/), the library used to render all of our charts, has been updated to version 4.5.3.
+* [Update] When functioning in Client mode, the tracker will now not ignore bots, spiders and the like automatically. Please use the appropriate option under Settings > Exclusions if you would like to ignore bots. This solves an incompatibility issue with some caching plugins which "prefetch" the website, presenting themselves as bots.
 * [Update] Removed tracker notice field under Settings > Maintenance as it was confusing many people and generating extra work for our customer service team.
 * [Update] Removed option to not track "client properties" like screen resolution, etc. Also, removed option to not honor DNT headers, as we received complaints from privacy activists on this matter.
+* [Update] Removed option to change date/time formats and numeric separators: Slimstat will now use the WordPress settings to adjust its behavior.
 * [Update] Removed 'About Slimstat' report, given that some of the information in it has been moved to the Settings.
 * [Update] Removed unused strings, improved contextual descriptions and applied consistent naming conventions across our codebase (first pass).
 * [Update] The Slimstat admin menu is now added to the Admin Bar by default. Please go to Settings > Basic > WordPress Integration and change the corresponding option, if you prefer to use the side menu instead.
@@ -82,7 +79,11 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Implemented a new optimized function to retrieve the post count on the Edit Posts/Pages/CPTs screens. Thank you, Lance.
 * [Update] Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser. This usually happens whenever a new browser version is released, which is not yet included in the data file.
 * [Update] Option to track same-domain referrers is now deactivated by default on new installations.
->>>>>>> Improved browser detection feature, which will now fallback to the heuristic function if the Browscap data file doesn't contain an exact match for a given browser.
+* [Update] Enabled wildcards on the exclusion rule by capability.
+* [Update] Improved the overall source code readability score. Now you don't have any other excuses to not contribute to this project!
+* [Update] Table indexes are now enabled by default in the database.
+* [Update] Added new WordPress filter to the Browscap Library, so that third-party tools can manipulate the data before it's returned to the tracker.
+* [Update] Added [nonce](https://wordpress.org/support/article/glossary/#nonce) to Settings page for improved security.
 
 
 ### 4.8.3 
