@@ -55,18 +55,18 @@
 <div class="wrap slimstat-layout">
 <h2><?php _e( 'Customize and organize your reports','wp-slimstat' ) ?></h2>
 <p><?php 
-	_e( 'Drag and drop report placeholders from one container to another, to customize the information you want to see right away when you open Slimstat. Place two or more charts on the same view, clone reports or move them to the Inactive Reports container for improved performance. It is your website, and you know how metrics should be combined to get a clear picture of the traffic it generates.', 'wp-slimstat' );
+	_e( 'You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat' );
 	echo ' ';
 	if ( is_network_admin() ) {
-		_e( 'By using the network-wide customizer, all your users will be seeing the same layout and will not be able to further customize it.', 'wp-slimstat' );
+		_e( 'By using the network-wide customizer, all your users will see the same layout you define, and they will not be able to customize it further.', 'wp-slimstat' );
 		echo ' ';
 	}
-	_e( '<strong>Note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden (Screen Options tab).', 'wp-slimstat');
+	_e( '<strong>Please note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden inside the Screen Options tab.', 'wp-slimstat');
 ?></p>
 
 <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form>
 
-<a href="admin.php?page=slimlayout&&amp;action=restore-views" class="button"><?php _e( 'Reset All', 'wp-slimstat' ) ?></a>
+<a href="admin.php?page=slimlayout&&amp;action=restore-views" class="button"><?php _e( 'Reset Layout', 'wp-slimstat' ) ?></a>
 
 <?php foreach ( $report_locations as $a_location_id => $a_location_list ): $hidden_reports = get_user_option( "metaboxhidden_{$page_location}_page_{$a_location_id}", $current_user->ID ); if ( !is_array( $hidden_reports ) ) $hidden_reports = array(); ?>
 <div id="postbox-container-<?php echo $a_location_id ?>" class="postbox-container">

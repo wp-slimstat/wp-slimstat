@@ -459,9 +459,9 @@ class wp_slimstat_admin {
 		wp_register_style(  'wp-slimstat', plugins_url( '/admin/css/slimstat.css', dirname( __FILE__ ) ) );
 		wp_enqueue_style(  'wp-slimstat' );
 
-	   	if ( !empty( wp_slimstat::$settings[ 'custom_css' ] ) ) {
-	   		wp_add_inline_style(  'wp-slimstat', wp_slimstat::$settings[ 'custom_css' ] );
-	   	}
+		if ( !empty( wp_slimstat::$settings[ 'custom_css' ] ) ) {
+			wp_add_inline_style( 'wp-slimstat', wp_slimstat::$settings[ 'custom_css' ] );
+		}
 	}
 	// END: wp_slimstat_stylesheet
 
@@ -491,6 +491,12 @@ class wp_slimstat_admin {
 	public static function wp_slimstat_enqueue_scripts( $_hook = '' ) {
 		wp_enqueue_script( 'dashboard' );
 		wp_enqueue_script( 'jquery-ui-datepicker' );
+
+		// Enqueue the built-in code editor to use on the Settings
+		if ( !empty( $_REQUEST[ 'page' ] ) && $_REQUEST[ 'page' ] == 'slimconfig' ) {
+			wp_enqueue_code_editor( array( 'type' => 'text/html' ) );
+		}
+		
 		wp_enqueue_script( 'slimstat_admin', plugins_url( '/admin/js/slimstat.admin.js', dirname( __FILE__ ) ), array( 'jquery-ui-dialog' ), null, false );
 
 		// Pass some information to Javascript
@@ -997,11 +1003,13 @@ class wp_slimstat_admin {
 						'custom_label_yes' => '',
 						'custom_label_no' => '',
 						'readonly' => false,
-						'use_tag_list' => true
+						'use_tag_list' => true,
+						'use_code_editor' => ''
 					), $_setting_info );
 
 					$is_readonly = ( !empty( $_setting_info[ 'readonly' ] ) && $_setting_info[ 'readonly' ] === true ) ? ' readonly' : '';
 					$use_tag_list = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_tag_list' ] ) && $_setting_info[ 'use_tag_list' ] === true ) ? ' slimstat-taglist' : '';
+					$use_code_editor = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_code_editor' ] ) ) ? ' data-code-editor="' . $_setting_info[ 'use_code_editor' ] . '"': '';
 
 					$network_override_checkbox = is_network_admin() ? '
 							<input class="slimstat-checkbox-toggle"
@@ -1083,7 +1091,7 @@ class wp_slimstat_admin {
 								<label for="' . $_setting_slug . '">' . $_setting_info[ 'description' ] . $network_override_checkbox . '</label>
 								<p class="description">' . $_setting_info[ 'long_description' ] . '</p>
 								<p>
-									<textarea class="large-text code' . $use_tag_list . '"' . $is_readonly . '
+									<textarea class="large-text code' . $use_tag_list . '"' . $is_readonly . $use_code_editor . '
 										id="' . $_setting_slug . '"
 										rows="' . $_setting_info[ 'rows' ] . '"
 										name="options[' . $_setting_slug . ']">' . ( isset( wp_slimstat::$settings[ $_setting_slug ] ) ? stripslashes( wp_slimstat::$settings[ $_setting_slug ] ) : '' ) . '</textarea>

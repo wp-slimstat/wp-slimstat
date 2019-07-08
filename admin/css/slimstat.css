@@ -457,6 +457,11 @@
 	float: right;
 }
 
+/* Settings */
+.CodeMirror {
+	height: auto !important;
+}
+
 /* Add-ons Page */
 .wp-list-table.slimstat-addons{
 	margin-bottom: 20px;

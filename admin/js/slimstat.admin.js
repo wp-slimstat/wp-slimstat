@@ -176,7 +176,6 @@ jQuery( function() {
 		jQuery( '<form id="slimstat-filters-form" method="post"/>' ).appendTo('body');
 	}
 
-
 	jQuery( document ).on( 'click', '.slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a', function( e ) {
 		url = jQuery( this ).attr( 'href' );
 
@@ -365,7 +364,7 @@ jQuery( function() {
 					jQuery( '#slimstat-modal-dialog' ).dialog( 'close' );
 				} );
 			},
-			position: { my: "top center" },
+			position: { my: 'top center' },
 			resizable: false
 		} );
 	}
@@ -378,6 +377,25 @@ jQuery( function() {
 		forceLowercase: false,
 		maxLength: 1000
 	} );
+
+	// Code Editor
+	if( typeof wp.codeEditor == 'object' ) {
+		jQuery( '[data-code-editor]' ).each( function() {
+			var editorSettings = wp.codeEditor.defaultSettings ? _.clone( wp.codeEditor.defaultSettings ) : {};
+			editorSettings.codemirror = _.extend(
+				{},
+				editorSettings.codemirror,
+				{
+					indentUnit: 2,
+					lineNumbers: true,
+					mode: jQuery( this ).attr( 'data-code-editor' ),
+					tabSize: 2
+				}
+			);
+
+			var editor = wp.codeEditor.initialize( jQuery( this ), editorSettings );
+		});
+	}
 
 	//
 	// ----- END: INIT THIRD-PARTY LIBRARIES -----------------------------------------
