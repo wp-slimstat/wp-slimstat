@@ -1797,7 +1797,7 @@ class wp_slimstat_reports {
 	 */
 	public static function get_resource_title( $_resource = '' ) {
 		if  ( wp_slimstat::$settings[ 'convert_resource_urls_to_titles' ] != 'on' ) {
-			return htmlentities( urldecode( $resource_title ), ENT_QUOTES, 'UTF-8' );
+			return htmlentities( urldecode( $_resource ), ENT_QUOTES, 'UTF-8' );
 		}
 
 		// Do we already have this value in our transient cache?

@@ -1,4 +1,7 @@
 ## Changelog ##
+### 4.8.4.1 ###
+* [Fix] Page URLs were not being displayed correctly if the option to display page titles was turned off.
+
 ### 4.8.4 ###
 * [Note] If you're using any of our premium add-ons, please make sure to update them to the latest version available (see Slimstat > Add-ons) as we've updated some references in our code.
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.
