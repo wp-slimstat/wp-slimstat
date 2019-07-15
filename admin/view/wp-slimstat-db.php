@@ -29,7 +29,7 @@ class wp_slimstat_db {
 			'country' => array( __( 'Country Code', 'wp-slimstat' ), 'varchar' ),
 			'ip' => array( __( 'IP Address', 'wp-slimstat' ), 'varchar' ),
 			'searchterms' => array( __( 'Search Terms', 'wp-slimstat' ), 'varchar' ),
-			'language' => array( __( 'Language Code', 'wp-slimstat' ), 'varchar' ),
+			'language' => array( __( 'Language', 'wp-slimstat' ), 'varchar' ),
 			'platform' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
 			'resource' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
 			'referer' => array( __( 'Referer', 'wp-slimstat' ), 'varchar' ),

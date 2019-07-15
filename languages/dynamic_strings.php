@@ -1,6 +1,7 @@
 <?php 
 class slim_i18n {
 	public static function get_dynamic_strings() {
+		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
 		return array(
 			'xx' => __( 'Unknown', 'wp-slimstat' ),
 
