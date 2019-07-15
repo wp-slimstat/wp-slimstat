@@ -2,7 +2,7 @@
 
 class maxmind_geolite2_connector {
 	public static function get_geolocation_info( $_ip_address = '' ) {
-		$geo_output = array( 'country' => array( 'iso_code' => 'xx' ) );
+		$geo_output = array( 'country' => array( 'iso_code' => '' ) );
 
 		// Is this a RFC1918 (local) IP?
 		if ( wp_slimstat::is_local_ip_address( $_ip_address ) ) {

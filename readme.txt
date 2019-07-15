@@ -62,7 +62,9 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 == Changelog ==
 = 4.8.4.1 =
+* [Update] Added visitor's language to the Activity Log report.
 * [Fix] Page URLs were not being displayed correctly if the option to display page titles was turned off.
+* [Fix] Not storing empty values for the Originating IP column: leave as NULL.
 
 = 4.8.4 =
 * [Note] If you're using any of our premium add-ons, please make sure to update them to the latest version available (see Slimstat > Add-ons) as we've updated some references in our code.
