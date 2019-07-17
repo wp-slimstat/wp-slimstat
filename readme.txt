@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 5.2
-Stable tag: 4.8.4
+Stable tag: 4.8.4.1
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -62,6 +62,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 == Changelog ==
 = 4.8.4.1 =
+* [Note] As anticipated a few weeks ago, this update drops the information about your visitors' browser plugins, which had been deprecated as not useful and oftentimes unreliable. Please make sure to backup your Slimstat tables if you need to preserve this information for some reason.
 * [Update] Added visitor's language to the Activity Log report.
 * [Update] Introduced code optimizations to improve performance when localizing strings related to operating systems, languages, countries, etc.
 * [Fix] Page URLs were not being displayed correctly if the option to display page titles was turned off.
