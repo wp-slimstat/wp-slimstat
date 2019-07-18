@@ -148,9 +148,9 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 
 		// Language
 		$language_filter = '';
-		if ( !empty( $results[ $i ][ 'language' ] ) && $results[ $i ][ 'language' ] != 'xx' ) {
-			$language_filter = '<span class="pageview-language"><a class="slimstat-filter-link" href="' . wp_slimstat_reports::fs_url( 'language equals ' . $results[ $i ][ 'language' ] ) . '">' . slim_i18n::get_string( 'l-' . $results[ $i ][ 'language' ] ) . '</a>';
-		}
+		// if ( !empty( $results[ $i ][ 'language' ] ) && $results[ $i ][ 'language' ] != 'xx' ) {
+		// 	$language_filter = '<span class="pageview-language"><a class="slimstat-filter-link" href="' . wp_slimstat_reports::fs_url( 'language equals ' . $results[ $i ][ 'language' ] ) . '">' . slim_i18n::get_string( 'l-' . $results[ $i ][ 'language' ] ) . '</a>';
+		// }
 
 		// Browser Type
 		$browser_type_filter = '';
