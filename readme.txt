@@ -9,9 +9,8 @@ Tested up to: 5.2
 Stable tag: 4.8.4
 
 == Description ==
-The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
-
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
+The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 = Main features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
@@ -62,6 +61,9 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.8.4.1 =
+* [Fix] Page URLs were not being displayed correctly if the option to display page titles was turned off.
+
 = 4.8.4 =
 * [Note] If you're using any of our premium add-ons, please make sure to update them to the latest version available (see Slimstat > Add-ons) as we've updated some references in our code.
 * [Note] We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with **bar charts**, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by [sending us a message](https://support.wp-slimstat.com/) on our support platform. Thank you.

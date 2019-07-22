@@ -1,5 +1,4 @@
 # Slimstat Analytics #
-
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 ### Main features ###
@@ -42,3 +41,4 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 
 ## Frequently Asked Questions ##
 Our knowledge base is available on our [support center](https://docs.wp-slimstat.com/) website.
+
