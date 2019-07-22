@@ -8,13 +8,10 @@ $is_dashboard = empty( $_REQUEST[ 'page' ] ) || $_REQUEST[ 'page' ] != 'slimview
 
 // Available icons
 $supported_browser_icons = array( 'Android', 'Anonymouse', 'Baiduspider', 'BlackBerry', 'BingBot', 'CFNetwork', 'Chrome', 'Chromium', 'Default Browser', 'Edge', 'Exabot/BiggerBetter', 'FacebookExternalHit', 'FeedBurner', 'Feedfetcher-Google', 'Firefox', 'Internet Archive', 'Googlebot', 'Google Bot', 'Google Feedfetcher', 'Google Web Preview', 'IE', 'IEMobile', 'iPad', 'iPhone', 'iPod Touch', 'Maxthon', 'Mediapartners-Google', 'Microsoft-WebDAV', 'msnbot', 'Mozilla', 'NewsGatorOnline', 'Netscape', 'Nokia', 'Opera', 'Opera Mini', 'Opera Mobi', 'Pingdom', 'Python', 'PycURL', 'Safari', 'W3C_Validator', 'WordPress', 'Yahoo! Slurp', 'YandexBot' );
-$supported_os_icons = array( 'android',' blackberry os', 'cellos', 'chromeos', 'ios', 'iphone osx', 'java', 'linux', 'macos', 'macosx', 'rim os', 'symbianos', 'win7', 'win8', 'win8.1', 'win10', 'winphone7', 'winphone7.5', 'winphone8', 'winphone8.1', 'winvista', 'winxp', 'unknown' );
+$supported_os_icons = array( 'android',' blackberry os', 'cellos', 'chromeos', 'ios', 'iphone osx', 'java', 'linux', 'macos', 'macosx', 'rim os', 'symbianos', 'win7', 'win8', 'win8.1', 'win10', 'winphone7', 'winphone7.5', 'winphone8', 'winphone8.1', 'winvista', 'winxp' );
 $supported_browser_types = array( __( 'Human', 'wp-slimstat' ), __( 'Bot/Crawler', 'wp-slimstat' ), __( 'Mobile Device', 'wp-slimstat' ), __( 'Syndication Reader', 'wp-slimstat' ) );
 
 $plugin_url = plugins_url( '', dirname( __FILE__ ) );
-
-// Load localization strings
-include_once( plugin_dir_path( __FILE__ ) . '../../languages/dynamic_strings.php' );
 
 // Get the data
 wp_slimstat_db::$debug_message = '';
@@ -117,9 +114,11 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		$highlight_row = !empty( $results[ $i ][ 'searchterms' ] ) ? ' is-search-engine' : ( ( $results[ $i ][ 'browser_type' ] != 1 ) ? ' is-direct' : '' );
 
 		// Country
-		$country_filter = '';
 		if ( !empty( $results[ $i ][ 'country' ] ) && $results[ $i ][ 'country' ] != 'xx' ) {
 			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country equals ' . $results[ $i ][ 'country' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.png' width='16' height='16' title='" . slim_i18n::get_string( 'c-' . $results[ $i ][ 'country' ] ) . "'></a>";
+		}
+		else {
+			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country is_empty ' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.png' width='16' height='16' title='" . slim_i18n::get_string( 'c-' ) . "'></a>";
 		}
 
 		// City, if tracked
@@ -130,7 +129,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 
 		// Browser
 		if ( empty( $results[ $i ][ 'browser_version' ] ) ) {
-			$results[$i]['browser_version'] = '';
+			$results[ $i ][ 'browser_version' ] = '';
 		}
 		$browser_title = ( wp_slimstat::$settings[ 'show_complete_user_agent_tooltip' ] != 'on' ) ? "{$results[ $i ][ 'browser' ]} {$results[ $i ][ 'browser_version' ]}" : $results[ $i ][ 'user_agent' ];
 		$browser_icon = $plugin_url . '/assets/images/browsers/other-browsers-and-os.png';
@@ -139,16 +138,17 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		}
 		$browser_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'browser equals ' . $results[ $i ][ 'browser' ] ) . "'><img class='slimstat-tooltip-trigger' src='$browser_icon' width='16' height='16' title='{$browser_title}'></a>";
 
-		// Platform
-		$platform_icon = $plugin_url . '/assets/images/browsers/other-browsers-and-os.png';
-		if ( in_array( strtolower( $results[ $i ][ 'platform' ] ), $supported_os_icons ) ) {
-			$platform_icon = $plugin_url . '/assets/images/platforms/' . sanitize_title( $results[ $i ][ 'platform' ] ) . '.png';
+		// Operating System
+		if ( !empty( $results[ $i ][ 'platform' ] ) && $results[ $i ][ 'platform' ] != 'unknown' ) {
+			$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform equals ' . $results[ $i ][ 'platform' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/platforms/{$results[ $i ][ 'platform' ]}.png' width='16' height='16' title='" . slim_i18n::get_string( $results[ $i ][ 'platform' ] ) . "'></a>";
 		}
-		$platform_filter = '<a class="slimstat-filter-link inline-icon" href="' . wp_slimstat_reports::fs_url( 'platform equals ' . $results[ $i ][ 'platform' ] ) . '"><img class="slimstat-tooltip-trigger" src="' . $platform_icon . '" width="16" height="16" title="' . slim_i18n::get_string( $results[ $i ][ 'platform' ] ) . '"></a>';
+		else {
+			$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform is_empty ' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/browsers/other-browsers-and-os.png' width='16' height='16' title='" . slim_i18n::get_string( 'unknown' ) . "'></a>";
+		}
 
 		// Language
 		$language_filter = '';
-		if ( !empty( $results[ $i ][ 'language' ] ) ) {
+		if ( !empty( $results[ $i ][ 'language' ] ) && $results[ $i ][ 'language' ] != 'xx' ) {
 			$language_filter = '<span class="pageview-language"><a class="slimstat-filter-link" href="' . wp_slimstat_reports::fs_url( 'language equals ' . $results[ $i ][ 'language' ] ) . '">' . slim_i18n::get_string( 'l-' . $results[ $i ][ 'language' ] ) . '</a>';
 		}
 
@@ -181,12 +181,9 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		}
 
 		// Originating IP Address
-		$other_ip_address = intval( $results[ $i ][ 'other_ip' ] );
-		if ( !empty( $other_ip_address ) ) {
+		$other_ip_address = '';
+		if ( !empty( $results[ $i ][ 'other_ip' ] ) ) {
 			$other_ip_address = "(<a class='slimstat-font-location-1 whois' href='" . wp_slimstat::$settings[ 'ip_lookup_service' ] . "{$results[ $i ][ 'other_ip' ]}' target='_blank' title='WHOIS: {$results[ $i ][ 'other_ip' ]}'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url( 'other_ip equals '. $results[ $i ][ 'other_ip' ] ) . "'>" . __( 'Originating IP', 'wp-slimstat' ) . ": {$results[$i]['other_ip']})</a>";
-		}
-		else {
-			$other_ip_address = '';
 		}
 
 		// Screen Resolution

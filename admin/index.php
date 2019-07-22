@@ -20,7 +20,7 @@ class wp_slimstat_admin {
 		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage these tools in Slimstat. Stay tuned!";
 
 		// Load language files
-		load_plugin_textdomain(  'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
+		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
 
 		// Define the default screens
 		$has_network_reports = get_user_option( "meta-box-order_slimstat_page_slimlayout-network", 1 );
