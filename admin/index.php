@@ -81,7 +81,7 @@ class wp_slimstat_admin {
 
 		// WPMU - New blog created
 		$active_sitewide_plugins = get_site_option( 'active_sitewide_plugins' );
-		if ( !empty( $active_sitewide_plugins[  'wp-slimstat/wp-slimstat.php' ] ) ) {
+		if ( !empty( $active_sitewide_plugins[ 'wp-slimstat/wp-slimstat.php' ] ) ) {
 			add_action( 'wpmu_new_blog', array( __CLASS__, 'new_blog' ) );
 		}
 
@@ -181,7 +181,7 @@ class wp_slimstat_admin {
 			add_action( 'wp_ajax_slimstat_delete_pageview', array( __CLASS__, 'delete_pageview' ) );
 		}
 
-		// Hide plugins
+		// Hide add-ons
 		if ( wp_slimstat::$settings[ 'hide_addons' ] == 'on' ) {
 			add_filter( 'all_plugins', array( __CLASS__, 'hide_addons' ) );
 		}
@@ -207,7 +207,6 @@ class wp_slimstat_admin {
 		switch_to_blog( $_blog_id );
 		self::init_environment();
 		restore_current_blog();
-		// wp_slimstat::$settings = get_option( 'slimstat_options', array() );
 	}
 	// END: new_blog
 	
@@ -288,6 +287,7 @@ class wp_slimstat_admin {
 
 				outbound_resource VARCHAR(2048) DEFAULT NULL,
 
+				tz_offset SMALLINT DEFAULT 0,
 				dt_out INT(10) UNSIGNED DEFAULT 0,
 				dt INT(10) UNSIGNED DEFAULT 0,
 
@@ -425,12 +425,14 @@ class wp_slimstat_admin {
 
 		// --- Updates for version 4.8.4.1 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.8.4.1', '<' ) ) {
-			// Goodbye, Browser Plugins
+			// Goodbye, browser plugins
 			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP COLUMN plugins" );
 
-			// Hello there, Fingerprint
+			// Hello there, fingerprint and timezone offset
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language" );
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN fingerprint VARCHAR(255) DEFAULT NULL AFTER language" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource" );
 		}
 		// --- END: Updates for version 4.8.4.1 ---
 
@@ -591,7 +593,7 @@ class wp_slimstat_admin {
 	// END: add_view_menu
 
 	/**
-	 * Adds a new entry to the WordPress Toolbar
+	 * Adds a new entry in the WordPress Admin Bar
 	 */
 	public static function add_menu_to_adminbar() {
 		// If this user is whitelisted, we use the minimum capability
@@ -668,7 +670,7 @@ class wp_slimstat_admin {
 	// END: add_menu_to_adminbar
 
 	/**
-	 * Adds a new entry in the admin menu, to manage Slimstat options
+	 * Adds a new entry in the admin menu, to customize the reports layout
 	 */
 	public static function add_customize_menu( $_s ) {
 		wp_slimstat::$settings[ 'capability_can_customize' ] = empty( wp_slimstat::$settings[ 'capability_can_customize' ] ) ? 'manage_options' : wp_slimstat::$settings[ 'capability_can_customize' ];

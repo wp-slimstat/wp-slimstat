@@ -23,7 +23,7 @@ class wp_slimstat_db {
 	 * Sets the filters and other structures needed to store the data retrieved from the DB
 	 */
 	public static function init( $_filters = '' ) {
-		// List of supported filters and their friendly names
+		// List of supported filters and their user-friendly names
 		self::$columns_names = array(
 			'browser' => array( __( 'Browser', 'wp-slimstat' ), 'varchar' ),
 			'country' => array( __( 'Country Code', 'wp-slimstat' ), 'varchar' ),
@@ -36,6 +36,7 @@ class wp_slimstat_db {
 			'username' => array( __( 'Visitor\'s Username', 'wp-slimstat' ), 'varchar' ),
 			'email' => array( __( 'Visitor\'s Email', 'wp-slimstat' ), 'varchar' ),
 			'outbound_resource' => array( __( 'Outbound Link', 'wp-slimstat' ), 'varchar' ),
+			'tz_offset' => array( __( 'Timezone Offset', 'wp-slimstat' ), 'int' ),
 			'page_performance' => array( __( 'Page Speed', 'wp-slimstat' ), 'int' ),
 			'no_filter_selected_2' => array( '', 'none' ),
 			'no_filter_selected_3' => array( __( '-- Advanced filters --', 'wp-slimstat' ), 'none' ),
@@ -873,7 +874,7 @@ class wp_slimstat_db {
 			$dimensions .= ', ip, dt';
 		}
 		else {
-			$dimensions = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
+			$dimensions = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, tz_offset, dt_out, dt';
 		}
 
 		if ( !empty( $_more_dimensions ) ) {
