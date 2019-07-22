@@ -319,6 +319,10 @@ class wp_slimstat {
 		// User's IP address
 		list ( self::$stat[ 'ip' ], self::$stat[ 'other_ip' ] ) = self::_get_remote_ip();
 
+		if ( empty( self::$stat[ 'other_ip' ] ) ) {
+			unset( self::$stat[ 'other_ip' ] );
+		}
+
 		if ( empty( self::$stat[ 'ip' ] ) || self::$stat[ 'ip' ] == '0.0.0.0' ) {
 			self::$stat[ 'id' ] = -202;
 			self::_set_error_array( __( 'Pageview not tracked because the IP address format was invalid.', 'wp-slimstat' ) );
@@ -1293,7 +1297,7 @@ class wp_slimstat {
 		$s = "<span class='slimstat-item-separator'>$s</span>";
 
 		// Load the localization files (for languages, operating systems, etc)
-		load_plugin_textdomain( 'wp-slimstat', WP_PLUGIN_DIR .'/wp-slimstat/languages', '/wp-slimstat/languages' );
+		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
 
 		// Look for required fields
 		if ( empty( $f ) || empty( $w ) ) {
