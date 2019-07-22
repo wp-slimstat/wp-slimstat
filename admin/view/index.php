@@ -111,7 +111,7 @@
 		</fieldset><!-- .slimstat-date-filters -->
 
 		<?php foreach( wp_slimstat_db::$filters_normalized[ 'columns' ] as $a_key => $a_details ): ?>
-			<input type="hidden" name="fs[<?php echo $a_key ?>]" class="slimstat-post-filter" value="<?php echo htmlspecialchars($a_details[0].' '.$a_details[1]) ?>"/>
+			<input type="hidden" name="fs[<?php echo $a_key ?>]" class="slimstat-post-filter" value="<?php echo htmlspecialchars( $a_details[ 0 ] . ' ' . $a_details[ 1 ] ) ?>"/>
 		<?php endforeach ?>
 
 		<?php foreach ( wp_slimstat_db::$filters_normalized[ 'date' ] as $a_key => $a_value ) : if ( !empty( $a_value ) ): ?>

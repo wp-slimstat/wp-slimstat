@@ -118,7 +118,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country equals ' . $results[ $i ][ 'country' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.png' width='16' height='16' title='" . slim_i18n::get_string( 'c-' . $results[ $i ][ 'country' ] ) . "'></a>";
 		}
 		else {
-			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country is_empty ' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.png' width='16' height='16' title='" . slim_i18n::get_string( 'c-' ) . "'></a>";
+			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country is_empty #' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.png' width='16' height='16' title='" . slim_i18n::get_string( 'c-' ) . "'></a>";
 		}
 
 		// City, if tracked
@@ -143,7 +143,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 			$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform equals ' . $results[ $i ][ 'platform' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/platforms/{$results[ $i ][ 'platform' ]}.png' width='16' height='16' title='" . slim_i18n::get_string( $results[ $i ][ 'platform' ] ) . "'></a>";
 		}
 		else {
-			$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform is_empty ' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/browsers/other-browsers-and-os.png' width='16' height='16' title='" . slim_i18n::get_string( 'unknown' ) . "'></a>";
+			$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform is_empty #' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/browsers/other-browsers-and-os.png' width='16' height='16' title='" . slim_i18n::get_string( 'unknown' ) . "'></a>";
 		}
 
 		// Language
