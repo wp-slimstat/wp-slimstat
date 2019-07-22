@@ -63,6 +63,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 == Changelog ==
 = 4.8.4.1 =
 * [Note] As anticipated a few weeks ago, this update drops the information about your visitors' browser plugins, which had been deprecated as not useful and oftentimes unreliable. Please make sure to backup your Slimstat tables if you need to preserve this information for some reason.
+* [Update] We received quite a few messages complaining about our decision to change the default position of the Slimstat menu from the sidebar to the admin bar. We are rolling back this change, and we apologize for any confusion this might have caused.
 * [Update] Added visitor's language to the Activity Log report.
 * [Update] Introduced code optimizations to improve performance when localizing strings related to operating systems, languages, countries, etc.
 * [Fix] Page URLs were not being displayed correctly if the option to display page titles was turned off.
