@@ -1710,7 +1710,7 @@ class wp_slimstat_reports {
 					continue;
 				}
 
-				$a_filter_value_no_slashes = htmlentities( str_replace( '\\','', $a_filter_details[ 1 ] ), ENT_QUOTES, 'UTF-8' );
+				$a_filter_value_no_slashes = ( $a_filter_details[ 0 ] == 'is_empty' || $a_filter_details[ 0 ] == 'is_not_empty' ) ? '' : htmlentities( str_replace( '\\','', $a_filter_details[ 1 ] ), ENT_QUOTES, 'UTF-8' );
 				$filters_html .= '<li>' . strtolower( wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] ) . ' ' . __( str_replace( '_', ' ', $a_filter_details[ 0 ] ), 'wp-slimstat' ) . " $a_filter_value_no_slashes <a class='slimstat-filter-link slimstat-font-cancel' title='" . htmlentities( __( 'Remove filter for', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . ' ' . wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] . "' href='" . self::fs_url( "$a_filter_label equals " ) . "'></a></li>";
 			}
 		}
