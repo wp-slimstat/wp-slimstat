@@ -17,7 +17,7 @@ class wp_slimstat_admin {
 	 */
 	public static function init() {
 		self::$admin_notice = "We recently received an email from one of our users suggesting that we replace the line charts currently used to display reports over a timeline with <strong>bar charts</strong>, because 'the number of pageviews and IPs are discrete numbers, hence they should also be presented as discrete numbers', according to him. What do you think? Please let us know by <a href='https://support.wp-slimstat.com/' target='_blank'>sending us a message</a> on our support platform. Thank you.";
-		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage these tools in Slimstat. Stay tuned!";
+		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
@@ -254,17 +254,16 @@ class wp_slimstat_admin {
 				id INT UNSIGNED NOT NULL auto_increment,
 				ip VARCHAR(39) DEFAULT NULL,
 				other_ip VARCHAR(39) DEFAULT NULL,
-				username VARCHAR(255) DEFAULT NULL,
-				email VARCHAR(255) DEFAULT NULL,
+				username VARCHAR(256) DEFAULT NULL,
+				email VARCHAR(256) DEFAULT NULL,
 
 				country VARCHAR(16) DEFAULT NULL,
 				location VARCHAR(36) DEFAULT NULL,
-				city VARCHAR(255) DEFAULT NULL,
+				city VARCHAR(256) DEFAULT NULL,
 
 				referer VARCHAR(2048) DEFAULT NULL,
 				resource VARCHAR(2048) DEFAULT NULL,
 				searchterms VARCHAR(2048) DEFAULT NULL,
-				plugins VARCHAR(255) DEFAULT NULL,
 				notes VARCHAR(2048) DEFAULT NULL,
 				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
 				server_latency INT(10) UNSIGNED DEFAULT 0,
@@ -275,6 +274,7 @@ class wp_slimstat_admin {
 				browser_type TINYINT UNSIGNED DEFAULT 0,
 				platform VARCHAR(15) DEFAULT NULL,
 				language VARCHAR(5) DEFAULT NULL,
+				fingerprint VARCHAR(256) DEFAULT NULL,
 				user_agent VARCHAR(2048) DEFAULT NULL,
 
 				resolution VARCHAR(12) DEFAULT NULL,
@@ -422,6 +422,17 @@ class wp_slimstat_admin {
 			wp_slimstat::$settings[ 'db_indexes' ] = 'on';
 		}
 		// --- END: Updates for version 4.8.4 ---
+
+		// --- Updates for version 4.8.4.1 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.8.4.1', '<' ) ) {
+			// Goodbye, Browser Plugins
+			wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP COLUMN plugins" );
+
+			// Hello there, Fingerprint
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language" );
+			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN fingerprint VARCHAR(255) DEFAULT NULL AFTER language" );
+		}
+		// --- END: Updates for version 4.8.4.1 ---
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;

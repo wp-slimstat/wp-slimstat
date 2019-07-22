@@ -83,7 +83,6 @@ class wp_slimstat_db {
 
 		// The following filters will not be displayed in the dropdown
 		self::$all_columns_names = array_merge( array(
-
 			// Date and Time
 			'minute' => array( __( 'Minute', 'wp-slimstat' ), 'int' ),
 			'hour' => array( __( 'Hour', 'wp-slimstat' ), 'int' ),
@@ -874,7 +873,7 @@ class wp_slimstat_db {
 			$dimensions .= ', ip, dt';
 		}
 		else {
-			$dimensions = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, plugins, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
+			$dimensions = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, dt_out, dt';
 		}
 
 		if ( !empty( $_more_dimensions ) ) {
