@@ -537,7 +537,14 @@ class wp_slimstat {
 
 		// Geolocation 
 		include_once ( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
-		$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
+		try {
+			$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( '148.90.12.132' /* self::$stat[ 'ip' ] */);
+		}
+		catch( Exception $e ) {
+			self::$stat[ 'id' ] = -314;
+			self::_set_error_array( __( 'Invalid Naxmind data file. Please <a target="_blank" href="https://slimstat.freshdesk.com/support/solutions/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-">follow these steps</a> to download it manually.', 'wp-slimstat' ) );
+			return $_argument;
+		}
 
 		if ( !empty( $geolocation_data[ 'country' ][ 'iso_code' ] ) ) {
 

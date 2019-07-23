@@ -348,7 +348,7 @@ var SlimStatParams = {
 			'comparison_chart' => array(
 				'title' => __( 'Comparison Chart', 'wp-slimstat'),
 				'type'=> 'toggle',
-				'description'=> __( "Slimstat displays two sets of charts, allowing you to compare the current time window with the previous one. Disable this option if you find those four charts confusing, and prefer seeing only the selected time range. Please keep in mind that you can always temporarily hide one series by clicking on the corresponding entry in the ", 'wp-slimstat' )
+				'description'=> __( "Slimstat displays two sets of charts, allowing you to compare the current time window with the previous one. Disable this option if you find those four charts confusing, and prefer seeing only the selected time range. Please keep in mind that you can always temporarily hide one series by clicking on the corresponding entry in the legend.", 'wp-slimstat' )
 			),
 			'show_display_name' => array(
 				'title' => __( 'Use Display Name', 'wp-slimstat'),
