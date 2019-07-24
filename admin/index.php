@@ -1041,14 +1041,13 @@ class wp_slimstat_admin {
 						'after_input_field' => '',
 						'custom_label_yes' => '',
 						'custom_label_no' => '',
-						'readonly' => false,
 						'use_tag_list' => true,
 						'use_code_editor' => '',
 						'select_values' => array(),
 						'default_value' => ''
 					), $_setting_info );
 
-					$is_readonly = ( !empty( $_setting_info[ 'readonly' ] ) && $_setting_info[ 'readonly' ] === true ) ? ' readonly' : '';
+					$is_readonly = ( $_setting_info[ 'type' ] === 'readonly' ) ? ' readonly' : '';
 					$use_tag_list = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_tag_list' ] ) && $_setting_info[ 'use_tag_list' ] === true ) ? ' slimstat-taglist' : '';
 					$use_code_editor = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_code_editor' ] ) ) ? ' data-code-editor="' . $_setting_info[ 'use_code_editor' ] . '"': '';
 
@@ -1070,7 +1069,7 @@ class wp_slimstat_admin {
 							echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $_setting_info[ 'title' ] ) . '">' . $_setting_info[ 'title' ] . '</td>';
 							break;
 
-						case 'static':
+						case 'readonly':
 							echo '<td colspan="2">' . $_setting_info[ 'title' ] . '<textarea rows="7" class="large-text code" readonly>' . $_setting_info[ 'description' ] . '</textarea></td>';
 							break;
 
@@ -1176,7 +1175,7 @@ class wp_slimstat_admin {
 
 		foreach( $_settings as $_setting_slug => $_setting_info ) {
 			// Some options require a special treatment and are updated somewhere else
-			if ( isset( $_setting_info[ 'skip_update' ] ) || isset( $_setting_info[ 'readonly' ] ) || $_setting_info[ 'type' ] == 'section_header' || $_setting_info[ 'type' ] == 'plain-text' ) {
+			if ( $_setting_info[ 'type' ] == 'readonly' || $_setting_info[ 'type' ] == 'section_header' || $_setting_info[ 'type' ] == 'plain-text' ) {
 				continue;
 			}
 
@@ -1185,7 +1184,7 @@ class wp_slimstat_admin {
 				wp_slimstat::$settings[ $_setting_slug ] = 'no';
 			}
 			else if ( isset( $_POST[ 'options' ][ $_setting_slug ] ) ) {
-				wp_slimstat::$settings[ $_setting_slug ] = sanitize_text_field( $_POST[ 'options' ][ $_setting_slug ] );
+				wp_slimstat::$settings[ $_setting_slug ] = !empty( $_setting_info[ 'use_code_editor' ] ) ? $_POST[ 'options' ][ $_setting_slug ] : sanitize_text_field( $_POST[ 'options' ][ $_setting_slug ] );
 			}
 
 			// If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set

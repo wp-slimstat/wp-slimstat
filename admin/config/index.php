@@ -215,7 +215,8 @@ $settings = array(
 			),
 			'opt_out_message' => array(
 				'title' => __( 'Opt-out Message', 'wp-slimstat' ),
-				'type'=> 'textarea', 'rows' => 4,
+				'type'=> 'textarea',
+				'rows' => 4,
 				'use_tag_list' => false,
 				'use_code_editor' => 'htmlmixed',
 				'description'=> __( "Customize the message displayed to your visitors here below. Match your website styles and layout by adding the appropriate HTML markup to your message.", 'wp-slimstat' )
@@ -282,7 +283,7 @@ $settings = array(
 				'type'=> 'section_header'
 			),
 			'external_pages_script' => array(
-				'type'=> 'static', 'skip_update' => 'yes',
+				'type'=> 'readonly',
 				'title' => __( 'Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel.', 'wp-slimstat' ),
 				'use_tag_list' => false,
 				'description'=> '&lt;script type="text/javascript"&gt;
