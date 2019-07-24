@@ -324,22 +324,11 @@ var SlimStatParams = {
 				'after_input_field' => __( 'days', 'wp-slimstat' ),
 				'description' => __( 'Default number of days in the time window used to generate all the reports. We set it to 4 weeks so that the comparison charts will overlap nicely (i.e. Monday over Monday) for a more meaningful analysis. This value is ignored if the option here above is turned on.', 'wp-slimstat' )
 			),
-			'async_load' => array(
-				'title' => __( 'Async Mode', 'wp-slimstat' ),
-				'type' => 'toggle',
-				'description' => __( 'Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple smaller requests, thus avoiding memory issues and performance problems.', 'wp-slimstat' )
-			),
 			'rows_to_show' => array(
 				'title' => __( 'Rows to Display', 'wp-slimstat' ),
 				'type' => 'integer',
 				'after_input_field' => __( 'rows', 'wp-slimstat' ),
 				'description' => __( 'Define the number of rows to display in Top and Recent reports. You can adjust this number to improve your server performance.', 'wp-slimstat' )
-			),
-			'limit_results' => array(
-				'title' => __( 'SQL Limit', 'wp-slimstat' ),
-				'type' => 'integer',
-				'after_input_field' => __( 'rows', 'wp-slimstat' ),
-				'description' => __( "You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the statistics.", 'wp-slimstat' )
 			),
 			'ip_lookup_service' => array(
 				'title' => __( 'IP Geolocation', 'wp-slimstat' ),
@@ -347,19 +336,24 @@ var SlimStatParams = {
 				'description'=> __( 'Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://www.infosniper.net/?ip_address=</code>', 'wp-slimstat' )
 			),
 			'comparison_chart' => array(
-				'title' => __( 'Comparison Chart', 'wp-slimstat'),
+				'title' => __( 'Comparison Chart', 'wp-slimstat' ),
 				'type'=> 'toggle',
 				'description'=> __( "Slimstat displays two sets of charts, allowing you to compare the current time window with the previous one. Disable this option if you find those four charts confusing, and prefer seeing only the selected time range. Please keep in mind that you can always temporarily hide one series by clicking on the corresponding entry in the legend.", 'wp-slimstat' )
 			),
 			'show_display_name' => array(
-				'title' => __( 'Use Display Name', 'wp-slimstat'),
+				'title' => __( 'Use Display Name', 'wp-slimstat' ),
 				'type'=> 'toggle',
 				'description'=> __( 'By default, users are listed by their usernames. Enable this option to show their display names instead.', 'wp-slimstat' )
 			),
 			'convert_resource_urls_to_titles' => array(
-				'title' => __( 'Use Titles', 'wp-slimstat' ),
+				'title' => __( 'Display Titles', 'wp-slimstat' ),
 				'type'=> 'toggle',
 				'description'=> __( 'For improved legibility, most reports list post and page titles instead of their permalinks. Use this option to change this behavior.', 'wp-slimstat' )
+			),
+			'show_hits' => array(
+				'title' => __( 'Display Hits', 'wp-slimstat' ),
+				'type'=> 'toggle',
+				'description'=> __( 'By default, Top and Recent reports display the percentage of pageviews compared to the total for each entry, and the actual number of hits on hover in a tooltip. Enable this feature if you prefer to see the number of hits directly and the percentage in the tooltip.', 'wp-slimstat' )
 			),
 			'convert_ip_addresses' => array(
 				'title' => __( 'Show Hostnames', 'wp-slimstat' ),
@@ -418,6 +412,17 @@ var SlimStatParams = {
 				'title' => __( 'Show User Agent', 'wp-slimstat' ),
 				'type'=> 'toggle',
 				'description'=> __( 'Enable this option if you want to see the full user agent string when hovering over each browser icon in the Access Log and elsewhere.', 'wp-slimstat' )
+			),
+			'async_load' => array(
+				'title' => __( 'Async Mode', 'wp-slimstat' ),
+				'type' => 'toggle',
+				'description' => __( 'Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple smaller requests, thus avoiding memory issues and performance problems.', 'wp-slimstat' )
+			),
+			'limit_results' => array(
+				'title' => __( 'SQL Limit', 'wp-slimstat' ),
+				'type' => 'integer',
+				'after_input_field' => __( 'rows', 'wp-slimstat' ),
+				'description' => __( "You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the statistics.", 'wp-slimstat' )
 			),
 			'enable_sov' => array(
 				'title' => __( 'Enable SOV', 'wp-slimstat' ),

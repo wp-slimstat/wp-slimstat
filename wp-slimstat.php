@@ -681,7 +681,7 @@ class wp_slimstat {
 			}
 		}
 
-		// Is this a new visitor?
+		// Does this visitor have a visit_id cookie?
 		$set_cookie = apply_filters( 'slimstat_set_visit_cookie', ( !empty( self::$settings[ 'set_tracker_cookie' ] ) && self::$settings[ 'set_tracker_cookie' ] == 'on' ) );
 		if ( $set_cookie ) {
 			if ( empty( self::$stat[ 'visit_id' ] ) && !empty( self::$stat[ 'id' ] ) ) {
@@ -1638,11 +1638,10 @@ class wp_slimstat {
 			// -----------------------------------------------------------------------
 
 			// Reports - Functionality
-			'posts_column_day_interval' => 28,
 			'use_current_month_timespan' => 'no',
-			'async_load' => 'no',
+			'posts_column_day_interval' => 28,
 			'rows_to_show' => '20',
-			'limit_results' => '1000',
+			'show_hits' => 'no',
 			'ip_lookup_service' => 'https://www.infosniper.net/?ip_address=',
 			'comparison_chart' => 'on',
 			'show_display_name' => 'no',
@@ -1660,6 +1659,8 @@ class wp_slimstat {
 			'mozcom_access_id' => '',
 			'mozcom_secret_key' => '',
 			'show_complete_user_agent_tooltip' => 'no',
+			'async_load' => 'no',
+			'limit_results' => '1000',
 			'enable_sov' => 'no',
 
 			// Exclusions

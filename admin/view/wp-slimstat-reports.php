@@ -1,7 +1,6 @@
 <?php
 
 class wp_slimstat_reports {
-
 	// Structures to store all the information about what screens and reports are available
 	public static $reports_info = array();
 	public static $user_reports = array();
@@ -10,8 +9,7 @@ class wp_slimstat_reports {
 	/**
 	 * Initalize class properties
 	 */
-	public static function init(){
-		
+	public static function init() {
 		// Include and initialize the API to interact with the database
 		include_once( 'wp-slimstat-db.php' );
 		wp_slimstat_db::init();
@@ -619,7 +617,7 @@ class wp_slimstat_reports {
 					'type' => 'top',
 					'columns' => 'resource',
 					'where' => 'content_type = "post"',
-					'raw' => array( 'wp_slimstat_db', 'get_top' )
+					'raw' => array( 'wp_slimstat_db', 'get_top' ),
 				),
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview4' )
@@ -1163,7 +1161,7 @@ class wp_slimstat_reports {
 					$percentage_value = ( ( wp_slimstat_db::$pageviews > 0 ) ? number_format_i18n( sprintf( "%01.2f", ( 100 * $results[ $i ][ 'counthits' ] / wp_slimstat_db::$pageviews ) ), 2 ) : 0 );
 					$counthits = number_format_i18n( $results[ $i ][ 'counthits' ] );
 
-					if ( !empty( $_args[ 'criteria' ] ) && $_args[ 'criteria' ] == 'swap' ) {
+					if ( ( !empty( $_args[ 'criteria' ] ) && $_args[ 'criteria' ] == 'swap' ) || wp_slimstat::$settings[ 'show_hits' ] == 'on' ) {
 						$percentage = ' <span>' . $counthits . '</span>';
 						$row_details = __('Hits','wp-slimstat') . ': ' . ( ( $column_not_calculated != 'outbound_resource' ) ? $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details : '' );
 					}
