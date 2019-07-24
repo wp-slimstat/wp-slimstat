@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 5.2
-Stable tag: 4.8.4.1
+Stable tag: 4.8.4.2
 
 == Description ==
 [youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
@@ -62,6 +62,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 == Changelog ==
 = 4.8.4.2 =
+* [New] New option to not track pageviews based on the ACCEPT-LANGUAGE header sent by the browser.
 * [Fix] The HTML markup in the opt-out message field was being stripped out (thank you, [paulmcmanus](https://wordpress.org/support/topic/saving-settings-flips-opt-out-message-to-plain-text/)).
 * [Fix] A fatal error thrown by the Maxmind library when the data file is corrupted has been addressed.
 

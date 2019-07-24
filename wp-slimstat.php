@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.8.4.1
+Version: 4.8.4.2
 Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8.4.1';
+	public static $version = '4.8.4.2';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -535,6 +535,12 @@ class wp_slimstat {
 		// Language
 		self::$stat[ 'language' ] = self::_get_language();
 
+		// Is this language blacklisted?
+		if ( !empty( self::$stat[ 'language' ] ) && !empty( self::$settings[ 'ignore_languages' ] ) && stripos( self::$settings[ 'ignore_languages' ], self::$stat[ 'language' ] ) !== false ) {
+			self::$stat[ 'id' ] = -317;
+			return $_argument;
+		}
+
 		// Geolocation 
 		include_once ( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
 		try {
@@ -568,6 +574,12 @@ class wp_slimstat {
 
 		unset( $geolocation_data );
 
+		// Is this country blacklisted?
+		if ( !empty( self::$stat[ 'country' ] ) && !empty( self::$settings[ 'ignore_countries' ] ) && stripos( self::$settings[ 'ignore_countries' ], self::$stat[ 'country' ] ) !== false ) {
+			self::$stat[ 'id' ] = -308;
+			return $_argument;
+		}
+
 		// Anonymize IP Address?
 		if ( self::$settings[ 'anonymize_ip' ] == 'on' ) {
 			// IPv4 or IPv6
@@ -583,12 +595,6 @@ class wp_slimstat {
 			if ( !empty( self::$stat[ 'other_ip' ] ) ) {
 				self::$stat[ 'other_ip' ] = substr( self::$stat[ 'other_ip' ], 0, strrpos( self::$stat[ 'other_ip' ], $needle ) ) . $replace;
 			}
-		}
-
-		// Is this country blacklisted?
-		if ( !empty( self::$stat[ 'country' ] ) && !empty( self::$settings[ 'ignore_countries' ] ) && stripos( self::$settings[ 'ignore_countries' ], self::$stat[ 'country' ] ) !== false ) {
-			self::$stat['id'] = -308;
-			return $_argument;
 		}
 
 		// Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
@@ -797,7 +803,7 @@ class wp_slimstat {
 	/**
 	 * Extracts the accepted language from browser headers
 	 */
-	protected static function _get_language(){
+	protected static function _get_language() {
 		if ( isset( $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ] ) ) {
 
 			// Capture up to the first delimiter (, found in Safari)
@@ -1667,6 +1673,7 @@ class wp_slimstat {
 			'ignore_users' => '',
 			'ignore_ip' => '',
 			'ignore_countries' => '',
+			'ignore_languages' => '',
 			'ignore_browsers' => '',
 			'ignore_platforms' => '',
 			'ignore_capabilities' => '',
