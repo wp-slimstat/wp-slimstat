@@ -3,7 +3,9 @@
 class wp_slimstat_admin {
 	public static $screens_info = array();
 	public static $config_url = '';
+	public static $current_screen = 'slimview1';
 	public static $faulty_fields = array();
+	public static $page_location = 'slimstat';
 
 	protected static $admin_notice = '';
 	protected static $data_for_column = array(
@@ -79,6 +81,16 @@ class wp_slimstat_admin {
 		// Settings URL
 		self::$config_url = 'admin.php?page=slimconfig&amp;tab=';
 
+		// Current Screen
+		if ( !empty( $_REQUEST[ 'page' ] ) && array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ) {
+			self::$current_screen = $_REQUEST[ 'page' ];
+		}
+
+		// Page Location
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'no' ) {
+			self::$page_location = 'admin';
+		}
+
 		// WPMU - New blog created
 		$active_sitewide_plugins = get_site_option( 'active_sitewide_plugins' );
 		if ( !empty( $active_sitewide_plugins[ 'wp-slimstat/wp-slimstat.php' ] ) ) {
@@ -145,14 +157,14 @@ class wp_slimstat_admin {
 		}
 
 		// Load the library of functions to generate the reports
-		if ( ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) || ( !empty( $_POST[ 'action' ] ) && $_POST[ 'action' ] == 'slimstat_load_report' ) ) {
+		if ( ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slim' ) === 0 ) || ( !empty( $_POST[ 'action' ] ) && $_POST[ 'action' ] == 'slimstat_load_report' ) ) {
 			include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
 			wp_slimstat_reports::init();
 
 			if ( !empty( $_POST[ 'report_id' ] ) ) {
 				$report_id = sanitize_title( $_POST[ 'report_id' ], 'slim_p0_00' );
 
-				if ( !empty( wp_slimstat_reports::$reports_info[ $report_id ] ) ) {
+				if ( !empty( wp_slimstat_reports::$reports[ $report_id ] ) ) {
 					add_action( 'wp_ajax_slimstat_load_report', array( 'wp_slimstat_reports', 'callback_wrapper' ), 10, 2 );
 				}
 			}
@@ -166,6 +178,7 @@ class wp_slimstat_admin {
 				add_action( 'admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts' ) );
 				add_action( 'admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet' ) );
 			}
+
 			add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widgets' ) );
 		}
 
@@ -351,25 +364,6 @@ class wp_slimstat_admin {
 	public static function update_tables_and_options() {
 		$my_wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
-		// --- Updates for version 4.7.8 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.8', '<' ) ) {
-			// The Geolocation screen has been removed, and the World Map has been moved to the Audience tab
-			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) ? 'slimstat' : 'admin';
-			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
-
-			if ( !empty( $user_reports[ 'slimview6' ] ) ) {
-				if ( !empty( $user_reports[ 'slimview3' ] ) ) {
-					$user_reports[ 'slimview3' ] = $user_reports[ 'slimview3' ] . ',' . $user_reports[ 'slimview6' ];
-				}
-				else {
-					$user_reports[ 'slimview3' ] = $user_reports[ 'slimview6' ];	
-				}
-			}
-
-			update_user_option( $GLOBALS[ 'current_user' ]->ID, "meta-box-order_{$page_location}_page_slimlayout", $user_reports );
-		}
-		// --- END: Updates for version 4.7.8 ---
-
 		// --- Updates for version 4.7.8.2 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.8.2', '<' ) ) {
 			wp_slimstat::$settings[ 'opt_out_message' ] = '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>';
@@ -455,21 +449,13 @@ class wp_slimstat_admin {
 			return;
 		}
 
+		// The Reports library is only loaded on the plugin's screens
 		include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 
-		if ( !empty( wp_slimstat_reports::$user_reports[ 'dashboard' ] ) ) {
-			$dashboard_reports = explode( ',', wp_slimstat_reports::$user_reports[ 'dashboard' ] );
-			foreach ( $dashboard_reports as $a_report_id ) {
-				wp_add_dashboard_widget( $a_report_id, wp_slimstat_reports::$reports_info[ $a_report_id ][ 'title' ], array( 'wp_slimstat_reports', 'callback_wrapper' ) );
-			}
-		}
-		else {
-			foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
-				if ( in_array( 'dashboard', $a_report_info[ 'screens' ] ) ) {
-					// When called this way, callback_wrapper receives just the report_id as the SECOND parameter
-					wp_add_dashboard_widget( $a_report_id, $a_report_info[ 'title' ], array( 'wp_slimstat_reports', 'callback_wrapper' ) );
-				}
+		if ( !empty( wp_slimstat_reports::$user_reports[ 'dashboard' ] ) && is_array( wp_slimstat_reports::$user_reports[ 'dashboard' ] ) ) {
+			foreach ( wp_slimstat_reports::$user_reports[ 'dashboard' ] as $a_report_id ) {
+				wp_add_dashboard_widget( $a_report_id, wp_slimstat_reports::$reports[ $a_report_id ][ 'title' ], array( 'wp_slimstat_reports', 'callback_wrapper' ) );
 			}
 		}
 	}
@@ -531,7 +517,7 @@ class wp_slimstat_admin {
 		wp_enqueue_script( 'jquery-ui-datepicker' );
 
 		// Enqueue the built-in code editor to use on the Settings
-		if ( !empty( $_REQUEST[ 'page' ] ) && $_REQUEST[ 'page' ] == 'slimconfig' ) {
+		if ( self::$current_screen ) {
 			wp_enqueue_code_editor( array( 'type' => 'text/html' ) );
 		}
 		
@@ -541,7 +527,8 @@ class wp_slimstat_admin {
 		$params = array(
 			'async_load' => !empty( wp_slimstat::$settings[ 'async_load' ] ) ? wp_slimstat::$settings[ 'async_load' ] : 'no',
 			'datepicker_image' => plugins_url( '/admin/assets/images/datepicker.png', dirname( __FILE__ ) ),
-			'refresh_interval' => intval( wp_slimstat::$settings[ 'refresh_interval' ] )
+			'refresh_interval' => intval( wp_slimstat::$settings[ 'refresh_interval' ] ),
+			'page_location' => self::$page_location
 		);
 		wp_localize_script( 'slimstat_admin', 'SlimStatAdminParams', $params );
 	}
@@ -573,10 +560,9 @@ class wp_slimstat_admin {
 		}
 
 		$current_user = wp_get_current_user();
-		$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
 
 		foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
-			if ( $a_screen_info[ 'show_in_sidebar' ] && ( !is_array( $user_reports ) || !empty( $user_reports[ $a_screen_id ] ) || !$a_screen_info[ 'is_report_group' ] ) ) {
+			if ( $a_screen_info[ 'show_in_sidebar' ] ) {
 				$new_entry[] = add_submenu_page( $parent, $a_screen_info[ 'title' ], $a_screen_info[ 'title' ], $minimum_capability, $a_screen_id, $a_screen_info[ 'callback' ] );
 			}
 		}
@@ -856,27 +842,22 @@ class wp_slimstat_admin {
 			return $_current;
 		}
 
-		$current = '<form id="adv-settings" action="" method="post"><h5>' . __( 'Show on screen', 'wp-slimstat') . '</h5><div class="metabox-prefs">';
+		$current = '<form id="adv-settings" action="" method="post"><h5>' . __( 'Show on screen', 'wp-slimstat' ) . '</h5><div class="metabox-prefs">';
 
 		// The Reports Library wp_slimstat_reports has already been loaded at this point
-		foreach( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
-			if ( !is_array( $a_report_info[ 'classes' ] ) ) {
+		foreach( wp_slimstat_reports::$user_reports[ self::$current_screen ] as $a_report_id ) {
+			if ( !is_array( wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] ) ) {
 				continue;
 			}
 
-			$checked = !in_array( 'hidden', $a_report_info[ 'classes' ] ) ? ' checked="checked"' : '';
+			$checked = !in_array( 'hidden', wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] ) ? ' checked="checked"' : '';
 
-			$current .= "
-				<label for='$a_report_id-hide'>
-					<input class='hide-postbox-tog' name='$a_report_id-hide' type='checkbox' id='$a_report_id-hide' value='$a_report_id'$checked />{$a_report_info[ 'title' ]}
-				</label>";
+			$current .= '
+				<label for="' . $a_report_id . '-hide">
+					<input' . $checked . ' class="hide-postbox-tog" name="' . $a_report_id . '-hide" type="checkbox" id="' . $a_report_id . '-hide" value="' . $a_report_id . '"/>' . wp_slimstat_reports::$reports[ $a_report_id ][ 'title' ] . '
+				</label>';
 		}
 		$current .= wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', true, false ) . "</div></form>";
-
-		// Some panels don't have any screen options
-		if ( strpos( $current, 'label' ) === false) {
-			return $_current;
-		}
 
 		return $current;
 	}

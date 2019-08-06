@@ -548,7 +548,7 @@ class wp_slimstat {
 		}
 		catch( Exception $e ) {
 			self::$stat[ 'id' ] = -314;
-			self::_set_error_array( __( 'Invalid Naxmind data file. Please <a target="_blank" href="https://slimstat.freshdesk.com/support/solutions/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-">follow these steps</a> to download it manually.', 'wp-slimstat' ) );
+			self::_set_error_array( __( 'Invalid MaxMind data file. Please <a target="_blank" href="https://slimstat.freshdesk.com/support/solutions/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-">follow these steps</a> to download it manually.', 'wp-slimstat' ) );
 			return $_argument;
 		}
 
@@ -1327,18 +1327,18 @@ class wp_slimstat {
 				break;
 
 			case 'widget':
-				if ( empty( wp_slimstat_reports::$reports_info[ $w ] ) ) {
+				if ( empty( wp_slimstat_reports::$reports[ $w ] ) ) {
 					return __( 'Invalid Report ID', 'wp-slimstat' );
 				}
 
 				wp_register_style( 'wp-slimstat-frontend', plugins_url( '/admin/assets/css/slimstat.css', __FILE__ ) );
 				wp_enqueue_style( 'wp-slimstat-frontend' );
 
-				wp_slimstat_reports::$reports_info[ $w ][ 'callback_args' ][ 'is_widget' ] = true;
+				wp_slimstat_reports::$reports[ $w ][ 'callback_args' ][ 'is_widget' ] = true;
 
 				ob_start();
 				echo wp_slimstat_reports::report_header( $w );
-				call_user_func( wp_slimstat_reports::$reports_info[ $w ][ 'callback' ], wp_slimstat_reports::$reports_info[ $w ][ 'callback_args' ] );
+				call_user_func( wp_slimstat_reports::$reports[ $w ][ 'callback' ], wp_slimstat_reports::$reports[ $w ][ 'callback_args' ] );
 				wp_slimstat_reports::report_footer();
 				$output = ob_get_contents();
 				ob_end_clean();
@@ -1979,7 +1979,7 @@ class slimstat_widget extends WP_Widget {
 		$slimstat_widget_id = !empty( $instance[ 'slimstat_widget_id' ] ) ? $instance[ 'slimstat_widget_id' ] : '';
 		$slimstat_widget_filters = !empty( $instance[ 'slimstat_widget_filters' ] ) ? $instance[ 'slimstat_widget_filters' ] : '';
 
-		foreach ( wp_slimstat_reports::$reports_info as $a_report_id => $a_report_info ) {
+		foreach ( wp_slimstat_reports::$reports as $a_report_id => $a_report_info ) {
 			$select_options .= "<option value='$a_report_id' " . ( ( $slimstat_widget_id == $a_report_id ) ? 'selected="selected"' : '' ) . ">{$a_report_info[ 'title' ]}</option>";
 		}
 		?>
