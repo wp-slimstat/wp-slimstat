@@ -18,7 +18,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Recently, we asked our users to help us decide if we should replace line charts with bar charts, and... the people of Slimstat have spoken! Based on the feedback we received, users were more or less evenly split between the two options, so we've decided that we'll provide both options. Yes, you read that right. We are going to add a new set of reports using the bar chart view, and then let admins choose which ones to display via the Customizer. It will even be possible to mix and match charts, if that's what our users prefer. Everybody wins, doesn't that feel great?";
+		self::$admin_notice = "Recently, we asked our users to help us decide if we should replace line charts with bar charts, and... the people of Slimstat have spoken! Based on the feedback we received, users were more or less evenly split between the two options, so we've decided that we'll provide both options. Yes, you read that right. We are going to add a new set of reports using the bar chart view, and then let admins choose which ones to display via the Customizer. It will even be possible to mix and match charts, if that's what you prefer. In order to prepare for this new feature, we rewrote the code that manages which reports are displayed on which screen (via the Customizer), streamlined data structures and optimized their use. Please update all the add-ons to the latest version available. Don't hesitate to contact us if you have any questions!";
 		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research to implement what techies out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any form of cookie on the user browser to collect a fingerprint. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate on average than relying on cookies. We are already wearing our lab coats and are hard at work to identify ways to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This will also allow the tracker to record things like the user's timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
 
 		// Load language files
@@ -99,9 +99,6 @@ class wp_slimstat_admin {
 
 		// WPMU - Blog Deleted
 		add_filter( 'wpmu_drop_tables', array( __CLASS__, 'drop_tables' ), 10, 2 );
-
-		// Screen options: hide/show panels to customize your view
-		add_filter( 'screen_settings', array( __CLASS__, 'screen_settings' ), 10, 2 );
 
 		// Display a notice that hightlights this version's features
 		if ( !empty( $_GET[ 'page' ] ) && strpos( $_GET[ 'page' ], 'slimview' ) !== false ) {
@@ -833,35 +830,6 @@ class wp_slimstat_admin {
 		return $_plugins;
 	}
 	// END: hide_addons
-
-	/**
-	 * Displays a tab to customize this user's screen options (what boxes to see/hide)
-	 */
-	public static function screen_settings( $_current = '', $_screen ) {
-		if ( strpos( $_screen->id, 'page_slimview' ) === false ) {
-			return $_current;
-		}
-
-		$current = '<form id="adv-settings" action="" method="post"><h5>' . __( 'Show on screen', 'wp-slimstat' ) . '</h5><div class="metabox-prefs">';
-
-		// The Reports Library wp_slimstat_reports has already been loaded at this point
-		foreach( wp_slimstat_reports::$user_reports[ self::$current_screen ] as $a_report_id ) {
-			if ( !is_array( wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] ) ) {
-				continue;
-			}
-
-			$checked = !in_array( 'hidden', wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] ) ? ' checked="checked"' : '';
-
-			$current .= '
-				<label for="' . $a_report_id . '-hide">
-					<input' . $checked . ' class="hide-postbox-tog" name="' . $a_report_id . '-hide" type="checkbox" id="' . $a_report_id . '-hide" value="' . $a_report_id . '"/>' . wp_slimstat_reports::$reports[ $a_report_id ][ 'title' ] . '
-				</label>';
-		}
-		$current .= wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', true, false ) . "</div></form>";
-
-		return $current;
-	}
-	// END: screen_settings
 
 	/**
 	 * Displays an alert message

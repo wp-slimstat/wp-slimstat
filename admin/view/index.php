@@ -146,19 +146,9 @@
 	<div class="meta-box-sortables">
 		<form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form><?php
 
-		$current_screen = ( is_string( $_REQUEST[ 'page' ] ) && !empty( wp_slimstat_reports::$user_reports[ $_REQUEST[ 'page' ] ] ) && is_array( wp_slimstat_reports::$user_reports[ $_REQUEST[ 'page' ] ] ) ) ? $_REQUEST[ 'page' ] : 'slimview1';
-		foreach( wp_slimstat_reports::$user_reports[ $current_screen ] as $a_report_id ) {
-			if ( !is_array( wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] ) ) {
-				continue;
-			}
-
+		foreach( wp_slimstat_reports::$user_reports[ wp_slimstat_admin::$current_screen ] as $a_report_id ) {
 			wp_slimstat_reports::report_header( $a_report_id );
-
-			// Third party reports can add their own methods via the callback parameter
-			if ( !in_array( 'hidden', wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] ) ) {
-				wp_slimstat_reports::callback_wrapper( array( 'id' => $a_report_id ) );
-			}
-
+			wp_slimstat_reports::callback_wrapper( array( 'id' => $a_report_id ) );
 			wp_slimstat_reports::report_footer();
 		}
 	?></div>
