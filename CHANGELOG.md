@@ -1,9 +1,10 @@
 ## Changelog ##
-### 4.8.4.2 ###
+### 4.8.5 ###
 * [New] Introduced option to not track pageviews based on the ACCEPT-LANGUAGE header sent by the browser.
 * [New] Introduced option to display a pageview count instead of the percentage in Top reports.
 * [New] Introduced two new reports under the Audience tab: Tob Bots and Top Human Browsers.
-* [Update] Rewritten the code to manage which reports are displayed on which screen (Customizer), streamlined data structures and optimized their use. Please update all the add-ons to the latest version available. Don't hesitate to contact us if you have any questions!
+* [Update] Removed the option to hide reports on tabs, as it was confusing users who couldn't find them. Now you can simply use the Customizer to arrange your reports, and place the ones you don't need in the Inactive box.
+* [Update] Rewritten the code that manages which reports are displayed on which screen (Customizer), streamlined data structures and optimized their use. Please update all the add-ons to the latest version available. Don't hesitate to contact us if you have any questions!
 * [Fix] The HTML markup in the opt-out message field was being stripped out (thank you, [paulmcmanus](https://wordpress.org/support/topic/saving-settings-flips-opt-out-message-to-plain-text/)).
 * [Fix] Reports could not be properly deleted in the Customizer, if the Slimstat menu was displayed in the Admin Bar.
 * [Fix] A fatal error thrown by the Maxmind library when the data file is corrupted has been addressed.

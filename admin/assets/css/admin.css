@@ -553,12 +553,6 @@
 	margin: 0 10px 10px 0;
 	min-width: 285px;
 }
-.slimstat-layout .postbox.hidden {
-	display: block;
-}
-.slimstat-layout .postbox.hidden h3 {
-	color: #ccc;
-}
 .slimstat-layout h3 {
 	border: 0;
 	font-weight: 300;
