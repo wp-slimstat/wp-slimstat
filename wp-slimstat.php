@@ -538,7 +538,7 @@ class wp_slimstat {
 		// Geolocation 
 		include_once ( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
 		try {
-			$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( '148.90.12.132' /* self::$stat[ 'ip' ] */);
+			$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
 		}
 		catch( Exception $e ) {
 			self::$stat[ 'id' ] = -314;
