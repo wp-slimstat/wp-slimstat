@@ -1,4 +1,8 @@
 ## Changelog ##
+### 4.8.4.2 ###
+* [Fix] The HTML markup in the opt-out message field was being stripped out (thank you, [paulmcmanus](https://wordpress.org/support/topic/saving-settings-flips-opt-out-message-to-plain-text/)).
+* [Fix] A fatal error thrown by the Maxmind library when the data file is corrupted has been addressed.
+
 ### 4.8.4.1 ###
 * [Note] As anticipated a few weeks ago, this update drops the information about your visitors' browser plugins, which had been deprecated as not useful and oftentimes unreliable. Please make sure to backup your Slimstat tables if you need to preserve this information for some reason.
 * [Update] We received quite a few messages complaining about our decision to change the default position of the Slimstat menu from the sidebar to the admin bar. We are rolling back this change, and we apologize for any confusion this might have caused.
