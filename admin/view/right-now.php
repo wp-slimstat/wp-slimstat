@@ -15,7 +15,7 @@ $plugin_url = plugins_url( '', dirname( __FILE__ ) );
 
 // Get the data
 wp_slimstat_db::$debug_message = '';
-$all_results = wp_slimstat_db::get_recent( wp_slimstat_reports::$reports_info[ 'slim_p7_02' ][ 'callback_args' ] );
+$all_results = wp_slimstat_db::get_recent( wp_slimstat_reports::$reports[ 'slim_p7_02' ][ 'callback_args' ] );
 $results = array_slice(
 	$all_results,
 	wp_slimstat_db::$filters_normalized[ 'misc' ][ 'start_from' ],
