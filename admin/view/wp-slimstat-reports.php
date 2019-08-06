@@ -2,7 +2,7 @@
 
 class wp_slimstat_reports {
 	// Structures to store all the information about what screens and reports are available
-	public static $reports_info = array();
+	public static $reports = array();
 	public static $user_reports = array();
 	public static $resource_titles = array();
 
@@ -26,7 +26,7 @@ class wp_slimstat_reports {
 
 		$chart_tooltip = '<strong>' . __( 'Chart Controls', 'wp-slimstat' ) . '</strong><ul><li>' . __( 'Use your mouse wheel to zoom in and out', 'wp-slimstat' ) . '</li><li>' . __( 'While zooming in, drag the chart to move to a different area', 'wp-slimstat' ) . '</li></ul>';
 
-		self::$reports_info = array(
+		self::$reports = array(
 			'slim_p7_02' => array(
 				'title' => __( 'Access Log', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_access_log' ),
@@ -155,7 +155,7 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'slimview2', 'slimview3', 'slimview5', 'dashboard' ),
-				'tooltip' => __( 'You can configure Slimstat to not track specific Countries by setting the corresponding filter in Settings > Slimstat > Filters.', 'wp-slimstat' )
+				'tooltip' => __( 'You can configure Slimstat to not track specific Countries by setting the corresponding filter in Slimstat > Settings > Exclusions.', 'wp-slimstat' )
 			),
 			'slim_p1_15' => array(
 				'title' => __( 'Rankings', 'wp-slimstat' ),
@@ -194,7 +194,7 @@ class wp_slimstat_reports {
 				'screens' => array( 'slimview2', 'dashboard' ),
 				'tooltip' => __( 'When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat' )
 			),
-			'slim_p1_19_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
+			'slim_p1_19_01' => array(
 				'title' => __( 'Search Terms', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
@@ -267,7 +267,7 @@ class wp_slimstat_reports {
 				'screens' => array( 'slimview3' )
 			),
 			'slim_p2_04' => array(
-				'title' => __( 'Top Browsers', 'wp-slimstat' ),
+				'title' => __( 'Top User Agents', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
@@ -275,7 +275,8 @@ class wp_slimstat_reports {
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
-				'screens' => array( 'slimview3', 'dashboard' )
+				'screens' => array( 'slimview3', 'dashboard' ),
+				'tooltip' => __( 'This report includes all types of clients, both bots and humans.', 'wp-slimstat' )
 			),
 			'slim_p2_05' => array(
 				'title' => __( 'Top Service Providers', 'wp-slimstat' ),
@@ -448,7 +449,7 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal', 'hidden' ),
 				'screens' => array( 'slimview3', 'dashboard' )
 			),
-			'slim_p2_22_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
+			'slim_p2_22_01' => array(
 				'title' => __( 'Users', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
@@ -465,6 +466,30 @@ class wp_slimstat_reports {
 				'classes' => array( 'extralarge', 'chart' ),
 				'screens' => array( 'slimview3' ),
 				'tooltip' => $chart_tooltip
+			),
+			'slim_p2_24' => array(
+				'title' => __( 'Top Bots', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'type' => 'top',
+					'columns' => 'browser, browser_version',
+					'where' => 'browser_type == 1',
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
+				),
+				'classes' => array( 'normal' ),
+				'screens' => array( 'slimview3' )
+			),
+			'slim_p2_25' => array(
+				'title' => __( 'Top Human Browsers', 'wp-slimstat' ),
+				'callback' => array( __CLASS__, 'raw_results_to_html' ),
+				'callback_args' => array(
+					'type' => 'top',
+					'columns' => 'browser, browser_version',
+					'where' => 'browser_type != 1',
+					'raw' => array( 'wp_slimstat_db', 'get_top' )
+				),
+				'classes' => array( 'normal' ),
+				'screens' => array( 'slimview3' )
 			),
 
 			'slim_p3_01' => array(
@@ -583,7 +608,6 @@ class wp_slimstat_reports {
 				'classes' => array( 'normal' ),
 				'screens' => array( 'slimview4', 'dashboard' )
 			),
-
 			'slim_p4_09' => array(
 				'title' => __( 'Top Downloads', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
@@ -766,7 +790,7 @@ class wp_slimstat_reports {
 				'classes' => array( 'large', 'hidden' ),
 				'screens' => array( 'slimview4' )
 			),
-			'slim_p4_26_01' => array( // Chart Reports need to always have a _01 suffix to tell our custom "refresh" code to avoid fading the chart, which apparently doesn't work
+			'slim_p4_26_01' => array(
 				'title' => __( 'Pages with Outbound Links', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_chart' ),
 				'callback_args' => array(
@@ -808,7 +832,7 @@ class wp_slimstat_reports {
 		);
 
 		if ( wp_slimstat::$settings[ 'geolocation_country' ] != 'on' ) {
-			self::$reports_info [ 'slim_p2_23' ] = array(
+			self::$reports[ 'slim_p2_23' ] = array(
 				'title' => __( 'Top Cities', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
@@ -823,36 +847,64 @@ class wp_slimstat_reports {
 		}
 
 		// Allow third party tools to manipulate this list here above: please use unique report IDs that don't interfere with built-in ones, if you add your own custom report
-		self::$reports_info = apply_filters( 'slimstat_reports_info', self::$reports_info );
+		self::$reports = apply_filters( 'slimstat_reports_info', self::$reports );
+		$merge_reports = array_keys( self::$reports );
 
-		// Define what reports have been deprecated over time, to remove them from the user's settings
-		$deprecated_reports = array(
-			'slim_p1_02' => 1,
-			'slim_p1_05' => 1,
-			'slim_p1_18' => 1,
-			'slim_p2_10' => 1,
-			'slim_p3_03' => 1,
-			'slim_p3_04' => 1,
-			'slim_p3_05' => 1,
-			'slim_p3_08' => 1,
-			'slim_p3_09' => 1,
-			'slim_p3_10' => 1,
-			'slim_p4_08' => 1,
-			'slim_p4_14' => 1,
-			'slim_p4_17' => 1,
-			'slim_getsocial' => 1
-		);
-
-		// Retrieve this user's list of active reports,
+		// Retrieve this user's custom report assignment (Customizer)
 		$current_user = wp_get_current_user();
-		$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) ? 'slimstat' : 'admin';
 
 		// Superadmins can customize the layout at network level, to override per-site settings
-		self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout-network", 1 );
+		self::$user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout-network', 1 );
 
-		// No network-wide settings exist
+		// No network-wide settings found
 		if ( empty( self::$user_reports ) ) {
-			self::$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $current_user->ID );
+			self::$user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout', $current_user->ID );
+		}
+
+		// Do we have any new reports not listed in this user's settings?
+		if ( !empty( self::$user_reports ) && is_array( self::$user_reports ) ) {
+			$flat_user_reports = array_filter( explode( ',', implode( ',', self::$user_reports ) ) );
+			$merge_reports = array_diff( array_filter( array_keys( self::$reports ) ), $flat_user_reports );
+
+			// Now let's explode all the lists
+			foreach ( self::$user_reports as $a_location => $a_report_list ) {
+				self::$user_reports[ $a_location ] = explode( ',', $a_report_list );
+			}
+		}
+		else {
+			self::$user_reports = array(
+				'slimview1' => array(),
+				'slimview2' => array(),
+				'slimview3' => array(),
+				'slimview4' => array(),
+				'slimview5' => array(),
+				'dashboard' => array(),
+				'inactive' => array()
+			);
+		}
+
+		foreach ( $merge_reports as $a_report_id ) {
+			if ( !empty( self::$reports[ $a_report_id ][ 'screens' ] ) && is_array( self::$reports[ $a_report_id ][ 'screens' ] ) ) {
+				foreach ( self::$reports[ $a_report_id ][ 'screens' ] as $a_report_location ) {
+					self::$user_reports[ $a_report_location ][] = $a_report_id;
+				}
+			}
+		}
+
+		// Mark hidden reports
+		foreach( array_keys( self::$user_reports ) as $a_report_location ) {
+			$hidden = get_user_option( 'metaboxhidden_' . wp_slimstat_admin::$page_location . "_page_{$a_report_location}", $current_user->ID );
+
+			if ( !empty( $hidden ) && is_array( $hidden ) ) {
+				foreach ( $hidden as $a_report_id ) {
+					if ( is_array( self::$reports[ $a_report_id ][ 'classes' ] ) ) {
+						self::$reports[ $a_report_id ][ 'classes' ][] = 'hidden';
+					}
+					else {
+						self::$reports[ $a_report_id ][ 'classes' ] = array( 'hidden' );
+					}
+				}
+			}
 		}
 
 		// We store page titles in a transient for improved performance
@@ -860,59 +912,15 @@ class wp_slimstat_reports {
 		if ( self::$resource_titles === false ) {
 			self::$resource_titles = array();
 		}
-
-		// Do this only if we are in one of our screens (no dashboard!)
-		if ( is_admin() && !empty( $_REQUEST[ 'page' ] ) && strpos( $_REQUEST[ 'page' ], 'slimview' ) !== false ) {
-
-			// If this list is not empty, we rearrange the order of our reports
-			if ( !empty( self::$user_reports[ $_REQUEST[ 'page' ] ] ) ) {
-				$user_reports_intersect = array_flip( explode( ',', self::$user_reports[ $_REQUEST[ 'page' ] ] ) );
-				self::$reports_info = array_intersect_key( array_merge( $user_reports_intersect, self::$reports_info ), $user_reports_intersect );
-			}
-			else {
-				foreach ( self::$reports_info as $a_report_id => $a_report_info ) {
-					if ( !in_array( $_REQUEST[ 'page' ], $a_report_info[ 'screens' ] ) ) {
-						unset( self::$reports_info[ $a_report_id ] );
-					}
-				}
-			}
-
-			// Remove deprecated reports
-			self::$reports_info = array_diff_key( self::$reports_info, $deprecated_reports );
-
-			$hidden_reports = get_user_option( "metaboxhidden_{$page_location}_page_{$_REQUEST['page']}", $current_user->ID );
-
-			// If this list is not empty, use it instead of the predefined visibility
-			if ( is_array( $hidden_reports ) ) {
-				foreach ( self::$reports_info as $a_report_id => $a_report_info ) {
-					if ( in_array( $a_report_id, $hidden_reports ) ) {
-						if ( is_array( self::$reports_info[ $a_report_id ][ 'classes' ] ) && !in_array( 'hidden', $a_report_info[ 'classes' ] ) ) {
-							self::$reports_info[ $a_report_id ][ 'classes' ][] = 'hidden';
-						}
-					}
-					else if ( is_array( self::$reports_info[ $a_report_id ][ 'classes' ] ) ) {
-						self::$reports_info[ $a_report_id ][ 'classes' ] = array_diff( self::$reports_info[ $a_report_id ][ 'classes' ], array( 'hidden' ) );
-					}
-				}
-			}
-		}
-		// If we are on the WP Dashboard page, all the reports are 'visible': WP will take care of honoring the Screen Options settings for that page
-		else if ( !empty( $_REQUEST['page'] ) && strpos( $_REQUEST['page'], 'slimlayout' ) === false  ) {
-			foreach ( self::$reports_info as $a_report_id => $a_report_info ) {
-				if ( is_array( self::$reports_info[ $a_report_id ][ 'classes' ] ) ) {
-					self::$reports_info[ $a_report_id ][ 'classes' ] = array_diff( self::$reports_info[ $a_report_id ][ 'classes' ], array( 'hidden' ) );
-				}
-			}
-		}
 	}
 	// end init
 
 	public static function report_header( $_report_id = '' ) {
-		if ( empty( self::$reports_info[ $_report_id ] ) ) {
+		if ( empty( self::$reports[ $_report_id ] ) ) {
 			return false;
 		}
 
-		$header_classes =  !empty( self::$reports_info[ $_report_id ][ 'classes' ] ) ? implode( ' ', self::$reports_info[ $_report_id ][ 'classes' ] ) : '';
+		$header_classes =  !empty( self::$reports[ $_report_id ][ 'classes' ] ) ? implode( ' ', self::$reports[ $_report_id ][ 'classes' ] ) : '';
 		$header_buttons = '';
 		$header_tooltip = '';
 
@@ -926,10 +934,10 @@ class wp_slimstat_reports {
 			// Allow third-party code to add more buttons 
 			$header_buttons = apply_filters( 'slimstat_report_header_buttons', $header_buttons, $_report_id );
 			$header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
-			$header_tooltip = !empty( self::$reports_info[ $_report_id ][ 'tooltip' ] ) ? '<i class="slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">' . self::$reports_info[ $_report_id ][ 'tooltip' ] . '</span></i>' : '';
+			$header_tooltip = !empty( self::$reports[ $_report_id ][ 'tooltip' ] ) ? '<i class="slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">' . self::$reports[ $_report_id ][ 'tooltip' ] . '</span></i>' : '';
 		}
 
-		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} <h3 data-report-id='{$_report_id}'>" . self::$reports_info[ $_report_id ][ 'title' ] . " {$header_tooltip}</h3><div class='inside'>";
+		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} <h3 data-report-id='{$_report_id}'>" . self::$reports[ $_report_id ][ 'title' ] . " {$header_tooltip}</h3><div class='inside'>";
 	}
 
 	public static function report_footer(){
@@ -1731,17 +1739,7 @@ class wp_slimstat_reports {
 		}
 
 		$request_uri = admin_url( 'admin.php' );
-		
-		$request_page = 'slimview1';
-		if ( !empty( $_REQUEST[ 'page' ] ) ) {
-			if ( !array_key_exists( $_REQUEST[ 'page' ], wp_slimstat_admin::$screens_info ) ) {
-				return '';
-			}
-
-			$request_page = $_REQUEST[ 'page' ];
-		}
-
-		$request_uri .= '?page=' . $request_page;
+		$request_uri .= '?page=' . wp_slimstat_admin::$current_screen;
 
 		// Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
 		if ( !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
@@ -1886,12 +1884,7 @@ class wp_slimstat_reports {
 			$report_id = $_args[ 'id' ];
 		}
 
-		// Honor the 'hidden' attribute, but not on the WP Dashboard ( empty( $_args[ 'id' ] ) )
-		// if ( empty( $report_id ) || in_array( 'hidden', self::$reports_info[ $report_id ][ 'classes' ] ) ) {
-		// 	return array();
-		// }
-
-		if ( !empty( self::$reports_info[ $report_id ] ) && is_array( self::$reports_info[ $report_id ] ) ) {
+		if ( !empty( self::$reports[ $report_id ] ) && is_array( self::$reports[ $report_id ] ) ) {
 			// Default values
 			$_args = array_merge( array(
 				'title' => '',
@@ -1900,7 +1893,7 @@ class wp_slimstat_reports {
 				'classes' => array(),
 				'screens' => array(),
 				'tooltip' => ''
-			), self::$reports_info[ $report_id ] );
+			), self::$reports[ $report_id ] );
 		}
 
 		// Default callback args

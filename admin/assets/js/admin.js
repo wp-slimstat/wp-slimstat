@@ -245,7 +245,8 @@ jQuery( function() {
 	//
 
 	// Clone and delete report placeholders
-	jQuery( '.slimstat-layout .slimstat-header-buttons a' ).on( 'click', function() {
+	jQuery( '.slimstat-layout .slimstat-header-buttons a' ).on( 'click', function( e ) {
+		e.preventDefault();
 		if ( jQuery( this ).hasClass( 'slimstat-font-docs' ) ) {
 			jQuery( this ).removeClass( 'slimstat-font-docs' ).addClass( 'slimstat-font-trash' ).parents( '.postbox' ).clone( true ).appendTo( jQuery( this ).parents( '.meta-box-sortables' ) );
 			jQuery( this ).removeClass( 'slimstat-font-trash' ).addClass( 'slimstat-font-docs' );
@@ -261,7 +262,7 @@ jQuery( function() {
 		var data = { 
 			action: 'meta-box-order',
 			_ajax_nonce: jQuery( '#meta-box-order-nonce' ).val(),
-			page: 'slimstat_page_slimlayout',
+			page: SlimStatAdminParams.page_location + '_page_slimlayout',
 			page_columns: 0
 		};
 		
