@@ -1,5 +1,6 @@
 ## Changelog ##
 ### 4.8.4.2 ###
+* [New] New option to not track pageviews based on the ACCEPT-LANGUAGE header sent by the browser.
 * [Fix] The HTML markup in the opt-out message field was being stripped out (thank you, [paulmcmanus](https://wordpress.org/support/topic/saving-settings-flips-opt-out-message-to-plain-text/)).
 * [Fix] A fatal error thrown by the Maxmind library when the data file is corrupted has been addressed.
 

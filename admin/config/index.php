@@ -473,7 +473,12 @@ var SlimStatParams = {
 			'ignore_countries' => array(
 				'title' => __( 'Countries', 'wp-slimstat' ),
 				'type'=> 'textarea',
-				'description'=> __( 'Enter a list of lowercase <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2" target="_blank">ISO 3166-1 country codes</a> (i.e.: <code>en-us, it, es</code>) that should not be tracked. Please note: this field does not allow wildcards.', 'wp-slimstat' )
+				'description'=> __( 'Enter a list of lowercase <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2" target="_blank">ISO 3166-1 country codes</a> (i.e.: <code>us, it, es</code>) that should not be tracked. Please note: this field does not allow wildcards.', 'wp-slimstat' )
+			),
+			'ignore_languages' => array(
+				'title' => __( 'Languages', 'wp-slimstat' ),
+				'type'=> 'textarea',
+				'description'=> __( 'Enter a list of lowercase <a href="http://www.lingoes.net/en/translator/langcode.htm" target="_blank">ISO 639-1 language codes</a> (i.e.: <code>en-us, fr-ca, zh-cn</code>) that should not be tracked. Please note: this field does not allow wildcards.', 'wp-slimstat' )
 			),
 			'ignore_browsers' => array(
 				'title' => __( 'User Agents', 'wp-slimstat' ),
