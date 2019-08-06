@@ -1,4 +1,7 @@
 ## Changelog ##
+### 4.8.5.1 ###
+* [Fix] Some icons in the Access Log were broken and not displayed as expected.
+
 ### 4.8.5 ###
 * [New] Introduced option to not track pageviews based on the ACCEPT-LANGUAGE header sent by the browser.
 * [New] Introduced option to display a pageview count instead of the percentage in Top reports.
