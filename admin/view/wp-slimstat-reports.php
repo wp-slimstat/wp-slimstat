@@ -970,7 +970,9 @@ class wp_slimstat_reports {
 
 	public static function callback_wrapper() {
 		$_args = self::_check_args( func_get_args() );
-		call_user_func( $_args[ 'callback' ] , $_args[ 'callback_args' ] );
+		if ( !empty( $_args ) ) {
+			call_user_func( $_args[ 'callback' ] , $_args[ 'callback_args' ] );
+		}
 	}
 
 	public static function raw_results_to_html( $_args = array() ) {
@@ -1880,19 +1882,21 @@ class wp_slimstat_reports {
 		}
 
 		// Default callback args
-		$_args[ 'callback_args' ] = array_merge( array(
-			'type' => '',
-			'columns' => '',
-			'where' => '',
-			'having' => '',
-			'as_column' => '',
-			'filter_op' => 'equals',
-			'outer_select_column' => '',
-			'aggr_function' => 'MAX',
-			'use_date_filters' => true,
-			'results_per_page' => wp_slimstat::$settings[ 'rows_to_show' ],
-			'criteria' => ''
-		), $_args[ 'callback_args' ] );
+		if ( !empty( $_args[ 'callback_args' ] ) ) {
+			$_args[ 'callback_args' ] = array_merge( array(
+				'type' => '',
+				'columns' => '',
+				'where' => '',
+				'having' => '',
+				'as_column' => '',
+				'filter_op' => 'equals',
+				'outer_select_column' => '',
+				'aggr_function' => 'MAX',
+				'use_date_filters' => true,
+				'results_per_page' => wp_slimstat::$settings[ 'rows_to_show' ],
+				'criteria' => ''
+			), $_args[ 'callback_args' ] );
+		}
 
 		return $_args;
 	}
