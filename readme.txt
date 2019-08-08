@@ -63,6 +63,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 = 4.8.5.1 =
 * [Fix] Some icons in the Access Log were broken and not displayed as expected.
 * [Fix] Added extra code to make sure a callback function is defined for any given report.
+* [Fix] Top reports where displaying an incorrect percentage value on the WordPress dashboard (thank you, [scruffy1 and a305587](https://wordpress.org/support/topic/dashboard-widgets-showing-0)).
 
 = 4.8.5 =
 * [New] Introduced option to not track pageviews based on the ACCEPT-LANGUAGE header sent by the browser.
@@ -73,7 +74,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] The HTML markup in the opt-out message field was being stripped out (thank you, [paulmcmanus](https://wordpress.org/support/topic/saving-settings-flips-opt-out-message-to-plain-text/)).
 * [Fix] Reports could not be properly deleted in the Customizer, if the Slimstat menu was displayed in the Admin Bar.
 * [Fix] A fatal error thrown by the Maxmind library when the data file is corrupted has been addressed.
-* [Fix] The icon filename for Windows 8.1 was incorrect (thank you, Dimitri)
+* [Fix] The icon filename for Windows 8.1 was incorrect (thank you, Dimitri).
 
 = 4.8.4.1 =
 * [Note] As anticipated a few weeks ago, this update drops the information about your visitors' browser plugins, which had been deprecated as not useful and oftentimes unreliable. Please make sure to backup your Slimstat tables if you need to preserve this information for some reason.
