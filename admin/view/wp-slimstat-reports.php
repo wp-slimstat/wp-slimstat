@@ -891,9 +891,11 @@ class wp_slimstat_reports {
 		}
 
 		// We store page titles in a transient for improved performance
-		self::$resource_titles = get_transient( 'slimstat_resource_titles' );
-		if ( self::$resource_titles === false ) {
-			self::$resource_titles = array();
+		if ( empty( $_REQUEST[ 'page' ] ) || !in_array( $_REQUEST[ 'page' ], array( 'slimlayout', 'slimadddons' ) ) ) {
+			self::$resource_titles = get_transient( 'slimstat_resource_titles' );
+			if ( self::$resource_titles === false ) {
+				self::$resource_titles = array();
+			}
 		}
 	}
 	// end init
