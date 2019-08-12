@@ -134,7 +134,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		$browser_title = ( wp_slimstat::$settings[ 'show_complete_user_agent_tooltip' ] != 'on' ) ? "{$results[ $i ][ 'browser' ]} {$results[ $i ][ 'browser_version' ]}" : $results[ $i ][ 'user_agent' ];
 		$browser_filter = 'default-browser';
 		if ( !empty( $results[ $i ][ 'browser' ] ) && in_array( $results[ $i ][ 'browser' ], $supported_browser_icons ) ) {
-			$browser_filter = esc_attr( $results[ $i ][ 'browser' ] );
+			$browser_filter = sanitize_title( $results[ $i ][ 'browser' ] );
 		}
 		$browser_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'browser equals ' . $results[ $i ][ 'browser' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/browsers/{$browser_filter}.png' width='16' height='16' title='{$browser_title}'></a>";
 
