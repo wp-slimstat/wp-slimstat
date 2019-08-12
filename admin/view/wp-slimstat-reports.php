@@ -852,12 +852,18 @@ class wp_slimstat_reports {
 		// Retrieve this user's custom report assignment (Customizer)
 		$current_user = wp_get_current_user();
 
+		// Page Location
+		$page_location = 'slimstat';
+		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'no' ) {
+			$page_location = 'admin';
+		}
+
 		// Superadmins can customize the layout at network level, to override per-site settings
-		self::$user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout-network', 1 );
+		self::$user_reports = get_user_option( 'meta-box-order_' . $page_location . '_page_slimlayout-network', 1 );
 
 		// No network-wide settings found
 		if ( empty( self::$user_reports ) ) {
-			self::$user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout', $current_user->ID );
+			self::$user_reports = get_user_option( 'meta-box-order_' . $page_location . '_page_slimlayout', $current_user->ID );
 		}
 
 		// Do we have any new reports not listed in this user's settings?
