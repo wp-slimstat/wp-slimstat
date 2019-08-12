@@ -8,7 +8,7 @@ $is_dashboard = empty( $_REQUEST[ 'page' ] ) || $_REQUEST[ 'page' ] != 'slimview
 
 // Available icons
 $supported_browser_icons = array( 'Android', 'Anonymouse', 'Baiduspider', 'BlackBerry', 'BingBot', 'CFNetwork', 'Chrome', 'Chromium', 'Default Browser', 'Edge', 'Exabot/BiggerBetter', 'FacebookExternalHit', 'FeedBurner', 'Feedfetcher-Google', 'Firefox', 'Internet Archive', 'Googlebot', 'Google Bot', 'Google Feedfetcher', 'Google Web Preview', 'IE', 'IEMobile', 'iPad', 'iPhone', 'iPod Touch', 'Maxthon', 'Mediapartners-Google', 'Microsoft-WebDAV', 'msnbot', 'Mozilla', 'NewsGatorOnline', 'Netscape', 'Nokia', 'Opera', 'Opera Mini', 'Opera Mobi', 'Pingdom', 'Python', 'PycURL', 'Safari', 'W3C_Validator', 'WordPress', 'Yahoo! Slurp', 'YandexBot' );
-$supported_os_icons = array( 'android',' blackberry os', 'cellos', 'chromeos', 'ios', 'iphone osx', 'java', 'linux', 'macos', 'macosx', 'rim os', 'symbianos', 'win7', 'win8', 'win8.1', 'win10', 'winphone7', 'winphone7.5', 'winphone8', 'winphone8.1', 'winvista', 'winxp' );
+$supported_os_icons = array( 'android',' blackberry os', 'cellos', 'chromeos', 'ios', 'iphone osx', 'java', 'linux', 'macos', 'macosx', 'rim os', 'symbianos', 'ubuntu', 'win7', 'win8', 'win8.1', 'win10', 'winphone7', 'winphone7.5', 'winphone8', 'winphone8.1', 'winvista', 'winxp' );
 $supported_browser_types = array( __( 'Human', 'wp-slimstat' ), __( 'Bot/Crawler', 'wp-slimstat' ), __( 'Mobile Device', 'wp-slimstat' ), __( 'Syndication Reader', 'wp-slimstat' ) );
 
 $plugin_url = plugins_url( '', dirname( __FILE__ ) );
@@ -132,19 +132,18 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 			$results[ $i ][ 'browser_version' ] = '';
 		}
 		$browser_title = ( wp_slimstat::$settings[ 'show_complete_user_agent_tooltip' ] != 'on' ) ? "{$results[ $i ][ 'browser' ]} {$results[ $i ][ 'browser_version' ]}" : $results[ $i ][ 'user_agent' ];
-		$browser_icon = $plugin_url . '/assets/images/browsers/other-browsers-and-os.png';
-		if ( in_array( $results[ $i ][ 'browser' ], $supported_browser_icons ) ) {
-			$browser_icon = $plugin_url . '/assets/images/browsers/' . sanitize_title( $results[ $i ][ 'browser' ] ) . '.png';
+		$browser_filter = 'default-browser';
+		if ( !empty( $results[ $i ][ 'browser' ] ) && in_array( $results[ $i ][ 'browser' ], $supported_browser_icons ) ) {
+			$browser_filter = esc_attr( $results[ $i ][ 'browser' ] );
 		}
-		$browser_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'browser equals ' . $results[ $i ][ 'browser' ] ) . "'><img class='slimstat-tooltip-trigger' src='$browser_icon' width='16' height='16' title='{$browser_title}'></a>";
+		$browser_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'browser equals ' . $results[ $i ][ 'browser' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/browsers/{$browser_filter}.png' width='16' height='16' title='{$browser_title}'></a>";
 
 		// Operating System
-		if ( !empty( $results[ $i ][ 'platform' ] ) && $results[ $i ][ 'platform' ] != 'unknown' ) {
-			$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform equals ' . $results[ $i ][ 'platform' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/platforms/{$results[ $i ][ 'platform' ]}.png' width='16' height='16' title='" . slim_i18n::get_string( $results[ $i ][ 'platform' ] ) . "'></a>";
+		$platform_filter = 'unknown';
+		if ( !empty( $results[ $i ][ 'platform' ] ) && in_array( $results[ $i ][ 'platform' ], $supported_os_icons ) ) {
+			$platform_filter = esc_attr( $results[ $i ][ 'platform' ] );
 		}
-		else {
-			$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform is_empty #' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/browsers/other-browsers-and-os.png' width='16' height='16' title='" . slim_i18n::get_string( 'unknown' ) . "'></a>";
-		}
+		$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform equals ' . $results[ $i ][ 'platform' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/platforms/{$platform_filter}.png' width='16' height='16' title='" . slim_i18n::get_string( $results[ $i ][ 'platform' ] ) . "'></a>";
 
 		// Language
 		$language_filter = '';
