@@ -1,5 +1,6 @@
 ## Changelog ##
 ### 4.8.5.1 ###
+* [Fix] A bug was affecting the way shortcodes were being displayed on the website (thank you, [inndesign](https://wordpress.org/support/topic/crashes-avada-theme-in-chrome/)).
 * [Fix] Some icons in the Access Log were broken and not displayed as expected.
 * [Fix] Added extra code to make sure a callback function is defined for any given report.
 * [Fix] Top reports where displaying an incorrect percentage value on the WordPress dashboard (thank you, [scruffy1 and a305587](https://wordpress.org/support/topic/dashboard-widgets-showing-0)).

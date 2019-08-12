@@ -13,12 +13,13 @@ class wp_slimstat_admin {
 		'sql' => array(),
 		'count' => array()
 	);
-	
+
 	/**
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. We are already wearing our lab coats and are hard at work to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This library, among other things, will allow our tracker to record your users' timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
+		self::$admin_notice = "Recently, we asked our users to help us decide if we should replace line charts with bar charts, and... the people of Slimstat have spoken! Based on the feedback we received, users were more or less evenly split between the two options, so we've decided that we'll provide both options. Yes, you read that right. We are going to add a new set of reports using the bar chart view, and then let admins choose which ones to display via the Customizer. It will even be possible to mix and match charts, if that's what you prefer. In order to prepare for this new feature, we rewrote the code that manages which reports are displayed on which screen (via the Customizer), streamlined data structures and optimized their use. Please update all the add-ons to the latest version available. Don't hesitate to contact us if you have any questions!";
+		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. We are already wearing our lab coats and are hard at work to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This library, among other things, will allow our tracker to record your users' timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
@@ -547,12 +548,10 @@ class wp_slimstat_admin {
 		$new_entry = array();
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' || is_network_admin() ) {
 			$parent = 'slimview1';
-			$page_location = 'slimstat';
 			$new_entry[] = add_menu_page( __( 'Slimstat',  'wp-slimstat' ), __( 'Slimstat',  'wp-slimstat' ), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
 		}
 		else {
 			$parent = 'admin.php';
-			$page_location = 'admin';
 		}
 
 		$current_user = wp_get_current_user();
@@ -605,9 +604,6 @@ class wp_slimstat_admin {
 		if ( empty( wp_slimstat::$settings[ 'can_view' ]) || strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login ) !== false || current_user_can( 'manage_options' ) ) {
 			$slimstat_view_url = get_admin_url( $GLOBALS[ 'blog_id' ], "admin.php?page=" );
 
-			$page_location = ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) ? 'slimstat' : 'admin';
-			$user_reports = get_user_option( "meta-box-order_{$page_location}_page_slimlayout", $GLOBALS[ 'current_user' ]->ID );
-
 			$frontend_filter = '';
 			if ( !is_admin() ) {
 				$frontend_filter = '&amp;fs%5Bresource%5D=contains+' . urlencode( wp_slimstat::get_request_uri() ); 
@@ -620,7 +616,7 @@ class wp_slimstat_admin {
 			) );
 
 			foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
-				if ( $a_screen_info[ 'show_in_sidebar' ] && ( !is_array( $user_reports ) || !empty( $user_reports[ $a_screen_id ] ) || !$a_screen_info[ 'is_report_group' ] ) ) {
+				if ( $a_screen_info[ 'show_in_sidebar' ] ) {
 					$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
 						'id' => $a_screen_id,
 						'href' => "{$slimstat_view_url}$a_screen_id" . ( ( $a_screen_info[ 'callback' ] == array( __CLASS__, 'wp_slimstat_include_view' ) ) ? $frontend_filter : '' ),
