@@ -177,7 +177,7 @@ class wp_slimstat_db {
 		self::$filters_normalized = self::init_filters( $filters_raw );
 
 		// Retrieve data that will be used by multiple reports
-		if ( !empty( $_REQUEST[ 'page' ] ) && !in_array( $_REQUEST[ 'page' ], array( 'slimlayout', 'slimadddons' ) ) ) {
+		if ( empty( $_REQUEST[ 'page' ] ) || !in_array( $_REQUEST[ 'page' ], array( 'slimlayout', 'slimadddons' ) ) ) {
 			self::$pageviews = wp_slimstat_db::count_records();
 		}
 	}
