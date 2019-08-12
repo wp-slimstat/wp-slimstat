@@ -1269,7 +1269,7 @@ class wp_slimstat_reports {
 				];
 
 				// Create series
-				var series1 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
+				var series1 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.ColumnSeries());
 				series1.name = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ); ?>";
 				series1.dataFields.valueY = "v1";
 				series1.dataFields.categoryX = "v1_label";
@@ -1277,7 +1277,7 @@ class wp_slimstat_reports {
 				series1.tooltipText = "{name} {v1_label}: [bold]{valueY}[/]";
 				series1.tensionX = 0.9;
 
-				var series2 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
+				var series2 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.ColumnSeries());
 				series2.name = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ], ENT_QUOTES, 'UTF-8' ); ?>";
 				series2.dataFields.valueY = "v2";
 				series2.dataFields.categoryX = "v1_label";
@@ -1286,7 +1286,7 @@ class wp_slimstat_reports {
 				series2.tensionX = 0.9;
 
 <?php if ( wp_slimstat::$settings[ 'comparison_chart' ] == 'on' ): ?>
-				var series3 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
+				var series3 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.ColumnSeries());
 				series3.name = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ) . ' ' . __( '(previous)', 'wp-slimstat' ); ?>";
 				series3.dataFields.valueY = "v3";
 				series3.dataFields.categoryX = "v1_label";
@@ -1294,7 +1294,7 @@ class wp_slimstat_reports {
 				series3.tooltipText = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 0 ], ENT_QUOTES, 'UTF-8' ); ?> {v3_label}: [bold]{valueY}[/]";
 				series3.tensionX = 0.9;
 
-				var series4 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.LineSeries());
+				var series4 = chart_<?php echo $_args[ 'id' ]; ?>.series.push(new am4charts.ColumnSeries());
 				series4.name = "<?php echo htmlspecialchars( $_args[ 'chart_labels' ][ 1 ], ENT_QUOTES, 'UTF-8' ) . ' ' . __( '(previous)', 'wp-slimstat' ); ?>";
 				series4.dataFields.valueY = "v4";
 				series4.dataFields.categoryX = "v1_label";
