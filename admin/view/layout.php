@@ -20,12 +20,11 @@
 <h2><?php _e( 'Customize and organize your reports','wp-slimstat' ) ?></h2>
 <p><?php 
 	_e( 'You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat' );
-	echo ' ';
 	if ( is_network_admin() ) {
+		echo ' ';
 		_e( 'By using the network-wide customizer, all your users will see the same layout you define, and they will not be able to customize it further.', 'wp-slimstat' );
 		echo ' ';
 	}
-	_e( '<strong>Please note</strong>: if a placeholder is greyed out, it means that the corresponding report is currently hidden inside the Screen Options tab.', 'wp-slimstat');
 ?></p>
 
 <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form>
