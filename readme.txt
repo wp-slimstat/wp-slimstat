@@ -6,10 +6,9 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 5.2
-Stable tag: 4.8.5
+Stable tag: 4.8.5.1
 
 == Description ==
-[youtube https://www.youtube.com/watch?v=zEKP9yC8x6g]
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 = Main features =
@@ -63,6 +62,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 == Changelog ==
 = 4.8.5.1 =
 * [Fix] Some icons in the Access Log were broken and not displayed as expected.
+* [Fix] Added extra code to make sure a callback function is defined for any given report.
 
 = 4.8.5 =
 * [New] Introduced option to not track pageviews based on the ACCEPT-LANGUAGE header sent by the browser.
