@@ -115,9 +115,6 @@ class wp_slimstat {
 		// If add-ons are installed, check for updates
 		add_action( 'wp_loaded', array( __CLASS__, 'update_checker' ) );
 
-		// Update the options before shutting down
-		add_action( 'shutdown', array( __CLASS__, 'slimstat_save_options' ), 100 );
-
 		// REST API Support
 		add_action( 'rest_api_init', array( __CLASS__, 'register_rest_route' ) );
 
@@ -137,7 +134,7 @@ class wp_slimstat {
 		if ( self::$settings[ 'is_tracking' ] != 'on' ) {
 			self::$stat[ 'id' ] = -204;
 			self::_set_error_array( __( 'Tracking is turned off, but it looks like the client-side code is still attached to your pages. Do you have a caching tool enabled?', 'wp-slimstat' ) );
-			self::slimstat_save_options();
+			self::save_options();
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 		}
 
@@ -231,7 +228,7 @@ class wp_slimstat {
 		if ( self::$stat[ 'id' ] <= 0 ) {
 			$abs_error_code = abs( self::$stat[ 'id' ] );
 			do_action( 'slimstat_track_exit_' . $abs_error_code, self::$stat );
-			self::slimstat_save_options();
+			self::save_options();
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 		}
 
@@ -1066,7 +1063,7 @@ class wp_slimstat {
 			do_action( 'slimstat_track_exit_102' );
 			self::$stat[ 'id' ] = -100;
 			self::_set_error_array( __( 'Invalid payload string. Try clearing your WordPress cache.', 'wp-slimstat' ) );
-			self::slimstat_save_options();
+			self::save_options();
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 		}
 
@@ -1077,7 +1074,7 @@ class wp_slimstat {
 			do_action( 'slimstat_track_exit_103' );
 			self::$stat[ 'id' ] = -101;
 			self::_set_error_array( __( 'Invalid data signature. Try clearing your WordPress cache.', 'wp-slimstat' ) );
-			self::slimstat_save_options();
+			self::save_options();
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 		}
 
@@ -1085,7 +1082,7 @@ class wp_slimstat {
 		if ( $intval_id < 0 ) {
 			do_action( 'slimstat_track_exit_' . abs( $intval_id ) );
 			self::$stat[ 'id' ] = $intval_id;
-			self::slimstat_save_options();
+			self::save_options();
 			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
 		}
 	}
@@ -1728,7 +1725,7 @@ class wp_slimstat {
 	/**
 	 * Saves the options in the database, if necessary
 	 */
-	public static function slimstat_save_options() {
+	public static function save_options() {
 		// Allow third-party functions to manipulate the options right before they are saved
 		self::$settings = apply_filters( 'slimstat_save_options', self::$settings );
 

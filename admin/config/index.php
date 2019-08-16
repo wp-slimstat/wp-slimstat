@@ -670,11 +670,11 @@ $settings = apply_filters( 'slimstat_options_on_page', $settings );
 $tabs_html = '';
 foreach ( $settings as $a_tab_id => $a_tab_info ) {
 	if ( !empty( $a_tab_info[ 'rows' ] ) || !empty( $a_tab_info[ 'include' ] ) ) {
-		$tabs_html .= "<li class='nav-tab nav-tab".(($current_tab == $a_tab_id)?'-active':'-inactive')."'><a href='".wp_slimstat_admin::$config_url.$a_tab_id."'>{$a_tab_info[ 'title' ]}</a></li>";
+		$tabs_html .= "<li class='nav-tab nav-tab" . ( ( $current_tab == $a_tab_id ) ? '-active' : '-inactive' ) . "'><a href='" . wp_slimstat_admin::$config_url . $a_tab_id . "'>{$a_tab_info[ 'title' ]}</a></li>";
 	}
 }
 
-echo '<div class="wrap slimstat-config"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">'.$tabs_html.'</ul>';
+echo '<div class="wrap slimstat-config"><h2>'.__('Settings','wp-slimstat').'</h2><ul class="nav-tabs">' . $tabs_html . '</ul>';
 echo '<div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px">' . __( '<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat' ) . '</div>';
 
 // The maintenance tab has its own separate file

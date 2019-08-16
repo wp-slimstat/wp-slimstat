@@ -62,6 +62,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 == Changelog ==
 = 4.8.5.2 =
 * [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
+* [Update] Simplified code that manages the sidebar menu.
 
 = 4.8.5.1 =
 * [Fix] A bug was affecting the way shortcodes were being displayed on the website (thank you, [inndesign](https://wordpress.org/support/topic/crashes-avada-theme-in-chrome/)).
