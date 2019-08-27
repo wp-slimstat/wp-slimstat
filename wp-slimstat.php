@@ -763,374 +763,18 @@ class wp_slimstat {
 
 		return 0;
 	}
+	// end update_row
 
 	/**
-	 * Tries to find the user's REAL IP address
+	 * Update content type as needed
 	 */
-	protected static function _get_remote_ip(){
-		$ip_array = array( '', '' );
-
-		if ( !empty( $_SERVER[ 'REMOTE_ADDR' ] ) && filter_var( $_SERVER[ 'REMOTE_ADDR' ], FILTER_VALIDATE_IP ) !== false ) {
-			$ip_array[ 0 ] = $_SERVER[ 'REMOTE_ADDR' ];
-		}
-
-		$originating_ip_headers = array( 'X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
-		foreach ( $originating_ip_headers as $a_header ) {
-			if ( !empty( $_SERVER[ $a_header ] ) ) {
-				foreach ( explode( ',', $_SERVER[ $a_header ] ) as $a_ip ) {
-					if ( filter_var( $a_ip, FILTER_VALIDATE_IP ) !== false && $a_ip != $ip_array[ 0 ] ) {
-						$ip_array[ 1 ] = $a_ip;
-						break;
-					}
-				}
-			}
-		}
-
-		return apply_filters( 'slimstat_filter_ip_address', $ip_array );
-	}
-	// end _get_remote_ip
-
-	/**
-	 * Extracts the accepted language from browser headers
-	 */
-	protected static function _get_language() {
-		if ( isset( $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ] ) ) {
-
-			// Capture up to the first delimiter (, found in Safari)
-			preg_match( "/([^,;]*)/", $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ], $array_languages );
-
-			// Fix some codes, the correct syntax is with minus (-) not underscore (_)
-			return str_replace( '_', '-', strtolower( $array_languages[ 0 ] ) );
-		}
-		return '';  // Indeterminable language
-	}
-	// end _get_language
-
-	/**
-	 * Sniffs out referrals from search engines and tries to determine the query string
-	 */
-	protected static function _get_search_terms( $_url = array() ) {
-		if ( empty( $_url ) || !isset( $_url[ 'host' ] ) ) {
-			return '';
-		}
-
-		// Engines with different character encodings should always be listed here, regardless of their query string format
-		$query_formats = array(
-			'baidu.com' => 'wd',
-			'bing' => 'q',
-			'dogpile.com' => 'q',
-			'duckduckgo' => 'q',
-			'eniro' => 'search_word',
-			'exalead.com' => 'q',
-			'excite' => 'q',
-			'gigablast' => 'q',
-			'google' => 'q',
-			'hotbot' => 'q',
-			'maktoob' => 'p',
-			'mamma' => 'q',
-			'naver' => 'query',
-			'qwant' => 'q',
-			'rambler' => 'query',
-			'seznam' => 'oq',
-			'soso.com' => 'query',
-			'virgilio' => 'qs',
-			'voila' => 'rdata',
-			'yahoo' => 'p',
-			'yam' => 'k',
-			'yandex' => 'text',
-			'yell' => 'keywords',
-			'yippy' => 'query',
-			'youdao' => 'q'
-		);
-
-		$charsets = array( 'baidu' => 'EUC-CN' );
-		$regex_match = implode( '|', array_keys( $query_formats ) );
-		$searchterms = '';
-
-		if ( !empty( $_url[ 'query' ] ) ) {
-			parse_str( $_url[ 'query' ], $query );
-		}
-
-		if ( !empty( $_url[ 'host' ] ) ) {
-			preg_match( "~($regex_match).~i", $_url[ 'host' ], $matches );
-		}
-
-		if ( !empty( $matches[ 1 ] ) ) {
-			// Let's remember that this is a search engine, regardless of the URL containing searchterms (thank you, NSA)
-			$searchterms = '_';
-			if ( !empty( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) {
-				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) );
-				// Test for encodings different from UTF-8
-				if ( function_exists( 'mb_check_encoding' ) && !mb_check_encoding( $query[ $query_formats[ $matches[ 1 ] ] ], 'UTF-8' ) && !empty( $charsets[ $matches[ 1 ] ] ) ) {
-					$searchterms = mb_convert_encoding( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ), 'UTF-8', $charsets[ $matches[ 1 ] ] );
-				}
-			}
-		}
-		else {
-			// We weren't lucky, but there's still hope
-			foreach( array( 'q','s','k','qt' ) as $a_format ) {
-				if ( !empty( $query[ $a_format ] ) ) {
-					$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $a_format ] ) ) );
-					break;
-				}
-			}
-		}
-
-		return $searchterms;
-	}
-	// end _get_search_terms
-
-	/**
-	 * Returns details about the resource being accessed
-	 */
-	protected static function _get_content_info(){
-		$content_info = array( 'content_type' => '' );
-
-		// Mark 404 pages
-		if ( is_404() ) {
-			$content_info[ 'content_type' ] = '404';
-		}
-
-		// Type
-		else if ( is_single() ) {
-			if ( ( $post_type = get_post_type() ) != 'post' ) {
-				$post_type = 'cpt:' . $post_type;
-			}
-
-			$content_info[ 'content_type' ] = $post_type;
-			$content_info_array = array();
-			foreach ( get_object_taxonomies( $GLOBALS[ 'post' ] ) as $a_taxonomy ) {
-				$terms = get_the_terms( $GLOBALS[ 'post' ]->ID, $a_taxonomy );
-				if ( is_array( $terms ) ) {
-					foreach ( $terms as $a_term ) {
-						$content_info_array[] = $a_term->term_id;
-					}
-					$content_info[ 'category' ] = implode( ',', $content_info_array );
-				}
-			}
-			$content_info[ 'content_id' ] = $GLOBALS[ 'post' ]->ID;
-		}
-		else if ( is_page() ) {
-			$content_info[ 'content_type' ] = 'page';
-			$content_info[ 'content_id' ] = $GLOBALS[ 'post' ]->ID;
-		}
-		elseif ( is_attachment() ) {
-			$content_info[ 'content_type' ] = 'attachment';
-		}
-		elseif ( is_singular() ) {
-			$content_info[ 'content_type' ] = 'singular';
-		}
-		elseif ( is_post_type_archive() ) {
-			$content_info[ 'content_type' ] = 'post_type_archive';
-		}
-		elseif ( is_tag() ) {
-			$content_info[ 'content_type' ] = 'tag';
-			$list_tags = get_the_tags();
-			if ( is_array( $list_tags ) ) {
-				$tag_info = array_pop( $list_tags );
-				if ( !empty( $tag_info ) ) {
-					$content_info[ 'category' ] = $tag_info->term_id;
-				}
-			}
-		}
-		elseif ( is_tax() ) {
-			$content_info[ 'content_type' ] = 'taxonomy';
-		}
-		elseif ( is_category() ) {
-			$content_info[ 'content_type' ] = 'category';
-			$list_categories = get_the_category();
-			if ( is_array( $list_categories ) ) {
-				$cat_info = array_pop( $list_categories );
-				if ( !empty( $cat_info ) ) {
-					$content_info[ 'category' ] = $cat_info->term_id;
-				}
-			}
-		}
-		else if ( is_date() ) {
-			$content_info[ 'content_type' ]= 'date';
-		}
-		else if ( is_author() ) {
-			$content_info[ 'content_type' ] = 'author';
-		}
-		else if ( is_archive() ) {
-			$content_info[ 'content_type' ] = 'archive';
-		}
-		else if ( is_search() ) {
-			$content_info[ 'content_type' ] = 'search';
-		}
-		else if ( is_feed() ) {
-			$content_info[ 'content_type' ] = 'feed';
-		}
-		else if ( is_home() || is_front_page() ) {
-			$content_info[ 'content_type' ] = 'home';
-		}
-		else if ( !empty( $GLOBALS[ 'pagenow' ] ) && $GLOBALS[ 'pagenow' ] == 'wp-login.php' ) {
-			$content_info[ 'content_type' ] = 'login';
-		}
-		else if ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-register.php' ) {
-			$content_info[ 'content_type' ] = 'registration';
-		}
-		// WordPress sets is_admin() to true for all ajax requests ( front-end or admin-side )
-		elseif ( is_admin() && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
-			$content_info[ 'content_type' ] = 'admin';
-		}
-
-		if (is_paged()){
-			$content_info[ 'content_type' ] .= ',paged';
-		}
-
-		// Author
-		if ( is_singular() ) {
-			$author = get_the_author_meta( 'user_login', $GLOBALS[ 'post' ]->post_author );
-			if ( !empty( $author ) ) {
-				$content_info[ 'author' ] = $author;
-			}
-		}
-
-		return $content_info;
-	}
-	// end _get_content_info
-
-	// Update content type as needed
 	public static function update_content_type( $_status = 301, $_location = '' ) {
 		if ( $_status >= 300 && $_status < 400 ) {
 			self::$stat[ 'content_type' ] = 'redirect:' . intval( $_status );
 			self::update_row( self::$stat, $GLOBALS[ 'wpdb' ]->prefix . 'slim_stats' );
 		}
 	}
-
-	/**
-	 * Reads the cookie to get the visit_id and sets the variable accordingly
-	 */
-	protected static function _set_visit_id($_force_assign = false){
-		$is_new_session = true;
-		$identifier = 0;
-
-		if ( isset( $_COOKIE[ 'slimstat_tracking_code' ] ) ) {
-			// Make sure only authorized information is recorded
-			$identifier = self::_separate_id_from_checksum( $_COOKIE[ 'slimstat_tracking_code' ] );
-			if ( $identifier === false ) {
-				return false;
-			}
-
-			$is_new_session = ( strpos( $identifier, 'id' ) !== false );
-			$identifier = intval( $identifier );
-		}
-
-		// User doesn't have an active session
-		if ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'on' ) ) {
-			if ( empty( self::$settings[ 'session_duration' ] ) ) {
-				self::$settings[ 'session_duration' ] = 1800;
-			}
-
-			self::$stat[ 'visit_id' ] = get_transient( 'slimstat_visit_id' );
-			if ( self::$stat[ 'visit_id' ] === false ) {
-				self::$stat[ 'visit_id' ] = intval( self::$wpdb->get_var( "SELECT MAX( visit_id ) FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" ) );
-			}
-			self::$stat[ 'visit_id' ]++;
-			set_transient( 'slimstat_visit_id', self::$stat[ 'visit_id' ] );
-
-			$set_cookie = apply_filters( 'slimstat_set_visit_cookie', ( !empty( self::$settings[ 'set_tracker_cookie' ] ) && self::$settings[ 'set_tracker_cookie' ] == 'on' ) );
-			if ( $set_cookie ) {
-				@setcookie(
-					'slimstat_tracking_code',
-					self::_get_id_with_checksum( self::$stat[ 'visit_id' ] ),
-					time() + self::$settings[ 'session_duration' ],
-					COOKIEPATH
-				);
-			}
-
-		}
-		elseif ( $identifier > 0 ) {
-			self::$stat[ 'visit_id' ] = $identifier;
-		}
-
-		if ( $is_new_session && $identifier > 0 ) {
-			self::$wpdb->query( self::$wpdb->prepare( "
-				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
-				SET visit_id = %d
-				WHERE id = %d AND visit_id = 0", self::$stat[ 'visit_id' ], $identifier
-			) );
-		}
-		return ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'on' ) );
-	}
-	// end _set_visit_id
-
-	/**
-	 * Makes sure that the data received from the client is well-formed (and that nobody is trying to do bad stuff)
-	 */
-	protected static function _check_data_integrity( $_data = '' ) {
-		// Parse the information we received
-		self::$data_js = apply_filters( 'slimstat_filter_pageview_data_js', $_data );
-
-		// Do we have an id for this request?
-		if ( empty( self::$data_js[ 'id' ] ) || empty( self::$data_js[ 'op' ] ) ) {
-			do_action( 'slimstat_track_exit_100' );
-			self::_log_error( 100 );
-			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
-		}
-
-		// Make sure that the control code is valid
-		self::$data_js[ 'id' ] = self::_separate_id_from_checksum( self::$data_js[ 'id' ] );
-
-		if ( self::$data_js[ 'id' ] === false ) {
-			do_action( 'slimstat_track_exit_101' );
-			self::_log_error( 101 );
-			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
-		}
-
-		$intval_id = intval( self::$data_js[ 'id' ] );
-		if ( $intval_id < 0 ) {
-			do_action( 'slimstat_track_exit_' . abs( $intval_id ) );
-			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
-		}
-	}
-	// end _check_data_integrity
-
-	protected static function _log_error( $_error_code = 0 ) {
-		self::toggle_date_i18n_filters( false );
-		if ( !is_network_admin() ) {
-			update_option( 'slimstat_tracker_error', array( $_error_code, date_i18n( 'U' ) ) );
-		}
-		else {
-			update_site_option( 'slimstat_tracker_error', array( $_error_code, date_i18n( 'U' ) ) );
-		}
-		self::toggle_date_i18n_filters( true );
-
-		self::$stat[ 'id' ] = -$_error_code;
-	}
-
-	protected static function _get_id_with_checksum( $_id = 0 ) {
-		return $_id . '.' . md5( $_id . self::$settings[ 'secret' ] );
-	}
-
-	protected static function _separate_id_from_checksum( $_id_with_checksum = '' ) {
-		list( $id, $checksum ) = explode( '.', $_id_with_checksum );
-
-		if ( $checksum === md5( $id . self::$settings[ 'secret' ] ) ) {
-			return $id;
-		}
-
-		return false;
-	}
-
-	protected static function _is_blacklisted( $_needles = array(), $_haystack_string = '' ) {
-		foreach ( self::string_to_array( $_haystack_string ) as $a_item ) {
-			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_item, '@' ) );
-
-			if ( !is_array( $_needles ) ) {
-				$_needles = array( $_needles );
-			}
-
-			foreach ( $_needles as $a_needle ) {
-				if ( preg_match( "@^$pattern$@i", $a_needle ) ) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
+	// end update_content_type
 
 	public static function is_local_ip_address( $ip_address = '' ) {
 		if ( !filter_var( $ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
@@ -1911,6 +1555,366 @@ class wp_slimstat {
 
 	public static function register_widget() {
 		return register_widget( "slimstat_widget" );
+	}
+
+	/**
+	 * Tries to find the user's REAL IP address
+	 */
+	protected static function _get_remote_ip() {
+		$ip_array = array( '', '' );
+
+		if ( !empty( $_SERVER[ 'REMOTE_ADDR' ] ) && filter_var( $_SERVER[ 'REMOTE_ADDR' ], FILTER_VALIDATE_IP ) !== false ) {
+			$ip_array[ 0 ] = $_SERVER[ 'REMOTE_ADDR' ];
+		}
+
+		$originating_ip_headers = array( 'X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED' );
+		foreach ( $originating_ip_headers as $a_header ) {
+			if ( !empty( $_SERVER[ $a_header ] ) ) {
+				foreach ( explode( ',', $_SERVER[ $a_header ] ) as $a_ip ) {
+					if ( filter_var( $a_ip, FILTER_VALIDATE_IP ) !== false && $a_ip != $ip_array[ 0 ] ) {
+						$ip_array[ 1 ] = $a_ip;
+						break;
+					}
+				}
+			}
+		}
+
+		return apply_filters( 'slimstat_filter_ip_address', $ip_array );
+	}
+	// end _get_remote_ip
+
+	/**
+	 * Extracts the accepted language from browser headers
+	 */
+	protected static function _get_language() {
+		if ( isset( $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ] ) ) {
+
+			// Capture up to the first delimiter (, found in Safari)
+			preg_match( "/([^,;]*)/", $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ], $array_languages );
+
+			// Fix some codes, the correct syntax is with minus (-) not underscore (_)
+			return str_replace( '_', '-', strtolower( $array_languages[ 0 ] ) );
+		}
+		return '';  // Indeterminable language
+	}
+	// end _get_language
+
+	/**
+	 * Sniffs out referrals from search engines and tries to determine the query string
+	 */
+	protected static function _get_search_terms( $_url = array() ) {
+		if ( empty( $_url ) || !isset( $_url[ 'host' ] ) ) {
+			return '';
+		}
+
+		// Engines with different character encodings should always be listed here, regardless of their query string format
+		$query_formats = array(
+			'baidu.com' => 'wd',
+			'bing' => 'q',
+			'dogpile.com' => 'q',
+			'duckduckgo' => 'q',
+			'eniro' => 'search_word',
+			'exalead.com' => 'q',
+			'excite' => 'q',
+			'gigablast' => 'q',
+			'google' => 'q',
+			'hotbot' => 'q',
+			'maktoob' => 'p',
+			'mamma' => 'q',
+			'naver' => 'query',
+			'qwant' => 'q',
+			'rambler' => 'query',
+			'seznam' => 'oq',
+			'soso.com' => 'query',
+			'virgilio' => 'qs',
+			'voila' => 'rdata',
+			'yahoo' => 'p',
+			'yam' => 'k',
+			'yandex' => 'text',
+			'yell' => 'keywords',
+			'yippy' => 'query',
+			'youdao' => 'q'
+		);
+
+		$charsets = array( 'baidu' => 'EUC-CN' );
+		$regex_match = implode( '|', array_keys( $query_formats ) );
+		$searchterms = '';
+
+		if ( !empty( $_url[ 'query' ] ) ) {
+			parse_str( $_url[ 'query' ], $query );
+		}
+
+		if ( !empty( $_url[ 'host' ] ) ) {
+			preg_match( "~($regex_match).~i", $_url[ 'host' ], $matches );
+		}
+
+		if ( !empty( $matches[ 1 ] ) ) {
+			// Let's remember that this is a search engine, regardless of the URL containing searchterms (thank you, NSA)
+			$searchterms = '_';
+			if ( !empty( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) {
+				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ) ) );
+				// Test for encodings different from UTF-8
+				if ( function_exists( 'mb_check_encoding' ) && !mb_check_encoding( $query[ $query_formats[ $matches[ 1 ] ] ], 'UTF-8' ) && !empty( $charsets[ $matches[ 1 ] ] ) ) {
+					$searchterms = mb_convert_encoding( urldecode( $query[ $query_formats[ $matches[ 1 ] ] ] ), 'UTF-8', $charsets[ $matches[ 1 ] ] );
+				}
+			}
+		}
+		else {
+			// We weren't lucky, but there's still hope
+			foreach( array( 'q','s','k','qt' ) as $a_format ) {
+				if ( !empty( $query[ $a_format ] ) ) {
+					$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $a_format ] ) ) );
+					break;
+				}
+			}
+		}
+
+		return $searchterms;
+	}
+	// end _get_search_terms
+
+	/**
+	 * Returns details about the resource being accessed
+	 */
+	protected static function _get_content_info() {
+		$content_info = array( 'content_type' => '' );
+
+		// Mark 404 pages
+		if ( is_404() ) {
+			$content_info[ 'content_type' ] = '404';
+		}
+
+		// Type
+		else if ( is_single() ) {
+			if ( ( $post_type = get_post_type() ) != 'post' ) {
+				$post_type = 'cpt:' . $post_type;
+			}
+
+			$content_info[ 'content_type' ] = $post_type;
+			$content_info_array = array();
+			foreach ( get_object_taxonomies( $GLOBALS[ 'post' ] ) as $a_taxonomy ) {
+				$terms = get_the_terms( $GLOBALS[ 'post' ]->ID, $a_taxonomy );
+				if ( is_array( $terms ) ) {
+					foreach ( $terms as $a_term ) {
+						$content_info_array[] = $a_term->term_id;
+					}
+					$content_info[ 'category' ] = implode( ',', $content_info_array );
+				}
+			}
+			$content_info[ 'content_id' ] = $GLOBALS[ 'post' ]->ID;
+		}
+		else if ( is_page() ) {
+			$content_info[ 'content_type' ] = 'page';
+			$content_info[ 'content_id' ] = $GLOBALS[ 'post' ]->ID;
+		}
+		elseif ( is_attachment() ) {
+			$content_info[ 'content_type' ] = 'attachment';
+		}
+		elseif ( is_singular() ) {
+			$content_info[ 'content_type' ] = 'singular';
+		}
+		elseif ( is_post_type_archive() ) {
+			$content_info[ 'content_type' ] = 'post_type_archive';
+		}
+		elseif ( is_tag() ) {
+			$content_info[ 'content_type' ] = 'tag';
+			$list_tags = get_the_tags();
+			if ( is_array( $list_tags ) ) {
+				$tag_info = array_pop( $list_tags );
+				if ( !empty( $tag_info ) ) {
+					$content_info[ 'category' ] = $tag_info->term_id;
+				}
+			}
+		}
+		elseif ( is_tax() ) {
+			$content_info[ 'content_type' ] = 'taxonomy';
+		}
+		elseif ( is_category() ) {
+			$content_info[ 'content_type' ] = 'category';
+			$list_categories = get_the_category();
+			if ( is_array( $list_categories ) ) {
+				$cat_info = array_pop( $list_categories );
+				if ( !empty( $cat_info ) ) {
+					$content_info[ 'category' ] = $cat_info->term_id;
+				}
+			}
+		}
+		else if ( is_date() ) {
+			$content_info[ 'content_type' ]= 'date';
+		}
+		else if ( is_author() ) {
+			$content_info[ 'content_type' ] = 'author';
+		}
+		else if ( is_archive() ) {
+			$content_info[ 'content_type' ] = 'archive';
+		}
+		else if ( is_search() ) {
+			$content_info[ 'content_type' ] = 'search';
+		}
+		else if ( is_feed() ) {
+			$content_info[ 'content_type' ] = 'feed';
+		}
+		else if ( is_home() || is_front_page() ) {
+			$content_info[ 'content_type' ] = 'home';
+		}
+		else if ( !empty( $GLOBALS[ 'pagenow' ] ) && $GLOBALS[ 'pagenow' ] == 'wp-login.php' ) {
+			$content_info[ 'content_type' ] = 'login';
+		}
+		else if ( !empty( $GLOBALS['pagenow'] ) && $GLOBALS['pagenow'] == 'wp-register.php' ) {
+			$content_info[ 'content_type' ] = 'registration';
+		}
+		// WordPress sets is_admin() to true for all ajax requests ( front-end or admin-side )
+		elseif ( is_admin() && ( !defined( 'DOING_AJAX' ) || !DOING_AJAX ) ) {
+			$content_info[ 'content_type' ] = 'admin';
+		}
+
+		if (is_paged()){
+			$content_info[ 'content_type' ] .= ',paged';
+		}
+
+		// Author
+		if ( is_singular() ) {
+			$author = get_the_author_meta( 'user_login', $GLOBALS[ 'post' ]->post_author );
+			if ( !empty( $author ) ) {
+				$content_info[ 'author' ] = $author;
+			}
+		}
+
+		return $content_info;
+	}
+	// end _get_content_info
+
+	/**
+	 * Reads the cookie to get the visit_id and sets the variable accordingly
+	 */
+	protected static function _set_visit_id( $_force_assign = false ) {
+		$is_new_session = true;
+		$identifier = 0;
+
+		if ( isset( $_COOKIE[ 'slimstat_tracking_code' ] ) ) {
+			// Make sure only authorized information is recorded
+			$identifier = self::_separate_id_from_checksum( $_COOKIE[ 'slimstat_tracking_code' ] );
+			if ( $identifier === false ) {
+				return false;
+			}
+
+			$is_new_session = ( strpos( $identifier, 'id' ) !== false );
+			$identifier = intval( $identifier );
+		}
+
+		// User doesn't have an active session
+		if ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'on' ) ) {
+			if ( empty( self::$settings[ 'session_duration' ] ) ) {
+				self::$settings[ 'session_duration' ] = 1800;
+			}
+
+			self::$stat[ 'visit_id' ] = get_transient( 'slimstat_visit_id' );
+			if ( self::$stat[ 'visit_id' ] === false ) {
+				self::$stat[ 'visit_id' ] = intval( self::$wpdb->get_var( "SELECT MAX( visit_id ) FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" ) );
+			}
+			self::$stat[ 'visit_id' ]++;
+			set_transient( 'slimstat_visit_id', self::$stat[ 'visit_id' ] );
+
+			$set_cookie = apply_filters( 'slimstat_set_visit_cookie', ( !empty( self::$settings[ 'set_tracker_cookie' ] ) && self::$settings[ 'set_tracker_cookie' ] == 'on' ) );
+			if ( $set_cookie ) {
+				@setcookie(
+					'slimstat_tracking_code',
+					self::_get_id_with_checksum( self::$stat[ 'visit_id' ] ),
+					time() + self::$settings[ 'session_duration' ],
+					COOKIEPATH
+				);
+			}
+
+		}
+		elseif ( $identifier > 0 ) {
+			self::$stat[ 'visit_id' ] = $identifier;
+		}
+
+		if ( $is_new_session && $identifier > 0 ) {
+			self::$wpdb->query( self::$wpdb->prepare( "
+				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
+				SET visit_id = %d
+				WHERE id = %d AND visit_id = 0", self::$stat[ 'visit_id' ], $identifier
+			) );
+		}
+		return ( $is_new_session && ( $_force_assign || self::$settings[ 'javascript_mode' ] == 'on' ) );
+	}
+	// end _set_visit_id
+
+	/**
+	 * Makes sure that the data received from the client is well-formed (and that nobody is trying to do bad stuff)
+	 */
+	protected static function _check_data_integrity( $_data = '' ) {
+		// Parse the information we received
+		self::$data_js = apply_filters( 'slimstat_filter_pageview_data_js', $_data );
+
+		// Do we have an id for this request?
+		if ( empty( self::$data_js[ 'id' ] ) || empty( self::$data_js[ 'op' ] ) ) {
+			do_action( 'slimstat_track_exit_100' );
+			self::_log_error( 100 );
+			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
+		}
+
+		// Make sure that the control code is valid
+		self::$data_js[ 'id' ] = self::_separate_id_from_checksum( self::$data_js[ 'id' ] );
+
+		if ( self::$data_js[ 'id' ] === false ) {
+			do_action( 'slimstat_track_exit_101' );
+			self::_log_error( 101 );
+			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
+		}
+
+		$intval_id = intval( self::$data_js[ 'id' ] );
+		if ( $intval_id < 0 ) {
+			do_action( 'slimstat_track_exit_' . abs( $intval_id ) );
+			exit( self::_get_id_with_checksum( self::$stat[ 'id' ] ) );
+		}
+	}
+	// end _check_data_integrity
+
+	protected static function _log_error( $_error_code = 0 ) {
+		self::toggle_date_i18n_filters( false );
+		if ( !is_network_admin() ) {
+			update_option( 'slimstat_tracker_error', array( $_error_code, date_i18n( 'U' ) ) );
+		}
+		else {
+			update_site_option( 'slimstat_tracker_error', array( $_error_code, date_i18n( 'U' ) ) );
+		}
+		self::toggle_date_i18n_filters( true );
+
+		self::$stat[ 'id' ] = -$_error_code;
+	}
+
+	protected static function _get_id_with_checksum( $_id = 0 ) {
+		return $_id . '.' . md5( $_id . self::$settings[ 'secret' ] );
+	}
+
+	protected static function _separate_id_from_checksum( $_id_with_checksum = '' ) {
+		list( $id, $checksum ) = explode( '.', $_id_with_checksum );
+
+		if ( $checksum === md5( $id . self::$settings[ 'secret' ] ) ) {
+			return $id;
+		}
+
+		return false;
+	}
+
+	protected static function _is_blacklisted( $_needles = array(), $_haystack_string = '' ) {
+		foreach ( self::string_to_array( $_haystack_string ) as $a_item ) {
+			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_item, '@' ) );
+
+			if ( !is_array( $_needles ) ) {
+				$_needles = array( $_needles );
+			}
+
+			foreach ( $_needles as $a_needle ) {
+				if ( preg_match( "@^$pattern$@i", $a_needle ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }
 // end of class declaration

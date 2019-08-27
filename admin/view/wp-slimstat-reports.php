@@ -472,7 +472,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'browser, browser_version',
-					'where' => 'browser_type == 1',
+					'where' => 'browser_type = 1',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
