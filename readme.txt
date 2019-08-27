@@ -63,6 +63,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 = 4.8.5.2 =
 * [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
 * [Update] Simplified code that manages the sidebar menu.
+* [Update] Reintroduced feature to hide certain report pages when no reports are assigned to them.
 * [Fix] Entries with a trailing slash and ones without were being listed as separate in Top Web Pages.
 
 = 4.8.5.1 =
