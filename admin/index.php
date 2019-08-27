@@ -560,7 +560,7 @@ class wp_slimstat_admin {
 
 		foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
 			$minimum_capability = 'read';
-			if ( strpos( wp_slimstat::$settings[ $a_screen_info[ 'capability' ] ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ] ) ) {
+			if ( !empty( $a_screen_info[ 'capability' ] ) && strpos( wp_slimstat::$settings[ $a_screen_info[ 'capability' ] ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ] ) ) {
 				$minimum_capability = wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ];
 			}
 
