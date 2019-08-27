@@ -48,6 +48,7 @@ function slimstat_uninstall($_wpdb = '', $_options = array()){
 	delete_option( 'slimstat_options' );
 	delete_option( 'slimstat_visit_id' );
 	delete_option( 'slimstat_filters' );
+	delete_option( 'slimstat_tracker_error' );
 
 	$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'" );
 	$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'" );

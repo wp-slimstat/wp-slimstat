@@ -639,8 +639,7 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'TRIM( TRAILING "/" FROM resource )',
-					'as_column' => 'resource_calculated',
+					'columns' => 'resource',
 					'where' => 'content_type = "post"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' ),
 				),
