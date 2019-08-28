@@ -275,16 +275,16 @@ class wp_slimstat {
 			$opt_out_cookie_names = self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] );
 
 			foreach ( $opt_out_cookie_names as $a_cookie_pair ) {
-				$pair = explode( '=', $a_cookie_pair );
+				list( $name, $value ) = explode( '=', $a_cookie_pair );
 
-				if ( !empty( $pair[ 0 ] ) && !empty( $pair[ 1 ] ) ) {
+				if ( !empty( $name ) && !empty( $value ) ) {
 					$cookie_names[ $name ] = $value;
 				}
 			}
 		}
 
 		foreach ( $cookie_names as $a_name => $a_value ) {
-			if ( isset( $_COOKIE[ $a_name ] ) && $_COOKIE[ $a_name ] == $a_value ) {
+			if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
 				self::$stat[ 'id' ] = -315;
 				return $_argument;
 			}

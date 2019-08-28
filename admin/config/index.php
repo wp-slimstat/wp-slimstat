@@ -206,12 +206,12 @@ $settings = array(
 			'opt_out_cookie_names' => array(
 				'title' => __( 'Opt-out Cookies', 'wp-slimstat' ),
 				'type'=> 'textarea',
-				'description'=> __( "If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitor who sends a cookie that <strong>does not</strong> have that value. Separate multiple duplets with commas.", 'wp-slimstat' )
+				'description'=> __( "If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"statistics\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"statistics\":false</code>. Separate multiple pairs with commas.", 'wp-slimstat' )
 			),
 			'opt_in_cookie_names' => array(
 				'title' => __( 'Opt-in Cookies', 'wp-slimstat' ),
 				'type'=> 'textarea',
-				'description'=> __( "Similarly to the option here above, you can configure Slimstat to work with an opt-in mechanism. Please use the following format: <code>cookie_name=value</code>. Slimstat will only track visitors who send a cookie that <strong>has</strong> that value. Separate multiple duplets with commas.", 'wp-slimstat' )
+				'description'=> __( "Similarly to the option here above, you can configure Slimstat to work with an opt-in mechanism. Please use the following format: <code>cookie_name=value</code>. Slimstat will only track visitors who send a cookie whose value <strong>CONTAINS</strong> the string you specified. Separate multiple pairs with commas.", 'wp-slimstat' )
 			),
 			'opt_out_message' => array(
 				'title' => __( 'Opt-out Message', 'wp-slimstat' ),

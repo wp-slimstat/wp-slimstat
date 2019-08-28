@@ -1,4 +1,7 @@
 ## Changelog ##
+### 4.8.5.2 ###
+* [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
+
 ### 4.8.5.1 ###
 * [Fix] A bug was affecting the way shortcodes were being displayed on the website (thank you, [inndesign](https://wordpress.org/support/topic/crashes-avada-theme-in-chrome/)).
 * [Fix] Some icons in the Access Log were broken and not displayed as expected.
