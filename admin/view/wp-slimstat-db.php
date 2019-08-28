@@ -855,38 +855,37 @@ class wp_slimstat_db {
 		return $results;
 	}
 
-	public static function get_recent( $_dimension = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_dimensions = '', $_order_by = 'dt DESC' ) {
+	public static function get_recent( $_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_columns = '', $_order_by = 'dt DESC' ) {
 		// This function can be passed individual arguments, or an array of arguments
-		if ( is_array( $_dimension ) ) {
-			$_where = !empty( $_dimension[ 'where' ] ) ? $_dimension[ 'where' ] : '';
-			$_having = !empty( $_dimension[ 'having' ] ) ? $_dimension[ 'having' ] : '';
-			$_use_date_filters = isset( $_dimension[ 'use_date_filters' ] ) ? $_dimension[ 'use_date_filters' ] : true;
-			$_as_column = !empty( $_dimension[ 'as_column' ] ) ? $_dimension[ 'as_column' ] : '';
-			$_more_dimensions = !empty( $_dimension[ 'more_columns' ] ) ? $_dimension[ 'more_columns' ] : '';
-			$_order_by = !empty( $_dimension[ 'order_by' ] ) ? $_dimension[ 'order_by' ] : 'dt DESC';
-			$_dimension = $_dimension[ 'columns' ];
+		if ( is_array( $_column ) ) {
+			$_where = !empty( $_column[ 'where' ] ) ? $_column[ 'where' ] : '';
+			$_having = !empty( $_column[ 'having' ] ) ? $_column[ 'having' ] : '';
+			$_use_date_filters = isset( $_column[ 'use_date_filters' ] ) ? $_column[ 'use_date_filters' ] : true;
+			$_as_column = !empty( $_column[ 'as_column' ] ) ? $_column[ 'as_column' ] : '';
+			$_more_columns = !empty( $_column[ 'more_columns' ] ) ? $_column[ 'more_columns' ] : '';
+			$_order_by = !empty( $_column[ 'order_by' ] ) ? $_column[ 'order_by' ] : 'dt DESC';
+			$_column = $_column[ 'columns' ];
 		}
 
-		$dimensions = $_dimension;
 		if ( !empty( $_as_column ) ) {
-			$dimensions = "$_column AS $_as_column";
+			$_column = "$_column AS $_as_column";
 		}
 
-		if ( $_dimension != '*' ) {
-			$dimensions .= ', ip, dt';
+		if ( $_column != '*' ) {
+			$_column .= ', ip, dt';
 		}
 		else {
-			$dimensions = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, tz_offset, dt_out, dt';
+			$_column = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, tz_offset, dt_out, dt';
 		}
 
-		if ( !empty( $_more_dimensions ) ) {
-			$dimensions .= ', ' . $_more_dimensions;
+		if ( !empty( $_more_columns ) ) {
+			$_column .= ', ' . $_more_columns;
 		}
 
-		$_where = self::get_combined_where( $_where, $_dimension, $_use_date_filters );
+		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
 		$results = self::get_results( "
-			SELECT $dimensions
+			SELECT $_column
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
 			ORDER BY $_order_by	
