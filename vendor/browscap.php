@@ -22,7 +22,7 @@ class slim_browser {
 		if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db-master/version.txt' ) ) {
 			self::$browscap_local_version = @file_get_contents( wp_slimstat::$upload_dir . '/browscap-db-master/version.txt' );
 			if ( false === self::$browscap_local_version ) {
-				wp_slimstat::slimstat_save_options();
+				wp_slimstat::save_options();
 				return array( 4, __( 'The Browscap Library could not be opened on your filesystem. Please check your server permissions and try again.', 'wp-slimstat' ) );
 			}
 		}
