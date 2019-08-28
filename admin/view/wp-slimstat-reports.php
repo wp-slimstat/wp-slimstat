@@ -853,24 +853,13 @@ class wp_slimstat_reports {
 		self::$reports = apply_filters( 'slimstat_reports_info', self::$reports );
 		$merge_reports = array_keys( self::$reports );
 
-		// Retrieve this user's custom report assignment (Customizer)
-		$current_user = wp_get_current_user();
-
-		// Superadmins can customize the layout at network level, to override per-site settings
-		self::$user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout-network', 1 );
-
-		// No network-wide settings found
-		if ( empty( self::$user_reports ) ) {
-			self::$user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout', $current_user->ID );
-		}
-
 		// Do we have any new reports not listed in this user's settings?
-		if ( !empty( self::$user_reports ) && is_array( self::$user_reports ) ) {
-			$flat_user_reports = array_filter( explode( ',', implode( ',', self::$user_reports ) ) );
+		if ( !empty( wp_slimstat_admin::$meta_user_reports ) && is_array( wp_slimstat_admin::$meta_user_reports ) ) {
+			$flat_user_reports = array_filter( explode( ',', implode( ',', wp_slimstat_admin::$meta_user_reports ) ) );
 			$merge_reports = array_diff( array_filter( array_keys( self::$reports ) ), $flat_user_reports );
 
 			// Now let's explode all the lists
-			foreach ( self::$user_reports as $a_location => $a_report_list ) {
+			foreach ( wp_slimstat_admin::$meta_user_reports as $a_location => $a_report_list ) {
 				self::$user_reports[ $a_location ] = explode( ',', $a_report_list );
 			}
 		}
