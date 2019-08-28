@@ -1,5 +1,4 @@
 ## Changelog ##
-<<<<<<< b7e44e436fae1223b51784108db394882924df7e
 ### 4.8.7 ###
 * [New] With this update, we are introducing an *updated tracker* (both server and client-side): a new simplified codebase that gets rid of a few layers of convoluted functions and algorithms accumulated over the years. We have been working on this update for quite a while, and the recent conflict with another plugin discovered by some users convinced us to make this our top priority. Even though we have tested our new code using a variety of scenarios, you can understand how it would be impossible to cover all the possible environments available out there. Make sure to clear your caches (local, Cloudflare, WP plugins, etc), to allow Slimstat to append the new tracking script to your pages. Also, if you are using Slimstat to track *external* pages (outside of your WP install), please make sure to update the code you're using on those pages with the new one you can find in Slimstat > Settings > Tracker > External Pages.
 * [New] Increased minimum WordPress requirements to version 4.9, given that we are now using some more modern functions to enqueue the tracker and implement the customizer feature.
@@ -11,8 +10,6 @@
 * [Fix] A bug was affecting certain shortcodes when PHP 7.2 was enabled (thank you, Peter).
 * [Fix] Emptying one of the settings and saving did not produce the desired effect.
 
-=======
->>>>>>> A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
 ### 4.8.6.1 ###
 * [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
 
