@@ -18,8 +18,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Recently, we asked our users to help us decide if we should replace line charts with bar charts, and... the people of Slimstat have spoken! Based on the feedback we received, users were more or less evenly split between the two options, so we've decided that we'll provide both options. Yes, you read that right. We are going to add a new set of reports using the bar chart view, and then let admins choose which ones to display via the Customizer. It will even be possible to mix and match charts, if that's what you prefer. In order to prepare for this new feature, we rewrote the code that manages which reports are displayed on which screen (via the Customizer), streamlined data structures and optimized their use. Please update all the add-ons to the latest version available. Don't hesitate to contact us if you have any questions!";
-		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. We are already wearing our lab coats and are hard at work to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This library, among other things, will allow our tracker to record your users' timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
+		self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. We are already wearing our lab coats and are hard at work to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This library, among other things, will allow our tracker to record your users' timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
@@ -31,55 +30,77 @@ class wp_slimstat_admin {
 				'is_report_group' => true,
 				'show_in_sidebar' => true,
 				'title' => __( 'Real-time',  'wp-slimstat' ),
+				'capability' => 'can_view',
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
 			),
 			'slimview2' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => true,
 				'title' => __( 'Overview',  'wp-slimstat' ),
+				'capability' => 'can_view',
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
 			),
 			'slimview3' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => true,
 				'title' => __( 'Audience',  'wp-slimstat' ),
+				'capability' => 'can_view',
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
 			),
 			'slimview4' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => true,
 				'title' => __( 'Site Analysis',  'wp-slimstat' ),
+				'capability' => 'can_view',
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
 			),
 			'slimview5' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => true,
 				'title' => __( 'Traffic Sources',  'wp-slimstat' ),
+				'capability' => 'can_view',
 				'callback' => array( __CLASS__, 'wp_slimstat_include_view' )
+			),
+			'slimlayout' => array(
+				'is_report_group' => false,
+				'show_in_sidebar' => true,
+				'title' => __( 'Customize',  'wp-slimstat' ),
+				'capability' => 'can_customize',
+				'callback' => array( __CLASS__, 'wp_slimstat_include_layout' )
+			),
+			'slimconfig' => array(
+				'is_report_group' => false,
+				'show_in_sidebar' => true,
+				'title' => __( 'Settings',  'wp-slimstat' ),
+				'capability' => 'can_admin',
+				'callback' => array( __CLASS__, 'wp_slimstat_include_config' )
 			),
 			'slimaddons' => array(
 				'is_report_group' => false,
 				'show_in_sidebar' => current_user_can( 'manage_options' ),
 				'title' => __( 'Add-ons',  'wp-slimstat' ),
+				'capability' => 'can_admin',
 				'callback' => array( __CLASS__, 'wp_slimstat_include_addons' )
 			),
 			'dashboard' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => false,
 				'title' => __( 'WordPress Dashboard',  'wp-slimstat' ),
-				'callback' => '' // No callback if show_in_sidebar is false
+				'capability' => '',
+				'callback' => '' // No callback and capabilities are needed if show_in_sidebar is false
 			),
 			'inactive' => array(
 				'is_report_group' => true,
 				'show_in_sidebar' => false,
 				'title' => __( 'Inactive Reports' ),
-				'callback' => '' // No callback if show_in_sidebar is false
+				'capability' => '',
+				'callback' => '' // No callback and capabilities are needed if show_in_sidebar is false
 			)
 		);
 		self::$screens_info = apply_filters( 'slimstat_screens_info', self::$screens_info );
 
 		// Settings URL
-		self::$config_url = 'admin.php?page=slimconfig&amp;tab=';
+		self::$config_url = get_admin_url( $GLOBALS[ 'blog_id' ], 'admin.php?page=slimconfig&amp;tab=' );
 
 		// Current Screen
 		if ( !empty( $_REQUEST[ 'page' ] ) && array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ) {
@@ -116,16 +137,14 @@ class wp_slimstat_admin {
 			add_action( 'transition_comment_status', array( __CLASS__, 'remove_spam' ), 15, 3 );
 		}
 
-		// Add a menu to the admin bar ( this function is declared here and not in wp_slimstat_admin because the latter is only initialized if is_admin(), and not in the front-end )
+		// Add a menu to the admin bar
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'no' && is_admin_bar_showing() ) {
 			add_action( 'admin_bar_menu', array( __CLASS__, 'add_menu_to_adminbar' ), 100 );
 		}
 
 		if ( function_exists( 'is_network_admin' ) && !is_network_admin() ) {
 			// Add the appropriate entries to the admin menu, if this user can view/admin  Slimstat
-			add_action( 'admin_menu', array( __CLASS__, 'add_view_menu' ) );
-			add_action( 'admin_menu', array( __CLASS__, 'add_customize_menu' ) );
-			add_action( 'admin_menu', array( __CLASS__, 'add_config_menu' ) );
+			add_action( 'admin_menu', array( __CLASS__, 'add_menus' ) );
 
 			// Display the column in the Edit Posts / Pages screen
 			if ( wp_slimstat::$settings[ 'add_posts_column' ] == 'on' ) {
@@ -143,9 +162,6 @@ class wp_slimstat_admin {
 					add_action( 'wp', array( __CLASS__, 'init_data_for_column' ) );
 				}
 			}
-
-			// Add some inline CSS to customize the icon associated to Slimstat in the sidebar
-			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'wp_slimstat_stylesheet_icon' ) );
 
 			// Update the table structure and options, if needed
 			if ( !empty( wp_slimstat::$settings[ 'version' ] ) && wp_slimstat::$settings[ 'version' ] != wp_slimstat::$version ) {
@@ -487,18 +503,6 @@ class wp_slimstat_admin {
 	// END: wp_slimstat_stylesheet
 
 	/**
-	 * Customizes the icon associated to Slimstat in the sidebar
-	 */
-	public static function wp_slimstat_stylesheet_icon(){
-		if (!array_key_exists('dashicons', $GLOBALS['wp_styles']->registered)){
-			return true;
-		}
-
-		wp_add_inline_style('dashicons', "#adminmenu #toplevel_page_slimview1 .wp-menu-image:before { content: '\\f239'; margin-top: -2px; }");
-	}
-	// END: wp_slimstat_stylesheet_icon
-
-	/**
 	 * Loads user-defined stylesheet code
 	 */
 	public static function wp_slimstat_userdefined_stylesheet(){
@@ -534,7 +538,7 @@ class wp_slimstat_admin {
 	/**
 	 * Adds a new entry in the admin menu, to view the stats
 	 */
-	public static function add_view_menu( $_s = '' ) {
+	public static function add_menus( $_s = '' ) {
 		// If this user is whitelisted, we use the minimum capability
 		$minimum_capability = 'read';
 		if ( is_network_admin() ) {
@@ -544,7 +548,7 @@ class wp_slimstat_admin {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
 
-		// Get the current report assignments
+		// Get the current menu position
 		$new_entry = array();
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' || is_network_admin() ) {
 			$parent = 'slimview1';
@@ -554,11 +558,21 @@ class wp_slimstat_admin {
 			$parent = 'admin.php';
 		}
 
-		$current_user = wp_get_current_user();
-
 		foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
+			$minimum_capability = 'read';
+			if ( strpos( wp_slimstat::$settings[ $a_screen_info[ 'capability' ] ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ] ) ) {
+				$minimum_capability = wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ];
+			}
+
 			if ( $a_screen_info[ 'show_in_sidebar' ] ) {
-				$new_entry[] = add_submenu_page( $parent, $a_screen_info[ 'title' ], $a_screen_info[ 'title' ], $minimum_capability, $a_screen_id, $a_screen_info[ 'callback' ] );
+				$new_entry[] = add_submenu_page( 
+					$parent,
+					$a_screen_info[ 'title' ],
+					$a_screen_info[ 'title' ],
+					$minimum_capability,
+					$a_screen_id,
+					$a_screen_info[ 'callback' ]
+				);
 			}
 		}
 
@@ -571,131 +585,44 @@ class wp_slimstat_admin {
 
 		return $_s;
 	}
-	// END: add_view_menu
-
-	/**
-	 * Adds a new entry in the admin menu, to customize the reports layout
-	 */
-	public static function add_customize_menu( $_s ) {
-		wp_slimstat::$settings[ 'capability_can_customize' ] = empty( wp_slimstat::$settings[ 'capability_can_customize' ] ) ? 'manage_options' : wp_slimstat::$settings[ 'capability_can_customize' ];
-		
-		// If this user is whitelisted, we use the minimum capability
-		$minimum_capability = 'read';
-		if ( ( strpos( wp_slimstat::$settings[ 'can_customize' ], $GLOBALS[ 'current_user' ]->user_login ) === false ) && !empty( wp_slimstat::$settings[ 'capability_can_customize' ] ) ) {
-			$minimum_capability = wp_slimstat::$settings[ 'capability_can_customize' ];
-		}
-
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) {
-			$new_entry = add_submenu_page( 'slimview1', __( 'Customize', 'wp-slimstat' ), __( 'Customize', 'wp-slimstat' ), $minimum_capability, 'slimlayout', array( __CLASS__, 'wp_slimstat_include_layout' ) );
-		}
-		else {
-			$new_entry = add_submenu_page( null, __( 'Customize', 'wp-slimstat' ), __( 'Customize', 'wp-slimstat' ), $minimum_capability, 'slimlayout', array( __CLASS__, 'wp_slimstat_include_layout' ) );
-		}
-		
-		// Load styles and Javascript needed to make the reports look nice and interactive
-		add_action( 'load-' . $new_entry, array( __CLASS__, 'wp_slimstat_stylesheet' ) );
-		add_action('load-'.$new_entry, array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
-
-		return $_s;
-	}
-	// END: add_customize_menu
-
-	/**
-	 * Adds a new entry in the admin menu, to manage Slimstat options
-	 */
-	public static function add_config_menu( $_s ) {
-		wp_slimstat::$settings[ 'capability_can_admin' ] = empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ? 'manage_options' : wp_slimstat::$settings[ 'capability_can_admin' ];
-		
-		// If this user is whitelisted, we use the minimum capability
-		$minimum_capability = 'read';
-		if ( ( strpos( wp_slimstat::$settings[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) === false ) && ( $GLOBALS[ 'current_user' ]->user_login != 'slimstatadmin' ) && !empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ) {
-			$minimum_capability = wp_slimstat::$settings[ 'capability_can_admin' ];
-		}
-
-		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' ) {
-			$new_entry = add_submenu_page( 'slimview1', __( 'Settings', 'wp-slimstat' ), __( 'Settings', 'wp-slimstat' ), $minimum_capability, 'slimconfig', array( __CLASS__, 'wp_slimstat_include_config' ) );
-		}
-		else {
-			$new_entry = add_submenu_page( null, __( 'Settings', 'wp-slimstat' ), __( 'Settings', 'wp-slimstat' ), $minimum_capability, 'slimconfig', array( __CLASS__, 'wp_slimstat_include_config' ) );
-		}
-		
-		// Load styles and Javascript needed to make the reports look nice and interactive
-		add_action( 'load-' . $new_entry, array( __CLASS__, 'wp_slimstat_stylesheet' ) );
-		add_action('load-'.$new_entry, array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
-
-		return $_s;
-	}
-	// END: add_config_menu
+	// END: add_menus
 
 	/**
 	 * Adds a new entry in the WordPress Admin Bar
 	 */
 	public static function add_menu_to_adminbar() {
 		// If this user is whitelisted, we use the minimum capability
-		$minimum_capability_view = 'read';
-		if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login) === false && !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
-			$minimum_capability_view = wp_slimstat::$settings[ 'capability_can_view' ];
+		$minimum_capability = 'read';
+		if ( is_network_admin() ) {
+			$minimum_capability = 'manage_network';
+		}
+		else if ( strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ) {
+			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
 
-		// If this user is whitelisted, we use the minimum capability
-		$minimum_capability_customize = 'read';
-		if ( strpos( wp_slimstat::$settings[ 'can_customize' ], $GLOBALS[ 'current_user' ]->user_login) === false && !empty( wp_slimstat::$settings[ 'capability_can_customize' ] ) ) {
-			$minimum_capability_customize = wp_slimstat::$settings[ 'capability_can_customize' ];
-		}
-
-		// If this user is whitelisted, we use the minimum capability
-		$minimum_capability_config = 'read';
-		if ( ( strpos( wp_slimstat::$settings[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) === false) && $GLOBALS[ 'current_user' ]->user_login != 'slimstatadmin' && !empty( wp_slimstat::$settings[ 'capability_can_admin' ] ) ) {
-			$minimum_capability_config = wp_slimstat::$settings[ 'capability_can_admin' ];
-		}
-
-		if ( ( function_exists( 'is_network_admin' ) && is_network_admin() ) || !is_user_logged_in() || !current_user_can( $minimum_capability_view ) ) {
-			return;
-		}
-
-		wp_slimstat::$settings[ 'capability_can_view' ] = empty( wp_slimstat::$settings[ 'capability_can_view' ] ) ? 'read' : wp_slimstat::$settings[ 'capability_can_view' ];
-
-		if ( empty( wp_slimstat::$settings[ 'can_view' ]) || strpos( wp_slimstat::$settings[ 'can_view' ], $GLOBALS[ 'current_user' ]->user_login ) !== false || current_user_can( 'manage_options' ) ) {
-			$slimstat_view_url = get_admin_url( $GLOBALS[ 'blog_id' ], "admin.php?page=" );
-
-			$frontend_filter = '';
-			if ( !is_admin() ) {
-				$frontend_filter = '&amp;fs%5Bresource%5D=contains+' . urlencode( wp_slimstat::get_request_uri() ); 
-			}
+		if ( current_user_can( $minimum_capability ) ) {
+			$view_url = get_admin_url( $GLOBALS[ 'blog_id' ], 'admin.php?page=' );
 
 			$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
 				'id' => 'slimstat-header',
 				'title' => __( 'Slimstat',  'wp-slimstat' ),
-				'href' => "{$slimstat_view_url}slimview1"
+				'href' => "{$view_url}slimview1"
 			) );
 
 			foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
-				if ( $a_screen_info[ 'show_in_sidebar' ] ) {
+				$minimum_capability = 'read';
+				if ( strpos( wp_slimstat::$settings[ $a_screen_info[ 'capability' ] ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ] ) ) {
+					$minimum_capability = wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ];
+				}
+
+				if ( $a_screen_info[ 'show_in_sidebar' ] && current_user_can( $minimum_capability ) ) {
 					$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
 						'id' => $a_screen_id,
-						'href' => "{$slimstat_view_url}$a_screen_id" . ( ( $a_screen_info[ 'callback' ] == array( __CLASS__, 'wp_slimstat_include_view' ) ) ? $frontend_filter : '' ),
+						'href' => "{$view_url}$a_screen_id",
 						'parent' => 'slimstat-header',
 						'title' => $a_screen_info[ 'title' ]
 					) );
 				}
-			}
-
-			if ( ( empty( wp_slimstat::$settings[ 'can_customize' ] ) || strpos( wp_slimstat::$settings[ 'can_customize' ], $GLOBALS[ 'current_user' ]->user_login ) !== false ) && current_user_can( $minimum_capability_customize ) ) {
-				$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
-					'id' => 'slimstat-layout',
-					'href' => get_admin_url( $GLOBALS[ 'blog_id' ], "admin.php?page=slimlayout" ),
-					'parent' => 'slimstat-header',
-					'title' => __( 'Customize',  'wp-slimstat' ) ) 
-				);
-			}
-
-			if ( ( empty( wp_slimstat::$settings[ 'can_admin' ] ) || strpos( wp_slimstat::$settings[ 'can_admin' ], $GLOBALS[ 'current_user' ]->user_login ) !== false || $GLOBALS[ 'current_user' ]->user_login == 'slimstatadmin' ) && current_user_can( $minimum_capability_config ) ) {
-				$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
-					'id' => 'slimstat-config',
-					'href' => get_admin_url( $GLOBALS[ 'blog_id' ], self::$config_url ),
-					'parent' => 'slimstat-header',
-					'title' => __( 'Settings',  'wp-slimstat' ) ) 
-				);
 			}
 		}
 	}
@@ -1145,6 +1072,8 @@ class wp_slimstat_admin {
 				unset( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] );
 			}
 		}
+
+		wp_slimstat::save_options();
 
 		if ( !empty( self::$faulty_fields ) ) {
 			self::show_message( implode( ' ', self::$faulty_fields ), 'warning' );
