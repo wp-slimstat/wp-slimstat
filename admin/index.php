@@ -4,7 +4,6 @@ class wp_slimstat_admin {
 	public static $screens_info = array();
 	public static $config_url = '';
 	public static $current_screen = 'slimview1';
-	public static $faulty_fields = array();
 	public static $page_location = 'slimstat';
 	public static $meta_user_reports = array();
 
@@ -19,7 +18,8 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. We are already wearing our lab coats and are hard at work to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This library, among other things, will allow our tracker to record your users' timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
+		self::$admin_notice = "Recently, we asked our users to help us decide if we should replace line charts with bar charts, and... the people of Slimstat have spoken! Based on the feedback we received, users were more or less evenly split between the two options, so we've decided that we'll provide both options. Yes, you read that right. We are going to add a new set of reports using the bar chart view, and then let admins choose which ones to display via the Customizer. It will even be possible to mix and match charts, if that's what you prefer. In order to prepare for this new feature, we rewrote the code that manages which reports are displayed on which screen (via the Customizer), streamlined data structures and optimized their use. Please update all the add-ons to the latest version available. Don't hesitate to contact us if you have any questions!";
+		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. We are already wearing our lab coats and are hard at work to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This library, among other things, will allow our tracker to record your users' timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
@@ -111,6 +111,11 @@ class wp_slimstat_admin {
 		// Page Location
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'no' ) {
 			self::$page_location = 'admin';
+		}
+
+		// Is the menu position setting being updated?
+		if ( !empty( $_POST[ 'slimstat_update_settings' ] ) && wp_verify_nonce( $_POST[ 'slimstat_update_settings' ], 'slimstat_update_settings' ) && !empty( $_POST[ 'options' ][ 'use_separate_menu' ] ) ) {
+			wp_slimstat::$settings[ 'use_separate_menu' ] = ( $_POST[ 'options' ][ 'use_separate_menu' ] == 'on' ) ? 'on' : 'no';
 		}
 
 		// Retrieve this user's custom report assignment (Customizer)
@@ -942,202 +947,10 @@ class wp_slimstat_admin {
 	// END: manage_filters
 
 	/*
-	 * Displays the options 
-	 */
-	public static function display_settings( $_settings = array(), $_current_tab = 1 ) { ?>
-		<form action="<?php echo self::$config_url . $_current_tab ?>" method="post" id="slimstat-options-<?php echo $_current_tab ?>">
-			<?php wp_nonce_field( 'slimstat_update_settings', 'slimstat_update_settings' ); ?>
-			<table class="form-table widefat <?php echo $GLOBALS[ 'wp_locale' ]->text_direction ?>">
-			<tbody><?php
-				$i = 0;
-				foreach( $_settings as $_setting_slug => $_setting_info ) {
-					$i++;
-					$_setting_info = array_merge( array(
-						'title' =>'',
-						'type' => '',
-						'rows' => 4,
-						'description' => '',
-						'before_input_field' => '',
-						'after_input_field' => '',
-						'custom_label_yes' => '',
-						'custom_label_no' => '',
-						'use_tag_list' => true,
-						'use_code_editor' => '',
-						'select_values' => array(),
-						'default_value' => ''
-					), $_setting_info );
-
-					$is_readonly = ( $_setting_info[ 'type' ] === 'readonly' ) ? ' readonly' : '';
-					$use_tag_list = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_tag_list' ] ) && $_setting_info[ 'use_tag_list' ] === true ) ? ' slimstat-taglist' : '';
-					$use_code_editor = ( empty( $is_readonly ) && !empty( $_setting_info[ 'use_code_editor' ] ) ) ? ' data-code-editor="' . $_setting_info[ 'use_code_editor' ] . '"': '';
-
-					if ( empty( $_setting_info[ 'default_value' ] ) && isset( wp_slimstat::$settings[ $_setting_slug ] ) ) {
-						$_setting_info[ 'default_value' ] = wp_slimstat::$settings[ $_setting_slug ];
-					}
-
-					$network_override_checkbox = is_network_admin() ? '
-							<input class="slimstat-checkbox-toggle"
-								type="checkbox"
-								name="options[addon_network_settings_' . $_setting_slug . ']"' .
-								( ( !empty( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) && wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
-								id="addon_network_settings_' . $_setting_slug . '"
-								data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
-
-					echo '<tr' . ( $i % 2 == 0 ? ' class="alternate"' : '' ) . '>';
-					switch ( $_setting_info[ 'type' ] ) {
-						case 'section_header':
-							echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $_setting_info[ 'title' ] ) . '">' . $_setting_info[ 'title' ] . '</td>';
-							break;
-
-						case 'readonly':
-							echo '<td colspan="2">' . $_setting_info[ 'title' ] . '<textarea rows="7" class="large-text code" readonly>' . $_setting_info[ 'description' ] . '</textarea></td>';
-							break;
-
-						case 'toggle':
-							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
-							<td>
-								<span class="block-element">
-									<input class="slimstat-checkbox-toggle" type="checkbox"' . $is_readonly . '
-										name="options[' . $_setting_slug . ']"
-										id="' . $_setting_slug . '"
-										data-size="mini" data-handle-width="50" data-on-color="success"' . 
-										( ( $_setting_info[ 'default_value' ] == 'on' ) ? ' checked="checked"' : '' ) . '
-										data-on-text="' . ( !empty( $_setting_info[ 'custom_label_on' ] ) ? $_setting_info[ 'custom_label_on' ] : __( 'On',  'wp-slimstat' ) ) . '"
-										data-off-text="' . ( !empty( $_setting_info[ 'custom_label_off' ] ) ? $_setting_info[ 'custom_label_off' ] : __( 'Off',  'wp-slimstat' ) ) . '">' .
-										$network_override_checkbox . '
-								</span>
-								<span class="description">' . $_setting_info[ 'description' ] . '</span>
-							</td>';
-							// ( is_network_admin() ? ' data-indeterminate="true"' : '' ) . '>
-							break;
-
-						case 'select':
-							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
-							<td>
-								<span class="block-element">
-									<select' . $is_readonly .' name="options[' . $_setting_slug . ']" id="' . $_setting_slug .'">';
-										foreach ( $_setting_info[ 'select_values' ] as $a_key => $a_value ) {
-											$is_selected = ( $_setting_info[ 'default_value' ] == $a_key ) ? ' selected' : '';
-											echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
-										}
-									echo '</select>' .
-									$network_override_checkbox . '
-								</span>
-								<span class="description">' . $_setting_info[ 'description' ] . '</span>
-							</td>';
-							break;
-							
-						case 'text':
-						case 'integer':
-							$empty_value = ( $_setting_info[ 'type' ] == 'text' ) ? '' : '0';
-							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
-							<td>
-								<span class="block-element"> ' .
-									$_setting_info[ 'before_input_field' ] . '
-									<input class="' . ( ( $_setting_info[ 'type' ] == 'integer' ) ? 'small-text' : 'regular-text' ) . '"' . $is_readonly . '
-										type="' . ( ( $_setting_info[ 'type' ] == 'integer' ) ? 'number' : 'text' ) . '"
-										name="options[' . $_setting_slug . ']"
-										id="' . $_setting_slug . '"
-										value="' . ( !empty( $_setting_info[ 'default_value' ] ) ? $_setting_info[ 'default_value' ] : $empty_value ) . '"> ' . $_setting_info[ 'after_input_field' ] .
-										$network_override_checkbox . '
-								</span>
-								<span class="description">' . $_setting_info[ 'description' ] . '</span>
-							</td>';
-							break;
-
-						case 'textarea':
-							echo '
-							<td colspan="2">
-								<label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . $network_override_checkbox . '</label>
-								<p class="description">' . $_setting_info[ 'description' ] . '</p>
-								<p>
-									<textarea class="large-text code' . $use_tag_list . '"' . $is_readonly . $use_code_editor . '
-										id="' . $_setting_slug . '"
-										rows="' . $_setting_info[ 'rows' ] . '"
-										name="options[' . $_setting_slug . ']">' . ( !empty( $_setting_info[ 'default_value' ] ) ? stripslashes( $_setting_info[ 'default_value' ] ) : '' ) . '</textarea>
-									<span class="description">' . $_setting_info[ 'after_input_field' ] . '</span>
-								</p>
-							</td>';
-							break;
-
-						case 'plain-text':
-							echo '<th scope="row"><label for="' . $_setting_slug . '">' . $_setting_info[ 'title' ] . '</label></th>
-							<td>
-								<span class="block-element">' . $_setting_info[ 'after_input_field' ] . '</span>
-								<span class="description">' . $_setting_info[ 'description' ] . '</span>
-							</td>';
-							break;
-
-						case 'custom':
-							echo '<td colspan="2">' . $_setting_info[ 'title' ] . '<br/><br/>' . $_setting_info[ 'markup' ] . '</td>';
-							break;
-
-						default:
-					}
-					echo '</tr>';
-				}
-			?></tbody>
-			</table>
-			<input type="hidden" name="options[make_sure_post_is_not_empty]" id="make_sure_post_is_not_empty" value="make_sure_post_is_not_empty">
-			<?php if ( empty( $_settings[ $_current_tab ][ 'include' ] ) ): ?><p class="submit"><input type="submit" value="<?php _e( 'Save Changes', 'wp-slimstat' ) ?>" class="button-primary" name="Submit"></p><?php endif ?>
-		</form><?php
-	}
-	// END: display_settings
-
-	/*
 	 * Updates the options 
 	 */
 	public static function update_settings( $_settings = array() ) {
-		// Nothing to do, if there is no data to be parsed or the nonce is not valid
-		if ( !isset( $_POST[ 'options' ] ) || empty( $_settings ) || !isset( $_POST[ 'slimstat_update_settings' ] ) || !wp_verify_nonce( $_POST[ 'slimstat_update_settings' ], 'slimstat_update_settings' ) ) {
-			return true;
-		}
-
-		foreach( $_settings as $_setting_slug => $_setting_info ) {
-			// Some options require a special treatment and are updated somewhere else
-			if ( $_setting_info[ 'type' ] == 'readonly' || $_setting_info[ 'type' ] == 'section_header' || $_setting_info[ 'type' ] == 'plain-text' ) {
-				continue;
-			}
-
-			// An empty toggle option is saved in the database as 'no'
-			if ( $_setting_info[ 'type' ] == 'toggle' && ( !isset( $_POST[ 'options' ][ $_setting_slug ] ) || strtolower( $_POST[ 'options' ][ $_setting_slug ] != 'on' ) ) ) {
-				wp_slimstat::$settings[ $_setting_slug ] = 'no';
-			}
-			else if ( isset( $_POST[ 'options' ][ $_setting_slug ] ) ) {
-				wp_slimstat::$settings[ $_setting_slug ] = !empty( $_setting_info[ 'use_code_editor' ] ) ? $_POST[ 'options' ][ $_setting_slug ] : sanitize_text_field( $_POST[ 'options' ][ $_setting_slug ] );
-			}
-
-			// If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
-			if ( is_network_admin() ) {
-				if ( !isset( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] ) || strtolower( $_POST[ 'options' ][ 'addon_network_settings_' . $_setting_slug ] != 'on' ) ) {
-					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'no';
-				}
-				else {
-					wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] = 'on';
-				}
-			}
-			else if ( isset( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] ) ) {
-				// Keep settings clean
-				unset( wp_slimstat::$settings[ 'addon_network_settings_' . $_setting_slug ] );
-			}
-		}
-
-		// Allow third-party functions to manipulate the options right before they are saved
-		wp_slimstat::$settings = apply_filters( 'slimstat_save_options', wp_slimstat::$settings );
-
-		if ( !is_network_admin() ) {
-			update_option( 'slimstat_options', wp_slimstat::$settings );
-		}
-		else {
-			update_site_option( 'slimstat_options', wp_slimstat::$settings );
-		}
-
-		if ( !empty( self::$faulty_fields ) ) {
-			self::show_message( implode( ' ', self::$faulty_fields ), 'warning' );
-		}
-		else{
-			self::show_message( __( 'Your new settings have been saved.', 'wp-slimstat' ), 'info' );
-		}
+		
 	}
 	// END: update_settings
 

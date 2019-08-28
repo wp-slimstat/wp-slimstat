@@ -1768,8 +1768,8 @@ class wp_slimstat {
 			$content_info[ 'content_type' ] = 'admin';
 		}
 
-		if (is_paged()){
-			$content_info[ 'content_type' ] .= ',paged';
+		if ( is_paged() ) {
+			$content_info[ 'content_type' ] .= ':paged';
 		}
 
 		// Author
