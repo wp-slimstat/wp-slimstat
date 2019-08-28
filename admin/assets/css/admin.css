@@ -560,7 +560,7 @@
 	margin: 0;
 	padding: 5px 10px;
 }
-#adminmenu #toplevel_page_slimview1 .wp-menu-image:before { content: '\f239'; margin-top: -2px; }
+
 /* Responsive */
 @media screen and ( max-width: 1560px ) {
 	.wrap.slimstat .postbox {
