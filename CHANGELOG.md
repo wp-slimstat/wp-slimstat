@@ -6,6 +6,7 @@
 * [Update] Rewrote the portion of code that manages tracker errors, which are now saved in a separate field in the database.
 * [Update] Reintroduced feature to hide certain report pages when no reports are assigned to them.
 * [Fix] Entries with a trailing slash and ones without were being listed as separate in Top Web Pages.
+* [Fix] Typo in one of the conditions definining the Top Bots report.
 
 ### 4.8.5.1 ###
 * [Fix] A bug was affecting the way shortcodes were being displayed on the website (thank you, [inndesign](https://wordpress.org/support/topic/crashes-avada-theme-in-chrome/)).
