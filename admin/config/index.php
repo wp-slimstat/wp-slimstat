@@ -77,7 +77,13 @@ if ( $current_tab == 6 && !empty( $_REQUEST[ 'options' ] ) ) {
 if ( !empty( $_REQUEST[ 'action' ] ) ) {
 	switch ( $_REQUEST[ 'action' ] ) {
 		case 'reset-tracker-error-status':
-			wp_slimstat::$settings[ 'last_tracker_error' ] = array();
+			$last_tracker_error = array();
+			if ( !is_network_admin() ) {
+				update_option( 'slimstat_tracker_error', $last_tracker_error );
+			}
+			else {
+				update_site_option( 'slimstat_tracker_error', $last_tracker_error );
+			}
 			break;
 
 		case 'truncate-table':
@@ -99,6 +105,10 @@ if ( file_exists( wp_slimstat::$maxmind_path ) && false !== ( $file_stat = @stat
 } 
 
 $index_enabled = wp_slimstat::$wpdb->get_results( "SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'" );
+
+if ( !isset( $last_tracker_error ) ) {
+	$last_tracker_error = get_option( 'slimstat_tracker_error', array() );
+}
 
 // Define all the options
 $settings = array(
@@ -607,7 +617,7 @@ var SlimStatParams = {
 			'filters_users_header' => array(
 				'title' => __( 'Tracker Error', 'wp-slimstat' ),
 				'type'=> 'plain-text',
-				'after_input_field' => ( !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] ) && !empty( wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ] ) ) ? '<strong>[' . date_i18n( get_option( 'date_format' ), wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . ' ' . date_i18n( get_option( 'time_format' ), wp_slimstat::$settings[ 'last_tracker_error' ][ 2 ], true ) . '] ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 0 ] . ' ' . wp_slimstat::$settings[ 'last_tracker_error' ][ 1 ] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities( __( 'Reset this error', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-error-status"></a>' : __( 'So far so good.', 'wp-slimstat' ),
+				'after_input_field' => !empty( $last_tracker_error ) ? '<strong>[' . date_i18n( get_option( 'date_format' ), $last_tracker_error[ 1 ], true ) . ' ' . date_i18n( get_option( 'time_format' ), $last_tracker_error[ 1 ], true ) . '] ' . $last_tracker_error[ 0 ] . ' ' . slim_i18n::get_string( 'e-' . $last_tracker_error[ 0 ] ) . '</strong><a class="slimstat-font-cancel" title="' . htmlentities( __( 'Reset this error', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . wp_slimstat_admin::$config_url.$current_tab . '&amp;action=reset-tracker-error-status"></a>' : __( 'So far so good.', 'wp-slimstat' ),
 				'description'=> __( 'The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction. Please include the message here above when sending a <a href="https://support.wp-slimstat.com" target="_blank">support request</a>.', 'wp-slimstat' )
 			),
 			'show_sql_debug' => array(

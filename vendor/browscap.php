@@ -22,7 +22,6 @@ class slim_browser {
 		if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db-master/version.txt' ) ) {
 			self::$browscap_local_version = @file_get_contents( wp_slimstat::$upload_dir . '/browscap-db-master/version.txt' );
 			if ( false === self::$browscap_local_version ) {
-				wp_slimstat::save_options();
 				return array( 4, __( 'The Browscap Library could not be opened on your filesystem. Please check your server permissions and try again.', 'wp-slimstat' ) );
 			}
 		}
@@ -102,8 +101,6 @@ class slim_browser {
 			if ( empty( wp_slimstat::$settings[ 'browscap_last_modified' ] ) ) {
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
 			}
-
-			wp_slimstat::slimstat_save_options();
 		}
 
 		// Check for updates once a week ( 604800 seconds ), if $_force_download is not true
@@ -117,7 +114,6 @@ class slim_browser {
 				// Now check the version number on the server
 				$response = wp_remote_get( 'https://raw.githubusercontent.com/slimstat/browscap-db/master/version.txt' );
 				if ( !is_array( $response ) || is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
-					wp_slimstat::slimstat_save_options();
 					return array( 5, __( 'There was an error checking the remote library version. Please try again later.', 'wp-slimstat' ) );
 				}
 
@@ -135,14 +131,12 @@ class slim_browser {
 
 			if ( !file_exists( $browscap_zip ) ) {
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
-				wp_slimstat::slimstat_save_options();
 				return array( 6, __( 'There was an error saving the Browscap data file on your server. Please check your folder permissions.', 'wp-slimstat' ) );
 			}
 
 			if ( is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
 				@unlink( $browscap_zip );
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
-				wp_slimstat::slimstat_save_options();
 				return array( 7, __( 'There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat' ) );
 			}
 
@@ -151,7 +145,6 @@ class slim_browser {
 			if ( !function_exists( 'wp_filesystem' ) ) {
 				@unlink( $browscap_zip );
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
-				wp_slimstat::slimstat_save_options();
 				return array( 8, __( 'Could not initialize the WP Filesystem API. Please check your folder permissions and PHP configuration.', 'wp-slimstat' ) );
 			}
 
@@ -166,7 +159,6 @@ class slim_browser {
 			if ( !$unzip_done || !file_exists( self::$browscap_autoload_path ) ) {
 				$GLOBALS[ 'wp_filesystem' ]->rmdir( dirname( self::$browscap_autoload_path ) . '/', true );
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
-				wp_slimstat::slimstat_save_options();
 				return array( 9, __( 'There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration.', 'wp-slimstat' ) );
 			}
 
