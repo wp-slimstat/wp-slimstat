@@ -1,4 +1,7 @@
 ## Changelog ##
+### 4.8.6.1 ###
+* [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
+
 ### 4.8.6 ###
 * [New] Slimstat can now track most WordPress redirects and mark them with the appropriate content type.
 * [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
