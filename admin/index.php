@@ -6,6 +6,7 @@ class wp_slimstat_admin {
 	public static $current_screen = 'slimview1';
 	public static $faulty_fields = array();
 	public static $page_location = 'slimstat';
+	public static $meta_user_reports = array();
 
 	protected static $admin_notice = '';
 	protected static $data_for_column = array(
@@ -110,6 +111,15 @@ class wp_slimstat_admin {
 		// Page Location
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] != 'no' ) {
 			self::$page_location = 'admin';
+		}
+
+		// Retrieve this user's custom report assignment (Customizer)
+		// Superadmins can customize the layout at network level, to override per-site settings
+		self::$meta_user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout-network', 1 );
+
+		// No network-wide settings found
+		if ( empty( self::$meta_user_reports ) ) {
+			self::$meta_user_reports = get_user_option( 'meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout', $GLOBALS[ 'current_user' ]->ID );
 		}
 
 		// WPMU - New blog created
@@ -548,10 +558,25 @@ class wp_slimstat_admin {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
 
+		// Find the first available location (screens with no reports assigned to them are hidden from the nav)
+		$parent = 'slimview1';
+		if ( is_array( self::$meta_user_reports ) ) {
+			$parent = '';
+			foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
+				if ( !empty( self::$meta_user_reports[ $a_screen_id ] ) && $a_screen_info[ 'show_in_sidebar' ] ) {
+					$parent = $a_screen_id;
+					break;
+				}
+			}
+
+			if ( empty( $parent ) ) {
+				$parent = 'slimlayout';
+			}
+		}
+
 		// Get the current menu position
 		$new_entry = array();
 		if ( wp_slimstat::$settings[ 'use_separate_menu' ] == 'no' || is_network_admin() ) {
-			$parent = 'slimview1';
 			$new_entry[] = add_menu_page( __( 'Slimstat',  'wp-slimstat' ), __( 'Slimstat',  'wp-slimstat' ), $minimum_capability, $parent, array( __CLASS__, 'wp_slimstat_include_view' ) );	
 		}
 		else {
@@ -559,6 +584,10 @@ class wp_slimstat_admin {
 		}
 
 		foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
+			if ( isset( self::$meta_user_reports[ $a_screen_id ] ) && empty( self::$meta_user_reports[ $a_screen_id ] ) ) {
+				continue;
+			}
+
 			$minimum_capability = 'read';
 			if ( !empty( $a_screen_info[ 'capability' ] ) && strpos( wp_slimstat::$settings[ $a_screen_info[ 'capability' ] ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ] ) ) {
 				$minimum_capability = wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ];
@@ -600,16 +629,36 @@ class wp_slimstat_admin {
 			$minimum_capability = wp_slimstat::$settings[ 'capability_can_view' ];
 		}
 
+		// Find the first available location (screens with no reports assigned to them are hidden from the nav)
+		$parent = 'slimview1';
+		if ( is_array( self::$meta_user_reports ) ) {
+			$parent = '';
+			foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
+				if ( !empty( self::$meta_user_reports[ $a_screen_id ] ) && $a_screen_info[ 'show_in_sidebar' ] ) {
+					$parent = $a_screen_id;
+					break;
+				}
+			}
+
+			if ( empty( $parent ) ) {
+				$parent = 'slimlayout';
+			}
+		}
+
 		if ( current_user_can( $minimum_capability ) ) {
 			$view_url = get_admin_url( $GLOBALS[ 'blog_id' ], 'admin.php?page=' );
 
 			$GLOBALS[ 'wp_admin_bar' ]->add_menu( array(
 				'id' => 'slimstat-header',
 				'title' => __( 'Slimstat',  'wp-slimstat' ),
-				'href' => "{$view_url}slimview1"
+				'href' => "{$view_url}{$parent}"
 			) );
 
 			foreach ( self::$screens_info as $a_screen_id => $a_screen_info ) {
+				if ( isset( self::$meta_user_reports[ $a_screen_id ] ) && empty( self::$meta_user_reports[ $a_screen_id ] ) ) {
+					continue;
+				}
+
 				$minimum_capability = 'read';
 				if ( strpos( wp_slimstat::$settings[ $a_screen_info[ 'capability' ] ], $GLOBALS[ 'current_user' ]->user_login ) === false && !empty( wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ] ) ) {
 					$minimum_capability = wp_slimstat::$settings[ 'capability_' . $a_screen_info[ 'capability' ] ];

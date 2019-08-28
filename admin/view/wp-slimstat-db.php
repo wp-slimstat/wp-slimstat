@@ -890,11 +890,11 @@ class wp_slimstat_db {
 			WHERE $_where
 			ORDER BY $_order_by	
 			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
-			$dimensions,
+			$_column,
 			'dt DESC' );
 
-		if ( $_dimension != '*' ) {
-			$values = array_map( 'unserialize', array_unique( array_map( 'serialize', self::array_column( $results, explode( ',', $_dimension ) ) ) ) );
+		if ( $_column != '*' ) {
+			$values = array_map( 'unserialize', array_unique( array_map( 'serialize', self::array_column( $results, explode( ',', $_column ) ) ) ) );
 			$results = array_intersect_key( $results, $values );
 		}
 
