@@ -98,7 +98,7 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'SUBSTRING_INDEX(resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1)',
+					'columns' => 'TRIM( TRAILING "/" FROM SUBSTRING_INDEX( resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1 ) )',
 					'as_column' => 'resource_calculated',
 					'filter_op' => 'contains',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
@@ -551,7 +551,8 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'resource',
+					'columns' => 'TRIM( TRAILING "/" FROM resource )',
+					'as_column' => 'resource_calculated',
 					'where' => 'content_type = "post"',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
@@ -638,7 +639,8 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'resource',
+					'columns' => 'TRIM( TRAILING "/" FROM resource )',
+					'as_column' => 'resource_calculated',
 					'where' => 'content_type = "post"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' ),
 				),
@@ -674,7 +676,8 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'resource',
+					'columns' => 'TRIM( TRAILING "/" FROM resource )',
+					'as_column' => 'resource_calculated',
 					'where' => '(content_type = "category" OR content_type = "tag")',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
@@ -755,7 +758,8 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'resource',
+					'columns' => 'TRIM( TRAILING "/" FROM resource )',
+					'as_column' => 'resource_calculated',
 					'where' => 'content_type <> "404"',
 					'having' => 'HAVING COUNT(visit_id) = 1',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
