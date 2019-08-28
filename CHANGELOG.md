@@ -1,10 +1,12 @@
 ## Changelog ##
-### 4.8.5.2 ###
+### 4.8.6 ###
 * [New] Slimstat can now track most WordPress redirects and mark them with the appropriate content type.
 * [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
 * [Update] Simplified code that manages the sidebar menu.
+* [Update] Reorganized code that manages the plugin options.
 * [Update] Rewrote the portion of code that manages tracker errors, which are now saved in a separate field in the database.
 * [Update] Reintroduced feature to hide certain report pages when no reports are assigned to them.
+* [Update] Decrease the number of database requests needed to record a new pageview.
 * [Fix] Entries with a trailing slash and ones without were being listed as separate in Top Web Pages.
 * [Fix] Typo in one of the conditions definining the Top Bots report.
 
