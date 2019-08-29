@@ -867,30 +867,31 @@ class wp_slimstat_db {
 			$_column = $_column[ 'columns' ];
 		}
 
+		$columns = $_column;
 		if ( !empty( $_as_column ) ) {
-			$_column = "$_column AS $_as_column";
+			$columns = "$_column AS $_as_column";
 		}
 
 		if ( $_column != '*' ) {
-			$_column .= ', ip, dt';
+			$columns .= ', ip, dt';
 		}
 		else {
-			$_column = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, tz_offset, dt_out, dt';
+			$columns = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, tz_offset, dt_out, dt';
 		}
 
 		if ( !empty( $_more_columns ) ) {
-			$_column .= ', ' . $_more_columns;
+			$columns .= ', ' . $_more_columns;
 		}
 
 		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
 		$results = self::get_results( "
-			SELECT $_column
+			SELECT $columns
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
 			ORDER BY $_order_by	
 			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
-			$_column,
+			$columns,
 			'dt DESC' );
 
 		if ( $_column != '*' ) {
