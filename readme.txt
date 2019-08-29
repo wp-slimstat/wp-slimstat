@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 3.8
 Requires PHP: 5.2
 Tested up to: 5.2
-Stable tag: 4.8.6
+Stable tag: 4.8.6.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -60,6 +60,9 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.8.6.1 =
+* [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
+
 = 4.8.6 =
 * [New] Slimstat can now track most WordPress redirects and mark them with the appropriate content type.
 * [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
