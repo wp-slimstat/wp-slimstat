@@ -1,8 +1,8 @@
 var SlimStat = {
-	// Private Properties
-	_id: "undefined" != typeof SlimStatParams.id ? SlimStatParams.id : "-1.0",
-	_base64_key_str: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+	_id : ( "undefined" != typeof SlimStatParams.id && !isNaN( parseInt( SlimStatParams.id ) ) ) ? SlimStatParams.id : "-1.0",
+	_base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
 
+	// Encodes a string using the UTF-8 encoding. This function is needed by the Base64 Encoder here below
 	_utf8_encode : function( string ) {
 		var n, c, utftext = "";
 
@@ -55,6 +55,7 @@ var SlimStat = {
 		return output;
 	},
 
+	// Calculates the current page's performance
 	get_page_performance : function() {
 		slim_performance = window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
 		if ( "undefined" == typeof slim_performance.timing ){
@@ -63,7 +64,8 @@ var SlimStat = {
 
 		return slim_performance.timing.loadEventEnd - slim_performance.timing.responseEnd;
 	},
-	
+
+	// Calculates the current page's latency
 	get_server_latency : function() {
 		slim_performance = window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
 		if ( "undefined" == typeof slim_performance.timing ){
@@ -73,7 +75,8 @@ var SlimStat = {
 		return slim_performance.timing.responseEnd - slim_performance.timing.connectEnd;
 	},
 
-	optout: function( event, cookie_value ) {
+	// Records the choice made by the visitor and hides the dialog message
+	optout : function( event, cookie_value ) {
 		event.preventDefault();
 
 		expiration = new Date();
@@ -83,6 +86,7 @@ var SlimStat = {
 		event.target.parentNode.parentNode.removeChild( event.target.parentNode );
 	},
 
+	// Retrieves and displays the opt-out message dynamically, to avoid issues with cached pages
 	show_optout_message : function() {
 		var opt_out_cookies = ( "undefined" != typeof SlimStatParams.opt_out_cookies && SlimStatParams.opt_out_cookies ) ? SlimStatParams.opt_out_cookies.split( ',' ) : [];
 		var show_optout = ( opt_out_cookies.length > 0 );
@@ -95,9 +99,13 @@ var SlimStat = {
 
 		if ( show_optout ) {
 			// Retrieve the message from the server
-			xhr = new XMLHttpRequest();
+			try {
+				xhr = new XMLHttpRequest();
+			} catch ( failed ) {
+				return false;
+			}
 
-			if ( xhr ) {
+			if ( "object" == typeof xhr ) {
 				xhr.open( "POST", SlimStatParams.ajaxurl, true );
 				xhr.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
 				xhr.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
@@ -115,6 +123,7 @@ var SlimStat = {
 		}
 	},
 
+	// Attaches an event handler to a node
 	add_event : function( obj, type, fn ) {
 		if ( obj && obj.addEventListener ) {
 			obj.addEventListener( type, fn, false );
@@ -129,24 +138,17 @@ var SlimStat = {
 		}
 	},
 
+	// Implements a function to find a substring in an array
 	in_array : function( needle, haystack ) {
 		for ( var i = 0; i < haystack.length; i++ ) {
-			if ( haystack[ i ].trim() == needle ) {
+			if ( needle.indexOf( haystack[ i ].trim() ) != -1 ) {
 				return true;
 			}
 		}
 		return false;
 	},
 
-	in_array_substring : function( needle, haystack_of_substrings ) {
-		for ( var i = 0; i < haystack_of_substrings.length; i++ ) {
-			if ( needle.indexOf( haystack_of_substrings[ i ].trim() ) != -1 ) {
-				return true;
-			}
-		}
-		return false;
-	},
-
+	// Retrieves the value associated to a given cookie
 	get_cookie : function( name ) {
 		var value = "; " + document.cookie;
 		var parts = value.split( "; " + name + "=" );
@@ -156,6 +158,7 @@ var SlimStat = {
 		return "";
 	},
 
+	// Sends data back to the server (wrapper for XMLHttpRequest object)
 	send_to_server : function( data, use_beacon ) {
 		if ( "undefined" == typeof SlimStatParams.ajaxurl || "undefined" == typeof data ) {
 			return false;
@@ -172,28 +175,23 @@ var SlimStat = {
 		}
 		else {
 			try {
-				if ( window.XMLHttpRequest ) {
-					request = new XMLHttpRequest();
-				}
-				else if ( window.ActiveXObject ) { // code for IE6, IE5
-					request = new ActiveXObject( "Microsoft.XMLHTTP" );
-				}
+				xhr = new XMLHttpRequest();
 			} catch ( failed ) {
 				return false;
 			}
 
-			if ( request ) {
-				request.open( "POST", SlimStatParams.ajaxurl, true );
-				request.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
-				request.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
-				request.withCredentials = true;
-				request.send( slimstat_data_with_client_info );
+			if ( "object" == typeof xhr ) {
+				xhr.open( "POST", SlimStatParams.ajaxurl, true );
+				xhr.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
+				xhr.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
+				xhr.withCredentials = true;
+				xhr.send( slimstat_data_with_client_info );
 
-				request.onreadystatechange = function() {
-					if ( 4 == request.readyState ) {
-						parsed_id = parseInt( request.responseText );
+				xhr.onreadystatechange = function() {
+					if ( 4 == xhr.readyState ) {
+						parsed_id = parseInt( xhr.responseText );
 						if ( !isNaN( parsed_id ) && parsed_id > 0 ) {
-							SlimStat._id = request.responseText;
+							SlimStat._id = xhr.responseText;
 						}
 					}
 				}
@@ -205,201 +203,141 @@ var SlimStat = {
 		return false;
 	},
 
-	ss_track : function( e, type, note, use_beacon ) {
-		// Check function params
-		e = e ? e : window.event;
-		type = ( "undefined" == typeof type ) ? 0 : parseInt( type );
+	// Tracks events (clicks to download files, mouse coordinates on anchors, etc)
+	ss_track : function( note, use_beacon ) {
+		// Read and initialize input parameters
 		note_array = [];
-
+		if ( "undefined" != typeof note && note.length > 0 ){
+			note_array.push( note );
+		}
 		if ( "undefined" == typeof use_beacon ) {
 			use_beacon = true;
 		}
 
-		parsed_id = parseInt( SlimStat._id );
-		if ( isNaN( parsed_id ) || parsed_id <= 0 ) {
+		// No event was triggered (weird)
+		if ( "undefined" == typeof window.event ) {
 			return false;
 		}
 
-		node = ( "undefined" != typeof e.target ) ? e.target : ( ( "undefined" != typeof e.srcElement ) ? e.srcElement : false );
-		if ( !node ) {
+		if ( "undefined" != typeof window.event.target ) {
+			target_node = window.event.target;
+		}
+		else if ( "undefined" != typeof window.event.srcElement ) {
+			target_node = window.event.srcElement;
+		}
+		else {
 			return false;
 		}
- 
-		// Safari bug
-		if ( 3 == node.nodeType ) {
-			node = node.parentNode;
+
+		action = "event";
+		resource_url = "";
+
+		// Do not track events on elements with given class names or rel attributes
+		to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
+
+		if ( to_not_track.length > 0 ) {
+			target_classes = ( "undefined" != typeof target_node.className ) ? target_node.className.split( " " ) : [];
+			if ( target_classes.filter( value => -1 !== to_not_track.indexOf( value ) ).length != 0 || ( "undefined" != typeof target_node.attributes && "undefined" != typeof target_node.attributes.rel && "undefined" != typeof target_node.attributes.rel.value && SlimStat.in_array( target_node.attributes.rel.value, to_not_track ) ) ) {
+				return false;
+			}
 		}
 
-		parent_node = node.parentNode;
-		resource_url = '';
-
-		// This handler can be attached to any element, but only A tags carry the extra info we need
-		switch ( node.nodeName ) {
-			case 'FORM':
-				if ( "undefined" != typeof node.action && node.action ) {
-					resource_url = node.action;
-				}
-				break;
-
-			case 'INPUT':
-				// Let's look for a FORM element
-				while ( "undefined" != typeof parent_node && parent_node.nodeName != "FORM" && parent_node.nodeName != "BODY" ) {
-					parent_node = parent_node.parentNode;
-				}
-				if ( "undefined" != typeof parent_node.action && parent_node.action ) {
-					resource_url = parent_node.action;
+		// Different elements have different properties to record...
+		if ( "undefined" != typeof target_node.nodeName ) {
+			switch ( target_node.nodeName ) {
+				case "FORM":
+					if ( "undefined" != typeof target_node.action ) {
+						resource_url = target_node.action;
+					}
 					break;
-				}
 
-			default:
-				// Any other element
-				if ( "A" != node.nodeName ) {
-					while ( "undefined" != typeof node.parentNode && null != node.parentNode && "A" != node.nodeName && "BODY" != node.nodeName ) {
-						node = node.parentNode;
+				case "INPUT":
+					// Let's look for a FORM element
+					parent_node = target_node.parentNode;
+					while ( "undefined" != typeof parent_node && parent_node.nodeName != "FORM" && parent_node.nodeName != "BODY" ) {
+						parent_node = parent_node.parentNode;
 					}
-				}
+					if ( "undefined" != typeof parent_node.action ) {
+						resource_url = parent_node.action;
+					}
+					break;
 
-				// Anchor in the same page
-				if ( "undefined" != typeof node.hash && node.hash && node.hostname == location.hostname ) {
-					resource_url = node.hash;
-				}
-				else if ( "undefined" != typeof node.href && node.href.indexOf( 'javascript:' ) == -1 ) {
-					resource_url = node.href;
-				}
+				default:
+					// Is this a link?
+					parent_node = target_node;
+					while ( "undefined" != typeof parent_node && parent_node.nodeName != "A" && parent_node.nodeName != "BODY" ) {
+						parent_node = parent_node.parentNode;
+					}
 
-				// If this element has a title, we can record that as well
-				if ( "function" == typeof node.getAttribute ) {
-					if ( "undefined" != typeof node.getAttribute( "title" ) && node.getAttribute( "title" ) ) {
-						note_array.push( "Title:" + node.getAttribute( "title" ) );
+					if ( parent_node.nodeName == "A" ) {
+						target_node = parent_node;
+
+						// Anchor in the same page
+						if ( "undefined" != typeof target_node.hash && target_node.hostname == location.hostname ) {
+							resource_url = target_node.hash;
+						}
+						// Regular link to another page
+						else if ( "undefined" != typeof target_node.href && target_node.href.indexOf( 'javascript:' ) == -1 ) {
+							// Do not track links containing one of the strings defined in the settings as HREF
+							if ( "undefined" != target_node.href && SlimStat.in_array( target_node.href, to_not_track ) ) {
+								return false;
+							}
+
+							resource_url = target_node.href;
+						}
+
+						// If the current link target's extension is among the one defined in the settings, we should label this event as a download
+						extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
+						extension_current_link = target_node.pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
+
+						if ( SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
+							action = "add";
+							resource_url = resource_url.substring( resource_url.indexOf( location.hostname ) + location.hostname.length );
+						}
 					}
-					if ( "undefined" != typeof node.getAttribute( "id" ) && node.getAttribute( "id" ) ) {
-						note_array.push( "ID:" + node.getAttribute( "id" ) );
+
+					// If this element has a title, we can record that as well
+					if ( "function" == typeof target_node.getAttribute ) {
+						if ( "undefined" != typeof target_node.getAttribute( "title" ) && target_node.getAttribute( "title" ) ) {
+							note_array.push( "Title:" + target_node.getAttribute( "title" ) );
+						}
+						if ( "undefined" != typeof target_node.getAttribute( "id" ) && target_node.getAttribute( "id" ) ) {
+							note_array.push( "ID:" + target_node.getAttribute( "id" ) );
+						}
 					}
-				}
+			}
 		}
 
 		// Event coordinates
-		pos_x = -1; 
-		pos_y = -1;
 		position = "";
 
-		if ( "undefined" != typeof e.pageX && "undefined" != typeof e.pageY ) {
-			pos_x = e.pageX;
-			pos_y = e.pageY;
+		if ( "undefined" != typeof window.event.pageX && "undefined" != typeof window.event.pageY ) {
+			position = window.event.pageX + "," + window.event.pageY;
 		}
-		else if ( "undefined" != typeof e.clientX && "undefined" != typeof e.clientY &&
+		else if ( "undefined" != typeof window.event.clientX && "undefined" != typeof window.event.clientY &&
 				"undefined" != typeof document.body.scrollLeft && "undefined" != typeof document.documentElement.scrollLeft &&
 				"undefined" != typeof document.body.scrollTop && "undefined" != typeof document.documentElement.scrollTop ) {
-			pos_x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-			pos_y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-		}
-
-		if ( pos_x > 0 && pos_y > 0 ) {
-			position = pos_x + "," + pos_y;
+			position = window.event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft + "," + window.event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
 		}
 
 		// Event description and button pressed
-		if ( "undefined" !=  typeof e.type ) {
-			event_description = e.type;
-			if ( "keypress" == e.type ) {
-				event_description += '; keypress:' + String.fromCharCode( parseInt( e.which ) );
+		if ( "undefined" !=  typeof window.event.type ) {
+			event_description = window.event.type;
+			if ( "keypress" == window.event.type ) {
+				event_description += '; keypress:' + String.fromCharCode( parseInt( window.event.which ) );
 			}
-			else if ( "click" == e.type ) {
-				event_description += '; which:' + e.which;
+			else if ( "click" == window.event.type ) {
+				event_description += '; which:' + window.event.which;
 			}
 		}
 
-		// Custom description for this event
-		if ( "undefined" != typeof note && note ){
-			note_array.push( note );
-		}
+// TODO: CONSOLIDATE NOTE AND DESCRIPTION
+		// note_string = SlimStat._base64_encode( note_array.join( ", " ) );
 
-		note_string = SlimStat._base64_encode( note_array.join( ", " ) );
-		requested_op = "add";
 
-		if ( 1 == type ) {
-			resource_url = resource_url.substring( resource_url.indexOf( location.hostname ) + location.hostname.length );
-		}
-		else if ( 0 == type || 2 == type ) {
-			requested_op = "update";
-		}
-		else {
-			requested_op = "event";
-		}
-
-		SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, use_beacon );
+		// SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, use_beacon );
 
 		return true;
-	},
-
-	attach_tracker: function() {
-		all_links = document.getElementsByTagName( "a" );
-		var extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
-		var to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
-
-		for ( var i = 0; i < all_links.length; i++ ) {
-			// SVG and other objects using the A tag should not be considered
-			if ( typeof all_links[ i ].href != "string" ) {
-				continue;
-			}
-
-			// Types
-			// 0: external
-			// 1: download
-			// 2: internal (track coordinates only)
-
-			linktype = ( all_links[ i ].hostname == location.hostname || all_links[ i ].href.indexOf( '://' ) == -1 || all_links[ i ].href.indexOf( 'javascript:' ) == -1 ) ? 2 : 0;
-			tracking = 1;
-
-			// Do not track links with given class names...
-			if ( to_not_track.length > 0 ) {
-				if ( 1 == tracking ) {
-					classes_current_link = ( "undefined" != typeof all_links[ i ].className && all_links[ i ].className ) ? all_links[ i ].className.split( " " ) : [];
-
-					for ( var cl = 0; cl < classes_current_link.length; cl++ ) {
-						if ( SlimStat.in_array_substring( classes_current_link[ cl ], to_not_track ) ) {
-							tracking = 0;
-							break;
-						}
-					}
-				}
-
-				// ... or rel attribute
-				if ( 1 == tracking && "undefined" != typeof all_links[ i ].attributes.rel && all_links[ i ].attributes.rel.value ) {
-					if ( SlimStat.in_array_substring( all_links[ i ].attributes.rel.value, to_not_track ) ) {
-						tracking = 0;
-					}
-				}
-
-				// ... or HREF attribute
-				if ( 1 == tracking && "undefined" != typeof all_links[ i ].href && all_links[ i ].href ) {
-					if ( SlimStat.in_array_substring( all_links[ i ].href, to_not_track ) ) {
-						tracking = 0;
-					}
-				}
-			}
-
-			// Downloads
-			extension_current_link = all_links[ i ].pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
-			if ( 2 == linktype && extensions_to_track.length > 0 && SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
-				tracking = 1;
-				linktype = 1;
-			}
-
-			all_links[ i ].setAttribute( "data-slimstat", ( linktype << 1 ) + tracking );
-
-			SlimStat.add_event( all_links[ i ], "click", function( e ) {
-				link_info = parseInt( this.getAttribute( "data-slimstat" ) );
-				if ( isNaN ( link_info ) ) {
-					link_info = 0;
-				}
-
-				// tracking: link_info & 1 --- linktype: link_info >> 1;
-				if ( link_info & 1 == 1 ) {
-					SlimStat.ss_track( e, link_info >> 1, "" );
-				}
-			});
-		}
 	}
 }
 
@@ -410,32 +348,42 @@ if ( typeof String.prototype.trim !== 'function' ) {
 	}
 }
 
-SlimStat.add_event( window, "load", function() {
-	// Attach an event tracker to all the links on the page that satisfy the criteria set by the admin
-	SlimStat.attach_tracker();
+// Ok, let's go, Sparky!
+SlimStat.add_event( window, 'load', function() {
+	slimstat_data = "";
+	use_beacon = true;
+
+	if ( "undefined" != typeof SlimStatParams.id && parseInt( SlimStatParams.id ) > 0 ) {
+		slimstat_data = "action=slimtrack&op=update&id=" + SlimStatParams.id;
+	}
+	else {
+// COMPLETE THE HANDLING OF EXTERNAL PAGES BY IMPLEMENTING THE CORRESPONDING PHP CODE
+	
+// CLEANUP USE OF PARAMS: ID is always ID, &ci= should be used for CI
+		slimstat_data = "action=slimtrack&op=add&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( window.location.href );
+	
+		if ( "undefined" != typeof SlimStatParams.ci ) {
+			slimstat_data += "&ci=" + SlimStatParams.ci;
+		}
+
+		// If the tracker is working in "client mode", it needs to wait for the server to assign it a page view ID
+		use_beacon = false;
+	}
+// TEST IF use_beacon is being passed as expected
+	if ( slimstat_data.length > 0 ) {
+		setTimeout( function(){
+			SlimStat.send_to_server( slimstat_data, use_beacon );
+		}, 50 );
+	}
+
+	// Attach an event handler to all the links on the page that satisfy the criteria set by the admin
+	all_links = document.getElementsByTagName( "a" );
+	for ( var i = 0; i < all_links.length; i++ ) {
+		SlimStat.add_event( all_links[ i ], "click", function( e ) {
+			SlimStat.ss_track();
+		} );
+	}
 
 	// GDPR: display the Opt-Out box, if needed
 	SlimStat.show_optout_message();
 } );
-
-var slimstat_data = "";
-var use_beacon = true;
-
-if ( "undefined" != typeof SlimStatParams.id && parseInt( SlimStatParams.id ) > 0 ) {
-	slimstat_data = "action=slimtrack&op=update&id=" + SlimStatParams.id;
-}
-else if ( "undefined" != typeof SlimStatParams.ci ) {
-	slimstat_data = "action=slimtrack&op=add&id=" + SlimStatParams.ci + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( window.location.href );
-
-	// If the tracker is working in "client mode", it needs to wait for the server to assign it a page view ID
-	use_beacon = false;
-}
-
-// Gather all the information and send it to the server
-if ( slimstat_data.length > 0 ) {
-	SlimStat.add_event( window, 'load', function(){
-		setTimeout( function(){
-			SlimStat.send_to_server( slimstat_data, '' );
-		}, 0 );
-	} );
-}

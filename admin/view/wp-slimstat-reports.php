@@ -964,7 +964,7 @@ class wp_slimstat_reports {
 
 	public static function callback_wrapper() {
 		$_args = self::_check_args( func_get_args() );
-		if ( !empty( $_args ) ) {
+		if ( !empty( $_args ) && !empty( $_args[ 'callback' ] ) ) {
 			call_user_func( $_args[ 'callback' ] , $_args[ 'callback_args' ] );
 		}
 	}

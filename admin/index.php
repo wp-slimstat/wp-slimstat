@@ -100,8 +100,19 @@ class wp_slimstat_admin {
 		);
 		self::$screens_info = apply_filters( 'slimstat_screens_info', self::$screens_info );
 
+		// If the plugin was network activated, the tables might not have been created for this specific site
+		$table_list = wp_slimstat::$wpdb->get_results( "SHOW TABLES LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats'" );
+		if ( empty( $table_list ) ) {
+			self::init_environment();
+		}
+
 		// Settings URL
-		self::$config_url = get_admin_url( $GLOBALS[ 'blog_id' ], 'admin.php?page=slimconfig&amp;tab=' );
+		if ( !is_network_admin() ) {
+			self::$config_url = get_admin_url( $GLOBALS[ 'blog_id' ], 'admin.php?page=slimconfig&amp;tab=' );
+		}
+		else {
+			self::$config_url = network_admin_url( 'admin.php?page=slimconfig&amp;tab=' );
+		}
 
 		// Current Screen
 		if ( !empty( $_REQUEST[ 'page' ] ) && array_key_exists( $_REQUEST[ 'page' ], self::$screens_info ) ) {
@@ -200,9 +211,9 @@ class wp_slimstat_admin {
 
 		// Dashboard Widgets
 		if ( wp_slimstat::$settings[ 'add_dashboard_widgets' ] == 'on' ) {
-			$temp = strlen( $_SERVER['REQUEST_URI'] ) - 10;
+			$temp = strlen( $_SERVER[ 'REQUEST_URI' ] ) - 10;
 
-			if( strpos( $_SERVER['REQUEST_URI'], 'index.php' ) !== false || ( $temp >= 0 && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false ) ) {
+			if( strpos( $_SERVER[ 'REQUEST_URI' ], 'index.php' ) !== false || ( $temp >= 0 && strpos( $_SERVER[ 'REQUEST_URI' ], '/wp-admin/', $temp ) !== false ) ) {
 				add_action( 'admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts' ) );
 				add_action( 'admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet' ) );
 			}
