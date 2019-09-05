@@ -134,13 +134,8 @@ class wp_slimstat {
 
 		$id = 0;
 
-<<<<<<< 223c23b65494acb2bc1805b63835f08c9a6ee52d
 		self::$data_js = apply_filters( 'slimstat_filter_pageview_data_js', self::$raw_post_array );
 		$site_host = parse_url( get_site_url(), PHP_URL_HOST );
-=======
-		// Is this a request to record a new pageview or update an existing one with client-side info?
-		if ( self::$data_js[ 'op' ] == 'add' || self::$data_js[ 'op' ] == 'update' ) {
->>>>>>> The Javascript tracking code has been refreshed and consolidated, for improved performance and a more seamless integration with other libraries.
 
 		self::$stat[ 'referer' ] = '';
 		if ( !empty( self::$data_js[ 'ref' ] ) ) {
