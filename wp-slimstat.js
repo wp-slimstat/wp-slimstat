@@ -1,6 +1,5 @@
 var SlimStat = {
-	_id : ( "undefined" != typeof SlimStatParams.id && !isNaN( parseInt( SlimStatParams.id ) ) ) ? SlimStatParams.id : "-1.0",
-	_base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+	_base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-",
 
 	// Encodes a string using the UTF-8 encoding. This function is needed by the Base64 Encoder here below
 	_utf8_encode : function( string ) {
@@ -79,6 +78,10 @@ var SlimStat = {
 	optout : function( event, cookie_value ) {
 		event.preventDefault();
 
+		if ( "string" != typeof SlimStatParams.baseurl || SlimStatParams.baseurl.length == 0 ) {
+			SlimStatParams.baseurl = '/';
+		}
+
 		expiration = new Date();
 		expiration.setTime( expiration.getTime() + 31536000000 );
 		document.cookie = "slimstat_optout_tracking=" + cookie_value + ";path=" + SlimStatParams.baseurl + ";expires=" + expiration.toGMTString();
@@ -88,8 +91,12 @@ var SlimStat = {
 
 	// Retrieves and displays the opt-out message dynamically, to avoid issues with cached pages
 	show_optout_message : function() {
-		var opt_out_cookies = ( "undefined" != typeof SlimStatParams.opt_out_cookies && SlimStatParams.opt_out_cookies ) ? SlimStatParams.opt_out_cookies.split( ',' ) : [];
-		var show_optout = ( opt_out_cookies.length > 0 );
+		opt_out_cookies = ( "undefined" != typeof SlimStatParams.oc && SlimStatParams.oc ) ? SlimStatParams.oc.split( ',' ) : [];
+		if ( !Array.isArray( opt_out_cookies ) ) {
+			opt_out_cookies = [];
+		}
+
+		show_optout = ( opt_out_cookies.length > 0 );
 
 		for ( var i = 0; i < opt_out_cookies.length; i++ ) {
 			if ( SlimStat.get_cookie( opt_out_cookies[ i ] ) != "" ) {
@@ -148,6 +155,22 @@ var SlimStat = {
 		return false;
 	},
 
+	// Checks if a string/array variable is defined and not empty
+	empty : function( variable ) {
+		if ( "undefined" == typeof variable || variable == null ) {
+			return true;
+		}
+		else if ( "number" == typeof variable ) {
+			return variable == 0;
+		}
+		else if ( "boolean" == typeof variable ) {
+			return !variable;
+		}
+		else if ( "string" == typeof variable || "object" == typeof variable ) {
+			return variable.length == 0;
+		}
+	},
+
 	// Retrieves the value associated to a given cookie
 	get_cookie : function( name ) {
 		var value = "; " + document.cookie;
@@ -160,7 +183,7 @@ var SlimStat = {
 
 	// Sends data back to the server (wrapper for XMLHttpRequest object)
 	send_to_server : function( data, use_beacon ) {
-		if ( "undefined" == typeof SlimStatParams.ajaxurl || "undefined" == typeof data ) {
+		if ( SlimStat.empty( SlimStatParams.ajaxurl )|| SlimStat.empty( data ) ) {
 			return false;
 		}
 
@@ -191,7 +214,7 @@ var SlimStat = {
 					if ( 4 == xhr.readyState ) {
 						parsed_id = parseInt( xhr.responseText );
 						if ( !isNaN( parsed_id ) && parsed_id > 0 ) {
-							SlimStat._id = xhr.responseText;
+							SlimStatParams.id = xhr.responseText;
 						}
 					}
 				}
@@ -205,48 +228,53 @@ var SlimStat = {
 
 	// Tracks events (clicks to download files, mouse coordinates on anchors, etc)
 	ss_track : function( note, use_beacon ) {
+		// Bail if the pageview ID is negative
+		if ( SlimStat.empty( SlimStatParams.id ) || isNaN( parseInt( SlimStatParams.id ) ) || parseInt( SlimStatParams.id ) <= 0 ) {
+			return false;
+		}
+window.event.preventDefault();
 		// Read and initialize input parameters
 		note_array = [];
-		if ( "undefined" != typeof note && note.length > 0 ){
+		if ( !SlimStat.empty( note ) ){
 			note_array.push( note );
 		}
+
 		if ( "undefined" == typeof use_beacon ) {
 			use_beacon = true;
 		}
 
 		// No event was triggered (weird)
-		if ( "undefined" == typeof window.event ) {
+		if ( SlimStat.empty( window.event ) ) {
 			return false;
 		}
 
-		if ( "undefined" != typeof window.event.target ) {
+		if ( !SlimStat.empty( window.event.target ) ) {
 			target_node = window.event.target;
 		}
-		else if ( "undefined" != typeof window.event.srcElement ) {
+		else if ( !SlimStat.empty( window.event.srcElement ) ) {
 			target_node = window.event.srcElement;
 		}
 		else {
 			return false;
 		}
 
-		action = "event";
 		resource_url = "";
 
 		// Do not track events on elements with given class names or rel attributes
-		to_not_track = ( "undefined" != typeof SlimStatParams.outbound_classes_rel_href_to_not_track && SlimStatParams.outbound_classes_rel_href_to_not_track ) ? SlimStatParams.outbound_classes_rel_href_to_not_track.split( ',' ) : [];
+		do_not_track = !SlimStat.empty( SlimStatParams.dnt ) ? SlimStatParams.dnt.split( ',' ) : [];
 
-		if ( to_not_track.length > 0 ) {
-			target_classes = ( "undefined" != typeof target_node.className ) ? target_node.className.split( " " ) : [];
-			if ( target_classes.filter( value => -1 !== to_not_track.indexOf( value ) ).length != 0 || ( "undefined" != typeof target_node.attributes && "undefined" != typeof target_node.attributes.rel && "undefined" != typeof target_node.attributes.rel.value && SlimStat.in_array( target_node.attributes.rel.value, to_not_track ) ) ) {
+		if ( !SlimStat.empty( do_not_track.length ) ) {
+			target_classes = !SlimStat.empty( target_node.className ) ? target_node.className.split( " " ) : [];
+			if ( target_classes.filter( value => -1 !== do_not_track.indexOf( value ) ).length != 0 || ( !SlimStat.empty( target_node.attributes ) && !SlimStat.empty( target_node.attributes.rel ) && !SlimStat.empty( target_node.attributes.rel.value ) && SlimStat.in_array( target_node.attributes.rel.value, do_not_track ) ) ) {
 				return false;
 			}
 		}
 
 		// Different elements have different properties to record...
-		if ( "undefined" != typeof target_node.nodeName ) {
+		if ( !SlimStat.empty( target_node.nodeName ) ) {
 			switch ( target_node.nodeName ) {
 				case "FORM":
-					if ( "undefined" != typeof target_node.action ) {
+					if ( !SlimStat.empty( target_node.action ) ) {
 						resource_url = target_node.action;
 					}
 					break;
@@ -257,7 +285,7 @@ var SlimStat = {
 					while ( "undefined" != typeof parent_node && parent_node.nodeName != "FORM" && parent_node.nodeName != "BODY" ) {
 						parent_node = parent_node.parentNode;
 					}
-					if ( "undefined" != typeof parent_node.action ) {
+					if ( !SlimStat.empty( parent_node.action ) ) {
 						resource_url = parent_node.action;
 					}
 					break;
@@ -273,35 +301,28 @@ var SlimStat = {
 						target_node = parent_node;
 
 						// Anchor in the same page
-						if ( "undefined" != typeof target_node.hash && target_node.hostname == location.hostname ) {
+						if ( !SlimStat.empty( target_node.hash ) && target_node.hostname == location.hostname ) {
 							resource_url = target_node.hash;
 						}
 						// Regular link to another page
-						else if ( "undefined" != typeof target_node.href && target_node.href.indexOf( 'javascript:' ) == -1 ) {
+						else if ( !SlimStat.empty( target_node.href ) && target_node.href.indexOf( 'javascript:' ) == -1 ) {
+							
 							// Do not track links containing one of the strings defined in the settings as HREF
-							if ( "undefined" != target_node.href && SlimStat.in_array( target_node.href, to_not_track ) ) {
+							if ( SlimStat.in_array( target_node.href, do_not_track ) ) {
 								return false;
 							}
 
 							resource_url = target_node.href;
-						}
 
-						// If the current link target's extension is among the one defined in the settings, we should label this event as a download
-						extensions_to_track = ( "undefined" != typeof SlimStatParams.extensions_to_track && SlimStatParams.extensions_to_track ) ? SlimStatParams.extensions_to_track.split( ',' ) : [];
-						extension_current_link = target_node.pathname.split( /[?#]/ )[ 0 ].split( '.' ).pop().replace( /[\/\-]/g, '' );
-
-						if ( SlimStat.in_array( extension_current_link, extensions_to_track ) ) {
-							action = "add";
-							resource_url = resource_url.substring( resource_url.indexOf( location.hostname ) + location.hostname.length );
 						}
 					}
 
 					// If this element has a title, we can record that as well
 					if ( "function" == typeof target_node.getAttribute ) {
-						if ( "undefined" != typeof target_node.getAttribute( "title" ) && target_node.getAttribute( "title" ) ) {
+						if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
 							note_array.push( "Title:" + target_node.getAttribute( "title" ) );
 						}
-						if ( "undefined" != typeof target_node.getAttribute( "id" ) && target_node.getAttribute( "id" ) ) {
+						if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
 							note_array.push( "ID:" + target_node.getAttribute( "id" ) );
 						}
 					}
@@ -309,33 +330,27 @@ var SlimStat = {
 		}
 
 		// Event coordinates
-		position = "";
+		position = "0,0";
 
-		if ( "undefined" != typeof window.event.pageX && "undefined" != typeof window.event.pageY ) {
+		if ( !SlimStat.empty( window.event.pageX ) && !SlimStat.empty( window.event.pageY ) ) {
 			position = window.event.pageX + "," + window.event.pageY;
 		}
-		else if ( "undefined" != typeof window.event.clientX && "undefined" != typeof window.event.clientY &&
-				"undefined" != typeof document.body.scrollLeft && "undefined" != typeof document.documentElement.scrollLeft &&
-				"undefined" != typeof document.body.scrollTop && "undefined" != typeof document.documentElement.scrollTop ) {
+		else if ( !SlimStat.empty( window.event.clientX ) && !SlimStat.empty( document.body.scrollLeft ) && !SlimStat.empty( document.documentElement.scrollLeft ) ) {
 			position = window.event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft + "," + window.event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
 		}
 
 		// Event description and button pressed
-		if ( "undefined" !=  typeof window.event.type ) {
-			event_description = window.event.type;
+		if ( !SlimStat.empty( window.event.type ) ) {
+			note_array.push( 'type:' + window.event.type );
 			if ( "keypress" == window.event.type ) {
-				event_description += '; keypress:' + String.fromCharCode( parseInt( window.event.which ) );
+				note_array.push( 'keypress:' + String.fromCharCode( parseInt( window.event.which ) ) );
 			}
 			else if ( "click" == window.event.type ) {
-				event_description += '; which:' + window.event.which;
+				note_array.push( 'which:' + window.event.which );
 			}
 		}
 
-// TODO: CONSOLIDATE NOTE AND DESCRIPTION
-		// note_string = SlimStat._base64_encode( note_array.join( ", " ) );
-
-
-		// SlimStat.send_to_server( "action=slimtrack&op=" + requested_op + "&id=" + SlimStat._id + "&ty=" + type + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&des=" + SlimStat._base64_encode( event_description ) + "&no=" + note_string, use_beacon );
+		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&no=" + SlimStat._base64_encode( note_array.join( ", " ) ), use_beacon );
 
 		return true;
 	}
@@ -353,23 +368,26 @@ SlimStat.add_event( window, 'load', function() {
 	slimstat_data = "";
 	use_beacon = true;
 
-	if ( "undefined" != typeof SlimStatParams.id && parseInt( SlimStatParams.id ) > 0 ) {
-		slimstat_data = "action=slimtrack&op=update&id=" + SlimStatParams.id;
+	// Server-side mode: update an existing pageview
+	if ( !SlimStat.empty( SlimStatParams.id ) ) {
+
+		if ( parseInt( SlimStatParams.id ) > 0 ) {
+			slimstat_data = "action=slimtrack&id=" + SlimStatParams.id;
+		}
 	}
+	// Client-side mode: record a new pageview
 	else {
-// COMPLETE THE HANDLING OF EXTERNAL PAGES BY IMPLEMENTING THE CORRESPONDING PHP CODE
-	
-// CLEANUP USE OF PARAMS: ID is always ID, &ci= should be used for CI
-		slimstat_data = "action=slimtrack&op=add&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( window.location.href );
-	
-		if ( "undefined" != typeof SlimStatParams.ci ) {
+		slimstat_data = "action=slimtrack&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( window.location.href );
+
+		// The "ci" param is not defined for external pages (the server-side tracker knows how to handle that situation)
+		if ( !SlimStat.empty( SlimStatParams.ci ) ) {
 			slimstat_data += "&ci=" + SlimStatParams.ci;
 		}
 
-		// If the tracker is working in "client mode", it needs to wait for the server to assign it a page view ID
+		// This call needs to wait for the server to assign a page view ID to this request
 		use_beacon = false;
 	}
-// TEST IF use_beacon is being passed as expected
+
 	if ( slimstat_data.length > 0 ) {
 		setTimeout( function(){
 			SlimStat.send_to_server( slimstat_data, use_beacon );
