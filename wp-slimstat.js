@@ -232,11 +232,7 @@ var SlimStat = {
 		if ( SlimStat.empty( SlimStatParams.id ) || isNaN( parseInt( SlimStatParams.id ) ) || parseInt( SlimStatParams.id ) <= 0 ) {
 			return false;
 		}
-<<<<<<< d476b46771025e716706f53bb79d3ba950a26386
 
-=======
-window.event.preventDefault();
->>>>>>> The new tracker seems to be stable enough now.
 		// Read and initialize input parameters
 		note_array = [];
 		if ( !SlimStat.empty( note ) ){
