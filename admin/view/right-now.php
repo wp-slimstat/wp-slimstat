@@ -202,15 +202,14 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 	}
 
 	// Permalink: find post title, if available
-	$parse_url = parse_url(get_site_url(empty($results[$i]['blog_id'])?1:$results[$i]['blog_id']));
-	$base_host = $parse_url['host'];
-	$base_url = '';
+	
 
 	if ( !empty( $results[ $i ][ 'resource' ] ) ) {
-		if (!empty($results[$i]['blog_id'])){
-			$base_url = $parse_url['scheme'].'://'.$base_host;
+		if ( isset( $results[ $i ][ 'blog_id' ] ) ) {
+			$results[ $i ][ 'resource' ] = get_site_url( $results[ $i ][ 'blog_id' ] ) . $results[ $i ][ 'resource' ];
 		}
-		$results[$i]['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities( __( 'Open this URL in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='" . $base_url . htmlentities( $results[$i][ 'resource' ], ENT_QUOTES, 'UTF-8' ) . "'></a> $base_url<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url( 'resource equals ' . htmlentities( $results[ $i ][ 'resource' ], ENT_QUOTES, 'UTF-8' ) ) . "'>" . wp_slimstat_reports::get_resource_title( $results[$i][ 'resource' ], $results[$i][ 'category' ] ) . '</a>';
+
+		$results[ $i ][ 'resource' ] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities( __( 'Open this URL in a new window', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . "' href='" . htmlentities( $results[$i][ 'resource' ], ENT_QUOTES, 'UTF-8' ) . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url( 'resource equals ' . htmlentities( $results[ $i ][ 'resource' ], ENT_QUOTES, 'UTF-8' ) ) . "'>" . wp_slimstat_reports::get_resource_title( $results[$i][ 'resource' ], $results[$i][ 'category' ] ) . '</a>';
 	}
 	else {
 		if ( !empty( $results[$i][ 'notes' ] ) ) {
