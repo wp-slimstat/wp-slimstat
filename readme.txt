@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 5.2
 Tested up to: 5.2
-Stable tag: 4.8.7
+Stable tag: 4.8.6.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -69,6 +69,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] The button to delete all the records from the database was not working as expected (thank you, [Softfully](https://wordpress.org/support/topic/delete-all-records-doesnt-work/)).
 * [Fix] When the plugin was network activated on a group of existing blogs, the tables used to store all the records were not initialized as expected, under given circumstances.
 * [Fix] A bug was affecting certain shortcodes when PHP 7.2 was enabled (thank you, Peter).
+* [Fix] Emptying one of the settings and saving did not produce the desired effect.
 
 = 4.8.6.1 =
 * [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
