@@ -31,7 +31,7 @@ is for those who would like to donate money - be it once, be it regularly, be it
 Try it out, you'll be amazed how good it feels! If you're on a tight budget, and coding is not your thing, please consider writing [a review](https://wordpress.org/support/plugin/wp-slimstat/reviews/#new-post) for Slimstat as a token of appreciation for our hard work!
 
 = Requirements =
-* WordPress 3.8+
+* WordPress 4.9+
 * PHP 5.2+ (or 7.1+ if you use the Browscap data file)
 * MySQL 5.0.3+
 * At least 40 MB of free web space
