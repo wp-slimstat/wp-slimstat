@@ -18,7 +18,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "Recently, we asked our users to help us decide if we should replace line charts with bar charts, and... the people of Slimstat have spoken! Based on the feedback we received, users were more or less evenly split between the two options, so we've decided that we'll provide both options. Yes, you read that right. We are going to add a new set of reports using the bar chart view, and then let admins choose which ones to display via the Customizer. It will even be possible to mix and match charts, if that's what you prefer. In order to prepare for this new feature, we rewrote the code that manages which reports are displayed on which screen (via the Customizer), streamlined data structures and optimized their use. Please update all the add-ons to the latest version available. Don't hesitate to contact us if you have any questions!";
+		self::$admin_notice = "With this update, we are introducing a <strong>brand-new tracker</strong> (both server and client-side): a new simplified codebase that gets rid of a few layers of convoluted functions and algorithms accumulated over the years. We have been working on this update for quite a while, and the recent conflict with another plugin discovered by some users convinced us to make this our top priority. Even though we have tested our new code using a variety of scenarios, you can understand how it would be impossible to cover all the possible environments available out there. Please, do not hesitate to contact <a href='https://support.wp-slimstat.com/' target='_blank'>our support team</a> if you notice any issues.";
 		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to install any cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. We are already wearing our lab coats and are hard at work to leverage <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>tools like Fingerprint2</a> in Slimstat. This library, among other things, will allow our tracker to record your users' timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Stay tuned!";
 
 		// Load language files
@@ -1623,15 +1623,15 @@ class slim_i18n {
 				'p-win' => __( 'Microsoft', 'wp-slimstat' ),
 
 				// Tracker Errors
-				'e-100' => __( 'Invalid payload string. Try clearing your WordPress cache.', 'wp-slimstat' ),
 				'e-101' => __( 'Invalid data signature. Try clearing your WordPress cache.', 'wp-slimstat' ),
+				'e-102' => __( 'Invalid content type signature. Try clearing your WordPress cache.', 'wp-slimstat' ),
+				'e-103' => __( 'Invalid content type format. Try clearing your WordPress cache.', 'wp-slimstat' ),
 				'e-200' => __( 'Unspecified error while attempting to add a new record to the table', 'wp-slimstat' ),
 				'e-201' => __( 'Malformed referrer URL', 'wp-slimstat' ),
 				'e-202' => __( 'Pageview not tracked because the IP address format was invalid.', 'wp-slimstat' ),
+				'e-203' => __( 'Malformed resource URL', 'wp-slimstat' ),
 				'e-204' => __( 'Tracking is turned off, but it looks like the client-side code is still attached to your pages. Do you have a caching tool enabled?', 'wp-slimstat' ),
-				'e-314' => __( 'Invalid MaxMind data file. Please <a target="_blank" href="https://slimstat.freshdesk.com/support/solutions/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-">follow these steps</a> to download it manually.', 'wp-slimstat' ),
-
-				
+				'e-205' => __( 'Invalid MaxMind data file. Please <a target="_blank" href="https://slimstat.freshdesk.com/support/solutions/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-">follow these steps</a> to download it manually.', 'wp-slimstat' ),
 			);
 
 			// set_transient( 'slimstat_dynamic_strings', self::$dynamic_strings, 86400 );
