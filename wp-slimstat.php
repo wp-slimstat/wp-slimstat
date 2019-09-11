@@ -138,7 +138,7 @@ class wp_slimstat {
 		// This function also initializes self::$data_js and removes the checksum from self::$data_js['id']
 		self::_check_data_integrity( self::$raw_post_array );
 
-		// Is this a request to record a new pageview?
+		// Is this a request to record a new pageview or update an existing one with client-side info?
 		if ( self::$data_js[ 'op' ] == 'add' || self::$data_js[ 'op' ] == 'update' ) {
 
 			// Track client-side information (screen resolution, server latency, etc)
@@ -1371,7 +1371,7 @@ class wp_slimstat {
 	// end init_options
 
 	/**
-	 * Enqueue a javascript to track users' screen resolution and other browser-based information
+	 * Attach a script to every page to track visitors' screen resolution and other browser-based information
 	 */
 	public static function wp_slimstat_enqueue_tracking_script() {
 		// Pass some information to the tracker

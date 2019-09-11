@@ -143,11 +143,6 @@ $settings = array(
 				'type'=> 'toggle',
 				'description'=> __( "By default, when a referrer's domain's pageview is the same as the current site, that information is not saved in the database. However, if you are running a multisite network with subfolders, you might need to enable this option to track same-domain referrers from one site to another, as they are technically 'independent' websites.", 'wp-slimstat' )
 			),
-			'do_not_track_outbound_classes_rel_href' => array(
-				'title' => __( 'Class Names', 'wp-slimstat' ),
-				'type'=> 'textarea',
-				'description'=> __( "Do not track links whose class names, <em>rel</em> attributes or <em>href</em> attribute contain one of the following strings. Please keep in mind that the class <code>noslimstat</code> is used to avoid tracking interactive links throughout the reports. If you remove it from this list, some features might not work as expected.", 'wp-slimstat' )
-			),
 			'extensions_to_track' => array(
 				'title' => __( 'Downloads', 'wp-slimstat' ),
 				'type'=> 'textarea',
@@ -193,25 +188,20 @@ $settings = array(
 				'title' => __( 'External Pages', 'wp-slimstat' ),
 				'type'=> 'section_header'
 			),
-			'external_pages_script' => array(
-				'type'=> 'readonly',
-				'title' => __( 'Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel.', 'wp-slimstat' ),
-				'use_tag_list' => false,
-				'description'=> '&lt;script type="text/javascript"&gt;
-/* &lt;![CDATA[ */
-var SlimStatParams = {
-	ajaxurl: "'.admin_url('admin-ajax.php').'",
-	ci: "YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=.' . md5('YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6ODoiZXh0ZXJuYWwiO3M6ODoiY2F0ZWdvcnkiO3M6MDoiIjtzOjEwOiJjb250ZW50X2lkIjtpOjA7czo2OiJhdXRob3IiO3M6MTM6ImV4dGVybmFsLXBhZ2UiO30=' . wp_slimstat::$settings[ 'secret' ] ).'",
-	extensions_to_track: "'.wp_slimstat::$settings[ 'extensions_to_track' ].'"
-};
-/* ]]&gt; */
-&lt;/script&gt;
-&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;'
-			),
 			'external_domains' => array(
 				'title' => __( 'Allowed Domains', 'wp-slimstat' ),
 				'type'=> 'textarea',
 				'description'=> __( "If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme) you would like to allow. For example: <code>https://my.domain.ext</code> (no trailing slash). Please see <a href='https://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.", 'wp-slimstat' )
+			),
+			'external_pages_script' => array(
+				'type'=> 'custom',
+				'title' => __( 'Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel.', 'wp-slimstat' ),
+				'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;
+/* &lt;![CDATA[ */
+var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
+/* ]]&gt; */
+&lt;/script&gt;
+&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;</pre>'
 			)
 		)
 	),
@@ -416,6 +406,11 @@ var SlimStatParams = {
 				'title' => __( 'Permalinks', 'wp-slimstat' ),
 				'type'=> 'textarea',
 				'description'=> __( 'Enter a list of permalinks that should not be tracked. Do not include your website domain name: <code>/about, ?p=1</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive.', 'wp-slimstat' )
+			),
+			'do_not_track_outbound_classes_rel_href' => array(
+				'title' => __( 'Link Attributes: class names, REL and HREF', 'wp-slimstat' ),
+				'type'=> 'textarea',
+				'description'=> __( "Do not track events on page elements whose class names, <em>rel</em> attributes or <em>href</em> attribute contain one of the following strings. Please keep in mind that the class <code>noslimstat</code> is used to avoid tracking interactive links throughout the reports. If you remove it from this list, some features might not work as expected.", 'wp-slimstat' )
 			),
 			'ignore_referers' => array(
 				'title' => __( 'Referring Sites', 'wp-slimstat' ),
@@ -663,22 +658,21 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 
 		// All other options
 		foreach( $_POST[ 'options' ] as $a_post_slug => $a_post_value ) {
-			if ( empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ] ) || in_array( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'type' ], array( 'readonly', 'section_header', 'plain-text' ) ) ) {
+			if ( empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ] ) || !empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'readonly' ] ) || in_array( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'type' ], array( 'section_header', 'plain-text' ) ) ) {
 				continue;
 			}
 
-			// An empty toggle option is saved in the database as 'no'
 			if ( !empty( $a_post_value ) ) {
 				wp_slimstat::$settings[ $a_post_slug ] = !empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'use_code_editor' ] ) ? $a_post_value : sanitize_text_field( $a_post_value );
 			}
 
 			// If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
 			if ( is_network_admin() ) {
-				if ( !isset( $_POST[ 'options' ][ 'addon_network_settings_' . $a_post_slug ] ) || strtolower( $_POST[ 'options' ][ 'addon_network_settings_' . $a_post_slug ] != 'on' ) ) {
-					wp_slimstat::$settings[ 'addon_network_settings_' . $a_post_slug ] = 'no';
+				if ( $_POST[ 'options' ][ 'addon_network_settings_' . $a_post_slug ] == 'on' ) {
+					wp_slimstat::$settings[ 'addon_network_settings_' . $a_post_slug ] = 'on';
 				}
 				else {
-					wp_slimstat::$settings[ 'addon_network_settings_' . $a_post_slug ] = 'on';
+					wp_slimstat::$settings[ 'addon_network_settings_' . $a_post_slug ] = 'no';
 				}
 			}
 			else if ( isset( wp_slimstat::$settings[ 'addon_network_settings_' . $a_post_slug ] ) ) {
@@ -766,6 +760,7 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 	<table class="form-table widefat <?php echo $GLOBALS[ 'wp_locale' ]->text_direction ?>">
 	<tbody><?php
 		$i = 0;
+
 		foreach( $settings[ $current_tab ][ 'rows' ] as $a_setting_slug => $a_setting_info ) {
 			$i++;
 			$a_setting_info = array_merge( array(
@@ -782,26 +777,24 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 				'select_values' => array()
 			), $a_setting_info );
 
-			$is_readonly = ( $a_setting_info[ 'type' ] === 'readonly' ) ? ' readonly' : '';
+			// Note: $a_setting_info[ 'readonly' ] is set to true by the Network Analytics add-on
+			$is_readonly = ( !empty( $a_setting_info[ 'readonly' ] ) ) ? ' readonly' : '';
 			$use_tag_list = ( empty( $is_readonly ) && !empty( $a_setting_info[ 'use_tag_list' ] ) && $a_setting_info[ 'use_tag_list' ] === true ) ? ' slimstat-taglist' : '';
 			$use_code_editor = ( empty( $is_readonly ) && !empty( $a_setting_info[ 'use_code_editor' ] ) ) ? ' data-code-editor="' . $a_setting_info[ 'use_code_editor' ] . '"': '';
 
 			$network_override_checkbox = is_network_admin() ? '
-					<input class="slimstat-checkbox-toggle"
-						type="checkbox"
-						name="options[addon_network_settings_' . $a_setting_slug . ']"' .
-						( ( !empty( wp_slimstat::$settings[ 'addon_network_settings_' . $a_setting_slug ] ) && wp_slimstat::$settings[ 'addon_network_settings_' . $a_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
-						id="addon_network_settings_' . $a_setting_slug . '"
-						data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
+				<input type="hidden" value="no" name="options[addon_network_settings_' . $a_setting_slug . ']" id="addon_network_settings_' . $a_setting_slug . '">
+				<input class="slimstat-checkbox-toggle"
+					type="checkbox"
+					name="options[addon_network_settings_' . $a_setting_slug . ']"' .
+					( ( !empty( wp_slimstat::$settings[ 'addon_network_settings_' . $a_setting_slug ] ) && wp_slimstat::$settings[ 'addon_network_settings_' . $a_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
+					id="addon_network_settings_' . $a_setting_slug . '"
+					data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
 
 			echo '<tr' . ( $i % 2 == 0 ? ' class="alternate"' : '' ) . '>';
 			switch ( $a_setting_info[ 'type' ] ) {
 				case 'section_header':
 					echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title( $a_setting_info[ 'title' ] ) . '">' . $a_setting_info[ 'title' ] . '</td>';
-					break;
-
-				case 'readonly':
-					echo '<td colspan="2">' . $a_setting_info[ 'title' ] . '<textarea rows="7" class="large-text code" readonly>' . $a_setting_info[ 'description' ] . '</textarea></td>';
 					break;
 
 				case 'toggle':
