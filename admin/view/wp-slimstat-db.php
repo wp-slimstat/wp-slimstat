@@ -874,9 +874,11 @@ class wp_slimstat_db {
 
 		if ( $_column != '*' ) {
 			$columns .= ', ip, dt';
+			$group_by = 'GROUP BY ' . $_column;
 		}
 		else {
 			$columns = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, tz_offset, dt_out, dt';
+			$group_by = '';
 		}
 
 		if ( !empty( $_more_columns ) ) {
@@ -889,7 +891,7 @@ class wp_slimstat_db {
 			SELECT $columns
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
-			GROUP BY $_column
+			$group_by
 			ORDER BY $_order_by
 			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
 			$columns,
