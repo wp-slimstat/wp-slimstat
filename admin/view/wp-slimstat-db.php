@@ -885,21 +885,15 @@ class wp_slimstat_db {
 
 		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 
-		$results = self::get_results( "
+		return self::get_results( "
 			SELECT $columns
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
-			ORDER BY $_order_by	
+			GROUP BY $_column
+			ORDER BY $_order_by
 			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
 			$columns,
 			'dt DESC' );
-
-		if ( $_column != '*' ) {
-			$values = array_map( 'unserialize', array_unique( array_map( 'serialize', self::array_column( $results, explode( ',', $_column ) ) ) ) );
-			$results = array_intersect_key( $results, $values );
-		}
-
-		return $results;
 	}
 
 	public static function get_recent_events() {
@@ -1239,20 +1233,21 @@ class wp_slimstat_db {
 		return $results;
 	}
 
-	protected static function array_column( $input = array(), $columns = array() ) {
-		$output = array();
+// 	protected static function array_column( $input = array(), $columns = array() ) {
+// 		$output = array();
 
-		foreach ( $input as $a_key => $a_row ) {
-			foreach ( $columns as $a_column ) {
-				$a_column = trim( $a_column );
-				if ( $a_row[ $a_column ] != NULL ) {
-					$output[ $a_key ][ $a_column ] = $a_row[ $a_column ];
-				}
-			}
-		}
+// 		foreach ( $input as $a_key => $a_row ) {
+// 			foreach ( $columns as $a_column ) {
+// var_dump($a_column);
+// 				$a_column = trim( $a_column );
+// 				if ( $a_row[ $a_column ] != NULL ) {
+// 					$output[ $a_key ][ $a_column ] = $a_row[ $a_column ];
+// 				}
+// 			}
+// 		}
 
-		return $output;
-	}
+// 		return $output;
+// 	}
 
 	protected static function count_months_between( $min_timestamp = 0, $max_timestamp = 0 ) {
 		$i = 0;
