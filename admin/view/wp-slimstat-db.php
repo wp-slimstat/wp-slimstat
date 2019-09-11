@@ -403,7 +403,7 @@ class wp_slimstat_db {
 
 				switch( $a_filter[ 1 ] ) {
 					case 'strtotime':
-						$custom_date = strtotime( $a_filter[ 3 ], date_i18n( 'U' ) );
+						$custom_date = strtotime( $a_filter[ 3 ], wp_slimstat::date_i18n( 'U' ) );
 
 						$filters_parsed[ 'date' ][ 'minute' ] = intval( date( 'i', $custom_date ) );
 						$filters_parsed[ 'date' ][ 'hour' ] = intval( date( 'H', $custom_date ) );
@@ -422,6 +422,7 @@ class wp_slimstat_db {
 						}
 						else{
 							// Try to apply strtotime to value
+							self::toggle_date_i18n_filters( false );
 							switch( $a_filter[ 1 ] ) {
 								case 'minute':
 									$filters_parsed[ 'date' ][ 'minute' ] = intval( date( 'i', strtotime( $a_filter[ 3 ], date_i18n( 'U' ) ) ) );
@@ -446,6 +447,7 @@ class wp_slimstat_db {
 								default:
 									break;
 							}
+							self::toggle_date_i18n_filters( true );
 
 							if ( $filters_parsed[ 'date' ][ $a_filter[ 1 ] ] === false ) {
 								unset( $filters_parsed[ 'date' ][ $a_filter[ 1 ] ] );
@@ -498,10 +500,8 @@ class wp_slimstat_db {
 			'end' => 0
 		);
 
-		// Temporarily disable any filters on date_i18n
-		wp_slimstat::toggle_date_i18n_filters( false );
-
 		// Normalize the various date values
+		wp_slimstat::toggle_date_i18n_filters( false );
 
 		// Intervals
 		// If neither an interval nor interval_hours were specified...
@@ -594,7 +594,7 @@ class wp_slimstat_db {
 			$fn[ 'utime' ][ 'end' ] = intval( date_i18n( 'U' ) );
 		}
 
-		// Restore filters on date_i18n
+		// Turn the date_i18n filters back on
 		wp_slimstat::toggle_date_i18n_filters( true );
 
 		// Apply third-party filters
@@ -823,6 +823,9 @@ class wp_slimstat_db {
 	public static function get_overview_summary() {
 		$days_in_range = ceil( ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] - wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 );
 		$results = array();
+		
+		// Turn date_i18n filters off
+		wp_slimstat::toggle_date_i18n_filters( false );
 
 		$results[ 0 ][ 'metric' ] = __( 'Pageviews', 'wp-slimstat' );
 		$results[ 0 ][ 'value' ] = number_format_i18n( self::$pageviews, 0 );
@@ -835,9 +838,9 @@ class wp_slimstat_db {
 		$results[ 2 ][ 'value' ] = number_format_i18n( round( self::$pageviews / $days_in_range, 0 ) );
 		$results[ 2 ][ 'tooltip' ] = __( 'How many daily pageviews have been generated on average.', 'wp-slimstat' );
 
-		$results[ 3 ][ 'metric' ] = __( 'From Search Results', 'wp-slimstat' );
+		$results[ 3 ][ 'metric' ] = __( 'From Any SERP', 'wp-slimstat' );
 		$results[ 3 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'searchterms IS NOT NULL' ) );
-		$results[ 3 ][ 'tooltip' ] = __( 'Visitors who landed on your site after searching for a keyword on a search engine and clicking on the corresponding search result link.', 'wp-slimstat' );
+		$results[ 3 ][ 'tooltip' ] = __( 'Visitors who landed on your site after searching for a keyword on a search engine and clicking on the corresponding search result link. This value includes both internal and external search result pages.', 'wp-slimstat' );
 
 		$results[ 4 ][ 'metric' ] = __( 'Unique IPs', 'wp-slimstat' );
 		$results[ 4 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'ip' ) );
@@ -851,6 +854,9 @@ class wp_slimstat_db {
 
 		$results[ 7 ][ 'metric' ] = __( 'Yesterday', 'wp-slimstat' );
 		$results[ 7 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'dt BETWEEN ' . ( date_i18n( 'U', mktime( 0, 0, 0, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ) . ' AND ' . ( date_i18n( 'U', mktime( 23, 59, 59, date_i18n( 'm' ), date_i18n( 'd' ) - 1, date_i18n( 'Y' ) ) ) ), false ) );
+
+		// Turn date_i18n filters back on
+		wp_slimstat::toggle_date_i18n_filters( true );
 
 		return $results;
 	}
@@ -899,20 +905,13 @@ class wp_slimstat_db {
 	}
 
 	public static function get_recent_events() {
-		if ( empty( self::$filters_normalized[ 'columns' ] ) ) {
-			$from = "{$GLOBALS['wpdb']->prefix}slim_events te";
-			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes' );
-		}
-		else {
-			$from = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
-			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes', true, 't1' );
-		}
-
 		return self::get_results( "
-			SELECT *
-			FROM $from
-			WHERE $where
-			ORDER BY te.dt DESC"
+			SELECT te.*, t1.resource
+			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te INNER JOIN {$GLOBALS[ 'wpdb' ]->prefix}slim_stats t1 ON te.id = t1.id
+			WHERE " . wp_slimstat_db::get_combined_where( 'te.notes NOT LIKE "type:click%"', 'te.notes', true, 't1' ) . "
+			ORDER BY te.dt DESC",
+			'te.*, t1.resource',
+			'dt DESC'
 		);
 	}
 
@@ -1003,19 +1002,23 @@ class wp_slimstat_db {
 	public static function get_top_events() {
 		if ( empty( self::$filters_normalized[ 'columns' ] ) ) {
 			$from = "{$GLOBALS['wpdb']->prefix}slim_events te";
-			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes' );
+			$where = wp_slimstat_db::get_combined_where( 'notes NOT LIKE "type:click%"', 'notes' );
 		}
 		else {
 			$from = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
-			$where = wp_slimstat_db::get_combined_where( 'te.type > 1', 'notes', true, 't1' );
+			$where = wp_slimstat_db::get_combined_where( 'notes NOT LIKE "type:click%"', 'notes', true, 't1' );
 		}
 
 		return self::get_results( "
-			SELECT te.notes, te.type, COUNT(*) counthits
+			SELECT te.notes, COUNT(*) counthits
 			FROM $from
 			WHERE $where
-			GROUP BY te.notes, te.type
-			ORDER BY counthits DESC"
+			GROUP BY te.notes
+			ORDER BY counthits DESC",
+			'notes',
+			'counthits DESC',
+			'notes',
+			'SUM(counthits) AS counthits'
 		);
 	}
 
@@ -1065,9 +1068,9 @@ class wp_slimstat_db {
 		$results[ 2 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', 'resource IS NULL' ) );
 		$results[ 2 ][ 'tooltip' ] = __( "Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat' );
 
-		$results[ 3 ][ 'metric' ] = __( 'From a search result', 'wp-slimstat' );
+		$results[ 3 ][ 'metric' ] = __( 'From External SERP', 'wp-slimstat' );
 		$results[ 3 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'id', "searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%'" ) );
-		$results[ 3 ][ 'tooltip' ] = __( "Visitors who clicked on a link to your website listed on a search engine result page (SERP).", 'wp-slimstat' );
+		$results[ 3 ][ 'tooltip' ] = __( "Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages.", 'wp-slimstat' );
 
 		$results[ 4 ][ 'metric' ] = __( 'Unique Landing Pages', 'wp-slimstat' );
 		$results[ 4 ][ 'value' ] = number_format_i18n( wp_slimstat_db::count_records( 'resource' ) );

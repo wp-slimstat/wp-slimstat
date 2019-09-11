@@ -232,7 +232,7 @@ var SlimStat = {
 		if ( SlimStat.empty( SlimStatParams.id ) || isNaN( parseInt( SlimStatParams.id ) ) || parseInt( SlimStatParams.id ) <= 0 ) {
 			return false;
 		}
-window.event.preventDefault();
+
 		// Read and initialize input parameters
 		note_array = [];
 		if ( !SlimStat.empty( note ) ){

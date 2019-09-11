@@ -662,7 +662,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 				continue;
 			}
 
-			if ( !empty( $a_post_value ) ) {
+			if ( isset( $a_post_value ) ) {
 				wp_slimstat::$settings[ $a_post_slug ] = !empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'use_code_editor' ] ) ? $a_post_value : sanitize_text_field( $a_post_value );
 			}
 
