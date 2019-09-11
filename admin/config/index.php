@@ -806,7 +806,7 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 								name="options[' . $a_setting_slug . ']"
 								id="' . $a_setting_slug . '"
 								data-size="mini" data-handle-width="50" data-on-color="success"' . 
-								( ( wp_slimstat::$settings[ $a_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
+								( ( !empty( wp_slimstat::$settings[ $a_setting_slug ] ) && wp_slimstat::$settings[ $a_setting_slug ] == 'on' ) ? ' checked="checked"' : '' ) . '
 								data-on-text="' . ( !empty( $a_setting_info[ 'custom_label_on' ] ) ? $a_setting_info[ 'custom_label_on' ] : __( 'On',  'wp-slimstat' ) ) . '"
 								data-off-text="' . ( !empty( $a_setting_info[ 'custom_label_off' ] ) ? $a_setting_info[ 'custom_label_off' ] : __( 'Off',  'wp-slimstat' ) ) . '">' .
 								$network_override_checkbox . '
@@ -822,7 +822,7 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 						<span class="block-element">
 							<select' . $is_readonly .' name="options[' . $a_setting_slug . ']" id="' . $a_setting_slug .'">';
 								foreach ( $a_setting_info[ 'select_values' ] as $a_key => $a_value ) {
-									$is_selected = ( wp_slimstat::$settings[ $a_setting_slug ] == $a_key ) ? ' selected' : '';
+									$is_selected = ( !empty( wp_slimstat::$settings[ $a_setting_slug ] ) && wp_slimstat::$settings[ $a_setting_slug ] == $a_key ) ? ' selected' : '';
 									echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
 								}
 							echo '</select>' .

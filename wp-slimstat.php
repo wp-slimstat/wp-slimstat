@@ -471,7 +471,7 @@ class wp_slimstat {
 		}
 
 		// Number of results from query_posts
-		if ( !empty( $GLOBALS[ 'wp_query' ]->found_posts ) ) {
+		if ( ( is_archive() || is_search() ) && !empty( $GLOBALS[ 'wp_query' ]->found_posts ) ) {
 			self::$stat[ 'notes' ][] = 'results:' . intval( $GLOBALS['wp_query']->found_posts );
 		}
 
