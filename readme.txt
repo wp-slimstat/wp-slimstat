@@ -65,8 +65,10 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [New] The Javascript tracking code has been refreshed and consolidated, for improved performance and a more seamless integration with other libraries. Please let us know if you notice any issues.
 * [Update] We tweaked the SQL query to retrieve 'recent' results, and added a GROUP BY clause to remove duplicates. This might affect some custom reports you might have created, so please don't hesitate to contact us if you have any question or experience any issues.
 * [Update] The columns to store event type and description are being deprecated, and consolidated into the existing 'notes' column. Our function `ss_track()` will only accept the note parameter moving forward. Please update your custom code accordingly. In a few releases, we are going to drop those columns from the database.
+* [Update] Changed wording on Traffic Sources report to explain what kind of search engine result pages are being counted (thank you, Nina).
 * [Fix] The button to delete all the records from the database was not working as expected (thank you, [Softfully](https://wordpress.org/support/topic/delete-all-records-doesnt-work/)).
 * [Fix] When the plugin was network activated on a group of existing blogs, the tables used to store all the records were not initialized as expected, under given circumstances.
+* [Fix] A bug was affecting certain shortcodes when PHP 7.2 was enabled (thank you, Peter).
 
 = 4.8.6.1 =
 * [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.

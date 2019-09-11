@@ -2,7 +2,15 @@
 
 class wp_slimstat_reports {
 	public static $reports = array(); // Structures to store all the information about what screens and reports are available
-	public static $user_reports = array();
+	public static $user_reports = array(
+		'slimview1' => array(),
+		'slimview2' => array(),
+		'slimview3' => array(),
+		'slimview4' => array(),
+		'slimview5' => array(),
+		'dashboard' => array(),
+		'inactive' => array()
+	);
 	public static $resource_titles = array();
 
 	/**
@@ -58,7 +66,7 @@ class wp_slimstat_reports {
 				'tooltip' => $chart_tooltip
 			),
 			'slim_p1_03' => array(
-				'title' => __( 'Traffic at a Glance', 'wp-slimstat' ),
+				'title' => __( 'At a Glance', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'raw' => array( 'wp_slimstat_db', 'get_overview_summary' )
@@ -853,25 +861,16 @@ class wp_slimstat_reports {
 		$merge_reports = array_keys( self::$reports );
 
 		// Do we have any new reports not listed in this user's settings?
-		if ( !empty( wp_slimstat_admin::$meta_user_reports ) && is_array( wp_slimstat_admin::$meta_user_reports ) ) {
-			$flat_user_reports = array_filter( explode( ',', implode( ',', wp_slimstat_admin::$meta_user_reports ) ) );
-			$merge_reports = array_diff( array_filter( array_keys( self::$reports ) ), $flat_user_reports );
+		if ( class_exists( 'wp_slimstat_admin' ) ) {
+			if ( !empty( wp_slimstat_admin::$meta_user_reports ) && is_array( wp_slimstat_admin::$meta_user_reports ) ) {
+				$flat_user_reports = array_filter( explode( ',', implode( ',', wp_slimstat_admin::$meta_user_reports ) ) );
+				$merge_reports = array_diff( array_filter( array_keys( self::$reports ) ), $flat_user_reports );
 
-			// Now let's explode all the lists
-			foreach ( wp_slimstat_admin::$meta_user_reports as $a_location => $a_report_list ) {
-				self::$user_reports[ $a_location ] = explode( ',', $a_report_list );
+				// Now let's explode all the lists
+				foreach ( wp_slimstat_admin::$meta_user_reports as $a_location => $a_report_list ) {
+					self::$user_reports[ $a_location ] = explode( ',', $a_report_list );
+				}
 			}
-		}
-		else {
-			self::$user_reports = array(
-				'slimview1' => array(),
-				'slimview2' => array(),
-				'slimview3' => array(),
-				'slimview4' => array(),
-				'slimview5' => array(),
-				'dashboard' => array(),
-				'inactive' => array()
-			);
 		}
 
 		foreach ( $merge_reports as $a_report_id ) {
@@ -1335,7 +1334,7 @@ class wp_slimstat_reports {
 		// Count the results
 		$count_page_results = count( $results );
 
-		if ($count_page_results == 0){
+		if ( $count_page_results == 0 ) {
 			echo '<p class="nodata">' . __( 'No data to display', 'wp-slimstat' ) . '</p>';
 
 			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
@@ -1348,15 +1347,21 @@ class wp_slimstat_reports {
 
 		echo self::report_pagination( $count_page_results, count( $all_results ) );
 
+		$blog_url = '';
+		if ( isset( $results[ 0 ][ 'blog_id' ] ) ) {
+			$blog_url = get_site_url( $results[ 0 ][ 'blog_id' ] );
+		}
+
 		foreach ( $results as $a_result ) {
-			echo "<p class='slimstat-tooltip-trigger'>{$a_result[ 'notes' ]} <b class='slimstat-tooltip-content'>" . __( 'Type', 'wp-slimstat' ) . ": {$a_result[ 'type' ]}";
+			echo "<p class='slimstat-tooltip-trigger'>{$a_result[ 'notes' ]}";
+
+			if ( !empty( $a_result[ 'counthits' ] ) ) {
+				echo "<span>{$a_result[ 'counthits' ]}</span>";
+			}
 
 			if ( !empty( $a_result[ 'dt' ] ) ) {
 				$date_time = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $a_result[ 'dt' ], true );
-				echo '<br/>' . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br/>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
-			}
-			if ( !empty( $a_result[ 'counthits' ] ) ) {
-				echo '<br/>' . __( 'Hits', 'wp-slimstat' ) . ": {$a_result[ 'counthits' ]}";
+				echo  '<b class="slimstat-tooltip-content">' .  __( 'Page', 'wp-slimstat' ) . ": <a href='{$blog_url}{$a_result[ 'resource' ]}'>{$blog_url}{$a_result[ 'resource' ]}</a><br>" . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
 			}
 
 			echo "</b></p>";
@@ -1677,8 +1682,7 @@ class wp_slimstat_reports {
 		}
 
 		if ( !empty( $_searchterms ) && $_searchterms != '_' ) {
-			$search_terms_info = '<a class="slimstat-font-logout" target="_blank" title="' . htmlentities( __( 'Go to the referring page', 'wp-slimstat' ), ENT_QUOTES, 'UTF-8' ) . '" href="' . $_referer . '"></a>' . htmlentities( $_searchterms, ENT_QUOTES, 'UTF-8' );
-			$search_terms_info = "$search_terms_info $query_details";
+			$search_terms_info = htmlentities( $_searchterms, ENT_QUOTES, 'UTF-8' ) . ' ' . $query_details;
 		}
 		return $search_terms_info;
 	}

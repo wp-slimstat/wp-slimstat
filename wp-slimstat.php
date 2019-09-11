@@ -27,8 +27,6 @@ class wp_slimstat {
 
 	protected static $data_js = array( 'id' => 0 );
 	protected static $stat = array();
-	protected static $browser = array();
-	protected static $heuristic_key = 0;
 	protected static $date_i18n_filters = array();
 
 	/**
@@ -136,8 +134,22 @@ class wp_slimstat {
 
 		$id = 0;
 
-		// Parse the information we received
 		self::$data_js = apply_filters( 'slimstat_filter_pageview_data_js', self::$raw_post_array );
+		$site_host = parse_url( get_site_url(), PHP_URL_HOST );
+
+		self::$stat[ 'referer' ] = '';
+		if ( !empty( self::$data_js[ 'ref' ] ) ) {
+			self::$stat[ 'referer' ] = self::_base64_url_decode( self::$data_js[ 'ref' ] );
+
+			$parsed_ref = parse_url( self::$stat[ 'referer' ], PHP_URL_HOST );
+			if ( $parsed_ref === false ) {
+				exit( self::_log_error( 201 ) );
+			}
+
+			if ( !empty( $parsed_ref ) && $parsed_ref == $site_host && self::$settings[ 'track_same_domain_referers' ] != 'on' ) {
+				self::$stat[ 'referer' ] = '';
+			}
+		}
 
 		// Do we have an id for this request? If we do, we are either updating an existing pageview, or recording an event on the page
 		if ( !empty( self::$data_js[ 'id' ] ) ) {
@@ -159,90 +171,66 @@ class wp_slimstat {
 			if ( empty( self::$data_js[ 'pos' ] ) ) {
 				self::_set_visit_id( true );
 
-				// Visitor is still on this page, record the timestamp in the corresponding field
-				self::toggle_date_i18n_filters( false );
-				self::$stat[ 'dt_out' ] = date_i18n( 'U' );
-				self::toggle_date_i18n_filters( true );
-
 				// Retrieves all the client-side info (screen resolution, server latency, etc) and sets the corresponding entries in self::$stat
 				self::$stat = self::_get_client_info( self::$data_js, self::$stat );
 
 				$id = self::_update_row( self::$stat );
 			}
-			// ... otherwise, is this a click on an outbound link or a 'download'? ( pos not empty and res not empty )
-			else if ( !empty( self::$data_js[ 'res' ] ) ) {
-				self::$stat[ 'resource' ] = self::_base64_url_decode( self::$data_js[ 'res' ] );
-
-				$parsed_url = parse_url( self::$stat[ 'resource' ] );
-				if ( !$parsed_url ) {
-					exit( self::_log_error( 203 ) );
-				}
-
-				if ( !empty( self::$data_js[ 'ref' ] ) ) {
-					self::$stat[ 'referer' ] = self::_base64_url_decode( self::$data_js[ 'ref' ] );
-
-					$parsed_url = parse_url( self::$stat[ 'referer' ] );
-					if ( !$parsed_url ) {
-						exit( self::_log_error( 201 ) );
-					}
-				}
-
-				// Is this a download? If it is, add a new record to the database
-				if ( in_array( pathinfo( self::$stat[ 'resource' ], PATHINFO_EXTENSION ), self::string_to_array( self::$settings[ 'extensions_to_track' ] ) ) ) {
-					self::$stat[ 'resource' ] = parse_url( self::$stat[ 'resource' ], PHP_URL_PATH );
-					self::$stat[ 'content_type' ] = 'download';
-
-					$id = self::slimtrack();
-				}
-				else {
-					$outbound_host = parse_url( self::$stat[ 'resource' ], PHP_URL_HOST );
-					$site_host = parse_url( get_site_url(), PHP_URL_HOST );
-
-					// Update the existing record with the appropriate information
-					if ( $outbound_host != $site_host ) {
-						unset( self::$stat[ 'resource' ] );
-						self::$stat[ 'outbound_resource' ] = $outbound_resource;
-					}
-
-					// Update the pageview with this new information
-					$id = self::_update_row( self::$stat );
-				}
-			}
-			// ... data_js[ 'pos' ] is not empty but data_js[ 'res' ] is: this is a new event on the page
+			// ... otherwise, is this an event: a click on a link (maybe a 'download'?) or other user action
 			else {
-				self::toggle_date_i18n_filters( false );
+				// Record the event
 				$event_info = array(
 					'position' => strip_tags( trim( self::$data_js[ 'pos' ] ) ),
 					'id' => self::$stat[ 'id' ],
-					'dt' => date_i18n( 'U' )
+					'dt' => self::date_i18n( 'U' )
 				);
-				self::toggle_date_i18n_filters( true );
 
 				if ( !empty( self::$data_js[ 'no' ] ) ) {
 					$event_info[ 'notes' ] = self::_base64_url_decode( self::$data_js[ 'no' ] );
 				}
 
 				self::_insert_row( $event_info, $GLOBALS[ 'wpdb' ]->prefix . 'slim_events' );
-				$id = self::$stat[ 'id' ];
+
+				// Track outbound links and downloads by adding the appropriate informaton to the database
+				$parsed_resource = array( 'host' => '', 'path' => '' );
+				
+				if ( !empty( self::$data_js[ 'res' ] ) )  {
+					$resource = self::_base64_url_decode( self::$data_js[ 'res' ] );
+					$parsed_resource = parse_url( $resource );
+
+					if ( $parsed_resource === false ) {
+						exit( self::_log_error( 203 ) );
+					}
+				}
+
+				// Is this a download? If it is, add a new record to the database
+				if ( in_array( pathinfo( $resource, PATHINFO_EXTENSION ), self::string_to_array( self::$settings[ 'extensions_to_track' ] ) ) ) {
+					self::$stat[ 'resource' ] = $parsed_resource[ 'path' ];
+					self::$stat[ 'content_type' ] = 'download';
+
+					$id = self::slimtrack();
+				}
+				// .. or outbound link? If so, update the pageview with the new info
+				else {
+					if ( $parsed_resource[ 'host' ] != $site_host ) {
+						self::$stat[ 'outbound_resource' ] = $resource;
+					}
+
+					// Visitor is still on this page, record the timestamp in the corresponding field
+					self::$stat[ 'dt_out' ] = self::date_i18n( 'U' );
+
+					$id = self::_update_row( self::$stat );
+				}
 			}
 		}
 		// If self::$data_js[ 'id' ] is empty, we are tracking a new pageview
 		else {
+			self::$stat[ 'resource' ] = '';
 			if ( !empty( self::$data_js[ 'res' ] ) ) {
 				self::$stat[ 'resource' ] = self::_base64_url_decode( self::$data_js[ 'res' ] );
 
-				$parsed_url = parse_url( self::$stat[ 'resource' ] );
-				if ( !$parsed_url ) {
+				if ( parse_url( self::$stat[ 'resource' ] ) === false ) {
 					exit( self::_log_error( 203 ) );
-				}
-			}
-
-			if ( !empty( self::$data_js[ 'ref' ] ) ) {
-				self::$stat[ 'referer' ] = self::_base64_url_decode( self::$data_js[ 'ref' ] );
-
-				$parsed_url = parse_url( self::$stat[ 'referer' ] );
-				if ( !$parsed_url ) {
-					exit( self::_log_error( 201 ) );
 				}
 			}
 
@@ -291,10 +279,8 @@ class wp_slimstat {
 	 * Core tracking functionality
 	 */
 	public static function slimtrack() {
-		self::toggle_date_i18n_filters( false );
-		self::$stat[ 'dt' ] = date_i18n( 'U' );
+		self::$stat[ 'dt' ] = self::date_i18n( 'U' );
 		self::$stat[ 'notes' ] = array();
-		self::toggle_date_i18n_filters( true );
 
 		// Allow third-party tools to initialize the stat array
 		self::$stat = apply_filters( 'slimstat_filter_pageview_stat_init', self::$stat );
@@ -399,8 +385,8 @@ class wp_slimstat {
 		}
 
 		// Resource URL
-		if ( empty( self::$stat[ 'resource' ] ) ) {
-			self::$stat[ 'resource' ] = parse_url( self::get_request_uri(), PHP_URL_PATH );
+		if ( !isset( self::$stat[ 'resource' ] ) ) {
+			self::$stat[ 'resource' ] = self::get_request_uri();
 
 			// Is this a 'seriously malformed' URL?
 			$parsed_url = parse_url( self::$stat[ 'resource' ] );
@@ -415,8 +401,11 @@ class wp_slimstat {
 			}
 		}
 
+		// Don't store the domain name in the database
+		self::$stat[ 'resource' ] = parse_url( self::$stat[ 'resource' ], PHP_URL_PATH );
+
 		// Referrer URL
-		if ( empty( self::$stat[ 'referer' ] ) && !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
+		if ( !isset( self::$stat[ 'referer' ] ) && !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
 			self::$stat[ 'referer' ] = $_SERVER[ 'HTTP_REFERER' ];
 		}
 
@@ -468,7 +457,7 @@ class wp_slimstat {
 		}
 
 		// If this function was called by the js tracker (client mode), we've already determined this pageview's content information
-		if ( empty( self::$stat[ 'content_type' ] ) ) {
+		if ( !isset( self::$stat[ 'content_type' ] ) ) {
 			$content_info = self::_get_content_info();
 
 			// Is this content type blacklisted?
@@ -482,7 +471,7 @@ class wp_slimstat {
 		}
 
 		// Number of results from query_posts
-		if ( isset( $GLOBALS[ 'wp_query' ]->found_posts ) ) {
+		if ( !empty( $GLOBALS[ 'wp_query' ]->found_posts ) ) {
 			self::$stat[ 'notes' ][] = 'results:' . intval( $GLOBALS['wp_query']->found_posts );
 		}
 
@@ -596,26 +585,24 @@ class wp_slimstat {
 		}
 
 		// User Agent
-		if ( empty( self::$browser ) ) {
-			self::$browser = slim_browser::get_browser();
-		}
+		$browser = slim_browser::get_browser();
 
 		// Are we ignoring bots?
-		if ( self::$settings[ 'ignore_bots' ] == 'on' && self::$browser[ 'browser_type' ] == 1 ) {
+		if ( self::$settings[ 'ignore_bots' ] == 'on' && $browser[ 'browser_type' ] == 1 ) {
 			return false;
 		}
 
 		// Is this browser blacklisted?
-		if ( !empty( self::$settings[ 'ignore_browsers' ] ) && self::_is_blacklisted( array( self::$browser[ 'browser' ], self::$browser[ 'user_agent' ] ), self::$settings[ 'ignore_browsers' ] ) ) {
+		if ( !empty( self::$settings[ 'ignore_browsers' ] ) && self::_is_blacklisted( array( $browser[ 'browser' ], $browser[ 'user_agent' ] ), self::$settings[ 'ignore_browsers' ] ) ) {
 			return false;
 		}
 
 		// Is this operating system blacklisted?
-		if ( !empty( self::$settings[ 'ignore_platforms' ] ) && self::_is_blacklisted( self::$browser[ 'platform' ], self::$settings[ 'ignore_platforms' ] ) ) {
+		if ( !empty( self::$settings[ 'ignore_platforms' ] ) && self::_is_blacklisted( $browser[ 'platform' ], self::$settings[ 'ignore_platforms' ] ) ) {
 			return false;
 		}
 
-		self::$stat = self::$stat + self::$browser;
+		self::$stat = self::$stat + $browser;
 
 		// Do we need to assign a visit_id to this user?
 		$cookie_has_been_set = self::_set_visit_id( false );
@@ -1159,6 +1146,17 @@ class wp_slimstat {
 	}
 
 	/**
+	 * Calls the date_i18n function without filters
+	 */
+	public static function date_i18n( $_format ) {
+		self::toggle_date_i18n_filters( false );
+		$date = date_i18n( $_format );
+		self::toggle_date_i18n_filters( true );
+
+		return $date;
+	}
+
+	/**
 	 * Imports all the 'old' options into the new array, and saves them
 	 */
 	public static function init_options(){
@@ -1369,9 +1367,7 @@ class wp_slimstat {
 			return;
 		}
 
-		self::toggle_date_i18n_filters( false );
-		$days_ago = strtotime( date_i18n( 'Y-m-d H:i:s' ) . " -$autopurge_interval days" );
-		self::toggle_date_i18n_filters( true );
+		$days_ago = strtotime( self::date_i18n( 'Y-m-d H:i:s' ) . " -$autopurge_interval days" );
 
 		// Copy entries to the archive table, if needed
 		if ( self::$settings[ 'auto_purge_delete' ] != 'no' ) {
@@ -1819,14 +1815,12 @@ class wp_slimstat {
 	// end _get_client_info
 
 	protected static function _log_error( $_error_code = 0 ) {
-		self::toggle_date_i18n_filters( false );
 		if ( !is_network_admin() ) {
-			update_option( 'slimstat_tracker_error', array( $_error_code, date_i18n( 'U' ) ) );
+			update_option( 'slimstat_tracker_error', array( $_error_code, self::date_i18n( 'U' ) ) );
 		}
 		else {
-			update_site_option( 'slimstat_tracker_error', array( $_error_code, date_i18n( 'U' ) ) );
+			update_site_option( 'slimstat_tracker_error', array( $_error_code, self::date_i18n( 'U' ) ) );
 		}
-		self::toggle_date_i18n_filters( true );
 
 		do_action( 'slimstat_track_exit_' . abs( $_error_code ), self::$stat );
 
