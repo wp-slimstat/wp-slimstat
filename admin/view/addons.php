@@ -5,8 +5,17 @@ if ( !function_exists( 'add_action' ) ) {
 }
 
 // Update license keys, if needed
-if ( !empty( $_POST[ 'licenses' ] ) ) {
-	wp_slimstat::$settings[ 'addon_licenses' ] = $_POST[ 'licenses' ];
+if ( !empty( $_POST[ 'licenses' ] ) && is_array( $_POST[ 'licenses' ] ) && !empty( $_POST[ 'slimstat_update_licenses' ] ) && wp_verify_nonce( $_POST[ 'slimstat_update_licenses' ], 'slimstat_update_licenses' ) ) {
+	foreach( $_POST[ 'licenses' ] as $a_license_slug => $a_license_key ) {
+		wp_slimstat::$settings[ 'addon_licenses' ][ $a_license_slug ] = sanitize_title( $a_license_key );
+	}
+
+	if ( !is_network_admin() ) {
+		update_option( 'slimstat_options', wp_slimstat::$settings );
+	}
+	else {
+		update_site_option( 'slimstat_options', wp_slimstat::$settings );
+	}
 }
 
 $response = get_transient( 'wp_slimstat_addon_list' );
@@ -48,6 +57,7 @@ if ( !is_array( $list_addons ) ) {
 </p>
 
 <form method="post" id="form-slimstat-options-tab-addons">
+<?php wp_nonce_field( 'slimstat_update_licenses', 'slimstat_update_licenses' ); ?>
 <table class="wp-list-table widefat plugins slimstat-addons" cellspacing="0">
 	<thead>
 	<tr>

@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.8.7
+Version: 4.8.7.1
 Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8.7';
+	public static $version = '4.8.7.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -294,23 +294,25 @@ class wp_slimstat {
 		unset( self::$stat[ 'id' ] );
 
 		// Opt-out of tracking via cookie
-		$cookie_names = array( 'slimstat_optout_tracking' => 'true' );
+		if ( self::$settings[ 'display_opt_out' ] == 'on' ) {
+			$cookie_names = array( 'slimstat_optout_tracking' => 'true' );
 
-		if ( !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
-			$cookie_names = array();
+			if ( !empty( self::$settings[ 'opt_out_cookie_names' ] ) ) {
+				$cookie_names = array();
 
-			foreach ( self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] ) as $a_cookie_pair ) {
-				list( $name, $value ) = explode( '=', $a_cookie_pair );
+				foreach ( self::string_to_array( self::$settings[ 'opt_out_cookie_names' ] ) as $a_cookie_pair ) {
+					list( $name, $value ) = explode( '=', $a_cookie_pair );
 
-				if ( !empty( $name ) && !empty( $value ) ) {
-					$cookie_names[ $name ] = $value;
+					if ( !empty( $name ) && !empty( $value ) ) {
+						$cookie_names[ $name ] = $value;
+					}
 				}
 			}
-		}
 
-		foreach ( $cookie_names as $a_name => $a_value ) {
-			if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
-				return false;
+			foreach ( $cookie_names as $a_name => $a_value ) {
+				if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
+					return false;
+				}
 			}
 		}
 
@@ -471,7 +473,7 @@ class wp_slimstat {
 		}
 
 		// Number of results from query_posts
-		if ( !empty( $GLOBALS[ 'wp_query' ]->found_posts ) ) {
+		if ( ( is_archive() || is_search() ) && !empty( $GLOBALS[ 'wp_query' ]->found_posts ) ) {
 			self::$stat[ 'notes' ][] = 'results:' . intval( $GLOBALS['wp_query']->found_posts );
 		}
 
@@ -1329,7 +1331,7 @@ class wp_slimstat {
 				}
 			}
 
-			$params[ 'oc' ] = implode( ',', $params[ 'opt_out_cookies' ] );
+			$params[ 'oc' ] = implode( ',', $params[ 'oc' ] );
 		}
 
 		if ( self::$settings[ 'javascript_mode' ] != 'on' ) {
