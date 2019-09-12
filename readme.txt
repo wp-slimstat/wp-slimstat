@@ -60,6 +60,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+<<<<<<< 4a8f5068d6711df5ff3d9aacbc88af68ab1d949d
 <<<<<<< 8023cfe71036e908922fb14a1e83bea5610a0b50
 <<<<<<< b7e44e436fae1223b51784108db394882924df7e
 = 4.8.7 =
@@ -81,6 +82,8 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] The button to delete all the records from the database was not working as expected (thank you, [Softfully](https://wordpress.org/support/topic/delete-all-records-doesnt-work/)).
 
 >>>>>>> The button to delete all the records from the database was not working as expected
+=======
+>>>>>>> A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
 = 4.8.6.1 =
 * [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
 
