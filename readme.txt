@@ -60,6 +60,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+<<<<<<< 8023cfe71036e908922fb14a1e83bea5610a0b50
 <<<<<<< b7e44e436fae1223b51784108db394882924df7e
 = 4.8.7 =
 * [New] With this update, we are introducing an *updated tracker* (both server and client-side): a new simplified codebase that gets rid of a few layers of convoluted functions and algorithms accumulated over the years. We have been working on this update for quite a while, and the recent conflict with another plugin discovered by some users convinced us to make this our top priority. Even though we have tested our new code using a variety of scenarios, you can understand how it would be impossible to cover all the possible environments available out there. Make sure to clear your caches (local, Cloudflare, WP plugins, etc), to allow Slimstat to append the new tracking script to your pages. Also, if you are using Slimstat to track *external* pages (outside of your WP install), please make sure to update the code you're using on those pages with the new one you can find in Slimstat > Settings > Tracker > External Pages.
@@ -74,6 +75,12 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 =======
 >>>>>>> A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
+=======
+= 4.8.6.2 =
+* [Update] We tweaked the SQL query to retrieve 'recent' results, and added a GROUP BY clause to remove duplicates. This might affect some custom reports you might have created, so please don't hesitate to contact us if you have any question or experience any issues.
+* [Fix] The button to delete all the records from the database was not working as expected (thank you, [Softfully](https://wordpress.org/support/topic/delete-all-records-doesnt-work/)).
+
+>>>>>>> The button to delete all the records from the database was not working as expected
 = 4.8.6.1 =
 * [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
 
