@@ -60,6 +60,11 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.8.7.2 =
+* [Fix] The new tracker was having problems recording clicks on SVG elements within a link (thank you, [pollensteyn](https://wordpress.org/support/topic/javascript-error-typeerror/#post-11926542)).
+* [Fix] The event handler is now capable of tracking events on BUTTONs within FORM elements.
+* [Fix] Permalinks containing post query strings were not being recorded as expected.
+
 = 4.8.7.1 =
 * [Note] We are in the process of deprecating the two columns *type* and *event_description* in the events table, and consolidating that information in the *notes* field. Code will be added to Slimstat in a few released to actually drop these columns from the database. If you are using those two columns in your custom code, please feel free to contact our support team to discuss your options and how to update your code using the information collected by the new tracker.
 * [Fix] A warning message was being displayed when enabling the opt-out feature with certain versions of PHP.
