@@ -266,43 +266,28 @@ var SlimStat = {
 		// Do not track events on elements with given class names or rel attributes
 		do_not_track = !SlimStat.empty( SlimStatParams.dnt ) ? SlimStatParams.dnt.split( ',' ) : [];
 
-		if ( !SlimStat.empty( do_not_track.length ) ) {
-			target_classes = !SlimStat.empty( target_node.className ) ? target_node.className.split( " " ) : [];
-			if ( target_classes.filter( value => -1 !== do_not_track.indexOf( value ) ).length != 0 || ( !SlimStat.empty( target_node.attributes ) && !SlimStat.empty( target_node.attributes.rel ) && !SlimStat.empty( target_node.attributes.rel.value ) && SlimStat.in_array( target_node.attributes.rel.value, do_not_track ) ) ) {
-				return false;
-			}
-		}
-
 		// Different elements have different properties to record...
 		if ( !SlimStat.empty( target_node.nodeName ) ) {
 			switch ( target_node.nodeName ) {
-				case "FORM":
-					if ( !SlimStat.empty( target_node.action ) ) {
-						resource_url = target_node.action;
-					}
-					break;
-
 				case "INPUT":
+				case "BUTTON":
 					// Let's look for a FORM element
-					parent_node = target_node.parentNode;
-					while ( "undefined" != typeof parent_node && parent_node.nodeName != "FORM" && parent_node.nodeName != "BODY" ) {
-						parent_node = parent_node.parentNode;
+					while ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && target_node.nodeName.toLowerCase() != "form" ) {
+						target_node = target_node.parentNode;
 					}
-					if ( !SlimStat.empty( parent_node.action ) ) {
-						resource_url = parent_node.action;
+
+					if ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && !SlimStat.empty( target_node.action ) ) {
+						resource_url = target_node.action;
 					}
 					break;
 
 				default:
 					// Is this a link?
-					parent_node = target_node;
-					while ( "undefined" != typeof parent_node && parent_node.nodeName != "A" && parent_node.nodeName != "BODY" ) {
-						parent_node = parent_node.parentNode;
+					while ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && target_node.nodeName.toLowerCase() != "a" ) {
+						target_node = target_node.parentNode;
 					}
 
-					if ( parent_node.nodeName == "A" ) {
-						target_node = parent_node;
-
+					if ( !SlimStat.empty( target_node ) ) {
 						// Anchor in the same page
 						if ( !SlimStat.empty( target_node.hash ) && target_node.hostname == location.hostname ) {
 							resource_url = target_node.hash;
@@ -316,19 +301,26 @@ var SlimStat = {
 							}
 
 							resource_url = target_node.href;
+						}
 
+						// If this element has a title, we can record that as well
+						if ( "function" == typeof target_node.getAttribute ) {
+							if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
+								note_array.push( "Title:" + target_node.getAttribute( "title" ) );
+							}
+							if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
+								note_array.push( "ID:" + target_node.getAttribute( "id" ) );
+							}
 						}
 					}
+			}
 
-					// If this element has a title, we can record that as well
-					if ( "function" == typeof target_node.getAttribute ) {
-						if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
-							note_array.push( "Title:" + target_node.getAttribute( "title" ) );
-						}
-						if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
-							note_array.push( "ID:" + target_node.getAttribute( "id" ) );
-						}
-					}
+			if ( !SlimStat.empty( do_not_track.length ) && !SlimStat.empty( target_node ) ) {
+				target_classes = !SlimStat.empty( target_node.className ) ? target_node.className.split( " " ) : [];
+
+				if ( target_classes.filter( value => -1 !== do_not_track.indexOf( value ) ).length != 0 || ( !SlimStat.empty( target_node.attributes ) && !SlimStat.empty( target_node.attributes.rel ) && !SlimStat.empty( target_node.attributes.rel.value ) && SlimStat.in_array( target_node.attributes.rel.value, do_not_track ) ) ) {
+					return false;
+				}
 			}
 		}
 

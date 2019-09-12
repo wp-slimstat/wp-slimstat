@@ -389,22 +389,22 @@ class wp_slimstat {
 		// Resource URL
 		if ( !isset( self::$stat[ 'resource' ] ) ) {
 			self::$stat[ 'resource' ] = self::get_request_uri();
+		}
 
-			// Is this a 'seriously malformed' URL?
-			$parsed_url = parse_url( self::$stat[ 'resource' ] );
-			if ( !$parsed_url ) {
-				$error = self::_log_error( 203 );
-				return false;
-			}
-
-			// Is this resource blacklisted?
-			if ( !empty( self::$settings[ 'ignore_resources' ] ) && self::_is_blacklisted( self::$stat[ 'resource' ], self::$settings[ 'ignore_resources' ] ) ) {
-				return false;
-			}
+		// Is this a 'seriously malformed' URL?
+		$parsed_url = parse_url( self::$stat[ 'resource' ] );
+		if ( !$parsed_url ) {
+			$error = self::_log_error( 203 );
+			return false;
 		}
 
 		// Don't store the domain name in the database
-		self::$stat[ 'resource' ] = parse_url( self::$stat[ 'resource' ], PHP_URL_PATH );
+		self::$stat[ 'resource' ] = $parsed_url[ 'path' ] . ( !empty( $parsed_url[ 'query' ] ) ? '?' . $parsed_url[ 'query' ] : '' );
+
+		// Is this resource blacklisted?
+		if ( !empty( self::$settings[ 'ignore_resources' ] ) && self::_is_blacklisted( self::$stat[ 'resource' ], self::$settings[ 'ignore_resources' ] ) ) {
+			return false;
+		}
 
 		// Referrer URL
 		if ( !isset( self::$stat[ 'referer' ] ) && !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
@@ -1551,12 +1551,6 @@ class wp_slimstat {
 			}
 		}
 
-		// self::$wpdb->query( self::$wpdb->prepare( "
-		// 	UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-		// 	SET " . implode( ' = %s, ', array_keys( $_data ) ) . " = %s
-		// 	WHERE id = $id", $_data
-		// ) );
-
 		self::$wpdb->update( 
 			$GLOBALS[ 'wpdb' ]->prefix . 'slim_stats',
 			$_data,
@@ -1613,7 +1607,7 @@ class wp_slimstat {
 		}
 		else {
 			// We weren't lucky, but there's still hope
-			foreach( array( 'k', 'p', 'q', 'qt', 'query', 's' ) as $a_format ) {
+			foreach( array( 'k', 'q', 'qt', 'query', 's' ) as $a_format ) {
 				if ( !empty( $query[ $a_format ] ) ) {
 					$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $a_format ] ) ) );
 					break;
