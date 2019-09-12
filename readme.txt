@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 5.2
 Tested up to: 5.2
-Stable tag: 4.8.7
+Stable tag: 4.8.7.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -61,6 +61,8 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 
 == Changelog ==
 = 4.8.7.1 =
+* [Note] We are in the process of deprecating the two columns *type* and *event_description* in the events table, and consolidating that information in the *notes* field. Code will be added to Slimstat in a few released to actually drop these columns from the database. If you are using those two columns in your custom code, please feel free to contact our support team to discuss your options and how to update your code using the information collected by the new tracker.
+* [Fix] A warning message was being displayed when enabling the opt-out feature with certain versions of PHP.
 * [Fix] PHP warning being displayed when trying to update some of the add-ons' settings.
 * [Fix] The new tracker was recording the number of posts on an archive page even when the single article was being displayed.
 * [Fix] License keys for premium add-ons were not being saved as expected, due to a side effect of the new security features we implemented in the Settings.

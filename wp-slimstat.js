@@ -91,7 +91,7 @@ var SlimStat = {
 
 	// Retrieves and displays the opt-out message dynamically, to avoid issues with cached pages
 	show_optout_message : function() {
-		opt_out_cookies = ( "undefined" != typeof SlimStatParams.oc && SlimStatParams.oc ) ? SlimStatParams.oc.split( ',' ) : [];
+		opt_out_cookies = !SlimStat.empty( SlimStatParams.oc ) ? SlimStatParams.oc.split( ',' ) : [];
 		if ( !Array.isArray( opt_out_cookies ) ) {
 			opt_out_cookies = [];
 		}
@@ -168,6 +168,9 @@ var SlimStat = {
 		}
 		else if ( "string" == typeof variable || "object" == typeof variable ) {
 			return variable.length == 0;
+		}
+		else {
+			return true;
 		}
 	},
 
