@@ -19,6 +19,9 @@ class wp_slimstat_db {
 	// Useful data for the reports
 	public static $pageviews = 0;
 
+	// Keep a cache of queries and results for improved performance
+	protected static $query_cache = array();
+
 	/*
 	 * Sets the filters and other structures needed to store the data retrieved from the DB
 	 */
@@ -365,7 +368,12 @@ class wp_slimstat_db {
 			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
-		return wp_slimstat::$wpdb->get_results( $_sql, ARRAY_A );
+		// Save the results of this query in our cache, if we don't have it already?
+		if ( empty( self::$query_cache[ md5( $_sql ) ] ) ) {
+			self::$query_cache[ md5( $_sql ) ] = wp_slimstat::$wpdb->get_results( $_sql, ARRAY_A );
+		}
+
+		return self::$query_cache[ md5( $_sql ) ];
 	}
 
 	public static function get_var( $_sql = '', $_aggregate_value = '' ) {
@@ -375,7 +383,12 @@ class wp_slimstat_db {
 			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
-		return wp_slimstat::$wpdb->get_var( $_sql );
+		// Save the results of this query in our cache, if we don't have it already?
+		if ( empty( self::$query_cache[ md5( $_sql ) ] ) ) {
+			self::$query_cache[ md5( $_sql ) ] = wp_slimstat::$wpdb->get_var( $_sql );
+		}
+
+		return self::$query_cache[ md5( $_sql ) ];
 	}
 
 	public static function parse_filters( $_filters_raw ) {
