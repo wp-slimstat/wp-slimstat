@@ -881,8 +881,13 @@ class wp_slimstat_db {
 			$columns = "$_column AS $_as_column";
 		}
 
+		// Add the IP column, used to display details about that visit
+		if ( $_column != 'ip' ) {
+			$columns .= ', ip';
+		}
+
 		if ( $_column != '*' ) {
-			$columns .= ', ip, dt';
+			$columns .= ', dt';
 			$group_by = 'GROUP BY ' . $_column;
 		}
 		else {
