@@ -62,6 +62,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 == Changelog ==
 = 4.8.7.3 =
 * [Update] Do not show the resource title in Network View mode.
+* [Fix] Some reports were not optimized for our Network Analytics add-on (thank you, Peter).
 
 = 4.8.7.2 =
 * [Fix] The new tracker was having problems recording clicks on SVG elements within a link (thank you, [pollensteyn](https://wordpress.org/support/topic/javascript-error-typeerror/#post-11926542)).

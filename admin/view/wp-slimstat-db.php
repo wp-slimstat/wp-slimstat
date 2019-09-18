@@ -97,10 +97,6 @@ class wp_slimstat_db {
 			'dt_out' => array( __( 'Exit Timestamp', 'wp-slimstat' ), 'int' ),
 
 			// Other columns
-			'language_calculated' => array( __( 'Language', 'wp-slimstat' ), 'varchar' ),
-			'platform_calculated' => array( __( 'Operating System', 'wp-slimstat' ), 'varchar' ),
-			'resource_calculated' => array( __( 'Permalink', 'wp-slimstat' ), 'varchar' ),
-			'referer_calculated' => array( __( 'Referer', 'wp-slimstat' ), 'varchar' ),
 			'metric' => array( __( 'Metric', 'wp-slimstat' ), 'varchar' ),
 			'value' => array( __( 'Value', 'wp-slimstat' ), 'varchar' ),
 			'counthits' => array( __( 'Hits', 'wp-slimstat' ), 'int' ),
@@ -252,7 +248,6 @@ class wp_slimstat_db {
 		}
 
 		if ( !empty( $_column ) && !empty( self::$columns_names[ $_column ] ) ) {
-			$_column = str_replace( '_calculated', '', $_column );
 			$column_with_alias = $_column;
 			if ( !empty( $_slim_stats_table_alias ) ) {
 				$column_with_alias = $_slim_stats_table_alias . '.' . $column_with_alias;
@@ -275,8 +270,6 @@ class wp_slimstat_db {
 	public static function get_single_where_clause( $_dimension = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '' ) {
 		$filter_empty = ( !empty( self::$columns_names[ $_dimension ] ) && self::$columns_names[ $_dimension ] [ 1 ] == 'varchar' ) ? 'IS NULL' : '= 0';
 		$filter_not_empty = ( !empty( self::$columns_names[ $_dimension ] ) && self::$columns_names[ $_dimension ] [ 1 ] == 'varchar' ) ? 'IS NOT NULL' : '<> 0';
-
-		$_dimension = str_replace( '_calculated', '', $_dimension );
 
 		$column_with_alias = $_dimension;
 		if ( !empty( $_slim_stats_table_alias ) ) {
