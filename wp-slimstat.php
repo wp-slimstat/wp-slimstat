@@ -42,7 +42,18 @@ class wp_slimstat {
 			self::$settings = get_option( 'slimstat_options', array() );
 		}
 
-		self::$settings = array_merge( self::init_options(), self::$settings );
+		if ( empty( self::$settings ) ) {
+			// Save the default values in the database
+			if ( !is_network_admin() ) {
+				update_option( 'slimstat_options', self::init_options() );
+			}
+			else {
+				update_site_option( 'slimstat_options', self::init_options() );
+			}
+		}
+		else {
+			self::$settings = array_merge( self::init_options(), self::$settings );
+		}
 
 		// Allow third party tools to edit the options
 		self::$settings = apply_filters( 'slimstat_init_options', self::$settings );

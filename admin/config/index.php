@@ -544,10 +544,16 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 				'type'=> 'section_header'
 			),
 			'delete_all_records' => array(
-				'title' => __( 'Data Reset', 'wp-slimstat' ),
+				'title' => __( 'Data', 'wp-slimstat' ),
 				'type'=> 'plain-text',
-				'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce( 'slimstat_update_settings' ) . '" onclick="return( confirm( \'' . __( 'Please confirm that you want to PERMANENTLY DELETE ALL the records from your database.' ,'wp-slimstat' ) . '\' ) )">' . __( 'Delete All Records', 'wp-slimstat' ) . '</a>',
+				'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce( 'slimstat_update_settings' ) . '" onclick="return( confirm( \'' . __( 'Please confirm that you want to PERMANENTLY DELETE ALL the records from your database.' ,'wp-slimstat' ) . '\' ) )">' . __( 'Delete Records', 'wp-slimstat' ) . '</a>',
 				'description'=> __( 'Delete all the information collected by Slimstat so far, but not the archived records (stored in <code>wp_slim_stats_archive</code>). This operation <strong>does not</strong> reset your settings and it can be undone by manually copying your records from the archive table, if you have the corresponding option enabled.' ,'wp-slimstat' )
+			),
+			'reset_all_settings' => array(
+				'title' => __( 'Settings', 'wp-slimstat' ),
+				'type'=> 'plain-text',
+				'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-settings&amp;slimstat_update_settings=' . wp_create_nonce( 'slimstat_update_settings' ) . '" onclick="return( confirm( \'' . __( 'Please confirm that you want to RESET your settings.' ,'wp-slimstat' ) . '\' ) )">' . __( 'Factory Reset', 'wp-slimstat' ) . '</a>',
+				'description'=> __( 'Restore all the settings to their default value. This action DOES NOT delete any records collected by the plugin.' ,'wp-slimstat' )
 			)
 		)
 	),
@@ -574,6 +580,42 @@ $settings = apply_filters( 'slimstat_options_on_page', $settings );
 // Save options
 $save_messages = array();
 if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) && wp_verify_nonce( $_REQUEST[ 'slimstat_update_settings' ], 'slimstat_update_settings' ) ) {
+	if ( !empty( $_GET[ 'action' ] ) ) {
+		switch ( $_GET[ 'action' ] ) {
+			case 'reset-tracker-error':
+				$settings[ 6 ][ 'rows' ][ 'last_tracker_error' ][ 'after_input_field' ] = __( 'So far so good.', 'wp-slimstat' );
+				if ( !is_network_admin() ) {
+					update_option( 'slimstat_tracker_error', array() );
+				}
+				else {
+					update_site_option( 'slimstat_tracker_error', array() );
+				}
+				break;
+
+			case 'reset-settings':
+				wp_slimstat::$settings = wp_slimstat::init_options();
+				if ( !is_network_admin() ) {
+					update_option( 'slimstat_options', wp_slimstat::$settings );
+				}
+				else {
+					update_site_option( 'slimstat_options', wp_slimstat::$settings );
+				}
+				wp_slimstat_admin::show_message( __( 'All settings were successfully reset to their default values.', 'wp-slimstat' ) );
+				break;
+
+			case 'truncate-table':
+				wp_slimstat::$wpdb->query( "DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te" );
+				wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
+				wp_slimstat::$wpdb->query( "DELETE t1 FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats t1" );
+				wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
+				wp_slimstat_admin::show_message( __( 'All your records were successfully deleted.', 'wp-slimstat' ) );
+				break;
+
+			default:
+				break;
+		}
+	}
+
 	// Some of them require extra processing
 	if ( !empty( $_POST[ 'options' ] ) ) {
 		// DB Indexes
@@ -696,31 +738,6 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 		}
 		else{
 			wp_slimstat_admin::show_message( __( 'Your new settings have been saved.', 'wp-slimstat' ), 'info' );
-		}
-	}
-
-	if ( !empty( $_GET[ 'action' ] ) ) {
-		switch ( $_GET[ 'action' ] ) {
-			case 'reset-tracker-error':
-				$settings[ 6 ][ 'rows' ][ 'last_tracker_error' ][ 'after_input_field' ] = __( 'So far so good.', 'wp-slimstat' );
-				if ( !is_network_admin() ) {
-					update_option( 'slimstat_tracker_error', array() );
-				}
-				else {
-					update_site_option( 'slimstat_tracker_error', array() );
-				}
-				break;
-
-			case 'truncate-table':
-				wp_slimstat::$wpdb->query( "DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te" );
-				wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events" );
-				wp_slimstat::$wpdb->query( "DELETE t1 FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats t1" );
-				wp_slimstat::$wpdb->query( "OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats" );
-				wp_slimstat_admin::show_message( __( 'All the records were successfully deleted.', 'wp-slimstat' ) );
-				break;
-
-			default:
-				break;
 		}
 	}
 }
