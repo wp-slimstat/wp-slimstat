@@ -410,7 +410,7 @@ class wp_slimstat {
 		}
 
 		// Don't store the domain name in the database
-		self::$stat[ 'resource' ] = $parsed_url[ 'path' ] . ( !empty( $parsed_url[ 'query' ] ) ? '?' . $parsed_url[ 'query' ] : '' );
+		self::$stat[ 'resource' ] = $parsed_url[ 'path' ] . ( !empty( $parsed_url[ 'query' ] ) ? '?' . $parsed_url[ 'query' ] : '' ) . ( !empty( $parsed_url[ 'fragment' ] ) ? '#' . $parsed_url[ 'fragment' ] : '' );
 
 		// Is this resource blacklisted?
 		if ( !empty( self::$settings[ 'ignore_resources' ] ) && self::_is_blacklisted( self::$stat[ 'resource' ], self::$settings[ 'ignore_resources' ] ) ) {
@@ -686,15 +686,23 @@ class wp_slimstat {
 	 * Decodes the permalink
 	 */
 	public static function get_request_uri() {
+		$request_url = '';
+
 		if ( isset( $_SERVER[ 'REQUEST_URI' ] ) ) {
 			return urldecode( $_SERVER[ 'REQUEST_URI' ] );
 		}
-		elseif ( isset( $_SERVER[ 'SCRIPT_NAME' ] ) ) {
-			return isset( $_SERVER[ 'QUERY_STRING' ] ) ? $_SERVER[ 'SCRIPT_NAME' ] . '?' . $_SERVER[ 'QUERY_STRING' ] : $_SERVER[ 'SCRIPT_NAME' ];
+		else if ( isset( $_SERVER[ 'SCRIPT_NAME' ] ) ) {
+			$request_url = $_SERVER[ 'SCRIPT_NAME' ];
 		}
-		else{
-			return isset( $_SERVER[ 'QUERY_STRING' ] ) ? $_SERVER[ 'PHP_SELF' ] . '?' . $_SERVER[ 'QUERY_STRING' ] : $_SERVER[ 'PHP_SELF' ];
+		else if ( isset( $_SERVER[ 'PHP_SELF' ] ) ) {
+			$request_url = $_SERVER[ 'PHP_SELF' ];
 		}
+
+		if ( isset( $_SERVER[ 'QUERY_STRING' ] ) ) {
+			$request_url .= '?' . $_SERVER[ 'QUERY_STRING' ];
+		}
+
+		return $request_url;
 	}
 	// end get_request_uri
 
