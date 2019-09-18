@@ -1065,12 +1065,13 @@ class wp_slimstat_reports {
 						$element_value = slim_i18n::get_string( 'c-' . $results[ $i ][ 'country' ] );
 						break;
 
+					case 'id':
 					case 'ip':
 						if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
-							$element_value = gethostbyaddr( $results[ $i ][ $_args[ 'columns' ] ] );
+							$element_value = gethostbyaddr( $results[ $i ][ 'ip' ] );
 						}
 						else{
-							$element_value = $results[ $i ][ $_args[ 'columns' ] ];
+							$element_value = $results[ $i ][ 'ip' ];
 						}
 						break;
 
