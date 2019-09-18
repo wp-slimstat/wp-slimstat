@@ -10,12 +10,7 @@ if ( !empty( $_POST[ 'licenses' ] ) && is_array( $_POST[ 'licenses' ] ) && !empt
 		wp_slimstat::$settings[ 'addon_licenses' ][ $a_license_slug ] = sanitize_title( $a_license_key );
 	}
 
-	if ( !is_network_admin() ) {
-		update_option( 'slimstat_options', wp_slimstat::$settings );
-	}
-	else {
-		update_site_option( 'slimstat_options', wp_slimstat::$settings );
-	}
+	wp_slimstat::update_option( 'slimstat_options', wp_slimstat::$settings );
 }
 
 $response = get_transient( 'wp_slimstat_addon_list' );

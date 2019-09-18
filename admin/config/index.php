@@ -584,22 +584,11 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 		switch ( $_GET[ 'action' ] ) {
 			case 'reset-tracker-error':
 				$settings[ 6 ][ 'rows' ][ 'last_tracker_error' ][ 'after_input_field' ] = __( 'So far so good.', 'wp-slimstat' );
-				if ( !is_network_admin() ) {
-					update_option( 'slimstat_tracker_error', array() );
-				}
-				else {
-					update_site_option( 'slimstat_tracker_error', array() );
-				}
+				wp_slimstat::update_option( 'slimstat_tracker_error', array() );
 				break;
 
 			case 'reset-settings':
-				wp_slimstat::$settings = wp_slimstat::init_options();
-				if ( !is_network_admin() ) {
-					update_option( 'slimstat_options', wp_slimstat::$settings );
-				}
-				else {
-					update_site_option( 'slimstat_options', wp_slimstat::$settings );
-				}
+				wp_slimstat::update_option( 'slimstat_options', wp_slimstat::$settings );
 				wp_slimstat_admin::show_message( __( 'All settings were successfully reset to their default values.', 'wp-slimstat' ) );
 				break;
 
@@ -726,12 +715,8 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 		// Allow third-party functions to manipulate the options right before they are saved
 		wp_slimstat::$settings = apply_filters( 'slimstat_save_options', wp_slimstat::$settings );
 
-		if ( !is_network_admin() ) {
-			update_option( 'slimstat_options', wp_slimstat::$settings );
-		}
-		else {
-			update_site_option( 'slimstat_options', wp_slimstat::$settings );
-		}
+		// Save the new values in the database
+		wp_slimstat::update_option( 'slimstat_options', wp_slimstat::$settings );
 
 		if ( !empty( $save_messages ) ) {
 			wp_slimstat_admin::show_message( implode( ' ', $save_messages ), 'warning' );

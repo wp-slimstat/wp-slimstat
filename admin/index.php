@@ -875,6 +875,9 @@ class wp_slimstat_admin {
 		if ( !empty( $tag ) ) {
 			$tag = str_replace( 'wp_ajax_slimstat_', '', $tag );
 			wp_slimstat::$settings[ $tag ] = 'no';
+			
+			// Save the default values in the database
+			wp_slimstat::update_option( 'slimstat_options', wp_slimstat::$settings );
 		}
 
 		exit();
