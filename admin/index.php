@@ -958,14 +958,6 @@ class wp_slimstat_admin {
 	}
 	// END: manage_filters
 
-	/*
-	 * Updates the options 
-	 */
-	public static function update_settings( $_settings = array() ) {
-		
-	}
-	// END: update_settings
-
 	/**
 	 * Contextual help
 	 */

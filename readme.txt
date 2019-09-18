@@ -62,6 +62,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 == Changelog ==
 = 4.8.7.3 =
 * [New] Implemented a simple query cache to minimize the number of requests needed to crunch and display the data in the reports.
+* [Update] Extended tracker to also record the 'fragment' portion of the URL, if available.
 * [Update] Do not show the resource title in Network View mode.
 * [Fix] Some reports were not optimized for our Network Analytics add-on (thank you, Peter).
 * [Fix] A new feature introduced by our Javascript tracker was not working as expected in IE11 (thank you, [51nullacht](https://wordpress.org/support/topic/js-error-in-wp-slimstat-js321/)).
