@@ -60,6 +60,9 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.8.7.3 =
+* [Update] Do not show the resource title in Network View mode.
+
 = 4.8.7.2 =
 * [Fix] The new tracker was having problems recording clicks on SVG elements within a link (thank you, [pollensteyn](https://wordpress.org/support/topic/javascript-error-typeerror/#post-11926542)).
 * [Fix] The event handler is now capable of tracking events on BUTTONs within FORM elements.
@@ -83,7 +86,6 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] A bug was affecting certain shortcodes when PHP 7.2 was enabled (thank you, Peter).
 * [Fix] Emptying one of the settings and saving did not produce the desired effect.
 
-=======
 = 4.8.6.2 =
 * [Update] We tweaked the SQL query to retrieve 'recent' results, and added a GROUP BY clause to remove duplicates. This might affect some custom reports you might have created, so please don't hesitate to contact us if you have any question or experience any issues.
 * [Fix] The button to delete all the records from the database was not working as expected (thank you, [Softfully](https://wordpress.org/support/topic/delete-all-records-doesnt-work/)).
