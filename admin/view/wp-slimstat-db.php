@@ -943,6 +943,8 @@ class wp_slimstat_db {
 			$_column = $_column[ 'columns' ];
 		}
 
+		$group_by_column = $_column;
+		
 		if ( !empty( $_as_column ) ) {
 			$_column = "$_column AS $_as_column";
 		}
@@ -956,7 +958,7 @@ class wp_slimstat_db {
 			SELECT $_column, COUNT(*) counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
-			GROUP BY $_as_column $_having
+			GROUP BY $group_by_column $_having
 			ORDER BY counthits DESC
 			LIMIT 0, " . self::$filters_normalized[ 'misc' ][ 'limit_results' ],
 			( ( !empty( $_as_column ) && $_as_column != $_column ) ? $_as_column : $_column ),
