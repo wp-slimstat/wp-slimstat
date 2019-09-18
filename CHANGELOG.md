@@ -1,9 +1,10 @@
 ## Changelog ##
 ### 4.8.7.3 ###
 * [New] Implemented a simple query cache to minimize the number of requests needed to crunch and display the data in the reports.
-* [Update] Extended tracker to also record the 'fragment' portion of the URL, if available.
+* [Update] Extended tracker to also record the 'fragment' portion of the URL, if available (this feature is only available in Client Mode).
 * [Update] Do not show the resource title in Network View mode.
 * [Fix] Some reports were not optimized for our Network Analytics add-on (thank you, Peter).
+* [Fix] The notice displayed to share the latest news with our users would not disappear even after clicking the X button to close it (thank you, Anton).
 * [Fix] A new feature introduced by our Javascript tracker was not working as expected in IE11 (thank you, [51nullacht](https://wordpress.org/support/topic/js-error-in-wp-slimstat-js321/)).
 
 ### 4.8.7.2 ###

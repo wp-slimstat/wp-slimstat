@@ -44,12 +44,7 @@ class wp_slimstat {
 
 		if ( empty( self::$settings ) ) {
 			// Save the default values in the database
-			if ( !is_network_admin() ) {
-				update_option( 'slimstat_options', self::init_options() );
-			}
-			else {
-				update_site_option( 'slimstat_options', self::init_options() );
-			}
+			self::update_option( 'slimstat_options', self::init_options() );
 		}
 		else {
 			self::$settings = array_merge( self::init_options(), self::$settings );
@@ -1178,7 +1173,7 @@ class wp_slimstat {
 	}
 
 	/**
-	 * Imports all the 'old' options into the new array, and saves them
+	 * Sets the default values for all the options
 	 */
 	public static function init_options(){
 		return array(
@@ -1321,6 +1316,19 @@ class wp_slimstat {
 		);
 	}
 	// end init_options
+
+	/**
+	 * Saves a given option in the database
+	 */
+	public static function update_option( $_key = '', $_value = '' ) {
+		if ( !is_network_admin() ) {
+			update_option( $_key, $_value );
+		}
+		else {
+			update_site_option( $_key, $_value );
+		}
+	}
+	// end update_option
 
 	/**
 	 * Attach a script to every page to track visitors' screen resolution and other browser-based information
@@ -1830,13 +1838,10 @@ class wp_slimstat {
 	// end _get_client_info
 
 	protected static function _log_error( $_error_code = 0 ) {
-		if ( !is_network_admin() ) {
-			update_option( 'slimstat_tracker_error', array( $_error_code, self::date_i18n( 'U' ) ) );
-		}
-		else {
-			update_site_option( 'slimstat_tracker_error', array( $_error_code, self::date_i18n( 'U' ) ) );
-		}
+		// Save this error in the database
+		self::update_option( 'slimstat_tracker_error', array( $_error_code, self::date_i18n( 'U' ) ) );
 
+		// Allow third-party code to trigger actions based on this error
 		do_action( 'slimstat_track_exit_' . abs( $_error_code ), self::$stat );
 
 		return -$_error_code;
