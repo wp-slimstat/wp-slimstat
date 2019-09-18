@@ -1241,22 +1241,6 @@ class wp_slimstat_db {
 		return $results;
 	}
 
-// 	protected static function array_column( $input = array(), $columns = array() ) {
-// 		$output = array();
-
-// 		foreach ( $input as $a_key => $a_row ) {
-// 			foreach ( $columns as $a_column ) {
-// var_dump($a_column);
-// 				$a_column = trim( $a_column );
-// 				if ( $a_row[ $a_column ] != NULL ) {
-// 					$output[ $a_key ][ $a_column ] = $a_row[ $a_column ];
-// 				}
-// 			}
-// 		}
-
-// 		return $output;
-// 	}
-
 	protected static function count_months_between( $min_timestamp = 0, $max_timestamp = 0 ) {
 		$i = 0;
 		$min_month = date( 'Ym', $min_timestamp );

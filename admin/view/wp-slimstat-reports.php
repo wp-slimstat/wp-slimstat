@@ -17,6 +17,11 @@ class wp_slimstat_reports {
 	 * Initalize class properties
 	 */
 	public static function init() {
+		// Has the class already been initialized?
+		if ( !empty( self::$reports ) ) {
+			return true;
+		}
+
 		// Include and initialize the API to interact with the database
 		include_once( 'wp-slimstat-db.php' );
 		wp_slimstat_db::init();
@@ -861,22 +866,22 @@ class wp_slimstat_reports {
 		$merge_reports = array_keys( self::$reports );
 
 		// Do we have any new reports not listed in this user's settings?
-		if ( class_exists( 'wp_slimstat_admin' ) ) {
-			if ( !empty( wp_slimstat_admin::$meta_user_reports ) && is_array( wp_slimstat_admin::$meta_user_reports ) ) {
-				$flat_user_reports = array_filter( explode( ',', implode( ',', wp_slimstat_admin::$meta_user_reports ) ) );
-				$merge_reports = array_diff( array_filter( array_keys( self::$reports ) ), $flat_user_reports );
+		if ( class_exists( 'wp_slimstat_admin' ) && !empty( wp_slimstat_admin::$meta_user_reports ) && is_array( wp_slimstat_admin::$meta_user_reports ) ) {
+			$flat_user_reports = array_filter( explode( ',', implode( ',', wp_slimstat_admin::$meta_user_reports ) ) );
+			$merge_reports = array_diff( array_filter( array_keys( self::$reports ) ), $flat_user_reports );
 
-				// Now let's explode all the lists
-				foreach ( wp_slimstat_admin::$meta_user_reports as $a_location => $a_report_list ) {
-					self::$user_reports[ $a_location ] = explode( ',', $a_report_list );
-				}
+			// Now let's explode all the lists
+			foreach ( wp_slimstat_admin::$meta_user_reports as $a_location => $a_report_list ) {
+				self::$user_reports[ $a_location ] = explode( ',', $a_report_list );
 			}
 		}
 
 		foreach ( $merge_reports as $a_report_id ) {
 			if ( !empty( self::$reports[ $a_report_id ][ 'locations' ] ) && is_array( self::$reports[ $a_report_id ][ 'locations' ] ) ) {
 				foreach ( self::$reports[ $a_report_id ][ 'locations' ] as $a_report_location ) {
-					self::$user_reports[ $a_report_location ][] = $a_report_id;
+					if ( !in_array( $a_report_id, self::$user_reports[ $a_report_location ] ) ) {
+						self::$user_reports[ $a_report_location ][] = $a_report_id;
+					}
 				}
 			}
 		}
