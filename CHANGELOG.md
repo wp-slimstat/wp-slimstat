@@ -1,5 +1,6 @@
 ## Changelog ##
 ### 4.8.7.3 ###
+* [New] Implemented a simple query cache to minimize the number of requests needed to crunch and display the data in the reports.
 * [Update] Do not show the resource title in Network View mode.
 * [Fix] Some reports were not optimized for our Network Analytics add-on (thank you, Peter).
 
