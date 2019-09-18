@@ -79,7 +79,7 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'recent',
-					'columns' => 'ip',
+					'columns' => 'id', // the 'ip' column is always added to any 'recent' query, so we don't need to specify it here
 					'where' => 'dt_out > '. ( date_i18n( 'U' ) - 300 ) . ' OR dt > '. ( date_i18n( 'U' ) - 300 ),
 					'use_date_filters' => false,
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
@@ -107,7 +107,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'TRIM( TRAILING "/" FROM SUBSTRING_INDEX( resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1 ) )',
-					'as_column' => 'resource_calculated',
+					'as_column' => 'resource',
 					'filter_op' => 'contains',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
@@ -121,7 +121,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
-					'as_column' => 'referer_calculated',
+					'as_column' => 'referer',
 					'filter_op' => 'contains',
 					'where' => 'referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
@@ -179,8 +179,8 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'SUBSTRING(language, 1, 2)',
-					'as_column' => 'language_calculated',
+					'columns' => 'SUBSTRING( language, 1, 2 )',
+					'as_column' => 'language',
 					'filter_op' => 'contains',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
@@ -423,8 +423,8 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
-					'as_column' => 'platform_calculated',
+					'columns' => 'CONCAT( "p-", SUBSTRING( platform, 1, 3 ) )',
+					'as_column' => 'platform',
 					'filter_op' => 'contains',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
@@ -533,7 +533,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'REPLACE( SUBSTRING_INDEX( SUBSTRING_INDEX( SUBSTRING_INDEX( referer, "://", -1 ), "/", 1 ), ".", -5 ), "www.", "" )',
-					'as_column' => 'referer_calculated',
+					'as_column' => 'referer',
 					'filter_op' => 'contains',
 					'where' => 'searchterms IS NOT NULL AND searchterms <> "" AND searchterms <> "_" AND referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
@@ -560,7 +560,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'TRIM( TRAILING "/" FROM resource )',
-					'as_column' => 'resource_calculated',
+					'as_column' => 'resource',
 					'where' => 'content_type = "post"',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
@@ -684,7 +684,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'recent',
 					'columns' => 'TRIM( TRAILING "/" FROM resource )',
-					'as_column' => 'resource_calculated',
+					'as_column' => 'resource',
 					'where' => '(content_type = "category" OR content_type = "tag")',
 					'raw' => array( 'wp_slimstat_db', 'get_recent' )
 				),
@@ -766,7 +766,7 @@ class wp_slimstat_reports {
 				'callback_args' => array(
 					'type' => 'top',
 					'columns' => 'TRIM( TRAILING "/" FROM resource )',
-					'as_column' => 'resource_calculated',
+					'as_column' => 'resource',
 					'where' => 'content_type <> "404"',
 					'having' => 'HAVING COUNT(visit_id) = 1',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
@@ -1035,7 +1035,6 @@ class wp_slimstat_reports {
 			echo self::report_pagination( $count_page_results, count( $all_results ) );
 
 			$permalinks_enabled = get_option( 'permalink_structure' );
-			$column_not_calculated = str_replace( '_calculated', '', $_args[ 'columns' ] );
 
 			for ( $i=0; $i<$count_page_results; $i++ ) {
 				$row_details = $percentage = '';
@@ -1043,7 +1042,7 @@ class wp_slimstat_reports {
 				$element_value = $results[ $i ][ $_args[ 'columns' ] ];
 
 				// Some columns require a special pre-treatment
-				switch ( $column_not_calculated ){
+				switch ( $_args[ 'columns' ] ){
 					case 'browser':
 						if ( !empty( $results[ $i ][ 'user_agent' ] ) && wp_slimstat::$settings[ 'show_complete_user_agent_tooltip' ] == 'on' ) {
 							$element_pre_value = self::inline_help( $results[ $i ][ 'user_agent' ], false );
@@ -1136,7 +1135,7 @@ class wp_slimstat_reports {
 				}
 
 				if ( is_admin() ) {
-					$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $column_not_calculated. ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
+					$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $_args[ 'columns' ] . ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
 				}
 
 				if ( !empty( $_args['type'] ) && $_args['type'] == 'recent' ) {
@@ -1149,7 +1148,7 @@ class wp_slimstat_reports {
 
 					if ( ( !empty( $_args[ 'criteria' ] ) && $_args[ 'criteria' ] == 'swap' ) || wp_slimstat::$settings[ 'show_hits' ] == 'on' ) {
 						$percentage = ' <span>' . $counthits . '</span>';
-						$row_details = __('Hits','wp-slimstat') . ': ' . ( ( $column_not_calculated != 'outbound_resource' ) ? $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details : '' );
+						$row_details = __('Hits','wp-slimstat') . ': ' . ( ( $_args[ 'columns' ] != 'outbound_resource' ) ? $percentage_value . '%' . ( !empty( $row_details ) ? '<br>' : '' ) . $row_details : '' );
 					}
 					else {
 						$percentage = ' <span>' . $percentage_value . '%</span>';
@@ -1165,11 +1164,6 @@ class wp_slimstat_reports {
 						$base_url = $base_url['scheme'].'://'.$base_url['host'];
 					}
 					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$base_url.htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8').'"></a> '.$base_url.$element_value;
-				}
-
-				if ( $_args[ 'columns' ] == 'referer_calculated' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
-					$element_url = 'http://' . htmlentities( $results[ $i ][ 'referer_calculated' ], ENT_QUOTES, 'UTF-8' );
-					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
 				}
 
 				if ( $_args[ 'columns' ] == 'referer' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
@@ -1737,7 +1731,6 @@ class wp_slimstat_reports {
 		// Columns
 		if ( !empty( $fn[ 'columns' ] ) ) {
 			foreach ( $fn[ 'columns' ] as $a_key => $a_filter ) {
-				$a_key = str_replace( '_calculated', '', $a_key );
 				$request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode( $a_filter[ 0 ] . ' ' . str_replace( '=', '%3D', $a_filter[ 1 ] ) );
 			}
 		}

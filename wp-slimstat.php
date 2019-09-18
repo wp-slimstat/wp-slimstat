@@ -940,7 +940,7 @@ class wp_slimstat {
 				// The special value 'post_list_no_qs' requires a substring to be calculated
 				if ( in_array( 'post_link_no_qs', $w ) ) {
 					$w_clean =  array( 'SUBSTRING_INDEX( resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1 )' );
-					$as_column = 'resource_calculated';
+					$as_column = 'resource';
 				}
 
 				// Retrieve the data
@@ -999,13 +999,12 @@ class wp_slimstat {
 
 							case 'post_link':
 							case 'post_link_no_qs':
-								$resource_key = ( $a_column == 'post_link' ) ? 'resource' : 'resource_calculated';
-								$post_id = url_to_postid( $a_result[ $resource_key ] );
+								$post_id = url_to_postid( $a_result[ 'resource' ] );
 								if ( $post_id > 0 ) {
-									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ $resource_key ]}'>" . get_the_title( $post_id ) . '</a>';
+									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>" . get_the_title( $post_id ) . '</a>';
 								}
 								else {
-									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ $resource_key ]}'>{$a_result[ $resource_key ]}</a>";
+									$output[ $result_idx ][ $a_column ] .= "<a href='{$a_result[ 'resource' ]}'>{$a_result[ 'resource' ]}</a>";
 								}
 								break;
 
