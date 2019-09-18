@@ -1,16 +1,25 @@
 <?php
-	$is_report_reset = false;
 	if ( !empty( $_GET[ 'action' ] ) && $_GET[ 'action' ] == 'restore-views' ) {
 		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'" );
 		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'" );
 		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'" );
 		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'" );
 		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'" );
-		$is_report_reset = true;
+		
+		// Reset the reports for the rest of this request
+		wp_slimstat_reports::$reports = array();
+		wp_slimstat_reports::$user_reports = array(
+			'slimview1' => array(),
+			'slimview2' => array(),
+			'slimview3' => array(),
+			'slimview4' => array(),
+			'slimview5' => array(),
+			'dashboard' => array(),
+			'inactive' => array()
+		);
+		wp_slimstat_admin::$meta_user_reports = array();
+		wp_slimstat_reports::init();
 	}
-
-	include_once( dirname(__FILE__) . '/wp-slimstat-reports.php' );
-	wp_slimstat_reports::init();
 
 	// Keep track of multiple occurrences of the same report, to allow users to delete duplicates
 	$already_seen = array();
