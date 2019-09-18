@@ -318,7 +318,7 @@ var SlimStat = {
 			if ( !SlimStat.empty( do_not_track.length ) && !SlimStat.empty( target_node ) ) {
 				target_classes = !SlimStat.empty( target_node.className ) ? target_node.className.split( " " ) : [];
 
-				if ( target_classes.filter( value => -1 !== do_not_track.indexOf( value ) ).length != 0 || ( !SlimStat.empty( target_node.attributes ) && !SlimStat.empty( target_node.attributes.rel ) && !SlimStat.empty( target_node.attributes.rel.value ) && SlimStat.in_array( target_node.attributes.rel.value, do_not_track ) ) ) {
+				if ( target_classes.filter( function( value ) { return do_not_track.indexOf( value ) !== -1; } ).length != 0 || ( !SlimStat.empty( target_node.attributes ) && !SlimStat.empty( target_node.attributes.rel ) && !SlimStat.empty( target_node.attributes.rel.value ) && SlimStat.in_array( target_node.attributes.rel.value, do_not_track ) ) ) {
 					return false;
 				}
 			}
