@@ -120,7 +120,6 @@ var SlimStat = {
 				xhr.send( "action=slimstat_optout_html" );
 
 				xhr.onreadystatechange = function() {
-					console.log(xhr.readyState + 'C');
 					if ( 4 == xhr.readyState ) {
 
 						document.body.insertAdjacentHTML( 'beforeend', xhr.responseText );
@@ -391,7 +390,7 @@ SlimStat.add_event( window, 'load', function() {
 
 			// GDPR: display the Opt-Out box, if needed
 			SlimStat.show_optout_message();
-		}, 50 );
+		}, 250 );
 	}
 
 	// Attach an event handler to all the links on the page that satisfy the criteria set by the admin
