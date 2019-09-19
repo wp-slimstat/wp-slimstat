@@ -26,6 +26,9 @@ class wp_slimstat_reports {
 		include_once( 'wp-slimstat-db.php' );
 		wp_slimstat_db::init();
 
+		// Include the localization library
+		include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'languages/index.php' );
+
 		// Define all the reports
 		//
 		// Parameters

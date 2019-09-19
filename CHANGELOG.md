@@ -1,4 +1,7 @@
 ## Changelog ##
+### 4.8.7.4 ###
+* [Fix] The Country shortcode was not working as expected because of a change in how we handle localization files.
+
 ### 4.8.7.3 ###
 * [New] Implemented a simple query cache to minimize the number of requests needed to crunch and display the data in the reports.
 * [Update] Extended tracker to also record the 'fragment' portion of the URL, if available (this feature is only available in Client Mode).
