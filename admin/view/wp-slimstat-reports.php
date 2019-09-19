@@ -1089,6 +1089,7 @@ class wp_slimstat_reports {
 
 					case 'referer':
 						$element_value = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ][ $_args[ 'columns' ] ] ) );
+						$results[ $i ][ $_args[ 'columns' ] ] = 'https://' . $results[ $i ][ $_args[ 'columns' ] ];
 						break;
 
 					case 'resource':
