@@ -1,5 +1,6 @@
 ## Changelog ##
 ### 4.8.7.4 ###
+* [New] Added new [FingerPrintJs2](https://github.com/Valve/fingerprintjs2) library to the Javascript tracker in preparation for the new features being added to Slimstat.
 * [Fix] The Country shortcode was not working as expected because of a change in how we handle localization files.
 
 ### 4.8.7.3 ###
