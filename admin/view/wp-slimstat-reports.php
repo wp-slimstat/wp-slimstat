@@ -905,6 +905,7 @@ class wp_slimstat_reports {
 		$header_classes =  !empty( self::$reports[ $_report_id ][ 'classes' ] ) ? implode( ' ', self::$reports[ $_report_id ][ 'classes' ] ) : '';
 		$header_buttons = '';
 		$header_tooltip = '';
+		$widget_title = '';
 
 		// Don't show the header buttons on the frontend
 		if ( is_admin() ) {
@@ -917,9 +918,10 @@ class wp_slimstat_reports {
 			$header_buttons = apply_filters( 'slimstat_report_header_buttons', $header_buttons, $_report_id );
 			$header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
 			$header_tooltip = !empty( self::$reports[ $_report_id ][ 'tooltip' ] ) ? '<i class="slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">' . self::$reports[ $_report_id ][ 'tooltip' ] . '</span></i>' : '';
+			$widget_title = "<h3 data-report-id='{$_report_id}'>" . self::$reports[ $_report_id ][ 'title' ] . "{$header_tooltip}</h3>";
 		}
 
-		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} <h3 data-report-id='{$_report_id}'>" . self::$reports[ $_report_id ][ 'title' ] . " {$header_tooltip}</h3><div class='inside'>";
+		echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} $widget_title <div class='inside'>";
 	}
 
 	public static function report_footer(){
@@ -1165,7 +1167,7 @@ class wp_slimstat_reports {
 				}
 
 				// Some columns require a special post-treatment
-				if ( $_args[ 'columns' ] == 'resource' && strpos( $_args['where'], '404' ) === false ) {
+				if ( $_args[ 'columns' ] == 'resource' && !empty( $_args[ 'where' ] ) && strpos( $_args[ 'where' ], '404' ) === false ) {
 					$base_url = '';
 					if (isset($results[$i]['blog_id'])){
 						$base_url = parse_url(get_site_url($results[$i]['blog_id']));
