@@ -1,6 +1,7 @@
 ## Changelog ##
 ### 4.8.7.4 ###
 * [New] Added new [FingerPrintJs2](https://github.com/Valve/fingerprintjs2) library to the Javascript tracker in preparation for the new features being added to Slimstat.
+* [New] Added event handler for 'beforeunload', which will allow the tracker to better meausure the time spent by your visitors on each page. This will make our upcoming new charts even more accurate.
 * [Update] Reverted a change to the Top Web Pages report that was now combining URLs with a trailing slash and ones without one into one result. As James pointed out, this is a less accurate measure and hides the fact that people might be accessing the website in different ways.
 * [Fix] The Country shortcode was not working as expected because of a change in how we handle localization files.
 
