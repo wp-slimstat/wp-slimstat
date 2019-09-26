@@ -37,6 +37,7 @@ class wp_slimstat_db {
 			'email' => array( __( 'Visitor\'s Email', 'wp-slimstat' ), 'varchar' ),
 			'outbound_resource' => array( __( 'Outbound Link', 'wp-slimstat' ), 'varchar' ),
 			'tz_offset' => array( __( 'Timezone Offset', 'wp-slimstat' ), 'int' ),
+			'fingerprint' => array( __( 'Fingerprint', 'wp-slimstat' ), 'varchar' ),
 			'page_performance' => array( __( 'Page Speed', 'wp-slimstat' ), 'int' ),
 			'no_filter_selected_2' => array( '', 'none' ),
 			'no_filter_selected_3' => array( __( '-- Advanced filters --', 'wp-slimstat' ), 'none' ),

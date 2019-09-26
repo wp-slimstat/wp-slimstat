@@ -14,6 +14,8 @@ $is_dashboard = empty( $_REQUEST[ 'page' ] ) || $_REQUEST[ 'page' ] != 'slimview
 //
 $search_engines = file_get_contents( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/matomo-searchengine.json' );
 $search_engines = json_decode( $search_engines );
+// COMPLETE THIS FEATURE!!
+
 
 // Available icons
 $supported_browser_icons = array( 'Android', 'Anonymouse', 'Baiduspider', 'BlackBerry', 'BingBot', 'CFNetwork', 'Chrome', 'Chromium', 'Default Browser', 'Edge', 'Exabot/BiggerBetter', 'FacebookExternalHit', 'FeedBurner', 'Feedfetcher-Google', 'Firefox', 'Internet Archive', 'Googlebot', 'Google Bot', 'Google Feedfetcher', 'Google Web Preview', 'IE', 'IEMobile', 'iPad', 'iPhone', 'iPod Touch', 'Maxthon', 'Mediapartners-Google', 'Microsoft-WebDAV', 'msnbot', 'Mozilla', 'NewsGatorOnline', 'Netscape', 'Nokia', 'Opera', 'Opera Mini', 'Opera Mobi', 'Pingdom', 'Python', 'PycURL', 'Safari', 'W3C_Validator', 'WordPress', 'Yahoo! Slurp', 'YandexBot' );
@@ -200,7 +202,13 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 			$screen_resolution = "<span class='pageview-screenres'>{$results[ $i ][ 'screen_width' ]}x{$results[ $i ][ 'screen_height' ]}</span>";
 		}
 
-		$row_output = "<p class='header$highlight_row'>$browser_filter $platform_filter $browser_type_filter $country_filter $whois_pin $city_filter $ip_address $other_ip_address $screen_resolution $language_filter</p>";
+		// Fingerprint
+		$fingerprint = '';
+		if ( !empty( $results[ $i ][ 'fingerprint' ] ) ) {
+			$fingerprint = "<span class='pageview-screenres'><code>" . substr( $results[ $i ][ 'fingerprint' ], 0, 8 ) . "</code></span>";
+		}
+
+		$row_output = "<p class='header$highlight_row'>$browser_filter $platform_filter $browser_type_filter $country_filter $whois_pin $city_filter $ip_address $other_ip_address $fingerprint $screen_resolution $language_filter</p>";
 
 		// Strip all the filter links, if this information is shown on the frontend
 		if ( !is_admin() ) {

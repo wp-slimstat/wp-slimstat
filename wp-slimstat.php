@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8.7.3';
+	public static $version = '4.8.8';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -175,9 +175,6 @@ class wp_slimstat {
 
 				// Retrieves all the client-side info (screen resolution, server latency, etc) and sets the corresponding entries in self::$stat
 				self::$stat = self::_get_client_info( self::$data_js, self::$stat );
-
-				// Visitor is still on this page, record the timestamp in the corresponding field
-				self::$stat[ 'dt_out' ] = self::date_i18n( 'U' );
 
 				$id = self::_update_row( self::$stat );
 			}
@@ -1861,6 +1858,12 @@ class wp_slimstat {
 		}
 		if ( !empty( $_data_js[ 'pp' ] ) && $_data_js[ 'pp' ] > 0 && $_data_js[ 'pp' ] < 60000 ) {
 			$_stat[ 'page_performance' ] = intval( $_data_js[ 'pp' ] );
+		}
+		if ( !empty( $_data_js[ 'fh' ] ) ) {
+			$_stat[ 'fingerprint' ] = sanitize_text_field( $_data_js[ 'fh' ] );
+		}
+		if ( !empty( $_data_js[ 'tz' ] ) ) {
+			$_stat[ 'tz_offset' ] = intval( $_data_js[ 'tz' ] );
 		}
 
 		return $_stat;
