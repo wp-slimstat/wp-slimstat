@@ -350,16 +350,28 @@ var SlimStat = {
 	},
 
 	get_slimstat_data : function( fingerprint_components ) {
-		fp2_data = [];
-
-		// Convert output into an associative array
-		fingerprint_components.map( function ( component ) { fp2_data[ component.key ] = component.value } );
+		values = fingerprint_components.map(
+			function ( component ) {
+				return component.value;
+			}
+		);
 
 		// Generate the unique fingerprint hash
-		fingerprint_hash = Fingerprint2.x64hash128( fp2_data.join( '' ), 31 );
+		fingerprint_hash = Fingerprint2.x64hash128( values.join( '' ), 31 );
+		screenres = SlimStat.get_component_value( fingerprint_components, "screenResolution", [0, 0] );
 
-		return "&sw=" + fp2_data[ "screenResolution" ][ 0 ] + "&sh=" + fp2_data[ "screenResolution" ][ 1 ] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&fh=" + fingerprint_hash + "&tz=" + fp2_data[ "timezoneOffset" ];
-	}
+		return "&sw=" + screenres[ 0 ] + "&sh=" + screenres[ 1 ] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&fh=" + fingerprint_hash + "&tz=" + SlimStat.get_component_value( fingerprint_components, "timezoneOffset", 0 );
+	},
+
+	get_component_value : function( fingerprint_components, key, default_value ) {
+		for ( x = 0; x < fingerprint_components.length; x++ ) {
+			if ( fingerprint_components[ x ].key === key ) {
+				return fingerprint_components[ x ].value;
+		  	}
+		}
+
+		return default_value;
+	  }
 }
 
 // Helper function
@@ -392,11 +404,11 @@ SlimStat.add_event( window, 'load', function() {
 	}
 
 	if ( slimstat_data.length > 0 ) {
-		options = { excludes: { adBlock: true, addBehavior: true, userAgent: true } };
+		var options = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true } };
 
 		if ( window.requestIdleCallback ) {
 			requestIdleCallback( function () {
-				Fingerprint2.get( options, function ( components ) {
+				Fingerprint2.get( function ( components ) {
 					SlimStat.send_to_server( slimstat_data + SlimStat.get_slimstat_data( components ), use_beacon );
 
 					// GDPR: display the Opt-Out box, if needed
@@ -405,7 +417,7 @@ SlimStat.add_event( window, 'load', function() {
 			} );
 		} else {
 			setTimeout( function () {
-				Fingerprint2.get( options, function ( components ) {
+				Fingerprint2.get( function ( components ) {
 					SlimStat.send_to_server( slimstat_data + SlimStat.get_slimstat_data( components ), use_beacon );
 
 					// GDPR: display the Opt-Out box, if needed
