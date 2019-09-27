@@ -347,7 +347,8 @@ class wp_slimstat_admin {
 				INDEX {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_dt_idx (dt),
 				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) ),
 				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) ),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )
+				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) ),
+				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
 			) COLLATE utf8_general_ci $use_innodb";
 
 		// This table will track outbound links (clicks on links to external sites)
@@ -403,23 +404,6 @@ class wp_slimstat_admin {
 	public static function update_tables_and_options() {
 		$my_wpdb = apply_filters( 'slimstat_custom_wpdb', $GLOBALS[ 'wpdb' ] );
 
-		// --- Updates for version 4.7.8.2 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.8.2', '<' ) ) {
-			wp_slimstat::$settings[ 'opt_out_message' ] = '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>';
-		}
-		// --- END: Updates for version 4.7.8.2 ---
-
-		// --- Updates for version 4.7.9 ---
-		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.7.9', '<' ) ) {
-			// Delete the old Browscap Library and install the new one
-			if ( file_exists( wp_slimstat::$upload_dir . '/browscap-db/autoload.php' ) ) {
-				WP_Filesystem();
-				$GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db/', true );
-				slim_browser::update_browscap_database( true );
-			}
-		}
-		// --- END: Updates for version 4.7.9 ---
-
 		// --- Updates for version 4.8.2 ---
 		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.8.2', '<' ) ) {
 			// Add new email column to database
@@ -468,6 +452,14 @@ class wp_slimstat_admin {
 			$my_wpdb->query( "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource" );
 		}
 		// --- END: Updates for version 4.8.4.1 ---
+
+		// --- Updates for version 4.8.8 ---
+		if ( version_compare( wp_slimstat::$settings[ 'version' ], '4.8.8', '<' ) ) {
+			// Adding new index on the 'fingerprint' column for improved performance
+			if ( wp_slimstat::$settings[ 'db_indexes' ] == 'on' ) {
+				$my_wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )" );
+			}
+		}
 
 		// Now we can update the version stored in the database
 		wp_slimstat::$settings[ 'version' ] = wp_slimstat::$version;
