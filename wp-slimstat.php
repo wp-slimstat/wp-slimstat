@@ -176,6 +176,11 @@ class wp_slimstat {
 				// Retrieves all the client-side info (screen resolution, server latency, etc) and sets the corresponding entries in self::$stat
 				self::$stat = self::_get_client_info( self::$data_js, self::$stat );
 
+				// Visitor is still on this page, record the timestamp in the corresponding field if this WAS NOT a request to update a "server-side" pageview with client-side info
+				if ( empty( self::$stat[ 'resolution' ] ) ) {
+					self::$stat[ 'dt_out' ] = self::date_i18n( 'U' );
+				}
+
 				$id = self::_update_row( self::$stat );
 			}
 			// ... otherwise, is this an event: a click on a link (maybe a 'download'?) or other user action
@@ -963,7 +968,7 @@ class wp_slimstat {
 								break;
 
 							case 'country':
-								$output[ $result_idx ][ $a_column ] .= slim_i18n::get_string( 'c-' . $a_result[ $a_column ] );
+								$output[ $result_idx ][ $a_column ] .= wp_slimstat_i18n::get_string( 'c-' . $a_result[ $a_column ] );
 								break;
 
 							case 'display_name':
@@ -986,11 +991,11 @@ class wp_slimstat {
 								break;
 
 							case 'language':
-								$output[ $result_idx ][ $a_column ] .= slim_i18n::get_string( 'l-' . $a_result[ $a_column ] );
+								$output[ $result_idx ][ $a_column ] .= wp_slimstat_i18n::get_string( 'l-' . $a_result[ $a_column ] );
 								break;
 
 							case 'platform':
-								$output[ $result_idx ][ $a_column ] .= slim_i18n::get_string( $a_result[ $a_column ] );
+								$output[ $result_idx ][ $a_column ] .= wp_slimstat_i18n::get_string( $a_result[ $a_column ] );
 								break;
 
 							case 'post_link':
