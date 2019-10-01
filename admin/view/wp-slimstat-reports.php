@@ -637,7 +637,7 @@ class wp_slimstat_reports {
 				'tooltip' => __( 'You can configure Slimstat to track specific file extensions as downloads.', 'wp-slimstat' )
 			),
 			'slim_p4_10' => array(
-				'title' => __( 'Recent Events', 'wp-slimstat' ),
+				'title' => __( 'Recent Custom Events', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_events' ),
 				'callback_args' => array(
 					'type' => 'recent',
@@ -661,7 +661,7 @@ class wp_slimstat_reports {
 				'locations' => array( 'slimview4' )
 			),
 			'slim_p4_12' => array(
-				'title' => __( 'Top Events', 'wp-slimstat' ),
+				'title' => __( 'Top Custom Events', 'wp-slimstat' ),
 				'callback' => array( __CLASS__, 'show_events' ),
 				'callback_args' => array(
 					'type' => 'top',
