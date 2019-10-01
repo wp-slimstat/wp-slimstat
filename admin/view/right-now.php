@@ -206,7 +206,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		// Fingerprint
 		$fingerprint = '';
 		if ( !empty( $results[ $i ][ 'fingerprint' ] ) ) {
-			$fingerprint = "<span class='pageview-screenres'><code>" . substr( $results[ $i ][ 'fingerprint' ], 0, 8 ) . "</code></span>";
+			$fingerprint = "<span class='pageview-screenres'><code><a class='slimstat-filter-link slimstat-tooltip-trigger' href='" . wp_slimstat_reports::fs_url( 'fingerprint equals ' . $results[ $i ][ 'fingerprint' ] ) . "' title='" . $results[ $i ][ 'fingerprint' ] . "'>" . substr( $results[ $i ][ 'fingerprint' ], 0, 8 ) . "</a></code></span>";
 		}
 
 		$row_output = "<p class='header$highlight_row'>$browser_filter $platform_filter $browser_type_filter $country_filter $whois_pin $city_filter $ip_address $other_ip_address $fingerprint $screen_resolution $language_filter</p>";

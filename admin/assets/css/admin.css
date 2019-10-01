@@ -239,7 +239,7 @@
 	float: right;
 }
 [id^=slim_] p span.pageview-screenres{
-	margin-right: 10px;
+	margin-left: 10px;
 }
 [id^=slim_] a:hover{
 	text-shadow: 0 0 2px #bbb;
