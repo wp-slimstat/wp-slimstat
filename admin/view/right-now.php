@@ -13,7 +13,7 @@ $is_dashboard = empty( $_REQUEST[ 'page' ] ) || $_REQUEST[ 'page' ] != 'slimview
 // - charsets: list of charset used to encode the keywords
 //
 $search_engines = file_get_contents( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/matomo-searchengine.json' );
-$search_engines = json_decode( $search_engines );
+$search_engines = json_decode( $search_engines, TRUE );
 // COMPLETE THIS FEATURE!!
 
 
@@ -122,7 +122,8 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 	if ( $i == 0 || $results[ $i - 1 ][ 'visit_id' ] != $results[ $i ][ 'visit_id' ] || $results[ $i - 1 ][ 'ip' ] != $results[ $i ][ 'ip' ] || $results[ $i - 1 ][ 'browser' ] != $results[ $i ][ 'browser' ] || $results[ $i - 1 ][ 'platform' ] != $results[ $i ][ 'platform' ] || $results[ $i - 1 ][ 'username' ] != $results[ $i ][ 'username' ] ) {
 
 		// Color-coded headers
-		$highlight_row = !empty( $results[ $i ][ 'searchterms' ] ) ? ' is-search-engine' : ( ( $results[ $i ][ 'browser_type' ] != 1 ) ? ' is-direct' : '' );
+		$sek = wp_slimstat::get_lossy_url( parse_url( $results[ $i ][ 'referer' ], PHP_URL_HOST ) );
+		$highlight_row = !empty( $search_engines[ $sek ] ) ? ' is-search-engine' : ( ( $results[ $i ][ 'browser_type' ] != 1 ) ? ' is-direct' : '' );
 
 		// Country
 		if ( !empty( $results[ $i ][ 'country' ] ) && $results[ $i ][ 'country' ] != 'xx' ) {
