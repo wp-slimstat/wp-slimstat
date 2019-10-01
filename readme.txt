@@ -60,6 +60,11 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.8.7.4 =
+* [New] Added new [FingerPrintJs2](https://github.com/Valve/fingerprintjs2) library to the Javascript tracker in preparation for the new features being added to Slimstat.
+* [Update] Reverted a change to the Top Web Pages report that was now combining URLs with a trailing slash and ones without one into one result. As James pointed out, this is a less accurate measure and hides the fact that people might be accessing the website in different ways.
+* [Fix] The Country shortcode was not working as expected because of a change in how we handle localization files.
+
 = 4.8.7.3 =
 * [New] Implemented a simple query cache to minimize the number of requests needed to crunch and display the data in the reports.
 * [Update] Extended tracker to also record the 'fragment' portion of the URL, if available (this feature is only available in Client Mode).

@@ -26,6 +26,9 @@ class wp_slimstat_reports {
 		include_once( 'wp-slimstat-db.php' );
 		wp_slimstat_db::init();
 
+		// Include the localization library
+		include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'languages/index.php' );
+
 		// Define all the reports
 		//
 		// Parameters
@@ -111,9 +114,7 @@ class wp_slimstat_reports {
 				'callback' => array( __CLASS__, 'raw_results_to_html' ),
 				'callback_args' => array(
 					'type' => 'top',
-					'columns' => 'TRIM( TRAILING "/" FROM SUBSTRING_INDEX( resource, "' . ( !get_option( 'permalink_structure' ) ? '&' : '?' ) . '", 1 ) )',
-					'as_column' => 'resource',
-					'filter_op' => 'contains',
+					'columns' => 'resource',
 					'raw' => array( 'wp_slimstat_db', 'get_top' )
 				),
 				'classes' => array( 'normal' ),
@@ -1088,6 +1089,7 @@ class wp_slimstat_reports {
 
 					case 'referer':
 						$element_value = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ][ $_args[ 'columns' ] ] ) );
+						$results[ $i ][ $_args[ 'columns' ] ] = 'https://' . $results[ $i ][ $_args[ 'columns' ] ];
 						break;
 
 					case 'resource':

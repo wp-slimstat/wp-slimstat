@@ -873,11 +873,11 @@ class wp_slimstat {
 
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ) {
 		extract( shortcode_atts( array(
-			'f' => '',		// recent, popular, count, widget
-			'w' => '',		// column to use (for recent, popular and count) or widget to use
-			's' => ' ',		// separator
-			'o' => 0		// offset for counters
-		), $_attributes));
+			'f' => '',	// recent, popular, count, widget
+			'w' => '',	// column to use (for recent, popular and count) or widget to use
+			's' => ' ',	// separator
+			'o' => 0	// offset for counters
+		), $_attributes ) );
 
 		$output = $where = $as_column = '';
 		$s = "<span class='slimstat-item-separator'>$s</span>";
