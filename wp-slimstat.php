@@ -1909,11 +1909,16 @@ class slimstat_widget extends WP_Widget {
 	 * @param array $args
 	 * @param array $instance
 	 */
-	public function widget( $args, $instance ) {
-		extract( $instance );
+	public function widget( $_args = array(), $_instance = array() ) {
+		extract( shortcode_atts( array(
+			'slimstat_widget_id' => '',
+			'slimstat_widget_title' => '',
+			'slimstat_widget_filters' => ''
+		), $_instance ) );
 
-		$slimstat_widget_filters = empty( $slimstat_widget_filters ) ? '' : $slimstat_widget_filters;
-
+		if ( !empty( $slimstat_widget_title ) ) {
+			echo ( !empty( $_args[ 'before_title' ] ) ? $_args[ 'before_title' ] : '<h2 class="widget-title">' ) . $slimstat_widget_title . ( !empty( $_args[ 'after_title' ] ) ? $_args[ 'after_title' ] : '</h2>' );
+		}
 		if ( !empty( $slimstat_widget_id ) ) {
 			echo do_shortcode( "[slimstat f='widget' w='{$slimstat_widget_id}']{$slimstat_widget_filters}[/slimstat]" );
 		}
@@ -1927,13 +1932,17 @@ class slimstat_widget extends WP_Widget {
 	 *
 	 * @param array $instance The widget options
 	 */
-	public function form( $instance ) {
+	public function form( $_instance ) {
+		extract( shortcode_atts( array(
+			'slimstat_widget_id' => '',
+			'slimstat_widget_title' => '',
+			'slimstat_widget_filters' => ''
+		), $_instance ) );
+
 		// Let's build the dropdown
 		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 		$select_options = '';
-		$slimstat_widget_id = !empty( $instance[ 'slimstat_widget_id' ] ) ? $instance[ 'slimstat_widget_id' ] : '';
-		$slimstat_widget_filters = !empty( $instance[ 'slimstat_widget_filters' ] ) ? $instance[ 'slimstat_widget_filters' ] : '';
 
 		foreach ( wp_slimstat_reports::$reports as $a_report_id => $a_report_info ) {
 			$select_options .= "<option value='$a_report_id' " . ( ( $slimstat_widget_id == $a_report_id ) ? 'selected="selected"' : '' ) . ">{$a_report_info[ 'title' ]}</option>";
@@ -1941,11 +1950,16 @@ class slimstat_widget extends WP_Widget {
 		?>
 
 		<p>
-		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>">Widget</label> 
+		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>"><?php _e( 'Report', 'wp-slimstat' ) ?></label> 
 		<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'slimstat_widget_id' ) ); ?>">
 			<option value="">Select a widget</option>
 			<?php echo $select_options ?>
 		</select>
+		</p>
+
+		<p>
+		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_title' ) ); ?>"><?php _e( 'Title', 'wp-slimstat' ) ?></label> 
+		<input type="text" class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_title' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'slimstat_widget_title' ) ); ?>" value="<?php echo trim( strip_tags( $slimstat_widget_title ) ) ?>">
 		</p>
 
 		<p>
@@ -1962,11 +1976,12 @@ class slimstat_widget extends WP_Widget {
 	 * @param array $new_instance The new options
 	 * @param array $old_instance The previous options
 	 */
-	public function update( $new_instance, $old_instance ) {
-		$instance = $old_instance;
+	public function update( $_new_instance, $_old_instance ) {
+		$instance = $_old_instance;
 
-		$instance[ 'slimstat_widget_id' ] = $new_instance[ 'slimstat_widget_id' ];
-		$instance[ 'slimstat_widget_filters' ] = $new_instance[ 'slimstat_widget_filters' ];
+		$instance[ 'slimstat_widget_id' ] = $_new_instance[ 'slimstat_widget_id' ];
+		$instance[ 'slimstat_widget_title' ] = $_new_instance[ 'slimstat_widget_title' ];
+		$instance[ 'slimstat_widget_filters' ] = $_new_instance[ 'slimstat_widget_filters' ];
 		return $instance;
 	}
 }
