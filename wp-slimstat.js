@@ -195,10 +195,8 @@ var SlimStat = {
 			use_beacon = true;
 		}
 
-		slimstat_data_with_client_info = data + "&sw=" + screen.width + "&sh=" + screen.height + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance();
-
 		if ( use_beacon && navigator.sendBeacon ) {
-			navigator.sendBeacon( SlimStatParams.ajaxurl, slimstat_data_with_client_info );
+			navigator.sendBeacon( SlimStatParams.ajaxurl, data );
 		}
 		else {
 			try {
@@ -212,7 +210,7 @@ var SlimStat = {
 				xhr.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
 				xhr.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
 				xhr.withCredentials = true;
-				xhr.send( slimstat_data_with_client_info );
+				xhr.send( data );
 
 				xhr.onreadystatechange = function() {
 					if ( 4 == xhr.readyState ) {
@@ -346,9 +344,21 @@ var SlimStat = {
 			}
 		}
 
-		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id + "&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&no=" + SlimStat._base64_encode( note_array.join( ", " ) ), use_beacon );
+		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&no=" + SlimStat._base64_encode( note_array.join( ", " ) ), use_beacon );
 
 		return true;
+	},
+
+	get_slimstat_data : function( fingerprint_components ) {
+		fp2_data = [];
+
+		// Convert output into an associative array
+		fingerprint_components.map( function ( component ) { fp2_data[ component.key ] = component.value } );
+
+		// Generate the unique fingerprint hash
+		fingerprint_hash = Fingerprint2.x64hash128( fp2_data.join( '' ), 31 );
+
+		return "&sw=" + fp2_data[ "screenResolution" ][ 0 ] + "&sh=" + fp2_data[ "screenResolution" ][ 1 ] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&fh=" + fingerprint_hash + "&tz=" + fp2_data[ "timezoneOffset" ];
 	}
 }
 
@@ -365,11 +375,8 @@ SlimStat.add_event( window, 'load', function() {
 	use_beacon = true;
 
 	// Server-side mode: update an existing pageview
-	if ( !SlimStat.empty( SlimStatParams.id ) ) {
-
-		if ( parseInt( SlimStatParams.id ) > 0 ) {
-			slimstat_data = "action=slimtrack&id=" + SlimStatParams.id;
-		}
+	if ( !SlimStat.empty( SlimStatParams.id ) && parseInt( SlimStatParams.id ) > 0 ) {
+		slimstat_data = "action=slimtrack&id=" + SlimStatParams.id;
 	}
 	// Client-side mode: record a new pageview
 	else {
@@ -385,12 +392,27 @@ SlimStat.add_event( window, 'load', function() {
 	}
 
 	if ( slimstat_data.length > 0 ) {
-		setTimeout( function(){
-			SlimStat.send_to_server( slimstat_data, use_beacon );
+		options = { excludes: { adBlock: true, addBehavior: true, userAgent: true } };
 
-			// GDPR: display the Opt-Out box, if needed
-			SlimStat.show_optout_message();
-		}, 250 );
+		if ( window.requestIdleCallback ) {
+			requestIdleCallback( function () {
+				Fingerprint2.get( options, function ( components ) {
+					SlimStat.send_to_server( slimstat_data + SlimStat.get_slimstat_data( components ), use_beacon );
+
+					// GDPR: display the Opt-Out box, if needed
+					SlimStat.show_optout_message();
+				} );
+			} );
+		} else {
+			setTimeout( function () {
+				Fingerprint2.get( options, function ( components ) {
+					SlimStat.send_to_server( slimstat_data + SlimStat.get_slimstat_data( components ), use_beacon );
+
+					// GDPR: display the Opt-Out box, if needed
+					SlimStat.show_optout_message();
+				} );
+			}, 250 );
+		}
 	}
 
 	// Attach an event handler to all the links on the page that satisfy the criteria set by the admin
