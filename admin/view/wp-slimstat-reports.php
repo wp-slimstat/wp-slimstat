@@ -1065,7 +1065,7 @@ class wp_slimstat_reports {
 
 					case 'country':
 						$row_details .= __( 'Code', 'wp-slimstat' ) . ": {$results[ $i ][ 'country' ]}";
-						$element_value = slim_i18n::get_string( 'c-' . $results[ $i ][ 'country' ] );
+						$element_value = wp_slimstat_i18n::get_string( 'c-' . $results[ $i ][ 'country' ] );
 						break;
 
 					case 'id':
@@ -1080,12 +1080,12 @@ class wp_slimstat_reports {
 
 					case 'language':
 						$row_details = __( 'Code', 'wp-slimstat' ) . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
-						$element_value = slim_i18n::get_string( 'l-' . $results[ $i ][ $_args[ 'columns' ] ] );
+						$element_value = wp_slimstat_i18n::get_string( 'l-' . $results[ $i ][ $_args[ 'columns' ] ] );
 						break;
 
 					case 'platform':
 						$row_details = __( 'Code', 'wp-slimstat' ).": {$results[ $i ][ $_args[ 'columns' ] ]}";
-						$element_value = slim_i18n::get_string( $results[ $i ][ $_args[ 'columns' ] ] );
+						$element_value = wp_slimstat_i18n::get_string( $results[ $i ][ $_args[ 'columns' ] ] );
 						$results[ $i ][ $_args[ 'columns' ] ] = str_replace( 'p-', '', $results[ $i ][ $_args[ 'columns' ] ] );
 						break;
 
@@ -1560,7 +1560,7 @@ class wp_slimstat_reports {
 
 		$data_areas = array();
 		
-		foreach ( slim_i18n::get_country_codes() as $a_code => $a_string ) {
+		foreach ( wp_slimstat_i18n::get_country_codes() as $a_code => $a_string ) {
 			$data_areas[ $a_code ] = '{id:"' . $a_code . '",balloonText:"' . $a_string . ': 0",value:0,color:"#ededed"}';
 		}
 
@@ -1574,7 +1574,7 @@ class wp_slimstat_reports {
 
 			$percentage = ( wp_slimstat_db::$pageviews > 0 ) ? sprintf( "%01.2f", ( 100 * $a_country[ 'counthits' ] / wp_slimstat_db::$pageviews ) ) : 0;
 			$percentage_format = number_format_i18n( $percentage, 2 );
-			$balloon_text = slim_i18n::get_string( 'c-' . $a_country[ 'country' ], 'wp-slimstat' ) . ': ' . $percentage_format . '% (' . number_format_i18n( $a_country[ 'counthits' ] ) . ')';
+			$balloon_text = wp_slimstat_i18n::get_string( 'c-' . $a_country[ 'country' ], 'wp-slimstat' ) . ': ' . $percentage_format . '% (' . number_format_i18n( $a_country[ 'counthits' ] ) . ')';
 			$data_areas[ $current_country_code ] = '{id:"' . strtoupper( $a_country[ 'country' ] ) . '",balloonText:"' . $balloon_text . '",value:' . $percentage . '}';
 
 			if ( $percentage > $max ) {
