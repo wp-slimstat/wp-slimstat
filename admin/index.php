@@ -19,7 +19,7 @@ class wp_slimstat_admin {
 	 */
 	public static function init() {
 		// self::$admin_notice = "Just a quick reminder that, in our quest for improved performance, we are deprecating the two columns <em>type</em> and <em>event_description</em> in the events table, and consolidating that information in the <em>notes</em> field. Code will be added to Slimstat in a few released to actually drop these columns from the database. If you are using those two columns in your custom code, please feel free to contact our support team to discuss your options and how to update your code using the information collected by the new tracker.";
-		self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to rely on cookies to identify a specific user. This means that the act of fingerprinting a specific browser is stateless and transparent, and thus much more accurate. This version of Slimstat implements <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>FingerprintJS2</a>, a library that enables our tracker to record your users' unique fingerprint and timezone: wouldn't it be nice to know what time it was for the user who was visiting your website? Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. This information is currently available in the Access Log and in the Filter dropdown. However, we plan to introduce new reports and to leverage it to increase overall accuracy.";
+		self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to rely on cookies to identify a specific user. This version of Slimstat implements <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>FingerprintJS2</a>, a library that enables our tracker to record your users' unique fingerprint and local timezone (isn't it nice to know what time it was for the user when s/he was visiting your website?) Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Your visitors' fingerprints are now available in the Access Log and in the Filter dropdown. In the next few months, we plan to introduce new reports and to leverage this new information to increase the plugin's overall accuracy.";
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );
@@ -459,6 +459,8 @@ class wp_slimstat_admin {
 			if ( wp_slimstat::$settings[ 'db_indexes' ] == 'on' ) {
 				$my_wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )" );
 			}
+
+			$my_wpdb->query( "UPDATE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%'" );
 		}
 
 		// Now we can update the version stored in the database
