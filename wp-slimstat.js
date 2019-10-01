@@ -1,8 +1,9 @@
 var SlimStat = {
-	_base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-",
+	base64_key_str : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-",
+	fingerprint_hash : "",
 
 	// Encodes a string using the UTF-8 encoding. This function is needed by the Base64 Encoder here below
-	_utf8_encode : function( string ) {
+	utf8_encode : function( string ) {
 		var n, c, utftext = "";
 
 		string = string.replace(/\r\n/g, "\n");
@@ -27,10 +28,10 @@ var SlimStat = {
 	},
 
 	// Base64 Encode - http://www.webtoolkit.info/
-	_base64_encode : function( input ) {
+	base64_encode : function( input ) {
 		var chr1, chr2, chr3, enc1, enc2, enc3, enc4, output = "", i = 0;
 
-		input = SlimStat._utf8_encode( input );
+		input = SlimStat.utf8_encode( input );
 
 		while ( i < input.length ) {
 			chr1 = input.charCodeAt( i++ );
@@ -49,7 +50,7 @@ var SlimStat = {
 				enc4 = 64;
 			}
 
-			output = output + SlimStat._base64_key_str.charAt( enc1 ) + SlimStat._base64_key_str.charAt( enc2 ) + SlimStat._base64_key_str.charAt( enc3 ) + SlimStat._base64_key_str.charAt( enc4 );
+			output = output + SlimStat.base64_key_str.charAt( enc1 ) + SlimStat.base64_key_str.charAt( enc2 ) + SlimStat.base64_key_str.charAt( enc3 ) + SlimStat.base64_key_str.charAt( enc4 );
 		}
 		return output;
 	},
@@ -260,66 +261,99 @@ var SlimStat = {
 			return false;
 		}
 
-		resource_url = "";
+		var resource_url = "";
+		var fingerprint_hash = "";
 
-		// Do not track events on elements with given class names or rel attributes
-		do_not_track = !SlimStat.empty( SlimStatParams.dnt ) ? SlimStatParams.dnt.split( ',' ) : [];
+		// This function doesn't track focus events, which are usually triggered along with click events
+		if ( SlimStat.empty( window.event.type ) || window.event.type == "focus" ) {
+			return false;
+		}
+
+		// Event description and button pressed
+		note_array.push( 'Type:' + window.event.type );
+		if ( "keypress" == window.event.type ) {
+			note_array.push( 'Keypress:' + String.fromCharCode( parseInt( window.event.which ) ) );
+		}
+		else if ( "click" == window.event.type ) {
+			note_array.push( 'Button:' + ( window.event.which == 1 ? 'left' : ( window.event.which == 2 ) ? 'middle' : 'right' ) );
+		}
 
 		// Different elements have different properties to record...
-		if ( !SlimStat.empty( target_node.nodeName ) ) {
-			switch ( target_node.nodeName.toLowerCase() ) {
-				case "input":
-				case "button":
-					// Let's look for a FORM element
-					while ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && target_node.nodeName.toLowerCase() != "form" ) {
-						target_node = target_node.parentNode;
+		switch ( target_node.nodeName.toLowerCase() ) {
+			case "input":
+			case "button":
+				// Look for a parent FORM element to get the target action
+				while ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && target_node.nodeName.toLowerCase() != "form" ) {
+					target_node = target_node.parentNode;
+				}
+
+				if ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.action ) ) {
+					resource_url = target_node.action;
+				}
+				break;
+
+			default:
+				// Look for a parent with a HREF attribute, if this node doesn't have one (i.e., a SPAN within an A element)
+				if ( SlimStat.empty( target_node.href ) || "string" != typeof target_node.href ) {
+					parent_node = target_node.parentNode;
+					while ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.nodeName ) && SlimStat.empty( parent_node.href ) ) {
+						parent_node = parent_node.parentNode;
 					}
 
-					if ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && !SlimStat.empty( target_node.action ) ) {
-						resource_url = target_node.action;
-					}
-					break;
-
-				default:
-					// Is this a link?
-					while ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && target_node.nodeName.toLowerCase() != "a" ) {
-						target_node = target_node.parentNode;
-					}
-
-					if ( !SlimStat.empty( target_node ) ) {
-						// Anchor in the same page
-						if ( !SlimStat.empty( target_node.hash ) && target_node.hostname == location.hostname ) {
-							resource_url = target_node.hash;
+					if ( !SlimStat.empty( parent_node ) ) {
+						if ( !SlimStat.empty( parent_node.hash ) && parent_node.hostname == location.hostname ) {
+							resource_url = parent_node.hash;
 						}
-						// Regular link to another page
-						else if ( !SlimStat.empty( target_node.href ) && target_node.href.indexOf( 'javascript:' ) == -1 ) {
-							
-							// Do not track links containing one of the strings defined in the settings as HREF
-							if ( SlimStat.in_array( target_node.href, do_not_track ) ) {
-								return false;
-							}
-
-							resource_url = target_node.href;
+						else if ( !SlimStat.empty( parent_node.href ) ) {
+							resource_url = parent_node.href;
 						}
 
 						// If this element has a title, we can record that as well
-						if ( "function" == typeof target_node.getAttribute ) {
-							if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
-								note_array.push( "Title:" + target_node.getAttribute( "title" ) );
+						if ( "function" == typeof parent_node.getAttribute ) {
+							if ( !SlimStat.empty( parent_node.getAttribute( "title" ) ) ) {
+								note_array.push( "Parent Title:" + parent_node.getAttribute( "title" ) );
 							}
-							if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
-								note_array.push( "ID:" + target_node.getAttribute( "id" ) );
+							if ( !SlimStat.empty( parent_node.getAttribute( "id" ) ) ) {
+								note_array.push( "Parent ID:" + parent_node.getAttribute( "id" ) );
 							}
 						}
 					}
+				}
+				else if ( !SlimStat.empty( target_node.hash ) ) {
+					resource_url = target_node.hash;
+				}
+				else {
+					resource_url = target_node.href;
+				}
+
+				// If this element has a title, we can record that as well
+				if ( "function" == typeof target_node.getAttribute ) {
+					if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
+						note_array.push( "Title:" + target_node.getAttribute( "title" ) );
+					}
+					if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
+						note_array.push( "ID:" + target_node.getAttribute( "id" ) );
+					}
+				}
+		}
+
+		do_not_track = !SlimStat.empty( SlimStatParams.dnt ) ? SlimStatParams.dnt.split( ',' ) : [];
+
+		if ( !SlimStat.empty( resource_url ) ) {
+			// Do not track links containing one of the strings defined in the settings as HREF
+			if ( !SlimStat.empty( do_not_track ) && SlimStat.in_array( resource_url, do_not_track ) ) {
+				return false;
 			}
 
-			if ( !SlimStat.empty( do_not_track.length ) && !SlimStat.empty( target_node ) ) {
-				target_classes = !SlimStat.empty( target_node.className ) ? target_node.className.split( " " ) : [];
+			// Send the fingerprint hash, in case this is considered a 'download'
+			fingerprint_hash = "&fh=" + SlimStat.fingerprint_hash;
+		}
 
-				if ( target_classes.filter( function( value ) { return do_not_track.indexOf( value ) !== -1; } ).length != 0 || ( !SlimStat.empty( target_node.attributes ) && !SlimStat.empty( target_node.attributes.rel ) && !SlimStat.empty( target_node.attributes.rel.value ) && SlimStat.in_array( target_node.attributes.rel.value, do_not_track ) ) ) {
-					return false;
-				}
+		// See if any of the classes associated to this element are listed as "do not track"
+		target_classes = ( !SlimStat.empty( target_node.className ) && "string" == typeof target_node.className ) ? target_node.className.split( " " ) : [];
+		if ( !SlimStat.empty( do_not_track ) && !SlimStat.empty( target_classes ) ) {
+			if ( target_classes.filter( function( value ) { return do_not_track.indexOf( value ) !== -1; } ).length != 0 || ( !SlimStat.empty( target_node.attributes ) && !SlimStat.empty( target_node.attributes.rel ) && !SlimStat.empty( target_node.attributes.rel.value ) && SlimStat.in_array( target_node.attributes.rel.value, do_not_track ) ) ) {
+				return false;
 			}
 		}
 
@@ -333,23 +367,28 @@ var SlimStat = {
 			position = window.event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft + "," + window.event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
 		}
 
-		// Event description and button pressed
-		if ( !SlimStat.empty( window.event.type ) ) {
-			note_array.push( 'type:' + window.event.type );
-			if ( "keypress" == window.event.type ) {
-				note_array.push( 'keypress:' + String.fromCharCode( parseInt( window.event.which ) ) );
-			}
-			else if ( "click" == window.event.type ) {
-				note_array.push( 'which:' + window.event.which );
-			}
-		}
-
-		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id + "&res=" + SlimStat._base64_encode( resource_url ) + "&pos=" + position + "&no=" + SlimStat._base64_encode( note_array.join( ", " ) ), use_beacon );
+		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id + "&res=" + SlimStat.base64_encode( resource_url ) + "&pos=" + position + "&no=" + SlimStat.base64_encode( note_array.join( "," ) ) + fingerprint_hash, use_beacon );
 
 		return true;
 	},
 
 	get_slimstat_data : function( fingerprint_components ) {
+		screenres = SlimStat.get_component_value( fingerprint_components, "screenResolution", [0, 0] );
+
+		return "&sw=" + screenres[ 0 ] + "&sh=" + screenres[ 1 ] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&fh=" + SlimStat.fingerprint_hash + "&tz=" + SlimStat.get_component_value( fingerprint_components, "timezoneOffset", 0 );
+	},
+
+	get_component_value : function( fingerprint_components, key, default_value ) {
+		for ( x = 0; x < fingerprint_components.length; x++ ) {
+			if ( fingerprint_components[ x ].key === key ) {
+				return fingerprint_components[ x ].value;
+			}
+		}
+
+		return default_value;
+	},
+
+	init_fingerprint_hash : function ( fingerprint_components ) {
 		values = fingerprint_components.map(
 			function ( component ) {
 				return component.value;
@@ -357,21 +396,8 @@ var SlimStat = {
 		);
 
 		// Generate the unique fingerprint hash
-		fingerprint_hash = Fingerprint2.x64hash128( values.join( '' ), 31 );
-		screenres = SlimStat.get_component_value( fingerprint_components, "screenResolution", [0, 0] );
-
-		return "&sw=" + screenres[ 0 ] + "&sh=" + screenres[ 1 ] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&fh=" + fingerprint_hash + "&tz=" + SlimStat.get_component_value( fingerprint_components, "timezoneOffset", 0 );
-	},
-
-	get_component_value : function( fingerprint_components, key, default_value ) {
-		for ( x = 0; x < fingerprint_components.length; x++ ) {
-			if ( fingerprint_components[ x ].key === key ) {
-				return fingerprint_components[ x ].value;
-		  	}
-		}
-
-		return default_value;
-	  }
+		SlimStat.fingerprint_hash = Fingerprint2.x64hash128( values.join( '' ), 31 );
+	}
 }
 
 // Helper function
@@ -392,7 +418,7 @@ SlimStat.add_event( window, 'load', function() {
 	}
 	// Client-side mode: record a new pageview
 	else {
-		slimstat_data = "action=slimtrack&ref=" + SlimStat._base64_encode( document.referrer ) + "&res=" + SlimStat._base64_encode( window.location.href );
+		slimstat_data = "action=slimtrack&ref=" + SlimStat.base64_encode( document.referrer ) + "&res=" + SlimStat.base64_encode( window.location.href );
 
 		// The "ci" param is not defined for external pages (the server-side tracker knows how to handle that situation)
 		if ( !SlimStat.empty( SlimStatParams.ci ) ) {
@@ -409,6 +435,7 @@ SlimStat.add_event( window, 'load', function() {
 		if ( window.requestIdleCallback ) {
 			requestIdleCallback( function () {
 				Fingerprint2.get( function ( components ) {
+					SlimStat.init_fingerprint_hash( components );
 					SlimStat.send_to_server( slimstat_data + SlimStat.get_slimstat_data( components ), use_beacon );
 
 					// GDPR: display the Opt-Out box, if needed
@@ -418,6 +445,7 @@ SlimStat.add_event( window, 'load', function() {
 		} else {
 			setTimeout( function () {
 				Fingerprint2.get( function ( components ) {
+					SlimStat.init_fingerprint_hash( components );
 					SlimStat.send_to_server( slimstat_data + SlimStat.get_slimstat_data( components ), use_beacon );
 
 					// GDPR: display the Opt-Out box, if needed
@@ -427,10 +455,10 @@ SlimStat.add_event( window, 'load', function() {
 		}
 	}
 
-	// Attach an event handler to all the links on the page that satisfy the criteria set by the admin
-	all_links = document.getElementsByTagName( "a" );
-	for ( var i = 0; i < all_links.length; i++ ) {
-		SlimStat.add_event( all_links[ i ], "click", function( e ) {
+	// Attach an event handler to all the clickable elements on the page
+	all_clickable = document.querySelectorAll( "a,button,input,area" );
+	for ( var i = 0; i < all_clickable.length; i++ ) {
+		SlimStat.add_event( all_clickable[ i ], "click", function( e ) {
 			SlimStat.ss_track();
 		} );
 	}

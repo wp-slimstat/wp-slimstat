@@ -5,6 +5,7 @@
 * [Update] Improved algorithm that scans referrer URLs for search terms, and introduced a new list of search engines. Please help us improve this list by submitting your missing search engine entries.
 * [Update] Added title field to Slimstat widgets (thank you, [jaroslawistok](https://wordpress.org/support/topic/broken-layout-from-3rd-widget-in-footer/)).
 * [Update] Reverted a change to the Top Web Pages report that was now combining URLs with a trailing slash and ones without one into one result. As James pointed out, this is a less accurate measure and hides the fact that people might be accessing the website in different ways.
+* [Update] The event tracker now annotates each event with information about the mouse button that was clicked and other useful data.
 * [Fix] The Country shortcode was not working as expected because of a change in how we handle localization files.
 * [Fix] Renamed slim_i18n class to avoid conflict with external libraries.
 

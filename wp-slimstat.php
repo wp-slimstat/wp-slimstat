@@ -200,9 +200,6 @@ class wp_slimstat {
 
 				self::_insert_row( $event_info, $GLOBALS[ 'wpdb' ]->prefix . 'slim_events' );
 
-				// Track outbound links and downloads by adding the appropriate informaton to the database
-				$parsed_resource = array( 'host' => '', 'path' => '' );
-				
 				if ( !empty( self::$data_js[ 'res' ] ) )  {
 					$resource = self::_base64_url_decode( self::$data_js[ 'res' ] );
 					$parsed_resource = parse_url( $resource );
@@ -210,21 +207,29 @@ class wp_slimstat {
 					if ( $parsed_resource === false ) {
 						exit( self::_log_error( 203 ) );
 					}
-				}
 
-				// Is this a download? If it is, add a new record to the database
-				if ( in_array( pathinfo( $resource, PATHINFO_EXTENSION ), self::string_to_array( self::$settings[ 'extensions_to_track' ] ) ) ) {
-					self::$stat[ 'resource' ] = $parsed_resource[ 'path' ];
-					self::$stat[ 'content_type' ] = 'download';
+					// Is this a download? If it is, add a new record to the database
+					if ( in_array( pathinfo( $resource, PATHINFO_EXTENSION ), self::string_to_array( self::$settings[ 'extensions_to_track' ] ) ) && !empty( $parsed_resource[ 'path' ] ) ) {
+						self::$stat[ 'resource' ] = $parsed_resource[ 'path' ];
+						self::$stat[ 'content_type' ] = 'download';
 
-					$id = self::slimtrack();
-				}
-				// .. or outbound link? If so, update the pageview with the new info
-				else {
-					if ( $parsed_resource[ 'host' ] != $site_host ) {
-						self::$stat[ 'outbound_resource' ] = $resource;
+						if ( !empty( self::$data_js[ 'fh' ] ) ) {
+							self::$stat[ 'fingerprint' ] = sanitize_text_field( self::$data_js[ 'fh' ] );
+						}
+
+						$id = self::slimtrack();
 					}
+					// .. or outbound link? If so, update the pageview with the new info
+					else if ( $parsed_resource[ 'host' ] != $site_host ) {
+						self::$stat[ 'outbound_resource' ] = $resource;
 
+						// Visitor is still on this page, record the timestamp in the corresponding field
+						self::$stat[ 'dt_out' ] = self::date_i18n( 'U' );
+
+						$id = self::_update_row( self::$stat );
+					}
+				}
+				else {
 					// Visitor is still on this page, record the timestamp in the corresponding field
 					self::$stat[ 'dt_out' ] = self::date_i18n( 'U' );
 
