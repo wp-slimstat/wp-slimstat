@@ -577,6 +577,9 @@ if ( version_compare( PHP_VERSION, '7.1', '>=' ) ) {
 // Allow third-party tools to add their own settings
 $settings = apply_filters( 'slimstat_options_on_page', $settings );
 
+// Maxmind Data File
+$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
+
 // Save options
 $save_messages = array();
 if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) && wp_verify_nonce( $_REQUEST[ 'slimstat_update_settings' ], 'slimstat_update_settings' ) ) {
@@ -613,6 +616,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) )" );
 				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) )" );
 				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )" );
+				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )" );
 				$save_messages[] = __( 'Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat' );
 				wp_slimstat::$settings[ 'db_indexes' ] = 'on';
 			}
@@ -621,6 +625,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx" );
 				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx");
 				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx");
+				wp_slimstat::$wpdb->query( "ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx");
 				$save_messages[] = __( 'Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat' );
 				wp_slimstat::$settings[ 'db_indexes' ] = 'no';
 			}
@@ -629,7 +634,8 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 		// MaxMind Data File
 		if ( !empty( $_POST[ 'options' ][ 'enable_maxmind' ] ) ) {
 			if ( $_POST[ 'options' ][ 'enable_maxmind' ] == 'on' && wp_slimstat::$settings[ 'enable_maxmind' ] == 'no' ) {
-				$error = wp_slimstat::download_maxmind_database();
+				include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/maxmind.php' );
+				$error = maxmind_geolite2_connector::download_maxmind_database();
 
 				if ( empty( $error ) ) {
 					$save_messages[] = __( 'The geolocation database has been installed on your server.', 'wp-slimstat' );
@@ -640,7 +646,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 				}
 			}
 			else if ( $_POST[ 'options' ][ 'enable_maxmind' ] == 'no' && wp_slimstat::$settings[ 'enable_maxmind' ] == 'on' ) {
-				$is_deleted = @unlink( wp_slimstat::$maxmind_path );
+				$is_deleted = @unlink( $maxmind_path );
 						
 				if ( $is_deleted ) {
 					$save_messages[] = __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' );
@@ -648,7 +654,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 				}
 				else {
 					// Some users have reported that a directory is created, instead of a file
-					$is_deleted = @rmdir( wp_slimstat::$maxmind_path );
+					$is_deleted = @rmdir( $maxmind_path );
 
 					if ( $is_deleted ) {
 						$save_messages[] = __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' );
@@ -728,7 +734,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 }
 
 $maxmind_last_modified = '';
-if ( file_exists( wp_slimstat::$maxmind_path ) && false !== ( $file_stat = @stat( wp_slimstat::$maxmind_path ) ) ) { 
+if ( file_exists( $maxmind_path ) && false !== ( $file_stat = @stat( $maxmind_path ) ) ) { 
 	$maxmind_last_modified = date_i18n( get_option( 'date_format' ), $file_stat[ 'mtime' ] );
 } 
 

@@ -233,7 +233,8 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 	}
 	else {
 		if ( !empty( $results[$i][ 'notes' ] ) ) {
-			$exploded_notes = explode( ';', $results[$i][ 'notes' ] );
+			$exploded_notes = explode( '][', substr( $results[ $i ][ 'notes' ], 1, -1 ) );
+
 			foreach ( $exploded_notes as $a_note ) {
 				if ( strpos( $a_note, 'results:') !== false ) {
 					$search_terms_info = $results[ $i ][ 'searchterms' ] . ' (' . $a_note . ')';
@@ -275,7 +276,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 	// Pageview Notes
 	$notes = '';
 	if ( is_admin() && !empty( $results[ $i ][ 'notes' ] ) ) {
-		$notes = str_replace(array(';', ':'), array('<br/>', ': '), $results[$i]['notes']);
+		$notes = str_replace( array( '][', ':', '[', ']' ), array( '<br/>', ': ', '', '' ), $results[ $i ][ 'notes' ] );
 		$notes = "<i class='slimstat-font-edit slimstat-tooltip-trigger'><b class='slimstat-tooltip-content'>{$notes}</b></i>";
 	}
 

@@ -2,33 +2,143 @@
 
 class maxmind_geolite2_connector {
 	public static function get_geolocation_info( $_ip_address = '' ) {
+		$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
 		$geo_output = array( 'country' => array( 'iso_code' => '' ) );
 
 		// Is this a RFC1918 (local) IP?
 		if ( wp_slimstat::is_local_ip_address( $_ip_address ) ) {
 			$geo_output[ 'country' ][ 'iso_code' ] = 'xy';
 		}
-		else if ( file_exists( wp_slimstat::$maxmind_path ) && is_file( wp_slimstat::$maxmind_path ) ) {
+		else if ( file_exists( $maxmind_path ) && is_file( $maxmind_path ) ) {
 			// Do we need to update our data file?
-			if ( false !== ( $file_stat = stat( wp_slimstat::$maxmind_path ) ) ) {
+			if ( false !== ( $file_stat = stat( $maxmind_path ) ) ) {
 				// Is the database more than 30 days old?
 				if ( !empty( $file_stat ) && ( date( 'U' ) - $file_stat[ 'mtime' ] > 2629740 ) ) {
-					add_action( 'shutdown', array( 'wp_slimstat', 'download_maxmind_database' ) );
+					add_action( 'shutdown', array( __CLASS__, 'download_maxmind_database' ) );
 				}
 			}
 
-			$reader = new MaxMindReader( wp_slimstat::$maxmind_path );
+			$reader = new MaxMindReader( $maxmind_path );
 			$geo_maxmind = $reader->get( $_ip_address );
 
 			if ( !empty( $geo_maxmind ) ) {
 				$geo_output = $geo_maxmind;
 			}
 		}
-		else if ( !is_file( wp_slimstat::$maxmind_path ) ) {
+		else if ( !is_file( $maxmind_path ) ) {
 			return $geo_output;
 		}
 
 		return apply_filters( 'slimstat_get_country', $geo_output, $_ip_address );
+	}
+
+	/**
+	 * Downloads the MaxMind geolocation database from their repository
+	 */
+	public static function download_maxmind_database() {
+		$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
+
+		// Create the folder, if it doesn't exist
+		if ( !file_exists( dirname( $maxmind_path ) ) ) {
+			mkdir( dirname( $maxmind_path ) );
+		}
+
+		if ( file_exists( $maxmind_path ) ) {
+			if ( is_file( $maxmind_path ) ) {
+				$is_deleted = @unlink( $maxmind_path );
+			}
+			else {
+				// This should not happen, but hey...
+				$is_deleted = @rmdir( $maxmind_path );
+			}
+
+			if ( !$is_deleted ) {
+				return __( "The geolocation database cannot be updated. Please check your server's file permissions and try again.", 'wp-slimstat' );
+			}
+		}
+
+		// Download the most recent database directly from MaxMind's repository
+		if ( wp_slimstat::$settings[ 'geolocation_country' ] == 'on' ) {
+			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz' );
+		}
+		else {
+			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz' );
+		}
+
+		if ( is_wp_error( $maxmind_tmp ) ) {
+			return __( 'There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat' ) . ' ' . $maxmind_tmp->get_error_message();
+		}
+
+		$zh = false;
+
+		if ( !function_exists( 'gzopen' ) ) {
+			if ( function_exists( 'gzopen64' ) ) {
+				if ( false === ( $zh = gzopen64( $maxmind_tmp, 'rb' ) ) ) {
+					return __( "There was an error opening the zipped MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
+				}
+			}
+			else {
+				return __( 'Function <code>gzopen</code> is not defined in your environment. Please ask your server administrator to install the corresponding library.', 'wp-slimstat' );
+			}
+		}
+		else{
+			if ( false === ( $zh = gzopen( $maxmind_tmp, 'rb' ) ) ) {
+				return __( "There was an error opening the zipped MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
+			}
+		}
+
+		if ( false === ( $fh = fopen( $maxmind_path, 'wb' ) ) ) {
+			return __( "There was an error opening the MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
+		}
+
+		while ( ( $data = gzread( $zh, 4096 ) ) != false ) {
+			fwrite( $fh, $data );
+		}
+
+		@gzclose( $zh );
+		@fclose( $fh );
+
+		if ( !is_file( $maxmind_path ) ) {
+			// Something went wrong, maybe a folder was created instead of a regular file
+			@rmdir( $maxmind_path );
+			return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' );
+		}
+
+		@unlink( $maxmind_tmp );
+
+		return '';
+	}
+
+	public static function download_url( $url ) {
+		// Include the FILE API, if it's not defined
+		if ( !function_exists( 'download_url' ) ) {
+			require_once( ABSPATH . 'wp-admin/includes/file.php' );
+		}
+
+		if ( !$url ) {
+			return new WP_Error( 'http_no_url', __( 'The provided URL is invalid.', 'wp-slimstat' ) );
+		}
+
+		$url_filename = basename( parse_url( $url, PHP_URL_PATH ) );
+
+		$tmpfname = wp_tempnam( $url_filename );
+		if ( ! $tmpfname ) {
+			return new WP_Error( 'http_no_file', __( "A temporary file could not be created. Please check your server's file permissions and try again.", 'wp-slimstat' ) );
+		}
+
+		$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'stream' => true, 'filename' => $tmpfname, 'user-agent'  => 'Slimstat Analytics/' . wp_slimstat::$version . '; ' . home_url() ) );
+
+		if ( is_wp_error( $response ) ) {
+			unlink( $tmpfname );
+			return $response;
+		}
+
+		if ( 200 != wp_remote_retrieve_response_code( $response ) ){
+			unlink( $tmpfname );
+			return new WP_Error( 'http_404', trim( wp_remote_retrieve_response_message( $response ) ) );
+		}
+
+		return $tmpfname;
 	}
 }
 

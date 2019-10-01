@@ -20,7 +20,6 @@ class wp_slimstat {
 
 	public static $wpdb = '';
 	public static $upload_dir = '';
-	public static $maxmind_path = '';
 
 	public static $update_checker = array();
 	public static $raw_post_array = array();
@@ -70,8 +69,6 @@ class wp_slimstat {
 			self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
 		}
 
-		self::$maxmind_path = self::$upload_dir . '/maxmind.mmdb';
-
 		// Allow add-ons to turn off the tracker based on other conditions
 		$is_tracking_filter = apply_filters( 'slimstat_filter_pre_tracking', strpos( self::get_request_uri(), 'wp-admin/admin-ajax.php' ) === false );
 		$is_tracking_filter_js = apply_filters( 'slimstat_filter_pre_tracking_js', true );
@@ -89,9 +86,9 @@ class wp_slimstat {
 			}
 
 			// Slimstat tracks screen resolutions, outbound links and other client-side information using a client-side tracker
-			add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 15 );
+			add_action( is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts' , array( __CLASS__, 'enqueue_tracker' ), 15 );
 			if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
-				add_action( 'login_enqueue_scripts', array( __CLASS__, 'wp_slimstat_enqueue_tracking_script' ), 10 );
+				add_action( 'login_enqueue_scripts', array( __CLASS__, 'enqueue_tracker' ), 10 );
 			}
 		}
 
@@ -130,7 +127,7 @@ class wp_slimstat {
 	// end init
 
 	/**
-	 * Ajax Tracking
+	 * Reads and processes the data received by the XHR tracker
 	 */
 	public static function slimtrack_ajax() {
 		// If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
@@ -179,6 +176,11 @@ class wp_slimstat {
 				// Visitor is still on this page, record the timestamp in the corresponding field if this WAS NOT a request to update a "server-side" pageview with client-side info
 				if ( empty( self::$stat[ 'resolution' ] ) ) {
 					self::$stat[ 'dt_out' ] = self::date_i18n( 'U' );
+				}
+
+				// Is this a new visitor, based on his fingerprint?
+				if ( !empty( self::$stat[ 'fingerprint' ] ) && self::_is_new_visitor( self::$stat[ 'fingerprint' ] ) ) {
+					self::$stat[ 'notes' ][] = 'new:yes';
 				}
 
 				$id = self::_update_row( self::$stat );
@@ -268,6 +270,11 @@ class wp_slimstat {
 				self::$stat[ 'content_type' ] = 'external';
 			}
 
+			// Is this a new visitor, based on his fingerprint?
+			if ( !empty( self::$stat[ 'fingerprint' ] ) && self::_is_new_visitor( self::$stat[ 'fingerprint' ] ) ) {
+				self::$stat[ 'notes' ][] = 'new:yes';
+			}
+
 			// Track the rest of the information related to this pageview
 			$id = self::slimtrack();
 		}
@@ -281,9 +288,10 @@ class wp_slimstat {
 		do_action( 'slimstat_track_success' );
 		exit( self::_get_value_with_checksum( $id ) );
 	}
+	// end slimtrack_ajax
 
 	/**
-	 * Core tracking functionality
+	 * THE Slimstat tracker
 	 */
 	public static function slimtrack() {
 		self::$stat[ 'dt' ] = self::date_i18n( 'U' );
@@ -364,12 +372,12 @@ class wp_slimstat {
 				list( $ip_to_ignore, $cidr_mask ) = explode( '/', trim( $ip_to_ignore ) );
 			}
 			else{
-				$cidr_mask = self::get_mask_length( $ip_to_ignore );
+				$cidr_mask = self::_get_mask_length( $ip_to_ignore );
 			}
 
-			$long_masked_ip_to_ignore = substr( self::dtr_pton( $ip_to_ignore ), 0, $cidr_mask );
-			$long_masked_user_ip = substr( self::dtr_pton( self::$stat[ 'ip' ] ), 0, $cidr_mask );
-			$long_masked_user_other_ip = substr( self::dtr_pton( self::$stat[ 'other_ip' ] ), 0 , $cidr_mask );
+			$long_masked_ip_to_ignore = substr( self::_dtr_pton( $ip_to_ignore ), 0, $cidr_mask );
+			$long_masked_user_ip = substr( self::_dtr_pton( self::$stat[ 'ip' ] ), 0, $cidr_mask );
+			$long_masked_user_other_ip = substr( self::_dtr_pton( self::$stat[ 'other_ip' ] ), 0 , $cidr_mask );
 
 			if ( $long_masked_user_ip === $long_masked_ip_to_ignore || $long_masked_user_other_ip === $long_masked_ip_to_ignore ) {
 				return false;
@@ -381,7 +389,7 @@ class wp_slimstat {
 			// IPv4 or IPv6
 			$needle = '.';
 			$replace = '.0';
-			if ( self::get_mask_length( self::$stat[ 'ip' ] ) == 128 ) {
+			if ( self::_get_mask_length( self::$stat[ 'ip' ] ) == 128 ) {
 				$needle = ':';
 				$replace = ':0000';
 			}
@@ -537,7 +545,7 @@ class wp_slimstat {
 		}
 
 		// Geolocation 
-		include_once ( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
 		try {
 			$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
 		}
@@ -613,7 +621,7 @@ class wp_slimstat {
 
 		// Implode the notes
 		if ( !empty( self::$stat[ 'notes' ] ) ) {
-			self::$stat[ 'notes' ] = implode( ';', self::$stat[ 'notes' ] );
+			self::$stat[ 'notes' ] = '[' . implode( '][', self::$stat[ 'notes' ] ) . ']';
 		}
 
 		// Remove empty values
@@ -688,18 +696,6 @@ class wp_slimstat {
 	}
 	// end get_request_uri
 
-	/**
-	 * Update content type as needed
-	 */
-	public static function update_content_type( $_status = 301, $_location = '' ) {
-		if ( $_status >= 300 && $_status < 400 ) {
-// SEE WHY THIS DOESN'T WORK?!
-			self::$stat[ 'content_type' ] = 'redirect:' . intval( $_status );
-			self::_update_row( self::$stat );
-		}
-	}
-	// end update_content_type
-
 	public static function is_local_ip_address( $ip_address = '' ) {
 		if ( !filter_var( $ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
 			return true;
@@ -708,156 +704,9 @@ class wp_slimstat {
 		return false;
 	}
 
-	public static function dtr_pton( $ip ){
-		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-			$unpacked = unpack( 'A4', inet_pton( $ip ) );
-		}
-		else if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) && defined( 'AF_INET6' ) ) {
-			$unpacked = unpack( 'A16', inet_pton( $ip ) );
-		}
-
-		$binary_ip = '';
-		if ( !empty( $unpacked ) ) {
-			$unpacked = str_split( $unpacked[ 1 ] );
-			foreach ( $unpacked as $char ) {
-				$binary_ip .= str_pad( decbin( ord( $char ) ), 8, '0', STR_PAD_LEFT );
-			}
-		}
-
-		return $binary_ip;
-	}
-
-	public static function get_mask_length( $ip ){
-		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-			return 32;
-		}
-		else if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-			return 128;
-		}
-
-		return false;
-	}
-
 	/**
-	 * Opens given domains during CORS requests to admin-ajax.php
+	 * Implements the Slimstat Shortcode API
 	 */
-	public static function open_cors_admin_ajax( $_allowed_origins = array() ) {
-		$exploded_domains = self::string_to_array( self::$settings[ 'external_domains' ] );
-
-		if ( !empty( $exploded_domains ) && !empty( $exploded_domains[ 0 ] ) ) {
-			$_allowed_origins = array_merge( $_allowed_origins, $exploded_domains );
-		}
-
-		return $_allowed_origins;
-	}
-
-	/**
-	 * Downloads the MaxMind geolocation database from their repository
-	 */
-	public static function download_maxmind_database() {
-		// Create the folder, if it doesn't exist
-		if ( !file_exists( dirname( self::$maxmind_path ) ) ) {
-			mkdir( dirname( self::$maxmind_path ) );
-		}
-
-		if ( file_exists( self::$maxmind_path ) ) {
-			if ( is_file( self::$maxmind_path ) ) {
-				$is_deleted = @unlink( self::$maxmind_path );
-			}
-			else {
-				// This should not happen, but hey...
-				$is_deleted = @rmdir( self::$maxmind_path );
-			}
-
-			if ( !$is_deleted ) {
-				return __( "The geolocation database cannot be updated. Please check your server's file permissions and try again.", 'wp-slimstat' );
-			}
-		}
-
-		// Download the most recent database directly from MaxMind's repository
-		if ( self::$settings[ 'geolocation_country' ] == 'on' ) {
-			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz' );
-		}
-		else {
-			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz' );
-		}
-
-		if ( is_wp_error( $maxmind_tmp ) ) {
-			return __( 'There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat' ) . ' ' . $maxmind_tmp->get_error_message();
-		}
-
-		$zh = false;
-
-		if ( !function_exists( 'gzopen' ) ) {
-			if ( function_exists( 'gzopen64' ) ) {
-				if ( false === ( $zh = gzopen64( $maxmind_tmp, 'rb' ) ) ) {
-					return __( "There was an error opening the zipped MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
-				}
-			}
-			else {
-				return __( 'Function <code>gzopen</code> is not defined in your environment. Please ask your server administrator to install the corresponding library.', 'wp-slimstat' );
-			}
-		}
-		else{
-			if ( false === ( $zh = gzopen( $maxmind_tmp, 'rb' ) ) ) {
-				return __( "There was an error opening the zipped MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
-			}
-		}
-
-		if ( false === ( $fh = fopen( self::$maxmind_path, 'wb' ) ) ) {
-			return __( "There was an error opening the MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
-		}
-
-		while ( ( $data = gzread( $zh, 4096 ) ) != false ) {
-			fwrite( $fh, $data );
-		}
-
-		@gzclose( $zh );
-		@fclose( $fh );
-
-		if ( !is_file( self::$maxmind_path ) ) {
-			// Something went wrong, maybe a folder was created instead of a regular file
-			@rmdir( self::$maxmind_path );
-			return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' );
-		}
-
-		@unlink( $maxmind_tmp );
-
-		return '';
-	}
-
-	public static function download_url( $url ) {
-		// Include the FILE API, if it's not defined
-		if ( !function_exists( 'download_url' ) ) {
-			require_once( ABSPATH . 'wp-admin/includes/file.php' );
-		}
-
-		if ( !$url ) {
-			return new WP_Error( 'http_no_url', __( 'The provided URL is invalid.', 'wp-slimstat' ) );
-		}
-
-		$url_filename = basename( parse_url( $url, PHP_URL_PATH ) );
-
-		$tmpfname = wp_tempnam( $url_filename );
-		if ( ! $tmpfname ) {
-			return new WP_Error( 'http_no_file', __( "A temporary file could not be created. Please check your server's file permissions and try again.", 'wp-slimstat' ) );
-		}
-
-		$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'stream' => true, 'filename' => $tmpfname, 'user-agent'  => 'Slimstat Analytics/' . self::$version . '; ' . home_url() ) );
-
-		if ( is_wp_error( $response ) ) {
-			unlink( $tmpfname );
-			return $response;
-		}
-
-		if ( 200 != wp_remote_retrieve_response_code( $response ) ){
-			unlink( $tmpfname );
-			return new WP_Error( 'http_404', trim( wp_remote_retrieve_response_message( $response ) ) );
-		}
-
-		return $tmpfname;
-	}
-
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ) {
 		extract( shortcode_atts( array(
 			'f' => '',	// recent, popular, count, widget
@@ -1027,7 +876,25 @@ class wp_slimstat {
 
 		return $output;
 	}
+	// end slimstat_shortcode
 
+	/**
+	 * Opens given domains during CORS requests to admin-ajax.php
+	 */
+	public static function open_cors_admin_ajax( $_allowed_origins = array() ) {
+		$exploded_domains = self::string_to_array( self::$settings[ 'external_domains' ] );
+
+		if ( !empty( $exploded_domains ) && !empty( $exploded_domains[ 0 ] ) ) {
+			$_allowed_origins = array_merge( $_allowed_origins, $exploded_domains );
+		}
+
+		return $_allowed_origins;
+	}
+	// end open_cors_admin_ajax
+
+	/**
+	 * Implements a REST API interface to retrieve Slimstat reports and metrics
+	 */
 	public static function rest_api_response( $_request = array() ) {
 		$filters = '';
 		if ( !empty( $_request[ 'filters' ] ) ) {
@@ -1076,7 +943,11 @@ class wp_slimstat {
 
 		return rest_ensure_response( $response );
 	}
+	// end rest_api_response
 
+	/**
+	 * Implements a REST API authentication mechanism via token
+	 */
 	public static function rest_api_authorization( $_request = array() ) {
 		if ( empty( $_request[ 'token' ] ) ) {
 			return new WP_Error( 'rest_invalid', esc_html__( '[REST API] Please use a valid token in order to access the REST API endpoint at this URL.', 'wp-slimstat' ), array( 'status' => 400 ) );
@@ -1088,7 +959,11 @@ class wp_slimstat {
 
 		return true;
 	}
+	// end rest_api_authorization
 
+	/**
+	 * Registers a new REST API route for the Slimstat endpoint
+	 */
 	public static function register_rest_route() {
 		register_rest_route( 'slimstat/v1', '/get', array(
 			'methods' => WP_REST_Server::READABLE,
@@ -1116,6 +991,7 @@ class wp_slimstat {
 			)
 		) );
 	}
+	// end register_rest_route
 
 	/**
 	 * Converts a series of comma separated values into an array
@@ -1128,6 +1004,7 @@ class wp_slimstat {
 			return array_filter( array_map( 'trim', explode( ',', $_option ) ) );
 		}
 	}
+	// end string_to_array
 
 	/**
 	 * Toggles WordPress filters on date_i18n function
@@ -1147,6 +1024,7 @@ class wp_slimstat {
 			remove_all_filters( 'date_i18n' );
 		}
 	}
+	// end toggle_date_i18n_filters
 
 	/**
 	 * Calls the date_i18n function without filters
@@ -1158,6 +1036,7 @@ class wp_slimstat {
 
 		return $date;
 	}
+	// end date_i18n
 
 	/**
 	 * Sets the default values for all the options
@@ -1320,7 +1199,7 @@ class wp_slimstat {
 	/**
 	 * Attach a script to every page to track visitors' screen resolution and other browser-based information
 	 */
-	public static function wp_slimstat_enqueue_tracking_script() {
+	public static function enqueue_tracker() {
 		// Pass some information to the tracker
 		$params = array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) );
 
@@ -1372,6 +1251,7 @@ class wp_slimstat {
 		wp_enqueue_script( 'wp_slimstat' );
 		wp_localize_script( 'wp_slimstat', 'SlimStatParams', $params );
 	}
+	// end enqueue_tracker
 
 	/**
 	 * Removes old entries from the main table and performs other daily tasks
@@ -1427,9 +1307,10 @@ class wp_slimstat {
 	public static function get_optout_html() {
 		die( stripslashes( self::$settings[ 'opt_out_message' ] ) );
 	}
+	// end get_optout_html
 
 	/**
-	 * Checks for add-on updates
+	 * Checks for add-on updates, using the third-party library PUC
 	 */
 	public static function update_checker() {
 		if ( empty( self::$update_checker ) || !is_admin() ) {
@@ -1451,6 +1332,7 @@ class wp_slimstat {
 			}
 		}
 	}
+	// end update_checker
 
 	public static function add_plugin_manual_download_link( $_links = array(), $_plugin_file = '' ) {
 		$a_clean_slug = str_replace( array( 'wp-slimstat-', '/index.php' ), array( '', '' ), $_plugin_file );
@@ -1475,10 +1357,17 @@ class wp_slimstat {
 		return $_links;
 	}
 
+	/**
+	 * Registers the Slimstat widget
+	 */
 	public static function register_widget() {
 		return register_widget( "slimstat_widget" );
 	}
+	// end register_widget
 
+	/**
+	 * Generates the key to see if a given host is listed as a search engine in the corresponding Json data file
+	 */
 	public static function get_lossy_url( $_url = '' ) {
 		return preg_replace(
 			array(
@@ -1495,6 +1384,82 @@ class wp_slimstat {
 			),
 			$_url );
 	}
+	// end get_lossy_url
+
+	/**
+	 * Update content type as needed
+	 */
+	public static function update_content_type( $_status = 301, $_location = '' ) {
+		if ( $_status >= 300 && $_status < 400 ) {
+// SEE WHY THIS DOESN'T WORK?!
+			self::$stat[ 'content_type' ] = 'redirect:' . intval( $_status );
+			self::_update_row( self::$stat );
+		}
+	}
+	// end update_content_type
+
+	/**
+	 * Stores the pageview information in the database and returns the ID associated to the new entry
+	 */
+	protected static function _insert_row( $_data = array(), $_table = '' ) {
+		if ( empty( $_data ) || empty( $_table ) ) {
+			return -1;
+		}
+
+		// Remove unwanted characters (SQL injections, anyone?)
+		$data_keys = array();
+		foreach ( array_keys( $_data ) as $a_key ) {
+			$data_keys[] = sanitize_key( $a_key );
+		}
+
+		self::$wpdb->query( self::$wpdb->prepare( "
+			INSERT IGNORE INTO $_table (" . implode (", ", $data_keys) . ')
+			VALUES (' . substr( str_repeat( '%s,', count( $_data ) ), 0, -1 ) . ")", $_data ) );
+
+		return intval( self::$wpdb->insert_id );
+	}
+	// end _insert_row
+
+	/**
+	 * Updates an existing row
+	 */
+	protected static function _update_row( $_data = array() ) {
+		if ( empty( $_data ) || empty( $_data[ 'id' ] ) ) {
+			return false;
+		}
+
+		// Extract the ID from the array
+		$id = abs( intval( $_data[ 'id' ] ) );
+		unset( $_data[ 'id' ] );
+
+		// Sanitize column names (SQL/XSS injections, anyone?)
+		$_data = array_filter( $_data );
+
+		// The 'notes' column stores multiple comma-separated values: we need to append the new value to the existing ones
+		$notes = '';
+		if ( !empty( $_data[ 'notes' ] ) && is_array( $_data[ 'notes' ] ) ) {
+			$imploded_notes = '[' . esc_sql( implode( '][', $_data[ 'notes' ] ) ) . ']';
+			$notes = ( count( $_data ) > 1 ? ',' : '' ) . "notes=CONCAT( IFNULL( notes, '' ), '" . $imploded_notes . "' )";
+			unset( $_data[ 'notes' ] );
+		}
+
+		$prepared_query = self::$wpdb->prepare( "
+			UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+			SET " . implode( '=%s,', array_keys( $_data ) ) . "=%s
+			WHERE id = $id
+		", $_data );
+
+		// Add the notes
+		if ( !empty( $notes ) ) {
+			$prepared_query = str_replace( 'WHERE id =', $notes . ' WHERE id =', $prepared_query );
+		}
+
+		// Save the data in the database
+		self::$wpdb->query( $prepared_query );
+
+		return $id;
+	}
+	// end _update_row
 
 	/**
 	 * Tries to find the user's REAL IP address
@@ -1537,59 +1502,6 @@ class wp_slimstat {
 		return '';  // Indeterminable language
 	}
 	// end _get_language
-
-	/**
-	 * Stores the information (array) in the appropriate table and returns the corresponding ID
-	 */
-	protected static function _insert_row( $_data = array(), $_table = '' ) {
-		if ( empty( $_data ) || empty( $_table ) ) {
-			return -1;
-		}
-
-		// Remove unwanted characters (SQL injections, anyone?)
-		$data_keys = array();
-		foreach ( array_keys( $_data ) as $a_key ) {
-			$data_keys[] = sanitize_key( $a_key );
-		}
-
-		self::$wpdb->query( self::$wpdb->prepare( "
-			INSERT IGNORE INTO $_table (" . implode (", ", $data_keys) . ')
-			VALUES (' . substr( str_repeat( '%s,', count( $_data ) ), 0, -1 ) . ")", $_data ) );
-
-		return intval( self::$wpdb->insert_id );
-	}
-	// end _insert_row
-
-	/**
-	 * Updates an existing row
-	 */
-	protected static function _update_row( $_data = array() ) {
-		if ( empty( $_data ) || empty( $_data[ 'id' ] ) ) {
-			return false;
-		}
-
-		// Extract the ID from the array
-		$id = abs( intval( $_data[ 'id' ] ) );
-		unset( $_data[ 'id' ] );
-
-		// Sanitize column names (SQL/XSS injections, anyone?)
-		$_data = array_filter( $_data );
-		foreach ( array_keys( $_data ) as $a_key ) {
-			if ( $a_key != sanitize_key( $a_key ) ) {
-				$_data[ sanitize_key( $a_key ) ] = $_data[ $a_key ];
-				unset( $_data[ $a_key ] );
-			}
-		}
-
-		self::$wpdb->update( 
-			$GLOBALS[ 'wpdb' ]->prefix . 'slim_stats',
-			$_data,
-			array( 'id' => $id )
-		);
-
-		return $id;
-	}
-	// end _update_row
 
 	/**
 	 * Sniffs out referrals from search engines and tries to determine the query string
@@ -1665,7 +1577,6 @@ class wp_slimstat {
 	/**
 	 * Retrieves a param value from a string treated as a URL query string
 	 */
-
 	protected static function _get_param_from_query_string( $_query = '', $_parameter = '' ) {
 		if ( empty( $_query ) ) {
 			return '';
@@ -1789,6 +1700,36 @@ class wp_slimstat {
 	// end _get_content_info
 
 	/**
+	 * Reads the information sent by the Javascript tracker and adds it to the $_stat array
+	 */
+	protected static function _get_client_info( $_data_js = array(), $_stat = array() ) {
+		if ( !empty( $_data_js[ 'bw' ] ) ) {
+			$_stat[ 'resolution' ] = strip_tags( trim( $_data_js[ 'bw' ] . 'x' . $_data_js[ 'bh' ] ) );
+		}
+		if ( !empty( $_data_js[ 'sw' ] ) ) {
+			$_stat[ 'screen_width' ] = intval( $_data_js[ 'sw' ] );
+		}
+		if ( !empty( $_data_js[ 'sh' ] ) ) {
+			$_stat[ 'screen_height' ] = intval( $_data_js[ 'sh' ] );
+		}
+		if ( !empty( $_data_js[ 'sl' ] ) && $_data_js[ 'sl' ] > 0 && $_data_js[ 'sl' ] < 60000 ) {
+			$_stat[ 'server_latency' ] = intval( $_data_js[ 'sl' ] );
+		}
+		if ( !empty( $_data_js[ 'pp' ] ) && $_data_js[ 'pp' ] > 0 && $_data_js[ 'pp' ] < 60000 ) {
+			$_stat[ 'page_performance' ] = intval( $_data_js[ 'pp' ] );
+		}
+		if ( !empty( $_data_js[ 'fh' ] ) ) {
+			$_stat[ 'fingerprint' ] = sanitize_text_field( $_data_js[ 'fh' ] );
+		}
+		if ( !empty( $_data_js[ 'tz' ] ) ) {
+			$_stat[ 'tz_offset' ] = intval( $_data_js[ 'tz' ] );
+		}
+
+		return $_stat;
+	}
+	// end _get_client_info
+
+	/**
 	 * Reads the cookie to get the visit_id and sets the variable accordingly
 	 */
 	protected static function _set_visit_id( $_force_assign = false ) {
@@ -1846,35 +1787,8 @@ class wp_slimstat {
 	// end _set_visit_id
 
 	/**
-	 * Reads the information sent by the Javascript tracker and adds it to the $_stat array
+	 * Saves an error detected by the tracker in the database
 	 */
-	protected static function _get_client_info( $_data_js = array(), $_stat = array() ) {
-		if ( !empty( $_data_js[ 'bw' ] ) ) {
-			$_stat[ 'resolution' ] = strip_tags( trim( $_data_js[ 'bw' ] . 'x' . $_data_js[ 'bh' ] ) );
-		}
-		if ( !empty( $_data_js[ 'sw' ] ) ) {
-			$_stat[ 'screen_width' ] = intval( $_data_js[ 'sw' ] );
-		}
-		if ( !empty( $_data_js[ 'sh' ] ) ) {
-			$_stat[ 'screen_height' ] = intval( $_data_js[ 'sh' ] );
-		}
-		if ( !empty( $_data_js[ 'sl' ] ) && $_data_js[ 'sl' ] > 0 && $_data_js[ 'sl' ] < 60000 ) {
-			$_stat[ 'server_latency' ] = intval( $_data_js[ 'sl' ] );
-		}
-		if ( !empty( $_data_js[ 'pp' ] ) && $_data_js[ 'pp' ] > 0 && $_data_js[ 'pp' ] < 60000 ) {
-			$_stat[ 'page_performance' ] = intval( $_data_js[ 'pp' ] );
-		}
-		if ( !empty( $_data_js[ 'fh' ] ) ) {
-			$_stat[ 'fingerprint' ] = sanitize_text_field( $_data_js[ 'fh' ] );
-		}
-		if ( !empty( $_data_js[ 'tz' ] ) ) {
-			$_stat[ 'tz_offset' ] = intval( $_data_js[ 'tz' ] );
-		}
-
-		return $_stat;
-	}
-	// end _get_client_info
-
 	protected static function _log_error( $_error_code = 0 ) {
 		// Save this error in the database
 		self::update_option( 'slimstat_tracker_error', array( $_error_code, self::date_i18n( 'U' ) ) );
@@ -1884,6 +1798,7 @@ class wp_slimstat {
 
 		return -$_error_code;
 	}
+	// end _log_error
 
 	protected static function _get_value_with_checksum( $_value = 0 ) {
 		return $_value . '.' . md5( $_value . self::$settings[ 'secret' ] );
@@ -1899,6 +1814,9 @@ class wp_slimstat {
 		return false;
 	}
 
+	/**
+	 * Determines if a given string is listed in the corresponding 'exclusion' field
+	 */
 	protected static function _is_blacklisted( $_needles = array(), $_haystack_string = '' ) {
 		foreach ( self::string_to_array( $_haystack_string ) as $a_item ) {
 			$pattern = str_replace( array( '\*', '\!' ) , array( '(.*)', '.' ), preg_quote( $a_item, '@' ) );
@@ -1916,13 +1834,70 @@ class wp_slimstat {
 
 		return false;
 	}
+	// end _is_blacklisted
 
+	/**
+	 * Determines if this is a new visitor, meaning that we've never seen this fingerprint before
+	 */
+	protected static function _is_new_visitor( $_fingerprint = '' ) {
+		$count_fingerprint = self::$wpdb->get_var( self::$wpdb->prepare( "
+			SELECT COUNT( id )
+			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+			WHERE fingerprint = %s", $_fingerprint
+		) );
+
+		return $count_fingerprint == 0;
+	}
+	// end _is_new_visitor
+
+	/**
+	 * Validates and unpacks an IP Address
+	 */
+	protected static function _dtr_pton( $_ip ){
+		if ( filter_var( $_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			$unpacked = unpack( 'A4', inet_pton( $_ip ) );
+		}
+		else if ( filter_var( $_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) && defined( 'AF_INET6' ) ) {
+			$unpacked = unpack( 'A16', inet_pton( $_ip ) );
+		}
+
+		$binary_ip = '';
+		if ( !empty( $unpacked ) ) {
+			$unpacked = str_split( $unpacked[ 1 ] );
+			foreach ( $unpacked as $char ) {
+				$binary_ip .= str_pad( decbin( ord( $char ) ), 8, '0', STR_PAD_LEFT );
+			}
+		}
+
+		return $binary_ip;
+	}
+	// end _dtr_pton
+
+	/**
+	 * Helper function to determine if we should ignore visits coming from this IP address
+	 */
+	protected static function _get_mask_length( $ip ){
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return 32;
+		}
+		else if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			return 128;
+		}
+
+		return false;
+	}
+	// end _get_mask_length
+
+	/**
+	 * These two functions here implement an URL-safe base64 string
+	 */
 	protected static function _base64_url_encode( $_input = '' ) {
 		return strtr( base64_encode( $_input ), '+/=', '._-' ); 
 	} 
 	protected static function _base64_url_decode( $_input = '' ) {
 		return strip_tags( trim( base64_decode( strtr( $_input, '._-', '+/=' ) ) ) );
 	}
+	// end _base64_url_encode/decode
 }
 // end of class declaration
 
