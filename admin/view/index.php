@@ -124,7 +124,7 @@
 	</form>
 
 	<?php
-		if ( !file_exists( wp_slimstat::$maxmind_path ) && wp_slimstat::$settings[ 'notice_geolite' ] == 'on' ) {
+		if ( !file_exists( wp_slimstat::$upload_dir . '/maxmind.mmdb' ) && wp_slimstat::$settings[ 'notice_geolite' ] == 'on' ) {
 			wp_slimstat_admin::show_message( sprintf( __( "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to identify your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-third-party-libraries' ), 'warning', 'geolite' );
 		}
 
