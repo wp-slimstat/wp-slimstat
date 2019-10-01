@@ -269,9 +269,9 @@ var SlimStat = {
 
 		// Different elements have different properties to record...
 		if ( !SlimStat.empty( target_node.nodeName ) ) {
-			switch ( target_node.nodeName ) {
-				case "INPUT":
-				case "BUTTON":
+			switch ( target_node.nodeName.toLowerCase() ) {
+				case "input":
+				case "button":
 					// Let's look for a FORM element
 					while ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && target_node.nodeName.toLowerCase() != "form" ) {
 						target_node = target_node.parentNode;
@@ -402,7 +402,7 @@ SlimStat.add_event( window, 'load', function() {
 	}
 } );
 SlimStat.add_event( window, 'beforeunload', function() {
-	if ( !SlimStat.empty( SlimStatParams.id ) && parseInt( SlimStatParams.id ) > 0 ) {
+	if ( !SlimStat.empty( document.activeElement ) && !SlimStat.empty( document.activeElement.nodeName ) && document.activeElement.nodeName.toLowerCase() == "body" && !SlimStat.empty( SlimStatParams.id ) && parseInt( SlimStatParams.id ) > 0 ) {
 		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id, true );
 	}
 } );
