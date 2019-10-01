@@ -180,7 +180,7 @@ class wp_slimstat {
 
 				// Is this a new visitor, based on his fingerprint?
 				if ( !empty( self::$stat[ 'fingerprint' ] ) && self::_is_new_visitor( self::$stat[ 'fingerprint' ] ) ) {
-					self::$stat[ 'notes' ][] = 'new:yes';
+					self::$stat[ 'notes' ] = array( 'new:yes' );
 				}
 
 				$id = self::_update_row( self::$stat );
@@ -272,7 +272,7 @@ class wp_slimstat {
 
 			// Is this a new visitor, based on his fingerprint?
 			if ( !empty( self::$stat[ 'fingerprint' ] ) && self::_is_new_visitor( self::$stat[ 'fingerprint' ] ) ) {
-				self::$stat[ 'notes' ][] = 'new:yes';
+				self::$stat[ 'notes' ] = array( 'new:yes' );
 			}
 
 			// Track the rest of the information related to this pageview
@@ -295,7 +295,10 @@ class wp_slimstat {
 	 */
 	public static function slimtrack() {
 		self::$stat[ 'dt' ] = self::date_i18n( 'U' );
-		self::$stat[ 'notes' ] = array();
+
+		if ( empty( self::$stat[ 'notes' ] ) ) {
+			self::$stat[ 'notes' ] = array();
+		}
 
 		// Allow third-party tools to initialize the stat array
 		self::$stat = apply_filters( 'slimstat_filter_pageview_stat_init', self::$stat );
@@ -1436,10 +1439,10 @@ class wp_slimstat {
 		$_data = array_filter( $_data );
 
 		// The 'notes' column stores multiple comma-separated values: we need to append the new value to the existing ones
+		// Also, values are organized in an array, which we need to implode as a string
 		$notes = '';
 		if ( !empty( $_data[ 'notes' ] ) && is_array( $_data[ 'notes' ] ) ) {
-			$imploded_notes = '[' . esc_sql( implode( '][', $_data[ 'notes' ] ) ) . ']';
-			$notes = ( count( $_data ) > 1 ? ',' : '' ) . "notes=CONCAT( IFNULL( notes, '' ), '" . $imploded_notes . "' )";
+			$notes = ( count( $_data ) > 1 ? ',' : '' ) . "notes=CONCAT( IFNULL( notes, '' ), '[" . esc_sql( implode( '][', $_data[ 'notes' ] ) ) . "]' )";
 			unset( $_data[ 'notes' ] );
 		}
 
