@@ -180,6 +180,9 @@ class wp_slimstat {
 				// Retrieves all the client-side info (screen resolution, server latency, etc) and sets the corresponding entries in self::$stat
 				self::$stat = self::_get_client_info( self::$data_js, self::$stat );
 
+				// Visitor is still on this page, record the timestamp in the corresponding field
+				self::$stat[ 'dt_out' ] = self::date_i18n( 'U' );
+
 				$id = self::_update_row( self::$stat );
 			}
 			// ... otherwise, is this an event: a click on a link (maybe a 'download'?) or other user action
