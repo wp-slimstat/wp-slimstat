@@ -1,5 +1,5 @@
 <?php
-class slim_i18n {
+class wp_slimstat_i18n {
 	public static $dynamic_strings = array();
 
 	public static function init_dynamic_strings() {

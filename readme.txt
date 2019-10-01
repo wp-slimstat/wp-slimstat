@@ -67,6 +67,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Update] Added title field to Slimstat widgets (thank you, [jaroslawistok](https://wordpress.org/support/topic/broken-layout-from-3rd-widget-in-footer/)).
 * [Update] Reverted a change to the Top Web Pages report that was now combining URLs with a trailing slash and ones without one into one result. As James pointed out, this is a less accurate measure and hides the fact that people might be accessing the website in different ways.
 * [Fix] The Country shortcode was not working as expected because of a change in how we handle localization files.
+* [Fix] Renamed i18n class to avoid conflict with external libraries.
 
 = 4.8.7.3 =
 * [New] Implemented a simple query cache to minimize the number of requests needed to crunch and display the data in the reports.

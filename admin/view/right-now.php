@@ -127,10 +127,10 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 
 		// Country
 		if ( !empty( $results[ $i ][ 'country' ] ) && $results[ $i ][ 'country' ] != 'xx' ) {
-			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country equals ' . $results[ $i ][ 'country' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.png' width='16' height='16' title='" . slim_i18n::get_string( 'c-' . $results[ $i ][ 'country' ] ) . "'></a>";
+			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country equals ' . $results[ $i ][ 'country' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.png' width='16' height='16' title='" . wp_slimstat_i18n::get_string( 'c-' . $results[ $i ][ 'country' ] ) . "'></a>";
 		}
 		else {
-			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country is_empty #' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.png' width='16' height='16' title='" . slim_i18n::get_string( 'c-' ) . "'></a>";
+			$country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'country is_empty #' ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.png' width='16' height='16' title='" . wp_slimstat_i18n::get_string( 'c-' ) . "'></a>";
 		}
 
 		// City, if tracked
@@ -155,12 +155,12 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		if ( !empty( $results[ $i ][ 'platform' ] ) && in_array( $results[ $i ][ 'platform' ], $supported_os_icons ) ) {
 			$platform_filter = esc_attr( $results[ $i ][ 'platform' ] );
 		}
-		$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform equals ' . $results[ $i ][ 'platform' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/platforms/{$platform_filter}.png' width='16' height='16' title='" . slim_i18n::get_string( $results[ $i ][ 'platform' ] ) . "'></a>";
+		$platform_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url( 'platform equals ' . $results[ $i ][ 'platform' ] ) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/platforms/{$platform_filter}.png' width='16' height='16' title='" . wp_slimstat_i18n::get_string( $results[ $i ][ 'platform' ] ) . "'></a>";
 
 		// Language
 		$language_filter = '';
 		// if ( !empty( $results[ $i ][ 'language' ] ) && $results[ $i ][ 'language' ] != 'xx' ) {
-		// 	$language_filter = '<span class="pageview-language"><a class="slimstat-filter-link" href="' . wp_slimstat_reports::fs_url( 'language equals ' . $results[ $i ][ 'language' ] ) . '">' . slim_i18n::get_string( 'l-' . $results[ $i ][ 'language' ] ) . '</a>';
+		// 	$language_filter = '<span class="pageview-language"><a class="slimstat-filter-link" href="' . wp_slimstat_reports::fs_url( 'language equals ' . $results[ $i ][ 'language' ] ) . '">' . wp_slimstat_i18n::get_string( 'l-' . $results[ $i ][ 'language' ] ) . '</a>';
 		// }
 
 		// Browser Type
