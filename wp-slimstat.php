@@ -151,10 +151,6 @@ class wp_slimstat {
 			if ( $parsed_ref === false ) {
 				exit( self::_log_error( 201 ) );
 			}
-
-			if ( !empty( $parsed_ref ) && $parsed_ref == $site_host && self::$settings[ 'track_same_domain_referers' ] != 'on' ) {
-				self::$stat[ 'referer' ] = '';
-			}
 		}
 
 		// Do we have an id for this request? If we do, we are either updating an existing pageview, or recording an event on the page
@@ -421,7 +417,6 @@ class wp_slimstat {
 		}
 
 		if ( !empty( self::$stat[ 'referer' ] ) ) {
-
 			// Is this a 'seriously malformed' URL?
 			$parsed_url = parse_url( self::$stat[ 'referer' ] );
 			if ( !$parsed_url ) {
@@ -434,36 +429,23 @@ class wp_slimstat {
 				unset( self::$stat[ 'referer' ] );
 			}
 
-			$parsed_site_url = parse_url( get_site_url(), PHP_URL_HOST );
-			if ( !empty( $parsed_url[ 'host' ] ) && $parsed_url[ 'host' ] == $parsed_site_url && self::$settings[ 'track_same_domain_referers' ] != 'on' ) {
-				unset( self::$stat[ 'referer' ] );
-			}
-			else {
-				// Fix Google Images referring domain
-				if ( strpos( self::$stat[ 'referer' ], 'www.google' ) !== false ) {
-					if ( strpos( self::$stat[ 'referer' ], '/imgres?' ) !== false ) {
-						self::$stat[ 'referer' ] = str_replace( 'www.google', 'images.google', self::$stat[ 'referer' ] );
-					}
-					if ( strpos( self::$stat[ 'referer' ], '/url?' ) !== false ) {
-						self::$stat[ 'referer' ] = str_replace( '/url?', '/search?', self::$stat[ 'referer' ] );
-					}
-				}
-			}
-
 			// Is this referer blacklisted?
 			if ( !empty( self::$settings[ 'ignore_referers' ] ) && self::_is_blacklisted( self::$stat[ 'referer' ], self::$settings[ 'ignore_referers' ] ) ) {
 				return false;
 			}
+
+			// Search terms
+			self::$stat[ 'searchterms' ] = self::_get_search_terms( self::$stat[ 'referer' ] );
+
+			// Are we storing internal referrers in the database?
+			$parsed_site_url = parse_url( get_site_url(), PHP_URL_HOST );
+			if ( !empty( $parsed_url[ 'host' ] ) && $parsed_url[ 'host' ] == $parsed_site_url && self::$settings[ 'track_same_domain_referers' ] != 'on' ) {
+				unset( self::$stat[ 'referer' ] );
+			}
 		}
 
-		// Search terms
-		if ( !empty( self::$stat[ 'resource' ] ) ) {
-			self::$stat[ 'searchterms' ] = self::_get_search_terms( self::$stat[ 'resource' ] );
-		}
-		if ( empty( self::$stat[ 'searchterms' ] ) && !empty( self::$stat[ 'referer' ] ) ) {
-			self::$stat[ 'searchterms' ] = self::_get_search_terms( self::$stat[ 'referer' ] );
-		}
-		if ( empty( self::$stat[ 'searchterms' ] ) && !empty( $_REQUEST[ 's' ] ) ) {
+		// Internal WP search?
+		if ( empty( self::$stat[ 'searchterms' ] ) && !empty( $_POST[ 's' ] ) ) {
 			self::$stat[ 'searchterms' ] = sanitize_text_field( str_replace( '\\', '', $_REQUEST[ 's' ] ) );
 		}
 
@@ -1599,46 +1581,59 @@ class wp_slimstat {
 		}
 
 		$searchterms = '';
-		$parsed_url = parse_url( $_url );
 
-		// Engines with different character encodings should always be listed here, regardless of their query string format
-		$query_strings = array(
-			'baidu.com' => 'wd',
-			'eniro' => 'search_word',
-			'seznam' => 'oq',
-			'virgilio' => 'qs',
-			'voila' => 'rdata',
-			'yandex' => 'text',
-			'yell' => 'keywords',
-			'yippy' => 'query'
-		);
+		// Load the search engines list to mark pageviews accordingly
+		// Each entry contains the following attributes
+		// - params: which query string params is associated to the search keyword
+		// - backlink: format of the URL point to the search engine result page
+		// - charsets: list of charset used to encode the keywords
+		//
+		$search_engines = file_get_contents( plugin_dir_path( __FILE__ ) . 'vendor/matomo-searchengine.json' );
+		$search_engines = json_decode( $search_engines, TRUE );
 
-		$charsets = array( 'baidu' => 'EUC-CN' );
-		$regex_match = implode( '|', array_keys( $query_strings ) );
+		$parsed_url = @parse_url( $_url );
 
-		if ( !empty( $parsed_url[ 'query' ] ) ) {
-			parse_str( $parsed_url[ 'query' ], $query );
+		if ( empty( $search_engines ) || empty( $parsed_url ) || empty( $parsed_url[ 'host' ] ) ) {
+			return '';
 		}
 
-		if ( !empty( $parsed_url[ 'host' ] ) ) {
-			preg_match( "~($regex_match).~i", $parsed_url[ 'host' ], $matches );
-		}
+		$sek = self::_get_lossy_url( $parsed_url[ 'host' ] );
 
-		if ( !empty( $matches[ 1 ] ) ) {
-			if ( !empty( $query[ $query_strings[ $matches[ 1 ] ] ] ) ) {
-				$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $query_strings[ $matches[ 1 ] ] ] ) ) );
-				
-				// Test for encodings different from UTF-8
-				if ( function_exists( 'mb_check_encoding' ) && !mb_check_encoding( $query[ $query_strings[ $matches[ 1 ] ] ], 'UTF-8' ) && !empty( $charsets[ $matches[ 1 ] ] ) ) {
-					$searchterms = mb_convert_encoding( urldecode( $query[ $query_strings[ $matches[ 1 ] ] ] ), 'UTF-8', $charsets[ $matches[ 1 ] ] );
+		if ( !empty( $search_engines[ $sek ] ) ) {
+			if ( empty( $search_engines[ $sek ][ 'params' ] ) ) {
+				$search_engines[ $sek ][ 'params' ] = array( 'q' );
+			}
+
+			foreach ( $search_engines[ $sek ][ 'params' ] as $a_param ) {
+				$searchterms = self::_get_param_from_query_string( $parsed_url[ 'query' ], $a_param );
+				if ( !empty( $searchterms ) ) {
+					break;
+				}
+			}
+
+			// Make sure to use the appropriate charset, if specified
+			if ( !empty( $searchterms ) ) {
+				if ( !empty( $search_engines[ 'charsets' ] ) && function_exists( 'iconv' ) ) {
+					$charset = $search_engines[ 'charsets' ][ 0 ];
+					if ( count( $search_engines[ 'charsets' ] ) > 1 && function_exists( 'mb_detect_encoding' ) ) {
+						$charset = mb_detect_encoding( $searchterms, $search_engines[ 'charsets' ] );
+						if ( $charset === false ) {
+							$charset = $search_engines[ 'charsets' ][ 0 ];
+						}
+					}
+
+					$new_searchterms = @iconv( $charset, 'UTF-8//IGNORE', $searchterms );
+					if ( !empty( $new_searchterms ) ) {
+						$searchterms = $new_searchterms;
+					}
 				}
 			}
 		}
 		else {
 			// We weren't lucky, but there's still hope
-			foreach( array( 'k', 'q', 'qt', 'query', 's' ) as $a_format ) {
-				if ( !empty( $query[ $a_format ] ) ) {
-					$searchterms = str_replace( '\\', '', trim( urldecode( $query[ $a_format ] ) ) );
+			foreach( array( 'ask', 'k', 'q', 'qs', 'qt', 'query', 's', 'string' ) as $a_param ) {
+				$searchterms = self::_get_param_from_query_string( $parsed_url[ 'query' ], $a_param );
+				if ( !empty( $searchterms ) ) {
 					break;
 				}
 			}
@@ -1647,6 +1642,38 @@ class wp_slimstat {
 		return sanitize_text_field( $searchterms );
 	}
 	// end _get_search_terms
+
+	/**
+	 * Retrieves a param value from a string treated as a URL query string
+	 */
+
+	protected static function _get_param_from_query_string( $_query = '', $_parameter = '' ) {
+		if ( empty( $_query ) ) {
+			return '';
+		}
+
+		$parsed_query = @parse_str( $_query, $values );
+
+		return !empty( $values[ $_parameter ] ) ? $values[ $_parameter ] : '';
+	}
+	// end _get_param_from_query_string
+
+	protected static function _get_lossy_url( $_url = '' ) {
+		return preg_replace(
+			array(
+					'/^(w+[0-9]*|search)\./',
+					'/(^|\.)m\./',
+					'/(\.(com|org|net|co|it|edu))?\.(ad|ae|af|ag|ai|al|am|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bl|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cu|cv|cw|cx|cy|cz|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mf|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tr|tt|tv|tw|tz|ua|ug|um|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|za|zm|zw)(\/|$)/',
+					'/(^|\.)(ad|ae|af|ag|ai|al|am|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bl|bm|bn|bo|bq|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cu|cv|cw|cx|cy|cz|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mf|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tr|tt|tv|tw|tz|ua|ug|um|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|za|zm|zw)\./',
+			),
+			array(
+					'',
+					'$1',
+					'.{}$4',
+					'$1{}.',
+			),
+			$_url );
+	}
 
 	/**
 	 * Returns details about the resource being accessed
