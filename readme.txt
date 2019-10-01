@@ -5,8 +5,8 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 5.2
-Tested up to: 5.2
-Stable tag: 4.8.7.3
+Tested up to: 5.3
+Stable tag: 4.8.8
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
