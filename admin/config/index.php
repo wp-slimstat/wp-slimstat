@@ -102,7 +102,7 @@ $settings = array(
 			'anonymize_ip' => array(
 				'title' => __( 'Privacy Mode', 'wp-slimstat' ),
 				'type'=> 'toggle',
-				'description'=> __( "Mask your visitors' IP addresses to comply with European privacy laws. This feature will convert the last octet into a ZERO.", 'wp-slimstat' )
+				'description'=> __( "Mask your visitors' IP addresses (by converting the last number into a zero) and do not track their browser fingerprint, to comply with European privacy laws.", 'wp-slimstat' )
 			),
 			'set_tracker_cookie' => array(
 				'title' => __( 'Set Cookie', 'wp-slimstat' ),
