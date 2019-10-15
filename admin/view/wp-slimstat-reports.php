@@ -1598,7 +1598,7 @@ class wp_slimstat_reports {
 					map: "worldLow",
 					getAreasFromMap: false,
 					areas:[ <?php echo implode( ',', $data_areas ) ?> ],
-					images: [ <?php if ( !empty( $data_points ) ) echo implode( ',', $data_points ) ?> ]
+					images: [ <?php if ( !empty( $data_points ) ) echo implode( ',', array_reverse( $data_points ) ) ?> ]
 				};
 
 				// Create AmMap object
