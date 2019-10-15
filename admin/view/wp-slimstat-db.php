@@ -366,12 +366,15 @@ class wp_slimstat_db {
 			self::$debug_message .= "<p class='debug'>$_sql</p>";
 		}
 
+		$cached_results = wp_cache_get( md5( $_sql ), 'wp-slimstat' );
+
 		// Save the results of this query in our object cache
-		if ( empty( wp_cache_get( md5( $_sql ), 'wp-slimstat' ) ) ) {
-			wp_cache_add( md5( $_sql ), wp_slimstat::$wpdb->get_results( $_sql, ARRAY_A ), 'wp-slimstat' );
+		if ( empty( $cached_results ) ) {
+			$cached_results = wp_slimstat::$wpdb->get_results( $_sql, ARRAY_A );
+			wp_cache_add( md5( $_sql ), $cached_results, 'wp-slimstat' );
 		}
 
-		return wp_cache_get( md5( $_sql ), 'wp-slimstat' );
+		return $cached_results;
 	}
 
 	public static function get_var( $_sql = '', $_aggregate_value = '' ) {
