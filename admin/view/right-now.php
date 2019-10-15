@@ -50,28 +50,11 @@ if ( isset( $_args[ 'echo' ] ) && $_args[ 'echo' ] === false ) {
 	// Process the data before returning it
 	if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
 		for ( $i = 0; $i < $count_page_results; $i++ ) {
-			// When the IP conversion feature is enabled, data is stored in the "notes" field, so that it doesn't need to be calculated over and over again
-			$gethostbyaddr = '';
-			if ( strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) === false ) {
-				$gethostbyaddr = gethostbyaddr( $results[ $i ][ 'ip' ] );
-				if ( $gethostbyaddr != $results[ $i ][ 'ip' ] && !empty( $gethostbyaddr ) ) {
-					wp_slimstat::$wpdb->query( wp_slimstat::$wpdb->prepare( "
-						UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
-						SET notes = %s
-						WHERE id = %s", ( empty( $results[ $i ][ 'notes' ] ) ? '' : $results[ $i ][ 'notes' ] . ';' ) . "hostbyaddr:$gethostbyaddr", $results[ $i ][ 'id' ]
-					) );
+			// When the IP conversion feature is enabled, we need to return the correct values
+			$hostname = wp_slimstat::gethostbyaddr( $results[ $i ][ 'ip' ] );
 
-					$results[ $i ][ 'ip' ] .= ', ' . $gethostbyaddr;
-				}
-			}
-			else {
-				$gethostbyaddr = substr( $results[ $i ][ 'notes' ], strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) + 11 );
-				
-				$length = strpos( $gethostbyaddr, ';' );
-				if ( $length == 0 ) {
-					$length = strlen( $gethostbyaddr );
-				}
-				$results[ $i ][ 'ip' ] .= ', ' . substr( $gethostbyaddr, 0, $length );
+			if ( $hostname != $results[ $i ][ 'ip' ] ) {
+				$results[ $i ][ 'ip' ] .= ', ' . $hostname;
 			}
 		}
 	}
@@ -88,34 +71,6 @@ $delete_row = '';
 
 // Loop through the results
 for ( $i=0; $i < $count_page_results; $i++ ) {
-	$host_by_ip = $results[ $i ][ 'ip' ];
-
-	if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
-		// When the IP conversion feature is enabled, data is stored in the "notes" field, so that it doesn't need to be calculated over and over again
-		$gethostbyaddr = '';
-		if ( strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) === false ) {
-			$gethostbyaddr = gethostbyaddr( $results[ $i ][ 'ip' ] );
-			if ( $gethostbyaddr != $results[ $i ][ 'ip' ] && !empty( $gethostbyaddr ) ) {
-				wp_slimstat::$wpdb->query( wp_slimstat::$wpdb->prepare( "
-					UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
-					SET notes = %s
-					WHERE id = %s", ( empty( $results[ $i ][ 'notes' ] ) ? '' : $results[ $i ][ 'notes' ] . ';' ) . "hostbyaddr:$gethostbyaddr", $results[ $i ][ 'id' ]
-				) );
-
-				$host_by_ip .= ', ' . $gethostbyaddr;
-			}
-		}
-		else {
-			$gethostbyaddr = substr( $results[ $i ][ 'notes' ], strpos( $results[ $i ][ 'notes' ], 'hostbyaddr:' ) + 11 );
-			
-			$length = strpos( $gethostbyaddr, ';' );
-			if ( $length == 0 ) {
-				$length = strlen( $gethostbyaddr );
-			}
-			$host_by_ip .= ', ' . substr( $gethostbyaddr, 0, $length );
-		}
-	}
-
 	$date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='".__( 'Date and Time', 'wp-slimstat' )."'></i> " . date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $results[ $i ][ 'dt' ], true );
 
 	// Print visit header?
@@ -170,6 +125,12 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 		}
 
 		// IP Address and user
+		$host_by_ip = $results[ $i ][ 'ip' ];
+		if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
+			// When the IP conversion feature is enabled, we need to return the correct values
+			$host_by_ip = wp_slimstat::gethostbyaddr( $results[ $i ][ 'ip' ] );
+		}
+
 		if ( empty( $results[ $i ][ 'username' ] ) ) {
 			$ip_address = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url( 'ip equals ' . $results[ $i ][ 'ip' ] ) . "'>$host_by_ip</a>";
 		}

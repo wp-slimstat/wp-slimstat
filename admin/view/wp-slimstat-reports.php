@@ -1071,7 +1071,7 @@ class wp_slimstat_reports {
 					case 'id':
 					case 'ip':
 						if ( wp_slimstat::$settings[ 'convert_ip_addresses' ] == 'on' ) {
-							$element_value = gethostbyaddr( $results[ $i ][ 'ip' ] );
+							$element_value = wp_slimstat::gethostbyaddr( $results[ $i ][ 'ip' ] );
 						}
 						else{
 							$element_value = $results[ $i ][ 'ip' ];

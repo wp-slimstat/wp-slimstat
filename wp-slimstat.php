@@ -844,7 +844,7 @@ class wp_slimstat {
 								break;
 
 							case 'hostname':
-								$output[ $result_idx ][ $a_column ] .= gethostbyaddr( $a_result[ 'ip' ] );
+								$output[ $result_idx ][ $a_column ] .= self::gethostbyaddr( $a_result[ 'ip' ] );
 								break;
 
 							case 'language':
@@ -1364,6 +1364,21 @@ class wp_slimstat {
 
 		return $_links;
 	}
+
+	/**
+	 * Resolves a given IP address, by keeping a local cache of hostnames to avoid multiple requests to the DNS server
+	 */
+	public static function gethostbyaddr( $_ip = '' ) {
+		$hostname = get_transient( 'slimstat_' . $_ip );
+
+		if ( empty( $hostname ) ) {
+			$hostname = gethostbyaddr( $_ip );
+			set_transient( 'slimstat_' . $_ip, $hostname, HOUR_IN_SECONDS );
+		}
+
+		return $hostname;
+	}
+	// end gethostbyaddr
 
 	/**
 	 * Registers the Slimstat widget
@@ -1917,7 +1932,6 @@ class wp_slimstat {
 // end of class declaration
 
 class slimstat_widget extends WP_Widget {
-
 	/**
 	 * Sets up the widgets name etc
 	 */
