@@ -286,7 +286,8 @@ class wp_slimstat_db {
 				break;
 		}
 
-		$where = array( '', $_value );
+		$where = array( '', htmlentities( $_value, ENT_QUOTES, 'UTF-8' ) );
+
 		switch ( $_operator ) {
 			case 'is_not_equal_to':
 				$where[ 0 ] = "$column_with_alias <> %s";
