@@ -1728,7 +1728,7 @@ class wp_slimstat {
 		if ( !empty( $_data_js[ 'pp' ] ) && $_data_js[ 'pp' ] > 0 && $_data_js[ 'pp' ] < 60000 ) {
 			$_stat[ 'page_performance' ] = intval( $_data_js[ 'pp' ] );
 		}
-		if ( !empty( $_data_js[ 'fh' ] ) ) {
+		if ( !empty( $_data_js[ 'fh' ] ) && self::$settings[ 'anonymize_ip' ] != 'on' ) {
 			$_stat[ 'fingerprint' ] = sanitize_text_field( $_data_js[ 'fh' ] );
 		}
 		if ( !empty( $_data_js[ 'tz' ] ) ) {
@@ -1850,6 +1850,11 @@ class wp_slimstat {
 	 * Determines if this is a new visitor, meaning that we've never seen this fingerprint before
 	 */
 	protected static function _is_new_visitor( $_fingerprint = '' ) {
+		// If the privacy option is enabled, all visitors would be considered "new"...
+		if ( self::$settings[ 'anonymize_ip' ] == 'on' ) {
+			return false;
+		}
+
 		$count_fingerprint = self::$wpdb->get_var( self::$wpdb->prepare( "
 			SELECT COUNT( id )
 			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
