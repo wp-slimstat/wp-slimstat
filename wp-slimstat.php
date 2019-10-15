@@ -1403,6 +1403,8 @@ class wp_slimstat {
 			self::$stat[ 'content_type' ] = 'redirect:' . intval( $_status );
 			self::_update_row( self::$stat );
 		}
+
+		return $_status;
 	}
 	// end update_content_type
 
