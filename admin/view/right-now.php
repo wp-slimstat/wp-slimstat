@@ -166,7 +166,7 @@ for ( $i=0; $i < $count_page_results; $i++ ) {
 
 		// Fingerprint
 		$fingerprint = '';
-		if ( !empty( $results[ $i ][ 'fingerprint' ] ) ) {
+		if ( !$is_dashboard && !empty( $results[ $i ][ 'fingerprint' ] ) ) {
 			$fingerprint = "<span class='pageview-screenres'><code><a class='slimstat-filter-link slimstat-tooltip-trigger' href='" . wp_slimstat_reports::fs_url( 'fingerprint equals ' . $results[ $i ][ 'fingerprint' ] ) . "' title='" . $results[ $i ][ 'fingerprint' ] . "'>" . substr( $results[ $i ][ 'fingerprint' ], 0, 8 ) . "</a></code></span>";
 		}
 

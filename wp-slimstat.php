@@ -209,8 +209,8 @@ class wp_slimstat {
 					}
 
 					// Is this a download? If it is, add a new record to the database
-					if ( in_array( pathinfo( $resource, PATHINFO_EXTENSION ), self::string_to_array( self::$settings[ 'extensions_to_track' ] ) ) && !empty( $parsed_resource[ 'path' ] ) ) {
-						self::$stat[ 'resource' ] = $parsed_resource[ 'path' ];
+					if ( !empty( $parsed_resource[ 'path' ] ) && in_array( pathinfo( $parsed_resource[ 'path' ], PATHINFO_EXTENSION ), self::string_to_array( self::$settings[ 'extensions_to_track' ] ) ) ) {
+						self::$stat[ 'resource' ] = $parsed_resource[ 'path' ] . ( !empty( $parsed_resource[ 'query' ] ) ? '?' . $parsed_resource[ 'query' ] : '' );
 						self::$stat[ 'content_type' ] = 'download';
 
 						if ( !empty( self::$data_js[ 'fh' ] ) ) {
