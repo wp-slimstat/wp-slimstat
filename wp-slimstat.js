@@ -283,12 +283,13 @@ var SlimStat = {
 			case "input":
 			case "button":
 				// Look for a parent FORM element to get the target action
-				while ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.nodeName ) && target_node.nodeName.toLowerCase() != "form" ) {
-					target_node = target_node.parentNode;
+				parent_node = target_node.parentNode;
+				while ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.nodeName ) && parent_node.nodeName.toLowerCase() != "form" ) {
+					parent_node = parent_node.parentNode;
 				}
 
-				if ( !SlimStat.empty( target_node ) && !SlimStat.empty( target_node.action ) ) {
-					resource_url = target_node.action;
+				if ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.action ) ) {
+					resource_url = parent_node.action;
 				}
 				break;
 
@@ -307,16 +308,6 @@ var SlimStat = {
 						else if ( !SlimStat.empty( parent_node.href ) ) {
 							resource_url = parent_node.href;
 						}
-
-						// If this element has a title, we can record that as well
-						if ( "function" == typeof parent_node.getAttribute ) {
-							if ( !SlimStat.empty( parent_node.getAttribute( "title" ) ) ) {
-								note_array.push( "Parent Title:" + parent_node.getAttribute( "title" ) );
-							}
-							if ( !SlimStat.empty( parent_node.getAttribute( "id" ) ) ) {
-								note_array.push( "Parent ID:" + parent_node.getAttribute( "id" ) );
-							}
-						}
 					}
 				}
 				else if ( !SlimStat.empty( target_node.hash ) ) {
@@ -325,16 +316,16 @@ var SlimStat = {
 				else {
 					resource_url = target_node.href;
 				}
+		}
 
-				// If this element has a title, we can record that as well
-				if ( "function" == typeof target_node.getAttribute ) {
-					if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
-						note_array.push( "Title:" + target_node.getAttribute( "title" ) );
-					}
-					if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
-						note_array.push( "ID:" + target_node.getAttribute( "id" ) );
-					}
-				}
+		// If this element has a title, we can record that as well
+		if ( "function" == typeof target_node.getAttribute ) {
+			if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
+				note_array.push( "Title:" + target_node.getAttribute( "title" ) );
+			}
+			if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
+				note_array.push( "ID:" + target_node.getAttribute( "id" ) );
+			}
 		}
 
 		do_not_track = !SlimStat.empty( SlimStatParams.dnt ) ? SlimStatParams.dnt.split( ',' ) : [];
