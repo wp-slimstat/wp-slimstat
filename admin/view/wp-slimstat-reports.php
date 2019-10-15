@@ -1091,7 +1091,6 @@ class wp_slimstat_reports {
 
 					case 'referer':
 						$element_value = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), urldecode( $results[ $i ][ $_args[ 'columns' ] ] ) );
-						$results[ $i ][ $_args[ 'columns' ] ] = 'https://' . $results[ $i ][ $_args[ 'columns' ] ];
 						break;
 
 					case 'resource':
@@ -1145,7 +1144,7 @@ class wp_slimstat_reports {
 				}
 
 				if ( is_admin() ) {
-					$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $_args[ 'columns' ] . ' ' . $_args[ 'filter_op' ] . ' ' . $results[ $i ][ $_args[ 'columns' ] ] ) . "'>$element_value</a>";
+					$element_value = "<a class='slimstat-filter-link' href='" . self::fs_url( $_args[ 'columns' ] . ' ' . $_args[ 'filter_op' ] . ' ' . htmlentities( $results[ $i ][ $_args[ 'columns' ] ], ENT_QUOTES, 'UTF-8' ) ) . "'>$element_value</a>";
 				}
 
 				if ( !empty( $_args['type'] ) && $_args['type'] == 'recent' ) {
