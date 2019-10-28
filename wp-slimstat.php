@@ -90,6 +90,8 @@ class wp_slimstat {
 			if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
 				add_action( 'login_enqueue_scripts', array( __CLASS__, 'enqueue_tracker' ), 10 );
 			}
+
+			add_filter( 'script_loader_tag', array( __CLASS__, 'add_defer_to_script_tag' ), 10, 2 );
 		}
 
 		// Hook a DB clean-up routine to the daily cronjob
@@ -1261,6 +1263,14 @@ class wp_slimstat {
 	}
 	// end enqueue_tracker
 
+	public static function add_defer_to_script_tag( $_tag, $_handle ) {
+		if ( $_handle === 'wp_slimstat' && false === stripos( $_tag, 'defer' ) ) {
+			$_tag = str_replace( '<script ', '<script defer ', $_tag );
+		}
+
+		return $_tag;
+	}
+
 	/**
 	 * Removes old entries from the main table and performs other daily tasks
 	 */
@@ -1587,7 +1597,7 @@ class wp_slimstat {
 				}
 			}
 		}
-		else {
+		else if ( !empty( $parsed_url[ 'query' ] ) ) {
 			// We weren't lucky, but there's still hope
 			foreach( array( 'ask', 'k', 'q', 'qs', 'qt', 'query', 's', 'string' ) as $a_param ) {
 				$searchterms = self::_get_param_from_query_string( $parsed_url[ 'query' ], $a_param );
