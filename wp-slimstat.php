@@ -356,7 +356,7 @@ class wp_slimstat {
 		
 			$cookie_found = false;
 			foreach ( $cookie_names as $a_name => $a_value ) {
-				if ( isset( $_COOKIE[ $a_name ] ) && $_COOKIE[ $a_name ] == $a_value ) {
+				if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
 					$cookie_found = true;
 				}
 			}
