@@ -58,11 +58,17 @@ class maxmind_geolite2_connector {
 		}
 
 		// Download the most recent database directly from MaxMind's repository
-		if ( wp_slimstat::$settings[ 'geolocation_country' ] == 'on' ) {
-			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz' );
+        if (wp_slimstat::$settings[ 'maxmind_license_key' ] == '') {
+            return __( 'No MaxMind GeoLite2 license key set. Please enter the MaxMind GeoLite2 license key in Slimstat Settings > Maintenance', 'wp-slimstat' );
+        }
+
+        $maxmind_license_key = wp_slimstat::$settings[ 'maxmind_license_key' ];
+
+        if ( wp_slimstat::$settings[ 'geolocation_country' ] == 'on' ) {
+			$maxmind_tmp = self::download_url( "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key={$maxmind_license_key}&suffix=tar.gz" );
 		}
 		else {
-			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz' );
+			$maxmind_tmp = self::download_url( "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key={$maxmind_license_key}&suffix=tar.gz" );
 		}
 
 		if ( is_wp_error( $maxmind_tmp ) ) {

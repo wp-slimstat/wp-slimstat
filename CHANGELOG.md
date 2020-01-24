@@ -1,6 +1,7 @@
 ## Changelog ##
 ### 4.8.8.2 ###
 * [Fix] Addressed a PHP warning of undefined variable when parsing a query string looking for search term keywords (thank you, [inndesign](https://wordpress.org/support/topic/line-747-and-line-1574-undefined)).
+* [New] Support MaxMind License Key for GeoLite2 database downloads.
 
 ### 4.8.8.1 ###
 * [Update] The Privacy Mode option under Slimstat > Settings > Tracker now controls the fingerprint collection mechanism as well. If you have this option enabled to comply with European privacy laws, your visitors' IP addresses will be masked and they won't be fingerprinted (thank you, Peter).
