@@ -304,7 +304,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 			'mozcom_access_id' => array('title' => __( 'Mozscape Access ID', 'wp-slimstat' ),
 				'type'=> 'text',
 				'description'=> __( 'Get accurate rankings for your website through the <a href="https://moz.com/community/join?redirect=/products/api/keys" target="_blank">Mozscape API</a>. Sign up for a free community account to get started. Then enter your personal identification code in this field.', 'wp-slimstat' )
-      ),
+			),
 			'mozcom_secret_key' => array('title' => __( 'Mozscape Secret Key', 'wp-slimstat' ),
 				'type'=> 'text',
 				'description'=> __( 'This key is needed to query the Mozscape API (see option here above). Treat it like a password and do not share it with anyone, or they will be able to make API requests using your account.', 'wp-slimstat' )
