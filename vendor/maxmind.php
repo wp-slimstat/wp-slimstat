@@ -62,10 +62,10 @@ class maxmind_geolite2_connector {
             return __( 'No MaxMind GeoLite2 license key set. Please enter the MaxMind GeoLite2 license key in Slimstat Settings > Maintenance', 'wp-slimstat' );
         }
 
-        $maxmind_license_key = wp_slimstat::$settings[ 'maxmind_license_key' ];
+		$maxmind_license_key = wp_slimstat::$settings[ 'maxmind_license_key' ];
 
-        if ( wp_slimstat::$settings[ 'geolocation_country' ] == 'on' ) {
-			$maxmind_tmp = self::download_url( "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key={$maxmind_license_key}&suffix=tar.gz" );
+		if ( wp_slimstat::$settings[ 'geolocation_country' ] == 'on' ) {
+		    $maxmind_tmp = self::download_url( "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key={$maxmind_license_key}&suffix=tar.gz" );
 		}
 		else {
 			$maxmind_tmp = self::download_url( "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key={$maxmind_license_key}&suffix=tar.gz" );
