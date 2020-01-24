@@ -1177,6 +1177,7 @@ class wp_slimstat {
 			'show_sql_debug' => 'no',
 			'db_indexes' => 'on',
 			'enable_maxmind' => 'no',
+			'maxmind_license_key' => '',
 			'enable_browscap' => 'no',
 
 			// Notices
