@@ -303,7 +303,8 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 			),
 			'mozcom_access_id' => array('title' => __( 'Mozscape Access ID', 'wp-slimstat' ),
 				'type'=> 'text',
-				'description'=> __( 'Get accurate rankings for your website through the <a href="https://moz.com/community/join?redirect=/products/api/keys" target="_blank">Mozscape API</a>. Sign up for a free community account to get started. Then enter your personal identification code in this field.', 'wp-slimstat' )
+				'description'=> __( 'Get accurate rankings for your website through the <a href="https://moz.com/community/join?redirect=/products/api/keys" target="_blank">Mozscape API</a>. 
+				for a free community account to get started. Then enter your personal identification code in this field.', 'wp-slimstat' )
 			),
 			'mozcom_secret_key' => array('title' => __( 'Mozscape Secret Key', 'wp-slimstat' ),
 				'type'=> 'text',
@@ -540,7 +541,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 			'maxmind_license_key' => array(
 				'title' => __( 'MaxMind License Key', 'wp-slimstat' ),
 				'type'=> 'text',
-				'description'=> __( 'To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field.', 'wp-slimstat' )
+				'description'=> __( 'To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat' )
 			),
 
 			// Maintenance - Danger Zone
