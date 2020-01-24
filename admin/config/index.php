@@ -576,7 +576,7 @@ if ( version_compare( PHP_VERSION, '7.1', '>=' ) ) {
 		'description'=> __( "We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-db' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every two weeks, when available.", 'wp-slimstat' ) . ( !empty( slim_browser::$browscap_local_version ) ? ' ' . sprintf( __( 'You are currently using version %s.' ), '<strong>' . slim_browser::$browscap_local_version . '</strong>' ) : '' )
 	) );
 
-	$settings[ 6 ][ 'rows' ] = array_slice( $settings[ 6 ][ 'rows' ], 0, 6, true) + $enable_browscap + array_slice($settings[ 6 ][ 'rows' ], 6, NULL, true );
+	$settings[ 6 ][ 'rows' ] = array_slice( $settings[ 6 ][ 'rows' ], 0, 7, true) + $enable_browscap + array_slice($settings[ 6 ][ 'rows' ], 7, NULL, true );
 }
 
 // Allow third-party tools to add their own settings
