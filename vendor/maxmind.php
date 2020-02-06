@@ -70,26 +70,26 @@ class maxmind_geolite2_connector {
 			return __( 'There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat' ) . ' ' . $maxmind_tmp->get_error_message();
 		}
 
-        if ( !class_exists( 'PharData' ) ) {
-            return __( 'Class <code>PharData</code> is not defined in your environment. Please use a PHP version which supports it.', 'wp-slimstat' );
-        }
+		if ( !class_exists( 'PharData' ) ) {
+		    return __( 'Class <code>PharData</code> is not defined in your environment. Please use a PHP version which supports it.', 'wp-slimstat' );
+		}
 
-        $phar      = new PharData($maxmind_tmp);
-        $fileInArchive = trailingslashit($phar->current()->getFileName()) . $database;
+		$phar      = new PharData($maxmind_tmp);
+		$fileInArchive = trailingslashit($phar->current()->getFileName()) . $database;
 
-        // Extract mmdb file in uploads directory (this includes the directory)
-        try {
-            $phar->extractTo(wp_slimstat::$upload_dir, $fileInArchive, true);
-        } catch (Exception $e){
-            return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' ) . $e->getMessage();
-        }
+		// Extract mmdb file in uploads directory (this includes the directory)
+		try {
+		    $phar->extractTo(wp_slimstat::$upload_dir, $fileInArchive, true);
+		} catch (Exception $e){
+		    return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' ) . $e->getMessage();
+		}
 
-        @rename( trailingslashit( wp_slimstat::$upload_dir ) . $fileInArchive, $maxmind_path );
+		@rename( trailingslashit( wp_slimstat::$upload_dir ) . $fileInArchive, $maxmind_path );
 
-        // delete extracted dir
-        @rmdir( trailingslashit( wp_slimstat::$upload_dir ) . $phar->current()->getFileName() );
+		// delete extracted dir
+		@rmdir( trailingslashit( wp_slimstat::$upload_dir ) . $phar->current()->getFileName() );
 
-        if ( !is_file( $maxmind_path ) ) {
+		if ( !is_file( $maxmind_path ) ) {
 			// Something went wrong, maybe a folder was created instead of a regular file
 			@rmdir( $maxmind_path );
 			return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' );
