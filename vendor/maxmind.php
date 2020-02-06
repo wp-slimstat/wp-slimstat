@@ -51,8 +51,8 @@ class maxmind_geolite2_connector {
 		}
 
 		// Download the most recent database directly from MaxMind's repository
-		if (wp_slimstat::$settings[ 'maxmind_license_key' ] == '') {
-		    return __( 'No MaxMind GeoLite2 license key set. Please enter the MaxMind GeoLite2 license key in Slimstat Settings > Maintenance', 'wp-slimstat' );
+		if ( wp_slimstat::$settings[ 'maxmind_license_key' ] == '' ) {
+			return __( 'No MaxMind GeoLite2 license key set. Please enter the MaxMind GeoLite2 license key in Slimstat Settings > Maintenance', 'wp-slimstat' );
 		}
 
 		$maxmind_license_key = wp_slimstat::$settings[ 'maxmind_license_key' ];
