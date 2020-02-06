@@ -50,20 +50,6 @@ class maxmind_geolite2_connector {
 			mkdir( dirname( $maxmind_path ) );
 		}
 
-		if ( file_exists( $maxmind_path ) ) {
-			if ( is_file( $maxmind_path ) ) {
-				$is_deleted = @unlink( $maxmind_path );
-			}
-			else {
-				// This should not happen, but hey...
-				$is_deleted = @rmdir( $maxmind_path );
-			}
-
-			if ( !$is_deleted ) {
-				return __( "The geolocation database cannot be updated. Please check your server's file permissions and try again.", 'wp-slimstat' );
-			}
-		}
-
 		// Download the most recent database directly from MaxMind's repository
 		if (wp_slimstat::$settings[ 'maxmind_license_key' ] == '') {
 		    return __( 'No MaxMind GeoLite2 license key set. Please enter the MaxMind GeoLite2 license key in Slimstat Settings > Maintenance', 'wp-slimstat' );
@@ -92,11 +78,16 @@ class maxmind_geolite2_connector {
         $fileInArchive = trailingslashit($phar->current()->getFileName()) . $database;
 
         // Extract mmdb file in uploads directory (this includes the directory)
-        $phar->extractTo(wp_slimstat::$upload_dir, $fileInArchive, true);
+        try {
+            $phar->extractTo(wp_slimstat::$upload_dir, $fileInArchive, true);
+        } catch (Exception $e){
+            return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' ) . $e->getMessage();
+        }
 
-        @rename( trailingslashit(wp_slimstat::$upload_dir) . $fileInArchive, $maxmind_path );
+        @rename( trailingslashit( wp_slimstat::$upload_dir ) . $fileInArchive, $maxmind_path );
 
-        @rmdir( trailingslashit(wp_slimstat::$upload_dir) . $phar->current()->getFileName() );
+        // delete extracted dir
+        @rmdir( trailingslashit( wp_slimstat::$upload_dir ) . $phar->current()->getFileName() );
 
         if ( !is_file( $maxmind_path ) ) {
 			// Something went wrong, maybe a folder was created instead of a regular file
