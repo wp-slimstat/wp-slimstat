@@ -34,13 +34,13 @@ class maxmind_geolite2_connector {
 
 	/**
 	 * Downloads the MaxMind geolocation database archive from their repository.
-     * The download file is a tar.gz-file containing a ".mmdb" tar file which contains the .mmdb db file in a subdirectory (with actual date)
-     * Example: GeoLite2-City_20200121/GeoLite2-City.mmdb
-     * So we:
-     * 1. Download the tar.gz file
-     * 2. Unpack the file we are interested in (GeoLite2-City.mmdb, GeoLite2-Country.mmdb)
-     * 3. Move the mmdb file from the extracted subdir to maxmind.mmdb
-     * 5. Delete the extracted subdir
+	 * The download file is a tar.gz-file containing a ".mmdb" tar file which contains the .mmdb db file in a subdirectory (with actual date)
+	 * Example: GeoLite2-City_20200121/GeoLite2-City.mmdb
+	 * So we:
+	 * 1. Download the tar.gz file
+	 * 2. Unpack the file we are interested in (GeoLite2-City.mmdb, GeoLite2-Country.mmdb)
+	 * 3. Move the mmdb file from the extracted subdir to maxmind.mmdb
+	 * 4. Delete the extracted subdir
 	 */
 	public static function download_maxmind_database() {
 		$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
