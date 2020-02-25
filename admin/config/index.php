@@ -11,6 +11,15 @@ $current_tab = empty( $_GET[ 'tab' ] ) ? 1 : intval( $_GET[ 'tab' ] );
 // Retrieve any tracker errors for display
 $last_tracker_error = get_option( 'slimstat_tracker_error', array() );
 
+// Maxmind Data File
+$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
+
+$maxmind_last_modified = '';
+if ( file_exists( $maxmind_path ) && false !== ( $file_stat = @stat( $maxmind_path ) ) ) {
+	$maxmind_last_modified = date_i18n( get_option( 'date_format' ), $file_stat[ 'mtime' ] );
+}
+
+
 // Define all the options
 $settings = array(
 	1 => array(
@@ -582,9 +591,6 @@ if ( version_compare( PHP_VERSION, '7.1', '>=' ) ) {
 // Allow third-party tools to add their own settings
 $settings = apply_filters( 'slimstat_options_on_page', $settings );
 
-// Maxmind Data File
-$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
-
 // Save options
 $save_messages = array();
 if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) && wp_verify_nonce( $_REQUEST[ 'slimstat_update_settings' ], 'slimstat_update_settings' ) ) {
@@ -740,12 +746,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 	}
 }
 
-$maxmind_last_modified = '';
-if ( file_exists( $maxmind_path ) && false !== ( $file_stat = @stat( $maxmind_path ) ) ) { 
-	$maxmind_last_modified = date_i18n( get_option( 'date_format' ), $file_stat[ 'mtime' ] );
-} 
-
-$index_enabled = wp_slimstat::$wpdb->get_results( 
+$index_enabled = wp_slimstat::$wpdb->get_results(
 	"SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'"
 );
 
