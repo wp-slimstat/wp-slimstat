@@ -63,6 +63,8 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 = 4.8.8.2 =
 * [Fix] Addressed a PHP warning of undefined variable when parsing a query string looking for search term keywords (thank you, [inndesign](https://wordpress.org/support/topic/line-747-and-line-1574-undefined)).
 * [New] Support MaxMind License Key for GeoLite2 database downloads.
+* [Fix] Fixed SQL error when Events Manager plugin is installed, 'Posts and Pages' is enabled, and no events are existing (thank you, [lwangamaman](https://wordpress.org/support/topic/you-have-an-error-in-your-sql-syntax-22/)
+* [Fix] Starting with 4.8.8.1, PHP 5.5+ is required. (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/)
 * [New] Speedup Browscap version check when repository site is down
 
 = 4.8.8.1 =
