@@ -108,10 +108,11 @@ class slim_browser {
 
 				// No matter what the outcome is, we'll check again in one week
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
+				wp_slimstat::update_option( 'slimstat_options', wp_slimstat::$settings );
 
 
-				// Now check the version number on the server. Short timeout, as github was down in the past and default timeout is 5 sec.
-				$response = wp_remote_get( 'https://raw.githubusercontent.com/slimstat/browscap-db/master/version.txt', array ( [ 'timeout' => 2 ] ) );
+				// Now check the version number on the server.
+				$response = wp_remote_get( 'https://raw.githubusercontent.com/slimstat/browscap-db/master/version.txt' );
 				if ( !is_array( $response ) || is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
 					return array( 5, __( 'There was an error checking the remote library version. Please try again later.', 'wp-slimstat' ) );
 				}
