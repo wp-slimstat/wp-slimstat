@@ -108,6 +108,7 @@ class slim_browser {
 
 				// No matter what the outcome is, we'll check again in one week
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
+				wp_slimstat::update_option( 'slimstat_options', wp_slimstat::$settings );
 
 
 				// Now check the version number on the server
