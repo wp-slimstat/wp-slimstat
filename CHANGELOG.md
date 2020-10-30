@@ -5,6 +5,7 @@
 * [Fix] Fixed SQL error when Events Manager plugin is installed, 'Posts and Pages' is enabled, and no events are existing (thank you, [lwangamaman](https://wordpress.org/support/topic/you-have-an-error-in-your-sql-syntax-22/)
 * [Fix] Starting with 4.8.8.1, PHP 5.5+ is required. (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/)
 * [New] Speedup Browscap version check when repository site is down
+* [Update] Use whatismyipaddress instead of infosniper for whois queries
 
 ### 4.8.8.1 ###
 * [Update] The Privacy Mode option under Slimstat > Settings > Tracker now controls the fingerprint collection mechanism as well. If you have this option enabled to comply with European privacy laws, your visitors' IP addresses will be masked and they won't be fingerprinted (thank you, Peter).
