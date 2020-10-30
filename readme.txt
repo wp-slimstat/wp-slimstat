@@ -1,11 +1,11 @@
 === Slimstat Analytics ===
-Contributors: coolmann
+Contributors: coolmann, toxicum
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 5.2
-Tested up to: 5.3
+Tested up to: 5.5
 Stable tag: 4.8.8.1
 
 == Description ==
