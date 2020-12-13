@@ -5,7 +5,7 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 5.2
-Tested up to: 5.5
+Tested up to: 5.6
 Stable tag: 4.8.8.1
 
 == Description ==
