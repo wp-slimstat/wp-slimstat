@@ -11,6 +11,15 @@ $current_tab = empty( $_GET[ 'tab' ] ) ? 1 : intval( $_GET[ 'tab' ] );
 // Retrieve any tracker errors for display
 $last_tracker_error = get_option( 'slimstat_tracker_error', array() );
 
+// Maxmind Data File
+$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
+
+$maxmind_last_modified = '';
+if ( file_exists( $maxmind_path ) && false !== ( $file_stat = @stat( $maxmind_path ) ) ) {
+	$maxmind_last_modified = date_i18n( get_option( 'date_format' ), $file_stat[ 'mtime' ] );
+}
+
+
 // Define all the options
 $settings = array(
 	1 => array(
@@ -234,7 +243,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 			'ip_lookup_service' => array(
 				'title' => __( 'IP Geolocation', 'wp-slimstat' ),
 				'type'=> 'text',
-				'description'=> __( 'Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://www.infosniper.net/?ip_address=</code>', 'wp-slimstat' )
+				'description'=> __( 'Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://whatismyipaddress.com/ip/</code>', 'wp-slimstat' )
 			),
 			'comparison_chart' => array(
 				'title' => __( 'Comparison Chart', 'wp-slimstat' ),
@@ -535,7 +544,12 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 			'enable_maxmind' => array(
 				'title' => __( 'MaxMind Geolocation', 'wp-slimstat' ),
 				'type'=> 'toggle',
-				'description'=> __( "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. If you're getting an error after enabling this option, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ) . ( !empty( $maxmind_last_modified ) ? ' ' . sprintf ( __( 'Your data file was last downloaded on <strong>%s</strong>', 'wp-slimstat' ), $maxmind_last_modified ) : '' )
+				'description'=> __( "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat' ) . ' ' . __( 'Updates are downloaded automatically every 4 weeks, when available.', 'wp-slimstat' ) . ( !empty( $maxmind_last_modified ) ? ' ' . sprintf ( __( 'Your data file was last downloaded on <strong>%s</strong>.', 'wp-slimstat' ), $maxmind_last_modified ) : '' )
+			),
+			'maxmind_license_key' => array(
+				'title' => __( 'MaxMind License Key', 'wp-slimstat' ),
+				'type'=> 'text',
+				'description'=> __( 'To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat' )
 			),
 
 			// Maintenance - Danger Zone
@@ -571,14 +585,11 @@ if ( version_compare( PHP_VERSION, '7.1', '>=' ) ) {
 		'description'=> __( "We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-db' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every two weeks, when available.", 'wp-slimstat' ) . ( !empty( slim_browser::$browscap_local_version ) ? ' ' . sprintf( __( 'You are currently using version %s.' ), '<strong>' . slim_browser::$browscap_local_version . '</strong>' ) : '' )
 	) );
 
-	$settings[ 6 ][ 'rows' ] = array_slice( $settings[ 6 ][ 'rows' ], 0, 6, true) + $enable_browscap + array_slice($settings[ 6 ][ 'rows' ], 6, NULL, true );
+	$settings[ 6 ][ 'rows' ] = array_slice( $settings[ 6 ][ 'rows' ], 0, 7, true) + $enable_browscap + array_slice($settings[ 6 ][ 'rows' ], 7, NULL, true );
 }
 
 // Allow third-party tools to add their own settings
 $settings = apply_filters( 'slimstat_options_on_page', $settings );
-
-// Maxmind Data File
-$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
 
 // Save options
 $save_messages = array();
@@ -633,7 +644,9 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 
 		// MaxMind Data File
 		if ( !empty( $_POST[ 'options' ][ 'enable_maxmind' ] ) ) {
-			if ( $_POST[ 'options' ][ 'enable_maxmind' ] == 'on' && wp_slimstat::$settings[ 'enable_maxmind' ] == 'no' ) {
+			if ( $_POST[ 'options' ][ 'enable_maxmind' ] == 'on'
+				  && wp_slimstat::$settings[ 'enable_maxmind' ] == 'no'
+				  && wp_slimstat::$settings[ 'maxmind_license_key' ] != '') {
 				include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/maxmind.php' );
 				$error = maxmind_geolite2_connector::download_maxmind_database();
 
@@ -733,12 +746,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 	}
 }
 
-$maxmind_last_modified = '';
-if ( file_exists( $maxmind_path ) && false !== ( $file_stat = @stat( $maxmind_path ) ) ) { 
-	$maxmind_last_modified = date_i18n( get_option( 'date_format' ), $file_stat[ 'mtime' ] );
-} 
-
-$index_enabled = wp_slimstat::$wpdb->get_results( 
+$index_enabled = wp_slimstat::$wpdb->get_results(
 	"SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'"
 );
 

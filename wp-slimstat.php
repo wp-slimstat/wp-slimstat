@@ -8,6 +8,7 @@ Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
+Requires PHP:      5.5
 */
 
 if ( !empty( wp_slimstat::$settings ) ) {
@@ -1177,6 +1178,7 @@ class wp_slimstat {
 			'show_sql_debug' => 'no',
 			'db_indexes' => 'on',
 			'enable_maxmind' => 'no',
+			'maxmind_license_key' => '',
 			'enable_browscap' => 'no',
 
 			// Notices

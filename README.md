@@ -22,7 +22,7 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 
 ### Requirements ###
 * WordPress 4.9+
-* PHP 5.2+ (or 7.1+ if you use the Browscap data file)
+* PHP 5.5+ (or 7.1+ if you use the Browscap data file)
 * MySQL 5.0.3+
 * At least 40 MB of free web space
 * At least 5 MB of free DB space

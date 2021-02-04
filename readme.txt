@@ -1,11 +1,11 @@
 === Slimstat Analytics ===
-Contributors: coolmann
+Contributors: coolmann, toxicum
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 5.2
-Tested up to: 5.3
+Tested up to: 5.6
 Stable tag: 4.8.8.1
 
 == Description ==
@@ -62,6 +62,11 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 == Changelog ==
 = 4.8.8.2 =
 * [Fix] Addressed a PHP warning of undefined variable when parsing a query string looking for search term keywords (thank you, [inndesign](https://wordpress.org/support/topic/line-747-and-line-1574-undefined)).
+* [New] Support MaxMind License Key for GeoLite2 database downloads.
+* [Fix] Fixed SQL error when Events Manager plugin is installed, 'Posts and Pages' is enabled, and no events are existing (thank you, [lwangamaman](https://wordpress.org/support/topic/you-have-an-error-in-your-sql-syntax-22/)
+* [Fix] Starting with 4.8.8.1, PHP 5.5+ is required. (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/)
+* [New] Speedup Browscap version check when repository site is down
+* [Update] Use whatismyipaddress instead of infosniper for whois queries
 
 = 4.8.8.1 =
 * [Update] The Privacy Mode option under Slimstat > Settings > Tracker now controls the fingerprint collection mechanism as well. If you have this option enabled to comply with European privacy laws, your visitors' IP addresses will be masked and they won't be fingerprinted (thank you, Peter).
