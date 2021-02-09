@@ -337,6 +337,14 @@ class wp_slimstat {
 
 			foreach ( $cookie_names as $a_name => $a_value ) {
 				if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
+					// remove slimstat cookie
+					unset($_COOKIE['slimstat_tracking_code']);
+					@setcookie(
+					  'slimstat_tracking_code',
+					  '',
+					  time() - ( 15 * 60 ) , // invalidate
+					  COOKIEPATH
+					);
 					return false;
 				}
 			}
@@ -363,6 +371,14 @@ class wp_slimstat {
 			}
 
 			if ( !$cookie_found ) {
+				// remove slimstat cookie
+				unset($_COOKIE['slimstat_tracking_code']);
+				@setcookie(
+				  'slimstat_tracking_code',
+				  '',
+				  time() - ( 15 * 60 ) , // invalidate
+				  COOKIEPATH
+				);
 				return false;
 			}
 		}
