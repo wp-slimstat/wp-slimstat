@@ -572,7 +572,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 			'delete_data_on_uninstall' => array(
 				'title' => __( 'Delete Data on Uninstall', 'wp-slimstat' ),
 				'type'=> 'toggle',
-				'description'=> __( 'Delete all settings and statistics on plugin uninstall. Warning! If you enable this feature, all statistics and plugin settings will be permanently deleted.','wp-slimstat' )
+				'description'=> __( 'Delete all settings and statistics on plugin uninstall. Warning! If you enable this feature, all statistics and plugin settings will be permanently deleted from the database.','wp-slimstat' )
 			)
 		)
 	),
