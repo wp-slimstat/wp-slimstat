@@ -16,7 +16,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8.8.1';
+	public static $version = '4.8.8.2';
 	public static $settings = array();
 
 	public static $wpdb = '';
