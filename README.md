@@ -36,7 +36,7 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 5. If your `wp-admin` folder is not publicly accessible, make sure to check our [knowledge base](https://docs.wp-slimstat.com/) to see if there's anything else you need to do
 
 ## Please note ##
-* If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
+* If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database if you enable the 'Delete Data on Uninstall' setting. In this case, make sure to setup a database backup (wp_slim_*) to avoid losing your data.
 * If you are upgrading from a version prior to 4.0, please [install version 4.0](https://downloads.wordpress.org/plugin/wp-slimstat.4.0.zip) first to upgrade the database structure and download the new Geolocation data.
 
 ## Frequently Asked Questions ##
