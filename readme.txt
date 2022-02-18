@@ -5,8 +5,8 @@ Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, on
 Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 5.2
-Tested up to: 5.6
-Stable tag: 4.8.8.1
+Tested up to: 5.7
+Stable tag: 4.8.8.2
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -67,6 +67,7 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 * [Fix] Starting with 4.8.8.1, PHP 5.5+ is required. (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/)
 * [New] Speedup Browscap version check when repository site is down
 * [Update] Use whatismyipaddress instead of infosniper for whois queries
+* [Fix] Opt-Out cookie does not delete slimstat cookie
 
 = 4.8.8.1 =
 * [Update] The Privacy Mode option under Slimstat > Settings > Tracker now controls the fingerprint collection mechanism as well. If you have this option enabled to comply with European privacy laws, your visitors' IP addresses will be masked and they won't be fingerprinted (thank you, Peter).
