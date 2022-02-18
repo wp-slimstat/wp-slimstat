@@ -237,10 +237,7 @@ var SlimStat = {
 		}
 
 		// Read and initialize input parameters
-		note_array = [];
-		if ( !SlimStat.empty( note ) ){
-			note_array.push( note );
-		}
+		note_array = {};
 
 		if ( "undefined" == typeof use_beacon ) {
 			use_beacon = true;
@@ -251,6 +248,12 @@ var SlimStat = {
 			return false;
 		}
 
+		// This function doesn't track focus events, which are usually triggered along with click events
+		if ( SlimStat.empty( window.event.type ) || window.event.type == "focus" ) {
+			return false;
+		}
+
+		// Find the target node
 		if ( !SlimStat.empty( window.event.target ) ) {
 			target_node = window.event.target;
 		}
@@ -264,68 +267,76 @@ var SlimStat = {
 		var resource_url = "";
 		var fingerprint_hash = "";
 
-		// This function doesn't track focus events, which are usually triggered along with click events
-		if ( SlimStat.empty( window.event.type ) || window.event.type == "focus" ) {
-			return false;
-		}
-
-		// Event description and button pressed
-		note_array.push( 'Type:' + window.event.type );
-		if ( "keypress" == window.event.type ) {
-			note_array.push( 'Keypress:' + String.fromCharCode( parseInt( window.event.which ) ) );
-		}
-		else if ( "click" == window.event.type ) {
-			note_array.push( 'Button:' + ( window.event.which == 1 ? 'left' : ( window.event.which == 2 ) ? 'middle' : 'right' ) );
+		// Do we need to record a custom label/note for this event?
+		if ( !SlimStat.empty( note ) ) {
+			note_array.note = note;
 		}
 
 		// Different elements have different properties to record...
-		switch ( target_node.nodeName.toLowerCase() ) {
-			case "input":
-			case "button":
-				// Look for a parent FORM element to get the target action
-				parent_node = target_node.parentNode;
-				while ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.nodeName ) && parent_node.nodeName.toLowerCase() != "form" ) {
-					parent_node = parent_node.parentNode;
-				}
-
-				if ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.action ) ) {
-					resource_url = parent_node.action;
-				}
-				break;
-
-			default:
-				// Look for a parent with a HREF attribute, if this node doesn't have one (i.e., a SPAN within an A element)
-				if ( SlimStat.empty( target_node.href ) || "string" != typeof target_node.href ) {
+		if ( !SlimStat.empty( target_node.nodeName ) ) {
+			switch ( target_node.nodeName.toLowerCase() ) {
+				case "input":
+				case "button":
+					// Look for a parent FORM element to get the target action
 					parent_node = target_node.parentNode;
-					while ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.nodeName ) && SlimStat.empty( parent_node.href ) ) {
+					while ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.nodeName ) && parent_node.nodeName.toLowerCase() != "form" ) {
 						parent_node = parent_node.parentNode;
 					}
 
-					if ( !SlimStat.empty( parent_node ) ) {
-						if ( !SlimStat.empty( parent_node.hash ) && parent_node.hostname == location.hostname ) {
-							resource_url = parent_node.hash;
+					if ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.action ) ) {
+						resource_url = parent_node.action;
+					}
+					break;
+
+				default:
+					// Look for a parent with a HREF attribute, if this node doesn't have one (i.e., a SPAN within an A element)
+					if ( SlimStat.empty( target_node.href ) || "string" != typeof target_node.href ) {
+						parent_node = target_node.parentNode;
+						while ( !SlimStat.empty( parent_node ) && !SlimStat.empty( parent_node.nodeName ) && SlimStat.empty( parent_node.href ) ) {
+							parent_node = parent_node.parentNode;
 						}
-						else if ( !SlimStat.empty( parent_node.href ) ) {
-							resource_url = parent_node.href;
+
+						if ( !SlimStat.empty( parent_node ) ) {
+							if ( !SlimStat.empty( parent_node.hash ) && parent_node.hostname == location.hostname ) {
+								resource_url = parent_node.hash;
+							}
+							else if ( !SlimStat.empty( parent_node.href ) ) {
+								resource_url = parent_node.href;
+							}
 						}
 					}
-				}
-				else if ( !SlimStat.empty( target_node.hash ) ) {
-					resource_url = target_node.hash;
-				}
-				else {
-					resource_url = target_node.href;
-				}
+					else if ( !SlimStat.empty( target_node.hash ) ) {
+						resource_url = target_node.hash;
+					}
+					else {
+						resource_url = target_node.href;
+					}
+			}
 		}
 
 		// If this element has a title, we can record that as well
 		if ( "function" == typeof target_node.getAttribute ) {
+			if ( !SlimStat.empty( target_node.textContent ) ) {
+				note_array.text = target_node.textContent;
+			}
+			if ( !SlimStat.empty( target_node.getAttribute( "value" ) ) ) {
+				note_array.value = target_node.getAttribute( "value" );
+			}
 			if ( !SlimStat.empty( target_node.getAttribute( "title" ) ) ) {
-				note_array.push( "Title:" + target_node.getAttribute( "title" ) );
+				note_array.title = target_node.getAttribute( "title" );
 			}
 			if ( !SlimStat.empty( target_node.getAttribute( "id" ) ) ) {
-				note_array.push( "ID:" + target_node.getAttribute( "id" ) );
+				note_array.id = target_node.getAttribute( "id" );
 			}
+		}
+
+		// Event description and button pressed
+		note_array.type = window.event.type;
+		if ( "keypress" == window.event.type ) {
+			note_array.key = String.fromCharCode( parseInt( window.event.which ) );
+		}
+		else if ( "mousedown" == window.event.type ) {
+			note_array.button = window.event.which == 1 ? 'left' : ( window.event.which == 2 ) ? 'middle' : 'right';
 		}
 
 		do_not_track = !SlimStat.empty( SlimStatParams.dnt ) ? SlimStatParams.dnt.split( ',' ) : [];
@@ -358,7 +369,7 @@ var SlimStat = {
 			position = window.event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft + "," + window.event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
 		}
 
-		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id + "&res=" + SlimStat.base64_encode( resource_url ) + "&pos=" + position + "&no=" + SlimStat.base64_encode( note_array.join( "," ) ) + fingerprint_hash, use_beacon );
+		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id + "&res=" + SlimStat.base64_encode( resource_url ) + "&pos=" + position + "&no=" + SlimStat.base64_encode( JSON.stringify( note_array ) ) + fingerprint_hash, use_beacon );
 
 		return true;
 	},
@@ -449,7 +460,7 @@ SlimStat.add_event( window, 'load', function() {
 	// Attach an event handler to all the clickable elements on the page
 	all_clickable = document.querySelectorAll( "a,button,input,area" );
 	for ( var i = 0; i < all_clickable.length; i++ ) {
-		SlimStat.add_event( all_clickable[ i ], "click", function( e ) {
+		SlimStat.add_event( all_clickable[ i ], "mousedown", function( e ) {
 			SlimStat.ss_track();
 		} );
 	}

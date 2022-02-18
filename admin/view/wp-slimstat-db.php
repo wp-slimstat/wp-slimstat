@@ -919,7 +919,7 @@ class wp_slimstat_db {
 
 	public static function get_recent_events() {
 		return self::get_results( "
-			SELECT te.*, t1.resource
+			SELECT te.*, t1.ip, t1.resource
 			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te INNER JOIN {$GLOBALS[ 'wpdb' ]->prefix}slim_stats t1 ON te.id = t1.id
 			WHERE " . wp_slimstat_db::get_combined_where( 'te.notes NOT LIKE "_ype:click%"', 'te.notes', true, 't1' ) . "
 			ORDER BY te.dt DESC",
