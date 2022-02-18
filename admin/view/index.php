@@ -128,7 +128,7 @@
 			wp_slimstat_admin::show_message( sprintf( __( "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to identify your visitors' country of origin.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-third-party-libraries' ), 'warning', 'geolite' );
 		}
 
-		if ( version_compare( PHP_VERSION, '7.1', '>=' ) && !file_exists( slim_browser::$browscap_autoload_path ) && wp_slimstat::$settings[ 'notice_browscap' ] == 'on' ) {
+		if ( version_compare( PHP_VERSION, '7.1', '>=' ) && !file_exists( wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt' ) && wp_slimstat::$settings[ 'notice_browscap' ] == 'on' ) {
 			wp_slimstat_admin::show_message( sprintf( __( "Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat' ), self::$config_url . '6#wp-slimstat-third-party-libraries' ), 'warning', 'browscap' );
 		}
 

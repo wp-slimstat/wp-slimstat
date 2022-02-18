@@ -3,11 +3,12 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.8.8.1
+Version: 4.9
 Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
+Requires PHP:      5.5
 */
 
 if ( !empty( wp_slimstat::$settings ) ) {
@@ -15,7 +16,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.8.8.1';
+	public static $version = '4.9';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -90,6 +91,8 @@ class wp_slimstat {
 			if ( self::$settings[ 'ignore_wp_users' ] != 'on' ) {
 				add_action( 'login_enqueue_scripts', array( __CLASS__, 'enqueue_tracker' ), 10 );
 			}
+
+			add_filter( 'script_loader_tag', array( __CLASS__, 'add_defer_to_script_tag' ), 10, 2 );
 		}
 
 		// Hook a DB clean-up routine to the daily cronjob
@@ -334,6 +337,14 @@ class wp_slimstat {
 
 			foreach ( $cookie_names as $a_name => $a_value ) {
 				if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
+					// remove slimstat cookie
+					unset($_COOKIE['slimstat_tracking_code']);
+					@setcookie(
+					  'slimstat_tracking_code',
+					  '',
+					  time() - ( 15 * 60 ) , // invalidate
+					  COOKIEPATH
+					);
 					return false;
 				}
 			}
@@ -354,12 +365,20 @@ class wp_slimstat {
 		
 			$cookie_found = false;
 			foreach ( $cookie_names as $a_name => $a_value ) {
-				if ( isset( $_COOKIE[ $a_name ] ) && $_COOKIE[ $a_name ] == $a_value ) {
+				if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
 					$cookie_found = true;
 				}
 			}
 
 			if ( !$cookie_found ) {
+				// remove slimstat cookie
+				unset($_COOKIE['slimstat_tracking_code']);
+				@setcookie(
+				  'slimstat_tracking_code',
+				  '',
+				  time() - ( 15 * 60 ) , // invalidate
+				  COOKIEPATH
+				);
 				return false;
 			}
 		}
@@ -499,7 +518,7 @@ class wp_slimstat {
 			}
 
 			// Don't track users with given capabilities
-			foreach ( self::string_to_array( self::$settings[ 'ignore_capabilities' ] ) as $a_capability ) {
+			foreach ( $GLOBALS[ 'current_user' ]->roles as $a_capability ) {
 				if ( self::_is_blacklisted( $a_capability, self::$settings[ 'ignore_capabilities' ] ) ) {
 					return false;
 				}
@@ -1175,6 +1194,7 @@ class wp_slimstat {
 			'show_sql_debug' => 'no',
 			'db_indexes' => 'on',
 			'enable_maxmind' => 'no',
+			'maxmind_license_key' => '',
 			'enable_browscap' => 'no',
 
 			// Notices
@@ -1260,6 +1280,14 @@ class wp_slimstat {
 		wp_localize_script( 'wp_slimstat', 'SlimStatParams', $params );
 	}
 	// end enqueue_tracker
+
+	public static function add_defer_to_script_tag( $_tag, $_handle ) {
+		if ( $_handle === 'wp_slimstat' && false === stripos( $_tag, 'defer' ) ) {
+			$_tag = str_replace( '<script ', '<script defer ', $_tag );
+		}
+
+		return $_tag;
+	}
 
 	/**
 	 * Removes old entries from the main table and performs other daily tasks
@@ -1587,7 +1615,7 @@ class wp_slimstat {
 				}
 			}
 		}
-		else {
+		else if ( !empty( $parsed_url[ 'query' ] ) ) {
 			// We weren't lucky, but there's still hope
 			foreach( array( 'ask', 'k', 'q', 'qs', 'qt', 'query', 's', 'string' ) as $a_param ) {
 				$searchterms = self::_get_param_from_query_string( $parsed_url[ 'query' ], $a_param );

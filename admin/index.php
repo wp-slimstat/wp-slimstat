@@ -734,7 +734,10 @@ class wp_slimstat_admin {
 			self::$data_for_column[ 'sql' ][ $a_post->ID ] = self::$data_for_column[ 'url' ][ $a_post->ID ] . '%';
 		}
 
-		if ( empty( self::$data_for_column ) ) {
+		/**
+			* https://wordpress.org/support/topic/you-have-an-error-in-your-sql-syntax-22/#post-12565619
+		 */
+		if ( empty( self::$data_for_column ) ||  empty( self::$data_for_column[ 'url' ] ) ) {
 			return 0;
 		}
 

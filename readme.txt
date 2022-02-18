@@ -1,12 +1,12 @@
 === Slimstat Analytics ===
-Contributors: coolmann
+Contributors: coolmann, toxicum
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 4.9
-Requires PHP: 5.2
-Tested up to: 5.3
-Stable tag: 4.8.8.1
+Requires PHP: 7.3
+Tested up to: 5.9
+Stable tag: 4.9
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -31,8 +31,8 @@ is for those who would like to donate money - be it once, be it regularly, be it
 Try it out, you'll be amazed how good it feels! If you're on a tight budget, and coding is not your thing, please consider writing [a review](https://wordpress.org/support/plugin/wp-slimstat/reviews/#new-post) for Slimstat as a token of appreciation for our hard work!
 
 = Requirements =
-* WordPress 4.9+
-* PHP 5.2+ (or 7.1+ if you use the Browscap data file)
+* WordPress 5.0+
+* PHP 7.3+
 * MySQL 5.0.3+
 * At least 40 MB of free web space
 * At least 5 MB of free DB space
@@ -60,6 +60,15 @@ Our knowledge base is available on our [support center](https://docs.wp-slimstat
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.9 =
+* [New] Browscap Library is now bundled with the main plugin, only definition files are downloaded dynamically.
+* [New] Support MaxMind License Key for GeoLite2 database downloads.
+* [New] Speedup Browscap version check when repository site is down.
+* [Fix] Addressed a PHP warning of undefined variable when parsing a query string looking for search term keywords (thank you, [inndesign](https://wordpress.org/support/topic/line-747-and-line-1574-undefined)).
+* [Fix] Fixed SQL error when Events Manager plugin is installed, 'Posts and Pages' is enabled, and no events are existing (thank you, [lwangamaman](https://wordpress.org/support/topic/you-have-an-error-in-your-sql-syntax-22/).
+* [Fix] Starting with 4.9, PHP 7.3+ is required (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/).
+* [Fix] Opt-Out cookie does not delete slimstat cookie.
+
 = 4.8.8.1 =
 * [Update] The Privacy Mode option under Slimstat > Settings > Tracker now controls the fingerprint collection mechanism as well. If you have this option enabled to comply with European privacy laws, your visitors' IP addresses will be masked and they won't be fingerprinted (thank you, Peter).
 * [Update] Improved handling of our local DNS cache to store hostnames when the option to convert IP addresses is enabled in the settings.

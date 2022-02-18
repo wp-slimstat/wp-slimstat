@@ -1364,7 +1364,7 @@ class wp_slimstat_reports {
 
 			if ( !empty( $a_result[ 'dt' ] ) ) {
 				$date_time = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $a_result[ 'dt' ], true );
-				echo  '<b class="slimstat-tooltip-content">' .  __( 'Page', 'wp-slimstat' ) . ": <a href='{$blog_url}{$a_result[ 'resource' ]}'>{$blog_url}{$a_result[ 'resource' ]}</a><br>" . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
+				echo  '<b class="slimstat-tooltip-content">' . __( 'IP', 'wp-slimstat' ) . ": " . $a_result[ 'ip' ] . "<br/>" . __( 'Page', 'wp-slimstat' ) . ": <a href='{$blog_url}{$a_result[ 'resource' ]}'>{$blog_url}{$a_result[ 'resource' ]}</a><br>" . __( 'Coordinates', 'wp-slimstat' ) . ": {$a_result[ 'position' ]}<br>" . __( 'Date', 'wp-slimstat' ) . ": $date_time";
 			}
 
 			echo "</b></p>";

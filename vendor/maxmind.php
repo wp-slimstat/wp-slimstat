@@ -33,7 +33,14 @@ class maxmind_geolite2_connector {
 	}
 
 	/**
-	 * Downloads the MaxMind geolocation database from their repository
+	 * Downloads the MaxMind geolocation database archive from their repository.
+	 * The download file is a tar.gz-file containing a ".mmdb" tar file which contains the .mmdb db file in a subdirectory (with actual date)
+	 * Example: GeoLite2-City_20200121/GeoLite2-City.mmdb
+	 * So we:
+	 * 1. Download the tar.gz file
+	 * 2. Unpack the file we are interested in (GeoLite2-City.mmdb, GeoLite2-Country.mmdb)
+	 * 3. Move the mmdb file from the extracted subdir to maxmind.mmdb
+	 * 4. Delete the extracted subdir
 	 */
 	public static function download_maxmind_database() {
 		$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
@@ -43,60 +50,45 @@ class maxmind_geolite2_connector {
 			mkdir( dirname( $maxmind_path ) );
 		}
 
-		if ( file_exists( $maxmind_path ) ) {
-			if ( is_file( $maxmind_path ) ) {
-				$is_deleted = @unlink( $maxmind_path );
-			}
-			else {
-				// This should not happen, but hey...
-				$is_deleted = @rmdir( $maxmind_path );
-			}
-
-			if ( !$is_deleted ) {
-				return __( "The geolocation database cannot be updated. Please check your server's file permissions and try again.", 'wp-slimstat' );
-			}
+		// Download the most recent database directly from MaxMind's repository
+		if ( wp_slimstat::$settings[ 'maxmind_license_key' ] == '' ) {
+			return __( 'No MaxMind GeoLite2 license key set. Please enter the MaxMind GeoLite2 license key in Slimstat Settings > Maintenance', 'wp-slimstat' );
 		}
 
-		// Download the most recent database directly from MaxMind's repository
+		$maxmind_license_key = wp_slimstat::$settings[ 'maxmind_license_key' ];
+
 		if ( wp_slimstat::$settings[ 'geolocation_country' ] == 'on' ) {
-			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz' );
+			$maxmind_tmp = self::download_url( "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key={$maxmind_license_key}&suffix=tar.gz" );
+			$database = 'GeoLite2-Country.mmdb';
 		}
 		else {
-			$maxmind_tmp = self::download_url( 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz' );
+			$maxmind_tmp = self::download_url( "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key={$maxmind_license_key}&suffix=tar.gz" );
+			$database = 'GeoLite2-City.mmdb';
 		}
 
 		if ( is_wp_error( $maxmind_tmp ) ) {
 			return __( 'There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat' ) . ' ' . $maxmind_tmp->get_error_message();
 		}
 
-		$zh = false;
-
-		if ( !function_exists( 'gzopen' ) ) {
-			if ( function_exists( 'gzopen64' ) ) {
-				if ( false === ( $zh = gzopen64( $maxmind_tmp, 'rb' ) ) ) {
-					return __( "There was an error opening the zipped MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
-				}
-			}
-			else {
-				return __( 'Function <code>gzopen</code> is not defined in your environment. Please ask your server administrator to install the corresponding library.', 'wp-slimstat' );
-			}
-		}
-		else{
-			if ( false === ( $zh = gzopen( $maxmind_tmp, 'rb' ) ) ) {
-				return __( "There was an error opening the zipped MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
-			}
+		if ( !class_exists( 'PharData' ) ) {
+		    return __( 'Class <code>PharData</code> is not defined in your environment. Please use a PHP version which supports it.', 'wp-slimstat' );
 		}
 
-		if ( false === ( $fh = fopen( $maxmind_path, 'wb' ) ) ) {
-			return __( "There was an error opening the MaxMind Geolite DB. Please check your server's file permissions and try again.", 'wp-slimstat' );
+		$phar = new PharData( $maxmind_tmp );
+		$fileInArchive = trailingslashit( $phar->current()->getFileName() ) . $database;
+
+		// Extract mmdb file in uploads directory (this includes the directory)
+		try {
+		    $phar->extractTo( wp_slimstat::$upload_dir, $fileInArchive, true );
+		}
+		catch ( Exception $e ) {
+		    return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' ) . $e->getMessage();
 		}
 
-		while ( ( $data = gzread( $zh, 4096 ) ) != false ) {
-			fwrite( $fh, $data );
-		}
+		@rename( trailingslashit( wp_slimstat::$upload_dir ) . $fileInArchive, $maxmind_path );
 
-		@gzclose( $zh );
-		@fclose( $fh );
+		// delete extracted dir
+		@rmdir( trailingslashit( wp_slimstat::$upload_dir ) . $phar->current()->getFileName() );
 
 		if ( !is_file( $maxmind_path ) ) {
 			// Something went wrong, maybe a folder was created instead of a regular file
