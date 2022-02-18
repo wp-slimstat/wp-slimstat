@@ -5,6 +5,12 @@ if ( !defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 $slimstat_options = get_option( 'slimstat_options', array() );
+
+if (isset($slimstat_options['delete_data_on_uninstall'])  && $slimstat_options['delete_data_on_uninstall'] != 'on'){
+	// Do not delete db data and settings
+	return;
+}
+
 if ( !empty( $slimstat_options[ 'addon_custom_db_dbuser' ] ) && !empty( $slimstat_options[ 'addon_custom_db_dbpass' ] ) && !empty( $slimstat_options[ 'addon_custom_db_dbname' ] ) && !empty($slimstat_options[ 'addon_custom_db_dbhost' ] ) ) {
 	$slimstat_wpdb = new wpdb( $slimstat_options[ 'addon_custom_db_dbuser' ], $slimstat_options[ 'addon_custom_db_dbpass' ], $slimstat_options[ 'addon_custom_db_dbname' ], $slimstat_options[ 'addon_custom_db_dbhost' ] );
 }
