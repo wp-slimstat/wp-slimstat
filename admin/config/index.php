@@ -587,7 +587,7 @@ if ( version_compare( PHP_VERSION, '7.1', '>=' ) ) {
 	$enable_browscap = array( 'enable_browscap' => array(
 		'title' => __( 'Browscap Library', 'wp-slimstat' ),
 		'type'=> 'toggle',
-		'description'=> __( "We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-db' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every two weeks, when available.", 'wp-slimstat' ) . ( !empty( slim_browser::$browscap_local_version ) ? ' ' . sprintf( __( 'You are currently using version %s.' ), '<strong>' . slim_browser::$browscap_local_version . '</strong>' ) : '' )
+		'description'=> __( "We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every two weeks, when available.", 'wp-slimstat' ) . ( !empty( slim_browser::$browscap_local_version ) ? ' ' . sprintf( __( 'You are currently using version %s.', 'wp-slimstat' ), '<strong>' . slim_browser::$browscap_local_version . '</strong>' ) : '' )
 	) );
 
 	$settings[ 6 ][ 'rows' ] = array_slice( $settings[ 6 ][ 'rows' ], 0, 7, true) + $enable_browscap + array_slice($settings[ 6 ][ 'rows' ], 7, NULL, true );
@@ -704,7 +704,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 			else if ( $_POST[ 'options' ][ 'enable_browscap' ] == 'no' && wp_slimstat::$settings[ 'enable_browscap' ] == 'on' ) {
 				WP_Filesystem();
 
-				if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-db-master/', true ) ) {
+				if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-cache-master/', true ) ) {
 					$save_messages[] = __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' );
 					wp_slimstat::$settings[ 'enable_browscap' ] = 'no';
 				}
