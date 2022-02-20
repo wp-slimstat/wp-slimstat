@@ -3,6 +3,7 @@
 * [New] Browscap Library is now bundled with the main plugin, only definition files are downloaded dynamically.
 * [New] Support MaxMind License Key for GeoLite2 database downloads.
 * [New] Speedup Browscap version check when repository site is down.
+* [New] Delete plugin settings and stats only if explicitly enabled in settings
 * [Fix] Addressed a PHP warning of undefined variable when parsing a query string looking for search term keywords (thank you, [inndesign](https://wordpress.org/support/topic/line-747-and-line-1574-undefined)).
 * [Fix] Fixed SQL error when Events Manager plugin is installed, 'Posts and Pages' is enabled, and no events are existing (thank you, [lwangamaman](https://wordpress.org/support/topic/you-have-an-error-in-your-sql-syntax-22/).
 * [Fix] Starting with 4.9, PHP 7.4+ is required (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/).
