@@ -226,18 +226,6 @@ class wp_slimstat_reports {
 				'locations' => array( 'slimview2' ),
 				'tooltip' => $chart_tooltip
 			),
-			'slim_p1_20' => array(
-				'title' => __('Top Referring URLs', 'wp-slimstat'),
-				'callback' => array( __CLASS__, 'raw_results_to_html' ),
-				'callback_args' => array(
-					'type' => 'top',
-					'columns' => 'referer',
-					'where' => 'referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
-					'raw' => array( 'wp_slimstat_db', 'get_top' )
-				),
-				'classes' => array( 'normal' ),
-				'locations' => array( 'slimview2', 'slimview5', 'dashboard' )
-			),
 
 			'slim_p2_01' => array(
 				'title' => __( 'Human Visits', 'wp-slimstat' ),
@@ -532,20 +520,6 @@ class wp_slimstat_reports {
 				),
 				'classes' => array( 'normal' ),
 				'locations' => array( 'slimview5' )
-			),
-			'slim_p3_06' => array(
-				'title' => __( 'Top Referring Search Engines', 'wp-slimstat' ),
-				'callback' => array( __CLASS__, 'raw_results_to_html' ),
-				'callback_args' => array(
-					'type' => 'top',
-					'columns' => 'REPLACE( SUBSTRING_INDEX( SUBSTRING_INDEX( SUBSTRING_INDEX( referer, "://", -1 ), "/", 1 ), ".", -5 ), "www.", "" )',
-					'as_column' => 'referer',
-					'filter_op' => 'contains',
-					'where' => 'searchterms IS NOT NULL AND searchterms <> "" AND searchterms <> "_" AND referer NOT LIKE "%' . str_replace( 'www.', '', parse_url( home_url(), PHP_URL_HOST ) ) . '%"',
-					'raw' => array( 'wp_slimstat_db', 'get_top' )
-				),
-				'classes' => array( 'normal' ),
-				'locations' => array( 'slimview5', 'dashboard' )
 			),
 
 			'slim_p4_01' => array(
@@ -1177,7 +1151,10 @@ class wp_slimstat_reports {
 
 				if ( $_args[ 'columns' ] == 'referer' && !empty( $_args[ 'type' ] ) && $_args[ 'type' ] == 'top' ) {
 					$element_url = htmlentities( $results[ $i ][ 'referer' ], ENT_QUOTES, 'UTF-8' );
-					$element_value = '<a target="_blank" class="slimstat-font-logout" title="'.__('Open this URL in a new window','wp-slimstat').'" href="'.$element_url.'"></a> '.$element_value;
+					if ( strpos( $element_url, 'http' ) === false ) {
+						$element_url = 'https://' . $element_url;
+					}
+					$element_value = '<a target="_blank" class="slimstat-font-logout" title="' . __( 'Open this URL in a new window', 'wp-slimstat' ) . '" href="'.$element_url.'"></a> '.$element_value;
 				}
 
 				if ( is_admin() && !empty( $results[ $i ][ 'ip' ]) && $_args[ 'columns' ] != 'ip' && wp_slimstat::$settings[ 'convert_ip_addresses' ] != 'on' ) {

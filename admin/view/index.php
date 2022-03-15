@@ -147,6 +147,11 @@
 		<form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form><?php
 
 		foreach( wp_slimstat_reports::$user_reports[ wp_slimstat_admin::$current_screen ] as $a_report_id ) {
+			// A report could have been deprecated...
+			if ( empty( wp_slimstat_reports::$reports[ $a_report_id ] ) ) {
+				continue;
+			}
+
 			wp_slimstat_reports::report_header( $a_report_id );
 			wp_slimstat_reports::callback_wrapper( array( 'id' => $a_report_id ) );
 			wp_slimstat_reports::report_footer();

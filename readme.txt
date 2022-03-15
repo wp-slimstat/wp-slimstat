@@ -6,7 +6,7 @@ Text Domain: wp-slimstat
 Requires at least: 4.9
 Requires PHP: 7.4+
 Tested up to: 5.9
-Stable tag: 4.9
+Stable tag: 4.9.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -58,6 +58,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.9.1 = 
+* [Fix] Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
+
 = 4.9 =
 * [New] Browscap Library is now bundled with the main plugin, only definition files are downloaded dynamically.
 * [New] Support MaxMind License Key for GeoLite2 database downloads.
