@@ -489,6 +489,9 @@ class wp_slimstat_admin {
 
 		if ( !empty( wp_slimstat_reports::$user_reports[ 'dashboard' ] ) && is_array( wp_slimstat_reports::$user_reports[ 'dashboard' ] ) ) {
 			foreach ( wp_slimstat_reports::$user_reports[ 'dashboard' ] as $a_report_id ) {
+				if ( empty( wp_slimstat_reports::$reports[ $a_report_id ] ) ) {
+					continue;
+				}
 				wp_add_dashboard_widget( $a_report_id, wp_slimstat_reports::$reports[ $a_report_id ][ 'title' ], array( 'wp_slimstat_reports', 'callback_wrapper' ) );
 			}
 		}
