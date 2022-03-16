@@ -9,8 +9,8 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
 * **Privacy**: hash IP addresses to protect your users' privacy.
-* **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
-* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](https://www.ammap.com/)).
+* **Geolocation**: identify your visitors by city and country, browser type and operating system (via [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
+* **World Map**: see where your visitors are coming from, even on your mobile device (via [amMap](https://www.ammap.com/)).
 
 ### Contribute ###
 Slimstat Analytics is an open source project, dependent in large part on community support. You can fork our [Github repository](https://github.com/slimstat/wp-slimstat) and submit code enhancements, bugfixes or provide localization files to let our plugin speak even more languages. [This page](https://www.paypal.com/cgi-bin/webscr?cmd###_s-xclick&hosted_button_id###BNJR5EZNY3W38)
