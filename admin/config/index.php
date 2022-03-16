@@ -582,8 +582,8 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 	)
 );
 
-// This option can only be added if this site is running PHP 7.1+
-if ( version_compare( PHP_VERSION, '7.1', '>=' ) ) {
+// This option can only be added if this site is running PHP 7.4+
+if ( version_compare( PHP_VERSION, '7.4', '>=' ) ) {
 	$enable_browscap = array( 'enable_browscap' => array(
 		'title' => __( 'Browscap Library', 'wp-slimstat' ),
 		'type'=> 'toggle',
@@ -675,7 +675,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 				}
 				else {
 					// Some users have reported that a directory is created, instead of a file
-					$is_deleted = @rmdir( $maxmind_path );
+					$is_deleted = wp_slimstat_admin::rmdir( $maxmind_path );
 
 					if ( $is_deleted ) {
 						$save_messages[] = __( 'The geolocation database has been uninstalled from your server.', 'wp-slimstat' );
@@ -693,18 +693,13 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 			if ( $_POST[ 'options' ][ 'enable_browscap' ] == 'on' && wp_slimstat::$settings[ 'enable_browscap' ] == 'no' ) {
 				$error = slim_browser::update_browscap_database( true );
 
-				if ( !is_array( $error ) ) {
-					$save_messages[] = __( 'The Browscap library has been installed on your server.', 'wp-slimstat' );
+				if ( $error[ 0 ] == 0 ) {
 					wp_slimstat::$settings[ 'enable_browscap' ] = 'on';
 				}
-				else {
-					$save_messages[] = $error[ 1 ];
-				}
+				$save_messages[] = $error[ 1 ];
 			}
 			else if ( $_POST[ 'options' ][ 'enable_browscap' ] == 'no' && wp_slimstat::$settings[ 'enable_browscap' ] == 'on' ) {
-				WP_Filesystem();
-
-				if ( $GLOBALS[ 'wp_filesystem' ]->rmdir( wp_slimstat::$upload_dir . '/browscap-cache-master/', true ) ) {
+				if ( wp_slimstat_admin::rmdir( wp_slimstat::$upload_dir . '/browscap-cache-master' ) ) {
 					$save_messages[] = __( 'The Browscap data file has been uninstalled from your server.', 'wp-slimstat' );
 					wp_slimstat::$settings[ 'enable_browscap' ] = 'no';
 				}
@@ -716,7 +711,10 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 
 		// All other options
 		foreach( $_POST[ 'options' ] as $a_post_slug => $a_post_value ) {
-			if ( empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ] ) || !empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'readonly' ] ) || in_array( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'type' ], array( 'section_header', 'plain-text' ) ) ) {
+			if ( empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ] ) || 
+				!empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'readonly' ] ) || 
+				in_array( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'type' ], array( 'section_header', 'plain-text' ) ) ||
+				in_array( $a_post_slug, array( 'enable_maxmind', 'enable_browscap' ) ) ) {
 				continue;
 			}
 

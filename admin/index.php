@@ -896,6 +896,32 @@ class wp_slimstat_admin {
 	// END: delete_pageview
 
 	/**
+	 * Deletes a given pageview from the database
+	 */
+	public static function rmdir( $path ) {
+		if ( !file_exists( $path ) ) {
+			return true;
+		}
+
+		if ( !is_dir( $path ) ) {
+			return unlink( $path );
+		}
+
+		foreach ( scandir( $path ) as $a_item ) {
+			if ( $a_item == '.' || $a_item == '..' ) {
+				continue;
+			}
+
+			if ( !wp_slimstat_admin::rmdir( $path . DIRECTORY_SEPARATOR . $a_item ) ) {
+				return false;
+			}
+		}
+
+		return rmdir( $path );
+	}
+	// END: delete_pageview
+
+	/**
 	 * Handles the Ajax requests to load, save or delete existing filters
 	 */
 	public static function manage_filters() {
