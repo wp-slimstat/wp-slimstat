@@ -13,8 +13,6 @@ class slim_browser {
 			}
 		}
 
-		self::$browscap_local_version = intval( filter_var( self::$browscap_local_version, FILTER_SANITIZE_NUMBER_INT ) );
-
 		if ( version_compare( PHP_VERSION, '7.4', '>=' ) ) {
 			self::update_browscap_database( false );
 			require_once( plugin_dir_path( __FILE__ ) . 'browscap-php/composer/autoload_real.php' );
@@ -139,7 +137,7 @@ class slim_browser {
 
 		// Check for updates once a week ( 604800 seconds ), if $_force_download is not true
 		if ( file_exists( wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt' ) ) {
-			if ( $current_timestamp - wp_slimstat::$settings[ 'browscap_last_modified' ] > 604800 ) {
+			if ( $current_timestamp - wp_slimstat::$settings[ 'browscap_last_modified' ] > 60 ) {
 
 				// No matter what the outcome is, we'll check again in one week
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
@@ -151,8 +149,7 @@ class slim_browser {
 					return array( 5, __( 'There was an error checking the remote library version. Please try again later.', 'wp-slimstat' ) );
 				}
 
-				$remote_version = intval( wp_remote_retrieve_body( $response ) );
-				$download_remote_file = ( self::$browscap_local_version < $remote_version );
+				$download_remote_file = ( self::$browscap_local_version != wp_remote_retrieve_body( $response ) );
 			}
 			else {
 				return array( 0, __( 'Your version of the library does not need to be updated.', 'wp-slimstat' ) );
