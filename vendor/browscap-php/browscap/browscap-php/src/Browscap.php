@@ -24,7 +24,7 @@ final class Browscap implements BrowscapInterface
     /**
      * Parser to use
      */
-    private ?ParserInterface $parser = null;
+    private ParserInterface $parser = null;
 
     /**
      * Formatter to use
