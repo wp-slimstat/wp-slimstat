@@ -18,11 +18,11 @@ is for those who would like to donate money - be it once, be it regularly, be it
 Try it out, you'll be amazed how good it feels! If you're on a tight budget, and coding is not your thing, please consider writing [a review](https://wordpress.org/support/plugin/wp-slimstat/reviews/#new-post) for Slimstat as a token of appreciation for our hard work!
 
 ### Requirements ###
-* WordPress 4.9+
+* WordPress 5.6+
 * PHP 7.4+
 * MySQL 5.0.3+
-* At least 40 MB of free web space
-* At least 5 MB of free DB space
+* At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
+* At least 10 MB of free DB space
 * At least 32 Mb of free PHP memory for the tracker (peak memory usage)
 
 ## Frequently Asked Questions ##

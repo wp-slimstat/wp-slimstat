@@ -3,10 +3,10 @@ Contributors: coolmann, toxicum
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
-Requires at least: 4.9
+Requires at least: 5.6
 Requires PHP: 7.4+
-Tested up to: 5.9
-Stable tag: 4.9.1
+Tested up to: 5.9.1
+Stable tag: 4.9.0.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -33,8 +33,8 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 * WordPress 5.0+
 * PHP 7.4+
 * MySQL 5.0.3+
-* At least 40 MB of free web space
-* At least 5 MB of free DB space
+* At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
+* At least 10 MB of free DB space
 * At least 32 Mb of free PHP memory for the tracker (peak memory usage)
 
 == Installation ==
@@ -42,7 +42,6 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 2. Search for limstat Analytics
 3. Click on **Install Now** next to Slimstat Analytics and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
-5. If your `wp-admin` folder is not publicly accessible, make sure to check our [knowledge base](https://docs.wp-slimstat.com/) to see if there's anything else you need to do
 
 == Please note ==
 * If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
@@ -58,8 +57,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
-= 4.9.1 = 
+= 4.9.0.1 = 
 * [Fix] Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
+* [Fix] The new Browscap Library requires at least PHP 7.4, up from 7.1. (thank you, [Daniel Jaraud](https://github.com/slimstat/wp-slimstat/issues/22)).
 
 = 4.9 =
 * [New] Browscap Library is now bundled with the main plugin, only definition files are downloaded dynamically.
@@ -123,21 +123,3 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 * [Fix] When the plugin was network activated on a group of existing blogs, the tables used to store all the records were not initialized as expected, under given circumstances.
 * [Fix] A bug was affecting certain shortcodes when PHP 7.2 was enabled (thank you, Peter).
 * [Fix] Emptying one of the settings and saving did not produce the desired effect.
-
-= 4.8.6.2 =
-* [Update] We tweaked the SQL query to retrieve 'recent' results, and added a GROUP BY clause to remove duplicates. This might affect some custom reports you might have created, so please don't hesitate to contact us if you have any question or experience any issues.
-* [Fix] The button to delete all the records from the database was not working as expected (thank you, [Softfully](https://wordpress.org/support/topic/delete-all-records-doesnt-work/)).
-
-= 4.8.6.1 =
-* [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
-
-= 4.8.6 =
-* [New] Slimstat can now track most WordPress redirects and mark them with the appropriate content type.
-* [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
-* [Update] Simplified code that manages the sidebar menu.
-* [Update] Reorganized code that manages the plugin options.
-* [Update] Rewrote the portion of code that manages tracker errors, which are now saved in a separate field in the database.
-* [Update] Reintroduced feature to hide certain report pages when no reports are assigned to them.
-* [Update] Decrease the number of database requests needed to record a new pageview.
-* [Fix] Entries with a trailing slash and ones without were being listed as separate in Top Web Pages.
-* [Fix] Typo in one of the conditions definining the Top Bots report.

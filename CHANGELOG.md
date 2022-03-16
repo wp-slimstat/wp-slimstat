@@ -1,4 +1,9 @@
 ## Changelog ##
+
+### 4.9.0.1 ###
+* [Fix] Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
+* [Fix] The new Browscap Library requires at least PHP 7.4, up from 7.1. (thank you, [Daniel Jaraud](https://github.com/slimstat/wp-slimstat/issues/22)).
+
 ### 4.9 ###
 * [New] Browscap Library is now bundled with the main plugin, only definition files are downloaded dynamically.
 * [New] Support MaxMind License Key for GeoLite2 database downloads.
@@ -61,21 +66,3 @@
 * [Fix] When the plugin was network activated on a group of existing blogs, the tables used to store all the records were not initialized as expected, under given circumstances.
 * [Fix] A bug was affecting certain shortcodes when PHP 7.2 was enabled (thank you, Peter).
 * [Fix] Emptying one of the settings and saving did not produce the desired effect.
-
-### 4.8.6.2 ###
-* [Update] We tweaked the SQL query to retrieve 'recent' results, and added a GROUP BY clause to remove duplicates. This might affect some custom reports you might have created, so please don't hesitate to contact us if you have any question or experience any issues.
-* [Fix] The button to delete all the records from the database was not working as expected (thank you, [Softfully](https://wordpress.org/support/topic/delete-all-records-doesnt-work/)).
-
-### 4.8.6.1 ###
-* [Fix] A regression bug was introduced in 4.8.6, affecting some of the shortcodes and reports.
-
-### 4.8.6 ###
-* [New] Slimstat can now track most WordPress redirects and mark them with the appropriate content type.
-* [Update] The GDPR compliance through third-party tools is now more flexible and allows admins to specify name/value pairs so that the cookie must CONTAIN the given string.
-* [Update] Simplified code that manages the sidebar menu.
-* [Update] Reorganized code that manages the plugin options.
-* [Update] Rewrote the portion of code that manages tracker errors, which are now saved in a separate field in the database.
-* [Update] Reintroduced feature to hide certain report pages when no reports are assigned to them.
-* [Update] Decrease the number of database requests needed to record a new pageview.
-* [Fix] Entries with a trailing slash and ones without were being listed as separate in Top Web Pages.
-* [Fix] Typo in one of the conditions definining the Top Bots report.
