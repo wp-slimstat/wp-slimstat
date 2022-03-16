@@ -11,6 +11,9 @@ class slim_browser {
 			if ( false === self::$browscap_local_version ) {
 				return array( 4, __( 'The Browscap Cache folder could not be opened on your filesystem. Please check your server permissions and try again.', 'wp-slimstat' ) );
 			}
+			else {
+				self::$browscap_local_version = trim( self::$browscap_local_version );
+			}
 		}
 
 		if ( version_compare( PHP_VERSION, '7.4', '>=' ) ) {
@@ -137,7 +140,7 @@ class slim_browser {
 
 		// Check for updates once a week ( 604800 seconds ), if $_force_download is not true
 		if ( file_exists( wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt' ) ) {
-			if ( $current_timestamp - wp_slimstat::$settings[ 'browscap_last_modified' ] > 60 ) {
+			if ( $current_timestamp - wp_slimstat::$settings[ 'browscap_last_modified' ] > 604800 ) {
 
 				// No matter what the outcome is, we'll check again in one week
 				wp_slimstat::$settings[ 'browscap_last_modified' ] = $current_timestamp;
@@ -149,7 +152,7 @@ class slim_browser {
 					return array( 5, __( 'There was an error checking the remote library version. Please try again later.', 'wp-slimstat' ) );
 				}
 
-				$download_remote_file = ( self::$browscap_local_version != wp_remote_retrieve_body( $response ) );
+				$download_remote_file = ( self::$browscap_local_version != trim( wp_remote_retrieve_body( $response ) ) );
 			}
 			else {
 				return array( 0, __( 'Your version of the library does not need to be updated.', 'wp-slimstat' ) );
