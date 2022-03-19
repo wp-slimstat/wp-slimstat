@@ -3,12 +3,12 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.9.0.1
+Version: 4.9.1
 Author: Jason Crouse
 Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
-Requires PHP: 7.4
+Requires PHP: 7.1
 */
 
 if ( !empty( wp_slimstat::$settings ) ) {
@@ -16,7 +16,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.9.0.1';
+	public static $version = '4.9.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -24,6 +24,8 @@ class wp_slimstat {
 
 	public static $update_checker = array();
 	public static $raw_post_array = array();
+
+	public static $status = '';
 
 	protected static $data_js = array( 'id' => 0 );
 	protected static $stat = array();
@@ -112,7 +114,7 @@ class wp_slimstat {
 		add_shortcode( 'slimstat', array( __CLASS__, 'slimstat_shortcode' ), 15 );
 
 		// Include our browser detector library
-		include_once( plugin_dir_path( __FILE__ ) . 'vendor/browscap.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/browscap/index.php' );
 		add_action( 'init', array( 'slim_browser', 'init' ) );
 
 		// If add-ons are installed, check for updates
@@ -572,7 +574,7 @@ class wp_slimstat {
 		}
 
 		// Geolocation 
-		include_once( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/maxmind/index.php' );
 		try {
 			$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
 		}
@@ -742,6 +744,7 @@ class wp_slimstat {
 			'o' => 0	// offset for counters
 		), $_attributes ) );
 
+		self::$status = 'doing_shortcode';
 		$output = $where = $as_column = '';
 		$s = "<span class='slimstat-item-separator'>$s</span>";
 
@@ -755,20 +758,21 @@ class wp_slimstat {
 
 		// Include the Reports Library, but don't initialize the database, since we will do that separately later
 		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-reports.php' );
-		wp_slimstat_reports::init();
 
 		// Init the database library with the appropriate filters
 		if ( strpos ( $_content, 'WHERE:' ) !== false ) {
 			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
+			wp_slimstat_reports::init();
 		}
 		else{
-			wp_slimstat_db::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
+			wp_slimstat_reports::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
 		}
 
 		switch( $f ) {
 			case 'count':
 			case 'count-all':
-				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all') === false ) + $o;
+				echo strpos( $f, 'all' ) === false;
+				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all' ) === false ) + $o;
 				break;
 
 			case 'widget':
@@ -900,6 +904,8 @@ class wp_slimstat {
 			default:
 				break;
 		}
+
+		self::$status = '';
 
 		return $output;
 	}

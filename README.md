@@ -9,8 +9,8 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
 * **Privacy**: hash IP addresses to protect your users' privacy.
-* **Geolocation**: identify your visitors by city and country, browser type and operating system (via [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
-* **World Map**: see where your visitors are coming from, even on your mobile device (via [amMap](https://www.ammap.com/)).
+* **Geolocation**: identify your visitors by city and country, browser type and operating system (powered by [MaxMind](https://www.maxmind.com/), [Browscap](https://browscap.org) and [ua-parser](https://github.com/ua-parser/uap-php)).
+* **World Map**: see where your visitors are coming from, even on your mobile device (powered by [amMap](https://www.ammap.com/)).
 
 ### Contribute ###
 Slimstat Analytics is an open source project, dependent in large part on community support. You can fork our [Github repository](https://github.com/slimstat/wp-slimstat) and submit code enhancements, bugfixes or provide localization files to let our plugin speak even more languages. [This page](https://www.paypal.com/cgi-bin/webscr?cmd###_s-xclick&hosted_button_id###BNJR5EZNY3W38)
@@ -19,7 +19,7 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 
 ### Requirements ###
 * WordPress 5.6+
-* PHP 7.4+
+* PHP 7.1+
 * MySQL 5.0.3+
 * At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
 * At least 10 MB of free DB space

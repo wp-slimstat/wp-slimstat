@@ -655,7 +655,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 			if ( $_POST[ 'options' ][ 'enable_maxmind' ] == 'on'
 				  && wp_slimstat::$settings[ 'enable_maxmind' ] == 'no'
 				  && wp_slimstat::$settings[ 'maxmind_license_key' ] != '' ) {
-				include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/maxmind.php' );
+				include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/maxmind/index.php' );
 				$error = maxmind_geolite2_connector::download_maxmind_database();
 
 				if ( empty( $error ) ) {

@@ -4,9 +4,9 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 5.6
-Requires PHP: 7.4+
+Requires PHP: 7.1
 Tested up to: 5.9.1
-Stable tag: 4.9.0.1
+Stable tag: 4.9.1
 
 == Description ==
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -19,8 +19,8 @@ The leading web analytics plugin for WordPress. Track returning customers and re
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
 * **Privacy**: hash IP addresses to protect your users' privacy.
-* **Geolocation**: identify your visitors by city and country, browser type and operating system (via [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
-* **World Map**: see where your visitors are coming from, even on your mobile device (via [amMap](https://www.ammap.com/)).
+* **Geolocation**: identify your visitors by city and country, browser type and operating system (powered by [MaxMind](https://www.maxmind.com/), [Browscap](https://browscap.org)).
+* **World Map**: see where your visitors are coming from, even on your mobile device (powered by [amMap](https://www.ammap.com/)).
 
 = Contribute =
 Slimstat Analytics is an open source project, dependent in large part on community support. You can fork our [Github repository](https://github.com/slimstat/wp-slimstat) and submit code enhancements, bugfixes or provide localization files to let our plugin speak even more languages.
@@ -31,7 +31,7 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 
 = Requirements =
 * WordPress 5.0+
-* PHP 7.4+
+* PHP 7.1+
 * MySQL 5.0.3+
 * At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
 * At least 10 MB of free DB space
@@ -57,9 +57,13 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.9.1 =
+* [Note] The method `fs_url`, currently defined in the class `wp_slimstat_reports`, is being moved to `wp_slimstat_admin`. If you have a custom report that uses this method, please make sure to update your code accordingly.
+* [Update] Improved shortcode performance, by not loading certain libraries only needed to show reports in the dashboard (thank you, [Matta Cib](https://wordpress.org/support/topic/f-in-counting/)).
+
 = 4.9.0.1 = 
 * [Fix] Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
-* [Fix] The new Browscap Library requires at least PHP 7.4, up from 7.1. (thank you, [Daniel Jaraud](https://github.com/slimstat/wp-slimstat/issues/22)).
+* [Fix] The new Browscap Library requires at least PHP 7.4, up from 7.1. (thank you, [Daniel Jaraud](https://github.com/slimstat/wp-slimstat/issues/22)). Conditions in the code wil deactivate it if the minimum requirements are not met.
 
 = 4.9 =
 * [New] Browscap Library is now bundled with the main plugin, only definition files are downloaded dynamically.
@@ -68,7 +72,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 * [New] Delete plugin settings and stats only if explicitly enabled in settings
 * [Fix] Addressed a PHP warning of undefined variable when parsing a query string looking for search term keywords (thank you, [inndesign](https://wordpress.org/support/topic/line-747-and-line-1574-undefined)).
 * [Fix] Fixed SQL error when Events Manager plugin is installed, 'Posts and Pages' is enabled, and no events are existing (thank you, [lwangamaman](https://wordpress.org/support/topic/you-have-an-error-in-your-sql-syntax-22/).
-* [Fix] Starting with 4.9, PHP 7.4+ is required (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/).
+* [Fix] Starting with 4.9, PHP 7.1+ is required (thank you, [stephanie-mitchell](https://wordpress.org/support/topic/slimstats-4-8-8-1-fails-on-php-5-3-26-but-no-warning-during-installation/).
 * [Fix] Opt-Out cookie does not delete slimstat cookie.
 
 = 4.8.8.1 =

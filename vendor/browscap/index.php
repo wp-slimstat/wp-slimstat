@@ -42,15 +42,14 @@ class slim_browser {
 			$browser = self::get_browser_from_browscap( $browser, wp_slimstat::$upload_dir . '/browscap-cache-master/' );
 		}
 
-		if ( $browser[ 'browser' ] == 'Default Browser' ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
-			$browser = slim_uadetector::get_browser( $browser[ 'user_agent' ] );
-		}
-		else if ( empty( $browser[ 'browser_version' ] ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'uadetector.php' );
-			$browser_version = slim_uadetector::get_browser( $browser[ 'user_agent' ] );
-			$browser[ 'browser_version' ] = $browser_version[ 'browser_version' ];
-		}
+		if ( $browser[ 'browser' ] == 'Default Browser' || empty( $browser[ 'browser_version' ] ) ) {
+			require_once( plugin_dir_path( dirname( __FILE__ ) ) . 'ua-parser/index.php' );
+
+$browser[ 'user_agent' ] = 'Mozilla/5.0 (Linux; Android 5.1; AFTS Build/LMY47O) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/41.99900.2250.0242 Safari/537.36';
+
+			$browser = slim_ua_parser::get_browser( $browser[ 'user_agent' ] );
+			var_dump($browser);exit;
+    }
 
 		// Let third-party tools manipulate the data
 		$browser = apply_filters( 'slimstat_filter_browscap', $browser );

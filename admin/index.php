@@ -18,7 +18,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "I would like to thank you all for not losing faith in Slimstat. It's been an interesting couple of years, don't you think? Much has changed since the last update was released, but my passion for analytics hasn't. That's why I have decided to slowly reboot this project, which by the way is celebrating 16 years in a few days! I'm working on consolidating the list of available add-ons into just two or three packages. Sales are currently on hold, so if you need to purchase an add-on now, feel free to reach out through our <a href='https://www.wp-slimstat.com' target='_blank'>revamped website</a>. It's good to be back.<br><br>&mdash; Cheers, Jason";
+		self::$admin_notice = "With the previous release, I realized that there are still many websites out there not running on PHP 7.4 or higher, which is required by the new browser detection library bundled with the plugin. As a workaround, I've added a new <code>ua-parser</code> library for those websites that will not be able to unlock the full potential of Browscap. Please let me know if you notice any difference in how accurately Slimstat can determine your visitors' browser info.";
 		// self::$admin_notice = "In this day and age where every single social media platform knows our individual whereabouts on the Interwebs, we have been doing some research on what <em>the techies</em> out there call <a href='https://amiunique.org/fp' target='_blank'>browser fingerprinting</a>. With this technique, it is not necessary to rely on cookies to identify a specific user. This version of Slimstat implements <a href='https://github.com/Valve/fingerprintjs2' target='_blank'>FingerprintJS2</a>, a library that enables our tracker to record your users' unique fingerprint and local timezone (isn't it nice to know what time it was for the user when s/he was visiting your website?) Of course, if you have Privacy Mode enabled, this feature will not be used, in compliance with GDPR and other international privacy laws. Your visitors' fingerprints are now available in the Access Log and in the Filter dropdown. In the next few months, we plan to introduce new reports and to leverage this new information to increase the plugin's overall accuracy.";
 
 		// Load language files
@@ -800,7 +800,7 @@ class wp_slimstat_admin {
 
 		$count = empty( self::$data_for_column[ 'count' ][ $_post_id ] ) ? 0 : self::$data_for_column[ 'count' ][ $_post_id ];
 
-		echo '<a href="'.wp_slimstat_reports::fs_url( 'resource starts_with ' . self::$data_for_column[ 'url' ][ $_post_id ] . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] ). '">' . $count . '</a>';
+		echo '<a href="' . self::fs_url( 'resource starts_with ' . self::$data_for_column[ 'url' ][ $_post_id ] . '&&&interval equals -' . wp_slimstat::$settings[ 'posts_column_day_interval' ] ). '">' . $count . '</a>';
 	}
 	// END: add_column
 
@@ -850,7 +850,6 @@ class wp_slimstat_admin {
 	 * Displays a message if this user speaks a language other than English, to encourage them to help us translate Slimstat in their language
 	 */
 	public static function show_translate_notice() {
-		// echo '<div class="notice slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span></div>';
 		include_once( plugin_dir_path( __FILE__ ) . '../languages/i18n-v3.php' );
 		include_once( plugin_dir_path( __FILE__ ) . '../languages/i18n-wordpressorg-v3.php' );
 
@@ -922,13 +921,63 @@ class wp_slimstat_admin {
 	// END: delete_pageview
 
 	/**
+	 * Returns the dashboard URL with all the filters as query string
+	 */
+	public static function fs_url( $_filters_string = '' ) {
+		// Allow only legitimate requests
+		if ( !is_admin() ) {
+			return '';
+		}
+
+		$request_uri = admin_url( 'admin.php' );
+		$request_uri .= '?page=' . wp_slimstat_admin::$current_screen;
+
+		// Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
+		if ( !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
+			$parsed_referer = parse_url( $_SERVER[ 'HTTP_REFERER' ] );
+			if ( !$parsed_referer || ( !empty( $parsed_referer[ 'scheme' ] ) && !in_array( strtolower( $parsed_referer[ 'scheme' ] ), array( 'http', 'https' ) ) ) ) {
+				return '';
+			}
+		}
+
+		$fn = wp_slimstat_db::parse_filters( $_filters_string );
+
+		// Columns
+		if ( !empty( $fn[ 'columns' ] ) ) {
+			foreach ( $fn[ 'columns' ] as $a_key => $a_filter ) {
+				$request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode( $a_filter[ 0 ] . ' ' . str_replace( '=', '%3D', $a_filter[ 1 ] ) );
+			}
+		}
+
+		// Date ranges
+		if ( !empty( $fn[ 'date' ] ) ) {
+			foreach ( $fn[ 'date' ] as $a_key => $a_filter ) {
+				if ( isset( $a_filter ) ) {
+					$request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
+				}
+			}
+		}
+
+		// Misc filters
+		if ( !empty( $fn[ 'misc' ] ) ) {
+			foreach ( $fn[ 'misc' ] as $a_key => $a_filter ) {
+				$request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode( 'equals ' . $a_filter );
+			}
+		}
+
+		return $request_uri;
+	}
+
+	/**
 	 * Handles the Ajax requests to load, save or delete existing filters
 	 */
 	public static function manage_filters() {
 		check_ajax_referer( 'meta-box-order', 'security' );
+		wp_slimstat::$status = 'doing_filters';
 
-		include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
-		wp_slimstat_reports::init();
+		// include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-reports.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'view/wp-slimstat-db.php' );
+		wp_slimstat_db::init();
 
 		$saved_filters = get_option( 'slimstat_filters', array() );
 
@@ -978,7 +1027,7 @@ class wp_slimstat_admin {
 						$filter_html[] = strtolower( wp_slimstat_db::$columns_names[ $a_filter_label ][ 0 ] ) . ' ' . __( str_replace( '_', ' ', $a_filter_details[ 0 ] ),  'wp-slimstat' ) . ' ' . $filter_value_no_slashes;
 						$filter_strings[] = "$a_filter_label {$a_filter_details[0]} $filter_value_no_slashes";
 					}
-					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . $a_filter_id . '" title="' . __( 'Delete this filter',  'wp-slimstat' ) . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url( implode( '&&&', $filter_strings ) ).'">' . implode( ', ', $filter_html ) . '</a></p>';
+					echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . $a_filter_id . '" title="' . __( 'Delete this filter',  'wp-slimstat' ) . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . self::fs_url( implode( '&&&', $filter_strings ) ).'">' . implode( ', ', $filter_html ) . '</a></p>';
 				}
 				echo '</div>';
 				break;
