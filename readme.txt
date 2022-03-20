@@ -39,7 +39,7 @@ Try it out, you'll be amazed how good it feels! If you're on a tight budget, and
 
 == Installation ==
 1. In your WordPress admin, go to Plugins > Add New
-2. Search for limstat Analytics
+2. Search for Slimstat Analytics
 3. Click on **Install Now** next to Slimstat Analytics and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 
