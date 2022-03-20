@@ -60,6 +60,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 = 4.9.1 =
 * [Note] The method `fs_url`, currently defined in the class `wp_slimstat_reports`, is being moved to `wp_slimstat_admin`. If you have a custom report that uses this method, please make sure to update your code accordingly.
 * [Update] Improved shortcode performance, by not loading certain libraries only needed to show reports in the dashboard (thank you, [Matta Cib](https://wordpress.org/support/topic/f-in-counting/)).
+* [Update] [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker), the library we use to manage addon releases, has been updated to the latest version.
 
 = 4.9.0.1 = 
 * [Fix] Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
