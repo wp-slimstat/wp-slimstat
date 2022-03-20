@@ -69,7 +69,7 @@ class wp_slimstat {
 				self::$upload_dir = str_replace( '/sites/' . get_current_blog_id(), '', self::$upload_dir );
 			}
 			self::$upload_dir .= '/wp-slimstat';
-			self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
+			self::$upload_dir = apply_filters( 'slimstat_upload_dir', self::$upload_dir );
 		}
 
 		// Allow add-ons to turn off the tracker based on other conditions
@@ -1362,7 +1362,7 @@ class wp_slimstat {
 		$update_checker_objects = array();
 		
 		// This is only included if add-ons are installed
-		include_once( plugin_dir_path( __FILE__ ) . 'vendor/update-checker/plugin-update-checker.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/plugin-update-checker/plugin-update-checker.php' );
 
 		foreach ( self::$update_checker as $a_slug ) {
 			$a_clean_slug = str_replace( array( 'wp_slimstat_', '_' ), array( '', '-' ), $a_slug );

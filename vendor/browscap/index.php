@@ -18,7 +18,7 @@ class slim_browser {
 
 		if ( version_compare( PHP_VERSION, '7.4', '>=' ) ) {
 			self::update_browscap_database( false );
-			require_once( plugin_dir_path( __FILE__ ) . 'browscap-php/composer/autoload_real.php' );
+			require_once( plugin_dir_path( __FILE__ ) . 'composer/autoload_real.php' );
 		}
 	}
 
@@ -43,7 +43,7 @@ class slim_browser {
 		}
 
 		if ( $browser[ 'browser' ] == 'Default Browser' || empty( $browser[ 'browser_version' ] ) ) {
-			require_once( plugin_dir_path( dirname( __FILE__ ) ) . 'ua-parser/index.php' );
+			// require_once( plugin_dir_path( dirname( __FILE__ ) ) . 'ua-parser/index.php' );
 
 $browser[ 'user_agent' ] = 'Mozilla/5.0 (Linux; Android 5.1; AFTS Build/LMY47O) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/41.99900.2250.0242 Safari/537.36';
 
