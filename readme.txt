@@ -59,8 +59,11 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Changelog ==
 = 4.9.1 =
 * [Note] The method `fs_url`, currently defined in the class `wp_slimstat_reports`, is being moved to `wp_slimstat_admin`. If you have a custom report that uses this method, please make sure to update your code accordingly.
-* [Update] Improved shortcode performance, by not loading certain libraries only needed to show reports in the dashboard (thank you, [Matta Cib](https://wordpress.org/support/topic/f-in-counting/)).
+* [Update] Removed German localization files. A HUGE thank you to [Robert Oschwald](https://github.com/robertoschwald) for not only completing the localization files, but also for helping on the support forum and for submitting a few key pull requests.
+* [Update] Improved shortcode performance, by not loading libraries that are only needed to show reports in the dashboard (thank you, [Matta Cib](https://wordpress.org/support/topic/f-in-counting/)).
 * [Update] [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker), the library we use to manage addon releases, has been updated to the latest version.
+* [Update] Removed Japanese localization files, since they are now available through the official [WordPress Translate](https://translate.wordpress.org/projects/wp-plugins/wp-slimstat/) repository. Contact us to translate Slimstat in your language!
+* [Fix] A warning was being shown when deactivating the plugin if the settings could not be loaded from the database (thank you, [Fernando Reve](https://wordpress.org/support/topic/works-in-php-7-3/)).
 
 = 4.9.0.1 = 
 * [Fix] Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).

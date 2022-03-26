@@ -46,9 +46,11 @@ class wp_slimstat {
 
 		if ( empty( self::$settings ) ) {
 			// Save the default values in the database
-			self::update_option( 'slimstat_options', self::init_options() );
+			self::$settings = self::init_options();
+			self::update_option( 'slimstat_options', self::$settings );
 		}
-		else {
+		// Any new options that are not defined in the database?
+		else if ( self::$settings != self::init_options() ) {
 			self::$settings = array_merge( self::init_options(), self::$settings );
 		}
 
@@ -1077,7 +1079,7 @@ class wp_slimstat {
 	public static function init_options(){
 		return array(
 			'version' => self::$version,
-			'secret' => wp_hash( uniqid( time(), true ) ),
+			'secret' => hash_hmac( 'md5', uniqid( time(), true ), 'eZyT)-Naw]F8CwA*VaW#q*|.)g@o}||wf~@C-YSt}(dh_r6EbI#A,y|nU2{B#JBW' ),
 			'browscap_last_modified' => 0,
 
 			// General
@@ -1192,7 +1194,7 @@ class wp_slimstat {
 			'can_admin' => '',
 
 			// Access Control - REST API
-			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
+			'rest_api_tokens' => hash_hmac( 'md5', uniqid( time() - 3542, true ), '+XSqHc;@Q*K_b|Z?NC[3H!!EONbh.n<+=uKR:>*c(u`g~EJBf#8u#R{mUEZrozmm' ),
 
 			// Maintenance
 			// -----------------------------------------------------------------------
