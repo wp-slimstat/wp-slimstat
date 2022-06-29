@@ -486,7 +486,7 @@ class wp_slimstat {
 		}
 
 		// Internal WP search?
-		if ( empty( self::$stat[ 'searchterms' ] ) && !empty( $_POST[ 's' ] ) ) {
+		if ( empty( self::$stat[ 'searchterms' ] ) && !empty( $_REQUEST[ 's' ] ) ) {
 			self::$stat[ 'searchterms' ] = sanitize_text_field( str_replace( '\\', '', $_REQUEST[ 's' ] ) );
 		}
 

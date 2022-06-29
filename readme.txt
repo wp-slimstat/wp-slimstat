@@ -57,6 +57,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.9.2 =
+* [Fix] Internal searchterm analysis assumed POST request, but mostly it is GET (Issue #28) (thank you, [Mikko Saari](https://github.com/msaari)).
+
 = 4.9.1 =
 * [Note] The method `fs_url`, currently defined in the class `wp_slimstat_reports`, is being moved to `wp_slimstat_admin`. If you have a custom report that uses this method, please make sure to update your code accordingly.
 * [Update] Removed German localization files. A HUGE thank you to [Robert Oschwald](https://github.com/robertoschwald) for not only completing the localization files, but also for helping on the support forum and for submitting a few key pull requests.
