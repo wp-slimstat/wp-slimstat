@@ -5,7 +5,7 @@
 
 	<div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e( '<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat' ); ?></div>
 
-	<form action="<?php echo wp_slimstat_admin::fs_url(); ?>" method="post" id="slimstat-filters-form">
+	<form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
 		<fieldset id="slimstat-filters"><?php
 			$filter_name_html = '<label for="slimstat-filter-name">Filter by</label><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __( 'Dimension', 'wp-slimstat' ) . '</option>';
 			foreach ( wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info ) {
@@ -58,12 +58,12 @@
 			?></a>
 			<div class="dropdown">
 				<div id="slimstat-quick-filters">
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_admin::fs_url( 'strtotime equals today&&&interval equals -1' ) ?>"><?php _e( 'Today', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_admin::fs_url( 'strtotime equals yesterday&&&interval equals -1' ) ?>"><?php _e( 'Yesterday', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_admin::fs_url( 'strtotime equals today&&&interval equals -7' ) ?>"><?php _e( 'Last 7 Days', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_admin::fs_url( 'strtotime equals today&&&interval equals -28' ) ?>"><?php _e( 'Last 4 weeks', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_admin::fs_url( 'strtotime equals today&&&interval equals -84' ) ?>"><?php _e( 'Last 12 weeks', 'wp-slimstat' ) ?></a>
-					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_admin::fs_url( 'strtotime equals today&&&interval equals -364' ) ?>"><?php _e( 'Last 12 months', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -1' ) ?>"><?php _e( 'Today', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals yesterday&&&interval equals -1' ) ?>"><?php _e( 'Yesterday', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -7' ) ?>"><?php _e( 'Last 7 Days', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -28' ) ?>"><?php _e( 'Last 4 weeks', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -84' ) ?>"><?php _e( 'Last 12 weeks', 'wp-slimstat' ) ?></a>
+					<a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url( 'strtotime equals today&&&interval equals -364' ) ?>"><?php _e( 'Last 12 months', 'wp-slimstat' ) ?></a>
 				</div>
 
 				<strong><?php _e( 'Date Range', 'wp-slimstat' ) ?></strong>
@@ -104,7 +104,7 @@
 					wp_slimstat_db::$filters_normalized[ 'date' ][ 'month' ] != intval( date_i18n( 'n' ) ) ||
 					wp_slimstat_db::$filters_normalized[ 'date' ][ 'year' ] != intval( date_i18n( 'Y' ) ) ||
 					( wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] != - abs( wp_slimstat::$settings[ 'posts_column_day_interval' ] ) && wp_slimstat_db::$filters_normalized[ 'date' ][ 'interval' ] != - intval( date_i18n( 'j' ) ) + 1 ) ) {
-					echo '<a class="slimstat-filter-link button button-secondary noslimstat" data-reset-filters="true" href="' . wp_slimstat_admin::fs_url() . '">' . __( 'Reset Filters', 'wp-slimstat' ) . '</a>';
+					echo '<a class="slimstat-filter-link button button-secondary noslimstat" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url() . '">' . __( 'Reset Filters', 'wp-slimstat' ) . '</a>';
 				}
 				?>
 			</div>

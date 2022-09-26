@@ -174,7 +174,7 @@ class wp_slimstat_db {
 		self::$filters_normalized = self::init_filters( $filters_raw );
 
 		// Retrieve data that will be used by multiple reports
-		if ( wp_slimstat::$status == '' && ( empty( $_REQUEST[ 'page' ] ) || strpos( $_REQUEST[ 'page' ], 'slimview' ) !== false ) ) {
+		if ( empty( $_REQUEST[ 'page' ] ) || strpos( $_REQUEST[ 'page' ], 'slimview' ) !== false ) {
 			self::$pageviews = wp_slimstat_db::count_records();
 		}
 	}
@@ -214,7 +214,7 @@ class wp_slimstat_db {
 			if ( !empty( self::$filters_normalized[ 'columns' ] ) ) {
 				$_where = self::_get_sql_where( self::$filters_normalized[ 'columns' ], $_slim_stats_table_alias );
 
-				if ( $_use_date_filters ) {
+				if ($_use_date_filters) {
 					$time_range_condition = "$dt_with_alias BETWEEN " . self::$filters_normalized[ 'utime' ][ 'start' ] . ' AND ' . self::$filters_normalized[ 'utime' ][ 'end' ];
 				}
 			}
@@ -290,7 +290,6 @@ class wp_slimstat_db {
 
 		switch ( $_operator ) {
 			case 'is_not_equal_to':
-			case 'does_not_equal':
 				$where[ 0 ] = "$column_with_alias <> %s";
 				break;
 

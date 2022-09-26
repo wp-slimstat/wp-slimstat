@@ -5,10 +5,9 @@ Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
 Version: 4.9.1
 Author: Jason Crouse
-Author URI: https://www.wp-slimstat.com/
 Text Domain: wp-slimstat
 Domain Path: /languages
-Requires PHP: 7.1
+Requires PHP: 7.4
 */
 
 if ( !empty( wp_slimstat::$settings ) ) {
@@ -24,8 +23,6 @@ class wp_slimstat {
 
 	public static $update_checker = array();
 	public static $raw_post_array = array();
-
-	public static $status = '';
 
 	protected static $data_js = array( 'id' => 0 );
 	protected static $stat = array();
@@ -46,11 +43,9 @@ class wp_slimstat {
 
 		if ( empty( self::$settings ) ) {
 			// Save the default values in the database
-			self::$settings = self::init_options();
-			self::update_option( 'slimstat_options', self::$settings );
+			self::update_option( 'slimstat_options', self::init_options() );
 		}
-		// Any new options that are not defined in the database?
-		else if ( self::$settings != self::init_options() ) {
+		else {
 			self::$settings = array_merge( self::init_options(), self::$settings );
 		}
 
@@ -71,7 +66,7 @@ class wp_slimstat {
 				self::$upload_dir = str_replace( '/sites/' . get_current_blog_id(), '', self::$upload_dir );
 			}
 			self::$upload_dir .= '/wp-slimstat';
-			self::$upload_dir = apply_filters( 'slimstat_upload_dir', self::$upload_dir );
+			self::$upload_dir = apply_filters( 'slimstat_maxmind_path', self::$upload_dir );
 		}
 
 		// Allow add-ons to turn off the tracker based on other conditions
@@ -116,7 +111,7 @@ class wp_slimstat {
 		add_shortcode( 'slimstat', array( __CLASS__, 'slimstat_shortcode' ), 15 );
 
 		// Include our browser detector library
-		include_once( plugin_dir_path( __FILE__ ) . 'vendor/browscap/index.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/browscap.php' );
 		add_action( 'init', array( 'slim_browser', 'init' ) );
 
 		// If add-ons are installed, check for updates
@@ -576,7 +571,7 @@ class wp_slimstat {
 		}
 
 		// Geolocation 
-		include_once( plugin_dir_path( __FILE__ ) . 'vendor/maxmind/index.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
 		try {
 			$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
 		}
@@ -746,7 +741,6 @@ class wp_slimstat {
 			'o' => 0	// offset for counters
 		), $_attributes ) );
 
-		self::$status = 'doing_shortcode';
 		$output = $where = $as_column = '';
 		$s = "<span class='slimstat-item-separator'>$s</span>";
 
@@ -760,21 +754,20 @@ class wp_slimstat {
 
 		// Include the Reports Library, but don't initialize the database, since we will do that separately later
 		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-reports.php' );
+		wp_slimstat_reports::init();
 
 		// Init the database library with the appropriate filters
 		if ( strpos ( $_content, 'WHERE:' ) !== false ) {
 			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
-			wp_slimstat_reports::init();
 		}
 		else{
-			wp_slimstat_reports::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
+			wp_slimstat_db::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
 		}
 
 		switch( $f ) {
 			case 'count':
 			case 'count-all':
-				echo strpos( $f, 'all' ) === false;
-				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all' ) === false ) + $o;
+				$output = wp_slimstat_db::count_records( $w, $where, strpos( $f, 'all') === false ) + $o;
 				break;
 
 			case 'widget':
@@ -906,8 +899,6 @@ class wp_slimstat {
 			default:
 				break;
 		}
-
-		self::$status = '';
 
 		return $output;
 	}
@@ -1079,7 +1070,7 @@ class wp_slimstat {
 	public static function init_options(){
 		return array(
 			'version' => self::$version,
-			'secret' => hash_hmac( 'md5', uniqid( time(), true ), 'eZyT)-Naw]F8CwA*VaW#q*|.)g@o}||wf~@C-YSt}(dh_r6EbI#A,y|nU2{B#JBW' ),
+			'secret' => wp_hash( uniqid( time(), true ) ),
 			'browscap_last_modified' => 0,
 
 			// General
@@ -1194,7 +1185,7 @@ class wp_slimstat {
 			'can_admin' => '',
 
 			// Access Control - REST API
-			'rest_api_tokens' => hash_hmac( 'md5', uniqid( time() - 3542, true ), '+XSqHc;@Q*K_b|Z?NC[3H!!EONbh.n<+=uKR:>*c(u`g~EJBf#8u#R{mUEZrozmm' ),
+			'rest_api_tokens' => wp_hash( uniqid( time() - 3600, true ) ),
 
 			// Maintenance
 			// -----------------------------------------------------------------------
@@ -1364,7 +1355,7 @@ class wp_slimstat {
 		$update_checker_objects = array();
 		
 		// This is only included if add-ons are installed
-		include_once( plugin_dir_path( __FILE__ ) . 'vendor/plugin-update-checker/plugin-update-checker.php' );
+		include_once( plugin_dir_path( __FILE__ ) . 'vendor/update-checker/plugin-update-checker.php' );
 
 		foreach ( self::$update_checker as $a_slug ) {
 			$a_clean_slug = str_replace( array( 'wp_slimstat_', '_' ), array( '', '-' ), $a_slug );

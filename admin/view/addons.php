@@ -18,7 +18,6 @@ $error_message = '';
 
 if ( !empty( $_GET[ 'force_refresh' ] ) || false === $response ) {
 	$response = wp_remote_get( 'https://www.wp-slimstat.com/update-checker/', array( 'headers' => array( 'referer' => get_site_url() ) ) );
-	
 	if ( is_wp_error( $response ) || $response[ 'response' ][ 'code' ] != 200 ) {
 		$error_message = is_wp_error( $response ) ? $response->get_error_message() : $response[ 'response' ][ 'code' ] . ' ' . $response[ 'response' ][ 'message' ];
 		$error_message = sprintf( __( 'There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s', 'wp-slimstat' ), $error_message );
@@ -65,7 +64,7 @@ if ( !is_array( $list_addons ) ) {
 		<?php foreach ( $list_addons as $a_addon ): $is_active = is_plugin_active( $a_addon[ 'slug' ] . '/index.php' ) || is_plugin_active( $a_addon[ 'slug' ] . '/' . $a_addon[ 'slug' ] . '.php'); ?>
 		<tr id="<?php echo $a_addon[ 'slug' ] ?>" <?php echo $is_active ? 'class="active"' : '' ?>>
 			<th scope="row" class="plugin-title">
-				<strong><?php echo $a_addon[ 'name' ] ?></strong>
+				<strong><a target="_blank" href="<?php echo $a_addon[ 'download_url' ] ?>"><?php echo $a_addon[ 'name' ] ?></a></strong>
 				<div class="row-actions-visible"><?php 
 					if ( !empty( $a_addon[ 'version' ] ) ) {
 						echo ( $is_active ? __( 'Repo Version', 'wp-slimstat' ) : __( 'Version', 'wp-slimstat' ) ) . ': ' . $a_addon[ 'version' ].'<br/>';
@@ -87,9 +86,9 @@ if ( !is_array( $list_addons ) ) {
 						}
 						$at_least_one_add_on_active = true;
 					}
-					// else{
-					// 	echo 'Price: ' . ( is_numeric( $a_addon[ 'price' ] ) ? '$' . $a_addon[ 'price' ] : $a_addon[ 'price' ] );
-					// }  ?>
+					else{
+						echo 'Price: ' . ( is_numeric( $a_addon[ 'price' ] ) ? '$' . $a_addon[ 'price' ] : $a_addon[ 'price' ] );
+					}  ?>
 				</div>
 			</th>
 			<td class="column-description desc">

@@ -243,7 +243,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 			'ip_lookup_service' => array(
 				'title' => __( 'IP Geolocation', 'wp-slimstat' ),
 				'type'=> 'text',
-				'description'=> __( 'Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://www.infosniper.net/?ip_address=</code>', 'wp-slimstat' )
+				'description'=> __( 'Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://whatismyipaddress.com/ip/</code>', 'wp-slimstat' )
 			),
 			'comparison_chart' => array(
 				'title' => __( 'Comparison Chart', 'wp-slimstat' ),
@@ -655,7 +655,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 			if ( $_POST[ 'options' ][ 'enable_maxmind' ] == 'on'
 				  && wp_slimstat::$settings[ 'enable_maxmind' ] == 'no'
 				  && wp_slimstat::$settings[ 'maxmind_license_key' ] != '' ) {
-				include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/maxmind/index.php' );
+				include_once( plugin_dir_path( dirname( dirname( __FILE__ ) ) ) . 'vendor/maxmind.php' );
 				$error = maxmind_geolite2_connector::download_maxmind_database();
 
 				if ( empty( $error ) ) {
