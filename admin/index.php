@@ -18,7 +18,7 @@ class wp_slimstat_admin {
 	 * Init -- Sets things up.
 	 */
 	public static function init() {
-		self::$admin_notice = "I wish this day would never come, and yet here we are. As you might have realized, Slimstat Analytics hasn't been maintained in a while. Today, I'm announcing that after more than 16 years, <strong>I will be officially shutting down this plugin</strong>. I'm proud of the community that railed around Slimstat and I'm inspired by the incredible sharing and discovery that came from it. While it's sad to say goodbye to Slimstat, I am hopeful that this works hasn't been for nothing, and that it has allowed millions of users to better understand their website traffic and visitors.<br><br>All the best, Jason.";
+		self::$admin_notice = "I would like to take a moment to thank all of you who have reached out to me, the outpouring of messages has been beyond overwhelming. I've been working to transfer ownership of code and copyrights to other volunteers, and I'm happy to announce that the wait is over! <a href='https://veronalabs.com/' target='_blank'>VeronaLabs</a>, the team behind one of the most popular analytics plugins for WordPress, WP Statistics, has agreed to take over and continue the development of this plugin. I will stick around for a while, mostly as a gentle presence out of public view. So please join me in welcoming Mostafa Soufi and his team as the new maintainers of Slimstat Analytics. Thank you for stepping forward!";
 
 		// Load language files
 		load_plugin_textdomain( 'wp-slimstat', false, '/wp-slimstat/languages' );

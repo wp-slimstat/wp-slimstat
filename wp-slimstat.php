@@ -3,8 +3,8 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wordpress.org/plugins/wp-slimstat/
 Description: The leading web analytics plugin for WordPress
-Version: 4.9.1
-Author: Jason Crouse
+Version: 4.9.1.1
+Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
 Requires PHP: 7.4
@@ -15,7 +15,7 @@ if ( !empty( wp_slimstat::$settings ) ) {
 }
 
 class wp_slimstat {
-	public static $version = '4.9.1';
+	public static $version = '4.9.1.1';
 	public static $settings = array();
 
 	public static $wpdb = '';
@@ -481,7 +481,7 @@ class wp_slimstat {
 		}
 
 		// Internal WP search?
-		if ( empty( self::$stat[ 'searchterms' ] ) && !empty( $_REQUEST[ 's' ] ) ) {
+		if ( empty( self::$stat[ 'searchterms' ] ) && !empty( $_POST[ 's' ] ) ) {
 			self::$stat[ 'searchterms' ] = sanitize_text_field( str_replace( '\\', '', $_REQUEST[ 's' ] ) );
 		}
 

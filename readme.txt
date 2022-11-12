@@ -1,15 +1,14 @@
 === Slimstat Analytics ===
-Contributors: coolmann, toxicum
-Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BNJR5EZNY3W38
-Tags: analytics, statistics, counter, tracking, reports, wassup, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
+Contributors: coolmann, toxicum, veronalabs, mostafas1990
+Tags: analytics, statistics, counter, tracking, reports, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.0
-Stable tag: 4.9.1
+Stable tag: 4.9.1.1
 
 == Description ==
-Please note: this plugin has been discontinued and is not actively maintained any longer. Thank you for 16 years of incredible sharing and discovery that came from it.
+Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
 = Main features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
