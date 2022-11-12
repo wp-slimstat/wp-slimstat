@@ -45,9 +45,8 @@ class wp_slimstat {
 			// Save the default values in the database
 			self::update_option( 'slimstat_options', self::init_options() );
 		}
-		else {
-			self::$settings = array_merge( self::init_options(), self::$settings );
-		}
+
+        self::$settings = array_merge( self::init_options(), self::$settings );
 
 		// Allow third party tools to edit the options
 		self::$settings = apply_filters( 'slimstat_init_options', self::$settings );
