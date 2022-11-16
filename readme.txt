@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.1
-Stable tag: 4.9.1.1
+Stable tag: 4.9.2
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -49,6 +49,10 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.9.2 =
+* [Fix] Fixed tweak notice errors while activating the plugin in fresh installation
+* [Update] Tested up to WordPress v6.1
+
 = 4.9.0.1 = 
 * [Fix] Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
 * [Fix] The new Browscap Library requires at least PHP 7.4, up from 7.1. (thank you, [Daniel Jaraud](https://github.com/slimstat/wp-slimstat/issues/22)).
