@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Slimstat Analytics
-Plugin URI: https://wordpress.org/plugins/wp-slimstat/
+Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 4.9.1.1
+Version: 4.9.2
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -45,9 +45,8 @@ class wp_slimstat {
 			// Save the default values in the database
 			self::update_option( 'slimstat_options', self::init_options() );
 		}
-		else {
-			self::$settings = array_merge( self::init_options(), self::$settings );
-		}
+
+        self::$settings = array_merge( self::init_options(), self::$settings );
 
 		// Allow third party tools to edit the options
 		self::$settings = apply_filters( 'slimstat_init_options', self::$settings );
