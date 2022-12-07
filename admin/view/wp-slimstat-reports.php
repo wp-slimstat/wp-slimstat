@@ -1737,7 +1737,7 @@ class wp_slimstat_reports {
 			}
 		}
 
-		return $request_uri;
+		return esc_url($request_uri);
 	}
 
 	/**
