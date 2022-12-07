@@ -360,7 +360,7 @@ class wp_slimstat {
 					$cookie_names[ $name ] = $value;
 				}
 			}
-		
+
 			$cookie_found = false;
 			foreach ( $cookie_names as $a_name => $a_value ) {
 				if ( isset( $_COOKIE[ $a_name ] ) && strpos( $_COOKIE[ $a_name ], $a_value ) !== false ) {
@@ -569,7 +569,7 @@ class wp_slimstat {
 			return false;
 		}
 
-		// Geolocation 
+		// Geolocation
 		include_once( plugin_dir_path( __FILE__ ) . 'vendor/maxmind.php' );
 		try {
 			$geolocation_data = maxmind_geolite2_connector::get_geolocation_info( self::$stat[ 'ip' ] );
@@ -704,7 +704,7 @@ class wp_slimstat {
 		$request_url = '';
 
 		if ( isset( $_SERVER[ 'REQUEST_URI' ] ) ) {
-			return urldecode( $_SERVER[ 'REQUEST_URI' ] );
+			return urldecode( sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])) );
 		}
 		else if ( isset( $_SERVER[ 'SCRIPT_NAME' ] ) ) {
 			$request_url = $_SERVER[ 'SCRIPT_NAME' ];
@@ -853,7 +853,7 @@ class wp_slimstat {
 								else {
 									$output[ $result_idx ][ $a_column ] .=  $a_result[ 'username' ];
 								}
-								
+
 								break;
 
 							case 'dt':
@@ -1352,13 +1352,13 @@ class wp_slimstat {
 		}
 
 		$update_checker_objects = array();
-		
+
 		// This is only included if add-ons are installed
 		include_once( plugin_dir_path( __FILE__ ) . 'vendor/update-checker/plugin-update-checker.php' );
 
 		foreach ( self::$update_checker as $a_slug ) {
 			$a_clean_slug = str_replace( array( 'wp_slimstat_', '_' ), array( '', '-' ), $a_slug );
-			
+
 			if ( !empty( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ) ) {
 				$update_checker_objects[ $a_clean_slug ] = Puc_v4_Factory::buildUpdateChecker( 'https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode( self::$settings[ 'addon_licenses' ][ 'wp-slimstat-' . $a_clean_slug ] ), dirname( dirname( __FILE__ ) ) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug );
 
@@ -1457,11 +1457,16 @@ class wp_slimstat {
 			return -1;
 		}
 
-		// Remove unwanted characters (SQL injections, anyone?)
+		// Remove unwanted characters from keys (SQL injections, anyone?)
 		$data_keys = array();
 		foreach ( array_keys( $_data ) as $a_key ) {
 			$data_keys[] = sanitize_key( $a_key );
 		}
+
+        // Remove unwanted characters from data (SQL injections, anyone?)
+        foreach ($_data as $key => $value) {
+            $_data[$key] = sanitize_text_field($value);
+        }
 
 		self::$wpdb->query( self::$wpdb->prepare( "
 			INSERT IGNORE INTO $_table (" . implode (", ", $data_keys) . ')
@@ -1950,8 +1955,8 @@ class wp_slimstat {
 	 * These two functions here implement an URL-safe base64 string
 	 */
 	protected static function _base64_url_encode( $_input = '' ) {
-		return strtr( base64_encode( $_input ), '+/=', '._-' ); 
-	} 
+		return strtr( base64_encode( $_input ), '+/=', '._-' );
+	}
 	protected static function _base64_url_decode( $_input = '' ) {
 		return strip_tags( trim( base64_decode( strtr( $_input, '._-', '+/=' ) ) ) );
 	}
@@ -1964,7 +1969,7 @@ class slimstat_widget extends WP_Widget {
 	 * Sets up the widgets name etc
 	 */
 	public function __construct() {
-		parent::__construct( 'slimstat_widget', 'Slimstat', array( 
+		parent::__construct( 'slimstat_widget', 'Slimstat', array(
 			'classname' => 'slimstat_widget',
 			'description' => 'Add a Slimstat report to your sidebar',
 		) );
@@ -2017,7 +2022,7 @@ class slimstat_widget extends WP_Widget {
 		?>
 
 		<p>
-		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>"><?php _e( 'Report', 'wp-slimstat' ) ?></label> 
+		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>"><?php _e( 'Report', 'wp-slimstat' ) ?></label>
 		<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_id' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'slimstat_widget_id' ) ); ?>">
 			<option value="">Select a widget</option>
 			<?php echo $select_options ?>
@@ -2025,12 +2030,12 @@ class slimstat_widget extends WP_Widget {
 		</p>
 
 		<p>
-		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_title' ) ); ?>"><?php _e( 'Title', 'wp-slimstat' ) ?></label> 
+		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_title' ) ); ?>"><?php _e( 'Title', 'wp-slimstat' ) ?></label>
 		<input type="text" class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_title' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'slimstat_widget_title' ) ); ?>" value="<?php echo trim( strip_tags( $slimstat_widget_title ) ) ?>">
 		</p>
 
 		<p>
-		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_filters' ) ); ?>"><?php _e( 'Optional filters', 'wp-slimstat' ); ?></label> 
+		<label for="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_filters' ) ); ?>"><?php _e( 'Optional filters', 'wp-slimstat' ); ?></label>
 		<a href="https://slimstat.freshdesk.com/solution/articles/5000631833-what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
 		<textarea class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'slimstat_widget_filters' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'slimstat_widget_filters' ) ); ?>"><?php echo trim( strip_tags( $slimstat_widget_filters ) ) ?></textarea>
 		</p>
