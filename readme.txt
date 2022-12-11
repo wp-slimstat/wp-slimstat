@@ -31,7 +31,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 
 == Installation ==
 1. In your WordPress admin, go to Plugins > Add New
-2. Search for limstat Analytics
+2. Search for Slimstat Analytics
 3. Click on **Install Now** next to Slimstat Analytics and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 
@@ -50,6 +50,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Changelog ==
 = 4.9.3 =
+* [Update] New logo and icon for the plugin!
 * [Fix] Hardened plugin security and sanitization of user input and escaped output
 
 = 4.9.2 =
