@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.1
-Stable tag: 4.9.2
+Stable tag: 4.9.3
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -31,7 +31,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 
 == Installation ==
 1. In your WordPress admin, go to Plugins > Add New
-2. Search for limstat Analytics
+2. Search for Slimstat Analytics
 3. Click on **Install Now** next to Slimstat Analytics and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 
@@ -49,6 +49,10 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.9.3 =
+* [Update] New logo and icon for the plugin!
+* [Fix] Hardened plugin security and sanitization of user input and escaped output
+
 = 4.9.2 =
 * [Fix] Fixed tweak notice errors while activating the plugin in fresh installation
 * [Update] Tested up to WordPress v6.1
