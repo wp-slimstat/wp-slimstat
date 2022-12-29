@@ -1466,7 +1466,11 @@ class wp_slimstat {
 
         // Remove unwanted characters from data (SQL injections, anyone?)
         foreach ($_data as $key => $value) {
-            $_data[$key] = sanitize_text_field($value);
+            if ($key == 'resource') {
+                $_data[$key] = sanitize_url($value);
+            } else {
+                $_data[$key] = sanitize_text_field($value);
+            }
         }
 
 		self::$wpdb->query( self::$wpdb->prepare( "
