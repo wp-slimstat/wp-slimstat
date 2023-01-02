@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 4.9.3
+Version: 4.9.3.1
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -1466,7 +1466,11 @@ class wp_slimstat {
 
         // Remove unwanted characters from data (SQL injections, anyone?)
         foreach ($_data as $key => $value) {
-            $_data[$key] = sanitize_text_field($value);
+            if ($key == 'resource') {
+                $_data[$key] = sanitize_url($value);
+            } else {
+                $_data[$key] = sanitize_text_field($value);
+            }
         }
 
 		self::$wpdb->query( self::$wpdb->prepare( "
