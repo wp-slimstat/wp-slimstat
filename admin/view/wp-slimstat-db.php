@@ -286,7 +286,8 @@ class wp_slimstat_db {
 				break;
 		}
 
-		$where = array( '', htmlentities( $_value, ENT_QUOTES, 'UTF-8' ) );
+        $_value = implode('/', array_map('urlencode', explode('/', $_value)));
+        $where  = array('', htmlentities($_value, ENT_QUOTES, 'UTF-8'));
 
 		switch ( $_operator ) {
 			case 'is_not_equal_to':
@@ -728,7 +729,7 @@ class wp_slimstat_db {
 		}
 
 		// Generate the output array (sent to the chart library) by combining all the data collected so far
-		
+
 		// Let's start by initializing all the data points to zero
 		for ( $i = 0; $i < $params[ 'data_points_count' ]; $i++ ) {
 			$v1_label = date( $params[ 'data_points_label' ], strtotime( "+$i {$params[ 'granularity' ]}", self::$filters_normalized[ 'utime' ][ 'start' ] ) );
@@ -831,7 +832,7 @@ class wp_slimstat_db {
 	public static function get_overview_summary() {
 		$days_in_range = ceil( ( wp_slimstat_db::$filters_normalized[ 'utime' ][ 'end' ] - wp_slimstat_db::$filters_normalized[ 'utime' ][ 'start' ] ) / 86400 );
 		$results = array();
-		
+
 		// Turn date_i18n filters off
 		wp_slimstat::toggle_date_i18n_filters( false );
 
@@ -954,7 +955,7 @@ class wp_slimstat_db {
 		}
 
 		$group_by_column = $_column;
-		
+
 		if ( !empty( $_as_column ) ) {
 			$_column = "$_column AS $_as_column";
 		}
