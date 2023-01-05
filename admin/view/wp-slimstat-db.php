@@ -286,7 +286,10 @@ class wp_slimstat_db {
 				break;
 		}
 
-        $_value = implode('/', array_map('urlencode', explode('/', $_value)));
+        if ($_dimension == 'resource') {
+            $_value = implode('/', array_map('urlencode', explode('/', $_value)));
+        }
+
         $where  = array('', htmlentities($_value, ENT_QUOTES, 'UTF-8'));
 
 		switch ( $_operator ) {
