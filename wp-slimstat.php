@@ -206,7 +206,7 @@ class wp_slimstat {
 					$resource = self::_base64_url_decode( self::$data_js[ 'res' ] );
 					$parsed_resource = parse_url( $resource );
 
-					if ( $parsed_resource === false ) {
+					if ( $parsed_resource === false or empty( $parsed_resource[ 'host' ]) ) {
 						exit( self::_log_error( 203 ) );
 					}
 
