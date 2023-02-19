@@ -756,13 +756,17 @@ class wp_slimstat {
 		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 
+        /**
+         * @SecurityProfile https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-0630
+         * Disabled because of the report from WP Scan
+         */
 		// Init the database library with the appropriate filters
-		if ( strpos ( $_content, 'WHERE:' ) !== false ) {
+		/*if ( strpos ( $_content, 'WHERE:' ) !== false ) {
 			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
 		}
-		else{
+		else{*/
 			wp_slimstat_db::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
-		}
+		//}
 
 		switch( $f ) {
 			case 'count':
