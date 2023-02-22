@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 4.9.3.2
+Version: 4.9.3.3
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -206,7 +206,7 @@ class wp_slimstat {
 					$resource = self::_base64_url_decode( self::$data_js[ 'res' ] );
 					$parsed_resource = parse_url( $resource );
 
-					if ( $parsed_resource === false ) {
+					if ( $parsed_resource === false or empty( $parsed_resource[ 'host' ]) ) {
 						exit( self::_log_error( 203 ) );
 					}
 
@@ -756,13 +756,17 @@ class wp_slimstat {
 		include_once( plugin_dir_path( __FILE__ ) . 'admin/view/wp-slimstat-reports.php' );
 		wp_slimstat_reports::init();
 
+        /**
+         * @SecurityProfile https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-0630
+         * Disabled because of the report from WP Scan
+         */
 		// Init the database library with the appropriate filters
-		if ( strpos ( $_content, 'WHERE:' ) !== false ) {
+		/*if ( strpos ( $_content, 'WHERE:' ) !== false ) {
 			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
 		}
-		else{
+		else{*/
 			wp_slimstat_db::init( html_entity_decode( $_content, ENT_QUOTES, 'UTF-8' ) );
-		}
+		//}
 
 		switch( $f ) {
 			case 'count':

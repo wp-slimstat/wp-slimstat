@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.1
-Stable tag: 4.9.3.2
+Stable tag: 4.9.3.3
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -49,6 +49,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 4.9.3.3 =
+* [Fix] Disabled shortcode's filtering WHERE statement and make security harder.
+
 = 4.9.3.2 =
 * [Fix] The filtering issue
 
