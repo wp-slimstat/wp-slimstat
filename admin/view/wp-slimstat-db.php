@@ -648,6 +648,11 @@ class wp_slimstat_db {
 	}
 
 	public static function count_records( $_column = 'id', $_where = '', $_use_date_filters = true ) {
+        // Validating the column
+        if (in_array($_column, ['id', 'ip', 'other_ip', 'username', 'email', 'country', 'location', 'city', 'referer', 'resource', 'searchterms', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser', 'browser_version', 'browser_type', 'platform', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'content_type', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out', 'dt']) === false) {
+            return;
+        }
+
 		$distinct_column = ( $_column != 'id' ) ? "DISTINCT $_column" : $_column;
 		$_where = self::get_combined_where( $_where, $_column, $_use_date_filters );
 

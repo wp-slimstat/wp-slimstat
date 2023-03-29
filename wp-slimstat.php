@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 4.9.3.3
+Version: 4.9.4
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -734,12 +734,17 @@ class wp_slimstat {
 	 * Implements the Slimstat Shortcode API
 	 */
 	public static function slimstat_shortcode( $_attributes = '', $_content = '' ) {
-		extract( shortcode_atts( array(
+        shortcode_atts( array(
 			'f' => '',	// recent, popular, count, widget
 			'w' => '',	// column to use (for recent, popular and count) or widget to use
 			's' => ' ',	// separator
 			'o' => 0	// offset for counters
-		), $_attributes ) );
+		), $_attributes );
+
+        $f = isset($_attributes['f']) ? $_attributes['f'] : '';
+        $w = isset($_attributes['w']) ? $_attributes['w'] : '';
+        $s = isset($_attributes['s']) ? $_attributes['s'] : '';
+        $o = isset($_attributes['o']) ? $_attributes['o'] : 0;
 
 		$output = $where = $as_column = '';
 		$s = "<span class='slimstat-item-separator'>$s</span>";
