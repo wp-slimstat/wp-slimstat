@@ -61,9 +61,9 @@ if (!is_array($list_addons)) {
 
             <tbody id="the-list">
             <?php foreach ($list_addons as $a_addon): $is_active = is_plugin_active($a_addon['slug'] . '/index.php') || is_plugin_active($a_addon['slug'] . '/' . $a_addon['slug'] . '.php'); ?>
-                <tr id="<?php echo $a_addon['slug'] ?>" <?php echo $is_active ? 'class="active"' : '' ?>>
+                <tr id="<?php echo esc_attr($a_addon['slug']); ?>" <?php echo $is_active ? 'class="active"' : '' ?>>
                     <th scope="row" class="plugin-title">
-                        <strong><a target="_blank" href="<?php echo $a_addon['download_url'] ?>"><?php echo $a_addon['name'] ?></a></strong>
+                        <strong><a target="_blank" href="<?php echo esc_url($a_addon['download_url']); ?>"><?php echo esc_html($a_addon['name']); ?></a></strong>
                         <div class="row-actions-visible"><?php
                             if (!empty($a_addon['version'])) {
                                 echo ($is_active ? __('Repo Version', 'wp-slimstat') : __('Version', 'wp-slimstat')) . ': ' . $a_addon['version'] . '<br/>';
@@ -88,10 +88,10 @@ if (!is_array($list_addons)) {
                         </div>
                     </th>
                     <td class="column-description desc">
-                        <div class="plugin-description"><p><?php echo $a_addon['description'] ?></p></div>
+                        <div class="plugin-description"><p><?php echo wp_kses_post($a_addon['description']); ?></p></div>
                         <?php if ((is_plugin_active($a_addon['slug'] . '/index.php') || is_plugin_active($a_addon['slug'] . '/' . $a_addon['slug'] . '.php'))): ?>
                             <div class="active second">
-                                License Key <input type="text" name="licenses[<?php echo $a_addon['slug'] ?>]" value="<?php echo !empty(wp_slimstat::$settings['addon_licenses'][$a_addon['slug']]) ? wp_slimstat::$settings['addon_licenses'][$a_addon['slug']] : '' ?>" size="50">
+                                License Key <input type="text" name="licenses[<?php echo esc_attr($a_addon['slug']); ?>]" value="<?php echo !empty(wp_slimstat::$settings['addon_licenses'][$a_addon['slug']]) ? wp_slimstat::$settings['addon_licenses'][$a_addon['slug']] : '' ?>" size="50">
                             </div>
                         <?php endif; ?>
                     </td>

@@ -899,7 +899,7 @@ class wp_slimstat_reports
             $widget_title   = "<h3 data-report-id='{$_report_id}'>" . self::$reports[$_report_id]['title'] . "{$header_tooltip}</h3>";
         }
 
-        echo "<div class='postbox $header_classes' id='$_report_id'>{$header_buttons} $widget_title <div class='inside'>";
+        echo "<div class='postbox " . esc_attr($header_classes) . "' id='" . esc_attr($_report_id) . "'>{$header_buttons} $widget_title <div class='inside'>";
     }
 
     public static function report_footer()
@@ -967,7 +967,7 @@ class wp_slimstat_reports
 
         $all_results = call_user_func($_args['raw'], $_args);
 
-        echo wp_slimstat_db::$debug_message;
+        echo wp_kses_post(wp_slimstat_db::$debug_message);
 
         // Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
         if (empty($_args['columns'])) {
@@ -1214,20 +1214,20 @@ class wp_slimstat_reports
         $chart_colors = !empty(wp_slimstat::$settings['chart_colors']) ? wp_slimstat::string_to_array(wp_slimstat::$settings['chart_colors']) : array('#bbcc44', '#21759b', '#ccc', '#999');
 
         ?>
-        <div class="chart-placeholder" id="chart_<?php echo $_args['id']; ?>" style="min-height: 280px"></div>
+        <div class="chart-placeholder" id="chart_<?php echo esc_attr($_args['id']); ?>" style="min-height: 280px"></div>
 
         <script type="text/javascript">
             <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
             jQuery(function () {
                 <?php endif; ?>
                 // am4core.useTheme(am4themes_material);
-                var chart_<?php echo $_args['id']; ?> = am4core.create("chart_<?php echo $_args['id']; ?>", am4charts.XYChart);
+                var chart_<?php echo esc_attr($_args['id']); ?> = am4core.create("chart_<?php echo esc_attr($_args['id']); ?>", am4charts.XYChart);
 
                 // Add data
-                chart_<?php echo $_args['id']; ?>.data = <?php unset($data['keys']); echo json_encode($data) ?>;
+                chart_<?php echo esc_attr($_args['id']); ?>.data = <?php unset($data['keys']); echo json_encode($data) ?>;
 
                 // Create axes
-                var categoryAxis = chart_<?php echo $_args['id']; ?>.xAxes.push(new am4charts.CategoryAxis());
+                var categoryAxis = chart_<?php echo esc_attr($_args['id']); ?>.xAxes.push(new am4charts.CategoryAxis());
                 categoryAxis.dataFields.category = "v1_label";
                 categoryAxis.renderer.minGridDistance = 50;
                 categoryAxis.startLocation = 0;
@@ -1235,19 +1235,19 @@ class wp_slimstat_reports
                 categoryAxis.renderer.grid.template.disabled = true;
 
                 // Create value axis
-                var valueAxis = chart_<?php echo $_args['id']; ?>.yAxes.push(new am4charts.ValueAxis());
+                var valueAxis = chart_<?php echo esc_attr($_args['id']); ?>.yAxes.push(new am4charts.ValueAxis());
                 valueAxis.baseValue = 0;
 
                 // Colors
-                chart_<?php echo $_args['id']; ?>.colors.list = [
-                    am4core.color("<?php echo $chart_colors[0] ?>"),
-                    am4core.color("<?php echo $chart_colors[1] ?>"),
-                    am4core.color("<?php echo $chart_colors[2] ?>"),
-                    am4core.color("<?php echo $chart_colors[3] ?>")
+                chart_<?php echo esc_attr($_args['id']); ?>.colors.list = [
+                    am4core.color("<?php echo esc_attr($chart_colors[0]); ?>"),
+                    am4core.color("<?php echo esc_attr($chart_colors[1]); ?>"),
+                    am4core.color("<?php echo esc_attr($chart_colors[2]); ?>"),
+                    am4core.color("<?php echo esc_attr($chart_colors[3]); ?>")
                 ];
 
                 // Create series
-                var series1 = chart_<?php echo $_args['id']; ?>.series.push(new am4charts.LineSeries());
+                var series1 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
                 series1.name = "<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?>";
                 series1.dataFields.valueY = "v1";
                 series1.dataFields.categoryX = "v1_label";
@@ -1255,7 +1255,7 @@ class wp_slimstat_reports
                 series1.tooltipText = "{name} {v1_label}: [bold]{valueY}[/]";
                 series1.tensionX = 0.9;
 
-                var series2 = chart_<?php echo $_args['id']; ?>.series.push(new am4charts.LineSeries());
+                var series2 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
                 series2.name = "<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?>";
                 series2.dataFields.valueY = "v2";
                 series2.dataFields.categoryX = "v1_label";
@@ -1264,7 +1264,7 @@ class wp_slimstat_reports
                 series2.tensionX = 0.9;
 
                 <?php if ( wp_slimstat::$settings['comparison_chart'] == 'on' ): ?>
-                var series3 = chart_<?php echo $_args['id']; ?>.series.push(new am4charts.LineSeries());
+                var series3 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
                 series3.name = "<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>";
                 series3.dataFields.valueY = "v3";
                 series3.dataFields.categoryX = "v1_label";
@@ -1272,7 +1272,7 @@ class wp_slimstat_reports
                 series3.tooltipText = "<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?> {v3_label}: [bold]{valueY}[/]";
                 series3.tensionX = 0.9;
 
-                var series4 = chart_<?php echo $_args['id']; ?>.series.push(new am4charts.LineSeries());
+                var series4 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
                 series4.name = "<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>";
                 series4.dataFields.valueY = "v4";
                 series4.dataFields.categoryX = "v1_label";
@@ -1281,19 +1281,19 @@ class wp_slimstat_reports
                 series4.tensionX = 0.9;
                 <?php endif; ?>
                 // Export
-                chart_<?php echo $_args['id']; ?>.exporting.menu = new am4core.ExportMenu();
+                chart_<?php echo esc_attr($_args['id']); ?>.exporting.menu = new am4core.ExportMenu();
 
                 // Legend
-                chart_<?php echo $_args['id']; ?>.legend = new am4charts.Legend();
+                chart_<?php echo esc_attr($_args['id']); ?>.legend = new am4charts.Legend();
 
                 // Cursor
-                chart_<?php echo $_args['id']; ?>.cursor = new am4charts.XYCursor();
-                chart_<?php echo $_args['id']; ?>.cursor.lineX.disabled = true;
+                chart_<?php echo esc_attr($_args['id']); ?>.cursor = new am4charts.XYCursor();
+                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineX.disabled = true;
 
-                chart_<?php echo $_args['id']; ?>.cursor.lineY.stroke = am4core.color("#444");
-                chart_<?php echo $_args['id']; ?>.cursor.lineY.strokeWidth = 2;
-                chart_<?php echo $_args['id']; ?>.cursor.lineY.strokeOpacity = 0.2;
-                chart_<?php echo $_args['id']; ?>.cursor.lineY.strokeDasharray = "";
+                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.stroke = am4core.color("#444");
+                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.strokeWidth = 2;
+                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.strokeOpacity = 0.2;
+                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.strokeDasharray = "";
 
                 <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
             });
@@ -1378,7 +1378,7 @@ class wp_slimstat_reports
             }
         }
 
-        echo wp_slimstat_db::$debug_message;
+        echo wp_kses_post(wp_slimstat_db::$debug_message);
         echo self::report_pagination($count_page_results, count($all_results));
 
         foreach ($results as $a_result) {
