@@ -1706,7 +1706,7 @@ class wp_slimstat_reports {
 
 		// Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
 		if ( !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
-			$parsed_referer = parse_url( $_SERVER[ 'HTTP_REFERER' ] );
+            $parsed_referer = parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])));
 			if ( !$parsed_referer || ( !empty( $parsed_referer[ 'scheme' ] ) && !in_array( strtolower( $parsed_referer[ 'scheme' ] ), array( 'http', 'https' ) ) ) ) {
 				return '';
 			}

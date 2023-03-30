@@ -449,7 +449,7 @@ class wp_slimstat {
 
 		// Referrer URL
 		if ( !isset( self::$stat[ 'referer' ] ) && !empty( $_SERVER[ 'HTTP_REFERER' ] ) ) {
-			self::$stat[ 'referer' ] = $_SERVER[ 'HTTP_REFERER' ];
+            self::$stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']));
 		}
 
 		if ( !empty( self::$stat[ 'referer' ] ) ) {
