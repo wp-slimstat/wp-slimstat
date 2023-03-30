@@ -23,7 +23,6 @@ class wp_slimstat
     public static $wpdb = '';
     public static $upload_dir = '';
 
-    public static $update_checker = array();
     public static $raw_post_array = array();
 
     protected static $data_js = array('id' => 0);
@@ -113,9 +112,6 @@ class wp_slimstat
         // Include our browser detector library
         include_once(plugin_dir_path(__FILE__) . 'vendor/browscap.php');
         add_action('init', array('slim_browser', 'init'));
-
-        // If add-ons are installed, check for updates
-        add_action('wp_loaded', array(__CLASS__, 'update_checker'));
 
         // REST API Support
         add_action('rest_api_init', array(__CLASS__, 'register_rest_route'));
@@ -1350,33 +1346,6 @@ class wp_slimstat
         die(stripslashes(self::$settings['opt_out_message']));
     }
     // end get_optout_html
-
-    /**
-     * Checks for add-on updates, using the third-party library PUC
-     */
-    public static function update_checker()
-    {
-        if (empty(self::$update_checker) || !is_admin()) {
-            return true;
-        }
-
-        $update_checker_objects = array();
-
-        // This is only included if add-ons are installed
-        include_once(plugin_dir_path(__FILE__) . 'vendor/update-checker/plugin-update-checker.php');
-
-        foreach (self::$update_checker as $a_slug) {
-            $a_clean_slug = str_replace(array('wp_slimstat_', '_'), array('', '-'), $a_slug);
-
-            if (!empty(self::$settings['addon_licenses']['wp-slimstat-' . $a_clean_slug])) {
-                $update_checker_objects[$a_clean_slug] = Puc_v4_Factory::buildUpdateChecker('https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode(self::$settings['addon_licenses']['wp-slimstat-' . $a_clean_slug]), dirname(dirname(__FILE__)) . '/wp-slimstat-' . $a_clean_slug . '/index.php', 'wp-slimstat-' . $a_clean_slug);
-
-                add_filter("plugin_action_links_wp-slimstat-{$a_clean_slug}/index.php", array(__CLASS__, 'add_plugin_manual_download_link'), 10, 2);
-            }
-        }
-    }
-
-    // end update_checker
 
     public static function add_plugin_manual_download_link($_links = array(), $_plugin_file = '')
     {
