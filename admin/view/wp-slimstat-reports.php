@@ -1208,92 +1208,94 @@ class wp_slimstat_reports
 
         // Enqueue all the Javascript and styles
         $path_slimstat = dirname(dirname(__FILE__));
-        wp_enqueue_script('slimstat_amcharts_core', plugins_url('/admin/assets/js/amcharts/core.js', $path_slimstat), array(), null, false);
-        wp_enqueue_script('slimstat_amcharts', plugins_url('/admin/assets/js/amcharts/charts.js', $path_slimstat), array(), null, false);
+        wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', $path_slimstat), array(), '3.9.1', false);
 
+        // todo remove it.
         $chart_colors = !empty(wp_slimstat::$settings['chart_colors']) ? wp_slimstat::string_to_array(wp_slimstat::$settings['chart_colors']) : array('#bbcc44', '#21759b', '#ccc', '#999');
 
         ?>
-        <div class="chart-placeholder" id="chart_<?php echo esc_attr($_args['id']); ?>" style="min-height: 280px"></div>
+        <canvas class="chart-placeholder" id="chart_<?php echo esc_attr($_args['id']); ?>"></canvas>
 
         <script type="text/javascript">
             <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
             jQuery(function () {
                 <?php endif; ?>
-                // am4core.useTheme(am4themes_material);
-                var chart_<?php echo esc_attr($_args['id']); ?> = am4core.create("chart_<?php echo esc_attr($_args['id']); ?>", am4charts.XYChart);
-
-                // Add data
-                chart_<?php echo esc_attr($_args['id']); ?>.data = <?php unset($data['keys']); echo json_encode($data) ?>;
-
-                // Create axes
-                var categoryAxis = chart_<?php echo esc_attr($_args['id']); ?>.xAxes.push(new am4charts.CategoryAxis());
-                categoryAxis.dataFields.category = "v1_label";
-                categoryAxis.renderer.minGridDistance = 50;
-                categoryAxis.startLocation = 0;
-                categoryAxis.endLocation = 1;
-                categoryAxis.renderer.grid.template.disabled = true;
-
-                // Create value axis
-                var valueAxis = chart_<?php echo esc_attr($_args['id']); ?>.yAxes.push(new am4charts.ValueAxis());
-                valueAxis.baseValue = 0;
-
-                // Colors
-                chart_<?php echo esc_attr($_args['id']); ?>.colors.list = [
-                    am4core.color("<?php echo esc_attr($chart_colors[0]); ?>"),
-                    am4core.color("<?php echo esc_attr($chart_colors[1]); ?>"),
-                    am4core.color("<?php echo esc_attr($chart_colors[2]); ?>"),
-                    am4core.color("<?php echo esc_attr($chart_colors[3]); ?>")
-                ];
-
-                // Create series
-                var series1 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
-                series1.name = "<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?>";
-                series1.dataFields.valueY = "v1";
-                series1.dataFields.categoryX = "v1_label";
-                series1.strokeWidth = 2;
-                series1.tooltipText = "{name} {v1_label}: [bold]{valueY}[/]";
-                series1.tensionX = 0.9;
-
-                var series2 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
-                series2.name = "<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?>";
-                series2.dataFields.valueY = "v2";
-                series2.dataFields.categoryX = "v1_label";
-                series2.strokeWidth = 2;
-                series2.tooltipText = "{name} {v1_label}: [bold]{valueY}[/]";
-                series2.tensionX = 0.9;
-
-                <?php if ( wp_slimstat::$settings['comparison_chart'] == 'on' ): ?>
-                var series3 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
-                series3.name = "<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>";
-                series3.dataFields.valueY = "v3";
-                series3.dataFields.categoryX = "v1_label";
-                series3.strokeWidth = 2;
-                series3.tooltipText = "<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?> {v3_label}: [bold]{valueY}[/]";
-                series3.tensionX = 0.9;
-
-                var series4 = chart_<?php echo esc_attr($_args['id']); ?>.series.push(new am4charts.LineSeries());
-                series4.name = "<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>";
-                series4.dataFields.valueY = "v4";
-                series4.dataFields.categoryX = "v1_label";
-                series4.strokeWidth = 2;
-                series4.tooltipText = "<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?> {v3_label}: [bold]{valueY}[/]";
-                series4.tensionX = 0.9;
-                <?php endif; ?>
-                // Export
-                chart_<?php echo esc_attr($_args['id']); ?>.exporting.menu = new am4core.ExportMenu();
-
-                // Legend
-                chart_<?php echo esc_attr($_args['id']); ?>.legend = new am4charts.Legend();
-
-                // Cursor
-                chart_<?php echo esc_attr($_args['id']); ?>.cursor = new am4charts.XYCursor();
-                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineX.disabled = true;
-
-                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.stroke = am4core.color("#444");
-                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.strokeWidth = 2;
-                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.strokeOpacity = 0.2;
-                chart_<?php echo esc_attr($_args['id']); ?>.cursor.lineY.strokeDasharray = "";
+                // Build ChartJs
+                const ctx = document.getElementById('chart_<?php echo esc_attr($_args['id']); ?>');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [<?php echo implode(',', $data['labels']); ?>],
+                        datasets: [
+                            {
+                                label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?>',
+                                data: [<?php echo implode(',', $data['datasets']['v1']); ?>],
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1,
+                                fill: true,
+                                tension: 0.4,
+                            },
+                            {
+                                label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?>',
+                                data: [<?php echo implode(',', $data['datasets']['v2']); ?>],
+                                backgroundColor: 'rgba(0, 149, 255, 0.2)',
+                                borderColor: 'rgba(0, 149, 255, 1)',
+                                borderWidth: 1,
+                                fill: true,
+                                tension: 0.4,
+                            },
+                            {
+                                label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
+                                data: [<?php echo implode(',', $data['datasets']['v3']); ?>],
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1,
+                                fill: true,
+                                tension: 0.4,
+                                borderDash: [4, 2]
+                            },
+                            {
+                                label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
+                                data: [<?php echo implode(',', $data['datasets']['v4']); ?>],
+                                backgroundColor: 'rgba(0, 149, 255, 0.2)',
+                                borderColor: 'rgba(0, 149, 255, 1)',
+                                borderWidth: 1,
+                                fill: true,
+                                tension: 0.4,
+                                borderDash: [4, 2]
+                            }
+                        ]
+                    },
+                    options: {
+                        layout: {
+                            padding: 20
+                        },
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        legend: {
+                            position: 'bottom',
+                        },
+                        animation: {
+                            duration: 1500,
+                        },
+                        tooltips: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        },
+                        scales: {
+                            yAxes: {
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    }
+                });
 
                 <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
             });
@@ -1541,7 +1543,7 @@ class wp_slimstat_reports
         $data_areas = array();
 
         foreach (wp_slimstat_i18n::get_country_codes() as $a_code => $a_string) {
-            $data_areas[$a_code] = '{id:"' . $a_code . '",balloonText:"' . $a_string . ': 0",value:0,color:"#ededed"}';
+            $data_areas[$a_code] = '';
         }
 
         $max = 0;
@@ -1555,7 +1557,7 @@ class wp_slimstat_reports
             $percentage                        = (wp_slimstat_db::$pageviews > 0) ? sprintf("%01.2f", (100 * $a_country['counthits'] / wp_slimstat_db::$pageviews)) : 0;
             $percentage_format                 = number_format_i18n($percentage, 2);
             $balloon_text                      = wp_slimstat_i18n::get_string('c-' . $a_country['country'], 'wp-slimstat') . ': ' . $percentage_format . '% (' . number_format_i18n($a_country['counthits']) . ')';
-            $data_areas[$current_country_code] = '{id:"' . strtoupper($a_country['country']) . '",balloonText:"' . $balloon_text . '",value:' . $percentage . '}';
+            $data_areas[$current_country_code] = $percentage;
 
             if ($percentage > $max) {
                 $max = $percentage;
@@ -1563,83 +1565,18 @@ class wp_slimstat_reports
         }
 
         $path_slimstat = dirname(dirname(__FILE__));
-        wp_enqueue_script('slimstat_ammap', plugins_url('/admin/assets/js/ammap/ammap.js', $path_slimstat), array(), null, false);
-        wp_enqueue_script('slimstat_ammap_world', plugins_url('/admin/assets/js/ammap/world.js', $path_slimstat), array(), null, false);
-
+        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), array(), '1.5.1', false);
+        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), array(), '1.5.1', false);
         ?>
 
         <div id="map_slim_p6_01" style="height: 100%"></div>
 
         <script type="text/javascript">
             jQuery(function () {
-                var targetSVG = "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z";
-
-                var dataProvider = {
-                    map: "worldLow",
-                    getAreasFromMap: false,
-                    areas: [ <?php echo implode(',', $data_areas) ?> ],
-                    images: [ <?php if (!empty($data_points)) echo implode(',', array_reverse($data_points)) ?> ]
-                };
-
-                // Create AmMap object
-                var map = new AmCharts.AmMap();
-
-                <?php if ($max != 0): ?>
-                var legend = new AmCharts.ValueLegend();
-                legend.height = 20;
-                legend.minValue = "0.01";
-                legend.maxValue = "<?php echo $max ?>%";
-                legend.right = 20;
-                legend.showAsGradient = true;
-                legend.width = 300;
-                map.valueLegend = legend;
-                <?php endif; ?>
-
-                // Configuration
-                map.areasSettings = {
-                    autoZoom: false,
-                    color: "#9dff98",
-                    colorSolid: "#fa8a50",
-                    outlineColor: "#888888",
-                    selectedColor: "#ffb739"
-                };
-                map.imagesSettings = {
-                    rollOverColor: "#089282",
-                    rollOverScale: 2,
-                    selectedScale: 2,
-                    selectedColor: "#089282",
-                    color: "#13564e"
-                };
-                map.zoomControl = {
-                    zoomControlEnabled: true,
-                    zoomFactor: 3
-                };
-                map.export = {
-                    "enabled": true,
-                    "libs": {
-                        "path": "<?php echo plugins_url('/assets/js/amcharts/plugins/export/libs/', dirname(__FILE__)) ?>"
-                    },
-                    "menu": [{
-                        "class": "export-main",
-                        "menu": [{
-                            "label": "Download as...",
-                            "menu": ["PNG", "PDF"]
-                        }]
-                    }]
-                };
-                map.backgroundAlpha = .9;
-                map.backgroundColor = "#7adafd";
-                map.backgroundZoomsToTop = false;
-                map.balloon.color = "#000000";
-                map.colorSteps = 5;
-                map.mouseWheelZoomEnabled = true;
-                map.pathToImages = "<?php echo plugins_url('/assets/js/ammap/images/', dirname(__FILE__)) ?>";
-
-                // Init Data
-                map.dataProvider = dataProvider;
-
-                // Display Map
-                map.write("map_slim_p6_01");
+                jQuery('#map_slim_p6_01').vectorMap({
+                    map: 'world_en',
+                    values: <?php echo json_encode($data_areas); ?>
+                });
             });
         </script><?php
 

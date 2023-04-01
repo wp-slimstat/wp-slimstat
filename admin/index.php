@@ -76,13 +76,13 @@ class wp_slimstat_admin
                 'capability'      => 'can_admin',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_config')
             ),
-            'slimaddons' => array(
+            /*'slimaddons' => array(
                 'is_report_group' => false,
                 'show_in_sidebar' => current_user_can('manage_options'),
                 'title'           => __('Add-ons', 'wp-slimstat'),
                 'capability'      => 'can_admin',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_addons')
-            ),
+            ),*/
             'dashboard'  => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => false,

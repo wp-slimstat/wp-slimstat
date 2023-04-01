@@ -730,7 +730,9 @@ class wp_slimstat_db
         );
 
         $output = array(
-            'keys' => array()
+            'keys'     => array(),
+            'labels'   => array(),
+            'datasets' => array()
         );
 
         // No data? No problem!
@@ -747,6 +749,8 @@ class wp_slimstat_db
 
             $output['keys'][$v1_label] = $i;
             $output['keys'][$v3_label] = $i;
+
+            $output['labels'][] = "'$v1_label'";
 
             // This is how AmCharts expects the data to be formatted
             $output[$i]['v1_label'] = $v1_label;
@@ -767,9 +771,15 @@ class wp_slimstat_db
             if ($a_result['dt'] >= self::$filters_normalized['utime']['start'] && $a_result['dt'] <= self::$filters_normalized['utime']['end']) {
                 $output[$output['keys'][$label]]['v1'] = intval($a_result['v1']);
                 $output[$output['keys'][$label]]['v2'] = intval($a_result['v2']);
+
+                $output['datasets']['v1'][] = intval($a_result['v1']);
+                $output['datasets']['v2'][] = intval($a_result['v2']);
             } else {
                 $output[$output['keys'][$label]]['v3'] = intval($a_result['v1']);
                 $output[$output['keys'][$label]]['v4'] = intval($a_result['v2']);
+
+                $output['datasets']['v3'][] = intval($a_result['v1']);
+                $output['datasets']['v4'][] = intval($a_result['v2']);
             }
         }
 
