@@ -216,10 +216,10 @@ class wp_slimstat_admin
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
             }
-            
 
-			add_action('wp_dashboard_setup', array(__CLASS__, 'add_dashboard_widgets'));
-		}
+
+            add_action('wp_dashboard_setup', array(__CLASS__, 'add_dashboard_widgets'));
+        }
 
         // AJAX Handlers
         if (defined('DOING_AJAX') && DOING_AJAX) {
@@ -847,12 +847,12 @@ class wp_slimstat_admin
             return 0;
         }
 
-        $_message = wpautop($_message);
+        $_message = wpautop(wp_kses_post($_message));
 
         if (!empty($_dismiss_handle)) {
-            echo '<div id="slimstat-notice-' . $_dismiss_handle . '" class="notice is-dismissible notice-' . $_type . '">' . $_message . '</div>';
+            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible notice-' . esc_attr($_type) . '">' . $_message . '</div>';
         } else {
-            echo '<div class="notice notice-' . $_type . '">' . $_message . '</div>';
+            echo '<div class="notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
         }
     }
     // END: show_message
