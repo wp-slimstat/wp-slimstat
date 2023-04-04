@@ -1096,6 +1096,8 @@ class wp_slimstat_db
         $total_human_hits  = wp_slimstat_db::count_records('id', 'visit_id > 0 AND browser_type <> 1');
         $new_visitors      = wp_slimstat_db::count_records_having('ip', 'visit_id > 0', 'COUNT(visit_id) = 1');
         $new_visitors_rate = ($total_human_hits > 0) ? sprintf("%01.2f", (100 * $new_visitors / $total_human_hits)) : 0;
+        $server_name       = sanitize_text_field(wp_unslash($_SERVER['SERVER_NAME']));
+
         if (intval($new_visitors_rate) > 99) {
             $new_visitors_rate = '100';
         }
@@ -1105,7 +1107,7 @@ class wp_slimstat_db
         $results[0]['tooltip'] = __('A pageview is a request to load a single HTML page on your website.', 'wp-slimstat');
 
         $results[1]['metric']  = __('Unique Referrers', 'wp-slimstat');
-        $results[1]['value']   = number_format_i18n(wp_slimstat_db::count_records('referer', "referer NOT LIKE '%{$_SERVER['SERVER_NAME']}%'"));
+        $results[1]['value']   = number_format_i18n(wp_slimstat_db::count_records('referer', "referer NOT LIKE '%{$server_name}%'"));
         $results[1]['tooltip'] = __('A referrer (or referring site) is a site that a visitor previously visited before following a link to your site.', 'wp-slimstat');
 
         $results[2]['metric']  = __('Direct Pageviews', 'wp-slimstat');

@@ -694,13 +694,13 @@ class wp_slimstat
         if (isset($_SERVER['REQUEST_URI'])) {
             return urldecode(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
         } else if (isset($_SERVER['SCRIPT_NAME'])) {
-            $request_url = $_SERVER['SCRIPT_NAME'];
+            $request_url = sanitize_text_field(wp_unslash($_SERVER['SCRIPT_NAME']));
         } else if (isset($_SERVER['PHP_SELF'])) {
-            $request_url = $_SERVER['PHP_SELF'];
+            $request_url = sanitize_text_field(wp_unslash($_SERVER['PHP_SELF']));
         }
 
         if (isset($_SERVER['QUERY_STRING'])) {
-            $request_url .= '?' . $_SERVER['QUERY_STRING'];
+            $request_url .= '?' . sanitize_text_field(wp_unslash($_SERVER['QUERY_STRING']));
         }
 
         return $request_url;
@@ -1345,6 +1345,7 @@ class wp_slimstat
     {
         die(stripslashes(self::$settings['opt_out_message']));
     }
+
     // end get_optout_html
 
     public static function add_plugin_manual_download_link($_links = array(), $_plugin_file = '')
@@ -1514,7 +1515,7 @@ class wp_slimstat
         $ip_array = array('', '');
 
         if (!empty($_SERVER['REMOTE_ADDR']) && filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP) !== false) {
-            $ip_array[0] = $_SERVER['REMOTE_ADDR'];
+            $ip_array[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
 
         $originating_ip_headers = array('X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED');
