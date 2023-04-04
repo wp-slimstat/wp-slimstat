@@ -1185,7 +1185,7 @@ class wp_slimstat_reports
     public static function show_access_log($_args = array())
     {
         // This function is too long, so it was moved to a separate file
-        include(WP_PLUGIN_DIR . '/wp-slimstat/admin/view/right-now.php');
+        include(dirname( __FILE__ ) . '/right-now.php');
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
