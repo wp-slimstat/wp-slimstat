@@ -1185,7 +1185,7 @@ class wp_slimstat_reports
     public static function show_access_log($_args = array())
     {
         // This function is too long, so it was moved to a separate file
-        include(dirname( __FILE__ ) . '/right-now.php');
+        include(dirname(__FILE__) . '/right-now.php');
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
@@ -1208,7 +1208,7 @@ class wp_slimstat_reports
 
         // Enqueue all the Javascript and styles
         $path_slimstat = dirname(dirname(__FILE__));
-        wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', $path_slimstat), array(), '3.9.1', false);
+        wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', $path_slimstat), array(), '4.2.1', false);
 
         // todo remove it.
         $chart_colors = !empty(wp_slimstat::$settings['chart_colors']) ? wp_slimstat::string_to_array(wp_slimstat::$settings['chart_colors']) : array('#bbcc44', '#21759b', '#ccc', '#999');
@@ -1286,13 +1286,6 @@ class wp_slimstat_reports
                         interaction: {
                             intersect: false,
                             mode: 'index',
-                        },
-                        scales: {
-                            yAxes: {
-                                ticks: {
-                                    beginAtZero: true
-                                }
-                            }
                         }
                     }
                 });
