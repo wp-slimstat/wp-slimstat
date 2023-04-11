@@ -43,10 +43,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Screenshots ==
 1. **Overview** - Your website traffic at a glance
-2. **Access Log** - A real-time view of your visitors' whereabouts
+2. **Real-Time** - A real-time view of your visitors' whereabouts
 3. **Settings** - Plenty of options to customize the plugin's behavior
-4. **Interactive World Map** - See where your visitors are coming from
-5. **Responsive layout** - Keep an eye on your reports on the go
+4. **Audiance** - See your visitors' full information
 
 == Changelog ==
 = 5.0.4 =
