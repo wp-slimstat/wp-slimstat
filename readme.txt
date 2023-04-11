@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.2
-Stable tag: 5.0.3
+Stable tag: 5.0.4
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -49,6 +49,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 5. **Responsive layout** - Keep an eye on your reports on the go
 
 == Changelog ==
+= 5.0.4 =
+* [Fix] Backward compatibility
+
 = 5.0.3 =
 * [Fix] Fix & compatibility with the Add-Ons
 
