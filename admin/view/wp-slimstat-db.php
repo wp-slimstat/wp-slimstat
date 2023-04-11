@@ -732,7 +732,12 @@ class wp_slimstat_db
         $output = array(
             'keys'     => array(),
             'labels'   => array(),
-            'datasets' => array()
+            'datasets' => array(
+                'v1' => array(),
+                'v2' => array(),
+                'v3' => array(),
+                'v4' => array()
+            )
         );
 
         // No data? No problem!
