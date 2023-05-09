@@ -819,15 +819,15 @@ class wp_slimstat_db
             $_args['group_by'] = 'id';
         }
 
-        return self::get_results("
+        // prepare the query
+        $sql = $GLOBALS['wpdb']->prepare("
 			SELECT {$_args[ 'group_by' ]}, COUNT(*) AS counthits, GROUP_CONCAT( DISTINCT {$_args[ 'column_group' ]} SEPARATOR ';;;' ) as column_group
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
 			ORDER BY counthits DESC
-			LIMIT 0, " . self::$filters_normalized['misc']['limit_results'],
-            $_args['group_by'],
-            $_args['group_by'] . ' ASC');
+			LIMIT 0, %d", self::$filters_normalized['misc']['limit_results']);
+        return self::get_results($sql, $_args['group_by'],$_args['group_by'] . ' ASC');
     }
 
     public static function get_max_and_average_pages_per_visit()
@@ -936,15 +936,15 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_column, $_use_date_filters);
 
-        return self::get_results("
+        // prepare the query
+        $sql = $GLOBALS['wpdb']->prepare("
 			SELECT $columns
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
 			$group_by
 			ORDER BY $_order_by
-			LIMIT 0, " . self::$filters_normalized['misc']['limit_results'],
-            $columns,
-            'dt DESC');
+			LIMIT 0, %d", self::$filters_normalized['misc']['limit_results']);
+        return self::get_results($sql, $columns, 'dt DESC');
     }
 
     public static function get_recent_events()
@@ -996,16 +996,16 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_as_column, $_use_date_filters);
 
-        return self::get_results("
+        // prepare the query
+        $sql = $GLOBALS['wpdb']->prepare("
 			SELECT $_column, COUNT(*) counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $_where
 			GROUP BY $group_by_column $_having
 			ORDER BY counthits DESC
-			LIMIT 0, " . self::$filters_normalized['misc']['limit_results'],
-            ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
-            'counthits DESC',
-            ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
+			LIMIT 0, %d", self::$filters_normalized['misc']['limit_results']);
+        return self::get_results($sql, ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
+            'counthits DESC', ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
             'SUM(counthits) AS counthits');
     }
 
@@ -1029,7 +1029,8 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_column);
 
-        return self::get_results("
+        // prepare the query
+        $sql = $GLOBALS['wpdb']->prepare("
 			SELECT $_outer_select_column, ts1.aggrid as $_column, COUNT(*) counthits
 			FROM (
 				SELECT $_column, $_aggr_function(id) aggrid
@@ -1039,11 +1040,8 @@ class wp_slimstat_db
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
-			LIMIT 0, " . self::$filters_normalized['misc']['limit_results'],
-            $_outer_select_column,
-            'counthits DESC',
-            $_outer_select_column,
-            "$_aggr_function(aggrid), SUM(counthits)");
+			LIMIT 0, %d", self::$filters_normalized['misc']['limit_results']);
+        return self::get_results($sql, $_outer_select_column, 'counthits DESC', $_outer_select_column, "$_aggr_function(aggrid), SUM(counthits)");
     }
 
     public static function get_top_events()
