@@ -45,6 +45,10 @@ class maxmind_geolite2_connector {
 	public static function download_maxmind_database() {
 		$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
 
+		if ( !class_exists( 'PharData' ) ) {
+		    return __( 'Class <code>PharData</code> is not defined in your environment. Please use a PHP version which supports it.', 'wp-slimstat' );
+		}
+
 		// Create the folder, if it doesn't exist
 		if ( !file_exists( dirname( $maxmind_path ) ) ) {
 			mkdir( dirname( $maxmind_path ) );
@@ -70,10 +74,6 @@ class maxmind_geolite2_connector {
 			return __( 'There was an error downloading the MaxMind Geolite DB:', 'wp-slimstat' ) . ' ' . $maxmind_tmp->get_error_message();
 		}
 
-		if ( !class_exists( 'PharData' ) ) {
-		    return __( 'Class <code>PharData</code> is not defined in your environment. Please use a PHP version which supports it.', 'wp-slimstat' );
-		}
-
 		$phar = new PharData( $maxmind_tmp );
 		$fileInArchive = trailingslashit( $phar->current()->getFileName() ) . $database;
 
@@ -82,6 +82,7 @@ class maxmind_geolite2_connector {
 		    $phar->extractTo( wp_slimstat::$upload_dir, $fileInArchive, true );
 		}
 		catch ( Exception $e ) {
+		    @unlink( $maxmind_tmp );
 		    return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' ) . $e->getMessage();
 		}
 
@@ -93,6 +94,7 @@ class maxmind_geolite2_connector {
 		if ( !is_file( $maxmind_path ) ) {
 			// Something went wrong, maybe a folder was created instead of a regular file
 			@rmdir( $maxmind_path );
+			@unlink( $maxmind_tmp );
 			return __( 'There was an error creating the MaxMind Geolite DB.', 'wp-slimstat' );
 		}
 
