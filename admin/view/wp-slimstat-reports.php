@@ -1222,50 +1222,54 @@ class wp_slimstat_reports
                 <?php endif; ?>
                 // Build ChartJs
                 const ctx = document.getElementById('chart_<?php echo esc_attr($_args['id']); ?>');
+                const comparison_chart = <?php echo wp_slimstat::$settings['comparison_chart'] == 'on' ? 'true' : 'false'; ?>;
+                let datasets = [
+                    {
+                        label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?>',
+                        data: [<?php echo implode(',', $data['datasets']['v1']); ?>],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        tension: 0.4,
+                    },
+                    {
+                        label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?>',
+                        data: [<?php echo implode(',', $data['datasets']['v2']); ?>],
+                        backgroundColor: 'rgba(0, 149, 255, 0.2)',
+                        borderColor: 'rgba(0, 149, 255, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        tension: 0.4,
+                    }
+                ];
+                if(comparison_chart){
+                    datasets.push({
+                        label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
+                        data: [<?php echo implode(',', $data['datasets']['v3']); ?>],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        tension: 0.4,
+                        borderDash: [4, 2]
+                    });
+                    datasets.push({
+                        label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
+                        data: [<?php echo implode(',', $data['datasets']['v4']); ?>],
+                        backgroundColor: 'rgba(0, 149, 255, 0.2)',
+                        borderColor: 'rgba(0, 149, 255, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        tension: 0.4,
+                        borderDash: [4, 2]
+                    });
+                }
                 new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: [<?php echo implode(',', $data['labels']); ?>],
-                        datasets: [
-                            {
-                                label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?>',
-                                data: [<?php echo implode(',', $data['datasets']['v1']); ?>],
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                borderWidth: 1,
-                                fill: true,
-                                tension: 0.4,
-                            },
-                            {
-                                label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?>',
-                                data: [<?php echo implode(',', $data['datasets']['v2']); ?>],
-                                backgroundColor: 'rgba(0, 149, 255, 0.2)',
-                                borderColor: 'rgba(0, 149, 255, 1)',
-                                borderWidth: 1,
-                                fill: true,
-                                tension: 0.4,
-                            },
-                            {
-                                label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
-                                data: [<?php echo implode(',', $data['datasets']['v3']); ?>],
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                borderWidth: 1,
-                                fill: true,
-                                tension: 0.4,
-                                borderDash: [4, 2]
-                            },
-                            {
-                                label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
-                                data: [<?php echo implode(',', $data['datasets']['v4']); ?>],
-                                backgroundColor: 'rgba(0, 149, 255, 0.2)',
-                                borderColor: 'rgba(0, 149, 255, 1)',
-                                borderWidth: 1,
-                                fill: true,
-                                tension: 0.4,
-                                borderDash: [4, 2]
-                            }
-                        ]
+                        datasets: datasets,
                     },
                     options: {
                         layout: {

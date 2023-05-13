@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.2
-Stable tag: 5.0.4
+Stable tag: 5.0.5
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -43,12 +43,16 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Screenshots ==
 1. **Overview** - Your website traffic at a glance
-2. **Access Log** - A real-time view of your visitors' whereabouts
+2. **Real-Time** - A real-time view of your visitors' whereabouts
 3. **Settings** - Plenty of options to customize the plugin's behavior
-4. **Interactive World Map** - See where your visitors are coming from
-5. **Responsive layout** - Keep an eye on your reports on the go
+4. **Audiance** - See your visitors' full information
 
 == Changelog ==
+= 5.0.5 =
+* [Fix] Hardened plugin security and prepare the queries
+* [Fix] Fixed comparison view issue
+* [Fix] Removed GeoIP download archive in error cases as well
+
 = 5.0.4 =
 * [Fix] Backward compatibility
 
