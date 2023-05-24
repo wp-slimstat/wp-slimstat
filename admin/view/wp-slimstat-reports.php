@@ -967,6 +967,11 @@ class wp_slimstat_reports
 
         $all_results = call_user_func($_args['raw'], $_args);
 
+        // Backward compatibility
+        if (!$all_results) {
+            $all_results = array();
+        }
+
         echo wp_kses_post(wp_slimstat_db::$debug_message);
 
         // Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
@@ -1243,7 +1248,7 @@ class wp_slimstat_reports
                         tension: 0.4,
                     }
                 ];
-                if(comparison_chart){
+                if (comparison_chart) {
                     datasets.push({
                         label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
                         data: [<?php echo implode(',', $data['datasets']['v3']); ?>],
