@@ -1526,6 +1526,12 @@ class wp_slimstat_reports
     public static function show_world_map()
     {
         $countries     = wp_slimstat_db::get_top('country');
+        
+        // Backward compatibility
+        if (!$countries) {
+            $countries = array();
+        }
+
         $recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
 
         $data_points = array();
