@@ -894,7 +894,7 @@ class wp_slimstat_admin
     {
         $tag = current_filter();
 
-        if (!empty($tag)) {
+        if (!empty($tag) && current_user_can('manage_options') && wp_verify_nonce($_POST['security'], 'meta-box-order')) {
             $tag                         = str_replace('wp_ajax_slimstat_', '', $tag);
             wp_slimstat::$settings[$tag] = 'no';
 
@@ -913,6 +913,12 @@ class wp_slimstat_admin
     {
         $my_wpdb     = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
         $pageview_id = intval($_POST['pageview_id']);
+
+        // Delete page view if user has enough access
+        $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
+        if (!$current_user_can_delete || !wp_verify_nonce($_POST['security'], 'meta-box-order')) {
+            return;
+        }
         $my_wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.id = $pageview_id");
         exit();
     }
