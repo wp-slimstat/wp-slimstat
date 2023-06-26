@@ -210,13 +210,13 @@ class wp_slimstat_admin
 
         // Dashboard Widgets
         if (wp_slimstat::$settings['add_dashboard_widgets'] == 'on') {
-            $temp = strlen(sanitize_url(wp_unslash($_SERVER['REQUEST_URI']))) - 10;
+            $request_length = strlen(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
+            $temp           = $request_length - 10;
 
-            if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false)) {
+            if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && $temp <= $request_length && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false)) {
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
             }
-
 
             add_action('wp_dashboard_setup', array(__CLASS__, 'add_dashboard_widgets'));
         }
