@@ -50,6 +50,10 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Changelog ==
 = 5.0.6 =
 * [New] Integrated a Feedback button powered by [FeedbackBird!](https://feedbackbird.io/) in the admin area to gather user feedback.
+* [Fix] Resolve STRPOS error when enqueuing scripts.
+* [Fix] Ensure backward compatibility for null values.
+* [Fix] Fix broken access in delete_pageView and notices_handler functions.
+* [Fix] Resolve escaping issue with literal '%' character in wpdb->prepare().
 
 = 5.0.5.1 =
 * [Fix] Backward compatibility
