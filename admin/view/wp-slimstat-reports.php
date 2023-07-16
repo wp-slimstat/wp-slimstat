@@ -579,7 +579,7 @@ class wp_slimstat_reports
                 'callback_args' => array(
                     'type'    => 'recent',
                     'columns' => 'searchterms',
-                    'where'   => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+                    'where'   => 'content_type LIKE "%%search%%" AND searchterms <> "" AND searchterms IS NOT NULL',
                     'raw'     => array('wp_slimstat_db', 'get_recent')
                 ),
                 'classes'       => array('normal'),
@@ -654,7 +654,7 @@ class wp_slimstat_reports
                 'callback_args' => array(
                     'type'    => 'top',
                     'columns' => 'searchterms',
-                    'where'   => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+                    'where'   => 'content_type LIKE "%%search%%" AND searchterms <> "" AND searchterms IS NOT NULL',
                     'raw'     => array('wp_slimstat_db', 'get_top')
                 ),
                 'classes'       => array('normal'),
@@ -1526,6 +1526,12 @@ class wp_slimstat_reports
     public static function show_world_map()
     {
         $countries     = wp_slimstat_db::get_top('country');
+        
+        // Backward compatibility
+        if (!$countries) {
+            $countries = array();
+        }
+
         $recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
 
         $data_points = array();

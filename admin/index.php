@@ -210,13 +210,13 @@ class wp_slimstat_admin
 
         // Dashboard Widgets
         if (wp_slimstat::$settings['add_dashboard_widgets'] == 'on') {
-            $temp = strlen(sanitize_url(wp_unslash($_SERVER['REQUEST_URI']))) - 10;
+            $request_length = strlen(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
+            $temp           = $request_length - 10;
 
-            if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false)) {
+            if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && $temp <= $request_length && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false)) {
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
             }
-
 
             add_action('wp_dashboard_setup', array(__CLASS__, 'add_dashboard_widgets'));
         }
@@ -242,6 +242,8 @@ class wp_slimstat_admin
         if (!wp_next_scheduled('wp_slimstat_purge')) {
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
+
+        self::initFeedback();
     }
     // END: init
 
@@ -894,7 +896,7 @@ class wp_slimstat_admin
     {
         $tag = current_filter();
 
-        if (!empty($tag)) {
+        if (!empty($tag) && current_user_can('manage_options') && wp_verify_nonce($_POST['security'], 'meta-box-order')) {
             $tag                         = str_replace('wp_ajax_slimstat_', '', $tag);
             wp_slimstat::$settings[$tag] = 'no';
 
@@ -913,6 +915,12 @@ class wp_slimstat_admin
     {
         $my_wpdb     = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
         $pageview_id = intval($_POST['pageview_id']);
+
+        // Delete page view if user has enough access
+        $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
+        if (!$current_user_can_delete || !wp_verify_nonce($_POST['security'], 'meta-box-order')) {
+            return;
+        }
         $my_wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.id = $pageview_id");
         exit();
     }
@@ -1103,5 +1111,43 @@ class wp_slimstat_admin
         return false;
     }
     // END: _create_table
+
+    /**
+     * Init FeedbackBird widget a third-party service to get feedbacks from users
+     *
+     * @url https://feedbackbird.io
+     *
+     * @return void
+     */
+    private static function initFeedback()
+    {
+        add_action('admin_enqueue_scripts', function () {
+            $screen = get_current_screen();
+
+            if (stristr($screen->id, 'slimview')) {
+                wp_enqueue_script('feedbackbird-app-script', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS');
+                wp_add_inline_script('feedbackbird-app-script', sprintf('var feedbackBirdObject = %s;', json_encode([
+                    'user_email' => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
+                    'meta'       => [
+                        'php_version'    => PHP_VERSION,
+                        'active_plugins' => array_map(function ($plugin, $pluginPath) {
+                            return [
+                                'name'    => $plugin['Name'],
+                                'version' => $plugin['Version'],
+                                'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
+                            ];
+                        }, get_plugins(), array_keys(get_plugins())),
+                    ]
+                ])));
+
+                add_filter('script_loader_tag', function ($tag, $handle, $src) {
+                    if ('feedbackbird-app-script' === $handle) {
+                        return preg_replace('/^<script /i', '<script type="module" crossorigin="crossorigin" ', $tag);
+                    }
+                    return $tag;
+                }, 10, 3);
+            }
+        });
+    }
 }
 // END: class declaration
