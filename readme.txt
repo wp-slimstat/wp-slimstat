@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.2
-Stable tag: 5.0.6
+Stable tag: 5.0.7
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -48,6 +48,10 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 4. **Audiance** - See your visitors' full information
 
 == Changelog ==
+= 5.0.7 =
+* [Fix] Resolved an issue with chart dataSet.
+* [Fix] Fixed the messy layout on the customize page.
+
 = 5.0.6 =
 * [New] Integrated a Feedback button powered by [FeedbackBird!](https://feedbackbird.io/) in the admin area to gather user feedback.
 * [Fix] Resolve STRPOS error when enqueuing scripts.

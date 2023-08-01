@@ -758,9 +758,7 @@ class wp_slimstat_db
             $output['labels'][] = "'$v1_label'";
 
             // This is how AmCharts expects the data to be formatted
-            $output[$i]['v1_label'] = $v1_label;
-            $output[$i]['v3_label'] = $v3_label;
-            $output[$i]['v4']       = $output[$i]['v3'] = $output[$i]['v2'] = $output[$i]['v1'] = 0;
+            $output['datasets']['v1'][] = $output['datasets']['v2'][] = $output['datasets']['v3'][] = $output['datasets']['v4'][] = 0;
         }
 
         // Now populate all the data points
@@ -774,17 +772,11 @@ class wp_slimstat_db
 
             // Does this value belong to the "current" range?
             if ($a_result['dt'] >= self::$filters_normalized['utime']['start'] && $a_result['dt'] <= self::$filters_normalized['utime']['end']) {
-                $output[$output['keys'][$label]]['v1'] = intval($a_result['v1']);
-                $output[$output['keys'][$label]]['v2'] = intval($a_result['v2']);
-
-                $output['datasets']['v1'][] = intval($a_result['v1']);
-                $output['datasets']['v2'][] = intval($a_result['v2']);
+                $output['datasets']['v1'][$output['keys'][$label]] = intval($a_result['v1']);
+                $output['datasets']['v2'][$output['keys'][$label]] = intval($a_result['v2']);
             } else {
-                $output[$output['keys'][$label]]['v3'] = intval($a_result['v1']);
-                $output[$output['keys'][$label]]['v4'] = intval($a_result['v2']);
-
-                $output['datasets']['v3'][] = intval($a_result['v1']);
-                $output['datasets']['v4'][] = intval($a_result['v2']);
+                $output['datasets']['v3'][$output['keys'][$label]] = intval($a_result['v1']);
+                $output['datasets']['v4'][$output['keys'][$label]] = intval($a_result['v2']);
             }
         }
 
