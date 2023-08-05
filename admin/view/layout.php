@@ -1,26 +1,4 @@
 <?php
-	if ( !empty( $_GET[ 'action' ] ) && $_GET[ 'action' ] == 'restore-views' ) {
-		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'" );
-		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'" );
-		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'" );
-		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'" );
-		$GLOBALS[ 'wpdb' ]->query( "DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'" );
-		
-		// Reset the reports for the rest of this request
-		wp_slimstat_reports::$reports = array();
-		wp_slimstat_reports::$user_reports = array(
-			'slimview1' => array(),
-			'slimview2' => array(),
-			'slimview3' => array(),
-			'slimview4' => array(),
-			'slimview5' => array(),
-			'dashboard' => array(),
-			'inactive' => array()
-		);
-		wp_slimstat_admin::$meta_user_reports = array();
-		wp_slimstat_reports::init();
-	}
-
 	// Keep track of multiple occurrences of the same report, to allow users to delete duplicates
 	$already_seen = array();
 ?>
@@ -38,7 +16,10 @@
 
 <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form>
 
-<a href="admin.php?page=slimlayout&&amp;action=restore-views" class="button"><?php _e( 'Reset Layout', 'wp-slimstat' ) ?></a>
+<form action="admin-post.php" method="post">
+    <input type="hidden" name="action" value="reset_slimlayout">
+    <input type="submit" value="<?php _e( 'Reset Layout', 'wp-slimstat' ) ?>" class="button" />
+</form>
 
 <?php foreach ( wp_slimstat_reports::$user_reports as $a_location_id => $a_location_list ): ?>
 

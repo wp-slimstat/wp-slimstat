@@ -20,6 +20,8 @@ class wp_slimstat_admin
      */
     public static function init()
     {
+        // Action for reset slimlayout
+        add_action('admin_post_reset_slimlayout', array('wp_slimstat_admin', 'reset_slimlayout'));
 
         // Load language files
         load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
@@ -253,6 +255,23 @@ class wp_slimstat_admin
     public static function deactivate()
     {
         wp_clear_scheduled_hook('wp_slimstat_purge');
+    }
+
+
+    /**
+     *  Reset layout
+     */
+    public static function reset_slimlayout()
+    {
+        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'");
+        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'");
+        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
+        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
+        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
+
+        // Redirect to layout page
+        wp_safe_redirect(admin_url('admin.php?page=slimlayout'));
+        die();
     }
 
     /**
