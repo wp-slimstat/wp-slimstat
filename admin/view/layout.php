@@ -17,7 +17,8 @@
 <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>" /></form>
 
 <form action="admin-post.php" method="post">
-    <input type="hidden" name="action" value="reset_slimlayout">
+    <?php wp_nonce_field( 'reset_layout' ); ?>
+    <input type="hidden" name="action" value="slimstat_reset_layout">
     <input type="submit" value="<?php _e( 'Reset Layout', 'wp-slimstat' ) ?>" class="button" />
 </form>
 

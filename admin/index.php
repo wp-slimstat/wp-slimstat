@@ -20,8 +20,8 @@ class wp_slimstat_admin
      */
     public static function init()
     {
-        // Action for reset slimlayout
-        add_action('admin_post_reset_slimlayout', array('wp_slimstat_admin', 'reset_slimlayout'));
+        // Action for reset layout
+        add_action('admin_post_slimstat_reset_layout', array('wp_slimstat_admin', 'handle_reset_layout'));
 
         // Load language files
         load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
@@ -261,8 +261,13 @@ class wp_slimstat_admin
     /**
      *  Reset layout
      */
-    public static function reset_slimlayout()
+    public static function handle_reset_layout()
     {
+        // Check nonce
+        if (!wp_verify_nonce($_REQUEST['_wpnonce'], 'reset_layout')) {
+            wp_die(__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
+        }
+
         $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'");
         $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'");
         $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
