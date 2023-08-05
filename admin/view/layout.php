@@ -42,9 +42,9 @@
 
 <?php foreach ( wp_slimstat_reports::$user_reports as $a_location_id => $a_location_list ): ?>
 
-<div id="postbox-container-<?php echo esc_attr($a_key); ?>" class="postbox-container">
+<div id="postbox-container-<?php echo esc_attr($a_location_id); ?>" class="postbox-container">
 <h2 class="slimstat-options-section-header"><?php echo wp_slimstat_admin::$screens_info[ $a_location_id ][ 'title' ] ?></h2>
-<div id="<?php echo esc_attr($a_key); ?>-sortables" class="meta-box-sortables"><?php
+<div id="<?php echo esc_attr($a_location_id); ?>-sortables" class="meta-box-sortables"><?php
 	foreach( $a_location_list as $a_report_id ) {
 		if ( empty( wp_slimstat_reports::$reports[ $a_report_id ] ) ) {
 			continue;
