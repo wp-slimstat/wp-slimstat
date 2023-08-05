@@ -849,6 +849,9 @@ class wp_slimstat_reports
 
             // Now let's explode all the lists
             foreach (wp_slimstat_admin::$meta_user_reports as $a_location => $a_report_list) {
+                if (!array_key_exists($a_location, self::$user_reports)) {
+                    continue;
+                }
                 self::$user_reports[$a_location] = explode(',', $a_report_list);
             }
         }
@@ -1525,8 +1528,8 @@ class wp_slimstat_reports
 
     public static function show_world_map()
     {
-        $countries     = wp_slimstat_db::get_top('country');
-        
+        $countries = wp_slimstat_db::get_top('country');
+
         // Backward compatibility
         if (!$countries) {
             $countries = array();
