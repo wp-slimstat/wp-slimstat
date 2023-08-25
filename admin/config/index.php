@@ -719,7 +719,7 @@ if ( !empty( $settings ) && !empty( $_REQUEST[ 'slimstat_update_settings' ] ) &&
 			}
 
 			if ( isset( $a_post_value ) ) {
-				wp_slimstat::$settings[ $a_post_slug ] = !empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'use_code_editor' ] ) ? $a_post_value : sanitize_text_field( $a_post_value );
+				wp_slimstat::$settings[ $a_post_slug ] = !empty( $settings[ $current_tab ][ 'rows' ][ $a_post_slug ][ 'use_code_editor' ] ) ? $a_post_value : htmlspecialchars(sanitize_text_field( $a_post_value ));
 			}
 
 			// If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
@@ -865,7 +865,7 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 								type="' . ( ( $a_setting_info[ 'type' ] == 'integer' ) ? 'number' : 'text' ) . '"
 								name="options[' . $a_setting_slug . ']"
 								id="' . $a_setting_slug . '"
-								value="' . ( !empty( wp_slimstat::$settings[ $a_setting_slug ] ) ? wp_slimstat::$settings[ $a_setting_slug ] : $empty_value ) . '"> ' . $a_setting_info[ 'after_input_field' ] .
+								value="' . ( !empty( wp_slimstat::$settings[ $a_setting_slug ] ) ? esc_attr(wp_slimstat::$settings[ $a_setting_slug ]) : $empty_value ) . '"> ' . $a_setting_info[ 'after_input_field' ] .
 								$network_override_checkbox . '
 						</span>
 						<span class="description">' . $a_setting_info[ 'description' ] . '</span>
