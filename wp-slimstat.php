@@ -796,6 +796,7 @@ class wp_slimstat
                     $w = 'id';
                 }
 
+                $w = esc_html($w);
                 $w = self::string_to_array($w);
 
                 // Some columns are 'special' and need be removed from the list
