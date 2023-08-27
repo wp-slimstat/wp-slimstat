@@ -746,6 +746,11 @@ class wp_slimstat
             return '<!-- Slimstat Shortcode Error: missing parameter -->';
         }
 
+        // Validation the parameter w
+        if (in_array($w, array('count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link')) == false) {
+            return '<!-- Slimstat Shortcode Error: invalid parameter for w -->';
+        }
+
         // Include the Reports Library, but don't initialize the database, since we will do that separately later
         include_once(plugin_dir_path(__FILE__) . 'admin/view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();

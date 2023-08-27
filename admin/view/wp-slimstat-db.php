@@ -819,7 +819,7 @@ class wp_slimstat_db
 			GROUP BY {$_args[ 'group_by' ]}
 			ORDER BY counthits DESC
 			LIMIT 0, %d", self::$filters_normalized['misc']['limit_results']);
-        return self::get_results($sql, $_args['group_by'],$_args['group_by'] . ' ASC');
+        return self::get_results($sql, $_args['group_by'], $_args['group_by'] . ' ASC');
     }
 
     public static function get_max_and_average_pages_per_visit()
