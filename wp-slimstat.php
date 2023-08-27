@@ -882,7 +882,7 @@ class wp_slimstat
                                 break;
 
                             default:
-                                $output[$result_idx][$a_column] .= $a_result[$a_column];
+                                $output[$result_idx][$a_column] .= isset($a_result[$a_column]) ? $a_result[$a_column] : '';
                                 break;
                         }
                         $output[$result_idx][$a_column] .= '</span>';
