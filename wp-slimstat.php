@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 5.0.9
+Version: 5.0.10
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -17,7 +17,7 @@ if (!empty(wp_slimstat::$settings)) {
 
 class wp_slimstat
 {
-    public static $version = '5.0.9';
+    public static $version = '5.0.10';
     public static $settings = array();
 
     public static $wpdb = '';
@@ -746,6 +746,11 @@ class wp_slimstat
             return '<!-- Slimstat Shortcode Error: missing parameter -->';
         }
 
+        // Validation the parameter w
+        if (in_array($w, array('count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link')) == false) {
+            return '<!-- Slimstat Shortcode Error: invalid parameter for w -->';
+        }
+
         // Include the Reports Library, but don't initialize the database, since we will do that separately later
         include_once(plugin_dir_path(__FILE__) . 'admin/view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();
@@ -796,6 +801,7 @@ class wp_slimstat
                     $w = 'id';
                 }
 
+                $w = esc_html($w);
                 $w = self::string_to_array($w);
 
                 // Some columns are 'special' and need be removed from the list
@@ -881,7 +887,7 @@ class wp_slimstat
                                 break;
 
                             default:
-                                $output[$result_idx][$a_column] .= $a_result[$a_column];
+                                $output[$result_idx][$a_column] .= isset($a_result[$a_column]) ? $a_result[$a_column] : '';
                                 break;
                         }
                         $output[$result_idx][$a_column] .= '</span>';
