@@ -82,13 +82,8 @@ for ($i = 0; $i < $count_page_results; $i++) {
     // Print visit header?
     if ($i == 0 || $results[$i - 1]['visit_id'] != $results[$i]['visit_id'] || $results[$i - 1]['ip'] != $results[$i]['ip'] || $results[$i - 1]['browser'] != $results[$i]['browser'] || $results[$i - 1]['platform'] != $results[$i]['platform'] || $results[$i - 1]['username'] != $results[$i]['username']) {
 
-        // Skip error responses
-        if (empty($results[$i]['referer'])) {
-            continue;
-        }
-
         // Color-coded headers
-        $sek           = wp_slimstat::get_lossy_url(parse_url($results[$i]['referer'], PHP_URL_HOST));
+        $sek           = isset($results[$i]['referer']) ? wp_slimstat::get_lossy_url(parse_url($results[$i]['referer'], PHP_URL_HOST)) : '';
         $highlight_row = !empty($search_engines[$sek]) ? ' is-search-engine' : (($results[$i]['browser_type'] != 1) ? ' is-direct' : '');
 
         // Country
