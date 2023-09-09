@@ -261,8 +261,10 @@ class wp_slimstat
                 }
 
                 foreach (array('content_type', 'category', 'content_id', 'author') as $a_key) {
-                    if (!empty($content_info[$a_key])) {
-                        self::$stat[$a_key] = sanitize_title($content_info[$a_key]);
+                    if (!empty($content_info[$a_key]) && $a_key !== 'content_id') {
+                        self::$stat[$a_key] = sanitize_text_field($content_info[$a_key]);
+                    } elseif (!empty($content_info[$a_key])) {
+                        self::$stat[$a_key] = absint($content_info[$a_key]);
                     }
                 }
             } // ... otherwise we'll track this as an external page
