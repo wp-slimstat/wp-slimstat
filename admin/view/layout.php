@@ -3,7 +3,7 @@
 	$already_seen = array();
 ?>
 
-<div class="wrap slimstat-layout">
+<div class="wrap slimstat slimstat-layout">
 <h2><?php _e( 'Customize and organize your reports','wp-slimstat' ) ?></h2>
 <p><?php 
 	_e( 'You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat' );
@@ -43,6 +43,7 @@
 		}
 
 		$placeholder_classes = '';
+        $h = wp_slimstat_reports::$reports[ $a_report_id ];
 		if ( is_array( wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] ) ) {
 			$placeholder_classes = ' ' . implode( ' ', wp_slimstat_reports::$reports[ $a_report_id ][ 'classes' ] );
 		}
@@ -50,7 +51,7 @@
 		echo "
 			<div class='postbox$placeholder_classes' id='".esc_attr($a_report_id)."'>
 				<div class='slimstat-header-buttons'>
-					<a class='slimstat-font-$icon' href='#' title='".esc_attr($title)."''></a>
+					<a class='slimstat-font-$icon' href='#' title='".esc_attr($title)."'></a>
 					" . ( ( $a_location_id != 'inactive' ) ? ' <a class="slimstat-font-minus-circled" href="#" title="' . __( 'Move to Inactive', 'wp-slimstat' ) . '"></a>' : '' ) . "
 				</div>
 				<h3 class='hndle'>" . wp_slimstat_reports::$reports[ $a_report_id ][ 'title' ] . "</h3>
