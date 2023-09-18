@@ -647,14 +647,24 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
-                $new_entry[] = add_submenu_page(
-                    $parent,
-                    $a_screen_info['title'],
-                    $a_screen_info['title'],
-                    $minimum_capability,
-                    $a_screen_id,
-                    $a_screen_info['callback']
-                );
+                if ($a_screen_id == 'slimupgrade') {
+                    $new_entry[] = add_submenu_page(
+                        $parent,
+                        $a_screen_info['title'],
+                        $a_screen_info['title'],
+                        $minimum_capability,
+                        $a_screen_info['callback']()
+                    );
+                } else {
+                    $new_entry[] = add_submenu_page(
+                        $parent,
+                        $a_screen_info['title'],
+                        $a_screen_info['title'],
+                        $minimum_capability,
+                        $a_screen_id,
+                        $a_screen_info['callback']
+                    );
+                }
             }
         }
 
@@ -759,12 +769,8 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_upgrade_to_pro()
     {
-        if (!wp_slimstat::pro_is_installed()) {
-            wp_redirect('https://wp-slimstat.com/');
-            exit;
-        }
-
-        do_action('slimstat_upgrade_to_pro');
+        $upgradeUrl = 'https://wp-slimstat.com/';
+        return apply_filters('slimstat_upgrade_to_pro_url', $upgradeUrl);
     }
     // END: wp_slimstat_include_addons
 
