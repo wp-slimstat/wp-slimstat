@@ -1956,6 +1956,20 @@ class wp_slimstat
         return strip_tags(trim(base64_decode(strtr($_input, '._-', '+/='))));
     }
     // end _base64_url_encode/decode
+
+    /**
+     * Check if slimstat pro plugin is installed
+     */
+    public static function pro_is_installed($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')
+    {
+        include_once(ABSPATH . 'wp-admin/includes/plugin.php');
+
+        if (is_plugin_active($pluginSlug)) {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 // end of class declaration

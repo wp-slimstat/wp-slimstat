@@ -29,70 +29,70 @@ class wp_slimstat_admin
         // Define the default screens
         $has_network_reports = get_user_option("meta-box-order_slimstat_page_slimlayout-network", 1);
         self::$screens_info  = array(
-            'slimview1'  => array(
+            'slimview1'   => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Real-time', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
             ),
-            'slimview2'  => array(
+            'slimview2'   => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Overview', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
             ),
-            'slimview3'  => array(
+            'slimview3'   => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Audience', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
             ),
-            'slimview4'  => array(
+            'slimview4'   => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Site Analysis', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
             ),
-            'slimview5'  => array(
+            'slimview5'   => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Traffic Sources', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
             ),
-            'slimlayout' => array(
+            'slimlayout'  => array(
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
                 'title'           => __('Customize', 'wp-slimstat'),
                 'capability'      => 'can_customize',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_layout')
             ),
-            'slimconfig' => array(
+            'slimconfig'  => array(
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
                 'title'           => __('Settings', 'wp-slimstat'),
                 'capability'      => 'can_admin',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_config')
             ),
-            /*'slimaddons' => array(
+            'slimupgrade' => array(
                 'is_report_group' => false,
                 'show_in_sidebar' => current_user_can('manage_options'),
-                'title'           => __('Add-ons', 'wp-slimstat'),
+                'title'           => __('Upgrade to Pro', 'wp-slimstat'),
                 'capability'      => 'can_admin',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_addons')
-            ),*/
-            'dashboard'  => array(
+                'callback'        => array(__CLASS__, 'wp_slimstat_upgrade_to_pro')
+            ),
+            'dashboard'   => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => false,
                 'title'           => __('WordPress Dashboard', 'wp-slimstat'),
                 'capability'      => '',
                 'callback'        => '' // No callback and capabilities are needed if show_in_sidebar is false
             ),
-            'inactive'   => array(
+            'inactive'    => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => false,
                 'title'           => __('Inactive Reports'),
@@ -602,6 +602,8 @@ class wp_slimstat_admin
      */
     public static function add_menus($_s = '')
     {
+        global $submenu;
+
         // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
         if (is_network_admin()) {
@@ -654,6 +656,12 @@ class wp_slimstat_admin
                     $a_screen_info['callback']
                 );
             }
+        }
+
+        if (!empty($submenu[$parent][7][4])) {
+            $submenu[$parent][7][4] .= ' wp-slimstat-upgrade-to-pro';
+        } else {
+            $submenu[$parent][7][4] = 'wp-slimstat-upgrade-to-pro';
         }
 
         // Load styles and Javascript needed to make the reports look nice and interactive
@@ -747,11 +755,16 @@ class wp_slimstat_admin
     // END: wp_slimstat_include_addons
 
     /**
-     * Includes the screen to manage add-ons
+     * Handles the upgrade to pro from the free version
      */
-    public static function wp_slimstat_include_addons()
+    public static function wp_slimstat_upgrade_to_pro()
     {
-        include(dirname(__FILE__) . '/view/addons.php');
+        if (!wp_slimstat::pro_is_installed()) {
+            wp_redirect('https://wp-slimstat.com/');
+            exit;
+        }
+
+        do_action('slimstat_upgrade_to_pro');
     }
     // END: wp_slimstat_include_addons
 
