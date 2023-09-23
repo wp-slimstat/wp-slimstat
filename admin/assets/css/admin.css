@@ -561,6 +561,12 @@
 	padding: 5px 10px;
 }
 
+a.wp-slimstat-upgrade-to-pro {
+    background-color: #f22f46 !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
 /* Responsive */
 @media screen and ( max-width: 1560px ) {
 	.wrap.slimstat .postbox {

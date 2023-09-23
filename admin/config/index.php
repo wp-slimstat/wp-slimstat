@@ -578,8 +578,12 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 	),
 
 	7 => array(
-		'title' => __( 'Add-ons', 'wp-slimstat' )
-	)
+		'title' => __( 'Pro Settings', 'wp-slimstat' )
+	),
+
+    8 => array(
+        'title' => __( 'License', 'wp-slimstat' )
+    ),
 );
 
 // This option can only be added if this site is running PHP 7.4+
