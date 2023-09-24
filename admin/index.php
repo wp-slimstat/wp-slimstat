@@ -81,7 +81,7 @@ class wp_slimstat_admin
             'slimupgrade' => array(
                 'is_report_group' => false,
                 'show_in_sidebar' => current_user_can('manage_options'),
-                'title'           => __('Upgrade to Pro', 'wp-slimstat'),
+                'title'           => apply_filters('slimstat_upgrade_to_pro_title', __('Upgrade to Pro', 'wp-slimstat')),
                 'capability'      => 'can_admin',
                 'callback'        => array(__CLASS__, 'wp_slimstat_upgrade_to_pro')
             ),
@@ -245,7 +245,16 @@ class wp_slimstat_admin
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
 
+        // Add style to admin_head
+        add_action('admin_head', array(__CLASS__, 'admin_head'));
+
+        // Init feedback
         self::initFeedback();
+    }
+
+    public static function admin_head()
+    {
+        echo '<style>a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;}</style>';
     }
     // END: init
 
