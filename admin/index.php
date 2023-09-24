@@ -254,7 +254,9 @@ class wp_slimstat_admin
 
     public static function admin_head()
     {
-        echo '<style>a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;}</style>';
+        if (!wp_slimstat::pro_is_installed()) {
+            echo '<style>a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;}</style>';
+        }
     }
     // END: init
 
