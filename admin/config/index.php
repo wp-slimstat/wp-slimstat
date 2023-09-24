@@ -578,7 +578,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url( 'admin-ajax.php' ) . '" };
 	),
 
 	7 => array(
-		'title' => __( 'Add-ons', 'wp-slimstat' )
+		'title' => __( 'Pro Options', 'wp-slimstat' )
 	),
 
     8 => array(
