@@ -665,6 +665,11 @@ $error: #ff3636;
   padding: 0 0 0 30px;
 }
 
+.rtl #screen-meta-links {
+    left: 0;
+    right: auto;
+}
+
 /* Customizer */
 .slimstat-layout .postbox-container {
   border: 1px solid $grayThree;
