@@ -1,11 +1,17 @@
-<?php if (!function_exists('add_action')) exit(); ?>
+<?php
+if (!function_exists('add_action')) exit();
+
+// Load header
+$pro_plugin_slug = 'wp-slimstat-pro/wp-slimstat-pro.php';
+wp_slimstat_admin::get_template('header', ['is_pro' => is_plugin_active($pro_plugin_slug)]);
+?>
 
 <div class="wrap slimstat">
     <h2><?php echo wp_slimstat_admin::$screens_info[$_GET['page']]['title'] ?></h2>
 
     <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat'); ?></div>
 
-    <form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form">
+    <form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form" style="background-color: rgba(255,255,255,0.6);">
         <fieldset id="slimstat-filters"><?php
             $filter_name_html = '<label for="slimstat-filter-name">Filter by</label><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __('Dimension', 'wp-slimstat') . '</option>';
             foreach (wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info) {
@@ -97,27 +103,31 @@
                 <?php
                 wp_slimstat::toggle_date_i18n_filters(false);
 
-                if (wp_slimstat_db::$filters_normalized['date']['day'] != intval(date_i18n('j')) ||
+                if (
+                    wp_slimstat_db::$filters_normalized['date']['day'] != intval(date_i18n('j')) ||
                     wp_slimstat_db::$filters_normalized['date']['month'] != intval(date_i18n('n')) ||
                     wp_slimstat_db::$filters_normalized['date']['year'] != intval(date_i18n('Y')) ||
-                    (wp_slimstat_db::$filters_normalized['date']['interval'] != -abs(wp_slimstat::$settings['posts_column_day_interval']) && wp_slimstat_db::$filters_normalized['date']['interval'] != -intval(date_i18n('j')) + 1)) {
+                    (wp_slimstat_db::$filters_normalized['date']['interval'] != -abs(wp_slimstat::$settings['posts_column_day_interval']) && wp_slimstat_db::$filters_normalized['date']['interval'] != -intval(date_i18n('j')) + 1)
+                ) {
                     echo '<a class="slimstat-filter-link button button-secondary noslimstat" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url() . '">' . __('Reset Filters', 'wp-slimstat') . '</a>';
                 }
                 ?>
             </div>
         </fieldset><!-- .slimstat-date-filters -->
 
-        <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details): ?>
+        <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details) : ?>
             <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="<?php echo htmlspecialchars($a_details[0] . ' ' . $a_details[1]) ?>"/>
         <?php endforeach ?>
 
-        <?php foreach (wp_slimstat_db::$filters_normalized['date'] as $a_key => $a_value) : if (!empty($a_value)): ?>
+        <?php foreach (wp_slimstat_db::$filters_normalized['date'] as $a_key => $a_value) : if (!empty($a_value)) : ?>
             <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="equals <?php echo htmlspecialchars($a_value) ?>"/>
-        <?php endif; endforeach; ?>
+        <?php endif;
+        endforeach; ?>
 
-        <?php foreach (wp_slimstat_db::$filters_normalized['misc'] as $a_key => $a_value): if (!empty($a_value)): ?>
+        <?php foreach (wp_slimstat_db::$filters_normalized['misc'] as $a_key => $a_value) : if (!empty($a_value)) : ?>
             <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="equals <?php echo htmlspecialchars($a_value) ?>"/>
-        <?php endif; endforeach; ?>
+        <?php endif;
+        endforeach; ?>
     </form>
 
     <?php
@@ -153,6 +163,7 @@
             wp_slimstat_reports::callback_wrapper(array('id' => $a_report_id));
             wp_slimstat_reports::report_footer();
         }
-        ?></div>
+        ?>
+    </div>
 </div>
 <div id="slimstat-modal-dialog"></div>

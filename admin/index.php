@@ -2,6 +2,8 @@
 
 class wp_slimstat_admin
 {
+    const SLIMSTAT_PRO_WEB = 'https://wp-slimstat.com/';
+
     public static $screens_info = array();
     public static $config_url = '';
     public static $current_screen = 'slimview1';
@@ -103,7 +105,7 @@ class wp_slimstat_admin
         self::$screens_info  = apply_filters('slimstat_screens_info', self::$screens_info);
 
         // If the plugin was network activated, the tables might not have been created for this specific site
-        $table_list = wp_slimstat::$wpdb->get_results("SHOW TABLES LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats'");
+        $table_list = wp_slimstat::$wpdb->get_results("SHOW TABLES LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'");
         if (empty($table_list)) {
             self::init_environment();
         }
@@ -250,6 +252,16 @@ class wp_slimstat_admin
 
         // Init feedback
         self::initFeedback();
+
+        // Add lock export button in report header
+        add_filter('slimstat_report_header_buttons', function ($_header_buttons, $_report_id) {
+            return self::add_lock_export_button($_header_buttons, $_report_id);
+        }, 10, 2);
+
+        // Add header to settings and customize and settings page
+        add_action('admin_notices', function () {
+            self::add_header();
+        });
     }
 
     public static function admin_head()
@@ -386,11 +398,11 @@ class wp_slimstat_admin
 				dt INT(10) UNSIGNED DEFAULT 0,
 
 				CONSTRAINT PRIMARY KEY (id),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_dt_idx (dt),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) ),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) ),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) ),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
+				INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
 			) COLLATE utf8_general_ci $use_innodb";
 
         // This table will track outbound links (clicks on links to external sites)
@@ -472,11 +484,11 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['expand_details']);
 
             // Add table indexes for improved performance
-            $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'");
+            $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$GLOBALS['wpdb']->prefix}stats_resource_idx'");
             if (empty($check_index)) {
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )");
+                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )");
+                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )");
+                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )");
             }
 
             wp_slimstat::$settings['db_indexes'] = 'on';
@@ -486,7 +498,7 @@ class wp_slimstat_admin
         // --- Updates for version 4.8.4.1 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
             // Goodbye, browser plugins
-            wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP COLUMN plugins");
+            wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP COLUMN plugins");
 
             // Hello there, fingerprint and timezone offset
             $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language");
@@ -500,10 +512,10 @@ class wp_slimstat_admin
         if (version_compare(wp_slimstat::$settings['version'], '4.8.8', '<')) {
             // Adding new index on the 'fingerprint' column for improved performance
             if (wp_slimstat::$settings['db_indexes'] == 'on') {
-                $my_wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )");
+                $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )");
             }
 
-            $my_wpdb->query("UPDATE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%'");
+            $my_wpdb->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%'");
         }
 
         // Now we can update the version stored in the database
@@ -814,7 +826,7 @@ class wp_slimstat_admin
 
         $sql = wp_slimstat::$wpdb->prepare("
 			SELECT resource, COUNT( DISTINCT $column ) as counthits 
-			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE " . $where . "
 			GROUP BY resource
 			LIMIT 0, " . wp_slimstat_db::$filters_normalized['misc']['limit_results'], self::$data_for_column['sql']);
@@ -966,7 +978,7 @@ class wp_slimstat_admin
         if (!$current_user_can_delete || !wp_verify_nonce($_POST['security'], 'meta-box-order')) {
             return;
         }
-        $my_wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.id = $pageview_id");
+        $my_wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.id = $pageview_id");
         exit();
     }
     // END: delete_pageview
@@ -1193,6 +1205,62 @@ class wp_slimstat_admin
                 }, 10, 3);
             }
         });
+    }
+
+    public static function get_template($template, $args = array(), $return = false)
+    {
+        // Push Args
+        if (is_array($args) && isset($args)) :
+            extract($args);
+        endif;
+
+        // Check Load single file or array list
+        if (is_string($template)) {
+            $template = explode(" ", $template);
+        }
+
+        // Load File
+        foreach ($template as $file) {
+            $template_file = WP_PLUGIN_DIR . "/wp-slimstat/admin/view/partials/{$file}.php";
+
+            if (!file_exists($template_file)) {
+                continue;
+            }
+
+            if ($return) {
+                ob_start();
+                require $template_file;
+
+                return ob_get_clean();
+            }
+
+            // include File
+            include $template_file;
+        }
+    }
+
+    public static function add_lock_export_button($_header_buttons = '', $_report_id = '')
+    {
+        // If the pro is active don't show it
+        $pro_plugin_slug = 'wp-slimstat-pro/wp-slimstat-pro.php';
+        if (is_plugin_active($pro_plugin_slug)) {
+            return $_header_buttons;
+        }
+
+        // Define which reports get this new functionality
+        if (empty(\wp_slimstat_reports::$reports[$_report_id]['callback_args']) || !array_key_exists('raw', \wp_slimstat_reports::$reports[$_report_id]['callback_args'])) {
+            return $_header_buttons;
+        }
+
+        return '<a class="slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" href="' . self::SLIMSTAT_PRO_WEB . '" target="_blank" title="' . __('Export to CSV', 'wp-slimstat-pro') . '">' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+    }
+
+    public static function add_header()
+    {
+        $pro_plugin_slug = 'wp-slimstat-pro/wp-slimstat-pro.php';
+        if (isset($_GET['page']) && ($_GET['page'] === 'slimlayout' || $_GET['page'] === 'slimconfig')) {
+            return self::get_template('header', ['is_pro' => is_plugin_active($pro_plugin_slug)]);
+        }
     }
 }
 // END: class declaration

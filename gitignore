@@ -1,0 +1,7 @@
+# .gitignore
+
+# Ignore virtual environment folder
+vendor/
+
+# Ignore Node.js modules folder
+node_modules/
