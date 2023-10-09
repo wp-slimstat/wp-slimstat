@@ -5,12 +5,12 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.3
-Stable tag: 5.0.10.2
+Stable tag: 5.1
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
-= Main features =
+= Main Features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **GDPR**: fully compliant with the GDPR European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
@@ -20,6 +20,16 @@ Track returning customers and registered users, monitor Javascript events, detec
 * **Privacy**: hash IP addresses to protect your users' privacy.
 * **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
 * **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](https://www.ammap.com/)).
+
+= Pro Pack Features =
+* **Network Analytics**: Enable a network-wide view of your reports and settings.
+* **Network Settings**: This plugin has been discontinued, and its functionality merged into our Network Analytics add-on. If you purchased a license for this add-on and need a new download code for Network Analytics, [contact support](mailto:support@example.com).
+* **Email Reports**: Receive your reports directly in your mailbox.
+* **Export to Excel**: Display a heatmap layer of the most clicked areas on your website.
+* **User Overview**: Monitor your registered users by tracking their activities and time on site.
+* **MaxMind Integration**: Connect to MaxMind's Geolocation API to retrieve detailed information about your visitors.
+* **Custom DB**: Use an external database to store all the information about your visitors.
+* **Extended Overview**: Add custom columns to the User Overview widget and export file.
 
 = Requirements =
 * WordPress 5.0+
@@ -48,6 +58,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 4. **Audiance** - See your visitors' full information
 
 == Changelog ==
+= 5.1 =
+*
+
 = 5.0.10.2 =
 * [Fix] The shortcode issues have been fixed
 * [Fix] Displaying the Access Log IPs have been fixed
