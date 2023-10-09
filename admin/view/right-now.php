@@ -88,9 +88,9 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
         // Country
         if (!empty($results[$i]['country']) && $results[$i]['country'] != 'xx') {
-            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country equals ' . $results[$i]['country']) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.png' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-' . $results[$i]['country']) . "'></a>";
+            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country equals ' . $results[$i]['country']) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.svg' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-' . $results[$i]['country']) . "'></a>";
         } else {
-            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country is_empty #') . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.png' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-') . "'></a>";
+            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country is_empty #') . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.svg' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-') . "'></a>";
         }
 
         // City, if tracked

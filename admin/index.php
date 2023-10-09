@@ -2,8 +2,6 @@
 
 class wp_slimstat_admin
 {
-    const SLIMSTAT_PRO_WEB = 'https://wp-slimstat.com/';
-
     public static $screens_info = array();
     public static $config_url = '';
     public static $current_screen = 'slimview1';
@@ -1252,7 +1250,7 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        return '<a class="slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" href="' . self::SLIMSTAT_PRO_WEB . '" target="_blank" title="' . __('Export to CSV', 'wp-slimstat-pro') . '">' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        return '<a target="_blank" class="slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" href="' . wp_slimstat_defines::SLIMSTAT_WESITE . '"  title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
     }
 
     public static function add_header()

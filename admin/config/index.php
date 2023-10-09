@@ -911,7 +911,7 @@ foreach ( $settings as $a_tab_id => $a_tab_info ) {
 	</table>
 
 	<p class="submit">
-		<input type="submit" value="<?php _e( 'Save Changes', 'wp-slimstat' ) ?>" class="button-primary" name="Submit">
+		<input type="submit" value="<?php _e( 'Save Changes', 'wp-slimstat' ) ?>" class="button-primary slimstat-settings-button" name="Submit">
 	</p>
 </form>
 

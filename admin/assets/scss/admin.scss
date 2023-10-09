@@ -8,6 +8,8 @@ $grayFive: #f8f8f8;
 $wpBlue: #2b76f6;
 $Green: #24cb7d;
 $brand: #e8294c;
+$lightBrand: #FCCFD4;
+$veryLightBrand: #fff4f5;
 $error: #ff3636;
 
 // Old Styles
@@ -49,6 +51,11 @@ $error: #ff3636;
   position: absolute;
   right: 0;
   z-index: 1;
+
+  .rtl & {
+    left: 0;
+    right: auto;
+  }
 }
 
 #slimstat-filters-form label {
@@ -61,7 +68,8 @@ $error: #ff3636;
   position: absolute;
   right: 5px;
   top: 5px;
-  border-radius: 6px;
+  background-color: $brand;
+  border-radius: 50px;
 }
 
 #slimstat-date-filters > a {
@@ -91,18 +99,11 @@ $error: #ff3636;
   width: 410px;
   z-index: 120;
   border-radius: 8px;
-}
 
-#slimstat-date-filters .dropdown #slimstat-quick-filters a {
-  background-color: $graySix;
-  display: block;
-  float: left;
-  margin: 0 5px 5px 0;
-  padding: 7px 5px;
-  width: 123px;
-  border-radius: 5px;
-  text-align: center;
-  color: $grayOne;
+  .rtl & {
+    right: auto;
+    left: -4px;
+  }
 }
 
 #slimstat-date-filters .dropdown strong {
@@ -168,6 +169,11 @@ $error: #ff3636;
   align-items: center;
   justify-content: flex-start;
   flex-wrap: wrap;
+  margin-right: -1.3%;
+
+  .rtl & {
+    margin-right: -.8%;
+  }
 }
 
 /* Single Report */
@@ -177,17 +183,17 @@ $error: #ff3636;
   float: left;
   margin-bottom: 15px;
   //margin-right: .7%;
-  min-width: 24.3%;
+  min-width: 24%;
   overflow: hidden;
-  width: 24.3%;
+  width: 24%;
 }
 
 .wrap.slimstat .postbox.large {
-  width: 49.1%;
+  width: 49%;
 }
 
 .wrap.slimstat .postbox.extralarge {
-  width: 74.3%;
+  width: 73.6%;
 }
 
 .wrap.slimstat .postbox.full-width {
@@ -208,37 +214,27 @@ $error: #ff3636;
   padding: 10px;
 }
 
-.wrap.slimstat .postbox h3:hover:after {
-  color: #bbb;
-  content: attr(data-report-id);
-  margin-left: 10px;
-}
+//.wrap.slimstat .postbox h3:hover:after {
+//  color: #bbb;
+//  content: attr(data-report-id);
+//  margin-left: 10px;
+//}
 
 .wrap.slimstat .postbox.tall h3 {
   cursor: auto;
 }
 
-.slimstat-header-buttons {
-  float: right;
-  padding: 15px 10px 0;
-}
-
 .slimstat-tooltip-trigger.corner {
-  background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAABkSURBVHjaYpw1a9YUBgaGbCD+AsR/GRCACYg/sACJXCBWBGIvBkzAC1L1H4i9gXgRFgUfmZA48UC8EF0FExo/AYgXIPH/MWExNhGI50PZnNgUgEASEG8FYg5cCkDAB4gnAAQYAGBCD4bcPf1fAAAAAElFTkSuQmCC) 0 0 no-repeat scroll;
-  cursor: help;
-  display: block;
-  height: 7px;
-  position: absolute;
-  top: 0;
-  width: 7px;
+  //background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAABkSURBVHjaYpw1a9YUBgaGbCD+AsR/GRCACYg/sACJXCBWBGIvBkzAC1L1H4i9gXgRFgUfmZA48UC8EF0FExo/AYgXIPH/MWExNhGI50PZnNgUgEASEG8FYg5cCkDAB4gnAAQYAGBCD4bcPf1fAAAAAElFTkSuQmCC) 0 0 no-repeat scroll;
+  //display: block;
+  //height: 7px;
+  //position: absolute;
+  //top: 0;
+  //width: 7px;
 }
 
 .slimstat-tooltip-content {
   display: none;
-}
-
-.wrap.slimstat h3 .slimstat-tooltip-trigger.corner {
-  right: 0;
 }
 
 .slimstat .no-refresh .refresh {
@@ -247,8 +243,6 @@ $error: #ff3636;
 
 /* Single Report: Header and Header Buttons - Pagination */
 [id^="slim_"] p.pagination {
-  //   background-color: $graySix;
-  //   color: $grayOne;
   font-weight: 600;
   color: black;
   font-size: 14px;
@@ -260,9 +254,9 @@ $error: #ff3636;
   margin-left: 5px;
 }
 
-[id^="slim_"] p.pagination a:hover {
-  text-shadow: 0 0 2px #000;
-}
+//[id^="slim_"] p.pagination a:hover {
+//  text-shadow: 0 0 2px #000;
+//}
 
 /* Single Report: Inside */
 [id^="slim_"] .inside {
@@ -516,7 +510,7 @@ $error: #ff3636;
 }
 
 .nav-tab.nav-tab-active {
-  background-color: transparent !important;
+  //background-color: transparent !important;
 }
 
 .nav-tab a {
@@ -645,10 +639,6 @@ $error: #ff3636;
   right: inherit !important;
 }
 
-.rtl .slimstat-header-buttons {
-  float: left;
-}
-
 .rtl [id^="slim_"] p.pagination a {
   float: left;
 }
@@ -663,11 +653,6 @@ $error: #ff3636;
 
 .rtl .form-table td span.block-element {
   padding: 0 0 0 30px;
-}
-
-.rtl #screen-meta-links {
-    left: 0;
-    right: auto;
 }
 
 /* Customizer */
@@ -866,7 +851,7 @@ $error: #ff3636;
 
 /* '' */
 .slimstat-font-download:before {
-  content: "\e804";
+  //content: "\e804";
 }
 
 /* '' */
@@ -1766,7 +1751,55 @@ x:-o-prefocus {
     text-decoration: none;
   }
 
+  #slimstat-date-filters {
+    a.slimstat-filter-link {
+      background-color: $grayFive;
+      display: block;
+      float: left;
+      margin: 0 5px 5px 0;
+      padding: 7px 5px;
+      width: 123px;
+      border-radius: 50px;
+      text-align: center;
+      color: $grayOne;
+      transition: .3s all ease-out;
+
+      &:hover {
+        background-color: $grayFour;
+      }
+    }
+
+    input, select {
+      border: 2px solid $grayFour;
+      border-radius: 50px;
+    }
+
+    input[type='submit'] {
+      background-color: $brand;
+      border: none;
+      border-radius: 50px;
+      transition: .3s all ease-out;
+
+      &:hover {
+        background-color: black;
+      }
+    }
+  }
+
   .button-primary {
+    &.slimstat-settings-button {
+      background-color: $brand;
+      color: white;
+      border-radius: 50px;
+      border: none;
+      transition: .3s all ease-out;
+      padding-left: 12px;
+      padding-right: 12px;
+
+      &:hover {
+        background-color: black;
+      }
+    }
   }
 
   h2 {
@@ -1777,20 +1810,19 @@ x:-o-prefocus {
 
   .nav-tabs {
     display: flex;
-    align-items: center;
     background-color: white;
     border-radius: 5px;
 
     .nav-tab {
-      padding: 15px 15px;
       transition: 0.3s all ease-out;
       border: none;
       background-color: transparent;
-      border-radius: 5px;
+      padding: 0;
 
       a {
         color: $grayOne;
-        font-size: 16px;
+        font-size: 14px;
+        padding: 15px 15px;
 
         &:hover {
           color: $brand;
@@ -1799,13 +1831,15 @@ x:-o-prefocus {
 
       &.nav-tab-active {
         border-bottom: 5px solid $brand;
-        padding-bottom: 8px;
-        border-radius: 0;
 
         a {
           color: $brand;
         }
       }
+    }
+
+    @media (max-width: 900px) {
+      overflow-x: scroll;
     }
   }
 
@@ -1815,6 +1849,12 @@ x:-o-prefocus {
     border-radius: 10px;
 
     tr {
+      &:first-of-type {
+        .slimstat-options-section-header {
+          border-radius: 10px 10px 0 0;
+        }
+      }
+
       border-bottom: 1px solid $graySix;
 
       &.alternate {
@@ -1829,6 +1869,45 @@ x:-o-prefocus {
       td {
         padding: 25px 20px;
         color: $grayOne;
+
+
+        .block-element {
+          input {
+            border: 2px solid $grayFour;
+            border-radius: 50px;
+          }
+
+          select {
+            border: 2px solid $grayFour;
+            border-radius: 50px;
+          }
+
+          .button-primary {
+            border: 1px solid $brand;
+            color: $brand;
+            background-color: white;
+            border-radius: 50px;
+          }
+        }
+
+        .tag-editor {
+          border-radius: 6px;
+          padding: 6px 4px;
+
+          .tag-editor-tag {
+            color: $brand;
+            background-color: $veryLightBrand;
+          }
+
+          .tag-editor-delete {
+            color: $brand;
+            background-color: $veryLightBrand;
+
+            i::before {
+              color: $brand;
+            }
+          }
+        }
 
         .bootstrap-switch-wrapper {
           border: 2px solid $grayFour;
@@ -1861,7 +1940,6 @@ x:-o-prefocus {
   .slimstat-options-section-header {
     background-color: $grayFive;
     padding: 20px 20px;
-    border-radius: 10px 10px 0 0;
     font-weight: 500;
     color: $grayOne;
     font-size: 16px;
@@ -1878,9 +1956,9 @@ x:-o-prefocus {
       margin-right: 5px;
 
       &[type="submit"] {
-        border: 1px solid $wpBlue;
+        border: 1px solid $brand;
         background-color: white;
-        color: $wpBlue;
+        color: $brand;
       }
     }
   }
@@ -1897,48 +1975,75 @@ x:-o-prefocus {
       -webkit-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       -moz-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
-      margin-right: 0.7%;
+      margin-right: 0.9%;
+
+      .slimScrollDiv {
+        .slimstat-tooltip-trigger.corner {
+          display: inline-block;
+          float: none;
+          margin-right: 3px;
+          cursor: help;
+
+          &::before {
+            color: #aaaaaa;
+            transform: scaleX(-1);
+            display: block;
+          }
+        }
+      }
 
       .slimstat-header-buttons {
+        padding: 16px 10px 0 10px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        float: right;
+
+        .dashicons {
+          width: auto;
+          height: auto;
+        }
+
         a {
+          &.refresh {
+            padding: 0px 3px;
+
+            &::before {
+              transform: translateY(-1px);
+              display: block;
+              color: $grayTwo;
+              transition: .3s all ease-out;
+            }
+          }
+
           &.slimstat-font-download {
-            padding: 4px 7px 6px 7px;
+            padding: 0px 3px;
             border-radius: 5px;
             color: $grayTwo;
             font-weight: 500;
-            margin-right: 5px;
-            border: 1px solid $grayTwo;
-            //transition: .3s all ease-out;
+            transition: .3s all ease-out;
 
-            //&:hover {
-            //  background-color: $grayTwo;
-            //  color: white;
-            //
-            //  &::before {
-            //    color: white;
-            //  }
-            //}
-
-            &::before {
-              margin-right: 5px;
-              margin-left: 0;
-              display: inline-block;
-              transform: translateY(1px);
-            }
-
-            &.is-not-pro {
+            span.dashicons {
               &::before {
-                content: "\e808";
+                color: $grayTwo;
+                font-size: 18px;
+                margin-right: 3px;
+                display: block;
+                transform: translateY(-1px);
+                transition: .3s all ease-out;
               }
             }
           }
-
-          &::before {
-            color: $grayTwo;
-            transition: .3s all ease-out;
-          }
         }
 
+        .rtl & {
+          float: left;
+
+          a.slimstat-font-download span.dashicons::before {
+            margin-right: 0px;
+            margin-left: 3px;
+          }
+        }
       }
 
       h3 {
@@ -1946,6 +2051,19 @@ x:-o-prefocus {
         padding: 18px 15px;
         border: none;
         font-size: 14px;
+
+        .header-tooltip {
+          &::before {
+            color: #aaaaaa;
+            padding: 0px 3px;
+            transform: translateY(-1px);
+            display: block;
+
+            .rtl & {
+              transform: translateY(-3px);
+            }
+          }
+        }
       }
 
       .slimstat-tooltip-trigger {
@@ -2035,7 +2153,7 @@ x:-o-prefocus {
     align-items: center;
     justify-content: flex-start;
     position: absolute;
-    right: 60px;
+    right: 20px;
     bottom: 20px;
     color: white;
 
@@ -2052,6 +2170,36 @@ x:-o-prefocus {
     }
   }
 
+  .rtl & {
+    margin-right: -20px;
+    margin-left: 0;
+
+    .pro-badge {
+      right: auto;
+      left: 20px;
+
+      .icon {
+        margin-left: 7px;
+        margin-right: 0;
+      }
+    }
+
+    .go-pro {
+
+      a .icon {
+        background: url(../images/white-right-chevron.png) no-repeat center center/contain;
+        margin-left: 0px;
+        margin-right: 5px;
+        transform: scaleX(-1);
+      }
+
+      p {
+        text-align: right;
+      }
+    }
+  }
+
+
   @media (max-width: 500px) {
     display: block;
 
@@ -2066,9 +2214,16 @@ x:-o-prefocus {
     }
 
     .pro-badge {
-      right: 10px
+      right: 10px;
+
+      .rtl & {
+        left: 10px;
+        right: auto;
+      }
     }
   }
+
+
 }
 
 .slimstat-layout {
