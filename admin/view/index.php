@@ -11,7 +11,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => is_plugin_active($pro_plu
 
     <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat'); ?></div>
 
-    <form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form" style="background-color: rgba(255,255,255,0.6);">
+    <form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form" style="background-color: rgba(255,255,255,0.4);">
         <fieldset id="slimstat-filters"><?php
             $filter_name_html = '<label for="slimstat-filter-name">Filter by</label><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __('Dimension', 'wp-slimstat') . '</option>';
             foreach (wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info) {
