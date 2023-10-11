@@ -119,7 +119,7 @@ class wp_slimstat
 
         // Load the admin library
         if (is_user_logged_in()) {
-            include_once(plugin_dir_path(__FILE__) . 'admin/defines.php');
+            include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             add_action('init', array('wp_slimstat_admin', 'init'), 60);
         }
@@ -781,7 +781,7 @@ class wp_slimstat
                     return __('Invalid Report ID', 'wp-slimstat');
                 }
 
-                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__));
+                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__) ,true, SLIMSTAT_ANALYTICS_VERSION);
                 wp_enqueue_style('wp-slimstat-frontend');
 
                 wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
@@ -2097,7 +2097,7 @@ if (function_exists('add_action')) {
 
     // From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
     if (is_admin()) {
-        include_once(plugin_dir_path(__FILE__) . 'admin/defines.php');
+        include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
         include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
         register_activation_hook(__FILE__, array('wp_slimstat_admin', 'init_environment'));
         register_deactivation_hook(__FILE__, array('wp_slimstat_admin', 'deactivate'));

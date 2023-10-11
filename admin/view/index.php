@@ -11,21 +11,21 @@ wp_slimstat_admin::get_template('header', ['is_pro' => is_plugin_active($pro_plu
 
     <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat'); ?></div>
 
-    <form action="<?php echo wp_slimstat_reports::fs_url(); ?>" method="post" id="slimstat-filters-form" style="background-color: rgba(255,255,255,0.4);">
+    <form action="<?php echo esc_url(wp_slimstat_reports::fs_url()); ?>" method="post" id="slimstat-filters-form" style="background-color: rgba(255,255,255,0.4);">
         <fieldset id="slimstat-filters"><?php
-            $filter_name_html = '<label for="slimstat-filter-name">Filter by</label><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __('Dimension', 'wp-slimstat') . '</option>';
+            $filter_name_html = '<div class="form-field"><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __('Dimension', 'wp-slimstat') . '</option>';
             foreach (wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info) {
                 $filter_name_html .= "<option value='$a_filter_label'>{$a_filter_info[0]}</option>";
             }
-            $filter_name_html .= '</select>';
+            $filter_name_html .= '</select></div>';
 
-            $filter_operator_html = '<label for="slimstat-filter-operator">Filter operator</label><select name="o" id="slimstat-filter-operator">';
+            $filter_operator_html = '<div class="form-field"><select name="o" id="slimstat-filter-operator">';
             foreach (wp_slimstat_db::$operator_names as $a_operator_label => $a_operator_name) {
                 $filter_operator_html .= "<option value='$a_operator_label'>$a_operator_name</option>";
             }
-            $filter_operator_html .= '</select>';
+            $filter_operator_html .= '</select></div>';
 
-            $filter_value_html = '<label for="slimstat-filter-value">Filter value</label><input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">';
+            $filter_value_html = '<div class="form-field"><input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20"></div>';
 
             if (wp_slimstat::$settings['enable_sov'] == 'on') {
                 echo $filter_value_html . $filter_operator_html . $filter_name_html;

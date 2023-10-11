@@ -574,7 +574,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_stylesheet($_hook = '')
     {
-        wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)));
+        wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)) ,false, SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_style('wp-slimstat');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
@@ -1250,7 +1250,7 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        return '<a target="_blank" class="slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" href="' . wp_slimstat_defines::SLIMSTAT_WESITE . '"  title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        return '<a target="_blank" class="slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" href="' . esc_url(SLIMSTAT_ANALYTICS_SITE) . '"  title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
     }
 
     public static function add_header()

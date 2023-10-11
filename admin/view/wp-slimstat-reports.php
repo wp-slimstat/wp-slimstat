@@ -896,13 +896,13 @@ class wp_slimstat_reports
             }
 
             $tooltip_base   = '<span class="header-tooltip dashicons dashicons-editor-help slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">';
-            $header_tooltip = $tooltip_base . (!empty(self::$reports[$_report_id]['tooltip']) ? self::$reports[$_report_id]['tooltip'] . '<br /><br />' . $_report_id : $_report_id) . '</span></span>';
+            $header_tooltip = $tooltip_base . (!empty(self::$reports[$_report_id]['tooltip']) ? self::$reports[$_report_id]['tooltip'] . '<br /><br />' . esc_html($_report_id) : esc_html($_report_id)) . '</span></span>';
 
             // Allow third-party code to add more buttons
             $header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_report_id);
             $header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
 
-            $widget_title = "<h3>" . self::$reports[$_report_id]['title'] . $header_tooltip . "</h3>";
+            $widget_title = "<h3>" . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . "</h3>";
         }
 
         echo "<div class='postbox " . esc_attr($header_classes) . "' id='" . esc_attr($_report_id) . "'>{$header_buttons} $widget_title <div class='inside'>";

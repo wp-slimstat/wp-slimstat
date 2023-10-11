@@ -58,11 +58,6 @@ $error: #ff3636;
   }
 }
 
-#slimstat-filters-form label {
-  left: -9000px;
-  position: absolute;
-}
-
 #slimstat-date-filters {
   padding: 4px 10px 6px 20px;
   position: absolute;
@@ -129,17 +124,29 @@ $error: #ff3636;
 #slimstat-date-filters .dropdown .ui-datepicker-trigger {
   float: right;
   margin: 2px 5px 0 0;
+
+  .rtl & {
+    margin: 2px 0 0 5px;
+  }
 }
 
 #slimstat-current-filters {
-  background-color: #ccc;
-  border-top: 2px solid #eee;
-  color: #222;
-  font-size: 1.1em;
+  background-color: white;
+  color: $grayTwo;
+  font-size: 14px;
   overflow: hidden;
-  padding: 5px;
+  padding: 6px 10px;
   position: relative;
+  border-radius: 5px;
+  margin-top: 14px;
+
+  @media (max-width: 400px) {
+    .button-secondary {
+      margin: 2px auto;
+    }
+  }
 }
+
 
 #slimstat-current-filters .slimstat-remove-filter {
   color: #fff;
@@ -173,6 +180,7 @@ $error: #ff3636;
 
   .rtl & {
     margin-right: -.8%;
+    margin-left: -.5%;
   }
 }
 
@@ -338,15 +346,6 @@ $error: #ff3636;
   display: none;
 }
 
-/* Single Report: Table */
-[id^="slim_"] .widefat th {
-  white-space: nowrap;
-}
-
-[id^="slim_"] .widefat td {
-  border-bottom: 1px solid #e1e1e1;
-}
-
 /* Single Report: Debug Message */
 [id^="slim_"] .debug {
   background-color: #000;
@@ -407,8 +406,12 @@ $error: #ff3636;
 [id^="slim_"] p.nodata {
   border: 0;
   color: #999;
-  padding-top: 95px;
   text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
 }
 
 /* Single Report: Chart */
@@ -847,6 +850,7 @@ $error: #ff3636;
   width: 12px;
   height: 12px;
   display: inline-block;
+  transform: translateY(1px);
 }
 
 /* '' */
@@ -1188,9 +1192,11 @@ x:-o-prefocus {
 
 .ui-datepicker {
   background-color: #fff;
-  border: 1px solid #ccc;
   width: 17em;
-  padding: 0.2em 0.2em 0;
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 5px 0px 40px rgba(0, 0, 0, 0.2);
+  border: none !important;
   display: none;
 }
 
@@ -1202,14 +1208,30 @@ x:-o-prefocus {
 .ui-datepicker .ui-datepicker-prev,
 .ui-datepicker .ui-datepicker-next {
   position: absolute;
-  top: 2px;
-  width: 1.8em;
-  height: 1.8em;
-}
+  top: 4px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
 
-.ui-datepicker .ui-datepicker-prev-hover,
-.ui-datepicker .ui-datepicker-next-hover {
-  top: 1px;
+  &:hover {
+    background-color: white;
+  }
+
+  span {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 15px;
+    font-weight: 600;
+    color: $grayTwo;
+    transition: .3s all ease-out;
+
+    &:hover {
+      color: $brand;
+    }
+  }
 }
 
 .ui-datepicker .ui-datepicker-prev {
@@ -1218,24 +1240,6 @@ x:-o-prefocus {
 
 .ui-datepicker .ui-datepicker-next {
   right: 2px;
-}
-
-.ui-datepicker .ui-datepicker-prev-hover {
-  left: 1px;
-}
-
-.ui-datepicker .ui-datepicker-next-hover {
-  right: 1px;
-}
-
-.ui-datepicker .ui-datepicker-prev span,
-.ui-datepicker .ui-datepicker-next span {
-  display: block;
-  position: absolute;
-  left: 50%;
-  margin-left: -8px;
-  top: 50%;
-  margin-top: -8px;
 }
 
 .ui-datepicker .ui-datepicker-title {
@@ -1751,6 +1755,24 @@ x:-o-prefocus {
     text-decoration: none;
   }
 
+  .button-secondary {
+    background-color: white;
+    border-radius: 50px;
+    border: 1px solid $brand;
+    color: $brand;
+    padding: 0px 12px;
+    height: auto;
+  }
+
+  .button-primary {
+    background-color: $brand;
+    border-radius: 50px;
+    border: none;
+    color: white;
+    padding: 0px 12px;
+    height: auto;
+  }
+
   #slimstat-date-filters {
     a.slimstat-filter-link {
       background-color: $grayFive;
@@ -1812,6 +1834,7 @@ x:-o-prefocus {
     display: flex;
     background-color: white;
     border-radius: 5px;
+    overflow-y: hidden;
 
     .nav-tab {
       transition: 0.3s all ease-out;
@@ -1824,6 +1847,11 @@ x:-o-prefocus {
         font-size: 14px;
         padding: 15px 15px;
 
+        &:focus {
+          outline: none;
+          box-shadow: none;
+        }
+
         &:hover {
           color: $brand;
         }
@@ -1834,6 +1862,7 @@ x:-o-prefocus {
 
         a {
           color: $brand;
+
         }
       }
     }
@@ -1870,23 +1899,33 @@ x:-o-prefocus {
         padding: 25px 20px;
         color: $grayOne;
 
+        input {
+          border: 2px solid $grayFour;
+          border-radius: 50px;
+        }
 
-        .block-element {
-          input {
-            border: 2px solid $grayFour;
-            border-radius: 50px;
-          }
+        textarea {
+          border: 2px solid $grayFour;
+          border-radius: 10px;
+        }
 
-          select {
-            border: 2px solid $grayFour;
-            border-radius: 50px;
-          }
+        select {
+          border: 2px solid $grayFour;
+          border-radius: 50px;
+        }
 
-          .button-primary {
+        .button-primary {
+          border: 1px solid $brand;
+          color: $brand;
+          background-color: white;
+          border-radius: 50px;
+        }
+
+        select, input, textarea {
+          &:focus {
             border: 1px solid $brand;
-            color: $brand;
-            background-color: white;
-            border-radius: 50px;
+            outline: none;
+            box-shadow: none;
           }
         }
 
@@ -1946,19 +1985,49 @@ x:-o-prefocus {
   }
 
   #slimstat-filters {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+
+    .form-field {
+      position: relative;
+    }
+
     select {
       border: 1px solid $graySix;
-      margin-right: 5px;
+      border-radius: 5px;
+      display: block;
+      width: 100%;
+      margin: 0;
     }
 
     input {
       border: 1px solid $graySix;
-      margin-right: 5px;
+      border-radius: 5px;
+      display: block;
+      width: 100%;
+      margin: 0;
+      max-width: 95%;
 
       &[type="submit"] {
         border: 1px solid $brand;
         background-color: white;
         color: $brand;
+        width: auto;
+
+        .rtl & {
+          margin-left: 0;
+        }
+      }
+    }
+
+    @media (max-width: 400px) {
+      margin-bottom: 12px;
+
+      .form-field {
+        flex: 0 0 50%;
+        margin-bottom: 10px;
       }
     }
   }
@@ -1993,7 +2062,7 @@ x:-o-prefocus {
       }
 
       .slimstat-header-buttons {
-        padding: 16px 10px 0 10px;
+        padding: 15px 10px 0 10px;
         display: flex;
         align-items: center;
         justify-content: flex-end;
@@ -2006,7 +2075,7 @@ x:-o-prefocus {
 
         a {
           &.refresh {
-            padding: 0px 3px;
+            padding: 5px 5px;
 
             &::before {
               transform: translateY(-1px);
@@ -2017,7 +2086,7 @@ x:-o-prefocus {
           }
 
           &.slimstat-font-download {
-            padding: 0px 3px;
+            padding: 5px 5px;
             border-radius: 5px;
             color: $grayTwo;
             font-weight: 500;
@@ -2090,6 +2159,46 @@ x:-o-prefocus {
       border-radius: 3px;
       background-color: white;
       padding: 3px 7px;
+    }
+  }
+}
+
+.wrap.slimstat {
+  table.widefat {
+    border: none;
+
+    tbody {
+      tr {
+        &:nth-child(even) {
+          background-color: $grayFive;
+        }
+
+        td {
+          vertical-align: middle;
+        }
+
+        a {
+          //font-weight: 500;
+        }
+      }
+    }
+
+    thead {
+      background-color: $veryLightBrand;
+
+      th {
+        white-space: nowrap;
+        border: none;
+        border-top: 1px solid $brand;
+        border-bottom: 1px solid $brand;
+        color: black;
+        padding: 8px 10px;
+        vertical-align: middle;
+
+        a {
+          color: $brand;
+        }
+      }
     }
   }
 }
@@ -2236,6 +2345,23 @@ x:-o-prefocus {
       font-weight: 500;
       padding: 12px 15px !important;
       background-color: white !important;
+    }
+  }
+}
+
+#dashboard-widgets-wrap {
+  .postbox {
+    .slimstat-tooltip-trigger.corner {
+      display: inline-block;
+      float: none;
+      margin-right: 3px;
+      cursor: help;
+
+      &::before {
+        color: #aaaaaa;
+        display: block;
+        transform: scaleX(-1);
+      }
     }
   }
 }
