@@ -190,18 +190,17 @@ $error: #ff3636;
   box-sizing: border-box;
   float: left;
   margin-bottom: 15px;
-  //margin-right: .7%;
-  min-width: 24%;
+  min-width: 24.3%;
   overflow: hidden;
-  width: 24%;
+  width: 24.3%;
 }
 
 .wrap.slimstat .postbox.large {
-  width: 49%;
+  width: 49.1%;
 }
 
 .wrap.slimstat .postbox.extralarge {
-  width: 73.6%;
+  width: 73.9%;
 }
 
 .wrap.slimstat .postbox.full-width {
@@ -397,10 +396,14 @@ $error: #ff3636;
 }
 
 [id^="slim_"] p.loading {
-  font-size: 30px;
-  line-height: 4em;
-  margin-top: 60px;
   text-align: center;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  top: 50%;
+  line-height: 0;
+  transform: translateY(-50%);
+  overflow: hidden;
 }
 
 [id^="slim_"] p.nodata {
@@ -926,6 +929,9 @@ $error: #ff3636;
 /* '' */
 .slimstat-font-spin4:before {
   content: "\e812";
+  font-size: 26px;
+  overflow: hidden;
+  margin: 0;
 }
 
 /* '' */
@@ -1755,6 +1761,14 @@ x:-o-prefocus {
     text-decoration: none;
   }
 
+  select, input, textarea {
+    &:focus {
+      border: 1px solid $brand !important;
+      outline: none;
+      box-shadow: none;
+    }
+  }
+
   .button-secondary {
     background-color: white;
     border-radius: 50px;
@@ -1771,6 +1785,16 @@ x:-o-prefocus {
     color: white;
     padding: 0px 12px;
     height: auto;
+  }
+
+  #datepicker-backdrop {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    position: fixed;
+    z-index: 2;
+    display: none;
   }
 
   #slimstat-date-filters {
@@ -1921,14 +1945,6 @@ x:-o-prefocus {
           border-radius: 50px;
         }
 
-        select, input, textarea {
-          &:focus {
-            border: 1px solid $brand;
-            outline: none;
-            box-shadow: none;
-          }
-        }
-
         .tag-editor {
           border-radius: 6px;
           padding: 6px 4px;
@@ -2044,7 +2060,7 @@ x:-o-prefocus {
       -webkit-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       -moz-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
-      margin-right: 0.9%;
+      margin-right: 0.5%;
 
       .slimScrollDiv {
         .slimstat-tooltip-trigger.corner {
@@ -2074,6 +2090,10 @@ x:-o-prefocus {
         }
 
         a {
+          &:focus {
+            box-shadow: none;
+          }
+
           &.refresh {
             padding: 5px 5px;
 
@@ -2098,7 +2118,7 @@ x:-o-prefocus {
                 font-size: 18px;
                 margin-right: 3px;
                 display: block;
-                transform: translateY(-1px);
+                transform: translateY(-2px);
                 transition: .3s all ease-out;
               }
             }
