@@ -2,8 +2,7 @@
 if (!function_exists('add_action')) exit();
 
 // Load header
-$pro_plugin_slug = 'wp-slimstat-pro/wp-slimstat-pro.php';
-wp_slimstat_admin::get_template('header', ['is_pro' => is_plugin_active($pro_plugin_slug)]);
+wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
 ?>
 
 <div class="wrap slimstat">
@@ -71,13 +70,13 @@ wp_slimstat_admin::get_template('header', ['is_pro' => is_plugin_active($pro_plu
 
                 <strong><?php _e('Date Range', 'wp-slimstat') ?></strong>
 
-                <label for="slimstat-filter-hour">Hour</label>
+                <label for="slimstat-filter-hour"><?php _e('Hour', 'wp-slimstat') ?></label>
                 <input type="text" name="hour" id="slimstat-filter-hour" placeholder="<?php _e('Hour', 'wp-slimstat') ?>" class="short" value="">
 
-                <label for="slimstat-filter-day">Day</label>
+                <label for="slimstat-filter-day"><?php _e('Day', 'wp-slimstat') ?></label>
                 <input type="text" name="day" id="slimstat-filter-day" placeholder="<?php _e('Day', 'wp-slimstat') ?>" class="short" value="">
 
-                <label for="slimstat-filter-month">Month</label>
+                <label for="slimstat-filter-month"><?php _e('Month', 'wp-slimstat') ?></label>
                 <select name="month" id="slimstat-filter-month">
                     <option value=""><?php _e('Month', 'wp-slimstat') ?></option><?php
                     for ($i = 1; $i <= 12; $i++) {
@@ -92,10 +91,10 @@ wp_slimstat_admin::get_template('header', ['is_pro' => is_plugin_active($pro_plu
                 <input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
                 <br/>
 
-                <label for="slimstat-filter-interval">Days in interval</label>
+                <label for="slimstat-filter-interval"><?php _e('Days in interval', 'wp-slimstat') ?></label>
                 <input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('&plusmn; days', 'wp-slimstat') ?>" class="short" value="" title="<?php _e('To define an interval, enter the number of days (negative to go back in time).', 'wp-slimstat') ?>">
 
-                <label for="slimstat-filter-interval_hours">Hours in interval</label>
+                <label for="slimstat-filter-interval_hours"><?php _e('Hours in interval', 'wp-slimstat') ?></label>
                 <input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('&plusmn; hours', 'wp-slimstat') ?>" class="short" value="">
 
                 <input type="submit" value="<?php _e('Apply', 'wp-slimstat') ?>" class="button button-primary noslimstat right">
@@ -113,6 +112,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => is_plugin_active($pro_plu
                 }
                 ?>
             </div>
+            <div id="datepicker-backdrop"></div>
         </fieldset><!-- .slimstat-date-filters -->
 
         <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details) : ?>
