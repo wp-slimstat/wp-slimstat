@@ -245,8 +245,8 @@ class wp_slimstat_admin
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
 
-        // Add style to admin_head
-        add_action('admin_head', array(__CLASS__, 'admin_head'));
+        // Add style to the admin menu
+        add_action('admin_head', array(__CLASS__, 'styling_admin_menu'));
 
         // Init feedback
         self::initFeedback();
@@ -265,14 +265,17 @@ class wp_slimstat_admin
             self::check_upgrade_redirect();
         });
     }
+    // END: init
 
-    public static function admin_head()
+    /**
+     * Add style to the admin menu
+     */
+    public static function styling_admin_menu()
     {
         if (!wp_slimstat::pro_is_installed()) {
-            echo '<style>a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;}</style>';
+            echo '<style> a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;} </style>';
         }
     }
-    // END: init
 
     /**
      * Clears the purge cron job
