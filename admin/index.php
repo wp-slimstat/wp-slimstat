@@ -784,9 +784,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_upgrade_to_pro()
     {
-        $upgradeUrl = apply_filters('slimstat_upgrade_to_pro_url', 'https://wp-slimstat.com');
-        wp_redirect($upgradeUrl);
-        exit;
+        //
     }
 
     // END: wp_slimstat_include_addons
