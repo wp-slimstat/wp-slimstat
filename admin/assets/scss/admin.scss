@@ -381,7 +381,7 @@ $error: #ff3636;
 
 [id^="slim_"] .header.is-known-user,
 .little-color-box.is-known-user {
-  background-color: #f1cf90;
+  background-color: $grayFive;
 }
 
 [id^="slim_"] .header.is-known-visitor,
@@ -1754,18 +1754,20 @@ x:-o-prefocus {
 // New Styles
 .wrap.slimstat-config,
 .wrap.slimstat {
+  box-sizing: border-box;
+  overflow: hidden;
+
   * {
-    // margin: 0;
-    // padding: 0;
     box-sizing: border-box;
     text-decoration: none;
   }
 
   select, input, textarea {
     &:focus {
-      border: 1px solid $brand !important;
+      //border: 1px solid $brand !important;
       outline: none;
       box-shadow: none;
+      border-color: $brand !important;
     }
   }
 
