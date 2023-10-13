@@ -1198,8 +1198,8 @@ class wp_slimstat_admin
             if (stristr($screen->id, 'slimview')) {
                 wp_enqueue_script('feedbackbird-app-script', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS');
                 wp_add_inline_script('feedbackbird-app-script', sprintf('var feedbackBirdObject = %s;', json_encode([
-                    'user_email' => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
-                    'meta'       => [
+                    'user_email'    => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
+                    'meta'          => [
                         'php_version'    => PHP_VERSION,
                         'active_plugins' => array_map(function ($plugin, $pluginPath) {
                             return [
@@ -1208,6 +1208,9 @@ class wp_slimstat_admin
                                 'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
                             ];
                         }, get_plugins(), array_keys(get_plugins())),
+                    ],
+                    'customization' => [
+                        "color" => "#e8294c"
                     ]
                 ])));
 
