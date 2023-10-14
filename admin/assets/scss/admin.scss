@@ -178,9 +178,18 @@ $error: #ff3636;
   flex-wrap: wrap;
   margin-right: -1.3%;
 
+  @media(max-width: 1560px) {
+    margin-right: -0.5%;
+  }
+
   .rtl & {
-    margin-right: -.8%;
-    margin-left: -.5%;
+    margin-right: 0;
+    margin-left: -1.3%;
+
+    @media(max-width: 1560px) {
+      margin-left: -0.5%;
+    }
+
   }
 }
 
@@ -1755,7 +1764,6 @@ x:-o-prefocus {
 .wrap.slimstat-config,
 .wrap.slimstat {
   box-sizing: border-box;
-  overflow: hidden;
 
   * {
     box-sizing: border-box;
@@ -2056,13 +2064,17 @@ x:-o-prefocus {
     }
 
     .postbox {
-      // border: 1px solid $graySix;
       border: none;
       border-radius: 10px;
       -webkit-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       -moz-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       margin-right: 0.5%;
+
+      .rtl & {
+        margin-right: 0;
+        margin-left: 0.5%;
+      }
 
       .slimScrollDiv {
         .slimstat-tooltip-trigger.corner {
@@ -2183,6 +2195,11 @@ x:-o-prefocus {
       padding: 3px 7px;
     }
   }
+
+  //@media(min-width: 1560px) {
+  //  box-sizing: border-box;
+  //  overflow: hidden;
+  //}
 }
 
 .wrap.slimstat {
