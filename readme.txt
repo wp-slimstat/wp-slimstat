@@ -53,10 +53,13 @@ Track returning customers and registered users, monitor Javascript events, detec
 An extensive knowledge base is available on our [website](https://www.wp-slimstat.com/).
 
 == Screenshots ==
-1. **Overview** - Your website traffic at a glance
-2. **Real-Time** - A real-time view of your visitors' whereabouts
-3. **Settings** - Plenty of options to customize the plugin's behavior
-4. **Audiance** - See your visitors' full information
+1. **Real-Time** - A real-time view of your visitors' whereabouts
+2. **Overview** - Your website traffic at a glance
+3. **Audience** - See your visitors' full information
+4. **Site Analysis** - Provides insights into how visitors are using your website
+5. **Traffic Sources** - See where your visitors are coming from, such as search engines, social media, or referral websites
+6. **Customize widgets** - Allows you to customize the analytics widgets that are displayed in your Slimstat dashboard
+7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
 = 5.1 =
