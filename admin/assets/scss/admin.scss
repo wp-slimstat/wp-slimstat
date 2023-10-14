@@ -1718,6 +1718,7 @@ x:-o-prefocus {
 .wrap.slimstat-config,
 .wrap.slimstat {
   box-sizing: border-box;
+  overflow: hidden;
 
   * {
     box-sizing: border-box;
