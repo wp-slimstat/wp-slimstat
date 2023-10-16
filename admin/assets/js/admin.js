@@ -402,32 +402,6 @@ jQuery(function () {
             var editor = wp.codeEditor.initialize(jQuery(this), editorSettings);
         });
     }
-
-    //
-    // ----- END: INIT THIRD-PARTY LIBRARIES -----------------------------------------
-
-    // ----- BEGIN: INIT SlimStat Pro Modal ---------------------------------------
-    //
-    jQuery('.slimstat-upgrade-pro').click(function () {
-        // Fade in .slimstat-pro-modal-backdrop and .slimstat-pro-modal
-        jQuery('.slimstat-pro-modal-backdrop').fadeIn();
-
-        // Set initial position of .slimstat-pro-modal off-screen
-        jQuery('.slimstat-pro-modal').css({
-            'display': 'block',
-            'opacity': 0,
-            'margin-top': '100px'
-        });
-
-        // Fade in and slide up .slimstat-pro-modal
-        jQuery('.slimstat-pro-modal').animate({
-            'opacity': 1,
-            'margin-top': '0'
-        }, 500);
-    });
-
-    //
-    // ----- END: INIT Slimstat Pro Modal -----------------------------------------
 });
 
 // ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------

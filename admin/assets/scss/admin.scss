@@ -1738,7 +1738,6 @@ x:-o-prefocus {
 
   .upgrade-pro-background {
     width: 100%;
-    height: auto;
   }
 
   select, input, textarea {
@@ -2336,7 +2335,7 @@ x:-o-prefocus {
 }
 
 .slimstat.upgrade-pro {
-  height: 80vh;
+
 }
 
 .slimstat-layout {
@@ -2384,9 +2383,8 @@ x:-o-prefocus {
 }
 
 .slimstat-pro-modal {
-  position: absolute;
+  position: fixed;
   top: 40px;
-  left: 50%;
   z-index: 30;
   transform: translateX(-50%);
   background-color: white;
@@ -2396,7 +2394,9 @@ x:-o-prefocus {
   text-align: center;
   box-sizing: border-box;
   max-width: 720px;
-  display: none;
+  margin-top: 100px;
+  left: 50%;
+  transform: translate(-50%, 0);
 
   * {
     margin: 0;
