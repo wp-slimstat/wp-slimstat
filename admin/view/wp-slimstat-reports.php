@@ -1140,8 +1140,9 @@ class wp_slimstat_reports
                 }
 
                 if (!empty($_args['type']) && $_args['type'] == 'top') {
-                    $percentage_value = ((wp_slimstat_db::$pageviews > 0) ? number_format_i18n(sprintf("%01.2f", (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews)), 2) : 0);
+                    $percentage_value = ((wp_slimstat_db::$pageviews > 0) ? sprintf("%01.2f", (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews)) : 0);
                     $counthits        = number_format_i18n($results[$i]['counthits']);
+                    $percentage_value = number_format_i18n((float)$percentage_value, 2);
 
                     if ((!empty($_args['criteria']) && $_args['criteria'] == 'swap') || wp_slimstat::$settings['show_hits'] == 'on') {
                         $percentage  = ' <span>' . $counthits . '</span>';
