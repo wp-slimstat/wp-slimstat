@@ -1714,12 +1714,22 @@ x:-o-prefocus {
   display: none;
 }
 
+.backdrop-container {
+  position: relative;
+
+  @media(min-width: 780px) {
+    margin-left: -20px;
+    margin-top: -20px;
+    padding-left: 20px;
+    padding-top: 20px;
+  }
+}
+
 // New Styles
 .wrap.slimstat-config,
 .wrap.slimstat {
   box-sizing: border-box;
   overflow: hidden;
-  position: relative;
 
   * {
     box-sizing: border-box;
@@ -2369,7 +2379,7 @@ x:-o-prefocus {
   height: 100%;
   backdrop-filter: blur(3px);
   background-color: rgba(255, 255, 255, 0.5);
-  z-index: 100000;
+  z-index: 20;
   display: none;
 }
 
@@ -2377,7 +2387,7 @@ x:-o-prefocus {
   position: absolute;
   top: 40px;
   left: 50%;
-  z-index: 1000000;
+  z-index: 30;
   transform: translateX(-50%);
   background-color: white;
   border-radius: 25px;
@@ -2543,7 +2553,7 @@ x:-o-prefocus {
     }
   }
 
-  @media(max-width: 600px) {
+  @media(max-width: 780px) {
     border-radius: 15px;
     padding: 20px 20px;
     width: 95%;

@@ -20,7 +20,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('Network Analytics', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('Network Analytics', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('Network Analytics', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Enable a network-wide view of your reports and settings.', 'wp-slimstat'); ?>
                     </span>
                 </div>
@@ -30,7 +30,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('Email Reports', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('Email Reports', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('Email Reports', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Receive your reports directly in your mailbox.', 'wp-slimstat'); ?>
                     </span>
                 </div>
@@ -40,7 +40,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('Export to Excel', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('Export to Excel', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('Export to Excel', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Receive your reports directly in your mailbox.', 'wp-slimstat'); ?>
                     </span>
                 </div>
@@ -50,7 +50,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('Heatmap', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('Heatmap', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('Heatmap', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Display a heatmap layer of the most clicked areas on your website.', 'wp-slimstat'); ?>
                     </span>
                 </div>
@@ -60,7 +60,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('User Overview', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('User Overview', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('User Overview', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Monitor your registered users by tracking their activities and time on site.', 'wp-slimstat'); ?>
                     </span>
                 </div>
@@ -70,7 +70,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('MaxMind Integration', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('MaxMind Integration', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('MaxMind Integration', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Connect to MaxMind\'s Geolocation API to retrieve detailed information about your visitors.', 'wp-slimstat'); ?>
                     </span>
                 </div>
@@ -80,7 +80,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('Custom DB', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('Custom DB', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('Custom DB', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Use an external database to store all the information about your visitors.', 'wp-slimstat'); ?>
                     </span>
                 </div>
@@ -90,7 +90,7 @@
                 <h6><span class="icon"></span><?php esc_html_e('Extended Overview', 'wp-slimstat'); ?></h6>
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
-                        <strong><?php esc_html_e('Extended Overview', 'wp-slimstat'); ?></strong><br><br>
+                        <strong><?php esc_html_e('Extended Overview', 'wp-slimstat'); ?></strong><br>
                         <?php esc_html_e('Add custom columns to the User Overview widget and export file.', 'wp-slimstat'); ?>
                     </span>
                 </div>

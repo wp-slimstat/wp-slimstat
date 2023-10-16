@@ -758,67 +758,68 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 }
 
 ?>
-
-<div class="wrap slimstat-config">
+<div class="backdrop-container">
     <?php
     // Load SlimStat Pro Modal
     wp_slimstat_admin::get_template('slimstat-pro-modal');
     ?>
-    <h2><?php _e('Settings', 'wp-slimstat') ?></h2>
-    <ul class="nav-tabs">
-        <?php echo $tabs_html ?>
-    </ul>
 
-    <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px">
-        <?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat') ?>
-    </div>
+    <div class="wrap slimstat-config">
+        <h2><?php _e('Settings', 'wp-slimstat') ?></h2>
+        <ul class="nav-tabs">
+            <?php echo $tabs_html ?>
+        </ul>
 
-    <?php if (!empty($settings[$current_tab]['rows'])) : ?>
+        <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px">
+            <?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat') ?>
+        </div>
 
-        <form action="<?php echo wp_slimstat_admin::$config_url . $current_tab ?>" method="post" id="slimstat-options-<?php echo $current_tab ?>">
-            <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings'); ?>
-            <table class="form-table widefat <?php echo $GLOBALS['wp_locale']->text_direction ?>">
-                <tbody><?php
-                $i = 0;
+        <?php if (!empty($settings[$current_tab]['rows'])) : ?>
 
-                foreach ($settings[$current_tab]['rows'] as $a_setting_slug => $a_setting_info) {
-                    $i++;
-                    $a_setting_info = array_merge(array(
-                        'title'              => '',
-                        'type'               => '',
-                        'rows'               => 4,
-                        'description'        => '',
-                        'before_input_field' => '',
-                        'after_input_field'  => '',
-                        'custom_label_yes'   => '',
-                        'custom_label_no'    => '',
-                        'use_tag_list'       => true,
-                        'use_code_editor'    => '',
-                        'select_values'      => array()
-                    ), $a_setting_info);
+            <form action="<?php echo wp_slimstat_admin::$config_url . $current_tab ?>" method="post" id="slimstat-options-<?php echo $current_tab ?>">
+                <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings'); ?>
+                <table class="form-table widefat <?php echo $GLOBALS['wp_locale']->text_direction ?>">
+                    <tbody><?php
+                    $i = 0;
 
-                    // Note: $a_setting_info[ 'readonly' ] is set to true by the Network Analytics add-on
-                    $is_readonly     = (!empty($a_setting_info['readonly'])) ? ' readonly' : '';
-                    $use_tag_list    = (empty($is_readonly) && !empty($a_setting_info['use_tag_list']) && $a_setting_info['use_tag_list'] === true) ? ' slimstat-taglist' : '';
-                    $use_code_editor = (empty($is_readonly) && !empty($a_setting_info['use_code_editor'])) ? ' data-code-editor="' . $a_setting_info['use_code_editor'] . '"' : '';
+                    foreach ($settings[$current_tab]['rows'] as $a_setting_slug => $a_setting_info) {
+                        $i++;
+                        $a_setting_info = array_merge(array(
+                            'title'              => '',
+                            'type'               => '',
+                            'rows'               => 4,
+                            'description'        => '',
+                            'before_input_field' => '',
+                            'after_input_field'  => '',
+                            'custom_label_yes'   => '',
+                            'custom_label_no'    => '',
+                            'use_tag_list'       => true,
+                            'use_code_editor'    => '',
+                            'select_values'      => array()
+                        ), $a_setting_info);
 
-                    $network_override_checkbox = is_network_admin() ? '
+                        // Note: $a_setting_info[ 'readonly' ] is set to true by the Network Analytics add-on
+                        $is_readonly     = (!empty($a_setting_info['readonly'])) ? ' readonly' : '';
+                        $use_tag_list    = (empty($is_readonly) && !empty($a_setting_info['use_tag_list']) && $a_setting_info['use_tag_list'] === true) ? ' slimstat-taglist' : '';
+                        $use_code_editor = (empty($is_readonly) && !empty($a_setting_info['use_code_editor'])) ? ' data-code-editor="' . $a_setting_info['use_code_editor'] . '"' : '';
+
+                        $network_override_checkbox = is_network_admin() ? '
 				<input type="hidden" value="no" name="options[addon_network_settings_' . $a_setting_slug . ']" id="addon_network_settings_' . $a_setting_slug . '">
 				<input class="slimstat-checkbox-toggle"
 					type="checkbox"
 					name="options[addon_network_settings_' . $a_setting_slug . ']"' .
-                        ((!empty(wp_slimstat::$settings['addon_network_settings_' . $a_setting_slug]) && wp_slimstat::$settings['addon_network_settings_' . $a_setting_slug] == 'on') ? ' checked="checked"' : '') . '
+                            ((!empty(wp_slimstat::$settings['addon_network_settings_' . $a_setting_slug]) && wp_slimstat::$settings['addon_network_settings_' . $a_setting_slug] == 'on') ? ' checked="checked"' : '') . '
 					id="addon_network_settings_' . $a_setting_slug . '"
 					data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
 
-                    echo '<tr' . ($i % 2 == 0 ? ' class="alternate"' : '') . '>';
-                    switch ($a_setting_info['type']) {
-                        case 'section_header':
-                            echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title($a_setting_info['title']) . '">' . $a_setting_info['title'] . '</td>';
-                            break;
+                        echo '<tr' . ($i % 2 == 0 ? ' class="alternate"' : '') . '>';
+                        switch ($a_setting_info['type']) {
+                            case 'section_header':
+                                echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title($a_setting_info['title']) . '">' . $a_setting_info['title'] . '</td>';
+                                break;
 
-                        case 'toggle':
-                            echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
+                            case 'toggle':
+                                echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
 					<td>
 						<input type="hidden" value="no" name="options[' . $a_setting_slug . ']" id="' . $a_setting_slug . '">
 						<span class="block-element">
@@ -826,52 +827,52 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 								name="options[' . $a_setting_slug . ']"
 								id="' . $a_setting_slug . '"
 								data-size="mini" data-handle-width="50" data-on-color="success"' .
-                                ((!empty(wp_slimstat::$settings[$a_setting_slug]) && wp_slimstat::$settings[$a_setting_slug] == 'on') ? ' checked="checked"' : '') . '
+                                    ((!empty(wp_slimstat::$settings[$a_setting_slug]) && wp_slimstat::$settings[$a_setting_slug] == 'on') ? ' checked="checked"' : '') . '
 								data-on-text="' . (!empty($a_setting_info['custom_label_on']) ? $a_setting_info['custom_label_on'] : __('On', 'wp-slimstat')) . '"
 								data-off-text="' . (!empty($a_setting_info['custom_label_off']) ? $a_setting_info['custom_label_off'] : __('Off', 'wp-slimstat')) . '">' .
-                                $network_override_checkbox . '
+                                    $network_override_checkbox . '
 						</span>
 						<span class="description">' . $a_setting_info['description'] . '</span>
 					</td>';
-                            // ( is_network_admin() ? ' data-indeterminate="true"' : '' ) . '>
-                            break;
+                                // ( is_network_admin() ? ' data-indeterminate="true"' : '' ) . '>
+                                break;
 
-                        case 'select':
-                            echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
+                            case 'select':
+                                echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
 					<td>
 						<span class="block-element">
 							<select' . $is_readonly . ' name="options[' . $a_setting_slug . ']" id="' . $a_setting_slug . '">';
-                            foreach ($a_setting_info['select_values'] as $a_key => $a_value) {
-                                $is_selected = (!empty(wp_slimstat::$settings[$a_setting_slug]) && wp_slimstat::$settings[$a_setting_slug] == $a_key) ? ' selected' : '';
-                                echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
-                            }
-                            echo '</select>' .
-                                $network_override_checkbox . '
+                                foreach ($a_setting_info['select_values'] as $a_key => $a_value) {
+                                    $is_selected = (!empty(wp_slimstat::$settings[$a_setting_slug]) && wp_slimstat::$settings[$a_setting_slug] == $a_key) ? ' selected' : '';
+                                    echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
+                                }
+                                echo '</select>' .
+                                    $network_override_checkbox . '
 						</span>
 						<span class="description">' . $a_setting_info['description'] . '</span>
 					</td>';
-                            break;
+                                break;
 
-                        case 'text':
-                        case 'integer':
-                            $empty_value = ($a_setting_info['type'] == 'text') ? '' : '0';
-                            echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
+                            case 'text':
+                            case 'integer':
+                                $empty_value = ($a_setting_info['type'] == 'text') ? '' : '0';
+                                echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
 					<td>
 						<span class="block-element"> ' .
-                                $a_setting_info['before_input_field'] . '
+                                    $a_setting_info['before_input_field'] . '
 							<input class="' . (($a_setting_info['type'] == 'integer') ? 'small-text' : 'regular-text') . '"' . $is_readonly . '
 								type="' . (($a_setting_info['type'] == 'integer') ? 'number' : 'text') . '"
 								name="options[' . $a_setting_slug . ']"
 								id="' . $a_setting_slug . '"
 								value="' . (!empty(wp_slimstat::$settings[$a_setting_slug]) ? esc_attr(wp_slimstat::$settings[$a_setting_slug]) : $empty_value) . '"> ' . $a_setting_info['after_input_field'] .
-                                $network_override_checkbox . '
+                                    $network_override_checkbox . '
 						</span>
 						<span class="description">' . $a_setting_info['description'] . '</span>
 					</td>';
-                            break;
+                                break;
 
-                        case 'textarea':
-                            echo '
+                            case 'textarea':
+                                echo '
 					<td colspan="2">
 						<label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . $network_override_checkbox . '</label>
 						<p class="description">' . $a_setting_info['description'] . '</p>
@@ -883,31 +884,32 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 							<span class="description">' . $a_setting_info['after_input_field'] . '</span>
 						</p>
 					</td>';
-                            break;
+                                break;
 
-                        case 'plain-text':
-                            echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
+                            case 'plain-text':
+                                echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
 					<td>
 						<span class="block-element">' . $a_setting_info['after_input_field'] . '</span>
 						<span class="description">' . $a_setting_info['description'] . '</span>
 					</td>';
-                            break;
+                                break;
 
-                        case 'custom':
-                            echo '<td colspan="2">' . $a_setting_info['title'] . '<br/><br/>' . $a_setting_info['markup'] . '</td>';
-                            break;
+                            case 'custom':
+                                echo '<td colspan="2">' . $a_setting_info['title'] . '<br/><br/>' . $a_setting_info['markup'] . '</td>';
+                                break;
 
-                        default:
+                            default:
+                        }
+                        echo '</tr>';
                     }
-                    echo '</tr>';
-                }
-                ?></tbody>
-            </table>
+                    ?></tbody>
+                </table>
 
-            <p class="submit">
-                <input type="submit" value="<?php _e('Save Changes', 'wp-slimstat') ?>" class="button-primary slimstat-settings-button" name="Submit">
-            </p>
-        </form>
+                <p class="submit">
+                    <input type="submit" value="<?php _e('Save Changes', 'wp-slimstat') ?>" class="button-primary slimstat-settings-button" name="Submit">
+                </p>
+            </form>
 
-    <?php endif ?>
+        <?php endif ?>
+    </div>
 </div>
