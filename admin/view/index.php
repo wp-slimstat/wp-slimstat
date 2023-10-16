@@ -6,6 +6,10 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
 ?>
 
 <div class="wrap slimstat">
+    <?php
+    // Load SlimStat Pro Modal
+    wp_slimstat_admin::get_template('slimstat-pro-modal');
+    ?>
     <h2><?php echo wp_slimstat_admin::$screens_info[$_GET['page']]['title'] ?></h2>
 
     <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat'); ?></div>

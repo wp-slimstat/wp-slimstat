@@ -426,22 +426,6 @@ jQuery(function () {
         }, 500);
     });
 
-    // When #slimstat-pro-modal-close or .slimstat-pro-modal-backdrop is clicked
-    jQuery('#slimstat-pro-modal-close, .slimstat-pro-modal-backdrop').click(function () {
-        // Fade out .slimstat-pro-modal-backdrop and .slimstat-pro-modal
-        jQuery('.slimstat-pro-modal-backdrop').fadeOut();
-
-        jQuery('.slimstat-pro-modal').animate({
-            'opacity': 0,
-            'margin-top': '100px'
-        }, 500, function () {
-            // Animation is complete, set initial position of .slimstat-pro-modal off-screen
-            jQuery('.slimstat-pro-modal').css({
-                'display': 'none',
-            });
-        });
-    });
-
     //
     // ----- END: INIT Slimstat Pro Modal -----------------------------------------
 });

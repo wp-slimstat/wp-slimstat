@@ -4,6 +4,10 @@
 ?>
 
 <div class="wrap slimstat slimstat-layout">
+    <?php
+    // Load SlimStat Pro Modal
+    wp_slimstat_admin::get_template('slimstat-pro-modal');
+    ?>
 <h2><?php _e( 'Customize and organize your reports','wp-slimstat' ) ?></h2>
 <p><?php 
 	_e( 'You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat' );

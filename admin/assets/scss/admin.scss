@@ -1719,6 +1719,7 @@ x:-o-prefocus {
 .wrap.slimstat {
   box-sizing: border-box;
   overflow: hidden;
+  position: relative;
 
   * {
     box-sizing: border-box;
@@ -2324,7 +2325,13 @@ x:-o-prefocus {
   }
 }
 
+.slimstat.upgrade-pro {
+  height: 80vh;
+}
+
 .slimstat-layout {
+  position: relative;
+
   .postbox {
     border-radius: 8px !important;
     box-shadow: none !important;
@@ -2355,11 +2362,11 @@ x:-o-prefocus {
 }
 
 .slimstat-pro-modal-backdrop {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   backdrop-filter: blur(3px);
   background-color: rgba(255, 255, 255, 0.5);
   z-index: 100000;
@@ -2367,18 +2374,18 @@ x:-o-prefocus {
 }
 
 .slimstat-pro-modal {
-  position: fixed;
-  top: 55%;
+  position: absolute;
+  top: 40px;
   left: 50%;
   z-index: 1000000;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   background-color: white;
   border-radius: 25px;
   box-shadow: 0px 4px 80px rgba(0, 0, 0, 0.15);
   padding: 40px 4%;
   text-align: center;
   box-sizing: border-box;
-  max-width: 600px;
+  max-width: 720px;
   display: none;
 
   * {
@@ -2404,7 +2411,6 @@ x:-o-prefocus {
   }
 
   h2 {
-    text-align: left;
 
     .subtitle {
       font-size: 18px;
@@ -2518,6 +2524,22 @@ x:-o-prefocus {
 
     &:hover {
       background-color: black;
+    }
+  }
+
+  .rtl & {
+    .features-flex-box {
+      .feature-item {
+        h6 .icon {
+          margin-left: 7px;
+          margin-right: 0;
+        }
+      }
+    }
+
+    #slimstat-pro-modal-close {
+      left: 10%;
+      right: auto;
     }
   }
 

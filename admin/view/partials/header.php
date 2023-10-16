@@ -19,8 +19,3 @@
     <?php endif; ?>
 
 </div>
-
-<?php
-// Load SlimStat Pro Modal
-wp_slimstat_admin::get_template('slimstat-pro-modal');
-?>
