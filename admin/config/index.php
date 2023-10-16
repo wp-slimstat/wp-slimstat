@@ -759,11 +759,6 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 
 ?>
 <div class="backdrop-container">
-    <?php
-    // Load SlimStat Pro Modal
-    wp_slimstat_admin::get_template('slimstat-pro-modal');
-    ?>
-
     <div class="wrap slimstat-config">
         <h2><?php _e('Settings', 'wp-slimstat') ?></h2>
         <ul class="nav-tabs">

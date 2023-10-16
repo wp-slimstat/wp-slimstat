@@ -4,10 +4,6 @@ $already_seen = array();
 ?>
 
 <div class="backdrop-container">
-    <?php
-    // Load SlimStat Pro Modal
-    wp_slimstat_admin::get_template('slimstat-pro-modal');
-    ?>
     <div class="wrap slimstat slimstat-layout">
         <h2><?php _e('Customize and organize your reports', 'wp-slimstat') ?></h2>
         <p><?php

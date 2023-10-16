@@ -6,7 +6,7 @@
     <?php if (isset($is_pro) && !$is_pro): ?>
         <div class="vr-line"></div>
         <div class="go-pro slimstat-upgrade-pro">
-            <a><?php esc_html_e('Go PRO', 'wp-slimstat'); ?><span class="icon"></span></a>
+            <a href="<?php echo admin_url('admin.php?page=slimupgrade'); ?>"><?php esc_html_e('Go PRO', 'wp-slimstat'); ?><span class="icon"></span></a>
             <p><?php esc_html_e('Upgrade to Pro to unlock more features', 'wp-slimstat'); ?></p>
         </div>
     <?php endif; ?>

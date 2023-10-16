@@ -6,10 +6,6 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
 ?>
 
 <div class="backdrop-container">
-    <?php
-    // Load SlimStat Pro Modal
-    wp_slimstat_admin::get_template('slimstat-pro-modal');
-    ?>
     <div class="wrap slimstat">
         <h2><?php echo wp_slimstat_admin::$screens_info[$_GET['page']]['title'] ?></h2>
 
