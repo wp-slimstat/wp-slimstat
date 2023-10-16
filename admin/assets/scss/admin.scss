@@ -2384,7 +2384,6 @@ x:-o-prefocus {
 
 .slimstat-pro-modal {
   position: fixed;
-  top: 40px;
   z-index: 30;
   transform: translateX(-50%);
   background-color: white;
@@ -2397,6 +2396,8 @@ x:-o-prefocus {
   margin-top: 100px;
   left: 50%;
   transform: translate(-50%, 0);
+  top: 45%;
+  transform: translateX(-50%) translateY(-50%);
 
   * {
     margin: 0;
