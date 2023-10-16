@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2023-10-16T12:12:25+00:00\n"
+"POT-Creation-Date: 2023-10-16T18:07:19+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: wp-slimstat\n"
@@ -113,8 +113,8 @@ msgstr ""
 #: admin/view/wp-slimstat-db.php:1168
 #: admin/view/wp-slimstat-db.php:1174
 #: admin/view/wp-slimstat-db.php:1180
-#: admin/view/wp-slimstat-reports.php:1148
-#: admin/view/wp-slimstat-reports.php:1151
+#: admin/view/wp-slimstat-reports.php:1149
+#: admin/view/wp-slimstat-reports.php:1152
 msgid "Hits"
 msgstr ""
 
@@ -671,7 +671,7 @@ msgstr ""
 
 #: admin/config/index.php:486
 #: admin/config/index.php:567
-#: admin/config/index.php:768
+#: admin/config/index.php:763
 #: admin/index.php:77
 msgid "Settings"
 msgstr ""
@@ -866,20 +866,20 @@ msgstr ""
 msgid "Your new settings have been saved."
 msgstr ""
 
-#: admin/config/index.php:774
-#: admin/view/index.php:16
+#: admin/config/index.php:769
+#: admin/view/index.php:12
 msgid "<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:831
+#: admin/config/index.php:826
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:832
+#: admin/config/index.php:827
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:909
+#: admin/config/index.php:904
 msgid "Save Changes"
 msgstr ""
 
@@ -1071,7 +1071,7 @@ msgid "2-letter code (us, ru, de, it, ...)"
 msgstr ""
 
 #: admin/index.php:1120
-#: admin/view/wp-slimstat-reports.php:1357
+#: admin/view/wp-slimstat-reports.php:1358
 msgid "IP"
 msgstr ""
 
@@ -1260,133 +1260,133 @@ msgstr ""
 msgid "Installed and Active"
 msgstr ""
 
-#: admin/view/index.php:20
+#: admin/view/index.php:16
 msgid "Dimension"
 msgstr ""
 
-#: admin/view/index.php:40
-#: admin/view/index.php:105
+#: admin/view/index.php:36
+#: admin/view/index.php:101
 msgid "Apply"
 msgstr ""
 
-#: admin/view/index.php:44
+#: admin/view/index.php:40
 msgid "Load"
 msgstr ""
 
-#: admin/view/index.php:68
+#: admin/view/index.php:64
 #: admin/view/wp-slimstat-db.php:882
 msgid "Today"
 msgstr ""
 
-#: admin/view/index.php:69
+#: admin/view/index.php:65
 #: admin/view/wp-slimstat-db.php:885
 msgid "Yesterday"
 msgstr ""
 
-#: admin/view/index.php:70
+#: admin/view/index.php:66
 msgid "Last 7 Days"
 msgstr ""
 
-#: admin/view/index.php:71
+#: admin/view/index.php:67
 msgid "Last 4 weeks"
 msgstr ""
 
-#: admin/view/index.php:72
+#: admin/view/index.php:68
 msgid "Last 12 weeks"
 msgstr ""
 
-#: admin/view/index.php:73
+#: admin/view/index.php:69
 msgid "Last 12 months"
 msgstr ""
 
-#: admin/view/index.php:76
+#: admin/view/index.php:72
 msgid "Date Range"
 msgstr ""
 
-#: admin/view/index.php:78
-#: admin/view/index.php:79
+#: admin/view/index.php:74
+#: admin/view/index.php:75
 #: admin/view/wp-slimstat-db.php:92
 msgid "Hour"
 msgstr ""
 
-#: admin/view/index.php:81
-#: admin/view/index.php:82
+#: admin/view/index.php:77
+#: admin/view/index.php:78
 #: admin/view/wp-slimstat-db.php:93
 msgid "Day"
 msgstr ""
 
-#: admin/view/index.php:84
-#: admin/view/index.php:86
+#: admin/view/index.php:80
+#: admin/view/index.php:82
 #: admin/view/wp-slimstat-db.php:94
 msgid "Month"
 msgstr ""
 
-#: admin/view/index.php:94
+#: admin/view/index.php:90
 #: admin/view/wp-slimstat-db.php:95
 msgid "Year"
 msgstr ""
 
-#: admin/view/index.php:99
+#: admin/view/index.php:95
 msgid "Days in interval"
 msgstr ""
 
-#: admin/view/index.php:100
+#: admin/view/index.php:96
 msgid "&plusmn; days"
 msgstr ""
 
-#: admin/view/index.php:100
+#: admin/view/index.php:96
 msgid "To define an interval, enter the number of days (negative to go back in time)."
 msgstr ""
 
-#: admin/view/index.php:102
+#: admin/view/index.php:98
 msgid "Hours in interval"
 msgstr ""
 
-#: admin/view/index.php:103
+#: admin/view/index.php:99
 msgid "&plusmn; hours"
 msgstr ""
 
-#: admin/view/index.php:116
+#: admin/view/index.php:112
 msgid "Reset Filters"
 msgstr ""
 
-#: admin/view/index.php:140
+#: admin/view/index.php:136
 msgid "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to identify your visitors' country of origin."
 msgstr ""
 
-#: admin/view/index.php:144
+#: admin/view/index.php:140
 msgid "Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system."
 msgstr ""
 
-#: admin/view/index.php:149
+#: admin/view/index.php:145
 msgid "A caching plugin might be enabled on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information."
 msgstr ""
 
-#: admin/view/layout.php:12
+#: admin/view/layout.php:8
 msgid "Customize and organize your reports"
 msgstr ""
 
-#: admin/view/layout.php:14
+#: admin/view/layout.php:10
 msgid "You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric."
 msgstr ""
 
-#: admin/view/layout.php:17
+#: admin/view/layout.php:13
 msgid "By using the network-wide customizer, all your users will see the same layout you define, and they will not be able to customize it further."
 msgstr ""
 
-#: admin/view/layout.php:27
+#: admin/view/layout.php:23
 msgid "Reset Layout"
 msgstr ""
 
-#: admin/view/layout.php:43
+#: admin/view/layout.php:39
 msgid "Clone"
 msgstr ""
 
-#: admin/view/layout.php:46
+#: admin/view/layout.php:42
 msgid "Delete"
 msgstr ""
 
-#: admin/view/layout.php:59
+#: admin/view/layout.php:55
 msgid "Move to Inactive"
 msgstr ""
 
@@ -1411,7 +1411,7 @@ msgid "SlimStat Analytics Experience"
 msgstr ""
 
 #: admin/view/partials/slimstat-pro-modal.php:14
-msgid "Lorem Ips hen an unknown printer took Lorem Ips hen an unknown printer took Lorem Ips hen an unknown printer took."
+msgid "Upgrading to SlimStat Pro gives you access to a powerful suite of tools to help you understand your website traffic and audience better."
 msgstr ""
 
 #: admin/view/partials/slimstat-pro-modal.php:20
@@ -1505,9 +1505,9 @@ msgstr ""
 
 #: admin/view/right-now.php:49
 #: admin/view/wp-slimstat-reports.php:1011
-#: admin/view/wp-slimstat-reports.php:1211
-#: admin/view/wp-slimstat-reports.php:1332
-#: admin/view/wp-slimstat-reports.php:1382
+#: admin/view/wp-slimstat-reports.php:1212
+#: admin/view/wp-slimstat-reports.php:1333
+#: admin/view/wp-slimstat-reports.php:1383
 msgid "No data to display"
 msgstr ""
 
@@ -1516,9 +1516,9 @@ msgid "Date and Time"
 msgstr ""
 
 #: admin/view/right-now.php:196
-#: admin/view/wp-slimstat-reports.php:1162
-#: admin/view/wp-slimstat-reports.php:1170
-#: admin/view/wp-slimstat-reports.php:1399
+#: admin/view/wp-slimstat-reports.php:1163
+#: admin/view/wp-slimstat-reports.php:1171
+#: admin/view/wp-slimstat-reports.php:1400
 msgid "Open this URL in a new window"
 msgstr ""
 
@@ -1603,7 +1603,7 @@ msgid "-- Advanced filters --"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:50
-#: admin/view/wp-slimstat-reports.php:1357
+#: admin/view/wp-slimstat-reports.php:1358
 msgid "Coordinates"
 msgstr ""
 
@@ -2370,84 +2370,84 @@ msgstr ""
 msgid "Referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1259
-#: admin/view/wp-slimstat-reports.php:1269
+#: admin/view/wp-slimstat-reports.php:1260
+#: admin/view/wp-slimstat-reports.php:1270
 msgid "(previous)"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1357
+#: admin/view/wp-slimstat-reports.php:1358
 msgid "Page"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1357
+#: admin/view/wp-slimstat-reports.php:1358
 msgid "Date"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1406
+#: admin/view/wp-slimstat-reports.php:1407
 msgid "Filter by element in a group"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1432
+#: admin/view/wp-slimstat-reports.php:1433
 msgid "Moz Domain Authority"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1433
+#: admin/view/wp-slimstat-reports.php:1434
 msgid "A normalized 100-point score representing the likelihood of a domain to rank well in search engine results."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1437
+#: admin/view/wp-slimstat-reports.php:1438
 msgid "Moz Backlinks"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1438
+#: admin/view/wp-slimstat-reports.php:1439
 msgid "Number of external equity links to your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1442
+#: admin/view/wp-slimstat-reports.php:1443
 msgid "Moz Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1443
+#: admin/view/wp-slimstat-reports.php:1444
 msgid "The number of links (external, equity or nonequity or not) to your homepage."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1447
+#: admin/view/wp-slimstat-reports.php:1448
 msgid "Alexa World Rank"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1448
+#: admin/view/wp-slimstat-reports.php:1449
 msgid "Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1452
+#: admin/view/wp-slimstat-reports.php:1453
 msgid "Alexa Country Rank"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1457
+#: admin/view/wp-slimstat-reports.php:1458
 msgid "Alexa Popularity"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1516
+#: admin/view/wp-slimstat-reports.php:1517
 msgid "Alexa Delta"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1609
+#: admin/view/wp-slimstat-reports.php:1610
 msgid "src"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1613
+#: admin/view/wp-slimstat-reports.php:1614
 msgid "serp"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1640
+#: admin/view/wp-slimstat-reports.php:1641
 msgid "Remove filter for"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1645
+#: admin/view/wp-slimstat-reports.php:1646
 msgid "Save"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1649
+#: admin/view/wp-slimstat-reports.php:1650
 msgid "Reset All"
 msgstr ""
 

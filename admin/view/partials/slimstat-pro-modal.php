@@ -11,7 +11,7 @@
     <div class="scroller">
 
         <p class="description">
-            <?php esc_html_e('Lorem Ips hen an unknown printer took Lorem Ips hen an unknown printer took Lorem Ips hen an unknown printer took.', 'wp-slimstat'); ?>
+            <?php esc_html_e('Upgrading to SlimStat Pro gives you access to a powerful suite of tools to help you understand your website traffic and audience better.', 'wp-slimstat'); ?>
         </p>
 
         <div class="features-flex-box">
