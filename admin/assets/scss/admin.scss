@@ -1725,6 +1725,11 @@ x:-o-prefocus {
     text-decoration: none;
   }
 
+  .upgrade-pro-background {
+    width: 100%;
+    height: auto;
+  }
+
   select, input, textarea {
     &:focus {
       outline: none;
@@ -2079,6 +2084,7 @@ x:-o-prefocus {
             color: $grayTwo;
             font-weight: 500;
             transition: .3s all ease-out;
+            cursor: pointer;
 
             span.dashicons {
               &::before {
@@ -2223,6 +2229,7 @@ x:-o-prefocus {
       text-decoration: none;
       font-size: 15px;
       font-weight: 400;
+      cursor: pointer;
 
       .icon {
         background: url("../images/white-right-chevron.png") no-repeat center center/contain;
@@ -2342,6 +2349,207 @@ x:-o-prefocus {
         color: #aaaaaa;
         display: block;
         transform: scaleX(-1);
+      }
+    }
+  }
+}
+
+.slimstat-pro-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  backdrop-filter: blur(3px);
+  background-color: rgba(255, 255, 255, 0.5);
+  z-index: 100000;
+  display: none;
+}
+
+.slimstat-pro-modal {
+  position: fixed;
+  top: 55%;
+  left: 50%;
+  z-index: 1000000;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 25px;
+  box-shadow: 0px 4px 80px rgba(0, 0, 0, 0.15);
+  padding: 40px 4%;
+  text-align: center;
+  box-sizing: border-box;
+  max-width: 600px;
+  display: none;
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  #slimstat-pro-modal-close {
+    position: absolute;
+    cursor: pointer;
+    top: 30px;
+    right: 10%;
+    width: 30px;
+    height: 30px;
+    opacity: .3;
+    transition: .3s all ease-out;
+    background: url("data:image/svg+xml,%3Csvg width='33' height='32' viewBox='0 0 33 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16.6172 31.1641C24.9015 31.1641 31.6172 24.4483 31.6172 16.1641C31.6172 7.87979 24.9015 1.16406 16.6172 1.16406C8.33292 1.16406 1.61719 7.87979 1.61719 16.1641C1.61719 24.4483 8.33292 31.1641 16.6172 31.1641Z' stroke='%23222222' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M21.1172 11.6641L12.1172 20.6641' stroke='%23222222' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.1172 11.6641L21.1172 20.6641' stroke='%23222222' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A") no-repeat center center / contain;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  h2 {
+    text-align: left;
+
+    .subtitle {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: $grayOne;
+      display: block;
+    }
+
+    .title {
+      color: $brand;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 25px;
+      display: block;
+    }
+  }
+
+  .description {
+    color: $grayTwo;
+    line-height: 1.7 !important;
+    font-weight: 400;
+    font-size: 16px;
+    margin-bottom: 25px;
+    text-align: justify;
+  }
+
+  .scroller {
+    max-height: 45vh;
+    overflow-y: auto;
+    /* Customize scrollbar styles for Webkit browsers (Chrome, Safari, newer versions of Opera) */
+    scrollbar-width: thin;
+    scrollbar-color: #333333 #f5f5f5;
+
+    /* Customize scrollbar styles for older versions of Webkit browsers */
+    scrollbar-face-color: #f5f5f5; /* Scrollbar background color */
+    scrollbar-arrow-color: #333333; /* Up and down arrow color */
+    scrollbar-track-color: #f5f5f5; /* Track color */
+    scrollbar-shadow-color: #333333; /* Shadow color */
+    scrollbar-highlight-color: #333333; /* Highlight color */
+    scrollbar-3dlight-color: #333333; /* 3D light shadow color */
+    scrollbar-darkshadow-color: #333333; /* Dark shadow color */
+
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    /* Customize scrollbar thumb */
+    &::-webkit-scrollbar-thumb {
+      background-color: #333333; /* Thumb color */
+      border-radius: 10px; /* Rounded corners for the thumb */
+    }
+
+    /* Customize scrollbar track */
+    &::-webkit-scrollbar-track {
+      background-color: #f5f5f5; /* Track color */
+    }
+  }
+
+  .features-flex-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    .feature-item {
+      flex: 0 0 45%;
+      border-bottom: 1px solid $grayFour;
+      padding: 15px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      h6 {
+        color: $grayOne;
+        font-weight: 500;
+        font-size: 16px;
+
+        .icon {
+          transform: translateY(6px);
+          width: 20px;
+          height: 20px;
+          margin-right: 7px;
+          display: inline-block;
+          background: url("data:image/svg+xml,%3Csvg width='18' height='17' viewBox='0 0 18 17' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16.4463 7.90039V8.57696C16.4454 10.1628 15.9319 11.7058 14.9823 12.976C14.0328 14.2461 12.6982 15.1753 11.1774 15.625C9.65665 16.0746 8.03129 16.0206 6.54373 15.471C5.05617 14.9215 3.78612 13.9057 2.92298 12.5754C2.05985 11.245 1.64988 9.67128 1.75422 8.08889C1.85857 6.50649 2.47163 5.00021 3.50198 3.79471C4.53233 2.5892 5.92476 1.74905 7.4716 1.39956C9.01844 1.05007 10.6368 1.20997 12.0854 1.8554' stroke='%23E8294C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M16.445 2.69531L9.09097 10.0567L6.88477 7.85047' stroke='%23E8294C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A") no-repeat center center / contain;
+        }
+      }
+
+      .more-info-icon {
+        display: block;
+        width: 20px;
+        height: 20px;
+        margin-left: 3px;
+        background: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.20996 15.4014C12.1434 15.4014 15.332 12.2127 15.332 8.2793C15.332 4.34589 12.1434 1.15723 8.20996 1.15723C4.27655 1.15723 1.08789 4.34589 1.08789 8.2793C1.08789 12.2127 4.27655 15.4014 8.20996 15.4014Z' stroke='%23C3C4C7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M6.13672 6.14245C6.30416 5.66645 6.63466 5.26508 7.06968 5.00942C7.5047 4.75376 8.01616 4.6603 8.51348 4.7456C9.0108 4.83091 9.46188 5.08946 9.78683 5.47548C10.1118 5.8615 10.2896 6.35007 10.2889 6.85465C10.2889 8.27907 8.15226 8.99127 8.15226 8.99127' stroke='%23C3C4C7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M8.21094 11.8398H8.21769' stroke='%23C3C4C7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A") no-repeat center center / contain;
+      }
+    }
+  }
+
+  .go-pro-button {
+    display: inline-block;
+    padding: 15px 10px;
+    width: 250px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: white;
+    text-align: center;
+    background-color: $brand;
+    text-decoration: none;
+    margin-top: 35px;
+    transition: .3s all ease-out;
+
+    &:hover {
+      background-color: black;
+    }
+  }
+
+  @media(max-width: 600px) {
+    border-radius: 15px;
+    padding: 20px 20px;
+    width: 95%;
+
+    #slimstat-pro-modal-close {
+      top: 20px;
+      right: 20px;
+    }
+
+    h2 {
+      .subtitle {
+        font-size: 15px;
+      }
+
+      .title {
+        font-size: 18px;
+      }
+    }
+
+    .features-flex-box {
+      .feature-item {
+        flex: 0 0 100%;
+
+        h6 {
+          .icon {
+            transform: translateY(4px);
+          }
+        }
       }
     }
   }

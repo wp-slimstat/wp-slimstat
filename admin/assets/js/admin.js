@@ -14,6 +14,7 @@ if (typeof SlimStatAdminParams == 'undefined') {
 // 4. Customizer
 // 5. Miscellaneous
 // 6. Init Third-party Libraries
+// 7. Init SlimStat Pro Modal
 //
 // -----------------------------------------------------------------------------------
 
@@ -404,6 +405,45 @@ jQuery(function () {
 
     //
     // ----- END: INIT THIRD-PARTY LIBRARIES -----------------------------------------
+
+    // ----- BEGIN: INIT SlimStat Pro Modal ---------------------------------------
+    //
+    jQuery('.slimstat-upgrade-pro').click(function () {
+        // Fade in .slimstat-pro-modal-backdrop and .slimstat-pro-modal
+        jQuery('.slimstat-pro-modal-backdrop').fadeIn();
+
+        // Set initial position of .slimstat-pro-modal off-screen
+        jQuery('.slimstat-pro-modal').css({
+            'display': 'block',
+            'opacity': 0,
+            'margin-top': '100px'
+        });
+
+        // Fade in and slide up .slimstat-pro-modal
+        jQuery('.slimstat-pro-modal').animate({
+            'opacity': 1,
+            'margin-top': '0'
+        }, 500);
+    });
+
+    // When #slimstat-pro-modal-close or .slimstat-pro-modal-backdrop is clicked
+    jQuery('#slimstat-pro-modal-close, .slimstat-pro-modal-backdrop').click(function () {
+        // Fade out .slimstat-pro-modal-backdrop and .slimstat-pro-modal
+        jQuery('.slimstat-pro-modal-backdrop').fadeOut();
+
+        jQuery('.slimstat-pro-modal').animate({
+            'opacity': 0,
+            'margin-top': '100px'
+        }, 500, function () {
+            // Animation is complete, set initial position of .slimstat-pro-modal off-screen
+            jQuery('.slimstat-pro-modal').css({
+                'display': 'none',
+            });
+        });
+    });
+
+    //
+    // ----- END: INIT Slimstat Pro Modal -----------------------------------------
 });
 
 // ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------

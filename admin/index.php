@@ -260,10 +260,6 @@ class wp_slimstat_admin
         add_action('admin_notices', function () {
             self::add_header();
         });
-
-        add_action('admin_init', function () {
-            self::check_upgrade_redirect();
-        });
     }
     // END: init
 
@@ -787,20 +783,10 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_upgrade_to_pro()
     {
-        //
+        include(dirname(__FILE__) . '/view/upgrade-pro.php');
     }
 
     // END: wp_slimstat_include_addons
-
-    public static function check_upgrade_redirect()
-    {
-        // Check if it's the desired page
-        if (isset($_GET['page']) && $_GET['page'] === 'slimupgrade') {
-            // Perform the redirect
-            wp_redirect(apply_filters('slimstat_upgrade_to_pro_url', 'https://wp-slimstat.com'));
-            exit;
-        }
-    }
 
     /**
      * Includes the appropriate panel to configure Slimstat
@@ -1269,7 +1255,7 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        return '<a class="slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" href="' . esc_url(SLIMSTAT_ANALYTICS_SITE) . '"  title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
     }
 
     public static function add_header()
