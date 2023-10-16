@@ -23,7 +23,6 @@ Track returning customers and registered users, monitor Javascript events, detec
 
 = Pro Pack Features =
 * **Network Analytics**: Enable a network-wide view of your reports and settings.
-* **Network Settings**: This plugin has been discontinued, and its functionality merged into our Network Analytics add-on. If you purchased a license for this add-on and need a new download code for Network Analytics, [contact support](mailto:support@example.com).
 * **Email Reports**: Receive your reports directly in your mailbox.
 * **Export to Excel**: Download your reports as CSV files.
 * **Heatmap**: Display a heatmap layer of the most clicked areas on your website.

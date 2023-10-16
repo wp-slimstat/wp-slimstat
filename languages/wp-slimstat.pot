@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2023-10-12T10:57:05+00:00\n"
+"POT-Creation-Date: 2023-10-16T12:12:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: wp-slimstat\n"
@@ -671,7 +671,7 @@ msgstr ""
 
 #: admin/config/index.php:486
 #: admin/config/index.php:567
-#: admin/config/index.php:773
+#: admin/config/index.php:768
 #: admin/index.php:77
 msgid "Settings"
 msgstr ""
@@ -837,49 +837,49 @@ msgstr ""
 msgid "Congratulations! Slimstat Analytics is now optimized for <a href=\"https://www.youtube.com/watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
 msgstr ""
 
-#: admin/config/index.php:652
+#: admin/config/index.php:651
 msgid "Table indexes have been disabled. Enjoy the extra database space!"
 msgstr ""
 
-#: admin/config/index.php:666
+#: admin/config/index.php:665
 msgid "The geolocation database has been installed on your server."
 msgstr ""
 
-#: admin/config/index.php:677
-#: admin/config/index.php:685
+#: admin/config/index.php:674
+#: admin/config/index.php:681
 msgid "The geolocation database has been uninstalled from your server."
 msgstr ""
 
-#: admin/config/index.php:689
+#: admin/config/index.php:684
 msgid "The geolocation database could not be uninstalled from your server. Please make sure Slimstat can save files in your <code>wp-content/uploads</code> folder."
 msgstr ""
 
-#: admin/config/index.php:707
+#: admin/config/index.php:701
 msgid "The Browscap data file has been uninstalled from your server."
 msgstr ""
 
-#: admin/config/index.php:711
+#: admin/config/index.php:704
 msgid "There was an error deleting the Browscap data folder on your server. Please check your permissions."
 msgstr ""
 
-#: admin/config/index.php:754
+#: admin/config/index.php:744
 msgid "Your new settings have been saved."
 msgstr ""
 
-#: admin/config/index.php:779
-#: admin/view/index.php:11
+#: admin/config/index.php:774
+#: admin/view/index.php:16
 msgid "<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:836
+#: admin/config/index.php:831
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:837
+#: admin/config/index.php:832
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:914
+#: admin/config/index.php:909
 msgid "Save Changes"
 msgstr ""
 
@@ -916,100 +916,100 @@ msgstr ""
 msgid "WordPress Dashboard"
 msgstr ""
 
-#: admin/index.php:296
+#: admin/index.php:292
 msgid "Sorry, you are not allowed to access this page."
 msgstr ""
 
-#: admin/index.php:662
-#: admin/index.php:740
+#: admin/index.php:658
+#: admin/index.php:736
 msgid "Slimstat"
 msgstr ""
 
-#: admin/index.php:873
+#: admin/index.php:859
 msgid "Pageviews in the last %s days"
 msgstr ""
 
-#: admin/index.php:875
+#: admin/index.php:861
 msgid "Unique IPs in the last %s days"
 msgstr ""
 
-#: admin/index.php:1057
+#: admin/index.php:1043
 msgid "Already saved"
 msgstr ""
 
-#: admin/index.php:1065
+#: admin/index.php:1051
 msgid "Saved"
 msgstr ""
 
-#: admin/index.php:1085
+#: admin/index.php:1071
 msgid "Delete this filter"
 msgstr ""
 
-#: admin/index.php:1109
+#: admin/index.php:1095
 msgid "Definitions"
 msgstr ""
 
-#: admin/index.php:1112
+#: admin/index.php:1098
 msgid "Pageview"
 msgstr ""
 
-#: admin/index.php:1112
+#: admin/index.php:1098
 msgid "A request to load a single HTML file (\"page\"). This should be contrasted with a \"hit\", which refers to a request for any file from a web server. Slimstat logs a pageview each time the tracking code is executed"
 msgstr ""
 
-#: admin/index.php:1113
+#: admin/index.php:1099
 msgid "(Human) Visit"
 msgstr ""
 
-#: admin/index.php:1113
+#: admin/index.php:1099
 msgid "A period of interaction between a visitor's browser and your website, ending when the browser is closed or when the user has been inactive on that site for 30 minutes"
 msgstr ""
 
-#: admin/index.php:1114
+#: admin/index.php:1100
 msgid "Known Visitor"
 msgstr ""
 
-#: admin/index.php:1114
+#: admin/index.php:1100
 msgid "Any user who has left a comment on your blog, and is thus identified by WordPress as a returning visitor"
 msgstr ""
 
-#: admin/index.php:1115
+#: admin/index.php:1101
 msgid "Unique IP"
 msgstr ""
 
-#: admin/index.php:1115
+#: admin/index.php:1101
 msgid "Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses; since this measurement looks only at the internet address a pageview came from, it is useful, but not perfect"
 msgstr ""
 
-#: admin/index.php:1116
-#: admin/index.php:1156
+#: admin/index.php:1102
+#: admin/index.php:1142
 #: admin/view/right-now.php:162
 #: admin/view/wp-slimstat-db.php:55
 msgid "Originating IP"
 msgstr ""
 
-#: admin/index.php:1116
+#: admin/index.php:1102
 msgid "the originating IP address of a client connecting to a web server through an HTTP proxy or load balancer"
 msgstr ""
 
-#: admin/index.php:1117
+#: admin/index.php:1103
 msgid "Direct Traffic"
 msgstr ""
 
-#: admin/index.php:1117
+#: admin/index.php:1103
 msgid "All those people showing up to your Web site by typing in the URL of your Web site coming or from a bookmark; some people also call this \"default traffic\" or \"ambient traffic\""
 msgstr ""
 
-#: admin/index.php:1118
+#: admin/index.php:1104
 msgid "Search Engine"
 msgstr ""
 
-#: admin/index.php:1118
+#: admin/index.php:1104
 msgid "Google, Yahoo, MSN, Ask, others; this bucket will include both your organic as well as your paid (PPC/SEM) traffic, so be aware of that"
 msgstr ""
 
-#: admin/index.php:1119
-#: admin/index.php:1135
+#: admin/index.php:1105
+#: admin/index.php:1121
 #: admin/view/right-now.php:217
 #: admin/view/wp-slimstat-db.php:33
 #: admin/view/wp-slimstat-reports.php:213
@@ -1017,202 +1017,202 @@ msgstr ""
 msgid "Search Terms"
 msgstr ""
 
-#: admin/index.php:1119
-#: admin/index.php:1135
+#: admin/index.php:1105
+#: admin/index.php:1121
 msgid "Keywords used by your visitors to find your website on a search engine"
 msgstr ""
 
-#: admin/index.php:1120
+#: admin/index.php:1106
 msgid "SERP"
 msgstr ""
 
-#: admin/index.php:1120
+#: admin/index.php:1106
 msgid "Short for search engine results page, the Web page that a search engine returns with the results of its search. The value shown represents your rank (or position) within that list of results"
 msgstr ""
 
-#: admin/index.php:1121
+#: admin/index.php:1107
 #: admin/view/wp-slimstat-db.php:48
 msgid "User Agent"
 msgstr ""
 
-#: admin/index.php:1121
+#: admin/index.php:1107
 msgid "Any program used for accessing a website; this includes browsers, robots, spiders and any other program that was used to retrieve information from the site"
 msgstr ""
 
-#: admin/index.php:1122
+#: admin/index.php:1108
 #: admin/view/wp-slimstat-db.php:40
 msgid "Outbound Link"
 msgstr ""
 
-#: admin/index.php:1122
+#: admin/index.php:1108
 msgid "A link from one domain to another is said to be outbound from its source anchor and inbound to its target. This report lists all the links to other websites followed by your visitors."
 msgstr ""
 
-#: admin/index.php:1129
+#: admin/index.php:1115
 msgid "Basic Filters"
 msgstr ""
 
-#: admin/index.php:1132
+#: admin/index.php:1118
 #: admin/view/wp-slimstat-db.php:30
 msgid "Browser"
 msgstr ""
 
-#: admin/index.php:1132
+#: admin/index.php:1118
 msgid "User agent (Firefox, Chrome, ...)"
 msgstr ""
 
-#: admin/index.php:1133
+#: admin/index.php:1119
 #: admin/view/wp-slimstat-db.php:31
 msgid "Country Code"
 msgstr ""
 
-#: admin/index.php:1133
+#: admin/index.php:1119
 msgid "2-letter code (us, ru, de, it, ...)"
 msgstr ""
 
-#: admin/index.php:1134
+#: admin/index.php:1120
 #: admin/view/wp-slimstat-reports.php:1357
 msgid "IP"
 msgstr ""
 
-#: admin/index.php:1134
+#: admin/index.php:1120
 msgid "Visitor's public IP address"
 msgstr ""
 
-#: admin/index.php:1136
+#: admin/index.php:1122
 msgid "Language Code"
 msgstr ""
 
-#: admin/index.php:1136
+#: admin/index.php:1122
 msgid "Please refer to this <a target=\"_blank\" href=\"https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first column) for more information"
 msgstr ""
 
-#: admin/index.php:1137
+#: admin/index.php:1123
 #: admin/view/wp-slimstat-db.php:35
 msgid "Operating System"
 msgstr ""
 
-#: admin/index.php:1137
+#: admin/index.php:1123
 msgid "Accepts identifiers like win7, win98, macosx, ...; please refer to <a target=\"_blank\" href=\"https://php.net/manual/en/function.get-browser.php\">this manual page</a> for more information"
 msgstr ""
 
-#: admin/index.php:1138
+#: admin/index.php:1124
 #: admin/view/wp-slimstat-db.php:36
 msgid "Permalink"
 msgstr ""
 
-#: admin/index.php:1138
+#: admin/index.php:1124
 msgid "URL accessed on your site"
 msgstr ""
 
-#: admin/index.php:1139
+#: admin/index.php:1125
 #: admin/view/wp-slimstat-db.php:37
 msgid "Referer"
 msgstr ""
 
-#: admin/index.php:1139
+#: admin/index.php:1125
 msgid "Complete address of the referrer page"
 msgstr ""
 
-#: admin/index.php:1140
+#: admin/index.php:1126
 msgid "Visitor's Name"
 msgstr ""
 
-#: admin/index.php:1140
+#: admin/index.php:1126
 msgid "Visitors' names according to the cookie set by WordPress after they leave a comment"
 msgstr ""
 
-#: admin/index.php:1148
+#: admin/index.php:1134
 msgid "Advanced Filters"
 msgstr ""
 
-#: admin/index.php:1151
+#: admin/index.php:1137
 #: admin/view/wp-slimstat-db.php:46
 msgid "Browser Version"
 msgstr ""
 
-#: admin/index.php:1151
+#: admin/index.php:1137
 msgid "user agent version (9.0, 11, ...)"
 msgstr ""
 
-#: admin/index.php:1152
+#: admin/index.php:1138
 #: admin/view/wp-slimstat-db.php:47
 msgid "Browser Type"
 msgstr ""
 
-#: admin/index.php:1152
+#: admin/index.php:1138
 msgid "1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others"
 msgstr ""
 
-#: admin/index.php:1153
+#: admin/index.php:1139
 msgid "Pageview Attributes"
 msgstr ""
 
-#: admin/index.php:1153
+#: admin/index.php:1139
 msgid "this field is set to <em>[pre]</em> if the resource has been accessed through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
 msgstr ""
 
-#: admin/index.php:1154
+#: admin/index.php:1140
 #: admin/view/wp-slimstat-db.php:53
 msgid "Post Author"
 msgstr ""
 
-#: admin/index.php:1154
+#: admin/index.php:1140
 msgid "author associated to that post/page when the resource was accessed"
 msgstr ""
 
-#: admin/index.php:1155
+#: admin/index.php:1141
 #: admin/view/wp-slimstat-db.php:54
 msgid "Post Category ID"
 msgstr ""
 
-#: admin/index.php:1155
+#: admin/index.php:1141
 msgid "ID of the category/term associated to the resource, when available"
 msgstr ""
 
-#: admin/index.php:1156
+#: admin/index.php:1142
 msgid "visitor's originating IP address, if available"
 msgstr ""
 
-#: admin/index.php:1157
+#: admin/index.php:1143
 #: admin/view/wp-slimstat-db.php:56
 msgid "Resource Content Type"
 msgstr ""
 
-#: admin/index.php:1157
+#: admin/index.php:1143
 msgid "post, page, cpt:<em>custom-post-type</em>, attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the <a target=\"_blank\" href=\"https://codex.wordpress.org/Conditional_Tags\">Conditional Tags</a> manual page for more information"
 msgstr ""
 
-#: admin/index.php:1158
+#: admin/index.php:1144
 msgid "Screen Resolution"
 msgstr ""
 
-#: admin/index.php:1158
+#: admin/index.php:1144
 msgid "viewport width and height (1024x768, 800x600, ...)"
 msgstr ""
 
-#: admin/index.php:1159
+#: admin/index.php:1145
 #: admin/view/wp-slimstat-db.php:61
 msgid "Visit ID"
 msgstr ""
 
-#: admin/index.php:1159
+#: admin/index.php:1145
 msgid "generally used in conjunction with <em>is not empty</em>, identifies human visitors"
 msgstr ""
 
-#: admin/index.php:1160
+#: admin/index.php:1146
 msgid "Date Filters"
 msgstr ""
 
-#: admin/index.php:1160
+#: admin/index.php:1146
 msgid "you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)"
 msgstr ""
 
-#: admin/index.php:1161
+#: admin/index.php:1147
 msgid "SERP Position"
 msgstr ""
 
-#: admin/index.php:1161
+#: admin/index.php:1147
 msgid "set the filter to Referer contains cd=N&, where N is the position you are looking for"
 msgstr ""
 
@@ -1260,133 +1260,133 @@ msgstr ""
 msgid "Installed and Active"
 msgstr ""
 
-#: admin/view/index.php:15
+#: admin/view/index.php:20
 msgid "Dimension"
 msgstr ""
 
-#: admin/view/index.php:35
-#: admin/view/index.php:100
+#: admin/view/index.php:40
+#: admin/view/index.php:105
 msgid "Apply"
 msgstr ""
 
-#: admin/view/index.php:39
+#: admin/view/index.php:44
 msgid "Load"
 msgstr ""
 
-#: admin/view/index.php:63
+#: admin/view/index.php:68
 #: admin/view/wp-slimstat-db.php:882
 msgid "Today"
 msgstr ""
 
-#: admin/view/index.php:64
+#: admin/view/index.php:69
 #: admin/view/wp-slimstat-db.php:885
 msgid "Yesterday"
 msgstr ""
 
-#: admin/view/index.php:65
+#: admin/view/index.php:70
 msgid "Last 7 Days"
 msgstr ""
 
-#: admin/view/index.php:66
+#: admin/view/index.php:71
 msgid "Last 4 weeks"
 msgstr ""
 
-#: admin/view/index.php:67
+#: admin/view/index.php:72
 msgid "Last 12 weeks"
 msgstr ""
 
-#: admin/view/index.php:68
+#: admin/view/index.php:73
 msgid "Last 12 months"
 msgstr ""
 
-#: admin/view/index.php:71
+#: admin/view/index.php:76
 msgid "Date Range"
 msgstr ""
 
-#: admin/view/index.php:73
-#: admin/view/index.php:74
+#: admin/view/index.php:78
+#: admin/view/index.php:79
 #: admin/view/wp-slimstat-db.php:92
 msgid "Hour"
 msgstr ""
 
-#: admin/view/index.php:76
-#: admin/view/index.php:77
+#: admin/view/index.php:81
+#: admin/view/index.php:82
 #: admin/view/wp-slimstat-db.php:93
 msgid "Day"
 msgstr ""
 
-#: admin/view/index.php:79
-#: admin/view/index.php:81
+#: admin/view/index.php:84
+#: admin/view/index.php:86
 #: admin/view/wp-slimstat-db.php:94
 msgid "Month"
 msgstr ""
 
-#: admin/view/index.php:89
+#: admin/view/index.php:94
 #: admin/view/wp-slimstat-db.php:95
 msgid "Year"
 msgstr ""
 
-#: admin/view/index.php:94
+#: admin/view/index.php:99
 msgid "Days in interval"
 msgstr ""
 
-#: admin/view/index.php:95
+#: admin/view/index.php:100
 msgid "&plusmn; days"
 msgstr ""
 
-#: admin/view/index.php:95
+#: admin/view/index.php:100
 msgid "To define an interval, enter the number of days (negative to go back in time)."
 msgstr ""
 
-#: admin/view/index.php:97
+#: admin/view/index.php:102
 msgid "Hours in interval"
 msgstr ""
 
-#: admin/view/index.php:98
+#: admin/view/index.php:103
 msgid "&plusmn; hours"
 msgstr ""
 
-#: admin/view/index.php:111
+#: admin/view/index.php:116
 msgid "Reset Filters"
 msgstr ""
 
-#: admin/view/index.php:135
+#: admin/view/index.php:140
 msgid "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to identify your visitors' country of origin."
 msgstr ""
 
-#: admin/view/index.php:139
+#: admin/view/index.php:144
 msgid "Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system."
 msgstr ""
 
-#: admin/view/index.php:144
+#: admin/view/index.php:149
 msgid "A caching plugin might be enabled on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information."
 msgstr ""
 
-#: admin/view/layout.php:7
+#: admin/view/layout.php:12
 msgid "Customize and organize your reports"
 msgstr ""
 
-#: admin/view/layout.php:9
+#: admin/view/layout.php:14
 msgid "You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric."
 msgstr ""
 
-#: admin/view/layout.php:12
+#: admin/view/layout.php:17
 msgid "By using the network-wide customizer, all your users will see the same layout you define, and they will not be able to customize it further."
 msgstr ""
 
-#: admin/view/layout.php:22
+#: admin/view/layout.php:27
 msgid "Reset Layout"
 msgstr ""
 
-#: admin/view/layout.php:38
+#: admin/view/layout.php:43
 msgid "Clone"
 msgstr ""
 
-#: admin/view/layout.php:42
+#: admin/view/layout.php:46
 msgid "Delete"
 msgstr ""
 
-#: admin/view/layout.php:55
+#: admin/view/layout.php:59
 msgid "Move to Inactive"
 msgstr ""
 
@@ -1400,6 +1400,91 @@ msgstr ""
 
 #: admin/view/partials/header.php:17
 msgid "Pro is activated!"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:7
+msgid "Upgrade to a complete"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:8
+msgid "SlimStat Analytics Experience"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:14
+msgid "Lorem Ips hen an unknown printer took Lorem Ips hen an unknown printer took Lorem Ips hen an unknown printer took."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:20
+#: admin/view/partials/slimstat-pro-modal.php:23
+msgid "Network Analytics"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:24
+msgid "Enable a network-wide view of your reports and settings."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:30
+#: admin/view/partials/slimstat-pro-modal.php:33
+msgid "Email Reports"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:34
+#: admin/view/partials/slimstat-pro-modal.php:44
+msgid "Receive your reports directly in your mailbox."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:40
+#: admin/view/partials/slimstat-pro-modal.php:43
+msgid "Export to Excel"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:50
+#: admin/view/partials/slimstat-pro-modal.php:53
+msgid "Heatmap"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:54
+msgid "Display a heatmap layer of the most clicked areas on your website."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:60
+#: admin/view/partials/slimstat-pro-modal.php:63
+msgid "User Overview"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:64
+msgid "Monitor your registered users by tracking their activities and time on site."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:70
+#: admin/view/partials/slimstat-pro-modal.php:73
+msgid "MaxMind Integration"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:74
+msgid "Connect to MaxMind's Geolocation API to retrieve detailed information about your visitors."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:80
+#: admin/view/partials/slimstat-pro-modal.php:83
+msgid "Custom DB"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:84
+msgid "Use an external database to store all the information about your visitors."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:90
+#: admin/view/partials/slimstat-pro-modal.php:93
+msgid "Extended Overview"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:94
+msgid "Add custom columns to the User Overview widget and export file."
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:101
+msgid "Unlock SlimStat Pro"
 msgstr ""
 
 #: admin/view/right-now.php:23

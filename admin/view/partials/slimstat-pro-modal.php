@@ -98,7 +98,7 @@
 
         </div>
     </div>
-    <a target="_blank" href="<?php echo esc_url(SLIMSTAT_ANALYTICS_SITE); ?>" class="go-pro-button"><?php esc_html_e('Go Pro', 'wp-slimstat'); ?></a>
+    <a target="_blank" href="<?php echo esc_url(SLIMSTAT_ANALYTICS_SITE); ?>" class="go-pro-button"><?php esc_html_e('Unlock SlimStat Pro', 'wp-slimstat'); ?></a>
 </div>
 
 <div class="slimstat-pro-modal-backdrop"></div>
