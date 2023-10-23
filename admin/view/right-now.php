@@ -243,11 +243,11 @@ for ($i = 0; $i < $count_page_results; $i++) {
     }
 
     // Avoid XSS attacks through the referer URL
-    $results[$i] ['referer'] = str_replace(array('<', '>', '%22', '%27', '\'', '"', '%3C', '%3E'), array('&lt;', '&gt;', '', '', '', '', '&lt;', '&gt;'), urldecode($results[$i] ['referer']));
+    $results[$i]['referer'] = str_replace(array('<', '>', '%22', '%27', '\'', '"', '%3C', '%3E'), array('&lt;', '&gt;', '', '', '', '', '&lt;', '&gt;'), urldecode($results[$i]['referer']));
 
     $login_logout = '';
     if (!$is_dashboard) {
-        $domain                      = parse_url($results[$i] ['referer']);
+        $domain                      = parse_url($results[$i]['referer']);
         $domain                      = !empty($domain['host']) ? $domain['host'] : __('Invalid Referrer', 'wp-slimstat');
         $results[$i]['referer']      = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms'])) ? "<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this referrer in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . "' href='{$results[$i]['referer']}'></a> $domain" : '';
         $results[$i]['content_type'] = !empty($results[$i]['content_type']) ? "<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . "'>{$results[$i]['content_type']}</a> " : '';
