@@ -1097,7 +1097,6 @@ class wp_slimstat
             'use_separate_menu'                      => 'no',
             'add_posts_column'                       => 'no',
             'posts_column_pageviews'                 => 'on',
-            'hide_addons'                            => 'no',
 
             // General - Database
             'auto_purge'                             => 0,

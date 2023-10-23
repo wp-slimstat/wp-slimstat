@@ -75,11 +75,6 @@ $settings = array(
                 'custom_label_off' => __('IPs', 'wp-slimstat'),
                 'description'      => __('Customize the information displayed when activating the option here above: <strong>hits</strong> refers to the total amount of pageviews, regardless of the user; <strong>(unique) IPs</strong> displays the amount of distinct IP addresses tracked in the given time range.', 'wp-slimstat')
             ),
-            'hide_addons'                => array(
-                'title'       => __('Hide Add-ons', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('If you are using our premium add-ons, you can enable this option to hide all the <strong>active</strong> ones from the list of plugins in WordPress. Please note that you will still be notified of new updates available for any given hidden add-on.', 'wp-slimstat')
-            ),
 
             // General - Database
             'general_database_header'    => array(

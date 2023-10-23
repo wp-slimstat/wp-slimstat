@@ -235,11 +235,6 @@ class wp_slimstat_admin
             add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
         }
 
-        // Hide add-ons
-        if (wp_slimstat::$settings['hide_addons'] == 'on') {
-            add_filter('all_plugins', array(__CLASS__, 'hide_addons'));
-        }
-
         // Schedule a daily cron job to purge the data
         if (!wp_next_scheduled('wp_slimstat_purge')) {
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
@@ -885,22 +880,6 @@ class wp_slimstat_admin
     }
 
     // END: add_column
-
-    public static function hide_addons($_plugins = array())
-    {
-        if (!is_array($_plugins)) {
-            return $_plugins;
-        }
-
-        foreach ($_plugins as $a_plugin_slug => $a_plugin_info) {
-            if (strpos($a_plugin_slug, 'wp-slimstat-') !== false && is_plugin_active($a_plugin_slug)) {
-                unset($_plugins[$a_plugin_slug]);
-            }
-        }
-
-        return $_plugins;
-    }
-    // END: hide_addons
 
     /**
      * Displays an alert message
