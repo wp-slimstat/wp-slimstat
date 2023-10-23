@@ -243,7 +243,9 @@ for ($i = 0; $i < $count_page_results; $i++) {
     }
 
     // Avoid XSS attacks through the referer URL
-    $results[$i]['referer'] = str_replace(array('<', '>', '%22', '%27', '\'', '"', '%3C', '%3E'), array('&lt;', '&gt;', '', '', '', '', '&lt;', '&gt;'), urldecode($results[$i]['referer']));
+    if ($results[$i]['referer']) {
+        $results[$i]['referer'] = str_replace(array('<', '>', '%22', '%27', '\'', '"', '%3C', '%3E'), array('&lt;', '&gt;', '', '', '', '', '&lt;', '&gt;'), urldecode($results[$i]['referer']));
+    }
 
     $login_logout = '';
     if (!$is_dashboard) {
