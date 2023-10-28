@@ -62,7 +62,13 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Changelog ==
 = 5.1 =
-*
+We're excited to announce the release of Slimstat v5.1! This update includes a big design change, as well as a number of new features and improvements.
+
+* [New] Improved layout and design. We've tidied up the design so it's clearer and more user-friendly. We've also chosen softer colors to make the design easier on the eyes.
+* [New] Add-Ons are back, but they've been formally collected into a version pack called [SlimstatPro](https://wp-slimstat.com/pricing).
+* [Fix] Plenty of improvements and error fixes.
+
+We still have some plans to make Slimstat better, so please keep your feedback coming, please [click here](https://wp-slimstat.com/***) to read more.
 
 = 5.0.10.2 =
 * [Fix] The shortcode issues have been fixed
