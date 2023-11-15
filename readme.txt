@@ -4,7 +4,7 @@ Tags: analytics, statistics, counter, tracking, reports, geolocation, online use
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
-Tested up to: 6.3
+Tested up to: 6.4
 Stable tag: 5.1
 
 == Description ==
@@ -68,7 +68,7 @@ We're excited to announce the release of Slimstat v5.1! This update includes a b
 * [New] Add-Ons are back, but they've been formally collected into a version pack called [SlimstatPro](https://wp-slimstat.com/pricing).
 * [Fix] Plenty of improvements and error fixes.
 
-We still have some plans to make Slimstat better, so please keep your feedback coming, please [click here](https://wp-slimstat.com/***) to read more.
+We still have some plans to make Slimstat better, so please keep your feedback coming, please [click here](https://wp-slimstat.com/1973/big-changes-slimstat-v5-1/) to read more.
 
 = 5.0.10.2 =
 * [Fix] The shortcode issues have been fixed

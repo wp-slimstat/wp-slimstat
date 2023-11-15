@@ -518,7 +518,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'title'             => __('Tracker Error', 'wp-slimstat'),
                 'type'              => 'plain-text',
                 'after_input_field' => !empty($last_tracker_error) ? '<strong>[' . date_i18n(get_option('date_format'), $last_tracker_error[1], true) . ' ' . date_i18n(get_option('time_format'), $last_tracker_error[1], true) . '] ' . $last_tracker_error[0] . ' ' . wp_slimstat_i18n::get_string('e-' . $last_tracker_error[0]) . '</strong><a class="slimstat-font-cancel" title="' . htmlentities(__('Reset this error', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-tracker-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>' : __('So far so good.', 'wp-slimstat'),
-                'description'       => __('The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction. Please include the message here above when sending a <a href="https://support.wp-slimstat.com" target="_blank">support request</a>.', 'wp-slimstat')
+                'description'       => __('The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction.', 'wp-slimstat')
             ),
             'show_sql_debug'                     => array(
                 'title'       => __('SQL Debug', 'wp-slimstat'),
