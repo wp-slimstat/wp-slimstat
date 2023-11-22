@@ -895,11 +895,14 @@ class wp_slimstat_reports
                 $header_buttons = '<a class="noslimstat refresh slimstat-font-arrows-cw" title="' . __('Refresh', 'wp-slimstat') . '" href="' . self::fs_url() . '"></a>';
             }
 
+            $tooltip_base   = '<span class="header-tooltip dashicons dashicons-editor-help slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">';
+            $header_tooltip = $tooltip_base . (!empty(self::$reports[$_report_id]['tooltip']) ? self::$reports[$_report_id]['tooltip'] . '<br /><br />' . esc_html($_report_id) : esc_html($_report_id)) . '</span></span>';
+
             // Allow third-party code to add more buttons
             $header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_report_id);
             $header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
-            $header_tooltip = !empty(self::$reports[$_report_id]['tooltip']) ? '<i class="slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">' . self::$reports[$_report_id]['tooltip'] . '</span></i>' : '';
-            $widget_title   = "<h3 data-report-id='{$_report_id}'>" . self::$reports[$_report_id]['title'] . "{$header_tooltip}</h3>";
+
+            $widget_title = "<h3>" . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . "</h3>";
         }
 
         echo "<div class='postbox " . esc_attr($header_classes) . "' id='" . esc_attr($_report_id) . "'>{$header_buttons} $widget_title <div class='inside'>";
@@ -982,11 +985,11 @@ class wp_slimstat_reports
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
+                echo "{$a_result[ 'metric' ]} <span>{$a_result[ 'value' ]}</span>";
+
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);
                 }
-
-                echo "{$a_result[ 'metric' ]} <span>{$a_result[ 'value' ]}</span>";
 
                 if (!empty($a_result['details'])) {
                     echo "<b class='slimstat-tooltip-content'>{$a_result[ 'details' ]}</b>";
@@ -1137,8 +1140,9 @@ class wp_slimstat_reports
                 }
 
                 if (!empty($_args['type']) && $_args['type'] == 'top') {
-                    $percentage_value = ((wp_slimstat_db::$pageviews > 0) ? number_format_i18n(sprintf("%01.2f", (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews)), 2) : 0);
+                    $percentage_value = ((wp_slimstat_db::$pageviews > 0) ? sprintf("%01.2f", (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews)) : 0);
                     $counthits        = number_format_i18n($results[$i]['counthits']);
+                    $percentage_value = number_format_i18n((float)$percentage_value, 2);
 
                     if ((!empty($_args['criteria']) && $_args['criteria'] == 'swap') || wp_slimstat::$settings['show_hits'] == 'on') {
                         $percentage  = ' <span>' . $counthits . '</span>';
@@ -1760,7 +1764,7 @@ class wp_slimstat_reports
     public static function inline_help($_text = '', $_echo = true)
     {
         if (is_admin() && !empty($_text)) {
-            $wrapped_text = "<i class='slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>$_text</span></i>";
+            $wrapped_text = "<span class='dashicons dashicons-editor-help slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>$_text</span></span>";
         } else {
             $wrapped_text = '';
         }

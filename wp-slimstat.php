@@ -3,7 +3,7 @@
 Plugin Name: Slimstat Analytics
 Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 5.0.10.2
+Version: 5.1
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -119,6 +119,7 @@ class wp_slimstat
 
         // Load the admin library
         if (is_user_logged_in()) {
+            include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             add_action('init', array('wp_slimstat_admin', 'init'), 60);
         }
@@ -261,8 +262,10 @@ class wp_slimstat
                 }
 
                 foreach (array('content_type', 'category', 'content_id', 'author') as $a_key) {
-                    if (!empty($content_info[$a_key])) {
-                        self::$stat[$a_key] = sanitize_title($content_info[$a_key]);
+                    if (!empty($content_info[$a_key]) && $a_key !== 'content_id') {
+                        self::$stat[$a_key] = sanitize_text_field($content_info[$a_key]);
+                    } elseif (!empty($content_info[$a_key])) {
+                        self::$stat[$a_key] = absint($content_info[$a_key]);
                     }
                 }
             } // ... otherwise we'll track this as an external page
@@ -778,7 +781,7 @@ class wp_slimstat
                     return __('Invalid Report ID', 'wp-slimstat');
                 }
 
-                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__));
+                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__) ,true, SLIMSTAT_ANALYTICS_VERSION);
                 wp_enqueue_style('wp-slimstat-frontend');
 
                 wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
@@ -1094,7 +1097,6 @@ class wp_slimstat
             'use_separate_menu'                      => 'no',
             'add_posts_column'                       => 'no',
             'posts_column_pageviews'                 => 'on',
-            'hide_addons'                            => 'no',
 
             // General - Database
             'auto_purge'                             => 0,
@@ -1954,6 +1956,20 @@ class wp_slimstat
         return strip_tags(trim(base64_decode(strtr($_input, '._-', '+/='))));
     }
     // end _base64_url_encode/decode
+
+    /**
+     * Check if slimstat pro plugin is installed
+     */
+    public static function pro_is_installed($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')
+    {
+        include_once(ABSPATH . 'wp-admin/includes/plugin.php');
+
+        if (is_plugin_active($pluginSlug)) {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 // end of class declaration
@@ -2080,6 +2096,7 @@ if (function_exists('add_action')) {
 
     // From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
     if (is_admin()) {
+        include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
         include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
         register_activation_hook(__FILE__, array('wp_slimstat_admin', 'init_environment'));
         register_deactivation_hook(__FILE__, array('wp_slimstat_admin', 'deactivate'));

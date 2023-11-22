@@ -78,13 +78,13 @@ class wp_slimstat_admin
                 'capability'      => 'can_admin',
                 'callback'        => array(__CLASS__, 'wp_slimstat_include_config')
             ),
-            /*'slimaddons' => array(
+            'slimpro'    => array(
                 'is_report_group' => false,
                 'show_in_sidebar' => current_user_can('manage_options'),
-                'title'           => __('Add-ons', 'wp-slimstat'),
+                'title'           => apply_filters('slimstat_upgrade_to_pro_title', __('Upgrade to Pro', 'wp-slimstat')),
                 'capability'      => 'can_admin',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_addons')
-            ),*/
+                'callback'        => array(__CLASS__, 'wp_slimstat_pro')
+            ),
             'dashboard'  => array(
                 'is_report_group' => true,
                 'show_in_sidebar' => false,
@@ -103,7 +103,7 @@ class wp_slimstat_admin
         self::$screens_info  = apply_filters('slimstat_screens_info', self::$screens_info);
 
         // If the plugin was network activated, the tables might not have been created for this specific site
-        $table_list = wp_slimstat::$wpdb->get_results("SHOW TABLES LIKE '{$GLOBALS[ 'wpdb' ]->prefix}slim_stats'");
+        $table_list = wp_slimstat::$wpdb->get_results("SHOW TABLES LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'");
         if (empty($table_list)) {
             self::init_environment();
         }
@@ -235,19 +235,38 @@ class wp_slimstat_admin
             add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
         }
 
-        // Hide add-ons
-        if (wp_slimstat::$settings['hide_addons'] == 'on') {
-            add_filter('all_plugins', array(__CLASS__, 'hide_addons'));
-        }
-
         // Schedule a daily cron job to purge the data
         if (!wp_next_scheduled('wp_slimstat_purge')) {
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
 
+        // Add style to the admin menu
+        add_action('admin_head', array(__CLASS__, 'styling_admin_menu'));
+
+        // Init feedback
         self::initFeedback();
+
+        // Add lock export button in report header
+        add_filter('slimstat_report_header_buttons', function ($_header_buttons, $_report_id) {
+            return self::add_lock_export_button($_header_buttons, $_report_id);
+        }, 10, 2);
+
+        // Add header to settings and customize and settings page
+        add_action('admin_notices', function () {
+            self::add_header();
+        });
     }
     // END: init
+
+    /**
+     * Add style to the admin menu
+     */
+    public static function styling_admin_menu()
+    {
+        if (!wp_slimstat::pro_is_installed()) {
+            echo '<style> a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;} </style>';
+        }
+    }
 
     /**
      * Clears the purge cron job
@@ -375,11 +394,11 @@ class wp_slimstat_admin
 				dt INT(10) UNSIGNED DEFAULT 0,
 
 				CONSTRAINT PRIMARY KEY (id),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_dt_idx (dt),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) ),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) ),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) ),
-				INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
+				INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
 			) COLLATE utf8_general_ci $use_innodb";
 
         // This table will track outbound links (clicks on links to external sites)
@@ -461,11 +480,11 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['expand_details']);
 
             // Add table indexes for improved performance
-            $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'");
+            $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$GLOBALS['wpdb']->prefix}stats_resource_idx'");
             if (empty($check_index)) {
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx( resource( 20 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_browser_idx( browser( 10 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_searchterms_idx( searchterms( 15 ) )");
+                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )");
+                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )");
+                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )");
             }
 
             wp_slimstat::$settings['db_indexes'] = 'on';
@@ -475,7 +494,7 @@ class wp_slimstat_admin
         // --- Updates for version 4.8.4.1 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
             // Goodbye, browser plugins
-            wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats DROP COLUMN plugins");
+            wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP COLUMN plugins");
 
             // Hello there, fingerprint and timezone offset
             $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language");
@@ -489,10 +508,10 @@ class wp_slimstat_admin
         if (version_compare(wp_slimstat::$settings['version'], '4.8.8', '<')) {
             // Adding new index on the 'fingerprint' column for improved performance
             if (wp_slimstat::$settings['db_indexes'] == 'on') {
-                $my_wpdb->query("ALTER TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ADD INDEX {$GLOBALS[ 'wpdb' ]->prefix}stats_fingerprint_idx( fingerprint( 20 ) )");
+                $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )");
             }
 
-            $my_wpdb->query("UPDATE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%'");
+            $my_wpdb->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%'");
         }
 
         // Now we can update the version stored in the database
@@ -553,7 +572,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_stylesheet($_hook = '')
     {
-        wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)));
+        wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)), false, SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_style('wp-slimstat');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
@@ -602,6 +621,8 @@ class wp_slimstat_admin
      */
     public static function add_menus($_s = '')
     {
+        global $submenu;
+
         // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
         if (is_network_admin()) {
@@ -654,6 +675,12 @@ class wp_slimstat_admin
                     $a_screen_info['callback']
                 );
             }
+        }
+
+        if (!empty($submenu[$parent][7][4])) {
+            $submenu[$parent][7][4] .= ' wp-slimstat-upgrade-to-pro';
+        } else {
+            $submenu[$parent][7][4] = 'wp-slimstat-upgrade-to-pro';
         }
 
         // Load styles and Javascript needed to make the reports look nice and interactive
@@ -747,12 +774,18 @@ class wp_slimstat_admin
     // END: wp_slimstat_include_addons
 
     /**
-     * Includes the screen to manage add-ons
+     * Handles the upgrade to pro from the free version
      */
-    public static function wp_slimstat_include_addons()
+    public static function wp_slimstat_pro()
     {
-        include(dirname(__FILE__) . '/view/addons.php');
+        if (wp_slimstat::pro_is_installed()) {
+            // Redirect to layout page
+            wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
+        }
+        
+        include(dirname(__FILE__) . '/view/upgrade-pro.php');
     }
+
     // END: wp_slimstat_include_addons
 
     /**
@@ -793,7 +826,7 @@ class wp_slimstat_admin
 
         $sql = wp_slimstat::$wpdb->prepare("
 			SELECT resource, COUNT( DISTINCT $column ) as counthits 
-			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE " . $where . "
 			GROUP BY resource
 			LIMIT 0, " . wp_slimstat_db::$filters_normalized['misc']['limit_results'], self::$data_for_column['sql']);
@@ -847,22 +880,6 @@ class wp_slimstat_admin
     }
 
     // END: add_column
-
-    public static function hide_addons($_plugins = array())
-    {
-        if (!is_array($_plugins)) {
-            return $_plugins;
-        }
-
-        foreach ($_plugins as $a_plugin_slug => $a_plugin_info) {
-            if (strpos($a_plugin_slug, 'wp-slimstat-') !== false && is_plugin_active($a_plugin_slug)) {
-                unset($_plugins[$a_plugin_slug]);
-            }
-        }
-
-        return $_plugins;
-    }
-    // END: hide_addons
 
     /**
      * Displays an alert message
@@ -945,7 +962,7 @@ class wp_slimstat_admin
         if (!$current_user_can_delete || !wp_verify_nonce($_POST['security'], 'meta-box-order')) {
             return;
         }
-        $my_wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.id = $pageview_id");
+        $my_wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.id = $pageview_id");
         exit();
     }
     // END: delete_pageview
@@ -1151,8 +1168,8 @@ class wp_slimstat_admin
             if (stristr($screen->id, 'slimview')) {
                 wp_enqueue_script('feedbackbird-app-script', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS');
                 wp_add_inline_script('feedbackbird-app-script', sprintf('var feedbackBirdObject = %s;', json_encode([
-                    'user_email' => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
-                    'meta'       => [
+                    'user_email'    => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
+                    'meta'          => [
                         'php_version'    => PHP_VERSION,
                         'active_plugins' => array_map(function ($plugin, $pluginPath) {
                             return [
@@ -1161,6 +1178,9 @@ class wp_slimstat_admin
                                 'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
                             ];
                         }, get_plugins(), array_keys(get_plugins())),
+                    ],
+                    'customization' => [
+                        "color" => "#e8294c"
                     ]
                 ])));
 
@@ -1172,6 +1192,61 @@ class wp_slimstat_admin
                 }, 10, 3);
             }
         });
+    }
+
+    public static function get_template($template, $args = array(), $return = false)
+    {
+        // Push Args
+        if (is_array($args) && isset($args)) :
+            extract($args);
+        endif;
+
+        // Check Load single file or array list
+        if (is_string($template)) {
+            $template = explode(" ", $template);
+        }
+
+        // Load File
+        foreach ($template as $file) {
+            $template_file = WP_PLUGIN_DIR . "/wp-slimstat/admin/view/partials/{$file}.php";
+
+            if (!file_exists($template_file)) {
+                continue;
+            }
+
+            if ($return) {
+                ob_start();
+                require $template_file;
+
+                return ob_get_clean();
+            }
+
+            // include File
+            include $template_file;
+        }
+    }
+
+    public static function add_lock_export_button($_header_buttons = '', $_report_id = '')
+    {
+        // If the pro is active don't show it
+        $pro_plugin_slug = 'wp-slimstat-pro/wp-slimstat-pro.php';
+        if (is_plugin_active($pro_plugin_slug)) {
+            return $_header_buttons;
+        }
+
+        // Define which reports get this new functionality
+        if (empty(\wp_slimstat_reports::$reports[$_report_id]['callback_args']) || !array_key_exists('raw', \wp_slimstat_reports::$reports[$_report_id]['callback_args'])) {
+            return $_header_buttons;
+        }
+
+        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+    }
+
+    public static function add_header()
+    {
+        if (isset($_GET['page']) && ($_GET['page'] === 'slimlayout' || $_GET['page'] === 'slimconfig')) {
+            return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
+        }
     }
 }
 // END: class declaration

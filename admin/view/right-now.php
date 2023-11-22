@@ -88,9 +88,9 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
         // Country
         if (!empty($results[$i]['country']) && $results[$i]['country'] != 'xx') {
-            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country equals ' . $results[$i]['country']) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.png' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-' . $results[$i]['country']) . "'></a>";
+            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country equals ' . $results[$i]['country']) . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/{$results[ $i ][ 'country' ]}.svg' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-' . $results[$i]['country']) . "'></a>";
         } else {
-            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country is_empty #') . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.png' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-') . "'></a>";
+            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country is_empty #') . "'><img class='slimstat-tooltip-trigger' src='$plugin_url/assets/images/flags/xx.svg' width='16' height='16' title='" . wp_slimstat_i18n::get_string('c-') . "'></a>";
         }
 
         // City, if tracked
@@ -243,11 +243,13 @@ for ($i = 0; $i < $count_page_results; $i++) {
     }
 
     // Avoid XSS attacks through the referer URL
-    $results[$i] ['referer'] = str_replace(array('<', '>', '%22', '%27', '\'', '"', '%3C', '%3E'), array('&lt;', '&gt;', '', '', '', '', '&lt;', '&gt;'), urldecode($results[$i] ['referer']));
+    if ($results[$i]['referer']) {
+        $results[$i]['referer'] = str_replace(array('<', '>', '%22', '%27', '\'', '"', '%3C', '%3E'), array('&lt;', '&gt;', '', '', '', '', '&lt;', '&gt;'), urldecode($results[$i]['referer']));
+    }
 
     $login_logout = '';
     if (!$is_dashboard) {
-        $domain                      = parse_url($results[$i] ['referer']);
+        $domain                      = parse_url($results[$i]['referer']);
         $domain                      = !empty($domain['host']) ? $domain['host'] : __('Invalid Referrer', 'wp-slimstat');
         $results[$i]['referer']      = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms'])) ? "<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this referrer in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . "' href='{$results[$i]['referer']}'></a> $domain" : '';
         $results[$i]['content_type'] = !empty($results[$i]['content_type']) ? "<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . "'>{$results[$i]['content_type']}</a> " : '';

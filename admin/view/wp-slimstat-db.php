@@ -254,8 +254,8 @@ class wp_slimstat_db
                 $column_with_alias = $_slim_stats_table_alias . '.' . $column_with_alias;
             }
 
-            $filter_empty     = "$column_with_alias " . ((self::$columns_names[$_column] [1] == 'varchar') ? 'IS NULL' : '= 0');
-            $filter_not_empty = "$column_with_alias " . ((self::$columns_names[$_column] [1] == 'varchar') ? 'IS NOT NULL' : '<> 0');
+            $filter_empty     = "$column_with_alias " . ((self::$columns_names[$_column][1] == 'varchar') ? 'IS NULL' : '= 0');
+            $filter_not_empty = "$column_with_alias " . ((self::$columns_names[$_column][1] == 'varchar') ? 'IS NOT NULL' : '<> 0');
 
             if (strpos($_where, $filter_empty) === false && strpos($_where, $filter_not_empty) === false) {
                 $_where = "$filter_not_empty AND $_where";
@@ -270,8 +270,8 @@ class wp_slimstat_db
      */
     public static function get_single_where_clause($_dimension = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '')
     {
-        $filter_empty     = (!empty(self::$columns_names[$_dimension]) && self::$columns_names[$_dimension] [1] == 'varchar') ? 'IS NULL' : '= 0';
-        $filter_not_empty = (!empty(self::$columns_names[$_dimension]) && self::$columns_names[$_dimension] [1] == 'varchar') ? 'IS NOT NULL' : '<> 0';
+        $filter_empty     = (!empty(self::$columns_names[$_dimension]) && self::$columns_names[$_dimension][1] == 'varchar') ? 'IS NULL' : '= 0';
+        $filter_not_empty = (!empty(self::$columns_names[$_dimension]) && self::$columns_names[$_dimension][1] == 'varchar') ? 'IS NOT NULL' : '<> 0';
 
         $column_with_alias = $_dimension;
         if (!empty($_slim_stats_table_alias)) {

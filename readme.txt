@@ -4,22 +4,32 @@ Tags: analytics, statistics, counter, tracking, reports, geolocation, online use
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
-Tested up to: 6.3
-Stable tag: 5.0.10.2
+Tested up to: 6.4
+Stable tag: 5.1
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
-= Main features =
+= Main Features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **GDPR**: fully compliant with the GDPR European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
-* **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via premium add-ons).
+* **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
 * **Privacy**: hash IP addresses to protect your users' privacy.
 * **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
 * **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](https://www.ammap.com/)).
+
+= Pro Pack Features =
+* **Network Analytics**: Enable a network-wide view of your reports and settings.
+* **Email Reports**: Receive your reports directly in your mailbox.
+* **Export to Excel**: Download your reports as CSV files.
+* **Heatmap**: Display a heatmap layer of the most clicked areas on your website.
+* **User Overview**: Monitor your registered users by tracking their activities and time on site.
+* **MaxMind Integration**: Connect to MaxMind's Geolocation API to retrieve detailed information about your visitors.
+* **Custom DB**: Use an external database to store all the information about your visitors.
+* **Extended Overview**: Add custom columns to the User Overview widget and export file.
 
 = Requirements =
 * WordPress 5.0+
@@ -42,12 +52,24 @@ Track returning customers and registered users, monitor Javascript events, detec
 An extensive knowledge base is available on our [website](https://www.wp-slimstat.com/).
 
 == Screenshots ==
-1. **Overview** - Your website traffic at a glance
-2. **Real-Time** - A real-time view of your visitors' whereabouts
-3. **Settings** - Plenty of options to customize the plugin's behavior
-4. **Audiance** - See your visitors' full information
+1. **Real-Time** - A real-time view of your visitors' whereabouts
+2. **Overview** - Your website traffic at a glance
+3. **Audience** - See your visitors' full information
+4. **Site Analysis** - Provides insights into how visitors are using your website
+5. **Traffic Sources** - See where your visitors are coming from, such as search engines, social media, or referral websites
+6. **Customize widgets** - Allows you to customize the analytics widgets that are displayed in your Slimstat dashboard
+7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.1 =
+We're excited to announce the release of Slimstat v5.1! This update includes a big design change, as well as a number of new features and improvements.
+
+* [New] Improved layout and design. We've tidied up the design so it's clearer and more user-friendly. We've also chosen softer colors to make the design easier on the eyes.
+* [New] Add-Ons are back, but they've been formally collected into a version pack called [SlimstatPro](https://wp-slimstat.com/pricing).
+* [Fix] Plenty of improvements and error fixes.
+
+We still have some plans to make Slimstat better, so please keep your feedback coming, please [click here](https://wp-slimstat.com/1973/big-changes-slimstat-v5-1/) to read more.
+
 = 5.0.10.2 =
 * [Fix] The shortcode issues have been fixed
 * [Fix] Displaying the Access Log IPs have been fixed

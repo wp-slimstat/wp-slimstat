@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "watch": "watch \"npm run sass-compile\" ./admin/assets/scss",
+    "sass-compile": "concurrently \"node-sass admin/assets/scss/admin.scss admin/assets/css/admin.css --output-style compressed\""
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@babel/runtime-corejs2": "^7.0.0",
+    "breakpoint-sass": "^2.7.1",
+    "node-sass": "^8.0.0",
+    "watch": "^1.0.2",
+    "concurrently": "^8.2.0"
+  }
+}
