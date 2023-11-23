@@ -249,7 +249,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
     $login_logout = '';
     if (!$is_dashboard) {
-        $domain                      = parse_url($results[$i]['referer']);
+        $domain                      = parse_url($results[$i]['referer'] ? $results[$i]['referer'] : '');
         $domain                      = !empty($domain['host']) ? $domain['host'] : __('Invalid Referrer', 'wp-slimstat');
         $results[$i]['referer']      = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms'])) ? "<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this referrer in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . "' href='{$results[$i]['referer']}'></a> $domain" : '';
         $results[$i]['content_type'] = !empty($results[$i]['content_type']) ? "<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . "'>{$results[$i]['content_type']}</a> " : '';
@@ -271,7 +271,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
         // Login / Logout Event
         $login_logout = '';
-        if (strpos($results[$i]['notes'], 'loggedin:') !== false) {
+        if ($results[$i]['notes'] && strpos($results[$i]['notes'], 'loggedin:') !== false) {
             $exploded_notes = explode(';', $results[$i]['notes']);
             foreach ($exploded_notes as $a_note) {
                 if (strpos($a_note, 'loggedin:') === false) {
@@ -281,7 +281,8 @@ for ($i = 0; $i < $count_page_results; $i++) {
                 $login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __('User Logged In', 'wp-slimstat') . "'></i> " . str_replace('loggedin:', '', $a_note);
             }
         }
-        if (strpos($results[$i]['notes'], 'loggedout:') !== false) {
+
+        if ($results[$i]['notes'] && strpos($results[$i]['notes'], 'loggedout:') !== false) {
             $exploded_notes = explode(';', $results[$i]['notes']);
             foreach ($exploded_notes as $a_note) {
                 if (strpos($a_note, 'loggedout:') === false) {

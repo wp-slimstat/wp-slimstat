@@ -1604,6 +1604,11 @@ class wp_slimstat_reports
     {
         $query_details     = '';
         $search_terms_info = '';
+
+        if (!$_referer) {
+            $_referer = '';
+        }
+
         parse_str($_referer, $query_parse_str);
 
         if (!empty($query_parse_str['source']) && !$_serp_only) {
