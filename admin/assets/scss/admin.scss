@@ -309,7 +309,7 @@ $error: #ff3636;
   margin-right: 5px;
   vertical-align: middle;
   width: 16px;
-  filter: grayscale(100%);
+  filter: grayscale(40%);
   transition: 0.3s all ease-out;
 
   &:hover {
@@ -349,28 +349,29 @@ $error: #ff3636;
 
 [id^="slim_"] .header.is-search-engine,
 .little-color-box.is-search-engine {
-  background-color: #c1e751;
+  background-color: #E2DBFF;
   color: $grayOne;
 }
 
 [id^="slim_"] .header.is-direct,
 .little-color-box.is-direct {
+  background-color: $grayFive;
   color: #111;
 }
 
 [id^="slim_"] .header.is-known-user,
 .little-color-box.is-known-user {
-  background-color: $grayFive;
+  background-color: #DDF0FF;
 }
 
 [id^="slim_"] .header.is-known-visitor,
 .little-color-box.is-known-visitor {
-  background-color: #effd8c;
+  background-color: #FFE9C8;
 }
 
 [id^="slim_"] .header.is-spam,
 .little-color-box.is-spam {
-  background-color: #aab3ab;
+  background-color: #EEFF89;
   color: #222;
 }
 
@@ -2153,7 +2154,7 @@ x:-o-prefocus {
       padding: 10px 20px;
 
       &.header {
-        background-color: $grayFive;
+        //background-color: $grayFive;
         border: none;
       }
     }
