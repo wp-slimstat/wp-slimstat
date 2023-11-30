@@ -212,7 +212,7 @@ class wp_slimstat_admin
 
         // Dashboard Widgets
         if (wp_slimstat::$settings['add_dashboard_widgets'] == 'on') {
-            $request_length = strlen(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
+            $request_length = strlen($_SERVER['REQUEST_URI']);
             $temp           = $request_length - 10;
 
             if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && $temp <= $request_length && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false)) {
@@ -782,7 +782,7 @@ class wp_slimstat_admin
             // Redirect to layout page
             wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
         }
-        
+
         include(dirname(__FILE__) . '/view/upgrade-pro.php');
     }
 
