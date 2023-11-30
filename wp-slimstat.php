@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: Slimstat Analytics
+Plugin Name: SlimStat Analytics
 Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 5.1
+Version: 5.1.1
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
