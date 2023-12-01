@@ -63,7 +63,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Changelog ==
 = 5.1.1 =
 * [Enhancement] Ensured compatibility with PHP version 8.2.
-* [Improvement] Refined color scheme to enhance differentiation and visibility of new visitors.
+* [Enhancement] Refined color scheme to enhance differentiation and visibility of new visitors.
 * [Fix] An issue with handling multiple array parameters in URLs.
 
 = 5.1 =
