@@ -62,7 +62,8 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Changelog ==
 = 5.1.2 =
-*
+* [Fix] Fixed loading of Constants.php for users not logged in.
+* [Enhancement] Improved CSS color styles for new visitors.
 
 = 5.1.1 =
 * [Enhancement] Ensured compatibility with PHP version 8.2.
