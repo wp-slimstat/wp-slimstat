@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.4
-Stable tag: 5.1.1
+Stable tag: 5.1.2
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -61,9 +61,13 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.1.2 =
+* [Fix] Fixed loading of Constants.php for users not logged in.
+* [Enhancement] Improved CSS color styles for new visitors.
+
 = 5.1.1 =
 * [Enhancement] Ensured compatibility with PHP version 8.2.
-* [Improvement] Refined color scheme to enhance differentiation and visibility of new visitors.
+* [Enhancement] Refined color scheme to enhance differentiation and visibility of new visitors.
 * [Fix] An issue with handling multiple array parameters in URLs.
 
 = 5.1 =

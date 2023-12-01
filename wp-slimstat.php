@@ -3,7 +3,7 @@
 Plugin Name: SlimStat Analytics
 Plugin URI: https://wp-slimstat.com/
 Description: The leading web analytics plugin for WordPress
-Version: 5.1.1
+Version: 5.1.2
 Author: Jason Crouse, VeronaLabs
 Text Domain: wp-slimstat
 Domain Path: /languages
@@ -2094,9 +2094,10 @@ if (function_exists('add_action')) {
         add_action('wp_ajax_slimtrack', array('wp_slimstat', 'slimtrack_ajax'));
     }
 
+    include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
+
     // From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
     if (is_admin()) {
-        include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
         include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
         register_activation_hook(__FILE__, array('wp_slimstat_admin', 'init_environment'));
         register_deactivation_hook(__FILE__, array('wp_slimstat_admin', 'deactivate'));

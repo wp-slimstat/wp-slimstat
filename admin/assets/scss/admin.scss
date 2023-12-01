@@ -347,6 +347,11 @@ $error: #ff3636;
   width: 15px;
 }
 
+[id^="slim_"] .header{
+  background-color: $grayFive;
+  color: #111;
+}
+
 [id^="slim_"] .header.is-search-engine,
 .little-color-box.is-search-engine {
   background-color: #E2DBFF;
