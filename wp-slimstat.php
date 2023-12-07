@@ -2049,7 +2049,7 @@ class slimstat_widget extends WP_Widget
 
         <p>
             <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php _e('Optional filters', 'wp-slimstat'); ?></label>
-            <a href="https://slimstat.freshdesk.com/solution/articles/5000631833-what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
+            <a href="https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
             <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo trim(strip_tags($slimstat_widget_filters)) ?></textarea>
         </p>
         <?php
