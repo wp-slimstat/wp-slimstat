@@ -20,6 +20,15 @@ class wp_slimstat_admin
      */
     public static function init()
     {
+        // Redirect to the pro settings
+        add_action('admin_menu', function () {
+            if (isset($_GET['page']) && $_GET['page'] === 'slimpro' && wp_slimstat::pro_is_installed()) {
+                // Redirect to layout page before any content is sent
+                wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
+                exit();
+            }
+        });
+
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', array('wp_slimstat_admin', 'handle_reset_layout'));
 
@@ -779,11 +788,6 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_pro()
     {
-        if (wp_slimstat::pro_is_installed()) {
-            // Redirect to layout page
-            wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
-        }
-
         include(dirname(__FILE__) . '/view/upgrade-pro.php');
     }
 
