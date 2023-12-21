@@ -22,8 +22,7 @@ class wp_slimstat_admin
     {
         // Redirect to the pro settings
         add_action('admin_menu', function () {
-            if (isset($_GET['page']) && $_GET['page'] === 'slimpro' && wp_slimstat::pro_is_installed()) {
-                // Redirect to layout page before any content is sent
+            if (is_admin() && isset($_GET['page']) && $_GET['page'] === 'slimpro' && wp_slimstat::pro_is_installed()) {
                 wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
                 exit();
             }
