@@ -17,7 +17,6 @@ if (!empty(wp_slimstat::$settings)) {
 
 class wp_slimstat
 {
-    public static $version = '5.0.10.2';
     public static $settings = array();
 
     public static $wpdb = '';
@@ -1080,7 +1079,7 @@ class wp_slimstat
     public static function init_options()
     {
         return array(
-            'version'                                => self::$version,
+            'version'                                => SLIMSTAT_ANALYTICS_VERSION,
             'secret'                                 => wp_hash(uniqid(time(), true)),
             'browscap_last_modified'                 => 0,
 
@@ -1278,7 +1277,7 @@ class wp_slimstat
         $params = apply_filters('slimstat_js_params', $params);
 
         if (self::$settings['enable_cdn'] == 'on') {
-            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . self::$version . '/wp-slimstat.min.js', array(), null, true);
+            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', array(), null, true);
         } else {
             $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
             wp_register_script('wp_slimstat', plugins_url("/wp-slimstat{$jstracker_suffix}.js", __FILE__), array(), null, true);
@@ -1365,7 +1364,7 @@ class wp_slimstat
             $_links[] = '<a href="' . $download_url . '">Download ZIP</a>';
         } else {
             $url      = 'https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode(self::$settings['addon_licenses']['wp-slimstat-' . $a_clean_slug]);
-            $response = wp_safe_remote_get($url, array('timeout' => 300, 'user-agent' => 'Slimstat Analytics/' . self::$version . '; ' . home_url()));
+            $response = wp_safe_remote_get($url, array('timeout' => 300, 'user-agent' => 'Slimstat Analytics/' . SLIMSTAT_ANALYTICS_VERSION . '; ' . home_url()));
 
             if (!is_wp_error($response) && 200 == wp_remote_retrieve_response_code($response)) {
                 $data = @json_decode($response['body']);
