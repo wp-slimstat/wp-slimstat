@@ -199,7 +199,7 @@ class wp_slimstat_admin
             }
 
             // Update the table structure and options, if needed
-            if (!empty(wp_slimstat::$settings['version']) && wp_slimstat::$settings['version'] != wp_slimstat::$version) {
+            if (!empty(wp_slimstat::$settings['version']) && wp_slimstat::$settings['version'] != SLIMSTAT_ANALYTICS_VERSION) {
                 add_action('admin_init', array(__CLASS__, 'update_tables_and_options'));
             }
         }
@@ -452,7 +452,7 @@ class wp_slimstat_admin
 
         // Let's save the version in the database
         if (empty(wp_slimstat::$settings['version'])) {
-            wp_slimstat::$settings['version'] = wp_slimstat::$version;
+            wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         }
     }
     // END: init_tables
@@ -524,7 +524,7 @@ class wp_slimstat_admin
         }
 
         // Now we can update the version stored in the database
-        wp_slimstat::$settings['version']            = wp_slimstat::$version;
+        wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
 
