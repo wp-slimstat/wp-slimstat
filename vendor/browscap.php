@@ -147,7 +147,7 @@ class slim_browser {
 				wp_slimstat::update_option( 'slimstat_options', wp_slimstat::$settings );
 
 				// Now check the version number on the server
-				$response = wp_remote_get( 'https://raw.githubusercontent.com/slimstat/browscap-cache/master/version.txt' );
+				$response = wp_remote_get( 'https://raw.githubusercontent.com/wp-slimstat/browscap-cache/master/version.txt' );
 				if ( !is_array( $response ) || is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
 					return array( 5, __( 'There was an error checking the remote library version. Please try again later.', 'wp-slimstat' ) );
 				}
@@ -161,7 +161,7 @@ class slim_browser {
 
 		// Download the most recent version of our pre-processed Browscap database
 		if ( $download_remote_file ) {
-			$response = wp_safe_remote_get( 'https://github.com/slimstat/browscap-cache/archive/master.zip', array( 'timeout' => 300, 'stream' => true, 'filename' => $browscap_zip ) );
+			$response = wp_safe_remote_get( 'https://github.com/wp-slimstat/browscap-cache/archive/master.zip', array( 'timeout' => 300, 'stream' => true, 'filename' => $browscap_zip ) );
 
 			if ( !file_exists( $browscap_zip ) ) {
 				return array( 6, __( 'There was an error saving the Browscap data file on your server. Please check your folder permissions.', 'wp-slimstat' ) );
