@@ -1,8 +1,8 @@
 <?php
 
-namespace MatthiasMullie\Scrapbook\Adapters;
+declare(strict_types=1);
 
-use PDO;
+namespace MatthiasMullie\Scrapbook\Adapters;
 
 /**
  * PostgreSQL adapter. Basically just a wrapper over \PDO, but in an
@@ -14,23 +14,40 @@ use PDO;
  */
 class PostgreSQL extends SQL
 {
-    /**
-     * @var bool
-     */
-    protected $conflictSupport = true;
+    protected bool $conflictSupport = true;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function flush()
+    public function flush(): bool
     {
-        return false !== $this->client->exec("TRUNCATE TABLE $this->table");
+        return $this->client->exec("TRUNCATE TABLE $this->table") !== false;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function set($key, $value, $expire = 0)
+    public function get(string $key, mixed &$token = null): mixed
+    {
+        $return = parent::get($key, $token);
+
+        if ($token !== null) {
+            // BYTEA data return streams - we actually need the data in
+            // serialized format, not some silly stream
+            $token = $this->serialize($return);
+        }
+
+        return $return;
+    }
+
+    public function getMulti(array $keys, array &$tokens = null): array
+    {
+        $return = parent::getMulti($keys, $tokens);
+
+        foreach ($return as $key => $value) {
+            // BYTEA data return streams - we actually need the data in
+            // serialized format, not some silly stream
+            $tokens[$key] = $this->serialize($value);
+        }
+
+        return $return;
+    }
+
+    public function set(string $key, mixed $value, int $expire = 0): bool
     {
         if (!$this->conflictSupport) {
             return parent::set($key, $value, $expire);
@@ -48,57 +65,22 @@ class PostgreSQL extends SQL
         );
 
         $statement->bindParam(':key', $key);
-        $statement->bindParam(':value', $serialized, PDO::PARAM_LOB, strlen($serialized));
+        $statement->bindParam(':value', $serialized, \PDO::PARAM_LOB, strlen($serialized));
         $statement->bindParam(':expire', $expiration);
         $statement->execute();
 
         // ON CONFLICT is not supported in versions < 9.5, in which case we'll
         // have to fall back on add/replace
-        if ('42601' === $statement->errorCode()) {
+        if ($statement->errorCode() === '42601') {
             $this->conflictSupport = false;
 
             return $this->set($key, $value, $expire);
         }
 
-        return 1 === $statement->rowCount();
+        return $statement->rowCount() === 1;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get($key, &$token = null)
-    {
-        $return = parent::get($key, $token);
-
-        if (null !== $token) {
-            // BYTEA data return streams - we actually need the data in
-            // serialized format, not some silly stream
-            $token = $this->serialize($return);
-        }
-
-        return $return;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getMulti(array $keys, array &$tokens = null)
-    {
-        $return = parent::getMulti($keys, $tokens);
-
-        foreach ($return as $key => $value) {
-            // BYTEA data return streams - we actually need the data in
-            // serialized format, not some silly stream
-            $tokens[$key] = $this->serialize($value);
-        }
-
-        return $return;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function init()
+    protected function init(): void
     {
         $this->client->exec(
             "CREATE TABLE IF NOT EXISTS $this->table (
@@ -110,10 +92,7 @@ class PostgreSQL extends SQL
         $this->client->exec("CREATE INDEX IF NOT EXISTS e_index ON $this->table (e)");
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function unserialize($value)
+    protected function unserialize(mixed $value): mixed
     {
         // BYTEA data return streams. Even though it's not how init() will
         // configure the DB by default, it could be used instead!

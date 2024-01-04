@@ -9,6 +9,7 @@ use BrowscapPHP\Data\PropertyFormatter;
 use BrowscapPHP\Data\PropertyHolder;
 use BrowscapPHP\Helper\QuoterInterface;
 use JsonException;
+use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use UnexpectedValueException;
 
@@ -34,14 +35,18 @@ final class GetData implements GetDataInterface
      */
     private BrowscapCacheInterface $cache;
 
+    /**
+     * a logger instance
+     */
+    private LoggerInterface $logger;
+
     private QuoterInterface $quoter;
 
-    /**
-     * @throws void
-     */
-    public function __construct(BrowscapCacheInterface $cache, QuoterInterface $quoter)
+    /** @throws void */
+    public function __construct(BrowscapCacheInterface $cache, LoggerInterface $logger, QuoterInterface $quoter)
     {
         $this->cache  = $cache;
+        $this->logger = $logger;
         $this->quoter = $quoter;
     }
 
@@ -113,9 +118,28 @@ final class GetData implements GetDataInterface
 
         try {
             if (! $this->cache->hasItem('browscap.iniparts.' . $subkey, true)) {
+                $this->logger->debug(
+                    sprintf(
+                        'cache key "browscap.iniparts.%s" for pattern "%s" not found',
+                        $subkey,
+                        $pattern,
+                    ),
+                );
+
                 return [];
             }
         } catch (InvalidArgumentException $e) {
+            $this->logger->error(
+                new \InvalidArgumentException(
+                    sprintf(
+                        'an error occured while checking inipart "browscap.iniparts.%s" in the cache',
+                        $subkey,
+                    ),
+                    0,
+                    $e,
+                ),
+            );
+
             return [];
         }
 
@@ -124,14 +148,41 @@ final class GetData implements GetDataInterface
         try {
             $file = $this->cache->getItem('browscap.iniparts.' . $subkey, true, $success);
         } catch (InvalidArgumentException $e) {
+            $this->logger->error(
+                new \InvalidArgumentException(
+                    sprintf(
+                        'an error occured while reading inipart "browscap.iniparts.%s" from the cache',
+                        $subkey,
+                    ),
+                    0,
+                    $e,
+                ),
+            );
+
             return [];
         }
 
         if (! $success) {
+            $this->logger->debug(
+                sprintf(
+                    'cache key "browscap.iniparts.%s" for pattern "%s" not found',
+                    $subkey,
+                    $pattern,
+                ),
+            );
+
             return [];
         }
 
         if (! is_array($file) || ! count($file)) {
+            $this->logger->debug(
+                sprintf(
+                    'cache key "browscap.iniparts.%s" for pattern "%s" was empty',
+                    $subkey,
+                    $pattern,
+                ),
+            );
+
             return [];
         }
 
@@ -145,6 +196,14 @@ final class GetData implements GetDataInterface
                 try {
                     $return = json_decode($patterns, true, 512, JSON_THROW_ON_ERROR);
                 } catch (JsonException $e) {
+                    $this->logger->error(
+                        sprintf(
+                            'data for cache key "browscap.iniparts.%s" for pattern "%s" are not valid json',
+                            $subkey,
+                            $pattern,
+                        ),
+                    );
+
                     return [];
                 }
 
@@ -153,7 +212,7 @@ final class GetData implements GetDataInterface
                 foreach (array_keys($return) as $property) {
                     $return[$property] = $propertyFormatter->formatPropertyValue(
                         $return[$property],
-                        (string) $property
+                        (string) $property,
                     );
                 }
 

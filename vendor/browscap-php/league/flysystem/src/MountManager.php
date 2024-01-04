@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace League\Flysystem;
 
+use DateTimeInterface;
+use Throwable;
+
+use function method_exists;
 use function sprintf;
 
 class MountManager implements FilesystemOperator
@@ -14,13 +18,31 @@ class MountManager implements FilesystemOperator
     private $filesystems = [];
 
     /**
+     * @var Config
+     */
+    private $config;
+
+    /**
      * MountManager constructor.
      *
      * @param array<string,FilesystemOperator> $filesystems
      */
-    public function __construct(array $filesystems = [])
+    public function __construct(array $filesystems = [], array $config = [])
     {
         $this->mountFilesystems($filesystems);
+        $this->config = new Config($config);
+    }
+
+    /**
+     * @param array<string,FilesystemOperator> $filesystems
+     */
+    public function extend(array $filesystems, array $config = []): MountManager
+    {
+        $clone = clone $this;
+        $clone->config = $this->config->extend($config);
+        $clone->mountFilesystems($filesystems);
+
+        return $clone;
     }
 
     public function fileExists(string $location): bool
@@ -30,8 +52,32 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->fileExists($path);
-        } catch (UnableToCheckFileExistence $exception) {
+        } catch (Throwable $exception) {
             throw UnableToCheckFileExistence::forLocation($location, $exception);
+        }
+    }
+
+    public function has(string $location): bool
+    {
+        /** @var FilesystemOperator $filesystem */
+        [$filesystem, $path] = $this->determineFilesystemAndPath($location);
+
+        try {
+            return $filesystem->fileExists($path) || $filesystem->directoryExists($path);
+        } catch (Throwable $exception) {
+            throw UnableToCheckExistence::forLocation($location, $exception);
+        }
+    }
+
+    public function directoryExists(string $location): bool
+    {
+        /** @var FilesystemOperator $filesystem */
+        [$filesystem, $path] = $this->determineFilesystemAndPath($location);
+
+        try {
+            return $filesystem->directoryExists($path);
+        } catch (Throwable $exception) {
+            throw UnableToCheckDirectoryExistence::forLocation($location, $exception);
         }
     }
 
@@ -128,7 +174,7 @@ class MountManager implements FilesystemOperator
         [$filesystem, $path] = $this->determineFilesystemAndPath($location);
 
         try {
-            $filesystem->write($path, $contents, $config);
+            $filesystem->write($path, $contents, $this->config->extend($config)->toArray());
         } catch (UnableToWriteFile $exception) {
             throw UnableToWriteFile::atLocation($location, $exception->reason(), $exception);
         }
@@ -138,7 +184,7 @@ class MountManager implements FilesystemOperator
     {
         /** @var FilesystemOperator $filesystem */
         [$filesystem, $path] = $this->determineFilesystemAndPath($location);
-        $filesystem->writeStream($path, $contents, $config);
+        $filesystem->writeStream($path, $contents, $this->config->extend($config)->toArray());
     }
 
     public function setVisibility(string $path, string $visibility): void
@@ -156,7 +202,7 @@ class MountManager implements FilesystemOperator
         try {
             $filesystem->delete($path);
         } catch (UnableToDeleteFile $exception) {
-            throw UnableToDeleteFile::atLocation($location, '', $exception);
+            throw UnableToDeleteFile::atLocation($location, $exception->reason(), $exception);
         }
     }
 
@@ -168,7 +214,7 @@ class MountManager implements FilesystemOperator
         try {
             $filesystem->deleteDirectory($path);
         } catch (UnableToDeleteDirectory $exception) {
-            throw UnableToDeleteDirectory::atLocation($location, '', $exception);
+            throw UnableToDeleteDirectory::atLocation($location, $exception->reason(), $exception);
         }
     }
 
@@ -178,7 +224,7 @@ class MountManager implements FilesystemOperator
         [$filesystem, $path] = $this->determineFilesystemAndPath($location);
 
         try {
-            $filesystem->createDirectory($path, $config);
+            $filesystem->createDirectory($path, $this->config->extend($config)->toArray());
         } catch (UnableToCreateDirectory $exception) {
             throw UnableToCreateDirectory::dueToFailure($location, $exception);
         }
@@ -196,8 +242,9 @@ class MountManager implements FilesystemOperator
             $sourcePath,
             $destinationPath,
             $source,
-            $destination
-        ) : $this->moveAcrossFilesystems($source, $destination);
+            $destination,
+            $config,
+        ) : $this->moveAcrossFilesystems($source, $destination, $config);
     }
 
     public function copy(string $source, string $destination, array $config = []): void
@@ -212,16 +259,53 @@ class MountManager implements FilesystemOperator
             $sourcePath,
             $destinationPath,
             $source,
-            $destination
+            $destination,
+            $config,
         ) : $this->copyAcrossFilesystem(
-            $config['visibility'] ?? null,
             $sourceFilesystem,
             $sourcePath,
             $destinationFilesystem,
             $destinationPath,
             $source,
-            $destination
+            $destination,
+            $config,
         );
+    }
+
+    public function publicUrl(string $path, array $config = []): string
+    {
+        /** @var FilesystemOperator $filesystem */
+        [$filesystem, $path] = $this->determineFilesystemAndPath($path);
+
+        if ( ! method_exists($filesystem, 'publicUrl')) {
+            throw new UnableToGeneratePublicUrl(sprintf('%s does not support generating public urls.', $filesystem::class), $path);
+        }
+
+        return $filesystem->publicUrl($path, $config);
+    }
+
+    public function temporaryUrl(string $path, DateTimeInterface $expiresAt, array $config = []): string
+    {
+        /** @var FilesystemOperator $filesystem */
+        [$filesystem, $path] = $this->determineFilesystemAndPath($path);
+
+        if ( ! method_exists($filesystem, 'temporaryUrl')) {
+            throw new UnableToGenerateTemporaryUrl(sprintf('%s does not support generating public urls.', $filesystem::class), $path);
+        }
+
+        return $filesystem->temporaryUrl($path, $expiresAt, $this->config->extend($config)->toArray());
+    }
+
+    public function checksum(string $path, array $config = []): string
+    {
+        /** @var FilesystemOperator $filesystem */
+        [$filesystem, $path] = $this->determineFilesystemAndPath($path);
+
+        if ( ! method_exists($filesystem, 'checksum')) {
+            throw new UnableToProvideChecksum(sprintf('%s does not support providing checksums.', $filesystem::class), $path);
+        }
+
+        return $filesystem->checksum($path, $this->config->extend($config)->toArray());
     }
 
     private function mountFilesystems(array $filesystems): void
@@ -257,7 +341,7 @@ class MountManager implements FilesystemOperator
     /**
      * @param string $path
      *
-     * @return array{0:FilesystemOperator, 1:string}
+     * @return array{0:FilesystemOperator, 1:string, 2:string}
      */
     private function determineFilesystemAndPath(string $path): array
     {
@@ -281,28 +365,36 @@ class MountManager implements FilesystemOperator
         string $sourcePath,
         string $destinationPath,
         string $source,
-        string $destination
+        string $destination,
+        array $config,
     ): void {
         try {
-            $sourceFilesystem->copy($sourcePath, $destinationPath);
+            $sourceFilesystem->copy($sourcePath, $destinationPath, $this->config->extend($config)->toArray());
         } catch (UnableToCopyFile $exception) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
         }
     }
 
     private function copyAcrossFilesystem(
-        ?string $visibility,
         FilesystemOperator $sourceFilesystem,
         string $sourcePath,
         FilesystemOperator $destinationFilesystem,
         string $destinationPath,
         string $source,
-        string $destination
+        string $destination,
+        array $config,
     ): void {
+        $config = $this->config->extend($config);
+        $retainVisibility = (bool) $config->get(Config::OPTION_RETAIN_VISIBILITY, true);
+        $visibility = $config->get(Config::OPTION_VISIBILITY);
+
         try {
-            $visibility = $visibility ?? $sourceFilesystem->visibility($sourcePath);
+            if ($visibility == null && $retainVisibility) {
+                $visibility = $sourceFilesystem->visibility($sourcePath);
+            }
+
             $stream = $sourceFilesystem->readStream($sourcePath);
-            $destinationFilesystem->writeStream($destinationPath, $stream, compact('visibility'));
+            $destinationFilesystem->writeStream($destinationPath, $stream, $visibility ? compact(Config::OPTION_VISIBILITY) : []);
         } catch (UnableToRetrieveMetadata | UnableToReadFile | UnableToWriteFile $exception) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
         }
@@ -313,19 +405,20 @@ class MountManager implements FilesystemOperator
         string $sourcePath,
         string $destinationPath,
         string $source,
-        string $destination
+        string $destination,
+        array $config,
     ): void {
         try {
-            $sourceFilesystem->move($sourcePath, $destinationPath);
+            $sourceFilesystem->move($sourcePath, $destinationPath, $this->config->extend($config)->toArray());
         } catch (UnableToMoveFile $exception) {
             throw UnableToMoveFile::fromLocationTo($source, $destination, $exception);
         }
     }
 
-    private function moveAcrossFilesystems(string $source, string $destination): void
+    private function moveAcrossFilesystems(string $source, string $destination, array $config = []): void
     {
         try {
-            $this->copy($source, $destination);
+            $this->copy($source, $destination, $config);
             $this->delete($source);
         } catch (UnableToCopyFile | UnableToDeleteFile $exception) {
             throw UnableToMoveFile::fromLocationTo($source, $destination, $exception);
