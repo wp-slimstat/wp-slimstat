@@ -586,7 +586,7 @@ if (version_compare(PHP_VERSION, '7.4', '>=')) {
     $enable_browscap = array('enable_browscap' => array(
         'title'       => __('Browscap Library', 'wp-slimstat'),
         'type'        => 'toggle',
-        'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (!empty(slim_browser::$browscap_local_version) ? ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . slim_browser::$browscap_local_version . '</strong>') : '')
+        'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (!empty(\SlimStat\Utils\Browscap::$browscap_local_version) ? ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Utils\Browscap::$browscap_local_version . '</strong>') : '')
     ));
 
     $settings[6]['rows'] = array_slice($settings[6]['rows'], 0, 7, true) + $enable_browscap + array_slice($settings[6]['rows'], 7, NULL, true);
@@ -653,8 +653,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             if ($_POST['options']['enable_maxmind'] == 'on'
                 && wp_slimstat::$settings['enable_maxmind'] == 'no'
                 && wp_slimstat::$settings['maxmind_license_key'] != '') {
-                include_once(plugin_dir_path(dirname(dirname(__FILE__))) . 'vendor/maxmind.php');
-                $error = maxmind_geolite2_connector::download_maxmind_database();
+                $error = \SlimStat\Utils\MaxMind::download_maxmind_database();
 
                 if (empty($error)) {
                     $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
@@ -685,7 +684,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         // Browscap Library
         if (!empty($_POST['options']['enable_browscap'])) {
             if ($_POST['options']['enable_browscap'] == 'on' && wp_slimstat::$settings['enable_browscap'] == 'no') {
-                $error = slim_browser::update_browscap_database(true);
+                $error = \SlimStat\Utils\Browscap::update_browscap_database(true);
 
                 if ($error[0] == 0) {
                     wp_slimstat::$settings['enable_browscap'] = 'on';
