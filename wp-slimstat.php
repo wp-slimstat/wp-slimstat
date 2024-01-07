@@ -1975,6 +1975,27 @@ class wp_slimstat
 
         return false;
     }
+
+    /**
+     * create upload directory
+     */
+    public static function create_upload_directory()
+    {
+        $upload_dir      = self::$upload_dir;
+        wp_mkdir_p($upload_dir);
+
+        /**
+         * Create .htaccess to avoid public access.
+         */
+        if (is_dir($upload_dir) and is_writable($upload_dir)) {
+            $htaccess_file = path_join($upload_dir, '.htaccess');
+
+            if (!file_exists($htaccess_file) and $handle = @fopen($htaccess_file, 'w')) {
+                fwrite($handle, "Deny from all\n");
+                fclose($handle);
+            }
+        }
+    }
 }
 
 // end of class declaration

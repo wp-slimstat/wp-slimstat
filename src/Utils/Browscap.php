@@ -120,7 +120,7 @@ class Browscap {
 
 		// Create the folder, if it doesn't exist
 		if ( !file_exists( wp_slimstat::$upload_dir ) ) {
-			@mkdir( wp_slimstat::$upload_dir );
+			wp_slimstat::create_upload_directory();
 		}
 
 		$download_remote_file = $_force_download;

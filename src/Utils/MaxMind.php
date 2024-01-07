@@ -55,7 +55,7 @@ class MaxMind {
 
 		// Create the folder, if it doesn't exist
 		if ( !file_exists( dirname( $maxmind_path ) ) ) {
-			mkdir( dirname( $maxmind_path ) );
+			wp_slimstat::create_upload_directory();
 		}
 
 		// Download the most recent database directly from MaxMind's repository
