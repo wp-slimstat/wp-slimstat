@@ -16,7 +16,7 @@ if (!empty(wp_slimstat::$settings)) {
 }
 
 // check if composer autoloader exists
-if(!file_exists(__DIR__ . '/vendor/autoload.php')) {
+if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
     wp_die('SlimStat Analytics requires the composer autoloader to be installed. Please run composer install in the plugin directory.');
 }
 
@@ -117,8 +117,8 @@ class wp_slimstat
         // Shortcodes
         add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
 
-        // Include our browser detector library
-        add_action('init', array('SlimStat\Utils\Browscap', 'init'));
+        // Init the plugin functionality
+        add_action('init', array(__CLASS__, 'init_plugin'));
 
         // REST API Support
         add_action('rest_api_init', array(__CLASS__, 'register_rest_route'));
@@ -786,7 +786,7 @@ class wp_slimstat
                     return __('Invalid Report ID', 'wp-slimstat');
                 }
 
-                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__) ,true, SLIMSTAT_ANALYTICS_VERSION);
+                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__), true, SLIMSTAT_ANALYTICS_VERSION);
                 wp_enqueue_style('wp-slimstat-frontend');
 
                 wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
@@ -913,6 +913,15 @@ class wp_slimstat
         return $output;
     }
     // end slimstat_shortcode
+
+    public static function init_plugin()
+    {
+        // Include our browser detector library
+        \SlimStat\Utils\Browscap::init();
+
+        // Make sure the upload directory is exist and is protected.
+        self::create_upload_directory();
+    }
 
     /**
      * Opens given domains during CORS requests to admin-ajax.php
@@ -1981,7 +1990,7 @@ class wp_slimstat
      */
     public static function create_upload_directory()
     {
-        $upload_dir      = self::$upload_dir;
+        $upload_dir = self::$upload_dir;
         wp_mkdir_p($upload_dir);
 
         /**
