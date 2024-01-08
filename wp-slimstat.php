@@ -17,7 +17,7 @@ if (!empty(wp_slimstat::$settings)) {
 
 // check if composer autoloader exists
 if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
-    wp_die('SlimStat Analytics requires the composer autoloader to be installed. Please run composer install in the plugin directory.');
+    return;
 }
 
 // include the autoloader if it exists
