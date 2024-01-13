@@ -1737,6 +1737,11 @@ class wp_slimstat_reports
             $home_url      = get_home_url();
             $relative_home = parse_url($home_url, PHP_URL_PATH);
 
+            // PHP ^v8 compatibility
+            if (!$relative_home) {
+                $relative_home = '';
+            }
+
             $all_terms = get_terms('category');
             foreach ($all_terms as $a_term) {
                 $term_link = get_term_link($a_term, 'category');
