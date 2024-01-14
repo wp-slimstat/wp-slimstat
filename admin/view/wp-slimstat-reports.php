@@ -1580,8 +1580,8 @@ class wp_slimstat_reports
         }
 
         $path_slimstat = dirname(dirname(__FILE__));
-        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), array(), '1.5.1', false);
-        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), array(), '1.5.1', false);
+        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
+        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
         ?>
 
         <div id="map_slim_p6_01" style="height: 100%"></div>
