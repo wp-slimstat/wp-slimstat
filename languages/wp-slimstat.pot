@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-01-04T10:25:07+00:00\n"
+"POT-Creation-Date: 2024-01-14T17:51:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.9.0\n"
 "X-Domain: wp-slimstat\n"
@@ -424,7 +424,7 @@ msgid "Custom CSS"
 msgstr ""
 
 #: admin/config/index.php:301
-msgid "Enter your own stylesheet definitions to customize the way your reports look. <a href='https://wp-slimstat.com/resources/how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-e' target='_blank'>Check our FAQs</a> for more information on how to use this option."
+msgid "Enter your own stylesheet definitions to customize the way your reports look. <a href='https://wp-slimstat.com/faq/how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-engines-etc/' target='_blank'>Check our FAQs</a> for more information on how to use this option."
 msgstr ""
 
 #: admin/config/index.php:304
@@ -580,7 +580,7 @@ msgid "Operating Systems"
 msgstr ""
 
 #: admin/config/index.php:401
-msgid "Enter a list of operating system codes that should not be tracked. Please refer to <a href=\"https://wp-slimstat.com/resources/what-are-the-operating-system-codes-used-by-slimstat-\" target=\"_blank\">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards."
+msgid "Enter a list of operating system codes that should not be tracked. Please refer to <a href=\"https://wp-slimstat.com/knowledge-base/\" target=\"_blank\">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards."
 msgstr ""
 
 #: admin/config/index.php:406
@@ -663,7 +663,7 @@ msgstr ""
 
 #: admin/config/index.php:481
 #: admin/config/index.php:562
-#: admin/config/index.php:758
+#: admin/config/index.php:757
 #: admin/index.php:85
 msgid "Settings"
 msgstr ""
@@ -685,7 +685,7 @@ msgid "Tokens"
 msgstr ""
 
 #: admin/config/index.php:504
-msgid "In order to send requests to <a href='https://wp-slimstat.com/resources/slimstat-rest-api' target='_blank'>the Slimstat REST API</a>, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens."
+msgid "In order to send requests to the Slimstat REST API, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens."
 msgstr ""
 
 #: admin/config/index.php:510
@@ -738,7 +738,7 @@ msgid "MaxMind Geolocation"
 msgstr ""
 
 #: admin/config/index.php:542
-msgid "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option, please <a href='https://wp-slimstat.com/resources/how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually."
+msgid "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option."
 msgstr ""
 
 #: admin/config/index.php:542
@@ -833,45 +833,45 @@ msgstr ""
 msgid "Table indexes have been disabled. Enjoy the extra database space!"
 msgstr ""
 
-#: admin/config/index.php:660
+#: admin/config/index.php:659
 msgid "The geolocation database has been installed on your server."
 msgstr ""
 
-#: admin/config/index.php:669
-#: admin/config/index.php:676
+#: admin/config/index.php:668
+#: admin/config/index.php:675
 msgid "The geolocation database has been uninstalled from your server."
 msgstr ""
 
-#: admin/config/index.php:679
+#: admin/config/index.php:678
 msgid "The geolocation database could not be uninstalled from your server. Please make sure Slimstat can save files in your <code>wp-content/uploads</code> folder."
 msgstr ""
 
-#: admin/config/index.php:696
+#: admin/config/index.php:695
 msgid "The Browscap data file has been uninstalled from your server."
 msgstr ""
 
-#: admin/config/index.php:699
+#: admin/config/index.php:698
 msgid "There was an error deleting the Browscap data folder on your server. Please check your permissions."
 msgstr ""
 
-#: admin/config/index.php:739
+#: admin/config/index.php:738
 msgid "Your new settings have been saved."
 msgstr ""
 
-#: admin/config/index.php:764
+#: admin/config/index.php:763
 #: admin/view/index.php:12
 msgid "<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:821
+#: admin/config/index.php:820
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:822
+#: admin/config/index.php:821
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:899
+#: admin/config/index.php:898
 msgid "Save Changes"
 msgstr ""
 
@@ -4607,54 +4607,119 @@ msgstr ""
 msgid "Invalid MaxMind data file. Please <a target=\"_blank\" href=\"https://wp-slimstat.com/resources/how-to-manually-install-the-maxmind-geolocation-data-file-\">follow these steps</a> to download it manually."
 msgstr ""
 
-#: wp-slimstat.php:460
+#: src/Utils/Browscap.php:19
+msgid "The Browscap Cache folder could not be opened on your filesystem. Please check your server permissions and try again."
+msgstr ""
+
+#: src/Utils/Browscap.php:110
+msgid "This library requires at least PHP 7.4. Please ask your service provider to upgrade your server accordingly."
+msgstr ""
+
+#: src/Utils/Browscap.php:114
+msgid "No updates are performed during AJAX requests."
+msgstr ""
+
+#: src/Utils/Browscap.php:118
+msgid "Please set your <code>FS_METHOD</code> variable to \"direct\" in your wp-config.php file, or contact our support to obtain a copy of our Browscap Library."
+msgstr ""
+
+#: src/Utils/Browscap.php:156
+msgid "There was an error checking the remote library version. Please try again later."
+msgstr ""
+
+#: src/Utils/Browscap.php:161
+msgid "Your version of the library does not need to be updated."
+msgstr ""
+
+#: src/Utils/Browscap.php:170
+msgid "There was an error saving the Browscap data file on your server. Please check your folder permissions."
+msgstr ""
+
+#: src/Utils/Browscap.php:175
+msgid "There was an error downloading the Browscap data file from our server. Please try again later."
+msgstr ""
+
+#: src/Utils/Browscap.php:187
+msgid "There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration."
+msgstr ""
+
+#: src/Utils/Browscap.php:195
+msgid "The Browscap data file has been installed on your server."
+msgstr ""
+
+#: src/Utils/MaxMind.php:54
+msgid "Class <code>PharData</code> is not defined in your environment. Please use a PHP version which supports it."
+msgstr ""
+
+#: src/Utils/MaxMind.php:64
+msgid "No MaxMind GeoLite2 license key set. Please enter the MaxMind GeoLite2 license key in Slimstat Settings > Maintenance"
+msgstr ""
+
+#: src/Utils/MaxMind.php:78
+msgid "There was an error downloading the MaxMind Geolite DB:"
+msgstr ""
+
+#: src/Utils/MaxMind.php:89
+#: src/Utils/MaxMind.php:101
+msgid "There was an error creating the MaxMind Geolite DB."
+msgstr ""
+
+#: src/Utils/MaxMind.php:117
+msgid "The provided URL is invalid."
+msgstr ""
+
+#: src/Utils/MaxMind.php:124
+msgid "A temporary file could not be created. Please check your server's file permissions and try again."
+msgstr ""
+
+#: wp-slimstat.php:458
 msgid "Attempted XSS Injection: %s"
 msgstr ""
 
-#: wp-slimstat.php:781
+#: wp-slimstat.php:778
 msgid "Invalid Report ID"
 msgstr ""
 
-#: wp-slimstat.php:938
+#: wp-slimstat.php:945
 msgid "[REST API] The <code>dimension</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:942
+#: wp-slimstat.php:949
 msgid "[REST API] The <code>function</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:973
+#: wp-slimstat.php:980
 msgid "[REST API] You sent an invalid request. Accepted function values include: <code>count, count-all, recent, recent-all, top and top-all</code>. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:987
+#: wp-slimstat.php:994
 msgid "[REST API] Please use a valid token in order to access the REST API endpoint at this URL."
 msgstr ""
 
-#: wp-slimstat.php:1009
+#: wp-slimstat.php:1016
 msgid "You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control."
 msgstr ""
 
-#: wp-slimstat.php:1013
+#: wp-slimstat.php:1020
 msgid "This parameter specifies the type of QUERY you would like to perform. Accepted funciton values include: count, count-all, recent, recent-all, top and top-all."
 msgstr ""
 
-#: wp-slimstat.php:1018
+#: wp-slimstat.php:1025
 msgid "This parameter indicates what dimension to return: * (all data), ip, resource, browser, operating system, etc. You can only specify one dimension at a time."
 msgstr ""
 
-#: wp-slimstat.php:1023
+#: wp-slimstat.php:1030
 msgid "This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)"
 msgstr ""
 
-#: wp-slimstat.php:2038
+#: wp-slimstat.php:2066
 msgid "Report"
 msgstr ""
 
-#: wp-slimstat.php:2046
+#: wp-slimstat.php:2074
 msgid "Title"
 msgstr ""
 
-#: wp-slimstat.php:2051
+#: wp-slimstat.php:2079
 msgid "Optional filters"
 msgstr ""
