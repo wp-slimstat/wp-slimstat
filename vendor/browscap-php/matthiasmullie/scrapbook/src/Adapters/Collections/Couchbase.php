@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters\Collections;
 
 use MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixReset;
@@ -28,7 +26,10 @@ use MatthiasMullie\Scrapbook\Adapters\Couchbase as Adapter;
  */
 class Couchbase extends PrefixReset
 {
-    public function __construct(Adapter $cache, string $name)
+    /**
+     * @param string $name
+     */
+    public function __construct(Adapter $cache, $name)
     {
         parent::__construct($cache, $name);
     }

@@ -8,7 +8,10 @@ use RuntimeException;
 
 final class SymbolicLinkEncountered extends RuntimeException implements FilesystemException
 {
-    private string $location;
+    /**
+     * @var string
+     */
+    private $location;
 
     public function location(): string
     {

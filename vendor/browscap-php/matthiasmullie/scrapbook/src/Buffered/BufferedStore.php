@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Buffered;
 
 use MatthiasMullie\Scrapbook\Buffered\Utils\Buffer;
@@ -27,19 +25,23 @@ class BufferedStore implements KeyValueStore
      * all we'll be left with is the local copy of all data that can act
      * as buffer for follow-up requests.
      * All we'll need to add is also buffering non-write results.
+     *
+     * @var Transaction
      */
-    protected Transaction $transaction;
+    protected $transaction;
 
     /**
      * Local in-memory storage, for the data we've already requested from
      * or written to the real cache.
+     *
+     * @var Buffer
      */
-    protected Buffer $local;
+    protected $local;
 
     /**
      * @var BufferedStore[]
      */
-    protected array $collections = [];
+    protected $collections = array();
 
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for
@@ -56,13 +58,13 @@ class BufferedStore implements KeyValueStore
      *
      * {@inheritdoc}
      */
-    public function get(string $key, mixed &$token = null): mixed
+    public function get($key, &$token = null)
     {
         $value = $this->transaction->get($key, $token);
 
         // only store if we managed to retrieve a value (valid token) and it's
         // not already in cache (or we may mess up tokens)
-        if ($value !== false && $this->local->get($key, $localToken) === false && $localToken === null) {
+        if (false !== $value && false === $this->local->get($key, $localToken) && null === $localToken) {
             $this->local->set($key, $value);
         }
 
@@ -75,7 +77,7 @@ class BufferedStore implements KeyValueStore
      *
      * {@inheritdoc}
      */
-    public function getMulti(array $keys, array &$tokens = null): array
+    public function getMulti(array $keys, array &$tokens = null)
     {
         $values = $this->transaction->getMulti($keys, $tokens);
 
@@ -87,7 +89,10 @@ class BufferedStore implements KeyValueStore
         return $values;
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         $result = $this->transaction->set($key, $value, $expire);
         $this->transaction->commit();
@@ -95,7 +100,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
         $result = $this->transaction->setMulti($items, $expire);
         $this->transaction->commit();
@@ -103,7 +111,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         $result = $this->transaction->delete($key);
         $this->transaction->commit();
@@ -111,7 +122,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
         $result = $this->transaction->deleteMulti($keys);
         $this->transaction->commit();
@@ -119,7 +133,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         $result = $this->transaction->add($key, $value, $expire);
         $this->transaction->commit();
@@ -127,7 +144,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         $result = $this->transaction->replace($key, $value, $expire);
         $this->transaction->commit();
@@ -135,7 +155,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         $result = $this->transaction->cas($token, $key, $value, $expire);
         $this->transaction->commit();
@@ -143,7 +166,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         $result = $this->transaction->increment($key, $offset, $initial, $expire);
         $this->transaction->commit();
@@ -151,7 +177,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         $result = $this->transaction->decrement($key, $offset, $initial, $expire);
         $this->transaction->commit();
@@ -159,7 +188,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         $result = $this->transaction->touch($key, $expire);
         $this->transaction->commit();
@@ -167,7 +199,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
         foreach ($this->collections as $collection) {
             $collection->flush();
@@ -179,7 +214,10 @@ class BufferedStore implements KeyValueStore
         return $result;
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         if (!isset($this->collections[$name])) {
             $collection = $this->transaction->getCollection($name);

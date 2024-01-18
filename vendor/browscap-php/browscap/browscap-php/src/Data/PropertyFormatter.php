@@ -8,7 +8,9 @@ final class PropertyFormatter
 {
     private PropertyHolder $propertyHolder;
 
-    /** @throws void */
+    /**
+     * @throws void
+     */
     public function __construct(PropertyHolder $propertyHolder)
     {
         $this->propertyHolder = $propertyHolder;
@@ -22,9 +24,6 @@ final class PropertyFormatter
      * @return bool|string
      *
      * @throws void
-     *
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingNativeTypeHint
      */
     public function formatPropertyValue($value, string $property)
     {

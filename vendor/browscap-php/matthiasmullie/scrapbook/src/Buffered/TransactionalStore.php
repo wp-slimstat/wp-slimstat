@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Buffered;
 
 use MatthiasMullie\Scrapbook\Buffered\Utils\Buffer;
@@ -36,7 +34,7 @@ class TransactionalStore implements KeyValueStore
      *
      * @var KeyValueStore[]
      */
-    protected array $transactions = [];
+    protected $transactions = array();
 
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for
@@ -62,7 +60,7 @@ class TransactionalStore implements KeyValueStore
      * Initiate a transaction: this will defer all writes to real cache until
      * commit() is called.
      */
-    public function begin(): void
+    public function begin()
     {
         // we'll rely on buffer to respond data that has not yet committed, so
         // it must never evict from cache - I'd even rather see the app crash
@@ -80,9 +78,11 @@ class TransactionalStore implements KeyValueStore
      * If the any write fails, all subsequent writes will be aborted & all keys
      * that had already been written to will be deleted.
      *
+     * @return bool
+     *
      * @throws UnbegunTransaction
      */
-    public function commit(): bool
+    public function commit()
     {
         if (count($this->transactions) <= 1) {
             throw new UnbegunTransaction('Attempted to commit without having begun a transaction.');
@@ -97,9 +97,11 @@ class TransactionalStore implements KeyValueStore
     /**
      * Roll back all scheduled changes.
      *
+     * @return bool
+     *
      * @throws UnbegunTransaction
      */
-    public function rollback(): bool
+    public function rollback()
     {
         if (count($this->transactions) <= 1) {
             throw new UnbegunTransaction('Attempted to rollback without having begun a transaction.');
@@ -111,73 +113,143 @@ class TransactionalStore implements KeyValueStore
         return $transaction->rollback();
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
-        return end($this->transactions)->get($key, $token);
+        $cache = end($this->transactions);
+
+        return $cache->get($key, $token);
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
-        return end($this->transactions)->getMulti($keys, $tokens);
+        $cache = end($this->transactions);
+
+        return $cache->getMulti($keys, $tokens);
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
-        return end($this->transactions)->set($key, $value, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->set($key, $value, $expire);
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
-        return end($this->transactions)->setMulti($items, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->setMulti($items, $expire);
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
-        return end($this->transactions)->delete($key);
+        $cache = end($this->transactions);
+
+        return $cache->delete($key);
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
-        return end($this->transactions)->deleteMulti($keys);
+        $cache = end($this->transactions);
+
+        return $cache->deleteMulti($keys);
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
-        return end($this->transactions)->add($key, $value, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->add($key, $value, $expire);
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
-        return end($this->transactions)->replace($key, $value, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->replace($key, $value, $expire);
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
-        return end($this->transactions)->cas($token, $key, $value, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->cas($token, $key, $value, $expire);
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
-        return end($this->transactions)->increment($key, $offset, $initial, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->increment($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
-        return end($this->transactions)->decrement($key, $offset, $initial, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->decrement($key, $offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
-        return end($this->transactions)->touch($key, $expire);
+        $cache = end($this->transactions);
+
+        return $cache->touch($key, $expire);
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        return end($this->transactions)->flush();
+        $cache = end($this->transactions);
+
+        return $cache->flush();
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
-        return new static(end($this->transactions)->getCollection($name));
+        $cache = end($this->transactions);
+
+        return new static($cache->getCollection($name));
     }
 }

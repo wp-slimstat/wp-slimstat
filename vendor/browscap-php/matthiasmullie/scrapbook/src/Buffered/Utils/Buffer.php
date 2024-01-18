@@ -1,11 +1,8 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Buffered\Utils;
 
 use MatthiasMullie\Scrapbook\Adapters\MemoryStore;
-use MatthiasMullie\Scrapbook\KeyValueStore;
 
 /**
  * This is a helper class for BufferedStore & TransactionalStore, which buffer
@@ -28,12 +25,25 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
 class Buffer extends MemoryStore
 {
     /**
+     * Make items publicly available - if we create a collection from this,
+     * that collection will need to be able to access these items to determine
+     * if something has expired.
+     *
+     * @var array
+     */
+    public $items = array();
+
+    /**
      * Checks if a value exists in cache and is not yet expired.
      * Contrary to default MemoryStore, expired items must *not* be deleted
      * from memory: we need to remember that they were expired, so we don't
      * reach out to real cache (only to get nothing, since it's expired...).
+     *
+     * @param string $key
+     *
+     * @return bool
      */
-    protected function exists(string $key): bool
+    protected function exists($key)
     {
         if (!array_key_exists($key, $this->items)) {
             // key not in cache
@@ -41,7 +51,7 @@ class Buffer extends MemoryStore
         }
 
         $expire = $this->items[$key][1];
-        if ($expire !== 0 && $expire < time()) {
+        if (0 !== $expire && $expire < time()) {
             // not permanent & already expired
             return false;
         }
@@ -60,10 +70,14 @@ class Buffer extends MemoryStore
      * may not yet have been expired because that may have been part of an
      * uncommitted write)
      * So we'll want to know when a value is in local cache, but expired!
+     *
+     * @param string $key
+     *
+     * @return bool
      */
-    public function expired(string $key): bool
+    public function expired($key)
     {
-        if ($this->get($key) !== false) {
+        if (false !== $this->get($key)) {
             // returned a value, clearly not yet expired
             return false;
         }
@@ -72,7 +86,10 @@ class Buffer extends MemoryStore
         return array_key_exists($key, $this->items);
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         return new BufferCollection($this, $name);
     }

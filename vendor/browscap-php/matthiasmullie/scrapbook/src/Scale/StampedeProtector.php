@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Scale;
 
 use MatthiasMullie\Scrapbook\Exception\InvalidKey;
@@ -47,40 +45,53 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
  */
 class StampedeProtector implements KeyValueStore
 {
-    protected KeyValueStore $cache;
+    /**
+     * @var KeyValueStore
+     */
+    protected $cache = array();
 
     /**
      * Amount of time, in milliseconds, this class guarantees protection.
+     *
+     * @var int
      */
-    protected int $sla;
+    protected $sla = 1000;
 
     /**
      * Amount of times every process will poll within $sla time.
+     *
+     * @var int
      */
-    protected int $attempts = 10;
+    protected $attempts = 10;
 
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for
      * @param int           $sla   Stampede protection time, in milliseconds
      */
-    public function __construct(KeyValueStore $cache, int $sla = 1000)
+    public function __construct(KeyValueStore $cache, $sla = 1000)
     {
         $this->cache = $cache;
         $this->sla = $sla;
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
-        $values = $this->getMulti([$key], $tokens);
-        $token = $tokens[$key] ?? null;
+        $values = $this->getMulti(array($key), $tokens);
+        $token = isset($tokens[$key]) ? $tokens[$key] : null;
 
-        return $values[$key] ?? false;
+        return isset($values[$key]) ? $values[$key] : false;
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
         // fetch both requested keys + stampede protection indicators at once
-        $stampedeKeys = array_combine($keys, array_map([$this, 'stampedeKey'], $keys));
+        $stampedeKeys = array_combine($keys, array_map(array($this, 'stampedeKey'), $keys));
         $values = $this->cache->getMulti(array_merge($keys, $stampedeKeys), $tokens);
 
         // figure out which of the requested keys are protected, and which need
@@ -122,62 +133,98 @@ class StampedeProtector implements KeyValueStore
         return $results;
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         return $this->cache->set($key, $value, $expire);
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
         return $this->cache->setMulti($items, $expire);
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         return $this->cache->delete($key);
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
         return $this->cache->deleteMulti($keys);
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         return $this->cache->add($key, $value, $expire);
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         return $this->cache->replace($key, $value, $expire);
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         return $this->cache->cas($token, $key, $value, $expire);
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         return $this->cache->increment($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         return $this->cache->decrement($key, $offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         return $this->cache->touch($key, $expire);
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
         return $this->cache->flush();
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         $collection = $this->cache->getCollection($name);
 
@@ -192,29 +239,21 @@ class StampedeProtector implements KeyValueStore
      *
      * @return string[] Array of keys that were successfully protected
      */
-    protected function protect(array $keys): array
+    protected function protect(array $keys)
     {
         if (empty($keys)) {
-            return [];
+            return array();
         }
 
-        $success = [];
+        $success = array();
         foreach ($keys as $key) {
             /*
              * Key is add()ed because there may be multiple concurrent processes
              * that are both in the process of protecting - first one to add()
              * wins (and those are returned by the function, so those that are
              * failed to protect can be considered protected)
-             *
-             * Note: lock is held for longer (rounded up to the closest second)
-             * than SLA because it can't be held in milliseconds. Should be fine.
-             * @see https://github.com/matthiasmullie/scrapbook/issues/48#issuecomment-1309990096
              */
-            $success[$key] = $this->cache->add(
-                $this->stampedeKey($key),
-                '',
-                (int) ceil($this->sla / 1000)
-            );
+            $success[$key] = $this->cache->add($this->stampedeKey($key), '', $this->sla);
         }
 
         return array_keys(array_filter($success));
@@ -223,8 +262,10 @@ class StampedeProtector implements KeyValueStore
     /**
      * When waiting for stampede-protected keys, we'll just sleep, not using
      * much resources.
+     *
+     * @return bool
      */
-    protected function sleep(): bool
+    protected function sleep()
     {
         $break = $this->sla / $this->attempts;
         usleep(1000 * $break);
@@ -238,16 +279,20 @@ class StampedeProtector implements KeyValueStore
      * another key, so follow-up requests know another process is likely already
      * re-processing the value.
      *
+     * @param string $key
+     *
+     * @return string
+     *
      * @throws InvalidKey
      */
-    protected function stampedeKey(string $key): string
+    protected function stampedeKey($key)
     {
         $suffix = '.stampede';
 
-        if (str_ends_with($key, $suffix)) {
+        if (substr($key, -strlen($suffix)) === $suffix) {
             throw new InvalidKey("Invalid key: $key. Keys with suffix '$suffix' are reserved.");
         }
 
-        return $key . $suffix;
+        return $key.$suffix;
     }
 }

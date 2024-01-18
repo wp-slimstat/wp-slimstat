@@ -8,7 +8,10 @@ use RuntimeException;
 
 class PathTraversalDetected extends RuntimeException implements FilesystemException
 {
-    private string $path;
+    /**
+     * @var string
+     */
+    private $path;
 
     public function path(): string
     {

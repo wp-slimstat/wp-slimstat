@@ -15,10 +15,6 @@ if (extension_loaded('intl')) {
     return;
 }
 
-if (\PHP_VERSION_ID >= 80000) {
-    return require __DIR__.'/bootstrap80.php';
-}
-
 if (!defined('GRAPHEME_EXTR_COUNT')) {
     define('GRAPHEME_EXTR_COUNT', 0);
 }

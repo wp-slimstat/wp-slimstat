@@ -9,15 +9,9 @@ use const FILEINFO_MIME_TYPE;
 use const PATHINFO_EXTENSION;
 use finfo;
 
-class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
+class FinfoMimeTypeDetector implements MimeTypeDetector
 {
-    private const INCONCLUSIVE_MIME_TYPES = [
-        'application/x-empty',
-        'text/plain',
-        'text/x-asm',
-        'application/octet-stream',
-        'inode/x-empty',
-    ];
+    private const INCONCLUSIVE_MIME_TYPES = ['application/x-empty', 'text/plain', 'text/x-asm'];
 
     /**
      * @var finfo
@@ -34,21 +28,14 @@ class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
      */
     private $bufferSampleSize;
 
-    /**
-     * @var array<string>
-     */
-    private $inconclusiveMimetypes;
-
     public function __construct(
         string $magicFile = '',
         ExtensionToMimeTypeMap $extensionMap = null,
-        ?int $bufferSampleSize = null,
-        array $inconclusiveMimetypes = self::INCONCLUSIVE_MIME_TYPES
+        ?int $bufferSampleSize = null
     ) {
         $this->finfo = new finfo(FILEINFO_MIME_TYPE, $magicFile);
         $this->extensionMap = $extensionMap ?: new GeneratedExtensionToMimeTypeMap();
         $this->bufferSampleSize = $bufferSampleSize;
-        $this->inconclusiveMimetypes = $inconclusiveMimetypes;
     }
 
     public function detectMimeType(string $path, $contents): ?string
@@ -57,7 +44,7 @@ class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
             ? (@$this->finfo->buffer($this->takeSample($contents)) ?: null)
             : null;
 
-        if ($mimeType !== null && ! in_array($mimeType, $this->inconclusiveMimetypes)) {
+        if ($mimeType !== null && ! in_array($mimeType, self::INCONCLUSIVE_MIME_TYPES)) {
             return $mimeType;
         }
 
@@ -88,19 +75,5 @@ class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
         }
 
         return (string) substr($contents, 0, $this->bufferSampleSize);
-    }
-
-    public function lookupExtension(string $mimetype): ?string
-    {
-        return $this->extensionMap instanceof ExtensionLookup
-            ? $this->extensionMap->lookupExtension($mimetype)
-            : null;
-    }
-
-    public function lookupAllExtensions(string $mimetype): array
-    {
-        return $this->extensionMap instanceof ExtensionLookup
-            ? $this->extensionMap->lookupAllExtensions($mimetype)
-            : [];
     }
 }

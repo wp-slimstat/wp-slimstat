@@ -46,7 +46,9 @@ final class Converter implements ConverterInterface
      */
     private int $iniVersion = 0;
 
-    /** @throws void */
+    /**
+     * @throws void
+     */
     public function __construct(LoggerInterface $logger, BrowscapCacheInterface $cache)
     {
         $this->logger      = $logger;

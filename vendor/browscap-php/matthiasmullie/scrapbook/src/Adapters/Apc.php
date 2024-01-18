@@ -1,9 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters;
 
+use APCIterator;
+use APCuIterator;
 use MatthiasMullie\Scrapbook\Adapters\Collections\Apc as Collection;
 use MatthiasMullie\Scrapbook\Exception\Exception;
 use MatthiasMullie\Scrapbook\KeyValueStore;
@@ -27,17 +27,22 @@ class Apc implements KeyValueStore
      * out in case they did expire.
      *
      * @see http://stackoverflow.com/questions/11750223/apc-user-cache-entries-not-expiring
+     *
+     * @var array
      */
-    protected array $expires = [];
+    protected $expires = array();
 
     public function __construct()
     {
-        if (!function_exists('apcu_fetch')) {
-            throw new Exception('ext-apcu is not installed.');
+        if (!function_exists('apcu_fetch') && !function_exists('apc_fetch')) {
+            throw new Exception('ext-apc(u) is not installed.');
         }
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
         // check for values that were just stored in this request but have
         // actually expired by now
@@ -45,8 +50,8 @@ class Apc implements KeyValueStore
             return false;
         }
 
-        $value = $this->fetch($key, $success);
-        if ($success === false) {
+        $value = $this->apcu_fetch($key, $success);
+        if (false === $success) {
             $token = null;
 
             return false;
@@ -57,11 +62,14 @@ class Apc implements KeyValueStore
         return $value;
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
-        $tokens = [];
+        $tokens = array();
         if (empty($keys)) {
-            return [];
+            return array();
         }
 
         // check for values that were just stored in this request but have
@@ -72,11 +80,12 @@ class Apc implements KeyValueStore
             }
         }
 
-        $values = $this->fetch($keys);
-        if ($values === false) {
-            return [];
+        $values = $this->apcu_fetch($keys);
+        if (false === $values) {
+            return array();
         }
 
+        $tokens = array();
         foreach ($values as $key => $value) {
             $tokens[$key] = serialize($value);
         }
@@ -84,7 +93,10 @@ class Apc implements KeyValueStore
         return $values;
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         $ttl = $this->ttl($expire);
 
@@ -100,17 +112,20 @@ class Apc implements KeyValueStore
             return false;
         }
 
-        $success = $this->store($key, $value, $ttl);
+        $success = $this->apcu_store($key, $value, $ttl);
         $this->expire($key, $ttl);
         $this->unlock($key);
 
         return $success;
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
         if (empty($items)) {
-            return [];
+            return array();
         }
 
         $ttl = $this->ttl($expire);
@@ -130,12 +145,12 @@ class Apc implements KeyValueStore
 
         if ($items) {
             // only write to those where lock was acquired
-            $this->store($items, null, $ttl);
+            $this->apcu_store($items, null, $ttl);
             $this->expire(array_keys($items), $ttl);
             $this->unlock(array_keys($items));
         }
 
-        $return = [];
+        $return = array();
         foreach ($items as $key => $value) {
             $return[$key] = !array_key_exists($key, $failed);
         }
@@ -143,24 +158,30 @@ class Apc implements KeyValueStore
         return $return;
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         // lock required for CAS
         if (!$this->lock($key)) {
             return false;
         }
 
-        $success = apcu_delete($key);
+        $success = $this->apcu_delete($key);
         unset($this->expires[$key]);
         $this->unlock($key);
 
         return $success;
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
         if (empty($keys)) {
-            return [];
+            return array();
         }
 
         // attempt to get locks for all items
@@ -179,23 +200,26 @@ class Apc implements KeyValueStore
              *
              * @see http://php.net/manual/en/function.apc-delete.php
              *
-             * @var string[] $result
+             * @var string[]
              */
-            $result = apcu_delete($keys);
+            $result = $this->apcu_delete($keys);
             $failed = array_merge($failed, $result);
             $this->unlock($keys);
         }
 
-        $return = [];
+        $return = array();
         foreach ($keys as $key) {
-            $return[$key] = !in_array($key, $failed, true);
+            $return[$key] = !in_array($key, $failed);
             unset($this->expires[$key]);
         }
 
         return $return;
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         $ttl = $this->ttl($expire);
 
@@ -203,7 +227,7 @@ class Apc implements KeyValueStore
         if ($ttl < 0) {
             // don't add - it's expired already; just check if it already
             // existed to return true/false as expected from add()
-            return $this->get($key) === false;
+            return false === $this->get($key);
         }
 
         // lock required for CAS
@@ -211,21 +235,24 @@ class Apc implements KeyValueStore
             return false;
         }
 
-        $success = apcu_add($key, $value, $ttl);
+        $success = $this->apcu_add($key, $value, $ttl);
         $this->expire($key, $ttl);
         $this->unlock($key);
 
         return $success;
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         $ttl = $this->ttl($expire);
 
         // APC doesn't support replace; I'll use get to check key existence,
         // then safely replace with cas
         $current = $this->get($key, $token);
-        if ($current === false) {
+        if (false === $current) {
             return false;
         }
 
@@ -240,7 +267,10 @@ class Apc implements KeyValueStore
         return $this->cas($token, $key, $value, $ttl);
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         $ttl = $this->ttl($expire);
 
@@ -256,9 +286,9 @@ class Apc implements KeyValueStore
         }
 
         // get current value, to compare with token
-        $compare = $this->fetch($key);
+        $compare = $this->apcu_fetch($key);
 
-        if ($compare === false) {
+        if (false === $compare) {
             $this->unlock($key);
 
             return false;
@@ -272,21 +302,24 @@ class Apc implements KeyValueStore
 
         // negative TTLs don't always seem to properly treat the key as deleted
         if ($ttl < 0) {
-            apcu_delete($key);
+            $this->apcu_delete($key);
             unset($this->expires[$key]);
             $this->unlock($key);
 
             return true;
         }
 
-        $success = $this->store($key, $value, $ttl);
+        $success = $this->apcu_store($key, $value, $ttl);
         $this->expire($key, $ttl);
         $this->unlock($key);
 
         return $success;
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         if ($offset <= 0 || $initial < 0) {
             return false;
@@ -297,7 +330,10 @@ class Apc implements KeyValueStore
         return $this->doIncrement($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         if ($offset <= 0 || $initial < 0) {
             return false;
@@ -308,7 +344,10 @@ class Apc implements KeyValueStore
         return $this->doIncrement($key, -$offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         $ttl = $this->ttl($expire);
 
@@ -319,10 +358,7 @@ class Apc implements KeyValueStore
         }
 
         // get existing TTL & quit early if it's that one already
-        $iterator = new \APCUIterator('/^' . preg_quote($key, '/') . '$/', \APC_ITER_VALUE | \APC_ITER_TTL, 1, \APC_LIST_ACTIVE);
-        if (!$iterator->valid()) {
-            return false;
-        }
+        $iterator = $this->APCuIterator('/^'.preg_quote($key, '/').'$/', \APC_ITER_VALUE | \APC_ITER_TTL, 1, \APC_LIST_ACTIVE);
         $current = $iterator->current();
         if (!$current) {
             // doesn't exist
@@ -340,14 +376,20 @@ class Apc implements KeyValueStore
         return $this->cas($token, $key, $value, $ttl);
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        $this->expires = [];
+        $this->expires = array();
 
-        return apcu_clear_cache();
+        return $this->apcu_clear_cache();
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         return new Collection($this, $name);
     }
@@ -356,8 +398,15 @@ class Apc implements KeyValueStore
      * Shared between increment/decrement: both have mostly the same logic
      * (decrement just increments a negative value), but need their validation
      * split up (increment won't accept negative values).
+     *
+     * @param string $key
+     * @param int    $offset
+     * @param int    $initial
+     * @param int    $expire
+     *
+     * @return int|bool
      */
-    protected function doIncrement(string $key, int $offset, int $initial, int $expire): int|false
+    protected function doIncrement($key, $offset, $initial, $expire)
     {
         $ttl = $this->ttl($expire);
 
@@ -371,7 +420,7 @@ class Apc implements KeyValueStore
          * PHP, then CAS the new value = 1 operation + CAS.
          */
         $value = $this->get($key, $token);
-        if ($value === false) {
+        if (false === $value) {
             // don't even set initial value, it's already expired...
             if ($ttl < 0) {
                 return $initial;
@@ -407,9 +456,11 @@ class Apc implements KeyValueStore
     /**
      * APC expects true TTL, not expiration timestamp.
      *
+     * @param int $expire
+     *
      * @return int TTL in seconds
      */
-    protected function ttl(int $expire): int
+    protected function ttl($expire)
     {
         // relative time in seconds, <30 days
         if ($expire < 30 * 24 * 60 * 60) {
@@ -439,12 +490,12 @@ class Apc implements KeyValueStore
      *
      * @return array Array of successfully locked keys
      */
-    protected function lock(string|array $keys): array
+    protected function lock($keys)
     {
         // both string (single key) and array (multiple) are accepted
         $keys = (array) $keys;
 
-        $locked = [];
+        $locked = array();
         for ($i = 0; $i < 10; ++$i) {
             $locked += $this->acquire($keys);
             $keys = array_diff($keys, $locked);
@@ -466,23 +517,23 @@ class Apc implements KeyValueStore
      *
      * @return string[] Array of successfully locked keys
      */
-    protected function acquire(string|array $keys): array
+    protected function acquire($keys)
     {
         $keys = (array) $keys;
 
-        $values = [];
+        $values = array();
         foreach ($keys as $key) {
             $values["scrapbook.lock.$key"] = null;
         }
 
         // there's no point in locking longer than max allowed execution time
         // for this script
-        $ttl = (int) ini_get('max_execution_time');
+        $ttl = ini_get('max_execution_time');
 
         // lock these keys, then compile a list of successfully locked keys
         // (using the returned failure array)
-        $result = (array) apcu_add($values, null, $ttl);
-        $failed = [];
+        $result = (array) $this->apcu_add($values, null, $ttl);
+        $failed = array();
         foreach ($result as $key => $err) {
             $failed[] = substr($key, strlen('scrapbook.lock.'));
         }
@@ -494,15 +545,17 @@ class Apc implements KeyValueStore
      * Release a lock.
      *
      * @param string|string[] $keys
+     *
+     * @return bool
      */
-    protected function unlock(string|array $keys): bool
+    protected function unlock($keys)
     {
         $keys = (array) $keys;
         foreach ($keys as $i => $key) {
             $keys[$i] = "scrapbook.lock.$key";
         }
 
-        apcu_delete($keys);
+        $this->apcu_delete($keys);
 
         return true;
     }
@@ -512,10 +565,13 @@ class Apc implements KeyValueStore
      * work around APC's behavior of only clearing expires per page request.
      *
      * @see static::$expires
+     *
+     * @param array|string $key
+     * @param int          $ttl
      */
-    protected function expire(string|array $key = [], int $ttl = 0): void
+    protected function expire($key = array(), $ttl = 0)
     {
-        if ($ttl === 0) {
+        if (0 === $ttl) {
             // when storing indefinitely, there's no point in keeping it around,
             // it won't just expire
             return;
@@ -525,8 +581,8 @@ class Apc implements KeyValueStore
         $keys = (array) $key;
 
         $time = time() + $ttl;
-        foreach ($keys as $k) {
-            $this->expires[$k] = $time;
+        foreach ($keys as $key) {
+            $this->expires[$key] = $time;
         }
     }
 
@@ -536,7 +592,7 @@ class Apc implements KeyValueStore
      *
      * @return mixed|false
      */
-    protected function fetch(string|array $key, bool &$success = null): mixed
+    protected function apcu_fetch($key, &$success = null)
     {
         /*
          * $key can also be numeric, in which case APC is able to retrieve it,
@@ -547,14 +603,14 @@ class Apc implements KeyValueStore
         if (is_array($key)) {
             $nums = array_filter($key, 'is_numeric');
             if ($nums) {
-                $values = [];
+                $values = array();
                 foreach ($nums as $k) {
-                    $values[$k] = $this->fetch((string) $k, $success);
+                    $values[$k] = $this->apcu_fetch((string) $k, $success);
                 }
 
                 $remaining = array_diff($key, $nums);
                 if ($remaining) {
-                    $values += $this->fetch($remaining, $success2);
+                    $values += $this->apcu_fetch($remaining, $success2);
                     $success &= $success2;
                 }
 
@@ -562,15 +618,21 @@ class Apc implements KeyValueStore
             }
         }
 
-        return apcu_fetch($key, $success);
+        if (function_exists('apcu_fetch')) {
+            return apcu_fetch($key, $success);
+        } else {
+            return apc_fetch($key, $success);
+        }
     }
 
     /**
      * @param string|string[] $key
+     * @param mixed           $var
+     * @param int             $ttl
      *
      * @return bool|bool[]
      */
-    protected function store(string|array $key, mixed $var, int $ttl = 0): bool|array
+    protected function apcu_store($key, $var, $ttl = 0)
     {
         /*
          * $key can also be a [$key => $value] array, where key is numeric,
@@ -580,21 +642,94 @@ class Apc implements KeyValueStore
         if (is_array($key)) {
             $nums = array_filter(array_keys($key), 'is_numeric');
             if ($nums) {
-                $success = [];
+                $success = array();
                 $nums = array_intersect_key($key, array_fill_keys($nums, null));
                 foreach ($nums as $k => $v) {
-                    $success[$k] = $this->store((string) $k, $v, $ttl);
+                    $success[$k] = $this->apcu_store((string) $k, $v, $ttl);
                 }
 
                 $remaining = array_diff_key($key, $nums);
                 if ($remaining) {
-                    $success += $this->store($remaining, $var, $ttl);
+                    $success += $this->apcu_store($remaining, $var, $ttl);
                 }
 
                 return $success;
             }
         }
 
-        return apcu_store($key, $var, $ttl);
+        if (function_exists('apcu_store')) {
+            return apcu_store($key, $var, $ttl);
+        } else {
+            return apc_store($key, $var, $ttl);
+        }
+    }
+
+    /**
+     * @param string|string[]|APCIterator|APCuIterator $key
+     *
+     * @return bool|string[]
+     */
+    protected function apcu_delete($key)
+    {
+        if (function_exists('apcu_delete')) {
+            return apcu_delete($key);
+        } else {
+            return apc_delete($key);
+        }
+    }
+
+    /**
+     * @param string|string[] $key
+     * @param mixed           $var
+     * @param int             $ttl
+     *
+     * @return bool|bool[]
+     */
+    protected function apcu_add($key, $var, $ttl = 0)
+    {
+        if (function_exists('apcu_add')) {
+            return apcu_add($key, $var, $ttl);
+        } else {
+            return apc_add($key, $var, $ttl);
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    protected function apcu_clear_cache()
+    {
+        if (function_exists('apcu_clear_cache')) {
+            return apcu_clear_cache();
+        } else {
+            return apc_clear_cache('user');
+        }
+    }
+
+    /**
+     * @param string|string[]|null $search
+     * @param int                  $format
+     * @param int                  $chunk_size
+     * @param int                  $list
+     *
+     * @return APCIterator|APCuIterator
+     */
+    protected function APCuIterator($search = null, $format = null, $chunk_size = null, $list = null)
+    {
+        $arguments = func_get_args();
+
+        if (class_exists('APCuIterator', false)) {
+            // I can't set the defaults parameter values because the APC_ or
+            // APCU_ constants may not exist, so I'll just initialize from
+            // func_get_args, not passing those params that haven't been set
+            $reflect = new \ReflectionClass('APCuIterator');
+
+            return $reflect->newInstanceArgs($arguments);
+        } else {
+            array_unshift($arguments, 'user');
+            $reflect = new \ReflectionClass('APCIterator');
+
+            return $reflect->newInstanceArgs($arguments);
+        }
     }
 }

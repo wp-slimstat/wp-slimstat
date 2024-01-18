@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Psr6;
 
 use MatthiasMullie\Scrapbook\KeyValueStore;
@@ -23,21 +21,24 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
  */
 class Repository
 {
-    protected KeyValueStore $store;
+    /**
+     * @var KeyValueStore
+     */
+    protected $store;
 
     /**
      * Array of resolved items.
      *
      * @var mixed[] [unique => value]
      */
-    protected array $resolved = [];
+    protected $resolved = array();
 
     /**
      * Array of unresolved items.
      *
      * @var string[] [unique => key]
      */
-    protected array $unresolved = [];
+    protected $unresolved = array();
 
     public function __construct(KeyValueStore $store)
     {
@@ -46,8 +47,11 @@ class Repository
 
     /**
      * Add a to-be-resolved cache key.
+     *
+     * @param string $unique
+     * @param string $key
      */
-    public function add(string $unique, string $key): void
+    public function add($unique, $key)
     {
         $this->unresolved[$unique] = $key;
     }
@@ -57,21 +61,30 @@ class Repository
      * such an item gets garbage collected, there is no point in wasting any
      * more memory storing that value.
      * In that case, this method can be called to remove those values.
+     *
+     * @param string $unique
      */
-    public function remove(string $unique): void
+    public function remove($unique)
     {
         unset($this->unresolved[$unique], $this->resolved[$unique]);
     }
 
     /**
+     * @param string $unique
+     *
      * @return mixed|null Value, of null if non-existent
      */
-    public function get(string $unique): mixed
+    public function get($unique)
     {
         return $this->exists($unique) ? $this->resolved[$unique] : null;
     }
 
-    public function exists(string $unique): bool
+    /**
+     * @param string $unique
+     *
+     * @return bool
+     */
+    public function exists($unique)
     {
         if (array_key_exists($unique, $this->unresolved)) {
             $this->resolve();
@@ -83,7 +96,7 @@ class Repository
     /**
      * Resolve all unresolved keys at once.
      */
-    protected function resolve(): void
+    protected function resolve()
     {
         $keys = array_unique(array_values($this->unresolved));
         $values = $this->store->getMulti($keys);
@@ -107,6 +120,6 @@ class Repository
             $this->resolved[$unique] = $value;
         }
 
-        $this->unresolved = [];
+        $this->unresolved = array();
     }
 }

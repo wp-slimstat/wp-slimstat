@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace BrowscapPHP\Cache;
 
-use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 
@@ -25,8 +24,6 @@ final class BrowscapCache implements BrowscapCacheInterface
      * Path to the cache directory
      */
     private CacheInterface $cache;
-
-    private LoggerInterface $logger;
 
     /**
      * Detected browscap version (read from INI file)
@@ -49,10 +46,9 @@ final class BrowscapCache implements BrowscapCacheInterface
      *
      * @throws void
      */
-    public function __construct(CacheInterface $adapter, LoggerInterface $logger)
+    public function __construct(CacheInterface $adapter)
     {
         $this->cache  = $adapter;
-        $this->logger = $logger;
     }
 
     /**
@@ -68,7 +64,6 @@ final class BrowscapCache implements BrowscapCacheInterface
             try {
                 $cachedVersion = $this->getItem('browscap.version', false, $success);
             } catch (InvalidArgumentException $e) {
-                $this->logger->error(new \InvalidArgumentException('an error occured while reading the data version from the cache', 0, $e));
                 $cachedVersion = null;
             }
 
@@ -95,7 +90,6 @@ final class BrowscapCache implements BrowscapCacheInterface
             try {
                 $releaseDate = $this->getItem('browscap.releaseDate', false, $success);
             } catch (InvalidArgumentException $e) {
-                $this->logger->error(new \InvalidArgumentException('an error occured while reading the data release date from the cache', 0, $e));
                 $releaseDate = null;
             }
 
@@ -122,7 +116,6 @@ final class BrowscapCache implements BrowscapCacheInterface
             try {
                 $type = $this->getItem('browscap.type', false, $success);
             } catch (InvalidArgumentException $e) {
-                $this->logger->error(new \InvalidArgumentException('an error occured while reading the data type from the cache', 0, $e));
                 $type = null;
             }
 
@@ -142,8 +135,6 @@ final class BrowscapCache implements BrowscapCacheInterface
      * @return mixed Data on success, null on failure
      *
      * @throws InvalidArgumentException
-     *
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingNativeTypeHint
      */
     public function getItem(string $cacheId, bool $withVersion = true, ?bool &$success = null)
     {
@@ -179,8 +170,6 @@ final class BrowscapCache implements BrowscapCacheInterface
      * @return bool whether the file was correctly written to the disk
      *
      * @throws InvalidArgumentException
-     *
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
      */
     public function setItem(string $cacheId, $content, bool $withVersion = true): bool
     {

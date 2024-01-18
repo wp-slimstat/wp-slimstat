@@ -9,7 +9,9 @@ namespace BrowscapPHP\Parser\Helper;
  */
 final class SubKey
 {
-    /** @throws void */
+    /**
+     * @throws void
+     */
     private function __construct()
     {
     }

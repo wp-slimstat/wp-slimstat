@@ -1,12 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters\Collections;
 
 use MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixKeys;
 use MatthiasMullie\Scrapbook\Adapters\MemoryStore as Adapter;
-use MatthiasMullie\Scrapbook\KeyValueStore;
+use ReflectionObject;
 
 /**
  * MemoryStore adapter for a subset of data.
@@ -18,19 +16,35 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
 class MemoryStore extends PrefixKeys
 {
     /**
-     * @var Adapter
+     * @param string $name
      */
-    protected KeyValueStore $cache;
-
-    public function __construct(Adapter $cache, string $name)
+    public function __construct(Adapter $cache, $name)
     {
-        parent::__construct($cache, $name . ':');
+        parent::__construct($cache, $name.':');
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        foreach ($this->cache->items as $key => $value) {
-            if (str_starts_with($key, $this->prefix)) {
+        /*
+         * It's not done to use ReflectionObject, but:
+         * - I *really* don't want to expose $cache->items publicly
+         * - This is very specific to MemoryStore implementation, it can assume
+         *   these kind of implementation details (like how it's ok for a child
+         *   to use protected methods - this just can't be a subclass for
+         *   practical reasons, but it mostly acts like one)
+         * - Reflection is not the most optimized thing, but that doesn't matter
+         *   too much for MemoryStore, which is not a *real* cache
+         */
+        $object = new ReflectionObject($this->cache);
+        $property = $object->getProperty('items');
+        $property->setAccessible(true);
+        $items = $property->getValue($this->cache);
+
+        foreach ($items as $key => $value) {
+            if (0 === strpos($key, $this->prefix)) {
                 $this->cache->delete($key);
             }
         }

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters;
 
 use MatthiasMullie\Scrapbook\Adapters\Collections\Redis as Collection;
@@ -18,21 +16,30 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
  */
 class Redis implements KeyValueStore
 {
-    protected \Redis $client;
+    /**
+     * @var \Redis
+     */
+    protected $client;
 
-    protected string|null $version = null;
+    /**
+     * @var string|null
+     */
+    protected $version;
 
     public function __construct(\Redis $client)
     {
         $this->client = $client;
 
         // set a serializer if none is set already
-        if ($this->client->getOption(\Redis::OPT_SERIALIZER) === \Redis::SERIALIZER_NONE) {
+        if (\Redis::SERIALIZER_NONE == $this->client->getOption(\Redis::OPT_SERIALIZER)) {
             $this->client->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);
         }
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
         $this->client->multi();
 
@@ -41,11 +48,12 @@ class Redis implements KeyValueStore
 
         /** @var array $return */
         $return = $this->client->exec();
-        if ($return === false) {
+        if (false === $return) {
             return false;
         }
 
-        [$value, $exists] = $return;
+        $value = $return[0];
+        $exists = $return[1];
 
         // no value = quit early, don't generate a useless token
         if (!$exists) {
@@ -60,11 +68,14 @@ class Redis implements KeyValueStore
         return $value;
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
-        $tokens = [];
+        $tokens = array();
         if (empty($keys)) {
-            return [];
+            return array();
         }
 
         $this->client->multi();
@@ -76,19 +87,20 @@ class Redis implements KeyValueStore
 
         /** @var array $return */
         $return = $this->client->exec();
-        if ($return === false) {
-            return [];
+        if (false === $return) {
+            return array();
         }
 
         $values = array_shift($return);
         $exists = $return;
 
-        if ($values === false) {
+        if (false === $values) {
             $values = array_fill_keys($keys, false);
         }
         $values = array_combine($keys, $values);
         $exists = array_combine($keys, $exists);
 
+        $tokens = array();
         foreach ($values as $key => $value) {
             // filter out non-existing values
             if (!$exists[$key]) {
@@ -103,7 +115,10 @@ class Redis implements KeyValueStore
         return $values;
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         $ttl = $this->ttl($expire);
 
@@ -135,10 +150,13 @@ class Redis implements KeyValueStore
         return $this->client->set($key, $value, $ttl);
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
         if (empty($items)) {
-            return [];
+            return array();
         }
 
         $ttl = $this->ttl($expire);
@@ -154,7 +172,7 @@ class Redis implements KeyValueStore
             return array_fill_keys(array_keys($items), true);
         }
 
-        if ($ttl === null) {
+        if (null === $ttl) {
             $success = $this->client->mset($items);
 
             return array_fill_keys(array_keys($items), $success);
@@ -171,7 +189,7 @@ class Redis implements KeyValueStore
         /* @var bool[] $return */
         $result = (array) $this->client->exec();
 
-        $return = [];
+        $return = array();
         $keys = array_keys($items);
         $success = array_shift($result);
         foreach ($result as $i => $value) {
@@ -182,15 +200,21 @@ class Redis implements KeyValueStore
         return $return;
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         return (bool) $this->client->del($key);
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
         if (empty($keys)) {
-            return [];
+            return array();
         }
 
         /*
@@ -202,7 +226,7 @@ class Redis implements KeyValueStore
 
         $this->client->del($keys);
 
-        $return = [];
+        $return = array();
         foreach ($keys as $key) {
             $return[$key] = array_key_exists($key, $items);
         }
@@ -210,7 +234,10 @@ class Redis implements KeyValueStore
         return $return;
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         $ttl = $this->ttl($expire);
 
@@ -223,7 +250,7 @@ class Redis implements KeyValueStore
             return true;
         }
 
-        if ($ttl === null) {
+        if (null === $ttl) {
             return $this->client->setnx($key, $value);
         }
 
@@ -240,10 +267,13 @@ class Redis implements KeyValueStore
         /** @var bool[] $return */
         $return = (array) $this->client->exec();
 
-        return !in_array(false, $return, true);
+        return !in_array(false, $return);
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         $ttl = $this->ttl($expire);
 
@@ -268,8 +298,8 @@ class Redis implements KeyValueStore
          * versions will get 2 additional network requests: a failed replace
          * (because the options are unknown) & a version check.
          */
-        if ($this->version === null || $this->supportsOptionsArray()) {
-            $options = ['xx'];
+        if (null === $this->version || $this->supportsOptionsArray()) {
+            $options = array('xx');
             if ($ttl > 0) {
                 /*
                  * Not adding 0 TTL to options:
@@ -283,7 +313,7 @@ class Redis implements KeyValueStore
             // either we support options array or we haven't yet checked, in
             // which case I'll assume a recent server is running
             $result = $this->client->set($key, $value, $options);
-            if ($result !== false) {
+            if (false !== $result) {
                 return $result;
             }
 
@@ -321,10 +351,13 @@ class Redis implements KeyValueStore
         /** @var bool[] $return */
         $return = (array) $this->client->exec();
 
-        return !in_array(false, $return, true);
+        return !in_array(false, $return);
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         $this->client->watch($key);
 
@@ -365,10 +398,13 @@ class Redis implements KeyValueStore
         /** @var bool[] $return */
         $return = (array) $this->client->exec();
 
-        return !in_array(false, $return, true);
+        return !in_array(false, $return);
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         if ($offset <= 0 || $initial < 0) {
             return false;
@@ -376,14 +412,17 @@ class Redis implements KeyValueStore
 
         // INCRBY initializes (at 0) & immediately increments, whereas we
         // only do initialization if the value does not yet exist
-        if ($initial + $offset === 0 && $expire === 0) {
+        if (0 === $initial + $offset && 0 === $expire) {
             return $this->client->incrBy($key, $offset);
         }
 
         return $this->doIncrement($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         if ($offset <= 0 || $initial < 0) {
             return false;
@@ -396,7 +435,10 @@ class Redis implements KeyValueStore
         return $this->doIncrement($key, -$offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         $ttl = $this->ttl($expire);
 
@@ -408,22 +450,28 @@ class Redis implements KeyValueStore
         return $this->client->expire($key, $ttl);
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
         return $this->client->flushAll();
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         if (!is_numeric($name)) {
-            throw new InvalidCollection('Redis database names must be numeric. ' . serialize($name) . ' given.');
+            throw new InvalidCollection('Redis database names must be numeric. '.serialize($name).' given.');
         }
 
         // we can't reuse $this->client in a different object, because it'll
         // operate on a different database
         $client = new \Redis();
 
-        if ($this->client->getPersistentID() !== null) {
+        if (null !== $this->client->getPersistentID()) {
             $client->pconnect(
                 $this->client->getHost(),
                 $this->client->getPort(),
@@ -438,7 +486,7 @@ class Redis implements KeyValueStore
         }
 
         $auth = $this->client->getAuth();
-        if ($auth !== null) {
+        if (null !== $auth) {
             $client->auth($auth);
         }
 
@@ -447,34 +495,43 @@ class Redis implements KeyValueStore
             $client->setOption(\Redis::OPT_READ_TIMEOUT, $this->client->getReadTimeout());
         }
 
-        return new Collection($client, (int) $name);
+        return new Collection($client, $name);
     }
 
     /**
      * Redis expects true TTL, not expiration timestamp.
      *
+     * @param int $expire
+     *
      * @return int|null TTL in seconds, or `null` for no expiration
      */
-    protected function ttl(int $expire): int|null
+    protected function ttl($expire)
     {
-        if ($expire === 0) {
+        if (0 === $expire) {
             return null;
         }
 
         // relative time in seconds, <30 days
-        if ($expire < 30 * 24 * 60 * 60) {
-            return $expire;
+        if ($expire > 30 * 24 * 60 * 60) {
+            return $expire - time();
         }
 
-        return $expire - time();
+        return $expire;
     }
 
     /**
      * Shared between increment/decrement: both have mostly the same logic
      * (decrement just increments a negative value), but need their validation
      * & use of non-ttl native methods split up.
+     *
+     * @param string $key
+     * @param int    $offset
+     * @param int    $initial
+     * @param int    $expire
+     *
+     * @return int|bool
      */
-    protected function doIncrement(string $key, int $offset, int $initial, int $expire): int|false
+    protected function doIncrement($key, $offset, $initial, $expire)
     {
         $ttl = $this->ttl($expire);
 
@@ -482,14 +539,14 @@ class Redis implements KeyValueStore
 
         $value = $this->client->get($key);
 
-        if ($value === false) {
+        if (false === $value) {
             /*
              * Negative ttl behavior isn't properly documented & doesn't always
              * appear to treat the value as non-existing. Let's play safe and not
              * even create the value (also saving a request)
              */
             if ($ttl < 0) {
-                return $initial;
+                return true;
             }
 
             // value is not yet set, store initial value!
@@ -499,7 +556,7 @@ class Redis implements KeyValueStore
             /** @var bool[] $return */
             $return = (array) $this->client->exec();
 
-            return !in_array(false, $return, true) ? $initial : false;
+            return !in_array(false, $return) ? $initial : false;
         }
 
         // can't increment if a non-numeric value is set
@@ -538,15 +595,17 @@ class Redis implements KeyValueStore
         /** @var bool[] $return */
         $return = (array) $this->client->exec();
 
-        return !in_array(false, $return, true) ? $value : false;
+        return !in_array(false, $return) ? $value : false;
     }
 
     /**
      * Returns the version of the Redis server we're connecting to.
+     *
+     * @return string
      */
-    protected function getVersion(): string
+    protected function getVersion()
     {
-        if ($this->version === null) {
+        if (null === $this->version) {
             $info = $this->client->info();
             $this->version = $info['redis_version'];
         }
@@ -557,8 +616,10 @@ class Redis implements KeyValueStore
     /**
      * Version-based check to test if passing an options array to set() is
      * supported.
+     *
+     * @return bool
      */
-    protected function supportsOptionsArray(): bool
+    protected function supportsOptionsArray()
     {
         return version_compare($this->getVersion(), '2.6.12') >= 0;
     }

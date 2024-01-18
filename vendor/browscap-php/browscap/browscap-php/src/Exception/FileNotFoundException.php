@@ -13,7 +13,9 @@ use function sprintf;
  */
 final class FileNotFoundException extends Exception
 {
-    /** @return FileNotFoundException */
+    /**
+     * @return FileNotFoundException
+     */
     public static function fileNotFound(string $file): self
     {
         return new self(sprintf('File "%s" does not exist', $file));

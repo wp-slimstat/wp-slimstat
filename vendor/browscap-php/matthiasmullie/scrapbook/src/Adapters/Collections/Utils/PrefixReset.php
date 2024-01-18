@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters\Collections\Utils;
 
 use MatthiasMullie\Scrapbook\KeyValueStore;
@@ -13,24 +11,36 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
  */
 class PrefixReset extends PrefixKeys
 {
-    protected string $collection;
+    /**
+     * @var string
+     */
+    protected $collection;
 
-    public function __construct(KeyValueStore $cache, string $name)
+    /**
+     * @param string $name
+     */
+    public function __construct(KeyValueStore $cache, $name)
     {
         $this->cache = $cache;
         $this->collection = $name;
         parent::__construct($cache, $this->getPrefix());
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
         $index = $this->cache->increment($this->collection);
-        $this->setPrefix($this->collection . ':' . $index . ':');
+        $this->setPrefix($this->collection.':'.$index.':');
 
-        return $index !== false;
+        return false !== $index;
     }
 
-    protected function getPrefix(): string
+    /**
+     * @return string
+     */
+    protected function getPrefix()
     {
         /*
          * It's easy enough to just set a prefix to be used, but we can not
@@ -40,10 +50,10 @@ class PrefixReset extends PrefixKeys
          */
         $index = $this->cache->get($this->collection);
 
-        if ($index === false) {
+        if (false === $index) {
             $index = $this->cache->set($this->collection, 1);
         }
 
-        return $this->collection . ':' . $index . ':';
+        return $this->collection.':'.$index.':';
     }
 }

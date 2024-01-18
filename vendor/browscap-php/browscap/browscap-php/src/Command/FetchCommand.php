@@ -28,8 +28,6 @@ use function sprintf;
 
 /**
  * Command to fetch a browscap ini file from the remote host and store the content in a local file
- *
- * @internal This extends Symfony API, and we do not want to expose upstream BC breaks, so we DO NOT promise BC on this
  */
 class FetchCommand extends Command
 {
@@ -37,7 +35,9 @@ class FetchCommand extends Command
 
     private ?string $defaultCacheFolder = null;
 
-    /** @throws LogicException */
+    /**
+     * @throws LogicException
+     */
     public function __construct(string $defaultCacheFolder, string $defaultIniFile)
     {
         $this->defaultCacheFolder = $defaultCacheFolder;
@@ -46,7 +46,9 @@ class FetchCommand extends Command
         parent::__construct();
     }
 
-    /** @throws InvalidArgumentException */
+    /**
+     * @throws InvalidArgumentException
+     */
     protected function configure(): void
     {
         $this
@@ -56,7 +58,7 @@ class FetchCommand extends Command
                 'file',
                 InputArgument::OPTIONAL,
                 'browscap.ini file',
-                $this->defaultIniFile,
+                $this->defaultIniFile
             )
             ->addOption(
                 'remote-file',
@@ -66,16 +68,16 @@ class FetchCommand extends Command
                     'browscap.ini file to download from remote location (possible values are: %s, %s, %s)',
                     IniLoaderInterface::PHP_INI_LITE,
                     IniLoaderInterface::PHP_INI,
-                    IniLoaderInterface::PHP_INI_FULL,
+                    IniLoaderInterface::PHP_INI_FULL
                 ),
-                IniLoaderInterface::PHP_INI,
+                IniLoaderInterface::PHP_INI
             )
             ->addOption(
                 'cache',
                 'c',
                 InputOption::VALUE_OPTIONAL,
                 'Where the cache files are located',
-                $this->defaultCacheFolder,
+                $this->defaultCacheFolder
             );
     }
 
@@ -93,7 +95,7 @@ class FetchCommand extends Command
         $adapter    = new LocalFilesystemAdapter($cacheOption);
         $filesystem = new Filesystem($adapter);
         $cache      = new SimpleCache(
-            new Flysystem($filesystem),
+            new Flysystem($filesystem)
         );
 
         $file = $input->getArgument('file');

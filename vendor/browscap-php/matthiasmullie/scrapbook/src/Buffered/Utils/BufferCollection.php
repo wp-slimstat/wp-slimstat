@@ -1,11 +1,8 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Buffered\Utils;
 
 use MatthiasMullie\Scrapbook\Adapters\Collections\MemoryStore as MemoryStoreCollection;
-use MatthiasMullie\Scrapbook\KeyValueStore;
 
 /**
  * A collection implementation for Buffer.
@@ -19,9 +16,12 @@ class BufferCollection extends MemoryStoreCollection
     /**
      * @var Buffer
      */
-    protected KeyValueStore $cache;
+    protected $cache;
 
-    public function __construct(Buffer $cache, string $name)
+    /**
+     * @param string $name
+     */
+    public function __construct(Buffer $cache, $name)
     {
         parent::__construct($cache, $name);
     }
@@ -35,10 +35,14 @@ class BufferCollection extends MemoryStoreCollection
      * may not yet have been expired because that may have been part of an
      * uncommitted write)
      * So we'll want to know when a value is in local cache, but expired!
+     *
+     * @param string $key
+     *
+     * @return bool
      */
-    public function expired(string $key): bool
+    public function expired($key)
     {
-        if ($this->get($key) !== false) {
+        if (false !== $this->get($key)) {
             // returned a value, clearly not yet expired
             return false;
         }

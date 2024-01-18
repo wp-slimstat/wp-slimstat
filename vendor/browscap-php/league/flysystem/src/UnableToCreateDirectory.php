@@ -9,26 +9,25 @@ use Throwable;
 
 final class UnableToCreateDirectory extends RuntimeException implements FilesystemOperationFailed
 {
-    private string $location;
-    private string $reason = '';
+    /**
+     * @var string
+     */
+    private $location;
 
-    public static function atLocation(string $dirname, string $errorMessage = '', ?Throwable $previous = null): UnableToCreateDirectory
+    public static function atLocation(string $dirname, string $errorMessage = ''): UnableToCreateDirectory
     {
-        $message = "Unable to create a directory at {$dirname}. {$errorMessage}";
-        $e = new static(rtrim($message), 0, $previous);
+        $message = "Unable to create a directory at {$dirname}. ${errorMessage}";
+        $e = new static(rtrim($message));
         $e->location = $dirname;
-        $e->reason = $errorMessage;
 
         return $e;
     }
 
     public static function dueToFailure(string $dirname, Throwable $previous): UnableToCreateDirectory
     {
-        $reason = $previous instanceof UnableToCreateDirectory ? $previous->reason() : '';
-        $message = "Unable to create a directory at $dirname. $reason";
-        $e = new static(rtrim($message), 0, $previous);
+        $message = "Unable to create a directory at {$dirname}";
+        $e = new static($message, 0, $previous);
         $e->location = $dirname;
-        $e->reason = $reason ?: $message;
 
         return $e;
     }
@@ -36,11 +35,6 @@ final class UnableToCreateDirectory extends RuntimeException implements Filesyst
     public function operation(): string
     {
         return FilesystemOperationFailed::OPERATION_CREATE_DIRECTORY;
-    }
-
-    public function reason(): string
-    {
-        return $this->reason;
     }
 
     public function location(): string

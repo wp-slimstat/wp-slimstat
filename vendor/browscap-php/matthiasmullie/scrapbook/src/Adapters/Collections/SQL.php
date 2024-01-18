@@ -1,11 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters\Collections;
 
 use MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixKeys;
 use MatthiasMullie\Scrapbook\Adapters\SQL as Adapter;
+use PDO;
 
 /**
  * SQL adapter for a subset of data, accomplished by prefixing keys.
@@ -16,18 +15,31 @@ use MatthiasMullie\Scrapbook\Adapters\SQL as Adapter;
  */
 class SQL extends PrefixKeys
 {
-    protected \PDO $client;
+    /**
+     * @var PDO
+     */
+    protected $client;
 
-    protected string $table;
+    /**
+     * @var string
+     */
+    protected $table;
 
-    public function __construct(Adapter $cache, \PDO $client, string $table, string $name)
+    /**
+     * @param string $table
+     * @param string $name
+     */
+    public function __construct(Adapter $cache, PDO $client, $table, $name)
     {
-        parent::__construct($cache, 'collection:' . $name . ':');
+        parent::__construct($cache, 'collection:'.$name.':');
         $this->client = $client;
         $this->table = $table;
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
         // deleting key with a prefixed LIKE should be fast, they're indexed
         $statement = $this->client->prepare(
@@ -35,8 +47,8 @@ class SQL extends PrefixKeys
             WHERE k LIKE :key"
         );
 
-        return $statement->execute([
-            ':key' => $this->prefix . '%',
-        ]);
+        return $statement->execute(array(
+            ':key' => $this->prefix.'%',
+        ));
     }
 }

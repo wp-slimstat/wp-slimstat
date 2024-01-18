@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters;
 
 /**
@@ -14,10 +12,13 @@ namespace MatthiasMullie\Scrapbook\Adapters;
  */
 class SQLite extends MySQL
 {
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
         if (empty($items)) {
-            return [];
+            return array();
         }
 
         $expire = $this->expire($expire);
@@ -31,15 +32,15 @@ class SQLite extends MySQL
             VALUES (:key, :value, :expire)"
         );
 
-        $success = [];
+        $success = array();
         foreach ($items as $key => $value) {
             $value = $this->serialize($value);
 
-            $statement->execute([
+            $statement->execute(array(
                 ':key' => $key,
                 ':value' => $value,
                 ':expire' => $expire,
-            ]);
+            ));
 
             $success[$key] = (bool) $statement->rowCount();
         }
@@ -47,7 +48,10 @@ class SQLite extends MySQL
         return $success;
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         $value = $this->serialize($value);
         $expire = $this->expire($expire);
@@ -60,21 +64,27 @@ class SQLite extends MySQL
             VALUES (:key, :value, :expire)"
         );
 
-        $statement->execute([
+        $statement->execute(array(
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ]);
+        ));
 
-        return $statement->rowCount() === 1;
+        return 1 === $statement->rowCount();
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        return $this->client->exec("DELETE FROM $this->table") !== false;
+        return false !== $this->client->exec("DELETE FROM $this->table");
     }
 
-    protected function init(): void
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
     {
         $this->client->exec(
             "CREATE TABLE IF NOT EXISTS $this->table (

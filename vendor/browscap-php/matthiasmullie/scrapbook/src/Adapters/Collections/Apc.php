@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters\Collections;
 
 use MatthiasMullie\Scrapbook\Adapters\Apc as Adapter;
@@ -16,16 +14,33 @@ use MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixKeys;
  */
 class Apc extends PrefixKeys
 {
-    public function __construct(Adapter $cache, string $name)
+    /**
+     * @param string $name
+     */
+    public function __construct(Adapter $cache, $name)
     {
-        parent::__construct($cache, 'collection:' . $name . ':');
+        parent::__construct($cache, 'collection:'.$name.':');
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        $iterator = new \APCUIterator('/^' . preg_quote($this->prefix, '/') . '/', \APC_ITER_KEY);
-        apcu_delete($iterator);
+        /*
+         * Both of these utility methods are protected in parent, because I just
+         * don't want to expose them to users. But I really want to use them
+         * here... I'll use reflection to access them - I shouldn't, but I have
+         * a decent test suite to protect me, should I forget about this and
+         * change the implementation of these methods.
+         */
+        $reflection = new \ReflectionMethod($this->cache, 'APCuIterator');
+        $reflection->setAccessible(true);
+        $iterator = $reflection->invoke($this->cache, '/^'.preg_quote($this->prefix, '/').'/', \APC_ITER_KEY);
 
-        return true;
+        $reflection = new \ReflectionMethod($this->cache, 'apcu_delete');
+        $reflection->setAccessible(true);
+
+        return $reflection->invoke($this->cache, $iterator);
     }
 }

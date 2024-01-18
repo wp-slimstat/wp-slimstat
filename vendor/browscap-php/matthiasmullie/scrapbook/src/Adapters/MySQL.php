@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters;
 
 /**
@@ -14,7 +12,10 @@ namespace MatthiasMullie\Scrapbook\Adapters;
  */
 class MySQL extends SQL
 {
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         $value = $this->serialize($value);
         $expire = $this->expire($expire);
@@ -26,25 +27,28 @@ class MySQL extends SQL
             VALUES (:key, :value, :expire)"
         );
 
-        $statement->execute([
+        $statement->execute(array(
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ]);
+        ));
 
         // 1 = insert; 2 = update
-        return $statement->rowCount() === 1 || $statement->rowCount() === 2;
+        return 1 === $statement->rowCount() || 2 === $statement->rowCount();
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
         if (empty($items)) {
-            return [];
+            return array();
         }
 
         $i = 1;
-        $query = [];
-        $params = [];
+        $query = array();
+        $params = array();
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -53,18 +57,18 @@ class MySQL extends SQL
             $value = $this->serialize($value);
 
             $query[] = "(:key$i, :value$i, :expire$i)";
-            $params += [
+            $params += array(
                 ":key$i" => $key,
                 ":value$i" => $value,
                 ":expire$i" => $expire,
-            ];
+            );
 
             ++$i;
         }
 
         $statement = $this->client->prepare(
             "REPLACE INTO $this->table (k, v, e)
-            VALUES " . implode(',', $query)
+            VALUES ".implode(',', $query)
         );
 
         $statement->execute($params);
@@ -82,7 +86,10 @@ class MySQL extends SQL
         return array_fill_keys(array_keys($items), $success);
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         $value = $this->serialize($value);
         $expire = $this->expire($expire);
@@ -95,21 +102,27 @@ class MySQL extends SQL
             VALUES (:key, :value, :expire)"
         );
 
-        $statement->execute([
+        $statement->execute(array(
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ]);
+        ));
 
-        return $statement->rowCount() === 1;
+        return 1 === $statement->rowCount();
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        return $this->client->exec("TRUNCATE TABLE $this->table") !== false;
+        return false !== $this->client->exec("TRUNCATE TABLE $this->table");
     }
 
-    protected function init(): void
+    /**
+     * {@inheritdoc}
+     */
+    protected function init()
     {
         $this->client->exec(
             "CREATE TABLE IF NOT EXISTS $this->table (

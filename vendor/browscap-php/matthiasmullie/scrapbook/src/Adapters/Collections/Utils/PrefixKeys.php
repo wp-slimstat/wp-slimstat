@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters\Collections\Utils;
 
 use MatthiasMullie\Scrapbook\KeyValueStore;
@@ -13,130 +11,206 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
  */
 class PrefixKeys implements KeyValueStore
 {
-    protected KeyValueStore $cache;
+    /**
+     * @var KeyValueStore
+     */
+    protected $cache;
 
-    protected string $prefix;
+    /**
+     * @var string
+     */
+    protected $prefix;
 
-    public function __construct(KeyValueStore $cache, string $prefix)
+    /**
+     * @param string $prefix
+     */
+    public function __construct(KeyValueStore $cache, $prefix)
     {
         $this->cache = $cache;
         $this->setPrefix($prefix);
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
         $key = $this->prefix($key);
 
         return $this->cache->get($key, $token);
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
-        $keys = array_map([$this, 'prefix'], $keys);
+        $keys = array_map(array($this, 'prefix'), $keys);
         $results = $this->cache->getMulti($keys, $tokens);
-        $keys = array_map([$this, 'unfix'], array_keys($results));
+        $keys = array_map(array($this, 'unfix'), array_keys($results));
         $tokens = array_combine($keys, $tokens);
 
         return array_combine($keys, $results);
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         $key = $this->prefix($key);
 
-        return $this->cache->set($key, $value, $expire);
+        // Note: I have no idea why, but it seems to happen in some cases that
+        // `$value` is `null`, but func_get_arg(1) returns the correct value.
+        // Makes no sense, probably a very obscure edge case, but it happens.
+        // (it didn't seem to happen if `$value` was another variable name...)
+        return $this->cache->set($key, func_get_arg(1), $expire);
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
-        $keys = array_map([$this, 'prefix'], array_keys($items));
+        $keys = array_map(array($this, 'prefix'), array_keys($items));
         $items = array_combine($keys, $items);
         $results = $this->cache->setMulti($items, $expire);
-        $keys = array_map([$this, 'unfix'], array_keys($results));
+        $keys = array_map(array($this, 'unfix'), array_keys($results));
 
         return array_combine($keys, $results);
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         $key = $this->prefix($key);
 
         return $this->cache->delete($key);
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
-        $keys = array_map([$this, 'prefix'], $keys);
+        $keys = array_map(array($this, 'prefix'), $keys);
         $results = $this->cache->deleteMulti($keys);
-        $keys = array_map([$this, 'unfix'], array_keys($results));
+        $keys = array_map(array($this, 'unfix'), array_keys($results));
 
         return array_combine($keys, $results);
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         $key = $this->prefix($key);
 
-        return $this->cache->add($key, $value, $expire);
+        // Note: I have no idea why, but it seems to happen in some cases that
+        // `$value` is `null`, but func_get_arg(1) returns the correct value.
+        // Makes no sense, probably a very obscure edge case, but it happens.
+        // (it didn't seem to happen if `$value` was another variable name...)
+        return $this->cache->add($key, func_get_arg(1), $expire);
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         $key = $this->prefix($key);
 
-        return $this->cache->replace($key, $value, $expire);
+        // Note: I have no idea why, but it seems to happen in some cases that
+        // `$value` is `null`, but func_get_arg(1) returns the correct value.
+        // Makes no sense, probably a very obscure edge case, but it happens.
+        // (it didn't seem to happen if `$value` was another variable name...)
+        return $this->cache->replace($key, func_get_arg(1), $expire);
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         $key = $this->prefix($key);
 
-        return $this->cache->cas($token, $key, $value, $expire);
+        // Note: I have no idea why, but it seems to happen in some cases that
+        // `$value` is `null`, but func_get_arg(2) returns the correct value.
+        // Makes no sense, probably a very obscure edge case, but it happens.
+        // (it didn't seem to happen if `$value` was another variable name...)
+        return $this->cache->cas($token, $key, func_get_arg(2), $expire);
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         $key = $this->prefix($key);
 
         return $this->cache->increment($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         $key = $this->prefix($key);
 
         return $this->cache->decrement($key, $offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         $key = $this->prefix($key);
 
         return $this->cache->touch($key, $expire);
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
         return $this->cache->flush();
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         return $this->cache->getCollection($name);
     }
 
-    protected function setPrefix(string $prefix): void
+    /**
+     * @param string $prefix
+     */
+    protected function setPrefix($prefix)
     {
         $this->prefix = $prefix;
     }
 
-    protected function prefix(string $key): string
+    /**
+     * {@inheritdoc}
+     */
+    protected function prefix($key)
     {
-        return $this->prefix . $key;
+        return $this->prefix.$key;
     }
 
-    protected function unfix(string $key): string
+    /**
+     * {@inheritdoc}
+     */
+    protected function unfix($key)
     {
-        return preg_replace('/^' . preg_quote($this->prefix, '/') . '/', '', $key);
+        return preg_replace('/^'.preg_quote($this->prefix, '/').'/', '', $key);
     }
 }

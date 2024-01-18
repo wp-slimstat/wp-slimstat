@@ -15,17 +15,18 @@ use Traversable;
 class DirectoryListing implements IteratorAggregate
 {
     /**
-     * @param iterable<T> $listing
+     * @var iterable<T>
      */
-    public function __construct(private iterable $listing)
-    {
-    }
+    private $listing;
 
     /**
-     * @param callable(T): bool $filter
-     *
-     * @return DirectoryListing<T>
+     * @param iterable<T> $listing
      */
+    public function __construct(iterable $listing)
+    {
+        $this->listing = $listing;
+    }
+
     public function filter(callable $filter): DirectoryListing
     {
         $generator = (static function (iterable $listing) use ($filter): Generator {
@@ -39,13 +40,6 @@ class DirectoryListing implements IteratorAggregate
         return new DirectoryListing($generator);
     }
 
-    /**
-     * @template R
-     *
-     * @param callable(T): R $mapper
-     *
-     * @return DirectoryListing<R>
-     */
     public function map(callable $mapper): DirectoryListing
     {
         $generator = (static function (iterable $listing) use ($mapper): Generator {
@@ -57,9 +51,6 @@ class DirectoryListing implements IteratorAggregate
         return new DirectoryListing($generator);
     }
 
-    /**
-     * @return DirectoryListing<T>
-     */
     public function sortByPath(): DirectoryListing
     {
         $listing = $this->toArray();

@@ -10,15 +10,25 @@ use function substr;
 
 final class PathPrefixer
 {
-    private string $prefix = '';
+    /**
+     * @var string
+     */
+    private $prefix = '';
 
-    public function __construct(string $prefix, private string $separator = '/')
+    /**
+     * @var string
+     */
+    private $separator = '/';
+
+    public function __construct(string $prefix, string $separator = '/')
     {
         $this->prefix = rtrim($prefix, '\\/');
 
         if ($this->prefix !== '' || $prefix === $separator) {
             $this->prefix .= $separator;
         }
+
+        $this->separator = $separator;
     }
 
     public function prefixPath(string $path): string
@@ -41,7 +51,7 @@ final class PathPrefixer
     {
         $prefixedPath = $this->prefixPath(rtrim($path, '\\/'));
 
-        if ($prefixedPath === '' || substr($prefixedPath, -1) === $this->separator) {
+        if ((substr($prefixedPath, -1) === $this->separator) || $prefixedPath === '') {
             return $prefixedPath;
         }
 

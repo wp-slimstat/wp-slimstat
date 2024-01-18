@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters;
 
 use MatthiasMullie\Scrapbook\Adapters\Collections\MemoryStore as Collection;
@@ -21,18 +19,27 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
  */
 class MemoryStore implements KeyValueStore
 {
-    public array $items = [];
-
-    protected int $limit = 0;
-
-    protected int $size = 0;
+    /**
+     * @var array
+     */
+    protected $items = array();
 
     /**
-     * @param int|string|null $limit Memory limit in bytes (defaults to 10% of memory_limit)
+     * @var int
      */
-    public function __construct(int|string $limit = null)
+    protected $limit = 0;
+
+    /**
+     * @var int
+     */
+    protected $size = 0;
+
+    /**
+     * @param int|string $limit Memory limit in bytes (defaults to 10% of memory_limit)
+     */
+    public function __construct($limit = null)
     {
-        if ($limit === null) {
+        if (null === $limit) {
             $phpLimit = ini_get('memory_limit');
             if ($phpLimit <= 0) {
                 $this->limit = PHP_INT_MAX;
@@ -44,7 +51,10 @@ class MemoryStore implements KeyValueStore
         }
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
         if (!$this->exists($key)) {
             $token = null;
@@ -57,13 +67,16 @@ class MemoryStore implements KeyValueStore
         // use serialized version of stored value as CAS token
         $token = $value;
 
-        return unserialize($value, ['allowed_classes' => true]);
+        return unserialize($value);
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
-        $items = [];
-        $tokens = [];
+        $items = array();
+        $tokens = array();
 
         foreach ($keys as $key) {
             if (!$this->exists($key)) {
@@ -78,13 +91,16 @@ class MemoryStore implements KeyValueStore
         return $items;
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         $this->size -= isset($this->items[$key]) ? strlen($this->items[$key][0]) : 0;
 
         $value = serialize($value);
         $expire = $this->normalizeTime($expire);
-        $this->items[$key] = [$value, $expire];
+        $this->items[$key] = array($value, $expire);
 
         $this->size += strlen($value);
         $this->lru($key);
@@ -93,19 +109,23 @@ class MemoryStore implements KeyValueStore
         return true;
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
-        $success = [];
+        $success = array();
         foreach ($items as $key => $value) {
-            // PHP treats numeric keys as integers, but they're allowed
-            $key = (string) $key;
             $success[$key] = $this->set($key, $value, $expire);
         }
 
         return $success;
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         $exists = $this->exists($key);
 
@@ -117,9 +137,12 @@ class MemoryStore implements KeyValueStore
         return $exists;
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
-        $success = [];
+        $success = array();
 
         foreach ($keys as $key) {
             $success[$key] = $this->delete($key);
@@ -128,7 +151,10 @@ class MemoryStore implements KeyValueStore
         return $success;
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         if ($this->exists($key)) {
             return false;
@@ -137,7 +163,10 @@ class MemoryStore implements KeyValueStore
         return $this->set($key, $value, $expire);
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         if (!$this->exists($key)) {
             return false;
@@ -146,7 +175,10 @@ class MemoryStore implements KeyValueStore
         return $this->set($key, $value, $expire);
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         if (!$this->exists($key)) {
             return false;
@@ -160,7 +192,10 @@ class MemoryStore implements KeyValueStore
         return $this->set($key, $value, $expire);
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         if ($offset <= 0 || $initial < 0) {
             return false;
@@ -169,7 +204,10 @@ class MemoryStore implements KeyValueStore
         return $this->doIncrement($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         if ($offset <= 0 || $initial < 0) {
             return false;
@@ -178,7 +216,10 @@ class MemoryStore implements KeyValueStore
         return $this->doIncrement($key, -$offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         $expire = $this->normalizeTime($expire);
 
@@ -188,23 +229,33 @@ class MemoryStore implements KeyValueStore
         return $this->cas($token, $key, $value, $expire);
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        $this->items = [];
+        $this->items = array();
         $this->size = 0;
 
         return true;
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         return new Collection($this, $name);
     }
 
     /**
      * Checks if a value exists in cache and is not yet expired.
+     *
+     * @param string $key
+     *
+     * @return bool
      */
-    protected function exists(string $key): bool
+    protected function exists($key)
     {
         if (!array_key_exists($key, $this->items)) {
             // key not in cache
@@ -212,7 +263,7 @@ class MemoryStore implements KeyValueStore
         }
 
         $expire = $this->items[$key][1];
-        if ($expire !== 0 && $expire < time()) {
+        if (0 !== $expire && $expire < time()) {
             // not permanent & already expired
             $this->size -= strlen($this->items[$key][0]);
             unset($this->items[$key]);
@@ -229,8 +280,15 @@ class MemoryStore implements KeyValueStore
      * Shared between increment/decrement: both have mostly the same logic
      * (decrement just increments a negative value), but need their validation
      * split up (increment won't accept negative values).
+     *
+     * @param string $key
+     * @param int    $offset
+     * @param int    $initial
+     * @param int    $expire
+     *
+     * @return int|bool
      */
-    protected function doIncrement(string $key, int $offset, int $initial, int $expire): int|false
+    protected function doIncrement($key, $offset, $initial, $expire)
     {
         if (!$this->exists($key)) {
             $this->set($key, $initial, $expire);
@@ -259,8 +317,12 @@ class MemoryStore implements KeyValueStore
      *
      * The first case (relative time) will be normalized into a fixed absolute
      * timestamp.
+     *
+     * @param int $time
+     *
+     * @return int
      */
-    protected function normalizeTime(int $time): int
+    protected function normalizeTime($time)
     {
         // 0 = infinity
         if (!$time) {
@@ -279,7 +341,7 @@ class MemoryStore implements KeyValueStore
      * This cache uses least recently used algorithm. This is to be called
      * with the key to be marked as just used.
      */
-    protected function lru(string $key): void
+    protected function lru($key)
     {
         // move key that has just been used to last position in the array
         $value = $this->items[$key];
@@ -291,7 +353,7 @@ class MemoryStore implements KeyValueStore
      * Least recently used cache values will be evicted from cache should
      * it fill up too much.
      */
-    protected function evict(): void
+    protected function evict()
     {
         while ($this->size > $this->limit && !empty($this->items)) {
             $item = array_shift($this->items);
@@ -306,8 +368,10 @@ class MemoryStore implements KeyValueStore
      * @see http://php.net/manual/en/faq.using.php#faq.using.shorthandbytes
      *
      * @param string|int $shorthand Amount of bytes (int) or shorthand value (e.g. 512M)
+     *
+     * @return int
      */
-    protected function shorthandToBytes(string|int $shorthand): int
+    protected function shorthandToBytes($shorthand)
     {
         if (is_numeric($shorthand)) {
             // make sure that when float(1.234E17) is passed in, it doesn't get
@@ -315,14 +379,10 @@ class MemoryStore implements KeyValueStore
             return $shorthand;
         }
 
-        $units = ['B' => 1024, 'M' => 1024 ** 2, 'G' => 1024 ** 3];
+        $units = array('B' => 1024, 'M' => pow(1024, 2), 'G' => pow(1024, 3));
 
-        return (int) preg_replace_callback(
-            '/^([0-9]+)(' . implode('|', array_keys($units)) . ')$/',
-            static function ($match) use ($units): int {
-                return $match[1] * $units[$match[2]];
-            },
-            $shorthand
-        );
+        return (int) preg_replace_callback('/^([0-9]+)('.implode('|', array_keys($units)).')$/', function ($match) use ($units) {
+            return $match[1] * $units[$match[2]];
+        }, $shorthand);
     }
 }

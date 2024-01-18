@@ -60,7 +60,9 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
      */
     private int $connectTimeout;
 
-    /** @throws void */
+    /**
+     * @throws void
+     */
     public function __construct(
         CacheInterface $cache,
         LoggerInterface $logger,
@@ -93,7 +95,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
         if (! is_readable($iniFile)) {
             throw new FileNotFoundException(
-                sprintf('it was not possible to read the local file %s', $iniFile),
+                sprintf('it was not possible to read the local file %s', $iniFile)
             );
         }
 
@@ -162,10 +164,10 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s',
-                    $uri,
+                    $uri
                 ),
                 0,
-                $e,
+                $e
             );
         }
 
@@ -174,8 +176,8 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
                 sprintf(
                     'an error occured while fetching remote data from URI %s: StatusCode was %d',
                     $uri,
-                    $response->getStatusCode(),
-                ),
+                    $response->getStatusCode()
+                )
             );
         }
 
@@ -194,7 +196,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
             throw FetcherException::httpError(
                 $uri,
-                'an error occured while fetching remote data, but no error was raised',
+                'an error occured while fetching remote data, but no error was raised'
             );
         }
 
@@ -254,10 +256,10 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s',
-                    $uri,
+                    $uri
                 ),
                 0,
-                $e,
+                $e
             );
         }
 
@@ -266,8 +268,8 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
                 sprintf(
                     'an error occured while fetching remote data from URI %s: StatusCode was %d',
                     $uri,
-                    $response->getStatusCode(),
-                ),
+                    $response->getStatusCode()
+                )
             );
         }
 
@@ -328,10 +330,10 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching version data from URI %s',
-                    $uri,
+                    $uri
                 ),
                 0,
-                $e,
+                $e
             );
         }
 
@@ -340,8 +342,8 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
                 sprintf(
                     'an error occured while fetching version data from URI %s: StatusCode was %d',
                     $uri,
-                    $response->getStatusCode(),
-                ),
+                    $response->getStatusCode()
+                )
             );
         }
 
@@ -352,17 +354,17 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
                 sprintf(
                     'an error occured while fetching version data from URI %s: StatusCode was %d',
                     $uri,
-                    $response->getStatusCode(),
+                    $response->getStatusCode()
                 ),
                 0,
-                $e,
+                $e
             );
         }
 
         if (! $remoteVersion) {
             // could not load remote version
             throw new FetcherException(
-                'could not load version from remote location',
+                'could not load version from remote location'
             );
         }
 
@@ -374,14 +376,16 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             sprintf(
                 'a newer version is available, local version: %s, remote version: %s',
                 $cachedVersion,
-                $remoteVersion,
-            ),
+                $remoteVersion
+            )
         );
 
         return (int) $cachedVersion;
     }
 
-    /** @throws void */
+    /**
+     * @throws void
+     */
     private function sanitizeContent(string $content): string
     {
         // replace everything between opening and closing php and asp tags

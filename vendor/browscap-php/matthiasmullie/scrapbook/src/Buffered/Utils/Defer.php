@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Buffered\Utils;
 
 use MatthiasMullie\Scrapbook\Exception\UncommittedTransaction;
@@ -43,8 +41,10 @@ class Defer
 {
     /**
      * Cache to write to.
+     *
+     * @var KeyValueStore
      */
-    protected KeyValueStore $cache;
+    protected $cache;
 
     /**
      * All updates will be scheduled by key. If there are multiple updates
@@ -60,13 +60,15 @@ class Defer
      *
      * @var array[]
      */
-    protected array $keys = [];
+    protected $keys = array();
 
     /**
      * Flush is special - it's not specific to (a) key(s), so we can't store
      * it to $keys.
+     *
+     * @var bool
      */
-    protected bool $flush = false;
+    protected $flush = false;
 
     public function __construct(KeyValueStore $cache)
     {
@@ -79,69 +81,92 @@ class Defer
     public function __destruct()
     {
         if (!empty($this->keys)) {
-            throw new UncommittedTransaction('Transaction is about to be destroyed without having been committed or rolled back.');
+            throw new UncommittedTransaction('Transaction is about to be destroyed without having been '.'committed or rolled back.');
         }
     }
 
-    public function set(string $key, mixed $value, int $expire): void
+    /**
+     * @param string $key
+     * @param mixed  $value
+     * @param int    $expire
+     */
+    public function set($key, $value, $expire)
     {
-        $args = [
+        $args = array(
             'key' => $key,
             'value' => $value,
             'expire' => $expire,
-        ];
-        $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
+        );
+        $this->keys[$key] = array(__FUNCTION__, array($this->cache, __FUNCTION__), $args);
     }
 
-    public function setMulti(array $items, int $expire): void
+    /**
+     * @param mixed[] $items
+     * @param int     $expire
+     */
+    public function setMulti(array $items, $expire)
     {
         foreach ($items as $key => $value) {
-            // PHP treats numeric keys as integers, but they're allowed
-            $key = (string) $key;
             $this->set($key, $value, $expire);
         }
     }
 
-    public function delete(string $key): void
+    /**
+     * @param string $key
+     */
+    public function delete($key)
     {
-        $args = ['key' => $key];
-        $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
+        $args = array('key' => $key);
+        $this->keys[$key] = array(__FUNCTION__, array($this->cache, __FUNCTION__), $args);
     }
 
     /**
      * @param string[] $keys
      */
-    public function deleteMulti(array $keys): void
+    public function deleteMulti(array $keys)
     {
         foreach ($keys as $key) {
             $this->delete($key);
         }
     }
 
-    public function add(string $key, mixed $value, int $expire): void
+    /**
+     * @param string $key
+     * @param mixed  $value
+     * @param int    $expire
+     */
+    public function add($key, $value, $expire)
     {
-        $args = [
+        $args = array(
             'key' => $key,
             'value' => $value,
             'expire' => $expire,
-        ];
-        $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
-    }
-
-    public function replace(string $key, mixed $value, int $expire): void
-    {
-        $args = [
-            'key' => $key,
-            'value' => $value,
-            'expire' => $expire,
-        ];
-        $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
+        );
+        $this->keys[$key] = array(__FUNCTION__, array($this->cache, __FUNCTION__), $args);
     }
 
     /**
-     * @param mixed $originalValue No real CAS token, but the original value for this key
+     * @param string $key
+     * @param mixed  $value
+     * @param int    $expire
      */
-    public function cas(mixed $originalValue, string $key, mixed $value, int $expire): void
+    public function replace($key, $value, $expire)
+    {
+        $args = array(
+            'key' => $key,
+            'value' => $value,
+            'expire' => $expire,
+        );
+        $this->keys[$key] = array(__FUNCTION__, array($this->cache, __FUNCTION__), $args);
+    }
+
+    /**
+     * @param mixed  $originalValue No real CAS token, but the original value for this key
+     * @param string $key
+     * @param mixed  $value
+     * @param int    $expire
+     */
+    public function cas($originalValue, $key, $value, $expire)
     {
         /*
          * If we made it here, we're sure that logically, the CAS applies with
@@ -151,17 +176,24 @@ class Defer
          * applies on top op that change. We can just fold it in there & update
          * the value we set initially.
          */
-        if (isset($this->keys[$key]) && in_array($this->keys[$key][0], ['set', 'add', 'replace', 'cas'])) {
+        if (isset($this->keys[$key]) && in_array($this->keys[$key][0], array('set', 'add', 'replace', 'cas'))) {
             $this->keys[$key][2]['value'] = $value;
             $this->keys[$key][2]['expire'] = $expire;
 
             return;
         }
 
+        /*
+         * @param mixed $originalValue
+         * @param string $key
+         * @param mixed $value
+         * @param int $expire
+         * @return bool
+         */
         $cache = $this->cache;
-        $callback = static function (mixed $originalValue, string $key, mixed $value, int $expire) use ($cache): bool {
+        $callback = function ($originalValue, $key, $value, $expire) use ($cache) {
             // check if given (local) CAS token was known
-            if ($originalValue === null) {
+            if (null === $originalValue) {
                 return false;
             }
 
@@ -178,47 +210,66 @@ class Defer
             return false;
         };
 
-        $args = [
+        $args = array(
             'originalValue' => $originalValue,
             'key' => $key,
             'value' => $value,
             'expire' => $expire,
-        ];
-        $this->keys[$key] = [__FUNCTION__, $callback, $args];
+        );
+        $this->keys[$key] = array(__FUNCTION__, $callback, $args);
     }
 
-    public function increment(string $key, int $offset, int $initial, int $expire): void
+    /**
+     * @param string $key
+     * @param int    $offset
+     * @param int    $initial
+     * @param int    $expire
+     */
+    public function increment($key, $offset, $initial, $expire)
     {
         $this->doIncrement(__FUNCTION__, $key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset, int $initial, int $expire): void
+    /**
+     * @param string $key
+     * @param int    $offset
+     * @param int    $initial
+     * @param int    $expire
+     */
+    public function decrement($key, $offset, $initial, $expire)
     {
         $this->doIncrement(__FUNCTION__, $key, $offset, $initial, $expire);
     }
 
-    protected function doIncrement(string $operation, string $key, int $offset, int $initial, int $expire): void
+    /**
+     * @param string $operation
+     * @param string $key
+     * @param int    $offset
+     * @param int    $initial
+     * @param int    $expire
+     */
+    protected function doIncrement($operation, $key, $offset, $initial, $expire)
     {
         if (isset($this->keys[$key])) {
-            if (in_array($this->keys[$key][0], ['set', 'add', 'replace', 'cas'])) {
+            if (in_array($this->keys[$key][0], array('set', 'add', 'replace', 'cas'))) {
                 // we're trying to increment a key that's only just being stored
                 // in this transaction - might as well combine those
-                $symbol = $this->keys[$key][1] === 'increment' ? 1 : -1;
+                $symbol = 'increment' === $this->keys[$key][1] ? 1 : -1;
                 $this->keys[$key][2]['value'] += $symbol * $offset;
                 $this->keys[$key][2]['expire'] = $expire;
-            } elseif (in_array($this->keys[$key][0], ['increment', 'decrement'])) {
+            } elseif (in_array($this->keys[$key][0], array('increment', 'decrement'))) {
                 // we're trying to increment a key that's already being incremented
                 // or decremented in this transaction - might as well combine those
 
                 // we may be combining an increment with a decrement
                 // we must carefully figure out how these 2 apply against each other
-                $symbol = $this->keys[$key][0] === 'increment' ? 1 : -1;
+                $symbol = 'increment' === $this->keys[$key][0] ? 1 : -1;
                 $previous = $symbol * $this->keys[$key][2]['offset'];
 
-                $symbol = $operation === 'increment' ? 1 : -1;
+                $symbol = 'increment' === $operation ? 1 : -1;
                 $current = $symbol * $offset;
 
-                $offset = (int) ($previous + $current);
+                $offset = $previous + $current;
 
                 $this->keys[$key][2]['offset'] = abs($offset);
                 // initial value must also be adjusted to include the new offset
@@ -229,7 +280,7 @@ class Defer
                 // decrement or vice versa
                 $operation = $offset >= 0 ? 'increment' : 'decrement';
                 $this->keys[$key][0] = $operation;
-                $this->keys[$key][1] = [$this->cache, $operation];
+                $this->keys[$key][1] = array($this->cache, $operation);
             } else {
                 // touch & delete become useless if incrementing/decrementing after
                 unset($this->keys[$key]);
@@ -237,45 +288,49 @@ class Defer
         }
 
         if (!isset($this->keys[$key])) {
-            $args = [
+            $args = array(
                 'key' => $key,
                 'offset' => $offset,
                 'initial' => $initial,
                 'expire' => $expire,
-            ];
-            $this->keys[$key] = [$operation, [$this->cache, $operation], $args];
+            );
+            $this->keys[$key] = array($operation, array($this->cache, $operation), $args);
         }
     }
 
-    public function touch(string $key, int $expire): void
+    /**
+     * @param string $key
+     * @param int    $expire
+     */
+    public function touch($key, $expire)
     {
-        if (isset($this->keys[$key][2]['expire'])) {
+        if (isset($this->keys[$key]) && isset($this->keys[$key][2]['expire'])) {
             // changing expiration time of a value we're already storing in
             // this transaction - might as well just set new expiration time
             // right away
             $this->keys[$key][2]['expire'] = $expire;
         } else {
-            $args = [
+            $args = array(
                 'key' => $key,
                 'expire' => $expire,
-            ];
-            $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
+            );
+            $this->keys[$key] = array(__FUNCTION__, array($this->cache, __FUNCTION__), $args);
         }
     }
 
-    public function flush(): void
+    public function flush()
     {
         // clear all scheduled updates, they'll be wiped out after this anyway
-        $this->keys = [];
+        $this->keys = array();
         $this->flush = true;
     }
 
     /**
      * Clears all scheduled writes.
      */
-    public function clear(): void
+    public function clear()
     {
-        $this->keys = [];
+        $this->keys = array();
         $this->flush = false;
     }
 
@@ -285,20 +340,21 @@ class Defer
      * When the commit fails, no changes in this transaction will be applied
      * (and those that had already been applied will be undone). False will
      * be returned in that case.
+     *
+     * @return bool
      */
-    public function commit(): bool
+    public function commit()
     {
-        [$old, $new] = $this->generateRollback();
+        list($old, $new) = $this->generateRollback();
         $updates = $this->generateUpdates();
         $updates = $this->combineUpdates($updates);
-        usort($updates, [$this, 'sortUpdates']);
+        usort($updates, array($this, 'sortUpdates'));
 
         foreach ($updates as $update) {
             // apply update to cache & receive a simple bool to indicate
             // success (true) or failure (false)
-            [, $callback, $args] = $update;
-            $success = call_user_func_array($callback, $args);
-            if ($success === false) {
+            $success = call_user_func_array($update[1], $update[2]);
+            if (false === $success) {
                 $this->rollback($old, $new);
 
                 return false;
@@ -314,7 +370,7 @@ class Defer
      * Roll the cache back to pre-transaction state by comparing the current
      * cache values with what we planned to set them to.
      */
-    protected function rollback(array $old, array $new): void
+    protected function rollback(array $old, array $new)
     {
         foreach ($old as $key => $value) {
             $current = $this->cache->get($key, $token);
@@ -349,46 +405,48 @@ class Defer
      *
      * @return array[] Array of 2 [key => value] maps: current & scheduled data
      */
-    protected function generateRollback(): array
+    protected function generateRollback()
     {
-        $keys = [];
-        $new = [];
+        $keys = array();
+        $new = array();
 
         foreach ($this->keys as $key => $data) {
             $operation = $data[0];
 
             // we only need values for cas & replace - recovering from an 'add'
             // is just deleting the value...
-            if (in_array($operation, ['cas', 'replace'])) {
+            if (in_array($operation, array('cas', 'replace'))) {
                 $keys[] = $key;
                 $new[$key] = $data[2]['value'];
             }
         }
 
         if (empty($keys)) {
-            return [[], []];
+            return array(array(), array());
         }
 
         // fetch the existing data & return the planned new data as well
         $current = $this->cache->getMulti($keys);
 
-        return [$current, $new];
+        return array($current, $new);
     }
 
     /**
      * By storing all updates by key, we've already made sure we don't perform
      * redundant operations on a per-key basis. Now we'll turn those into
      * actual updates.
+     *
+     * @return array
      */
-    protected function generateUpdates(): array
+    protected function generateUpdates()
     {
-        $updates = [];
+        $updates = array();
 
         if ($this->flush) {
-            $updates[] = ['flush', [$this->cache, 'flush'], []];
+            $updates[] = array('flush', array($this->cache, 'flush'), array());
         }
 
-        foreach ($this->keys as $data) {
+        foreach ($this->keys as $key => $data) {
             $updates[] = $data;
         }
 
@@ -398,14 +456,19 @@ class Defer
     /**
      * We may have multiple sets & deletes, which can be combined into a single
      * setMulti or deleteMulti operation.
+     *
+     * @param array $updates
+     *
+     * @return array
      */
-    protected function combineUpdates(array $updates): array
+    protected function combineUpdates($updates)
     {
-        $setMulti = [];
-        $deleteMulti = [];
+        $setMulti = array();
+        $deleteMulti = array();
 
         foreach ($updates as $i => $update) {
-            [$operation, , $args] = $update;
+            $operation = $update[0];
+            $args = $update[2];
 
             switch ($operation) {
                 // all set & delete operations can be grouped into setMulti & deleteMulti
@@ -432,15 +495,19 @@ class Defer
              * We'll use the return value of all deferred writes to check if they
              * should be rolled back.
              * commit() expects a single bool, not a per-key array of success bools.
+             *
+             * @param mixed[] $items
+             * @param int $expire
+             * @return bool
              */
-            $callback = static function (array $items, int $expire) use ($cache): bool {
+            $callback = function ($items, $expire) use ($cache) {
                 $success = $cache->setMulti($items, $expire);
 
-                return !in_array(false, $success, true);
+                return !in_array(false, $success);
             };
 
             foreach ($setMulti as $expire => $items) {
-                $updates[] = ['setMulti', $callback, [$items, $expire]];
+                $updates[] = array('setMulti', $callback, array($items, $expire));
             }
         }
 
@@ -452,14 +519,17 @@ class Defer
              * Besides, deleteMulti() is never cause for failure here: if the
              * key didn't exist because it has been deleted elsewhere already,
              * the data isn't corrupt, it's still as we'd expect it.
+             *
+             * @param string[] $keys
+             * @return bool
              */
-            $callback = static function (array $keys) use ($cache): bool {
+            $callback = function ($keys) use ($cache) {
                 $cache->deleteMulti($keys);
 
                 return true;
             };
 
-            $updates[] = ['deleteMulti', $callback, [$deleteMulti]];
+            $updates[] = array('deleteMulti', $callback, array($deleteMulti));
         }
 
         return $updates;
@@ -472,10 +542,12 @@ class Defer
      *
      * @param array $a Update, where index 0 is the operation name
      * @param array $b Update, where index 0 is the operation name
+     *
+     * @return int
      */
-    protected function sortUpdates(array $a, array $b): int
+    protected function sortUpdates(array $a, array $b)
     {
-        $updateOrder = [
+        $updateOrder = array(
             // there's no point in applying this after doing the below updates
             // we also shouldn't really worry about cas/replace failing after this,
             // there won't be any after cache having been flushed
@@ -493,12 +565,12 @@ class Defer
             'decrement',
             'set', 'setMulti',
             'delete', 'deleteMulti',
-        ];
+        );
 
         if ($a[0] === $b[0]) {
             return 0;
         }
 
-        return array_search($a[0], $updateOrder, true) < array_search($b[0], $updateOrder, true) ? -1 : 1;
+        return array_search($a[0], $updateOrder) < array_search($b[0], $updateOrder) ? -1 : 1;
     }
 }

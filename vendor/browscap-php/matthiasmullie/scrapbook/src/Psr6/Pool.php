@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Psr6;
 
 use MatthiasMullie\Scrapbook\KeyValueStore;
@@ -23,16 +21,22 @@ class Pool implements CacheItemPoolInterface
      *
      * @var string
      */
-    protected const KEY_INVALID_CHARACTERS = '{}()/\@:';
+    const KEY_INVALID_CHARACTERS = '{}()/\@:';
 
-    protected KeyValueStore $store;
+    /**
+     * @var KeyValueStore
+     */
+    protected $store;
 
-    protected Repository $repository;
+    /**
+     * @var Repository
+     */
+    protected $repository;
 
     /**
      * @var Item[]
      */
-    protected array $deferred = [];
+    protected $deferred = array();
 
     public function __construct(KeyValueStore $store)
     {
@@ -46,7 +50,10 @@ class Pool implements CacheItemPoolInterface
         $this->commit();
     }
 
-    public function getItem(string $key): CacheItemInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function getItem($key)
     {
         $this->assertValidKey($key);
         if (array_key_exists($key, $this->deferred)) {
@@ -79,9 +86,9 @@ class Pool implements CacheItemPoolInterface
      *
      * @return Item[]
      */
-    public function getItems(array $keys = []): iterable
+    public function getItems(array $keys = array())
     {
-        $items = [];
+        $items = array();
         foreach ($keys as $key) {
             $this->assertValidKey($key);
 
@@ -91,21 +98,32 @@ class Pool implements CacheItemPoolInterface
         return $items;
     }
 
-    public function hasItem(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function hasItem($key)
     {
         $this->assertValidKey($key);
 
-        return $this->getItem($key)->isHit();
+        $item = $this->getItem($key);
+
+        return $item->isHit();
     }
 
-    public function clear(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function clear()
     {
-        $this->deferred = [];
+        $this->deferred = array();
 
         return $this->store->flush();
     }
 
-    public function deleteItem(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteItem($key)
     {
         $this->assertValidKey($key);
 
@@ -117,7 +135,10 @@ class Pool implements CacheItemPoolInterface
         return true;
     }
 
-    public function deleteItems(array $keys): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteItems(array $keys)
     {
         foreach ($keys as $key) {
             $this->assertValidKey($key);
@@ -132,10 +153,14 @@ class Pool implements CacheItemPoolInterface
         return true;
     }
 
-    public function save(CacheItemInterface $item): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function save(CacheItemInterface $item)
     {
         if (!$item instanceof Item) {
-            throw new InvalidArgumentException('MatthiasMullie\Scrapbook\Psr6\Pool can only save MatthiasMullie\Scrapbook\Psr6\Item objects');
+            throw new InvalidArgumentException('MatthiasMullie\Scrapbook\Psr6\Pool can only save
+                MatthiasMullie\Scrapbook\Psr6\Item objects');
         }
 
         if (!$item->hasChanged()) {
@@ -146,7 +171,7 @@ class Pool implements CacheItemPoolInterface
              * changed, the value for this key is in cache) and if it doesn't,
              * well then nothing is in cache.
              */
-            return $item->get() !== null;
+            return null !== $item->get();
         }
 
         $expire = $item->getExpiration();
@@ -154,10 +179,14 @@ class Pool implements CacheItemPoolInterface
         return $this->store->set($item->getKey(), $item->get(), $expire);
     }
 
-    public function saveDeferred(CacheItemInterface $item): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function saveDeferred(CacheItemInterface $item)
     {
         if (!$item instanceof Item) {
-            throw new InvalidArgumentException('MatthiasMullie\Scrapbook\Psr6\Pool can only save MatthiasMullie\Scrapbook\Psr6\Item objects');
+            throw new InvalidArgumentException('MatthiasMullie\Scrapbook\Psr6\Pool can only save
+                MatthiasMullie\Scrapbook\Psr6\Item objects');
         }
 
         $this->deferred[$item->getKey()] = $item;
@@ -169,10 +198,13 @@ class Pool implements CacheItemPoolInterface
         return true;
     }
 
-    public function commit(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function commit()
     {
-        $deferred = [];
-        foreach ($this->deferred as $item) {
+        $deferred = array();
+        foreach ($this->deferred as $key => $item) {
             if ($item->isExpired()) {
                 // already expired: don't even save it
                 continue;
@@ -189,24 +221,30 @@ class Pool implements CacheItemPoolInterface
         $success = true;
         foreach ($deferred as $expire => $items) {
             $status = $this->store->setMulti($items, $expire);
-            $success = $success && !in_array(false, $status, true);
+            $success &= !in_array(false, $status);
             unset($deferred[$expire]);
         }
 
-        return $success;
+        return (bool) $success;
     }
 
     /**
      * Throws an exception if $key is invalid.
      *
+     * @param string $key
+     *
      * @throws InvalidArgumentException
      */
-    protected function assertValidKey(string $key): void
+    protected function assertValidKey($key)
     {
+        if (!is_string($key)) {
+            throw new InvalidArgumentException('Invalid key: '.var_export($key, true).'. Key should be a string.');
+        }
+
         // valid key according to PSR-6 rules
         $invalid = preg_quote(static::KEY_INVALID_CHARACTERS, '/');
-        if (preg_match('/[' . $invalid . ']/', $key)) {
-            throw new InvalidArgumentException('Invalid key: ' . $key . '. Contains (a) character(s) reserved for future extension: ' . static::KEY_INVALID_CHARACTERS);
+        if (preg_match('/['.$invalid.']/', $key)) {
+            throw new InvalidArgumentException('Invalid key: '.$key.'. Contains (a) character(s) reserved '.'for future extension: '.static::KEY_INVALID_CHARACTERS);
         }
     }
 }

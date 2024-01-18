@@ -1,10 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Scale;
 
 use MatthiasMullie\Scrapbook\KeyValueStore;
+use SplObjectStorage;
 
 /**
  * This class lets you scale your cache cluster by sharding the data across
@@ -32,7 +31,7 @@ class Shard implements KeyValueStore
     /**
      * @var KeyValueStore[]
      */
-    protected array $caches = [];
+    protected $caches = array();
 
     /**
      * Overloadable with multiple KeyValueStore objects.
@@ -44,41 +43,53 @@ class Shard implements KeyValueStore
         $this->caches = $caches;
     }
 
-    public function addCache(KeyValueStore $cache): void
+    public function addCache(KeyValueStore $cache)
     {
         $this->caches[] = $cache;
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
         return $this->getShard($key)->get($key, $token);
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
         $shards = $this->getShards($keys);
-        $results = [];
-        $tokens = [];
+        $results = array();
+        $tokens = array();
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
             $keysOnShard = $shards[$shard];
             $results += $shard->getMulti($keysOnShard, $shardTokens);
-            $tokens += $shardTokens ?: [];
+            $tokens += $shardTokens ?: array();
         }
 
         return $results;
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         return $this->getShard($key)->set($key, $value, $expire);
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
         $shards = $this->getShards(array_keys($items));
-        $results = [];
+        $results = array();
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
@@ -90,15 +101,21 @@ class Shard implements KeyValueStore
         return $results;
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         return $this->getShard($key)->delete($key);
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
         $shards = $this->getShards($keys);
-        $results = [];
+        $results = array();
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
@@ -109,48 +126,72 @@ class Shard implements KeyValueStore
         return $results;
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         return $this->getShard($key)->add($key, $value, $expire);
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         return $this->getShard($key)->replace($key, $value, $expire);
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         return $this->getShard($key)->cas($token, $key, $value, $expire);
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         return $this->getShard($key)->increment($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         return $this->getShard($key)->decrement($key, $offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         return $this->getShard($key)->touch($key, $expire);
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
         $result = true;
 
         foreach ($this->caches as $cache) {
-            $result = $result && $cache->flush();
+            $result &= $cache->flush();
         }
 
-        return $result;
+        return (bool) $result;
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         $shard = new static($this->caches[0]->getCollection($name));
 
@@ -165,8 +206,12 @@ class Shard implements KeyValueStore
     /**
      * Get the shard (KeyValueStore object) that corresponds to a particular
      * cache key.
+     *
+     * @param string $key
+     *
+     * @return KeyValueStore
      */
-    protected function getShard(string $key): KeyValueStore
+    protected function getShard($key)
     {
         /*
          * The hash is so we can deterministically randomize the spread of keys
@@ -191,20 +236,20 @@ class Shard implements KeyValueStore
     /**
      * Get a [KeyValueStore => array of cache keys] map (SplObjectStorage) for
      * multiple cache keys.
+     *
+     * @return SplObjectStorage
      */
-    protected function getShards(array $keys): \SplObjectStorage
+    protected function getShards(array $keys)
     {
-        $shards = new \SplObjectStorage();
+        $shards = new SplObjectStorage();
 
         foreach ($keys as $key) {
-            // PHP treats numeric keys as integers, but they're allowed
-            $key = (string) $key;
             $shard = $this->getShard($key);
             if (!isset($shards[$shard])) {
-                $shards[$shard] = [];
+                $shards[$shard] = array();
             }
 
-            $shards[$shard] = array_merge($shards[$shard], [$key]);
+            $shards[$shard] = array_merge($shards[$shard], array($key));
         }
 
         return $shards;

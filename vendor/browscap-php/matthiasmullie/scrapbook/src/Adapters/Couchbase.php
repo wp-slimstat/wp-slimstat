@@ -1,19 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Adapters;
 
-use DateTime;
 use MatthiasMullie\Scrapbook\Adapters\Collections\Couchbase as Collection;
 use MatthiasMullie\Scrapbook\Exception\InvalidKey;
+use MatthiasMullie\Scrapbook\Exception\ServerUnhealthy;
 use MatthiasMullie\Scrapbook\KeyValueStore;
 
 /**
  * Couchbase adapter. Basically just a wrapper over \CouchbaseBucket, but in an
  * exchangeable (KeyValueStore) interface.
  *
- * @see https://docs.couchbase.com/sdk-api/couchbase-php-client/namespaces/couchbase.html
+ * @see http://developer.couchbase.com/documentation/server/4.0/sdks/php-2.0/php-intro.html
+ * @see http://docs.couchbase.com/sdk-api/couchbase-php-client-2.1.0/
+ * @see http://docs.couchbase.com/sdk-api/couchbase-php-client-2.6.2/
  *
  * @author Matthias Mullie <scrapbook@mullie.eu>
  * @copyright Copyright (c) 2014, Matthias Mullie. All rights reserved
@@ -21,75 +21,82 @@ use MatthiasMullie\Scrapbook\KeyValueStore;
  */
 class Couchbase implements KeyValueStore
 {
-    protected \Couchbase\Collection $collection;
-
-    protected \Couchbase\BucketManager|\Couchbase\Management\BucketManager $bucketManager;
-
-    protected \Couchbase\Bucket $bucket;
+    /**
+     * @var \CouchbaseBucket|\Couchbase|Bucket
+     */
+    protected $client;
 
     /**
-     * @var int|null Timeout in ms
+     * @param bool $assertServerHealthy
+     *
+     * @throws ServerUnhealthy
      */
-    protected int|null $timeout;
+    public function __construct(/* \CouchbaseBucket|\Couchbase|Bucket */ $client, $assertServerHealthy = true)
+    {
+        $this->client = $client;
 
-    /**
-     * @param int|null $timeout K/V timeout in ms
-     */
-    public function __construct(
-        \Couchbase\Collection $client,
-        \Couchbase\BucketManager|\Couchbase\Management\BucketManager $bucketManager,
-        \Couchbase\Bucket $bucket,
-        int $timeout = null
-    ) {
-        $this->collection = $client;
-        $this->bucketManager = $bucketManager;
-        $this->bucket = $bucket;
-        $this->timeout = $timeout;
+        if ($assertServerHealthy) {
+            $this->assertServerHealhy();
+        }
     }
 
-    public function get(string $key, mixed &$token = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key, &$token = null)
     {
         $this->assertValidKey($key);
 
         try {
-            $options = new \Couchbase\GetOptions();
-            $options = $this->timeout === null ? $options : $options->timeout($this->timeout);
-            $result = $this->collection->get($key, $options);
-            $token = $result->cas();
-
-            return $this->unserialize($result->content());
-        } catch (\Couchbase\Exception\CouchbaseException $e) {
-            // SDK >=4.0
-            $token = null;
-
-            return false;
-        } catch (\Couchbase\BaseException $e) {
-            // SDK >=3.0 & <4.0
+            $result = $this->client->get($key);
+        } catch (\CouchbaseException $e) {
             $token = null;
 
             return false;
         }
+
+        $token = $result->cas;
+
+        return $result->error ? false : $this->unserialize($result->value);
     }
 
-    public function getMulti(array $keys, array &$tokens = null): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getMulti(array $keys, array &$tokens = null)
     {
-        // SDK >=3.0 no longer provides *multi operations
-        $results = [];
-        $tokens = [];
-        foreach ($keys as $key) {
-            $token = null;
-            $value = $this->get($key, $token);
+        array_map(array($this, 'assertValidKey'), $keys);
 
-            if ($token !== null) {
-                $results[$key] = $value;
-                $tokens[$key] = $token;
-            }
+        $tokens = array();
+        if (empty($keys)) {
+            return array();
         }
 
-        return $results;
+        try {
+            $results = $this->client->get($keys);
+        } catch (\CouchbaseException $e) {
+            return array();
+        }
+
+        $values = array();
+        $tokens = array();
+
+        foreach ($results as $key => $value) {
+            if (!in_array($key, $keys) || $value->error) {
+                continue;
+            }
+
+            $values[$key] = $this->unserialize($value->value);
+            $tokens[$key] = $value->cas;
+        }
+
+        return $values;
     }
 
-    public function set(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $value, $expire = 0)
     {
         $this->assertValidKey($key);
 
@@ -98,143 +105,188 @@ class Couchbase implements KeyValueStore
         }
 
         $value = $this->serialize($value);
-
         try {
-            $options = new \Couchbase\UpsertOptions();
-            $options = $this->timeout === null ? $options : $options->timeout($this->timeout);
-            $options = $options->expiry($this->expire($expire));
-            $this->collection->upsert($key, $value, $options);
-
-            return true;
-        } catch (\Couchbase\Exception\CouchbaseException $e) {
-            // SDK >=4.0
-            return false;
-        } catch (\Couchbase\BaseException $e) {
-            // SDK >=3.0 & <4.0
+            $result = $this->client->upsert($key, $value, array('expiry' => $expire));
+        } catch (\CouchbaseException $e) {
             return false;
         }
+
+        return !$result->error;
     }
 
-    public function setMulti(array $items, int $expire = 0): array
+    /**
+     * {@inheritdoc}
+     */
+    public function setMulti(array $items, $expire = 0)
     {
-        // SDK >=3.0 no longer provides *multi operations
-        $success = [];
+        array_map(array($this, 'assertValidKey'), array_keys($items));
+
+        if (empty($items)) {
+            return array();
+        }
+
+        $keys = array_keys($items);
+        if ($this->deleteIfExpired($keys, $expire)) {
+            return array_fill_keys($keys, true);
+        }
+
+        // attempting to insert integer keys (e.g. '0' as key is automatically
+        // cast to int, if it's an array key) fails with a segfault, so we'll
+        // have to do those piecemeal
+        $integers = array_filter(array_keys($items), 'is_int');
+        if ($integers) {
+            $success = array();
+            $integers = array_intersect_key($items, array_fill_keys($integers, null));
+            foreach ($integers as $k => $v) {
+                $success[$k] = $this->set((string) $k, $v, $expire);
+            }
+
+            $items = array_diff_key($items, $integers);
+
+            return array_merge($success, $this->setMulti($items, $expire));
+        }
+
         foreach ($items as $key => $value) {
-            // PHP treats numeric keys as integers, but they're allowed
-            $key = (string) $key;
-            $success[$key] = $this->set($key, $value, $expire);
+            $items[$key] = array(
+                'value' => $this->serialize($value),
+                'expiry' => $expire,
+            );
+        }
+
+        try {
+            $results = $this->client->upsert($items);
+        } catch (\CouchbaseException $e) {
+            return array_fill_keys(array_keys($items), false);
+        }
+
+        $success = array();
+        foreach ($results as $key => $result) {
+            $success[$key] = !$result->error;
         }
 
         return $success;
     }
 
-    public function delete(string $key): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
     {
         $this->assertValidKey($key);
 
         try {
-            $options = new \Couchbase\RemoveOptions();
-            $options = $this->timeout === null ? $options : $options->timeout($this->timeout);
-            $this->collection->remove($key, $options);
-
-            return true;
-        } catch (\Couchbase\Exception\CouchbaseException $e) {
-            // SDK >=4.0
-            return false;
-        } catch (\Couchbase\BaseException $e) {
-            // SDK >=3.0 & <4.0
+            $result = $this->client->remove($key);
+        } catch (\CouchbaseException $e) {
             return false;
         }
+
+        return !$result->error;
     }
 
-    public function deleteMulti(array $keys): array
+    /**
+     * {@inheritdoc}
+     */
+    public function deleteMulti(array $keys)
     {
-        // SDK >=3.0 no longer provides *multi operations
-        $success = [];
-        foreach ($keys as $key) {
-            $success[$key] = $this->delete($key);
+        array_map(array($this, 'assertValidKey'), $keys);
+
+        if (empty($keys)) {
+            return array();
+        }
+
+        try {
+            $results = $this->client->remove($keys);
+        } catch (\CouchbaseException $e) {
+            return array_fill_keys($keys, false);
+        }
+
+        $success = array();
+        foreach ($results as $key => $result) {
+            $success[$key] = !$result->error;
         }
 
         return $success;
     }
 
-    public function add(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function add($key, $value, $expire = 0)
     {
         $this->assertValidKey($key);
 
         $value = $this->serialize($value);
-
         try {
-            $options = new \Couchbase\InsertOptions();
-            $options = $this->timeout === null ? $options : $options->timeout($this->timeout);
-            $options = $options->expiry($this->expire($expire));
-            $this->collection->insert($key, $value, $options);
-
-            $this->deleteIfExpired($key, $expire);
-
-            return true;
-        } catch (\Couchbase\Exception\CouchbaseException $e) {
-            // SDK >=4.0
-            return false;
-        } catch (\Couchbase\BaseException $e) {
-            // SDK >=3.0 & <4.0
+            $result = $this->client->insert($key, $value, array('expiry' => $expire));
+        } catch (\CouchbaseException $e) {
             return false;
         }
+
+        $success = !$result->error;
+
+        // Couchbase is imprecise in its expiration handling, so we can clean up
+        // stuff that is already expired (assuming the `add` succeeded)
+        if ($success && $this->deleteIfExpired($key, $expire)) {
+            return true;
+        }
+
+        return $success;
     }
 
-    public function replace(string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function replace($key, $value, $expire = 0)
     {
         $this->assertValidKey($key);
 
         $value = $this->serialize($value);
-
         try {
-            $options = new \Couchbase\ReplaceOptions();
-            $options = $this->timeout === null ? $options : $options->timeout($this->timeout);
-            $options = $options->expiry($this->expire($expire));
-            $this->collection->replace($key, $value, $options);
-
-            $this->deleteIfExpired($key, $expire);
-
-            return true;
-        } catch (\Couchbase\Exception\CouchbaseException $e) {
-            // SDK >=4.0
-            return false;
-        } catch (\Couchbase\BaseException $e) {
-            // SDK >=3.0 & <4.0
+            $result = $this->client->replace($key, $value, array('expiry' => $expire));
+        } catch (\CouchbaseException $e) {
             return false;
         }
+
+        $success = !$result->error;
+
+        // Couchbase is imprecise in its expiration handling, so we can clean up
+        // stuff that is already expired (assuming the `replace` succeeded)
+        if ($success && $this->deleteIfExpired($key, $expire)) {
+            return true;
+        }
+
+        return $success;
     }
 
-    public function cas(mixed $token, string $key, mixed $value, int $expire = 0): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function cas($token, $key, $value, $expire = 0)
     {
         $this->assertValidKey($key);
 
         $value = $this->serialize($value);
-
-        if ($token === null) {
-            return false;
-        }
         try {
-            $options = new \Couchbase\ReplaceOptions();
-            $options = $this->timeout === null ? $options : $options->timeout($this->timeout);
-            $options = $options->expiry($this->expire($expire));
-            $options = $options->cas($token);
-            $this->collection->replace($key, $value, $options);
-
-            $this->deleteIfExpired($key, $expire);
-
-            return true;
-        } catch (\Couchbase\Exception\CouchbaseException $e) {
-            // SDK >=4.0
-            return false;
-        } catch (\Couchbase\BaseException $e) {
-            // SDK >=3.0 & <4.0
+            $result = $this->client->replace($key, $value, array('expiry' => $expire, 'cas' => $token));
+        } catch (\CouchbaseException $e) {
             return false;
         }
+
+        $success = !$result->error;
+
+        // Couchbase is imprecise in its expiration handling, so we can clean up
+        // stuff that is already expired (assuming the `cas` succeeded)
+        if ($success && $this->deleteIfExpired($key, $expire)) {
+            return true;
+        }
+
+        return $success;
     }
 
-    public function increment(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function increment($key, $offset = 1, $initial = 0, $expire = 0)
     {
         $this->assertValidKey($key);
 
@@ -245,7 +297,10 @@ class Couchbase implements KeyValueStore
         return $this->doIncrement($key, $offset, $initial, $expire);
     }
 
-    public function decrement(string $key, int $offset = 1, int $initial = 0, int $expire = 0): int|false
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement($key, $offset = 1, $initial = 0, $expire = 0)
     {
         $this->assertValidKey($key);
 
@@ -256,7 +311,10 @@ class Couchbase implements KeyValueStore
         return $this->doIncrement($key, -$offset, $initial, $expire);
     }
 
-    public function touch(string $key, int $expire): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function touch($key, $expire)
     {
         $this->assertValidKey($key);
 
@@ -265,53 +323,90 @@ class Couchbase implements KeyValueStore
         }
 
         try {
-            $options = new \Couchbase\GetAndTouchOptions();
-            $options = $this->timeout === null ? $options : $options->timeout($this->timeout);
-            $this->collection->getAndTouch($key, $this->expire($expire), $options);
-
-            return true;
-        } catch (\Couchbase\Exception\CouchbaseException $e) {
-            // SDK >=4.0
-            return false;
-        } catch (\Couchbase\BaseException $e) {
-            // SDK >=3.0 & <4.0
+            $result = $this->client->getAndTouch($key, $expire);
+        } catch (\CouchbaseException $e) {
             return false;
         }
+
+        return !$result->error;
     }
 
-    public function flush(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
     {
-        $bucketSettings = $this->bucketManager->getBucket($this->bucket->name());
-        if (!$bucketSettings->flushEnabled()) {
-            // `enableFlush` exists, but whether or not it is enabled is config
-            // that doesn't belong here; Scrapbook shouldn't alter that
+        // depending on config & client version, flush may not be available
+        try {
+            /*
+             * Flush wasn't always properly implemented[1] in the client, plus
+             * it depends on server config[2] to be enabled. Return status has
+             * been null in both success & failure cases.
+             * Flush is a very pervasive function that's likely not called
+             * lightly. Since it's probably more important to know whether or
+             * not it succeeded, than having it execute as fast as possible, I'm
+             * going to add some calls and test if flush succeeded.
+             *
+             * 1: https://forums.couchbase.com/t/php-flush-isnt-doing-anything/1886/8
+             * 2: http://docs.couchbase.com/admin/admin/CLI/CBcli/cbcli-bucket-flush.html
+             */
+            $this->client->upsert('cb-flush-tester', '');
+
+            $manager = $this->client->manager();
+            if (method_exists($manager, 'flush')) {
+                // ext-couchbase >= 2.0.6
+                $manager->flush();
+            } elseif (method_exists($this->client, 'flush')) {
+                // ext-couchbase < 2.0.6
+                $this->client->flush();
+            } else {
+                return false;
+            }
+        } catch (\CouchbaseException $e) {
             return false;
         }
 
-        $this->bucketManager->flush($this->bucket->name());
+        try {
+            // cleanup in case flush didn't go through; but if it did, we won't
+            // be able to remove it and know flush succeeded
+            $result = $this->client->remove('cb-flush-tester');
 
-        return true;
+            return (bool) $result->error;
+        } catch (\CouchbaseException $e) {
+            // exception: "The key does not exist on the server"
+            return true;
+        }
     }
 
-    public function getCollection(string $name): KeyValueStore
+    /**
+     * {@inheritdoc}
+     */
+    public function getCollection($name)
     {
         return new Collection($this, $name);
     }
 
     /**
-     * We could use `$this->collection->counter()`, but it doesn't seem to respect
+     * We could use `$this->client->counter()`, but it doesn't seem to respect
      * data types and stores the values as strings instead of integers.
      *
      * Shared between increment/decrement: both have mostly the same logic
      * (decrement just increments a negative value), but need their validation
      * split up (increment won't accept negative values).
+     *
+     * @param string $key
+     * @param int    $offset
+     * @param int    $initial
+     * @param int    $expire
+     *
+     * @return int|bool
      */
-    protected function doIncrement(string $key, int $offset, int $initial, int $expire): int|false
+    protected function doIncrement($key, $offset, $initial, $expire)
     {
         $this->assertValidKey($key);
 
         $value = $this->get($key, $token);
-        if ($value === false) {
+        if (false === $value) {
             $success = $this->add($key, $initial, $expire);
 
             return $success ? $initial : false;
@@ -331,44 +426,29 @@ class Couchbase implements KeyValueStore
 
     /**
      * Couchbase doesn't properly remember the data type being stored:
-     * arrays and objects are turned into stdClass instances, or the
-     * other way around.
+     * arrays and objects are turned into stdClass instances.
+     *
+     * @param mixed $value
+     *
+     * @return string|mixed
      */
-    protected function serialize(mixed $value): mixed
+    protected function serialize($value)
     {
-        // binary data doesn't roundtrip well
-        if (is_string($value) && !preg_match('//u', $value)) {
-            return serialize(base64_encode($value));
-        }
-
-        // and neither do arrays/objects
-        if (is_array($value) || is_object($value)) {
-            return serialize($value);
-        }
-
-        return $value;
+        return (is_array($value) || is_object($value)) ? serialize($value) : $value;
     }
 
     /**
      * Restore serialized data.
+     *
+     * @param mixed $value
+     *
+     * @return mixed|int|float
      */
-    protected function unserialize(mixed $value): mixed
+    protected function unserialize($value)
     {
-        // more efficient quick check whether value is unserializable
-        if (!is_string($value) || !preg_match('/^[saOC]:[0-9]+:/', $value)) {
-            return $value;
-        }
+        $unserialized = @unserialize($value);
 
-        $unserialized = @unserialize($value, ['allowed_classes' => true]);
-        if ($unserialized === false) {
-            return $value;
-        }
-
-        if (is_string($unserialized)) {
-            return base64_decode($unserialized);
-        }
-
-        return $unserialized;
+        return false === $unserialized ? $value : $unserialized;
     }
 
     /**
@@ -377,10 +457,11 @@ class Couchbase implements KeyValueStore
      * delete it (instead of performing the already expired operation).
      *
      * @param string|string[] $key
+     * @param int             $expire
      *
-     * @return bool True if expired
+     * @return int TTL in seconds
      */
-    protected function deleteIfExpired(string|array $key, int $expire): bool
+    protected function deleteIfExpired($key, $expire)
     {
         if ($expire < 0 || ($expire > 2592000 && $expire < time())) {
             $this->deleteMulti((array) $key);
@@ -392,35 +473,29 @@ class Couchbase implements KeyValueStore
     }
 
     /**
-     * Couchbase expects an integer TTL (under 1576800000) for relative
-     * times, or a \DateTimeInterface for absolute times.
+     * @param string $key
      *
-     * @return int|DateTime expiration in seconds or \DateTimeInterface
-     */
-    protected function expire(int $expire): int|DateTime
-    {
-        // relative time in seconds, <30 days
-        if ($expire < 30 * 24 * 60 * 60) {flush();
-            return $expire;
-        }
-
-        if ($expire < time()) {
-            // a timestamp (whether int or DateTimeInterface) larger than
-            // 1576800000 is not accepted; let's just go with -1, result
-            // is the same: it's expired & should be evicted
-            return -1; // @todo this if statement should be useless; this case should be fine as DateTime
-        }
-
-        return (new DateTime())->setTimestamp($expire);
-    }
-
-    /**
      * @throws InvalidKey
      */
-    protected function assertValidKey(string $key): void
+    protected function assertValidKey($key)
     {
         if (strlen($key) > 255) {
             throw new InvalidKey("Invalid key: $key. Couchbase keys can not exceed 255 chars.");
+        }
+    }
+
+    /**
+     * Verify that the server is healthy.
+     *
+     * @throws ServerUnhealthy
+     */
+    protected function assertServerHealhy()
+    {
+        $info = $this->client->manager()->info();
+        foreach ($info['nodes'] as $node) {
+            if ('healthy' !== $node['status']) {
+                throw new ServerUnhealthy('Server isn\'t ready yet');
+            }
         }
     }
 }

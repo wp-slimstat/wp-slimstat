@@ -1,9 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
 namespace MatthiasMullie\Scrapbook\Psr6;
 
+use DateInterval;
+use DateTime;
+use DateTimeInterface;
 use Psr\Cache\CacheItemInterface;
 
 /**
@@ -15,21 +16,45 @@ use Psr\Cache\CacheItemInterface;
  */
 class Item implements CacheItemInterface
 {
-    protected string $hash;
+    /**
+     * @var string
+     */
+    protected $hash;
 
-    protected string $key;
+    /**
+     * @var string
+     */
+    protected $key;
 
-    protected Repository $repository;
+    /**
+     * @var Repository
+     */
+    protected $repository;
 
-    protected mixed $value = null;
+    /**
+     * @var mixed
+     */
+    protected $value;
 
-    protected int $expire = 0;
+    /**
+     * @var int
+     */
+    protected $expire = 0;
 
-    protected bool|null $isHit;
+    /**
+     * @var bool
+     */
+    protected $isHit = null;
 
-    protected bool $changed = false;
+    /**
+     * @var bool
+     */
+    protected $changed = false;
 
-    public function __construct(string $key, Repository $repository)
+    /**
+     * @param string $key
+     */
+    public function __construct($key, Repository $repository)
     {
         $this->key = $key;
 
@@ -62,27 +87,36 @@ class Item implements CacheItemInterface
         $this->repository->remove($this->hash);
     }
 
-    public function getKey(): string
+    /**
+     * {@inheritdoc}
+     */
+    public function getKey()
     {
         return $this->key;
     }
 
-    public function get(): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get()
     {
         // value was already set on this object, return that one!
-        if ($this->value !== null) {
+        if (null !== $this->value) {
             return $this->value;
         }
 
         // sanity check
         if (!$this->isHit()) {
-            return null;
+            return;
         }
 
         return $this->repository->get($this->hash);
     }
 
-    public function set(mixed $value): static
+    /**
+     * {@inheritdoc}
+     */
+    public function set($value)
     {
         $this->value = $value;
         $this->changed = true;
@@ -90,29 +124,53 @@ class Item implements CacheItemInterface
         return $this;
     }
 
-    public function isHit(): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function isHit()
     {
-        return $this->isHit ?? $this->repository->exists($this->hash);
+        if (null !== $this->isHit) {
+            return $this->isHit;
+        }
+
+        return $this->repository->exists($this->hash);
     }
 
-    public function expiresAt(?\DateTimeInterface $expiration): static
+    /**
+     * {@inheritdoc}
+     */
+    public function expiresAt($expiration)
     {
-        $this->changed = true;
-
-        if ($expiration === null) {
-            $this->expire = 0;
-        } else {
+        // DateTimeInterface only exists since PHP>=5.5, also accept DateTime
+        if ($expiration instanceof DateTimeInterface || $expiration instanceof DateTime) {
             // convert datetime to unix timestamp
             $this->expire = (int) $expiration->format('U');
+            $this->changed = true;
+        } elseif (null === $expiration) {
+            $this->expire = 0;
+            $this->changed = true;
+        } else {
+            $class = get_class($this);
+            $type = gettype($expiration);
+            $error = "Argument 1 passed to $class::expiresAt()  must be an ".
+                "instance of DateTime or DateTimeImmutable, $type given";
+
+            if (class_exists('\TypeError')) {
+                throw new \TypeError($error);
+            }
+            trigger_error($error, E_USER_ERROR);
         }
 
         return $this;
     }
 
-    public function expiresAfter(int|\DateInterval|null $time): static
+    /**
+     * {@inheritdoc}
+     */
+    public function expiresAfter($time)
     {
-        if ($time instanceof \DateInterval) {
-            $expire = new \DateTime();
+        if ($time instanceof DateInterval) {
+            $expire = new DateTime();
             $expire->add($time);
             // convert datetime to unix timestamp
             $this->expire = (int) $expire->format('U');
@@ -122,7 +180,7 @@ class Item implements CacheItemInterface
             // this is allowed, but just defaults to infinite
             $this->expire = 0;
         } else {
-            throw new InvalidArgumentException('Invalid time: ' . serialize($time) . '. Must be integer or instance of DateInterval.');
+            throw new InvalidArgumentException('Invalid time: '.serialize($time).'. Must be integer or '.'instance of DateInterval.');
         }
         $this->changed = true;
 
@@ -132,27 +190,33 @@ class Item implements CacheItemInterface
     /**
      * Returns the set expiration time in integer form (as it's what
      * KeyValueStore expects).
+     *
+     * @return int
      */
-    public function getExpiration(): int
+    public function getExpiration()
     {
         return $this->expire;
     }
 
     /**
      * Returns true if the item is already expired, false otherwise.
+     *
+     * @return bool
      */
-    public function isExpired(): bool
+    public function isExpired()
     {
         $expire = $this->getExpiration();
 
-        return $expire !== 0 && $expire < time();
+        return 0 !== $expire && $expire < time();
     }
 
     /**
      * We'll want to know if this Item was altered (value or expiration date)
      * once we'll want to store it.
+     *
+     * @return bool
      */
-    public function hasChanged(): bool
+    public function hasChanged()
     {
         return $this->changed;
     }
@@ -160,8 +224,10 @@ class Item implements CacheItemInterface
     /**
      * Allow isHit to be override, in case it's a value that is returned from
      * memory, when a value is being saved deferred.
+     *
+     * @param bool $isHit
      */
-    public function overrideIsHit(bool $isHit): void
+    public function overrideIsHit($isHit)
     {
         $this->isHit = $isHit;
     }

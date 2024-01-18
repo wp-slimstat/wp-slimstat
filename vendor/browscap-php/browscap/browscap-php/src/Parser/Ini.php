@@ -32,7 +32,9 @@ final class Ini implements ParserInterface
      */
     private FormatterInterface $formatter;
 
-    /** @throws void */
+    /**
+     * @throws void
+     */
     public function __construct(
         GetPatternInterface $patternHelper,
         GetDataInterface $dataHelper,

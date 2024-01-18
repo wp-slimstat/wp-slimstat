@@ -7,15 +7,38 @@ namespace League\Flysystem;
 class DirectoryAttributes implements StorageAttributes
 {
     use ProxyArrayAccessToProperties;
-    private string $type = StorageAttributes::TYPE_DIRECTORY;
 
-    public function __construct(
-        private string $path,
-        private ?string $visibility = null,
-        private ?int $lastModified = null,
-        private array $extraMetadata = []
-    ) {
-        $this->path = trim($this->path, '/');
+    /**
+     * @var string
+     */
+    private $type = StorageAttributes::TYPE_DIRECTORY;
+
+    /**
+     * @var string
+     */
+    private $path;
+
+    /**
+     * @var string|null
+     */
+    private $visibility;
+
+    /**
+     * @var int|null
+     */
+    private $lastModified;
+
+    /**
+     * @var array
+     */
+    private $extraMetadata;
+
+    public function __construct(string $path, ?string $visibility = null, ?int $lastModified = null, array $extraMetadata = [])
+    {
+        $this->path = $path;
+        $this->visibility = $visibility;
+        $this->lastModified = $lastModified;
+        $this->extraMetadata = $extraMetadata;
     }
 
     public function path(): string
@@ -25,7 +48,7 @@ class DirectoryAttributes implements StorageAttributes
 
     public function type(): string
     {
-        return $this->type;
+        return StorageAttributes::TYPE_DIRECTORY;
     }
 
     public function visibility(): ?string
@@ -53,7 +76,7 @@ class DirectoryAttributes implements StorageAttributes
         return true;
     }
 
-    public function withPath(string $path): self
+    public function withPath(string $path): StorageAttributes
     {
         $clone = clone $this;
         $clone->path = $path;
@@ -61,7 +84,7 @@ class DirectoryAttributes implements StorageAttributes
         return $clone;
     }
 
-    public static function fromArray(array $attributes): self
+    public static function fromArray(array $attributes): StorageAttributes
     {
         return new DirectoryAttributes(
             $attributes[StorageAttributes::ATTRIBUTE_PATH],
