@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-01-04T10:25:07+00:00\n"
+"POT-Creation-Date: 2024-01-18T15:50:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.9.0\n"
 "X-Domain: wp-slimstat\n"
@@ -424,7 +424,7 @@ msgid "Custom CSS"
 msgstr ""
 
 #: admin/config/index.php:301
-msgid "Enter your own stylesheet definitions to customize the way your reports look. <a href='https://wp-slimstat.com/resources/how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-e' target='_blank'>Check our FAQs</a> for more information on how to use this option."
+msgid "Enter your own stylesheet definitions to customize the way your reports look. <a href='https://wp-slimstat.com/faq/how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-engines-etc/' target='_blank'>Check our FAQs</a> for more information on how to use this option."
 msgstr ""
 
 #: admin/config/index.php:304
@@ -580,7 +580,7 @@ msgid "Operating Systems"
 msgstr ""
 
 #: admin/config/index.php:401
-msgid "Enter a list of operating system codes that should not be tracked. Please refer to <a href=\"https://wp-slimstat.com/resources/what-are-the-operating-system-codes-used-by-slimstat-\" target=\"_blank\">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards."
+msgid "Enter a list of operating system codes that should not be tracked. Please refer to <a href=\"https://wp-slimstat.com/knowledge-base/\" target=\"_blank\">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards."
 msgstr ""
 
 #: admin/config/index.php:406
@@ -685,7 +685,7 @@ msgid "Tokens"
 msgstr ""
 
 #: admin/config/index.php:504
-msgid "In order to send requests to <a href='https://wp-slimstat.com/resources/slimstat-rest-api' target='_blank'>the Slimstat REST API</a>, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens."
+msgid "In order to send requests to the Slimstat REST API, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens."
 msgstr ""
 
 #: admin/config/index.php:510
@@ -738,7 +738,7 @@ msgid "MaxMind Geolocation"
 msgstr ""
 
 #: admin/config/index.php:542
-msgid "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option, please <a href='https://wp-slimstat.com/resources/how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually."
+msgid "The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option."
 msgstr ""
 
 #: admin/config/index.php:542
@@ -4607,54 +4607,54 @@ msgstr ""
 msgid "Invalid MaxMind data file. Please <a target=\"_blank\" href=\"https://wp-slimstat.com/resources/how-to-manually-install-the-maxmind-geolocation-data-file-\">follow these steps</a> to download it manually."
 msgstr ""
 
-#: wp-slimstat.php:460
+#: wp-slimstat.php:451
 msgid "Attempted XSS Injection: %s"
 msgstr ""
 
-#: wp-slimstat.php:781
+#: wp-slimstat.php:772
 msgid "Invalid Report ID"
 msgstr ""
 
-#: wp-slimstat.php:938
+#: wp-slimstat.php:929
 msgid "[REST API] The <code>dimension</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:942
+#: wp-slimstat.php:933
 msgid "[REST API] The <code>function</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:973
+#: wp-slimstat.php:964
 msgid "[REST API] You sent an invalid request. Accepted function values include: <code>count, count-all, recent, recent-all, top and top-all</code>. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:987
+#: wp-slimstat.php:978
 msgid "[REST API] Please use a valid token in order to access the REST API endpoint at this URL."
 msgstr ""
 
-#: wp-slimstat.php:1009
+#: wp-slimstat.php:1000
 msgid "You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control."
 msgstr ""
 
-#: wp-slimstat.php:1013
+#: wp-slimstat.php:1004
 msgid "This parameter specifies the type of QUERY you would like to perform. Accepted funciton values include: count, count-all, recent, recent-all, top and top-all."
 msgstr ""
 
-#: wp-slimstat.php:1018
+#: wp-slimstat.php:1009
 msgid "This parameter indicates what dimension to return: * (all data), ip, resource, browser, operating system, etc. You can only specify one dimension at a time."
 msgstr ""
 
-#: wp-slimstat.php:1023
+#: wp-slimstat.php:1014
 msgid "This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)"
 msgstr ""
 
-#: wp-slimstat.php:2038
+#: wp-slimstat.php:2029
 msgid "Report"
 msgstr ""
 
-#: wp-slimstat.php:2046
+#: wp-slimstat.php:2037
 msgid "Title"
 msgstr ""
 
-#: wp-slimstat.php:2051
+#: wp-slimstat.php:2042
 msgid "Optional filters"
 msgstr ""

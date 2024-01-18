@@ -407,18 +407,10 @@ class wp_slimstat
 
         // Do we need to anonymize this IP address?
         if (self::$settings['anonymize_ip'] == 'on') {
-            // IPv4 or IPv6
-            $needle  = '.';
-            $replace = '.0';
-            if (self::_get_mask_length(self::$stat['ip']) == 128) {
-                $needle  = ':';
-                $replace = ':0000';
-            }
-
-            self::$stat['ip'] = substr(self::$stat['ip'], 0, strrpos(self::$stat['ip'], $needle)) . $replace;
+            self::$stat['ip'] = wp_privacy_anonymize_ip(self::$stat['ip']);
 
             if (!empty(self::$stat['other_ip'])) {
-                self::$stat['other_ip'] = substr(self::$stat['other_ip'], 0, strrpos(self::$stat['other_ip'], $needle)) . $replace;
+                self::$stat['other_ip'] = wp_privacy_anonymize_ip(self::$stat['other_ip']);
             }
         }
 

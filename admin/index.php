@@ -1173,6 +1173,12 @@ class wp_slimstat_admin
                 wp_enqueue_script('feedbackbird-app-script', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS');
                 wp_add_inline_script('feedbackbird-app-script', sprintf('var feedbackBirdObject = %s;', json_encode([
                     'user_email'    => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
+                    'platform'      => 'wordpress-admin',
+                    'config'        => [
+                        'color'    => '#e8294c',
+                        'button'   => __('Feedback', 'wp-sms'),
+                        'subtitle' => __('Feel free to share your thoughts!', 'wp-sms'),
+                    ],
                     'meta'          => [
                         'php_version'    => PHP_VERSION,
                         'active_plugins' => array_map(function ($plugin, $pluginPath) {
@@ -1182,9 +1188,6 @@ class wp_slimstat_admin
                                 'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
                             ];
                         }, get_plugins(), array_keys(get_plugins())),
-                    ],
-                    'customization' => [
-                        "color" => "#e8294c"
                     ]
                 ])));
 
