@@ -432,7 +432,7 @@ SlimStat.add_event( window, 'load', function() {
 	}
 
 	if ( slimstat_data.length > 0 ) {
-		var options = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colnorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, addBehavior: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
+		var options = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, addBehavior: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
 
 		if ( window.requestIdleCallback ) {
 			requestIdleCallback( function () {
