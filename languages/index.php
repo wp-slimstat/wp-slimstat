@@ -573,7 +573,7 @@ class wp_slimstat_i18n {
 				'e-202' => __( 'Pageview not tracked because the IP address format was invalid.', 'wp-slimstat' ),
 				'e-203' => __( 'Malformed resource URL', 'wp-slimstat' ),
 				'e-204' => __( 'Tracking is turned off, but it looks like the client-side code is still attached to your pages. Do you have a caching tool enabled?', 'wp-slimstat' ),
-				'e-205' => __( 'Invalid MaxMind data file. Please <a target="_blank" href="https://slimstat.freshdesk.com/support/solutions/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-">follow these steps</a> to download it manually.', 'wp-slimstat' ),
+				'e-205' => __( 'Invalid MaxMind data file. Please <a target="_blank" href="https://wp-slimstat.com/resources/how-to-manually-install-the-maxmind-geolocation-data-file-">follow these steps</a> to download it manually.', 'wp-slimstat' ),
 			);
 
 			// set_transient( 'slimstat_dynamic_strings', self::$dynamic_strings, 86400 );

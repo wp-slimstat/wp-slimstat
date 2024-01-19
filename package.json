@@ -1,14 +1,16 @@
 {
   "scripts": {
     "watch": "watch \"npm run sass-compile\" ./admin/assets/scss",
-    "sass-compile": "concurrently \"node-sass admin/assets/scss/admin.scss admin/assets/css/admin.css --output-style compressed\""
+    "sass-compile": "concurrently \"node-sass admin/assets/scss/admin.scss admin/assets/css/admin.css --output-style compressed\"",
+    "build": "terser wp-slimstat.js -o wp-slimstat.min.js -c -m"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
     "@babel/runtime-corejs2": "^7.0.0",
     "breakpoint-sass": "^2.7.1",
+    "concurrently": "^8.2.0",
     "node-sass": "^8.0.0",
-    "watch": "^1.0.2",
-    "concurrently": "^8.2.0"
+    "terser": "^5.27.0",
+    "watch": "^1.0.2"
   }
 }

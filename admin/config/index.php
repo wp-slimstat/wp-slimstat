@@ -298,7 +298,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'type'            => 'textarea',
                 'use_tag_list'    => false,
                 'use_code_editor' => 'css',
-                'description'     => __("Enter your own stylesheet definitions to customize the way your reports look. <a href='https://slimstat.freshdesk.com/support/solutions/articles/5000528528-how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-e' target='_blank'>Check our FAQs</a> for more information on how to use this option.", 'wp-slimstat')
+                'description'     => __("Enter your own stylesheet definitions to customize the way your reports look. <a href='https://wp-slimstat.com/faq/how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-engines-etc/' target='_blank'>Check our FAQs</a> for more information on how to use this option.", 'wp-slimstat')
             ),
             'chart_colors'                     => array(
                 'title'       => __('Chart Colors', 'wp-slimstat'),
@@ -398,7 +398,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
             'ignore_platforms'                       => array(
                 'title'       => __('Operating Systems', 'wp-slimstat'),
                 'type'        => 'textarea',
-                'description' => __('Enter a list of operating system codes that should not be tracked. Please refer to <a href="https://slimstat.freshdesk.com/solution/articles/12000031504-what-are-the-operating-system-codes-used-by-slimstat-" target="_blank">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards.', 'wp-slimstat')
+                'description' => __('Enter a list of operating system codes that should not be tracked. Please refer to <a href="https://wp-slimstat.com/knowledge-base/" target="_blank">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards.', 'wp-slimstat')
             ),
 
             // Exclusions - Page Properties
@@ -501,7 +501,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
             'rest_api_tokens'              => array(
                 'title'       => __('Tokens', 'wp-slimstat'),
                 'type'        => 'textarea',
-                'description' => __("In order to send requests to <a href='https://slimstat.freshdesk.com/support/solutions/articles/12000033661-slimstat-rest-api' target='_blank'>the Slimstat REST API</a>, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens.", 'wp-slimstat')
+                'description' => __("In order to send requests to the Slimstat REST API, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens.", 'wp-slimstat')
             )
         )
     ),
@@ -539,7 +539,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
             'enable_maxmind'                     => array(
                 'title'       => __('MaxMind Geolocation', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __("The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option, please <a href='https://slimstat.freshdesk.com/solution/articles/12000039798-how-to-manually-install-the-maxmind-geolocation-data-file-' target='_blank'>take a look at our knowledge base</a> to learn how to install this file manually.", 'wp-slimstat') . ' ' . __('Updates are downloaded automatically every 4 weeks, when available.', 'wp-slimstat') . (!empty($maxmind_last_modified) ? ' ' . sprintf(__('Your data file was last downloaded on <strong>%s</strong>.', 'wp-slimstat'), $maxmind_last_modified) : '')
+                'description' => __("The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option.", 'wp-slimstat') . ' ' . __('Updates are downloaded automatically every 4 weeks, when available.', 'wp-slimstat') . (!empty($maxmind_last_modified) ? ' ' . sprintf(__('Your data file was last downloaded on <strong>%s</strong>.', 'wp-slimstat'), $maxmind_last_modified) : '')
             ),
             'maxmind_license_key'                => array(
                 'title'       => __('MaxMind License Key', 'wp-slimstat'),
@@ -761,7 +761,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
         </ul>
 
         <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px">
-            <?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://slimstat.freshdesk.com/support/solutions/articles/12000000414-the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat') ?>
+            <?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat') ?>
         </div>
 
         <?php if (!empty($settings[$current_tab]['rows'])) : ?>

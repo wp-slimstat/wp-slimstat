@@ -20,6 +20,14 @@ class wp_slimstat_admin
      */
     public static function init()
     {
+        // Redirect to the pro settings
+        add_action('admin_menu', function () {
+            if (is_admin() && isset($_GET['page']) && $_GET['page'] === 'slimpro' && wp_slimstat::pro_is_installed()) {
+                wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
+                exit();
+            }
+        });
+
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', array('wp_slimstat_admin', 'handle_reset_layout'));
 
@@ -191,7 +199,7 @@ class wp_slimstat_admin
             }
 
             // Update the table structure and options, if needed
-            if (!empty(wp_slimstat::$settings['version']) && wp_slimstat::$settings['version'] != wp_slimstat::$version) {
+            if (!empty(wp_slimstat::$settings['version']) && wp_slimstat::$settings['version'] != SLIMSTAT_ANALYTICS_VERSION) {
                 add_action('admin_init', array(__CLASS__, 'update_tables_and_options'));
             }
         }
@@ -212,10 +220,11 @@ class wp_slimstat_admin
 
         // Dashboard Widgets
         if (wp_slimstat::$settings['add_dashboard_widgets'] == 'on') {
-            $request_length = strlen($_SERVER['REQUEST_URI']);
+            $sanitized_uri  = sanitize_url(wp_unslash($_SERVER['REQUEST_URI']));
+            $request_length = strlen($sanitized_uri);
             $temp           = $request_length - 10;
 
-            if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && $temp <= $request_length && strpos($_SERVER['REQUEST_URI'], '/wp-admin/', $temp) !== false)) {
+            if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && $temp <= $request_length && strpos($sanitized_uri, '/wp-admin/', $temp) !== false)) {
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
                 add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
             }
@@ -443,7 +452,7 @@ class wp_slimstat_admin
 
         // Let's save the version in the database
         if (empty(wp_slimstat::$settings['version'])) {
-            wp_slimstat::$settings['version'] = wp_slimstat::$version;
+            wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         }
     }
     // END: init_tables
@@ -515,7 +524,7 @@ class wp_slimstat_admin
         }
 
         // Now we can update the version stored in the database
-        wp_slimstat::$settings['version']            = wp_slimstat::$version;
+        wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
 
@@ -778,11 +787,6 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_pro()
     {
-        if (wp_slimstat::pro_is_installed()) {
-            // Redirect to layout page
-            wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
-        }
-
         include(dirname(__FILE__) . '/view/upgrade-pro.php');
     }
 
@@ -1169,6 +1173,12 @@ class wp_slimstat_admin
                 wp_enqueue_script('feedbackbird-app-script', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS');
                 wp_add_inline_script('feedbackbird-app-script', sprintf('var feedbackBirdObject = %s;', json_encode([
                     'user_email'    => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
+                    'platform'      => 'wordpress-admin',
+                    'config'        => [
+                        'color'    => '#e8294c',
+                        'button'   => __('Feedback', 'wp-sms'),
+                        'subtitle' => __('Feel free to share your thoughts!', 'wp-sms'),
+                    ],
                     'meta'          => [
                         'php_version'    => PHP_VERSION,
                         'active_plugins' => array_map(function ($plugin, $pluginPath) {
@@ -1178,9 +1188,6 @@ class wp_slimstat_admin
                                 'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
                             ];
                         }, get_plugins(), array_keys(get_plugins())),
-                    ],
-                    'customization' => [
-                        "color" => "#e8294c"
                     ]
                 ])));
 
