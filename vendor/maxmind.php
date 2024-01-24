@@ -120,7 +120,7 @@ class maxmind_geolite2_connector {
 			return new WP_Error( 'http_no_file', __( "A temporary file could not be created. Please check your server's file permissions and try again.", 'wp-slimstat' ) );
 		}
 
-		$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'stream' => true, 'filename' => $tmpfname, 'user-agent'  => 'Slimstat Analytics/' . wp_slimstat::$version . '; ' . home_url() ) );
+		$response = wp_safe_remote_get( $url, array( 'timeout' => 300, 'stream' => true, 'filename' => $tmpfname, 'user-agent'  => 'Slimstat Analytics/' . SLIMSTAT_ANALYTICS_VERSION . '; ' . home_url() ) );
 
 		if ( is_wp_error( $response ) ) {
 			unlink( $tmpfname );
