@@ -123,7 +123,7 @@ jQuery(function () {
         });
     }
 
-    // Save silters
+    // Save filters
     jQuery(document).on('click', '#slimstat-save-filter', function (e) {
         e.preventDefault();
 

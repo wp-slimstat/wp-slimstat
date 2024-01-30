@@ -1012,7 +1012,7 @@ class wp_slimstat_admin
 
         switch ($_POST['type']) {
             case 'save':
-                $new_filter = json_decode(stripslashes_deep($_POST['filter_array']), true);
+                $new_filter = json_decode(stripslashes_deep(sanitize_text_field($_POST['filter_array'])), true);
 
                 // Check if this filter is already saved
                 foreach ($saved_filters as $a_saved_filter) {
