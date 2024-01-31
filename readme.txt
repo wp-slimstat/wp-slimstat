@@ -63,6 +63,8 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Changelog ==
 = 5.1.4 =
 * [Fixes] Update maxmind plugin to get `wp_slimstat` version
+* [Enhancement] Sanitized input `filter_array`
+* [Enhancement] Added minimum cap to ajax callback report to prevent unauthorized use by low-privileged users
 
 = 5.1.3 =
 * [Enhancement] PHP v8.2 compatibility
