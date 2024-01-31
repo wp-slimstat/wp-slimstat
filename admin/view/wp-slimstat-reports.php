@@ -957,6 +957,16 @@ class wp_slimstat_reports
 
     public static function callback_wrapper()
     {
+        // If this user is whitelisted, we use the minimum capability
+        $minimum_capability = 'read';
+        if (strpos(wp_slimstat::$settings['can_view'], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
+            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
+        }
+
+        if (!current_user_can($minimum_capability)) {
+            return;
+        }
+
         $_args = self::_check_args(func_get_args());
         if (!empty($_args) && !empty($_args['callback'])) {
             call_user_func($_args['callback'], $_args['callback_args']);
