@@ -1005,6 +1005,16 @@ class wp_slimstat_admin
     {
         check_ajax_referer('meta-box-order', 'security');
 
+        // If this user is whitelisted, we use the minimum capability
+        $minimum_capability = 'read';
+        if (strpos(wp_slimstat::$settings['can_view'], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
+            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
+        }
+
+        if (!current_user_can($minimum_capability)) {
+            return;
+        }
+
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();
 
@@ -1012,7 +1022,7 @@ class wp_slimstat_admin
 
         switch ($_POST['type']) {
             case 'save':
-                $new_filter = json_decode(stripslashes_deep($_POST['filter_array']), true);
+                $new_filter = json_decode(stripslashes_deep(sanitize_text_field($_POST['filter_array'])), true);
 
                 // Check if this filter is already saved
                 foreach ($saved_filters as $a_saved_filter) {
@@ -1056,7 +1066,7 @@ class wp_slimstat_admin
                         $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . ' ' . $filter_value_no_slashes;
                         $filter_strings[]        = "$a_filter_label {$a_filter_details[0]} $filter_value_no_slashes";
                     }
-                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . $a_filter_id . '" title="' . __('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url(implode('&&&', $filter_strings)) . '">' . implode(', ', $filter_html) . '</a></p>';
+                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . __('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url(implode('&&&', $filter_strings)) . '">' . implode(', ', $filter_html) . '</a></p>';
                 }
                 echo '</div>';
                 break;

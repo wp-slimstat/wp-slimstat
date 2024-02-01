@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.4
-Stable tag: 5.1.3
+Stable tag: 5.1.4
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -61,6 +61,11 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.1.4 =
+* [Fixes] Update maxmind plugin to get `wp_slimstat` version
+* [Enhancement] Sanitized input `filter_array`
+* [Enhancement] Added minimum cap to ajax callback report to prevent unauthorized use by low-privileged users
+
 = 5.1.3 =
 * [Enhancement] PHP v8.2 compatibility
 * [Enhancement] Refactor IP Anonymization Logic to Use `wp_privacy_anonymize_ip()` Function
