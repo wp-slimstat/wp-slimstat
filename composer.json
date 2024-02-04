@@ -9,6 +9,6 @@
     }
   },
   "require": {
-    "browscap/browscap-php": "^7.4"
+    "veronalabs/browscap-php": "dev-standalone"
   }
 }

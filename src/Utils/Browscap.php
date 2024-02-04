@@ -2,6 +2,7 @@
 
 namespace SlimStat\Utils;
 
+use Psr\Log\NullLogger;
 use wp_slimstat;
 use wp_slimstat_admin;
 
@@ -70,7 +71,7 @@ class Browscap
 		$cache = new \MatthiasMullie\Scrapbook\Psr16\SimpleCache(
 			new \MatthiasMullie\Scrapbook\Adapters\Flysystem($filesystem)
 		);
-		$logger = new \Monolog\Logger('slimstat_browscap');
+		$logger = new NullLogger();
 		$browscap = new \BrowscapPHP\Browscap($cache, $logger);
 
 		try {
