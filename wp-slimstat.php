@@ -1113,7 +1113,7 @@ class wp_slimstat
             'geolocation_country'                    => 'on',
             'session_duration'                       => 1800,
             'extend_session'                         => 'no',
-            'enable_cdn'                             => 'on',
+            'enable_cdn'                             => 'no',
             'ajax_relative_path'                     => 'no',
 
             // Tracker - External Pages
