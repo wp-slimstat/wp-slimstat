@@ -1,14 +1,15 @@
 <?php
 /*
-Plugin Name: SlimStat Analytics
-Plugin URI: https://wp-slimstat.com/
-Description: The leading web analytics plugin for WordPress
-Version: 5.1.4
-Author: Jason Crouse, VeronaLabs
-Text Domain: wp-slimstat
-Domain Path: /languages
-Author URI: https://wp-slimstat.com/
-Requires PHP: 7.4
+ * Plugin Name: SlimStat Analytics
+ * Plugin URI: https://wp-slimstat.com/
+ * Description: The leading web analytics plugin for WordPress
+ * Version: 5.1.5
+ * Author: Jason Crouse, VeronaLabs
+ * Text Domain: wp-slimstat
+ * Domain Path: /languages
+ * Author URI: https://wp-slimstat.com/
+ * License: GPL-2.0+
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 */
 
 if (!empty(wp_slimstat::$settings)) {
@@ -1113,7 +1114,7 @@ class wp_slimstat
             'geolocation_country'                    => 'on',
             'session_duration'                       => 1800,
             'extend_session'                         => 'no',
-            'enable_cdn'                             => 'on',
+            'enable_cdn'                             => 'no',
             'ajax_relative_path'                     => 'no',
 
             // Tracker - External Pages
