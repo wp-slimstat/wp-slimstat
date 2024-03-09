@@ -6,6 +6,8 @@ Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.4
 Stable tag: 5.1.4
+License: GPL-2.0+
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
