@@ -1,6 +1,6 @@
 === SlimStat Analytics ===
 Contributors: coolmann, toxicum, veronalabs, mostafas1990
-Tags: analytics, statistics, counter, tracking, reports, geolocation, online users, spider, tracker, pageviews, stats, maxmind, statistics, statpress, power stats, hit
+Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
