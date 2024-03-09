@@ -3,7 +3,7 @@ Contributors: coolmann, toxicum, veronalabs, mostafas1990
 Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
-Requires PHP: 7.4+
+Requires PHP: 7.4
 Tested up to: 6.4
 Stable tag: 5.1.5
 License: GPL-2.0+
