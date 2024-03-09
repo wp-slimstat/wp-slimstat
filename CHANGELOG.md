@@ -1,3 +1,6 @@
+= 5.1.5 =
+* [Enhancement] Minor improvements.
+
 = 5.1.4 =
 * [Fixes] Update maxmind plugin to get `wp_slimstat` version
 * [Enhancement] Sanitized input `filter_array`

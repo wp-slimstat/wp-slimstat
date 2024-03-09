@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4+
 Tested up to: 6.4
-Stable tag: 5.1.4
+Stable tag: 5.1.5
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,9 +63,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.1.4 =
-* [Fixes] Update maxmind plugin to get `wp_slimstat` version
-* [Enhancement] Sanitized input `filter_array`
-* [Enhancement] Added minimum cap to ajax callback report to prevent unauthorized use by low-privileged users
+= 5.1.5 =
+* [Enhancement] Minor improvements.
 
 [See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).
