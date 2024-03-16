@@ -23,12 +23,9 @@ class MaxMindReader
      * Constructs a MaxMindReader for the MaxMind DB format. The file passed to it must
      * be a valid MaxMind DB file such as a GeoIp2 database file.
      *
-     * @param string $database
-     *            the MaxMind DB file to use.
+     * @param string $database the MaxMind DB file to use.
      * @throws \InvalidArgumentException for invalid database path or unknown arguments
-     * @throws \MaxMind\Db\Reader\InvalidDatabaseException
-     *             if the database is invalid or there is an error reading
-     *             from it.
+     * @throws InvalidDatabaseException if the database is invalid or there is an error reading from it.
      */
     public function __construct($database)
     {
@@ -255,7 +252,7 @@ class MaxMindReader
     /**
      * @throws \InvalidArgumentException if arguments are passed to the method.
      * @throws \BadMethodCallException if the database has been closed.
-     * @return Metadata object for the database.
+     * @return MaxMindMetadata object for the database.
      */
     public function metadata()
     {

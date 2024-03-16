@@ -11,16 +11,16 @@ class MaxMindDecoder
     private $switchByteOrder;
 
     private $types = array(
-        0 => 'extended',
-        1 => 'pointer',
-        2 => 'utf8_string',
-        3 => 'double',
-        4 => 'bytes',
-        5 => 'uint16',
-        6 => 'uint32',
-        7 => 'map',
-        8 => 'int32',
-        9 => 'uint64',
+        0  => 'extended',
+        1  => 'pointer',
+        2  => 'utf8_string',
+        3  => 'double',
+        4  => 'bytes',
+        5  => 'uint16',
+        6  => 'uint32',
+        7  => 'map',
+        8  => 'int32',
+        9  => 'uint64',
         10 => 'uint128',
         11 => 'array',
         12 => 'container',
@@ -29,19 +29,19 @@ class MaxMindDecoder
         15 => 'float',
     );
 
-    public function __construct(
-        $fileStream,
-        $pointerBase = 0,
-        $pointerTestHack = false
-    ) {
-        $this->fileStream = $fileStream;
-        $this->pointerBase = $pointerBase;
+    public function __construct($fileStream, $pointerBase = 0, $pointerTestHack = false)
+    {
+        $this->fileStream      = $fileStream;
+        $this->pointerBase     = $pointerBase;
         $this->pointerTestHack = $pointerTestHack;
 
         $this->switchByteOrder = $this->isPlatformLittleEndian();
     }
 
 
+    /**
+     * @throws InvalidDatabaseException
+     */
     public function decode($offset)
     {
         list(, $ctrlByte) = unpack(
@@ -79,9 +79,9 @@ class MaxMindDecoder
             if ($typeNum < 8) {
                 throw new InvalidDatabaseException(
                     "Something went horribly wrong in the decoder. An extended type "
-                        . "resolved to a type number < 8 ("
-                        . $this->types[$typeNum]
-                        . ")"
+                    . "resolved to a type number < 8 ("
+                    . $this->types[$typeNum]
+                    . ")"
                 );
             }
 
@@ -94,7 +94,10 @@ class MaxMindDecoder
         return $this->decodeByType($type, $offset, $size);
     }
 
-    private function decodeByType($type, $offset, $size)
+    /**
+     * @throws InvalidDatabaseException
+     */
+    private function decodeByType($type, $offset, $size): array
     {
         switch ($type) {
             case 'map':
@@ -106,7 +109,7 @@ class MaxMindDecoder
         }
 
         $newOffset = $offset + $size;
-        $bytes = MaxMindUtil::read($this->fileStream, $offset, $size);
+        $bytes     = MaxMindUtil::read($this->fileStream, $offset, $size);
         switch ($type) {
             case 'utf8_string':
                 return array($this->decodeString($bytes), $newOffset);
@@ -133,6 +136,9 @@ class MaxMindDecoder
         }
     }
 
+    /**
+     * @throws InvalidDatabaseException
+     */
     private function verifySize($expected, $actual)
     {
         if ($expected != $actual) {
@@ -142,21 +148,24 @@ class MaxMindDecoder
         }
     }
 
-    private function decodeArray($size, $offset)
+    /**
+     * @throws InvalidDatabaseException
+     */
+    private function decodeArray($size, $offset): array
     {
         $array = array();
 
         for ($i = 0; $i < $size; $i++) {
             list($value, $offset) = $this->decode($offset);
-            array_push($array, $value);
+            $array[] = $value;
         }
 
         return array($array, $offset);
     }
 
-    private function decodeBoolean($size)
+    private function decodeBoolean($size): bool
     {
-        return $size == 0 ? false : true;
+        return !($size == 0);
     }
 
     private function decodeDouble($bits)
@@ -180,7 +189,7 @@ class MaxMindDecoder
         return $int;
     }
 
-    private function decodeMap($size, $offset)
+    private function decodeMap($size, $offset): array
     {
 
         $map = array();
@@ -201,7 +210,10 @@ class MaxMindDecoder
         4 => 0,
     );
 
-    private function decodePointer($ctrlByte, $offset)
+    /**
+     * @throws InvalidDatabaseException
+     */
+    private function decodePointer($ctrlByte, $offset): array
     {
         $pointerSize = (($ctrlByte >> 3) & 0x3) + 1;
 
@@ -213,7 +225,7 @@ class MaxMindDecoder
             : (pack('C', $ctrlByte & 0x7)) . $buffer;
 
         $unpacked = $this->decodeUint($packed);
-        $pointer = $unpacked + $this->pointerBase
+        $pointer  = $unpacked + $this->pointerBase
             + $this->pointerValueOffset[$pointerSize];
 
         return array($pointer, $offset);
@@ -234,9 +246,9 @@ class MaxMindDecoder
         }
 
         $numberOfLongs = ceil($byteLength / 4);
-        $paddedLength = $numberOfLongs * 4;
-        $paddedBytes = $this->zeroPadLeft($bytes, $paddedLength);
-        $unpacked = array_merge(unpack("N$numberOfLongs", $paddedBytes));
+        $paddedLength  = $numberOfLongs * 4;
+        $paddedBytes   = $this->zeroPadLeft($bytes, $paddedLength);
+        $unpacked      = array_merge(unpack("N$numberOfLongs", $paddedBytes));
 
         $integer = 0;
 
@@ -267,12 +279,12 @@ class MaxMindDecoder
         return $bytes;
     }
 
-    private function sizeFromCtrlByte($ctrlByte, $offset)
+    private function sizeFromCtrlByte($ctrlByte, $offset): array
     {
-        $size = $ctrlByte & 0x1f;
+        $size        = $ctrlByte & 0x1f;
         $bytesToRead = $size < 29 ? 0 : $size - 28;
-        $bytes = MaxMindUtil::read($this->fileStream, $offset, $bytesToRead);
-        $decoded = $this->decodeUint($bytes);
+        $bytes       = MaxMindUtil::read($this->fileStream, $offset, $bytesToRead);
+        $decoded     = $this->decodeUint($bytes);
 
         if ($size == 29) {
             $size = 29 + $decoded;
@@ -286,7 +298,7 @@ class MaxMindDecoder
         return array($size, $offset + $bytesToRead);
     }
 
-    private function zeroPadLeft($content, $desiredLength)
+    private function zeroPadLeft($content, $desiredLength): string
     {
         return str_pad($content, $desiredLength, "\x00", STR_PAD_LEFT);
     }
@@ -296,10 +308,10 @@ class MaxMindDecoder
         return $this->switchByteOrder ? strrev($bytes) : $bytes;
     }
 
-    private function isPlatformLittleEndian()
+    private function isPlatformLittleEndian(): bool
     {
         $testint = 0x00FF;
-        $packed = pack('S', $testint);
+        $packed  = pack('S', $testint);
         return $testint === current(unpack('v', $packed));
     }
 }

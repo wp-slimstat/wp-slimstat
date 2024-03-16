@@ -5,6 +5,9 @@ namespace SlimStat\Utils;
 
 class MaxMindUtil
 {
+    /**
+     * @throws InvalidDatabaseException
+     */
     public static function read($stream, $offset, $numberOfBytes)
     {
         if ($numberOfBytes == 0) {

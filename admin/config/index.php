@@ -653,7 +653,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             if ($_POST['options']['enable_maxmind'] == 'on'
                 && wp_slimstat::$settings['enable_maxmind'] == 'no'
                 && wp_slimstat::$settings['maxmind_license_key'] != '') {
-                $error = \SlimStat\Utils\MaxMind::download_maxmind_database();
+                $error = \SlimStat\Utils\MaxMind::downloadDatabase();
 
                 if (empty($error)) {
                     $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
