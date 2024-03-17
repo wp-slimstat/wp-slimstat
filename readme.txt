@@ -4,7 +4,7 @@ Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
-Tested up to: 6.4
+Tested up to: 6.5
 Stable tag: 5.1.5
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
