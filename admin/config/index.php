@@ -609,7 +609,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                 break;
 
             case 'reset-settings':
-                wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+                wp_slimstat::update_option('slimstat_options', wp_slimstat::init_options());
                 wp_slimstat_admin::show_message(__('All settings were successfully reset to their default values.', 'wp-slimstat'));
                 break;
 
