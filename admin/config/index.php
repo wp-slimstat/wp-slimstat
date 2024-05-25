@@ -537,14 +537,23 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'type'  => 'section_header'
             ),
             'enable_maxmind'                     => array(
-                'title'       => __('MaxMind Geolocation', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __("The <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>MaxMind GeoLite2 library</a>, which Slimstat uses to geolocate your visitors, is released under the Creative Commons BY-SA 4.0 license, and cannot be directly bundled with the plugin because of license incompatibility issues. You must obtain and set a GeoLite2 license key below. If you're getting an error after enabling this option.", 'wp-slimstat') . ' ' . __('Updates are downloaded automatically every 4 weeks, when available.', 'wp-slimstat') . (!empty($maxmind_last_modified) ? ' ' . sprintf(__('Your data file was last downloaded on <strong>%s</strong>.', 'wp-slimstat'), $maxmind_last_modified) : '')
+                'title'         => __('GeoIP Database Update Source', 'wp-slimstat'),
+                'type'          => 'select',
+                'select_values' => array(
+                    'no' => __('Use the JsDelivr', 'wp-slimstat'),
+                    'on' => __('Use the MaxMind server with your own license key', 'wp-slimstat')
+                ),
+                'description'   => __('Select a service that updates the GeoIP database, ensuring the geographic information displayed is accurate and up-to-date. It\'s only used for database updates, not for real-time location lookups.', 'wp-slimstat')
             ),
             'maxmind_license_key'                => array(
                 'title'       => __('MaxMind License Key', 'wp-slimstat'),
                 'type'        => 'text',
                 'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat')
+            ),
+            'maxmind_user_id'                    => array(
+                'title'       => __('MaxMind User ID', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('Enter your MaxMind User ID and activate your access to their API. <a href="https://www.maxmind.com/en/geoip2-precision-insights" target="_blank">Click here</a> to purchase a new key for the GeoIP2 Precision Insights service.', 'wp-slimstat')
             ),
 
             // Maintenance - Danger Zone
@@ -589,7 +598,7 @@ if (version_compare(PHP_VERSION, '7.4', '>=')) {
         'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (!empty(\SlimStat\Utils\Browscap::$browscap_local_version) ? ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Utils\Browscap::$browscap_local_version . '</strong>') : '')
     ));
 
-    $settings[6]['rows'] = array_slice($settings[6]['rows'], 0, 7, true) + $enable_browscap + array_slice($settings[6]['rows'], 7, NULL, true);
+    $settings[6]['rows'] = array_slice($settings[6]['rows'], 0, 8, true) + $enable_browscap + array_slice($settings[6]['rows'], 7, NULL, true);
 }
 
 // Allow third-party tools to add their own settings
