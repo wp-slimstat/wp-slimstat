@@ -11,14 +11,6 @@ $current_tab = empty($_GET['tab']) ? 1 : intval($_GET['tab']);
 // Retrieve any tracker errors for display
 $last_tracker_error = get_option('slimstat_tracker_error', array());
 
-// Maxmind Data File
-$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
-
-$maxmind_last_modified = '';
-if (file_exists($maxmind_path) && false !== ($file_stat = @stat($maxmind_path))) {
-    $maxmind_last_modified = date_i18n(get_option('date_format'), $file_stat['mtime']);
-}
-
 
 // Define all the options
 $settings = array(
@@ -550,11 +542,6 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'type'        => 'text',
                 'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat')
             ),
-            'maxmind_user_id'                    => array(
-                'title'       => __('MaxMind User ID', 'wp-slimstat'),
-                'type'        => 'text',
-                'description' => __('Enter your MaxMind User ID and activate your access to their API. <a href="https://www.maxmind.com/en/geoip2-precision-insights" target="_blank">Click here</a> to purchase a new key for the GeoIP2 Precision Insights service.', 'wp-slimstat')
-            ),
 
             // Maintenance - Danger Zone
             'maintenance_danger_zone_header'     => array(
@@ -603,9 +590,6 @@ if (version_compare(PHP_VERSION, '7.4', '>=')) {
 
 // Allow third-party tools to add their own settings
 $settings = apply_filters('slimstat_options_on_page', $settings);
-
-// Maxmind Data File
-$maxmind_path = wp_slimstat::$upload_dir . '/maxmind.mmdb';
 
 // Save options
 $save_messages = array();
@@ -661,31 +645,25 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         if (!empty($_POST['options']['enable_maxmind'])) {
             if ($_POST['options']['enable_maxmind'] == 'on'
                 && wp_slimstat::$settings['enable_maxmind'] == 'no'
-                && wp_slimstat::$settings['maxmind_license_key'] != '') {
-                $error = \SlimStat\Utils\MaxMind::downloadDatabase();
+                && $_POST['options']['maxmind_license_key'] != '') {
+                $pack                = \SlimStat\Utils\GeoIP::get_pack();
+                $maxmind_license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
+                $result              = \SlimStat\Utils\GeoIP::download($pack, 'on', $maxmind_license_key);
 
-                if (empty($error)) {
+                if (isset($result['status']) and $result['status'] === false) {
+                    $save_messages[] = $result['notice'];
+                } else {
                     $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
                     wp_slimstat::$settings['enable_maxmind'] = 'on';
-                } else {
-                    $save_messages[] = $error;
                 }
-            } else if ($_POST['options']['enable_maxmind'] == 'no' && wp_slimstat::$settings['enable_maxmind'] == 'on') {
-                $is_deleted = @unlink($maxmind_path);
-
-                if ($is_deleted) {
-                    $save_messages[]                         = __('The geolocation database has been uninstalled from your server.', 'wp-slimstat');
-                    wp_slimstat::$settings['enable_maxmind'] = 'no';
+            } else if ($_POST['options']['enable_maxmind'] == 'no' && (wp_slimstat::$settings['enable_maxmind'] == 'on' || !\SlimStat\Utils\GeoIP::database_exists())) {
+                $pack   = \SlimStat\Utils\GeoIP::get_pack();
+                $result = \SlimStat\Utils\GeoIP::download($pack);
+                if (isset($result['status']) and $result['status'] === false) {
+                    $save_messages[] = $result['notice'];
                 } else {
-                    // Some users have reported that a directory is created, instead of a file
-                    $is_deleted = wp_slimstat_admin::rmdir($maxmind_path);
-
-                    if ($is_deleted) {
-                        $save_messages[]                         = __('The geolocation database has been uninstalled from your server.', 'wp-slimstat');
-                        wp_slimstat::$settings['enable_maxmind'] = 'no';
-                    } else {
-                        $save_messages[] = __('The geolocation database could not be uninstalled from your server. Please make sure Slimstat can save files in your <code>wp-content/uploads</code> folder.', 'wp-slimstat');
-                    }
+                    $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
+                    wp_slimstat::$settings['enable_maxmind'] = 'no';
                 }
             }
         }

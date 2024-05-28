@@ -563,7 +563,7 @@ class wp_slimstat
 
         // Geolocation
         try {
-            $geolocation_data = \SlimStat\Utils\MaxMind::getGeolocationInfo(self::$stat['ip']);
+            $geolocation_data = \SlimStat\Utils\GeoIP::loader(self::$stat['ip']);
         } catch (Exception $e) {
             // Invalid MaxMind data file
             $error = self::_log_error(205);
