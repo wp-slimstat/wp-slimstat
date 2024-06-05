@@ -63,8 +63,8 @@ function slimstat_uninstall($_wpdb = '', $_options = array())
     wp_clear_scheduled_hook('wp_slimstat_purge');
 
     // Delete the MaxMind data file
-    if (\SlimStat\Utils\GeoIP::database_exists()) {
-        $databaseFilePath = \SlimStat\Utils\GeoIP::get_database_file();
+    if (\SlimStat\Services\GeoIP::database_exists()) {
+        $databaseFilePath = \SlimStat\Services\GeoIP::get_database_file();
         @unlink($databaseFilePath);
     }
 }

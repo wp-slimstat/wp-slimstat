@@ -145,6 +145,26 @@ $settings = array(
                 'description' => __('List all the file extensions that you want to be identified as Downloads. Please note that links pointing to external resources (i.e. PDFs on an external website) will be tracked as Downloads and not Outbound Links, if they match one of the extensions listed here below.', 'wp-slimstat')
             ),
 
+            // Maintenance - Third-party Libraries
+            'maintenance_third_party_header' => array(
+                'title' => __('Third-party Libraries', 'wp-slimstat'),
+                'type'  => 'section_header'
+            ),
+            'enable_maxmind'                 => array(
+                'title'         => __('GeoIP Database Update Source', 'wp-slimstat'),
+                'type'          => 'select',
+                'select_values' => array(
+                    'no' => __('Use the JsDelivr', 'wp-slimstat'),
+                    'on' => __('Use the MaxMind server with your own license key', 'wp-slimstat')
+                ),
+                'description'   => __('Select a service that updates the GeoIP database, ensuring the geographic information displayed is accurate and up-to-date. It\'s only used for database updates, not for real-time location lookups.', 'wp-slimstat')
+            ),
+            'maxmind_license_key'            => array(
+                'title'       => __('MaxMind License Key', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat')
+            ),
+
             // Tracker - Advanced Options
             'advanced_tracker_header'        => array(
                 'title' => __('Advanced Options', 'wp-slimstat'),
@@ -155,7 +175,7 @@ $settings = array(
                 'type'             => 'toggle',
                 'custom_label_on'  => __('Country', 'wp-slimstat'),
                 'custom_label_off' => __('City', 'wp-slimstat'),
-                'description'      => __("Slimstat determines your visitors' Country of origin through a third-party data file <a href='https://dev.maxmind.com/geoip/geoip2/geolite2/' target='_blank'>distributed by MaxMind</a>. This information is available in two precision levels: country and city. By default, Slimstat will install the country precision level. Use this option to switch to the more granular level, if you don't mind its 60 Mb average size. After updating this option, please <strong>go to the Maintenance tab</strong> and uninstall/install the MaxMind GeoLite DB file by clicking on the corresponding button.", 'wp-slimstat')
+                'description'      => __("Slimstat determines your visitors' Country of origin through third-party libraries. This information is available in two precision levels: country and city. By default, Slimstat will install the country precision level. Use this option to switch to the more granular level, if you don't mind its 60 Mb average size.", 'wp-slimstat')
             ),
             'session_duration'               => array(
                 'title'             => __('Visit Duration', 'wp-slimstat'),
@@ -523,26 +543,6 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'description' => __('Enable this option to add column indexes to the main Slimstat table. This will make SQL queries faster and increase the size of the table by about 30%.', 'wp-slimstat')
             ),
 
-            // Maintenance - Third-party Libraries
-            'maintenance_third_party_header'     => array(
-                'title' => __('Third-party Libraries', 'wp-slimstat'),
-                'type'  => 'section_header'
-            ),
-            'enable_maxmind'                     => array(
-                'title'         => __('GeoIP Database Update Source', 'wp-slimstat'),
-                'type'          => 'select',
-                'select_values' => array(
-                    'no' => __('Use the JsDelivr', 'wp-slimstat'),
-                    'on' => __('Use the MaxMind server with your own license key', 'wp-slimstat')
-                ),
-                'description'   => __('Select a service that updates the GeoIP database, ensuring the geographic information displayed is accurate and up-to-date. It\'s only used for database updates, not for real-time location lookups.', 'wp-slimstat')
-            ),
-            'maxmind_license_key'                => array(
-                'title'       => __('MaxMind License Key', 'wp-slimstat'),
-                'type'        => 'text',
-                'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat')
-            ),
-
             // Maintenance - Danger Zone
             'maintenance_danger_zone_header'     => array(
                 'title' => __('Danger Zone', 'wp-slimstat'),
@@ -582,7 +582,7 @@ if (version_compare(PHP_VERSION, '7.4', '>=')) {
     $enable_browscap = array('enable_browscap' => array(
         'title'       => __('Browscap Library', 'wp-slimstat'),
         'type'        => 'toggle',
-        'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (!empty(\SlimStat\Utils\Browscap::$browscap_local_version) ? ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Utils\Browscap::$browscap_local_version . '</strong>') : '')
+        'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (!empty(\SlimStat\Services\Browscap::$browscap_local_version) ? ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Services\Browscap::$browscap_local_version . '</strong>') : '')
     ));
 
     $settings[6]['rows'] = array_slice($settings[6]['rows'], 0, 8, true) + $enable_browscap + array_slice($settings[6]['rows'], 7, NULL, true);
@@ -641,29 +641,27 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
         }
 
-        // MaxMind Data File
-        if (!empty($_POST['options']['enable_maxmind'])) {
-            if ($_POST['options']['enable_maxmind'] == 'on'
-                && wp_slimstat::$settings['enable_maxmind'] == 'no'
-                && $_POST['options']['maxmind_license_key'] != '') {
-                $pack                = \SlimStat\Utils\GeoIP::get_pack();
-                $maxmind_license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
-                $result              = \SlimStat\Utils\GeoIP::download($pack, 'on', $maxmind_license_key);
-
-                if (isset($result['status']) and $result['status'] === false) {
-                    $save_messages[] = $result['notice'];
+        // GeoIP Library
+        if (!empty($_POST['options']['geolocation_country'])) {
+            $pack = ($_POST['options']['geolocation_country'] == 'on') ? 'country' : 'city';
+            if (!\SlimStat\Services\GeoIP::database_exists($pack)) {
+                if ($_POST['options']['enable_maxmind'] == 'on' && $_POST['options']['maxmind_license_key'] != '') {
+                    $license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
+                    $result      = \SlimStat\Services\GeoIP::download($pack, 'on', $license_key);
+                    if (isset($result['status']) and $result['status'] === false) {
+                        $save_messages[] = $result['notice'];
+                    } else {
+                        $save_messages[]                              = __('The geolocation database has been installed on your server.', 'wp-slimstat');
+                        wp_slimstat::$settings['geolocation_country'] = 'on';
+                    }
                 } else {
-                    $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
-                    wp_slimstat::$settings['enable_maxmind'] = 'on';
-                }
-            } else if ($_POST['options']['enable_maxmind'] == 'no' && (wp_slimstat::$settings['enable_maxmind'] == 'on' || !\SlimStat\Utils\GeoIP::database_exists())) {
-                $pack   = \SlimStat\Utils\GeoIP::get_pack();
-                $result = \SlimStat\Utils\GeoIP::download($pack);
-                if (isset($result['status']) and $result['status'] === false) {
-                    $save_messages[] = $result['notice'];
-                } else {
-                    $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
-                    wp_slimstat::$settings['enable_maxmind'] = 'no';
+                    $result = \SlimStat\Services\GeoIP::download($pack);
+                    if (isset($result['status']) and $result['status'] === false) {
+                        $save_messages[] = $result['notice'];
+                    } else {
+                        $save_messages[]                              = __('The geolocation database has been installed on your server.', 'wp-slimstat');
+                        wp_slimstat::$settings['geolocation_country'] = 'no';
+                    }
                 }
             }
         }
@@ -671,7 +669,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         // Browscap Library
         if (!empty($_POST['options']['enable_browscap'])) {
             if ($_POST['options']['enable_browscap'] == 'on' && wp_slimstat::$settings['enable_browscap'] == 'no') {
-                $error = \SlimStat\Utils\Browscap::update_browscap_database(true);
+                $error = \SlimStat\Services\Browscap::update_browscap_database(true);
 
                 if ($error[0] == 0) {
                     wp_slimstat::$settings['enable_browscap'] = 'on';

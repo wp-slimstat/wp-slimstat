@@ -563,7 +563,7 @@ class wp_slimstat
 
         // Geolocation
         try {
-            $geolocation_data = \SlimStat\Utils\GeoIP::loader(self::$stat['ip']);
+            $geolocation_data = \SlimStat\Services\GeoIP::loader(self::$stat['ip']);
         } catch (Exception $e) {
             // Invalid MaxMind data file
             $error = self::_log_error(205);
@@ -602,7 +602,7 @@ class wp_slimstat
         }
 
         // User Agent
-        $browser = \SlimStat\Utils\Browscap::get_browser();
+        $browser = \SlimStat\Services\Browscap::get_browser();
 
         // Are we ignoring bots?
         if (self::$settings['ignore_bots'] == 'on' && $browser['browser_type'] == 1) {
@@ -910,7 +910,7 @@ class wp_slimstat
     public static function init_plugin()
     {
         // Include our browser detector library
-        \SlimStat\Utils\Browscap::init();
+        \SlimStat\Services\Browscap::init();
 
         // Make sure the upload directory is exist and is protected.
         self::create_upload_directory();

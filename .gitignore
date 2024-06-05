@@ -40,9 +40,6 @@ nbproject
 #vscode
 .vscode
 
-#vendor
-/vendor
-
 #composer.lock
 composer.lock
 
