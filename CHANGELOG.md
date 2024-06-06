@@ -1,3 +1,11 @@
+= 5.2 =
+* [New] Added option to load Maxmind GeoIP from [jsDelivr](https://www.jsdelivr.com/) without requiring a license
+* [Fix] Resolved reset factory bug
+* [Fix] Addressed Deprecated Warning: Ensure referer is set before parsing URL
+* [Enhancement] Auto-loaded Vendor libraries and performed cleanup
+* [Enhancement] Cleaned up Utils classes and improved method naming
+* [Enhancement] Made minor improvements
+
 = 5.1.5 =
 * [Enhancement] Minor improvements.
 
