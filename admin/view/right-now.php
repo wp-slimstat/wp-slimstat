@@ -12,7 +12,7 @@ $is_dashboard = empty($_REQUEST['page']) || $_REQUEST['page'] != 'slimview1';
 // - backlink: format of the URL point to the search engine result page
 // - charsets: list of charset used to encode the keywords
 //
-$search_engines = file_get_contents(plugin_dir_path(dirname(dirname(__FILE__))) . 'vendor/matomo-searchengine.json');
+$search_engines = file_get_contents(plugin_dir_path(dirname(dirname(__FILE__))) . 'admin/assets/data/matomo-searchengine.json');
 $search_engines = json_decode($search_engines, TRUE);
 // COMPLETE THIS FEATURE!!
 

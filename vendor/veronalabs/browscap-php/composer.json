@@ -1,0 +1,70 @@
+{
+    "name": "veronalabs/browscap-php",
+    "description": "Standalone replacement for php's native get_browser() function",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "get_browser",
+        "browser",
+        "capabilities",
+        "user agent"
+    ],
+    "authors": [
+        {
+            "name": "Jonathan Stoppani",
+            "email": "jonathan.stoppani@gmail.com"
+        },
+        {
+            "name": "James Titcumb",
+            "email": "james@asgrim.com"
+        },
+        {
+            "name": "Thomas Mueller",
+            "email": "mimmi20@live.de"
+        }
+    ],
+    "homepage": "https://github.com/browscap/browscap-php",
+    "support": {
+        "issues": "https://github.com/browscap/browscap-php/issues",
+        "source": "https://github.com/browscap/browscap-php"
+    },
+    "require": {
+        "php": ">=7.4.3,<8.3.0",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^7.4.5",
+        "league/flysystem": "^2.4.5",
+        "matthiasmullie/scrapbook": "^1.4.8",
+        "psr/log": "^1.1.4",
+        "psr/cache": "~1.0",
+        "psr/simple-cache": "^1.0",
+        "symfony/console": "^v5.4.8",
+        "symfony/filesystem": "^v5.4.7"
+    },
+    "suggest": {
+        "ext-curl": "to use curl requests to get the ini file"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "BrowscapPHP\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BrowscapPHPTest\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/browscap-php"
+    ],
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "ergebnis/composer-normalize": true,
+            "phpstan/extension-installer": true
+        },
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}

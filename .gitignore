@@ -40,5 +40,8 @@ nbproject
 #vscode
 .vscode
 
+#composer.lock
+composer.lock
+
 # Testing
 .env.testing
