@@ -3,6 +3,9 @@
   "description": "The leading web analytics plugin for WordPress",
   "homepage": "https://wp-slimstat.com/",
   "license": "MIT",
+  "config": {
+    "platform-check": false
+  },
   "autoload": {
     "psr-4": {
       "SlimStat\\": "src"
