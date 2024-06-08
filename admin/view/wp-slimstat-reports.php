@@ -1112,7 +1112,11 @@ class wp_slimstat_reports
 
                     case 'searchterms':
                         if ($_args['type'] == 'recent') {
-                            $domain = parse_url($results[$i]['referer'], PHP_URL_HOST);
+                            if (isset($results[$i]['referer']) && $results[$i]['referer']) {
+                                $domain = parse_url($results[$i]['referer'], PHP_URL_HOST);
+                            } else {
+                                $domain = __('No referrer', 'wp-slimstat');
+                            }
 
                             $row_details   = __('Referrer', 'wp-slimstat') . ": $domain";
                             $element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'], true);

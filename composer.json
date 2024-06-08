@@ -1,0 +1,14 @@
+{
+  "name": "wp-slimstat/wp-slimstat",
+  "description": "The leading web analytics plugin for WordPress",
+  "homepage": "https://wp-slimstat.com/",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "SlimStat\\": "src"
+    }
+  },
+  "require": {
+    "veronalabs/browscap-php": "dev-standalone"
+  }
+}

@@ -20,6 +20,24 @@ if (typeof SlimStatAdminParams == 'undefined') {
 
 jQuery(function () {
 
+    let licenseType = jQuery('#enable_maxmind');
+    if(licenseType.val() !== 'on')
+    {
+        jQuery("#maxmind_license_key").closest("tr").css("display", "none");
+        jQuery("#maxmind_user_id").closest("tr").css("display", "none");
+    }
+    jQuery('#enable_maxmind').on('change', function(e){
+        let value = e.target.value;
+        if(value == "on") {
+            jQuery("#maxmind_user_id").closest("tr").css("display", "table-row");
+            jQuery("#maxmind_license_key").closest("tr").css("display", "table-row");
+        }
+        if(value == "no") {
+            jQuery("#maxmind_user_id").closest("tr").css("display", "none");
+            jQuery("#maxmind_license_key").closest("tr").css("display", "none");
+        }
+    });
+
     // ----- BEGIN: DATA REFRESH -----------------------------------------------------
     //
 

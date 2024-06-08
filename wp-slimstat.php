@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.1.5
+ * Version: 5.2
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -16,11 +16,19 @@ if (!empty(wp_slimstat::$settings)) {
     return true;
 }
 
+// check if composer autoloader exists
+if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
+    return;
+}
+
+// include the autoloader if it exists
+require_once __DIR__ . '/vendor/autoload.php';
+
 class wp_slimstat
 {
     public static $settings = array();
 
-    public static $wpdb = '';
+    public static $wpdb = null;
     public static $upload_dir = '';
 
     public static $update_checker = array();
@@ -110,9 +118,8 @@ class wp_slimstat
         // Shortcodes
         add_shortcode('slimstat', array(__CLASS__, 'slimstat_shortcode'), 15);
 
-        // Include our browser detector library
-        include_once(plugin_dir_path(__FILE__) . 'vendor/browscap.php');
-        add_action('init', array('slim_browser', 'init'));
+        // Init the plugin functionality
+        add_action('init', array(__CLASS__, 'init_plugin'));
 
         // REST API Support
         add_action('rest_api_init', array(__CLASS__, 'register_rest_route'));
@@ -163,7 +170,7 @@ class wp_slimstat
 
             self::$stat['id'] = intval(self::$data_js['id']);
             if (self::$stat['id'] < 0) {
-                do_action('slimstat_track_exit_' . abs($intval_id));
+                do_action('slimstat_track_exit_' . abs(self::$stat['id']));
                 exit(self::_get_value_with_checksum(self::$stat['id']));
             }
 
@@ -556,9 +563,8 @@ class wp_slimstat
         }
 
         // Geolocation
-        include_once(plugin_dir_path(__FILE__) . 'vendor/maxmind.php');
         try {
-            $geolocation_data = maxmind_geolite2_connector::get_geolocation_info(self::$stat['ip']);
+            $geolocation_data = \SlimStat\Services\GeoIP::loader(self::$stat['ip']);
         } catch (Exception $e) {
             // Invalid MaxMind data file
             $error = self::_log_error(205);
@@ -597,7 +603,7 @@ class wp_slimstat
         }
 
         // User Agent
-        $browser = slim_browser::get_browser();
+        $browser = \SlimStat\Services\Browscap::get_browser();
 
         // Are we ignoring bots?
         if (self::$settings['ignore_bots'] == 'on' && $browser['browser_type'] == 1) {
@@ -773,7 +779,7 @@ class wp_slimstat
                     return __('Invalid Report ID', 'wp-slimstat');
                 }
 
-                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__) ,true, SLIMSTAT_ANALYTICS_VERSION);
+                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__), true, SLIMSTAT_ANALYTICS_VERSION);
                 wp_enqueue_style('wp-slimstat-frontend');
 
                 wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
@@ -899,7 +905,17 @@ class wp_slimstat
 
         return $output;
     }
+
     // end slimstat_shortcode
+
+    public static function init_plugin()
+    {
+        // Include our browser detector library
+        \SlimStat\Services\Browscap::init();
+
+        // Make sure the upload directory is exist and is protected.
+        self::create_upload_directory();
+    }
 
     /**
      * Opens given domains during CORS requests to admin-ajax.php
@@ -1569,7 +1585,7 @@ class wp_slimstat
         // - backlink: format of the URL point to the search engine result page
         // - charsets: list of charset used to encode the keywords
         //
-        $search_engines = file_get_contents(plugin_dir_path(__FILE__) . 'vendor/matomo-searchengine.json');
+        $search_engines = file_get_contents(plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json');
         $search_engines = json_decode($search_engines, TRUE);
 
         $parsed_url = @parse_url($_url);
@@ -1961,6 +1977,27 @@ class wp_slimstat
         }
 
         return false;
+    }
+
+    /**
+     * create upload directory
+     */
+    public static function create_upload_directory()
+    {
+        $upload_dir = self::$upload_dir;
+        wp_mkdir_p($upload_dir);
+
+        /**
+         * Create .htaccess to avoid public access.
+         */
+        if (is_dir($upload_dir) and is_writable($upload_dir)) {
+            $htaccess_file = path_join($upload_dir, '.htaccess');
+
+            if (!file_exists($htaccess_file) and $handle = @fopen($htaccess_file, 'w')) {
+                fwrite($handle, "Deny from all\n");
+                fclose($handle);
+            }
+        }
     }
 }
 

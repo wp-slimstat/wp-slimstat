@@ -3,9 +3,9 @@ Contributors: coolmann, toxicum, veronalabs, mostafas1990
 Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
-Requires PHP: 7.4+
-Tested up to: 6.4
-Stable tag: 5.1.5
+Requires PHP: 7.4
+Tested up to: 6.5
+Stable tag: 5.2
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,7 +63,12 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.1.5 =
-* [Enhancement] Minor improvements.
+= 5.2 =
+* [New] Added option to load Maxmind GeoIP from [jsDelivr](https://www.jsdelivr.com/) without requiring a license
+* [Fix] Resolved reset factory bug
+* [Fix] Addressed Deprecated Warning: Ensure referer is set before parsing URL
+* [Enhancement] Auto-loaded Vendor libraries and performed cleanup
+* [Enhancement] Cleaned up Utils classes and improved method naming
+* [Enhancement] Made minor improvements
 
 [See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).
