@@ -635,6 +635,29 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
         }
 
+        // MaxMind Library
+        if (!empty($_POST['options']['enable_maxmind'])) {
+            $pack = ($_POST['options']['geolocation_country'] == 'on') ? 'country' : 'city';
+            if ($_POST['options']['enable_maxmind'] == 'on' && wp_slimstat::$settings['enable_maxmind'] == 'no') {
+                $license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
+                $result      = \SlimStat\Services\GeoIP::download($pack, 'on', $license_key);
+                if (isset($result['status']) and $result['status'] === false) {
+                    $save_messages[] = $result['notice'];
+                } else {
+                    $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
+                    wp_slimstat::$settings['enable_maxmind'] = 'on';
+                }
+            } else if ($_POST['options']['enable_maxmind'] == 'no' && wp_slimstat::$settings['enable_maxmind'] == 'on') {
+                $result = \SlimStat\Services\GeoIP::download($pack);
+                if (isset($result['status']) and $result['status'] === false) {
+                    $save_messages[] = $result['notice'];
+                } else {
+                    $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
+                    wp_slimstat::$settings['enable_maxmind'] = 'no';
+                }
+            }
+        }
+
         // GeoIP Library
         if (!empty($_POST['options']['geolocation_country'])) {
             $pack = ($_POST['options']['geolocation_country'] == 'on') ? 'country' : 'city';
