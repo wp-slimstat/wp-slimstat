@@ -66,16 +66,23 @@ class wp_slimstat
 
         // Define the folder where to store the geolocation database (shared among sites in a network, by default)
         if (defined('UPLOADS')) {
-            self::$upload_dir = ABSPATH . UPLOADS;
+            self::$upload_dir = ABSPATH . UPLOADS . '/wp-slimstat';
         } else {
-            self::$upload_dir = wp_upload_dir();
-            self::$upload_dir = self::$upload_dir['basedir'];
-            if (is_multisite() && !(is_main_network() && is_main_site() && defined('MULTISITE'))) {
-                self::$upload_dir = str_replace('/sites/' . get_current_blog_id(), '', self::$upload_dir);
+            $upload_dir_info  = wp_upload_dir();
+            self::$upload_dir = $upload_dir_info['basedir'];
+
+            // Handle multisite environment
+            if (is_multisite()) {
+                if (!(is_main_network() && is_main_site() && defined('MULTISITE'))) {
+                    self::$upload_dir = str_replace('/sites/' . get_current_blog_id(), '', self::$upload_dir);
+                }
             }
+
             self::$upload_dir .= '/wp-slimstat';
-            self::$upload_dir = apply_filters('slimstat_maxmind_path', self::$upload_dir);
         }
+
+        // Apply filter to allow customization of the upload directory
+        self::$upload_dir = apply_filters('slimstat_maxmind_path', self::$upload_dir);
 
         // Allow add-ons to turn off the tracker based on other conditions
         $is_tracking_filter    = apply_filters('slimstat_filter_pre_tracking', strpos(self::get_request_uri(), 'wp-admin/admin-ajax.php') === false);
