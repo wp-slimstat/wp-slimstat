@@ -181,11 +181,8 @@ class Browscap
             wp_slimstat_admin::rmdir(wp_slimstat::$upload_dir . '/browscap-cache-master/');
 
             // We're ready to unzip the file
-            $ziplib = new \ZipArchive;
-            if ($ziplib->open($browscap_zip) === TRUE) {
-                $ziplib->extractTo(wp_slimstat::$upload_dir);
-                $ziplib->close();
-            } else {
+            $result = unzip_file($browscap_zip, wp_slimstat::$upload_dir);
+            if (is_wp_error($result)) {
                 return array(9, __('There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration.', 'wp-slimstat'));
             }
 
