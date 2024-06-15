@@ -2,36 +2,32 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: SlimStat Analytics 5.1.5\n"
+"Project-Id-Version: SlimStat Analytics 5.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-slimstat\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-06-06T09:13:15+00:00\n"
+"POT-Creation-Date: 2024-06-15T02:43:21+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.10.0\n"
+"X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: wp-slimstat\n"
 
 #. Plugin Name of the plugin
-#: wp-slimstat.php
 msgid "SlimStat Analytics"
 msgstr ""
 
 #. Plugin URI of the plugin
 #. Author URI of the plugin
-#: wp-slimstat.php
 msgid "https://wp-slimstat.com/"
 msgstr ""
 
 #. Description of the plugin
-#: wp-slimstat.php
 msgid "The leading web analytics plugin for WordPress"
 msgstr ""
 
 #. Author of the plugin
-#: wp-slimstat.php
 msgid "Jason Crouse, VeronaLabs"
 msgstr ""
 
@@ -139,7 +135,7 @@ msgid "Data Retention"
 msgstr ""
 
 #: admin/config/index.php:79
-#: admin/config/index.php:246
+#: admin/config/index.php:247
 #: admin/view/wp-slimstat-db.php:96
 msgid "days"
 msgstr ""
@@ -237,637 +233,643 @@ msgid "GeoIP Database Update Source"
 msgstr ""
 
 #: admin/config/index.php:157
-msgid "Use the JsDelivr"
+msgid "Disable"
 msgstr ""
 
 #: admin/config/index.php:158
+msgid "Use the JsDelivr"
+msgstr ""
+
+#: admin/config/index.php:159
 msgid "Use the MaxMind server with your own license key"
 msgstr ""
 
-#: admin/config/index.php:160
+#: admin/config/index.php:161
 msgid "Select a service that updates the GeoIP database, ensuring the geographic information displayed is accurate and up-to-date. It's only used for database updates, not for real-time location lookups."
 msgstr ""
 
-#: admin/config/index.php:163
+#: admin/config/index.php:164
 msgid "MaxMind License Key"
 msgstr ""
 
-#: admin/config/index.php:165
+#: admin/config/index.php:166
 msgid "To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href=\"https://dev.maxmind.com/geoip/geoip2/geolite2/\" target=\"_blank\">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website."
 msgstr ""
 
-#: admin/config/index.php:168
+#: admin/config/index.php:169
 msgid "Browscap Library"
 msgstr ""
 
-#: admin/config/index.php:170
+#: admin/config/index.php:171
 msgid "We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available."
 msgstr ""
 
-#: admin/config/index.php:170
+#: admin/config/index.php:171
 msgid "You are currently using version %s."
 msgstr ""
 
-#: admin/config/index.php:175
+#: admin/config/index.php:176
 msgid "Advanced Options"
 msgstr ""
 
-#: admin/config/index.php:179
+#: admin/config/index.php:180
 msgid "Geolocation Precision"
 msgstr ""
 
-#: admin/config/index.php:181
+#: admin/config/index.php:182
 msgid "Country"
 msgstr ""
 
-#: admin/config/index.php:182
+#: admin/config/index.php:183
 #: admin/view/wp-slimstat-db.php:49
 msgid "City"
 msgstr ""
 
-#: admin/config/index.php:183
+#: admin/config/index.php:184
 msgid "Slimstat determines your visitors' Country of origin through third-party libraries. This information is available in two precision levels: country and city. By default, Slimstat will install the country precision level. Use this option to switch to the more granular level, if you don't mind its 60 Mb average size."
 msgstr ""
 
-#: admin/config/index.php:186
+#: admin/config/index.php:187
 #: admin/view/wp-slimstat-reports.php:341
 msgid "Visit Duration"
 msgstr ""
 
-#: admin/config/index.php:188
-#: admin/config/index.php:294
+#: admin/config/index.php:189
+#: admin/config/index.php:295
 msgid "seconds"
 msgstr ""
 
-#: admin/config/index.php:189
+#: admin/config/index.php:190
 msgid "How many seconds should a human visit last? Google Analytics sets it to 1800 seconds."
 msgstr ""
 
-#: admin/config/index.php:192
+#: admin/config/index.php:193
 msgid "Extend Duration"
 msgstr ""
 
-#: admin/config/index.php:194
+#: admin/config/index.php:195
 msgid "Reset your visitors' visit duration every time they access a new page within the current visit."
 msgstr ""
 
-#: admin/config/index.php:197
+#: admin/config/index.php:198
 msgid "Enable CDN"
 msgstr ""
 
-#: admin/config/index.php:199
+#: admin/config/index.php:200
 msgid "Use <a href='https://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service)."
 msgstr ""
 
-#: admin/config/index.php:202
+#: admin/config/index.php:203
 msgid "Relative Ajax"
 msgstr ""
 
-#: admin/config/index.php:204
+#: admin/config/index.php:205
 msgid "Try enabling this option if you are experiencing issues related to the header field X-Requested-With not being allowed by Access-Control-Allow-Headers in preflight response (or similar)."
 msgstr ""
 
-#: admin/config/index.php:209
+#: admin/config/index.php:210
 msgid "External Pages"
 msgstr ""
 
-#: admin/config/index.php:213
+#: admin/config/index.php:214
 msgid "Allowed Domains"
 msgstr ""
 
-#: admin/config/index.php:215
+#: admin/config/index.php:216
 msgid "If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code here above, list the domains (complete with scheme) you would like to allow. For example: <code>https://my.domain.ext</code> (no trailing slash). Please see <a href='https://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests."
 msgstr ""
 
-#: admin/config/index.php:219
+#: admin/config/index.php:220
 msgid "Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel."
 msgstr ""
 
-#: admin/config/index.php:231
-#: admin/config/index.php:459
+#: admin/config/index.php:232
+#: admin/config/index.php:460
 msgid "Reports"
 msgstr ""
 
-#: admin/config/index.php:235
+#: admin/config/index.php:236
 msgid "Functionality"
 msgstr ""
 
-#: admin/config/index.php:239
+#: admin/config/index.php:240
 msgid "Current Month"
 msgstr ""
 
-#: admin/config/index.php:241
+#: admin/config/index.php:242
 msgid "Determine what time window to use for the reports. Enable this option to default to the current month, disable it to use the past X number of days (see option here below). Use the date and time filters for a more granular analysis."
 msgstr ""
 
-#: admin/config/index.php:244
+#: admin/config/index.php:245
 msgid "Time Range"
 msgstr ""
 
-#: admin/config/index.php:247
+#: admin/config/index.php:248
 msgid "Default number of days in the time window used to generate all the reports. We set it to 4 weeks so that the comparison charts will overlap nicely (i.e. Monday over Monday) for a more meaningful analysis. This value is ignored if the option here above is turned on."
 msgstr ""
 
-#: admin/config/index.php:250
-#: admin/config/index.php:297
+#: admin/config/index.php:251
+#: admin/config/index.php:298
 msgid "Rows to Display"
 msgstr ""
 
-#: admin/config/index.php:252
-#: admin/config/index.php:300
-#: admin/config/index.php:346
+#: admin/config/index.php:253
+#: admin/config/index.php:301
+#: admin/config/index.php:347
 msgid "rows"
 msgstr ""
 
-#: admin/config/index.php:253
+#: admin/config/index.php:254
 msgid "Define the number of rows to display in Top and Recent reports. You can adjust this number to improve your server performance."
 msgstr ""
 
-#: admin/config/index.php:256
+#: admin/config/index.php:257
 msgid "IP Geolocation"
 msgstr ""
 
-#: admin/config/index.php:258
+#: admin/config/index.php:259
 msgid "Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://whatismyipaddress.com/ip/</code>"
 msgstr ""
 
-#: admin/config/index.php:261
+#: admin/config/index.php:262
 msgid "Comparison Chart"
 msgstr ""
 
-#: admin/config/index.php:263
+#: admin/config/index.php:264
 msgid "Slimstat displays two sets of charts, allowing you to compare the current time window with the previous one. Disable this option if you find those four charts confusing, and prefer seeing only the selected time range. Please keep in mind that you can always temporarily hide one series by clicking on the corresponding entry in the legend."
 msgstr ""
 
-#: admin/config/index.php:266
+#: admin/config/index.php:267
 msgid "Use Display Name"
 msgstr ""
 
-#: admin/config/index.php:268
+#: admin/config/index.php:269
 msgid "By default, users are listed by their usernames. Enable this option to show their display names instead."
 msgstr ""
 
-#: admin/config/index.php:271
+#: admin/config/index.php:272
 msgid "Display Titles"
 msgstr ""
 
-#: admin/config/index.php:273
+#: admin/config/index.php:274
 msgid "For improved legibility, most reports list post and page titles instead of their permalinks. Use this option to change this behavior."
 msgstr ""
 
-#: admin/config/index.php:276
+#: admin/config/index.php:277
 msgid "Display Hits"
 msgstr ""
 
-#: admin/config/index.php:278
+#: admin/config/index.php:279
 msgid "By default, Top and Recent reports display the percentage of pageviews compared to the total for each entry, and the actual number of hits on hover in a tooltip. Enable this feature if you prefer to see the number of hits directly and the percentage in the tooltip."
 msgstr ""
 
-#: admin/config/index.php:281
+#: admin/config/index.php:282
 msgid "Show Hostnames"
 msgstr ""
 
-#: admin/config/index.php:283
+#: admin/config/index.php:284
 msgid "Enable this option to display the hostname associated to each IP address. Please note that this might affect performance, as Slimstat will need to query your DNS server for each address."
 msgstr ""
 
-#: admin/config/index.php:288
+#: admin/config/index.php:289
 msgid "Access Log and World Map"
 msgstr ""
 
-#: admin/config/index.php:292
+#: admin/config/index.php:293
 msgid "Auto Refresh"
 msgstr ""
 
-#: admin/config/index.php:295
+#: admin/config/index.php:296
 msgid "When a value greater than zero is entered, the Access Log view will refresh every X seconds. Enter <strong>0</strong> (the number zero) if you would like to deactivate this feature."
 msgstr ""
 
-#: admin/config/index.php:299
+#: admin/config/index.php:300
 msgid "Define the number of rows to visualize in the Access Log."
 msgstr ""
 
-#: admin/config/index.php:302
+#: admin/config/index.php:303
 msgid "Map Data Points"
 msgstr ""
 
-#: admin/config/index.php:304
+#: admin/config/index.php:305
 msgid "Customize the maximum number of data points displayed on the world map. Please note that larger numbers might negatively affect rendering times."
 msgstr ""
 
-#: admin/config/index.php:305
+#: admin/config/index.php:306
 msgid "points"
 msgstr ""
 
-#: admin/config/index.php:310
+#: admin/config/index.php:311
 msgid "Miscellaneous"
 msgstr ""
 
-#: admin/config/index.php:314
+#: admin/config/index.php:315
 msgid "Custom CSS"
 msgstr ""
 
-#: admin/config/index.php:318
+#: admin/config/index.php:319
 msgid "Enter your own stylesheet definitions to customize the way your reports look. <a href='https://wp-slimstat.com/faq/how-can-i-change-the-colors-associated-to-color-coded-pageviews-known-user-known-visitors-search-engines-etc/' target='_blank'>Check our FAQs</a> for more information on how to use this option."
 msgstr ""
 
-#: admin/config/index.php:321
+#: admin/config/index.php:322
 msgid "Chart Colors"
 msgstr ""
 
-#: admin/config/index.php:323
+#: admin/config/index.php:324
 msgid "Customize the look and feel of your charts by assigning your own colors to each metric. List four hex colors, in the following order: metric 1 previous, metric 2 previous, metric 1 current, metric 2 current. For example: <code>#ccc, #999, #bbcc44, #21759b</code>."
 msgstr ""
 
-#: admin/config/index.php:325
+#: admin/config/index.php:326
 msgid "Mozscape Access ID"
 msgstr ""
 
-#: admin/config/index.php:327
+#: admin/config/index.php:328
 msgid "Get accurate rankings for your website through the <a href=\"https://moz.com/community/join?redirect=/products/api/keys\" target=\"_blank\">Mozscape API</a>. Sign up for a free community account to get started. Then enter your personal identification code in this field."
 msgstr ""
 
-#: admin/config/index.php:329
+#: admin/config/index.php:330
 msgid "Mozscape Secret Key"
 msgstr ""
 
-#: admin/config/index.php:331
+#: admin/config/index.php:332
 msgid "This key is needed to query the Mozscape API (see option here above). Treat it like a password and do not share it with anyone, or they will be able to make API requests using your account."
 msgstr ""
 
-#: admin/config/index.php:334
+#: admin/config/index.php:335
 msgid "Show User Agent"
 msgstr ""
 
-#: admin/config/index.php:336
+#: admin/config/index.php:337
 msgid "Enable this option if you want to see the full user agent string when hovering over each browser icon in the Access Log and elsewhere."
 msgstr ""
 
-#: admin/config/index.php:339
+#: admin/config/index.php:340
 msgid "Async Mode"
 msgstr ""
 
-#: admin/config/index.php:341
+#: admin/config/index.php:342
 msgid "Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple smaller requests, thus avoiding memory issues and performance problems."
 msgstr ""
 
-#: admin/config/index.php:344
+#: admin/config/index.php:345
 msgid "SQL Limit"
 msgstr ""
 
-#: admin/config/index.php:347
+#: admin/config/index.php:348
 msgid "You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the statistics."
 msgstr ""
 
-#: admin/config/index.php:350
+#: admin/config/index.php:351
 msgid "Enable SOV"
 msgstr ""
 
-#: admin/config/index.php:352
+#: admin/config/index.php:353
 msgid "In linguistic typology, a subject-object-verb (SOV) language is one in which the subject, object, and verb of a sentence appear in that order, like in Japanese."
 msgstr ""
 
-#: admin/config/index.php:358
+#: admin/config/index.php:359
 msgid "Exclusions"
 msgstr ""
 
-#: admin/config/index.php:362
+#: admin/config/index.php:363
 msgid "User Properties"
 msgstr ""
 
-#: admin/config/index.php:366
+#: admin/config/index.php:367
 msgid "WP Users"
 msgstr ""
 
-#: admin/config/index.php:368
+#: admin/config/index.php:369
 msgid "If enabled, logged in WordPress users will not be tracked, neither on the website nor in the backend."
 msgstr ""
 
-#: admin/config/index.php:371
+#: admin/config/index.php:372
 msgid "Spammers"
 msgstr ""
 
-#: admin/config/index.php:373
+#: admin/config/index.php:374
 msgid "If enabled, visits from users identified as spammers by third-party tools like Akismet will not be tracked. Pageviews generated by users whose comments are later marked as spam, will also be removed from the database on a daily basis."
 msgstr ""
 
-#: admin/config/index.php:376
+#: admin/config/index.php:377
 #: admin/view/wp-slimstat-db.php:1231
 msgid "Bots"
 msgstr ""
 
-#: admin/config/index.php:378
+#: admin/config/index.php:379
 msgid "If enabled, pageviews generated by crawlers, spiders, search engine bots, and other automated tools will not be tracked. Please note that if the tracker is set to work in Client mode, some of those pageviews might not be tracked anyway, since these tools usually do not run any embedded Javascript code."
 msgstr ""
 
-#: admin/config/index.php:381
+#: admin/config/index.php:382
 msgid "Prefetch Requests"
 msgstr ""
 
-#: admin/config/index.php:383
+#: admin/config/index.php:384
 msgid "<a href=\"https://en.wikipedia.org/wiki/Link_prefetching\" target=\"_blank\">Link Prefetching</a> is a technique that allows web browsers to pre-load resources, before the user clicks on the corresponding link. If enabled, this kind of requests will not be tracked."
 msgstr ""
 
-#: admin/config/index.php:386
-#: admin/config/index.php:474
-#: admin/config/index.php:491
-#: admin/config/index.php:508
+#: admin/config/index.php:387
+#: admin/config/index.php:475
+#: admin/config/index.php:492
+#: admin/config/index.php:509
 msgid "Usernames"
 msgstr ""
 
-#: admin/config/index.php:388
+#: admin/config/index.php:389
 msgid "Enter a list of usernames that should not be tracked. Please note that spaces are <em>not</em> ignored and that usernames are case sensitive. See note at the bottom of this page for more information on how to use wildcards."
 msgstr ""
 
-#: admin/config/index.php:391
+#: admin/config/index.php:392
 msgid "Capabilities"
 msgstr ""
 
-#: admin/config/index.php:393
+#: admin/config/index.php:394
 msgid "Enter a list of <a href=\"https://wordpress.org/support/article/roles-and-capabilities/\" target=\"_new\">WordPress capabilities</a>, so that users who have any of them assigned to their role will not be tracked. Please note that although capabilities are case-insensitive, it is recommended to enter them all in lowercase. See note at the bottom of this page for more information on how to use wildcards."
 msgstr ""
 
-#: admin/config/index.php:396
+#: admin/config/index.php:397
 msgid "IP Addresses"
 msgstr ""
 
-#: admin/config/index.php:398
+#: admin/config/index.php:399
 msgid "Enter a list of IP addresses that should not be tracked. Each subnet <strong>must</strong> be defined using the <a href='https://www.iplocation.net/subnet-mask' target='_blank'>CIDR notation</a> (i.e. <em>192.168.0.0/24</em>). This filter applies both to the public IP address and the originating IP address, if available. Using the CIDR notation, you will use octets to determine the mask. For example, 54.0.0.0/8 matches any address that has 54 as the first number; 54.12.0.0/16 matches any address that starts with 54.12, and so on."
 msgstr ""
 
-#: admin/config/index.php:401
+#: admin/config/index.php:402
 msgid "Countries"
 msgstr ""
 
-#: admin/config/index.php:403
+#: admin/config/index.php:404
 msgid "Enter a list of lowercase <a href=\"https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\" target=\"_blank\">ISO 3166-1 country codes</a> (i.e.: <code>us, it, es</code>) that should not be tracked. Please note: this field does not allow wildcards."
 msgstr ""
 
-#: admin/config/index.php:406
+#: admin/config/index.php:407
 msgid "Languages"
 msgstr ""
 
-#: admin/config/index.php:408
+#: admin/config/index.php:409
 msgid "Enter a list of lowercase <a href=\"http://www.lingoes.net/en/translator/langcode.htm\" target=\"_blank\">ISO 639-1 language codes</a> (i.e.: <code>en-us, fr-ca, zh-cn</code>) that should not be tracked. Please note: this field does not allow wildcards."
 msgstr ""
 
-#: admin/config/index.php:411
+#: admin/config/index.php:412
 msgid "User Agents"
 msgstr ""
 
-#: admin/config/index.php:413
+#: admin/config/index.php:414
 msgid "Enter a list of browser names that should not be tracked. You can specify the browser's version adding a slash after the name (i.e. <em>Firefox/36</em>). Technically speaking, Slimstat will match your list against the visitor's user agent string. Strings are case-insensitive. See note at the bottom of this page for more information on how to use wildcards."
 msgstr ""
 
-#: admin/config/index.php:416
+#: admin/config/index.php:417
 msgid "Operating Systems"
 msgstr ""
 
-#: admin/config/index.php:418
+#: admin/config/index.php:419
 msgid "Enter a list of operating system codes that should not be tracked. Please refer to <a href=\"https://wp-slimstat.com/knowledge-base/\" target=\"_blank\">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards."
 msgstr ""
 
-#: admin/config/index.php:423
+#: admin/config/index.php:424
 msgid "Page Properties"
 msgstr ""
 
-#: admin/config/index.php:427
+#: admin/config/index.php:428
 msgid "Permalinks"
 msgstr ""
 
-#: admin/config/index.php:429
+#: admin/config/index.php:430
 msgid "Enter a list of permalinks that should not be tracked. Do not include your website domain name: <code>/about, ?p=1</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive."
 msgstr ""
 
-#: admin/config/index.php:432
+#: admin/config/index.php:433
 msgid "Link Attributes: class names, REL and HREF"
 msgstr ""
 
-#: admin/config/index.php:434
+#: admin/config/index.php:435
 msgid "Do not track events on page elements whose class names, <em>rel</em> attributes or <em>href</em> attribute contain one of the following strings. Please keep in mind that the class <code>noslimstat</code> is used to avoid tracking interactive links throughout the reports. If you remove it from this list, some features might not work as expected."
 msgstr ""
 
-#: admin/config/index.php:437
+#: admin/config/index.php:438
 msgid "Referring Sites"
 msgstr ""
 
-#: admin/config/index.php:439
+#: admin/config/index.php:440
 msgid "Enter a list of referring URLs that should not be tracked: <code>https://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive and must include the protocol (https://, https://)."
 msgstr ""
 
-#: admin/config/index.php:442
+#: admin/config/index.php:443
 msgid "Content Types"
 msgstr ""
 
-#: admin/config/index.php:444
+#: admin/config/index.php:445
 msgid "Enter a list of Slimstat content types that should not be tracked: <code>post, page, attachment, tag, 404, taxonomy, author, archive, search, feed, login</code>, etc. See note at the bottom of this page for more information on how to use wildcards. String should be entered in lowercase."
 msgstr ""
 
-#: admin/config/index.php:448
+#: admin/config/index.php:449
 msgid "<strong>Wildcards</strong><br>You can use the character <code>*</code> to match <em>any string, including the empty string</em>, and the character <code>!</code> to match <em>any character, including no character</em>. For example, <code>user*</code> matches user12 and userfoo, <code>u*100</code> matches user100 and ur100, <code>user!0</code> matches user10, user0 and user90, but not user100."
 msgstr ""
 
-#: admin/config/index.php:455
+#: admin/config/index.php:456
 msgid "Access Control"
 msgstr ""
 
-#: admin/config/index.php:463
+#: admin/config/index.php:464
 msgid "Restrict Authors"
 msgstr ""
 
-#: admin/config/index.php:465
+#: admin/config/index.php:466
 msgid "Enable this option if you want your authors to only see statistics related to their own content."
 msgstr ""
 
-#: admin/config/index.php:468
-#: admin/config/index.php:485
-#: admin/config/index.php:502
+#: admin/config/index.php:469
+#: admin/config/index.php:486
+#: admin/config/index.php:503
 msgid "Minimum Capability"
 msgstr ""
 
-#: admin/config/index.php:471
+#: admin/config/index.php:472
 msgid "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> your WordPress users must have to have to access the reports (default: <code>manage_options</code>). The field here below can be used to override this option for specific users."
 msgstr ""
 
-#: admin/config/index.php:476
+#: admin/config/index.php:477
 msgid "Enter a list of usernames who should have access to the statistics. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed."
 msgstr ""
 
-#: admin/config/index.php:481
+#: admin/config/index.php:482
 msgid "Customizer"
 msgstr ""
 
-#: admin/config/index.php:488
+#: admin/config/index.php:489
 msgid "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> your WordPress users must have to access the Customizer (default: <code>manage_options</code>). The field here below can be used to override this option for specific users."
 msgstr ""
 
-#: admin/config/index.php:493
+#: admin/config/index.php:494
 msgid "Enter a list of usernames who should have access to the customizer. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed."
 msgstr ""
 
-#: admin/config/index.php:498
-#: admin/config/index.php:563
-#: admin/config/index.php:736
+#: admin/config/index.php:499
+#: admin/config/index.php:564
+#: admin/config/index.php:762
 #: admin/index.php:85
 msgid "Settings"
 msgstr ""
 
-#: admin/config/index.php:505
+#: admin/config/index.php:506
 msgid "Specify the minimum <a href='https://wordpress.org/support/article/roles-and-capabilities/' target='_new'>capability</a> your WordPress users must have to configure Slimstat (default: <code>manage_options</code>). The field here below can be used to override this option for specific users."
 msgstr ""
 
-#: admin/config/index.php:510
+#: admin/config/index.php:511
 msgid "Enter a list of usernames who should have access to the plugin settings. Please be advised that administrators <strong>are not</strong> implicitly allowed, so do not forget to include yourself! Usernames are case sensitive. Wildcards are not allowed."
 msgstr ""
 
-#: admin/config/index.php:515
+#: admin/config/index.php:516
 msgid "REST API"
 msgstr ""
 
-#: admin/config/index.php:519
+#: admin/config/index.php:520
 msgid "Tokens"
 msgstr ""
 
-#: admin/config/index.php:521
+#: admin/config/index.php:522
 msgid "In order to send requests to the Slimstat REST API, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field here below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens."
 msgstr ""
 
-#: admin/config/index.php:527
+#: admin/config/index.php:528
 msgid "Maintenance"
 msgstr ""
 
-#: admin/config/index.php:531
+#: admin/config/index.php:532
 msgid "Troubleshooting"
 msgstr ""
 
-#: admin/config/index.php:535
+#: admin/config/index.php:536
 msgid "Tracker Error"
 msgstr ""
 
-#: admin/config/index.php:537
+#: admin/config/index.php:538
 msgid "Reset this error"
 msgstr ""
 
-#: admin/config/index.php:537
-#: admin/config/index.php:594
+#: admin/config/index.php:538
+#: admin/config/index.php:595
 msgid "So far so good."
 msgstr ""
 
-#: admin/config/index.php:538
+#: admin/config/index.php:539
 msgid "The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction."
 msgstr ""
 
-#: admin/config/index.php:541
+#: admin/config/index.php:542
 msgid "SQL Debug"
 msgstr ""
 
-#: admin/config/index.php:543
+#: admin/config/index.php:544
 msgid "Enable this option to display the SQL code associated to each report. This can be useful to troubleshoot issues with data consistency or missing pageviews."
 msgstr ""
 
-#: admin/config/index.php:546
+#: admin/config/index.php:547
 msgid "Increase Performance"
 msgstr ""
 
-#: admin/config/index.php:548
+#: admin/config/index.php:549
 msgid "Enable this option to add column indexes to the main Slimstat table. This will make SQL queries faster and increase the size of the table by about 30%."
 msgstr ""
 
-#: admin/config/index.php:553
+#: admin/config/index.php:554
 msgid "Danger Zone"
 msgstr ""
 
-#: admin/config/index.php:557
+#: admin/config/index.php:558
 msgid "Data"
 msgstr ""
 
-#: admin/config/index.php:559
+#: admin/config/index.php:560
 msgid "Please confirm that you want to PERMANENTLY DELETE ALL the records from your database."
 msgstr ""
 
-#: admin/config/index.php:559
+#: admin/config/index.php:560
 msgid "Delete Records"
 msgstr ""
 
-#: admin/config/index.php:560
+#: admin/config/index.php:561
 msgid "Delete all the information collected by Slimstat so far, but not the archived records (stored in <code>wp_slim_stats_archive</code>). This operation <strong>does not</strong> reset your settings and it can be undone by manually copying your records from the archive table, if you have the corresponding option enabled."
 msgstr ""
 
-#: admin/config/index.php:565
+#: admin/config/index.php:566
 msgid "Please confirm that you want to RESET your settings."
 msgstr ""
 
-#: admin/config/index.php:565
+#: admin/config/index.php:566
 msgid "Factory Reset"
 msgstr ""
 
-#: admin/config/index.php:566
+#: admin/config/index.php:567
 msgid "Restore all the settings to their default value. This action DOES NOT delete any records collected by the plugin."
 msgstr ""
 
-#: admin/config/index.php:569
+#: admin/config/index.php:570
 msgid "Delete Data on Uninstall"
 msgstr ""
 
-#: admin/config/index.php:571
+#: admin/config/index.php:572
 msgid "Delete all settings and statistics on plugin uninstall. Warning! If you enable this feature, all statistics and plugin settings will be permanently deleted from the database."
 msgstr ""
 
-#: admin/config/index.php:577
+#: admin/config/index.php:578
 msgid "Pro Options"
 msgstr ""
 
-#: admin/config/index.php:581
+#: admin/config/index.php:582
 msgid "License"
 msgstr ""
 
-#: admin/config/index.php:600
+#: admin/config/index.php:601
 msgid "All settings were successfully reset to their default values."
 msgstr ""
 
-#: admin/config/index.php:608
+#: admin/config/index.php:609
 msgid "All your records were successfully deleted."
 msgstr ""
 
-#: admin/config/index.php:625
+#: admin/config/index.php:626
 msgid "Congratulations! Slimstat Analytics is now optimized for <a href=\"https://www.youtube.com/watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
 msgstr ""
 
-#: admin/config/index.php:633
+#: admin/config/index.php:634
 msgid "Table indexes have been disabled. Enjoy the extra database space!"
 msgstr ""
 
 #: admin/config/index.php:648
 #: admin/config/index.php:656
+#: admin/config/index.php:674
+#: admin/config/index.php:682
 msgid "The geolocation database has been installed on your server."
 msgstr ""
 
-#: admin/config/index.php:674
+#: admin/config/index.php:700
 msgid "The Browscap data file has been uninstalled from your server."
 msgstr ""
 
-#: admin/config/index.php:677
+#: admin/config/index.php:703
 msgid "There was an error deleting the Browscap data folder on your server. Please check your permissions."
 msgstr ""
 
-#: admin/config/index.php:717
+#: admin/config/index.php:743
 msgid "Your new settings have been saved."
 msgstr ""
 
-#: admin/config/index.php:742
+#: admin/config/index.php:768
 #: admin/view/index.php:12
 msgid "<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:799
+#: admin/config/index.php:825
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:800
+#: admin/config/index.php:826
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:877
+#: admin/config/index.php:903
 msgid "Save Changes"
 msgstr ""
 
@@ -1339,7 +1341,7 @@ msgid "Reset Filters"
 msgstr ""
 
 #: admin/view/index.php:136
-msgid "<a href='%s' class='noslimstat'>Install MaxMind's GeoLite DB</a> to identify your visitors' country of origin."
+msgid "GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor."
 msgstr ""
 
 #: admin/view/index.php:140
@@ -4639,11 +4641,11 @@ msgstr ""
 msgid "There was an error downloading the Browscap data file from our server. Please try again later."
 msgstr ""
 
-#: src/Services/Browscap.php:189
+#: src/Services/Browscap.php:186
 msgid "There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration."
 msgstr ""
 
-#: src/Services/Browscap.php:197
+#: src/Services/Browscap.php:194
 msgid "The Browscap data file has been installed on your server."
 msgstr ""
 
@@ -4683,54 +4685,54 @@ msgstr ""
 msgid "Error: %1$s"
 msgstr ""
 
-#: wp-slimstat.php:459
+#: wp-slimstat.php:466
 msgid "Attempted XSS Injection: %s"
 msgstr ""
 
-#: wp-slimstat.php:779
+#: wp-slimstat.php:786
 msgid "Invalid Report ID"
 msgstr ""
 
-#: wp-slimstat.php:946
+#: wp-slimstat.php:953
 msgid "[REST API] The <code>dimension</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:950
+#: wp-slimstat.php:957
 msgid "[REST API] The <code>function</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:981
+#: wp-slimstat.php:988
 msgid "[REST API] You sent an invalid request. Accepted function values include: <code>count, count-all, recent, recent-all, top and top-all</code>. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:995
+#: wp-slimstat.php:1002
 msgid "[REST API] Please use a valid token in order to access the REST API endpoint at this URL."
 msgstr ""
 
-#: wp-slimstat.php:1017
+#: wp-slimstat.php:1024
 msgid "You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control."
 msgstr ""
 
-#: wp-slimstat.php:1021
+#: wp-slimstat.php:1028
 msgid "This parameter specifies the type of QUERY you would like to perform. Accepted funciton values include: count, count-all, recent, recent-all, top and top-all."
 msgstr ""
 
-#: wp-slimstat.php:1026
+#: wp-slimstat.php:1033
 msgid "This parameter indicates what dimension to return: * (all data), ip, resource, browser, operating system, etc. You can only specify one dimension at a time."
 msgstr ""
 
-#: wp-slimstat.php:1031
+#: wp-slimstat.php:1038
 msgid "This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)"
 msgstr ""
 
-#: wp-slimstat.php:2067
+#: wp-slimstat.php:2074
 msgid "Report"
 msgstr ""
 
-#: wp-slimstat.php:2075
+#: wp-slimstat.php:2082
 msgid "Title"
 msgstr ""
 
-#: wp-slimstat.php:2080
+#: wp-slimstat.php:2087
 msgid "Optional filters"
 msgstr ""
