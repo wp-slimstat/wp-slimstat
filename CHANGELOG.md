@@ -1,3 +1,8 @@
+= 5.2.1 =
+* [Fix] Resolved issue with saving the GeoIP Database Update Source field value in the settings.
+* [Fix] Corrected the `upload_dir` bug.
+* [Fix] Addressed multiple bugs affecting GeoIP and Browscap functionalities.
+
 = 5.2 =
 * [New] Added option to load Maxmind GeoIP from [jsDelivr](https://www.jsdelivr.com/) without requiring a license
 * [Fix] Resolved reset factory bug

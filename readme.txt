@@ -5,9 +5,11 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.5
-Stable tag: 5.2
+Stable tag: 5.2.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+The leading web analytics plugin for WordPress
 
 == Description ==
 Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
@@ -63,12 +65,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2 =
-* [New] Added option to load Maxmind GeoIP from [jsDelivr](https://www.jsdelivr.com/) without requiring a license
-* [Fix] Resolved reset factory bug
-* [Fix] Addressed Deprecated Warning: Ensure referer is set before parsing URL
-* [Enhancement] Auto-loaded Vendor libraries and performed cleanup
-* [Enhancement] Cleaned up Utils classes and improved method naming
-* [Enhancement] Made minor improvements
+= 5.2.1 =
+* [Fix] Resolved issue with saving the GeoIP Database Update Source field value in the settings.
+* [Fix] Corrected the `upload_dir` bug.
+* [Fix] Addressed multiple bugs affecting GeoIP and Browscap functionalities.
 
 [See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).
