@@ -85,6 +85,7 @@ class GeoIP
                 $reader = new MaxMindReader(self::get_database_file());
                 return $reader->get(sanitize_text_field($ip));
             } catch (\Exception $e) {
+                error_log('Slimstat Error - ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
                 return false;
             }
         }
