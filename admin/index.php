@@ -242,6 +242,7 @@ class wp_slimstat_admin
 
             add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
             add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
+            add_action('wp_ajax_slimstat_update_geoip_database', array(__CLASS__, 'update_geoip_database'));
         }
 
         // Schedule a daily cron job to purge the data
@@ -1074,6 +1075,25 @@ class wp_slimstat_admin
         exit();
     }
     // END: manage_filters
+
+    public static function update_geoip_database()
+    {
+        check_ajax_referer('wp_rest', 'security');
+
+        if (wp_slimstat::$settings['enable_maxmind'] != 'disable') {
+            $pack = \SlimStat\Services\GeoIP::get_pack();
+            $args = array('update' => true);
+            if (wp_slimstat::$settings['enable_maxmind'] == 'on' && !empty(wp_slimstat::$settings['maxmind_license_key'])) {
+                $args['enable_maxmind']      = 'on';
+                $args['maxmind_license_key'] = wp_slimstat::$settings['maxmind_license_key'];
+            }
+            $result = \SlimStat\Services\GeoIP::download($pack, $args);
+            echo $result['notice'];
+        } else {
+            echo __('Please first choose GeoIP Database Source and save settings!', 'wp-statistics');
+        }
+        exit();
+    }
 
     /**
      * Contextual help

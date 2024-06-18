@@ -97,8 +97,14 @@ class GeoIP
      * @param $pack
      * @return array
      */
-    public static function download($pack, $enable_maxmind = false, $maxmind_license_key = false)
+    public static function download($pack, $args = [])
     {
+        $args = wp_parse_args($args, [
+            'update'              => false,
+            'enable_maxmind'      => false,
+            'maxmind_license_key' => false,
+        ]);
+
         try {
             WP_Filesystem();
             global $wp_filesystem;
@@ -112,7 +118,7 @@ class GeoIP
             // Create a variable with the name of the database file to download.
             $DBFile = self::get_geo_ip_path($pack);
 
-            if (file_exists($DBFile)) {
+            if (!$args['update'] && file_exists($DBFile)) {
                 $result["status"] = true;
                 return array_merge($result, array("notice" => __('GeoIP Database Already Exists!', 'wp-slimstat')));
             }
@@ -134,9 +140,9 @@ class GeoIP
             }
 
             // This is the location of the file to download.
-            if ($enable_maxmind == 'on' && $maxmind_license_key) {
+            if ($args['enable_maxmind'] == 'on' && $args['maxmind_license_key']) {
                 $download_url = add_query_arg(array(
-                    'license_key' => $maxmind_license_key
+                    'license_key' => $args['maxmind_license_key']
                 ), self::$library[$pack]['userSource']);
             } else {
                 $download_url = self::$library[$pack]['source'];
@@ -205,6 +211,7 @@ class GeoIP
 
                         // Display the success message.
                         $result["status"] = true;
+                        $result["notice"] = __('GeoIP Database Successfully Updated!', 'wp-slimstat');
                     }
                 }
             }

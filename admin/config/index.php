@@ -151,14 +151,15 @@ $settings = array(
                 'type'  => 'section_header'
             ),
             'enable_maxmind'                 => array(
-                'title'         => __('GeoIP Database Update Source', 'wp-slimstat'),
-                'type'          => 'select',
-                'select_values' => array(
+                'title'             => __('GeoIP Database Source', 'wp-slimstat'),
+                'after_input_field' => '<input type="hidden" id="slimstat-update-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">Update Database</a>',
+                'type'              => 'select',
+                'select_values'     => array(
                     'disable' => __('Disable', 'wp-slimstat'),
                     'no'      => __('Use the JsDelivr', 'wp-slimstat'),
                     'on'      => __('Use the MaxMind server with your own license key', 'wp-slimstat')
                 ),
-                'description'   => __('Select a service that updates the GeoIP database, ensuring the geographic information displayed is accurate and up-to-date. It\'s only used for database updates, not for real-time location lookups.', 'wp-slimstat')
+                'description'       => __('Choose a service to update the GeoIP database to ensure your geographic information is accurate and up-to-date.', 'wp-slimstat') . '<br />' . __('<b>Note: </b>If the database file is missing, it will be downloaded when you save the settings.', 'wp-slimstat')
             ),
             'maxmind_license_key'            => array(
                 'title'       => __('MaxMind License Key', 'wp-slimstat'),
@@ -641,7 +642,10 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             $pack = ($_POST['options']['geolocation_country'] == 'on') ? 'country' : 'city';
             if ($_POST['options']['enable_maxmind'] == 'on') {
                 $license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
-                $result      = \SlimStat\Services\GeoIP::download($pack, 'on', $license_key);
+                $result      = \SlimStat\Services\GeoIP::download($pack, [
+                    'enable_maxmind'      => 'on',
+                    'maxmind_license_key' => $license_key
+                ]);
                 if (isset($result['status']) and $result['status'] === false) {
                     $save_messages[] = $result['notice'];
                 } else {
@@ -667,7 +671,10 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             if (!\SlimStat\Services\GeoIP::database_exists($pack)) {
                 if ($_POST['options']['enable_maxmind'] == 'on' && $_POST['options']['maxmind_license_key'] != '') {
                     $license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
-                    $result      = \SlimStat\Services\GeoIP::download($pack, 'on', $license_key);
+                    $result      = \SlimStat\Services\GeoIP::download($pack, [
+                        'enable_maxmind'      => 'on',
+                        'maxmind_license_key' => $license_key
+                    ]);
                     if (isset($result['status']) and $result['status'] === false) {
                         $save_messages[] = $result['notice'];
                     } else {
@@ -840,7 +847,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                                     $is_selected = (!empty(wp_slimstat::$settings[$a_setting_slug]) && wp_slimstat::$settings[$a_setting_slug] == $a_key) ? ' selected' : '';
                                     echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
                                 }
-                                echo '</select>' .
+                                echo '</select> ' . $a_setting_info['after_input_field'] .
                                     $network_override_checkbox . '
 						</span>
 						<span class="description">' . $a_setting_info['description'] . '</span>
