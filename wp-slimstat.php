@@ -112,6 +112,9 @@ class wp_slimstat
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', array(__CLASS__, 'wp_slimstat_purge'));
 
+        // Hook a GeoIP database update routine to the daily cronjob
+        add_action('wp_slimstat_update_geoip_database', array(__CLASS__, 'wp_slimstat_update_geoip_database'));
+
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax'));
 
@@ -1362,6 +1365,28 @@ class wp_slimstat
         self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive");
     }
 
+    public static function wp_slimstat_update_geoip_database()
+    {
+        $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
+        $last_update = get_option('slimstat_last_geoip_dl', 0);
+
+        if ($last_update < $this_update && wp_slimstat::$settings['enable_maxmind'] != 'disable') {
+            $args = array('update' => true);
+            if (wp_slimstat::$settings['enable_maxmind'] == 'on' && !empty(wp_slimstat::$settings['maxmind_license_key'])) {
+                $args['enable_maxmind']      = 'on';
+                $args['maxmind_license_key'] = wp_slimstat::$settings['maxmind_license_key'];
+            }
+
+            $pack   = \SlimStat\Services\GeoIP::get_pack();
+            $result = \SlimStat\Services\GeoIP::download($pack, $args);
+
+            update_option('slimstat_last_geoip_dl', time());
+            if (!$result['status']) {
+                update_option('slimstat_last_geoip_error', $result['notice']);
+            }
+        }
+    }
+
     /**
      * Displays the opt-out box via Ajax request
      */
@@ -2005,6 +2030,16 @@ class wp_slimstat
                 fclose($handle);
             }
         }
+    }
+
+    public static function get_schedule_interval($schedule)
+    {
+        $schedulesInterval = wp_get_schedules();
+        $timeInterval      = 86400;
+        if (isset($schedulesInterval[$schedule]['interval'])) {
+            $timeInterval = $schedulesInterval[$schedule]['interval'];
+        }
+        return $timeInterval;
     }
 }
 

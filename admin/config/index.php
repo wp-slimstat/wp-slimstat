@@ -152,7 +152,7 @@ $settings = array(
             ),
             'enable_maxmind'                 => array(
                 'title'             => __('GeoIP Database Source', 'wp-slimstat'),
-                'after_input_field' => '<input type="hidden" id="slimstat-update-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">Update Database</a>',
+                'after_input_field' => '<input type="hidden" id="slimstat-update-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a>',
                 'type'              => 'select',
                 'select_values'     => array(
                     'disable' => __('Disable', 'wp-slimstat'),

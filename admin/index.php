@@ -250,6 +250,12 @@ class wp_slimstat_admin
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
 
+        // Schedule a weekly cron job to update geoip database automatically
+        if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
+            $nextRunInterval = wp_slimstat::get_schedule_interval('weekly');
+            wp_schedule_event(time() + $nextRunInterval, 'weekly', 'wp_slimstat_update_geoip_database');
+        }
+
         // Add style to the admin menu
         add_action('admin_head', array(__CLASS__, 'styling_admin_menu'));
 
@@ -284,6 +290,7 @@ class wp_slimstat_admin
     public static function deactivate()
     {
         wp_clear_scheduled_hook('wp_slimstat_purge');
+        wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');
     }
 
 
@@ -1074,6 +1081,7 @@ class wp_slimstat_admin
         }
         exit();
     }
+
     // END: manage_filters
 
     public static function update_geoip_database()
