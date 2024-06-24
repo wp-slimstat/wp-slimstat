@@ -1371,7 +1371,7 @@ class wp_slimstat
         $last_update = get_option('slimstat_last_geoip_dl', 0);
         if ($last_update < $this_update) {
 
-            $geographicProvider = new \SlimStat\Providers\GeographicProvider();
+            $geographicProvider = new \SlimStat\Services\GeoService();
 
             try {
                 $geographicProvider

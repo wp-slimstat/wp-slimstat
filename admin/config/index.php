@@ -657,7 +657,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             $licenseKey    = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
 
             try {
-                $geographicProvider = new \SlimStat\Providers\GeographicProvider();
+                $geographicProvider = new \SlimStat\Services\GeoService();
                 $geographicProvider->setEnableMaxmind($enableMaxmind);
                 if ($geographicProvider->isGeoIPEnabled()) {
                     $result = $geographicProvider

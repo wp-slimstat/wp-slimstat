@@ -63,7 +63,7 @@ function slimstat_uninstall($_wpdb = '', $_options = array())
     wp_clear_scheduled_hook('wp_slimstat_purge');
 
     // Uninstall Geographic
-    $geographicProvider = new \SlimStat\Providers\GeographicProvider();
+    $geographicProvider = new \SlimStat\Services\GeoService();
     $geographicProvider->clearScheduledEvent();
     $geographicProvider->deleteDatabaseFile();
 }

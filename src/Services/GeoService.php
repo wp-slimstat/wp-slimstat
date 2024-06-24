@@ -1,11 +1,10 @@
 <?php
 
-namespace SlimStat\Providers;
+namespace SlimStat\Services;
 
-use SlimStat\Services\GeoIP;
 use SlimStat\Utils\MaxMindReader;
 
-class GeographicProvider
+class GeoService
 {
     private $update = false;
     private $pack = '';

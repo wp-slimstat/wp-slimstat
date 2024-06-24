@@ -1090,7 +1090,7 @@ class wp_slimstat_admin
         check_ajax_referer('wp_rest', 'security');
 
         try {
-            $geographicProvider = new \SlimStat\Providers\GeographicProvider();
+            $geographicProvider = new \SlimStat\Services\GeoService();
 
             $result = $geographicProvider
                 ->setUpdate(true)
@@ -1110,7 +1110,7 @@ class wp_slimstat_admin
         check_ajax_referer('wp_rest', 'security');
 
         try {
-            $geographicProvider = new \SlimStat\Providers\GeographicProvider();
+            $geographicProvider = new \SlimStat\Services\GeoService();
 
             $result = $geographicProvider->checkDatabase();
 
