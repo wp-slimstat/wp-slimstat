@@ -148,22 +148,6 @@ class GeoIP
                 $download_url = self::$library[$pack]['source'];
             }
 
-            ini_set('max_execution_time', '120');
-
-            $response = wp_remote_get($download_url, array(
-                'timeout'   => 120,
-                'sslverify' => false
-            ));
-
-            if (is_wp_error($response)) {
-                return array_merge($result, array("notice" => $response->get_error_message()));
-            }
-
-            // Change download url if the maxmind.com doesn't response.
-            if (wp_remote_retrieve_response_code($response) != '200') {
-                return array_merge($result, array("notice" => sprintf(__('Error: %1$s, Request URL: %2$s', 'wp-slimstat'), wp_remote_retrieve_body($response), $download_url)));
-            }
-
             // Check to see if the subdirectory we're going to upload to exists, if not create it.
             if (!file_exists(\wp_slimstat::$upload_dir)) {
                 if (!$wp_filesystem->mkdir(\wp_slimstat::$upload_dir, 0755)) {
@@ -174,6 +158,8 @@ class GeoIP
             if (!$wp_filesystem->is_writable(\wp_slimstat::$upload_dir)) {
                 return array_merge($result, array("notice" => sprintf(__('Error Setting Permissions for GeoIP Database Directory. Check Write Permissions for Directories in: %s', 'wp-slimstat'), $upload_dir['basedir'])));
             }
+
+            ini_set('max_execution_time', '300');
 
             // Download the file from MaxMind, this places it in a temporary location.
             $TempFile = download_url($download_url);
