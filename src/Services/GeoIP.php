@@ -148,10 +148,10 @@ class GeoIP
                 $download_url = self::$library[$pack]['source'];
             }
 
-            ini_set('max_execution_time', '60');
+            ini_set('max_execution_time', '120');
 
             $response = wp_remote_get($download_url, array(
-                'timeout'   => 60,
+                'timeout'   => 120,
                 'sslverify' => false
             ));
 
@@ -188,12 +188,12 @@ class GeoIP
                 // Create th new file to unzip to.
                 $DBfh = fopen($DBFile, 'wb'); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
-                // If we failed to open the downloaded file, through an error and remove the temporary file.  Otherwise do the actual unzip.
+                // If we failed to open the downloaded file, through an error and remove the temporary file. Otherwise, do the actual unzip.
                 if (!$ZipHandle) {
                     wp_delete_file($TempFile);
                     return array_merge($result, array("notice" => sprintf(__('Error Opening Downloaded GeoIP Database for Reading: %s', 'wp-slimstat'), $TempFile)));
                 } else {
-                    // If we failed to open the new file, throw and error and remove the temporary file.  Otherwise actually do the unzip.
+                    // If we failed to open the new file, throw and error and remove the temporary file. Otherwise, actually do to unzip.
                     if (!$DBfh) {
                         wp_delete_file($TempFile);
                         return array_merge($result, array("notice" => sprintf(__('Error Opening Destination GeoIP Database for Writing: %s', 'wp-slimstat'), $DBFile)));

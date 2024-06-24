@@ -47,7 +47,7 @@ jQuery(function () {
             return;
         }
 
-        $geoipUpdateButton.after('<span class="loading" style="vertical-align: middle; position: relative; top: 3px;"> &nbsp; <i class="slimstat-font-spin4 animate-spin"></i></span>');
+        $geoipUpdateButton.after('<span class="loading" style="vertical-align: middle; position: relative; top: 3px;"> &nbsp; <i class="slimstat-font-spin4 animate-spin"></i> &nbsp; </span>');
         $geoipUpdateButton.addClass('disabled');
 
         jQuery.ajax({
@@ -55,15 +55,47 @@ jQuery(function () {
             url: ajaxurl,
             data: {
                 action: 'slimstat_update_geoip_database',
-                security: jQuery('#slimstat-update-geoip-nonce').val()
-            }
+                security: jQuery('#slimstat-geoip-nonce').val()
+            },
+            dataType: 'json'
         }).done(function (result) {
-            alert(result);
+            alert(result.data);
         }).fail(function () {
             alert($geoipUpdateButton.attr('data-error-message'));
         }).always(function () {
             $geoipUpdateButton.next('.loading').remove();
             $geoipUpdateButton.removeClass('disabled');
+        });
+    });
+
+    // Check GeoIP Database
+    jQuery('#slimstat-check-geoip-database').on('click', function (e) {
+        e.preventDefault();
+
+        const $geoipCheckButton = jQuery(this);
+
+        if ($geoipCheckButton.hasClass('disabled')) {
+            return;
+        }
+
+        $geoipCheckButton.after('<span class="loading" style="vertical-align: middle; position: relative; top: 3px;"> &nbsp; <i class="slimstat-font-spin4 animate-spin"></i> &nbsp; </span>');
+        $geoipCheckButton.addClass('disabled');
+
+        jQuery.ajax({
+            method: 'POST',
+            url: ajaxurl,
+            data: {
+                action: 'slimstat_check_geoip_database',
+                security: jQuery('#slimstat-geoip-nonce').val()
+            },
+            dataType: 'json'
+        }).done(function (result) {
+            alert(result.data);
+        }).fail(function () {
+            alert($geoipCheckButton.attr('data-error-message'));
+        }).always(function () {
+            $geoipCheckButton.next('.loading').remove();
+            $geoipCheckButton.removeClass('disabled');
         });
     });
 

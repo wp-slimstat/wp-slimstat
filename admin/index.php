@@ -243,6 +243,7 @@ class wp_slimstat_admin
             add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
             add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
             add_action('wp_ajax_slimstat_update_geoip_database', array(__CLASS__, 'update_geoip_database'));
+            add_action('wp_ajax_slimstat_check_geoip_database', array(__CLASS__, 'check_geoip_database'));
         }
 
         // Schedule a daily cron job to purge the data
@@ -1088,19 +1089,35 @@ class wp_slimstat_admin
     {
         check_ajax_referer('wp_rest', 'security');
 
-        if (wp_slimstat::$settings['enable_maxmind'] != 'disable') {
-            $pack = \SlimStat\Services\GeoIP::get_pack();
-            $args = array('update' => true);
-            if (wp_slimstat::$settings['enable_maxmind'] == 'on' && !empty(wp_slimstat::$settings['maxmind_license_key'])) {
-                $args['enable_maxmind']      = 'on';
-                $args['maxmind_license_key'] = wp_slimstat::$settings['maxmind_license_key'];
-            }
-            $result = \SlimStat\Services\GeoIP::download($pack, $args);
-            echo $result['notice'];
-        } else {
-            echo __('Please first choose GeoIP Database Source and save settings!', 'wp-statistics');
+        try {
+            $geographicProvider = new \SlimStat\Providers\GeographicProvider();
+
+            $result = $geographicProvider
+                ->setUpdate(true)
+                ->setEnableMaxmind(\wp_slimstat::$settings['enable_maxmind'])
+                ->setMaxmindLicense(\wp_slimstat::$settings['maxmind_license_key'])
+                ->download();
+
+            wp_send_json_success($result['notice']);
+        } catch (\Exception $e) {
+
+            wp_send_json_error($e->getMessage());
         }
-        exit();
+    }
+
+    public static function check_geoip_database()
+    {
+        check_ajax_referer('wp_rest', 'security');
+
+        try {
+            $geographicProvider = new \SlimStat\Providers\GeographicProvider();
+
+            $result = $geographicProvider->checkDatabase();
+
+            wp_send_json_success($result['notice']);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
     }
 
     /**

@@ -1369,20 +1369,22 @@ class wp_slimstat
     {
         $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
         $last_update = get_option('slimstat_last_geoip_dl', 0);
+        if ($last_update < $this_update) {
 
-        if ($last_update < $this_update && wp_slimstat::$settings['enable_maxmind'] != 'disable') {
-            $args = array('update' => true);
-            if (wp_slimstat::$settings['enable_maxmind'] == 'on' && !empty(wp_slimstat::$settings['maxmind_license_key'])) {
-                $args['enable_maxmind']      = 'on';
-                $args['maxmind_license_key'] = wp_slimstat::$settings['maxmind_license_key'];
-            }
+            $geographicProvider = new \SlimStat\Providers\GeographicProvider();
 
-            $pack   = \SlimStat\Services\GeoIP::get_pack();
-            $result = \SlimStat\Services\GeoIP::download($pack, $args);
+            try {
+                $geographicProvider
+                    ->setEnableMaxmind(wp_slimstat::$settings['enable_maxmind'])
+                    ->setUpdate(true)
+                    ->setMaxmindLicense(wp_slimstat::$settings['maxmind_license_key'])
+                    ->download();
 
-            update_option('slimstat_last_geoip_dl', time());
-            if (!$result['status']) {
-                update_option('slimstat_last_geoip_error', $result['notice']);
+                // Set the last update time
+                $geographicProvider->updateLastUpdateTime(time());
+
+            } catch (\Exception $e) {
+                $geographicProvider->logError($e->getMessage());
             }
         }
     }
