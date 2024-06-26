@@ -65,7 +65,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2.2 - **.06.2024 =
+= 5.2.2 - 26.06.2024 =
 * New: Automatic and manual updates added for GeoIP Database and Update strings.
 * Fix: Array slice error in admin reports view.
 * Enhanced: Improvements to GeoIP Database functionality.
