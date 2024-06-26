@@ -62,9 +62,8 @@ function slimstat_uninstall($_wpdb = '', $_options = array())
     // Remove scheduled autopurge events
     wp_clear_scheduled_hook('wp_slimstat_purge');
 
-    // Delete the MaxMind data file
-    if (\SlimStat\Services\GeoIP::database_exists()) {
-        $databaseFilePath = \SlimStat\Services\GeoIP::get_database_file();
-        @unlink($databaseFilePath);
-    }
+    // Uninstall Geographic
+    $geographicProvider = new \SlimStat\Services\GeoService();
+    $geographicProvider->clearScheduledEvent();
+    $geographicProvider->deleteDatabaseFile();
 }

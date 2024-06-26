@@ -21,21 +21,82 @@ if (typeof SlimStatAdminParams == 'undefined') {
 jQuery(function () {
 
     let licenseType = jQuery('#enable_maxmind');
-    if(licenseType.val() !== 'on')
-    {
+    if (licenseType.val() !== 'on') {
         jQuery("#maxmind_license_key").closest("tr").css("display", "none");
         jQuery("#maxmind_user_id").closest("tr").css("display", "none");
     }
-    jQuery('#enable_maxmind').on('change', function(e){
+    jQuery('#enable_maxmind').on('change', function (e) {
         let value = e.target.value;
-        if(value == "on") {
+        if (value == "on") {
             jQuery("#maxmind_user_id").closest("tr").css("display", "table-row");
             jQuery("#maxmind_license_key").closest("tr").css("display", "table-row");
         }
-        if(value == "no") {
+        if (value == "no") {
             jQuery("#maxmind_user_id").closest("tr").css("display", "none");
             jQuery("#maxmind_license_key").closest("tr").css("display", "none");
         }
+    });
+
+    // GeoIP Database Manually Update
+    jQuery('#slimstat-update-geoip-database').on('click', function (e) {
+        e.preventDefault();
+
+        const $geoipUpdateButton = jQuery(this);
+
+        if ($geoipUpdateButton.hasClass('disabled')) {
+            return;
+        }
+
+        $geoipUpdateButton.after('<span class="loading" style="vertical-align: middle; position: relative; top: 3px;"> &nbsp; <i class="slimstat-font-spin4 animate-spin"></i> &nbsp; </span>');
+        $geoipUpdateButton.addClass('disabled');
+
+        jQuery.ajax({
+            method: 'POST',
+            url: ajaxurl,
+            data: {
+                action: 'slimstat_update_geoip_database',
+                security: jQuery('#slimstat-geoip-nonce').val()
+            },
+            dataType: 'json'
+        }).done(function (result) {
+            alert(result.data);
+        }).fail(function () {
+            alert($geoipUpdateButton.attr('data-error-message'));
+        }).always(function () {
+            $geoipUpdateButton.next('.loading').remove();
+            $geoipUpdateButton.removeClass('disabled');
+        });
+    });
+
+    // Check GeoIP Database
+    jQuery('#slimstat-check-geoip-database').on('click', function (e) {
+        e.preventDefault();
+
+        const $geoipCheckButton = jQuery(this);
+
+        if ($geoipCheckButton.hasClass('disabled')) {
+            return;
+        }
+
+        $geoipCheckButton.after('<span class="loading" style="vertical-align: middle; position: relative; top: 3px;"> &nbsp; <i class="slimstat-font-spin4 animate-spin"></i> &nbsp; </span>');
+        $geoipCheckButton.addClass('disabled');
+
+        jQuery.ajax({
+            method: 'POST',
+            url: ajaxurl,
+            data: {
+                action: 'slimstat_check_geoip_database',
+                security: jQuery('#slimstat-geoip-nonce').val()
+            },
+            dataType: 'json'
+        }).done(function (result) {
+            alert(result.data);
+        }).fail(function () {
+            alert($geoipCheckButton.attr('data-error-message'));
+        }).always(function () {
+            $geoipCheckButton.next('.loading').remove();
+            $geoipCheckButton.removeClass('disabled');
+        });
     });
 
     // ----- BEGIN: DATA REFRESH -----------------------------------------------------

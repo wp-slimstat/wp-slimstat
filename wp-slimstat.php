@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.2.1
+ * Version: 5.2.2
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -111,6 +111,9 @@ class wp_slimstat
 
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', array(__CLASS__, 'wp_slimstat_purge'));
+
+        // Hook a GeoIP database update routine to the daily cronjob
+        add_action('wp_slimstat_update_geoip_database', array(__CLASS__, 'wp_slimstat_update_geoip_database'));
 
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax'));
@@ -1362,6 +1365,30 @@ class wp_slimstat
         self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive");
     }
 
+    public static function wp_slimstat_update_geoip_database()
+    {
+        $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
+        $last_update = get_option('slimstat_last_geoip_dl', 0);
+        if ($last_update < $this_update) {
+
+            $geographicProvider = new \SlimStat\Services\GeoService();
+
+            try {
+                $geographicProvider
+                    ->setEnableMaxmind(wp_slimstat::$settings['enable_maxmind'])
+                    ->setUpdate(true)
+                    ->setMaxmindLicense(wp_slimstat::$settings['maxmind_license_key'])
+                    ->download();
+
+                // Set the last update time
+                $geographicProvider->updateLastUpdateTime(time());
+
+            } catch (\Exception $e) {
+                $geographicProvider->logError($e->getMessage());
+            }
+        }
+    }
+
     /**
      * Displays the opt-out box via Ajax request
      */
@@ -2005,6 +2032,16 @@ class wp_slimstat
                 fclose($handle);
             }
         }
+    }
+
+    public static function get_schedule_interval($schedule)
+    {
+        $schedulesInterval = wp_get_schedules();
+        $timeInterval      = 86400;
+        if (isset($schedulesInterval[$schedule]['interval'])) {
+            $timeInterval = $schedulesInterval[$schedule]['interval'];
+        }
+        return $timeInterval;
     }
 }
 

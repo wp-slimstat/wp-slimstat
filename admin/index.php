@@ -242,11 +242,19 @@ class wp_slimstat_admin
 
             add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
             add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
+            add_action('wp_ajax_slimstat_update_geoip_database', array(__CLASS__, 'update_geoip_database'));
+            add_action('wp_ajax_slimstat_check_geoip_database', array(__CLASS__, 'check_geoip_database'));
         }
 
         // Schedule a daily cron job to purge the data
         if (!wp_next_scheduled('wp_slimstat_purge')) {
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
+        }
+
+        // Schedule a weekly cron job to update geoip database automatically
+        if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
+            $nextRunInterval = wp_slimstat::get_schedule_interval('weekly');
+            wp_schedule_event(time() + $nextRunInterval, 'weekly', 'wp_slimstat_update_geoip_database');
         }
 
         // Add style to the admin menu
@@ -283,6 +291,7 @@ class wp_slimstat_admin
     public static function deactivate()
     {
         wp_clear_scheduled_hook('wp_slimstat_purge');
+        wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');
     }
 
 
@@ -1073,7 +1082,43 @@ class wp_slimstat_admin
         }
         exit();
     }
+
     // END: manage_filters
+
+    public static function update_geoip_database()
+    {
+        check_ajax_referer('wp_rest', 'security');
+
+        try {
+            $geographicProvider = new \SlimStat\Services\GeoService();
+
+            $result = $geographicProvider
+                ->setUpdate(true)
+                ->setEnableMaxmind(\wp_slimstat::$settings['enable_maxmind'])
+                ->setMaxmindLicense(\wp_slimstat::$settings['maxmind_license_key'])
+                ->download();
+
+            wp_send_json_success($result['notice']);
+        } catch (\Exception $e) {
+
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public static function check_geoip_database()
+    {
+        check_ajax_referer('wp_rest', 'security');
+
+        try {
+            $geographicProvider = new \SlimStat\Services\GeoService();
+
+            $result = $geographicProvider->checkDatabase();
+
+            wp_send_json_success($result['notice']);
+        } catch (\Exception $e) {
+            wp_send_json_error($e->getMessage());
+        }
+    }
 
     /**
      * Contextual help

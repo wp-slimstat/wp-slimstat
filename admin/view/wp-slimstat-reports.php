@@ -1384,11 +1384,14 @@ class wp_slimstat_reports
     {
         $all_results = call_user_func($_args['raw'], $_args);
 
-        $results = array_slice(
-            $all_results,
-            wp_slimstat_db::$filters_normalized['misc']['start_from'],
-            wp_slimstat::$settings['rows_to_show']
-        );
+        $results = array();
+        if (is_array($all_results) && count($all_results)) {
+            $results = array_slice(
+                $all_results,
+                wp_slimstat_db::$filters_normalized['misc']['start_from'],
+                wp_slimstat::$settings['rows_to_show']
+            );
+        }
 
         // Count the results
         $count_page_results = count($results);

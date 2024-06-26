@@ -11,6 +11,8 @@ $current_tab = empty($_GET['tab']) ? 1 : intval($_GET['tab']);
 // Retrieve any tracker errors for display
 $last_tracker_error = get_option('slimstat_tracker_error', array());
 
+// Retrieve any geoip errors for display
+$last_geoip_error = get_option('slimstat_geoip_error', array());
 
 // Define all the options
 $settings = array(
@@ -151,14 +153,15 @@ $settings = array(
                 'type'  => 'section_header'
             ),
             'enable_maxmind'                 => array(
-                'title'         => __('GeoIP Database Update Source', 'wp-slimstat'),
-                'type'          => 'select',
-                'select_values' => array(
+                'title'             => __('GeoIP Database Source', 'wp-slimstat'),
+                'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>',
+                'type'              => 'select',
+                'select_values'     => array(
                     'disable' => __('Disable', 'wp-slimstat'),
                     'no'      => __('Use the JsDelivr', 'wp-slimstat'),
                     'on'      => __('Use the MaxMind server with your own license key', 'wp-slimstat')
                 ),
-                'description'   => __('Select a service that updates the GeoIP database, ensuring the geographic information displayed is accurate and up-to-date. It\'s only used for database updates, not for real-time location lookups.', 'wp-slimstat')
+                'description'       => __('Choose a service to update the GeoIP database to ensure your geographic information is accurate and up-to-date.', 'wp-slimstat') . '<br />' . __('<b>Note: </b>If the database file is missing, it will be downloaded when you save the settings.', 'wp-slimstat')
             ),
             'maxmind_license_key'            => array(
                 'title'       => __('MaxMind License Key', 'wp-slimstat'),
@@ -538,6 +541,12 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'after_input_field' => !empty($last_tracker_error) ? '<strong>[' . date_i18n(get_option('date_format'), $last_tracker_error[1], true) . ' ' . date_i18n(get_option('time_format'), $last_tracker_error[1], true) . '] ' . $last_tracker_error[0] . ' ' . wp_slimstat_i18n::get_string('e-' . $last_tracker_error[0]) . '</strong><a class="slimstat-font-cancel" title="' . htmlentities(__('Reset this error', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-tracker-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>' : __('So far so good.', 'wp-slimstat'),
                 'description'       => __('The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction.', 'wp-slimstat')
             ),
+            'last_geoip_error'                   => array(
+                'title'             => __('GeoIP Database Error', 'wp-slimstat'),
+                'type'              => 'plain-text',
+                'after_input_field' => !empty($last_geoip_error) ? '<strong>[' . date_i18n(get_option('date_format'), $last_geoip_error['time'], true) . ' ' . date_i18n(get_option('time_format'), $last_geoip_error['time'], true) . '] ' . $last_geoip_error['error'] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities(__('Reset this error', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-geoip-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>' : __('So far so good.', 'wp-slimstat'),
+                'description'       => __('The information here above is useful to troubleshoot issues with the GeoIP Database. <strong>Errors</strong> are returned when the GeoIP Database can\'t update or retrieve a visitor\'s location, indicating some malfunction.', 'wp-slimstat'),
+            ),
             'show_sql_debug'                     => array(
                 'title'       => __('SQL Debug', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -596,6 +605,11 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                 wp_slimstat::update_option('slimstat_tracker_error', array());
                 break;
 
+            case 'reset-geoip-error':
+                $settings[6]['rows']['last_geoip_error']['after_input_field'] = __('So far so good.', 'wp-slimstat');
+                wp_slimstat::update_option('slimstat_geoip_error', array());
+                break;
+
             case 'reset-settings':
                 wp_slimstat::update_option('slimstat_options', wp_slimstat::init_options());
                 wp_slimstat_admin::show_message(__('All settings were successfully reset to their default values.', 'wp-slimstat'));
@@ -637,53 +651,38 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         }
 
         // MaxMind Library
-        if (!empty($_POST['options']['enable_maxmind'])) {
-            $pack = ($_POST['options']['geolocation_country'] == 'on') ? 'country' : 'city';
-            if ($_POST['options']['enable_maxmind'] == 'on') {
-                $license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
-                $result      = \SlimStat\Services\GeoIP::download($pack, 'on', $license_key);
-                if (isset($result['status']) and $result['status'] === false) {
-                    $save_messages[] = $result['notice'];
-                } else {
-                    $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
-                    wp_slimstat::$settings['enable_maxmind'] = 'on';
-                }
-            } else if ($_POST['options']['enable_maxmind'] == 'no') {
-                $result = \SlimStat\Services\GeoIP::download($pack);
-                if (isset($result['status']) and $result['status'] === false) {
-                    $save_messages[] = $result['notice'];
-                } else {
-                    $save_messages[]                         = __('The geolocation database has been installed on your server.', 'wp-slimstat');
-                    wp_slimstat::$settings['enable_maxmind'] = 'no';
-                }
-            } else {
-                wp_slimstat::$settings['enable_maxmind'] = 'disable';
-            }
-        }
+        if (!empty($_POST['options']['enable_maxmind']) or !empty($_POST['options']['geolocation_country'])) {
+            $pack          = ($_POST['options']['geolocation_country'] == 'on') ? 'country' : 'city';
+            $enableMaxmind = sanitize_text_field($_POST['options']['enable_maxmind']);
+            $licenseKey    = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
 
-        // GeoIP Library
-        if (!empty($_POST['options']['geolocation_country'])) {
-            $pack = ($_POST['options']['geolocation_country'] == 'on') ? 'country' : 'city';
-            if (!\SlimStat\Services\GeoIP::database_exists($pack)) {
-                if ($_POST['options']['enable_maxmind'] == 'on' && $_POST['options']['maxmind_license_key'] != '') {
-                    $license_key = !empty($_POST['options']['maxmind_license_key']) ? sanitize_text_field($_POST['options']['maxmind_license_key']) : '';
-                    $result      = \SlimStat\Services\GeoIP::download($pack, 'on', $license_key);
-                    if (isset($result['status']) and $result['status'] === false) {
+            try {
+                $geographicProvider = new \SlimStat\Services\GeoService();
+                $geographicProvider->setEnableMaxmind($enableMaxmind);
+                if ($geographicProvider->isGeoIPEnabled()) {
+                    $result = $geographicProvider
+                        ->setPack($pack)
+                        ->setMaxmindLicense($licenseKey)
+                        ->download();
+
+                    if ($result['status'] === false) {
                         $save_messages[] = $result['notice'];
                     } else {
-                        $save_messages[]                              = __('The geolocation database has been installed on your server.', 'wp-slimstat');
-                        wp_slimstat::$settings['geolocation_country'] = 'on';
+                        $save_messages[] = __('The geolocation database has been installed on your server.', 'wp-slimstat');
+
+                        // Save Settings
+                        wp_slimstat::$settings['enable_maxmind']      = $enableMaxmind;
+                        wp_slimstat::$settings['maxmind_license_key'] = $licenseKey;
                     }
-                } elseif ($_POST['options']['enable_maxmind'] == 'no') {
-                    $result = \SlimStat\Services\GeoIP::download($pack);
-                    if (isset($result['status']) and $result['status'] === false) {
-                        $save_messages[] = $result['notice'];
-                    } else {
-                        $save_messages[]                              = __('The geolocation database has been installed on your server.', 'wp-slimstat');
-                        wp_slimstat::$settings['geolocation_country'] = 'no';
-                    }
+                } else {
+                    wp_slimstat::$settings['enable_maxmind'] = 'disable';
                 }
+            } catch (\Exception $e) {
+                $save_messages[] = $e->getMessage();
             }
+
+            // Save Settings
+            wp_slimstat::$settings['geolocation_country'] = sanitize_text_field($_POST['options']['geolocation_country']);
         }
 
         // Browscap Library
@@ -840,7 +839,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                                     $is_selected = (!empty(wp_slimstat::$settings[$a_setting_slug]) && wp_slimstat::$settings[$a_setting_slug] == $a_key) ? ' selected' : '';
                                     echo '<option' . $is_selected . ' value="' . $a_key . '">' . $a_value . '</option>';
                                 }
-                                echo '</select>' .
+                                echo '</select> ' . $a_setting_info['after_input_field'] .
                                     $network_override_checkbox . '
 						</span>
 						<span class="description">' . $a_setting_info['description'] . '</span>

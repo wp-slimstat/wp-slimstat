@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.5
-Stable tag: 5.2.1
+Stable tag: 5.2.2
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,9 +65,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2.1 =
-* [Fix] Resolved issue with saving the GeoIP Database Update Source field value in the settings.
-* [Fix] Corrected the `upload_dir` bug.
-* [Fix] Addressed multiple bugs affecting GeoIP and Browscap functionalities.
+= 5.2.2 - 26.06.2024 =
+* New: Automatic and manual updates added for GeoIP Database and Update strings.
+* Fix: Array slice error in admin reports view.
+* Enhanced: Improvements to GeoIP Database functionality.
 
 [See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).
