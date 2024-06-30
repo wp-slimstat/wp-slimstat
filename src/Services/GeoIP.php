@@ -58,6 +58,10 @@ class GeoIP
      */
     public static function get_database_file($pack = false)
     {
+        if (self::maxmind_database_exists()) {
+            return self::get_maxmind_database_file();
+        }
+
         $geo_pack = ($pack ? $pack : self::get_pack());
         return self::get_geo_ip_path($geo_pack);
     }
@@ -67,12 +71,34 @@ class GeoIP
      */
     public static function database_exists($pack = false)
     {
+        if (self::maxmind_database_exists()) {
+            return true;
+        }
+
         $filePath = self::get_database_file($pack);
         if (file_exists($filePath)) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Get MaxMind Database File Path
+     * @return string
+     */
+    public static function get_maxmind_database_file()
+    {
+        return wp_normalize_path(path_join(\wp_slimstat::$upload_dir, 'maxmind.mmdb'));
+    }
+
+    /**
+     * Check if MaxMind Database Exists
+     * @return bool
+     */
+    public static function maxmind_database_exists()
+    {
+        return file_exists(self::get_maxmind_database_file());
     }
 
     /**
@@ -168,6 +194,11 @@ class GeoIP
             if (is_wp_error($TempFile)) {
                 return array_merge($result, array("notice" => sprintf(__('Error Downloading GeoIP Database from: %1$s - %2$s', 'wp-slimstat'), $download_url, $TempFile->get_error_message())));
             } else {
+                // Delete Old Database
+                if (self::database_exists()) {
+                    wp_delete_file(self::get_database_file());
+                }
+
                 // Open the downloaded file to unzip it.
                 $ZipHandle = gzopen($TempFile, 'rb');
 
@@ -202,8 +233,7 @@ class GeoIP
                 }
             }
 
-        } catch
-        (\Exception $e) {
+        } catch (\Exception $e) {
             $result['notice'] = sprintf(__('Error: %1$s', 'wp-slimstat'), $e->getMessage());
         }
 
