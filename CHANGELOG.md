@@ -1,3 +1,8 @@
+= 5.2.3 - 03.07.2024 =
+* Fix: Resolved issue with extracting the MaxMind GeoIP database file.
+* Enhanced: Added backward compatibility for the GeoIP database.
+* Enhanced: Included the plugin version in admin.js to prevent browser caching issues.
+
 = 5.2.2 - 26.06.2024 =
 * New: Automatic and manual updates added for GeoIP Database and Update strings.
 * Fix: Array slice error in admin reports view.
