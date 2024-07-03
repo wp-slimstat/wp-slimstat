@@ -154,7 +154,7 @@ $settings = array(
             ),
             'enable_maxmind'                 => array(
                 'title'             => __('GeoIP Database Source', 'wp-slimstat'),
-                'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>',
+                'after_input_field' => ((!empty($_POST['options']['enable_maxmind']) && sanitize_text_field($_POST['options']['enable_maxmind']) != 'disable') || (empty($_POST['options']['enable_maxmind']) && wp_slimstat::$settings['enable_maxmind'] != 'disable')) ? '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>' : '',
                 'type'              => 'select',
                 'select_values'     => array(
                     'disable' => __('Disable', 'wp-slimstat'),
@@ -675,6 +675,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                         wp_slimstat::$settings['maxmind_license_key'] = $licenseKey;
                     }
                 } else {
+                    // Disable geographic database
                     wp_slimstat::$settings['enable_maxmind'] = 'disable';
                 }
             } catch (\Exception $e) {

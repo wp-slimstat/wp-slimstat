@@ -621,7 +621,7 @@ class wp_slimstat_admin
             wp_enqueue_code_editor(array('type' => 'text/html'));
         }
 
-        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), null, false);
+        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), SLIMSTAT_ANALYTICS_VERSION, false);
 
         // Pass some information to Javascript
         $params = array(

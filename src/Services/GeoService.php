@@ -11,6 +11,12 @@ class GeoService
     private $enableMaxmind = '';
     private $maxmindLicense = '';
 
+    public function __construct()
+    {
+        $this->enableMaxmind  = \wp_slimstat::$settings['enable_maxmind'];
+        $this->maxmindLicense = \wp_slimstat::$settings['maxmind_license_key'];
+    }
+
     public function setUpdate($update = false)
     {
         $this->update = $update;

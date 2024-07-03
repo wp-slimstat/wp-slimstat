@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.5
-Stable tag: 5.2.2
+Stable tag: 5.2.3
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,9 +65,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2.2 - 26.06.2024 =
-* New: Automatic and manual updates added for GeoIP Database and Update strings.
-* Fix: Array slice error in admin reports view.
-* Enhanced: Improvements to GeoIP Database functionality.
+= 5.2.3 - 03.07.2024 =
+* Fix: Resolved issue with extracting the MaxMind GeoIP database file.
+* Enhanced: Added backward compatibility for the GeoIP database.
+* Enhanced: Included the plugin version in admin.js to prevent browser caching issues.
 
 [See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).

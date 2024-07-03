@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.2.2
+ * Version: 5.2.3
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -573,33 +573,35 @@ class wp_slimstat
         }
 
         // Geolocation
-        try {
-            $geolocation_data = \SlimStat\Services\GeoIP::loader(self::$stat['ip']);
-        } catch (Exception $e) {
-            // Invalid MaxMind data file
-            $error = self::_log_error(205);
-            return false;
-        }
-
-        if (!empty($geolocation_data['country']['iso_code']) && $geolocation_data['country']['iso_code'] != 'xx') {
-            self::$stat['country'] = strtolower($geolocation_data['country']['iso_code']);
-
-            if (!empty($geolocation_data['city']['names']['en'])) {
-                self::$stat['city'] = $geolocation_data['city']['names']['en'];
+        $geographicProvider = new \SlimStat\Services\GeoService();
+        if ($geographicProvider->isGeoIPEnabled()) {
+            try {
+                $geolocation_data = \SlimStat\Services\GeoIP::loader(self::$stat['ip']);
+            } catch (Exception $e) {
+                self::_log_error(205);
+                return false;
             }
 
-            if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty(self::$stat['city'])) {
-                self::$stat['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
+            if (!empty($geolocation_data['country']['iso_code']) && $geolocation_data['country']['iso_code'] != 'xx') {
+                self::$stat['country'] = strtolower($geolocation_data['country']['iso_code']);
+
+                if (!empty($geolocation_data['city']['names']['en'])) {
+                    self::$stat['city'] = $geolocation_data['city']['names']['en'];
+                }
+
+                if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty(self::$stat['city'])) {
+                    self::$stat['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
+                }
+
+                if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
+                    self::$stat['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
+                }
             }
 
-            if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
-                self::$stat['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
+            // Is this country blacklisted?
+            if (!empty(self::$stat['country']) && !empty(self::$settings['ignore_countries']) && stripos(self::$settings['ignore_countries'], self::$stat['country']) !== false) {
+                return false;
             }
-        }
-
-        // Is this country blacklisted?
-        if (!empty(self::$stat['country']) && !empty(self::$settings['ignore_countries']) && stripos(self::$settings['ignore_countries'], self::$stat['country']) !== false) {
-            return false;
         }
 
         // Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
