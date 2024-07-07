@@ -695,10 +695,12 @@ class wp_slimstat_admin
             }
         }
 
-        if (!empty($submenu[$parent][7][4])) {
-            $submenu[$parent][7][4] .= ' wp-slimstat-upgrade-to-pro';
-        } else {
-            $submenu[$parent][7][4] = 'wp-slimstat-upgrade-to-pro';
+        if(isset($submenu[$parent])){
+            array_walk($submenu[$parent], function(&$item) {
+                if (isset($item[2]) && $item[2] === 'slimpro') {
+                    $item[4] = isset($item[4]) ? $item[4] . ' wp-slimstat-upgrade-to-pro' : ' wp-slimstat-upgrade-to-pro';
+                }
+            });
         }
 
         // Load styles and Javascript needed to make the reports look nice and interactive
