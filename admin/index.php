@@ -871,7 +871,7 @@ class wp_slimstat_admin
         }
 
         if (wp_slimstat::$settings['posts_column_pageviews'] == 'on') {
-            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"></span>';
+            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"><span class="screen-reader-text">' . __( 'Views' ) . '</span></span>';
         } else {
             $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Unique IPs in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"></span>';
         }
