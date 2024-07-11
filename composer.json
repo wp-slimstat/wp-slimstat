@@ -8,10 +8,33 @@
   },
   "autoload": {
     "psr-4": {
-      "SlimStat\\": "src"
+      "SlimStat\\": "src/"
     }
   },
   "require": {
     "veronalabs/browscap-php": "dev-standalone"
+  },
+  "extra": {
+    "mozart": {
+      "dep_namespace": "SlimStat\\Dependencies\\",
+      "dep_directory": "/src/Dependencies/",
+      "classmap_directory": "/src/",
+      "classmap_prefix": "SlimStat_",
+      "packages": [
+        "veronalabs/browscap-php",
+        "league/flysystem"
+      ],
+      "delete_vendor_directories": true
+    }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "~/.composer/vendor/bin/mozart compose",
+      "composer dump-autoload"
+    ],
+    "post-update-cmd": [
+      "~/.composer/vendor/bin/mozart compose",
+      "composer dump-autoload"
+    ]
   }
 }
