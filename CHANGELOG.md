@@ -1,3 +1,7 @@
+= 5.2.4 - 17.07.2024 =
+* Fix: Resolved issues with capabilities in the sub-menu.
+* Enhancement: Added a missing title for Screen Options.
+
 = 5.2.3 - 03.07.2024 =
 * Fix: Resolved issue with extracting the MaxMind GeoIP database file.
 * Enhanced: Added backward compatibility for the GeoIP database.

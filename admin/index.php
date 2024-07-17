@@ -695,10 +695,12 @@ class wp_slimstat_admin
             }
         }
 
-        if (!empty($submenu[$parent][7][4])) {
-            $submenu[$parent][7][4] .= ' wp-slimstat-upgrade-to-pro';
-        } else {
-            $submenu[$parent][7][4] = 'wp-slimstat-upgrade-to-pro';
+        if(isset($submenu[$parent])){
+            array_walk($submenu[$parent], function(&$item) {
+                if (isset($item[2]) && $item[2] === 'slimpro') {
+                    $item[4] = isset($item[4]) ? $item[4] . ' wp-slimstat-upgrade-to-pro' : ' wp-slimstat-upgrade-to-pro';
+                }
+            });
         }
 
         // Load styles and Javascript needed to make the reports look nice and interactive
@@ -869,7 +871,7 @@ class wp_slimstat_admin
         }
 
         if (wp_slimstat::$settings['posts_column_pageviews'] == 'on') {
-            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"></span>';
+            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"><span class="screen-reader-text">' . __( 'Views' ) . '</span></span>';
         } else {
             $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Unique IPs in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"></span>';
         }
