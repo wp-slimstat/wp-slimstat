@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.6
-Stable tag: 5.2.4
+Stable tag: 5.2.5
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,8 +65,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2.4 - 17.07.2024 =
-* Fix: Resolved issues with capabilities in the sub-menu.
-* Enhancement: Added a missing title for Screen Options.
+= 5.2.5 - 05.08.2024 =
+* Enhancement: Mozart: Implemented to avoid plugin namespace conflicts.
+* Enhancement: Replaced default IP lookup service with a new provider offering fewer limitations and integrated map functionality.
+* Fix: Resolved an issue occurring during the uninstallation process in certain cases.
 
 [See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).

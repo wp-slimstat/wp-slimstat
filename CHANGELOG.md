@@ -1,3 +1,8 @@
+= 5.2.5 - 05.08.2024 =
+* Enhancement: Mozart: Implemented to avoid plugin namespace conflicts.
+* Enhancement: Replaced default IP lookup service with a new provider offering fewer limitations and integrated map functionality.
+* Fix: Resolved an issue occurring during the uninstallation process in certain cases.
+
 = 5.2.4 - 17.07.2024 =
 * Fix: Resolved issues with capabilities in the sub-menu.
 * Enhancement: Added a missing title for Screen Options.
