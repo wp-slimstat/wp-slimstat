@@ -2,7 +2,12 @@
 
 namespace SlimStat\Services;
 
-use Psr\Log\NullLogger;
+use Exception;
+use SlimStat\Dependencies\League\Flysystem\Filesystem;
+use SlimStat\Dependencies\League\Flysystem\Local\LocalFilesystemAdapter;
+use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Flysystem;
+use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr16\SimpleCache;
+use SlimStat\Dependencies\Psr\Log\NullLogger;
 use SlimStat\Utils\UADetector;
 use wp_slimstat;
 use wp_slimstat_admin;
@@ -69,15 +74,15 @@ class Browscap
     public static function get_browser_from_browscap($_browser = array(), $_cache_path = '')
     {
         try {
-            $file_cache    = new \League\Flysystem\Local\LocalFilesystemAdapter($_cache_path);
-            $filesystem    = new \League\Flysystem\Filesystem($file_cache);
-            $cache         = new \MatthiasMullie\Scrapbook\Psr16\SimpleCache(
-                new \MatthiasMullie\Scrapbook\Adapters\Flysystem($filesystem)
+            $file_cache    = new LocalFilesystemAdapter($_cache_path);
+            $filesystem    = new Filesystem($file_cache);
+            $cache         = new SimpleCache(
+                new Flysystem($filesystem)
             );
             $logger        = new NullLogger();
-            $browscap      = new \BrowscapPHP\Browscap($cache, $logger);
+            $browscap      = new \SlimStat\Dependencies\BrowscapPHP\Browscap($cache, $logger);
             $search_object = $browscap->getBrowser();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $search_object = '';
         }
 

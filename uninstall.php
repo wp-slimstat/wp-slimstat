@@ -61,9 +61,25 @@ function slimstat_uninstall($_wpdb = '', $_options = array())
 
     // Remove scheduled autopurge events
     wp_clear_scheduled_hook('wp_slimstat_purge');
+    wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');
 
-    // Uninstall Geographic
-    $geographicProvider = new \SlimStat\Services\GeoService();
-    $geographicProvider->clearScheduledEvent();
-    $geographicProvider->deleteDatabaseFile();
+    // Remove the uploads folder
+    if (defined('UPLOADS')) {
+        $upload_dir = ABSPATH . UPLOADS . '/wp-slimstat';
+    } else {
+        $upload_dir_info = wp_upload_dir();
+        $upload_dir = $upload_dir_info['basedir'];
+
+        // Handle multisite environment
+        if (is_multisite()) {
+            if (!(is_main_network() && is_main_site() && defined('MULTISITE'))) {
+                $upload_dir = str_replace('/sites/' . get_current_blog_id(), '', $upload_dir);
+            }
+        }
+        $upload_dir .= '/wp-slimstat';
+    }
+
+    WP_Filesystem();
+    global $wp_filesystem;
+    $wp_filesystem->delete($upload_dir, true, 'd');
 }

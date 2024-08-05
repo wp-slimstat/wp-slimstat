@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.2.4
+ * Version: 5.2.5
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -1156,7 +1156,7 @@ class wp_slimstat
             'posts_column_day_interval'              => 28,
             'rows_to_show'                           => '20',
             'show_hits'                              => 'no',
-            'ip_lookup_service'                      => 'https://www.infosniper.net/?ip_address=',
+            'ip_lookup_service'                      => 'https://ip-api.com/#',
             'comparison_chart'                       => 'on',
             'show_display_name'                      => 'no',
             'convert_resource_urls_to_titles'        => 'on',

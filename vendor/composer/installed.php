@@ -3,7 +3,7 @@
         'name' => 'wp-slimstat/wp-slimstat',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '22a88346cc2c02698a4f953ca01a0e13436bdc5a',
+        'reference' => '2b0f0c238f368de43db364d3b2070a07a2fcba52',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -285,7 +285,7 @@
         'wp-slimstat/wp-slimstat' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '22a88346cc2c02698a4f953ca01a0e13436bdc5a',
+            'reference' => '2b0f0c238f368de43db364d3b2070a07a2fcba52',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
