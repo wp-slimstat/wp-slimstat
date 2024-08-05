@@ -137,7 +137,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
         }
 
         if (version_compare(PHP_VERSION, '7.1', '>=') && !file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt') && wp_slimstat::$settings['notice_browscap'] == 'on') {
-            wp_slimstat_admin::show_message(sprintf(__("Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat'), self::$config_url . '6#wp-slimstat-third-party-libraries'), 'warning', 'browscap');
+            wp_slimstat_admin::show_message(sprintf(__("Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'browscap');
         }
 
         // Path to wp-content folder, used to detect caching plugins via advanced-cache.php
