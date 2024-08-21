@@ -77,7 +77,7 @@ class GeoService
             return sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
 
-        $originating_ip_headers = array('X-Forwarded-For', 'HTTP_X_FORWARDED_FOR', 'CF-Connecting-IP', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_FORWARDED', 'HTTP_X_FORWARDED');
+        $originating_ip_headers = array('HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP');
         foreach ($originating_ip_headers as $a_header) {
             if (!empty($_SERVER[$a_header])) {
                 foreach (explode(',', $_SERVER[$a_header]) as $ip) {
