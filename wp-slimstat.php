@@ -215,7 +215,19 @@ class wp_slimstat
                     $event_info['notes'] = self::_base64_url_decode(self::$data_js['no']);
                 }
 
-                self::_insert_row($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+                /**
+                 * Allow third-party tools to decide whether to track this event or not
+                 *
+                 * @param bool $shouldEventBeTracked
+                 * @param array $event_info
+                 * @return bool
+                 * @since 5.2.6
+                 */
+                $shouldEventBeTracked = apply_filters('slimstat_track_event_enabled', true, $event_info);
+
+                if ($shouldEventBeTracked) {
+                    self::_insert_row($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+                }
 
                 if (!empty(self::$data_js['res'])) {
                     $resource        = self::_base64_url_decode(self::$data_js['res']);
