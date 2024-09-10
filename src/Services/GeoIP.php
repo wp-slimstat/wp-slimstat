@@ -132,6 +132,10 @@ class GeoIP
         ]);
 
         try {
+            if (!function_exists('WP_Filesystem')) {
+                include_once ABSPATH . 'wp-admin/includes/file.php';
+            }
+            
             WP_Filesystem();
             global $wp_filesystem;
 

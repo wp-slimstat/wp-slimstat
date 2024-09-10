@@ -1,3 +1,9 @@
+= 5.2.6 - 10.09.2024 =
+* Enhancement: Optimized sorting of originating IP methods for better performance.
+* Enhancement: Improved backward compatibility and minor improvements.
+* Fix: Resolved issue with the Top Cities shortcode in widget display.
+* Dev: Introduced new filter `slimstat_track_event_enabled` for enhanced customization.
+
 = 5.2.5 - 05.08.2024 =
 * Enhancement: Mozart: Implemented to avoid plugin namespace conflicts.
 * Enhancement: Replaced default IP lookup service with a new provider offering fewer limitations and integrated map functionality.
