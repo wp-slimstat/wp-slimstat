@@ -10,6 +10,8 @@
  * Author URI: https://wp-slimstat.com/
  * License: GPL-2.0+
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Requires at least: 5.6
+ * Requires PHP: 7.4
 */
 
 if (!empty(wp_slimstat::$settings)) {
