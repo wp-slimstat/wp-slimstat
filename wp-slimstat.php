@@ -449,6 +449,8 @@ class wp_slimstat
             self::$stat['resource'] = self::get_request_uri();
         }
 
+        self::$stat['resource'] = sanitize_text_field(self::$stat['resource']);
+
         // Is this a 'seriously malformed' URL?
         $parsed_url = parse_url(self::$stat['resource']);
         if (!$parsed_url) {
