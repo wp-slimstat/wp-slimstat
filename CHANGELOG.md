@@ -1,3 +1,6 @@
+= 5.2.7 - 11.10.2024 =
+* Fix: Minor improvements & Hardened plugin security.
+
 = 5.2.6 - 10.09.2024 =
 * Enhancement: Optimized sorting of originating IP methods for better performance.
 * Enhancement: Improved backward compatibility and minor improvements.
