@@ -1146,7 +1146,7 @@ class wp_slimstat_reports
                 }
 
                 if (is_admin()) {
-                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . htmlentities($results[$i][$_args['columns']], ENT_QUOTES, 'UTF-8')) . "'>$element_value</a>";
+                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . htmlentities(strval($results[$i][$_args['columns']]), ENT_QUOTES, 'UTF-8')) . "'>$element_value</a>";
                 }
 
                 if (!empty($_args['type']) && $_args['type'] == 'recent') {

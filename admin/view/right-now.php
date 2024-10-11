@@ -193,6 +193,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
             $resource_title = wp_slimstat_reports::get_resource_title($results[$i]['resource']);
         }
 
+        $results[$i]['resource'] = rawurldecode($results[$i]['resource']);
         $results[$i]['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this URL in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . "' href='" . htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8') . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . esc_url($results[$i]['resource'])) . "'>" . esc_html($resource_title) . '</a>';
     } else {
         if (!empty($results[$i]['notes'])) {
