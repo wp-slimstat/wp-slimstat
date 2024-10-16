@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.7
-Stable tag: 5.2.7
+Stable tag: 5.2.8
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,7 +65,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2.7 - 11.10.2024 =
-* Fix: Minor improvements & Hardened plugin security.
+= 5.2.8 - 16.10.2024 =
+* Fix: UTF-8 characters are now preserved during sanitization.
 
 [See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).
