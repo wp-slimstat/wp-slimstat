@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.2.7
+ * Version: 5.2.8
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -451,7 +451,13 @@ class wp_slimstat
             self::$stat['resource'] = self::get_request_uri();
         }
 
-        self::$stat['resource'] = sanitize_text_field(self::$stat['resource']);
+        // Decode the URL and sanitize it to ensure it's safe and properly formatted
+        self::$stat['resource'] = sanitize_text_field(urldecode(self::$stat['resource']));
+
+        // Re-encode non-ASCII chars, preserving ASCII and slashes for backwards compatibility
+        self::$stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($match) {
+            return '%' . bin2hex($match[0]);
+        }, self::$stat['resource']);
 
         // Is this a 'seriously malformed' URL?
         $parsed_url = parse_url(self::$stat['resource']);

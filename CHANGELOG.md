@@ -1,3 +1,6 @@
+= 5.2.8 - 16.10.2024 =
+* Fix: UTF-8 characters are now preserved during sanitization.
+
 = 5.2.7 - 11.10.2024 =
 * Fix: Minor improvements & Hardened plugin security.
 
