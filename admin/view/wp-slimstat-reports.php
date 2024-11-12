@@ -984,7 +984,7 @@ class wp_slimstat_reports
         $all_results = call_user_func($_args['raw'], $_args);
 
         // Backward compatibility
-        if (!$all_results) {
+        if (!is_array($all_results)) {
             $all_results = array();
         }
 

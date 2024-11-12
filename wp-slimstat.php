@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.2.8
+ * Version: 5.2.9
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -22,6 +22,9 @@ if (!empty(wp_slimstat::$settings)) {
 if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
     return;
 }
+
+// Set the plugin version
+define('SLIMSTAT_ANALYTICS_VERSION', '5.2.9');
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
@@ -475,7 +478,7 @@ class wp_slimstat
         }
 
         // Referrer URL
-        if (!isset(self::$stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
+        if (empty(self::$stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
             self::$stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']));
         }
 
