@@ -1,5 +1,5 @@
 === SlimStat Analytics ===
-Contributors: coolmann, toxicum, veronalabs, mostafas1990
+Contributors: veronalabs, coolmann, toxicum, mostafas1990
 Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
