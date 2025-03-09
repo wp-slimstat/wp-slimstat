@@ -1,4 +1,7 @@
-= 5.2.9 - 2024-11-12 =
+= 5.2.10 - 2025-03-09 =
+- **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
+
+- = 5.2.9 - 2024-11-12 =
 - **Enhancement**: Ensured compatibility with WordPress version 6.7.
 - **Fix**: Resolved the Top Referring Domain Issue.
 
