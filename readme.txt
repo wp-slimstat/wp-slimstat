@@ -1,11 +1,11 @@
 === SlimStat Analytics ===
-Contributors: coolmann, toxicum, veronalabs, mostafas1990
+Contributors: veronalabs, coolmann, toxicum, mostafas1990
 Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.7
-Stable tag: 5.2.9
+Stable tag: 5.2.10
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.2.10 - 2025-03-09 =
+- **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
+
 = 5.2.9 - 2024-11-12 =
 - **Enhancement**: Ensured compatibility with WordPress version 6.7.
 - **Fix**: Resolved the Top Referring Domain Issue.
