@@ -52,6 +52,11 @@ Track returning customers and registered users, monitor Javascript events, detec
 == Please note ==
 * If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
 
+= Report Bugs =
+Having trouble with a bug? Please [create an issue](https://github.com/wp-slimstat/wp-slimstat/issues/new) on GitHub. Kindly note that [GitHub](https://github.com/wp-slimstat/wp-slimstat) is exclusively for bug reports; other inquiries will be closed.
+
+For security vulnerabilities, please report them through the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/database/wordpress/plugin/wp-slimstat/vdp). The Patchstack team will validate, triage, and handle any security issues.
+
 == Frequently Asked Questions ==
 An extensive knowledge base is available on our [website](https://www.wp-slimstat.com/).
 
