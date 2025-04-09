@@ -1,0 +1,32 @@
+{
+  "name": "slamstat-dashboard",
+  "module": "src/App/index.jsx",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@wordpress/scripts": "^30.14.1",
+    "wp-scripts": "^0.0.1-security"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "start": "wp-scripts start",
+    "start:hot": "wp-scripts start --hot",
+    "build": "wp-scripts build"
+  },
+  "dependencies": {
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-slot": "^1.1.2",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "@reduxjs/toolkit": "^2.6.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "react": "^19.1.0",
+    "react-jvectormap": "^0.0.16",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.5.0",
+    "recharts": "^2.15.2",
+    "tailwind-variants": "^1.0.0"
+  }
+}

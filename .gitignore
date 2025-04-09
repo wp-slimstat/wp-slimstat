@@ -45,3 +45,4 @@ composer.lock
 
 # Testing
 .env.testing
+.qodo
