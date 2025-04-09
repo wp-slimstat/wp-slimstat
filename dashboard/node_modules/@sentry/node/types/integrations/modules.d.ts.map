@@ -1,0 +1,1 @@
+{"version":3,"file":"modules.d.ts","sourceRoot":"","sources":["../../../src/integrations/modules.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,KAAK,EAAE,WAAW,EAAE,gBAAgB,EAAiB,MAAM,eAAe,CAAC;AA2FzF,eAAO,MAAM,kBAAkB,mDAAyC,CAAC;AAEzE;;;GAGG;AAEH,eAAO,MAAM,OAAO;0BACoB,KAAK,KAAK,KAAK;EACtD,CAAC;AAGF,MAAM,MAAM,OAAO,GAAG,OAAO,OAAO,CAAC"}

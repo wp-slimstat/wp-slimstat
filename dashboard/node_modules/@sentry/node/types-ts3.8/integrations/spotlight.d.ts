@@ -1,0 +1,32 @@
+import * as http from 'http';
+import { Client, Integration, IntegrationClass } from '@sentry/types';
+type SpotlightConnectionOptions = {
+    /**
+     * Set this if the Spotlight Sidecar is not running on localhost:8969
+     * By default, the Url is set to http://localhost:8969/stream
+     */
+    sidecarUrl?: string;
+};
+export declare const spotlightIntegration: (options?: Partial<SpotlightConnectionOptions> | undefined) => import("@sentry/types").IntegrationFnResult;
+/**
+ * Use this integration to send errors and transactions to Spotlight.
+ *
+ * Learn more about spotlight at https://spotlightjs.com
+ *
+ * Important: This integration only works with Node 18 or newer.
+ *
+ * @deprecated Use `spotlightIntegration()` instead.
+ */
+export declare const Spotlight: IntegrationClass<Integration & {
+    setup: (client: Client) => void;
+}> & (new (options?: Partial<{
+    sidecarUrl?: string;
+}>) => Integration);
+export type Spotlight = typeof Spotlight;
+type HttpRequestImpl = typeof http.request;
+/**
+ * We want to get an unpatched http request implementation to avoid capturing our own calls.
+ */
+export declare function getNativeHttpRequest(): HttpRequestImpl;
+export {};
+//# sourceMappingURL=spotlight.d.ts.map
