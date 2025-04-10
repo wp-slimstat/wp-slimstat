@@ -328,15 +328,6 @@ class wp_slimstat_reports
                 'classes'       => array('normal',),
                 'locations'     => array('inactive')
             ),
-            'slim_p2_09'    => array(
-                'title'         => __('Browser Capabilities', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
-                    'raw' => array('wp_slimstat_db', 'get_plugins')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
             'slim_p2_12'    => array(
                 'title'         => __('Visit Duration', 'wp-slimstat'),
                 'callback'      => array(__CLASS__, 'raw_results_to_html'),
