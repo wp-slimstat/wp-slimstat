@@ -1304,7 +1304,7 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $_report_id . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
     }
 
     public static function add_header()
