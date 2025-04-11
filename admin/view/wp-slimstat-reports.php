@@ -1119,7 +1119,7 @@ class wp_slimstat_reports
                             }
 
                             $row_details   = __('Referrer', 'wp-slimstat') . ": $domain";
-                            $element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'], true);
+                            $element_value = self::get_search_terms_info($results[$i]['searchterms'], isset($results[$i]['referer']) ? $results[$i]['referer'] : '', true);
                         } else {
                             $element_value = htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
                         }
