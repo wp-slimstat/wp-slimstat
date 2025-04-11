@@ -1,5 +1,6 @@
 = 5.2.11 - 2025-04-11 =
 - **Fix:** Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
+- **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
 
 = 5.2.10 - 2025-03-09 =
 - **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
