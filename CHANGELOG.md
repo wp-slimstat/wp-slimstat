@@ -1,3 +1,6 @@
+= 5.2.11 - 2025-04-11 =
+- **Fix:** Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
+
 = 5.2.10 - 2025-03-09 =
 - **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
 
