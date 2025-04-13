@@ -818,7 +818,7 @@ class wp_slimstat_db
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_args['group_by'], $_args['group_by'] . ' ASC');
@@ -930,6 +930,14 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_column, $_use_date_filters);
 
+        // Sanitize and protect WHERE clause
+        if (strpos($_where, 'OR') !== false && strpos($_where, '(') === false) {
+            $_where = '(' . $_where . ')';
+        }
+
+        $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+
         // prepare the query
         $sql = $GLOBALS['wpdb']->prepare("
 			SELECT $columns
@@ -937,9 +945,10 @@ class wp_slimstat_db
 			WHERE $_where
 			$group_by
 			ORDER BY $_order_by
-			LIMIT %d, %d", 
-                self::$filters_normalized['misc']['start_from'],
-                self::$filters_normalized['misc']['limit_results']);
+			LIMIT %d, %d",
+                $start,
+                $limit
+            );
         return self::get_results($sql, $columns, 'dt DESC');
     }
 
@@ -999,7 +1008,7 @@ class wp_slimstat_db
 			WHERE $_where
 			GROUP BY $group_by_column $_having
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
@@ -1038,7 +1047,7 @@ class wp_slimstat_db
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_outer_select_column, 'counthits DESC', $_outer_select_column, "$_aggr_function(aggrid), SUM(counthits)");

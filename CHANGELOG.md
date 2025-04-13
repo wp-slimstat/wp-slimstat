@@ -1,3 +1,7 @@
+= 5.2.11 - 2025-04-13 =
+- **Enhancement**: Optimized SQL query to reduce the chances of errors and improve overall performance.
+- **Enhancement**:
+
 = 5.2.10 - 2025-03-09 =
 - **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
 
@@ -153,7 +157,7 @@ We recently encountered an issue with the license of some libraries that did not
 * Fix: Fixed tweak notice errors while activating the plugin in fresh installation
 * Update: Tested up to WordPress v6.1
 
-= 4.9.0.1 = 
+= 4.9.0.1 =
 * Fix: Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
 * Fix: The new Browscap Library requires at least PHP 7.4, up from 7.1. (thank you, [Daniel Jaraud](https://github.com/slimstat/wp-slimstat/issues/22)).
 
