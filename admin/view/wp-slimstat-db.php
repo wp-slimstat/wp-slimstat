@@ -818,7 +818,7 @@ class wp_slimstat_db
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_args['group_by'], $_args['group_by'] . ' ASC');
@@ -937,7 +937,7 @@ class wp_slimstat_db
 			WHERE $_where
 			$group_by
 			ORDER BY $_order_by
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $columns, 'dt DESC');
@@ -999,7 +999,7 @@ class wp_slimstat_db
 			WHERE $_where
 			GROUP BY $group_by_column $_having
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
@@ -1038,7 +1038,7 @@ class wp_slimstat_db
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_outer_select_column, 'counthits DESC', $_outer_select_column, "$_aggr_function(aggrid), SUM(counthits)");
@@ -1051,7 +1051,7 @@ class wp_slimstat_db
             $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "type:click%"', 'notes');
         } else {
             $from  = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
-            $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "_ype:click%"', 'notes', true, 't1');
+            $where = wp_slimstat_db::get_combined_where('te.notes NOT LIKE "_ype:click%"', 'te.notes', true, 't1');
         }
 
         return self::get_results("
