@@ -2,6 +2,14 @@
 // Keep track of multiple occurrences of the same report, to allow users to delete duplicates
 $already_seen = array();
 ?>
+<style>
+    /* Hide all non-Slimstat notices in the admin */
+    .notice:not(.slimstat-notice),
+    .update-nag:not(.slimstat-notice),
+    .error:not(.slimstat-notice) {
+        display: none !important;
+    }
+</style>
 
 <div class="backdrop-container">
     <div class="wrap slimstat slimstat-layout">

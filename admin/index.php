@@ -28,6 +28,20 @@ class wp_slimstat_admin
             }
         });
 
+        // Hide non-slimstat notices in the admin
+        add_action('current_screen', function ($screen) {
+            if ($screen && strpos($screen->id, 'slimview') !== false) {
+                echo '<style>
+                    /* Hide all non-Slimstat notices in the admin */
+                    .notice:not(.slimstat-notice),
+                    .update-nag:not(.slimstat-notice),
+                    .error:not(.slimstat-notice) {
+                        display: none !important;
+                    }
+                </style>';
+            }
+        });
+
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', array('wp_slimstat_admin', 'handle_reset_layout'));
 
@@ -36,6 +50,7 @@ class wp_slimstat_admin
 
         // Define the default screens
         $has_network_reports = get_user_option("meta-box-order_slimstat_page_slimlayout-network", 1);
+
         self::$screens_info  = array(
             'slimview1'  => array(
                 'is_report_group' => true,
@@ -840,7 +855,7 @@ class wp_slimstat_admin
         $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s')) . ')', '*', true);
 
         $sql = wp_slimstat::$wpdb->prepare("
-			SELECT resource, COUNT( DISTINCT $column ) as counthits 
+			SELECT resource, COUNT( DISTINCT $column ) as counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE " . $where . "
 			GROUP BY resource
@@ -908,9 +923,9 @@ class wp_slimstat_admin
         $_message = wpautop(wp_kses_post($_message));
 
         if (!empty($_dismiss_handle)) {
-            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible slimstat-notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
         } else {
-            echo '<div class="notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
         }
     }
     // END: show_message

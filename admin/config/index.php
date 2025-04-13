@@ -757,6 +757,14 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 }
 
 ?>
+<style>
+    /* Hide all non-Slimstat notices in the admin */
+    .notice:not(.slimstat-notice),
+    .update-nag:not(.slimstat-notice),
+    .error:not(.slimstat-notice) {
+        display: none !important;
+    }
+</style>
 <div class="backdrop-container">
     <div class="wrap slimstat-config">
         <h2><?php _e('Settings', 'wp-slimstat') ?></h2>
