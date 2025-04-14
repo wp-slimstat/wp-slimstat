@@ -1,3 +1,6 @@
+= 5.2.11 - 2025-03-15 =
+- **Fix**: Fatal error in EmailReportsAddon.php for missing `get_plugins` method.
+
 = 5.2.10 - 2025-03-09 =
 - **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
 
