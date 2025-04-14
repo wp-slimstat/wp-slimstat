@@ -1,6 +1,8 @@
-= 5.2.11 - 2025-04-11 =
+= 5.2.11 - 2025-04-15 =
 - **Fix:** Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
+- **Fix:** Fix a database error related to the notes column.
 - **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
+
 
 = 5.2.10 - 2025-03-09 =
 - **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
@@ -157,7 +159,7 @@ We recently encountered an issue with the license of some libraries that did not
 * Fix: Fixed tweak notice errors while activating the plugin in fresh installation
 * Update: Tested up to WordPress v6.1
 
-= 4.9.0.1 = 
+= 4.9.0.1 =
 * Fix: Entries in the Top Referring Domains report were pointing to broken links (thank you, [s7ech](https://github.com/slimstat/wp-slimstat/issues/21)).
 * Fix: The new Browscap Library requires at least PHP 7.4, up from 7.1. (thank you, [Daniel Jaraud](https://github.com/slimstat/wp-slimstat/issues/22)).
 
