@@ -696,11 +696,16 @@ class wp_slimstat_db
             $params['granularity']       = 'HOUR';
         } else if (self::$filters_normalized['utime']['range'] < 10368000) {
             $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $params['data_points_label'] = (strpos(number_format_i18n(1000), '.') === false) ? 'm/d' : 'd/m';
+            $format = get_option('date_format');
+            $format = str_replace(array('Y-', 'Y/', 'Y.', 'Y '), '', $format);
+            $format = str_replace(array('y-', 'y/', 'y.', 'y '), '', $format);
+            $params['data_points_label'] = $format;
             $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 86400);
             $params['granularity']       = 'DAY';
         } else {
             $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+            $format = get_option('date_format');
+            $format = str_replace(array('d-', 'd/', 'd.', 'd '), '', $format);
             $params['data_points_label'] = 'm/y';
             $params['data_points_count'] = self::count_months_between(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']);
             $params['granularity']       = 'MONTH';
@@ -818,7 +823,7 @@ class wp_slimstat_db
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_args['group_by'], $_args['group_by'] . ' ASC');
@@ -937,7 +942,7 @@ class wp_slimstat_db
 			WHERE $_where
 			$group_by
 			ORDER BY $_order_by
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $columns, 'dt DESC');
@@ -999,7 +1004,7 @@ class wp_slimstat_db
 			WHERE $_where
 			GROUP BY $group_by_column $_having
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
@@ -1038,7 +1043,7 @@ class wp_slimstat_db
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_outer_select_column, 'counthits DESC', $_outer_select_column, "$_aggr_function(aggrid), SUM(counthits)");
