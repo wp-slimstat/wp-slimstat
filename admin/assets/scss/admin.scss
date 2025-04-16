@@ -14,6 +14,10 @@ $error: #ff3636;
 
 .wrap.slimstat {
   overflow-x: hidden !important;
+
+  .postbox:has(p.loading) a.refresh svg {
+    animation: spin 1s linear infinite;
+  }
 }
 
 // Old Styles
@@ -258,10 +262,11 @@ $error: #ff3636;
 
 /* Single Report: Inside */
 [id^="slim_"] .inside {
-  height: 281px;
+  height: 340px;
   margin: 0 !important;
   overflow: auto;
   padding: 0 !important;
+  margin-bottom: 45px !important;
 }
 
 .wrap.slimstat .postbox.tall .inside {
@@ -1121,9 +1126,31 @@ $error: #ff3636;
 }
 
 .qtip-default {
-  border: 1px solid #555;
-  background-color: rgba(0, 0, 0, 0.9);
-  color: #ddd;
+  background-color: #2b2b2b;
+  font-style: italic;
+  padding-top: 12px;
+  padding-right: 16px;
+  padding-bottom: 12px;
+  padding-left: 16px;
+  border-radius: 12px;
+  color: #9ba1a6;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  font-style: normal;
+  text-decoration: none !important;
+  transform: translateX(9px) translateY(-1px);
+
+  strong {
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0px;
+    font-style: normal;
+    text-decoration: none !important;
+  }
 }
 
 .qtip-default .qtip-titlebar {
@@ -1156,14 +1183,22 @@ x:-o-prefocus {
 .qtip .qtip-tip .qtip-vml,
 .qtip .qtip-tip canvas {
   position: absolute;
-  color: #123456;
-  background: 0 0;
+  color: #2b2b2b !important;
+  background: #2b2b2b !important;
   border: 0 dashed transparent;
+  background-color: #2b2b2b !important;
+  width: 12px !important;
+  height: 12px !important;
+  transform: rotate(135deg) translateX(-5px) translateY(-4px);
+  line-height: unset !important;
+  border-top-right-radius: 4px;
+  display: inline-block;
 }
 
 .qtip .qtip-tip canvas {
   top: 0;
   left: 0;
+  display: none !important;
 }
 
 .qtip .qtip-tip .qtip-vml {
@@ -1727,6 +1762,7 @@ x:-o-prefocus {
 
 .backdrop-container {
   position: relative;
+  background-color: #f5f6fa;
 
   @media (min-width: 780px) {
     margin-left: -20px;
@@ -2046,11 +2082,11 @@ x:-o-prefocus {
     }
 
     .postbox {
-      border: none;
+      border: solid 1px #f0f0f0;
       border-radius: 10px;
-      -webkit-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
-      -moz-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
-      box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
+      // -webkit-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
+      // -moz-box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
+      // box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       margin-right: 0.5%;
 
       .rtl & {
@@ -2104,8 +2140,11 @@ x:-o-prefocus {
           &.slimstat-font-download {
             padding: 5px 5px;
             border-radius: 5px;
-            color: $grayTwo;
-            font-weight: 500;
+            font-weight: 700;
+            font-size: 12px;
+            line-height: 100%;
+            letter-spacing: 0px;
+            color: #e7294b;
             transition: 0.3s all ease-out;
             cursor: pointer;
 
@@ -2133,37 +2172,127 @@ x:-o-prefocus {
       }
 
       h3 {
-        background-color: $grayFive;
+        background-color: #ffffff;
+        color: #202224;
         padding: 18px 15px;
         border: none;
-        font-size: 14px;
+        font-size: 18px;
+        font-weight: bold;
+        letter-spacing: -0.43px;
 
         .header-tooltip {
-          &::before {
-            color: #aaaaaa;
-            padding: 0px 3px;
-            transform: translateY(-1px);
-            display: block;
+          margin: 0px 5px;
+          display: inline-block;
+          transform: translateY(3px);
 
-            .rtl & {
-              transform: translateY(-3px);
-            }
+          &:hover svg path {
+            fill: #202224;
           }
         }
       }
 
+      .slimstat-browser-icon,
+      span.slimstat-flag-container {
+        position: relative !important;
+        width: 18px;
+        height: auto !important;
+        float: left !important;
+        margin: 0px 10px 0px 0px;
+        transform: translateY(2px);
+        border-radius: 60px;
+      }
+
+      .slimstat-author-link {
+        img {
+          position: relative !important;
+          width: 18px;
+          height: auto !important;
+          float: left !important;
+          margin: 0px 10px 0px 0px;
+          transform: translateY(2px);
+          border-radius: 60px;
+        }
+      }
+
       .slimstat-tooltip-trigger {
+        .slimstat-tooltip-bar-wrap {
+          z-index: 0 !important;
+          position: absolute;
+          display: block;
+          width: calc(100% - 30px);
+          height: 100%;
+          top: 0;
+          left: 0;
+          margin: 0px 15px;
+          box-sizing: border-box;
+        }
+
+        * {
+          z-index: 2 !important;
+          position: relative;
+        }
+
         a {
           max-width: 80%;
           display: inline-block;
+          color: #202224;
+          font-weight: 600;
+          vertical-align: middle;
+          font-size: 12px;
         }
       }
     }
   }
 
+  p.slimstat-tooltip-trigger {
+    border: none !important;
+    margin-bottom: 8px;
+  }
+
+  .pagination {
+    color: #9ba1a6;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    background-color: #fff;
+    z-index: 2;
+    width: 100%;
+    padding: 10px 15px;
+  }
+  a.refresh.slimstat-font-angle-double-right,
+  a.refresh.slimstat-font-angle-right,
+  a.refresh.slimstat-font-angle-double-left,
+  a.refresh.slimstat-font-angle-left {
+    width: 24px;
+    border: solid 1px #dadce0;
+    height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  a.refresh.slimstat-font-angle-double-right:before,
+  a.refresh.slimstat-font-angle-right:before,
+  a.refresh.slimstat-font-angle-double-left:before,
+  a.refresh.slimstat-font-angle-left:before {
+    color: #676e74 !important;
+    font-size: 13px;
+  }
+
+  span.slimstat-tooltip-bar {
+    display: block;
+    height: 100%;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    background-color: var(--box-bar-color);
+    border-radius: 6px;
+  }
+
   .slimScrollDiv {
     p {
-      padding: 10px 20px;
+      padding: 10px 25px;
 
       &.header {
         //background-color: $grayFive;

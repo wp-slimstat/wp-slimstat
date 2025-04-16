@@ -3,6 +3,7 @@
 - **Fix:** Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
 - **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
 - **Enhancement**: Added support for the WordPress date format setting for the charts.
+- **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.
 
 = 5.2.10 - 2025-03-09 =
 - **Enhancement**: Improved SQL update query to support offset with `LIMIT`.

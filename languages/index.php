@@ -385,6 +385,8 @@ class wp_slimstat_i18n {
 				'l-mt' => __( 'Maltese', 'wp-slimstat' ),
 				'l-mt-mt' => __( 'Maltese (Malta)', 'wp-slimstat' ),
 				'l-nb' => __( 'Norwegian (Bokmål)', 'wp-slimstat' ),
+                'l-en-be' => __( 'English (Belgium)', 'wp-slimstat' ),
+                'l-en-sg' => __( 'English (Singapore)', 'wp-slimstat' ),
 				'l-nb-no' => __( 'Norwegian (Bokmål) (Norway)', 'wp-slimstat' ),
 				'l-nl' => __( 'Dutch', 'wp-slimstat' ),
 				'l-nl-be' => __( 'Dutch (Belgium)', 'wp-slimstat' ),
