@@ -819,7 +819,7 @@ class wp_slimstat_reports
                 'callback_args' => array(
                     'id' => 'slim_p6_01'
                 ),
-                'classes'       => array('full-width', 'tall'),
+                'classes'       => array('extralarge', 'tall', 'map-wrap'),
                 'locations'     => array('slimview1'),
                 'tooltip'       => __('Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat')
             )
@@ -1120,11 +1120,27 @@ class wp_slimstat_reports
                     case 'platform':
                         $row_details                    = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
 
+                        $icons = array(
+                            'android' => 'and',
+                            'chromeos' => 'chr',
+                            'ios' => 'ios',
+                            'linux' => 'lin',
+                            'ubuntu' => 'ubu',
+                            'windows' => 'win',
+                            'win7' => 'win',
+                            'win10' => 'win',
+                            'win11' => 'win',
+                            'macos' => 'mac',
+                            'macosx' => 'mac',
+                        );
+
                         $platform_parts = explode('-', $results[$i][$_args['columns']]);
                         $last_platform_part = end($platform_parts);
 
                         if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . strtolower($last_platform_part) . '.webp') ) ) {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . strtolower($last_platform_part) . '.webp');
+                        } else if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp') ) ) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp');
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/default-browser.png');
                         }
@@ -1622,73 +1638,116 @@ class wp_slimstat_reports
 
     public static function show_world_map()
     {
-        $countries = wp_slimstat_db::get_top('country');
-
-        // Backward compatibility
-        if (!$countries) {
-            $countries = array();
-        }
-
+        $countries = wp_slimstat_db::get_top('country') ?: array();
         $recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
+        $data_points = [];
 
-        $data_points = array();
         if (!empty($recent_visits)) {
             $recent_visits = array_slice($recent_visits, 0, wp_slimstat::$settings['max_dots_on_map']);
-
             foreach ($recent_visits as $a_recent_visit) {
                 if (!empty($a_recent_visit['city']) && !empty($a_recent_visit['location'])) {
                     list($latitude, $longitude) = explode(',', $a_recent_visit['location']);
                     $clean_city_name = htmlentities($a_recent_visit['city'], ENT_QUOTES, 'UTF-8');
-                    $date_time       = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_recent_visit['dt'], true);
-                    $data_points[]   = "{zoomLevel:7,type:'circle',title:'{$clean_city_name}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
+                    $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_recent_visit['dt'], true);
+                    $data_points[] = "{zoomLevel:7,type:'circle',title:'{$clean_city_name}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
                 }
             }
         }
 
-        $data_areas = array();
-
-        foreach (wp_slimstat_i18n::get_country_codes() as $a_code => $a_string) {
-            $data_areas[$a_code] = '';
-        }
-
+        $data_areas = [];
+        $country_stats = [];
         $max = 0;
 
         foreach ($countries as $a_country) {
-            $current_country_code = strtolower($a_country['country']);
-            if (!array_key_exists($current_country_code, $data_areas)) {
-                continue;
-            }
+            $code = strtolower($a_country['country']);
+            $visits = (int) $a_country['counthits'];
+            $percent = (wp_slimstat_db::$pageviews > 0) ? round((100 * $visits / wp_slimstat_db::$pageviews), 2) : 0;
+            $country_name = wp_slimstat_i18n::get_string('c-' . $a_country['country'], 'wp-slimstat');
 
-            $percentage                        = (wp_slimstat_db::$pageviews > 0) ? sprintf("%01.2f", (100 * $a_country['counthits'] / wp_slimstat_db::$pageviews)) : 0;
-            $percentage_format                 = number_format_i18n($percentage, 2);
-            $balloon_text                      = wp_slimstat_i18n::get_string('c-' . $a_country['country'], 'wp-slimstat') . ': ' . $percentage_format . '% (' . number_format_i18n($a_country['counthits']) . ')';
-            $data_areas[$current_country_code] = $percentage;
+            $data_areas[$code] = $visits;
+            $country_stats[] = [
+                'code' => $code,
+                'name' => $country_name,
+                'visits' => $visits,
+                'percent' => $percent
+            ];
 
-            if ($percentage > $max) {
-                $max = $percentage;
+            if ($percent > $max) {
+                $max = $percent;
             }
         }
+
+        usort($country_stats, function ($a, $b) {
+            return $b['visits'] <=> $a['visits'];
+        });
+        $top_countries = array_slice($country_stats, 0, 5);
 
         $path_slimstat = dirname(dirname(__FILE__));
         wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
         wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
         ?>
 
-        <div id="map_slim_p6_01" style="height: 100%"></div>
+        <div class="map-container">
+            <div id="map_slim_p6_01"></div>
+            <div class="top-countries-wrap">
+                <div class="top-countries">
+                    <h4>Top Countries</h4>
+                    <?php foreach ($top_countries as $country): ?>
+                        <div class="country-bar">
+                            <div class="country-flag-container">
+                                <?php
+                                if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($country['code']) . '.svg') ) ) {
+                                    $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower($country['code']) . '.svg');
+                                    echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
+                                } else {
+                                    $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/default-browser.png');
+                                    echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
+                                }
+                                ?>
+                            </div>
+                            <strong><?= esc_html($country['name']) ?></strong>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width: <?= $country['percent'] ?>%;"></div>
+                            </div>
+                            <span><?= $country['percent'] ?>%</span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
 
         <script type="text/javascript">
             jQuery(function () {
                 jQuery('#map_slim_p6_01').vectorMap({
                     map: 'world_en',
-                    values: <?php echo json_encode($data_areas); ?>
+                    backgroundColor: '#fff',
+                    hoverOpacity: 0.7,
+                    showTooltip: true,
+                    normalizeFunction: 'polynomial',
+                    values: <?php echo json_encode($data_areas); ?>,
+                    enableZoom: true,
+                    onLabelShow: function (event, label, code) {
+                        const data = <?php echo json_encode($country_stats); ?>;
+                        const country = data.find(c => c.code === code);
+                        if (country) {
+                            label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' Visitors</p>');
+                        } else {
+                            label.html( '<canvas></canvas><h3>'  + label.text()  + '</h3><p>0 Visitors</p>');
+                        }
+                    },
+                    scaleColors: ['#fcd7dc', '#E7294B'],
+                    borderColor: '#ffffff',
+                    color: '#D4D7E2',
                 });
             });
-        </script><?php
+        </script>
 
+        <?php
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
     }
+
 
     public static function get_search_terms_info($_searchterms = '', $_referer = '', $_serp_only = false)
     {

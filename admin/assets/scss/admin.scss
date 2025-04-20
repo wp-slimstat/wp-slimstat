@@ -18,6 +18,171 @@ $error: #ff3636;
   .postbox:has(p.loading) a.refresh svg {
     animation: spin 1s linear infinite;
   }
+
+  .map-container {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0px 20px;
+    overflow: hidden;
+    height: 370px;
+  }
+
+  #map_slim_p6_01 {
+    width: 100%;
+    height: 395px;
+    flex: 1;
+  }
+
+  .top-countries-wrap {
+    min-width: 430px;
+    max-width: 430px;
+    margin-left: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .top-countries {
+    flex: 1;
+
+    h4 {
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 100%;
+      letter-spacing: -0.43px;
+    }
+  }
+
+  .country-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    height: 36px;
+
+    .country-flag-container {
+      width: 24px;
+      height: 24px;
+      border-radius: 100px;
+      overflow: hidden;
+      margin: 0px 10px 0 0px;
+      display: inline-block;
+      min-width: 24px;
+    }
+
+    strong {
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 100%;
+      letter-spacing: 0px;
+      vertical-align: middle;
+      position: absolute;
+      top: 3px;
+      left: 43px;
+      color: #9ba1a6;
+    }
+
+    span {
+      color: #202224;
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 100%;
+      letter-spacing: 0px;
+      vertical-align: middle;
+      margin-left: 5px;
+      margin-top: 20px;
+    }
+  }
+
+  .country-flag {
+    height: auto;
+    transform: translateX(-13%);
+  }
+
+  .bar-container {
+    background-color: #eee;
+    height: 8px;
+    width: 100%;
+    margin-left: 10px;
+    border-radius: 4px;
+    margin-top: 25px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background-color: #e7294b;
+  }
+
+  @media (max-width: 768px) {
+    .map-container {
+      flex-direction: column;
+    }
+    .top-countries {
+      margin-left: 0;
+      margin-top: 20px;
+    }
+  }
+}
+
+.jqvmap-label {
+  z-index: 999999;
+  position: absolute !important;
+  background-color: #2b2b2b;
+  color: #ffffff;
+  padding: 10px;
+  transform: translateY(-15px) translateX(50%);
+  max-width: 280px;
+  min-width: 50px;
+  font-size: 1em;
+  line-height: 1.5em;
+  direction: ltr;
+  border-radius: 8px;
+  backdrop-filter: blur(34px);
+  box-shadow: 0px 2px 4px 0px #0000000a;
+}
+
+.jqvmap-label h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 100%;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.jqvmap-label p {
+  font-family: Inter;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 100%;
+  letter-spacing: 1px;
+  color: #d9d9d9;
+}
+
+.jqvmap-label canvas {
+  position: absolute;
+  color: #2b2b2b !important;
+  background: #2b2b2b !important;
+  border: 0 dashed transparent;
+  background-color: #2b2b2b !important;
+  width: 12px !important;
+  height: 12px !important;
+  transform: rotate(135deg) translateX(0px) translateY(1px);
+  line-height: unset !important;
+  border-top-right-radius: 4px;
+  display: inline-block;
+  bottom: -5px;
+  left: calc(50% - 6px);
+}
+
+.postbox.tall ~ .postbox.normal .inside {
+  height: 372px;
+}
+
+.export-pro-badge {
+  margin-left: 3px;
+  margin-bottom: -5px;
 }
 
 // Old Styles
@@ -270,7 +435,13 @@ $error: #ff3636;
 }
 
 .wrap.slimstat .postbox.tall .inside {
-  height: 605px;
+  height: 515px;
+}
+
+.map-wrap {
+  .inside {
+    height: 373px !important;
+  }
 }
 
 [id^="slim_"] p {
@@ -1189,7 +1360,7 @@ x:-o-prefocus {
   background-color: #2b2b2b !important;
   width: 12px !important;
   height: 12px !important;
-  transform: rotate(135deg) translateX(-5px) translateY(-4px);
+  transform: rotate(135deg) translateX(0px) translateY(1px);
   line-height: unset !important;
   border-top-right-radius: 4px;
   display: inline-block;
@@ -2147,6 +2318,8 @@ x:-o-prefocus {
             color: #e7294b;
             transition: 0.3s all ease-out;
             cursor: pointer;
+            top: -2px;
+            position: relative;
 
             span.dashicons {
               &::before {
@@ -2198,7 +2371,7 @@ x:-o-prefocus {
         height: auto !important;
         float: left !important;
         margin: 0px 10px 0px 0px;
-        transform: translateY(2px);
+        transform: translateY(1px);
         border-radius: 60px;
       }
 
@@ -2209,7 +2382,7 @@ x:-o-prefocus {
           height: auto !important;
           float: left !important;
           margin: 0px 10px 0px 0px;
-          transform: translateY(2px);
+          transform: translateY(1px);
           border-radius: 60px;
         }
       }
