@@ -23,13 +23,17 @@ $error: #ff3636;
     display: flex;
     flex-wrap: wrap;
     padding: 0px 20px;
-    overflow: hidden;
-    height: 370px;
+
+    @media (min-width: 782px) {
+      overflow: hidden;
+      height: 370px;
+    }
   }
 
   #map_slim_p6_01 {
     width: 100%;
     height: 395px;
+    min-height: 395px;
     flex: 1;
   }
 
@@ -441,6 +445,9 @@ $error: #ff3636;
 .map-wrap {
   .inside {
     height: 373px !important;
+    @media (max-width: 767px) {
+      height: 773px !important;
+    }
   }
 }
 
