@@ -814,7 +814,7 @@ class wp_slimstat_reports
                 'locations'     => array('slimview4')
             ),
             'slim_p6_01'    => array(
-                'title'         => __('World Map', 'wp-slimstat'),
+                'title'         => __('Audience Location', 'wp-slimstat'),
                 'callback'      => array(__CLASS__, 'show_world_map'),
                 'callback_args' => array(
                     'id' => 'slim_p6_01'
