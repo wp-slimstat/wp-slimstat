@@ -19,12 +19,3 @@
     <?php endif; ?>
 
 </div>
-
-<style>
-    /* Hide all non-Slimstat notices in the admin */
-    .notice:not(.slimstat-notice),
-    .update-nag:not(.slimstat-notice),
-    .error:not(.slimstat-notice) {
-        display: none !important;
-    }
-</style>
