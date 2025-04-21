@@ -43,7 +43,7 @@ $error: #ff3636;
     margin-left: 30px;
     display: flex;
     justify-content: center;
-    align-items: center;
+    // align-items: center;
   }
 
   .top-countries {
@@ -83,7 +83,7 @@ $error: #ff3636;
       position: absolute;
       top: 3px;
       left: 43px;
-      color: #9ba1a6;
+      color: #202224;
     }
 
     span {
@@ -346,7 +346,6 @@ $error: #ff3636;
 
 /* Reports: Container */
 .wrap.slimstat .meta-box-sortables {
-  margin-top: 20px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -431,7 +430,7 @@ $error: #ff3636;
 
 /* Single Report: Inside */
 [id^="slim_"] .inside {
-  height: 340px;
+  height: 240px;
   margin: 0 !important;
   overflow: auto;
   padding: 0 !important;
@@ -439,7 +438,7 @@ $error: #ff3636;
 }
 
 .wrap.slimstat .postbox.tall .inside {
-  height: 515px;
+  height: 465px;
 }
 
 .map-wrap {
@@ -702,7 +701,7 @@ $error: #ff3636;
 }
 
 .slimstat-options-section-header {
-  background-color: #e4e4e4;
+  background-color: #ffffff;
   font-size: 1.4em;
   margin: 0;
   padding: 5px 10px;
@@ -829,10 +828,10 @@ $error: #ff3636;
 
 /* Customizer */
 .slimstat-layout .postbox-container {
-  border: 1px solid $grayThree;
   float: none;
   margin-top: 20px;
   overflow: hidden;
+  border: solid 1px #f0f0f0;
   border-radius: 10px;
 }
 
@@ -2356,7 +2355,7 @@ x:-o-prefocus {
         color: #202224;
         padding: 18px 15px;
         border: none;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
         letter-spacing: -0.43px;
 
@@ -2666,7 +2665,7 @@ x:-o-prefocus {
     h3 {
       font-weight: 500;
       padding: 12px 15px !important;
-      background-color: white !important;
+      background-color: #f2f2f2 !important;
     }
   }
 }
