@@ -3,6 +3,7 @@
 - **Fix:** Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
 - **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
 - **Enhancement**: Added support for the WordPress date format setting for the charts.
+- **Fix:** Investigate and resolve the "Division by zero" fatal error in wp-slimstat-db.php caused by PHP version 8.2.22. Further investigation needed to determine the root cause and provide a fix.
 
 = 5.2.10 - 2025-03-09 =
 - **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
