@@ -36,6 +36,7 @@ class wp_slimstat_admin
 
         // Define the default screens
         $has_network_reports = get_user_option("meta-box-order_slimstat_page_slimlayout-network", 1);
+
         self::$screens_info  = array(
             'slimview1'  => array(
                 'is_report_group' => true,
@@ -908,9 +909,9 @@ class wp_slimstat_admin
         $_message = wpautop(wp_kses_post($_message));
 
         if (!empty($_dismiss_handle)) {
-            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible slimstat-notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
         } else {
-            echo '<div class="notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
         }
     }
     // END: show_message
