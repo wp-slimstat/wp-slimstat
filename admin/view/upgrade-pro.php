@@ -4,7 +4,14 @@ if (!function_exists('add_action')) exit();
 // Load header
 wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
 ?>
-
+<style>
+    /* Hide all non-Slimstat notices in the admin */
+    .notice:not(.slimstat-notice),
+    .update-nag:not(.slimstat-notice),
+    .error:not(.slimstat-notice) {
+        display: none !important;
+    }
+</style>
 <div class="backdrop-container">
     <?php
     // Load SlimStat Pro Modal
