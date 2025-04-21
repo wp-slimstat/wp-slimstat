@@ -592,7 +592,7 @@ class wp_slimstat_admin
     public static function wp_slimstat_stylesheet($_hook = '')
     {
         wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)), false, SLIMSTAT_ANALYTICS_VERSION);
-        wp_enqueue_style('wp-slimstat');
+        wp_enqueue_style('wp-slimstat', array(), array(), SLIMSTAT_ANALYTICS_VERSION, 'all');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);

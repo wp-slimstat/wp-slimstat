@@ -12,6 +12,10 @@ $lightBrand: #fccfd4;
 $veryLightBrand: #fff4f5;
 $error: #ff3636;
 
+.wrap.slimstat {
+  overflow-x: hidden !important;
+}
+
 // Old Styles
 /* Links */
 .wrap.slimstat a,
@@ -2043,7 +2047,7 @@ x:-o-prefocus {
     }
   }
 
-  .meta-box-sortables.ui-sortable {
+  .meta-box-sortables {
     form {
       display: none;
     }
