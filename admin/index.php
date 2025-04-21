@@ -28,20 +28,6 @@ class wp_slimstat_admin
             }
         });
 
-        // Hide non-slimstat notices in the admin
-        add_action('current_screen', function ($screen) {
-            if ($screen && strpos($screen->id, 'slimview') !== false) {
-                echo '<style>
-                    /* Hide all non-Slimstat notices in the admin */
-                    .notice:not(.slimstat-notice),
-                    .update-nag:not(.slimstat-notice),
-                    .error:not(.slimstat-notice) {
-                        display: none !important;
-                    }
-                </style>';
-            }
-        });
-
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', array('wp_slimstat_admin', 'handle_reset_layout'));
 
