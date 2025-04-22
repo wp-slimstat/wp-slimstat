@@ -1065,7 +1065,7 @@ class wp_slimstat_reports
                         if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/browsers/' . strtolower($results[$i]['browser'] ) . '.png') ) ) {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/' . strtolower($results[$i]['browser'] ) . '.png');
                         } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/default-browser.png');
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                         }
 
                         $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['browser'] . '" /> ';
@@ -1085,7 +1085,7 @@ class wp_slimstat_reports
                             $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
 
                         } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/default-browser.png');
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
                         }
 
@@ -1111,7 +1111,7 @@ class wp_slimstat_reports
                             $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
 
                         } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/default-browser.png');
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
                         }
 
@@ -1145,7 +1145,7 @@ class wp_slimstat_reports
                         } else if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp') ) ) {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp');
                         } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/default-browser.png');
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                         }
 
                         $element_value                  = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . strtolower($last_platform_part) . '" /> ';
@@ -1706,7 +1706,7 @@ class wp_slimstat_reports
                                     $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower($country['code']) . '.svg');
                                     echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
                                 } else {
-                                    $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/default-browser.png');
+                                    $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                                     echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
                                 }
                                 ?>

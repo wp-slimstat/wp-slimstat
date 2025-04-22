@@ -333,14 +333,16 @@ body {
 }
 
 #slimstat-current-filters {
+  margin-bottom: 5px;
   background-color: white;
-  color: $grayTwo;
+  color: #616060;
   font-size: 14px;
   overflow: hidden;
-  padding: 6px 10px;
+  padding: 10px 10px;
   position: relative;
   border-radius: 5px;
-  margin-top: 14px;
+  margin-top: 0px;
+  border: solid 1px #f0f0f0;
 
   @media (max-width: 400px) {
     .button-secondary {
@@ -2496,7 +2498,7 @@ x:-o-prefocus {
   }
 
   .pagination {
-    color: #9ba1a6;
+    color: #6f7478;
     position: absolute;
     left: 0;
     bottom: 0;
