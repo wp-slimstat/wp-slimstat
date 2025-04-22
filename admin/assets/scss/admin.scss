@@ -61,6 +61,12 @@ body {
     height: 395px;
     min-height: 395px;
     flex: 1;
+
+    @media (max-width: 768px) {
+      height: 310px;
+      min-height: 310px;
+      max-height: 310px;
+    }
   }
 
   .top-countries-wrap {
@@ -70,6 +76,12 @@ body {
     display: flex;
     justify-content: center;
     // align-items: center;
+
+    @media (max-width: 768px) {
+      margin-left: 0;
+      min-width: 100%;
+      max-width: 100%;
+    }
   }
 
   .top-countries {
@@ -473,7 +485,7 @@ body {
   .inside {
     height: 370px !important;
     @media (max-width: 767px) {
-      height: 773px !important;
+      height: auto !important;
     }
   }
 }
