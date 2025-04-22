@@ -696,11 +696,17 @@ class wp_slimstat_db
             $params['granularity']       = 'HOUR';
         } else if (self::$filters_normalized['utime']['range'] < 10368000) {
             $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $params['data_points_label'] = (strpos(number_format_i18n(1000), '.') === false) ? 'm/d' : 'd/m';
+            $format = get_option('date_format');
+            $format = str_replace(array('Y-', 'Y/', 'Y.', 'Y ', ', Y', ' Y' ), '', $format);
+            $format = str_replace(array('y-', 'y/', 'y.', 'y ', ', y', ' y' ), '', $format);
+            $params['data_points_label'] = $format;
             $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 86400);
             $params['granularity']       = 'DAY';
         } else {
             $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+            $format = get_option('date_format');
+            $format = str_replace(array('d-', 'd/', 'd.', 'd '), '', $format);
+            $format = str_replace(array('j-', 'j/', 'j.', 'j '), '', $format);
             $params['data_points_label'] = 'm/y';
             $params['data_points_count'] = self::count_months_between(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']);
             $params['granularity']       = 'MONTH';
