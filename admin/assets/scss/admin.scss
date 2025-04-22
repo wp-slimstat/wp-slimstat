@@ -469,6 +469,7 @@ body {
 
 .map-wrap {
   .inside {
+    height: 370px !important;
     @media (max-width: 767px) {
       height: 773px !important;
     }
