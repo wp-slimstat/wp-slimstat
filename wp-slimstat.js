@@ -412,8 +412,8 @@ if ( typeof String.prototype.trim !== 'function' ) {
 // Ok, let's go, Sparky!
 (function () {
 	function trackPageView() {
-		let slimstat_data = "";
-		let use_beacon = true;
+		var slimstat_data = "";
+		var use_beacon = true;
 
 		if (!SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
 			slimstat_data = "action=slimtrack&id=" + SlimStatParams.id;
@@ -427,7 +427,7 @@ if ( typeof String.prototype.trim !== 'function' ) {
 		}
 
 		if (slimstat_data.length > 0) {
-			const options = {
+			var options = {
 				excludes: {
 					adBlock: true, addBehavior: true, userAgent: true, canvas: true,
 					webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true,
@@ -438,7 +438,7 @@ if ( typeof String.prototype.trim !== 'function' ) {
 				}
 			};
 
-			const fingerprintAndSend = () => {
+			var fingerprintAndSend = function () {
 				Fingerprint2.get(options, function (components) {
 					SlimStat.init_fingerprint_hash(components);
 					SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
@@ -456,10 +456,10 @@ if ( typeof String.prototype.trim !== 'function' ) {
 
 	function initTracking() {
         trackPageView();
-        
-        const all_clickable = document.querySelectorAll("a,button,input,area");
-        for (let i = 0; i < all_clickable.length; i++) {
-            const el = all_clickable[i];
+
+        var all_clickable = document.querySelectorAll("a,button,input,area");
+        for (var i = 0; i < all_clickable.length; i++) {
+            var el = all_clickable[i];
 
             if (!el.hasAttribute("data-slimstat-attached")) {
                 SlimStat.add_event(el, "mousedown", function () {
@@ -474,8 +474,8 @@ if ( typeof String.prototype.trim !== 'function' ) {
 	SlimStat.add_event(window, 'load', initTracking);
 
 	// Handle SPA navigations
-	const originalPushState = history.pushState;
-	const originalReplaceState = history.replaceState;
+	var originalPushState = history.pushState;
+	var originalReplaceState = history.replaceState;
 
 	function handleHistoryChange() {
 		setTimeout(() => {
