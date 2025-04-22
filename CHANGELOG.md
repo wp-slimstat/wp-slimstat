@@ -1,4 +1,5 @@
-= 5.2.11 - 2025-04-15 =
+= 5.2.11 - 2025-03-15 =
+- **Fix**: Fatal error in EmailReportsAddon.php for missing `get_plugins` method.
 - **Fix:** Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
 - **Fix:** Fix a database error related to the notes column.
 - **Fix:** Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
