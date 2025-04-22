@@ -14,7 +14,7 @@ $error: #ff3636;
 
 body {
   &.toplevel_page_slimview1,
-  &.toplevel_page_slimview2,
+  &.slimstat_page_slimview2,
   &.slimstat_page_slimview3,
   &.slimstat_page_slimview4,
   &.slimstat_page_slimview5,
@@ -607,7 +607,7 @@ body {
 
 body {
   &.toplevel_page_slimview1,
-  &.toplevel_page_slimview2,
+  &.slimstat_page_slimview2,
   &.slimstat_page_slimview3,
   &.slimstat_page_slimview4,
   &.slimstat_page_slimview5,
@@ -2251,6 +2251,7 @@ x:-o-prefocus {
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
+    margin-bottom: 5px;
 
     .form-field {
       position: relative;
