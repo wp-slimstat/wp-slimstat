@@ -860,6 +860,7 @@ class wp_slimstat_db
     public static function get_overview_summary()
     {
         $days_in_range = ceil((wp_slimstat_db::$filters_normalized['utime']['end'] - wp_slimstat_db::$filters_normalized['utime']['start']) / 86400);
+        $days_in_range = ($days_in_range < 1) ? 1 : $days_in_range;
         $results       = array();
 
         // Turn date_i18n filters off
