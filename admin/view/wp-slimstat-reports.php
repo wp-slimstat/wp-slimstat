@@ -169,7 +169,7 @@ class wp_slimstat_reports
                     'raw'     => array('wp_slimstat_db', 'get_top')
                 ),
                 'classes'       => array('normal'),
-                'color'         => '#EFF6FF',
+                // 'color'         => '#fff7ed',
                 'locations'     => array('slimview2', 'slimview3', 'slimview5', 'dashboard'),
                 'tooltip'       => __('You can configure Slimstat to not track specific Countries by setting the corresponding filter in Slimstat > Settings > Exclusions.', 'wp-slimstat')
             ),
@@ -780,7 +780,7 @@ class wp_slimstat_reports
                     'aggr_function'       => 'MIN',
                     'raw'                 => array('wp_slimstat_db', 'get_top_aggr')
                 ),
-                'color'         => '#EFF6FF',
+                // 'color'         => '#EFF6FF',
                 'classes'       => array('large'),
                 'locations'     => array('slimview4')
             ),
@@ -910,7 +910,7 @@ class wp_slimstat_reports
             $widget_title = "<h3>" . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . "</h3>";
         }
 
-        $bar_color = (!empty(self::$reports[$_report_id]['color'])) ? self::$reports[$_report_id]['color'] : '#fff7ed';
+        $bar_color = (!empty(self::$reports[$_report_id]['color'])) ? self::$reports[$_report_id]['color'] : '#EFF6FF';
 
         echo "<div class='postbox " . esc_attr($header_classes) . "' style='--box-bar-color: " . esc_attr($bar_color) . ";' id='" . esc_attr($_report_id) . "'>{$header_buttons} $widget_title <div class='inside'>";
     }
