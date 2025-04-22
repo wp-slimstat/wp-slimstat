@@ -202,9 +202,9 @@ body {
   left: calc(50% - 6px);
 }
 
-.postbox.tall ~ .postbox.normal .inside {
-  height: 372px;
-}
+// .postbox.tall + .postbox.normal .inside {
+//   height: 372px;
+// }
 
 .export-pro-badge {
   margin-left: 3px;
@@ -465,7 +465,6 @@ body {
 
 .map-wrap {
   .inside {
-    height: 373px !important;
     @media (max-width: 767px) {
       height: 773px !important;
     }

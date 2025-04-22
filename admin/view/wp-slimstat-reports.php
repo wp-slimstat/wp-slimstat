@@ -819,7 +819,7 @@ class wp_slimstat_reports
                 'callback_args' => array(
                     'id' => 'slim_p6_01'
                 ),
-                'classes'       => array('extralarge', 'tall', 'map-wrap'),
+                'classes'       => array('extralarge', 'map-wrap'),
                 'locations'     => array('slimview1'),
                 'tooltip'       => __('Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat')
             )
