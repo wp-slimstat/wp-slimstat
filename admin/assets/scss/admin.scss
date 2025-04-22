@@ -12,6 +12,19 @@ $lightBrand: #fccfd4;
 $veryLightBrand: #fff4f5;
 $error: #ff3636;
 
+body {
+  &.toplevel_page_slimview1,
+  &.toplevel_page_slimview2,
+  &.slimstat_page_slimview3,
+  &.slimstat_page_slimview4,
+  &.slimstat_page_slimview5,
+  &.slimstat_page_slimconfig,
+  &.slimstat_page_slimpro,
+  &.slimstat_page_slimlayout {
+    background: #f5f6fa !important;
+  }
+}
+
 .wrap.slimstat {
   overflow-x: hidden !important;
 
@@ -701,8 +714,9 @@ $error: #ff3636;
 }
 
 .slimstat-options-section-header {
-  background-color: #ffffff;
+  background-color: #ffffff !important;
   font-size: 1.4em;
+  font-weight: bold !important;
   margin: 0;
   padding: 5px 10px;
 }
@@ -1949,6 +1963,15 @@ x:-o-prefocus {
   }
 }
 
+.slimstat-filter-link .avatar {
+  border-radius: 50px;
+  overflow: hidden;
+  display: inline-block;
+  transform: translateY(3px);
+  margin-right: 2px;
+  border: solid 1px #fff;
+}
+
 // New Styles
 .wrap.slimstat-config,
 .wrap.slimstat {
@@ -2321,19 +2344,31 @@ x:-o-prefocus {
             font-size: 12px;
             line-height: 100%;
             letter-spacing: 0px;
-            color: #e7294b;
+            color: rgb(103, 110, 116);
             transition: 0.3s all ease-out;
             cursor: pointer;
-            top: -2px;
             position: relative;
+            top: 0px;
 
+            &.is-not-pro {
+              top: -2px;
+              color: #e7294b;
+            }
+
+            &:not(.is-not-pro):hover {
+              color: #202224;
+
+              span.dashicons::before {
+                color: #202224;
+              }
+            }
             span.dashicons {
               &::before {
-                color: $grayTwo;
-                font-size: 18px;
-                margin-right: 3px;
+                color: rgb(103, 110, 116);
+                font-size: 14px;
+                margin-right: 2px;
                 display: block;
-                transform: translateY(-2px);
+                transform: translateY(1px);
                 transition: 0.3s all ease-out;
               }
             }
@@ -2658,14 +2693,33 @@ x:-o-prefocus {
 .slimstat-layout {
   position: relative;
 
+  .postbox-container {
+    border: solid 1px #f0f0f0;
+
+    &:has(.ui-sortable-placeholder) {
+      border: dashed 1px #ff8080;
+    }
+
+    .meta-box-sortables,
+    h2 {
+      background-color: #fff !important;
+      color: #202224;
+      padding: 18px 15px;
+      font-size: 16px !important;
+      font-weight: bold !important;
+      letter-spacing: -0.43px;
+    }
+  }
   .postbox {
     border-radius: 8px !important;
     box-shadow: none !important;
+    background-color: #fff;
 
     h3 {
-      font-weight: 500;
+      font-weight: 400 !important;
       padding: 12px 15px !important;
-      background-color: #f2f2f2 !important;
+      background-color: #f1f1f1 !important;
+      font-size: 14px !important;
     }
   }
 }

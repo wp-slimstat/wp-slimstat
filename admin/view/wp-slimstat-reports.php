@@ -1128,6 +1128,7 @@ class wp_slimstat_reports
                             'ubuntu' => 'ubu',
                             'windows' => 'win',
                             'win7' => 'win',
+                            'win8.1' => 'win',
                             'win10' => 'win',
                             'win11' => 'win',
                             'macos' => 'mac',
@@ -1442,8 +1443,6 @@ class wp_slimstat_reports
             }
         }
 
-        echo self::report_pagination($count_page_results, count($all_results));
-
         $blog_url = '';
         if (isset($results[0]['blog_id'])) {
             $blog_url = get_site_url($results[0]['blog_id']);
@@ -1463,7 +1462,9 @@ class wp_slimstat_reports
 
             echo "</b></p>";
         }
-
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '</div>';
+        echo self::report_pagination($count_page_results, count($all_results));
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '<div>';
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
@@ -1496,7 +1497,6 @@ class wp_slimstat_reports
         }
 
         echo wp_kses_post(wp_slimstat_db::$debug_message);
-        echo self::report_pagination($count_page_results, count($all_results));
 
         foreach ($results as $a_result) {
             if (empty($a_result['counthits'])) {
@@ -1516,6 +1516,10 @@ class wp_slimstat_reports
 
             echo "<p>{$a_result[ 'resource' ]} <span>{$a_result[ 'counthits' ]}</span><br/>" . implode(', ', $group_markup) . "</p>";
         }
+
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '</div>';
+        echo self::report_pagination($count_page_results, count($all_results));
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '<div>';
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();

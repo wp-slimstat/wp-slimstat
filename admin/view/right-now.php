@@ -68,9 +68,6 @@ if (isset($_args['echo']) && $_args['echo'] === false) {
     return $results;
 }
 
-// Pagination
-echo wp_slimstat_reports::report_pagination($count_page_results, $count_all_results, !$is_dashboard, wp_slimstat::$settings['number_results_raw_data']);
-
 // Show delete button? (only those who can access the settings can see it)
 $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
 $delete_row              = '';
@@ -146,8 +143,12 @@ for ($i = 0; $i < $count_page_results; $i++) {
                     $display_user_name = $display_real_name->display_name;
                 }
             }
-            $ip_address    = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username']) . "'>{$display_user_name}</a>";
-            $ip_address    .= " <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip']) . "'>($host_by_ip)</a>";
+
+            $user          = get_user_by('login', $results[$i]['username']);
+            $ip_address    = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username']) . "'>";
+            $ip_address   .= get_avatar($user->ID, 16);
+            $ip_address   .= " {$display_user_name}</a>";
+            $ip_address   .= " <a class=s'slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip']) . "'>($host_by_ip)</a>";
             $highlight_row = (strpos($results[$i]['notes'], 'user:') !== false) ? ' is-known-user' : ' is-known-visitor';
         }
 
@@ -308,10 +309,9 @@ for ($i = 0; $i < $count_page_results; $i++) {
 }
 
 // Pagination
-if ($count_page_results > 20) {
-    echo wp_slimstat_reports::report_pagination($count_page_results, $count_all_results, true, wp_slimstat::$settings['number_results_raw_data']);
-}
-
+// if ($count_page_results > 20) {
+//     echo wp_slimstat_reports::report_pagination($count_page_results, $count_all_results, true, wp_slimstat::$settings['number_results_raw_data']);
+// }
 ?>
 
 <script type="text/javascript">
@@ -339,3 +339,9 @@ if ($count_page_results > 20) {
         SlimStatAdmin.refresh_handle = window.setInterval(slimstat_refresh_countdown, 1000);
     }
 </script>
+<?php
+
+if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '</div>';
+// Pagination
+echo wp_slimstat_reports::report_pagination($count_page_results, $count_all_results, !$is_dashboard, wp_slimstat::$settings['number_results_raw_data']);
+if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '<div>';
