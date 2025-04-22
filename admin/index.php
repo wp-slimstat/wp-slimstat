@@ -36,6 +36,7 @@ class wp_slimstat_admin
 
         // Define the default screens
         $has_network_reports = get_user_option("meta-box-order_slimstat_page_slimlayout-network", 1);
+
         self::$screens_info  = array(
             'slimview1'  => array(
                 'is_report_group' => true,
@@ -591,7 +592,7 @@ class wp_slimstat_admin
     public static function wp_slimstat_stylesheet($_hook = '')
     {
         wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)), false, SLIMSTAT_ANALYTICS_VERSION);
-        wp_enqueue_style('wp-slimstat');
+        wp_enqueue_style('wp-slimstat', array(), array(), SLIMSTAT_ANALYTICS_VERSION, 'all');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);
@@ -840,7 +841,7 @@ class wp_slimstat_admin
         $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s')) . ')', '*', true);
 
         $sql = wp_slimstat::$wpdb->prepare("
-			SELECT resource, COUNT( DISTINCT $column ) as counthits 
+			SELECT resource, COUNT( DISTINCT $column ) as counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE " . $where . "
 			GROUP BY resource
@@ -908,9 +909,9 @@ class wp_slimstat_admin
         $_message = wpautop(wp_kses_post($_message));
 
         if (!empty($_dismiss_handle)) {
-            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible slimstat-notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
         } else {
-            echo '<div class="notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
         }
     }
     // END: show_message
@@ -1303,8 +1304,8 @@ class wp_slimstat_admin
         if (empty(\wp_slimstat_reports::$reports[$_report_id]['callback_args']) || !array_key_exists('raw', \wp_slimstat_reports::$reports[$_report_id]['callback_args'])) {
             return $_header_buttons;
         }
-
-        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        $utm_medium = !empty($_report_id) ? $_report_id : 'report-unknown';
+        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
     }
 
     public static function add_header()
