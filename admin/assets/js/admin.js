@@ -515,10 +515,12 @@ var SlimStatAdmin = {
             jQuery.ajax({method: 'POST', url: ajaxurl, data: data})
                 .done(function (response) {
                     var filteredResponse = jQuery('<div>').html(response);
-                    filteredResponse.find('.pagination').remove();
 
-                    var paginationHtml = jQuery(response).last().html();
-                    jQuery('#' + id + ' .pagination').html(paginationHtml);
+                    if( id !== 'slim_p8_02' && id !== 'slim_p8_01' ) {
+                        filteredResponse.find('.pagination').remove();
+                        var paginationHtml = jQuery(response).last().html();
+                        jQuery('#' + id + ' .pagination').html(paginationHtml);
+                    }
 
                     if (jQuery('#' + id).hasClass('chart')) {
                         jQuery(inner_content).html(filteredResponse.html());
