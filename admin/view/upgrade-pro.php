@@ -4,7 +4,6 @@ if (!function_exists('add_action')) exit();
 // Load header
 wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
 ?>
-
 <div class="backdrop-container">
     <?php
     // Load SlimStat Pro Modal

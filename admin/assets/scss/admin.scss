@@ -605,6 +605,24 @@ body {
   overflow: hidden;
 }
 
+body {
+  &.toplevel_page_slimview1,
+  &.toplevel_page_slimview2,
+  &.slimstat_page_slimview3,
+  &.slimstat_page_slimview4,
+  &.slimstat_page_slimview5,
+  &.slimstat_page_slimconfig,
+  &.slimstat_page_slimpro,
+  &.slimstat_page_slimlayout {
+    /* Hide all non-Slimstat notices in the admin */
+    .notice:not(.slimstat-notice),
+    .update-nag:not(.slimstat-notice),
+    .error:not(.slimstat-notice) {
+      display: none !important;
+    }
+  }
+}
+
 /* Single Report: Modal Window */
 .ui-widget-overlay {
   background-color: #222;
