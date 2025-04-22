@@ -1057,7 +1057,7 @@ class wp_slimstat_db
             $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "type:click%"', 'notes');
         } else {
             $from  = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
-            $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "_ype:click%"', 'notes', true, 't1');
+            $where = wp_slimstat_db::get_combined_where('te.notes NOT LIKE "_ype:click%"', 'te.notes', true, 't1');
         }
 
         return self::get_results("
