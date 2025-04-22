@@ -33,6 +33,10 @@ body.index-php {
     margin: 0 5px !important;
   }
 
+  .slimstat-tooltip-trigger:has(.slimstat-tooltip-bar-wrap) {
+    border: none !important;
+  }
+
   span.slimstat-tooltip-bar {
     display: block;
     height: 100%;
