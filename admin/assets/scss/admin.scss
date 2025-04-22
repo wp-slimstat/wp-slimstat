@@ -25,6 +25,15 @@ body {
   }
 }
 
+// FIXME: Remove this in the next version of Pro
+.report-pages-by-user .inside {
+  margin-bottom: 10px !important;
+}
+// FIXME: Remove this in the next version of Pro
+.report-pages-by-user .pagination {
+  position: relative !important;
+}
+
 .wrap.slimstat {
   overflow-x: hidden !important;
 

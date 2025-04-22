@@ -886,6 +886,8 @@ class wp_slimstat_reports
         }
 
         $header_classes = !empty(self::$reports[$_report_id]['classes']) ? implode(' ', self::$reports[$_report_id]['classes']) : '';
+        $fixed_title    = str_replace(array('-', '_', '"', "'", ')', '('), '', strtolower(self::$reports[$_report_id]['title']));
+        $header_classes .= ' report-' . implode('-', explode(' ', esc_attr($fixed_title)));
         $header_buttons = '';
         $header_tooltip = '';
         $widget_title   = '';
