@@ -333,11 +333,12 @@ for ($i = 0; $i < $count_page_results; $i++) {
             slimstat_refresh_timer = parseInt(SlimStatAdminParams.refresh_interval);
         }
     }
-
-    if (jQuery('.refresh-timer').length > 0 && typeof SlimStatAdminParams.refresh_interval != 'undefined') {
-        slimstat_refresh_timer = SlimStatAdminParams.refresh_interval;
-        SlimStatAdmin.refresh_handle = window.setInterval(slimstat_refresh_countdown, 1000);
-    }
+    jQuery( document ).on('ready', function() {
+        if (jQuery('.refresh-timer').length > 0 && typeof SlimStatAdminParams.refresh_interval != 'undefined') {
+            slimstat_refresh_timer = SlimStatAdminParams.refresh_interval;
+            SlimStatAdmin.refresh_handle = window.setInterval(slimstat_refresh_countdown, 1000);
+        }
+    })
 </script>
 <?php
 
