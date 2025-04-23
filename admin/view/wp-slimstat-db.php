@@ -1015,10 +1015,10 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_as_column, $_use_date_filters);
 
-        $column = esc_sql($_column);
-        $where_clause = esc_sql($_where);
-        $group_by = esc_sql($group_by_column);
-        $having_clause = esc_sql($_having);
+        $column = $_column;
+        $where_clause = $_where;
+        $group_by = $group_by_column;
+        $having_clause = $_having;
         $start_from = intval(self::$filters_normalized['misc']['start_from']);
         $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
 
