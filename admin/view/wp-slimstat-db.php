@@ -823,7 +823,7 @@ class wp_slimstat_db
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
-     
+
 			ORDER BY counthits DESC
 			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
@@ -903,6 +903,7 @@ class wp_slimstat_db
 
     public static function get_recent($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_columns = '', $_order_by = 'dt DESC')
     {
+        global $wpdb;
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
             $_where            = !empty($_column['where']) ? $_column['where'] : '';
@@ -946,18 +947,20 @@ class wp_slimstat_db
         $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
 
-        // prepare the query
-        $sql = $GLOBALS['wpdb']->prepare("
+        // Prepare the query
+        $sql = $wpdb->prepare("
             SELECT $columns
-            FROM {$GLOBALS['wpdb']->prefix}slim_stats
-            WHERE $_where
+            FROM {$wpdb->prefix}slim_stats
+            WHERE [[_WHERE_]]
             $group_by
             ORDER BY $_order_by
             LIMIT %d, %d",
             $start,
-            $limit 
+            $limit
         );
-      
+
+        $sql = str_replace('[[_WHERE_]]', $_where, $sql);
+
         return self::get_results($sql, $columns, 'dt DESC');
     }
 
@@ -991,6 +994,8 @@ class wp_slimstat_db
 
     public static function get_top($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '')
     {
+        global $wpdb;
+
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
             $_where            = !empty($_column['where']) ? $_column['where'] : '';
@@ -1010,19 +1015,33 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_as_column, $_use_date_filters);
 
-        // prepare the query
-        $sql = $GLOBALS['wpdb']->prepare("
-			SELECT $_column, COUNT(*) counthits
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE $_where
-			GROUP BY $group_by_column $_having
-			ORDER BY counthits DESC
-			LIMIT %d, %d",
-                self::$filters_normalized['misc']['start_from'],
-                self::$filters_normalized['misc']['limit_results']);
-        return self::get_results($sql, ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
-            'counthits DESC', ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
-            'SUM(counthits) AS counthits');
+        $column = esc_sql($_column);
+        $where_clause = esc_sql($_where);
+        $group_by = esc_sql($group_by_column);
+        $having_clause = esc_sql($_having);
+        $start_from = intval(self::$filters_normalized['misc']['start_from']);
+        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
+
+        $sql = "
+            SELECT $column, COUNT(*) AS counthits
+            FROM {$wpdb->prefix}slim_stats
+            WHERE $where_clause
+            GROUP BY $group_by
+            $having_clause
+            ORDER BY counthits DESC
+            LIMIT %d, %d
+        ";
+
+        $prepared_sql = $wpdb->prepare($sql, $start_from, $limit_results);
+        $results = self::get_results(
+            $prepared_sql,
+            (!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column,
+            'counthits DESC',
+            (!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column,
+            'SUM(counthits) AS counthits'
+        );
+
+        return $results;
     }
 
     public static function get_top_aggr($_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX')
