@@ -1074,7 +1074,6 @@ class wp_slimstat_reports
                             $svg_path     = realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($results[$i]['country']) . '.svg') );
                             $svg_content = file_get_contents($svg_path);
                             $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
-
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
@@ -1100,10 +1099,9 @@ class wp_slimstat_reports
                             $svg_path     = realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . $last_language_part . '.svg') );
                             $svg_content = file_get_contents($svg_path);
                             $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
-
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
+                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i][$_args['columns']] . '" />';
                         }
 
                         $row_details   = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
@@ -1114,27 +1112,27 @@ class wp_slimstat_reports
                         $row_details                    = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
 
                         $icons = array(
-                            'android' => 'and',
+                            'android'  => 'and',
                             'chromeos' => 'chr',
-                            'ios' => 'ios',
-                            'linux' => 'lin',
-                            'ubuntu' => 'ubu',
-                            'windows' => 'win',
-                            'win7' => 'win',
-                            'win8.1' => 'win',
-                            'win10' => 'win',
-                            'win11' => 'win',
-                            'macos' => 'mac',
-                            'macosx' => 'mac',
+                            'ios'      => 'ios',
+                            'linux'    => 'lin',
+                            'ubuntu'   => 'ubu',
+                            'windows'  => 'win',
+                            'win7'     => 'win',
+                            'win8.1'   => 'win',
+                            'win10'    => 'win',
+                            'win11'    => 'win',
+                            'macos'    => 'mac',
+                            'macosx'   => 'mac',
                         );
 
                         $platform_parts = explode('-', $results[$i][$_args['columns']]);
-                        $last_platform_part = end($platform_parts);
+                        $last_platform_part = strtolower(end($platform_parts));
 
-                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . strtolower($last_platform_part) . '.webp') ) ) {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . strtolower($last_platform_part) . '.webp');
-                        } else if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp') ) ) {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp');
+                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $last_platform_part . '.webp') ) ) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $last_platform_part . '.webp');
+                        } else if( isset($icons[$last_platform_part]) && realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $icons[$last_platform_part] . '.webp') ) ) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $icons[$last_platform_part] . '.webp');
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                         }
