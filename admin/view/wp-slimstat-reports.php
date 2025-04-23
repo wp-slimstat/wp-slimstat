@@ -169,6 +169,7 @@ class wp_slimstat_reports
                     'raw'     => array('wp_slimstat_db', 'get_top')
                 ),
                 'classes'       => array('normal'),
+                // 'color'         => '#fff7ed',
                 'locations'     => array('slimview2', 'slimview3', 'slimview5', 'dashboard'),
                 'tooltip'       => __('You can configure Slimstat to not track specific Countries by setting the corresponding filter in Slimstat > Settings > Exclusions.', 'wp-slimstat')
             ),
@@ -770,6 +771,7 @@ class wp_slimstat_reports
                     'aggr_function'       => 'MIN',
                     'raw'                 => array('wp_slimstat_db', 'get_top_aggr')
                 ),
+                // 'color'         => '#EFF6FF',
                 'classes'       => array('large'),
                 'locations'     => array('slimview4')
             ),
@@ -803,12 +805,12 @@ class wp_slimstat_reports
                 'locations'     => array('slimview4')
             ),
             'slim_p6_01'    => array(
-                'title'         => __('World Map', 'wp-slimstat'),
+                'title'         => __('Audience Location', 'wp-slimstat'),
                 'callback'      => array(__CLASS__, 'show_world_map'),
                 'callback_args' => array(
                     'id' => 'slim_p6_01'
                 ),
-                'classes'       => array('full-width', 'tall'),
+                'classes'       => array('extralarge', 'map-wrap'),
                 'locations'     => array('slimview1'),
                 'tooltip'       => __('Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat')
             )
@@ -875,6 +877,8 @@ class wp_slimstat_reports
         }
 
         $header_classes = !empty(self::$reports[$_report_id]['classes']) ? implode(' ', self::$reports[$_report_id]['classes']) : '';
+        $fixed_title    = str_replace(array('-', '_', '"', "'", ')', '('), '', strtolower(self::$reports[$_report_id]['title']));
+        $header_classes .= ' report-' . implode('-', explode(' ', esc_attr($fixed_title)));
         $header_buttons = '';
         $header_tooltip = '';
         $widget_title   = '';
@@ -883,10 +887,11 @@ class wp_slimstat_reports
         if (is_admin()) {
             // Show the refresh button only if the time range is not in the past
             if (wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
-                $header_buttons = '<a class="noslimstat refresh slimstat-font-arrows-cw" title="' . __('Refresh', 'wp-slimstat') . '" href="' . self::fs_url() . '"></a>';
+                $header_buttons = '<a class="noslimstat refresh" title="' . __('Refresh', 'wp-slimstat') . '" href="' . self::fs_url() . '"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.44215 9.33359C2.50187 5.19973 5.89666 1.875 10.0656 1.875C12.8226 1.875 15.239 3.32856 16.5777 5.50601C16.7584 5.80006 16.6666 6.18499 16.3726 6.36576C16.0785 6.54654 15.6936 6.45471 15.5128 6.16066C14.3937 4.34037 12.3735 3.125 10.0656 3.125C6.57859 3.125 3.75293 5.89808 3.69234 9.33181L4.02599 9.00077C4.27102 8.75765 4.66675 8.75921 4.90986 9.00424C5.15298 9.24928 5.15143 9.645 4.90639 9.88812L3.50655 11.277C3.26288 11.5188 2.86982 11.5188 2.62614 11.277L1.2263 9.88812C0.981267 9.645 0.979713 9.24928 1.22283 9.00424C1.46595 8.75921 1.86167 8.75765 2.10671 9.00077L2.44215 9.33359ZM16.4885 8.72215C16.732 8.4815 17.1238 8.4815 17.3672 8.72215L18.7724 10.111C19.0179 10.3537 19.0202 10.7494 18.7776 10.9949C18.5349 11.2404 18.1392 11.2427 17.8937 11.0001L17.5521 10.6624C17.4943 14.8003 14.0846 18.125 9.90191 18.125C7.13633 18.125 4.71134 16.6725 3.3675 14.4949C3.18622 14.2012 3.2774 13.8161 3.57114 13.6348C3.86489 13.4535 4.24997 13.5447 4.43125 13.8384C5.5545 15.6586 7.58316 16.875 9.90191 16.875C13.4071 16.875 16.2433 14.0976 16.302 10.6641L15.962 11.0001C15.7165 11.2427 15.3208 11.2404 15.0782 10.9949C14.8355 10.7494 14.8378 10.3537 15.0833 10.111L16.4885 8.72215Z" fill="#676E74"/></svg></a>';
             }
 
-            $tooltip_base   = '<span class="header-tooltip dashicons dashicons-editor-help slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">';
+            $tooltip_base   = '<span class="header-tooltip slimstat-tooltip-trigger corner"><svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M8.6665 13.3125C8.97716 13.3125 9.229 13.0607 9.229 12.75V8.25C9.229 7.93934 8.97716 7.6875 8.6665 7.6875C8.35584 7.6875 8.104 7.93934 8.104 8.25V12.75C8.104 13.0607 8.35584 13.3125 8.6665 13.3125Z" fill="#9BA1A6"/> <path d="M8.6665 5.25C9.08072 5.25 9.4165 5.58579 9.4165 6C9.4165 6.41421 9.08072 6.75 8.6665 6.75C8.25229 6.75 7.9165 6.41421 7.9165 6C7.9165 5.58579 8.25229 5.25 8.6665 5.25Z" fill="#9BA1A6"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M0.604004 9C0.604004 4.5472 4.21371 0.9375 8.6665 0.9375C13.1193 0.9375 16.729 4.5472 16.729 9C16.729 13.4528 13.1193 17.0625 8.6665 17.0625C4.21371 17.0625 0.604004 13.4528 0.604004 9ZM8.6665 2.0625C4.83503 2.0625 1.729 5.16852 1.729 9C1.729 12.8315 4.83503 15.9375 8.6665 15.9375C12.498 15.9375 15.604 12.8315 15.604 9C15.604 5.16852 12.498 2.0625 8.6665 2.0625Z" fill="#9BA1A6"/></svg><span class="slimstat-tooltip-content">';
+            // $tooltip_base   = '<span class="header-tooltip dashicons dashicons-editor-help slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">';
             $header_tooltip = $tooltip_base . (!empty(self::$reports[$_report_id]['tooltip']) ? self::$reports[$_report_id]['tooltip'] . '<br /><br />' . esc_html($_report_id) : esc_html($_report_id)) . '</span></span>';
 
             // Allow third-party code to add more buttons
@@ -896,7 +901,9 @@ class wp_slimstat_reports
             $widget_title = "<h3>" . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . "</h3>";
         }
 
-        echo "<div class='postbox " . esc_attr($header_classes) . "' id='" . esc_attr($_report_id) . "'>{$header_buttons} $widget_title <div class='inside'>";
+        $bar_color = (!empty(self::$reports[$_report_id]['color'])) ? self::$reports[$_report_id]['color'] : '#EFF6FF';
+
+        echo "<div class='postbox " . esc_attr($header_classes) . "' style='--box-bar-color: " . esc_attr($bar_color) . ";' id='" . esc_attr($_report_id) . "'>{$header_buttons} $widget_title <div class='inside'>";
     }
 
     public static function report_footer()
@@ -936,7 +943,7 @@ class wp_slimstat_reports
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals 0') . '"></a> ';
         }
 
-        $pagination = '<p class="pagination">' . sprintf(__('Results %s - %s of %s', 'wp-slimstat'), number_format_i18n(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
+        $pagination = '<p class="pagination">' . sprintf(__('Showing %s - %s of %s', 'wp-slimstat'), number_format_i18n(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
 
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
             $pagination .= ' [' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]';
@@ -1005,6 +1012,7 @@ class wp_slimstat_reports
                 wp_slimstat::$settings['rows_to_show']
             );
 
+
             // Count the results
             $count_page_results = count($results);
 
@@ -1031,8 +1039,6 @@ class wp_slimstat_reports
                 $_args['columns'] = trim($_args['columns'][0]);
             }
 
-            echo self::report_pagination($count_page_results, count($all_results));
-
             $permalinks_enabled = get_option('permalink_structure');
 
             for ($i = 0; $i < $count_page_results; $i++) {
@@ -1046,7 +1052,15 @@ class wp_slimstat_reports
                         if (!empty($results[$i]['user_agent']) && wp_slimstat::$settings['show_complete_user_agent_tooltip'] == 'on') {
                             $element_pre_value = self::inline_help($results[$i]['user_agent'], false);
                         }
-                        $element_value = $results[$i]['browser'] . ((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0) ? ' ' . $results[$i]['browser_version'] : '');
+
+                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/browsers/' . strtolower($results[$i]['browser'] ) . '.png') ) ) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/' . strtolower($results[$i]['browser'] ) . '.png');
+                        } else {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                        }
+
+                        $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['browser'] . '" /> ';
+                        $element_value .= $results[$i]['browser'] . ((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0) ? ' ' . $results[$i]['browser_version'] : '');
                         break;
 
                     case 'category':
@@ -1055,8 +1069,19 @@ class wp_slimstat_reports
                         break;
 
                     case 'country':
+
+                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($results[$i]['country']) . '.svg') ) ) {
+                            $svg_path     = realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($results[$i]['country']) . '.svg') );
+                            $svg_content = file_get_contents($svg_path);
+                            $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
+
+                        } else {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
+                        }
+
                         $row_details   .= __('Code', 'wp-slimstat') . ": {$results[ $i ][ 'country' ]}";
-                        $element_value = wp_slimstat_i18n::get_string('c-' . $results[$i]['country']);
+                        $element_value .= wp_slimstat_i18n::get_string('c-' . $results[$i]['country']);
                         break;
 
                     case 'id':
@@ -1069,13 +1094,53 @@ class wp_slimstat_reports
                         break;
 
                     case 'language':
+                        $language_parts = explode('-', $results[$i][$_args['columns']]);
+                        $last_language_part = end($language_parts);
+                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . $last_language_part . '.svg') ) ) {
+                            $svg_path     = realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . $last_language_part . '.svg') );
+                            $svg_content = file_get_contents($svg_path);
+                            $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
+
+                        } else {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
+                        }
+
                         $row_details   = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
-                        $element_value = wp_slimstat_i18n::get_string('l-' . $results[$i][$_args['columns']]);
+                        $element_value .= wp_slimstat_i18n::get_string('l-' . $results[$i][$_args['columns']]);
                         break;
 
                     case 'platform':
                         $row_details                    = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
-                        $element_value                  = wp_slimstat_i18n::get_string($results[$i][$_args['columns']]);
+
+                        $icons = array(
+                            'android' => 'and',
+                            'chromeos' => 'chr',
+                            'ios' => 'ios',
+                            'linux' => 'lin',
+                            'ubuntu' => 'ubu',
+                            'windows' => 'win',
+                            'win7' => 'win',
+                            'win8.1' => 'win',
+                            'win10' => 'win',
+                            'win11' => 'win',
+                            'macos' => 'mac',
+                            'macosx' => 'mac',
+                        );
+
+                        $platform_parts = explode('-', $results[$i][$_args['columns']]);
+                        $last_platform_part = end($platform_parts);
+
+                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . strtolower($last_platform_part) . '.webp') ) ) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . strtolower($last_platform_part) . '.webp');
+                        } else if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp') ) ) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $icons[strtolower($last_platform_part)] . '.webp');
+                        } else {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                        }
+
+                        $element_value                  = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . strtolower($last_platform_part) . '" /> ';
+                        $element_value                 .= wp_slimstat_i18n::get_string($results[$i][$_args['columns']]);
                         $results[$i][$_args['columns']] = str_replace('p-', '', $results[$i][$_args['columns']]);
                         break;
 
@@ -1117,7 +1182,11 @@ class wp_slimstat_reports
                         break;
 
                     case 'username':
-                        $element_value = $results[$i]['username'];
+                        $element_custom_value = get_user_by('login', $results[$i]['username']);
+                        $element_value = "<a href='" . get_author_posts_url($element_custom_value->ID) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
+                        $element_value .= get_avatar($element_custom_value->ID, 18);
+                        $element_value .= $results[$i]['username'];
+                        $element_value .= "</a>";
                         if (wp_slimstat::$settings['show_display_name'] == 'on') {
                             $element_custom_value = get_user_by('login', $results[$i]['username']);
                             if (is_object($element_custom_value)) {
@@ -1125,7 +1194,14 @@ class wp_slimstat_reports
                             }
                         }
                         break;
-
+                    case 'author': // Backward compatibility
+                        $author_id = $results[$i]['counthits'];
+                        $author    = get_userdata($author_id);
+                        $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
+                        $element_value .= get_avatar($author_id, 18);
+                        $element_value .= $author ? empty($author->display_name) ? $author->user_login : $author->display_name : $results[$i]['author'];
+                        $element_value .= "</a>";
+                        break;
                     case 'visit_id':
                         $resource_title = self::get_resource_title($results[$i]['resource']);
                         if ($resource_title != $results[$i]['resource']) {
@@ -1183,7 +1259,15 @@ class wp_slimstat_reports
                     $row_details = "<b class='slimstat-tooltip-content'>$row_details</b>";
                 }
 
-                $row_output = "<p class='slimstat-tooltip-trigger'>$element_pre_value$element_value$percentage $row_details</p>";
+                $bar = "";
+                $strip_percentage = trim(strip_tags($percentage));
+                if (strpos($strip_percentage, '%') !== false) {
+                    $strip_percentage = str_replace('%', '', $strip_percentage);
+                }
+                if( !empty($strip_percentage) ) {
+                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . $strip_percentage . '%"></span></span>';
+                }
+                $row_output = "<p class='slimstat-tooltip-trigger'>$bar$element_pre_value$element_value$percentage $row_details</p>";
 
                 // Strip all the filter links, if this information is shown on the frontend
                 if (!is_admin()) {
@@ -1191,6 +1275,14 @@ class wp_slimstat_reports
                 }
 
                 echo $row_output;
+
+            }
+            if (!defined('DOING_AJAX') || !DOING_AJAX) {
+                echo '</div>';
+            }
+            echo self::report_pagination($count_page_results, count($all_results));
+            if (!defined('DOING_AJAX') || !DOING_AJAX) {
+                echo '<div>';
             }
         }
 
@@ -1344,8 +1436,6 @@ class wp_slimstat_reports
             }
         }
 
-        echo self::report_pagination($count_page_results, count($all_results));
-
         $blog_url = '';
         if (isset($results[0]['blog_id'])) {
             $blog_url = get_site_url($results[0]['blog_id']);
@@ -1365,7 +1455,9 @@ class wp_slimstat_reports
 
             echo "</b></p>";
         }
-
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '</div>';
+        echo self::report_pagination($count_page_results, count($all_results));
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '<div>';
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
@@ -1398,7 +1490,6 @@ class wp_slimstat_reports
         }
 
         echo wp_kses_post(wp_slimstat_db::$debug_message);
-        echo self::report_pagination($count_page_results, count($all_results));
 
         foreach ($results as $a_result) {
             if (empty($a_result['counthits'])) {
@@ -1418,6 +1509,10 @@ class wp_slimstat_reports
 
             echo "<p>{$a_result[ 'resource' ]} <span>{$a_result[ 'counthits' ]}</span><br/>" . implode(', ', $group_markup) . "</p>";
         }
+
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '</div>';
+        echo self::report_pagination($count_page_results, count($all_results));
+        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '<div>';
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
@@ -1540,73 +1635,116 @@ class wp_slimstat_reports
 
     public static function show_world_map()
     {
-        $countries = wp_slimstat_db::get_top('country');
-
-        // Backward compatibility
-        if (!$countries) {
-            $countries = array();
-        }
-
+        $countries = wp_slimstat_db::get_top('country') ?: array();
         $recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
+        $data_points = [];
 
-        $data_points = array();
         if (!empty($recent_visits)) {
             $recent_visits = array_slice($recent_visits, 0, wp_slimstat::$settings['max_dots_on_map']);
-
             foreach ($recent_visits as $a_recent_visit) {
                 if (!empty($a_recent_visit['city']) && !empty($a_recent_visit['location'])) {
                     list($latitude, $longitude) = explode(',', $a_recent_visit['location']);
                     $clean_city_name = htmlentities($a_recent_visit['city'], ENT_QUOTES, 'UTF-8');
-                    $date_time       = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_recent_visit['dt'], true);
-                    $data_points[]   = "{zoomLevel:7,type:'circle',title:'{$clean_city_name}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
+                    $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_recent_visit['dt'], true);
+                    $data_points[] = "{zoomLevel:7,type:'circle',title:'{$clean_city_name}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
                 }
             }
         }
 
-        $data_areas = array();
-
-        foreach (wp_slimstat_i18n::get_country_codes() as $a_code => $a_string) {
-            $data_areas[$a_code] = '';
-        }
-
+        $data_areas = [];
+        $country_stats = [];
         $max = 0;
 
         foreach ($countries as $a_country) {
-            $current_country_code = strtolower($a_country['country']);
-            if (!array_key_exists($current_country_code, $data_areas)) {
-                continue;
-            }
+            $code = strtolower($a_country['country']);
+            $visits = (int) $a_country['counthits'];
+            $percent = (wp_slimstat_db::$pageviews > 0) ? round((100 * $visits / wp_slimstat_db::$pageviews), 2) : 0;
+            $country_name = wp_slimstat_i18n::get_string('c-' . $a_country['country'], 'wp-slimstat');
 
-            $percentage                        = (wp_slimstat_db::$pageviews > 0) ? sprintf("%01.2f", (100 * $a_country['counthits'] / wp_slimstat_db::$pageviews)) : 0;
-            $percentage_format                 = number_format_i18n($percentage, 2);
-            $balloon_text                      = wp_slimstat_i18n::get_string('c-' . $a_country['country'], 'wp-slimstat') . ': ' . $percentage_format . '% (' . number_format_i18n($a_country['counthits']) . ')';
-            $data_areas[$current_country_code] = $percentage;
+            $data_areas[$code] = $visits;
+            $country_stats[] = [
+                'code' => $code,
+                'name' => $country_name,
+                'visits' => $visits,
+                'percent' => $percent
+            ];
 
-            if ($percentage > $max) {
-                $max = $percentage;
+            if ($percent > $max) {
+                $max = $percent;
             }
         }
+
+        usort($country_stats, function ($a, $b) {
+            return $b['visits'] <=> $a['visits'];
+        });
+        $top_countries = array_slice($country_stats, 0, 5);
 
         $path_slimstat = dirname(dirname(__FILE__));
         wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
         wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
         ?>
 
-        <div id="map_slim_p6_01" style="height: 100%"></div>
+        <div class="map-container">
+            <div id="map_slim_p6_01"></div>
+            <div class="top-countries-wrap">
+                <div class="top-countries">
+                    <h4>Top Countries</h4>
+                    <?php foreach ($top_countries as $country): ?>
+                        <div class="country-bar">
+                            <div class="country-flag-container">
+                                <?php
+                                if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($country['code']) . '.svg') ) ) {
+                                    $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower($country['code']) . '.svg');
+                                    echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
+                                } else {
+                                    $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                                    echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
+                                }
+                                ?>
+                            </div>
+                            <strong><?= esc_html($country['name']) ?></strong>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width: <?= $country['percent'] ?>%;"></div>
+                            </div>
+                            <span><?= $country['percent'] ?>%</span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
 
         <script type="text/javascript">
             jQuery(function () {
                 jQuery('#map_slim_p6_01').vectorMap({
                     map: 'world_en',
-                    values: <?php echo json_encode($data_areas); ?>
+                    backgroundColor: '#fff',
+                    hoverOpacity: 0.7,
+                    showTooltip: true,
+                    normalizeFunction: 'polynomial',
+                    values: <?php echo json_encode($data_areas); ?>,
+                    enableZoom: true,
+                    onLabelShow: function (event, label, code) {
+                        const data = <?php echo json_encode($country_stats); ?>;
+                        const country = data.find(c => c.code === code);
+                        if (country) {
+                            label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' Visitors</p>');
+                        } else {
+                            label.html( '<canvas></canvas><h3>'  + label.text()  + '</h3><p>0 Visitors</p>');
+                        }
+                    },
+                    scaleColors: ['#fcd7dc', '#E7294B'],
+                    borderColor: '#ffffff',
+                    color: '#D4D7E2',
                 });
             });
-        </script><?php
+        </script>
 
+        <?php
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
     }
+
 
     public static function get_search_terms_info($_searchterms = '', $_referer = '', $_serp_only = false)
     {
