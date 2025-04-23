@@ -840,7 +840,8 @@ body {
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout {
     /* Hide all non-Slimstat notices in the admin */
-    div[class*="admin-notice"],
+    div[class*="-notice"]:not(.slimstat-notice),
+    div[class*="admin-notice"]:not(.slimstat-notice),
     .notice:not(.slimstat-notice),
     .update-nag:not(.slimstat-notice),
     .error:not(.slimstat-notice) {
