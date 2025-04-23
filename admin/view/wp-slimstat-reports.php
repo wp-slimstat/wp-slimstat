@@ -1183,13 +1183,14 @@ class wp_slimstat_reports
 
                     case 'username':
                         $element_custom_value = get_user_by('login', $results[$i]['username']);
-                        if( !is_object($element_custom_value) ) {
+                        if( $element_custom_value ) {
                             $element_value = "<a href='" . get_author_posts_url($element_custom_value->ID) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
                             $element_value .= get_avatar($element_custom_value->ID, 18);
                             $element_value .= $results[$i]['username'];
                             $element_value .= "</a>";
                         } else {
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'>{$results[$i]['username']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['username']} (". __('Unknown', 'wp-slimstat') .")</a>";
                         }
 
                         if (wp_slimstat::$settings['show_display_name'] == 'on') {
@@ -1202,10 +1203,15 @@ class wp_slimstat_reports
                     case 'author': // Backward compatibility
                         $author_id = $results[$i]['counthits'];
                         $author    = get_userdata($author_id);
-                        $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
-                        $element_value .= get_avatar($author_id, 18);
-                        $element_value .= $author ? empty($author->display_name) ? $author->user_login : $author->display_name : $results[$i]['author'];
-                        $element_value .= "</a>";
+                        if( $author ) {
+                            $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
+                            $element_value .= get_avatar($author_id, 18);
+                            $element_value .= $author ? empty($author->display_name) ? $author->user_login : $author->display_name : $results[$i]['author'];
+                            $element_value .= "</a>";
+                        } else {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['author']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                        }
                         break;
                     case 'visit_id':
                         $resource_title = self::get_resource_title($results[$i]['resource']);
