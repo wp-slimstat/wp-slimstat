@@ -90,7 +90,7 @@ class wp_slimstat_reports
                 'callback_args' => array(
                     'type'             => 'recent',
                     'columns'          => 'ip',
-                    'where'            => 'dt_out > ' . (date_i18n('U') - 300) . ' OR dt > ' . (date_i18n('U') - 300),
+                    'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ' OR dt > ' . (date_i18n('U') - 300) . ')',
                     'use_date_filters' => false,
                     'raw'              => array('wp_slimstat_db', 'get_recent')
                 ),

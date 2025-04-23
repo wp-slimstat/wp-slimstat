@@ -3,6 +3,7 @@
 - **Fix:** Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
 - **Fix:** Fix a database error related to the notes column.
 - **Fix:** Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
+- **Enhancement**: Optimized SQL query to reduce the chances of errors and improve overall performance.
 - **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
 - **Enhancement**: Added support for the WordPress date format setting for the charts.
 - **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.

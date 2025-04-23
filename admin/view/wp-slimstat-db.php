@@ -823,6 +823,7 @@ class wp_slimstat_db
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
+     
 			ORDER BY counthits DESC
 			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
@@ -937,16 +938,26 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_column, $_use_date_filters);
 
+        // Sanitize and protect WHERE clause
+        if (strpos($_where, 'OR') !== false && strpos($_where, '(') === false) {
+            $_where = '(' . $_where . ')';
+        }
+
+        $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+
         // prepare the query
         $sql = $GLOBALS['wpdb']->prepare("
-			SELECT $columns
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE $_where
-			$group_by
-			ORDER BY $_order_by
-			LIMIT %d, %d",
-                self::$filters_normalized['misc']['start_from'],
-                self::$filters_normalized['misc']['limit_results']);
+            SELECT $columns
+            FROM {$GLOBALS['wpdb']->prefix}slim_stats
+            WHERE $_where
+            $group_by
+            ORDER BY $_order_by
+            LIMIT %d, %d",
+            $start,
+            $limit 
+        );
+      
         return self::get_results($sql, $columns, 'dt DESC');
     }
 
