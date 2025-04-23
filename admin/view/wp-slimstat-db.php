@@ -696,11 +696,17 @@ class wp_slimstat_db
             $params['granularity']       = 'HOUR';
         } else if (self::$filters_normalized['utime']['range'] < 10368000) {
             $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $params['data_points_label'] = (strpos(number_format_i18n(1000), '.') === false) ? 'm/d' : 'd/m';
+            $format = get_option('date_format');
+            $format = str_replace(array('Y-', 'Y/', 'Y.', 'Y ', ', Y', ' Y' ), '', $format);
+            $format = str_replace(array('y-', 'y/', 'y.', 'y ', ', y', ' y' ), '', $format);
+            $params['data_points_label'] = $format;
             $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 86400);
             $params['granularity']       = 'DAY';
         } else {
             $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+            $format = get_option('date_format');
+            $format = str_replace(array('d-', 'd/', 'd.', 'd '), '', $format);
+            $format = str_replace(array('j-', 'j/', 'j.', 'j '), '', $format);
             $params['data_points_label'] = 'm/y';
             $params['data_points_count'] = self::count_months_between(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']);
             $params['granularity']       = 'MONTH';
@@ -817,6 +823,7 @@ class wp_slimstat_db
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
+     
 			ORDER BY counthits DESC
 			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
@@ -854,6 +861,7 @@ class wp_slimstat_db
     public static function get_overview_summary()
     {
         $days_in_range = ceil((wp_slimstat_db::$filters_normalized['utime']['end'] - wp_slimstat_db::$filters_normalized['utime']['start']) / 86400);
+        $days_in_range = ($days_in_range < 1) ? 1 : $days_in_range;
         $results       = array();
 
         // Turn date_i18n filters off
@@ -940,15 +948,16 @@ class wp_slimstat_db
 
         // prepare the query
         $sql = $GLOBALS['wpdb']->prepare("
-			SELECT $columns
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE $_where
-			$group_by
-			ORDER BY $_order_by
-			LIMIT %d, %d",
-                $start,
-                $limit
-            );
+            SELECT $columns
+            FROM {$GLOBALS['wpdb']->prefix}slim_stats
+            WHERE $_where
+            $group_by
+            ORDER BY $_order_by
+            LIMIT %d, %d",
+            $start,
+            $limit 
+        );
+      
         return self::get_results($sql, $columns, 'dt DESC');
     }
 
@@ -1060,7 +1069,7 @@ class wp_slimstat_db
             $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "type:click%"', 'notes');
         } else {
             $from  = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
-            $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "_ype:click%"', 'notes', true, 't1');
+            $where = wp_slimstat_db::get_combined_where('te.notes NOT LIKE "_ype:click%"', 'te.notes', true, 't1');
         }
 
         return self::get_results("

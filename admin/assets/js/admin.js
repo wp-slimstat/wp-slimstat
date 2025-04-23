@@ -514,15 +514,21 @@ var SlimStatAdmin = {
 
             jQuery.ajax({method: 'POST', url: ajaxurl, data: data})
                 .done(function (response) {
-                    // Charts don't play nice with the "fade" animation we have for the other reports
+                    var filteredResponse = jQuery('<div>').html(response);
+
+                    if( id !== 'slim_p8_02' && id !== 'slim_p8_01' ) {
+                        filteredResponse.find('.pagination').remove();
+                        var paginationHtml = jQuery(response).last().html();
+                        jQuery('#' + id + ' .pagination').html(paginationHtml);
+                    }
+
                     if (jQuery('#' + id).hasClass('chart')) {
-                        jQuery(inner_content).html(response);
+                        jQuery(inner_content).html(filteredResponse.html());
                     } else {
                         jQuery(inner_content).fadeOut(500, function () {
-                            jQuery(this).html(response).fadeIn(500);
+                            jQuery(this).html(filteredResponse.html()).fadeIn(500);
                         });
 
-                        // If we are refreshing the Access Log, let's reset the countdown timer
                         if (id == 'slim_p7_02') {
                             SlimStatAdmin._refresh_timer = SlimStatAdminParams.refresh_interval;
                         }
@@ -1174,7 +1180,7 @@ var SlimStatAdmin = {
                 return !d || c && d === a.css(c) || ra.test(d) ? C : d
             }, _parseColours: function (a) {
                 var b = this.qtip.elements, c = this.element.css("cssText", ""), e = la + s(a[a.precedance]) + s(ma), f = this._useTitle(a) && b.titlebar || b.content, g = this._invalidColour, h = [];
-                return h[0] = g(c, na) || g(f, na) || g(b.content, na) || g(b.tooltip, na) || c.css(na), h[1] = g(c, e, ma) || g(f, e, ma) || g(b.content, e, ma) || g(b.tooltip, e, ma) || b.tooltip.css(e), d("*", c).add(c).css("cssText", na + ":" + oa + pa + ";" + la + ":0" + pa + ";"), h
+                return h[0] = g(c, na) || g(f, na) || g(b.content, na) || g(b.tooltip, na) || c.css(na), h[1] = g(c, e, ma) || g(f, e, ma) || g(b.content, e, ma) || g(b.tooltip, e, ma) || b.tooltip.css(e), d("*", c).add(c).css("cssText", na + ":" + oa + ";" + la + ":0" + pa + ";"), h
             }, _calculateSize: function (a) {
                 var b, c, d, e = a.precedance === F, f = this.options.width, g = this.options.height, h = "c" === a.abbrev(), i = (e ? f : g) * (h ? .5 : 1), j = Math.pow, k = Math.round, l = Math.sqrt(j(i, 2) + j(g, 2)), m = [this.border / i * l, this.border / g * l];
                 return m[2] = Math.sqrt(j(m[0], 2) - j(this.border, 2)), m[3] = Math.sqrt(j(m[1], 2) - j(this.border, 2)), b = l + m[2] + m[3] + (h ? 0 : m[0]), c = b / l, d = [k(c * f), k(c * g)], e ? d : d.reverse()
