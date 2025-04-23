@@ -3,7 +3,7 @@
 $already_seen = array();
 ?>
 
-<div class="backdrop-container">
+<div class="backdrop-container ">
     <div class="wrap slimstat slimstat-layout">
         <h2><?php _e('Customize and organize your reports', 'wp-slimstat') ?></h2>
         <p><?php

@@ -696,11 +696,17 @@ class wp_slimstat_db
             $params['granularity']       = 'HOUR';
         } else if (self::$filters_normalized['utime']['range'] < 10368000) {
             $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $params['data_points_label'] = (strpos(number_format_i18n(1000), '.') === false) ? 'm/d' : 'd/m';
+            $format = get_option('date_format');
+            $format = str_replace(array('Y-', 'Y/', 'Y.', 'Y ', ', Y', ' Y' ), '', $format);
+            $format = str_replace(array('y-', 'y/', 'y.', 'y ', ', y', ' y' ), '', $format);
+            $params['data_points_label'] = $format;
             $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 86400);
             $params['granularity']       = 'DAY';
         } else {
             $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+            $format = get_option('date_format');
+            $format = str_replace(array('d-', 'd/', 'd.', 'd '), '', $format);
+            $format = str_replace(array('j-', 'j/', 'j.', 'j '), '', $format);
             $params['data_points_label'] = 'm/y';
             $params['data_points_count'] = self::count_months_between(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']);
             $params['granularity']       = 'MONTH';
@@ -817,8 +823,9 @@ class wp_slimstat_db
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE $where AND {$_args[ 'group_by' ]} IS NOT NULL
 			GROUP BY {$_args[ 'group_by' ]}
+
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_args['group_by'], $_args['group_by'] . ' ASC');
@@ -854,6 +861,7 @@ class wp_slimstat_db
     public static function get_overview_summary()
     {
         $days_in_range = ceil((wp_slimstat_db::$filters_normalized['utime']['end'] - wp_slimstat_db::$filters_normalized['utime']['start']) / 86400);
+        $days_in_range = ($days_in_range < 1) ? 1 : $days_in_range;
         $results       = array();
 
         // Turn date_i18n filters off
@@ -895,6 +903,7 @@ class wp_slimstat_db
 
     public static function get_recent($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_columns = '', $_order_by = 'dt DESC')
     {
+        global $wpdb;
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
             $_where            = !empty($_column['where']) ? $_column['where'] : '';
@@ -930,16 +939,28 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_column, $_use_date_filters);
 
-        // prepare the query
-        $sql = $GLOBALS['wpdb']->prepare("
-			SELECT $columns
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE $_where
-			$group_by
-			ORDER BY $_order_by
-			LIMIT %d, %d", 
-                self::$filters_normalized['misc']['start_from'],
-                self::$filters_normalized['misc']['limit_results']);
+        // Sanitize and protect WHERE clause
+        if (strpos($_where, 'OR') !== false && strpos($_where, '(') === false) {
+            $_where = '(' . $_where . ')';
+        }
+
+        $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+
+        // Prepare the query
+        $sql = $wpdb->prepare("
+            SELECT $columns
+            FROM {$wpdb->prefix}slim_stats
+            WHERE [[_WHERE_]]
+            $group_by
+            ORDER BY $_order_by
+            LIMIT %d, %d",
+            $start,
+            $limit
+        );
+
+        $sql = str_replace('[[_WHERE_]]', $_where, $sql);
+
         return self::get_results($sql, $columns, 'dt DESC');
     }
 
@@ -973,6 +994,8 @@ class wp_slimstat_db
 
     public static function get_top($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '')
     {
+        global $wpdb;
+
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
             $_where            = !empty($_column['where']) ? $_column['where'] : '';
@@ -992,19 +1015,33 @@ class wp_slimstat_db
 
         $_where = self::get_combined_where($_where, $_as_column, $_use_date_filters);
 
-        // prepare the query
-        $sql = $GLOBALS['wpdb']->prepare("
-			SELECT $_column, COUNT(*) counthits
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE $_where
-			GROUP BY $group_by_column $_having
-			ORDER BY counthits DESC
-			LIMIT %d, %d", 
-                self::$filters_normalized['misc']['start_from'],
-                self::$filters_normalized['misc']['limit_results']);
-        return self::get_results($sql, ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
-            'counthits DESC', ((!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column),
-            'SUM(counthits) AS counthits');
+        $column = esc_sql($_column);
+        $where_clause = esc_sql($_where);
+        $group_by = esc_sql($group_by_column);
+        $having_clause = esc_sql($_having);
+        $start_from = intval(self::$filters_normalized['misc']['start_from']);
+        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
+
+        $sql = "
+            SELECT $column, COUNT(*) AS counthits
+            FROM {$wpdb->prefix}slim_stats
+            WHERE $where_clause
+            GROUP BY $group_by
+            $having_clause
+            ORDER BY counthits DESC
+            LIMIT %d, %d
+        ";
+
+        $prepared_sql = $wpdb->prepare($sql, $start_from, $limit_results);
+        $results = self::get_results(
+            $prepared_sql,
+            (!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column,
+            'counthits DESC',
+            (!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column,
+            'SUM(counthits) AS counthits'
+        );
+
+        return $results;
     }
 
     public static function get_top_aggr($_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX')
@@ -1038,7 +1075,7 @@ class wp_slimstat_db
 			) AS ts1 JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON ts1.aggrid = t1.id
 			GROUP BY $_outer_select_column
 			ORDER BY counthits DESC
-			LIMIT %d, %d", 
+			LIMIT %d, %d",
                 self::$filters_normalized['misc']['start_from'],
                 self::$filters_normalized['misc']['limit_results']);
         return self::get_results($sql, $_outer_select_column, 'counthits DESC', $_outer_select_column, "$_aggr_function(aggrid), SUM(counthits)");
@@ -1051,7 +1088,7 @@ class wp_slimstat_db
             $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "type:click%"', 'notes');
         } else {
             $from  = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
-            $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "_ype:click%"', 'notes', true, 't1');
+            $where = wp_slimstat_db::get_combined_where('te.notes NOT LIKE "_ype:click%"', 'te.notes', true, 't1');
         }
 
         return self::get_results("

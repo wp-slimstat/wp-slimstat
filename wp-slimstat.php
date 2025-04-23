@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.2.10
+ * Version: 5.2.11
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -24,7 +24,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version
-define('SLIMSTAT_ANALYTICS_VERSION', '5.2.10');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.2.11');
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
@@ -785,7 +785,7 @@ class wp_slimstat
         }
 
         // Validation the parameter w
-        if (in_array($w, array('count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link', 'ip', 'id', 'searchterms', 'username', 'resource', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_09', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p2_23')) == false) {
+        if (in_array($w, array('count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link', 'ip', 'id', 'searchterms', 'username', 'resource', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p2_23')) == false) {
             return '<!-- Slimstat Shortcode Error: invalid parameter for w -->';
         }
 

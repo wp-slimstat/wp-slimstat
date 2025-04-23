@@ -39,6 +39,7 @@ nbproject
 
 #vscode
 .vscode
+.qodo
 
 #composer.lock
 composer.lock

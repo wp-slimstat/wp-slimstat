@@ -36,6 +36,7 @@ class wp_slimstat_admin
 
         // Define the default screens
         $has_network_reports = get_user_option("meta-box-order_slimstat_page_slimlayout-network", 1);
+
         self::$screens_info  = array(
             'slimview1'  => array(
                 'is_report_group' => true,
@@ -591,7 +592,7 @@ class wp_slimstat_admin
     public static function wp_slimstat_stylesheet($_hook = '')
     {
         wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)), false, SLIMSTAT_ANALYTICS_VERSION);
-        wp_enqueue_style('wp-slimstat');
+        wp_enqueue_style('wp-slimstat', array(), array(), SLIMSTAT_ANALYTICS_VERSION, 'all');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);
@@ -840,7 +841,7 @@ class wp_slimstat_admin
         $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s')) . ')', '*', true);
 
         $sql = wp_slimstat::$wpdb->prepare("
-			SELECT resource, COUNT( DISTINCT $column ) as counthits 
+			SELECT resource, COUNT( DISTINCT $column ) as counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE " . $where . "
 			GROUP BY resource
@@ -908,9 +909,9 @@ class wp_slimstat_admin
         $_message = wpautop(wp_kses_post($_message));
 
         if (!empty($_dismiss_handle)) {
-            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible slimstat-notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
         } else {
-            echo '<div class="notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
         }
     }
     // END: show_message
@@ -1303,8 +1304,8 @@ class wp_slimstat_admin
         if (empty(\wp_slimstat_reports::$reports[$_report_id]['callback_args']) || !array_key_exists('raw', \wp_slimstat_reports::$reports[$_report_id]['callback_args'])) {
             return $_header_buttons;
         }
-
-        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '"><span class="dashicons dashicons-lock"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        $utm_medium = !empty($_report_id) ? $_report_id : 'report-unknown';
+        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank">' . __('Export', 'wp-slimstat-pro') . '<svg width="32" height="20" viewBox="0 0 32 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="export-pro-badge"><rect y="0.5" width="32" height="19" rx="9.5" fill="url(#paint0_linear_2525_5330)"/><path d="M6.75852 14.5V5.77273H10.2017C10.8636 5.77273 11.4276 5.89915 11.8935 6.15199C12.3594 6.40199 12.7145 6.75 12.9588 7.19602C13.206 7.6392 13.3295 8.15057 13.3295 8.73011C13.3295 9.30966 13.2045 9.82102 12.9545 10.2642C12.7045 10.7074 12.3423 11.0526 11.8679 11.2997C11.3963 11.5469 10.8253 11.6705 10.1548 11.6705H7.96023V10.1918H9.85653C10.2116 10.1918 10.5043 10.1307 10.7344 10.0085C10.9673 9.88352 11.1406 9.71165 11.2543 9.4929C11.3707 9.27131 11.429 9.01705 11.429 8.73011C11.429 8.44034 11.3707 8.1875 11.2543 7.97159C11.1406 7.75284 10.9673 7.58381 10.7344 7.46449C10.5014 7.34233 10.206 7.28125 9.84801 7.28125H8.60369V14.5H6.75852ZM14.494 14.5V7.95455H16.2539V9.09659H16.3221C16.4414 8.69034 16.6417 8.38352 16.9229 8.17614C17.2042 7.96591 17.5281 7.8608 17.8945 7.8608C17.9854 7.8608 18.0835 7.86648 18.1886 7.87784C18.2937 7.8892 18.386 7.90483 18.4656 7.92472V9.53551C18.3803 9.50994 18.2624 9.48722 18.1119 9.46733C17.9613 9.44744 17.8235 9.4375 17.6985 9.4375C17.4315 9.4375 17.1928 9.49574 16.9826 9.61222C16.7752 9.72585 16.6104 9.88494 16.4883 10.0895C16.369 10.294 16.3093 10.5298 16.3093 10.7969V14.5H14.494ZM22.0568 14.6278C21.3949 14.6278 20.8224 14.4872 20.3395 14.206C19.8594 13.9219 19.4886 13.527 19.2273 13.0213C18.9659 12.5128 18.8352 11.9233 18.8352 11.2528C18.8352 10.5767 18.9659 9.9858 19.2273 9.48011C19.4886 8.97159 19.8594 8.5767 20.3395 8.29545C20.8224 8.01136 21.3949 7.86932 22.0568 7.86932C22.7188 7.86932 23.2898 8.01136 23.7699 8.29545C24.2528 8.5767 24.625 8.97159 24.8864 9.48011C25.1477 9.9858 25.2784 10.5767 25.2784 11.2528C25.2784 11.9233 25.1477 12.5128 24.8864 13.0213C24.625 13.527 24.2528 13.9219 23.7699 14.206C23.2898 14.4872 22.7188 14.6278 22.0568 14.6278ZM22.0653 13.2216C22.3665 13.2216 22.6179 13.1364 22.8196 12.9659C23.0213 12.7926 23.1733 12.5568 23.2756 12.2585C23.3807 11.9602 23.4332 11.6207 23.4332 11.2401C23.4332 10.8594 23.3807 10.5199 23.2756 10.2216C23.1733 9.9233 23.0213 9.6875 22.8196 9.5142C22.6179 9.34091 22.3665 9.25426 22.0653 9.25426C21.7614 9.25426 21.5057 9.34091 21.2983 9.5142C21.0938 9.6875 20.9389 9.9233 20.8338 10.2216C20.7315 10.5199 20.6804 10.8594 20.6804 11.2401C20.6804 11.6207 20.7315 11.9602 20.8338 12.2585C20.9389 12.5568 21.0938 12.7926 21.2983 12.9659C21.5057 13.1364 21.7614 13.2216 22.0653 13.2216Z" fill="white"/><defs><linearGradient id="paint0_linear_2525_5330" x1="32" y1="1" x2="1.05151e-06" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#E83051"/><stop offset="1" stop-color="#FF575A"/></linearGradient></defs></svg></a> ' . $_header_buttons;
     }
 
     public static function add_header()

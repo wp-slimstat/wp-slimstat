@@ -1,11 +1,11 @@
 === SlimStat Analytics ===
-Contributors: veronalabs, coolmann, toxicum, mostafas1990
+Contributors: veronalabs, coolmann, toxicum, parhumm, mostafas1990
 Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
-Tested up to: 6.7
-Stable tag: 5.2.10
+Tested up to: 6.8
+Stable tag: 5.2.11
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,11 @@ Track returning customers and registered users, monitor Javascript events, detec
 == Please note ==
 * If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
 
+= Report Bugs =
+Having trouble with a bug? Please [create an issue](https://github.com/wp-slimstat/wp-slimstat/issues/new) on GitHub. Kindly note that [GitHub](https://github.com/wp-slimstat/wp-slimstat) is exclusively for bug reports; other inquiries will be closed.
+
+For security vulnerabilities, please report them through the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/database/wordpress/plugin/wp-slimstat/vdp). The Patchstack team will validate, triage, and handle any security issues.
+
 == Frequently Asked Questions ==
 An extensive knowledge base is available on our [website](https://www.wp-slimstat.com/).
 
@@ -65,8 +70,17 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2.10 - 2025-03-09 =
-- **Enhancement**: Improved SQL update query to support offset with `LIMIT`.
+= 5.2.11 - 2025-04-23 =
+- **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.
+- **Enhancement**: Optimized SQL query to reduce the chances of errors and improve overall performance.
+- **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
+- **Enhancement**: Added support for the WordPress date format setting for the charts.
+- **Fix**: Fatal error in EmailReportsAddon.php for missing `get_plugins` method.
+- **Fix**: Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
+- **Fix**: Fix a database error related to the notes column.
+- **Fix**: Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
+- **Fix**: Addressed several user-reported issues to enhance overall stability and user experience.
+- **Fix**: Investigate and resolve the "Division by zero" fatal error in `wp-slimstat-db.php` caused by PHP version 8.2.22. Further investigation needed to determine the root cause and provide a fix.
 
 = 5.2.9 - 2024-11-12 =
 - **Enhancement**: Ensured compatibility with WordPress version 6.7.
