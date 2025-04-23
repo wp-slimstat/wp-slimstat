@@ -197,33 +197,47 @@ var SlimStat = {
 		}
 
 		if ( use_beacon && navigator.sendBeacon ) {
-			navigator.sendBeacon( SlimStatParams.ajaxurl, data );
-		}
-		else {
 			try {
-				xhr = new XMLHttpRequest();
-			} catch ( failed ) {
-				return false;
+				return navigator.sendBeacon(SlimStatParams.ajaxurl, data);
+			} catch (e) {
+				console.error('Beacon failed:', e);
 			}
+		}
 
-			if ( "object" == typeof xhr ) {
-				xhr.open( "POST", SlimStatParams.ajaxurl, true );
-				xhr.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
-				xhr.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
-				xhr.withCredentials = true;
-				xhr.send( data );
+		var xhr;
+		try {
+			xhr = new XMLHttpRequest();
+		} catch (e) {
+			console.error('XMLHttpRequest not supported:', e);
+			return false;
+		}
 
-				xhr.onreadystatechange = function() {
-					if ( 4 == xhr.readyState ) {
-						parsed_id = parseInt( xhr.responseText );
-						if ( !isNaN( parsed_id ) && parsed_id > 0 ) {
+		if (xhr) {
+			xhr.open('POST', SlimStatParams.ajaxurl, true);
+			xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+			xhr.withCredentials = true;
+
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4) {
+					if (xhr.status >= 200 && xhr.status < 300) {
+						var parsed_id = parseInt(xhr.responseText, 10);
+						if (!isNaN(parsed_id) && parsed_id > 0) {
 							SlimStatParams.id = xhr.responseText;
 						}
+					} else {
+						console.error('Server error:', xhr.status, xhr.statusText);
 					}
 				}
+			};
 
-				return true;
+			try {
+				xhr.send(data);
+			} catch (e) {
+				console.error('XHR send failed:', e);
 			}
+
+			return true;
 		}
 
 		return false;
@@ -403,10 +417,10 @@ var SlimStat = {
 }
 
 // Helper function
-if ( typeof String.prototype.trim !== 'function' ) {
-	String.prototype.trim = function() {
-		return this.replace( /^\s+|\s+$/g, '' );
-	}
+if (!String.prototype.trim) {
+	String.prototype.trim = function () {
+		return this.replace(/^\s+|\s+$/g, '');
+	};
 }
 
 // Ok, let's go, Sparky!
@@ -439,11 +453,15 @@ if ( typeof String.prototype.trim !== 'function' ) {
 			};
 
 			var fingerprintAndSend = function () {
-				Fingerprint2.get(options, function (components) {
-					SlimStat.init_fingerprint_hash(components);
-					SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
-					SlimStat.show_optout_message();
-				});
+				try {
+					Fingerprint2.get(options, function (components) {
+						SlimStat.init_fingerprint_hash(components);
+						SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
+						SlimStat.show_optout_message();
+					});
+				} catch (e) {
+					console.error('Fingerprint2 failed:', e);
+				}
 			};
 
 			if (window.requestIdleCallback) {
@@ -455,44 +473,63 @@ if ( typeof String.prototype.trim !== 'function' ) {
 	}
 
 	function initTracking() {
-        trackPageView();
+		trackPageView();
 
-        var all_clickable = document.querySelectorAll("a,button,input,area");
-        for (var i = 0; i < all_clickable.length; i++) {
-            var el = all_clickable[i];
+		var all_clickable = document.querySelectorAll('a,button,input,area');
+		for (var i = 0; i < all_clickable.length; i++) {
+			var el = all_clickable[i];
 
-            if (!el.hasAttribute("data-slimstat-attached")) {
-                SlimStat.add_event(el, "mousedown", function () {
-                    SlimStat.ss_track();
-                });
-                el.setAttribute("data-slimstat-attached", "true");
-            }
-        }
-    }
-
-	// Run on initial load
-	SlimStat.add_event(window, 'load', initTracking);
-
-	// Handle SPA navigations
-	var originalPushState = history.pushState;
-	var originalReplaceState = history.replaceState;
-
-	function handleHistoryChange() {
-		setTimeout(() => {
-			initTracking(); // re-run tracking after route change
-		}, 100); // slight delay to allow DOM update
+			if (!el.hasAttribute('data-slimstat-attached')) {
+				SlimStat.add_event(el, 'mousedown', function () {
+					SlimStat.ss_track();
+				});
+				el.setAttribute('data-slimstat-attached', 'true');
+			}
+		}
 	}
 
-	history.pushState = function () {
-		originalPushState.apply(this, arguments);
-		handleHistoryChange();
-	};
-	history.replaceState = function () {
-		originalReplaceState.apply(this, arguments);
-		handleHistoryChange();
-	};
+	// Ensure compatibility with WordPress Gutenberg by using wp.domReady
+	if (typeof wp !== 'undefined' && typeof wp.domReady === 'function') {
+		wp.domReady(function () {
+			// Initialize tracking after Gutenberg editor is ready
+			SlimStat.add_event(window, 'load', initTracking);
+		});
+	} else {
+		// Fallback for non-Gutenberg environments
+		SlimStat.add_event(window, 'load', initTracking);
+	}
 
-	window.addEventListener('popstate', handleHistoryChange); // back/forward nav
+	// Handle SPA navigations
+	if (typeof history.pushState === 'function' && typeof history.replaceState === 'function') {
+		var originalPushState = history.pushState;
+		var originalReplaceState = history.replaceState;
+
+		function handleHistoryChange() {
+			setTimeout(function () {
+				initTracking(); // re-run tracking after route change
+			}, 100); // slight delay to allow DOM update
+		}
+
+		history.pushState = function () {
+			originalPushState.apply(this, arguments);
+			handleHistoryChange();
+		};
+		history.replaceState = function () {
+			originalReplaceState.apply(this, arguments);
+			handleHistoryChange();
+		};
+
+		window.addEventListener('popstate', handleHistoryChange); // back/forward nav
+	} else {
+		console.warn('History API not fully supported in this browser.');
+	}
+
+	// Add fallback for `requestIdleCallback`
+	if (typeof requestIdleCallback !== 'function') {
+		window.requestIdleCallback = function (callback) {
+			return setTimeout(callback, 250);
+		};
+	}
 
 	// Final unload tracking
 	SlimStat.add_event(window, 'beforeunload', function () {
