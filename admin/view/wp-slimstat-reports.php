@@ -1697,7 +1697,20 @@ class wp_slimstat_reports
             <div id="map_slim_p6_01"></div>
             <div class="top-countries-wrap">
                 <div class="top-countries">
-                    <h4>Top Countries</h4>
+                    <?php if ($top_countries): ?>
+                        <h4><?php esc_html_e('Top Countries', 'wp-slimstat'); ?></h4>
+                    <?php endif; ?>
+                    <?php
+                    // Settings URL
+                    if (!is_network_admin()) {
+                        $settings_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=slimconfig&amp;tab=');
+                    } else {
+                        $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
+                    }
+                    if ((wp_slimstat::$settings['enable_maxmind'] == 'disable' or !\SlimStat\Services\GeoIP::database_exists()) && wp_slimstat::$settings['notice_geolite'] == 'on') {
+                        wp_slimstat_admin::show_message(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
+                    }
+                    ?>
                     <?php foreach ($top_countries as $country): ?>
                         <div class="country-bar">
                             <div class="country-flag-container">
