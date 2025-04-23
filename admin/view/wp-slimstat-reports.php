@@ -1717,7 +1717,7 @@ class wp_slimstat_reports
                     } else {
                         $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
                     }
-                    if (wp_slimstat::$settings['enable_maxmind'] != 'on' or !\SlimStat\Services\GeoIP::database_exists()) {
+                    if ((wp_slimstat::$settings['enable_maxmind'] == 'disable' or !\SlimStat\Services\GeoIP::database_exists()) && wp_slimstat::$settings['notice_geolite'] == 'on') {
                         echo sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries');
                     }
                     ?>
