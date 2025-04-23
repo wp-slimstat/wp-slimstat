@@ -860,6 +860,7 @@ class wp_slimstat_db
     public static function get_overview_summary()
     {
         $days_in_range = ceil((wp_slimstat_db::$filters_normalized['utime']['end'] - wp_slimstat_db::$filters_normalized['utime']['start']) / 86400);
+        $days_in_range = ($days_in_range < 1) ? 1 : $days_in_range;
         $results       = array();
 
         // Turn date_i18n filters off
@@ -1057,7 +1058,7 @@ class wp_slimstat_db
             $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "type:click%"', 'notes');
         } else {
             $from  = "{$GLOBALS['wpdb']->prefix}slim_events te INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id";
-            $where = wp_slimstat_db::get_combined_where('notes NOT LIKE "_ype:click%"', 'notes', true, 't1');
+            $where = wp_slimstat_db::get_combined_where('te.notes NOT LIKE "_ype:click%"', 'te.notes', true, 't1');
         }
 
         return self::get_results("
