@@ -1025,7 +1025,7 @@ class wp_slimstat_db
         $sql = "
             SELECT $column, COUNT(*) AS counthits
             FROM {$wpdb->prefix}slim_stats
-            WHERE $where_clause
+            WHERE [[_WHERE_]]
             GROUP BY $group_by
             $having_clause
             ORDER BY counthits DESC
@@ -1033,6 +1033,9 @@ class wp_slimstat_db
         ";
 
         $prepared_sql = $wpdb->prepare($sql, $start_from, $limit_results);
+
+        $prepared_sql = str_replace('[[_WHERE_]]', $where_clause, $prepared_sql);
+
         $results = self::get_results(
             $prepared_sql,
             (!empty($_as_column) && $_as_column != $_column) ? $_as_column : $_column,
