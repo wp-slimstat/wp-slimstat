@@ -1204,10 +1204,11 @@ class wp_slimstat_reports
                         }
                         break;
                     case 'author': // Backward compatibility
-                        $author_id = $results[$i]['counthits'];
-                        if($author_id) {
-                            $author    = get_userdata($author_id);
+                        $author_username = $results[$i]['author'];
+                        if($author_username) {
+                            $author    = get_user_by('login', $author_username);
                             if( $author ) {
+                                $author_id = $author->ID;
                                 $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
                                 $element_value .= get_avatar($author_id, 18);
                                 $element_value .= $author ? empty($author->display_name) ? $author->user_login : $author->display_name : $results[$i]['author'];
