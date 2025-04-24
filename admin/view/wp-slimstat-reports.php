@@ -1522,7 +1522,12 @@ class wp_slimstat_reports
                 $exploded_group = explode(';;;', $a_result['column_group']);
                 $group_markup   = array();
                 foreach ($exploded_group as $a_item) {
-                    $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . $a_item . '</a>';
+                    $user = get_user_by('login', $a_item);
+                    if ($user) {
+                        $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . get_avatar($user->ID, 16) . $user->display_name . '</a>';
+                    } else {
+                        $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . $a_item . '</a>';
+                    }
                 }
             }
 
