@@ -1,6 +1,8 @@
 # Slimstat Analytics #
 The leading web analytics plugin for WordPress. Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
 
+We still have some plans to make SlimStat Analytics better, so please keep your feedback coming, please click here [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-2-11-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-2-11) to read more.
+
 ### Main features ###
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.

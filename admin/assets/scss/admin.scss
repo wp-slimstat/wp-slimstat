@@ -365,55 +365,69 @@ body.index-php {
   }
 }
 
-.jqvmap-label {
-  z-index: 999999;
-  position: absolute !important;
-  background-color: #2b2b2b;
-  color: #ffffff;
-  padding: 10px;
-  transform: translateY(-15px) translateX(50%);
-  max-width: 280px;
-  min-width: 50px;
-  font-size: 1em;
-  line-height: 1.5em;
-  direction: ltr;
-  border-radius: 8px;
-  backdrop-filter: blur(34px);
-  box-shadow: 0px 2px 4px 0px #0000000a;
-}
+body {
+  &.index-php,
+  &.toplevel_page_slimview1,
+  &.slimstat_page_slimview2,
+  &.slimstat_page_slimview3,
+  &.slimstat_page_slimview4,
+  &.slimstat_page_slimview5,
+  &.slimstat_page_slimconfig,
+  &.slimstat_page_slimpro,
+  &.slimstat_page_slimlayout {
+    .jqvmap-label {
+      z-index: 999999;
+      position: absolute !important;
+      background-color: #2b2b2b !important;
+      color: #ffffff !important;
+      padding: 10px !important;
+      transform: translateY(-15px) translateX(50%) !important;
+      max-width: 280px !important;
+      min-width: 50px !important;
+      font-size: 1em !important;
+      line-height: 1.5em !important;
+      direction: ltr !important;
+      border-radius: 8px !important;
+      backdrop-filter: blur(34px) !important;
+      box-shadow: 0px 2px 4px 0px #0000000a !important;
 
-.jqvmap-label h3 {
-  margin: 0;
-  font-size: 16px;
-  line-height: 100%;
-  font-weight: bold;
-  color: #fff;
-  letter-spacing: 1px;
-}
+      & h3 {
+        margin: 0 !important;
+        font-size: 16px !important;
+        line-height: 100% !important;
+        font-weight: bold !important;
+        background-color: #2b2b2b !important;
+        color: #ffffff !important;
+        letter-spacing: 1px !important;
+      }
 
-.jqvmap-label p {
-  font-family: Inter;
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 100%;
-  letter-spacing: 1px;
-  color: #d9d9d9;
-}
+      & p {
+        font-family: Inter !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        line-height: 100% !important;
+        letter-spacing: 1px !important;
+        background-color: #2b2b2b !important;
+        color: #ffffff !important;
+      }
 
-.jqvmap-label canvas {
-  position: absolute;
-  color: #2b2b2b !important;
-  background: #2b2b2b !important;
-  border: 0 dashed transparent;
-  background-color: #2b2b2b !important;
-  width: 12px !important;
-  height: 12px !important;
-  transform: rotate(135deg) translateX(0px) translateY(1px);
-  line-height: unset !important;
-  border-top-right-radius: 4px;
-  display: inline-block;
-  bottom: -5px;
-  left: calc(50% - 6px);
+      & canvas {
+        position: absolute;
+        color: #2b2b2b !important;
+        background: #2b2b2b !important;
+        border: 0 dashed transparent;
+        background-color: #2b2b2b !important;
+        width: 12px !important;
+        height: 12px !important;
+        transform: rotate(135deg) translateX(0px) translateY(1px);
+        line-height: unset !important;
+        border-top-right-radius: 4px;
+        display: inline-block;
+        bottom: -5px;
+        left: calc(50% - 6px);
+      }
+    }
+  }
 }
 
 // .postbox.tall + .postbox.normal .inside {
@@ -840,6 +854,8 @@ body {
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout {
     /* Hide all non-Slimstat notices in the admin */
+    div[class*="-notice"]:not(.slimstat-notice),
+    div[class*="admin-notice"]:not(.slimstat-notice),
     .notice:not(.slimstat-notice),
     .update-nag:not(.slimstat-notice),
     .error:not(.slimstat-notice) {
@@ -1240,9 +1256,7 @@ body {
   font-family: "slimstat";
   font-style: normal;
   font-weight: normal;
-  speak: none;
   font-size: 14px;
-
   text-decoration: inherit;
   width: 1em;
   margin: 0 0.2em;
@@ -2929,9 +2943,6 @@ x:-o-prefocus {
       }
     }
   }
-}
-
-.slimstat.upgrade-pro {
 }
 
 .slimstat-layout {
