@@ -70,7 +70,8 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.2.11 - 2025-04-23 =
+= 5.2.11 - 2025-04-25 =
+- Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-2-11-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-2-11) – SlimStat 5.2.11 Release Notes
 - **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.
 - **Enhancement**: Optimized SQL query to reduce the chances of errors and improve overall performance.
 - **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
