@@ -1,3 +1,6 @@
+= 5.2.12 - 2025-04-26 =
+- **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
+
 = 5.2.11 - 2025-04-25 =
 - Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-2-11-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-2-11) – SlimStat 5.2.11 Release Notes
 - **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.
