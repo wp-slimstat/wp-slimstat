@@ -2608,10 +2608,10 @@ x:-o-prefocus {
             position: relative;
             top: 0px;
 
-            &.is-not-pro {
-              top: -2px;
-              color: #e7294b;
-            }
+            // &.is-not-pro {
+            //   top: -2px;
+            //   color: #e7294b;
+            // }
 
             &:not(.is-not-pro):hover {
               color: #202224;
