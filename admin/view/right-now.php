@@ -32,10 +32,9 @@ $all_results                   = wp_slimstat_db::get_recent(wp_slimstat_reports:
 if (!$all_results) {
     $all_results = array();
 }
-
 $results = array_slice(
     $all_results,
-    wp_slimstat_db::$filters_normalized['misc']['start_from'],
+    0,
     wp_slimstat::$settings['number_results_raw_data']
 );
 
@@ -71,7 +70,6 @@ if (isset($_args['echo']) && $_args['echo'] === false) {
 // Show delete button? (only those who can access the settings can see it)
 $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
 $delete_row              = '';
-
 // Loop through the results
 for ($i = 0; $i < $count_page_results; $i++) {
     $date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='" . __('Date and Time', 'wp-slimstat') . "'></i> " . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true);
