@@ -35,7 +35,7 @@ if (!$all_results) {
 
 $results = array_slice(
     $all_results,
-    wp_slimstat_db::$filters_normalized['misc']['start_from'],
+    0,
     wp_slimstat::$settings['number_results_raw_data']
 );
 
@@ -146,9 +146,15 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
             $user          = get_user_by('login', $results[$i]['username']);
             $ip_address    = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username']) . "'>";
-            $ip_address   .= get_avatar($user->ID, 16);
+            if ($user) {
+                $ip_address   .= get_avatar($user->ID, 16);
+            } else {
+                $ip_address   .= get_avatar($results[$i]['username'], 16);
+            }
             $ip_address   .= " {$display_user_name}</a>";
-            $ip_address   .= " <a class=s'slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip']) . "'>($host_by_ip)</a>";
+            $ip_address   .= " <a class='slimstat-filter-link' href='"
+               . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])
+               . "'>($host_by_ip)</a>";
             $highlight_row = (strpos($results[$i]['notes'], 'user:') !== false) ? ' is-known-user' : ' is-known-visitor';
         }
 
