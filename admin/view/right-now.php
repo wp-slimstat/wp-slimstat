@@ -32,9 +32,10 @@ $all_results                   = wp_slimstat_db::get_recent(wp_slimstat_reports:
 if (!$all_results) {
     $all_results = array();
 }
+
 $results = array_slice(
     $all_results,
-    0,
+    wp_slimstat_db::$filters_normalized['misc']['start_from'],
     wp_slimstat::$settings['number_results_raw_data']
 );
 
@@ -70,6 +71,7 @@ if (isset($_args['echo']) && $_args['echo'] === false) {
 // Show delete button? (only those who can access the settings can see it)
 $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
 $delete_row              = '';
+
 // Loop through the results
 for ($i = 0; $i < $count_page_results; $i++) {
     $date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='" . __('Date and Time', 'wp-slimstat') . "'></i> " . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true);
@@ -144,9 +146,15 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
             $user          = get_user_by('login', $results[$i]['username']);
             $ip_address    = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username']) . "'>";
-            $ip_address   .= get_avatar($user->ID, 16);
+            if ($user) {
+                $ip_address   .= get_avatar($user->ID, 16);
+            } else {
+                $ip_address   .= get_avatar($results[$i]['username'], 16);
+            }
             $ip_address   .= " {$display_user_name}</a>";
-            $ip_address   .= " <a class=s'slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip']) . "'>($host_by_ip)</a>";
+            $ip_address   .= " <a class='slimstat-filter-link' href='"
+               . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])
+               . "'>($host_by_ip)</a>";
             $highlight_row = (strpos($results[$i]['notes'], 'user:') !== false) ? ' is-known-user' : ' is-known-visitor';
         }
 
