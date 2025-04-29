@@ -35,7 +35,7 @@ if (!$all_results) {
 
 $results = array_slice(
     $all_results,
-    wp_slimstat_db::$filters_normalized['misc']['start_from'],
+    0,
     wp_slimstat::$settings['number_results_raw_data']
 );
 
