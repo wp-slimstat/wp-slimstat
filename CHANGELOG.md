@@ -1,3 +1,6 @@
+= 5.2.13 - 2025-04-29 =
+- **Fix**: Resolved issues with pagination in reports.
+
 = 5.2.12 - 2025-04-26 =
 - **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
 
