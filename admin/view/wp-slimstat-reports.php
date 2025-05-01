@@ -1008,7 +1008,7 @@ class wp_slimstat_reports
         } else {
             $results = array_slice(
                 $all_results,
-                wp_slimstat_db::$filters_normalized['misc']['start_from'],
+                0,
                 wp_slimstat::$settings['rows_to_show']
             );
 
@@ -1180,15 +1180,20 @@ class wp_slimstat_reports
                         break;
 
                     case 'username':
-                        $element_custom_value = get_user_by('login', $results[$i]['username']);
-                        if( $element_custom_value ) {
-                            $element_value = "<a href='" . get_author_posts_url($element_custom_value->ID) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
-                            $element_value .= get_avatar($element_custom_value->ID, 18);
-                            $element_value .= $results[$i]['username'];
-                            $element_value .= "</a>";
+                        if(!empty($results[$i]['username'])) {
+                            $element_custom_value = get_user_by('login', $results[$i]['username']);
+                            if( $element_custom_value ) {
+                                $element_value = "<a href='" . get_author_posts_url($element_custom_value->ID) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
+                                $element_value .= get_avatar($element_custom_value->ID, 18);
+                                $element_value .= $results[$i]['username'];
+                                $element_value .= "</a>";
+                            } else {
+                                $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['username']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                            }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['username']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>". __('Guest', 'wp-slimstat') ."</a>";
                         }
 
                         if (wp_slimstat::$settings['show_display_name'] == 'on') {
@@ -1199,16 +1204,22 @@ class wp_slimstat_reports
                         }
                         break;
                     case 'author': // Backward compatibility
-                        $author_id = $results[$i]['counthits'];
-                        $author    = get_userdata($author_id);
-                        if( $author ) {
-                            $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
-                            $element_value .= get_avatar($author_id, 18);
-                            $element_value .= $author ? empty($author->display_name) ? $author->user_login : $author->display_name : $results[$i]['author'];
-                            $element_value .= "</a>";
+                        $author_username = $results[$i]['author'];
+                        if($author_username) {
+                            $author    = get_user_by('login', $author_username);
+                            if( $author ) {
+                                $author_id = $author->ID;
+                                $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
+                                $element_value .= get_avatar($author_id, 18);
+                                $element_value .= $author ? empty($author->display_name) ? $author->user_login : $author->display_name : $results[$i]['author'];
+                                $element_value .= "</a>";
+                            } else {
+                                $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['author']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                            }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['author']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>". __('Guest', 'wp-slimstat') ."</a>";
                         }
                         break;
                     case 'visit_id':
@@ -1428,7 +1439,7 @@ class wp_slimstat_reports
 
         $results = array_slice(
             $all_results,
-            wp_slimstat_db::$filters_normalized['misc']['start_from'],
+            0,
             wp_slimstat::$settings['rows_to_show']
         );
 
@@ -1480,7 +1491,7 @@ class wp_slimstat_reports
         if (is_array($all_results) && count($all_results)) {
             $results = array_slice(
                 $all_results,
-                wp_slimstat_db::$filters_normalized['misc']['start_from'],
+                0,
                 wp_slimstat::$settings['rows_to_show']
             );
         }
@@ -1512,7 +1523,12 @@ class wp_slimstat_reports
                 $exploded_group = explode(';;;', $a_result['column_group']);
                 $group_markup   = array();
                 foreach ($exploded_group as $a_item) {
-                    $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . $a_item . '</a>';
+                    $user = get_user_by('login', $a_item);
+                    if ($user) {
+                        $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . get_avatar($user->ID, 16) . $user->display_name . '</a>';
+                    } else {
+                        $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . $a_item . '</a>';
+                    }
                 }
             }
 
@@ -1697,7 +1713,21 @@ class wp_slimstat_reports
             <div id="map_slim_p6_01"></div>
             <div class="top-countries-wrap">
                 <div class="top-countries">
-                    <h4>Top Countries</h4>
+                    <?php if ($top_countries): ?>
+                        <h4><?php esc_html_e('Top Countries', 'wp-slimstat'); ?></h4>
+                    <?php endif; ?>
+                    <?php
+                    // Settings URL
+                    if (!is_network_admin()) {
+                        $settings_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=slimconfig&amp;tab=');
+                    } else {
+                        $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
+                    }
+                    if ((wp_slimstat::$settings['enable_maxmind'] == 'disable' or !\SlimStat\Services\GeoIP::database_exists())) {
+                        echo sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries');
+                        echo "<br>";
+                    }
+                    ?>
                     <?php foreach ($top_countries as $country): ?>
                         <div class="country-bar">
                             <div class="country-flag-container">
