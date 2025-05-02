@@ -442,6 +442,7 @@ if (!window.requestIdleCallback) {
         if ( slimstat_data.length > 0 ) {
             var options = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, addBehavior: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
             // Wait for fingerprint calculation using requestIdleCallback or setTimeout
+
             if (window.requestIdleCallback) {
                 requestIdleCallback(function() {
                     Fingerprint2.get(options, function(components) {
@@ -465,15 +466,21 @@ if (!window.requestIdleCallback) {
     // Initial pageview registration on page load
     SlimStat.add_event(window, 'load', sendPageview);
 
+    var interactiveRoots = document.querySelectorAll('[data-wp-interactive]');
+
     // Re-register pageview when navigating with browser history (for Interactivity API)
-    if (window.history && history.pushState) {
+    if (window.history && history.pushState && interactiveRoots.length > 0) {
         // Override pushState
         (function(originalPush, originalReplace) {
+            // Override pushState
             history.pushState = function() {
+                SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id, true );
+                SlimStatParams.id = 0;
                 var result = originalPush.apply(this, arguments);
                 sendPageview();
                 return result;
             };
+            // Override replaceState
             history.replaceState = function() {
                 var result = originalReplace.apply(this, arguments);
                 sendPageview();
@@ -509,7 +516,7 @@ if (!window.requestIdleCallback) {
 })();
 
 SlimStat.add_event( window, 'beforeunload', function() {
-	if ( !SlimStat.empty( document.activeElement ) && !SlimStat.empty( document.activeElement.nodeName ) && document.activeElement.nodeName.toLowerCase() == "body" && !SlimStat.empty( SlimStatParams.id ) && parseInt( SlimStatParams.id ) > 0 ) {
+	if ( !SlimStat.empty( document.activeElement ) && !SlimStat.empty( document.activeElement.nodeName ) && document.activeElement.nodeName.toLowerCase() == "body" && !SlimStat.empty( SlimStatParams.id ) && parseInt( SlimStatParams.id ) > 0 ){
 		SlimStat.send_to_server( "action=slimtrack&id=" + SlimStatParams.id, true );
 	}
 } );
