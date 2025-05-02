@@ -1,3 +1,6 @@
+5.2.14 - 2025-05-03 =
+- **Enhancement**: Added compatibility with WordPress's Interactivity API.
+
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.
 
