@@ -15,7 +15,7 @@ class REST_Service {
      *
      * Hooks into the `rest_api_init` action to register the tracking route.
      *
-     * @since 5.2.12
+     * @since 5.2.14
      */
     public static function run() {
         add_action('rest_api_init', array(__CLASS__, 'register_routes'));
@@ -28,7 +28,7 @@ class REST_Service {
      *
      * Registers the `/hit` endpoint for tracking hits.
      *
-     * @since 5.2.12
+     * @since 5.2.14
      */
     public static function register_routes() {
         register_rest_route('slimstat/v1', '/hit', array(
@@ -41,7 +41,7 @@ class REST_Service {
     /**
      * Handles the tracking request.
      *
-     * @since 5.2.12
+     * @since 5.2.14
      *
      * @param WP_REST_Request $request The request object.
      * @return WP_REST_Response The response object.
@@ -53,7 +53,7 @@ class REST_Service {
     /**
      * Adds a rewrite rule for the request.
      *
-     * @since 5.2.12
+     * @since 5.2.14
      */
     public static function rewrite_rule_request()
     {
@@ -69,6 +69,11 @@ class REST_Service {
         );
     }
 
+    /**
+     * Handles the tracking request, for the adblocker bypass.
+     *
+     * @since 5.2.14
+     */
     public static function handle_adblock_tracking()
     {
         if(\wp_slimstat::$settings['enable_adblock_bypass'] != 'on') {

@@ -1,3 +1,9 @@
+= 5.2.14 - 2025-05-04 =
+**Enhancement**: Introduced new settings to improve tracking reliability, particularly in environments where ad blockers or firewalls may interfere:
+- Back-End Request Channel (backend_transport_method): Choose between the WP REST API or admin-ajax.php for sending tracking data.
+- Auto-Fallback to admin-ajax.php (enable_fallback_detection): Automatically switches to admin-ajax.php if REST API requests are blocked.
+- Ad Blocker Bypass (enable_adblock_bypass): Enqueues the tracking script with a randomized, hash-based URL and sends requests using a hashed path to bypass ad blockers and content filters.
+
 = 5.2.12 - 2025-04-26 =
 - **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
 
