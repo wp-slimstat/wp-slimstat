@@ -187,47 +187,65 @@ var SlimStat = {
 	},
 
 	// Sends data back to the server (wrapper for XMLHttpRequest object)
-	send_to_server : function( data, use_beacon ) {
-		if ( SlimStat.empty( SlimStatParams.ajaxurl )|| SlimStat.empty( data ) ) {
-			return false;
-		}
+	send_to_server: function (data, use_beacon) {
+        if (SlimStat.empty(SlimStatParams.ajaxurl) || SlimStat.empty(data)) {
+            return false;
+        }
 
-		if ( "undefined" == typeof use_beacon ) {
-			use_beacon = true;
-		}
+        if (typeof use_beacon === "undefined") {
+            use_beacon = true;
+        }
 
-		if ( use_beacon && navigator.sendBeacon ) {
-			navigator.sendBeacon( SlimStatParams.ajaxurl, data );
-		}
-		else {
-			try {
-				xhr = new XMLHttpRequest();
-			} catch ( failed ) {
-				return false;
-			}
+        // Helper to send via XMLHttpRequest
+        function sendXHR(url) {
+            try {
+                var xhr = new XMLHttpRequest();
+            } catch (e) {
+                return false;
+            }
 
-			if ( "object" == typeof xhr ) {
-				xhr.open( "POST", SlimStatParams.ajaxurl, true );
-				xhr.setRequestHeader( "Content-type", "application/x-www-form-urlencoded" );
-				xhr.setRequestHeader( "X-Requested-With", "XMLHttpRequest" );
-				xhr.withCredentials = true;
-				xhr.send( data );
+            if (typeof xhr === "object") {
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                xhr.withCredentials = true;
+                xhr.send(data);
 
-				xhr.onreadystatechange = function() {
-					if ( 4 == xhr.readyState ) {
-						parsed_id = parseInt( xhr.responseText );
-						if ( !isNaN( parsed_id ) && parsed_id > 0 ) {
-							SlimStatParams.id = xhr.responseText;
-						}
-					}
-				}
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            var parsed_id = parseInt(xhr.responseText);
+                            if (!isNaN(parsed_id) && parsed_id > 0) {
+                                SlimStatParams.id = xhr.responseText;
+                            }
+                        } else {
+                            // If REST fails and we're in REST mode, try fallback
+                            if (SlimStatParams.transport === 'rest') {
+                                console.warn("REST API call failed. Trying fallback via admin-ajax.php");
+                                sendXHR(SlimStatParams.ajax_fallback_url || '/wp-admin/admin-ajax.php');
+                            }
+                        }
+                    }
+                };
 
-				return true;
-			}
-		}
-		
-		return false;
-	},
+                return true;
+            }
+            return false;
+        }
+
+        // Primary send
+        if (use_beacon && navigator.sendBeacon) {
+            var beaconSuccess = navigator.sendBeacon(SlimStatParams.ajaxurl, data);
+            if (!beaconSuccess && SlimStatParams.transport === 'rest') {
+                console.warn("sendBeacon failed. Trying fallback via admin-ajax.php");
+                return sendXHR(SlimStatParams.ajax_fallback_url || '/wp-admin/admin-ajax.php');
+            }
+            return beaconSuccess;
+        } else {
+            return sendXHR(SlimStatParams.ajaxurl);
+        }
+    },
+
 
 	// Tracks events (clicks to download files, mouse coordinates on anchors, etc)
 	ss_track : function( note, use_beacon ) {
@@ -405,7 +423,7 @@ var SlimStat = {
 // Helper function
 if ( typeof String.prototype.trim !== 'function' ) {
 	String.prototype.trim = function() {
-		return this.replace( /^\s+|\s+$/g, '' ); 
+		return this.replace( /^\s+|\s+$/g, '' );
 	}
 }
 

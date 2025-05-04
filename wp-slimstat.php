@@ -28,6 +28,7 @@ define('SLIMSTAT_ANALYTICS_VERSION', '5.2.12');
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/includes/class-init.php';
 
 class wp_slimstat
 {
@@ -48,6 +49,7 @@ class wp_slimstat
      */
     public static function init()
     {
+        \Slimstat\Core\Init::run();
 
         // Load all the settings
         if (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'slimview') === false)) {
@@ -138,6 +140,10 @@ class wp_slimstat
 
         // REST API Support
         add_action('rest_api_init', array(__CLASS__, 'register_rest_route'));
+
+        // Rewrite rule for static tracker
+        add_action('init', array(__CLASS__, 'rewrite_rule_tracker'));
+        add_action('template_redirect', array(__CLASS__, 'adblocker_javascript'));
 
         // Load the admin library
         if (is_user_logged_in()) {
@@ -326,6 +332,58 @@ class wp_slimstat
         exit(self::_get_value_with_checksum($id));
     }
     // end slimtrack_ajax
+
+
+    /**
+     * Rewrite rule for static tracker
+     */
+    public static function rewrite_rule_tracker()
+    {
+        if(self::$settings['enable_adblock_bypass'] != 'on') {
+            return;
+        }
+
+        add_rewrite_tag('%slimstat_tracker%', '([a-f0-9]{32})');
+        add_rewrite_rule(
+            '^([a-f0-9]{32})\.js$',
+            'index.php?slimstat_tracker=$matches[1]',
+            'top'
+        );
+    }
+
+    /**
+     * Function to detect if Adblock is enabled
+     */
+    public static function adblocker_javascript()
+    {
+        if(self::$settings['enable_adblock_bypass'] != 'on') {
+            return;
+        }
+
+        $tracker_hash = get_query_var('slimstat_tracker');
+        if ($tracker_hash && $tracker_hash === md5(site_url() . 'slimstat')) {
+            // Set the content type to JavaScript
+            header('Content-Type: application/javascript');
+
+            // Set caching headers for one year
+            header('Cache-Control: public, max-age=31536000');
+
+            // Set the expiration date for one year from now
+            header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
+
+            $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
+            $js_path = plugin_dir_path(__FILE__) . "/wp-slimstat{$jstracker_suffix}.js";
+
+            if (file_exists($js_path)) {
+                readfile($js_path);
+                exit;
+            } else {
+                status_header(404);
+                echo '// Tracker not found';
+                exit;
+            }
+        }
+    }
 
     /**
      * THE Slimstat tracker
@@ -1231,6 +1289,11 @@ class wp_slimstat
             'capability_can_view'                    => 'manage_options',
             'can_view'                               => '',
 
+            // Access Control - Reports
+            'backend_transport_method'               => 'ajax',
+            'enable_fallback_detection'              => true,
+            'enable_adblock_bypass'                  => false,
+
             // Access Control - Customizer
             'capability_can_customize'               => 'manage_options',
             'can_customize'                          => '',
@@ -1283,21 +1346,40 @@ class wp_slimstat
      */
     public static function enqueue_tracker()
     {
-        // Pass some information to the tracker
-        $params = array('ajaxurl' => admin_url('admin-ajax.php'));
+        $use_rest_api = (isset(self::$settings['backend_transport_method']) && self::$settings['backend_transport_method'] === 'rest');
 
-        if (self::$settings['ajax_relative_path'] == 'on') {
-            $params['ajaxurl'] = admin_url('admin-ajax.php', 'relative');
+        if(self::$settings['enable_adblock_bypass'] == 'on') {
+            $hash = md5(site_url() . 'slimstat_request');
+            $params = array(
+                'ajaxurl' => home_url("request/$hash/"),
+                'transport' => 'ajax',
+                'ajax_fallback_url' => admin_url('admin-ajax.php', 'relative')
+            );
+        } else if ($use_rest_api) {
+            $rest_url = rest_url('slimstat/v1/hit');
+            $params = array(
+                'ajaxurl' => $rest_url,
+                'transport' => 'rest',
+                'ajax_fallback_url' => admin_url('admin-ajax.php', 'relative')
+            );
+        } else {
+            $ajax_url = admin_url('admin-ajax.php');
+            if (self::$settings['ajax_relative_path'] == 'on') {
+                $ajax_url = admin_url('admin-ajax.php', 'relative');
+            }
+            $params = array(
+                'ajaxurl' => $ajax_url,
+                'transport' => 'ajax'
+            );
         }
 
-        $baseurl           = parse_url(get_home_url());
+        $baseurl = parse_url(get_home_url());
         $params['baseurl'] = empty($baseurl['path']) ? '/' : $baseurl['path'];
 
         if (!empty(self::$settings['do_not_track_outbound_classes_rel_href'])) {
             $params['dnt'] = str_replace(' ', '', self::$settings['do_not_track_outbound_classes_rel_href']);
         }
 
-        // GDPR Compliance: test for third-party cookies to see if we need to display the opt-out message
         if (self::$settings['display_opt_out'] == 'on') {
             $params['oc'] = array('slimstat_optout_tracking');
             if (!empty(self::$settings['opt_out_cookie_names'])) {
@@ -1305,16 +1387,13 @@ class wp_slimstat
                     $params['oc'][] = substr($a_cookie_pair, 0, strpos($a_cookie_pair, '='));
                 }
             }
-
             $params['oc'] = implode(',', $params['oc']);
         }
 
         if (self::$settings['javascript_mode'] != 'on') {
-            // Do not enqueue the tracker if this page view was not tracked for some reason
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
-
             $params['id'] = self::_get_value_with_checksum(intval(self::$stat['id']));
         } else {
             $params['ci'] = self::_get_value_with_checksum(self::_base64_url_encode(serialize(self::_get_content_info())));
@@ -1322,11 +1401,14 @@ class wp_slimstat
 
         $params = apply_filters('slimstat_js_params', $params);
 
-        if (self::$settings['enable_cdn'] == 'on') {
+        if (self::$settings['enable_adblock_bypass'] == 'on') {
+            $hash = md5(site_url() . 'slimstat');
+            wp_register_script('wp_slimstat', home_url("/$hash.js/"), array(), SLIMSTAT_ANALYTICS_VERSION, true);
+        } else if (self::$settings['enable_cdn'] == 'on') {
             wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', array(), null, true);
         } else {
             $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
-            wp_register_script('wp_slimstat', plugins_url("/wp-slimstat{$jstracker_suffix}.js", __FILE__), array(), null, true);
+            wp_register_script('wp_slimstat', plugins_url("/wp-slimstat{$jstracker_suffix}.js", __FILE__), array(), SLIMSTAT_ANALYTICS_VERSION, true);
         }
 
         wp_enqueue_script('wp_slimstat');
