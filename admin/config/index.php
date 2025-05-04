@@ -655,6 +655,8 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             default:
                 break;
         }
+
+        flush_rewrite_rules();
     }
 
     // Some of them require extra processing
