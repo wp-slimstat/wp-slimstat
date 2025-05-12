@@ -681,58 +681,99 @@ class wp_slimstat_db
             'SUM(counthits) AS counthits'));
     }
 
-    public static function get_data_for_chart($_args = array())
-    {
-        // Determine the chart granularity based on the date range
-        // - Up to 24 hours (86400 seconds): HOURLY
-        // - Up to 120 days (10368000 seconds): DAILY
-        // - Otherwise: MONTHLY
+    public static function get_data_for_chart($args) {
         $params = array();
+        $_args = $args['chart_data'];
 
-        if (self::$filters_normalized['utime']['range'] < 86400) {
-            $params['group_by']          = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $params['data_points_label'] = (strpos(number_format_i18n(1000), '.') === false) ? 'h a' : 'H';
-            $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 3600);
-            $params['granularity']       = 'HOUR';
-        } else if (self::$filters_normalized['utime']['range'] < 10368000) {
-            $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $format = get_option('date_format');
-            $format = str_replace(array('Y-', 'Y/', 'Y.', 'Y ', ', Y', ' Y' ), '', $format);
-            $format = str_replace(array('y-', 'y/', 'y.', 'y ', ', y', ' y' ), '', $format);
-            $params['data_points_label'] = $format;
-            $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 86400);
-            $params['granularity']       = 'DAY';
-        } else {
-            $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $format = get_option('date_format');
-            $format = str_replace(array('d-', 'd/', 'd.', 'd '), '', $format);
-            $format = str_replace(array('j-', 'j/', 'j.', 'j '), '', $format);
-            $params['data_points_label'] = 'm/y';
-            $params['data_points_count'] = self::count_months_between(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']);
-            $params['granularity']       = 'MONTH';
+        // Set default values
+        $start       = isset($args['start']) ? intval($args['start']) : strtotime('-30 days');
+        $end         = isset($args['end']) ? intval($args['end']) : time();
+        $granularity = isset($args['granularity']) ? strtolower($args['granularity']) : 'daily';
+
+        $range = $end - $start;
+
+        // Normalize filters
+        self::$filters_normalized['utime'] = array(
+            'start' => $start,
+            'end'   => $end,
+            'range' => $range
+        );
+
+        $wp_timezone     = wp_timezone();
+        $date_format     = 'Y/m/d';
+        $start_of_week   = (int) get_option('start_of_week', 1);
+
+        switch ($granularity) {
+            case 'hourly':
+                $params['group_by']          = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'Y/m/d H:00';
+                $params['data_points_count'] = ceil($range / 3600);
+                $params['granularity']       = 'HOUR';
+                break;
+
+            case 'weekly':
+                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'W, Y';
+                $params['data_points_count'] = self::count_weeks_between($start, $end);
+                $params['granularity']       = 'WEEK';
+
+                $start_of_week = (int) get_option('start_of_week', 1);
+                $weekdays = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+                $weekday_name = $weekdays[$start_of_week];
+
+                $adjusted_start = strtotime("last $weekday_name", $start);
+                if (date('w', $start) == $start_of_week) {
+                    $adjusted_start = strtotime("this $weekday_name", $start);
+                }
+
+                $params['adjusted_start'] = $adjusted_start;
+                $params['adjusted_prev_start'] = strtotime("-$range seconds", $adjusted_start);
+                break;
+
+            case 'monthly':
+                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'F Y';
+                $params['data_points_count'] = self::count_months_between($start, $end);
+                $params['granularity']       = 'MONTH';
+                break;
+            case 'yearly':
+                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'Y';
+                $params['data_points_count'] = self::count_years_between($start, $end);
+                $params['granularity']       = 'YEAR';
+                break;
+
+            case 'daily':
+            default:
+
+                $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = $date_format;
+                $params['data_points_count'] = ceil($range / 86400);
+                $params['granularity']       = 'DAY';
+                break;
         }
 
-        // Calculate the "previous/comparison" time range
-        $params['previous_end']   = self::$filters_normalized['utime']['start'] - 1;
-        $params['previous_start'] = $params['previous_end'] - self::$filters_normalized['utime']['range'];
+        $params['previous_end']   = $start - 1;
+        $params['previous_start'] = $params['previous_end'] - $range;
 
-        // Build the SQL query
         if (empty($_args['where'])) {
             $_args['where'] = '';
         }
 
         $sql = "
-			SELECT MIN(dt) AS dt, {$_args[ 'data1' ]} AS v1, {$_args[ 'data2' ]} AS v2
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE " . self::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params[ 'previous_start' ]} AND {$params[ 'previous_end' ]} OR dt BETWEEN " . self::$filters_normalized['utime']['start'] . ' AND ' . self::$filters_normalized['utime']['end'] . ")
-			GROUP BY {$params[ 'group_by' ]}";
+            SELECT MIN(dt) AS dt, {$_args['data1']} AS v1, {$_args['data2']} AS v2
+            FROM {$GLOBALS['wpdb']->prefix}slim_stats
+            WHERE " . self::get_combined_where($_args['where'], '*', false) . "
+            AND (dt BETWEEN {$params['previous_start']} AND {$params['previous_end']} OR dt BETWEEN $start AND $end)
+            GROUP BY {$params['group_by']}
+        ";
 
-        // Get the data
         $results = self::get_results(
             $sql,
             'dt',
             '',
-            $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
+            $params['group_by'],
+            'SUM(v1) AS v1, SUM(v2) AS v2'
         );
 
         $output = array(
@@ -741,52 +782,84 @@ class wp_slimstat_db
             'datasets' => array(
                 'v1' => array(),
                 'v2' => array(),
-                'v3' => array(),
-                'v4' => array()
             )
         );
 
-        // No data? No problem!
         if (!is_array($results) || empty($results)) {
             return $output;
         }
 
-        // Generate the output array (sent to the chart library) by combining all the data collected so far
-
-        // Let's start by initializing all the data points to zero
         for ($i = 0; $i < $params['data_points_count']; $i++) {
-            $v1_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", self::$filters_normalized['utime']['start']));
-            $v3_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", $params['previous_start']));
+            $v1_time  = strtotime("+$i {$params['granularity']}", $start);
+            $v3_time  = strtotime("+$i {$params['granularity']}", $params['previous_start']);
+
+            $v1_label = wp_date($params['data_points_label'], $v1_time, $wp_timezone);
+            $v3_label = wp_date($params['data_points_label'], $v3_time, $wp_timezone);
+
+            if ($granularity === 'weekly') {
+                $v1_time = strtotime("+$i weeks", $params['adjusted_start']);
+                $v3_time = strtotime("+$i weeks", $params['adjusted_prev_start']);
+            } else {
+                $v1_time = strtotime("+$i {$params['granularity']}", $start);
+                $v3_time = strtotime("+$i {$params['granularity']}", $params['previous_start']);
+            }
+
 
             $output['keys'][$v1_label] = $i;
             $output['keys'][$v3_label] = $i;
 
-            $output['labels'][] = "'$v1_label'";
+            $output['labels'][] = "'".date($params['data_points_label'], $v1_time)."'";
 
-            // This is how AmCharts expects the data to be formatted
-            $output['datasets']['v1'][] = $output['datasets']['v2'][] = $output['datasets']['v3'][] = $output['datasets']['v4'][] = 0;
+            $output['datasets']['v1'][] = 0;
+            $output['datasets']['v2'][] = 0;
         }
 
-        // Now populate all the data points
         foreach ($results as $a_result) {
-            $label = date($params['data_points_label'], $a_result['dt']);
+            $label = wp_date($params['data_points_label'], $a_result['dt'], $wp_timezone);
 
-            // Data out of range?
             if (!isset($output['keys'][$label])) {
                 continue;
             }
 
-            // Does this value belong to the "current" range?
-            if ($a_result['dt'] >= self::$filters_normalized['utime']['start'] && $a_result['dt'] <= self::$filters_normalized['utime']['end']) {
+            if ($a_result['dt'] >= $start && $a_result['dt'] <= $end) {
                 $output['datasets']['v1'][$output['keys'][$label]] = intval($a_result['v1']);
                 $output['datasets']['v2'][$output['keys'][$label]] = intval($a_result['v2']);
-            } else {
-                $output['datasets']['v3'][$output['keys'][$label]] = intval($a_result['v1']);
-                $output['datasets']['v4'][$output['keys'][$label]] = intval($a_result['v2']);
+            }
+            if( ! $output['datasets']['v2'][$output['keys'][$label]] ) {
+                unset( $output['datasets']['v2'][$output['keys'][$label]]);
             }
         }
 
-        return $output;
+        $today = wp_date($params['data_points_label'], time(), $wp_timezone);
+
+        return array(
+            'labels'      => $output['labels'],
+            'datasets'    => $output['datasets'],
+            'today'       => $today,
+            'granularity' => $params['granularity'],
+        );
+    }
+
+    private static function format_label($timestamp, $format, $granularity) {
+        if ($granularity === 'weekly') {
+            return 'Week ' . date('W, Y', $timestamp);
+        }
+        return date($format, $timestamp);
+    }
+
+
+    public static function count_years_between($start, $end) {
+        $start = date('Y', $start);
+        $end   = date('Y', $end);
+
+        return abs($end - $start) + 1;
+    }
+
+    public static function count_weeks_between($start, $end) {
+        $start = date('W', $start);
+        $end   = date('W', $end);
+
+        return abs($end - $start) + 1;
     }
 
     public static function get_data_size()

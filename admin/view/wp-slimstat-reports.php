@@ -1321,96 +1321,400 @@ class wp_slimstat_reports
         }
     }
 
-    public static function show_chart($_args = array())
-    {
-        $data = wp_slimstat_db::get_data_for_chart($_args['chart_data']);
+    public static function show_chart($args) {
 
-        if (empty($data['keys'])) {
-            echo '<p class="nodata">' . __('No data to display', 'wp-slimstat') . '</p>';
+        $args['start'] = isset($args['start']) ? $args['start'] : wp_slimstat_db::$filters_normalized['utime']['start'];
+        $args['end'] = isset($args['end']) ? $args['end'] : wp_slimstat_db::$filters_normalized['utime']['end'];
 
-            if (defined('DOING_AJAX') && DOING_AJAX) {
-                die();
-            } else {
-                return 0;
-            }
+        if (!isset($args['granularity'])) {
+            $diff = $args['end'] - $args['start'];
+            if      ($diff >= 1.5 * 365 * 86400) { $args['granularity'] = 'yearly'; }
+            elseif  ($diff >= 45  * 86400     ) { $args['granularity'] = 'monthly'; }
+            elseif  ($diff >= 14  * 86400     ) { $args['granularity'] = 'weekly';  }
+            elseif  ($diff >= 2   * 86400     ) { $args['granularity'] = 'daily';   }
+            else                               { $args['granularity'] = 'hourly';  }
         }
+
+
+        $data = wp_slimstat_db::get_data_for_chart($args);
+
+        $prev_args = $args;
+        $dtStart = (new DateTime)->setTimestamp($args['start']);
+        $dtEnd   = (new DateTime)->setTimestamp($args['end']);
+        $daysBetween = 0;
+        switch ($args['granularity']) {
+            case 'hourly':
+                $dtStart->modify('-1 day');
+                $dtEnd  ->modify('-1 day');
+                break;
+            case 'daily':
+                $daysBetween = $dtStart->diff($dtEnd)->days;
+                $dtStart->modify('-' . $daysBetween . ' days');
+                $dtEnd->modify('-' . $daysBetween . ' days');
+                break;
+            case 'weekly':
+                $dtStart->modify('-1 week');
+                $dtEnd  ->modify('-1 week');
+                break;
+            case 'monthly':
+                $dtStart->modify('-1 month');
+                $dtEnd  ->modify('-1 month');
+                break;
+            case 'yearly':
+                $dtStart->modify('-1 year');
+                $dtEnd  ->modify('-1 year');
+                break;
+        }
+
+        $prev_args['start'] = $dtStart->getTimestamp();
+        $prev_args['end']   = $dtEnd->getTimestamp();
+
+
+        $prev_data = wp_slimstat_db::get_data_for_chart($prev_args);
+        $prev_labels = $prev_data['labels'];
+        $prev_datasets = $prev_data['datasets'];
+
+
+        $labels = $data['labels'];
+        $datasets = $data['datasets'];
+        $today = $data['today'];
+
+        $chart_labels = isset($args['chart_labels']) ? $args['chart_labels'] : array_keys($datasets);
 
         // Enqueue all the Javascript and styles
         $path_slimstat = dirname(dirname(__FILE__));
         wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', $path_slimstat), array(), '4.2.1', false);
 
-        // todo remove it.
-        $chart_colors = !empty(wp_slimstat::$settings['chart_colors']) ? wp_slimstat::string_to_array(wp_slimstat::$settings['chart_colors']) : array('#bbcc44', '#21759b', '#ccc', '#999');
+        $js_labels = json_encode($labels);
 
+        $js_datasets = array();
+        $i = 0;
+        foreach ($datasets as $key => $values) {
+            $is_today_series = false;
+            $styled_values = array();
+            foreach ($labels as $j => $label) {
+                $value = $values[$j];
+                $styled_values[] = $value;
+            }
+
+            $js_datasets[] = array(
+                'label' => $chart_labels[$i] ?? $key,
+                'data' => $styled_values,
+                'borderColor' => ["#2b76f6", "#ffacb6", "#24cb7d", "#e8294c", "#942bf6"][$i % 5],
+                'borderWidth' => 2,
+                'fill' => false,
+                'tension' => 0.3,
+            );
+            $i++;
+        }
+
+        $js_prev_datasets = array();
+        $i = 0;
+        foreach ($prev_datasets as $key => $values) {
+            $is_today_series = false;
+            $styled_values = array();
+            foreach ($prev_labels as $j => $label) {
+                $value = $values[$j];
+                $styled_values[] = $value;
+            }
+
+            $js_prev_datasets[] = array(
+                'label' => 'Previous ' . $js_datasets[$i]['label'],
+                'data' => $styled_values,
+                'borderColor' => ["#2b76f6", "#ffacb6", "#24cb7d", "#e8294c", "#942bf6"][$i % 5],
+                'dataIndex' => $i,
+                'borderWidth' => 1,
+                'fill' => false,
+                'tension' => 0.3,
+            );
+            $i++;
+        }
         ?>
-        <canvas class="chart-placeholder" id="chart_<?php echo esc_attr($_args['id']); ?>"></canvas>
+        <div id="slimstat-postbox-custom-legend_<?php echo esc_attr($args['id']) ?>" class="slimstat-postbox-chart--items"></div>
+        <canvas id="slimstat_chart_<?php echo esc_attr($args['id']) ?>" class="slimstat-postbox-chart--canvas" height="240px"></canvas>
 
-        <script type="text/javascript">
-            <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
-            jQuery(function () {
-                <?php endif; ?>
-                // Build ChartJs
-                const ctx = document.getElementById('chart_<?php echo esc_attr($_args['id']); ?>');
-                const comparison_chart = <?php echo wp_slimstat::$settings['comparison_chart'] == 'on' ? 'true' : 'false'; ?>;
-                let datasets = [
-                    {
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v1']); ?>],
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                    },
-                    {
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v2']); ?>],
-                        backgroundColor: 'rgba(0, 149, 255, 0.2)',
-                        borderColor: 'rgba(0, 149, 255, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                    }
-                ];
-                if (comparison_chart) {
-                    datasets.push({
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v3']); ?>],
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                        borderDash: [4, 2]
+        <script>
+            jQuery(function($){
+                var unitTime = "<?php echo esc_js($args['granularity']) ?>";
+                var datasets = <?php echo json_encode($js_datasets); ?>;
+                var daysBetween = <?php echo $daysBetween; ?>;
+                var prev_datasets = <?php echo json_encode($js_prev_datasets); ?>;
+                var prev_labels = <?php echo json_encode($prev_labels); ?>;
+                var labels = <?php echo json_encode($labels); ?>;
+                var ctx = document.getElementById('slimstat_chart_<?php echo esc_attr($args['id']) ?>');
+                datasets.forEach(dataset => {
+                    dataset.segment = {
+                        borderDash: ctx => {
+                            const index = ctx.p1DataIndex;
+                            return labels[index] === "'<?php echo $today ?>'" ? [5, 3] : [];
+                        }
+                    };
+                    dataset.pointBorderColor = 'transparent';
+                    dataset.pointBackgroundColor = dataset.borderColor;
+                    dataset.pointBorderWidth = 2;
+                    dataset.hoverPointRadius = 6;
+                    dataset.hoverPointRadius = 6;
+                    dataset.pointBorderWidth = 2;
+                    dataset.hoverPointBorderWidth = 4;
+                    dataset.hitRadius = 10;
+                });
+
+                prev_datasets.forEach(dataset => {
+                    dataset.segment = {
+                        borderDash: ctx => {
+                            return [3, 3];
+                        }
+                    };
+                    dataset.pointBorderColor = 'transparent';
+                    dataset.pointBackgroundColor = dataset.borderColor;
+                    dataset.pointBorderWidth = 2;
+                    dataset.hoverPointRadius = 6;
+                    dataset.hoverPointRadius = 6;
+                    dataset.pointBorderWidth = 2;
+                    dataset.hoverPointBorderWidth = 4;
+                    dataset.hitRadius = 10;
+                });
+
+                function renderCustomLegend(chart) {
+                    const legendContainer = document.getElementById('slimstat-postbox-custom-legend_<?php echo esc_attr($args['id']) ?>');
+                    legendContainer.innerHTML = '';
+
+                    chart.data.datasets.forEach((dataset, index) => {
+                        var value = 0;
+                        var new_value = 0;
+                        var i = 0;
+
+                        if( prev_datasets[index]?.data !== undefined ) {
+                            const datasetData = datasets[index]?.data;
+
+                            datasetData.forEach(data => {
+                                if( labels[i] !== "'<?php echo $today ?>'" ) {
+                                    value += data;
+                                }
+                                new_value += data;
+                                i++;
+                            });
+
+                            const legendItem = document.createElement('div');
+                            legendItem.classList.add('slimstat-postbox-chart--item');
+
+                            const colorDot = document.createElement('span');
+                            colorDot.classList.add('slimstat-postbox-chart--item--color');
+                            colorDot.style.backgroundColor = dataset.borderColor;
+
+                            const lineValue = document.createElement('span');
+                            legendItem.classList.add('slimstat-postbox-chart--item-value');
+                            lineValue.innerHTML = value;
+
+                            const lineLabel = document.createElement('span');
+                            lineLabel.classList.add('slimstat-postbox-chart--item-label');
+                            lineLabel.innerHTML = dataset.label;
+                            legendItem.appendChild(lineLabel);
+                            legendItem.appendChild(colorDot);
+                            legendItem.appendChild(lineValue);
+
+                            if (value !== new_value) {
+                                const prev_colorDot = document.createElement('span');
+                                prev_colorDot.classList.add('slimstat-postbox-chart--item--color');
+                                prev_colorDot.style.backgroundImage = 'linear-gradient(to right, ' + dataset.borderColor + ' 80%, transparent 20%)';
+                                prev_colorDot.style.backgroundSize = '10px 6px';
+                                prev_colorDot.style.opacity = 0.8;
+                                legendItem.appendChild(prev_colorDot);
+                                const lineValue = document.createElement('span');
+                                legendItem.classList.add('slimstat-postbox-chart--item-value');
+                                lineValue.style.opacity = 0.8;
+                                lineValue.innerHTML = new_value;
+                                legendItem.appendChild(lineValue);
+                            }
+
+                            legendItem.addEventListener('click', function() {
+                                const meta = chart.getDatasetMeta(index);
+                                meta.hidden = !meta.hidden;
+                                legendItem.classList.toggle('slimstat-postbox-chart--item-hidden');
+                                const prevIndex = index + chart.data.datasets.length / 2;
+                                const prevMeta = chart.getDatasetMeta(prevIndex);
+                                prevMeta.hidden = meta.hidden;
+                                chart.update();
+                            });
+                            legendContainer.appendChild(legendItem);
+                        }
                     });
-                    datasets.push({
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v4']); ?>],
-                        backgroundColor: 'rgba(0, 149, 255, 0.2)',
-                        borderColor: 'rgba(0, 149, 255, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                        borderDash: [4, 2]
+
+                    const togglePrevDatasetsButton = document.createElement('span');
+                    togglePrevDatasetsButton.innerText = '<?php _e('-- Previous Period', 'wp-slimstat'); ?>';
+                    togglePrevDatasetsButton.classList.add( 'active', 'slimstat-toggle-prev-datasets');
+                    let prevDatasetsVisible = true;
+
+                    togglePrevDatasetsButton.addEventListener('click', function() {
+                        prevDatasetsVisible = !prevDatasetsVisible;
+                        chart.data.datasets.forEach((dataset, index) => {
+                            if (dataset.label.includes('Previous')) {
+                                const meta = chart.getDatasetMeta(index);
+                                meta.hidden = !prevDatasetsVisible;
+                            }
+                        });
+                        togglePrevDatasetsButton.classList.toggle('active');
+                        chart.update();
                     });
+                    legendContainer.parentNode.insertBefore(togglePrevDatasetsButton, legendContainer);
                 }
-                new Chart(ctx, {
+
+                const slimstatGetLabel = ( label, long = true, previous = false ) => {
+                    label = label.replace(/'/g, '');
+                    console.log(unitTime, previous, label);
+
+                    if( unitTime === 'monthly' ) {
+                        if( previous ) {
+                            return label + '<span class="slimstat-postbox-chart--item--prev">' + "<?php echo __('30 Days ago', 'wp-slimstat') ?>" + '</span>';
+                        }
+                        const date = new Date(label + ' 1');
+                        const month = date.toLocaleString('default', { month: 'long' });
+                        const year = date.getFullYear();
+                        const currentDate = new Date();
+                        const isThisMonth = currentDate.getMonth() === date.getMonth() && currentDate.getFullYear() === date.getFullYear();
+                        return isThisMonth && long ? `${month}, ${year} (This Month)` : `${month}, ${year}`;
+                    } else if( unitTime === 'weekly' ) {
+                        if( previous ) {
+                            return label + '<span class="slimstat-postbox-chart--item--prev">' + "<?php echo __('30 Days ago', 'wp-slimstat') ?>" + '</span>';
+                        }
+                        const weekNumber = parseInt(label.split(', ')[0]);
+                        const year = parseInt(label.split(', ')[1]);
+                        const firstDayOfYear = new Date(year, 0, 1);
+                        const firstDayOfWeek = new Date(year, 0, 1 + (weekNumber - 1) * 7 - firstDayOfYear.getDay() + (<?php echo get_option('start_of_week') ?>));
+                        const lastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
+                        const firstDayOfWeekString = long ? firstDayOfWeek.toLocaleString('default', { weekday: 'short', month: 'long', day: 'numeric' }) : firstDayOfWeek.toLocaleString('default', { month: 'short', day: 'numeric' });
+                        const lastDayOfWeekString = long ? lastDayOfWeek.toLocaleString('default', { weekday: 'short', month: 'long', day: 'numeric' }) : lastDayOfWeek.toLocaleString('default', { month: 'short', day: 'numeric' });
+                        return `${firstDayOfWeekString} - ${lastDayOfWeekString}`;
+                    }
+                    else if (unitTime === 'daily') {
+                        if( previous ) {
+                            return label + '<span class="slimstat-postbox-chart--item--prev">' + "<?php echo sprintf(__('%s Days ago', 'wp-slimstat'), $daysBetween) ?>" + '</span>';
+                        }
+                        const date = new Date(label);
+                        const dayName = date.toLocaleString('default', { weekday: 'long' });
+                        const isToday = new Date().toDateString() === date.toDateString();
+                        const formattedDate = long ? date.toLocaleString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : date.toLocaleDateString('default', { month: 'short', day: '2-digit' }).replaceAll('-', '/');
+                        return long ? isToday ? `${formattedDate} (Today)` : `${formattedDate}` : formattedDate;
+                    }
+                    else if (unitTime === 'hourly') {
+                        if( previous ) {
+                            return label + '<span class="slimstat-postbox-chart--item--prev">' + "<?php echo __('Day ago', 'wp-slimstat') ?>" + '</span>';
+                        }
+                        const date = new Date(label.replace(/(\d+)-(\d+)-(\d+) (\d+):00/, '$1/$2/$3 $4:00'));
+                        const hour = date.getHours();
+                        const isToday = new Date().toDateString() === date.toDateString();
+                        const formattedDate = long ? date.toLocaleString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : date.toLocaleDateString('default', { month: 'short', day: '2-digit' }).replaceAll('-', '/');
+                        return long ? isToday ? `${formattedDate} ${hour}:00 (This Hour)` : `${formattedDate} ${hour}:00` : `${hour}:00`;
+                    }
+                    else if (unitTime === 'yearly') {
+                        if( previous ) {
+                            return label + '<span class="slimstat-postbox-chart--item--prev">' + "<?php echo __('Year ago', 'wp-slimstat') ?>" + '</span>';
+                        }
+                        const date = new Date(label);
+                        const year = date.getFullYear();
+                        const isThisYear = new Date().getFullYear() === year;
+                        return isThisYear && long ? `${year} (This Year)` : `${year}`;
+                    }
+                };
+                var chart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: [<?php echo implode(',', $data['labels']); ?>],
-                        datasets: datasets,
+                        labels: labels,
+                        datasets: [...datasets, ...prev_datasets]
                     },
                     options: {
                         layout: {
                             padding: 20
                         },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    callback: function(value, index, ticks) {
+                                        const label =  slimstatGetLabel( this.getLabelForValue(value).replace(/'/g, ''), false );
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
                         maintainAspectRatio: false,
                         responsive: true,
-                        legend: {
-                            position: 'bottom',
+                        plugins: {
+                            legend: false,
+                            tooltip: {
+                                enabled: false,
+                                external: function(context) {
+
+                                    let tooltipEl = document.getElementById('chartjs-tooltip');
+                                    var dataIndex = context.tooltip.dataPoints[0].dataIndex;
+                                    if (!tooltipEl) {
+                                        tooltipEl = document.createElement('div');
+                                        tooltipEl.id = 'chartjs-tooltip';
+                                        tooltipEl.innerHTML = '<table></table>';
+                                        document.body.appendChild(tooltipEl);
+                                    }
+
+                                    const { chart, tooltip } = context;
+
+                                    if (tooltip.opacity === 0) {
+                                        tooltipEl.style.opacity = 0;
+                                        return;
+                                    }
+
+                                    tooltipEl.classList.remove('above', 'below', 'no-transform');
+                                    if (tooltip.yAlign) {
+                                        tooltipEl.classList.add(tooltip.yAlign);
+                                    } else {
+                                        tooltipEl.classList.add('no-transform');
+                                    }
+
+                                    function getBody(bodyItem) {
+                                        return bodyItem.lines[0].split(': ').map((text, index) => {
+                                            const colorClass = index === 0 ? 'tooltip-item-title' : 'tooltip-item-content';
+                                            return `<span class="${colorClass} ${text.includes('Previous') ? 'slimstat-postbox-chart--prev-item--title' : ''}">${text.includes('Previous') ? slimstatGetLabel(text.split('Previous ')[1].trim(), false, true) : text}</span>`;
+                                        }).join(': ');
+                                    }
+
+                                    if (tooltip.body) {
+                                        const titleLines = tooltip.title || [];
+                                        const bodyLines = tooltip.body.map(getBody);
+                                        let innerHtml = '<thead>';
+
+                                        titleLines.forEach(function(title) {
+                                            innerHtml += `<tr><th style="font-weight: bold; font-size: 14px; padding-bottom: 6px;text-align: left;">${slimstatGetLabel(title)}</th></tr>`;
+                                        });
+                                        innerHtml += '</thead><tbody>';
+
+                                        bodyLines.forEach((body, i) => {
+                                            const color = tooltip.labelColors[i];
+                                            var backgroundStyle = 'background-color:' + color.backgroundColor;
+                                            if( body.includes('slimstat-postbox-chart--prev-item--title')) {
+                                                backgroundStyle = `background-image: repeating-linear-gradient(to right,${color.backgroundColor},${color.backgroundColor} 4px,transparent 0px,transparent 6px);background-size: auto 6px;opacity: 0.8;height: 2px;`;
+                                            }
+                                            innerHtml += `<tr class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="${backgroundStyle};margin-bottom:3px;margin-right:10px;"></div>${body}</td></tr>`;
+                                        });
+                                        innerHtml += '</tbody>';
+                                        innerHtml += '<div class="align-indicator" style="width: 15px;height: 15px;background-color: #fff;border-radius: 3px;display: inline-block;position: absolute;left: -8px;top: calc(50% - 8px);border-bottom: solid 1px #f0f0f0;border-left: solid 1px #f0f0f0;transform: rotate(45deg);"></div>';
+
+                                        let tableRoot = tooltipEl.querySelector('table');
+                                        tableRoot.innerHTML = innerHtml;
+                                    }
+
+                                    const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+                                    const position = chart.canvas.getBoundingClientRect();
+
+                                    tooltipEl.style.opacity = 1;
+                                    tooltipEl.style.position = 'absolute';
+                                    tooltipEl.style.left = position.left + window.pageXOffset + tooltip.caretX + 20 + 'px';
+                                    tooltipEl.style.top = position.top + window.pageYOffset + tooltip.caretY - tooltipEl.offsetHeight + 61 + 'px';
+                                }
+                            }
                         },
-                        animation: {
-                            duration: 1500,
+                        animations: {
+                            radius: {
+                                duration: 400,
+                                easing: 'linear',
+                                loop: (context) => context.active
+                            }
                         },
                         tooltips: {
                             mode: 'index',
@@ -1423,14 +1727,10 @@ class wp_slimstat_reports
                     }
                 });
 
-                <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
+                renderCustomLegend(chart);
             });
-            <?php endif; ?>
         </script>
         <?php
-        if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
-        }
     }
 
     public static function show_events($_args = array())
@@ -1741,11 +2041,11 @@ class wp_slimstat_reports
                                 }
                                 ?>
                             </div>
-                            <strong><?= esc_html($country['name']) ?></strong>
+                            <strong><?php echo esc_html($country['name']) ?></strong>
                             <div class="bar-container">
-                                <div class="bar-fill" style="width: <?= $country['percent'] ?>%;"></div>
+                                <div class="bar-fill" style="width: <?php echo $country['percent'] ?>%;"></div>
                             </div>
-                            <span><?= $country['percent'] ?>%</span>
+                            <span><?php echo $country['percent'] ?>%</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
