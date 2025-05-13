@@ -103,19 +103,10 @@ class Chart
         $_args  = $args['chart_data'];
 
         // Set default values
-        $start       = isset($args['start']) ? intval($args['start']) : strtotime('-30 days');
-        $end         = isset($args['end']) ? intval($args['end']) : time();
-        $granularity = isset($args['granularity']) ? strtolower($args['granularity']) : 'daily';
-
-        $range = $end - $start;
-
-        // Normalize filters
-        \wp_slimstat_db::$filters_normalized['utime'] = array(
-            'start' => $start,
-            'end'   => $end,
-            'range' => $range
-        );
-
+        $start         = isset($args['start']) ? intval($args['start']) : strtotime('-30 days');
+        $end           = isset($args['end']) ? intval($args['end']) : time();
+        $granularity   = isset($args['granularity']) ? strtolower($args['granularity']) : 'daily';
+        $range         = $end - $start;
         $wp_timezone   = wp_timezone();
         $date_format   = 'Y/m/d';
         $start_of_week = (int) get_option('start_of_week', 1);
