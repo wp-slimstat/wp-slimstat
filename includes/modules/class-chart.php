@@ -12,15 +12,29 @@ if (! defined('ABSPATH')) {
 class Chart
 {
 
-    private $args         = array();
-    private $data         = array();
-    private $prev_data    = array();
+    public  $data         = array();
+    public  $prev_data    = array();
+    public  $args         = array();
     private $daysBetween  = 0;
     private $chart_labels = array();
     private $translations = array();
 
     public function show_chart($args)
     {
+        $this->setup_args( $args );
+        $this->render_chart($this->args, $this->data, $this->prev_data);
+    }
+
+    /**
+     * Sets up the chart arguments by normalizing them and fetching the data.
+     *
+     * This method initializes the class properties with the normalized version
+     * of the provided arguments and retrieves the data required for charting.
+     * It also manages the datasets for the current and previous data states.
+     *
+     * @param array $args The arguments to be set up for the chart.
+     */
+    public function setup_args($args) {
         $this->args      = $this->normalize_args($args);
         $this->data      = $this->get_data_for_chart($this->args);
         $this->prev_data = $this->data;
@@ -28,7 +42,6 @@ class Chart
         unset($this->data['datasets_prev']);
         $this->prev_data['datasets'] = $this->prev_data['datasets_prev'];
         unset($this->prev_data['datasets_prev']);
-        $this->render_chart($this->args, $this->data, $this->prev_data);
     }
 
     private function normalize_args($args)
@@ -296,12 +309,20 @@ class Chart
         if (!in_array($granularity, ['yearly', 'monthly', 'weekly', 'daily', 'hourly'])) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
         }
+
+        \wp_slimstat_db::$filters_normalized['utime']['start'] = $args['start'];
+        \wp_slimstat_db::$filters_normalized['utime']['end']   = $args['end'];
+        \wp_slimstat_db::$filters_normalized['utime']['range'] = $args['end'] - $args['start'];
+
         $chart = (new self());
         $args['granularity'] = $granularity;
-        $args = $chart->normalize_args($args);
-        $data =  $chart->get_data_for_chart($args);
-        $prev_args = $chart->get_previous_args($args);
-        $prev_data =  $chart->get_data_for_chart($prev_args);
+
+        $chart->setup_args($args);
+
+        $data      = $chart->data;
+        $prev_data = $chart->prev_data;
+        $args      = $chart->args;
+
         $args['days_between'] = $chart->count_days_between($args['start'], $args['end']);
 
         $chart_labels = isset($args['chart_labels']) ? $args['chart_labels'] : array_keys($data['datasets']);
