@@ -1,3 +1,6 @@
+= 5.3.0 - 2025-05-12
+- **Enhancement**: Redesigned line charts for improved user experience
+
 = 5.2.12 - 2025-04-26 =
 - **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
 
