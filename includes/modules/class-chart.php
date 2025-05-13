@@ -23,9 +23,11 @@ class Chart
     {
         $this->args      = $this->normalize_args($args);
         $this->data      = $this->get_data_for_chart($this->args);
-        $prev_args       = $this->get_previous_args($this->args);
-        $this->prev_data = $this->get_data_for_chart($prev_args);
+        $this->prev_data = $this->data;
 
+        unset($this->data['datasets_prev']);
+        $this->prev_data['datasets'] = $this->prev_data['datasets_prev'];
+        unset($this->prev_data['datasets_prev']);
         $this->render_chart($this->args, $this->data, $this->prev_data);
     }
 
@@ -118,18 +120,17 @@ class Chart
                 $params['data_points_count'] = ceil($range / 3600);
                 $params['granularity']       = 'HOUR';
                 break;
-
             case 'weekly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = 'W, Y';
                 $params['data_points_count'] = $this->count_weeks_between($start, $end);
                 $params['granularity']       = 'WEEK';
 
-                $start_of_week = (int) get_option('start_of_week', 1);
-                $weekdays = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
-                $weekday_name = $weekdays[$start_of_week];
-
+                $start_of_week  = (int) get_option('start_of_week', 1);
+                $weekdays       = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+                $weekday_name   = $weekdays[$start_of_week];
                 $adjusted_start = strtotime("last $weekday_name", $start);
+
                 if (date('w', $start) == $start_of_week) {
                     $adjusted_start = strtotime("this $weekday_name", $start);
                 }
@@ -137,7 +138,6 @@ class Chart
                 $params['adjusted_start']      = $adjusted_start;
                 $params['adjusted_prev_start'] = strtotime("-$range seconds", $adjusted_start);
                 break;
-
             case 'monthly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = 'F Y';
@@ -153,7 +153,6 @@ class Chart
 
             case 'daily':
             default:
-
                 $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = $date_format;
                 $params['data_points_count'] = ceil($range / 86400);
@@ -161,27 +160,26 @@ class Chart
                 break;
         }
 
-        $params['previous_end']   = $start - 1;
-        $params['previous_start'] = $params['previous_end'] - $range;
+
+        $params['previous_end']   = \wp_slimstat_db::$filters_normalized['utime']['start'] - 1;
+        $params['previous_start'] = $params['previous_end'] - \wp_slimstat_db::$filters_normalized['utime']['range'];
 
         if (empty($_args['where'])) {
             $_args['where'] = '';
         }
 
         $sql = "
-            SELECT MIN(dt) AS dt, {$_args['data1']} AS v1, {$_args['data2']} AS v2
-            FROM {$GLOBALS['wpdb']->prefix}slim_stats
-            WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . "
-            AND (dt BETWEEN {$params['previous_start']} AND {$params['previous_end']} OR dt BETWEEN $start AND $end)
-            GROUP BY {$params['group_by']}
-        ";
+        SELECT MIN(dt) AS dt, {$_args[ 'data1' ]} AS v1, {$_args[ 'data2' ]} AS v2
+        FROM {$GLOBALS['wpdb']->prefix}slim_stats
+        WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params[ 'previous_start' ]} AND {$params[ 'previous_end' ]} OR dt BETWEEN " . \wp_slimstat_db::$filters_normalized['utime']['start'] . ' AND ' . \wp_slimstat_db::$filters_normalized['utime']['end'] . ")
+        GROUP BY {$params[ 'group_by' ]}";
 
+        // Get the data
         $results = \wp_slimstat_db::get_results(
             $sql,
             'dt',
             '',
-            $params['group_by'],
-            'SUM(v1) AS v1, SUM(v2) AS v2'
+            $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
         );
 
         $output = array(
@@ -190,52 +188,48 @@ class Chart
             'datasets' => array(
                 'v1' => array(),
                 'v2' => array(),
+                'v3' => array(),
+                'v4' => array()
             )
         );
 
+        // No data? No problem!
         if (!is_array($results) || empty($results)) {
             return $output;
         }
 
+        // Generate the output array (sent to the chart library) by combining all the data collected so far
+
+        // Let's start by initializing all the data points to zero
         for ($i = 0; $i < $params['data_points_count']; $i++) {
-            $v1_time  = strtotime("+$i {$params['granularity']}", $start);
-            $v3_time  = strtotime("+$i {$params['granularity']}", $params['previous_start']);
-
-            $v1_label = wp_date($params['data_points_label'], $v1_time, $wp_timezone);
-            $v3_label = wp_date($params['data_points_label'], $v3_time, $wp_timezone);
-
-            if ($granularity === 'weekly') {
-                $v1_time = strtotime("+$i weeks", $params['adjusted_start']);
-                $v3_time = strtotime("+$i weeks", $params['adjusted_prev_start']);
-            } else {
-                $v1_time = strtotime("+$i {$params['granularity']}", $start);
-                $v3_time = strtotime("+$i {$params['granularity']}", $params['previous_start']);
-            }
-
+            $v1_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", \wp_slimstat_db::$filters_normalized['utime']['start']));
+            $v3_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", $params['previous_start']));
 
             $output['keys'][$v1_label] = $i;
             $output['keys'][$v3_label] = $i;
 
-            $output['labels'][] = "'" . date($params['data_points_label'], $v1_time) . "'";
+            $output['labels'][] = "'$v1_label'";
 
-            $output['datasets']['v1'][] = 0;
-            $output['datasets']['v2'][] = 0;
+            // This is how AmCharts expects the data to be formatted
+            $output['datasets']['v1'][] = $output['datasets']['v2'][] = $output['datasets']['v3'][] = $output['datasets']['v4'][] = 0;
         }
 
+        // Now populate all the data points
         foreach ($results as $a_result) {
-            $label = wp_date($params['data_points_label'], $a_result['dt'], $wp_timezone);
+            $label = date($params['data_points_label'], $a_result['dt']);
 
+            // Data out of range?
             if (!isset($output['keys'][$label])) {
                 continue;
             }
 
-            if ($a_result['dt'] >= $start && $a_result['dt'] <= $end) {
+            // Does this value belong to the "current" range?
+            if ($a_result['dt'] >= \wp_slimstat_db::$filters_normalized['utime']['start'] && $a_result['dt'] <= \wp_slimstat_db::$filters_normalized['utime']['end']) {
                 $output['datasets']['v1'][$output['keys'][$label]] = intval($a_result['v1']);
                 $output['datasets']['v2'][$output['keys'][$label]] = intval($a_result['v2']);
-            }
-
-            if (isset($output['keys'][$label]) && isset($output['datasets']['v2'][$output['keys'][$label]]) && !$output['datasets']['v2'][$output['keys'][$label]]) {
-                unset($output['datasets']['v2'][$output['keys'][$label]]);
+            } else {
+                $output['datasets']['v3'][$output['keys'][$label]] = intval($a_result['v1']);
+                $output['datasets']['v4'][$output['keys'][$label]] = intval($a_result['v2']);
             }
         }
 
@@ -243,7 +237,14 @@ class Chart
 
         return array(
             'labels'      => $output['labels'],
-            'datasets'    => $output['datasets'],
+            'datasets'    => array(
+                'v1' => $output['datasets']['v1'],
+                'v2' => $output['datasets']['v2'],
+            ),
+            'datasets_prev' => array(
+                'v1' => $output['datasets']['v3'],
+                'v2' => $output['datasets']['v4'],
+            ),
             'today'       => $today,
             'granularity' => $params['granularity'],
         );
@@ -316,6 +317,7 @@ class Chart
             'weekly'   => __('Weekly', 'wp-slimstat'),
             'daily'    => __('Daily', 'wp-slimstat'),
             'hourly'   => __('Hourly', 'wp-slimstat'),
+            'now'      => __('Now', 'wp-slimstat'),
         ];
 
         wp_send_json_success([
@@ -338,11 +340,12 @@ class Chart
             '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
             'day_ago'                 => __('Day ago', 'wp-slimstat'),
             'year_ago'                => __('Year ago', 'wp-slimstat'),
+            'now'                     => __('Now', 'wp-slimstat'),
         ];
 
         $path_slimstat = dirname(dirname(__FILE__));
         wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', $path_slimstat), [], '4.2.1', false);
-        wp_enqueue_script('slimstat_chart', plugins_url('/admin/assets/js/slimstat-chart.js', $path_slimstat), ['slimstat_chartjs'], '1.0', true);
+        wp_enqueue_script('slimstat_chart', plugins_url('/admin/assets/js/slimstat-chart.js', $path_slimstat), ['slimstat_chartjs'], '1.0', false);
 
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
             'ajax_url' => admin_url('admin-ajax.php'),

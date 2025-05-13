@@ -53,7 +53,7 @@ $disable_hourly = $availableRange > (7 * 86400); // More than 7 days of data
     <canvas id="slimstat_chart_<?php echo esc_attr($args['id']); ?>" class="slimstat-postbox-chart--canvas" height="240px"></canvas>
     <?php if ( defined('DOING_AJAX') && DOING_AJAX): ?>
         <script>
-            window.reinitializeCharts("<?php echo $args['id']; ?>")
+            reinitializeSlimstatCharts("<?php echo $args['id']; ?>")
         </script>
     <?php endif; ?>
 </div>
