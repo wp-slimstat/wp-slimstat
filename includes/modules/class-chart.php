@@ -310,6 +310,12 @@ class Chart
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
         }
 
+        if (!class_exists('\wp_slimstat_db')) {
+            include_once(SLIMSTAT_DIR . '/admin/view/wp-slimstat-db.php');
+            \wp_slimstat_db::init();
+        }
+
+
         \wp_slimstat_db::$filters_normalized['utime']['start'] = $args['start'];
         \wp_slimstat_db::$filters_normalized['utime']['end']   = $args['end'];
         \wp_slimstat_db::$filters_normalized['utime']['range'] = $args['end'] - $args['start'];
