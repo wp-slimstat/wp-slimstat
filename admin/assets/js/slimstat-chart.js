@@ -311,14 +311,13 @@ document.addEventListener("DOMContentLoaded", function () {
             const formatted_label = isThisMonth ? `${month}, ${year} (${translations.now})` : `${label} <span class="slimstat-postbox-chart--item--prev">${month}, ${year}</span>`;
             return justTranslation ? formatted_label : long && isThisMonth ? `${formatted_label}` : `${month}, ${year}`;
         } else if (unitTime === "weekly") {
-            // Robustly parse weekNumber and year, trimming spaces
             const [weekNumber, year] = (justTranslation ? justTranslation : label).split(",").map((s) => Number(s.trim()));
             const firstDayOfYear = new Date(year, 0, 1);
             const firstDayOfWeek = new Date(year, 0, 1 + (weekNumber - 1) * 7 - firstDayOfYear.getDay());
             const lastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
             const firstStr = long ? firstDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : firstDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
             const lastStr = long ? lastDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : lastDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
-            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${firstStr} - ${lastStr}</span>`;
+            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${year} &#8226; ${firstStr} - ${lastStr}</span>`;
             return justTranslation ? `${formatted_label}` : `${firstStr} - ${lastStr}`;
         } else if (unitTime === "daily") {
             var date = new Date(label);
@@ -333,7 +332,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const formatted = long ? date.toLocaleString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : date.toLocaleDateString("default", { month: "short", day: "2-digit" }).replaceAll("-", "/");
             return long && isToday ? `${formatted} (Today)` : formatted;
         } else if (unitTime === "hourly") {
-            // if (justTranslation) return `${label} <span class="slimstat-postbox-chart--item--prev">${translations.day_ago}</span>`;
             const date = new Date(justTranslation ? justTranslation.replace(/(\d+)-(\d+)-(\d+) (\d+):00/, "$1/$2/$3 $4:00") : label.replace(/(\d+)-(\d+)-(\d+) (\d+):00/, "$1/$2/$3 $4:00"));
             const hour = date.getHours();
             const minutes = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
