@@ -114,17 +114,25 @@ class Chart
 
     public function get_data_for_chart($args)
     {
+        global $wpdb;
         $params = array();
         $_args  = $args['chart_data'];
 
         // Set default values
-        $start         = isset($args['start']) ? intval($args['start']) : strtotime('-30 days');
-        $end           = isset($args['end']) ? intval($args['end']) : time();
+        $start         = isset($args['start']) ? intval($args['start']) : \wp_slimstat_db::$filters_normalized['utime']['start'];
+        $end           = isset($args['end']) ? intval($args['end']) : \wp_slimstat_db::$filters_normalized['utime']['end'];
         $granularity   = isset($args['granularity']) ? strtolower($args['granularity']) : 'daily';
         $range         = $end - $start;
         $wp_timezone   = wp_timezone();
         $date_format   = 'Y/m/d';
         $start_of_week = (int) get_option('start_of_week', 1);
+
+        $min_dt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats") - 1;
+        if ($min_dt && isset($start) && $start < $min_dt) {
+            \wp_slimstat_db::$filters_normalized['utime']['start'] = $min_dt;
+            $start = $min_dt;
+            $range = $end - $start;
+        }
 
         switch ($granularity) {
             case 'hourly':
@@ -195,6 +203,7 @@ class Chart
             $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
         );
 
+
         $output = array(
             'keys'     => array(),
             'labels'   => array(),
@@ -250,6 +259,10 @@ class Chart
 
         return array(
             'labels'      => $output['labels'],
+            'prev_labels' => array_map(function ($label, $index) use ($params, $wp_timezone) {
+                $prev_start = $params['previous_start'];
+                return wp_date($params['data_points_label'], strtotime("+{$index} {$params['granularity']}", $prev_start),  $wp_timezone);
+            }, $output['labels'], array_keys($output['labels'])),
             'datasets'    => array(
                 'v1' => $output['datasets']['v1'],
                 'v2' => $output['datasets']['v2'],
@@ -273,10 +286,22 @@ class Chart
 
     public function count_weeks_between($start, $end)
     {
-        $start = date('W', $start);
-        $end   = date('W', $end);
+        $start_week = (int)date('W', $start);
+        $start_year = (int)date('Y', $start);
+        $end_week   = (int)date('W', $end);
+        $end_year   = (int)date('Y', $end);
 
-        return abs($end - $start) + 1;
+        $weeks = 0;
+        while ($start_year < $end_year || $start_week <= $end_week) {
+            $weeks++;
+            $start_week++;
+            if ($start_week > 52) {
+                $start_week = 1;
+                $start_year++;
+            }
+        }
+
+        return $weeks;
     }
 
     protected function count_months_between($min_timestamp = 0, $max_timestamp = 0)
@@ -337,6 +362,7 @@ class Chart
             'days_ago'                => sprintf(__('%s Days ago', 'wp-slimstat'), $args['days_between'] ?? 0),
             '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
             'previous_period_tooltip' => __('Click to Show or Hide data from the previous period for comparison.', 'wp-slimstat'),
+            'today'    => __('Today', 'wp-slimstat'),
             'day_ago'  => __('Day ago', 'wp-slimstat'),
             'year_ago' => __('Year ago', 'wp-slimstat'),
             'yearly'   => __('Yearly', 'wp-slimstat'),
@@ -363,6 +389,7 @@ class Chart
         $this->translations = [
             'previous_period'         => __('-- Previous Period', 'wp-slimstat'),
             'previous_period_tooltip' => __('Click to Show or Hide data from the previous period for comparison.', 'wp-slimstat'),
+            'today'                   => __('Today', 'wp-slimstat'),
             'days_ago'                => sprintf(__('%s Days ago', 'wp-slimstat'), $this->args['days_between'] ?? 0),
             '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
             'day_ago'                 => __('Day ago', 'wp-slimstat'),

@@ -37,11 +37,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const translations = JSON.parse(element.getAttribute("data-translations"));
 
         const labels = data.labels;
+        const prev_labels = data.prev_labels;
+
         const datasets = prepareDatasets(data.datasets, chartLabels, labels, data.today);
         const prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true);
 
         const ctx = document.getElementById(`slimstat_chart_${chartId}`).getContext("2d");
-        const chart = createChart(ctx, labels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
+        const chart = createChart(ctx, labels, prev_labels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
         charts.set(chartId, chart);
 
         renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
@@ -74,54 +76,61 @@ document.addEventListener("DOMContentLoaded", function () {
         inside.appendChild(loadingIndicator);
         document.querySelector(`.slimstat-chart-wrap:has(#slimstat_chart_${chartId})`).style.display = "none";
 
-        fetch(slimstat_chart_vars.ajax_url, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", slimstat_chart_vars.ajax_url, true);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    const result = JSON.parse(xhr.responseText);
+                    if (!result.success) {
+                        console.error("AJAX error:", result.data.message);
+                        return;
+                    }
+                    element.dataset.granularity = granularity;
+
+                    const oldToggleButtons = document.querySelectorAll(`.slimstat-postbox-chart--item-${chartId}`);
+                    oldToggleButtons.forEach((button) => button.remove());
+
+                    const { args, data, prev_data, days_between, chart_labels, translations } = result.data;
+                    const labels = data.labels;
+                    const datasets = prepareDatasets(data.datasets, chart_labels, labels, data.today);
+                    const prevDatasets = prepareDatasets(prev_data.datasets, chart_labels, prev_data.labels, null, true);
+
+                    const chart = charts.get(chartId);
+                    chart.data.labels = labels;
+                    chart.data.datasets = [...datasets, ...prevDatasets];
+                    chart.options.scales.x.ticks.callback = function (value) {
+                        const label = this.getLabelForValue(value).replace(/'/g, "");
+                        return slimstatGetLabel(label, false, granularity, translations); // Ensure updated granularity is passed
+                    };
+                    chart.update();
+
+                    renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
+
+                    element.dataset.args = JSON.stringify(args);
+                    element.dataset.data = JSON.stringify(data);
+                    element.dataset.prevData = JSON.stringify(prev_data);
+                    element.dataset.daysBetween = days_between;
+                    element.dataset.chartLabels = JSON.stringify(chart_labels);
+                    element.dataset.translations = JSON.stringify(translations);
+
+                    inside.removeChild(loadingIndicator);
+                    document.querySelector(`.slimstat-chart-wrap:has(#slimstat_chart_${chartId})`).style.display = "block";
+                } else {
+                    console.error("XHR error:", xhr.statusText);
+                }
+            }
+        };
+        xhr.send(
+            new URLSearchParams({
                 action: "slimstat_fetch_chart_data",
                 nonce: slimstat_chart_vars.nonce,
                 args: JSON.stringify(args),
                 granularity: granularity,
-            }),
-        })
-            .then((response) => response.json())
-            .then((result) => {
-                if (!result.success) {
-                    console.error("AJAX error:", result.data.message);
-                    return;
-                }
-                element.dataset.granularity = granularity;
-
-                const oldToggleButtons = document.querySelectorAll(`.slimstat-postbox-chart--item-${chartId}`);
-                oldToggleButtons.forEach((button) => button.remove());
-
-                const { args, data, prev_data, days_between, chart_labels, translations } = result.data;
-                const labels = data.labels;
-                const datasets = prepareDatasets(data.datasets, chart_labels, labels, data.today);
-                const prevDatasets = prepareDatasets(prev_data.datasets, chart_labels, prev_data.labels, null, true);
-
-                const chart = charts.get(chartId);
-                chart.data.labels = labels;
-                chart.data.datasets = [...datasets, ...prevDatasets];
-                chart.options.scales.x.ticks.callback = function (value) {
-                    const label = this.getLabelForValue(value).replace(/'/g, "");
-                    return slimstatGetLabel(label, false, granularity, translations); // Ensure updated granularity is passed
-                };
-                chart.update();
-
-                renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
-
-                element.dataset.args = JSON.stringify(args);
-                element.dataset.data = JSON.stringify(data);
-                element.dataset.prevData = JSON.stringify(prev_data);
-                element.dataset.daysBetween = days_between;
-                element.dataset.chartLabels = JSON.stringify(chart_labels);
-                element.dataset.translations = JSON.stringify(translations);
-
-                inside.removeChild(loadingIndicator);
-                document.querySelector(`.slimstat-chart-wrap:has(#slimstat_chart_${chartId})`).style.display = "block";
-            })
-            .catch((error) => console.error("Fetch error:", error));
+            }).toString()
+        );
     }
 
     function prepareDatasets(rawDatasets, chartLabels, labels, today, isPrevious = false) {
@@ -155,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function createChart(ctx, labels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
+    function createChart(ctx, labels, prev_labels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
         return new Chart(ctx, {
             type: "line",
             data: {
@@ -180,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     legend: false,
                     tooltip: {
                         enabled: false,
-                        external: createTooltip(labels, translations, daysBetween, chartId),
+                        external: createTooltip(labels, prev_labels, translations, daysBetween, chartId),
                     },
                 },
                 animations: {
@@ -206,12 +215,17 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!dataset.label.includes("Previous")) {
                 const datasetData = datasets[index]?.data;
                 let value = 0,
-                    newValue = 0;
+                    prevValue = 0;
 
                 datasetData.forEach((data, i) => {
-                    if (labels[i] !== `'${today}'`) value += data;
-                    newValue += data;
+                    value += data;
                 });
+
+                if (prevDatasets[index]) {
+                    prevDatasets[index].data.forEach((data) => {
+                        prevValue += data;
+                    });
+                }
 
                 const legendItem = document.createElement("div");
                 legendItem.classList.add("slimstat-postbox-chart--item");
@@ -221,10 +235,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span class="slimstat-postbox-chart--item--color" style="background-color: ${dataset.borderColor}"></span>
                     <span class="slimstat-postbox-chart--item-value">${value}</span>
                     ${
-                        value !== newValue
+                        prevValue !== value
                             ? `
-                        <span class="slimstat-postbox-chart--item--color" style="background-image: linear-gradient(to right, ${dataset.borderColor} 80%, transparent 20%); background-size: 10px 6px; opacity: 0.8;"></span>
-                        <span class="slimstat-postbox-chart--item-value" style="opacity: 0.8;">${newValue}</span>
+                        <span class="slimstat-postbox-chart--item--color" style="background-image: repeating-linear-gradient(to right, ${dataset.borderColor}, ${dataset.borderColor} 4px, transparent 0px, transparent 6px); background-size: auto 6px; height: 2px; margin-bottom: 0px; margin-left: 10px;"></span>
+                        <span class="slimstat-postbox-chart--item-value">${prevValue}</span>
                     `
                             : ""
                     }
@@ -276,50 +290,66 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function slimstatGetLabel(label, long = true, unitTime, translations, justTranslation = false) {
+        label = label.replace(/'/g, "");
         if (unitTime === "monthly") {
-            if (justTranslation) return `${label} <span class="slimstat-postbox-chart--item--prev">${translations["30_days_ago"]}</span>`;
-            const date = new Date(`${label} 1`);
+            const date = new Date(`${justTranslation ? justTranslation : label} 1`);
             const month = date.toLocaleString("default", { month: "long" });
             const year = date.getFullYear();
             const isThisMonth = new Date().getMonth() === date.getMonth() && new Date().getFullYear() === year;
-            return isThisMonth && long ? `${month}, ${year} (This Month)` : `${month}, ${year}`;
+            const formatted_label = isThisMonth ? `${month}, ${year} (${translations.now})` : `${label} <span class="slimstat-postbox-chart--item--prev">${month}, ${year}</span>`;
+            return justTranslation ? formatted_label : long && isThisMonth ? `${formatted_label}` : `${month}, ${year}`;
         } else if (unitTime === "weekly") {
-            if (justTranslation) return `${label} <span class="slimstat-postbox-chart--item--prev">${translations["30_days_ago"]}</span>`;
-            const [weekNumber, year] = label.split(", ").map(Number);
+            // Robustly parse weekNumber and year, trimming spaces
+            const [weekNumber, year] = (justTranslation ? justTranslation : label).split(",").map((s) => Number(s.trim()));
             const firstDayOfYear = new Date(year, 0, 1);
             const firstDayOfWeek = new Date(year, 0, 1 + (weekNumber - 1) * 7 - firstDayOfYear.getDay());
             const lastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
             const firstStr = long ? firstDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : firstDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
             const lastStr = long ? lastDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : lastDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
-            return `${firstStr} - ${lastStr}`;
+            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${firstStr} - ${lastStr}</span>`;
+            return justTranslation ? `${formatted_label}` : `${firstStr} - ${lastStr}`;
         } else if (unitTime === "daily") {
-            if (justTranslation) return `${label} <span class="slimstat-postbox-chart--item--prev">${translations.days_ago}</span>`;
-            const date = new Date(label);
+            var date = new Date(label);
+            if (justTranslation) {
+                date = new Date(justTranslation);
+                const isToday = new Date().toDateString() === date.toDateString();
+                const formatted = long ? date.toLocaleString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : date.toLocaleDateString("default", { month: "short", day: "2-digit" }).replaceAll("-", "/");
+                const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${formatted}</span>`;
+                return long && isToday ? `${formatted_label} (${translations.today})` : formatted_label;
+            }
             const isToday = new Date().toDateString() === date.toDateString();
             const formatted = long ? date.toLocaleString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : date.toLocaleDateString("default", { month: "short", day: "2-digit" }).replaceAll("-", "/");
             return long && isToday ? `${formatted} (Today)` : formatted;
         } else if (unitTime === "hourly") {
-            if (justTranslation) return `${label} <span class="slimstat-postbox-chart--item--prev">${translations.day_ago}</span>`;
-            const date = new Date(label.replace(/(\d+)-(\d+)-(\d+) (\d+):00/, "$1/$2/$3 $4:00"));
+            // if (justTranslation) return `${label} <span class="slimstat-postbox-chart--item--prev">${translations.day_ago}</span>`;
+            const date = new Date(justTranslation ? justTranslation.replace(/(\d+)-(\d+)-(\d+) (\d+):00/, "$1/$2/$3 $4:00") : label.replace(/(\d+)-(\d+)-(\d+) (\d+):00/, "$1/$2/$3 $4:00"));
             const hour = date.getHours();
             const minutes = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
             const isToday = new Date().toLocaleString("default", { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", hourCycle: "h23" }) === date.toLocaleString("default", { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", hourCycle: "h23" });
             const formatted = long ? date.toLocaleString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : date.toLocaleDateString("default", { month: "short", day: "2-digit" }).replaceAll("-", "/");
             const now = new Date().toLocaleString("default", { hour: "numeric", minute: "2-digit", hourCycle: "h23" });
-
+            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${formatted}</span>`;
+            if (justTranslation) {
+                return formatted_label;
+            }
             return long ? (isToday ? `${formatted} ${hour}:${minutes}-${now} (${translations.now})` : `${formatted} ${hour}:${minutes}-${hour + 1}:${minutes}`) : `${formatted} ${hour}:${minutes}`;
         } else if (unitTime === "yearly") {
-            if (justTranslation) return `${label} <span class="slimstat-postbox-chart--item--prev">${translations.year_ago}</span>`;
-            const date = new Date(label);
+            const date = new Date(justTranslation ? justTranslation : label);
             const year = date.getFullYear();
             const isThisYear = new Date().getFullYear() === year;
+            if (justTranslation) {
+                const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${year}</span>`;
+                return formatted_label;
+            }
             return isThisYear && long ? `${year} (This Year)` : `${year}`;
         }
     }
 
-    function createTooltip(labels, translations, daysBetween, chartId) {
+    function createTooltip(labels, prev_labels, translations, daysBetween, chartId) {
         return function (context) {
             var unitTime = document.getElementById(`slimstat_chart_data_${chartId}`).dataset.granularity;
+            var data = JSON.parse(document.getElementById(`slimstat_chart_data_${chartId}`).getAttribute("data-data"));
+            prev_labels = data.prev_labels;
             let tooltipEl = document.getElementById("chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
@@ -329,6 +359,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const { chart, tooltip } = context;
+
             if (tooltip.opacity === 0) {
                 tooltipEl.style.opacity = 0;
                 return;
@@ -339,10 +370,12 @@ document.addEventListener("DOMContentLoaded", function () {
             else tooltipEl.classList.add("no-transform");
 
             const titleLines = tooltip.title || [];
-            const bodyLines = tooltip.body.map((bodyItem) => {
+
+            const bodyLines = tooltip.body.map((bodyItem, i) => {
                 const [label, value] = bodyItem.lines[0].split(": ");
+                const itemDate = prev_labels[tooltip.dataPoints[i].dataIndex] ? prev_labels[tooltip.dataPoints[i].dataIndex] : false;
                 const isPrev = label.includes("Previous");
-                const formattedLabel = isPrev ? slimstatGetLabel(label.split("Previous ")[1].trim(), false, unitTime, translations, true) : label;
+                const formattedLabel = isPrev ? slimstatGetLabel(label.split("Previous ")[1].trim(), false, unitTime, translations, itemDate) : label;
                 return `<span class="tooltip-item-title ${isPrev ? "slimstat-postbox-chart--prev-item--title" : ""}">${formattedLabel}</span>: <span class="tooltip-item-content">${value}</span>`;
             });
 
@@ -358,15 +391,58 @@ document.addEventListener("DOMContentLoaded", function () {
                 innerHtml += `<tr class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="${style}; margin-bottom: 3px; margin-right: 10px;"></div>${body}</td></tr>`;
             });
             innerHtml += "</tbody>";
-            innerHtml += '<div class="align-indicator" style="width: 15px; height: 15px; background-color: #fff; border-radius: 3px; display: inline-block; position: absolute; left: -8px; top: calc(50% - 8px); border-bottom: solid 1px #f0f0f0; border-left: solid 1px #f0f0f0; transform: rotate(45deg);"></div>';
+            innerHtml += `<div class="align-indicator" style="
+                width: 15px;
+                height: 15px;
+                background-color: #fff;
+                border-radius: 3px;
+                display: inline-block;
+                position: absolute;
+                bottom: -8px;
+                border-bottom: solid 1px #f0f0f0;
+                border-left: solid 1px #f0f0f0;
+                transform: rotate(-45deg);
+                transition: left 0.1s ease;
+            "></div>`;
 
             tooltipEl.querySelector("table").innerHTML = innerHtml;
 
             const position = chart.canvas.getBoundingClientRect();
+            const tooltipWidth = tooltipEl.offsetWidth;
+            const tooltipHeight = tooltipEl.offsetHeight;
+            let left = position.left + window.pageXOffset + tooltip.caretX - tooltipWidth / 2;
+            const dataPointYs = tooltip.dataPoints.map(dp => dp.element.y);
+            const highestY = Math.min(...dataPointYs);
+            let top = position.top + window.pageYOffset + highestY - tooltipHeight - 24;
+
+
+            if (left + tooltipWidth > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipWidth - 10;
+            }
+            if (left < 10) {
+                left = 10;
+            }
+            if (top < 10) {
+                top = 10;
+            }
+
             tooltipEl.style.opacity = 1;
             tooltipEl.style.position = "absolute";
-            tooltipEl.style.left = `${position.left + window.pageXOffset + tooltip.caretX + 20}px`;
-            tooltipEl.style.top = `${position.top + window.pageYOffset + tooltip.caretY - tooltipEl.offsetHeight + 61}px`;
+            tooltipEl.style.left = `${left}px`;
+            tooltipEl.style.top = `${top}px`;
+
+            const alignIndicator = tooltipEl.querySelector(".align-indicator");
+            if (alignIndicator) {
+                const indicatorWidth = alignIndicator.offsetWidth;
+                const tooltipLeft = left;
+                const tooltipRight = left + tooltipWidth;
+                const mouseX = position.left + window.pageXOffset + tooltip.caretX;
+                let indicatorLeft = mouseX - tooltipLeft - indicatorWidth / 2;
+                const minLeft = 4;
+                const maxLeft = tooltipWidth - indicatorWidth - 4;
+                indicatorLeft = Math.max(minLeft, Math.min(indicatorLeft, maxLeft));
+                alignIndicator.style.left = `${indicatorLeft}px`;
+            }
         };
     }
 });
