@@ -57,16 +57,14 @@ class REST_Service {
      */
     public static function rewrite_rule_request()
     {
-        if(\wp_slimstat::$settings['enable_adblock_bypass'] != 'on') {
-            return;
+        if(\wp_slimstat::$settings['tracking_request_method'] === 'adblock_bypass') {
+            add_rewrite_tag('%slimstat_request%', '([a-f0-9]{32})');
+            add_rewrite_rule(
+                '^request/([a-f0-9]{32})$',
+                'index.php?slimstat_request=$matches[1]',
+                'top'
+            );
         }
-
-        add_rewrite_tag('%slimstat_request%', '([a-f0-9]{32})');
-        add_rewrite_rule(
-            '^request/([a-f0-9]{32})$',
-            'index.php?slimstat_request=$matches[1]',
-            'top'
-        );
     }
 
     /**
@@ -76,10 +74,7 @@ class REST_Service {
      */
     public static function handle_adblock_tracking()
     {
-        if(\wp_slimstat::$settings['enable_adblock_bypass'] != 'on') {
-            return;
-        }
-
+        // Always handle adblock bypass endpoint for fallback
         $request_hash = get_query_var('slimstat_request');
         if ($request_hash && $request_hash === md5(site_url() . 'slimstat_request')) {
             \wp_slimstat::slimtrack_ajax();

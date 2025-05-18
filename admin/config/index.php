@@ -485,28 +485,16 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'title' => __('Tracking Request Method', 'wp-slimstat'),
                 'type'  => 'section_header'
             ),
-            'backend_transport_method' => array(
-                'title'       => __('Back-End Request Method', 'wp-slimstat'),
+            'tracking_request_method' => array(
+                'title'       => __('Tracking Request Method', 'wp-slimstat'),
                 'type'        => 'select',
-                'description' => __('Select the method used for sending tracking requests to the server.', 'wp-slimstat'),
+                'description' => __('Choose how Slimstat sends tracking requests to the server. Fallback logic is always enabled: if the selected method fails, Slimstat will automatically try the next available method.','wp-slimstat') . '<br />' .
+                                 __('<strong>Note</strong> that some ad blockers may block tracking requests sent via the REST API or admin-ajax.php. If you are using one of these methods and notice that some visits are not being tracked, consider using the Ad-Blocker Bypass method.', 'wp-slimstat'),
                 'select_values'     => array(
-                    'rest' => __('WP REST API (may be blocked by ad blockers)', 'wp-slimstat'),
-                    'ajax' => __('admin-ajax.php (recommended fallback)', 'wp-slimstat')
+                    'rest' => __('REST API: Use the WordPress REST API for tracking requests (may be blocked by ad blockers).', 'wp-slimstat'),
+                    'ajax' => __('Admin-AJAX: Use admin-ajax.php for tracking requests (recommended fallback for compatibility).', 'wp-slimstat'),
+                    'adblock_bypass' => __('Ad-Blocker Bypass: Use an alternate method to bypass common ad blockers and ensure tracking.', 'wp-slimstat')
                 )
-            ),
-            'enable_fallback_detection' => array(
-                'title'       => __('Enable REST API Fallback Detection', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('Automatically switch to admin-ajax.php if REST API calls are blocked.', 'wp-slimstat')
-            ),
-            'bypass_adblock_restapi_header' => array(
-                'title' => __('Bypass Ad-Blocker & REST API', 'wp-slimstat'),
-                'type'  => 'section_header'
-            ),
-            'enable_adblock_bypass' => array(
-                'title'       => __('Bypass Ad-Blocker', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('Enable this option to attempt bypassing common ad-blockers that may interfere with tracking.', 'wp-slimstat') . '<p class="description">' . __('<strong>Note</strong>: When this option is enabled, the settings under <a href="#wp-slimstat-tracking-request-method">Tracking Request Method</a> will be ignored. This option takes priority, and tracking requests will automatically use an alternate method to bypass ad blockers.', 'wp-slimstat') . '</p>',
             ),
 
             // Access Control - Customizer
