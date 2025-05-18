@@ -8,7 +8,7 @@
 
 #chartjs-tooltip {
   transition: 0.3s all ease-in-out;
-  pointer-events: auto;
+  pointer-events: none !important;
   background: white;
   box-shadow: 0 8px 32px 0 rgba(60, 60, 90, 0.18), 0 1.5px 6px 0 rgba(60, 60, 90, 0.1);
   z-index: 9999;
