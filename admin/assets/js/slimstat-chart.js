@@ -405,12 +405,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 width: 15px;
                 height: 15px;
                 background-color: #fff;
-                border-radius: 3px;
+                border-bottom-left-radius: 5px;
                 display: inline-block;
                 position: absolute;
                 bottom: -8px;
-                border-bottom: solid 1px #f0f0f0;
-                border-left: solid 1px #f0f0f0;
+                border-bottom: solid 1px #e0e0e0;
+                border-left: solid 1px #e0e0e0;
                 transform: rotate(-45deg);
                 transition: left 0.1s ease;
             "></div>`;
