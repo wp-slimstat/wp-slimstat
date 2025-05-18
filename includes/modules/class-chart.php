@@ -261,7 +261,7 @@ class Chart
             'labels'      => $output['labels'],
             'prev_labels' => array_map(function ($label, $index) use ($params, $wp_timezone) {
                 $prev_start = $params['previous_start'];
-                return wp_date($params['data_points_label'], strtotime("+{$index} {$params['granularity']}", $prev_start),  $wp_timezone);
+                return date($params['data_points_label'], strtotime("+{$index} {$params['granularity']}", $prev_start));
             }, $output['labels'], array_keys($output['labels'])),
             'datasets'    => array(
                 'v1' => $output['datasets']['v1'],

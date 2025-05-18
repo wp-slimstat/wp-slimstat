@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return [];
         }
 
-        const colors = ["#2b76f6", "#ffacb6", "#24cb7d", "#e8294c", "#942bf6"];
+        const colors = ["#ffacb6", "#2b76f6", "#24cb7d", "#e8294c", "#942bf6"];
         return Object.entries(rawDatasets).map(([key, values], i) => {
             if (!Array.isArray(values)) {
                 values = Object.values(values);
@@ -250,7 +250,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     legendItem.classList.toggle("slimstat-postbox-chart--item-hidden");
                     const prevIndex = index + datasets.length;
                     const prevMeta = chart.getDatasetMeta(prevIndex);
-                    prevMeta.hidden = meta.hidden;
+                    const prevToggleBtn = document.querySelector(`.slimstat-toggle-prev-datasets.slimstat-postbox-chart--item-${chartId}`);
+                    const prevActive = prevToggleBtn && prevToggleBtn.classList.contains("active");
+                    if (prevActive) {
+                        prevMeta.hidden = meta.hidden;
+                    } else {
+                        prevMeta.hidden = true;
+                    }
                     chart.update();
                 });
 
@@ -278,7 +284,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 prevDatasetsVisible = !prevDatasetsVisible;
                 chart.data.datasets.forEach((dataset, index) => {
                     if (dataset.label.includes("Previous")) {
-                        chart.getDatasetMeta(index).hidden = !prevDatasetsVisible;
+                        const mainIndex = index - datasets.length;
+                        const mainMeta = chart.getDatasetMeta(mainIndex);
+                        if (prevDatasetsVisible && mainMeta && !mainMeta.hidden) {
+                            chart.getDatasetMeta(index).hidden = false;
+                        } else {
+                            chart.getDatasetMeta(index).hidden = true;
+                        }
                     }
                 });
                 toggleButton.classList.toggle("active");
@@ -328,7 +340,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const isToday = new Date().toLocaleString("default", { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", hourCycle: "h23" }) === date.toLocaleString("default", { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", hourCycle: "h23" });
             const formatted = long ? date.toLocaleString("default", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : date.toLocaleDateString("default", { month: "short", day: "2-digit" }).replaceAll("-", "/");
             const now = new Date().toLocaleString("default", { hour: "numeric", minute: "2-digit", hourCycle: "h23" });
-            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${formatted}</span>`;
+            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${formatted} ${hour}:${minutes}</span>`;
             if (justTranslation) {
                 return formatted_label;
             }
@@ -411,10 +423,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const tooltipWidth = tooltipEl.offsetWidth;
             const tooltipHeight = tooltipEl.offsetHeight;
             let left = position.left + window.pageXOffset + tooltip.caretX - tooltipWidth / 2;
-            const dataPointYs = tooltip.dataPoints.map(dp => dp.element.y);
+            const dataPointYs = tooltip.dataPoints.map((dp) => dp.element.y);
             const highestY = Math.min(...dataPointYs);
             let top = position.top + window.pageYOffset + highestY - tooltipHeight - 24;
-
 
             if (left + tooltipWidth > window.innerWidth - 10) {
                 left = window.innerWidth - tooltipWidth - 10;
