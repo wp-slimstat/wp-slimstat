@@ -304,7 +304,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         easing: "linear",
                         loop: (context) => context.active,
                     },
-                    // انیمیشن برای خط عمودی
                     x: {
                         duration: 250,
                         easing: "easeOutCubic",
