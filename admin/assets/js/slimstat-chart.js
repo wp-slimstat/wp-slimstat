@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return [];
         }
 
-        const colors = ["#ffacb6", "#2b76f6", "#24cb7d", "#e8294c", "#942bf6"];
+        const colors = ["#e8294c", "#2b76f6", "#ffacb6", "#24cb7d", "#942bf6"];
         return Object.entries(rawDatasets).map(([key, values], i) => {
             if (!Array.isArray(values)) {
                 values = Object.values(values);
