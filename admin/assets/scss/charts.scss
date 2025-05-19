@@ -146,6 +146,10 @@ body.index-php {
   .slimstat-chart-wrap {
     max-width: 100% !important;
   }
+  .inside:has(.slimstat-postbox-chart--canvas) {
+    height: 305px !important;
+    max-height: 305px !important;
+  }
   .slimstat-postbox-chart--canvas {
     width: 100% !important;
     max-width: 100%;
@@ -153,7 +157,6 @@ body.index-php {
     height: 180px !important;
     border-radius: 7px;
     margin: 0 auto 8px auto;
-    background: #f8fafd;
     box-shadow: 0 1px 4px rgba(60, 60, 90, 0.04);
   }
   .slimstat-postbox-custom-legend,
