@@ -28,7 +28,7 @@ $availableRange = $this->args['end'] - $this->args['start'];
 $disable_yearly = $availableRange < (365 * 86400); // Less than 1 year of data
 $disable_monthly = $availableRange < (30 * 86400); // Less than 1 month of data
 $disable_weekly = $availableRange < (7 * 86400); // Less than 1 week of data
-$disable_daily = ($availableRange === 86400); // Disable daily if range is exactly one day
+$disable_daily = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
 $disable_hourly = $availableRange > (7 * 86400); // More than 7 days of data
 ?>
 <div class="slimstat-chart-wrap">

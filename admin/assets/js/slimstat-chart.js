@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const prev_labels = data.prev_labels;
 
         const datasets = prepareDatasets(data.datasets, chartLabels, labels, data.today);
-        const prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true);
+        let prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true);
+        prevDatasets = prevDatasets.filter((ds) => Array.isArray(ds.data) && ds.data.some((v) => v > 0));
 
         const ctx = document.getElementById(`slimstat_chart_${chartId}`).getContext("2d");
         const chart = createChart(ctx, labels, prev_labels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
@@ -203,12 +204,12 @@ document.addEventListener("DOMContentLoaded", function () {
                             maxRotation: xTickRotation,
                         },
                         grid: {
-                            display: false,
+                            display: true,
                         },
                     },
                     y: {
                         grid: {
-                            display: true,
+                            display: false,
                         },
                     },
                 },
@@ -293,7 +294,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        const hasPrevData = prevDatasets.some((dataset) => dataset.data.some((value) => value > 0));
+        const hasPrevData = prevDatasets.length > 0 && prevDatasets.some((dataset) => dataset.data.some((value) => value > 0));
 
         if (hasPrevData) {
             const oldToggleButtons = document.querySelectorAll(`#slimstat-postbox-custom-legend_${chartId} .slimstat-toggle-prev-datasets`);
