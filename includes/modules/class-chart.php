@@ -48,8 +48,10 @@ class Chart
     {
         $args['start'] = isset($args['start']) ? $args['start'] : \wp_slimstat_db::$filters_normalized['utime']['start'];
         $args['end'] = isset($args['end']) ? $args['end'] : \wp_slimstat_db::$filters_normalized['utime']['end'];
-
-        if (!isset($args['granularity'])) {
+        if(isset($_REQUEST['granularity']) && !empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], ['yearly', 'monthly', 'weekly', 'daily', 'hourly'])) {
+            $args['granularity'] = sanitize_text_field($_REQUEST['granularity']);
+        }
+        else if (!isset($args['granularity'])) {
             $diff = $args['end'] - $args['start'];
             if ($diff === 27 * 86400) {
                 $args['granularity'] = 'daily';

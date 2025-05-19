@@ -98,14 +98,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     const datasets = prepareDatasets(data.datasets, chart_labels, labels, data.today);
                     const prevDatasets = prepareDatasets(prev_data.datasets, chart_labels, prev_data.labels, null, true);
 
-                    const chart = charts.get(chartId);
-                    chart.data.labels = labels;
-                    chart.data.datasets = [...datasets, ...prevDatasets];
-                    chart.options.scales.x.ticks.callback = function (value) {
-                        const label = this.getLabelForValue(value).replace(/'/g, "");
-                        return slimstatGetLabel(label, false, granularity, translations); // Ensure updated granularity is passed
-                    };
-                    chart.update();
+                    // Destroy previous chart and create a new one to ensure correct tick callback
+                    const chartCanvas = document.getElementById(`slimstat_chart_${chartId}`);
+                    const prevChart = charts.get(chartId);
+                    if (prevChart) prevChart.destroy();
+                    const ctx = chartCanvas.getContext("2d");
+                    const chart = createChart(ctx, labels, data.prev_labels, datasets, prevDatasets, granularity, data.today, translations, days_between, chartId);
+                    charts.set(chartId, chart);
 
                     renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
 
@@ -165,6 +164,29 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function createChart(ctx, labels, prev_labels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
+        let xTickRotation = undefined;
+        let customTickCallback;
+        if (labels.length > 15) {
+            const maxTicks = labels.length === 30 || labels.length === 31 ? 10 : labels.length > 45 ? Math.round(labels.length / 4) : labels.length >= 15 ? 8 : labels.length;
+            let tickInterval = 1;
+            if (labels.length >= 15) {
+                tickInterval = Math.floor((labels.length - 1) / (maxTicks - 1));
+            }
+            xTickRotation = 0;
+            customTickCallback = function (value, index, values) {
+                if (value % tickInterval === 0) {
+                    const label = this.getLabelForValue(value).replace(/'/g, "");
+                    return slimstatGetLabel(label, false, unitTime, translations);
+                }
+                return "";
+            };
+        } else {
+            xTickRotation = 30;
+            customTickCallback = function (value, index, values) {
+                const label = this.getLabelForValue(value).replace(/'/g, "");
+                return slimstatGetLabel(label, false, unitTime, translations);
+            };
+        }
         return new Chart(ctx, {
             type: "line",
             data: {
@@ -176,10 +198,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 scales: {
                     x: {
                         ticks: {
-                            callback: function (value) {
-                                const label = this.getLabelForValue(value).replace(/'/g, "");
-                                return slimstatGetLabel(label, false, unitTime, translations);
-                            },
+                            callback: customTickCallback,
+                            minRotation: 0,
+                            maxRotation: xTickRotation,
+                        },
+                        grid: {
+                            display: false,
+                        },
+                    },
+                    y: {
+                        grid: {
+                            display: true,
                         },
                     },
                 },
