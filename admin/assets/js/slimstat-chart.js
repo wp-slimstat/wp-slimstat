@@ -167,6 +167,82 @@ document.addEventListener("DOMContentLoaded", function () {
     function createChart(ctx, labels, prev_labels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
         let xTickRotation = undefined;
         let customTickCallback;
+
+        function drawRoundedRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        const customCrosshair = {
+            id: "customCrosshair",
+            afterEvent(chart, args) {
+                chart._lastEvent = args.event;
+            },
+            afterDraw(chart) {
+                const event = chart._lastEvent;
+                if (!event) return;
+
+                const ctx = chart.ctx;
+                const { top, bottom, left, right } = chart.chartArea;
+                const { scales } = chart;
+
+                const mouseX = event.x;
+                const mouseY = event.y;
+
+                if (mouseX < left || mouseX > right || mouseY < top || mouseY > bottom) return;
+
+                ctx.save();
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+
+                ctx.beginPath();
+                ctx.moveTo(mouseX, top);
+                ctx.lineTo(mouseX, bottom);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(left, mouseY);
+                ctx.lineTo(right, mouseY);
+                ctx.stroke();
+
+                const yValue = scales.y.getValueForPixel(mouseY);
+                const label = yValue.toFixed(0);
+                const padding = 5;
+                const fontSize = 10;
+                const textWidth = ctx.measureText(label).width - 3; // Subtract 2 for padding adjustment
+
+                const boxHeight = fontSize + padding;
+                const boxWidth = textWidth + padding * 2;
+
+                var boxX = right - 45;
+                var boxY = mouseY - boxHeight / 2;
+
+                if (mouseX > boxX - 60 && mouseX < boxX + boxWidth + 60) {
+                    boxX = left + 5;
+                }
+
+                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                drawRoundedRect(ctx, boxX, boxY, boxWidth, boxHeight, 6);
+
+                ctx.fillStyle = "#fff";
+                ctx.font = `${fontSize}px sans-serif`;
+                ctx.textBaseline = "middle";
+                ctx.fillText(label, boxX + padding, mouseY);
+                ctx.restore();
+            },
+        };
+
         if (labels.length > 15) {
             const maxTicks = labels.length === 30 || labels.length === 31 ? 10 : labels.length > 45 ? Math.round(labels.length / 4) : labels.length >= 15 ? 8 : labels.length;
             let tickInterval = 1;
@@ -228,12 +304,18 @@ document.addEventListener("DOMContentLoaded", function () {
                         easing: "linear",
                         loop: (context) => context.active,
                     },
+                    // انیمیشن برای خط عمودی
+                    x: {
+                        duration: 250,
+                        easing: "easeOutCubic",
+                    },
                 },
                 interaction: {
                     intersect: false,
                     mode: "index",
                 },
             },
+            plugins: [customCrosshair],
         });
     }
 
