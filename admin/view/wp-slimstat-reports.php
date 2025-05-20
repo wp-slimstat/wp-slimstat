@@ -659,7 +659,20 @@ class wp_slimstat_reports
                     'type'      => 'recent',
                     'columns'   => 'TRIM( TRAILING "/" FROM resource )',
                     'as_column' => 'resource',
-                    'where'     => '(content_type = "category" OR content_type = "tag")',
+                    'where'     => '(content_type = "category")',
+                    'raw'       => array('wp_slimstat_db', 'get_recent')
+                ),
+                'classes'       => array('normal'),
+                'locations'     => array('inactive')
+            ),
+            'slim_p4_152'    => array(
+                'title'         => __('Recent Tags', 'wp-slimstat'),
+                'callback'      => array(__CLASS__, 'raw_results_to_html'),
+                'callback_args' => array(
+                    'type'      => 'recent',
+                    'columns'   => 'TRIM( TRAILING "/" FROM resource )',
+                    'as_column' => 'resource',
+                    'where'     => '(content_type = "tag")',
                     'raw'       => array('wp_slimstat_db', 'get_recent')
                 ),
                 'classes'       => array('normal'),
@@ -1064,8 +1077,31 @@ class wp_slimstat_reports
                         break;
 
                     case 'category':
-                        $row_details   = __('Category ID', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
-                        $element_value = get_cat_name($results[$i][$_args['columns']]);
+                        // Only show tag name for Top Tags, and only category name for Recent Categories
+                        $term_id = $results[$i][$_args['columns']];
+                        $show_tag = false;
+                        if (!empty($_args['where']) && strpos($_args['where'], 'tag') !== false) {
+                            $show_tag = true;
+                        }
+                        if ($show_tag) {
+                            $term_obj = get_term($term_id, 'post_tag');
+                            if ($term_obj && !is_wp_error($term_obj)) {
+                                $element_value = $term_obj->name;
+                                $row_details = __('Tag', 'wp-slimstat') . ': ' . $term_obj->name;
+                            } else {
+                                $element_value = esc_html($term_id);
+                                $row_details = __('ID', 'wp-slimstat') . ': ' . esc_html($term_id);
+                            }
+                        } else {
+                            $term_obj = get_term($term_id, 'category');
+                            if ($term_obj && !is_wp_error($term_obj)) {
+                                $element_value = $term_obj->name;
+                                $row_details = __('Category', 'wp-slimstat') . ': ' . $term_obj->name;
+                            } else {
+                                $element_value = esc_html($term_id);
+                                $row_details = __('ID', 'wp-slimstat') . ': ' . esc_html($term_id);
+                            }
+                        }
                         break;
 
                     case 'country':
@@ -1104,12 +1140,12 @@ class wp_slimstat_reports
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i][$_args['columns']] . '" />';
                         }
 
-                        $row_details   = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+                        $row_details   = __('Code', 'wp-slimstat') . ": {$results[$i][$_args[ 'columns' ]]}";
                         $element_value .= wp_slimstat_i18n::get_string('l-' . $results[$i][$_args['columns']]);
                         break;
 
                     case 'platform':
-                        $row_details                    = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+                        $row_details                    = __('Code', 'wp-slimstat') . ": {$results[$i][$_args[ 'columns' ]]}";
 
                         $icons = array(
                             'android'  => 'and',
