@@ -1109,7 +1109,7 @@ class wp_slimstat_reports
                         break;
 
                     case 'platform':
-                        $row_details                    = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+                        $row_details = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
 
                         $icons = array(
                             'android'  => 'and',
@@ -1137,8 +1137,8 @@ class wp_slimstat_reports
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                         }
 
-                        $element_value                  = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . strtolower($last_platform_part) . '" /> ';
-                        $element_value                 .= wp_slimstat_i18n::get_string($results[$i][$_args['columns']]);
+                        $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . strtolower($last_platform_part) . '" /> ';
+                        $element_value .= wp_slimstat_i18n::get_string($results[$i][$_args['columns']]);
                         $results[$i][$_args['columns']] = str_replace('p-', '', $results[$i][$_args['columns']]);
                         break;
 
@@ -1900,7 +1900,11 @@ class wp_slimstat_reports
 
         // Do we already have this value in our transient cache?
         $cache_index = md5($_resource);
-        if (!empty(self::$resource_titles) && !empty(self::$resource_titles[$cache_index])) {
+        if (!isset(self::$resource_titles) || !is_array(self::$resource_titles)) {
+            $transient = get_transient('slimstat_resource_titles');
+            self::$resource_titles = is_array($transient) ? $transient : array();
+        }
+        if (!empty(self::$resource_titles[$cache_index])) {
             return self::$resource_titles[$cache_index];
         }
 
@@ -1950,9 +1954,8 @@ class wp_slimstat_reports
             }
         }
 
-        // Save new value in cache
+        // Save new value in cache only if changed
         set_transient('slimstat_resource_titles', self::$resource_titles, 1800);
-
         return self::$resource_titles[$cache_index];
     }
 

@@ -749,6 +749,23 @@ $index_enabled = wp_slimstat::$wpdb->get_results(
     "SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '{$GLOBALS[ 'wpdb' ]->prefix}stats_resource_idx'"
 );
 
+$index_names = [
+    $GLOBALS[ 'wpdb' ]->prefix.'stats_resource_idx',
+    $GLOBALS[ 'wpdb' ]->prefix.'stats_browser_idx',
+    $GLOBALS[ 'wpdb' ]->prefix.'stats_searchterms_idx',
+    $GLOBALS[ 'wpdb' ]->prefix.'stats_fingerprint_idx',
+];
+$missing_indexes = [];
+foreach ($index_names as $idx) {
+    $exists = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats WHERE Key_name = '$idx'");
+    if (empty($exists)) {
+        $missing_indexes[] = $idx;
+    }
+}
+if (!empty($missing_indexes)) {
+    echo '<div class="notice notice-warning"><b>Performance Notice:</b> The following DB indexes are missing and should be created for optimal performance: <code>' . implode(', ', $missing_indexes) . '</code>. Please visit the Slimstat settings or re-activate the plugin to trigger index creation.</div>';
+}
+
 $tabs_html = '';
 foreach ($settings as $a_tab_id => $a_tab_info) {
     if (!empty($a_tab_info['rows'])) {

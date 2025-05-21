@@ -57,11 +57,9 @@ class Init {
      * Load all required files from the includes folder.
      */
     private static function load_dependencies() {
-        // Load the plugin Modules
-        require_once self::$dir . '/modules/class-chart.php';
-
         if( file_exists( self::$dir . '/tests/class-init.php' ) ) {
             require_once self::$dir . '/tests/class-init.php';
+            
         }
     }
 }

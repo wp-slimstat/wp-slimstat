@@ -126,8 +126,10 @@ class wp_slimstat
         add_filter('allowed_http_origins', array(__CLASS__, 'open_cors_admin_ajax'));
 
         // GDPR: Opt-out Ajax Handler
-        add_action('wp_ajax_slimstat_optout_html', array(__CLASS__, 'get_optout_html'));
-        add_action('wp_ajax_nopriv_slimstat_optout_html', array(__CLASS__, 'get_optout_html'));
+        if (defined('DOING_AJAX') && DOING_AJAX) {
+            add_action('wp_ajax_slimstat_optout_html', array(__CLASS__, 'get_optout_html'));
+            add_action('wp_ajax_nopriv_slimstat_optout_html', array(__CLASS__, 'get_optout_html'));
+        }
 
         // If this request was a redirect, we should update the content type accordingly
         add_filter('wp_redirect_status', array(__CLASS__, 'update_content_type'), 10, 2);
@@ -1892,7 +1894,7 @@ class wp_slimstat
 
         if ($is_new_session && $identifier > 0) {
             self::$wpdb->query(self::$wpdb->prepare("
-				UPDATE {$GLOBALS['wpdb']->prefix}slim_stats
+				UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats
 				SET visit_id = %d
 				WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier
             ));

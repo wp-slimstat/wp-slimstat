@@ -235,16 +235,20 @@ class wp_slimstat_admin
 
         // AJAX Handlers
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            add_action('wp_ajax_slimstat_notice_latest_news', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_geolite', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_browscap', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_caching', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_translate', array(__CLASS__, 'notices_handler'));
-
-            add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
-            add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
-            add_action('wp_ajax_slimstat_update_geoip_database', array(__CLASS__, 'update_geoip_database'));
-            add_action('wp_ajax_slimstat_check_geoip_database', array(__CLASS__, 'check_geoip_database'));
+            $ajax_actions = [
+                'slimstat_notice_latest_news' => 'notices_handler',
+                'slimstat_notice_geolite' => 'notices_handler',
+                'slimstat_notice_browscap' => 'notices_handler',
+                'slimstat_notice_caching' => 'notices_handler',
+                'slimstat_notice_translate' => 'notices_handler',
+                'slimstat_manage_filters' => 'manage_filters',
+                'slimstat_delete_pageview' => 'delete_pageview',
+                'slimstat_update_geoip_database' => 'update_geoip_database',
+                'slimstat_check_geoip_database' => 'check_geoip_database',
+            ];
+            foreach ($ajax_actions as $action => $handler) {
+                add_action('wp_ajax_' . $action, [__CLASS__, $handler]);
+            }
         }
 
         // Schedule a daily cron job to purge the data
@@ -495,17 +499,22 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['no_browscap_warning']);
             unset(wp_slimstat::$settings['use_european_separators']);
             unset(wp_slimstat::$settings['date_format']);
-            unset(wp_slimstat::$settings['time_format']);
-            unset(wp_slimstat::$settings['expand_details']);
+            unset($wp_slimstat::$settings['time_format']);
+            unset($wp_slimstat::$settings['expand_details']);
 
-            // Add table indexes for improved performance
-            $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$GLOBALS['wpdb']->prefix}stats_resource_idx'");
-            if (empty($check_index)) {
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )");
+            // Add table indexes for improved performance (idempotent)
+            $indexes = [
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_resource_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_browser_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_searchterms_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_fingerprint_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )"],
+            ];
+            foreach ($indexes as $index) {
+                $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$index['name']}'");
+                if (empty($check_index)) {
+                    wp_slimstat::$wpdb->query($index['sql']);
+                }
             }
-
             wp_slimstat::$settings['db_indexes'] = 'on';
         }
         // --- END: Updates for version 4.8.4 ---
