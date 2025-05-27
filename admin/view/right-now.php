@@ -219,6 +219,14 @@ for ($i = 0; $i < $count_page_results; $i++) {
         $results[$i]['resource'] = __('Local search results page', 'wp-slimstat');
     }
 
+    // Defensive: ensure 'searchterms' and 'referer' keys exist to avoid undefined index
+    if (!isset($results[$i]['searchterms'])) {
+        $results[$i]['searchterms'] = '';
+    }
+    if (!isset($results[$i]['referer'])) {
+        $results[$i]['referer'] = '';
+    }
+
     if (empty($search_terms_info)) {
         $search_terms_info = wp_slimstat_reports::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer']);
     }
