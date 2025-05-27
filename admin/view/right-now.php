@@ -26,7 +26,7 @@ $plugin_url = plugins_url('', dirname(__FILE__));
 
 // Get the data
 wp_slimstat_db::$debug_message = '';
-$all_results                   = wp_slimstat_db::get_recent(wp_slimstat_reports::$reports['slim_p7_02']['callback_args']);
+$all_results = wp_slimstat_db::get_recent(wp_slimstat_reports::$reports['slim_p7_02']['callback_args']);
 
 // Backward compatibility
 if (!$all_results) {
@@ -49,6 +49,7 @@ if ($count_page_results == 0) {
     echo '<p class="nodata">' . __('No data to display', 'wp-slimstat') . '</p>';
     return 0;
 }
+
 
 // Return the results if we are not echoing them (export, email, etc)
 if (isset($_args['echo']) && $_args['echo'] === false) {
@@ -132,6 +133,8 @@ for ($i = 0; $i < $count_page_results; $i++) {
             // When the IP conversion feature is enabled, we need to return the correct values
             $host_by_ip = wp_slimstat::gethostbyaddr($results[$i]['ip']);
         }
+
+
 
         if (empty($results[$i]['username'])) {
             $ip_address = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip']) . "'>$host_by_ip</a>";

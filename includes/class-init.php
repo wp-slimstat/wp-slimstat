@@ -57,9 +57,12 @@ class Init {
      * Load all required files from the includes folder.
      */
     private static function load_dependencies() {
+
+        require_once self::$dir . '/utils/TransientCacheTrait.php';
+        require_once self::$dir . '/utils/Query.php';
+
         if( file_exists( self::$dir . '/tests/class-init.php' ) ) {
             require_once self::$dir . '/tests/class-init.php';
-            
         }
     }
 }

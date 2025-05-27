@@ -277,6 +277,40 @@ class wp_slimstat_admin
         add_action('admin_notices', function () {
             self::add_header();
         });
+
+        self::register_country_dt_index_hooks();
+
+        add_action('admin_notices', function () {
+            if (!current_user_can('manage_options')) return;
+            if (get_option('slimstat_country_dt_indexed') === 'yes') return;
+            $ajax_url = admin_url('admin-ajax.php');
+            echo '<div class="notice notice-warning is-dismissible" id="slimstat-country-dt-index-notice">'
+                . '<p><strong>Improve the performance of country statistics in SlimStat</strong></p>'
+                . '<p>To increase the speed of the World Map report and other country-based reports, it is necessary to create a new index on the <code>country</code> and <code>dt</code> columns of the <code>wp_slim_stats</code> table. This change does not affect your previous data and only increases the speed.</p>'
+                . '<button class="button button-primary" id="slimstat-add-country-dt-index">' . __('Apply changes', 'wp-slimstat') . '</button>'
+                . '<span id="slimstat-index-status" style="margin-right:10px;"></span>'
+                . '</div>';
+            echo '<script>
+            jQuery(document).on("click", "#slimstat-add-country-dt-index", function(e) {
+                e.preventDefault();
+                var btn = jQuery(this);
+                btn.prop("disabled", true);
+                jQuery("#slimstat-index-status").text("' . __('In progress...', 'wp-slimstat') . '");
+                jQuery.post("' . $ajax_url . '", {
+                    action: "slimstat_add_country_dt_index",
+                    _ajax_nonce: "' . wp_create_nonce('slimstat_add_country_dt_index') . '"
+                }, function(response) {
+                    if (response.success) {
+                        jQuery("#slimstat-index-status").text("' . __('Index added successfully.', 'wp-slimstat') . '");
+                        setTimeout(function(){ jQuery("#slimstat-country-dt-index-notice").fadeOut(); }, 2000);
+                    } else {
+                        jQuery("#slimstat-index-status").text("' . __('Error: ', 'wp-slimstat') . '" + response.data);
+                        btn.prop("disabled", false);
+                    }
+                });
+            });
+            </script>';
+        });
     }
     // END: init
 
@@ -358,6 +392,12 @@ class wp_slimstat_admin
 
         // Create the tables
         self::init_tables($my_wpdb);
+
+        $has_index = $_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats} WHERE Key_name = 'idx_country_dt'");
+        if (!$has_index || count($has_index) === 0) {
+            $_wpdb->query("CREATE INDEX idx_country_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (country, dt)");
+            update_option('slimstat_country_dt_indexed', 'yes');
+        }
 
         return true;
     }
@@ -1199,7 +1239,7 @@ class wp_slimstat_admin
 <li><b>' . __('Screen Resolution', 'wp-slimstat') . '</b>: ' . __('viewport width and height (1024x768, 800x600, ...)', 'wp-slimstat') . '</li>
 <li><b>' . __('Visit ID', 'wp-slimstat') . "</b>: " . __('generally used in conjunction with <em>is not empty</em>, identifies human visitors', 'wp-slimstat') . '</li>
 <li><b>' . __('Date Filters', 'wp-slimstat') . "</b>: " . __('you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)', 'wp-slimstat') . '</li>
-<li><b>' . __('SERP Position', 'wp-slimstat') . "</b>: " . __('set the filter to Referer contains cd=N&, where N is the position you are looking for', 'wp-slimstat') . '</li>
+<li><b>' . __('SERP Position', 'wp_slimstat') . "</b>: " . __('set the filter to Referer contains cd=N&, where N is the position you are looking for', 'wp-slimstat') . '</li>
 </ul>'
             )
         );
@@ -1322,6 +1362,61 @@ class wp_slimstat_admin
         if (isset($_GET['page']) && ($_GET['page'] === 'slimlayout' || $_GET['page'] === 'slimconfig')) {
             return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
         }
+    }
+
+    public static function ajax_add_country_dt_index() {
+        check_ajax_referer('slimstat_add_country_dt_index');
+        global $wpdb;
+        $table = $wpdb->prefix . 'slim_stats';
+        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'idx_country_dt'");
+        if ($has_index && count($has_index) > 0) {
+            update_option('slimstat_country_dt_indexed', 'yes');
+            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
+        }
+        $result = $wpdb->query("CREATE INDEX idx_country_dt ON $table (country, dt)");
+        if ($result !== false) {
+            update_option('slimstat_country_dt_indexed', 'yes');
+            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
+        } else {
+            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+        }
+    }
+
+    public static function register_country_dt_index_hooks() {
+        add_action('admin_notices', [__CLASS__, 'show_country_dt_index_notice']);
+        add_action('wp_ajax_slimstat_add_country_dt_index', [__CLASS__, 'ajax_add_country_dt_index']);
+    }
+
+    public static function show_country_dt_index_notice() {
+        if (!current_user_can('manage_options')) return;
+        if (get_option('slimstat_country_dt_indexed') === 'yes') return;
+        $ajax_url = admin_url('admin-ajax.php');
+        echo '<div class="notice notice-warning is-dismissible" id="slimstat-country-dt-index-notice">'
+            . '<p><strong>Improve country reports performance in SlimStat</strong></p>'
+            . '<p>To increase the speed of World Map and other country-based reports, an index needs to be created on the <code>country</code> and <code>dt</code> columns of the <code>wp_slim_stats</code> table. This change won\'t affect your existing data and only increases the speed.</p>'
+            . '<button class="button button-primary" id="slimstat-add-country-dt-index">' . __('Apply changes', 'wp-slimstat') . '</button>'
+            . '<span id="slimstat-index-status" style="margin-right:10px;"></span>'
+            . '</div>';
+        echo '<script>
+        jQuery(document).on("click", "#slimstat-add-country-dt-index", function(e) {
+            e.preventDefault();
+            var btn = jQuery(this);
+            btn.prop("disabled", true);
+            jQuery("#slimstat-index-status").text("' . __('Applying changes...', 'wp-slimstat') . '");
+            jQuery.post("' . $ajax_url . '", {
+                action: "slimstat_add_country_dt_index",
+                _ajax_nonce: "' . wp_create_nonce('slimstat_add_country_dt_index') . '"
+            }, function(response) {
+                if (response.success) {
+                    jQuery("#slimstat-index-status").text("' . __('Index added successfully.', 'wp-slimstat') . '");
+                    setTimeout(function(){ jQuery("#slimstat-country-dt-index-notice").fadeOut(); }, 2000);
+                } else {
+                    jQuery("#slimstat-index-status").text("' . __('Error: ', 'wp-slimstat') . '" + response.data);
+                    btn.prop("disabled", false);
+                }
+            });
+        });
+        </script>';
     }
 }
 // END: class declaration

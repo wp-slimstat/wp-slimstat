@@ -271,7 +271,7 @@ class AjaxPerformanceTest {
             $results[] = $result;
         }
         echo '<h2>JSON Results</h2>';
-        echo '<pre style="background:#222;color:#fff;padding:1em;overflow:auto;max-width:900px">' . esc_html(json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) . '</pre>';
+        echo '<pre style="background:#222;color:#fff;padding:1em;overflow:auto;max-width:90%">' . esc_html(json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) . '</pre>';
     }
 
     private static function run_single_test($action, $input, $tags, $description) {
@@ -279,7 +279,6 @@ class AjaxPerformanceTest {
         $test_id = $action . '_' . md5(json_encode($input));
         $wpdb->queries = [];
         $wpdb->savequeries = true;
-        $sql_start = microtime(true);
         $total_start = microtime(true);
 
         wp_cache_flush();
@@ -289,12 +288,18 @@ class AjaxPerformanceTest {
         }
 
         if ($action === 'slimstat_delete_pageview') {
-            $pageview_id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}slim_stats ORDER BY id DESC LIMIT 1");
+            // Use Query builder for SELECT and DELETE
+            $query = \SlimStat\Utils\Query::select('id')->from($wpdb->prefix . 'slim_stats')->orderBy('id DESC')->limit(1);
+            $row = $query->getRow();
+            $pageview_id = $row ? $row['id'] : null;
             if ($pageview_id) {
                 $input['pageview_id'] = $pageview_id;
+                // Delete using Query builder
+                \SlimStat\Utils\Query::delete($wpdb->prefix . 'slim_stats')->where('id', $pageview_id)->execute();
             } else {
-                $wpdb->insert("{$wpdb->prefix}slim_stats", ['dt' => time()]);
-                $input['pageview_id'] = $wpdb->insert_id;
+                // Insert using Query builder
+                \SlimStat\Utils\Query::insert($wpdb->prefix . 'slim_stats', ['dt' => time()])->execute();
+                $input['pageview_id'] = $wpdb->insert_id; // fallback for test tracking
             }
         }
         if ($action === 'slimstat_manage_filters') {
@@ -316,19 +321,22 @@ class AjaxPerformanceTest {
                     $input['report_id'] = 'slim_p0_00';
                 }
             }
+
         }
         if ($action === 'slimstat_fetch_chart_data') {
-            $input['chart'] = 'visits';
-            $input['granularity'] = 'daily';
-            $input['start'] = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats");
-            $input['end'] = $wpdb->get_var("SELECT MAX(dt) FROM {$wpdb->prefix}slim_stats");
+            // Use Query builder for MIN and MAX
+            $minRow = \SlimStat\Utils\Query::select('MIN(dt) as min_dt')->from($wpdb->prefix . 'slim_stats')->getRow();
+            $maxRow = \SlimStat\Utils\Query::select('MAX(dt) as max_dt')->from($wpdb->prefix . 'slim_stats')->getRow();
+            $input['start'] = $minRow ? $minRow['min_dt'] : strtotime('-7 days');
+            $input['end'] = $maxRow ? $maxRow['max_dt'] : time();
             if (empty($input['start']) || empty($input['end'])) {
                 $input['start'] = strtotime('-7 days');
                 $input['end'] = time();
             }
         }
         if ($action === 'slimtrack') {
-            $row = $wpdb->get_row("SELECT ip, resource, dt FROM {$wpdb->prefix}slim_stats WHERE ip IS NOT NULL AND resource IS NOT NULL LIMIT 1", ARRAY_A);
+            // Use Query builder for SELECT
+            $row = \SlimStat\Utils\Query::select('ip, resource, dt')->from($wpdb->prefix . 'slim_stats')->where('ip IS NOT NULL')->where('resource IS NOT NULL')->limit(1)->getRow();
             if ($row) {
                 $input['ip'] = $row['ip'];
                 $input['resource'] = $row['resource'];
@@ -359,6 +367,7 @@ class AjaxPerformanceTest {
         $old_post = $_POST;
         $old_request = $_REQUEST;
         $_POST = $_REQUEST = $input;
+        $wpdb->queries = [];
 
         ob_start();
         $error = null;
@@ -377,15 +386,35 @@ class AjaxPerformanceTest {
         $_REQUEST = $old_request;
 
         $total_end = microtime(true);
-        $sql_end = microtime(true);
-        $sql_duration = round(($sql_end - $sql_start) * 1000, 2);
+
+        $sql_duration = 0;
         $total_duration = round(($total_end - $total_start) * 1000, 2);
         $sql_queries = [];
-        if (!empty($wpdb->queries)) {
+        $sql_query_times = [];
+        if (!empty($wpdb->queries) && is_array($wpdb->queries)) {
             foreach ($wpdb->queries as $q) {
-                $sql_queries[] = $q[0];
+                if (is_array($q) && count($q) >= 2) {
+                    $query = $q[0];
+                    $time_seconds = floatval($q[1]);
+
+                    $duration_ms = round($time_seconds * 1000, 8);
+                    $sql_duration += $duration_ms;
+                    $sql_queries[] = $query;
+                    $q[2] = str_replace("do_action('slimstat-tests_page_slimstat-ajax-performance'), WP_Hook->do_action, WP_Hook->apply_filters, Slimstat\\Tests\\Performance\\AjaxPerformanceTest::render_page, Slimstat\\Tests\\Performance\\AjaxPerformanceTest::run_tests, Slimstat\\Tests\\Performance\\AjaxPerformanceTest::run_single_test, do_action('wp_ajax_slimstat_load_report'), WP_Hook->do_action, WP_Hook->apply_filters, wp_slimstat_reports::callback_wrapper", ' ', $q[2]);
+                    $sql_query_times[] = [
+                        'query' => $query,
+                        'duration_ms' => $duration_ms,
+                        'x' => $q[2]
+                    ];
+                }
             }
         }
+
+        // Sort $sql_query_times by duration
+        usort($sql_query_times, function($a, $b) {
+            return $b['duration_ms'] <=> $a['duration_ms'];
+        });
+        // $sql_query_times = array_slice($sql_query_times, 0, 10);
 
         return [
             'test_id' => $test_id,
@@ -393,7 +422,7 @@ class AjaxPerformanceTest {
             'description' => $description,
             'total_duration_ms' => $total_duration,
             'sql_duration_ms' => $sql_duration,
-            'sql_queries' => $sql_queries,
+            'sql_query_times' => $sql_query_times,
             'tags' => $tags,
             'input' => $input,
             'output' => $output,

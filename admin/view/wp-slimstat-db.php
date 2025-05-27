@@ -1,4 +1,8 @@
 <?php
+// Ensure SlimStat autoloader is loaded for Query class
+if (!class_exists('SlimStat\\Includes\\Utils\\Query')) {
+
+}
 
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
@@ -364,6 +368,21 @@ class wp_slimstat_db
         }
     }
 
+    /**
+     * Helper to enable caching on a Query object if the date range does not include today.
+     * @param Query $query
+     */
+    protected static function maybe_enable_query_cache($query) {
+        // Use the end date from normalized filters (if available)
+        if (!empty(self::$filters_normalized['utime']['end'])) {
+            // Convert to Y-m-d for comparison (Query expects string date)
+            $to = date('Y-m-d', self::$filters_normalized['utime']['end']);
+            if (method_exists($query, 'canUseCacheForDateRange')) {
+                $query->canUseCacheForDateRange($to);
+            }
+        }
+    }
+
     public static function get_results($_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '')
     {
         $_sql = apply_filters('slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add);
@@ -372,15 +391,61 @@ class wp_slimstat_db
             self::$debug_message .= "<p class='debug'>$_sql</p>";
         }
 
-        $cached_results = wp_cache_get(md5($_sql), 'wp-slimstat');
-
-        // Save the results of this query in our object cache
-        if (empty($cached_results)) {
-            $cached_results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
-            wp_cache_add(md5($_sql), $cached_results, 'wp-slimstat');
+        // Detect if this is a simple SELECT from wp_slim_stats (no joins, no subqueries)
+        $is_simple_slim_stats = false;
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $sql_trim = ltrim($_sql);
+        if (stripos($sql_trim, 'select') === 0) {
+            // Try to match: SELECT ... FROM `wp_slim_stats` ...
+            $pattern = '/^select\s+[\s\S]+?from\s+`?' . preg_quote($table, '/') . '`?\b/i';
+            if (preg_match($pattern, $sql_trim) &&
+                stripos($sql_trim, ' join ') === false &&
+                stripos($sql_trim, 'select', 6) === false && // no subquery in select list
+                stripos($sql_trim, 'union') === false &&
+                stripos($sql_trim, ' as sub') === false) {
+                $is_simple_slim_stats = true;
+            }
         }
 
-        return $cached_results;
+        if ($is_simple_slim_stats) {
+            // Run directly for max performance and index usage
+            return wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        } else if (stripos($sql_trim, 'select') === 0) {
+            // Use Query builder for complex/cached queries
+            $query = \SlimStat\Utils\Query::select('*')->from('(' . $_sql . ') as sub');
+            self::maybe_enable_query_cache($query);
+            return $query->getAll();
+        } else {
+            // fallback for non-select queries (should not happen here)
+            return wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        }
+    }
+
+    // Helper: Detect if a query is a simple COUNT (no subquery, no join, no group by)
+    protected static function is_simple_count_query($sql) {
+        $sql_trim = ltrim($sql);
+        // Match: SELECT COUNT(*) ... FROM ... [WHERE ...]
+        if (preg_match('/^select\s+count\s*\(.*\)\s+as\s+[a-z_][a-z0-9_]*\s+from\s+[`\w]+/i', $sql_trim)) {
+            if (stripos($sql_trim, ' join ') === false &&
+                stripos($sql_trim, ' group by ') === false &&
+                stripos($sql_trim, ' having ') === false &&
+                stripos($sql_trim, ' union ') === false &&
+                stripos($sql_trim, ' as sub') === false &&
+                stripos($sql_trim, '(') === stripos($sql_trim, 'count(')) { // no subquery before count
+                return true;
+            }
+        }
+        // Also allow: SELECT COUNT(DISTINCT ...) ...
+        if (preg_match('/^select\s+count\s*\(\s*distinct\s+.*\)\s+as\s+[a-z_][a-z0-9_]*\s+from\s+[`\w]+/i', $sql_trim)) {
+            if (stripos($sql_trim, ' join ') === false &&
+                stripos($sql_trim, ' group by ') === false &&
+                stripos($sql_trim, ' having ') === false &&
+                stripos($sql_trim, ' union ') === false &&
+                stripos($sql_trim, ' as sub') === false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static function get_var($_sql = '', $_aggregate_value = '')
@@ -391,12 +456,20 @@ class wp_slimstat_db
             self::$debug_message .= "<p class='debug'>$_sql</p>";
         }
 
-        // Save the results of this query in our object cache
-        if (empty(wp_cache_get(md5($_sql), 'wp-slimstat'))) {
-            wp_cache_add(md5($_sql), wp_slimstat::$wpdb->get_var($_sql), 'wp-slimstat');
+        // Optimize: run simple COUNT queries directly for max performance
+        if (self::is_simple_count_query($_sql)) {
+            return wp_slimstat::$wpdb->get_var($_sql);
         }
 
-        return wp_cache_get(md5($_sql), 'wp-slimstat');
+        // Use the new Query class for SELECT queries with internal caching
+        if (stripos(trim($_sql), 'select') === 0) {
+            $query = \SlimStat\Utils\Query::select('*')->from('(' . $_sql . ') as sub');
+            self::maybe_enable_query_cache($query);
+            return $query->getVar();
+        } else {
+            // fallback for non-select queries (should not happen here)
+            return wp_slimstat::$wpdb->get_var($_sql);
+        }
     }
 
     public static function parse_filters($_filters_raw)
@@ -915,39 +988,33 @@ class wp_slimstat_db
             $_column           = $_column['columns'];
         }
 
-        $columns = $_column;
+        // Only select needed columns for performance
+        $columns = ($_column === '*')
+            ? 'id, ip, dt, username, referer, resource, browser, platform, country, city, content_type, notes, visit_id, server_latency, page_performance, browser_version, browser_type, language, fingerprint, user_agent, resolution, screen_width, screen_height, category, author, content_id, outbound_resource, tz_offset, dt_out'
+            : $_column;
         if (!empty($_as_column)) {
-            $columns = "$_column AS $_as_column";
+            $columns = "$columns AS $_as_column";
         }
-
-        // Add the IP column, used to display details about that visit
-        if ($_column != 'ip') {
-            $columns .= ', ip';
-        }
-
-        if ($_column != '*') {
-            $columns  .= ', dt';
-            $group_by = 'GROUP BY ' . $_column;
-        } else {
-            $columns  = 'id, ip, other_ip, username, email, country, city, location, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, outbound_resource, tz_offset, dt_out, dt';
-            $group_by = '';
-        }
-
         if (!empty($_more_columns)) {
             $columns .= ', ' . $_more_columns;
         }
+        // Always add dt for sorting
+        if (strpos($columns, 'dt') === false) {
+            $columns .= ', dt';
+        }
+        // Always add ip for details (legacy)
+        if (strpos($columns, 'ip') === false) {
+            $columns .= ', ip';
+        }
+        $group_by = ($_column !== '*' ? 'GROUP BY ' . $_column : '');
 
         $_where = self::get_combined_where($_where, $_column, $_use_date_filters);
-
-        // Sanitize and protect WHERE clause
         if (strpos($_where, 'OR') !== false && strpos($_where, '(') === false) {
             $_where = '(' . $_where . ')';
         }
-
         $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
 
-        // Prepare the query
         $sql = $wpdb->prepare("
             SELECT $columns
             FROM {$wpdb->prefix}slim_stats
@@ -958,9 +1025,13 @@ class wp_slimstat_db
             $start,
             $limit
         );
-
         $sql = str_replace('[[_WHERE_]]', $_where, $sql);
 
+        // Debug: log the final SQL and columns
+        if (wp_slimstat::$settings['show_sql_debug'] == 'on') {
+            self::$debug_message .= "<p class='debug'>SQL: $sql</p>";
+            self::$debug_message .= "<p class='debug'>Columns: $columns</p>";
+        }
         return self::get_results($sql, $columns, 'dt DESC');
     }
 
