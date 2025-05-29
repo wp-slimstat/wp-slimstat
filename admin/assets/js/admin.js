@@ -6,6 +6,34 @@ if (typeof SlimStatAdminParams == "undefined") {
     };
 }
 
+// Clear Cache Button Handler
+jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
+    e.preventDefault();
+    var $btn = jQuery(this);
+    $btn.prop("disabled", true);
+    $btn.after('<span class="loading" style="vertical-align: middle; position: relative; top: 3px;"> &nbsp; <i class="slimstat-font-spin4 animate-spin"></i> &nbsp; </span>');
+    jQuery
+        .ajax({
+            method: "POST",
+            url: ajaxurl,
+            data: {
+                action: "slimstat_clear_cache",
+                security: typeof SlimStatAdminParams.clear_cache_nonce !== "undefined" ? SlimStatAdminParams.clear_cache_nonce : "",
+            },
+            dataType: "json",
+        })
+        .done(function (result) {
+            alert(result.data || "Cache cleared!");
+        })
+        .fail(function (xhr) {
+            alert("Cache clear failed!");
+        })
+        .always(function () {
+            $btn.prop("disabled", false);
+            $btn.next(".loading").remove();
+        });
+});
+
 // ----- TABLE OF CONTENTS -----------------------------------------------------------
 //
 // 1. Data Refresh

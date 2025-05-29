@@ -981,6 +981,15 @@ class wp_slimstat_reports
 
         $all_results = call_user_func($_args['raw'], $_args);
 
+        // Fix for Recent Outbound Links: wrap strings as arrays with the correct key
+        if (!empty($_args['columns']) && $_args['columns'] === 'outbound_resource' && !empty($all_results) && is_array($all_results)) {
+            foreach ($all_results as $k => $v) {
+                if (!is_array($v)) {
+                    $all_results[$k] = array('outbound_resource' => $v);
+                }
+            }
+        }
+
         // Backward compatibility
         if (!is_array($all_results)) {
             $all_results = array();
@@ -1038,13 +1047,22 @@ class wp_slimstat_reports
                 $_args['columns'] = explode(',', $_args['columns']);
                 $_args['columns'] = trim($_args['columns'][0]);
             }
+            // Ensure columns is a string (for safety)
+            if (is_array($_args['columns'])) {
+                $_args['columns'] = trim($_args['columns'][0]);
+            }
 
             $permalinks_enabled = get_option('permalink_structure');
 
             for ($i = 0; $i < $count_page_results; $i++) {
                 $row_details       = $percentage = '';
                 $element_pre_value = '';
-                $element_value     = $results[$i][$_args['columns']];
+                // Ensure $results[$i] is an array and the key exists
+                if (is_array($results[$i]) && isset($results[$i][$_args['columns']])) {
+                    $element_value = $results[$i][$_args['columns']];
+                } else {
+                    $element_value = '';
+                }
 
                 // Some columns require a special pre-treatment
                 switch ($_args['columns']) {
@@ -1109,7 +1127,7 @@ class wp_slimstat_reports
                         break;
 
                     case 'platform':
-                        $row_details = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+                        $row_details = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ]]}";
 
                         $icons = array(
                             'android'  => 'and',
@@ -1204,18 +1222,18 @@ class wp_slimstat_reports
                         }
                         break;
                     case 'author': // Backward compatibility
-                        $author_username = $results[$i]['author'];
+                        $author_username = is_array($results[$i]) && isset($results[$i]['author']) ? $results[$i]['author'] : '';
                         if($author_username) {
                             $author    = get_user_by('login', $author_username);
                             if( $author ) {
                                 $author_id = $author->ID;
                                 $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
                                 $element_value .= get_avatar($author_id, 18);
-                                $element_value .= $author ? empty($author->display_name) ? $author->user_login : $author->display_name : $results[$i]['author'];
+                                $element_value .= $author ? (empty($author->display_name) ? $author->user_login : $author->display_name) : $author_username;
                                 $element_value .= "</a>";
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['author']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>". $author_username ." (". __('Unknown', 'wp-slimstat') .")</a>";
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1230,14 +1248,23 @@ class wp_slimstat_reports
                         $element_value = $resource_title;
                         break;
                     default:
-                }
+                               }
 
                 if (is_admin()) {
-                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . htmlentities(strval($results[$i][$_args['columns']]), ENT_QUOTES, 'UTF-8')) . "'>$element_value</a>";
+                    if (is_array($results[$i]) && isset($results[$i][$_args['columns']])) {
+                        $column_value = $results[$i][$_args['columns']];
+                    } else {
+                        $column_value = '';
+                    }
+                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . htmlentities(strval($column_value), ENT_QUOTES, 'UTF-8')) . "'>$element_value</a>";
                 }
 
                 if (!empty($_args['type']) && $_args['type'] == 'recent') {
-                    $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . (!empty($row_details) ? '<br>' : '') . $row_details;
+                    if (is_array($results[$i]) && isset($results[$i]['dt'])) {
+                        $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . (!empty($row_details) ? '<br>' : '') . $row_details;
+                    } else {
+                        $row_details = $row_details; // No date available, just show details if any
+                    }
                 }
 
                 if (!empty($_args['type']) && $_args['type'] == 'top') {
@@ -1512,10 +1539,6 @@ class wp_slimstat_reports
         echo wp_kses_post(wp_slimstat_db::$debug_message);
 
         foreach ($results as $a_result) {
-            if (empty($a_result['counthits'])) {
-                $a_result['counthits'] = 0;
-            }
-
             $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this URL in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . "' href='" . htmlentities($a_result['resource'], ENT_QUOTES, 'UTF-8') . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . htmlentities($a_result['resource'], ENT_QUOTES, 'UTF-8')) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
 
             $group_markup = array();

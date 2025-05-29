@@ -1203,7 +1203,7 @@ class wp_slimstat
             'mozcom_secret_key'                      => '',
             'show_complete_user_agent_tooltip'       => 'no',
             'async_load'                             => 'no',
-            'limit_results'                          => '1000',
+            'limit_results'                          => '200',
             'enable_sov'                             => 'no',
 
             // Exclusions
@@ -1360,40 +1360,35 @@ class wp_slimstat
         }
 
         $days_ago = strtotime(self::date_i18n('Y-m-d H:i:s') . " -$autopurge_interval days");
+        $table_stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $table_stats_archive = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
+        $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
+        $table_events_archive = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
 
         // Copy entries to the archive table, if needed
         if (self::$settings['auto_purge_delete'] != 'no') {
-            $is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt)
-				SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt
-				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-				WHERE dt < $days_ago");
-
+            // Use Query builder for INSERT INTO ... SELECT ...
+            $insert_sql = "INSERT INTO $table_stats_archive (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt) SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt FROM $table_stats WHERE dt < $days_ago";
+            $is_copy_done = self::$wpdb->query($insert_sql);
             if ($is_copy_done !== false) {
-                self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
+                \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
             }
-
-            $is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events_archive (type, event_description, notes, position, id, dt)
-				SELECT type, event_description, notes, position, id, dt
-				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events
-				WHERE dt < $days_ago"
-            );
-
+            $insert_sql_events = "INSERT INTO $table_events_archive (type, event_description, notes, position, id, dt) SELECT type, event_description, notes, position, id, dt FROM $table_events WHERE dt < $days_ago";
+            $is_copy_done = self::$wpdb->query($insert_sql_events);
             if ($is_copy_done !== false) {
-                self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
+                \SlimStat\Utils\Query::delete($table_events)->where('dt', '<', $days_ago)->execute();
             }
         } else {
             // Delete old entries
-            self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
-            self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
+            \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
+            \SlimStat\Utils\Query::delete($table_events)->where('dt', '<', $days_ago)->execute();
         }
 
-        // Optimize tables
-        self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats");
-        self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive");
-        self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events");
-        self::$wpdb->query("OPTIMIZE TABLE {$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive");
+        // Optimize tables (keep as direct queries)
+        self::$wpdb->query("OPTIMIZE TABLE $table_stats");
+        self::$wpdb->query("OPTIMIZE TABLE $table_stats_archive");
+        self::$wpdb->query("OPTIMIZE TABLE $table_events");
+        self::$wpdb->query("OPTIMIZE TABLE $table_events_archive");
     }
 
     public static function wp_slimstat_update_geoip_database()
@@ -1873,7 +1868,16 @@ class wp_slimstat
 
             self::$stat['visit_id'] = get_transient('slimstat_visit_id');
             if (self::$stat['visit_id'] === false) {
-                self::$stat['visit_id'] = intval(self::$wpdb->get_var("SELECT MAX( visit_id ) FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats"));
+                // Use Query builder for SELECT MAX(visit_id)
+                $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+                $query = \SlimStat\Utils\Query::select('MAX(visit_id) as max_visit_id')->from($table);
+                // Enable caching for historical queries (all but today)
+                $today = date('Y-m-d');
+                if (!empty(self::$stat['dt']) && date('Y-m-d', self::$stat['dt']) < $today) {
+                    $query->allowCaching(true);
+                }
+                $max_visit_id = $query->getVar();
+                self::$stat['visit_id'] = intval($max_visit_id);
             }
             self::$stat['visit_id']++;
             set_transient('slimstat_visit_id', self::$stat['visit_id']);
@@ -1894,9 +1898,9 @@ class wp_slimstat
 
         if ($is_new_session && $identifier > 0) {
             self::$wpdb->query(self::$wpdb->prepare("
-				UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats
-				SET visit_id = %d
-				WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier
+                UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats
+                SET visit_id = %d
+                WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier
             ));
         }
         return ($is_new_session && ($_force_assign || self::$settings['javascript_mode'] == 'on'));
@@ -1968,12 +1972,17 @@ class wp_slimstat
             return false;
         }
 
-        $count_fingerprint = self::$wpdb->get_var(self::$wpdb->prepare("
-			SELECT COUNT( id )
-			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-			WHERE fingerprint = %s", $_fingerprint
-        ));
-
+        // Use Query builder for SELECT with caching for historical data
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $query = \SlimStat\Utils\Query::select('COUNT(id) as cnt')
+            ->from($table)
+            ->where('fingerprint', '=', $_fingerprint);
+        // Enable caching for historical queries (all but today)
+        $today = date('Y-m-d');
+        if (!empty(self::$stat['dt']) && date('Y-m-d', self::$stat['dt']) < $today) {
+            $query->allowCaching(true);
+        }
+        $count_fingerprint = $query->getVar();
         return $count_fingerprint == 0;
     }
     // end _is_new_visitor
@@ -2211,4 +2220,27 @@ if (function_exists('add_action')) {
 
     // Add the appropriate actions
     add_action('plugins_loaded', array('wp_slimstat', 'init'), 20);
+}
+
+add_action('wp_ajax_slimstat_clear_cache', 'wp_slimstat_clear_cache_handler');
+
+function wp_slimstat_clear_cache_handler() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(__('Permission denied', 'wp-slimstat'));
+    }
+    // Optional: check nonce if you add it to JS
+    if (empty($_POST['security']) || !wp_verify_nonce($_POST['security'], 'slimstat_clear_cache')) {
+        wp_send_json_error(__('Invalid nonce', 'wp-slimstat'));
+    }
+
+    global $wpdb;
+    $transients = $wpdb->get_col(
+        "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_slimstat_query_%' OR option_name LIKE '_transient_timeout_wp_slimstat_query_%'"
+    );
+    $count = 0;
+    foreach ($transients as $transient) {
+        delete_option($transient);
+        $count++;
+    }
+    wp_send_json_success(sprintf(__('Slimstat cache cleared (%d items)', 'wp-slimstat'), $count));
 }
