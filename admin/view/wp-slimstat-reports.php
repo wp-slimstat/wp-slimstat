@@ -131,7 +131,8 @@ class wp_slimstat_reports
                     'columns'   => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
                     'as_column' => 'referer',
                     'filter_op' => 'contains',
-                    'where'     => 'referer NOT LIKE "%' . str_replace('www.', '', parse_url(home_url(), PHP_URL_HOST)) . '%"',
+                    'where'     => 'referer NOT LIKE %s AND dt BETWEEN %d AND %d',
+                    'where_params' => array('%' . str_replace('www.', '', parse_url(home_url(), PHP_URL_HOST)) . '%', 1746144000, 1748529632),
                     'raw'       => array('wp_slimstat_db', 'get_top')
                 ),
                 'classes'       => array('normal'),
@@ -547,7 +548,8 @@ class wp_slimstat_reports
                 'callback_args' => array(
                     'type'    => 'recent',
                     'columns' => 'resource',
-                    'where'   => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")',
+                    'where'   => '(resource LIKE %s OR resource LIKE %s OR resource LIKE %s OR content_type LIKE %s)',
+                    'where_params' => array('%/feed%', '%?feed=>%', '%&feed=>%', '%feed%'),
                     'raw'     => array('wp_slimstat_db', 'get_recent')
                 ),
                 'classes'       => array('normal'),
@@ -571,7 +573,8 @@ class wp_slimstat_reports
                 'callback_args' => array(
                     'type'    => 'recent',
                     'columns' => 'searchterms',
-                    'where'   => 'content_type LIKE "%%search%%" AND searchterms <> "" AND searchterms IS NOT NULL',
+                    'where'   => 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL AND dt BETWEEN %d AND %d',
+                    'where_params' => array('%search%', 1746144000, 1748530105),
                     'raw'     => array('wp_slimstat_db', 'get_recent')
                 ),
                 'classes'       => array('normal'),
@@ -979,6 +982,14 @@ class wp_slimstat_reports
 
         wp_slimstat_db::$debug_message = '';
 
+        // Remove the workaround for double percent signs
+        // Instead, pass where_param if present
+        $where_param = isset($_args['where_param']) ? $_args['where_param'] : null;
+        $where_params = isset($_args['where_params']) ? $_args['where_params'] : null;
+        if (!empty($_args['raw']) && is_array($_args['raw']) && isset($_args['raw'][0]) && method_exists($_args['raw'][0], 'get_combined_where')) {
+            $_args['where'] = call_user_func(array($_args['raw'][0], 'get_combined_where'), $_args['where'], '', true, '', $where_params);
+        }
+
         $all_results = call_user_func($_args['raw'], $_args);
 
         // Fix for Recent Outbound Links: wrap strings as arrays with the correct key
@@ -1071,34 +1082,33 @@ class wp_slimstat_reports
                             $element_pre_value = self::inline_help($results[$i]['user_agent'], false);
                         }
 
-                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/browsers/' . strtolower($results[$i]['browser'] ) . '.png') ) ) {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/' . strtolower($results[$i]['browser'] ) . '.png');
+                        $browser = isset($results[$i]['browser']) ? $results[$i]['browser'] : '';
+                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/browsers/' . strtolower($browser) . '.png') ) ) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/browsers/' . strtolower($browser) . '.png');
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                         }
-
-                        $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['browser'] . '" /> ';
-                        $element_value .= $results[$i]['browser'] . ((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0) ? ' ' . $results[$i]['browser_version'] : '');
+                        $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $browser . '" /> ';
+                        $element_value .= $browser . ((isset($results[$i]['browser_version']) && intval($results[$i]['browser_version']) != 0) ? ' ' . $results[$i]['browser_version'] : '');
                         break;
 
                     case 'category':
-                        $row_details   = __('Category ID', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+                        $row_details   = __('Category ID', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ]]}";
                         $element_value = get_cat_name($results[$i][$_args['columns']]);
                         break;
 
                     case 'country':
-
-                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($results[$i]['country']) . '.svg') ) ) {
-                            $svg_path     = realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($results[$i]['country']) . '.svg') );
+                        $country = isset($results[$i]['country']) ? $results[$i]['country'] : '';
+                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($country) . '.svg') ) ) {
+                            $svg_path     = realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($country) . '.svg') );
                             $svg_content = file_get_contents($svg_path);
                             $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
+                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $country . '" />';
                         }
-
-                        $row_details   .= __('Code', 'wp-slimstat') . ": {$results[ $i ][ 'country' ]}";
-                        $element_value .= wp_slimstat_i18n::get_string('c-' . $results[$i]['country']);
+                        $row_details   .= __('Code', 'wp-slimstat') . ": {$country}";
+                        $element_value .= wp_slimstat_i18n::get_string('c-' . $country);
                         break;
 
                     case 'id':
@@ -1226,7 +1236,6 @@ class wp_slimstat_reports
                         if($author_username) {
                             $author    = get_user_by('login', $author_username);
                             if( $author ) {
-                                $author_id = $author->ID;
                                 $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
                                 $element_value .= get_avatar($author_id, 18);
                                 $element_value .= $author ? (empty($author->display_name) ? $author->user_login : $author->display_name) : $author_username;
@@ -1569,6 +1578,7 @@ class wp_slimstat_reports
 
     public static function show_rankings()
     {
+        // Remove Alexa ranking code and references
         $options  = array('timeout' => 30, 'headers' => array('Accept' => 'application/json'));
         $site_url = parse_url(home_url(), PHP_URL_HOST);
         if (!empty(wp_slimstat_db::$filters_normalized['resource']) && wp_slimstat_db::$filters_normalized['resource'][0] == 'equals') {
@@ -1576,7 +1586,7 @@ class wp_slimstat_reports
         }
         $site_url = urlencode($site_url);
 
-        // Check if we have a valied transient
+        // Check if we have a valid transient
         if (false === ($rankings = get_transient('slimstat_ranking_values'))) {
             $rankings = array(
                 'seomoz_domain_authority' => array(
@@ -1593,21 +1603,6 @@ class wp_slimstat_reports
                     0,
                     __('Moz Links', 'wp-slimstat'),
                     __('The number of links (external, equity or nonequity or not) to your homepage.', 'wp-slimstat')
-                ),
-                'alexa_world_rank'        => array(
-                    0,
-                    __('Alexa World Rank', 'wp-slimstat'),
-                    __('Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data.', 'wp-slimstat')
-                ),
-                'alexa_country_rank'      => array(
-                    0,
-                    __('Alexa Country Rank', 'wp-slimstat'),
-                    ''
-                ),
-                'alexa_popularity'        => array(
-                    0,
-                    __('Alexa Popularity', 'wp-slimstat'),
-                    ''
                 )
             );
 
@@ -1632,40 +1627,6 @@ class wp_slimstat_reports
 
                         if (!empty($response->uid)) {
                             $rankings['seomoz_links'][0] = number_format_i18n(floatval($response->uid));
-                        }
-                    }
-                }
-            }
-
-            // Alexa
-            $response = @wp_remote_get('http://data.alexa.com/data?cli=10&dat=snbamz&url=' . $site_url, $options);
-            if (!is_wp_error($response) && isset($response['response']['code']) && ($response['response']['code'] == 200) && !empty($response['body'])) {
-                $response = @simplexml_load_string($response['body']);
-                if (is_object($response->SD[1])) {
-                    if ($response->SD[1]->POPULARITY && $response->SD[1]->POPULARITY->attributes()) {
-                        $popularity = $response->SD[1]->POPULARITY->attributes();
-                        if (!empty($popularity)) {
-                            $rankings['alexa_popularity'][0] = number_format_i18n(floatval($popularity['TEXT']));
-                        }
-                    }
-
-                    if ($response->SD[1]->REACH && $response->SD[1]->REACH->attributes()) {
-                        $reach = $response->SD[1]->REACH->attributes();
-                        if (!empty($reach)) {
-                            $rankings['alexa_world_rank'][0] = number_format_i18n(floatval($reach['RANK']));
-                        }
-                    }
-
-                    if ($response->SD[1]->COUNTRY && $response->SD[1]->COUNTRY->attributes()) {
-                        $country = $response->SD[1]->COUNTRY->attributes();
-                        if (!empty($country)) {
-                            $rankings['alexa_country_rank'][0] = number_format_i18n(floatval($country['RANK']));
-                        }
-                    } else if ($response->SD[1]->RANK && $response->SD[1]->RANK->attributes()) {
-                        $rank = $response->SD[1]->RANK->attributes();
-                        if (!empty($rank)) {
-                            $rankings['alexa_country_rank'][0] = number_format_i18n(floatval($rank['DELTA']));
-                            $rankings['alexa_country_rank'][1] = __('Alexa Delta', 'wp-slimstat');
                         }
                     }
                 }

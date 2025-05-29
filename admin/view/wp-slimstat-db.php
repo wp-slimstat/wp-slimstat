@@ -209,7 +209,7 @@ class wp_slimstat_db
         return '';
     }
 
-    public static function get_combined_where($_where = '', $_column = '*', $_use_date_filters = true, $_slim_stats_table_alias = '')
+    public static function get_combined_where($_where = '', $_column = '*', $_use_date_filters = true, $_slim_stats_table_alias = '', $where_params = null)
     {
         $dt_with_alias = 'dt';
         if (!empty($_slim_stats_table_alias)) {
@@ -263,6 +263,16 @@ class wp_slimstat_db
 
             if (strpos($_where, $filter_empty) === false && strpos($_where, $filter_not_empty) === false) {
                 $_where = "$filter_not_empty AND $_where";
+            }
+        }
+
+        // If where_param is provided and where contains %s or %d, use prepare
+        if ($where_params !== null && (strpos($_where, '%s') !== false || strpos($_where, '%d') !== false)) {
+            global $wpdb;
+            if (is_array($where_params)) {
+                $_where = $wpdb->prepare($_where, ...$where_params);
+            } else {
+                $_where = $wpdb->prepare($_where, $where_params);
             }
         }
 
@@ -1006,9 +1016,11 @@ class wp_slimstat_db
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $query = \SlimStat\Utils\Query::select(implode(', ', $columns))->from($table);
 
+        // Always add date filter as a proper where() clause so placeholders are replaced
         if ($_use_date_filters && !empty(self::$filters_normalized['utime']['start']) && !empty(self::$filters_normalized['utime']['end']) && !$query->hasWhereClause('dt', 'BETWEEN')) {
             $query->where('dt', 'BETWEEN', [intval(self::$filters_normalized['utime']['start']), intval(self::$filters_normalized['utime']['end'])]);
         }
+        // Only add non-parameterized conditions to whereRaw
         if (!empty($_where)) {
             $query->whereRaw($_where);
         }
