@@ -1236,6 +1236,7 @@ class wp_slimstat_reports
                         if($author_username) {
                             $author    = get_user_by('login', $author_username);
                             if( $author ) {
+                                $author_id = $author ? $author->ID : 0;
                                 $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
                                 $element_value .= get_avatar($author_id, 18);
                                 $element_value .= $author ? (empty($author->display_name) ? $author->user_login : $author->display_name) : $author_username;
