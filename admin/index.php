@@ -278,6 +278,19 @@ class wp_slimstat_admin
             self::add_header();
         });
 
+        $index_checks = [
+            ['option' => 'slimstat_country_dt_indexed', 'key' => 'idx_country_dt'],
+            ['option' => 'slimstat_dt_screen_indexed', 'key' => 'idx_dt_screen_width_screen_height'],
+            ['option' => 'slimstat_dt_browser_indexed', 'key' => 'idx_dt_browser_browser_version'],
+            ['option' => 'slimstat_dt_platform_indexed', 'key' => 'idx_dt_platform'],
+        ];
+        foreach ($index_checks as $idx) {
+            $exists = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
+            if (!empty($exists)) {
+                update_option($idx['option'], 'yes');
+            }
+        }
+
         self::register_country_dt_index_hooks();
         self::register_dt_screen_index_hooks();
         self::register_dt_browser_index_hooks();
@@ -371,27 +384,29 @@ class wp_slimstat_admin
         $has_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_country_dt'");
         if (!$has_index || count($has_index) === 0) {
             $my_wpdb->query("CREATE INDEX idx_country_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (country, dt)");
-            update_option('slimstat_country_dt_indexed', 'yes');
         }
+        update_option('slimstat_country_dt_indexed', 'yes');
 
         // --- Add (dt, screen_width, screen_height) index for Top Screen Resolutions ---
         $dt_screen_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_screen_width_screen_height'");
         if (empty($dt_screen_index)) {
             $my_wpdb->query("CREATE INDEX idx_dt_screen_width_screen_height ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, screen_width, screen_height)");
-            wp_slimstat::$settings['dt_screen_indexed'] = 'on';
         }
+        update_option('slimstat_dt_screen_indexed', 'yes');
+
         // --- Add (dt, browser, browser_version) index for Top Browsers ---
         $dt_browser_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_browser_browser_version'");
         if (empty($dt_browser_index)) {
             $my_wpdb->query("CREATE INDEX idx_dt_browser_browser_version ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, browser, browser_version)");
-            wp_slimstat::$settings['dt_browser_indexed'] = 'on';
         }
+        update_option('slimstat_dt_browser_indexed', 'yes');
+
         // --- Add (dt, platform) index for Top Platforms ---
         $dt_platform_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_platform'");
         if (empty($dt_platform_index)) {
             $my_wpdb->query("CREATE INDEX idx_dt_platform ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, platform)");
-            wp_slimstat::$settings['dt_platform_indexed'] = 'on';
         }
+        update_option('slimstat_dt_platform_indexed', 'yes');
 
         return true;
     }
@@ -502,6 +517,20 @@ class wp_slimstat_admin
         if (empty(wp_slimstat::$settings['version'])) {
             wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         }
+
+        $index_defs = [
+            ['name' => 'idx_country_dt', 'sql' => "CREATE INDEX idx_country_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (country, dt)", 'option' => 'slimstat_country_dt_indexed'],
+            ['name' => 'idx_dt_screen_width_screen_height', 'sql' => "CREATE INDEX idx_dt_screen_width_screen_height ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, screen_width, screen_height)", 'option' => 'slimstat_dt_screen_indexed'],
+            ['name' => 'idx_dt_browser_browser_version', 'sql' => "CREATE INDEX idx_dt_browser_browser_version ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, browser, browser_version)", 'option' => 'slimstat_dt_browser_indexed'],
+            ['name' => 'idx_dt_platform', 'sql' => "CREATE INDEX idx_dt_platform ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, platform)", 'option' => 'slimstat_dt_platform_indexed'],
+        ];
+        foreach ($index_defs as $idx) {
+            $exists = $_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['name']}'");
+            if (empty($exists)) {
+                $_wpdb->query($idx['sql']);
+            }
+            update_option($idx['option'], 'yes');
+        }
     }
     // END: init_tables
 
@@ -532,7 +561,7 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['no_maxmind_warning']);
             unset(wp_slimstat::$settings['no_browscap_warning']);
             unset(wp_slimstat::$settings['use_european_separators']);
-            unset(wp_slimstat::$settings['date_format']);
+            unset($wp_slimstat::$settings['date_format']);
             unset($wp_slimstat::$settings['time_format']);
             unset($wp_slimstat::$settings['expand_details']);
 
@@ -1459,6 +1488,7 @@ class wp_slimstat_admin
                 'id' => 'country-dt',
                 'label' => __('World Map & Country Reports', 'wp-slimstat'),
                 'desc' => __('Index on <code>country</code> and <code>dt</code>', 'wp-slimstat'),
+                'key' => 'idx_country_dt',
                 'ajax' => 'slimstat_add_country_dt_index',
                 'btn' => __('Apply', 'wp-slimstat'),
             ],
@@ -1467,6 +1497,7 @@ class wp_slimstat_admin
                 'id' => 'dt-screen',
                 'label' => __('Screen Resolution Reports', 'wp-slimstat'),
                 'desc' => __('Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>', 'wp-slimstat'),
+                'key' => 'idx_dt_screen_width_screen_height',
                 'ajax' => 'slimstat_add_dt_screen_index',
                 'btn' => __('Apply', 'wp-slimstat'),
             ],
@@ -1475,6 +1506,7 @@ class wp_slimstat_admin
                 'id' => 'dt-browser',
                 'label' => __('Browser Reports', 'wp-slimstat'),
                 'desc' => __('Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>', 'wp-slimstat'),
+                'key' => 'idx_dt_browser_browser_version',
                 'ajax' => 'slimstat_add_dt_browser_index',
                 'btn' => __('Apply', 'wp-slimstat'),
             ],
@@ -1483,11 +1515,17 @@ class wp_slimstat_admin
                 'id' => 'dt-platform',
                 'label' => __('Platform Reports', 'wp-slimstat'),
                 'desc' => __('Index on <code>dt</code>, <code>platform</code>', 'wp-slimstat'),
+                'key' => 'idx_dt_platform',
                 'ajax' => 'slimstat_add_dt_platform_index',
                 'btn' => __('Apply', 'wp-slimstat'),
             ],
         ];
-        $pending = array_filter($indexes, function($idx) { return get_option($idx['option']) !== 'yes'; });
+
+        $pending = array_filter($indexes, function($idx) {
+            global $wpdb;
+            $exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
+            return empty($exists);
+        });
         if (empty($pending)) return;
         $ajax_url = admin_url('admin-ajax.php');
 
