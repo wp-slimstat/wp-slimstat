@@ -43,6 +43,16 @@ class wp_slimstat_reports
 
         $chart_tooltip = '<strong>' . __('Chart Controls', 'wp-slimstat') . '</strong><ul><li>' . __('Use your mouse wheel to zoom in and out', 'wp-slimstat') . '</li><li>' . __('While zooming in, drag the chart to move to a different area', 'wp-slimstat') . '</li></ul>';
 
+        $pageviews_chart_tooltip = '<strong>' . __('Pageviews', 'wp-slimstat') . '</strong><br>'
+            . __('Shows how many times your site’s pages have been viewed.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Pageviews” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
         self::$reports = array(
             'slim_p7_02' => array(
                 'title'         => __('Access Log', 'wp-slimstat'),
@@ -73,7 +83,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview2', 'dashboard'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $pageviews_chart_tooltip
             ),
             'slim_p1_03'    => array(
                 'title'         => __('At a Glance', 'wp-slimstat'),
