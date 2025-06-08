@@ -83,6 +83,16 @@ class wp_slimstat_reports
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
+        $traffic_sources_chart_tooltip = '<strong>' . __('Traffic Sources', 'wp-slimstat') . '</strong><br>'
+            . __('See how many visits come from each traffic source.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Domains” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
         self::$reports = array(
             'slim_p7_02' => array(
                 'title'         => __('Access Log', 'wp-slimstat'),
@@ -544,7 +554,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview5'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $traffic_sources_chart_tooltip
             ),
             'slim_p3_02' => array(
                 'title'         => __('Traffic Summary', 'wp-slimstat'),
