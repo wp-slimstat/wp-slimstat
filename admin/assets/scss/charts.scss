@@ -145,19 +145,35 @@ body.index-php {
   // WP Dashboard specific styles
   .slimstat-chart-wrap {
     max-width: 100% !important;
+    width: 100%;
+    aspect-ratio: 16/7;
+    min-height: 160px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   .inside:has(.slimstat-postbox-chart--canvas) {
-    height: 305px !important;
-    max-height: 305px !important;
+    height: auto !important;
+    min-height: 180px;
+    max-height: none;
+    margin-bottom: 20px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   .slimstat-postbox-chart--canvas {
     width: 100% !important;
     max-width: 100%;
-    min-width: 180px;
-    height: 180px !important;
+    min-width: 100px;
+    aspect-ratio: 16/7;
+    height: auto !important;
+    min-height: 120px;
+    max-height: 60vw;
     border-radius: 7px;
     margin: 0 auto 8px auto;
     box-shadow: 0 1px 4px rgba(60, 60, 90, 0.04);
+    display: block;
   }
   .slimstat-postbox-custom-legend,
   .slimstat-postbox-chart--items {
@@ -169,6 +185,8 @@ body.index-php {
     padding-left: 0;
     overflow-x: auto;
     font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
   }
   .slimstat-postbox-chart--item {
     padding: 3px 7px;
@@ -188,6 +206,13 @@ body.index-php {
       border-radius: 5px;
     }
   }
+  @media (max-width: 900px) {
+    .slimstat-postbox-chart--canvas {
+      aspect-ratio: 16/10;
+      min-height: 90px;
+      max-height: 50vw;
+    }
+  }
   @media (max-width: 600px) {
     .slimstat-postbox-custom-legend,
     .slimstat-postbox-chart--items {
@@ -196,23 +221,28 @@ body.index-php {
       column-gap: 8px;
       row-gap: 6px;
       font-size: 12px;
+      width: 100%;
     }
     .slimstat-postbox-chart--canvas {
-      min-width: 100px;
-      height: 100px !important;
+      min-width: 80px;
+      aspect-ratio: 16/12;
+      min-height: 60px;
+      max-height: 40vw;
       border-radius: 5px;
     }
-    .slimstat-postbox-chart--item {
-      padding: 2px 4px;
-      font-size: 11px;
+    .slimstat-chart-wrap {
+      aspect-ratio: 16/12;
+      min-height: 60px;
     }
-    .slimstat-chart-controls {
-      right: 4px;
-      & select {
-        width: 60px;
-        font-size: 11px;
-        padding: 1px 2px;
-      }
+  }
+  @media (max-width: 400px) {
+    .slimstat-postbox-chart--canvas {
+      min-width: 60px;
+      min-height: 40px;
+      max-height: 30vw;
+    }
+    .slimstat-chart-wrap {
+      min-height: 40px;
     }
   }
 }

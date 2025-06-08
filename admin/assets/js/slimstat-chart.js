@@ -167,24 +167,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function createChart(ctx, labels, prev_labels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
-        let xTickRotation = undefined;
-        let customTickCallback;
-
-        function drawRoundedRect(ctx, x, y, width, height, radius) {
-            ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.lineTo(x + width - radius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-            ctx.lineTo(x + width, y + height - radius);
-            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-            ctx.lineTo(x + radius, y + height);
-            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-            ctx.lineTo(x, y + radius);
-            ctx.quadraticCurveTo(x, y, x + radius, y);
-            ctx.closePath();
-            ctx.fill();
-        }
-
         const customCrosshair = {
             id: "customCrosshair",
             afterEvent(chart, args) {
@@ -212,26 +194,57 @@ document.addEventListener("DOMContentLoaded", function () {
             },
         };
 
-        if (labels.length > 15) {
-            const maxTicks = labels.length === 30 || labels.length === 31 ? 10 : labels.length > 45 ? Math.round(labels.length / 4) : labels.length >= 15 ? 8 : labels.length;
-            let tickInterval = 1;
-            if (labels.length >= 15) {
-                tickInterval = Math.floor((labels.length - 1) / (maxTicks - 1));
-            }
-            xTickRotation = 0;
-            customTickCallback = function (value, index, values) {
-                if (value % tickInterval === 0) {
-                    const label = this.getLabelForValue(value).replace(/'/g, "");
-                    return slimstatGetLabel(label, false, unitTime, translations);
+        var maxTicks = 8;
+        var uniqueTickIndexes = [];
+        var xTickRotation = 0;
+        var xAutoSkip = false;
+        if (labels.length > maxTicks) {
+            var tickIndexes = [0];
+            var step = (labels.length - 1) / (maxTicks - 1);
+            for (var i = 1; i < maxTicks - 1; i++) {
+                var idx = Math.round(i * step);
+                if (!tickIndexes.includes(idx)) {
+                    tickIndexes.push(idx);
+                } else {
+                    var nextIdx = idx + 1;
+                    while (nextIdx < labels.length - 1 && tickIndexes.includes(nextIdx)) {
+                        nextIdx++;
+                    }
+                    if (nextIdx < labels.length - 1) {
+                        tickIndexes.push(nextIdx);
+                    }
                 }
-                return "";
-            };
-        } else {
-            xTickRotation = 30;
-            customTickCallback = function (value, index, values) {
-                const label = this.getLabelForValue(value).replace(/'/g, "");
+            }
+            tickIndexes.push(labels.length - 1);
+            uniqueTickIndexes = Array.from(new Set(tickIndexes)).sort(function (a, b) {
+                return a - b;
+            });
+            if (uniqueTickIndexes.length > maxTicks) {
+                var toRemove = uniqueTickIndexes.length - maxTicks;
+                var middle = Math.floor(uniqueTickIndexes.length / 2);
+                uniqueTickIndexes.splice(middle, toRemove);
+            }
+        }
+        // Dynamically set rotation: only rotate if labels would overlap
+        // If the distance between two shown ticks is enough, set rotation to 0
+        var minLabelSpacingPx = 60; // Minimum pixel spacing to avoid rotation
+        var chartWidth = ctx.canvas.offsetWidth || ctx.canvas.width;
+        var tickCount = labels.length <= maxTicks ? labels.length : uniqueTickIndexes.length;
+        var approxSpacing = chartWidth / (tickCount - 1);
+        // Always recalculate rotation after every chart (AJAX or not)
+        if (approxSpacing > minLabelSpacingPx) {
+            xTickRotation = 0;
+        } else if (window.innerWidth < 600) {
+            xTickRotation = 35;
+        } else if (labels.length > maxTicks) {
+            xTickRotation = 20;
+        }
+        function customTickCallback(value, index, values) {
+            if (labels.length <= maxTicks || uniqueTickIndexes.includes(index)) {
+                var label = this.getLabelForValue(value).replace(/'/g, "");
                 return slimstatGetLabel(label, false, unitTime, translations);
-            };
+            }
+            return "";
         }
         return new Chart(ctx, {
             type: "line",
@@ -247,6 +260,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             callback: customTickCallback,
                             minRotation: 0,
                             maxRotation: xTickRotation,
+                            autoSkip: xAutoSkip,
+                            maxTicksLimit: labels.length,
                         },
                         grid: {
                             display: true,
