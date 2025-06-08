@@ -250,3 +250,110 @@ body.index-php {
     }
   }
 }
+
+// RTL support for chart legend, controls, tooltip, and chart items
+[dir="rtl"] .slimstat-postbox-custom-legend,
+.rtl .slimstat-postbox-custom-legend {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 40px;
+  text-align: right;
+}
+
+[dir="rtl"] .slimstat-chart-controls,
+.rtl .slimstat-chart-controls {
+  right: auto;
+  left: 20px;
+  text-align: left;
+}
+
+[dir="rtl"] #chartjs-tooltip,
+.rtl #chartjs-tooltip {
+  direction: rtl;
+  text-align: right;
+  font-family: "Open Sans", sans-serif !important;
+}
+
+[dir="rtl"] .slimstat-postbox-custom-legend,
+.rtl .slimstat-postbox-custom-legend,
+[dir="rtl"] .slimstat-postbox-chart--items,
+.rtl .slimstat-postbox-chart--items {
+  direction: rtl;
+  text-align: right;
+  font-family: "Open Sans", sans-serif !important;
+}
+
+[dir="rtl"] .slimstat-postbox-chart--item,
+.rtl .slimstat-postbox-chart--item {
+  direction: rtl;
+  text-align: right;
+  font-family: "Open Sans", sans-serif !important;
+}
+
+[dir="rtl"] .tooltip-item-title,
+.rtl .tooltip-item-title,
+[dir="rtl"] .tooltip-item-content,
+.rtl .tooltip-item-content {
+  direction: rtl;
+  text-align: right;
+  font-family: "Open Sans", sans-serif !important;
+}
+
+[dir="rtl"] #chartjs-tooltip table,
+.rtl #chartjs-tooltip table {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] #chartjs-tooltip tr.slimstat-postbox-chart--item td,
+.rtl #chartjs-tooltip tr.slimstat-postbox-chart--item td {
+  padding-right: 0;
+  padding-left: 8px;
+}
+
+[dir="rtl"] .slimstat-postbox-chart--item,
+.rtl .slimstat-postbox-chart--item {
+  flex-direction: row-reverse;
+  text-align: right;
+  gap: 8px;
+}
+
+[dir="rtl"] #chartjs-tooltip tr.slimstat-postbox-chart--item {
+  flex-direction: unset !important;
+}
+
+[dir="rtl"] .slimstat-toggle-prev-datasets {
+  left: 120px !important;
+  right: unset;
+  direction: ltr;
+}
+[dir="rtl"] .slimstat-postbox-chart--items {
+  padding: 0px 20px 0px 20px;
+}
+
+[dir="rtl"] .slimstat-postbox-chart--item > span,
+.rtl .slimstat-postbox-chart--item > span {
+  text-align: right;
+}
+
+[dir="rtl"] .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color,
+.rtl .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color {
+  margin-left: 10px !important;
+  margin-right: 0 !important;
+}
+
+[dir="rtl"] .slimstat-postbox-chart--item .slimstat-postbox-chart--item--prev,
+.rtl .slimstat-postbox-chart--item .slimstat-postbox-chart--item--prev {
+  margin: 0 3px 0 0;
+}
+
+[dir="rtl"] .tooltip-item-title,
+.rtl .tooltip-item-title {
+  text-align: right;
+}
+
+[dir="rtl"] .tooltip-item-content,
+.rtl .tooltip-item-content {
+  direction: rtl;
+  text-align: right;
+}

@@ -167,6 +167,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function createChart(ctx, labels, prev_labels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
+        const isRTL = document.documentElement.dir === "rtl" || document.body.classList.contains("rtl");
+
         const customCrosshair = {
             id: "customCrosshair",
             afterEvent(chart, args) {
@@ -254,20 +256,68 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             options: {
                 layout: { padding: 20 },
+                locale: "fa-IR",
+                direction: isRTL ? "rtl" : "ltr",
+                plugins: {
+                    legend: {
+                        display: false,
+                        rtl: isRTL,
+                        textDirection: isRTL ? "rtl" : "ltr",
+                        labels: {
+                            textAlign: isRTL ? "right" : "left",
+                            font: {
+                                family: "Open Sans, sans-serif",
+                            },
+                            color: "#222",
+                        },
+                    },
+                    tooltip: {
+                        enabled: false,
+                        external: createTooltip(labels, prev_labels, translations, daysBetween, chartId),
+                        rtl: isRTL,
+                        textDirection: isRTL ? "rtl" : "ltr",
+                        bodyAlign: isRTL ? "right" : "left",
+                        titleAlign: isRTL ? "right" : "left",
+                        footerAlign: isRTL ? "right" : "left",
+                        backgroundColor: "#fff",
+                        borderColor: "#e0e0e0",
+                        borderWidth: 1,
+                        titleFont: {
+                            family: "Open Sans, sans-serif",
+                        },
+                        bodyFont: {
+                            family: "Open Sans, sans-serif",
+                        },
+                        titleColor: "#222",
+                        bodyColor: "#222",
+                    },
+                },
                 scales: {
                     x: {
+                        reverse: isRTL,
                         ticks: {
                             callback: customTickCallback,
                             minRotation: 0,
                             maxRotation: xTickRotation,
                             autoSkip: xAutoSkip,
                             maxTicksLimit: labels.length,
+                            align: isRTL ? "end" : "start",
+                            font: {
+                                family: "Open Sans, sans-serif",
+                            },
+                            color: "#222",
                         },
                         grid: {
                             display: true,
                         },
                     },
                     y: {
+                        ticks: {
+                            font: {
+                                family: "Open Sans, sans-serif",
+                            },
+                            color: "#222",
+                        },
                         grid: {
                             display: false,
                         },
@@ -275,13 +325,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 maintainAspectRatio: false,
                 responsive: true,
-                plugins: {
-                    legend: false,
-                    tooltip: {
-                        enabled: false,
-                        external: createTooltip(labels, prev_labels, translations, daysBetween, chartId),
-                    },
-                },
                 animations: {
                     x: {
                         duration: 250,
@@ -323,7 +366,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 legendItem.innerHTML = `
                     <span class="slimstat-postbox-chart--item-label">${dataset.label}</span>
                     <span class="slimstat-postbox-chart--item--color" style="background-color: ${dataset.borderColor}"></span>
-                    <span class="slimstat-postbox-chart--item-value">${value}</span>
+                    <span class="slimstat-postbox-chart--item-value">${value.toLocaleString()}</span>
                     ${
                         prevValue !== value
                             ? `
