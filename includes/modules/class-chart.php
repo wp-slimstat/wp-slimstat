@@ -363,7 +363,7 @@ class Chart
             'previous_period'         => __('-- Previous Period', 'wp-slimstat'),
             'days_ago'                => sprintf(__('%s Days ago', 'wp-slimstat'), $args['days_between'] ?? 0),
             '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
-            'previous_period_tooltip' => __('Click to Show or Hide data from the previous period for comparison.', 'wp-slimstat'),
+            'previous_period_tooltip' => __("-- Previous Period\nTap here to show/hide comparison.", 'wp-slimstat'),
             'today'    => __('Today', 'wp-slimstat'),
             'day_ago'  => __('Day ago', 'wp-slimstat'),
             'year_ago' => __('Year ago', 'wp-slimstat'),
