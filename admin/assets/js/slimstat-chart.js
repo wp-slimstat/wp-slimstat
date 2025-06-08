@@ -497,9 +497,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
             grouped.forEach((item, idx) => {
                 const color = tooltip.labelColors[idx];
-                innerHtml += `<tr class="slimstat-postbox-chart--item"><td ><div class="slimstat-postbox-chart--item--color" style="background-color: ${color.backgroundColor}; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">${item.label}</span>: <span class="tooltip-item-content">${item.value}</span>`;
+                innerHtml += `<tr class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ${color.backgroundColor}; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">${item.label}</span>: <span class="tooltip-item-content">${item.value}</span>`;
                 if (item.prevValue !== null && item.prevDate) {
-                    innerHtml += `<br><span class=\"slimstat-postbox-chart--item--color\" style=\"display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, ${color.backgroundColor}, ${color.backgroundColor} 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:0.8;margin-bottom:0px;margin-left:0px;vertical-align:middle;\"></span> <span class=\"tooltip-item-title\" style=\"font-size:12px;opacity:.7;\">${slimstatGetLabel(item.prevDate, false, unitTime, translations)}: </span><span class=\"tooltip-item-content\" style=\"font-size:12px;opacity:.7;\">${item.prevValue}</span>`;
+                    innerHtml += `<br><span class=\"slimstat-postbox-chart--item--color\" style=\"display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(${color.backgroundColor
+                        .replace("#", "")
+                        .match(/.{1,2}/g)
+                        .map((x) => parseInt(x, 16))
+                        .join(",")},0.7), rgba(${color.backgroundColor
+                        .replace("#", "")
+                        .match(/.{1,2}/g)
+                        .map((x) => parseInt(x, 16))
+                        .join(",")},0.7) 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:1;margin-bottom:0px;margin-left:0px;vertical-align:middle;\"></span> <span class=\"tooltip-item-title\" style=\"font-size:12px;opacity:.7;\">${slimstatGetLabel(item.prevDate, false, unitTime, translations)}: </span><span class=\"tooltip-item-content\" style=\"font-size:12px;opacity:.7;\">${item.prevValue}</span>`;
                 }
                 innerHtml += `</td></tr>`;
             });
