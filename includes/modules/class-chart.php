@@ -39,9 +39,11 @@ class Chart
         $this->data      = $this->get_data_for_chart($this->args);
         $this->prev_data = $this->data;
 
-        unset($this->data['datasets_prev']);
-        $this->prev_data['datasets'] = $this->prev_data['datasets_prev'];
-        unset($this->prev_data['datasets_prev']);
+        if (isset($this->data['datasets_prev'])) {
+            unset($this->data['datasets_prev']);
+            $this->prev_data['datasets'] = $this->prev_data['datasets_prev'];
+            unset($this->prev_data['datasets_prev']);
+        }
     }
 
     private function normalize_args($args)
