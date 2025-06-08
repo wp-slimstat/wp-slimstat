@@ -156,8 +156,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 pointBorderWidth: 2,
                 pointRadius: 0,
                 pointHoverRadius: 4,
-                pointHoverBorderWidth: 4,
+                pointHoverBorderWidth: 2,
                 hitRadius: 10,
+                pointHitRadius: 10,
                 segment: {
                     borderDash: isPrevious ? () => [3, 3] : (ctx) => (labels[ctx.p1DataIndex] === `'${today}'` ? [5, 3] : []),
                 },
@@ -194,25 +195,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!event) return;
 
                 const ctx = chart.ctx;
-                const { top, bottom, left, right } = chart.chartArea;
-                // const { scales } = chart;
-
-                const mouseX = event.x;
-                const mouseY = event.y;
-
-                if (mouseX < left || mouseX > right || mouseY < top || mouseY > bottom) return;
-
+                const { top, bottom } = chart.chartArea;
+                const activePoints = chart.getElementsAtEventForMode(event.native || event, "nearest", { intersect: false }, false);
+                if (!activePoints || !activePoints.length) return;
+                const pt = activePoints[0].element;
+                if (!pt || typeof pt.x !== "number") return;
                 ctx.save();
                 ctx.lineWidth = 1;
                 ctx.setLineDash([4, 4]);
                 ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-
-                // Only draw vertical line (no horizontal line or label)
                 ctx.beginPath();
-                ctx.moveTo(mouseX, top);
-                ctx.lineTo(mouseX, bottom);
+                ctx.moveTo(pt.x, top);
+                ctx.lineTo(pt.x, chart.chartArea.bottom);
                 ctx.stroke();
-
                 ctx.restore();
             },
         };
