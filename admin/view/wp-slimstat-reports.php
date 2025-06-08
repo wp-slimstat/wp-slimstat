@@ -63,6 +63,16 @@ class wp_slimstat_reports
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
+        $pages_with_outbound_links_chart_tooltip = '<strong>' . __('Pages with Outbound Links', 'wp-slimstat') . '</strong><br>'
+            . __('Track how often visitors click outbound links on your site.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Outbound Links” or “Unique Outbound” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
         self::$reports = array(
             'slim_p7_02' => array(
                 'title'         => __('Access Log', 'wp-slimstat'),
@@ -811,7 +821,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview4'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $pages_with_outbound_links_chart_tooltip
             ),
             'slim_p4_27'    => array(
                 'title'         => __('Users by Page', 'wp-slimstat'),
@@ -1129,7 +1139,7 @@ class wp_slimstat_reports
                         break;
 
                     case 'platform':
-                        $row_details                    = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+                        $row_details                    = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ]]}";
 
                         $icons = array(
                             'android'  => 'and',
