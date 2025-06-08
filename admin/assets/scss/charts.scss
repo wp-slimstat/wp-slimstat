@@ -88,6 +88,10 @@ span.slimstat-toggle-prev-datasets {
   align-items: center;
   cursor: pointer;
 
+  &:not(:last-child) {
+    margin-bottom: 5px;
+  }
+
   &.slimstat-postbox-chart--item-hidden {
     opacity: 0.5;
   }

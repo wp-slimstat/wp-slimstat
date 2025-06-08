@@ -471,12 +471,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const titleLines = tooltip.title || [];
 
-            const bodyLines = tooltip.body.map((bodyItem, i) => {
-                const [label, value] = bodyItem.lines[0].split(": ");
-                const itemDate = prev_labels[tooltip.dataPoints[i].dataIndex] ? prev_labels[tooltip.dataPoints[i].dataIndex] : false;
-                const isPrev = label.includes("Previous");
-                const formattedLabel = isPrev ? slimstatGetLabel(label.split("Previous ")[1].trim(), false, unitTime, translations, itemDate) : label;
-                return `<span class="tooltip-item-title ${isPrev ? "slimstat-postbox-chart--prev-item--title" : ""}">${formattedLabel}</span>: <span class="tooltip-item-content">${value}</span>`;
+            let grouped = [];
+            tooltip.dataPoints.forEach((dp, i) => {
+                const label = tooltip.body[i].lines[0].split(": ")[0];
+                const value = tooltip.body[i].lines[0].split(": ")[1];
+                if (label.startsWith("Previous ")) return;
+                let prevValue = null,
+                    prevDate = null;
+                for (let j = 0; j < tooltip.dataPoints.length; j++) {
+                    const prevLabel = tooltip.body[j].lines[0].split(": ")[0];
+                    if (prevLabel === `Previous ${label}`) {
+                        prevValue = tooltip.body[j].lines[0].split(": ")[1];
+                        prevDate = prev_labels[tooltip.dataPoints[j].dataIndex];
+                        break;
+                    }
+                }
+                grouped.push({ label, value, prevValue, prevDate });
             });
 
             let innerHtml = "<thead>";
@@ -485,10 +495,13 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             innerHtml += "</thead><tbody>";
 
-            bodyLines.forEach((body, i) => {
-                const color = tooltip.labelColors[i];
-                const style = body.includes("slimstat-postbox-chart--prev-item--title") ? `background-image: repeating-linear-gradient(to right, ${color.backgroundColor}, ${color.backgroundColor} 4px, transparent 0px, transparent 6px); background-size: auto 6px; opacity: 0.8; height: 2px;` : `background-color: ${color.backgroundColor};`;
-                innerHtml += `<tr class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="${style}; margin-bottom: 3px; margin-right: 10px;"></div>${body}</td></tr>`;
+            grouped.forEach((item, idx) => {
+                const color = tooltip.labelColors[idx];
+                innerHtml += `<tr class="slimstat-postbox-chart--item"><td ><div class="slimstat-postbox-chart--item--color" style="background-color: ${color.backgroundColor}; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">${item.label}</span>: <span class="tooltip-item-content">${item.value}</span>`;
+                if (item.prevValue !== null && item.prevDate) {
+                    innerHtml += `<br><span class=\"slimstat-postbox-chart--item--color\" style=\"display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, ${color.backgroundColor}, ${color.backgroundColor} 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:0.8;margin-bottom:0px;margin-left:0px;vertical-align:middle;\"></span> <span class=\"tooltip-item-title\" style=\"font-size:12px;opacity:.7;\">${slimstatGetLabel(item.prevDate, false, unitTime, translations)}: </span><span class=\"tooltip-item-content\" style=\"font-size:12px;opacity:.7;\">${item.prevValue}</span>`;
+                }
+                innerHtml += `</td></tr>`;
             });
             innerHtml += "</tbody>";
             innerHtml += `<div class="align-indicator" style="
