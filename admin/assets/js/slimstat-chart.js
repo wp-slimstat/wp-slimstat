@@ -195,7 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const ctx = chart.ctx;
                 const { top, bottom, left, right } = chart.chartArea;
-                const { scales } = chart;
+                // const { scales } = chart;
 
                 const mouseX = event.x;
                 const mouseY = event.y;
@@ -207,39 +207,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 ctx.setLineDash([4, 4]);
                 ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
 
+                // Only draw vertical line (no horizontal line or label)
                 ctx.beginPath();
                 ctx.moveTo(mouseX, top);
                 ctx.lineTo(mouseX, bottom);
                 ctx.stroke();
 
-                ctx.beginPath();
-                ctx.moveTo(left, mouseY);
-                ctx.lineTo(right, mouseY);
-                ctx.stroke();
-
-                const yValue = scales.y.getValueForPixel(mouseY);
-                const label = yValue.toFixed(0);
-                const padding = 5;
-                const fontSize = 10;
-                const textWidth = ctx.measureText(label).width - 3; // Subtract 2 for padding adjustment
-
-                const boxHeight = fontSize + padding;
-                const boxWidth = textWidth + padding * 2;
-
-                var boxX = right - 45;
-                var boxY = mouseY - boxHeight / 2;
-
-                if (mouseX > boxX - 60 && mouseX < boxX + boxWidth + 60) {
-                    boxX = left + 5;
-                }
-
-                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-                drawRoundedRect(ctx, boxX, boxY, boxWidth, boxHeight, 6);
-
-                ctx.fillStyle = "#fff";
-                ctx.font = `${fontSize}px sans-serif`;
-                ctx.textBaseline = "middle";
-                ctx.fillText(label, boxX + padding, mouseY);
                 ctx.restore();
             },
         };
