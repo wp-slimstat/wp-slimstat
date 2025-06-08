@@ -154,7 +154,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 pointBorderColor: "transparent",
                 pointBackgroundColor: colors[i % colors.length],
                 pointBorderWidth: 2,
-                hoverPointRadius: 6,
+                pointRadius: 0,
+                pointHoverRadius: 4,
                 pointHoverBorderWidth: 4,
                 hitRadius: 10,
                 segment: {
@@ -299,11 +300,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     },
                 },
                 animations: {
-                    radius: {
-                        duration: 400,
-                        easing: "linear",
-                        loop: (context) => context.active,
-                    },
                     x: {
                         duration: 250,
                         easing: "easeOutCubic",
