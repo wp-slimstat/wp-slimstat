@@ -400,25 +400,27 @@ document.addEventListener("DOMContentLoaded", function () {
         const hasPrevData = prevDatasets.length > 0 && prevDatasets.some((dataset) => dataset.data.some((value) => value > 0));
 
         if (hasPrevData) {
-            const oldToggleButtons = document.querySelectorAll(`#slimstat-postbox-custom-legend_${chartId} .slimstat-toggle-prev-datasets`);
-            oldToggleButtons.forEach((button) => button.remove());
-            const toggleButton = document.createElement("span");
+            const oldToggleButtons = document.querySelectorAll("#slimstat-postbox-custom-legend_" + chartId + " .slimstat-toggle-prev-datasets");
+            oldToggleButtons.forEach(function (button) {
+                button.remove();
+            });
+            var toggleButton = document.createElement("span");
             toggleButton.innerText = translations.previous_period;
-            toggleButton.classList.add("active", "slimstat-toggle-prev-datasets", `slimstat-postbox-chart--item-${chartId}`, "more-info-icon", "slimstat-tooltip-trigger", "corner");
-            toggleButton.title = translations.previous_period_tooltip || "Click to Show or Hide data from the previous period for comparison.";
-            const tooltipContent = document.createElement("span");
-            tooltipContent.classList.add("slimstat-tooltip-content");
-            tooltipContent.innerHTML = `<strong>${translations.previous_period}</strong><br>${translations.previous_period_tooltip || "Shows data from the previous period for comparison."}`;
-            toggleButton.appendChild(tooltipContent);
-
-            let prevDatasetsVisible = true;
-
-            toggleButton.addEventListener("click", () => {
+            toggleButton.classList.add("active", "slimstat-toggle-prev-datasets", "slimstat-postbox-chart--item-" + chartId, "more-info-icon", "slimstat-tooltip-trigger", "corner");
+            toggleButton.title = translations.previous_period_tooltip || "Tap here to show/hide comparison.";
+            if (!toggleButton.querySelector(".slimstat-tooltip-content")) {
+                var tooltipContent = document.createElement("span");
+                tooltipContent.className = "slimstat-tooltip-content";
+                tooltipContent.innerHTML = "<strong>" + translations.previous_period + "</strong><br>" + (translations.previous_period_tooltip || "Tap here to show/hide comparison.");
+                toggleButton.appendChild(tooltipContent);
+            }
+            var prevDatasetsVisible = true;
+            toggleButton.addEventListener("click", function () {
                 prevDatasetsVisible = !prevDatasetsVisible;
-                chart.data.datasets.forEach((dataset, index) => {
-                    if (dataset.label.includes("Previous")) {
-                        const mainIndex = index - datasets.length;
-                        const mainMeta = chart.getDatasetMeta(mainIndex);
+                chart.data.datasets.forEach(function (dataset, index) {
+                    if (dataset.label.indexOf("Previous") !== -1) {
+                        var mainIndex = index - datasets.length;
+                        var mainMeta = chart.getDatasetMeta(mainIndex);
                         if (prevDatasetsVisible && mainMeta && !mainMeta.hidden) {
                             chart.getDatasetMeta(index).hidden = false;
                         } else {
