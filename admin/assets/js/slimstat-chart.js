@@ -206,6 +206,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 maxTicks = 7;
                 xAutoSkip = true;
             }
+            if (unitTime === "monthly") {
+                maxTicks = 12;
+                xAutoSkip = true;
+            }
 
             if (labels.length > maxTicks) {
                 var tickIndexes = [0];
