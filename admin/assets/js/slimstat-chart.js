@@ -203,12 +203,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (["daily", "monthly", "hourly", "weekly"].includes(unitTime)) {
             if (unitTime === "weekly") {
-                maxTicks = 7;
+                maxTicks = 6;
                 xAutoSkip = true;
             }
             if (unitTime === "monthly") {
-                maxTicks = 7;
+                maxTicks = 6;
                 xAutoSkip = true;
+            }
+
+            if (labels.length % 2 !== 0) {
+                maxTicks += 1;
             }
 
             if (labels.length > maxTicks) {
