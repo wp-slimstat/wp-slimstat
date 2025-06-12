@@ -139,11 +139,10 @@ class Chart
         $date_format   = 'Y/m/d';
         $start_of_week = (int) get_option('start_of_week', 1);
 
-        $min_dt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats") ;
+        $min_dt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats");
+        $db_query_start = $start;
         if ($min_dt && isset($start) && $start < $min_dt) {
-            \wp_slimstat_db::$filters_normalized['utime']['start'] = $min_dt;
-            $start = $min_dt;
-            $range = $end - $start;
+            $db_query_start = $min_dt;
         }
 
         switch ($granularity) {
@@ -158,28 +157,38 @@ class Chart
                 $params['data_points_label'] = 'W, Y';
                 $params['data_points_count'] = $this->count_weeks_between($start, $end);
                 $params['granularity']       = 'WEEK';
-
-                $start_of_week  = (int) get_option('start_of_week', 1);
-                $weekdays       = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
-                $weekday_name   = $weekdays[$start_of_week];
-
-
-                $adjusted_start = strtotime("last $weekday_name", $start + 86400);
-                if (date('w', $start) == $start_of_week) {
-                    $adjusted_start = strtotime("this $weekday_name", $start);
+                $week_labels = [];
+                $week_keys = [];
+                $cur = strtotime('next Sunday', $start - 1);
+                $i = 0;
+                while ($cur <= $end) {
+                    $label = date('W, Y', $cur);
+                    $week_labels[] = "'$label'";
+                    $week_keys[$label] = $i;
+                    $cur = strtotime('+1 week', $cur);
+                    $i++;
                 }
-                $adjusted_end = strtotime("next $weekday_name", $end) - 1;
-                $params['adjusted_start']      = $adjusted_start;
-                $params['adjusted_end']        = $adjusted_end;
-                $params['adjusted_prev_start'] = strtotime("-" . ($adjusted_end - $adjusted_start) . " seconds", $adjusted_start);
-                $start = $adjusted_start;
-                $end = $adjusted_end;
+                $params['custom_labels'] = $week_labels;
+                $params['custom_keys'] = $week_keys;
                 break;
             case 'monthly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = 'F Y';
                 $params['data_points_count'] = $this->count_months_between($start, $end);
                 $params['granularity']       = 'MONTH';
+                $month_labels = [];
+                $month_keys = [];
+                $cur = strtotime(date('Y-m-01', $start));
+                $i = 0;
+                while ($cur <= $end) {
+                    $label = date($params['data_points_label'], $cur);
+                    $month_labels[] = "'$label'";
+                    $month_keys[$label] = $i;
+                    $cur = strtotime('+1 month', $cur);
+                    $i++;
+                }
+                $params['custom_labels'] = $month_labels;
+                $params['custom_keys'] = $month_keys;
                 break;
             case 'yearly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
@@ -194,6 +203,19 @@ class Chart
                 $params['data_points_label'] = $date_format;
                 $params['data_points_count'] = floor($range / 86400) + 1;
                 $params['granularity']       = 'DAY';
+                $day_labels = [];
+                $day_keys = [];
+                $cur = $start;
+                $i = 0;
+                while ($cur <= $end) {
+                    $label = date($params['data_points_label'], $cur);
+                    $day_labels[] = "'$label'";
+                    $day_keys[$label] = $i;
+                    $cur = strtotime('+1 day', $cur);
+                    $i++;
+                }
+                $params['custom_labels'] = $day_labels;
+                $params['custom_keys'] = $day_keys;
                 break;
         }
 
@@ -208,10 +230,9 @@ class Chart
         $sql = "
         SELECT MIN(dt) AS dt, {$_args[ 'data1' ]} AS v1, {$_args[ 'data2' ]} AS v2
         FROM {$GLOBALS['wpdb']->prefix}slim_stats
-        WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params[ 'previous_start' ]} AND {$params[ 'previous_end' ]} OR dt BETWEEN " . \wp_slimstat_db::$filters_normalized['utime']['start'] . ' AND ' . \wp_slimstat_db::$filters_normalized['utime']['end'] . ")
+        WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params[ 'previous_start' ]} AND {$params[ 'previous_end' ]} OR dt BETWEEN $db_query_start AND $end )
         GROUP BY {$params[ 'group_by' ]}";
 
-        // Get the data
         $results = \wp_slimstat_db::get_results(
             $sql,
             'dt',
@@ -236,9 +257,6 @@ class Chart
             return $output;
         }
 
-        // Generate the output array (sent to the chart library) by combining all the data collected so far
-
-        // Let's start by initializing all the data points to zero
         for ($i = 0; $i < $params['data_points_count']; $i++) {
             $v1_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", \wp_slimstat_db::$filters_normalized['utime']['start']));
             $v3_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", $params['previous_start']));
@@ -248,20 +266,16 @@ class Chart
 
             $output['labels'][] = "'$v1_label'";
 
-            // This is how AmCharts expects the data to be formatted
             $output['datasets']['v1'][] = $output['datasets']['v2'][] = $output['datasets']['v3'][] = $output['datasets']['v4'][] = 0;
         }
 
-        // Now populate all the data points
         foreach ($results as $a_result) {
             $label = date($params['data_points_label'], $a_result['dt']);
 
-            // Data out of range?
             if (!isset($output['keys'][$label])) {
                 continue;
             }
 
-            // Does this value belong to the "current" range?
             if ($a_result['dt'] >= \wp_slimstat_db::$filters_normalized['utime']['start'] && $a_result['dt'] <= \wp_slimstat_db::$filters_normalized['utime']['end']) {
                 $output['datasets']['v1'][$output['keys'][$label]] = intval($a_result['v1']);
                 $output['datasets']['v2'][$output['keys'][$label]] = intval($a_result['v2']);
