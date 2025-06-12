@@ -76,6 +76,14 @@ class Chart
 
         $args['days_between'] = $this->count_days_between($args['start'], $args['end']);
 
+        if (isset($args['granularity']) && $args['granularity'] === 'daily') {
+            if (date('H:i:s', $args['end']) === '00:00:00' || date('H:i:s', $args['end']) === '00:00') {
+                $args['end'] += 86399;
+            } else if (date('H:i:s', $args['end']) !== '23:59:59') {
+                $args['end'] = strtotime(date('Y-m-d', $args['end']) . ' 23:59:59');
+            }
+        }
+
         return $args;
     }
 
@@ -131,7 +139,7 @@ class Chart
         $date_format   = 'Y/m/d';
         $start_of_week = (int) get_option('start_of_week', 1);
 
-        $min_dt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats") - 1;
+        $min_dt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats") ;
         if ($min_dt && isset($start) && $start < $min_dt) {
             \wp_slimstat_db::$filters_normalized['utime']['start'] = $min_dt;
             $start = $min_dt;
@@ -184,7 +192,7 @@ class Chart
             default:
                 $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = $date_format;
-                $params['data_points_count'] = ceil($range / 86400);
+                $params['data_points_count'] = floor($range / 86400) + 1;
                 $params['granularity']       = 'DAY';
                 break;
         }
