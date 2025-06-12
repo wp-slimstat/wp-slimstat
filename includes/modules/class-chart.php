@@ -154,14 +154,18 @@ class Chart
                 $start_of_week  = (int) get_option('start_of_week', 1);
                 $weekdays       = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
                 $weekday_name   = $weekdays[$start_of_week];
-                $adjusted_start = strtotime("last $weekday_name", $start);
 
+
+                $adjusted_start = strtotime("last $weekday_name", $start + 86400);
                 if (date('w', $start) == $start_of_week) {
                     $adjusted_start = strtotime("this $weekday_name", $start);
                 }
-
+                $adjusted_end = strtotime("next $weekday_name", $end) - 1;
                 $params['adjusted_start']      = $adjusted_start;
-                $params['adjusted_prev_start'] = strtotime("-$range seconds", $adjusted_start);
+                $params['adjusted_end']        = $adjusted_end;
+                $params['adjusted_prev_start'] = strtotime("-" . ($adjusted_end - $adjusted_start) . " seconds", $adjusted_start);
+                $start = $adjusted_start;
+                $end = $adjusted_end;
                 break;
             case 'monthly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";

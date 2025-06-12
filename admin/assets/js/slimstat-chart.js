@@ -200,47 +200,55 @@ document.addEventListener("DOMContentLoaded", function () {
         var uniqueTickIndexes = [];
         var xTickRotation = 0;
         var xAutoSkip = false;
-        if (labels.length > maxTicks) {
-            var tickIndexes = [0];
-            var step = (labels.length - 1) / (maxTicks - 1);
-            for (var i = 1; i < maxTicks - 1; i++) {
-                var idx = Math.round(i * step);
-                if (!tickIndexes.includes(idx)) {
-                    tickIndexes.push(idx);
-                } else {
-                    var nextIdx = idx + 1;
-                    while (nextIdx < labels.length - 1 && tickIndexes.includes(nextIdx)) {
-                        nextIdx++;
-                    }
-                    if (nextIdx < labels.length - 1) {
-                        tickIndexes.push(nextIdx);
+
+        if (["daily", "monthly", "hourly", "weekly"].includes(unitTime)) {
+            if (unitTime === "weekly") {
+                maxTicks = 7;
+                xAutoSkip = true;
+            }
+
+            if (labels.length > maxTicks) {
+                var tickIndexes = [0];
+                var step = (labels.length - 1) / (maxTicks - 1);
+                for (var i = 1; i < maxTicks - 1; i++) {
+                    var idx = Math.round(i * step);
+                    if (!tickIndexes.includes(idx)) {
+                        tickIndexes.push(idx);
+                    } else {
+                        var nextIdx = idx + 1;
+                        while (nextIdx < labels.length - 1 && tickIndexes.includes(nextIdx)) {
+                            nextIdx++;
+                        }
+                        if (nextIdx < labels.length - 1) {
+                            tickIndexes.push(nextIdx);
+                        }
                     }
                 }
+                tickIndexes.push(labels.length - 1);
+                uniqueTickIndexes = Array.from(new Set(tickIndexes)).sort((a, b) => a - b);
+                if (uniqueTickIndexes.length > maxTicks) {
+                    var toRemove = uniqueTickIndexes.length - maxTicks;
+                    var middle = Math.floor(uniqueTickIndexes.length / 2);
+                    uniqueTickIndexes.splice(middle, toRemove);
+                }
             }
-            tickIndexes.push(labels.length - 1);
-            uniqueTickIndexes = Array.from(new Set(tickIndexes)).sort(function (a, b) {
-                return a - b;
-            });
-            if (uniqueTickIndexes.length > maxTicks) {
-                var toRemove = uniqueTickIndexes.length - maxTicks;
-                var middle = Math.floor(uniqueTickIndexes.length / 2);
-                uniqueTickIndexes.splice(middle, toRemove);
-            }
+        } else {
+            uniqueTickIndexes = Array.from(Array(labels.length).keys());
         }
-        // Dynamically set rotation: only rotate if labels would overlap
-        // If the distance between two shown ticks is enough, set rotation to 0
-        var minLabelSpacingPx = 60; // Minimum pixel spacing to avoid rotation
+
+        var minLabelSpacingPx = 60;
         var chartWidth = ctx.canvas.offsetWidth || ctx.canvas.width;
         var tickCount = labels.length <= maxTicks ? labels.length : uniqueTickIndexes.length;
         var approxSpacing = chartWidth / (tickCount - 1);
-        // Always recalculate rotation after every chart (AJAX or not)
+
         if (approxSpacing > minLabelSpacingPx) {
             xTickRotation = 0;
         } else if (window.innerWidth < 600) {
             xTickRotation = 35;
-        } else if (labels.length > maxTicks) {
+        } else if (unitTime === "weekly") {
             xTickRotation = 20;
         }
+
         function customTickCallback(value, index, values) {
             if (labels.length <= maxTicks || uniqueTickIndexes.includes(index)) {
                 var label = this.getLabelForValue(value).replace(/'/g, "");
@@ -248,6 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             return "";
         }
+
         return new Chart(ctx, {
             type: "line",
             data: {
@@ -301,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             maxRotation: xTickRotation,
                             autoSkip: xAutoSkip,
                             maxTicksLimit: labels.length,
-                            align: isRTL ? "end" : "start",
+                            align: "center",
                             font: {
                                 family: "Open Sans, sans-serif",
                             },
@@ -449,7 +458,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const [weekNumber, year] = (justTranslation ? justTranslation : label).split(",").map((s) => Number(s.trim()));
             const firstDayOfYear = new Date(year, 0, 1);
             const firstDayOfWeek = new Date(year, 0, 1 + (weekNumber - 1) * 7 - firstDayOfYear.getDay());
-            const lastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
+            const calculatedLastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
+            const today = new Date();
+            let lastDayOfWeek;
+            if (today >= firstDayOfWeek && today <= calculatedLastDayOfWeek) {
+                lastDayOfWeek = today;
+            } else {
+                lastDayOfWeek = calculatedLastDayOfWeek;
+            }
             const firstStr = long ? firstDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : firstDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
             const lastStr = long ? lastDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : lastDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
             const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${year} &#8226; ${firstStr} - ${lastStr}</span>`;
