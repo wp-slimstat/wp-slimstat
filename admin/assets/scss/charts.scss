@@ -314,7 +314,6 @@ body.index-php {
 
 [dir="rtl"] .slimstat-postbox-chart--item,
 .rtl .slimstat-postbox-chart--item {
-  flex-direction: row-reverse;
   text-align: right;
   gap: 8px;
 }
@@ -339,8 +338,22 @@ body.index-php {
 
 [dir="rtl"] .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color,
 .rtl .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color {
+  margin-left: 0px !important;
+  margin-right: 10px !important;
+}
+
+[dir="rtl"] #chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color,
+.rtl #chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color {
   margin-left: 10px !important;
-  margin-right: 0 !important;
+  margin-right: 10px !important;
+}
+
+[dir="rtl"] .slimstat-postbox-chart--item:not(:first-child) {
+  margin-bottom: 0px;
+}
+
+[dir="rtl"] .slimstat-postbox-chart--item:not(:last-child) {
+  margin-bottom: 0px;
 }
 
 [dir="rtl"] .slimstat-postbox-chart--item .slimstat-postbox-chart--item--prev,
