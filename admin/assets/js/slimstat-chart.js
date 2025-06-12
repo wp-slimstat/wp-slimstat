@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 ctx.save();
                 ctx.lineWidth = 1;
                 // ctx.setLineDash([4, 4]);
-                ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.44)";
                 ctx.beginPath();
                 ctx.moveTo(pt.x, top);
                 ctx.lineTo(pt.x, chart.chartArea.bottom);
