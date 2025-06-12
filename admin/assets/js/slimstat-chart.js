@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 xAutoSkip = true;
             }
             if (unitTime === "monthly") {
-                maxTicks = 12;
+                maxTicks = 7;
                 xAutoSkip = true;
             }
 
