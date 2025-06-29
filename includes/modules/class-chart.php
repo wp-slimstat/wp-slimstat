@@ -240,7 +240,6 @@ class Chart
             $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
         );
 
-
         $output = array(
             'keys'     => array(),
             'labels'   => array(),
@@ -252,21 +251,29 @@ class Chart
             )
         );
 
-        // No data? No problem!
-        if (!is_array($results) || empty($results)) {
-            return $output;
-        }
+        if (isset($params['custom_keys']) && isset($params['custom_labels'])) {
+            foreach ($params['custom_keys'] as $label => $index) {
+                $output['keys'][$label] = $index;
+                $output['labels'][] = "'$label'";
+                $output['datasets']['v1'][] = 0;
+                $output['datasets']['v2'][] = 0;
+                $output['datasets']['v3'][] = 0;
+                $output['datasets']['v4'][] = 0;
+            }
+        } else {
+            for ($i = 0; $i < $params['data_points_count']; $i++) {
+                $v1_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", \wp_slimstat_db::$filters_normalized['utime']['start']));
+                $v3_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", $params['previous_start']));
 
-        for ($i = 0; $i < $params['data_points_count']; $i++) {
-            $v1_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", \wp_slimstat_db::$filters_normalized['utime']['start']));
-            $v3_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", $params['previous_start']));
+                $output['keys'][$v1_label] = $i;
+                $output['keys'][$v3_label] = $i;
 
-            $output['keys'][$v1_label] = $i;
-            $output['keys'][$v3_label] = $i;
-
-            $output['labels'][] = "'$v1_label'";
-
-            $output['datasets']['v1'][] = $output['datasets']['v2'][] = $output['datasets']['v3'][] = $output['datasets']['v4'][] = 0;
+                $output['labels'][] = "'$v1_label'";
+                $output['datasets']['v1'][] = 0;
+                $output['datasets']['v2'][] = 0;
+                $output['datasets']['v3'][] = 0;
+                $output['datasets']['v4'][] = 0;
+            }
         }
 
         foreach ($results as $a_result) {
