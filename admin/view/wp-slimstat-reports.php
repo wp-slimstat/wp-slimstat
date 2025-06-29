@@ -1695,7 +1695,7 @@ class wp_slimstat_reports
                             <div class="bar-container">
                                 <div class="bar-fill" style="width: <?php echo $country['percent'] ?>%;"></div>
                             </div>
-                            <span><?php echo $country['percent'] ?>%</span>
+                            <span><?php echo $country['percent']; ?>%</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
