@@ -49,7 +49,6 @@ class wp_slimstat_reports
             . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Pageviews” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
@@ -59,7 +58,6 @@ class wp_slimstat_reports
             . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Visits” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
@@ -69,7 +67,6 @@ class wp_slimstat_reports
             . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Outbound Links” or “Unique Outbound” to toggle each line.', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
@@ -79,7 +76,6 @@ class wp_slimstat_reports
             . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Search Terms” or “Unique Terms” to toggle each line.', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
@@ -89,7 +85,6 @@ class wp_slimstat_reports
             . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Domains” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
@@ -99,7 +94,6 @@ class wp_slimstat_reports
             . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Users” or “Unique Users” to toggle each line.', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
