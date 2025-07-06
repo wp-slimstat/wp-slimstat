@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.8
-Stable tag: 5.2.12
+Stable tag: 5.2.13
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,6 +70,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.2.13 - 2025-04-29 =
+- **Fix**: Resolved issues with pagination in reports.
+
 = 5.2.12 - 2025-04-26 =
 - **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
 

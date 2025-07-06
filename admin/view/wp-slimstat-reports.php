@@ -1008,7 +1008,7 @@ class wp_slimstat_reports
         } else {
             $results = array_slice(
                 $all_results,
-                wp_slimstat_db::$filters_normalized['misc']['start_from'],
+                0,
                 wp_slimstat::$settings['rows_to_show']
             );
 
@@ -1439,7 +1439,7 @@ class wp_slimstat_reports
 
         $results = array_slice(
             $all_results,
-            wp_slimstat_db::$filters_normalized['misc']['start_from'],
+            0,
             wp_slimstat::$settings['rows_to_show']
         );
 
@@ -1491,7 +1491,7 @@ class wp_slimstat_reports
         if (is_array($all_results) && count($all_results)) {
             $results = array_slice(
                 $all_results,
-                wp_slimstat_db::$filters_normalized['misc']['start_from'],
+                0,
                 wp_slimstat::$settings['rows_to_show']
             );
         }

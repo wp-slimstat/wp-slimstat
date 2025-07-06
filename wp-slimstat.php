@@ -24,7 +24,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version
-define('SLIMSTAT_ANALYTICS_VERSION', '5.2.12');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.2.13');
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
