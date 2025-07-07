@@ -23,8 +23,9 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
     return;
 }
 
-// Set the plugin version
-define('SLIMSTAT_ANALYTICS_VERSION', '5.2.13');
+// Set the plugin version and directory
+define('SLIMSTAT_ANALYTICS_VERSION', '5.3.0');
+define('SLIMSTAT_DIR', __DIR__);
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
@@ -1409,6 +1410,19 @@ class wp_slimstat
         }
 
         wp_enqueue_script('wp_slimstat');
+
+        /**
+         * Registers the 'wp_slimstat' script as an interactivity module if the registration function exists.
+         *
+         * Ensures compatibility with WordPress Interactivity API by registering the script module and its dependencies.
+         */
+        if ( function_exists( 'wp_interactivity_register_script_module' ) ) {
+            wp_interactivity_register_script_module( 'wp_slimstat', array(
+                'name' => 'wp_slimstat',
+                'dependencies' => array(),
+            ) );
+        }
+
         wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
     }
 
