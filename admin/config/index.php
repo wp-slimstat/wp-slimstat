@@ -643,8 +643,6 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             default:
                 break;
         }
-
-        flush_rewrite_rules();
     }
 
     // Some of them require extra processing
@@ -726,7 +724,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 
         // Refresh WP permalinks, in case the user has changed the tracking method
         if (isset($_POST['options']['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $_POST['options']['tracking_request_method']) {
-            flush_rewrite_rules();
+            update_option('slimstat_permalink_structure_updated', true); // This will trigger a rewrite rules flush
         }
 
         // All other options

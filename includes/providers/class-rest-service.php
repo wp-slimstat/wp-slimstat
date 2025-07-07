@@ -57,6 +57,12 @@ class REST_Service {
      */
     public static function rewrite_rule_request()
     {
+        if(get_option('slimstat_permalink_structure_updated', false)) {
+            // If the permalink structure has been updated, we need to flush rewrite rules
+            flush_rewrite_rules();
+            delete_option('slimstat_permalink_structure_updated');
+        }
+
         if(\wp_slimstat::$settings['tracking_request_method'] === 'adblock_bypass') {
             add_rewrite_tag('%slimstat_request%', '([a-f0-9]{32})');
             add_rewrite_rule(
