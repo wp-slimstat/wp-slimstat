@@ -24,7 +24,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version
-define('SLIMSTAT_ANALYTICS_VERSION', '5.2.13');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.3.0');
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
@@ -1345,7 +1345,7 @@ class wp_slimstat
         $rest_url = rest_url('slimstat/v1/hit');
         $ajax_url = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
-        $adblock_hash = md5(site_url() . 'slimstat_request');
+        $adblock_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
         $adblock_url = home_url("request/$adblock_hash/");
 
         // Always provide all possible endpoints for fallback logic

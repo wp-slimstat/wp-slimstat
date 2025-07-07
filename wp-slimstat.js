@@ -1,18 +1,14 @@
+// SlimStat: A production-ready analytics tracking library
 var SlimStat = {
     base64_key_str: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-",
     fingerprint_hash: "",
 
-    // Encodes a string using the UTF-8 encoding. This function is needed by the Base64 Encoder here below
+    // UTF-8 encoding for Base64
     utf8_encode: function (string) {
-        var n,
-            c,
-            utftext = "";
-
         string = string.replace(/\r\n/g, "\n");
-
-        for (n = 0; n < string.length; n++) {
-            c = string.charCodeAt(n);
-
+        var utftext = "";
+        for (var n = 0; n < string.length; n++) {
+            var c = string.charCodeAt(n);
             if (c < 128) {
                 utftext += String.fromCharCode(c);
             } else if (c > 127 && c < 2048) {
@@ -27,143 +23,125 @@ var SlimStat = {
         return utftext;
     },
 
-    // Base64 Encode - http://www.webtoolkit.info/
+    // Base64 encoding
     base64_encode: function (input) {
-        var chr1,
-            chr2,
-            chr3,
-            enc1,
-            enc2,
-            enc3,
-            enc4,
-            output = "",
-            i = 0;
-
+        var output = "";
+        var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+        var i = 0;
         input = SlimStat.utf8_encode(input);
-
         while (i < input.length) {
             chr1 = input.charCodeAt(i++);
             chr2 = input.charCodeAt(i++);
             chr3 = input.charCodeAt(i++);
-
             enc1 = chr1 >> 2;
             enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
             enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
             enc4 = chr3 & 63;
-
             if (isNaN(chr2)) {
                 enc3 = enc4 = 64;
             } else if (isNaN(chr3)) {
                 enc4 = 64;
             }
-
-            output = output + SlimStat.base64_key_str.charAt(enc1) + SlimStat.base64_key_str.charAt(enc2) + SlimStat.base64_key_str.charAt(enc3) + SlimStat.base64_key_str.charAt(enc4);
+            output += this.base64_key_str.charAt(enc1) + this.base64_key_str.charAt(enc2) + this.base64_key_str.charAt(enc3) + this.base64_key_str.charAt(enc4);
         }
         return output;
     },
 
-    // Calculates the current page's performance
+    // Calculate page performance
     get_page_performance: function () {
-        slim_performance = window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
-        if ("undefined" == typeof slim_performance.timing) {
-            return 0;
-        }
-
-        return slim_performance.timing.loadEventEnd - slim_performance.timing.responseEnd;
+        var perf = window.performance || {};
+        var timing = perf.timing || {};
+        if (!timing.loadEventEnd || !timing.responseEnd) return 0;
+        return timing.loadEventEnd - timing.responseEnd;
     },
 
-    // Calculates the current page's latency
+    // Calculate server latency
     get_server_latency: function () {
-        slim_performance = window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
-        if ("undefined" == typeof slim_performance.timing) {
-            return 0;
-        }
-
-        return slim_performance.timing.responseEnd - slim_performance.timing.connectEnd;
+        var perf = window.performance || {};
+        var timing = perf.timing || {};
+        if (!timing.responseEnd || !timing.connectEnd) return 0;
+        return timing.responseEnd - timing.connectEnd;
     },
 
-    // Records the choice made by the visitor and hides the dialog message
+    // Handle opt-out cookie and UI
     optout: function (event, cookie_value) {
-        event.preventDefault();
+        event = event || window.event;
+        if (event.preventDefault) event.preventDefault();
+        else event.returnValue = false;
 
-        if ("string" != typeof SlimStatParams.baseurl || SlimStatParams.baseurl.length == 0) {
-            SlimStatParams.baseurl = "/";
+        var baseurl = SlimStatParams.baseurl || "/";
+        var expiration = new Date();
+        expiration.setTime(expiration.getTime() + 31536000000); // 1 year
+        document.cookie = "slimstat_optout_tracking=" + cookie_value + ";path=" + baseurl + ";expires=" + expiration.toGMTString();
+
+        var target = event.target || event.srcElement;
+        var parent = target.parentNode;
+        if (parent && parent.parentNode) {
+            parent.parentNode.removeChild(parent);
         }
-
-        expiration = new Date();
-        expiration.setTime(expiration.getTime() + 31536000000);
-        document.cookie = "slimstat_optout_tracking=" + cookie_value + ";path=" + SlimStatParams.baseurl + ";expires=" + expiration.toGMTString();
-
-        event.target.parentNode.parentNode.removeChild(event.target.parentNode);
     },
 
-    // Retrieves and displays the opt-out message dynamically, to avoid issues with cached pages
+    // Display opt-out message
     show_optout_message: function () {
-        opt_out_cookies = !SlimStat.empty(SlimStatParams.oc) ? SlimStatParams.oc.split(",") : [];
-        if (!Array.isArray(opt_out_cookies)) {
-            opt_out_cookies = [];
-        }
-
-        show_optout = opt_out_cookies.length > 0;
+        var opt_out_cookies = SlimStatParams.oc ? SlimStatParams.oc.split(",") : [];
+        var show_optout = opt_out_cookies.length > 0;
 
         for (var i = 0; i < opt_out_cookies.length; i++) {
-            if (SlimStat.get_cookie(opt_out_cookies[i]) != "") {
+            if (SlimStat.get_cookie(opt_out_cookies[i])) {
                 show_optout = false;
+                break;
             }
         }
 
         if (show_optout) {
-            // Retrieve the message from the server
+            var xhr;
             try {
                 xhr = new XMLHttpRequest();
-            } catch (failed) {
+            } catch (e) {
                 return false;
             }
-
-            if ("object" == typeof xhr) {
-                xhr.open("POST", SlimStatParams.ajaxurl, true);
-                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                xhr.withCredentials = true;
-                xhr.send("action=slimstat_optout_html");
-
-                xhr.onreadystatechange = function () {
-                    if (4 == xhr.readyState) {
-                        document.body.insertAdjacentHTML("beforeend", xhr.responseText);
-                    }
-                };
-
-                return true;
-            }
+            xhr.open("POST", SlimStatParams.ajaxurl, true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            xhr.withCredentials = true;
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var div = document.createElement("div");
+                    div.innerHTML = xhr.responseText;
+                    document.body.appendChild(div);
+                }
+            };
+            xhr.send("action=slimstat_optout_html");
+            return true;
         }
+        return false;
     },
 
-    // Attaches an event handler to a node
+    // Cross-browser event listener
     add_event: function (obj, type, fn) {
-        if (obj && obj.addEventListener) {
+        if (!obj) return;
+        if (obj.addEventListener) {
             obj.addEventListener(type, fn, false);
-        } else if (obj && obj.attachEvent) {
+        } else if (obj.attachEvent) {
             obj["e" + type + fn] = fn;
             obj[type + fn] = function () {
                 obj["e" + type + fn](window.event);
             };
             obj.attachEvent("on" + type, obj[type + fn]);
         } else {
-            obj["on" + type] = obj["e" + type + fn];
+            obj["on" + type] = fn;
         }
     },
 
-    // Implements a function to find a substring in an array
+    // Check if string exists in array
     in_array: function (needle, haystack) {
         for (var i = 0; i < haystack.length; i++) {
-            if (needle.indexOf(haystack[i].trim()) != -1) {
-                return true;
-            }
+            if (needle.indexOf(haystack[i].trim()) !== -1) return true;
         }
         return false;
     },
 
-    // Checks if a string/array variable is defined and not empty
+    // Check if variable is empty
     empty: function (variable) {
         if ("undefined" == typeof variable || variable == null) {
             return true;
@@ -171,6 +149,10 @@ var SlimStat = {
             return variable == 0;
         } else if ("boolean" == typeof variable) {
             return !variable;
+        } else if ("function" == typeof variable) {
+            return false;
+        } else if ("array" == typeof variable) {
+            return variable.length == 0;
         } else if ("string" == typeof variable || "object" == typeof variable) {
             return variable.length == 0;
         } else {
@@ -178,23 +160,21 @@ var SlimStat = {
         }
     },
 
-    // Retrieves the value associated to a given cookie
+    // Get cookie value
     get_cookie: function (name) {
         var value = "; " + document.cookie;
         var parts = value.split("; " + name + "=");
-        if (parts.length == 2) {
-            return parts.pop().split(";").shift();
-        }
+        if (parts.length === 2) return parts.pop().split(";").shift();
         return "";
     },
 
-    // Sends data back to the server (wrapper for XMLHttpRequest object)
+    // Send data to server (with fallback for adblock/REST/ajax)
     send_to_server: function (data, use_beacon) {
         if (SlimStat.empty(data)) {
             return false;
         }
 
-        // Determine the order of endpoints to try based on selected transport
+        // Support for multiple endpoints and fallback (adblock bypass)
         var transports = ["rest", "ajax", "adblock"];
         var endpoints = {
             rest: SlimStatParams.ajaxurl_rest,
@@ -208,7 +188,6 @@ var SlimStat = {
             })
         );
 
-        // Helper to send via XMLHttpRequest
         function sendXHR(url, onFail) {
             try {
                 var xhr = new XMLHttpRequest();
@@ -240,13 +219,11 @@ var SlimStat = {
             return false;
         }
 
-        // Try sending to each endpoint in order, fallback if needed
         function trySend(index) {
             if (index >= tryOrder.length) return false;
             var method = tryOrder[index];
             var url = endpoints[method];
             if (!url) return trySend(index + 1);
-            // Try sendBeacon if available and allowed
             if (use_beacon && navigator.sendBeacon && index === 0) {
                 var beaconSuccess = navigator.sendBeacon(url, data);
                 if (!beaconSuccess) {
@@ -263,8 +240,8 @@ var SlimStat = {
         return trySend(0);
     },
 
-    // Tracks events (clicks to download files, mouse coordinates on anchors, etc)
-    ss_track: function (note, use_beacon) {
+    // Track user interactions
+    ss_track: function (event, note, use_beacon) {
         // Bail if the pageview ID is negative
         if (SlimStat.empty(SlimStatParams.id) || isNaN(parseInt(SlimStatParams.id)) || parseInt(SlimStatParams.id) <= 0) {
             return false;
@@ -277,21 +254,20 @@ var SlimStat = {
             use_beacon = true;
         }
 
-        // No event was triggered (weird)
-        if (SlimStat.empty(window.event)) {
+        if (SlimStat.empty(event)) {
             return false;
         }
 
         // This function doesn't track focus events, which are usually triggered along with click events
-        if (SlimStat.empty(window.event.type) || window.event.type == "focus") {
+        if (SlimStat.empty(event.type) || event.type == "focus") {
             return false;
         }
 
         // Find the target node
-        if (!SlimStat.empty(window.event.target)) {
-            target_node = window.event.target;
-        } else if (!SlimStat.empty(window.event.srcElement)) {
-            target_node = window.event.srcElement;
+        if (!SlimStat.empty(event.target)) {
+            target_node = event.target;
+        } else if (!SlimStat.empty(event.srcElement)) {
+            target_node = event.srcElement;
         } else {
             return false;
         }
@@ -360,11 +336,11 @@ var SlimStat = {
         }
 
         // Event description and button pressed
-        note_array.type = window.event.type;
-        if ("keypress" == window.event.type) {
-            note_array.key = String.fromCharCode(parseInt(window.event.which));
-        } else if ("mousedown" == window.event.type) {
-            note_array.button = window.event.which == 1 ? "left" : window.event.which == 2 ? "middle" : "right";
+        note_array.type = event.type;
+        if ("keypress" == event.type) {
+            note_array.key = String.fromCharCode(parseInt(event.which));
+        } else if ("mousedown" == event.type) {
+            note_array.button = event.which == 1 ? "left" : event.which == 2 ? "middle" : "right";
         }
 
         do_not_track = !SlimStat.empty(SlimStatParams.dnt) ? SlimStatParams.dnt.split(",") : [];
@@ -395,10 +371,10 @@ var SlimStat = {
         // Event coordinates
         position = "0,0";
 
-        if (!SlimStat.empty(window.event.pageX) && !SlimStat.empty(window.event.pageY)) {
-            position = window.event.pageX + "," + window.event.pageY;
-        } else if (!SlimStat.empty(window.event.clientX) && !SlimStat.empty(document.body.scrollLeft) && !SlimStat.empty(document.documentElement.scrollLeft)) {
-            position = window.event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft + "," + window.event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+        if (!SlimStat.empty(event.pageX) && !SlimStat.empty(event.pageY)) {
+            position = event.pageX + "," + event.pageY;
+        } else if (!SlimStat.empty(event.clientX) && !SlimStat.empty(document.body.scrollLeft) && !SlimStat.empty(document.documentElement.scrollLeft)) {
+            position = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft + "," + event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
         }
 
         SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id + "&res=" + SlimStat.base64_encode(resource_url) + "&pos=" + position + "&no=" + SlimStat.base64_encode(JSON.stringify(note_array)) + fingerprint_hash, use_beacon);
@@ -406,100 +382,135 @@ var SlimStat = {
         return true;
     },
 
-    get_slimstat_data: function (fingerprint_components) {
-        screenres = SlimStat.get_component_value(fingerprint_components, "screenResolution", [0, 0]);
+    // Generate fingerprint hash using Fingerprint2
+    init_fingerprint_hash: function (fingerprint_components) {
+        var values = fingerprint_components.map(function (component) {
+            return component.value;
+        });
+        SlimStat.fingerprint_hash = Fingerprint2.x64hash128(values.join(""), 31);
+    },
 
+    // Get slimstat data
+    get_slimstat_data: function (fingerprint_components) {
+        var screenres = SlimStat.get_component_value(fingerprint_components, "screenResolution", [0, 0]);
         return "&sw=" + screenres[0] + "&sh=" + screenres[1] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + SlimStat.get_server_latency() + "&pp=" + SlimStat.get_page_performance() + "&fh=" + SlimStat.fingerprint_hash + "&tz=" + SlimStat.get_component_value(fingerprint_components, "timezoneOffset", 0);
     },
 
     get_component_value: function (fingerprint_components, key, default_value) {
-        for (x = 0; x < fingerprint_components.length; x++) {
+        for (var x = 0; x < fingerprint_components.length; x++) {
             if (fingerprint_components[x].key === key) {
                 return fingerprint_components[x].value;
             }
         }
-
         return default_value;
-    },
-
-    init_fingerprint_hash: function (fingerprint_components) {
-        values = fingerprint_components.map(function (component) {
-            return component.value;
-        });
-
-        // Generate the unique fingerprint hash
-        SlimStat.fingerprint_hash = Fingerprint2.x64hash128(values.join(""), 31);
     },
 };
 
-// Helper function
-if (typeof String.prototype.trim !== "function") {
+// Polyfills for ES5 and older browsers
+if (!String.prototype.trim) {
     String.prototype.trim = function () {
         return this.replace(/^\s+|\s+$/g, "");
     };
 }
+if (!Array.isArray) {
+    Array.isArray = function (arg) {
+        return Object.prototype.toString.call(arg) === "[object Array]";
+    };
+}
+if (!window.requestIdleCallback) {
+    window.requestIdleCallback = function (callback) {
+        return setTimeout(callback, 250);
+    };
+}
 
-// Ok, let's go, Sparky!
-SlimStat.add_event(window, "load", function () {
-    slimstat_data = "";
-    use_beacon = true;
+// Main initialization
+(function () {
+    // Helper function: send pageview data to the server
+    function sendPageview() {
+        var slimstat_data = "";
+        var use_beacon = true;
 
-    // Server-side mode: update an existing pageview
-    if (!SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
-        slimstat_data = "action=slimtrack&id=" + SlimStatParams.id;
-    }
-    // Client-side mode: record a new pageview
-    else {
-        slimstat_data = "action=slimtrack&ref=" + SlimStat.base64_encode(document.referrer) + "&res=" + SlimStat.base64_encode(window.location.href);
-
-        // The "ci" param is not defined for external pages (the server-side tracker knows how to handle that situation)
-        if (!SlimStat.empty(SlimStatParams.ci)) {
-            slimstat_data += "&ci=" + SlimStatParams.ci;
+        // If a pageview has already been recorded (has an ID), update it
+        if (!SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
+            slimstat_data = "action=slimtrack&id=" + SlimStatParams.id;
+        }
+        // Otherwise, record a new pageview
+        else {
+            slimstat_data = "action=slimtrack&ref=" + SlimStat.base64_encode(document.referrer) + "&res=" + SlimStat.base64_encode(window.location.href);
+            if (!SlimStat.empty(SlimStatParams.ci)) {
+                slimstat_data += "&ci=" + SlimStatParams.ci;
+            }
+            use_beacon = false; // Wait for page ID to be received from the server
         }
 
-        // This call needs to wait for the server to assign a page view ID to this request
-        use_beacon = false;
-    }
+        if (slimstat_data.length > 0) {
+            var options = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, addBehavior: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
+            // Wait for fingerprint calculation using requestIdleCallback or setTimeout
 
-    if (slimstat_data.length > 0) {
-        var options = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, addBehavior: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
-
-        if (window.requestIdleCallback) {
-            requestIdleCallback(function () {
-                Fingerprint2.get(options, function (components) {
-                    SlimStat.init_fingerprint_hash(components);
-                    SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
-
-                    // GDPR: display the Opt-Out box, if needed
-                    SlimStat.show_optout_message();
+            if (window.requestIdleCallback) {
+                requestIdleCallback(function () {
+                    Fingerprint2.get(options, function (components) {
+                        SlimStat.init_fingerprint_hash(components);
+                        SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
+                        SlimStat.show_optout_message(); // Show opt-out dialog if needed
+                    });
                 });
-            });
-        } else {
-            setTimeout(function () {
-                Fingerprint2.get(options, function (components) {
-                    SlimStat.init_fingerprint_hash(components);
-                    SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
-
-                    // GDPR: display the Opt-Out box, if needed
-                    SlimStat.show_optout_message();
-                });
-            }, 250);
+            } else {
+                setTimeout(function () {
+                    Fingerprint2.get(options, function (components) {
+                        SlimStat.init_fingerprint_hash(components);
+                        SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
+                        SlimStat.show_optout_message();
+                    });
+                }, 250);
+            }
         }
     }
 
-    // Attach an event handler to all the clickable elements on the page
-    all_clickable = document.querySelectorAll("a,button,input,area");
-    for (var i = 0; i < all_clickable.length; i++) {
-        SlimStat.add_event(all_clickable[i], "mousedown", function (e) {
-            SlimStat.ss_track();
-        });
+    // Initial pageview registration on page load
+    SlimStat.add_event(window, "load", sendPageview);
+
+    var interactiveRoots = document.querySelectorAll("[data-wp-interactive]");
+
+    // WP Interactivity API support: re-register pageview on navigation
+    if (window.history && history.pushState && interactiveRoots.length > 0) {
+        (function (originalPush, originalReplace) {
+            history.pushState = function () {
+                SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id, true);
+                SlimStatParams.id = 0;
+                var result = originalPush.apply(this, arguments);
+                sendPageview();
+                return result;
+            };
+            history.replaceState = function () {
+                var result = originalReplace.apply(this, arguments);
+                sendPageview();
+                return result;
+            };
+        })(history.pushState, history.replaceState);
+
+        SlimStat.add_event(window, "popstate", sendPageview);
     }
-});
-SlimStat.add_event(window, "beforeunload", function () {
-    if (!SlimStat.empty(document.activeElement) && !SlimStat.empty(document.activeElement.nodeName) && document.activeElement.nodeName.toLowerCase() == "body" && !SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
-        SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id, true);
-    }
-});
+
+    // Handle page unload event
+    SlimStat.add_event(window, "beforeunload", function () {
+        if (!SlimStat.empty(document.activeElement) && !SlimStat.empty(document.activeElement.nodeName) && document.activeElement.nodeName.toLowerCase() == "body" && !SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
+            SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id, true);
+        }
+    });
+
+    // Attach an event handler to all the clickable elements on the page (event delegation)
+    SlimStat.add_event(document.body, "click", function (e) {
+        var target = e.target;
+        while (target && target !== document.body) {
+            if (target.matches && (target.matches("a") || target.matches("button") || target.matches("input") || target.matches("area"))) {
+                SlimStat.ss_track(e, null, null);
+                break;
+            }
+            target = target.parentNode;
+        }
+    });
+})();
 
 // fingerprintjs2 - https://github.com/Valve/fingerprintjs2
 !(function (e, t, a) {
