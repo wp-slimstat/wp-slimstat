@@ -63,7 +63,7 @@ class REST_Service {
             delete_option('slimstat_permalink_structure_updated');
         }
 
-        if(\wp_slimstat::$settings['tracking_request_method'] === 'adblock_bypass') {
+        if(isset(\wp_slimstat::$settings['tracking_request_method']) && \wp_slimstat::$settings['tracking_request_method'] === 'adblock_bypass') {
             add_rewrite_tag('%slimstat_request%', '([a-f0-9]{32})');
             add_rewrite_rule(
                 '^request/([a-f0-9]{32})$',
