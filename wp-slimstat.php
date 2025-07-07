@@ -29,7 +29,6 @@ define('SLIMSTAT_DIR', __DIR__);
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/includes/class-init.php';
 
 class wp_slimstat
 {
@@ -50,7 +49,7 @@ class wp_slimstat
      */
     public static function init()
     {
-        \Slimstat\Core\Init::run();
+        \SlimStat\Core\Init::run();
 
         // Load all the settings
         if (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'slimview') === false)) {
@@ -616,11 +615,11 @@ class wp_slimstat
         } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
             // Is this a spammer?
             $spam_comment = self::$wpdb->get_row(self::$wpdb->prepare("
-				SELECT comment_author, comment_author_email, COUNT(*) comment_count
-				FROM `" . DB_NAME . "`.{$GLOBALS['wpdb']->comments}
-				WHERE comment_author_IP = %s AND comment_approved = 'spam'
-				GROUP BY comment_author
-				LIMIT 0,1", self::$stat['ip']), ARRAY_A);
+                SELECT comment_author, comment_author_email, COUNT(*) comment_count
+                FROM `" . DB_NAME . "`.{$GLOBALS['wpdb']->comments}
+                WHERE comment_author_IP = %s AND comment_approved = 'spam'
+                GROUP BY comment_author
+                LIMIT 0,1", self::$stat['ip']), ARRAY_A);
 
             if (!empty($spam_comment['comment_count'])) {
                 if (self::$settings['ignore_spammers'] == 'on') {
@@ -850,9 +849,9 @@ class wp_slimstat
          */
         // Init the database library with the appropriate filters
         /*if ( strpos ( $_content, 'WHERE:' ) !== false ) {
-			$where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
-		}
-		else{*/
+            $where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
+        }
+        else{*/
         wp_slimstat_db::init(html_entity_decode($_content, ENT_QUOTES, 'UTF-8'));
         //}
 
@@ -1453,20 +1452,20 @@ class wp_slimstat
         // Copy entries to the archive table, if needed
         if (self::$settings['auto_purge_delete'] != 'no') {
             $is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt)
-				SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt
-				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-				WHERE dt < $days_ago");
+                INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt)
+                SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt
+                FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+                WHERE dt < $days_ago");
 
             if ($is_copy_done !== false) {
                 self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
             }
 
             $is_copy_done = self::$wpdb->query("
-				INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events_archive (type, event_description, notes, position, id, dt)
-				SELECT type, event_description, notes, position, id, dt
-				FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events
-				WHERE dt < $days_ago"
+                INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events_archive (type, event_description, notes, position, id, dt)
+                SELECT type, event_description, notes, position, id, dt
+                FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events
+                WHERE dt < $days_ago"
             );
 
             if ($is_copy_done !== false) {
@@ -1629,8 +1628,8 @@ class wp_slimstat
         }
 
         self::$wpdb->query(self::$wpdb->prepare("
-			INSERT IGNORE INTO $_table (" . implode(", ", $data_keys) . ')
-			VALUES (' . substr(str_repeat('%s,', count($_data)), 0, -1) . ")", $_data));
+            INSERT IGNORE INTO $_table (" . implode(", ", $data_keys) . ')
+            VALUES (' . substr(str_repeat('%s,', count($_data)), 0, -1) . ")", $_data));
 
         return intval(self::$wpdb->insert_id);
     }
@@ -1661,10 +1660,10 @@ class wp_slimstat
         }
 
         $prepared_query = self::$wpdb->prepare("
-			UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-			SET " . implode('=%s,', array_keys($_data)) . "=%s
-			WHERE id = $id
-		", $_data);
+            UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+            SET " . implode('=%s,', array_keys($_data)) . "=%s
+            WHERE id = $id
+        ", $_data);
 
         // Add the notes
         if (!empty($notes)) {
@@ -1983,9 +1982,9 @@ class wp_slimstat
 
         if ($is_new_session && $identifier > 0) {
             self::$wpdb->query(self::$wpdb->prepare("
-				UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats
-				SET visit_id = %d
-				WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier
+                UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats
+                SET visit_id = %d
+                WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier
             ));
         }
         return ($is_new_session && ($_force_assign || self::$settings['javascript_mode'] == 'on'));
@@ -2058,9 +2057,9 @@ class wp_slimstat
         }
 
         $count_fingerprint = self::$wpdb->get_var(self::$wpdb->prepare("
-			SELECT COUNT( id )
-			FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-			WHERE fingerprint = %s", $_fingerprint
+            SELECT COUNT( id )
+            FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
+            WHERE fingerprint = %s", $_fingerprint
         ));
 
         return $count_fingerprint == 0;

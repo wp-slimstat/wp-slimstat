@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    window.reinitializeSlimstatCharts = reinitializeCharts;
+    window.reinitializeSlimStatCharts = reinitializeCharts;
 
     chartElements.forEach((element) => {
         const chartId = element.id.replace("slimstat_chart_data_", "");

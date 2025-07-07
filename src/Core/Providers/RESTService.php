@@ -1,5 +1,5 @@
 <?php
-namespace Slimstat\Core\Providers;
+namespace SlimStat\Core\Providers;
 
 // don't load directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class REST_Service {
+class RESTService {
 
     /**
      * Runs the service.
@@ -18,9 +18,9 @@ class REST_Service {
      * @since 5.2.14
      */
     public static function run() {
-        add_action('rest_api_init', array(__CLASS__, 'register_routes'));
-        add_action('init', array(__CLASS__, 'rewrite_rule_request'));
-        add_action('template_redirect', array(__CLASS__, 'handle_adblock_tracking'));
+        add_action('rest_api_init', array(__CLASS__, 'registerRoutes'));
+        add_action('init', array(__CLASS__, 'rewriteRuleRequest'));
+        add_action('template_redirect', array(__CLASS__, 'handleAdblockTracking'));
     }
 
     /**
@@ -30,10 +30,10 @@ class REST_Service {
      *
      * @since 5.2.14
      */
-    public static function register_routes() {
+    public static function registerRoutes() {
         register_rest_route('slimstat/v1', '/hit', array(
             'methods'             => 'POST',
-            'callback'            => array(__CLASS__, 'handle_tracking'),
+            'callback'            => array(__CLASS__, 'handleTracking'),
             'permission_callback' => '__return_true',
         ));
     }
@@ -46,7 +46,7 @@ class REST_Service {
      * @param WP_REST_Request $request The request object.
      * @return WP_REST_Response The response object.
      */
-    public static function handle_tracking(\WP_REST_Request $request) {
+    public static function handleTracking(\WP_REST_Request $request) {
         \wp_slimstat::slimtrack_ajax($request->get_json_params());
     }
 
@@ -55,7 +55,7 @@ class REST_Service {
      *
      * @since 5.2.14
      */
-    public static function rewrite_rule_request()
+    public static function rewriteRuleRequest()
     {
         if(get_option('slimstat_permalink_structure_updated', false)) {
             // If the permalink structure has been updated, we need to flush rewrite rules
@@ -78,7 +78,7 @@ class REST_Service {
      *
      * @since 5.2.14
      */
-    public static function handle_adblock_tracking()
+    public static function handleAdblockTracking()
     {
         // Always handle adblock bypass endpoint for fallback
         $request_hash = get_query_var('slimstat_request');

@@ -1,6 +1,5 @@
 <?php
-
-namespace Slimstat\Core\Modules;
+namespace SlimStat\Core\Modules;
 
 // don't load directly.
 if (! defined('ABSPATH')) {
@@ -11,7 +10,6 @@ if (! defined('ABSPATH')) {
 
 class Chart
 {
-
     public  $data         = array();
     public  $prev_data    = array();
     public  $args         = array();
@@ -19,10 +17,10 @@ class Chart
     private $chart_labels = array();
     private $translations = array();
 
-    public function show_chart($args)
+    public function showChart($args)
     {
-        $this->setup_args( $args );
-        $this->render_chart($this->args, $this->data, $this->prev_data);
+        $this->setupArgs($args);
+        $this->renderChart($this->args, $this->data, $this->prev_data);
     }
 
     /**
@@ -34,9 +32,9 @@ class Chart
      *
      * @param array $args The arguments to be set up for the chart.
      */
-    public function setup_args($args) {
-        $this->args      = $this->normalize_args($args);
-        $this->data      = $this->get_data_for_chart($this->args);
+    public function setupArgs($args) {
+        $this->args      = $this->normalizeArgs($args);
+        $this->data      = $this->getDataForChart($this->args);
         $this->prev_data = $this->data;
 
         if (isset($this->data['datasets_prev'])) {
@@ -46,7 +44,7 @@ class Chart
         }
     }
 
-    private function normalize_args($args)
+    private function normalizeArgs($args)
     {
         $args['start'] = isset($args['start']) ? $args['start'] : \wp_slimstat_db::$filters_normalized['utime']['start'];
         $args['end'] = isset($args['end']) ? $args['end'] : \wp_slimstat_db::$filters_normalized['utime']['end'];
@@ -74,7 +72,7 @@ class Chart
             }
         }
 
-        $args['days_between'] = $this->count_days_between($args['start'], $args['end']);
+        $args['days_between'] = $this->countDaysBetween($args['start'], $args['end']);
 
         if (isset($args['granularity']) && $args['granularity'] === 'daily') {
             if (date('H:i:s', $args['end']) === '00:00:00' || date('H:i:s', $args['end']) === '00:00') {
@@ -87,7 +85,7 @@ class Chart
         return $args;
     }
 
-    private function get_previous_args($args)
+    private function getPreviousArgs($args)
     {
         $prev_args   = $args;
         $dtStart     = (new \DateTime())->setTimestamp($args['start']);
@@ -124,7 +122,7 @@ class Chart
     }
 
 
-    public function get_data_for_chart($args)
+    public function getDataForChart($args)
     {
         global $wpdb;
         $params = array();
@@ -155,7 +153,7 @@ class Chart
             case 'weekly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = 'W, Y';
-                $params['data_points_count'] = $this->count_weeks_between($start, $end);
+                $params['data_points_count'] = $this->countWeeksBetween($start, $end);
                 $params['granularity']       = 'WEEK';
                 $week_labels = [];
                 $week_keys = [];
@@ -174,7 +172,7 @@ class Chart
             case 'monthly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = 'F Y';
-                $params['data_points_count'] = $this->count_months_between($start, $end);
+                $params['data_points_count'] = $this->countMonthsBetween($start, $end);
                 $params['granularity']       = 'MONTH';
                 $month_labels = [];
                 $month_keys = [];
@@ -193,7 +191,7 @@ class Chart
             case 'yearly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
                 $params['data_points_label'] = 'Y';
-                $params['data_points_count'] = $this->count_years_between($start, $end);
+                $params['data_points_count'] = $this->countYearsBetween($start, $end);
                 $params['granularity']       = 'YEAR';
                 break;
 
@@ -313,7 +311,7 @@ class Chart
         );
     }
 
-    public function count_years_between($start, $end)
+    public function countYearsBetween($start, $end)
     {
         $start = date('Y', $start);
         $end   = date('Y', $end);
@@ -321,7 +319,7 @@ class Chart
         return abs($end - $start) + 1;
     }
 
-    public function count_weeks_between($start, $end)
+    public function countWeeksBetween($start, $end)
     {
         $start_week = (int)date('W', $start);
         $start_year = (int)date('Y', $start);
@@ -341,7 +339,7 @@ class Chart
         return $weeks;
     }
 
-    protected function count_months_between($min_timestamp = 0, $max_timestamp = 0)
+    protected function countMonthsBetween($minTimestamp = 0, $maxTimestamp = 0)
     {
         $i         = 0;
         $min_month = date('Ym', $min_timestamp);
@@ -356,12 +354,12 @@ class Chart
         return $i;
     }
 
-    protected function count_days_between($start, $end)
+    protected function countDaysBetween($start, $end)
     {
         return abs(intval(($end - $start) / 86400)) + 1;
     }
 
-    public static function ajax_fetch_chart_data()
+    public static function ajaxFetchChartData()
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
 
@@ -385,13 +383,13 @@ class Chart
         $chart = (new self());
         $args['granularity'] = $granularity;
 
-        $chart->setup_args($args);
+        $chart->setupArgs($args);
 
         $data      = $chart->data;
         $prev_data = $chart->prev_data;
         $args      = $chart->args;
 
-        $args['days_between'] = $chart->count_days_between($args['start'], $args['end']);
+        $args['days_between'] = $chart->countDaysBetween($args['start'], $args['end']);
 
         $chart_labels = isset($args['chart_labels']) ? $args['chart_labels'] : array_keys($data['datasets']);
         $translations = [
@@ -420,7 +418,7 @@ class Chart
         ]);
     }
 
-    private function render_chart()
+    private function renderChart()
     {
         $this->chart_labels = isset($this->args['chart_labels']) ? $this->args['chart_labels'] : array_keys($this->data['datasets']);
         $this->translations = [
@@ -447,4 +445,4 @@ class Chart
     }
 }
 
-add_action('wp_ajax_slimstat_fetch_chart_data', array(__NAMESPACE__ . '\Chart', 'ajax_fetch_chart_data'));
+add_action('wp_ajax_slimstat_fetch_chart_data', array(__NAMESPACE__ . '\Chart', 'ajaxFetchChartData'));
