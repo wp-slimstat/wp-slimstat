@@ -724,6 +724,11 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
         }
 
+        // Refresh WP permalinks, in case the user has changed the tracking method
+        if (isset($_POST['options']['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $_POST['options']['tracking_request_method']) {
+            flush_rewrite_rules();
+        }
+
         // All other options
         foreach ($_POST['options'] as $a_post_slug => $a_post_value) {
             if (empty($settings[$current_tab]['rows'][$a_post_slug]) ||
@@ -755,6 +760,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 
         // Save the new values in the database
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+
 
         if (!empty($save_messages)) {
             wp_slimstat_admin::show_message(implode(' ', $save_messages), 'warning');
