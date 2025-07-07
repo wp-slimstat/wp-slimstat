@@ -1,3 +1,6 @@
+= 5.3.0 - 2025-05-12
+- **Enhancement**: Redesigned line charts for improved user experience
+
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.
 
