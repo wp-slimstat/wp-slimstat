@@ -3,6 +3,8 @@
 - Back-End Request Channel (backend_transport_method): Choose between the WP REST API or admin-ajax.php for sending tracking data.
 - Auto-Fallback to admin-ajax.php (enable_fallback_detection): Automatically switches to admin-ajax.php if REST API requests are blocked.
 - Ad Blocker Bypass (enable_adblock_bypass): Enqueues the tracking script with a randomized, hash-based URL and sends requests using a hashed path to bypass ad blockers and content filters.
+- **Enhancement**: Redesigned line charts for improved user experience
+- **Enhancement**: Added compatibility with WordPress's Interactivity API.
 
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.

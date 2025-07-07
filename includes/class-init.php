@@ -61,6 +61,9 @@ class Init {
     private static function load_dependencies() {
         // Load the plugin providers
         require_once self::$dir . '/providers/class-rest-service.php';
+        
+        // Load the plugin Modules
+        require_once self::$dir . '/modules/class-chart.php';
     }
 
     /**
