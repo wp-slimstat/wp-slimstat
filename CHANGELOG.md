@@ -1,4 +1,5 @@
-5.2.14 - 2025-05-03 =
+= 5.3.0 - 2025-05-12
+- **Enhancement**: Redesigned line charts for improved user experience
 - **Enhancement**: Added compatibility with WordPress's Interactivity API.
 
 = 5.2.13 - 2025-04-29 =
