@@ -51,13 +51,36 @@ class Init {
         self::definitions();
         // Load dependencies
         self::load_dependencies();
+        // Run all the providers
+        self::run_providers();
     }
 
     /**
      * Load all required files from the includes folder.
      */
     private static function load_dependencies() {
+        // Load the plugin providers
+        require_once self::$dir . '/providers/class-rest-service.php';
+        
         // Load the plugin Modules
         require_once self::$dir . '/modules/class-chart.php';
+    }
+
+    /**
+     * Run all the providers.
+     */
+    private static function run_providers() {
+        // Get all the providers
+        $providers = array(
+            'SlimStat\Core\Providers\Rest_Service',
+        );
+
+        // Loop each provider and run it
+        foreach ( $providers as $provider ) {
+            $provider = new $provider();
+            if ( method_exists( $provider, 'run' ) ) {
+                $provider->run();
+            }
+        }
     }
 }

@@ -480,6 +480,23 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'description' => __("Enter a list of usernames who should have access to the statistics. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat')
             ),
 
+            // Access Control - Ad-Blocker & REST API
+            'backend_transport_header' => array(
+                'title' => __('Tracking Request Method', 'wp-slimstat'),
+                'type'  => 'section_header'
+            ),
+            'tracking_request_method' => array(
+                'title'       => __('Tracking Request Method', 'wp-slimstat'),
+                'type'        => 'select',
+                'description' => __('Choose how Slimstat sends tracking requests to the server. Fallback logic is always enabled: if the selected method fails, Slimstat will automatically try the next available method.','wp-slimstat') . '<br />' .
+                                 __('<strong>Note</strong> that some ad blockers may block tracking requests sent via the REST API or admin-ajax.php. If you are using one of these methods and notice that some visits are not being tracked, consider using the Ad-Blocker Bypass method.', 'wp-slimstat'),
+                'select_values'     => array(
+                    'rest' => __('REST API: Use the WordPress REST API for tracking requests (may be blocked by ad blockers).', 'wp-slimstat'),
+                    'ajax' => __('Admin-AJAX: Use admin-ajax.php for tracking requests (recommended fallback for compatibility).', 'wp-slimstat'),
+                    'adblock_bypass' => __('Ad-Blocker Bypass: Use an alternate method to bypass common ad blockers and ensure tracking.', 'wp-slimstat')
+                )
+            ),
+
             // Access Control - Customizer
             'permissions_customize_header' => array(
                 'title' => __('Customizer', 'wp-slimstat'),
@@ -626,6 +643,8 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             default:
                 break;
         }
+
+        flush_rewrite_rules();
     }
 
     // Some of them require extra processing
@@ -705,6 +724,11 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
         }
 
+        // Refresh WP permalinks, in case the user has changed the tracking method
+        if (isset($_POST['options']['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $_POST['options']['tracking_request_method']) {
+            flush_rewrite_rules();
+        }
+
         // All other options
         foreach ($_POST['options'] as $a_post_slug => $a_post_value) {
             if (empty($settings[$current_tab]['rows'][$a_post_slug]) ||
@@ -736,6 +760,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 
         // Save the new values in the database
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+
 
         if (!empty($save_messages)) {
             wp_slimstat_admin::show_message(implode(' ', $save_messages), 'warning');
