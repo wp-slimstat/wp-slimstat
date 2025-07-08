@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Init {
     /**
-     * Base directory path for the plugin.
+     * Core directory path.
      *
      * @var string
      */
