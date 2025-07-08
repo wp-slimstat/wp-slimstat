@@ -1199,7 +1199,7 @@ class wp_slimstat_reports
                         break;
 
                     case 'platform':
-                      
+
                         $row_details                    = __('Code', 'wp-slimstat') . ": {$results[$i][$_args[ 'columns' ]]}";
                         $icons = array(
                             'android'  => 'and',
@@ -1413,7 +1413,7 @@ class wp_slimstat_reports
 
     public static function show_chart($args) {
         $chart = new \SlimStat\Core\Modules\Chart();
-        $chart->show_chart($args);
+        $chart->showChart($args);
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
