@@ -82,6 +82,12 @@ class RESTService {
     {
         // Always handle adblock bypass endpoint for fallback
         $request_hash = get_query_var('slimstat_request');
+        if( $request_hash ) {
+            echo "<pre>";
+            var_dump($request_hash && $request_hash === md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION));
+            echo "</pre>";
+            die();
+        }
         if ($request_hash && $request_hash === md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION)) {
             \wp_slimstat::slimtrack_ajax();
         }
