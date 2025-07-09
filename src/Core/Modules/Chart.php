@@ -441,7 +441,7 @@ class Chart
             'nonce' => wp_create_nonce('slimstat_chart_nonce')
         ]);
 
-        include SLIMSTAT_DIR . '/src/Core/Views/Modules/chart.php';
+        include SLIMSTAT_DIR . '/src/Core/Views/Modules/ChartView.php';
     }
 }
 
