@@ -31,20 +31,21 @@ document.addEventListener("DOMContentLoaded", function () {
     function initializeChart(element, chartId) {
         const args = JSON.parse(element.getAttribute("data-args"));
         const data = JSON.parse(element.getAttribute("data-data"));
-        const prevData = JSON.parse(element.getAttribute("data-prev-data"));
-        const daysBetween = parseInt(element.getAttribute("data-days-between"));
-        const chartLabels = JSON.parse(element.getAttribute("data-chart-labels"));
+        const prevData = JSON.parse(element.getAttribute("data-prevData"));
+        const daysBetween = parseInt(element.getAttribute("data-daysBetween"));
+        const chartLabels = JSON.parse(element.getAttribute("data-chartLabels"));
         const translations = JSON.parse(element.getAttribute("data-translations"));
 
         const labels = data.labels;
-        const prev_labels = data.prev_labels;
+        const prevLabels = data.prevLabels;
 
-        const datasets = prepareDatasets(data.datasets, chartLabels, labels, data.today);
-        let prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true);
+        // Fix: Check for null/undefined datasets before using them
+        const datasets = data && data.datasets ? prepareDatasets(data.datasets, chartLabels, labels, data.today) : [];
+        let prevDatasets = prevData && prevData.datasets ? prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true) : [];
         prevDatasets = prevDatasets.filter((ds) => Array.isArray(ds.data) && ds.data.some((v) => v > 0));
 
         const ctx = document.getElementById(`slimstat_chart_${chartId}`).getContext("2d");
-        const chart = createChart(ctx, labels, prev_labels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
+        const chart = createChart(ctx, labels, prevLabels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
         charts.set(chartId, chart);
 
         renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
@@ -78,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelector(`.slimstat-chart-wrap:has(#slimstat_chart_${chartId})`).style.display = "none";
 
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", slimstat_chart_vars.ajax_url, true);
+        xhr.open("POST", slimstatChartVars.ajaxUrl, true); // was slimstat_chart_vars.ajax_url
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
         xhr.onreadystatechange = function () {
@@ -126,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
         xhr.send(
             new URLSearchParams({
                 action: "slimstat_fetch_chart_data",
-                nonce: slimstat_chart_vars.nonce,
+                nonce: slimstatChartVars.nonce, // was slimstat_chart_vars.nonce
                 args: JSON.stringify(args),
                 granularity: granularity,
             }).toString()
@@ -144,8 +145,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 values = Object.values(values);
             }
 
+            // Fix: Safely access chartLabels[i]
+            let labelText = key;
+            if (Array.isArray(chartLabels) && typeof chartLabels[i] !== "undefined" && chartLabels[i] !== null) {
+                labelText = chartLabels[i];
+            }
+
             return {
-                label: isPrevious ? `Previous ${chartLabels[i] ?? key}` : chartLabels[i] ?? key,
+                label: isPrevious ? `Previous ${labelText}` : labelText,
                 data: values,
                 borderColor: colors[i % colors.length],
                 borderWidth: isPrevious ? 1 : 2,
@@ -166,7 +173,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function createChart(ctx, labels, prev_labels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
+    function createChart(ctx, labels, prevLabels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
         const isRTL = document.documentElement.dir === "rtl" || document.body.classList.contains("rtl");
 
         const customCrosshair = {
@@ -290,7 +297,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     },
                     tooltip: {
                         enabled: false,
-                        external: createTooltip(labels, prev_labels, translations, daysBetween, chartId),
+                        external: createTooltip(labels, prevLabels, translations, daysBetween, chartId),
                         rtl: isRTL,
                         textDirection: isRTL ? "rtl" : "ltr",
                         bodyAlign: isRTL ? "right" : "left",
@@ -514,11 +521,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function createTooltip(labels, prev_labels, translations, daysBetween, chartId) {
+    function createTooltip(labels, prevLabels, translations, daysBetween, chartId) {
         return function (context) {
             var unitTime = document.getElementById(`slimstat_chart_data_${chartId}`).dataset.granularity;
             var data = JSON.parse(document.getElementById(`slimstat_chart_data_${chartId}`).getAttribute("data-data"));
-            prev_labels = data.prev_labels;
+            prevLabels = data.prevLabels; // was prev_labels
             let tooltipEl = document.getElementById("chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
@@ -551,7 +558,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const prevLabel = tooltip.body[j].lines[0].split(": ")[0];
                     if (prevLabel === `Previous ${label}`) {
                         prevValue = tooltip.body[j].lines[0].split(": ")[1];
-                        prevDate = prev_labels[tooltip.dataPoints[j].dataIndex];
+                        prevDate = prevLabels[tooltip.dataPoints[j].dataIndex];
                         break;
                     }
                 }
