@@ -31,17 +31,19 @@ document.addEventListener("DOMContentLoaded", function () {
     function initializeChart(element, chartId) {
         const args = JSON.parse(element.getAttribute("data-args"));
         const data = JSON.parse(element.getAttribute("data-data"));
-        const prevData = JSON.parse(element.getAttribute("data-prevData"));
-        const daysBetween = parseInt(element.getAttribute("data-daysBetween"));
-        const chartLabels = JSON.parse(element.getAttribute("data-chartLabels"));
+        const prevData = JSON.parse(element.getAttribute("data-prev-data"));
+        const daysBetween = parseInt(element.getAttribute("data-days-between"));
+        const chartLabels = JSON.parse(element.getAttribute("data-chart-labels"));
         const translations = JSON.parse(element.getAttribute("data-translations"));
 
+        console.log(data);
+
         const labels = data.labels;
-        const prevLabels = data.prevLabels;
+        const prevLabels = data.prev_labels;
 
         // Fix: Check for null/undefined datasets before using them
-        const datasets = data && data.datasets ? prepareDatasets(data.datasets, chartLabels, labels, data.today) : [];
-        let prevDatasets = prevData && prevData.datasets ? prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true) : [];
+        const datasets = prepareDatasets(data.datasets, chartLabels, labels, data.today);
+        let prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true);
         prevDatasets = prevDatasets.filter((ds) => Array.isArray(ds.data) && ds.data.some((v) => v > 0));
 
         const ctx = document.getElementById(`slimstat_chart_${chartId}`).getContext("2d");
@@ -79,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelector(`.slimstat-chart-wrap:has(#slimstat_chart_${chartId})`).style.display = "none";
 
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", slimstatChartVars.ajaxUrl, true); // was slimstat_chart_vars.ajax_url
+        xhr.open("POST", slimstat_chart_vars.ajaxUrl, true);
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
         xhr.onreadystatechange = function () {
@@ -127,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
         xhr.send(
             new URLSearchParams({
                 action: "slimstat_fetch_chart_data",
-                nonce: slimstatChartVars.nonce, // was slimstat_chart_vars.nonce
+                nonce: slimstat_chart_vars.nonce,
                 args: JSON.stringify(args),
                 granularity: granularity,
             }).toString()
@@ -386,6 +388,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const legendItem = document.createElement("div");
                 legendItem.classList.add("slimstat-postbox-chart--item");
+                console.log(dataset);
 
                 legendItem.innerHTML = `
                     <span class="slimstat-postbox-chart--item-label">${dataset.label}</span>
@@ -525,7 +528,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return function (context) {
             var unitTime = document.getElementById(`slimstat_chart_data_${chartId}`).dataset.granularity;
             var data = JSON.parse(document.getElementById(`slimstat_chart_data_${chartId}`).getAttribute("data-data"));
-            prevLabels = data.prevLabels; // was prev_labels
+            prevLabels = data.prev_labels;
             let tooltipEl = document.getElementById("chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
