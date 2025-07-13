@@ -37,10 +37,10 @@ class Chart
         $this->data      = $this->getDataForChart($this->args);
         $this->prevData  = $this->data;
 
-        if (isset($this->data['datasetsPrev'])) {
-            unset($this->data['datasetsPrev']);
-            $this->prevData['datasets'] = $this->prevData['datasetsPrev'];
-            unset($this->prevData['datasetsPrev']);
+        if (isset($this->data['datasets_prev'])) {
+            unset($this->data['datasets_prev']);
+            $this->prevData['datasets'] = $this->prevData['datasets_prev'];
+            unset($this->prevData['datasets_prev']);
         }
     }
 
@@ -414,14 +414,14 @@ class Chart
             'data' => $data,
             'prev_data'    => $prev_data,
             'days_between' => $args['daysBetween'] ?? 0,
-            'chart_labels' => $chartLabels,
+            'chartLabels' => $chartLabels,
             'translations' => $translations
         ]);
     }
 
     private function renderChart()
     {
-        $this->chart_labels = isset($this->args['chart_labels']) ? $this->args['chart_labels'] : array_keys($this->data['datasets']);
+        $this->chartLabels = isset($this->args['chart_labels']) ? $this->args['chart_labels'] : array_keys($this->data['datasets']);
         $this->translations = [
             'previous_period'         => __('-- Previous Period', 'wp-slimstat'),
             'previous_period_tooltip' => __('Click Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat'),
