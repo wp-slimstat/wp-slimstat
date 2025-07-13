@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelector(`.slimstat-chart-wrap:has(#slimstat_chart_${chartId})`).style.display = "none";
 
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", slimstat_chart_vars.ajaxUrl, true);
+        xhr.open("POST", slimstat_chart_vars.ajax_url, true);
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
         xhr.onreadystatechange = function () {
@@ -388,7 +388,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const legendItem = document.createElement("div");
                 legendItem.classList.add("slimstat-postbox-chart--item");
-                console.log(dataset);
 
                 legendItem.innerHTML = `
                     <span class="slimstat-postbox-chart--item-label">${dataset.label}</span>
