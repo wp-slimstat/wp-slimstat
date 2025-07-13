@@ -2305,4 +2305,6 @@ if (function_exists('add_action')) {
 
     // Add the appropriate actions
     add_action('plugins_loaded', array('wp_slimstat', 'init'), 20);
+    // Add the action to fetch chart data
+    add_action('wp_ajax_slimstat_fetch_chart_data', array('SlimStat\Core\Modules\Chart', 'ajaxFetchChartData'));
 }

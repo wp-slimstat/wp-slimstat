@@ -394,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span class="slimstat-postbox-chart--item--color" style="background-color: ${dataset.borderColor}"></span>
                     <span class="slimstat-postbox-chart--item-value">${value.toLocaleString()}</span>
                     ${
-                        prevValue !== value
+                        prevValue && prevValue !== value
                             ? `
                         <span class="slimstat-postbox-chart--item--color" style="background-image: repeating-linear-gradient(to right, ${dataset.borderColor}, ${dataset.borderColor} 4px, transparent 0px, transparent 6px); background-size: auto 6px; height: 2px; margin-bottom: 0px; margin-left: 10px;"></span>
                         <span class="slimstat-postbox-chart--item-value">${prevValue.toLocaleString()}</span>

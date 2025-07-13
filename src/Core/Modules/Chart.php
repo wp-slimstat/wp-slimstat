@@ -145,15 +145,15 @@ class Chart
 
         switch ($granularity) {
             case 'hourly':
-                $params['groupBy']          = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['dataPointsLabel'] = 'Y/m/d H:00';
-                $params['dataPointsCount'] = ceil($range / 3600);
+                $params['group_by']          = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'Y/m/d H:00';
+                $params['data_points_count'] = ceil($range / 3600);
                 $params['granularity']       = 'HOUR';
                 break;
             case 'weekly':
-                $params['groupBy']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['dataPointsLabel'] = 'W, Y';
-                $params['dataPointsCount'] = $this->countWeeksBetween($start, $end);
+                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'W, Y';
+                $params['data_points_count'] = $this->countWeeksBetween($start, $end);
                 $params['granularity']       = 'WEEK';
                 $week_labels = [];
                 $week_keys = [];
@@ -166,60 +166,59 @@ class Chart
                     $cur = strtotime('+1 week', $cur);
                     $i++;
                 }
-                $params['customLabels'] = $week_labels;
-                $params['customKeys'] = $week_keys;
+                $params['custom_labels'] = $week_labels;
+                $params['custom_keys'] = $week_keys;
                 break;
             case 'monthly':
-                $params['groupBy']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['dataPointsLabel'] = 'F Y';
-                $params['dataPointsCount'] = $this->countMonthsBetween($start, $end);
+                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'F Y';
+                $params['data_points_count'] = $this->countMonthsBetween($start, $end);
                 $params['granularity']       = 'MONTH';
                 $month_labels = [];
                 $month_keys = [];
                 $cur = strtotime(date('Y-m-01', $start));
                 $i = 0;
                 while ($cur <= $end) {
-                    $label = date($params['dataPointsLabel'], $cur);
+                    $label = date($params['data_points_label'], $cur);
                     $month_labels[] = "'$label'";
                     $month_keys[$label] = $i;
                     $cur = strtotime('+1 month', $cur);
                     $i++;
                 }
-                $params['customLabels'] = $month_labels;
-                $params['customKeys'] = $month_keys;
+                $params['custom_labels'] = $month_labels;
+                $params['custom_keys'] = $month_keys;
                 break;
             case 'yearly':
-                $params['groupBy']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['dataPointsLabel'] = 'Y';
-                $params['dataPointsCount'] = $this->countYearsBetween($start, $end);
+                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = 'Y';
+                $params['data_points_count'] = $this->countYearsBetween($start, $end);
                 $params['granularity']       = 'YEAR';
                 break;
 
             case 'daily':
             default:
-                $params['groupBy']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['dataPointsLabel'] = $dateFormat;
-                $params['dataPointsCount'] = floor($range / 86400) + 1;
+                $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['data_points_label'] = $dateFormat;
+                $params['data_points_count'] = floor($range / 86400) + 1;
                 $params['granularity']       = 'DAY';
                 $day_labels = [];
                 $day_keys = [];
                 $cur = $start;
                 $i = 0;
                 while ($cur <= $end) {
-                    $label = date($params['dataPointsLabel'], $cur);
+                    $label = date($params['data_points_label'], $cur);
                     $day_labels[] = "'$label'";
                     $day_keys[$label] = $i;
                     $cur = strtotime('+1 day', $cur);
                     $i++;
                 }
-                $params['customLabels'] = $day_labels;
-                $params['customKeys'] = $day_keys;
+                $params['custom_labels'] = $day_labels;
                 break;
         }
 
 
-        $params['previousEnd']   = \wp_slimstat_db::$filters_normalized['utime']['start'] - 1;
-        $params['previousStart'] = $params['previousEnd'] - \wp_slimstat_db::$filters_normalized['utime']['range'];
+        $params['previous_end']   = \wp_slimstat_db::$filters_normalized['utime']['start'] - 1;
+        $params['previous_start'] = $params['previous_end'] - \wp_slimstat_db::$filters_normalized['utime']['range'];
 
         if (empty($_args['where'])) {
             $_args['where'] = '';
@@ -228,15 +227,14 @@ class Chart
         $sql = "
         SELECT MIN(dt) AS dt, {$_args['data1']} AS v1, {$_args['data2']} AS v2
         FROM {$GLOBALS['wpdb']->prefix}slim_stats
-        WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params['previousStart']} AND {$params['previousEnd']} OR dt BETWEEN $dbQueryStart AND $end )
-        GROUP BY {$params['groupBy']}";
-
+        WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params['previous_start']} AND {$params['previous_end']} OR dt BETWEEN $dbQueryStart AND $end )
+        GROUP BY {$params['group_by']}";
 
         $results = \wp_slimstat_db::get_results(
             $sql,
             'dt',
             '',
-            $params['groupBy'], 'SUM(v1) AS v1, SUM(v2) AS v2'
+            $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
         );
 
         $output = array(
@@ -250,8 +248,8 @@ class Chart
             )
         );
 
-        if (isset($params['customKeys']) && isset($params['customLabels'])) {
-            foreach ($params['customKeys'] as $label => $index) {
+        if (isset($params['custom_keys']) && isset($params['custom_labels'])) {
+            foreach ($params['custom_keys'] as $label => $index) {
                 $output['keys'][$label] = $index;
                 $output['labels'][] = "'$label'";
                 $output['datasets']['v1'][] = 0;
@@ -260,9 +258,9 @@ class Chart
                 $output['datasets']['v4'][] = 0;
             }
         } else {
-            for ($i = 0; $i < $params['dataPointsCount']; $i++) {
-                $v1_label = date($params['dataPointsLabel'], strtotime("+$i {$params['granularity']}", \wp_slimstat_db::$filters_normalized['utime']['start']));
-                $v3_label = date($params['dataPointsLabel'], strtotime("+$i {$params['granularity']}", $params['previousStart']));
+            for ($i = 0; $i < $params['data_points_count']; $i++) {
+                $v1_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", \wp_slimstat_db::$filters_normalized['utime']['start']));
+                $v3_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", $params['previous_start']));
 
                 $output['keys'][$v1_label] = $i;
                 $output['keys'][$v3_label] = $i;
@@ -276,8 +274,7 @@ class Chart
         }
 
         foreach ($results as $aResult) {
-            $label = date($params['dataPointsLabel'], $aResult['dt']);
-
+            $label = date($params['data_points_label'], $aResult['dt']);
             if (!isset($output['keys'][$label])) {
                 continue;
             }
@@ -291,13 +288,13 @@ class Chart
             }
         }
 
-        $today = wp_date($params['dataPointsLabel'], time(), $wpTimezone);
+        $today = wp_date($params['data_points_label'], time(), $wpTimezone);
 
         return array(
             'labels'      => $output['labels'],
             'prev_labels' => array_map(function ($label, $index) use ($params, $wpTimezone) {
-                $prev_start = $params['previousStart'];
-                return date($params['dataPointsLabel'], strtotime("+{$index} {$params['granularity']}", $prev_start));
+                $prev_start = $params['previous_start'];
+                return date($params['data_points_label'], strtotime("+{$index} {$params['granularity']}", $prev_start));
             }, $output['labels'], array_keys($output['labels'])),
             'datasets'    => array(
                 'v1' => $output['datasets']['v1'],
@@ -414,7 +411,7 @@ class Chart
             'data' => $data,
             'prev_data'    => $prev_data,
             'days_between' => $args['daysBetween'] ?? 0,
-            'chartLabels' => $chartLabels,
+            'chart_labels' => $chartLabels,
             'translations' => $translations
         ]);
     }
@@ -445,5 +442,3 @@ class Chart
         include SLIMSTAT_DIR . '/src/Core/Views/Modules/ChartView.php';
     }
 }
-
-add_action('wp_ajax_slimstat_fetch_chart_data', array(__NAMESPACE__ . '\Chart', 'ajaxFetchChartData'));
