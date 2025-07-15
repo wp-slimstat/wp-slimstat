@@ -425,8 +425,42 @@ if (!window.requestIdleCallback) {
 
 // Main initialization
 (function () {
+    function extractSlimStatParams() {
+        var meta = document.querySelector('meta[name="slimstat-params"]');
+        if (meta) {
+            try {
+                window.SlimStatParams = JSON.parse(meta.getAttribute("content"));
+                return;
+            } catch (e) {}
+        }
+
+        var scripts = document.querySelectorAll("script");
+        for (var i = scripts.length - 1; i >= 0; i--) {
+            var script = scripts[i];
+            var match = script.textContent.match(/var\s+SlimStatParams\s*=\s*({[\s\S]*?});/);
+            if (match) {
+                try {
+                    window.SlimStatParams = new Function("return " + match[1])();
+                    return;
+                } catch (e) {}
+            }
+        }
+    }
+    document.addEventListener("wp-interactivity:navigate", extractSlimStatParams);
+    var lastParams = JSON.stringify(window.SlimStatParams || {});
+    var observer = new MutationObserver(function () {
+        extractSlimStatParams();
+        var newParams = JSON.stringify(window.SlimStatParams || {});
+        if (newParams !== lastParams) {
+            lastParams = newParams;
+        }
+    });
+    observer.observe(document.head, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true });
+
     // Helper function: send pageview data to the server
     function sendPageview() {
+        extractSlimStatParams();
         var slimstat_data = "";
         var use_beacon = true;
 
@@ -477,7 +511,7 @@ if (!window.requestIdleCallback) {
         (function (originalPush, originalReplace) {
             history.pushState = function () {
                 SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id, true);
-                SlimStatParams.id = 0;
+                SlimStatParams.id = null;
                 var result = originalPush.apply(this, arguments);
                 sendPageview();
                 return result;

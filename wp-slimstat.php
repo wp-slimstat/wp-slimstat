@@ -162,10 +162,6 @@ class wp_slimstat
     public static function slimtrack_ajax()
     {
         // If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
-        echo "<pre>";
-        var_dump(self::$settings['is_tracking']);
-        echo "<\pre>";
-        die();
         if (self::$settings['is_tracking'] != 'on') {
             exit(self::_log_error(204));
         }
