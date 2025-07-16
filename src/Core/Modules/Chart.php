@@ -167,7 +167,6 @@ class Chart
                     $i++;
                 }
                 $params['custom_labels'] = $week_labels;
-                $params['custom_keys'] = $week_keys;
                 break;
             case 'monthly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
@@ -186,7 +185,6 @@ class Chart
                     $i++;
                 }
                 $params['custom_labels'] = $month_labels;
-                $params['custom_keys'] = $month_keys;
                 break;
             case 'yearly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
