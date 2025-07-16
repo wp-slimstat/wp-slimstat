@@ -2782,6 +2782,7 @@ x:-o-prefocus {
   span.slimstat-tooltip-bar {
     display: block;
     height: 100%;
+    max-width: 100% !important;
     position: absolute !important;
     top: 0;
     left: 0;

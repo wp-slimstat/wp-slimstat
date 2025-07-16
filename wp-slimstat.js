@@ -199,6 +199,8 @@ var SlimStat = {
                 xhr.open("POST", url, true);
                 xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                xhr.setRequestHeader("X-WP-Nonce", SlimStatParams.wp_rest_nonce);
+
                 xhr.withCredentials = true;
                 xhr.send(data);
                 xhr.onreadystatechange = function () {

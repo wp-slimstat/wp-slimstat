@@ -1397,6 +1397,8 @@ class wp_slimstat
             $params['ci'] = self::_get_value_with_checksum(self::_base64_url_encode(serialize(self::_get_content_info())));
         }
 
+        $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
+
         $params = apply_filters('slimstat_js_params', $params);
 
         // Register the correct script for adblock bypass, CDN, or default
