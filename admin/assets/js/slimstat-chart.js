@@ -613,24 +613,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
             tooltipEl.querySelector("table").innerHTML = innerHtml;
 
-            const position = chart.canvas.getBoundingClientRect();
+            const chartRect = chart.canvas.getBoundingClientRect();
             const tooltipWidth = tooltipEl.offsetWidth;
             const tooltipHeight = tooltipEl.offsetHeight;
-            let left = position.left + window.pageXOffset + tooltip.caretX - tooltipWidth / 2;
+            let left = chartRect.left + window.pageXOffset + tooltip.caretX - tooltipWidth / 2;
             const dataPointYs = tooltip.dataPoints.map((dp) => dp.element.y);
             const highestY = Math.min(...dataPointYs);
-            let top = position.top + window.pageYOffset + highestY - tooltipHeight - 24;
+            let top = chartRect.top + window.pageYOffset + highestY - tooltipHeight - 24;
 
-            if (left + tooltipWidth > window.innerWidth - 10) {
-                left = window.innerWidth - tooltipWidth - 10;
+            const chartLeft = chartRect.left + window.pageXOffset;
+            const chartRight = chartRect.right + window.pageXOffset;
+            if (left < chartLeft + 4) {
+                left = chartLeft + 4;
             }
-            if (left < 10) {
-                left = 10;
+            if (left + tooltipWidth > chartRight - 4) {
+                left = chartRight - tooltipWidth - 4;
             }
-            if (top < 10) {
-                top = 10;
-            }
-
             tooltipEl.style.opacity = 1;
             tooltipEl.style.position = "absolute";
             tooltipEl.style.left = `${left}px`;
@@ -640,8 +638,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (alignIndicator) {
                 const indicatorWidth = alignIndicator.offsetWidth;
                 const tooltipLeft = left;
-                const tooltipRight = left + tooltipWidth;
-                const mouseX = position.left + window.pageXOffset + tooltip.caretX;
+                const mouseX = chartRect.left + window.pageXOffset + tooltip.caretX;
                 let indicatorLeft = mouseX - tooltipLeft - indicatorWidth / 2;
                 const minLeft = 4;
                 const maxLeft = tooltipWidth - indicatorWidth - 4;
