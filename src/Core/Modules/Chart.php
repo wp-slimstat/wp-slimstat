@@ -151,7 +151,7 @@ class Chart
                 $params['granularity']       = 'HOUR';
                 break;
             case 'weekly':
-                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
+                $params['group_by'] = "DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'), '%x-W%v')";
                 $params['data_points_label'] = 'W, Y';
                 $params['data_points_count'] = $this->countWeeksBetween($start, $end);
                 $params['granularity']       = 'WEEK';

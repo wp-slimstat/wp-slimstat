@@ -46,7 +46,14 @@ document.addEventListener("DOMContentLoaded", function () {
         let prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true);
         prevDatasets = prevDatasets.filter((ds) => Array.isArray(ds.data) && ds.data.some((v) => v > 0));
 
-        const ctx = document.getElementById(`slimstat_chart_${chartId}`).getContext("2d");
+        // Fix for infinite height: set a default height if not present (for widgets or non-dashboard usage)
+        const chartCanvas = document.getElementById(`slimstat_chart_${chartId}`);
+        if (chartCanvas && (!chartCanvas.style.height || chartCanvas.offsetHeight > 2000)) {
+            chartCanvas.style.height = "260px";
+            chartCanvas.style.maxHeight = "320px";
+            chartCanvas.style.minHeight = "180px";
+        }
+        const ctx = chartCanvas.getContext("2d");
         const chart = createChart(ctx, labels, prevLabels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
         charts.set(chartId, chart);
 
