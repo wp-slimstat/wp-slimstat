@@ -16,7 +16,6 @@ $translations = array_merge(
     array(
         'yearly' => __('Yearly', 'wp-slimstat'),
         'monthly' => __('Monthly', 'wp-slimstat'),
-        'weekly' => __('Weekly', 'wp-slimstat'),
         'daily' => __('Daily', 'wp-slimstat'),
         'hourly' => __('Hourly', 'wp-slimstat'),
     )
@@ -27,7 +26,6 @@ $availableRange = $this->args['end'] - $this->args['start'];
 // Dynamically calculate limits based on available data range
 $disableYearly = $availableRange < (365 * 86400); // Less than 1 year of data
 $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
-$disableWeekly = $availableRange < (7 * 86400); // Less than 1 week of data
 $disableDaily = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
 $disableHourly = $availableRange > (7 * 86400); // More than 7 days of data
 ?>
@@ -36,7 +34,6 @@ $disableHourly = $availableRange > (7 * 86400); // More than 7 days of data
         <select id="slimstat_granularity_<?php echo esc_attr($args['id']); ?>" name="xxx" class="slimstat-granularity-select">
             <option value="yearly" <?php echo $disableYearly ? 'disabled' : ''; ?> <?php selected($args['granularity'], 'yearly'); ?>><?php echo esc_html($translations['yearly']); ?></option>
             <option value="monthly" <?php echo $disableMonthly ? 'disabled' : ''; ?> <?php selected($args['granularity'], 'monthly'); ?>><?php echo esc_html($translations['monthly']); ?></option>
-            <option value="weekly" <?php echo $disableWeekly ? 'disabled' : ''; ?> <?php selected($args['granularity'], 'weekly'); ?>><?php echo esc_html($translations['weekly']); ?></option>
             <option value="daily" <?php echo $disableDaily ? 'disabled' : ''; ?> <?php selected($args['granularity'], 'daily'); ?>><?php echo esc_html($translations['daily']); ?></option>
             <option value="hourly" <?php echo $disableHourly ? 'disabled' : ''; ?> <?php selected($args['granularity'], 'hourly'); ?>><?php echo esc_html($translations['hourly']); ?></option>
         </select>

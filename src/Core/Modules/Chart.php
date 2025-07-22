@@ -48,7 +48,7 @@ class Chart
     {
         $args['start'] = isset($args['start']) ? $args['start'] : \wp_slimstat_db::$filters_normalized['utime']['start'];
         $args['end'] = isset($args['end']) ? $args['end'] : \wp_slimstat_db::$filters_normalized['utime']['end'];
-        if(isset($_REQUEST['granularity']) && !empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], ['yearly', 'monthly', 'weekly', 'daily', 'hourly'])) {
+        if(isset($_REQUEST['granularity']) && !empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], ['yearly', 'monthly', 'daily', 'hourly'])) {
             $args['granularity'] = sanitize_text_field($_REQUEST['granularity']);
         }
         else if (!isset($args['granularity'])) {
@@ -59,8 +59,6 @@ class Chart
                 $args['granularity'] = 'yearly';
             } elseif ($diff >= 90 * 86400) {
                 $args['granularity'] = 'monthly';
-            } elseif ($diff >= 60 * 86400) {
-                $args['granularity'] = 'weekly';
             } elseif ($diff >= 45 * 86400) {
                 $args['granularity'] = 'daily';
             } elseif ($diff >= 14 * 86400) {
@@ -101,10 +99,6 @@ class Chart
                 $dtStart->modify('-' . $daysBetween . ' days');
                 $dtEnd->modify('-' . $daysBetween . ' days');
                 break;
-            case 'weekly':
-                $dtStart->modify('-1 week');
-                $dtEnd->modify('-1 week');
-                break;
             case 'monthly':
                 $dtStart->modify('-1 year');
                 $dtEnd->modify('-1 year');
@@ -135,7 +129,6 @@ class Chart
         $range         = $end - $start;
         $wpTimezone    = wp_timezone();
         $dateFormat    = 'Y/m/d';
-        $startOfWeek   = (int) get_option('start_of_week', 1);
 
         $minDt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats");
         $dbQueryStart = $start;
@@ -149,24 +142,6 @@ class Chart
                 $params['data_points_label'] = 'Y/m/d H:00';
                 $params['data_points_count'] = ceil($range / 3600);
                 $params['granularity']       = 'HOUR';
-                break;
-            case 'weekly':
-                $params['group_by'] = "DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'), '%x-W%v')";
-                $params['data_points_label'] = 'W, Y';
-                $params['data_points_count'] = $this->countWeeksBetween($start, $end);
-                $params['granularity']       = 'WEEK';
-                $week_labels = [];
-                $week_keys = [];
-                $cur = strtotime('next Sunday', $start - 1);
-                $i = 0;
-                while ($cur <= $end) {
-                    $label = date('W, Y', $cur);
-                    $week_labels[] = "'$label'";
-                    $week_keys[$label] = $i;
-                    $cur = strtotime('+1 week', $cur);
-                    $i++;
-                }
-                $params['custom_labels'] = $week_labels;
                 break;
             case 'monthly':
                 $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
@@ -315,26 +290,6 @@ class Chart
         return abs($end - $start) + 1;
     }
 
-    public function countWeeksBetween($start, $end)
-    {
-        $startWeek = (int)date('W', $start);
-        $startYear = (int)date('Y', $start);
-        $endWeek   = (int)date('W', $end);
-        $endYear   = (int)date('Y', $end);
-
-        $weeks = 0;
-        while ($startYear < $endYear || $startWeek <= $endWeek) {
-            $weeks++;
-            $startWeek++;
-            if ($startWeek > 52) {
-                $startWeek = 1;
-                $startYear++;
-            }
-        }
-
-        return $weeks;
-    }
-
     protected function countMonthsBetween($minTimestamp = 0, $maxTimestamp = 0)
     {
         $i         = 0;
@@ -362,7 +317,7 @@ class Chart
         $args = isset($_POST['args']) ? json_decode(stripslashes($_POST['args']), true) : [];
         $granularity = isset($_POST['granularity']) ? sanitize_text_field($_POST['granularity']) : 'daily';
 
-        if (!in_array($granularity, ['yearly', 'monthly', 'weekly', 'daily', 'hourly'])) {
+        if (!in_array($granularity, ['yearly', 'monthly', 'daily', 'hourly'])) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
         }
 
@@ -398,7 +353,6 @@ class Chart
             'year_ago' => __('Year ago', 'wp-slimstat'),
             'yearly'   => __('Yearly', 'wp-slimstat'),
             'monthly'  => __('Monthly', 'wp-slimstat'),
-            'weekly'   => __('Weekly', 'wp-slimstat'),
             'daily'    => __('Daily', 'wp-slimstat'),
             'hourly'   => __('Hourly', 'wp-slimstat'),
             'now'      => __('Now', 'wp-slimstat'),

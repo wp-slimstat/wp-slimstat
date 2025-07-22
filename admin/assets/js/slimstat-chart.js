@@ -217,11 +217,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var xTickRotation = 0;
         var xAutoSkip = false;
 
-        if (["daily", "monthly", "hourly", "weekly"].includes(unitTime)) {
-            if (unitTime === "weekly") {
-                maxTicks = 6;
-                xAutoSkip = true;
-            }
+        if (["daily", "monthly", "hourly"].includes(unitTime)) {
             if (unitTime === "monthly") {
                 maxTicks = 6;
                 xAutoSkip = true;
@@ -269,8 +265,6 @@ document.addEventListener("DOMContentLoaded", function () {
             xTickRotation = 0;
         } else if (window.innerWidth < 600) {
             xTickRotation = 35;
-        } else if (unitTime === "weekly") {
-            xTickRotation = 20;
         }
 
         function customTickCallback(value, index, values) {
@@ -478,22 +472,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const isThisMonth = new Date().getMonth() === date.getMonth() && new Date().getFullYear() === year;
             const formatted_label = isThisMonth ? `${month}, ${year} (${translations.now})` : `${label} <span class="slimstat-postbox-chart--item--prev">${month}, ${year}</span>`;
             return justTranslation ? formatted_label : long && isThisMonth ? `${formatted_label}` : `${month}, ${year}`;
-        } else if (unitTime === "weekly") {
-            const [weekNumber, year] = (justTranslation ? justTranslation : label).split(",").map((s) => Number(s.trim()));
-            const firstDayOfYear = new Date(year, 0, 1);
-            const firstDayOfWeek = new Date(year, 0, 1 + (weekNumber - 1) * 7 - firstDayOfYear.getDay());
-            const calculatedLastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
-            const today = new Date();
-            let lastDayOfWeek;
-            if (today >= firstDayOfWeek && today <= calculatedLastDayOfWeek) {
-                lastDayOfWeek = today;
-            } else {
-                lastDayOfWeek = calculatedLastDayOfWeek;
-            }
-            const firstStr = long ? firstDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : firstDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
-            const lastStr = long ? lastDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : lastDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
-            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${year} &#8226; ${firstStr} - ${lastStr}</span>`;
-            return justTranslation ? `${formatted_label}` : `${firstStr} - ${lastStr}`;
         } else if (unitTime === "daily") {
             var date = new Date(label);
             if (justTranslation) {
