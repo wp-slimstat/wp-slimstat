@@ -36,7 +36,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 * **Extended Overview**: Add custom columns to the User Overview widget and export file.
 
 = Requirements =
-* WordPress 5.0+
+* WordPress 5.6+
 * PHP 7.4+
 * MySQL 5.0.3+
 * At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
