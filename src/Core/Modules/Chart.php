@@ -118,11 +118,9 @@ class Chart
 
     public function getDataForChart($args)
     {
-        global $wpdb;
         $params = array();
         $_args  = $args['chart_data'];
 
-        // Set default values
         $start         = isset($args['start']) ? intval($args['start']) : \wp_slimstat_db::$filters_normalized['utime']['start'];
         $end           = isset($args['end']) ? intval($args['end']) : \wp_slimstat_db::$filters_normalized['utime']['end'];
         $granularity   = isset($args['granularity']) ? strtolower($args['granularity']) : 'daily';
@@ -130,12 +128,7 @@ class Chart
         $wpTimezone    = wp_timezone();
         $dateFormat    = 'Y/m/d';
 
-        $minDt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats");
-        $dbQueryStart = $start;
-        if ($minDt && isset($start) && $start < $minDt) {
-            $dbQueryStart = $minDt;
-        }
-
+        // Grouping logic
         switch ($granularity) {
             case 'hourly':
                 $params['group_by']          = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
@@ -189,26 +182,35 @@ class Chart
                 break;
         }
 
+        $prev_end   = $start - 1;
+        $prev_start = $prev_end - $range;
 
-        $params['previous_end']   = \wp_slimstat_db::$filters_normalized['utime']['start'] - 1;
-        $params['previous_start'] = $params['previous_end'] - \wp_slimstat_db::$filters_normalized['utime']['range'];
-
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         if (empty($_args['where'])) {
             $_args['where'] = '';
         }
 
-        $sql = "
-        SELECT MIN(dt) AS dt, {$_args['data1']} AS v1, {$_args['data2']} AS v2
-        FROM {$GLOBALS['wpdb']->prefix}slim_stats
-        WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params['previous_start']} AND {$params['previous_end']} OR dt BETWEEN $dbQueryStart AND $end )
-        GROUP BY {$params['group_by']}";
+        $fields = [
+            "MIN(dt) AS dt, {$_args['data1']} AS v1, {$_args['data2']} AS v2"
+        ];
 
-        $results = \wp_slimstat_db::get_results(
-            $sql,
-            'dt',
-            '',
-            $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
+        $query = \SlimStat\Utils\Query::select($fields)
+            ->from($table);
+        $where_time = sprintf(
+            '(dt BETWEEN %d AND %d OR dt BETWEEN %d AND %d)',
+            $start, $end, $prev_start, $prev_end
         );
+        $where_extra = !empty($_args['where']) ? \wp_slimstat_db::get_combined_where($_args['where'], '*', false) : '';
+        if ($where_extra) {
+            $query->whereRaw($where_time . ' AND ' . $where_extra);
+        } else {
+            $query->whereRaw($where_time);
+        }
+        if (!empty($params['group_by'])) {
+            $query->groupBy($params['group_by']);
+        }
+        $query->allowCaching(true, 3600);
+        $results = $query->getAll();
 
         $output = array(
             'keys'     => array(),
@@ -232,9 +234,8 @@ class Chart
             }
         } else {
             for ($i = 0; $i < $params['data_points_count']; $i++) {
-                $v1_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", \wp_slimstat_db::$filters_normalized['utime']['start']));
-                $v3_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", $params['previous_start']));
-
+                $v1_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", $start));
+                $v3_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", $prev_start));
                 $output['keys'][$v1_label] = $i;
                 $output['keys'][$v3_label] = $i;
 
@@ -251,11 +252,10 @@ class Chart
             if (!isset($output['keys'][$label])) {
                 continue;
             }
-
-            if ($aResult['dt'] >= \wp_slimstat_db::$filters_normalized['utime']['start'] && $aResult['dt'] <= \wp_slimstat_db::$filters_normalized['utime']['end']) {
+            if ($aResult['dt'] >= $start && $aResult['dt'] <= $end) {
                 $output['datasets']['v1'][$output['keys'][$label]] = intval($aResult['v1']);
                 $output['datasets']['v2'][$output['keys'][$label]] = intval($aResult['v2']);
-            } else {
+            } elseif ($aResult['dt'] >= $prev_start && $aResult['dt'] <= $prev_end) {
                 $output['datasets']['v3'][$output['keys'][$label]] = intval($aResult['v1']);
                 $output['datasets']['v4'][$output['keys'][$label]] = intval($aResult['v2']);
             }
@@ -265,8 +265,7 @@ class Chart
 
         return array(
             'labels'      => $output['labels'],
-            'prev_labels' => array_map(function ($label, $index) use ($params, $wpTimezone) {
-                $prev_start = $params['previous_start'];
+            'prev_labels' => array_map(function ($label, $index) use ($params, $wpTimezone, $prev_start) {
                 return date($params['data_points_label'], strtotime("+{$index} {$params['granularity']}", $prev_start));
             }, $output['labels'], array_keys($output['labels'])),
             'datasets'    => array(

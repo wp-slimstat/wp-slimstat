@@ -283,6 +283,7 @@ class wp_slimstat_admin
             ['option' => 'slimstat_dt_screen_indexed', 'key' => 'idx_dt_screen_width_screen_height'],
             ['option' => 'slimstat_dt_browser_indexed', 'key' => 'idx_dt_browser_browser_version'],
             ['option' => 'slimstat_dt_platform_indexed', 'key' => 'idx_dt_platform'],
+            ['option' => 'slimstat_dtout_dt_indexed', 'key' => 'idx_dtout_dt'],
         ];
         foreach ($index_checks as $idx) {
             $exists = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
@@ -295,6 +296,7 @@ class wp_slimstat_admin
         self::register_dt_screen_index_hooks();
         self::register_dt_browser_index_hooks();
         self::register_dt_platform_index_hooks();
+        self::register_dtout_dt_index_hooks();
 
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
@@ -408,6 +410,13 @@ class wp_slimstat_admin
         }
         update_option('slimstat_dt_platform_indexed', 'yes');
 
+        // --- Add (dt_out, dt) index for Top Page Performance ---
+        $dtout_dt_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dtout_dt'");
+        if (empty($dtout_dt_index)) {
+            $my_wpdb->query("CREATE INDEX idx_dtout_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (dt_out, dt)");
+        }
+        update_option('slimstat_dtout_dt_indexed', 'yes');
+
         return true;
     }
     // END: init_environment
@@ -423,89 +432,90 @@ class wp_slimstat_admin
 
         // Table that stores the actual data about visits
         $stats_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
-				id INT UNSIGNED NOT NULL auto_increment,
-				ip VARCHAR(39) DEFAULT NULL,
-				other_ip VARCHAR(39) DEFAULT NULL,
-				username VARCHAR(256) DEFAULT NULL,
-				email VARCHAR(256) DEFAULT NULL,
+            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
+                id INT UNSIGNED NOT NULL auto_increment,
+                ip VARCHAR(39) DEFAULT NULL,
+                other_ip VARCHAR(39) DEFAULT NULL,
+                username VARCHAR(256) DEFAULT NULL,
+                email VARCHAR(256) DEFAULT NULL,
 
-				country VARCHAR(16) DEFAULT NULL,
-				location VARCHAR(36) DEFAULT NULL,
-				city VARCHAR(256) DEFAULT NULL,
+                country VARCHAR(16) DEFAULT NULL,
+                location VARCHAR(36) DEFAULT NULL,
+                city VARCHAR(256) DEFAULT NULL,
 
-				referer VARCHAR(2048) DEFAULT NULL,
-				resource VARCHAR(2048) DEFAULT NULL,
-				searchterms VARCHAR(2048) DEFAULT NULL,
-				notes VARCHAR(2048) DEFAULT NULL,
-				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
-				server_latency INT(10) UNSIGNED DEFAULT 0,
-				page_performance INT(10) UNSIGNED DEFAULT 0,
+                referer VARCHAR(2048) DEFAULT NULL,
+                resource VARCHAR(2048) DEFAULT NULL,
+                searchterms VARCHAR(2048) DEFAULT NULL,
+                notes VARCHAR(2048) DEFAULT NULL,
+                visit_id INT UNSIGNED NOT NULL DEFAULT 0,
+                server_latency INT(10) UNSIGNED DEFAULT 0,
+                page_performance INT(10) UNSIGNED DEFAULT 0,
 
-				browser VARCHAR(40) DEFAULT NULL,
-				browser_version VARCHAR(15) DEFAULT NULL,
-				browser_type TINYINT UNSIGNED DEFAULT 0,
-				platform VARCHAR(15) DEFAULT NULL,
-				language VARCHAR(5) DEFAULT NULL,
-				fingerprint VARCHAR(256) DEFAULT NULL,
-				user_agent VARCHAR(2048) DEFAULT NULL,
+                browser VARCHAR(40) DEFAULT NULL,
+                browser_version VARCHAR(15) DEFAULT NULL,
+                browser_type TINYINT UNSIGNED DEFAULT 0,
+                platform VARCHAR(15) DEFAULT NULL,
+                language VARCHAR(5) DEFAULT NULL,
+                fingerprint VARCHAR(256) DEFAULT NULL,
+                user_agent VARCHAR(2048) DEFAULT NULL,
 
-				resolution VARCHAR(12) DEFAULT NULL,
-				screen_width SMALLINT UNSIGNED DEFAULT 0,
-				screen_height SMALLINT UNSIGNED DEFAULT 0,
+                resolution VARCHAR(12) DEFAULT NULL,
+                screen_width SMALLINT UNSIGNED DEFAULT 0,
+                screen_height SMALLINT UNSIGNED DEFAULT 0,
 
-				content_type VARCHAR(64) DEFAULT NULL,
-				category VARCHAR(256) DEFAULT NULL,
-				author VARCHAR(64) DEFAULT NULL,
-				content_id BIGINT(20) UNSIGNED DEFAULT 0,
+                content_type VARCHAR(64) DEFAULT NULL,
+                category VARCHAR(256) DEFAULT NULL,
+                author VARCHAR(64) DEFAULT NULL,
+                content_id BIGINT(20) UNSIGNED DEFAULT 0,
 
-				outbound_resource VARCHAR(2048) DEFAULT NULL,
+                outbound_resource VARCHAR(2048) DEFAULT NULL,
 
-				tz_offset SMALLINT DEFAULT 0,
-				dt_out INT(10) UNSIGNED DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
+                tz_offset SMALLINT DEFAULT 0,
+                dt_out INT(10) UNSIGNED DEFAULT 0,
+                dt INT(10) UNSIGNED DEFAULT 0,
 
-				CONSTRAINT PRIMARY KEY (id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
-			) COLLATE utf8_general_ci $use_innodb";
+                CONSTRAINT PRIMARY KEY (id),
+                INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
+                INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
+                INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
+                INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
+                INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) ),
+                INDEX {$GLOBALS['wpdb']->prefix}stats_dtout_dt_idx (dt_out, dt)
+            ) COLLATE utf8_general_ci $use_innodb";
 
         // This table will track outbound links (clicks on links to external sites)
         $events_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events (
-				event_id INT(10) NOT NULL AUTO_INCREMENT,
-				type TINYINT UNSIGNED DEFAULT 0,
-				event_description VARCHAR(64) DEFAULT NULL,
-				notes VARCHAR(256) DEFAULT NULL,
-				position VARCHAR(32) DEFAULT NULL,
-				id INT UNSIGNED NOT NULL DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
+            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events (
+                event_id INT(10) NOT NULL AUTO_INCREMENT,
+                type TINYINT UNSIGNED DEFAULT 0,
+                event_description VARCHAR(64) DEFAULT NULL,
+                notes VARCHAR(256) DEFAULT NULL,
+                position VARCHAR(32) DEFAULT NULL,
+                id INT UNSIGNED NOT NULL DEFAULT 0,
+                dt INT(10) UNSIGNED DEFAULT 0,
 
-				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_idx (dt),
-				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
-			) COLLATE utf8_general_ci $use_innodb";
+                CONSTRAINT PRIMARY KEY (event_id),
+                INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_idx (dt),
+                CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
+            ) COLLATE utf8_general_ci $use_innodb";
 
         $archive_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
-			LIKE {$GLOBALS['wpdb']->prefix}slim_stats";
+            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
+            LIKE {$GLOBALS['wpdb']->prefix}slim_stats";
 
         $events_archive_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
-				event_id INT(10) NOT NULL AUTO_INCREMENT,
-				type TINYINT UNSIGNED DEFAULT 0,
-				event_description VARCHAR(64) DEFAULT NULL,
-				notes VARCHAR(256) DEFAULT NULL,
-				position VARCHAR(32) DEFAULT NULL,
-				id INT UNSIGNED NOT NULL DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
+            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
+                event_id INT(10) NOT NULL AUTO_INCREMENT,
+                type TINYINT UNSIGNED DEFAULT 0,
+                event_description VARCHAR(64) DEFAULT NULL,
+                notes VARCHAR(256) DEFAULT NULL,
+                position VARCHAR(32) DEFAULT NULL,
+                id INT UNSIGNED NOT NULL DEFAULT 0,
+                dt INT(10) UNSIGNED DEFAULT 0,
 
-				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_archive_idx (dt)
-			) COLLATE utf8_general_ci $use_innodb";
+                CONSTRAINT PRIMARY KEY (event_id),
+                INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_archive_idx (dt)
+            ) COLLATE utf8_general_ci $use_innodb";
 
         // Ok, let's create the table structure
         self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix . 'slim_stats', $_wpdb);
@@ -523,6 +533,7 @@ class wp_slimstat_admin
             ['name' => 'idx_dt_screen_width_screen_height', 'sql' => "CREATE INDEX idx_dt_screen_width_screen_height ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, screen_width, screen_height)", 'option' => 'slimstat_dt_screen_indexed'],
             ['name' => 'idx_dt_browser_browser_version', 'sql' => "CREATE INDEX idx_dt_browser_browser_version ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, browser, browser_version)", 'option' => 'slimstat_dt_browser_indexed'],
             ['name' => 'idx_dt_platform', 'sql' => "CREATE INDEX idx_dt_platform ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, platform)", 'option' => 'slimstat_dt_platform_indexed'],
+            ['name' => 'idx_dtout_dt', 'sql' => "CREATE INDEX idx_dtout_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (dt_out, dt)", 'option' => 'slimstat_dtout_dt_indexed'],
         ];
         foreach ($index_defs as $idx) {
             $exists = $_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['name']}'");
@@ -571,6 +582,7 @@ class wp_slimstat_admin
                 ['name' => $GLOBALS['wpdb']->prefix.'stats_browser_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )"],
                 ['name' => $GLOBALS['wpdb']->prefix.'stats_searchterms_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )"],
                 ['name' => $GLOBALS['wpdb']->prefix.'stats_fingerprint_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_dtout_dt_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_dtout_dt_idx (dt_out, dt)"],
             ];
             foreach ($indexes as $index) {
                 $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$index['name']}'");
@@ -651,9 +663,9 @@ class wp_slimstat_admin
 
         if ($_new_status == 'spam' && !empty($_comment->comment_author) && !empty($_comment->comment_author_IP)) {
             $my_wpdb->query(wp_slimstat::$wpdb->prepare("
-				DELETE ts
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats ts
-				WHERE username = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
+                DELETE ts
+                FROM {$GLOBALS['wpdb']->prefix}slim_stats ts
+                WHERE username = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
         }
     }
     // END: remove_spam
@@ -914,11 +926,11 @@ class wp_slimstat_admin
         $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s')) . ')', '*', true);
 
         $sql = wp_slimstat::$wpdb->prepare("
-			SELECT resource, COUNT( DISTINCT $column ) as counthits
-			FROM {$GLOBALS['wpdb']->prefix}slim_stats
-			WHERE " . $where . "
-			GROUP BY resource
-			LIMIT 0, " . wp_slimstat_db::$filters_normalized['misc']['limit_results'], self::$data_for_column['sql']);
+            SELECT resource, COUNT( DISTINCT $column ) as counthits
+            FROM {$GLOBALS['wpdb']->prefix}slim_stats
+            WHERE " . $where . "
+            GROUP BY resource
+            LIMIT 0, " . wp_slimstat_db::$filters_normalized['misc']['limit_results'], self::$data_for_column['sql']);
 
         $results = wp_slimstat_db::get_results($sql);
 
@@ -1476,6 +1488,29 @@ class wp_slimstat_admin
         add_action('wp_ajax_slimstat_add_dt_platform_index', [__CLASS__, 'ajax_add_dt_platform_index']);
     }
 
+    public static function ajax_add_dtout_dt_index() {
+        check_ajax_referer('slimstat_add_dtout_dt_index');
+        global $wpdb;
+        $table = $wpdb->prefix . 'slim_stats';
+        $index_name = 'idx_dtout_dt';
+        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = '$index_name'");
+        if ($has_index && count($has_index) > 0) {
+            update_option('slimstat_dtout_dt_indexed', 'yes');
+            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
+        }
+        $result = $wpdb->query("CREATE INDEX $index_name ON $table (dt_out, dt)");
+        if ($result !== false) {
+            update_option('slimstat_dtout_dt_indexed', 'yes');
+            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
+        } else {
+            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+        }
+    }
+
+    public static function register_dtout_dt_index_hooks() {
+        add_action('wp_ajax_slimstat_add_dtout_dt_index', [__CLASS__, 'ajax_add_dtout_dt_index']);
+    }
+
     public static function show_indexes_notice() {
 
         if (!current_user_can('manage_options')) return;
@@ -1516,6 +1551,15 @@ class wp_slimstat_admin
                 'ajax' => 'slimstat_add_dt_platform_index',
                 'btn' => __('Apply', 'wp-slimstat'),
             ],
+            [
+                'option' => 'slimstat_dtout_dt_indexed',
+                'id' => 'dtout-dt',
+                'label' => __('Date/Time Reports', 'wp-slimstat'),
+                'desc' => __('Index on <code>dt_out</code> and <code>dt</code>', 'wp-slimstat'),
+                'key' => 'idx_dtout_dt',
+                'ajax' => 'slimstat_add_dtout_dt_index',
+                'btn' => __('Apply', 'wp-slimstat'),
+            ]
         ];
 
         $pending = array_filter($indexes, function($idx) {
@@ -1523,6 +1567,7 @@ class wp_slimstat_admin
             $exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
             return empty($exists);
         });
+
         if (empty($pending)) return;
         $ajax_url = admin_url('admin-ajax.php');
 

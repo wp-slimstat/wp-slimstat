@@ -192,6 +192,7 @@ class Query
         return $this;
     }
 
+
     /**
      * Add a raw WHERE clause to the query. If values are provided, they will be
      * escaped and inserted into the query.
@@ -577,14 +578,13 @@ class Query
      */
     protected function getCacheKeyForQuery($query, $args = [])
     {
-        $data = [
-            'query' => $query,
-            'args' => $args,
-        ];
-        $hash = substr(md5(serialize($data)), 0, 16);
-        return 'wp_slimstat_query_' . $hash;
+        $input = serialize(['query' => $query, 'args' => $args]);
+        $key = $this->getCacheKey($input);
+        if (strpos($key, 'wp_slimstat_cache_') === 0) {
+            $key = 'wp_slimstat_query_' . substr($key, strlen('wp_slimstat_cache_'));
+        }
+        return $key;
     }
-
 
     /**
      * Retrieves the cached result for the given query and args
@@ -597,26 +597,14 @@ class Query
     protected function getCachedResultForQuery($query, $args = [])
     {
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
-        $data = get_transient($cacheKey);
-        if ($data === false) return false;
-        if (is_array($data) && isset($data['chunks']) && isset($data['size'])) {
-            $chunks = [];
-            for ($i = 0; $i < $data['chunks']; $i++) {
-                $chunk = get_transient($cacheKey . '_' . $i);
-                if ($chunk === false) return false;
-                $chunks[] = $chunk;
-            }
-            $data = implode('', $chunks);
-        } elseif (is_array($data)) {
-            $data = serialize($data);
-        }
-        if (function_exists('gzuncompress') && is_string($data)) {
-            $first2 = substr($data, 0, 2);
-            if ($first2 === "\x1f\x8b" || $first2 === "\x78\x9c" || $first2 === "\x78\xda") {
-                $data = @gzuncompress($data);
+        $result = $this->getCachedResult($cacheKey);
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            if ($result !== false) {
+                error_log('[SlimStat][CACHE HIT] ' . $cacheKey);
+            } else {
+                error_log('[SlimStat][CACHE MISS] ' . $cacheKey);
             }
         }
-        $result = @unserialize($data);
         return $result;
     }
 
@@ -633,34 +621,12 @@ class Query
     protected function setCachedResultForQuery($query, $args, $result, $expiration = 300)
     {
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
-        $data = serialize($result);
-
-        $max_chunk_size = 900 * 1024; // 900KB
-        $old_meta = get_transient($cacheKey);
-        if (is_array($old_meta) && isset($old_meta['chunks'])) {
-            for ($i = 0; $i < $old_meta['chunks']; $i++) {
-                delete_transient($cacheKey . '_' . $i);
-            }
+        $set = $this->setCachedResult($cacheKey, $result, $expiration);
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[SlimStat][CACHE SET] ' . $cacheKey . ' (success: ' . ($set ? 'yes' : 'no') . ')');
         }
-        if (strlen($data) > $max_chunk_size) {
-            $chunks = str_split($data, $max_chunk_size);
-            $meta = [
-                'chunks' => count($chunks),
-                'size' => strlen($data)
-            ];
-            if (strlen(serialize($meta)) > $max_chunk_size) {
-                return false;
-            }
-            set_transient($cacheKey, $meta, $expiration);
-            foreach ($chunks as $i => $chunk) {
-                set_transient($cacheKey . '_' . $i, $chunk, $expiration);
-            }
-        } else {
-            set_transient($cacheKey, $data, $expiration);
-        }
-        return true;
+        return $set;
     }
-
 
     /**
      * Extracts a date range from the WHERE clause where the range overlaps with today.
@@ -818,13 +784,14 @@ class Query
     }
 
 
+
     /**
-     * Get all results from a query.
-     * If this is a live query (i.e. the query has a live date range), this function will
-     * split the query into two parts: a historical part that can be safely cached, and a live
-     * part that should not be cached.
-     * If this is not a live query, the function will simply return the result of the query.
-     * @return array The result of the query
+     * Execute the query and return all results as an array of associative arrays.
+     *
+     * This method builds the SQL query, prepares it with the provided values,
+     * and executes it against the database. It supports caching for performance.
+     *
+     * @return array An array of associative arrays representing the query results.
      */
     public function getAll()
     {
@@ -903,13 +870,12 @@ class Query
         }
         $query = $this->buildQuery();
         $query = $this->prepareQuery($query, $this->valuesToPrepare);
+
         if ($this->allowCaching) {
-            try {
-                $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
-            } catch (Exception $e) {
-                $cachedResult = false;
-            }
+            $cacheKey = 'wp_slimstat_query_' . md5($query);
+            $cachedResult = get_transient($cacheKey);
             if ($cachedResult !== false) {
+                if (defined('WP_DEBUG') && WP_DEBUG) error_log('[SlimStat][CACHE HIT] ' . $cacheKey);
                 return $cachedResult;
             }
         }
@@ -919,11 +885,9 @@ class Query
             $result = [];
         }
         if ($this->allowCaching) {
-            try {
-                $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
-            } catch (Exception $e) {
-                // ignore
-            }
+            $cacheKey = 'wp_slimstat_query_' . md5($query);
+            set_transient($cacheKey, $result, $this->cacheExpiration);
+            if (defined('WP_DEBUG') && WP_DEBUG) error_log('[SlimStat][CACHE SET] ' . $cacheKey);
         }
         return $result;
     }

@@ -1,3 +1,10 @@
+= 5.4.0 - 2025-07-27 =
+**Enhancement**: Refactored chart data engine to use a new Query builder for improved performance and maintainability.
+**Enhancement**: Unified and optimized transient cache key generation and usage for analytics queries.
+**Enhancement**: Added new (dt_out, dt) index to the slim_stats table for faster page performance and date/time reports.
+**Enhancement**: Improved user report rendering to better handle unknown users and display names.
+**Fix**: Various code cleanups and minor bug fixes.
+
 = 5.3.0 - 2025-05-04 =
 **Enhancement**: Introduced new settings to improve tracking reliability, particularly in environments where ad blockers or firewalls may interfere:
 - Back-End Request Channel (backend_transport_method): Choose between the WP REST API or admin-ajax.php for sending tracking data.

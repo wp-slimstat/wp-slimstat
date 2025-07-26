@@ -393,6 +393,7 @@ class wp_slimstat_db
         }
     }
 
+
     public static function get_results($_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '')
     {
         $_sql = apply_filters('slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add);
@@ -757,119 +758,6 @@ class wp_slimstat_db
 				HAVING $_having
 			) AS ts1",
             'SUM(counthits) AS counthits'));
-    }
-
-    public static function get_data_for_chart($_args = array())
-    {
-        // Determine the chart granularity based on the date range
-        // - Up to 24 hours (86400 seconds): HOURLY
-        // - Up to 120 days (10368000 seconds): DAILY
-        // - Otherwise: MONTHLY
-        $params = array();
-
-        if (self::$filters_normalized['utime']['range'] < 86400) {
-            $params['group_by']          = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $params['data_points_label'] = (strpos(number_format_i18n(1000), '.') === false) ? 'h a' : 'H';
-            $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 3600);
-            $params['granularity']       = 'HOUR';
-        } else if (self::$filters_normalized['utime']['range'] < 10368000) {
-            $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $format = get_option('date_format');
-            $format = str_replace(array('Y-', 'Y/', 'Y.', 'Y ', ', Y', ' Y' ), '', $format);
-            $format = str_replace(array('y-', 'y/', 'y.', 'y ', ', y', ' y' ), '', $format);
-            $params['data_points_label'] = $format;
-            $params['data_points_count'] = ceil(self::$filters_normalized['utime']['range'] / 86400);
-            $params['granularity']       = 'DAY';
-        } else {
-            $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-            $format = get_option('date_format');
-            $format = str_replace(array('d-', 'd/', 'd.', 'd '), '', $format);
-            $format = str_replace(array('j-', 'j/', 'j.', 'j '), '', $format);
-            $params['data_points_label'] = 'm/y';
-            $params['data_points_count'] = self::count_months_between(self::$filters_normalized['utime']['start'], self::$filters_normalized['utime']['end']);
-            $params['granularity']       = 'MONTH';
-        }
-
-        // Calculate the "previous/comparison" time range
-        $params['previous_end']   = self::$filters_normalized['utime']['start'] - 1;
-        $params['previous_start'] = $params['previous_end'] - self::$filters_normalized['utime']['range'];
-
-        // Build the SQL query
-        if (empty($_args['where'])) {
-            $_args['where'] = '';
-        }
-
-        $sql = "
-            SELECT MIN(dt) AS dt, {$_args[ 'data1' ]} AS v1, {$_args[ 'data2' ]} AS v2
-            FROM {$GLOBALS['wpdb']->prefix}slim_stats
-            WHERE " . self::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params[ 'previous_start' ]} AND {$params[ 'previous_end' ]} OR dt BETWEEN " . self::$filters_normalized['utime']['start'] . ' AND ' . self::$filters_normalized['utime']['end'] . ")
-            GROUP BY {$params[ 'group_by' ]}";
-
-        // Add caching for heavy chart queries
-        $cache_key = 'slimstat_chart_' . md5($sql);
-        $results = get_transient($cache_key);
-        if ($results === false) {
-            $results = self::get_results(
-                $sql,
-                'dt',
-                '',
-                $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
-            );
-            set_transient($cache_key, $results, 10 * MINUTE_IN_SECONDS); // Cache for 10 minutes
-        }
-
-        $output = array(
-            'keys'     => array(),
-            'labels'   => array(),
-            'datasets' => array(
-                'v1' => array(),
-                'v2' => array(),
-                'v3' => array(),
-                'v4' => array()
-            )
-        );
-
-        // No data? No problem!
-        if (!is_array($results) || empty($results)) {
-            return $output;
-        }
-
-        // Generate the output array (sent to the chart library) by combining all the data collected so far
-
-        // Let's start by initializing all the data points to zero
-        for ($i = 0; $i < $params['data_points_count']; $i++) {
-            $v1_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", self::$filters_normalized['utime']['start']));
-            $v3_label = date($params['data_points_label'], strtotime("+$i {$params[ 'granularity' ]}", $params['previous_start']));
-
-            $output['keys'][$v1_label] = $i;
-            $output['keys'][$v3_label] = $i;
-
-            $output['labels'][] = "'$v1_label'";
-
-            // This is how AmCharts expects the data to be formatted
-            $output['datasets']['v1'][] = $output['datasets']['v2'][] = $output['datasets']['v3'][] = $output['datasets']['v4'][] = 0;
-        }
-
-        // Now populate all the data points
-        foreach ($results as $a_result) {
-            $label = date($params['data_points_label'], $a_result['dt']);
-
-            // Data out of range?
-            if (!isset($output['keys'][$label])) {
-                continue;
-            }
-
-            // Does this value belong to the "current" range?
-            if ($a_result['dt'] >= self::$filters_normalized['utime']['start'] && $a_result['dt'] <= self::$filters_normalized['utime']['end']) {
-                $output['datasets']['v1'][$output['keys'][$label]] = intval($a_result['v1']);
-                $output['datasets']['v2'][$output['keys'][$label]] = intval($a_result['v2']);
-            } else {
-                $output['datasets']['v3'][$output['keys'][$label]] = intval($a_result['v1']);
-                $output['datasets']['v4'][$output['keys'][$label]] = intval($a_result['v2']);
-            }
-        }
-
-        return $output;
     }
 
     public static function get_data_size()

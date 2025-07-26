@@ -1273,25 +1273,31 @@ class wp_slimstat_reports
 
                     case 'username':
                         if(!empty($results[$i]['username'])) {
-                            $element_custom_value = get_user_by('login', $results[$i]['username']);
-                            if( $element_custom_value ) {
-                                $element_value = "<a href='" . get_author_posts_url($element_custom_value->ID) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
-                                $element_value .= get_avatar($element_custom_value->ID, 18);
-                                $element_value .= $results[$i]['username'];
-                                $element_value .= "</a>";
-                            } else {
-                                $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['username']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                            $username = $results[$i]['username'];
+                            if (!empty($username)) {
+                                $element_custom_value = get_user_by('login', $username);
+                                if( $element_custom_value ) {
+                                    $element_value = "<a href='" . get_author_posts_url($element_custom_value->ID) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
+                                    $element_value .= get_avatar($element_custom_value->ID, 18);
+                                    $element_value .= $username;
+                                    $element_value .= "</a>";
+                                } else {
+                                    $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
+                                    $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$username} (". __('Unknown', 'wp-slimstat') .")</a>";
+                                }
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                             $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>". __('Guest', 'wp-slimstat') ."</a>";
                         }
 
-                        if (wp_slimstat::$settings['show_display_name'] == 'on') {
-                            $element_custom_value = get_user_by('login', $results[$i]['username']);
-                            if (is_object($element_custom_value)) {
-                                $element_value = $element_custom_value->display_name;
+                        if (wp_slimstat::$settings['show_display_name'] == 'on' && !empty($results[$i]['username'])) {
+                            $username = $results[$i]['username'];
+                            if (!empty($username)) {
+                                $element_custom_value = get_user_by('login', $username);
+                                if (is_object($element_custom_value)) {
+                                    $element_value = $element_custom_value->display_name;
+                                }
                             }
                         }
                         break;
