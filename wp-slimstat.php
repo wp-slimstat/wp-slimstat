@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.3.0
+ * Version: 5.4.0
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -24,7 +24,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.3.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.0');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -331,12 +331,38 @@ class wp_slimstat
             exit(0);
         }
 
+        static::clear_cache();
+
         // Send the ID back to Javascript to track future interactions
         do_action('slimstat_track_success');
         exit(self::_get_value_with_checksum($id));
     }
     // end slimtrack_ajax
 
+    /**
+     * Clears the transient cache for all queries
+     *
+     * This function deletes all transients that match the Slimstat query cache key pattern.
+     * It is typically used to clear cached results when the underlying data changes.
+     *
+     * @return void
+     */
+    public static function clear_cache()
+    {
+        if (function_exists('get_transient') && function_exists('set_transient') && function_exists('delete_transient')) {
+            if (!get_transient('wp_slimstat_cache_flush_lock')) {
+                global $wpdb;
+                $transients = $wpdb->get_col(
+                    "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_slimstat_query_%' OR option_name LIKE '_transient_timeout_wp_slimstat_query_%'"
+                );
+                foreach ($transients as $transient) {
+                    delete_option($transient);
+                }
+                set_transient('wp_slimstat_cache_flush_lock', 1, 60);
+            }
+        }
+    }
+    // end clear_cache
 
     /**
      * Rewrite rule for static tracker
@@ -733,18 +759,26 @@ class wp_slimstat
         // Remove empty values
         self::$stat = array_filter(self::$stat);
 
+
         // Save this information in the database
         self::$stat['id'] = self::_insert_row(self::$stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
+        if (!empty(self::$stat['id'])) {
+            static::clear_cache();
+        }
+
         // Did something go wrong during the insert?
         if (empty(self::$stat['id'])) {
-
             // Attempt to init the environment (plugin just activated on a blog in a MU network?)
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             wp_slimstat_admin::init_environment(true);
 
             // Now let's try again
             self::$stat['id'] = self::_insert_row(self::$stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+
+            if (!empty(self::$stat['id'])) {
+                static::clear_cache();
+            }
 
             if (empty(self::$stat['id'])) {
                 $error = self::_log_error(200);

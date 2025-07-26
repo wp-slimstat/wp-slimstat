@@ -409,7 +409,7 @@ class Query
                     if (preg_match('/%s/', $c)) $dtIdx += substr_count($c, '%s');
                 }
                 $from = $this->valuesToPrepare[$dtIdx] ?? null;
-                $to = $this->valuesToPrepare[$dtIdx + 1] ?? null;
+                $to = $this->valuesToPrepare[$dtIdx+1] ?? null;
                 $fromTs = is_numeric($from) ? intval($from) : strtotime($from);
                 $toTs = is_numeric($to) ? intval($to) : strtotime($to);
                 if ($fromTs !== null && $toTs !== null && $fromTs < $todayStart && $toTs >= $todayStart) {
@@ -652,7 +652,7 @@ class Query
                     if (preg_match('/%s/', $c)) $dtIdx += substr_count($c, '%s');
                 }
                 $from = $this->valuesToPrepare[$dtIdx] ?? null;
-                $to = $this->valuesToPrepare[$dtIdx + 1] ?? null;
+                $to = $this->valuesToPrepare[$dtIdx+1] ?? null;
                 $fromTs = is_numeric($from) ? intval($from) : strtotime($from);
                 $toTs = is_numeric($to) ? intval($to) : strtotime($to);
                 if ($fromTs !== null && $toTs !== null && $fromTs < $todayStart && $toTs >= $todayStart) {
@@ -707,15 +707,14 @@ class Query
      *
      * @return array Array of extracted date ranges with keys from, to, clauseIdx, and valueIdx
      */
-    protected function extractDateRangesFromWhere()
-    {
+    protected function extractDateRangesFromWhere() {
         $dtField = 'dt';
         $ranges = [];
         $dtIdx = 0;
         foreach ($this->whereClauses as $idx => $clause) {
             if (preg_match('/' . $dtField . ' BETWEEN %s AND %s/', $clause)) {
                 $from = $this->valuesToPrepare[$dtIdx] ?? null;
-                $to = $this->valuesToPrepare[$dtIdx + 1] ?? null;
+                $to = $this->valuesToPrepare[$dtIdx+1] ?? null;
                 $ranges[] = [
                     'from' => $from,
                     'to' => $to,
@@ -738,8 +737,7 @@ class Query
      * @param array $baseValuesToPrepare values to prepare for the query
      * @return array result set
      */
-    protected function processDateRange($from, $to, $baseWhereClauses, $baseValuesToPrepare)
-    {
+    protected function processDateRange($from, $to, $baseWhereClauses, $baseValuesToPrepare) {
         $todayStart = $this->getTodayDate();
         $fromTs = is_numeric($from) ? intval($from) : strtotime($from);
         $toTs = is_numeric($to) ? intval($to) : strtotime($to);
