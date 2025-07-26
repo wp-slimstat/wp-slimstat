@@ -1156,6 +1156,8 @@ class wp_slimstat_reports
                                 $row_details = __('ID', 'wp-slimstat') . ': ' . esc_html($term_id);
                             }
                         }
+                        // $row_details   = __('Category ID', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ]]}";
+                        // $element_value = get_cat_name($results[$i][$_args['columns']]);
                         break;
 
                     case 'country':

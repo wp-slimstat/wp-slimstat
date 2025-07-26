@@ -102,6 +102,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
                     <input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('&plusmn; hours', 'wp-slimstat') ?>" class="short" value="">
 
                     <input type="submit" value="<?php _e('Apply', 'wp-slimstat') ?>" class="button button-primary noslimstat right">
+                    <button type="button" id="slimstat-clear-cache" class="button button-secondary noslimstat right" style="margin-right:8px;"><?php _e('Clear Cache', 'wp-slimstat') ?></button>
 
                     <?php
                     wp_slimstat::toggle_date_i18n_filters(false);

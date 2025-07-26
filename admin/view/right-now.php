@@ -26,7 +26,7 @@ $plugin_url = plugins_url('', dirname(__FILE__));
 
 // Get the data
 wp_slimstat_db::$debug_message = '';
-$all_results                   = wp_slimstat_db::get_recent(wp_slimstat_reports::$reports['slim_p7_02']['callback_args']);
+$all_results = wp_slimstat_db::get_recent(wp_slimstat_reports::$reports['slim_p7_02']['callback_args']);
 
 // Backward compatibility
 if (!$all_results) {
@@ -214,6 +214,14 @@ for ($i = 0; $i < $count_page_results; $i++) {
             }
         }
         $results[$i]['resource'] = __('Local search results page', 'wp-slimstat');
+    }
+
+    // Defensive: ensure 'searchterms' and 'referer' keys exist to avoid undefined index
+    if (!isset($results[$i]['searchterms'])) {
+        $results[$i]['searchterms'] = '';
+    }
+    if (!isset($results[$i]['referer'])) {
+        $results[$i]['referer'] = '';
     }
 
     if (empty($search_terms_info)) {

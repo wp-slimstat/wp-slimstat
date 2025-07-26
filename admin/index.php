@@ -235,16 +235,20 @@ class wp_slimstat_admin
 
         // AJAX Handlers
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            add_action('wp_ajax_slimstat_notice_latest_news', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_geolite', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_browscap', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_caching', array(__CLASS__, 'notices_handler'));
-            add_action('wp_ajax_slimstat_notice_translate', array(__CLASS__, 'notices_handler'));
-
-            add_action('wp_ajax_slimstat_manage_filters', array(__CLASS__, 'manage_filters'));
-            add_action('wp_ajax_slimstat_delete_pageview', array(__CLASS__, 'delete_pageview'));
-            add_action('wp_ajax_slimstat_update_geoip_database', array(__CLASS__, 'update_geoip_database'));
-            add_action('wp_ajax_slimstat_check_geoip_database', array(__CLASS__, 'check_geoip_database'));
+            $ajax_actions = [
+                'slimstat_notice_latest_news' => 'notices_handler',
+                'slimstat_notice_geolite' => 'notices_handler',
+                'slimstat_notice_browscap' => 'notices_handler',
+                'slimstat_notice_caching' => 'notices_handler',
+                'slimstat_notice_translate' => 'notices_handler',
+                'slimstat_manage_filters' => 'manage_filters',
+                'slimstat_delete_pageview' => 'delete_pageview',
+                'slimstat_update_geoip_database' => 'update_geoip_database',
+                'slimstat_check_geoip_database' => 'check_geoip_database',
+            ];
+            foreach ($ajax_actions as $action => $handler) {
+                add_action('wp_ajax_' . $action, [__CLASS__, $handler]);
+            }
         }
 
         // Schedule a daily cron job to purge the data
@@ -273,6 +277,27 @@ class wp_slimstat_admin
         add_action('admin_notices', function () {
             self::add_header();
         });
+
+        $index_checks = [
+            ['option' => 'slimstat_country_dt_indexed', 'key' => 'idx_country_dt'],
+            ['option' => 'slimstat_dt_screen_indexed', 'key' => 'idx_dt_screen_width_screen_height'],
+            ['option' => 'slimstat_dt_browser_indexed', 'key' => 'idx_dt_browser_browser_version'],
+            ['option' => 'slimstat_dt_platform_indexed', 'key' => 'idx_dt_platform'],
+        ];
+        foreach ($index_checks as $idx) {
+            $exists = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
+            if (!empty($exists)) {
+                update_option($idx['option'], 'yes');
+            }
+        }
+
+        self::register_country_dt_index_hooks();
+        self::register_dt_screen_index_hooks();
+        self::register_dt_browser_index_hooks();
+        self::register_dt_platform_index_hooks();
+
+        // Register the combined notice
+        add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
     }
     // END: init
 
@@ -354,6 +379,34 @@ class wp_slimstat_admin
 
         // Create the tables
         self::init_tables($my_wpdb);
+
+        // Ensure country/dt index exists for performance
+        $has_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_country_dt'");
+        if (!$has_index || count($has_index) === 0) {
+            $my_wpdb->query("CREATE INDEX idx_country_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (country, dt)");
+        }
+        update_option('slimstat_country_dt_indexed', 'yes');
+
+        // --- Add (dt, screen_width, screen_height) index for Top Screen Resolutions ---
+        $dt_screen_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_screen_width_screen_height'");
+        if (empty($dt_screen_index)) {
+            $my_wpdb->query("CREATE INDEX idx_dt_screen_width_screen_height ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, screen_width, screen_height)");
+        }
+        update_option('slimstat_dt_screen_indexed', 'yes');
+
+        // --- Add (dt, browser, browser_version) index for Top Browsers ---
+        $dt_browser_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_browser_browser_version'");
+        if (empty($dt_browser_index)) {
+            $my_wpdb->query("CREATE INDEX idx_dt_browser_browser_version ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, browser, browser_version)");
+        }
+        update_option('slimstat_dt_browser_indexed', 'yes');
+
+        // --- Add (dt, platform) index for Top Platforms ---
+        $dt_platform_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_platform'");
+        if (empty($dt_platform_index)) {
+            $my_wpdb->query("CREATE INDEX idx_dt_platform ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, platform)");
+        }
+        update_option('slimstat_dt_platform_indexed', 'yes');
 
         return true;
     }
@@ -464,6 +517,20 @@ class wp_slimstat_admin
         if (empty(wp_slimstat::$settings['version'])) {
             wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         }
+
+        $index_defs = [
+            ['name' => 'idx_country_dt', 'sql' => "CREATE INDEX idx_country_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (country, dt)", 'option' => 'slimstat_country_dt_indexed'],
+            ['name' => 'idx_dt_screen_width_screen_height', 'sql' => "CREATE INDEX idx_dt_screen_width_screen_height ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, screen_width, screen_height)", 'option' => 'slimstat_dt_screen_indexed'],
+            ['name' => 'idx_dt_browser_browser_version', 'sql' => "CREATE INDEX idx_dt_browser_browser_version ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, browser, browser_version)", 'option' => 'slimstat_dt_browser_indexed'],
+            ['name' => 'idx_dt_platform', 'sql' => "CREATE INDEX idx_dt_platform ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, platform)", 'option' => 'slimstat_dt_platform_indexed'],
+        ];
+        foreach ($index_defs as $idx) {
+            $exists = $_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['name']}'");
+            if (empty($exists)) {
+                $_wpdb->query($idx['sql']);
+            }
+            update_option($idx['option'], 'yes');
+        }
     }
     // END: init_tables
 
@@ -494,18 +561,23 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['no_maxmind_warning']);
             unset(wp_slimstat::$settings['no_browscap_warning']);
             unset(wp_slimstat::$settings['use_european_separators']);
-            unset(wp_slimstat::$settings['date_format']);
-            unset(wp_slimstat::$settings['time_format']);
-            unset(wp_slimstat::$settings['expand_details']);
+            unset($wp_slimstat::$settings['date_format']);
+            unset($wp_slimstat::$settings['time_format']);
+            unset($wp_slimstat::$settings['expand_details']);
 
-            // Add table indexes for improved performance
-            $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$GLOBALS['wpdb']->prefix}stats_resource_idx'");
-            if (empty($check_index)) {
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )");
-                wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )");
+            // Add table indexes for improved performance (idempotent)
+            $indexes = [
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_resource_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_browser_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_searchterms_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_fingerprint_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )"],
+            ];
+            foreach ($indexes as $index) {
+                $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$index['name']}'");
+                if (empty($check_index)) {
+                    wp_slimstat::$wpdb->query($index['sql']);
+                }
             }
-
             wp_slimstat::$settings['db_indexes'] = 'on';
         }
         // --- END: Updates for version 4.8.4 ---
@@ -629,7 +701,8 @@ class wp_slimstat_admin
             'async_load'       => !empty(wp_slimstat::$settings['async_load']) ? wp_slimstat::$settings['async_load'] : 'no',
             'datepicker_image' => plugins_url('/admin/assets/images/datepicker.png', dirname(__FILE__)),
             'refresh_interval' => intval(wp_slimstat::$settings['refresh_interval']),
-            'page_location'    => self::$page_location
+            'page_location'    => self::$page_location,
+            'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
         );
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }
@@ -1310,6 +1383,230 @@ class wp_slimstat_admin
         if (isset($_GET['page']) && ($_GET['page'] === 'slimlayout' || $_GET['page'] === 'slimconfig')) {
             return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
         }
+    }
+
+    public static function ajax_add_country_dt_index() {
+        check_ajax_referer('slimstat_add_country_dt_index');
+        global $wpdb;
+        $table = $wpdb->prefix . 'slim_stats';
+        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'idx_country_dt'");
+        if ($has_index && count($has_index) > 0) {
+            update_option('slimstat_country_dt_indexed', 'yes');
+            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
+        }
+        $result = $wpdb->query("CREATE INDEX idx_country_dt ON $table (country, dt)");
+        if ($result !== false) {
+            update_option('slimstat_country_dt_indexed', 'yes');
+            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
+        } else {
+            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+        }
+    }
+
+    public static function register_country_dt_index_hooks() {
+        add_action('wp_ajax_slimstat_add_country_dt_index', [__CLASS__, 'ajax_add_country_dt_index']);
+    }
+
+    public static function ajax_add_dt_screen_index() {
+        check_ajax_referer('slimstat_add_dt_screen_index');
+        global $wpdb;
+        $table = $wpdb->prefix . 'slim_stats';
+        $index_name = 'idx_dt_screen_width_screen_height';
+        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = '$index_name'");
+        if ($has_index && count($has_index) > 0) {
+            update_option('slimstat_dt_screen_indexed', 'yes');
+            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
+        }
+        $result = $wpdb->query("CREATE INDEX $index_name ON $table (dt, screen_width, screen_height)");
+        if ($result !== false) {
+            update_option('slimstat_dt_screen_indexed', 'yes');
+            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
+        } else {
+            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+        }
+    }
+
+    public static function register_dt_screen_index_hooks() {
+        add_action('wp_ajax_slimstat_add_dt_screen_index', [__CLASS__, 'ajax_add_dt_screen_index']);
+    }
+
+    public static function ajax_add_dt_browser_index() {
+        check_ajax_referer('slimstat_add_dt_browser_index');
+        global $wpdb;
+        $table = $wpdb->prefix . 'slim_stats';
+        $index_name = 'idx_dt_browser_browser_version';
+        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = '$index_name'");
+        if ($has_index && count($has_index) > 0) {
+            update_option('slimstat_dt_browser_indexed', 'yes');
+            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
+        }
+        $result = $wpdb->query("CREATE INDEX $index_name ON $table (dt, browser, browser_version)");
+        if ($result !== false) {
+            update_option('slimstat_dt_browser_indexed', 'yes');
+            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
+        } else {
+            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+        }
+    }
+
+    public static function register_dt_browser_index_hooks() {
+        add_action('wp_ajax_slimstat_add_dt_browser_index', [__CLASS__, 'ajax_add_dt_browser_index']);
+    }
+
+    public static function ajax_add_dt_platform_index() {
+        check_ajax_referer('slimstat_add_dt_platform_index');
+        global $wpdb;
+        $table = $wpdb->prefix . 'slim_stats';
+        $index_name = 'idx_dt_platform';
+        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = '$index_name'");
+        if ($has_index && count($has_index) > 0) {
+            update_option('slimstat_dt_platform_indexed', 'yes');
+            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
+        }
+        $result = $wpdb->query("CREATE INDEX $index_name ON $table (dt, platform)");
+        if ($result !== false) {
+            update_option('slimstat_dt_platform_indexed', 'yes');
+            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
+        } else {
+            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+        }
+    }
+
+    public static function register_dt_platform_index_hooks() {
+        add_action('wp_ajax_slimstat_add_dt_platform_index', [__CLASS__, 'ajax_add_dt_platform_index']);
+    }
+
+    public static function show_indexes_notice() {
+
+        if (!current_user_can('manage_options')) return;
+        $indexes = [
+            [
+                'option' => 'slimstat_country_dt_indexed',
+                'id' => 'country-dt',
+                'label' => __('World Map & Country Reports', 'wp-slimstat'),
+                'desc' => __('Index on <code>country</code> and <code>dt</code>', 'wp-slimstat'),
+                'key' => 'idx_country_dt',
+                'ajax' => 'slimstat_add_country_dt_index',
+                'btn' => __('Apply', 'wp-slimstat'),
+            ],
+            [
+                'option' => 'slimstat_dt_screen_indexed',
+                'id' => 'dt-screen',
+                'label' => __('Screen Resolution Reports', 'wp-slimstat'),
+                'desc' => __('Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>', 'wp-slimstat'),
+                'key' => 'idx_dt_screen_width_screen_height',
+                'ajax' => 'slimstat_add_dt_screen_index',
+                'btn' => __('Apply', 'wp-slimstat'),
+            ],
+            [
+                'option' => 'slimstat_dt_browser_indexed',
+                'id' => 'dt-browser',
+                'label' => __('Browser Reports', 'wp-slimstat'),
+                'desc' => __('Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>', 'wp-slimstat'),
+                'key' => 'idx_dt_browser_browser_version',
+                'ajax' => 'slimstat_add_dt_browser_index',
+                'btn' => __('Apply', 'wp-slimstat'),
+            ],
+            [
+                'option' => 'slimstat_dt_platform_indexed',
+                'id' => 'dt-platform',
+                'label' => __('Platform Reports', 'wp-slimstat'),
+                'desc' => __('Index on <code>dt</code>, <code>platform</code>', 'wp-slimstat'),
+                'key' => 'idx_dt_platform',
+                'ajax' => 'slimstat_add_dt_platform_index',
+                'btn' => __('Apply', 'wp-slimstat'),
+            ],
+        ];
+
+        $pending = array_filter($indexes, function($idx) {
+            global $wpdb;
+            $exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
+            return empty($exists);
+        });
+        if (empty($pending)) return;
+        $ajax_url = admin_url('admin-ajax.php');
+
+        // Generate nonces for each AJAX action
+        $nonces = array();
+        foreach ($pending as $idx) {
+            $nonces[$idx['ajax']] = wp_create_nonce($idx['ajax']);
+        }
+
+        echo '<div class="notice slimstat-indexes-notice slimstat-notice" style="border-left: 6px solid #0073aa; background: #fff; box-shadow: 0 2px 8px #0001; padding: 24px 24px 16px 24px; margin-bottom: 24px; position: relative; min-width: 400px; max-width: 700px;">';
+        echo '<h2 style="margin-top:0; font-size:1.3em; color:#0073aa;">' . __('Improve SlimStat Report Performance', 'wp-slimstat') . '</h2>';
+        echo '<p style="margin-bottom:18px;">' . __('To speed up SlimStat reports, please apply the following database optimizations. These changes are safe and will not affect your data.', 'wp-slimstat') . '</p>';
+        echo '<ul id="slimstat-index-list" style="list-style:none; margin:0 0 18px 0; padding:0;">';
+        foreach ($pending as $idx) {
+            echo '<li id="slimstat-index-'.$idx['id'].'" style="margin-bottom:12px; display:flex; align-items:center;">'
+                . '<div style="flex:1 1 0;">'
+                . '<div class="slimstat-index-label" style="font-weight:600;">' . $idx['label'] . '</div>'
+                . '<div class="slimstat-index-desc" style="color:#666; font-size:0.97em; margin-top:2px;">' . $idx['desc'] . '</div>'
+                . '</div>'
+                . '<span class="slimstat-index-lamp" style="margin-left:18px; min-width:30px; display:inline-block; font-size:1.5em; vertical-align:middle;">'
+                . '<span class="dashicons dashicons-lightbulb" style="color:#ccc;"></span>'
+                . '</span>'
+                . '<span class="slimstat-index-status" style="margin-left:10px; min-width:120px; display:inline-block;"></span>'
+                . '</li>';
+        }
+        echo '</ul>';
+        echo '<div id="slimstat-index-progress-bar" style="height:8px; background:#e5e5e5; border-radius:4px; overflow:hidden; margin-bottom:10px;">'
+            . '<div id="slimstat-index-progress" style="height:100%; width:0; background:linear-gradient(90deg,#0073aa,#00c3aa); transition:width 0.4s;"></div>'
+            . '</div>';
+        echo '<button class="button button-primary" id="slimstat-apply-all" style="margin-bottom:10px; min-width:120px; font-size:1.1em;">' . __('Apply All', 'wp-slimstat') . '</button>';
+        echo '<div style="color:#888; font-size:0.95em;">' . __('Do not close this tab until all optimizations are complete.', 'wp-slimstat') . '</div>';
+        echo '</div>';
+        ?>
+        <script>
+        jQuery(function($){
+            var indexes = <?php echo json_encode(array_values($pending)); ?>;
+            var nonces = <?php echo json_encode($nonces); ?>;
+            var total = indexes.length, done = 0;
+            function updateProgress() {
+                var percent = Math.round((done/total)*100);
+                $('#slimstat-index-progress').css('width', percent+'%');
+                if (done === total) setTimeout(function(){ $('.slimstat-indexes-notice').fadeOut(); }, 2000);
+            }
+            function markDone(id) {
+                var lamp = $('#slimstat-index-'+id+' .slimstat-index-lamp .dashicons');
+                lamp.css('color','#ffc107'); // yellow lamp
+                lamp.addClass('slimstat-lamp-on');
+                $('#slimstat-index-'+id).css('opacity',0.9);
+            }
+            $('#slimstat-apply-all').on('click', function(e){
+                e.preventDefault();
+                var btn = $(this);
+                btn.prop('disabled', true);
+                window.onbeforeunload = function(){ return '<?php echo esc_js(__('Please wait for SlimStat optimizations to finish.', 'wp-slimstat')); ?>'; };
+                function next(i) {
+                    if (i >= indexes.length) {
+                        window.onbeforeunload = null;
+                        return;
+                    }
+                    var idx = indexes[i];
+                    var li = $('#slimstat-index-'+idx.id);
+                    li.find('.slimstat-index-status').html('<span style="color:#0073aa;">' + '<?php echo esc_js(__('In progress...', 'wp-slimstat')); ?>' + '</span> <span class="spinner is-active" style="float:none;display:inline-block;vertical-align:middle;"></span>');
+                    $.post('<?php echo $ajax_url; ?>', {
+                        action: idx.ajax,
+                        _ajax_nonce: nonces[idx.ajax]
+                    }, function(response){
+                        if (response.success) {
+                            markDone(idx.id);
+                            done++;
+                            li.find('.slimstat-index-status').html('<span style="color:green;">' + '<?php echo esc_js(__('Done!', 'wp-slimstat')); ?>' + '</span>');
+                            updateProgress();
+                            next(i+1);
+                        } else {
+                            li.find('.slimstat-index-status').html('<span style="color:red;">' + '<?php echo esc_js(__('Error: ', 'wp-slimstat')); ?>' + '</span>' + (response.data || ''));
+                            btn.prop('disabled', false);
+                            window.onbeforeunload = null;
+                        }
+                    });
+                }
+                next(0);
+            });
+        });
+        </script>
+        <?php
     }
 }
 // END: class declaration
