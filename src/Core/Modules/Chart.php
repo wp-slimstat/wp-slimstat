@@ -1,4 +1,5 @@
 <?php
+
 namespace SlimStat\Core\Modules;
 
 // don't load directly.
@@ -32,7 +33,8 @@ class Chart
      *
      * @param array $args The arguments to be set up for the chart.
      */
-    public function setupArgs($args) {
+    public function setupArgs($args)
+    {
         $this->args      = $this->normalizeArgs($args);
         $this->data      = $this->getDataForChart($this->args);
         $this->prevData  = $this->data;
@@ -48,10 +50,9 @@ class Chart
     {
         $args['start'] = isset($args['start']) ? $args['start'] : \wp_slimstat_db::$filters_normalized['utime']['start'];
         $args['end'] = isset($args['end']) ? $args['end'] : \wp_slimstat_db::$filters_normalized['utime']['end'];
-        if(isset($_REQUEST['granularity']) && !empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], ['yearly', 'monthly', 'daily', 'hourly'])) {
+        if (isset($_REQUEST['granularity']) && !empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], ['yearly', 'monthly', 'daily', 'hourly'])) {
             $args['granularity'] = sanitize_text_field($_REQUEST['granularity']);
-        }
-        else if (!isset($args['granularity'])) {
+        } else if (!isset($args['granularity'])) {
             $diff = $args['end'] - $args['start'];
             if ($diff === 27 * 86400) {
                 $args['granularity'] = 'daily';
@@ -198,7 +199,10 @@ class Chart
             ->from($table);
         $where_time = sprintf(
             '(dt BETWEEN %d AND %d OR dt BETWEEN %d AND %d)',
-            $start, $end, $prev_start, $prev_end
+            $start,
+            $end,
+            $prev_start,
+            $prev_end
         );
         $where_extra = !empty($_args['where']) ? \wp_slimstat_db::get_combined_where($_args['where'], '*', false) : '';
         if ($where_extra) {

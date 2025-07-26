@@ -24,10 +24,10 @@ $translations = array_merge(
 $availableRange = $this->args['end'] - $this->args['start'];
 
 // Dynamically calculate limits based on available data range
-$disableYearly = $availableRange < (365 * 86400); // Less than 1 year of data
+$disableYearly  = $availableRange < (365 * 86400); // Less than 1 year of data
 $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
-$disableDaily = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
-$disableHourly = $availableRange > (7 * 86400); // More than 7 days of data
+$disableDaily   = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
+$disableHourly  = $availableRange > (7 * 86400); // More than 7 days of data
 ?>
 <div class="slimstat-chart-wrap">
     <div class="slimstat-chart-controls">

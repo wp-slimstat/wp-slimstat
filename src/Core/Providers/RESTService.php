@@ -1,14 +1,16 @@
 <?php
+
 namespace SlimStat\Core\Providers;
 
 // don't load directly.
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     header('Status: 403 Forbidden');
     header('HTTP/1.1 403 Forbidden');
     exit;
 }
 
-class RESTService {
+class RESTService
+{
 
     /**
      * Runs the service.
@@ -17,7 +19,8 @@ class RESTService {
      *
      * @since 5.2.14
      */
-    public static function run() {
+    public static function run()
+    {
         add_action('rest_api_init', array(__CLASS__, 'registerRoutes'));
         add_action('init', array(__CLASS__, 'rewriteRuleRequest'));
         add_action('template_redirect', array(__CLASS__, 'handleAdblockTracking'));
@@ -30,7 +33,8 @@ class RESTService {
      *
      * @since 5.2.14
      */
-    public static function registerRoutes() {
+    public static function registerRoutes()
+    {
         register_rest_route('slimstat/v1', '/hit', array(
             'methods'             => 'POST',
             'callback'            => array(__CLASS__, 'handleTracking'),
@@ -46,7 +50,8 @@ class RESTService {
      * @param WP_REST_Request $request The request object.
      * @return WP_REST_Response The response object.
      */
-    public static function handleTracking(\WP_REST_Request $request) {
+    public static function handleTracking(\WP_REST_Request $request)
+    {
         \wp_slimstat::slimtrack_ajax($request->get_json_params());
     }
 
@@ -57,13 +62,13 @@ class RESTService {
      */
     public static function rewriteRuleRequest()
     {
-        if(get_option('slimstat_permalink_structure_updated', false)) {
+        if (get_option('slimstat_permalink_structure_updated', false)) {
             // If the permalink structure has been updated, we need to flush rewrite rules
             flush_rewrite_rules();
             delete_option('slimstat_permalink_structure_updated');
         }
 
-        if(isset(\wp_slimstat::$settings['tracking_request_method']) && \wp_slimstat::$settings['tracking_request_method'] === 'adblock_bypass') {
+        if (isset(\wp_slimstat::$settings['tracking_request_method']) && \wp_slimstat::$settings['tracking_request_method'] === 'adblock_bypass') {
             add_rewrite_tag('%slimstat_request%', '([a-f0-9]{32})');
             add_rewrite_rule(
                 '^request/([a-f0-9]{32})$',
