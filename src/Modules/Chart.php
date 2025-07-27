@@ -7,308 +7,250 @@ if (! defined('ABSPATH')) {
     header('HTTP/1.1 403 Forbidden');
     exit;
 }
+
 use SlimStat\Components\View;
+use SlimStat\Helpers\DataBuckets;
+use DateTime;
+use WP_Error;
 
 class Chart
 {
-    public  $data        = array();
-    public  $prevData    = array();
-    public  $args        = array();
-    private $daysBetween = 0;
-    private $chartLabels = array();
-    private $translations = array();
+    const DAY  = 86400;
+    const YEAR = 365 * self::DAY;
 
-    public function showChart($args)
+    private const GRANULARITIES = ['yearly', 'monthly', 'weekly', 'daily', 'hourly'];
+
+    private array $args = [];
+    private array $data = [];
+    private array $prevData = [];
+    private array $chartLabels = [];
+    private array $translations = [];
+
+    public function showChart(array $args): void
     {
-        $this->setupArgs($args);
-        $this->renderChart($this->args, $this->data, $this->prevData);
+        $this->init($args);
+        $this->enqueueAssets();
+        $this->renderChart();
     }
 
-    /**
-     * Sets up the chart arguments by normalizing them and fetching the data.
-     *
-     * This method initializes the class properties with the normalized version
-     * of the provided arguments and retrieves the data required for charting.
-     * It also manages the datasets for the current and previous data states.
-     *
-     * @param array $args The arguments to be set up for the chart.
-     */
-    public function setupArgs($args) {
-        $this->args      = $this->normalizeArgs($args);
-        $this->data      = $this->getDataForChart($this->args);
-        $this->prevData  = $this->data;
-
-        if (isset($this->data['datasets_prev'])) {
-            unset($this->data['datasets_prev']);
-            $this->prevData['datasets'] = $this->prevData['datasets_prev'];
-            unset($this->prevData['datasets_prev']);
-        }
+    private function init(array $args): void
+    {
+        $normalized = $this->normalizeArgs($args);
+        $this->args    = $normalized;
+        $this->data    = $this->fetchChartData($normalized);
+        $this->prevData = $this->extractPreviousData($this->data);
+        $this->translations = [
+            'previous_period'         => __('-- Previous Period', 'wp-slimstat'),
+            'previous_period_tooltip' => __('Click Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat'),
+            'today'                   => __('Today', 'wp-slimstat'),
+            '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
+            'day_ago'                 => __('Day ago', 'wp-slimstat'),
+            'year_ago'                => __('Year ago', 'wp-slimstat'),
+            'now'                     => __('Now', 'wp-slimstat'),
+        ];
+        $this->chartLabels = isset($this->args['chart_labels']) ? $this->args['chart_labels'] : array_keys($this->data['datasets']);
     }
 
-    private function normalizeArgs($args)
+    private function normalizeArgs(array $args): array
     {
-        $args['start'] = isset($args['start']) ? $args['start'] : \wp_slimstat_db::$filters_normalized['utime']['start'];
-        $args['end'] = isset($args['end']) ? $args['end'] : \wp_slimstat_db::$filters_normalized['utime']['end'];
-        if(isset($_REQUEST['granularity']) && !empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], ['yearly', 'monthly', 'daily', 'hourly'])) {
-            $args['granularity'] = sanitize_text_field($_REQUEST['granularity']);
-        }
-        else if (!isset($args['granularity'])) {
-            $diff = $args['end'] - $args['start'];
-            if ($diff === 27 * 86400) {
-                $args['granularity'] = 'daily';
-            } else if ($diff >= 1.5 * 365 * 86400) {
-                $args['granularity'] = 'yearly';
-            } elseif ($diff >= 90 * 86400) {
-                $args['granularity'] = 'monthly';
-            } elseif ($diff >= 45 * 86400) {
-                $args['granularity'] = 'daily';
-            } elseif ($diff >= 14 * 86400) {
-                $args['granularity'] = 'daily';
-            } elseif ($diff >= 2 * 86400) {
-                $args['granularity'] = 'daily';
-            } else {
-                $args['granularity'] = 'hourly';
-            }
-        }
+        $defaults = [
+            'start' => \wp_slimstat_db::$filters_normalized['utime']['start'],
+            'end'   => \wp_slimstat_db::$filters_normalized['utime']['end'],
+        ];
+        $args = array_merge($defaults, $args);
 
-        $args['daysBetween'] = $this->countDaysBetween($args['start'], $args['end']);
-
-        if (isset($args['granularity']) && $args['granularity'] === 'daily') {
-            if (date('H:i:s', $args['end']) === '00:00:00' || date('H:i:s', $args['end']) === '00:00') {
-                $args['end'] += 86399;
-            } else if (date('H:i:s', $args['end']) !== '23:59:59') {
-                $args['end'] = strtotime(date('Y-m-d', $args['end']) . ' 23:59:59');
-            }
-        }
+        $args['granularity'] = $this->detectGranularity($args);
+        // $args['granularity'] = 'monthly'; // Default to monthly for now
+        $args['rangeDays']   = $this->countDays($args['start'], $args['end']);
+        $args['end']         = $this->adjustEndForDaily($args);
 
         return $args;
     }
 
-    private function getPreviousArgs($args)
+    protected function countDays(int $start, int $end): int
     {
-        $prevArgs   = $args;
-        $dtStart    = (new \DateTime())->setTimestamp($args['start']);
-        $dtEnd      = (new \DateTime())->setTimestamp($args['end']);
-        $daysBetween = 0;
-        switch ($args['granularity']) {
-            case 'hourly':
-                $dtStart->modify('-1 day');
-                $dtEnd->modify('-1 day');
-                break;
-            case 'daily':
-                $daysBetween = $dtStart->diff($dtEnd)->days;
-                $dtStart->modify('-' . $daysBetween . ' days');
-                $dtEnd->modify('-' . $daysBetween . ' days');
-                break;
-            case 'monthly':
-                $dtStart->modify('-1 year');
-                $dtEnd->modify('-1 year');
-                break;
-            case 'yearly':
-                $dtStart->modify('-1 year');
-                $dtEnd->modify('-1 year');
-                break;
-        }
-        $prevArgs['start'] = $dtStart->getTimestamp();
-        $prevArgs['end'] = $dtEnd->getTimestamp();
-        $prevArgs['daysBetween'] = $daysBetween;
-
-        return $prevArgs;
+        return max(1, intval(($end - $start) / self::DAY) + 1);
     }
 
+    private function detectGranularity(array $args): string
+    {
+        if (!empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], self::GRANULARITIES, true)) {
+            return sanitize_text_field($_REQUEST['granularity']);
+        }
 
-    public function getDataForChart($args)
+        $diff = $args['end'] - $args['start'];
+        return match (true) {
+            $diff > 1.5 * self::YEAR => 'yearly',
+            $diff > 90 *  self::DAY  => 'monthly',
+            $diff > 2 * self::DAY   => 'daily',
+            $diff > 7  *  self::DAY  => 'weekly',
+            default            => 'hourly',
+        };
+    }
+
+    private function adjustEndForDaily(array $args): int
+    {
+        if ($args['granularity'] !== 'daily') {
+            return $args['end'];
+        }
+
+        $time = date('H:i:s', $args['end']);
+        if ($time === '00:00:00') {
+            return $args['end'] + self::DAY - 1;
+        }
+        if ($time !== '23:59:59') {
+            return strtotime(date('Y-m-d', $args['end']) . ' 23:59:59');
+        }
+
+        return $args['end'];
+    }
+
+    private function fetchChartData(array $args): array
     {
         global $wpdb;
-        $params = array();
-        $_args  = $args['chart_data'];
 
-        // Set default values
-        $start         = isset($args['start']) ? intval($args['start']) : \wp_slimstat_db::$filters_normalized['utime']['start'];
-        $end           = isset($args['end']) ? intval($args['end']) : \wp_slimstat_db::$filters_normalized['utime']['end'];
-        $granularity   = isset($args['granularity']) ? strtolower($args['granularity']) : 'daily';
-        $range         = $end - $start;
-        $wpTimezone    = wp_timezone();
-        $dateFormat    = 'Y/m/d';
+        $prevArgs = $this->calculatePreviousArgs($args);
+        $sqlInfo  = $this->buildSql($args, $prevArgs);
+        $results  = $wpdb->get_results($sqlInfo['sql']);
 
-        $minDt = $wpdb->get_var("SELECT MIN(dt) FROM {$wpdb->prefix}slim_stats");
-        $dbQueryStart = $start;
-        if ($minDt && isset($start) && $start < $minDt) {
-            $dbQueryStart = $minDt;
-        }
-
-        switch ($granularity) {
-            case 'hourly':
-                $params['group_by']          = "DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), HOUR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['data_points_label'] = 'Y/m/d H:00';
-                $params['data_points_count'] = ceil($range / 3600);
-                $params['granularity']       = 'HOUR';
-                break;
-            case 'monthly':
-                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['data_points_label'] = 'F Y';
-                $params['data_points_count'] = $this->countMonthsBetween($start, $end);
-                $params['granularity']       = 'MONTH';
-                $month_labels = [];
-                $month_keys = [];
-                $cur = strtotime(date('Y-m-01', $start));
-                $i = 0;
-                while ($cur <= $end) {
-                    $label = date($params['data_points_label'], $cur);
-                    $month_labels[] = "'$label'";
-                    $month_keys[$label] = $i;
-                    $cur = strtotime('+1 month', $cur);
-                    $i++;
-                }
-                $params['custom_labels'] = $month_labels;
-                break;
-            case 'yearly':
-                $params['group_by']          = "YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['data_points_label'] = 'Y';
-                $params['data_points_count'] = $this->countYearsBetween($start, $end);
-                $params['granularity']       = 'YEAR';
-                break;
-
-            case 'daily':
-            default:
-                $params['group_by']          = "MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), DAY(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))";
-                $params['data_points_label'] = $dateFormat;
-                $params['data_points_count'] = floor($range / 86400) + 1;
-                $params['granularity']       = 'DAY';
-                $day_labels = [];
-                $day_keys = [];
-                $cur = $start;
-                $i = 0;
-                while ($cur <= $end) {
-                    $label = date($params['data_points_label'], $cur);
-                    $day_labels[] = "'$label'";
-                    $day_keys[$label] = $i;
-                    $cur = strtotime('+1 day', $cur);
-                    $i++;
-                }
-                $params['custom_labels'] = $day_labels;
-                break;
-        }
-
-
-        $params['previous_end']   = \wp_slimstat_db::$filters_normalized['utime']['start'] - 1;
-        $params['previous_start'] = $params['previous_end'] - \wp_slimstat_db::$filters_normalized['utime']['range'];
-
-        if (empty($_args['where'])) {
-            $_args['where'] = '';
-        }
-
-        $sql = "
-        SELECT MIN(dt) AS dt, {$_args['data1']} AS v1, {$_args['data2']} AS v2
-        FROM {$GLOBALS['wpdb']->prefix}slim_stats
-        WHERE " . \wp_slimstat_db::get_combined_where($_args['where'], '*', false) . " AND (dt BETWEEN {$params['previous_start']} AND {$params['previous_end']} OR dt BETWEEN $dbQueryStart AND $end )
-        GROUP BY {$params['group_by']}";
-
-        $results = \wp_slimstat_db::get_results(
-            $sql,
-            'dt',
-            '',
-            $params['group_by'], 'SUM(v1) AS v1, SUM(v2) AS v2'
+        return $this->processResults(
+            $results,
+            $sqlInfo['params'],
+            $args['start'],
+            $args['end'],
+            $prevArgs['start'],
+            $prevArgs['end']
         );
+    }
 
-        $output = array(
-            'keys'     => array(),
-            'labels'   => array(),
-            'datasets' => array(
-                'v1' => array(),
-                'v2' => array(),
-                'v3' => array(),
-                'v4' => array()
+    private function calculatePreviousArgs(array $args): array
+    {
+        $rangeSeconds = $args['end'] - $args['start'];
+
+        $dtStart = (new DateTime())->setTimestamp($args['start']);
+        $dtEnd   = (new DateTime())->setTimestamp($args['end']);
+
+        $dtStart->modify("-{$rangeSeconds} seconds")->modify('midnight');
+        $dtEnd->modify("-{$rangeSeconds} seconds");
+
+        return [
+            'start' => $dtStart->getTimestamp(),
+            'end'   => $dtEnd->getTimestamp(),
+        ];
+    }
+
+    private function buildSql(array $args, array $prevArgs): array
+    {
+        $where = $args['chart_data']['where'] ?? [];
+        $range = $args['end'] - $args['start'];
+
+        $common = [
+            'start' => $prevArgs['start'],
+            'end'   => $prevArgs['end'],
+            'range' => $range,
+        ];
+
+        return match ($args['granularity']) {
+            'hourly'  => $this->sqlFor('HOUR', $args, $common),
+            'daily'   => $this->sqlFor('DAY', $args, $common),
+            'monthly' => $this->sqlFor('MONTH', $args, $common),
+            'weekly'  => $this->sqlFor('WEEK', $args, $common),
+            'yearly'  => $this->sqlFor('YEAR', $args, $common),
+            default   => throw new WP_Error('invalid_granularity'),
+        };
+    }
+
+    private function sqlFor(string $gran, array $args, array $prevArgs): array
+    {
+        global $wpdb;
+        $where = $args['where'] ?? [];
+        $data1 = $args['chart_data']['data1'] ?? '';
+        $data2 = $args['chart_data']['data2'] ?? '';
+        $start = $args['start'];
+        $end   = $args['end'];
+
+        $dtExpr = match ($gran) {
+            'HOUR'  => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'), '%Y-%m-%d %H:00:00'))",
+            'DAY'   => "UNIX_TIMESTAMP(DATE(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')))",
+            'MONTH' => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), '-', LPAD(MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), 2, '0'),'-01'), '%Y-%m-%d'))",
+            'WEEK' => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), '-', LPAD(WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'), 3), 2, '0'), '-1'), '%Y-%u-%w'))",
+            'YEAR'  => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), '-01-01'), '%Y-%m-%d'))",
+            default => throw new WP_Error('invalid_granularity'),
+        };
+
+        $periods = [
+            'HOUR'  => ['label' => 'Y/m/d H:00'],
+            'DAY'   => ['label' => 'Y/m/d'],
+            'MONTH' => ['label' => 'F Y'],
+            'WEEK'  => ['label' => 'W, Y'],
+            'YEAR'  => ['label' => 'Y'],
+        ];
+
+        // Start of SQL query
+        $sql = "WITH data AS (
+                SELECT
+                    MIN(dt) AS dt,
+                    COUNT(ip) AS v1,
+                    COUNT(DISTINCT ip) AS v2,
+                    CASE
+                        WHEN dt BETWEEN $start AND $end THEN 'current'
+                        ELSE 'previous'
+                    END AS period,
+                    {$dtExpr} AS grouped_date
+                FROM {$wpdb->prefix}slim_stats
+                WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
+                    OR dt BETWEEN $start AND $end
+                GROUP BY grouped_date, period
             )
+            SELECT
+                grouped_date AS dt,
+                v1,
+                v2,
+                period
+            FROM data
+            ORDER BY dt, period;
+        ";
+        // End of SQL query
+
+        return [
+            'sql'    => $sql,
+            'params' => ['label' => $periods[$gran]['label'], 'gran' => $gran],
+        ];
+    }
+
+    private function processResults(array $rows, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
+    {
+        $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd);
+        foreach ($rows as $row) {
+            $buckets->addRow((int)$row->dt, (int)$row->v1, (int)$row->v2, (string)$row->period);
+        }
+        return $buckets->toArray();
+    }
+
+    private function extractPreviousData(array $data): array
+    {
+        $prev = $data;
+        $prev['datasets'] = $prev['datasets_prev'] ?? [];
+        unset($prev['datasets_prev']);
+        return $prev;
+    }
+
+    private function enqueueAssets(): void
+    {
+        wp_enqueue_script(
+            'slimstat_chartjs',
+            plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
+            [], '4.2.1', false
         );
-
-        if (isset($params['custom_keys']) && isset($params['custom_labels'])) {
-            foreach ($params['custom_keys'] as $label => $index) {
-                $output['keys'][$label] = $index;
-                $output['labels'][] = "'$label'";
-                $output['datasets']['v1'][] = 0;
-                $output['datasets']['v2'][] = 0;
-                $output['datasets']['v3'][] = 0;
-                $output['datasets']['v4'][] = 0;
-            }
-        } else {
-            for ($i = 0; $i < $params['data_points_count']; $i++) {
-                $v1_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", \wp_slimstat_db::$filters_normalized['utime']['start']));
-                $v3_label = date($params['data_points_label'], strtotime("+$i {$params['granularity']}", $params['previous_start']));
-
-                $output['keys'][$v1_label] = $i;
-                $output['keys'][$v3_label] = $i;
-
-                $output['labels'][] = "'$v1_label'";
-                $output['datasets']['v1'][] = 0;
-                $output['datasets']['v2'][] = 0;
-                $output['datasets']['v3'][] = 0;
-                $output['datasets']['v4'][] = 0;
-            }
-        }
-
-        foreach ($results as $aResult) {
-            $label = date($params['data_points_label'], $aResult['dt']);
-            if (!isset($output['keys'][$label])) {
-                continue;
-            }
-
-            if ($aResult['dt'] >= \wp_slimstat_db::$filters_normalized['utime']['start'] && $aResult['dt'] <= \wp_slimstat_db::$filters_normalized['utime']['end']) {
-                $output['datasets']['v1'][$output['keys'][$label]] = intval($aResult['v1']);
-                $output['datasets']['v2'][$output['keys'][$label]] = intval($aResult['v2']);
-            } else {
-                $output['datasets']['v3'][$output['keys'][$label]] = intval($aResult['v1']);
-                $output['datasets']['v4'][$output['keys'][$label]] = intval($aResult['v2']);
-            }
-        }
-
-        $today = wp_date($params['data_points_label'], time(), $wpTimezone);
-
-        return array(
-            'labels'      => $output['labels'],
-            'prev_labels' => array_map(function ($label, $index) use ($params, $wpTimezone) {
-                $prev_start = $params['previous_start'];
-                return date($params['data_points_label'], strtotime("+{$index} {$params['granularity']}", $prev_start));
-            }, $output['labels'], array_keys($output['labels'])),
-            'datasets'    => array(
-                'v1' => $output['datasets']['v1'],
-                'v2' => $output['datasets']['v2'],
-            ),
-            'datasets_prev' => array(
-                'v1' => $output['datasets']['v3'],
-                'v2' => $output['datasets']['v4'],
-            ),
-            'today'       => $today,
-            'granularity' => $params['granularity'],
+        wp_enqueue_script(
+            'slimstat_chart',
+            plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
+            ['slimstat_chartjs'], '1.0', false
         );
-    }
-
-    public function countYearsBetween($start, $end)
-    {
-        $start = date('Y', $start);
-        $end   = date('Y', $end);
-
-        return abs($end - $start) + 1;
-    }
-
-    protected function countMonthsBetween($minTimestamp = 0, $maxTimestamp = 0)
-    {
-        $i         = 0;
-        $minMonth  = date('Ym', $minTimestamp);
-        $maxMonth  = date('Ym', $maxTimestamp);
-
-        while ($minMonth <= $maxMonth) {
-            $minTimestamp = strtotime("+1 month", $minTimestamp);
-            $minMonth     = date('Ym', $minTimestamp);
-            $i++;
-        }
-
-        return $i;
-    }
-
-    protected function countDaysBetween($start, $end)
-    {
-        return abs(intval(($end - $start) / 86400)) + 1;
+        wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('slimstat_chart_nonce'),
+        ]);
     }
 
     public static function ajaxFetchChartData()
@@ -318,7 +260,7 @@ class Chart
         $args = isset($_POST['args']) ? json_decode(stripslashes($_POST['args']), true) : [];
         $granularity = isset($_POST['granularity']) ? sanitize_text_field($_POST['granularity']) : 'daily';
 
-        if (!in_array($granularity, ['yearly', 'monthly', 'daily', 'hourly'])) {
+        if (!in_array($granularity, ['yearly', 'monthly', 'weekly', 'daily', 'hourly'])) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
         }
 
@@ -327,76 +269,33 @@ class Chart
             \wp_slimstat_db::init();
         }
 
-
         \wp_slimstat_db::$filters_normalized['utime']['start'] = $args['start'];
         \wp_slimstat_db::$filters_normalized['utime']['end']   = $args['end'];
         \wp_slimstat_db::$filters_normalized['utime']['range'] = $args['end'] - $args['start'];
 
-        $chart = (new self());
-        $args['granularity'] = $granularity;
+        try {
+            $chart = new self();
+            $args['granularity'] = $granularity;
+            $chart->init($args);
 
-        $chart->setupArgs($args);
-
-        $data      = $chart->data;
-        $prev_data = $chart->prevData;
-        $args      = $chart->args;
-
-        $args['daysBetween'] = $chart->countDaysBetween($args['start'], $args['end']);
-
-        $chartLabels = isset($args['chart_labels']) ? $args['chart_labels'] : array_keys($data['datasets']);
-        $translations = [
-            'previous_period'         => __('-- Previous Period', 'wp-slimstat'),
-            'days_ago'                => sprintf(__('%s Days ago', 'wp-slimstat'), $args['daysBetween'] ?? 0),
-            '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
-            'previous_period_tooltip' => __("Tap “Previous Period” to hide or show the previous period line.", 'wp-slimstat'),
-            'today'    => __('Today', 'wp-slimstat'),
-            'day_ago'  => __('Day ago', 'wp-slimstat'),
-            'year_ago' => __('Year ago', 'wp-slimstat'),
-            'yearly'   => __('Yearly', 'wp-slimstat'),
-            'monthly'  => __('Monthly', 'wp-slimstat'),
-            'daily'    => __('Daily', 'wp-slimstat'),
-            'hourly'   => __('Hourly', 'wp-slimstat'),
-            'now'      => __('Now', 'wp-slimstat'),
-        ];
-
-        wp_send_json_success([
-            'args' => $args,
-            'data' => $data,
-            'prev_data'    => $prev_data,
-            'days_between' => $args['daysBetween'] ?? 0,
-            'chart_labels' => $chartLabels,
-            'translations' => $translations
-        ]);
+            wp_send_json_success([
+                'args' => $chart->args,
+                'data' => $chart->data,
+                'prev_data' => $chart->prevData,
+                'chart_labels' => $chart->chartLabels,
+                'translations' => $chart->translations,
+            ]);
+        } catch (Exception $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 
-    private function renderChart()
+    private function renderChart(): void
     {
-        $this->chartLabels = isset($this->args['chart_labels']) ? $this->args['chart_labels'] : array_keys($this->data['datasets']);
-        $this->translations = [
-            'previous_period'         => __('-- Previous Period', 'wp-slimstat'),
-            'previous_period_tooltip' => __('Click Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat'),
-            'today'                   => __('Today', 'wp-slimstat'),
-            'days_ago'                => sprintf(__('%s Days ago', 'wp-slimstat'), $this->args['daysBetween'] ?? 0),
-            '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
-            'day_ago'                 => __('Day ago', 'wp-slimstat'),
-            'year_ago'                => __('Year ago', 'wp-slimstat'),
-            'now'                     => __('Now', 'wp-slimstat'),
-        ];
-
-        $path_slimstat = dirname(dirname(__FILE__));
-        wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE), [], '4.2.1', false);
-        wp_enqueue_script('slimstat_chart', plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE), ['slimstat_chartjs'], '1.0', false);
-
-        wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('slimstat_chart_nonce')
-        ]);
-
         View::load('modules/chart-view', [
-            'args' => $this->args,
-            'data' => $this->data,
-            'prevData' => $this->prevData,
-            'daysBetween' => $this->args['daysBetween'],
+            'args'        => $this->args,
+            'data'        => $this->data,
+            'prevData'    => $this->prevData,
             'chartLabels' => $this->chartLabels,
             'translations' => $this->translations
         ]);
