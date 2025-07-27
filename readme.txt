@@ -49,6 +49,9 @@ Track returning customers and registered users, monitor Javascript events, detec
 3. Click on **Install Now** next to Slimstat Analytics and then activate the plugin
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 
+== Please note ==
+* If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
+
 = Report Bugs =
 Having trouble with a bug? Please [create an issue](https://github.com/wp-slimstat/wp-slimstat/issues/new) on GitHub. Kindly note that [GitHub](https://github.com/wp-slimstat/wp-slimstat) is exclusively for bug reports; other inquiries will be closed.
 
