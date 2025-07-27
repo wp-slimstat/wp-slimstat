@@ -6,28 +6,21 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$args = $this->args;
-$data = $this->data;
-$prevData = $this->prevData;
-$daysBetween = $this->daysBetween;
-$chartLabels = $this->chartLabels;
 $translations = array_merge(
-    $this->translations,
+    $translations,
     array(
-        'yearly' => __('Yearly', 'wp-slimstat'),
+        'yearly'  => __('Yearly', 'wp-slimstat'),
         'monthly' => __('Monthly', 'wp-slimstat'),
-        'daily' => __('Daily', 'wp-slimstat'),
-        'hourly' => __('Hourly', 'wp-slimstat'),
+        'daily'   => __('Daily', 'wp-slimstat'),
+        'hourly'  => __('Hourly', 'wp-slimstat'),
     )
 );
 
-$availableRange = $this->args['end'] - $this->args['start'];
-
-// Dynamically calculate limits based on available data range
-$disableYearly = $availableRange < (365 * 86400); // Less than 1 year of data
+$availableRange = $args['end'] - $args['start'];
+$disableYearly  = $availableRange < (365 * 86400); // Less than 1 year of data
 $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
-$disableDaily = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
-$disableHourly = $availableRange > (7 * 86400); // More than 7 days of data
+$disableDaily   = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
+$disableHourly  = $availableRange > (7 * 86400); // More than 7 days of data
 ?>
 <div class="slimstat-chart-wrap">
     <div class="slimstat-chart-controls">
@@ -54,4 +47,3 @@ $disableHourly = $availableRange > (7 * 86400); // More than 7 days of data
         </script>
     <?php endif; ?>
 </div>
-<?php

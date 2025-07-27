@@ -1412,7 +1412,7 @@ class wp_slimstat_reports
     }
 
     public static function show_chart($args) {
-        $chart = new \SlimStat\Core\Modules\Chart();
+        $chart = new \SlimStat\Modules\Chart();
         $chart->showChart($args);
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();

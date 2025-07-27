@@ -51,7 +51,7 @@ class wp_slimstat
      */
     public static function init()
     {
-        \SlimStat\Core\Init::run();
+        \SlimStat\Providers\RESTService::run();
 
         // Load all the settings
         if (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'slimview') === false)) {
@@ -334,6 +334,27 @@ class wp_slimstat
         exit(self::_get_value_with_checksum($id));
     }
     // end slimtrack_ajax
+
+     /**
+     * The main logging function
+     *
+     * @param string $message The message to be logged.
+     * @param string $level The log level (e.g., 'info', 'warning', 'error'). Default is 'info'.
+     * @uses error_log
+     */
+    public static function log($message, $level = 'info')
+    {
+        if (is_array($message)) {
+            $message = wp_json_encode($message);
+        }
+
+        $log_level = strtoupper($level);
+
+        // Log when debug is enabled
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
+        }
+    }
 
 
     /**
@@ -2304,5 +2325,5 @@ if (function_exists('add_action')) {
     // Add the appropriate actions
     add_action('plugins_loaded', array('wp_slimstat', 'init'), 20);
     // Add the action to fetch chart data
-    add_action('wp_ajax_slimstat_fetch_chart_data', array('SlimStat\Core\Modules\Chart', 'ajaxFetchChartData'));
+    add_action('wp_ajax_slimstat_fetch_chart_data', array('SlimStat\Modules\Chart', 'ajaxFetchChartData'));
 }

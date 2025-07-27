@@ -1,5 +1,5 @@
 <?php
-namespace SlimStat\Core\Providers;
+namespace SlimStat\Providers;
 
 // don't load directly.
 if ( ! defined( 'ABSPATH' ) ) {

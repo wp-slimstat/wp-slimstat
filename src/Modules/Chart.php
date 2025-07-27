@@ -1,5 +1,5 @@
 <?php
-namespace SlimStat\Core\Modules;
+namespace SlimStat\Modules;
 
 // don't load directly.
 if (! defined('ABSPATH')) {
@@ -7,6 +7,7 @@ if (! defined('ABSPATH')) {
     header('HTTP/1.1 403 Forbidden');
     exit;
 }
+use SlimStat\Components\View;
 
 class Chart
 {
@@ -391,6 +392,13 @@ class Chart
             'nonce' => wp_create_nonce('slimstat_chart_nonce')
         ]);
 
-        include SLIMSTAT_DIR . '/src/Core/Views/Modules/ChartView.php';
+        View::load('modules/chart-view', [
+            'args' => $this->args,
+            'data' => $this->data,
+            'prevData' => $this->prevData,
+            'daysBetween' => $this->args['daysBetween'],
+            'chartLabels' => $this->chartLabels,
+            'translations' => $this->translations
+        ]);
     }
 }
