@@ -62,12 +62,14 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Screenshots ==
 1. **Real-Time** - A real-time view of your visitors' whereabouts
-2. **Overview** - Your website traffic at a glance
-3. **Audience** - See your visitors' full information
-4. **Site Analysis** - Provides insights into how visitors are using your website
-5. **Traffic Sources** - See where your visitors are coming from, such as search engines, social media, or referral websites
-6. **Customize widgets** - Allows you to customize the analytics widgets that are displayed in your Slimstat dashboard
-7. **Settings** - Plenty of options to customize the plugin's behavior
+2. **Word Map** - Identify them by country, browser, and operating system in a snap.
+3. **Overview** - Your website traffic at a glance. Enjoy a simple, all-in-one dashboard to check your website stats quickly.
+4. **Audience** - See your visitors' full information
+5. **Site Analysis** - See top pages, categories, download and outbound links in an easy, simple view.
+6. **Traffic Sources** - See where your visitors are coming from, such as search engines, social media, or referral websites
+7. **Customize widgets** - Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
+8. **WordPress Dashboard** - Add and display custom reports like Traffic Sources directly on your WordPress dashboard!
+9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
 = 5.2.13 - 2025-04-29 =
