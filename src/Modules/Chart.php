@@ -187,28 +187,20 @@ class Chart
         ];
 
         // Start of SQL query
-        $sql = "WITH data AS (
-                SELECT
-                    MIN(dt) AS dt,
-                    COUNT(ip) AS v1,
-                    COUNT(DISTINCT ip) AS v2,
-                    CASE
-                        WHEN dt BETWEEN $start AND $end THEN 'current'
-                        ELSE 'previous'
-                    END AS period,
-                    {$dtExpr} AS grouped_date
-                FROM {$wpdb->prefix}slim_stats
-                WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
-                    OR dt BETWEEN $start AND $end
-                GROUP BY grouped_date, period
-            )
+        $sql = "
             SELECT
-                grouped_date AS dt,
-                v1,
-                v2,
-                period
-            FROM data
-            ORDER BY dt, period;
+                UNIX_TIMESTAMP(DATE(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))) AS grouped_date,
+                MIN(dt) AS dt,
+                COUNT(ip) AS v1,
+                COUNT(DISTINCT ip) AS v2,
+                CASE
+                    WHEN dt BETWEEN $start AND $end THEN 'current'
+                    ELSE 'previous'
+                END AS period
+            FROM {$wpdb->prefix}slim_stats
+            WHERE (dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']} OR dt BETWEEN $start AND $end)
+            GROUP BY grouped_date, period
+            ORDER BY dt, period
         ";
         // End of SQL query
 
