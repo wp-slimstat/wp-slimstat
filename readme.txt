@@ -17,6 +17,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 = Main Features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
+* **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
 * **GDPR**: fully compliant with the GDPR European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
