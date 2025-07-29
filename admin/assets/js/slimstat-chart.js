@@ -150,11 +150,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const colors = ["#e8294c", "#2b76f6", "#ffacb6", "#24cb7d", "#942bf6"];
         return Object.entries(rawDatasets).map(([key, values], i) => {
+            // Remove negative keys and ensure array length matches labels
             if (!Array.isArray(values)) {
-                values = Object.values(values);
+                values = Object.entries(values)
+                    .filter(([k, v]) => !isNaN(k) && Number(k) >= 0)
+                    .sort((a, b) => Number(a[0]) - Number(b[0]))
+                    .map(([k, v]) => v);
+            }
+            if (Array.isArray(values)) {
+                values = values.slice(0, labels.length);
             }
 
-            // Fix: Safely access chartLabels[i]
             let labelText = key;
             if (Array.isArray(chartLabels) && typeof chartLabels[i] !== "undefined" && chartLabels[i] !== null) {
                 labelText = chartLabels[i];

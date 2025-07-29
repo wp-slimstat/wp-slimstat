@@ -60,7 +60,7 @@ class Chart
         $args = array_merge($defaults, $args);
 
         $args['granularity'] = $this->detectGranularity($args);
-        // $args['granularity'] = 'monthly'; // Default to monthly for now
+        $args['granularity'] = 'weekly'; // Default to monthly for now
         $args['rangeDays']   = $this->countDays($args['start'], $args['end']);
         $args['end']         = $this->adjustEndForDaily($args);
 
@@ -172,8 +172,8 @@ class Chart
         $dtExpr = match ($gran) {
             'HOUR'  => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'), '%Y-%m-%d %H:00:00'))",
             'DAY'   => "UNIX_TIMESTAMP(DATE(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')))",
-            'MONTH' => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), '-', LPAD(MONTH(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), 2, '0'),'-01'), '%Y-%m-%d'))",
-            'WEEK' => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), '-', LPAD(WEEK(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'), 3), 2, '0'), '-1'), '%Y-%u-%w'))",
+            'MONTH' => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '+00:00'), '%Y-%m-01'))",
+            'WEEK'  => "UNIX_TIMESTAMP(DATE_SUB(DATE(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '+03:00')),INTERVAL (DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '+03:00')) - 1) DAY))",
             'YEAR'  => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), '-01-01'), '%Y-%m-%d'))",
             default => throw new WP_Error('invalid_granularity'),
         };
@@ -187,22 +187,29 @@ class Chart
         ];
 
         // Start of SQL query
-        $sql = "
+        $sql = "WITH data AS (
+                SELECT
+                    MIN(dt) AS dt,
+                    COUNT(ip) AS v1,
+                    COUNT(DISTINCT ip) AS v2,
+                    CASE
+                        WHEN dt BETWEEN $start AND $end THEN 'current'
+                        ELSE 'previous'
+                    END AS period,
+                    {$dtExpr} AS grouped_date
+                FROM {$wpdb->prefix}slim_stats
+                WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
+                    OR dt BETWEEN $start AND $end
+                GROUP BY grouped_date, period
+            )
             SELECT
-                UNIX_TIMESTAMP(DATE(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'))) AS grouped_date,
-                MIN(dt) AS dt,
-                COUNT(ip) AS v1,
-                COUNT(DISTINCT ip) AS v2,
-                CASE
-                    WHEN dt BETWEEN $start AND $end THEN 'current'
-                    ELSE 'previous'
-                END AS period
-            FROM {$wpdb->prefix}slim_stats
-            WHERE (dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']} OR dt BETWEEN $start AND $end)
-            GROUP BY grouped_date, period
-            ORDER BY dt, period
+                grouped_date AS dt,
+                v1,
+                v2,
+                period
+            FROM data
+            ORDER BY dt, period;
         ";
-        // End of SQL query
 
         return [
             'sql'    => $sql,

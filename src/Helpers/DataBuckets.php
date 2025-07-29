@@ -61,15 +61,16 @@ class DataBuckets
             foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
             $time += $interval;
         }
+
         $this->points = $count;
     }
 
     private function initSeqWeek(): void
     {
-        $start = (new \DateTime())->setTimestamp($this->start);
-        $end   = (new \DateTime())->setTimestamp($this->end);
+        $start    = (new \DateTime())->setTimestamp($this->start);
+        $end      = (new \DateTime())->setTimestamp($this->end);
         $interval = new \DateInterval('P1W');
-
+        $end->modify('next sunday')->setTime(23,59,59);
         while ($start <= $end) {
             $label = $start->format($this->labelFormat);
             $this->labels[] = "'$label'";
@@ -81,7 +82,7 @@ class DataBuckets
 
     private function initSeqMonth(): void
     {
-        $date = (new \DateTime())->setTimestamp($this->start);
+        $date = (new \DateTime())->setTimestamp($this->start)->modify('first day of this month')->modifY('midnight');
         $end  = (new \DateTime())->setTimestamp($this->end);
         while ($date <= $end) {
             $label = $date->format($this->labelFormat);
@@ -89,6 +90,7 @@ class DataBuckets
             foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
             $date->modify('+1 month');
         }
+
         $this->points = count($this->labels);
     }
 
@@ -106,27 +108,26 @@ class DataBuckets
     public function addRow(int $dt, int $v1, int $v2, string $period): void
     {
         $base = $period === 'current' ? $this->start : $this->prevStart;
-
+        $start = $this->start;
+        $prevEnd = $this->prevEnd;
         $offset = match ($this->gran) {
             'HOUR'  => (int)floor(($dt - $base) / 3600),
             'DAY'   => (int)floor(($dt - $base) / 86400),
             'MONTH' => (function () use ($base, $dt) {
                 $start = new \DateTime("@$base");
+                $start = $start->modify('first day of previous month')->modify('midnight');
                 $target = new \DateTime("@$dt");
-                if ($target < $start) {
+                if ($target->getTimestamp() < $start->getTimestamp()) {
                     return -1;
                 }
                 $diff = $start->diff($target);
                 return $diff->y * 12 + $diff->m;
             })(),
-            'WEEK'  => (function () use ($base, $dt) {
-                $start = new \DateTime("@$base");
-                $target = new \DateTime("@$dt");
-                if ($target < $start) {
-                    return -1;
-                }
-                $diff = $start->diff($target);
-                return $diff->y * 52 + (int)floor($diff->days / 7);
+            'WEEK'  => (function () use ($base, $dt, $period, $start, $prevEnd) {
+                $dtObj = new \DateTime("@$dt");
+                $dtObj = $dtObj->modify('midnight');
+                $baseObj = new \DateTime("@$base");
+                return (int)$dtObj->format('W') - (int)$baseObj->format('W');
             })(),
             'YEAR'  => (new \DateTime("@$base"))->diff(new \DateTime("@$dt"))->y,
         };
@@ -152,7 +153,8 @@ class DataBuckets
         }, $labels, array_keys($labels));
     }
 
-    public function toArray(): array
+
+    private function shiftDatasets(): void
     {
         foreach (['v1', 'v2'] as $k) {
             if (isset($this->datasets[$k][-1])) {
@@ -173,6 +175,11 @@ class DataBuckets
                 }
             }
         }
+    }
+
+    public function toArray(): array
+    {
+        $this->shiftDatasets();
 
         $this->mapPrevLabels($this->labels, [
             'data_points_label' => $this->labelFormat,
