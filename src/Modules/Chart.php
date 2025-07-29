@@ -60,7 +60,6 @@ class Chart
         $args = array_merge($defaults, $args);
 
         $args['granularity'] = $this->detectGranularity($args);
-        $args['granularity'] = 'weekly'; // Default to monthly for now
         $args['rangeDays']   = $this->countDays($args['start'], $args['end']);
         $args['end']         = $this->adjustEndForDaily($args);
 
