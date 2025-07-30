@@ -475,6 +475,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function getLastDayOfWeek(year, weekNumber) {
+        // Get start_of_week from WP (0=Sunday, 1=Monday, ...)
+        const startOfWeek = window.slimstat_chart_vars && typeof window.slimstat_chart_vars.start_of_week !== "undefined" ? Number(window.slimstat_chart_vars.start_of_week) : 1;
+        // Find first day of year
+        const jan1 = new Date(Date.UTC(year, 0, 1));
+        // Find first desired weekday in year
+        let firstWeekday = jan1.getUTCDay();
+        let offset = (startOfWeek - firstWeekday + 7) % 7;
+        const firstStartOfWeek = new Date(Date.UTC(year, 0, 1 + offset));
+        // Calculate start of week
+        const weekStart = new Date(firstStartOfWeek.getTime() + (weekNumber - 1) * 7 * 24 * 60 * 60 * 1000);
+        // End of week is 6 days after start
+        const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+        return weekEnd;
+    }
+
     function slimstatGetLabel(label, long = true, unitTime, translations, justTranslation = false) {
         label = label.replace(/'/g, "");
         if (unitTime === "monthly") {
@@ -485,10 +501,23 @@ document.addEventListener("DOMContentLoaded", function () {
             const formatted_label = isThisMonth ? `${month}, ${year} (${translations.now})` : `${label} <span class="slimstat-postbox-chart--item--prev">${month}, ${year}</span>`;
             return justTranslation ? formatted_label : long && isThisMonth ? `${formatted_label}` : `${month}, ${year}`;
         } else if (unitTime === "weekly") {
-            const [weekNumber, year] = (justTranslation ? justTranslation : label).split(",").map((s) => Number(s.trim()));
-            const firstDayOfYear = new Date(year, 0, 1);
-            const firstDayOfWeek = new Date(year, 0, 1 + (weekNumber - 1) * 7 - firstDayOfYear.getDay());
-            const calculatedLastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
+            const [weekNumber, year, day] = (justTranslation ? justTranslation : label).split(",").map((s) => Number(s.trim()));
+            // Get start_of_week from WP (0=Sunday, 1=Monday, ...)
+            const startOfWeek = window.slimstat_chart_vars && typeof window.slimstat_chart_vars.start_of_week !== "undefined" ? Number(window.slimstat_chart_vars.start_of_week) : 1;
+            // Find first day of year
+            const jan1 = new Date(Date.UTC(year, 0, 1));
+            let firstWeekday = jan1.getUTCDay();
+            let offset = (startOfWeek - firstWeekday + 7) % 7;
+            const firstStartOfWeek = new Date(Date.UTC(year, 0, 1 + offset));
+            const firstDayOfWeek = new Date(firstStartOfWeek.getTime() + (weekNumber - 1) * 7 * 24 * 60 * 60 * 1000);
+            let calculatedLastDayOfWeek = getLastDayOfWeek(year, weekNumber);
+            if (typeof window !== "undefined" && window.slimstat_chart_vars && window.slimstat_chart_vars.end_date) {
+                const endDateUTC = new Date(window.slimstat_chart_vars.end_date * 1000);
+                const endDate = new Date(Date.UTC(endDateUTC.getUTCFullYear(), endDateUTC.getUTCMonth(), endDateUTC.getUTCDate()));
+                if (endDate >= firstDayOfWeek && endDate <= calculatedLastDayOfWeek) {
+                    calculatedLastDayOfWeek = endDate;
+                }
+            }
             const today = new Date();
             let lastDayOfWeek;
             if (today >= firstDayOfWeek && today <= calculatedLastDayOfWeek) {
@@ -496,9 +525,10 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 lastDayOfWeek = calculatedLastDayOfWeek;
             }
-            const firstStr = long ? firstDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : firstDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
-            const lastStr = long ? lastDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric" }) : lastDayOfWeek.toLocaleString("default", { month: "short", day: "numeric" });
-            const formatted_label = `${label} <span class="slimstat-postbox-chart--item--prev">${year} &#8226; ${firstStr} - ${lastStr}</span>`;
+            var firstStr = long ? firstDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", timeZone: "UTC" }) : firstDayOfWeek.toLocaleString("default", { month: "short", timeZone: "UTC" });
+            firstStr += " " + day;
+            const lastStr = long ? lastDayOfWeek.toLocaleString("default", { weekday: "short", month: "long", day: "numeric", timeZone: "UTC" }) : lastDayOfWeek.toLocaleString("default", { month: "short", day: "numeric", timeZone: "UTC" });
+            const formatted_label = `${label} <span class=\"slimstat-postbox-chart--item--prev\">${year} &#8226; ${firstStr} - ${lastStr}</span>`;
             return justTranslation ? `${formatted_label}` : `${firstStr} - ${lastStr}`;
         } else if (unitTime === "daily") {
             var date = new Date(label);

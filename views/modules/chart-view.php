@@ -40,7 +40,8 @@ $disableHourly  = $availableRange > (7 * 86400); // More than 7 days of data
         data-prev-data="<?php echo esc_attr(json_encode($prevData)); ?>"
         data-granularity="<?php echo esc_attr($args['granularity']); ?>"
         data-chart-labels="<?php echo esc_attr(json_encode($chartLabels)); ?>"
-        data-translations="<?php echo esc_attr(json_encode($translations)); ?>"></div>
+        data-translations="<?php echo esc_attr(json_encode($translations)); ?>"
+        data-total="<?php echo esc_attr(json_encode($total ?? [])); ?>"></div>
     <div id="slimstat-postbox-custom-legend_<?php echo esc_attr($args['id']); ?>" class="slimstat-postbox-chart--items"></div>
     <canvas id="slimstat_chart_<?php echo esc_attr($args['id']); ?>" class="slimstat-postbox-chart--canvas" height="240px"></canvas>
     <?php if (defined('DOING_AJAX') && DOING_AJAX): ?>

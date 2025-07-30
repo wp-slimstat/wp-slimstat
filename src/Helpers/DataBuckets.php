@@ -67,16 +67,29 @@ class DataBuckets
 
     private function initSeqWeek(): void
     {
-        $start    = (new \DateTime())->setTimestamp($this->start);
-        $end      = (new \DateTime())->setTimestamp($this->end);
-        $interval = new \DateInterval('P1W');
-        $end->modify('next sunday')->setTime(23,59,59);
+        $start = (new \DateTime())->setTimestamp($this->start);
+        $end   = (new \DateTime())->setTimestamp($this->end);
+        $startOfWeek = get_option('start_of_week', 1);
+
+        // Adjust start to the first day of the week
+        $firstLabel = $start->format($this->labelFormat);
+        $this->labels[] = "'$firstLabel'";
+        foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
+
+        // Move start to the next week if it is not the start of the week
+        $start->modify('next ' . jddayofweek($startOfWeek - 1, 1));
+        if ($start->getTimestamp() <= $this->start) {
+            $start->modify('+1 week');
+        }
+
+        // Generate labels for each week
         while ($start <= $end) {
             $label = $start->format($this->labelFormat);
             $this->labels[] = "'$label'";
             foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
-            $start->add($interval);
+            $start->modify('+1 week');
         }
+        
         $this->points = count($this->labels);
     }
 
@@ -111,8 +124,14 @@ class DataBuckets
         $start = $this->start;
         $prevEnd = $this->prevEnd;
         $offset = match ($this->gran) {
-            'HOUR'  => (int)floor(($dt - $base) / 3600),
-            'DAY'   => (int)floor(($dt - $base) / 86400),
+            'HOUR'  => (function () use ($base, $dt) {
+                $dt = strtotime(wp_date('Y-m-d H:i:s', $dt));
+                return floor(($dt - $base) / 3600);
+            })(),
+            'DAY'  => (function () use ($base, $dt) {
+                $dt = strtotime(wp_date('Y-m-d H:i:s', $dt));
+                return floor(($dt - $base) / 86400);
+            })(),
             'MONTH' => (function () use ($base, $dt) {
                 $start = new \DateTime("@$base");
                 $start = $start->modify('first day of previous month')->modify('midnight');
@@ -124,20 +143,22 @@ class DataBuckets
                 return $diff->y * 12 + $diff->m;
             })(),
             'WEEK'  => (function () use ($base, $dt, $period, $start, $prevEnd) {
-                $dtObj = new \DateTime("@$dt");
-                $dtObj = $dtObj->modify('midnight');
-                $baseObj = new \DateTime("@$base");
-                return (int)$dtObj->format('W') - (int)$baseObj->format('W');
+                $offset = date('W', $dt) - date('W', $base);
+                if ($offset < 0) {
+                    return -1;
+                }
+                return $offset;
             })(),
             'YEAR'  => (new \DateTime("@$base"))->diff(new \DateTime("@$dt"))->y,
         };
 
         // Ensure offset is within bounds
-        if ($offset < $this->points) {
+        if ($offset <= $this->points) {
             $target = $period === 'current' ? 'datasets' : 'datasetsPrev';
             if (!isset($this->{$target}['v1'][$offset])) {
                 $this->{$target}['v1'][$offset] = 0;
             }
+
             $this->{$target}['v1'][$offset] += $v1;
             if (!isset($this->{$target}['v2'][$offset])) {
                 $this->{$target}['v2'][$offset] = 0;
@@ -179,6 +200,7 @@ class DataBuckets
 
     public function toArray(): array
     {
+
         $this->shiftDatasets();
 
         $this->mapPrevLabels($this->labels, [

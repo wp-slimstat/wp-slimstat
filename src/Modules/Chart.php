@@ -126,10 +126,11 @@ class Chart
     {
         $rangeSeconds = $args['end'] - $args['start'];
 
+        $tz = \wp_timezone();
         $dtStart = (new DateTime())->setTimestamp($args['start']);
         $dtEnd   = (new DateTime())->setTimestamp($args['end']);
 
-        $dtStart->modify("-{$rangeSeconds} seconds")->modify('midnight');
+        $dtStart->modify("-{$rangeSeconds} seconds")->setTime(0, 0, 0);
         $dtEnd->modify("-{$rangeSeconds} seconds");
 
         return [
@@ -162,18 +163,34 @@ class Chart
     private function sqlFor(string $gran, array $args, array $prevArgs): array
     {
         global $wpdb;
+
+        // Prepare the SQL query based on the granularity
         $where = $args['where'] ?? [];
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
         $start = $args['start'];
         $end   = $args['end'];
 
+        // Adjust timezone and date formatting
+        $tz    = wp_timezone();
+        $offset_seconds = $tz->getOffset(new DateTime('now'));
+        $sign  = '-';
+        $abs   = abs($offset_seconds);
+        $h     = floor($abs / 3600);
+        $m     = floor(($abs % 3600) / 60);
+        $tzOffset = sprintf('%s%02d:%02d', $sign, $h, $m);
+
+        // Start of week configuration
+        $startOfWeek = get_option('start_of_week', 1);
+        $weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $weekStartDay = isset($weekdays[$startOfWeek]) ? $weekdays[$startOfWeek] : 'Monday';
+
         $dtExpr = match ($gran) {
-            'HOUR'  => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00'), '%Y-%m-%d %H:00:00'))",
-            'DAY'   => "UNIX_TIMESTAMP(DATE(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')))",
-            'MONTH' => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '+00:00'), '%Y-%m-01'))",
-            'WEEK'  => "UNIX_TIMESTAMP(DATE_SUB(DATE(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '+03:00')),INTERVAL (DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '+03:00')) - 1) DAY))",
-            'YEAR'  => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), @@session.time_zone, '+00:00')), '-01-01'), '%Y-%m-%d'))",
+            'HOUR'  => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d %H:00:00'))",
+            'DAY'   => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d'))",
+            'MONTH' => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-01'))",
+            'WEEK'  => "UNIX_TIMESTAMP(STR_TO_DATE(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%x%v $weekStartDay'), '%x%v %W'))",
+            'YEAR'  => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset')), '-01-01'), '%Y-%m-%d'))",
             default => throw new WP_Error('invalid_granularity'),
         };
 
@@ -181,35 +198,33 @@ class Chart
             'HOUR'  => ['label' => 'Y/m/d H:00'],
             'DAY'   => ['label' => 'Y/m/d'],
             'MONTH' => ['label' => 'F Y'],
-            'WEEK'  => ['label' => 'W, Y'],
+            'WEEK'  => ['label' => "W, Y, d, $startOfWeek"],
             'YEAR'  => ['label' => 'Y'],
         ];
 
-        // Start of SQL query
         $sql = "WITH data AS (
-                SELECT
-                    MIN(dt) AS dt,
-                    COUNT(ip) AS v1,
-                    COUNT(DISTINCT ip) AS v2,
-                    CASE
-                        WHEN dt BETWEEN $start AND $end THEN 'current'
-                        ELSE 'previous'
-                    END AS period,
-                    {$dtExpr} AS grouped_date
-                FROM {$wpdb->prefix}slim_stats
-                WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
+                    SELECT
+                        MIN(dt) AS dt,
+                        {$data1} AS v1,
+                        {$data2} AS v2,
+                        CASE
+                            WHEN dt BETWEEN $start AND $end THEN 'current'
+                            ELSE 'previous'
+                        END AS period,
+                        {$dtExpr} AS grouped_date
+                    FROM {$wpdb->prefix}slim_stats
+                    WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
                     OR dt BETWEEN $start AND $end
-                GROUP BY grouped_date, period
-            )
-            SELECT
-                grouped_date AS dt,
-                v1,
-                v2,
-                period
-            FROM data
-            ORDER BY dt, period;
+                    GROUP BY grouped_date, period
+                )
+                SELECT
+                    grouped_date AS dt,
+                    v1,
+                    v2,
+                    period
+                FROM data
+                ORDER BY dt, period;
         ";
-
         return [
             'sql'    => $sql,
             'params' => ['label' => $periods[$gran]['label'], 'gran' => $gran],
@@ -248,6 +263,9 @@ class Chart
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('slimstat_chart_nonce'),
+            'end_date' => isset($this->args['end']) ? $this->args['end'] : null,
+            'timezone' => get_option('timezone_string') ?: 'UTC',
+            'start_of_week' => get_option('start_of_week', 1),
         ]);
     }
 
