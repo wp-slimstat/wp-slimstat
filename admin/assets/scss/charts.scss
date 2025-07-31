@@ -24,6 +24,10 @@
   &:hover {
     opacity: 0.3;
   }
+
+  .slimstat-postbox-chart--item[data-index].active .tooltip-item-content {
+    color: #000 !important;
+  }
 }
 
 @media (max-width: 600px) {

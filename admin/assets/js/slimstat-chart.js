@@ -1,3 +1,4 @@
+var slimstatClosestPoint = false;
 document.addEventListener("DOMContentLoaded", function () {
     const chartElements = document.querySelectorAll('[id^="slimstat_chart_data_"]');
     const charts = new Map();
@@ -56,6 +57,34 @@ document.addEventListener("DOMContentLoaded", function () {
         const ctx = chartCanvas.getContext("2d");
         const chart = createChart(ctx, labels, prevLabels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
         charts.set(chartId, chart);
+
+        chart.canvas.addEventListener("mousemove", function (event) {
+            const points = chart.getElementsAtEventForMode(event, "nearest", { intersect: false }, true);
+            if (points.length > 0) {
+                const mouseY = event.offsetY;
+                const mouseX = event.offsetX;
+
+                for (const pt of points) {
+                    const el = chart.getDatasetMeta(pt.datasetIndex).data[pt.index];
+                    if (!el || !el.x || !el.y) continue;
+
+                    const dx = el.x - mouseX;
+                    const dy = el.y - mouseY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= 100) {
+                        const allItems = document.querySelectorAll("tr.slimstat-postbox-chart--item");
+                        for (const i of allItems) {
+                            if (i !== points[0].element) {
+                                i.classList.remove("active");
+                            }
+                        }
+                        const item = document.querySelector(`.slimstat-postbox-chart--item[data-index="${pt.datasetIndex}"]`);
+                        if (item) item.classList.add("active");
+                    }
+                }
+            }
+        });
 
         renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
     }
@@ -618,7 +647,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             grouped.forEach((item, idx) => {
                 const color = tooltip.labelColors[idx];
-                innerHtml += `<tr class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ${color.backgroundColor}; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">${item.label}</span>: <span class="tooltip-item-content">${item.value}</span>`;
+                innerHtml += `<tr data-index="${idx}" class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ${color.backgroundColor}; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">${item.label}</span>: <span class="tooltip-item-content">${item.value}</span>`;
                 if (item.prevValue !== null && item.prevDate) {
                     innerHtml += `<br><span class=\"slimstat-postbox-chart--item--color\" style=\"display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(${color.backgroundColor
                         .replace("#", "")
