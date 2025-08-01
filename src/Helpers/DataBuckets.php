@@ -213,7 +213,7 @@ class DataBuckets
             'prev_labels'    => $this->prev_labels,
             'datasets'       => $this->datasets,
             'datasets_prev'  => $this->datasetsPrev,
-            'today'          => wp_date($this->labelFormat, time(), wp_timezone()),
+            'today'          => $this->gran === 'WEEK' ? str_replace("'", '', $this->labels[count($this->labels) -1]) : wp_date($this->labelFormat, time(), wp_timezone()),
             'granularity'    => $this->gran,
         ];
     }
