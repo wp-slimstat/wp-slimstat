@@ -89,7 +89,7 @@ class DataBuckets
             foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
             $start->modify('+1 week');
         }
-        
+
         $this->points = count($this->labels);
     }
 
@@ -143,7 +143,7 @@ class DataBuckets
                 return $diff->y * 12 + $diff->m;
             })(),
             'WEEK'  => (function () use ($base, $dt, $period, $start, $prevEnd) {
-                $offset = date('W', $dt) - date('W', $base);
+                $offset = date('W', $dt) - date('W', $base) + (date('Y', $dt) - date('Y', $base)) * 52;
                 if ($offset < 0) {
                     return -1;
                 }
@@ -200,7 +200,6 @@ class DataBuckets
 
     public function toArray(): array
     {
-
         $this->shiftDatasets();
 
         $this->mapPrevLabels($this->labels, [

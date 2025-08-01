@@ -61,7 +61,6 @@ class Chart
 
         $args['granularity'] = $this->detectGranularity($args);
         $args['rangeDays']   = $this->countDays($args['start'], $args['end']);
-        $args['end']         = $this->adjustEndForDaily($args);
 
         return $args;
     }
@@ -80,28 +79,11 @@ class Chart
         $diff = $args['end'] - $args['start'];
         return match (true) {
             $diff > 1.5 * self::YEAR => 'yearly',
-            $diff > 90 *  self::DAY  => 'monthly',
-            $diff > 2 * self::DAY   => 'daily',
-            $diff > 7  *  self::DAY  => 'weekly',
-            default            => 'hourly',
+            $diff > 90  * self::DAY  => 'monthly',
+            $diff > 2   * self::DAY  => 'daily',
+            $diff > 7   * self::DAY  => 'weekly',
+            default                  => 'hourly',
         };
-    }
-
-    private function adjustEndForDaily(array $args): int
-    {
-        if ($args['granularity'] !== 'daily') {
-            return $args['end'];
-        }
-
-        $time = date('H:i:s', $args['end']);
-        if ($time === '00:00:00') {
-            return $args['end'] + self::DAY - 1;
-        }
-        if ($time !== '23:59:59') {
-            return strtotime(date('Y-m-d', $args['end']) . ' 23:59:59');
-        }
-
-        return $args['end'];
     }
 
     private function fetchChartData(array $args): array
@@ -154,7 +136,7 @@ class Chart
             'hourly'  => $this->sqlFor('HOUR', $args, $common),
             'daily'   => $this->sqlFor('DAY', $args, $common),
             'monthly' => $this->sqlFor('MONTH', $args, $common),
-            'weekly'  => $this->sqlFor('WEEK', $args, $common),
+            'weekly'  => $this->sqlForWeekly($args, $common),
             'yearly'  => $this->sqlFor('YEAR', $args, $common),
             default   => throw new WP_Error('invalid_granularity'),
         };
@@ -180,16 +162,10 @@ class Chart
         $m     = floor(($abs % 3600) / 60);
         $tzOffset = sprintf('%s%02d:%02d', $sign, $h, $m);
 
-        // Start of week configuration
-        $startOfWeek = get_option('start_of_week', 1);
-        $weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        $weekStartDay = isset($weekdays[$startOfWeek]) ? $weekdays[$startOfWeek] : 'Monday';
-
         $dtExpr = match ($gran) {
             'HOUR'  => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d %H:00:00'))",
             'DAY'   => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d'))",
             'MONTH' => "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-01'))",
-            'WEEK'  => "UNIX_TIMESTAMP(STR_TO_DATE(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%x%v $weekStartDay'), '%x%v %W'))",
             'YEAR'  => "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset')), '-01-01'), '%Y-%m-%d'))",
             default => throw new WP_Error('invalid_granularity'),
         };
@@ -198,7 +174,6 @@ class Chart
             'HOUR'  => ['label' => 'Y/m/d H:00'],
             'DAY'   => ['label' => 'Y/m/d'],
             'MONTH' => ['label' => 'F Y'],
-            'WEEK'  => ['label' => "W, Y, d, $startOfWeek"],
             'YEAR'  => ['label' => 'Y'],
         ];
 
@@ -208,13 +183,13 @@ class Chart
                         {$data1} AS v1,
                         {$data2} AS v2,
                         CASE
-                            WHEN dt BETWEEN $start AND $end THEN 'current'
+                            WHEN dt BETWEEN {$start} AND {$end} THEN 'current'
                             ELSE 'previous'
                         END AS period,
                         {$dtExpr} AS grouped_date
                     FROM {$wpdb->prefix}slim_stats
                     WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
-                    OR dt BETWEEN $start AND $end
+                    OR dt BETWEEN {$start} AND {$end}
                     GROUP BY grouped_date, period
                 )
                 SELECT
@@ -225,9 +200,83 @@ class Chart
                 FROM data
                 ORDER BY dt, period;
         ";
+
         return [
             'sql'    => $sql,
             'params' => ['label' => $periods[$gran]['label'], 'gran' => $gran],
+        ];
+    }
+
+    private function sqlForWeekly(array $args, array $prevArgs): array
+    {
+        global $wpdb;
+
+        // Prepare the SQL query based on the granularity
+        $where = $args['where'] ?? [];
+        $data1 = $args['chart_data']['data1'] ?? '';
+        $data2 = $args['chart_data']['data2'] ?? '';
+        $start = $args['start'];
+        $end   = $args['end'];
+
+        // Adjust timezone and date formatting
+        $tz             = wp_timezone();
+        $offset_seconds = $tz->getOffset(new DateTime('now'));
+        $sign           = '-';
+        $abs            = abs($offset_seconds);
+        $h              = floor($abs / 3600);
+        $m              = floor(($abs % 3600) / 60);
+        $tzOffset       = sprintf('%s%02d:%02d', $sign, $h, $m);
+
+        // Start of week configuration
+        $startOfWeek  = get_option('start_of_week', 1);
+
+        $sql = "
+            WITH periodic AS (
+                SELECT
+                    dt,
+                    ip,
+                    CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset') AS ts,
+                    CASE
+                        WHEN dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']} THEN 'previous'
+                        WHEN dt BETWEEN {$start} AND {$end} THEN 'current'
+                        ELSE NULL
+                    END AS period
+                FROM {$wpdb->prefix}slim_stats
+                WHERE dt BETWEEN {$prevArgs['start']} AND {$end}
+            ),
+            grouped AS (
+                SELECT
+                    period,
+                    DATE(
+                        ts - INTERVAL (
+                            (DAYOFWEEK(ts) - 1 - {$startOfWeek} + 7) % 7
+                        ) DAY
+                    ) AS week_start_date,
+                    ip
+                FROM periodic
+            ),
+             agg AS (
+                    SELECT
+                        week_start_date AS dt,
+                        period,
+                        COUNT(ip)          AS v1,
+                        COUNT(DISTINCT ip) AS v2
+                    FROM grouped
+                    WHERE period IS NOT NULL
+                    GROUP BY week_start_date, period
+                )
+            SELECT
+                UNIX_TIMESTAMP(dt) as dt,
+                v1,
+                v2,
+                period
+            FROM agg
+            ORDER BY dt, period;
+        ";
+
+        return [
+            'sql'    => $sql,
+            'params' => ['label' => "W, Y, d, $startOfWeek", 'gran' => 'WEEK'],
         ];
     }
 
