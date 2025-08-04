@@ -45,6 +45,7 @@ class Chart
             'today'                   => __('Today', 'wp-slimstat'),
             '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
             'day_ago'                 => __('Day ago', 'wp-slimstat'),
+            'today_date'              => wp_date('Y/m/d', time()),
             'year_ago'                => __('Year ago', 'wp-slimstat'),
             'now'                     => __('Now', 'wp-slimstat'),
         ];
@@ -276,7 +277,7 @@ class Chart
 
         return [
             'sql'    => $sql,
-            'params' => ['label' => "W, Y, d, $startOfWeek", 'gran' => 'WEEK'],
+            'params' => ['label' => "Y/m/d", 'gran' => 'WEEK'],
         ];
     }
 
