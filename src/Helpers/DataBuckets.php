@@ -4,10 +4,11 @@ namespace SlimStat\Helpers;
 
 class DataBuckets
 {
-    private array $labels = [];
-    private array $prev_labels = [];
-    private array $datasets = ['v1' => [], 'v2' => []];
-    private array $datasetsPrev = ['v1' => [], 'v2' => []];
+    private array $labels       = array();
+    private array $prev_labels  = array();
+    private array $datasets     = array('v1' => array(), 'v2' => array());
+    private array $datasetsPrev = array('v1' => array(), 'v2' => array());
+    private array $totals;
     private string $labelFormat;
     private string $gran;
     private int $start;
@@ -16,7 +17,7 @@ class DataBuckets
     private int $prevEnd;
     private int $points;
 
-    public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd)
+    public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = array())
     {
         $this->labelFormat = $labelFormat;
         $this->gran        = $gran;
@@ -24,7 +25,8 @@ class DataBuckets
         $this->end         = $end;
         $this->prevStart   = $prevStart;
         $this->prevEnd     = $prevEnd;
-        $this->prev_labels = [];
+        $this->totals      = $totals;
+        $this->prev_labels = array();
 
         $this->initBuckets();
     }
@@ -56,9 +58,12 @@ class DataBuckets
         $count = (int)ceil($range / $interval);
         $time  = $this->start;
         for ($i = 0; $i < $count; $i++) {
-            $label = date($this->labelFormat, $time);
+            $label          = date($this->labelFormat, $time);
             $this->labels[] = "'$label'";
-            foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
+            foreach (array('v1', 'v2') as $k) {
+                $this->datasets[$k][]     = 0;
+                $this->datasetsPrev[$k][] = 0;
+            }
             $time += $interval;
         }
 
@@ -67,14 +72,17 @@ class DataBuckets
 
     private function initSeqWeek(): void
     {
-        $start = (new \DateTime())->setTimestamp($this->start);
-        $end   = (new \DateTime())->setTimestamp($this->end);
+        $start       = (new \DateTime())->setTimestamp($this->start);
+        $end         = (new \DateTime())->setTimestamp($this->end);
         $startOfWeek = get_option('start_of_week', 1);
 
         // Adjust start to the first day of the week
-        $firstLabel = $start->format($this->labelFormat);
+        $firstLabel     = $start->format($this->labelFormat);
         $this->labels[] = "'$firstLabel'";
-        foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
+        foreach (array('v1', 'v2') as $k) {
+            $this->datasets[$k][]     = 0;
+            $this->datasetsPrev[$k][] = 0;
+        }
 
         // Move start to the next week if it is not the start of the week
         $start->modify('next ' . jddayofweek($startOfWeek - 1, 1));
@@ -84,9 +92,12 @@ class DataBuckets
 
         // Generate labels for each week
         while ($start <= $end) {
-            $label = $start->format($this->labelFormat);
+            $label          = $start->format($this->labelFormat);
             $this->labels[] = "'$label'";
-            foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
+            foreach (array('v1', 'v2') as $k) {
+                $this->datasets[$k][]     = 0;
+                $this->datasetsPrev[$k][] = 0;
+            }
             $start->modify('+1 week');
         }
 
@@ -98,9 +109,12 @@ class DataBuckets
         $date = (new \DateTime())->setTimestamp($this->start)->modify('first day of this month')->modifY('midnight');
         $end  = (new \DateTime())->setTimestamp($this->end);
         while ($date <= $end) {
-            $label = $date->format($this->labelFormat);
+            $label          = $date->format($this->labelFormat);
             $this->labels[] = "'$label'";
-            foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
+            foreach (array('v1', 'v2') as $k) {
+                $this->datasets[$k][]     = 0;
+                $this->datasetsPrev[$k][] = 0;
+            }
             $date->modify('+1 month');
         }
 
@@ -113,28 +127,31 @@ class DataBuckets
         $endYear   = (int)date('Y', $this->end);
         for ($y = $startYear; $y <= $endYear; $y++) {
             $this->labels[] = "'$y'";
-            foreach (['v1','v2'] as $k) { $this->datasets[$k][] = 0; $this->datasetsPrev[$k][] = 0; }
+            foreach (array('v1', 'v2') as $k) {
+                $this->datasets[$k][]     = 0;
+                $this->datasetsPrev[$k][] = 0;
+            }
         }
         $this->points = count($this->labels);
     }
 
     public function addRow(int $dt, int $v1, int $v2, string $period): void
     {
-        $base = $period === 'current' ? $this->start : $this->prevStart;
-        $start = $this->start;
+        $base    = 'current' === $period ? $this->start : $this->prevStart;
+        $start   = $this->start;
         $prevEnd = $this->prevEnd;
-        $offset = match ($this->gran) {
+        $offset  = match ($this->gran) {
             'HOUR'  => (function () use ($base, $dt) {
                 $dt = strtotime(wp_date('Y-m-d H:i:s', $dt));
                 return floor(($dt - $base) / 3600);
             })(),
-            'DAY'  => (function () use ($base, $dt) {
+            'DAY'   => (function () use ($base, $dt) {
                 $dt = strtotime(wp_date('Y-m-d H:i:s', $dt));
                 return floor(($dt - $base) / 86400);
             })(),
             'MONTH' => (function () use ($base, $dt) {
-                $start = new \DateTime("@$base");
-                $start = $start->modify('first day of previous month')->modify('midnight');
+                $start  = new \DateTime("@$base");
+                $start  = $start->modify('first day of previous month')->modify('midnight');
                 $target = new \DateTime("@$dt");
                 if ($target->getTimestamp() < $start->getTimestamp()) {
                     return -1;
@@ -154,7 +171,7 @@ class DataBuckets
 
         // Ensure offset is within bounds
         if ($offset <= $this->points) {
-            $target = $period === 'current' ? 'datasets' : 'datasetsPrev';
+            $target = 'current' === $period ? 'datasets' : 'datasetsPrev';
             if (!isset($this->{$target}['v1'][$offset])) {
                 $this->{$target}['v1'][$offset] = 0;
             }
@@ -174,12 +191,11 @@ class DataBuckets
         }, $labels, array_keys($labels));
     }
 
-
     private function shiftDatasets(): void
     {
-        foreach (['v1', 'v2'] as $k) {
+        foreach (array('v1', 'v2') as $k) {
             if (isset($this->datasets[$k][-1])) {
-                $newKeys = array_map(fn($key) => $key + 1, array_keys($this->datasets[$k]));
+                $newKeys            = array_map(fn ($key) => $key + 1, array_keys($this->datasets[$k]));
                 $this->datasets[$k] = array_combine($newKeys, array_values($this->datasets[$k]));
                 ksort($this->datasets[$k]);
                 if (empty(end($this->datasets[$k]))) {
@@ -188,7 +204,7 @@ class DataBuckets
             }
 
             if (isset($this->datasetsPrev[$k][-1])) {
-                $newKeys = array_map(fn($key) => $key + 1, array_keys($this->datasetsPrev[$k]));
+                $newKeys                = array_map(fn ($key) => $key + 1, array_keys($this->datasetsPrev[$k]));
                 $this->datasetsPrev[$k] = array_combine($newKeys, array_values($this->datasetsPrev[$k]));
                 ksort($this->datasetsPrev[$k]);
                 if (empty(end($this->datasetsPrev[$k]))) {
@@ -202,19 +218,20 @@ class DataBuckets
     {
         $this->shiftDatasets();
 
-        $this->mapPrevLabels($this->labels, [
+        $this->mapPrevLabels($this->labels, array(
             'data_points_label' => $this->labelFormat,
             'granularity'       => $this->gran,
             'previous_start'    => $this->prevStart,
-        ]);
+        ));
 
-        return [
-            'labels'         => $this->labels,
-            'prev_labels'    => $this->prev_labels,
-            'datasets'       => $this->datasets,
-            'datasets_prev'  => $this->datasetsPrev,
-            'today'          => $this->gran === 'WEEK' && wp_date('YW', $this->end, wp_timezone()) === wp_date('YW', time(), wp_timezone()) ? str_replace("'", '', $this->labels[count($this->labels) -1]) : wp_date($this->labelFormat, time(), wp_timezone()),
-            'granularity'    => $this->gran,
-        ];
+        return array(
+            'labels'        => $this->labels,
+            'totals'        => $this->totals,
+            'prev_labels'   => $this->prev_labels,
+            'datasets'      => $this->datasets,
+            'datasets_prev' => $this->datasetsPrev,
+            'today'         => 'WEEK' === $this->gran && wp_date('YW', $this->end, wp_timezone()) === wp_date('YW', time(), wp_timezone()) ? str_replace("'", '', $this->labels[count($this->labels) - 1]) : wp_date($this->labelFormat, time(), wp_timezone()),
+            'granularity'   => $this->gran,
+        );
     }
 }

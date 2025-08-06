@@ -36,8 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const daysBetween = parseInt(element.getAttribute("data-days-between"));
         const chartLabels = JSON.parse(element.getAttribute("data-chart-labels"));
         const translations = JSON.parse(element.getAttribute("data-translations"));
-
-        console.log(data);
+        const totals = JSON.parse(element.getAttribute("data-totals") || "{}");
 
         const labels = data.labels;
         const prevLabels = data.prev_labels;
@@ -55,9 +54,9 @@ document.addEventListener("DOMContentLoaded", function () {
             chartCanvas.style.minHeight = "180px";
         }
         const ctx = chartCanvas.getContext("2d");
-        const chart = createChart(ctx, labels, prevLabels, datasets, prevDatasets, args.granularity, data.today, translations, daysBetween, chartId);
+        const chart = createChart(ctx, labels, prevLabels, datasets, prevDatasets, totals, args.granularity, data.today, translations, daysBetween, chartId);
         charts.set(chartId, chart);
-        renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
+        renderCustomLegend(chart, chartId, datasets, prevDatasets, totals, translations);
     }
 
     function setupGranularitySelect(chartId) {
@@ -104,7 +103,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     const oldToggleButtons = document.querySelectorAll(`.slimstat-postbox-chart--item-${chartId}`);
                     oldToggleButtons.forEach((button) => button.remove());
 
-                    const { args, data, prev_data, days_between, chart_labels, translations } = result.data;
+                    const { args, data, totals, prev_data, days_between, chart_labels, translations } = result.data;
+                    console.log(totals);
+
                     const labels = data.labels;
                     const datasets = prepareDatasets(data.datasets, chart_labels, labels, data.today);
                     const prevDatasets = prepareDatasets(prev_data.datasets, chart_labels, prev_data.labels, null, true);
@@ -114,10 +115,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     const prevChart = charts.get(chartId);
                     if (prevChart) prevChart.destroy();
                     const ctx = chartCanvas.getContext("2d");
-                    const chart = createChart(ctx, labels, data.prev_labels, datasets, prevDatasets, granularity, data.today, translations, days_between, chartId);
+                    const chart = createChart(ctx, labels, data.prev_labels, datasets, prevDatasets, totals, granularity, data.today, translations, days_between, chartId);
                     charts.set(chartId, chart);
 
-                    renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, data.today, translations);
+                    renderCustomLegend(chart, chartId, datasets, prevDatasets, totals, translations);
 
                     element.dataset.args = JSON.stringify(args);
                     element.dataset.data = JSON.stringify(data);
@@ -168,6 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             return {
                 label: isPrevious ? `Previous ${labelText}` : labelText,
+                key: key,
                 data: values,
                 borderColor: colors[i % colors.length],
                 borderWidth: isPrevious ? 1 : 2,
@@ -188,7 +190,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function createChart(ctx, labels, prevLabels, datasets, prevDatasets, unitTime, today, translations, daysBetween, chartId) {
+    function createChart(ctx, labels, prevLabels, datasets, prevDatasets, total, unitTime, today, translations, daysBetween, chartId) {
         const isRTL = document.documentElement.dir === "rtl" || document.body.classList.contains("rtl");
 
         const customCrosshair = {
@@ -379,100 +381,97 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function renderCustomLegend(chart, chartId, datasets, prevDatasets, labels, today, translations) {
+    function renderCustomLegend(chart, chartId, currentDatasets, previousDatasets, totals, translations) {
         const legendContainer = document.getElementById(`slimstat-postbox-custom-legend_${chartId}`);
         legendContainer.innerHTML = "";
+        console.log(chart.data);
 
         chart.data.datasets.forEach((dataset, index) => {
-            if (!dataset.label.includes("Previous")) {
-                const datasetData = datasets[index]?.data;
-                let value = 0,
-                    prevValue = 0;
+            const isPrevious = dataset.label.includes("Previous");
+            if (isPrevious) return;
 
-                datasetData.forEach((data, i) => {
-                    value += data;
-                });
+            const key = dataset.key;
+            const currentValue = totals.current[key] ?? 0;
+            const previousValue = totals.previous[key] ?? 0;
 
-                if (prevDatasets[index]) {
-                    prevDatasets[index].data.forEach((data) => {
-                        prevValue += data;
-                    });
+            const legendItem = document.createElement("div");
+            legendItem.className = "slimstat-postbox-chart--item";
+
+            // Current value and optional previous comparison
+            legendItem.innerHTML = `
+            <span class="slimstat-postbox-chart--item-label">${dataset.label}</span>
+            <span class="slimstat-postbox-chart--item--color" style="background-color: ${dataset.borderColor}"></span>
+            <span class="slimstat-postbox-chart--item-value">${currentValue.toLocaleString()}</span>
+            ${
+                previousValue && previousValue !== currentValue
+                    ? `
+                <span class="slimstat-postbox-chart--item--color" style="background-image: repeating-linear-gradient(to right, ${dataset.borderColor}, ${dataset.borderColor} 4px, transparent 0px, transparent 6px); background-size: auto 6px; height: 2px; margin-bottom: 0px; margin-left: 10px;"></span>
+                <span class="slimstat-postbox-chart--item-value">${previousValue.toLocaleString()}</span>
+                `
+                    : ""
+            }
+        `;
+
+            // Click toggle for current dataset + corresponding previous
+            legendItem.addEventListener("click", () => {
+                const currentMeta = chart.getDatasetMeta(index);
+                const previousMeta = chart.getDatasetMeta(index + currentDatasets.length);
+                const togglePrevBtn = document.querySelector(`.slimstat-toggle-prev-datasets.slimstat-postbox-chart--item-${chartId}`);
+                const showPrevious = togglePrevBtn?.classList.contains("active");
+
+                currentMeta.hidden = !currentMeta.hidden;
+                legendItem.classList.toggle("slimstat-postbox-chart--item-hidden");
+
+                if (showPrevious) {
+                    previousMeta.hidden = currentMeta.hidden;
+                } else {
+                    previousMeta.hidden = true;
                 }
 
-                const legendItem = document.createElement("div");
-                legendItem.classList.add("slimstat-postbox-chart--item");
-
-                legendItem.innerHTML = `
-                    <span class="slimstat-postbox-chart--item-label">${dataset.label}</span>
-                    <span class="slimstat-postbox-chart--item--color" style="background-color: ${dataset.borderColor}"></span>
-                    <span class="slimstat-postbox-chart--item-value">${value.toLocaleString()}</span>
-                    ${
-                        prevValue && prevValue !== value
-                            ? `
-                        <span class="slimstat-postbox-chart--item--color" style="background-image: repeating-linear-gradient(to right, ${dataset.borderColor}, ${dataset.borderColor} 4px, transparent 0px, transparent 6px); background-size: auto 6px; height: 2px; margin-bottom: 0px; margin-left: 10px;"></span>
-                        <span class="slimstat-postbox-chart--item-value">${prevValue.toLocaleString()}</span>
-                    `
-                            : ""
-                    }
-                `;
-
-                legendItem.addEventListener("click", () => {
-                    const meta = chart.getDatasetMeta(index);
-                    meta.hidden = !meta.hidden;
-                    legendItem.classList.toggle("slimstat-postbox-chart--item-hidden");
-                    const prevIndex = index + datasets.length;
-                    const prevMeta = chart.getDatasetMeta(prevIndex);
-                    const prevToggleBtn = document.querySelector(`.slimstat-toggle-prev-datasets.slimstat-postbox-chart--item-${chartId}`);
-                    const prevActive = prevToggleBtn && prevToggleBtn.classList.contains("active");
-                    if (prevActive) {
-                        prevMeta.hidden = meta.hidden;
-                    } else {
-                        prevMeta.hidden = true;
-                    }
-                    chart.update();
-                });
-
-                legendContainer.appendChild(legendItem);
-            }
-        });
-
-        const hasPrevData = prevDatasets.length > 0 && prevDatasets.some((dataset) => dataset.data.some((value) => value > 0));
-
-        if (hasPrevData) {
-            const oldToggleButtons = document.querySelectorAll("#slimstat-postbox-custom-legend_" + chartId + " .slimstat-toggle-prev-datasets");
-            oldToggleButtons.forEach(function (button) {
-                button.remove();
-            });
-            var toggleButton = document.createElement("span");
-            toggleButton.innerText = translations.previous_period;
-            toggleButton.classList.add("active", "slimstat-toggle-prev-datasets", "slimstat-postbox-chart--item-" + chartId, "more-info-icon", "slimstat-tooltip-trigger", "corner");
-            toggleButton.title = translations.previous_period_tooltip || "Tap here to show/hide comparison.";
-            if (!toggleButton.querySelector(".slimstat-tooltip-content")) {
-                var tooltipContent = document.createElement("span");
-                tooltipContent.className = "slimstat-tooltip-content";
-                tooltipContent.innerHTML = "<strong>" + translations.previous_period + "</strong><br>" + (translations.previous_period_tooltip || "Tap here to show/hide comparison.");
-                toggleButton.appendChild(tooltipContent);
-            }
-            var prevDatasetsVisible = true;
-            toggleButton.addEventListener("click", function () {
-                prevDatasetsVisible = !prevDatasetsVisible;
-                chart.data.datasets.forEach(function (dataset, index) {
-                    if (dataset.label.indexOf("Previous") !== -1) {
-                        var mainIndex = index - datasets.length;
-                        var mainMeta = chart.getDatasetMeta(mainIndex);
-                        if (prevDatasetsVisible && mainMeta && !mainMeta.hidden) {
-                            chart.getDatasetMeta(index).hidden = false;
-                        } else {
-                            chart.getDatasetMeta(index).hidden = true;
-                        }
-                    }
-                });
-                toggleButton.classList.toggle("active");
                 chart.update();
             });
 
-            legendContainer.parentNode.insertBefore(toggleButton, legendContainer);
+            legendContainer.appendChild(legendItem);
+        });
+
+        // Check if previous data is available
+        const hasPreviousData = previousDatasets.length > 0 && previousDatasets.some((ds) => ds.data.some((value) => value > 0));
+        if (!hasPreviousData) return;
+
+        // Remove existing toggle buttons
+        document.querySelectorAll(`#slimstat-postbox-custom-legend_${chartId} .slimstat-toggle-prev-datasets`).forEach((btn) => btn.remove());
+
+        const togglePrevBtn = document.createElement("span");
+        togglePrevBtn.innerText = translations.previous_period;
+        togglePrevBtn.className = `active slimstat-toggle-prev-datasets slimstat-postbox-chart--item-${chartId} more-info-icon slimstat-tooltip-trigger corner`;
+        togglePrevBtn.title = translations.previous_period_tooltip || "Tap here to show/hide comparison.";
+
+        // Tooltip
+        if (!togglePrevBtn.querySelector(".slimstat-tooltip-content")) {
+            const tooltip = document.createElement("span");
+            tooltip.className = "slimstat-tooltip-content";
+            tooltip.innerHTML = `<strong>${translations.previous_period}</strong><br>${translations.previous_period_tooltip || "Tap here to show/hide comparison."}`;
+            togglePrevBtn.appendChild(tooltip);
         }
+
+        let previousVisible = true;
+
+        togglePrevBtn.addEventListener("click", () => {
+            previousVisible = !previousVisible;
+
+            chart.data.datasets.forEach((dataset, index) => {
+                if (dataset.label.includes("Previous")) {
+                    const correspondingCurrentMeta = chart.getDatasetMeta(index - currentDatasets.length);
+                    chart.getDatasetMeta(index).hidden = previousVisible ? correspondingCurrentMeta.hidden : true;
+                }
+            });
+
+            togglePrevBtn.classList.toggle("active");
+            chart.update();
+        });
+
+        // Insert the toggle button before the legend
+        legendContainer.parentNode.insertBefore(togglePrevBtn, legendContainer);
     }
 
     function getEndOfWeek(dateInput, startOfWeek = 1, respectToday = false) {
@@ -481,13 +480,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const diff = (7 - startOfWeek + day) % 7;
         const nextWeek = new Date(date.getTime() + (7 - diff) * 24 * 60 * 60 * 1000);
         if (respectToday) {
-            console.log(nextWeek.getTime(), new Date(respectToday).getTime());
             const today = new Date(respectToday);
-            console.log("Respecting today:", today);
 
             if (nextWeek.getTime() > today.getTime()) {
-                console.log("Respecting today, adjusting end of week to today.");
-
                 return new Date(respectToday);
             }
         }
@@ -520,7 +515,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");
             const weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, translations.today_date.replace(/\//g, "-") + "T00:00:00Z");
-            console.log(weekEnd, translations.today_date + "T00:00:00Z");
             return long ? formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" }) : formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" });
         } else if (unitTime === "daily") {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
