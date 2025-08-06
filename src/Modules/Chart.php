@@ -204,7 +204,7 @@ class Chart
         // Timezone offset
         $tz             = wp_timezone();
         $offset_seconds = $tz->getOffset(new \DateTime('now'));
-        $sign           = ($offset_seconds < 0) ? '-' : '+';
+        $sign           = '-';
         $abs            = abs($offset_seconds);
         $h              = floor($abs / 3600);
         $m              = floor(($abs % 3600) / 60);
@@ -212,17 +212,15 @@ class Chart
 
         $startOfWeek = (int) get_option('start_of_week', 1); // default Monday
 
-        $dtExpr = '';
-
         switch ($gran) {
             case 'HOUR':
-                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}'), '%Y-%m-%d %H'))";
+                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d %H:00:00'))";
                 break;
             case 'DAY':
-                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}'), '%Y-%m-%d'))";
+                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d'))";
                 break;
             case 'MONTH':
-                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}'), '%Y-%m-01'))";
+                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-01'))";
                 break;
             case 'WEEK':
                 $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}')) - 1 - {$startOfWeek} + 7) % 7) DAY), '%Y-%m-%d'))";
@@ -269,17 +267,17 @@ class Chart
         // Total V1 and V2
         $totalsSql = "
             SELECT
-                    {$data1} AS v1,
-                    {$data2} AS v2,
-                    CASE
-                        WHEN dt BETWEEN {$start} AND {$end} THEN 'current'
-                        ELSE 'previous'
-                    END AS period
-                FROM {$wpdb->prefix}slim_stats
-                WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
-                OR dt BETWEEN {$start} AND {$end}
-                GROUP BY period
-                ORDER BY period
+                {$data1} AS v1,
+                {$data2} AS v2,
+                CASE
+                    WHEN dt BETWEEN {$start} AND {$end} THEN 'current'
+                    ELSE 'previous'
+                END AS period
+            FROM {$wpdb->prefix}slim_stats
+            WHERE CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME({$prevArgs['start']}) AND FROM_UNIXTIME({$prevArgs['end']})
+            OR CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME({$start}) AND FROM_UNIXTIME({$end})
+            GROUP BY period
+            ORDER BY period
         ";
 
         return array(

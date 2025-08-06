@@ -104,7 +104,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     oldToggleButtons.forEach((button) => button.remove());
 
                     const { args, data, totals, prev_data, days_between, chart_labels, translations } = result.data;
-                    console.log(totals);
 
                     const labels = data.labels;
                     const datasets = prepareDatasets(data.datasets, chart_labels, labels, data.today);
@@ -384,8 +383,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function renderCustomLegend(chart, chartId, currentDatasets, previousDatasets, totals, translations) {
         const legendContainer = document.getElementById(`slimstat-postbox-custom-legend_${chartId}`);
         legendContainer.innerHTML = "";
-        console.log(chart.data);
-
         chart.data.datasets.forEach((dataset, index) => {
             const isPrevious = dataset.label.includes("Previous");
             if (isPrevious) return;
@@ -515,43 +512,36 @@ document.addEventListener("DOMContentLoaded", function () {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");
             const weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, translations.today_date.replace(/\//g, "-") + "T00:00:00Z");
+
             return long ? formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" }) : formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" });
         } else if (unitTime === "daily") {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");
-
             const isToday = new Date().toISOString().slice(0, 10) === rawDate;
-
             const longFormat = formatDateTime(date, {
                 weekday: "long",
                 month: "long",
                 day: "numeric",
                 year: "numeric",
             });
-
             const shortFormat = formatDate(date, {
                 month: "short",
                 day: "2-digit",
             }).replaceAll("-", "/");
-
             const finalFormatted = long ? longFormat : shortFormat;
-
             const formattedLabel = `${label} <span class="slimstat-postbox-chart--item--prev">${finalFormatted}</span>`;
 
             return justTranslation ? (long && isToday ? `${formattedLabel} (${translations.today})` : formattedLabel) : long && isToday ? `${finalFormatted} (${translations.today})` : finalFormatted;
         } else if (unitTime === "hourly") {
-            const rawDate = (justTranslation || label).replace(/\//g, "-");
+            const rawDate = (justTranslation || label).replace(/\//g, "-").replace(" ", "T") + "Z"; // ISO UTC
+            if (!rawDate) return label; // Handle empty label case
             const date = new Date(rawDate);
-            const hour = date.getHours();
-            const minutes = date.getMinutes().toString().padStart(2, "0");
-
+            const hour = date.getUTCHours();
+            const minutes = date.getUTCMinutes().toString().padStart(2, "0");
             const datePart = long ? formatDateTime(date, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : formatDate(date, { month: "short", day: "2-digit" }).replaceAll("-", "/");
-
-            const isSameHour = now.getFullYear() === date.getFullYear() && now.getMonth() === date.getMonth() && now.getDate() === date.getDate() && now.getHours() === date.getHours();
-
-            const nowStr = now.toLocaleTimeString("default", { hour: "numeric", minute: "2-digit", hourCycle: "h23" });
+            const isSameHour = new Date().toISOString().slice(0, 10) === rawDate && new Date().getUTCHours() === date.getUTCHours();
+            const nowStr = new Date().toLocaleTimeString("default", { hour: "numeric", minute: "2-digit", hourCycle: "h23" });
             const labelStr = long ? (isSameHour ? `${datePart} ${hour}:${minutes}-${nowStr} (${translations.now})` : `${datePart} ${hour}:${minutes}-${hour + 1}:${minutes}`) : `${datePart} ${hour}:${minutes}`;
-
             const formattedLabel = `${label} <span class="slimstat-postbox-chart--item--prev">${datePart} ${hour}:${minutes}</span>`;
 
             return justTranslation ? formattedLabel : labelStr;
@@ -560,6 +550,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const year = date.getFullYear();
             const isThisYear = now.getFullYear() === year;
             const formattedLabel = `${label} <span class="slimstat-postbox-chart--item--prev">${year}</span>`;
+
             return justTranslation ? formattedLabel : isThisYear && long ? `${year} (${translations.this_year || "This Year"})` : `${year}`;
         }
 
