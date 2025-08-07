@@ -471,16 +471,16 @@ document.addEventListener("DOMContentLoaded", function () {
         legendContainer.parentNode.insertBefore(togglePrevBtn, legendContainer);
     }
 
-    function getEndOfWeek(dateInput, startOfWeek = 1, respectToday = false) {
+    function getEndOfWeek(dateInput, startOfWeek = 1, respectEndOfPeriod = false) {
         const date = new Date(dateInput);
         const day = date.getDay();
         const diff = (7 - startOfWeek + day) % 7;
         const nextWeek = new Date(date.getTime() + (7 - diff) * 24 * 60 * 60 * 1000);
-        if (respectToday) {
-            const today = new Date(respectToday);
+        if (respectEndOfPeriod) {
+            const today = new Date(respectEndOfPeriod);
 
             if (nextWeek.getTime() > today.getTime()) {
-                return new Date(respectToday);
+                return new Date(respectEndOfPeriod);
             }
         }
         return nextWeek;
@@ -511,7 +511,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (unitTime === "weekly") {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");
-            const weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, translations.today_date.replace(/\//g, "-") + "T00:00:00Z");
+            const weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, slimstat_chart_vars.end_date_string.replace(/\//g, "-").replace(" ", "T") + "Z");
 
             return long ? formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" }) : formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" });
         } else if (unitTime === "daily") {

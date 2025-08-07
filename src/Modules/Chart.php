@@ -95,7 +95,6 @@ class Chart
             'today'                   => __('Today', 'wp-slimstat'),
             '30_days_ago'             => __('30 Days ago', 'wp-slimstat'),
             'day_ago'                 => __('Day ago', 'wp-slimstat'),
-            'today_date'              => wp_date('Y/m/d', time()),
             'year_ago'                => __('Year ago', 'wp-slimstat'),
             'now'                     => __('Now', 'wp-slimstat'),
         );
@@ -320,11 +319,12 @@ class Chart
             false
         );
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', array(
-            'ajax_url'      => admin_url('admin-ajax.php'),
-            'nonce'         => wp_create_nonce('slimstat_chart_nonce'),
-            'end_date'      => isset($this->args['end']) ? $this->args['end'] : null,
-            'timezone'      => get_option('timezone_string') ?: 'UTC',
-            'start_of_week' => get_option('start_of_week', 1),
+            'ajax_url'        => admin_url('admin-ajax.php'),
+            'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
+            'end_date'        => isset($this->args['end']) ? $this->args['end'] : null,
+            'end_date_string' => isset($this->args['end']) ? date('Y/m/d H:i:s', $this->args['end']) : null,
+            'timezone'        => get_option('timezone_string') ?: 'UTC',
+            'start_of_week'   => get_option('start_of_week', 1),
         ));
     }
 
