@@ -11,6 +11,7 @@ class DataBuckets
     private array $totals;
     private string $labelFormat;
     private string $gran;
+    private string $tzOffset;
     private int $start;
     private int $end;
     private int $prevStart;
@@ -19,6 +20,8 @@ class DataBuckets
 
     public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = array())
     {
+        global $wpdb;
+
         $this->labelFormat = $labelFormat;
         $this->gran        = $gran;
         $this->start       = $start;
@@ -27,6 +30,14 @@ class DataBuckets
         $this->prevEnd     = $prevEnd;
         $this->totals      = $totals;
         $this->prev_labels = array();
+
+        $offset_seconds = $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
+        $sign           = ($offset_seconds < 0) ? '-' : '+';
+        $abs            = abs($offset_seconds);
+        $h              = floor($abs / 3600);
+        $m              = floor(($abs % 3600) / 60);
+        $tzOffset       = sprintf('%s%02d:%02d', $sign, $h, $m);
+        $this->tzOffset = $tzOffset;
 
         $this->initBuckets();
     }
@@ -41,7 +52,7 @@ class DataBuckets
                 $this->initSeq(86400);
                 break;
             case 'WEEK':
-                $this->initSeqWeek(); // 7 days
+                $this->initSeqWeek();
                 break;
             case 'MONTH':
                 $this->initSeqMonth();
@@ -142,7 +153,7 @@ class DataBuckets
         $prevEnd = $this->prevEnd;
         $offset  = match ($this->gran) {
             'HOUR'  => (function () use ($base, $dt) {
-                $dt = strtotime(wp_date('Y-m-d H:i:s', $dt));
+                $dt = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
                 return floor(($dt - $base) / 3600);
             })(),
             'DAY'   => (function () use ($base, $dt) {

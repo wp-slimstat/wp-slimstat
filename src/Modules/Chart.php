@@ -201,16 +201,13 @@ class Chart
         $start = $args['start'];
         $end   = $args['end'];
 
-        // Timezone offset
-        $tz             = wp_timezone();
-        $offset_seconds = $tz->getOffset(new \DateTime('now'));
-        $sign           = '-';
+        $offset_seconds = $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
+        $sign           = ($offset_seconds < 0) ? '+' : '-';
         $abs            = abs($offset_seconds);
         $h              = floor($abs / 3600);
         $m              = floor(($abs % 3600) / 60);
         $tzOffset       = sprintf('%s%02d:%02d', $sign, $h, $m);
-
-        $startOfWeek = (int) get_option('start_of_week', 1); // default Monday
+        $startOfWeek    = (int) get_option('start_of_week', 1); // default Monday
 
         switch ($gran) {
             case 'HOUR':
@@ -233,7 +230,7 @@ class Chart
         }
 
         $periods = array(
-            'HOUR'  => array('label' => 'Y/m/d H:00'),
+            'HOUR'  => array('label' => 'Y/m/d H:00:00'),
             'DAY'   => array('label' => 'Y/m/d'),
             'MONTH' => array('label' => 'F Y'),
             'WEEK'  => array('label' => 'Y/m/d'),
