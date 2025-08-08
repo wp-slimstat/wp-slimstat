@@ -151,34 +151,32 @@ class DataBuckets
         $base    = 'current' === $period ? $this->start : $this->prevStart;
         $start   = $this->start;
         $prevEnd = $this->prevEnd;
-        $offset  = match ($this->gran) {
-            'HOUR'  => (function () use ($base, $dt) {
-                $dt = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
-                return floor(($dt - $base) / 3600);
-            })(),
-            'DAY'   => (function () use ($base, $dt) {
-                $dt = strtotime(wp_date('Y-m-d H:i:s', $dt));
-                return floor(($dt - $base) / 86400);
-            })(),
-            'MONTH' => (function () use ($base, $dt) {
-                $start  = new \DateTime("@$base");
-                $start  = $start->modify('first day of previous month')->modify('midnight');
-                $target = new \DateTime("@$dt");
-                if ($target->getTimestamp() < $start->getTimestamp()) {
-                    return -1;
-                }
-                $diff = $start->diff($target);
-                return $diff->y * 12 + $diff->m;
-            })(),
-            'WEEK'  => (function () use ($base, $dt, $period, $start, $prevEnd) {
-                $offset = date('W', $dt) - date('W', $base) + (date('Y', $dt) - date('Y', $base)) * 52;
-                if ($offset < 0) {
-                    return -1;
-                }
-                return $offset;
-            })(),
-            'YEAR'  => (new \DateTime("@$base"))->diff(new \DateTime("@$dt"))->y,
-        };
+        if ('HOUR' === $this->gran) {
+            $dt     = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
+            $offset = floor(($dt - $base) / 3600);
+        } elseif ('DAY' === $this->gran) {
+            $dt     = strtotime(wp_date('Y-m-d H:i:s', $dt));
+            $offset = floor(($dt - $base) / 86400);
+        } elseif ('MONTH' === $this->gran) {
+            $start  = new \DateTime("@$base");
+            $start  = $start->modify('first day of previous month')->modify('midnight');
+            $target = new \DateTime("@$dt");
+            if ($target->getTimestamp() < $start->getTimestamp()) {
+                $offset = -1;
+            } else {
+                $diff   = $start->diff($target);
+                $offset = $diff->y * 12 + $diff->m;
+            }
+        } elseif ('WEEK' === $this->gran) {
+            $offset = date('W', $dt) - date('W', $base) + (date('Y', $dt) - date('Y', $base)) * 52;
+            if ($offset < 0) {
+                $offset = -1;
+            }
+        } elseif ('YEAR' === $this->gran) {
+            $offset = (new \DateTime("@$base"))->diff(new \DateTime("@$dt"))->y;
+        } else {
+            $offset = 0; // fallback default
+        }
 
         // Ensure offset is within bounds
         if ($offset <= $this->points) {

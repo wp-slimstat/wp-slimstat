@@ -123,13 +123,23 @@ class Chart
 
         $diff = $args['end'] - $args['start'];
 
-        return match (true) {
-            $diff > 1.5 * self::YEAR => 'yearly',
-            $diff > 90 * self::DAY   => 'monthly',
-            $diff > 2 * self::DAY    => 'daily',
-            $diff > 7 * self::DAY    => 'weekly',
-            default                  => 'hourly',
-        };
+        if ($diff > 1.5 * self::YEAR) {
+            return 'yearly';
+        }
+
+        if ($diff > 90 * self::DAY) {
+            return 'monthly';
+        }
+
+        if ($diff > 2 * self::DAY) {
+            return 'daily';
+        }
+
+        if ($diff > 7 * self::DAY) {
+            return 'weekly';
+        }
+
+        return 'hourly';
     }
 
     private function fetchChartData(array $args): array
@@ -180,14 +190,20 @@ class Chart
             'range' => $range,
         );
 
-        return match ($args['granularity']) {
-            'hourly'  => $this->sqlFor('HOUR', $args, $common),
-            'daily'   => $this->sqlFor('DAY', $args, $common),
-            'monthly' => $this->sqlFor('MONTH', $args, $common),
-            'weekly'  => $this->sqlFor('WEEK', $args, $common),
-            'yearly'  => $this->sqlFor('YEAR', $args, $common),
-            default   => throw new \WP_Error('invalid_granularity'),
-        };
+        switch ($args['granularity']) {
+            case 'hourly':
+                return $this->sqlFor('HOUR', $args, $common);
+            case 'daily':
+                return $this->sqlFor('DAY', $args, $common);
+            case 'monthly':
+                return $this->sqlFor('MONTH', $args, $common);
+            case 'weekly':
+                return $this->sqlFor('WEEK', $args, $common);
+            case 'yearly':
+                return $this->sqlFor('YEAR', $args, $common);
+            default:
+                throw new \WP_Error('invalid_granularity');
+        }
     }
 
     private function sqlFor(string $gran, array $args, array $prevArgs): array
