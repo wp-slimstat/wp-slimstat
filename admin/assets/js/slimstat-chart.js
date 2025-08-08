@@ -226,12 +226,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (["daily", "monthly", "hourly", "weekly"].includes(unitTime)) {
             if (unitTime === "weekly") {
-                maxTicks = 6;
-                xAutoSkip = true;
+                maxTicks = 8;
             }
             if (unitTime === "monthly") {
                 maxTicks = 6;
-                xAutoSkip = true;
             }
 
             if (labels.length % 2 !== 0) {
@@ -277,7 +275,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (window.innerWidth < 600) {
             xTickRotation = 35;
         } else if (unitTime === "weekly") {
-            xTickRotation = 20;
+            xTickRotation = 0;
         }
 
         function customTickCallback(value, index, values) {
@@ -512,8 +510,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");
             const weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, slimstat_chart_vars.end_date_string.replace(/\//g, "-").replace(" ", "T") + "Z");
-
-            return long ? formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" }) : formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" });
+            return long ? formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" }) : formatDate(date, { month: "short", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "short", day: "numeric" });
         } else if (unitTime === "daily") {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");

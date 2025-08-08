@@ -210,19 +210,22 @@ class Chart
     {
         global $wpdb;
 
-        $where = $args['where'] ?? array();
-        $data1 = $args['chart_data']['data1'] ?? '';
-        $data2 = $args['chart_data']['data2'] ?? '';
-        $start = $args['start'];
-        $end   = $args['end'];
+        $where              = $args['where'] ?? array();
+        $data1              = $args['chart_data']['data1'] ?? '';
+        $data2              = $args['chart_data']['data2'] ?? '';
+        $start              = $args['start'];
+        $end                = $args['end'];
+        $mysqlOffsetSeconds = (int) $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
+        $gmt_offset         = get_option('gmt_offset');
+        $wpOffsetSeconds    = (int) ($gmt_offset * 3600);
+        $totalOffsetSeconds = $mysqlOffsetSeconds + $wpOffsetSeconds;
+        $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
+        $abs                = abs($totalOffsetSeconds);
+        $h                  = floor($abs / 3600);
+        $m                  = floor(($abs % 3600) / 60);
+        $tzOffset           = sprintf('%s%02d:%02d', $sign, $h, $m);
 
-        $offset_seconds = $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
-        $sign           = ($offset_seconds < 0) ? '+' : '-';
-        $abs            = abs($offset_seconds);
-        $h              = floor($abs / 3600);
-        $m              = floor(($abs % 3600) / 60);
-        $tzOffset       = sprintf('%s%02d:%02d', $sign, $h, $m);
-        $startOfWeek    = (int) get_option('start_of_week', 1); // default Monday
+        $startOfWeek = (int) get_option('start_of_week', 1); // default Monday
 
         switch ($gran) {
             case 'HOUR':
