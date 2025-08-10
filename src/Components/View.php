@@ -2,6 +2,13 @@
 
 namespace SlimStat\Components;
 
+// don't load directly.
+if (! defined('ABSPATH')) {
+    header('Status: 403 Forbidden');
+    header('HTTP/1.1 403 Forbidden');
+    exit;
+}
+
 use SlimStat\Exception\SystemErrorException;
 use wp_slimstat as SlimStat;
 
@@ -17,13 +24,13 @@ class View
      *
      * @throws Exception if the view file cannot be found.
      */
-    public static function load($view, $args = [], $return = false, $baseDir = null)
+    public static function load($view, $args = array(), $return = false, $baseDir = null)
     {
         // Default to SLIMSTAT_DIR
         $baseDir = empty($baseDir) ? SLIMSTAT_DIR : $baseDir;
 
         try {
-            $viewList = is_array($view) ? $view : [$view];
+            $viewList = is_array($view) ? $view : array($view);
 
             foreach ($viewList as $view) {
                 $viewPath = "$baseDir/views/$view.php";
@@ -49,5 +56,4 @@ class View
             \SlimStat::log($e->getMessage(), 'error');
         }
     }
-
 }

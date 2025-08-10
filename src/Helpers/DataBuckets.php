@@ -2,6 +2,12 @@
 
 namespace SlimStat\Helpers;
 
+// don't load directly.
+if (! defined('ABSPATH')) {
+    header('Status: 403 Forbidden');
+    header('HTTP/1.1 403 Forbidden');
+    exit;
+}
 class DataBuckets
 {
     private array $labels       = array();
@@ -149,13 +155,14 @@ class DataBuckets
     public function addRow(int $dt, int $v1, int $v2, string $period): void
     {
         $base    = 'current' === $period ? $this->start : $this->prevStart;
+        $base    = strtotime(date('Y-m-d H:i:s', $base));
+        $dt      = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
         $start   = $this->start;
         $prevEnd = $this->prevEnd;
         if ('HOUR' === $this->gran) {
-            $dt     = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
+            $dt     = strtotime(date('Y-m-d H:00:00', $dt));
             $offset = floor(($dt - $base) / 3600);
         } elseif ('DAY' === $this->gran) {
-            $dt     = strtotime(wp_date('Y-m-d H:i:s', $dt));
             $offset = floor(($dt - $base) / 86400);
         } elseif ('MONTH' === $this->gran) {
             $start  = new \DateTime("@$base");

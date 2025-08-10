@@ -3,10 +3,9 @@
 namespace SlimStat\Modules;
 
 // don't load directly.
-if (!defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     header('Status: 403 Forbidden');
     header('HTTP/1.1 403 Forbidden');
-
     exit;
 }
 
@@ -210,15 +209,13 @@ class Chart
     {
         global $wpdb;
 
-        $where              = $args['where'] ?? array();
-        $data1              = $args['chart_data']['data1'] ?? '';
-        $data2              = $args['chart_data']['data2'] ?? '';
-        $start              = $args['start'];
-        $end                = $args['end'];
-        $mysqlOffsetSeconds = (int) $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
-        $gmt_offset         = get_option('gmt_offset');
-        $wpOffsetSeconds    = (int) ($gmt_offset * 3600);
-        $totalOffsetSeconds = $mysqlOffsetSeconds + $wpOffsetSeconds;
+        $where = $args['where'] ?? array();
+        $data1 = $args['chart_data']['data1'] ?? '';
+        $data2 = $args['chart_data']['data2'] ?? '';
+        $start = $args['start'];
+        $end   = $args['end'];
+
+        $totalOffsetSeconds = (int) $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);
