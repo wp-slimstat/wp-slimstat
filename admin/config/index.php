@@ -645,8 +645,16 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         }
     }
 
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( __( 'Insufficient permissions.', 'wp-slimstat' ) );
+    }
+
     // Some of them require extra processing
     if (!empty($_POST['options'])) {
+
+        if (!check_admin_referer( 'slimstat_save_settings' )) {
+            wp_die(__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
+        }
         // DB Indexes
         if (!empty($_POST['options']['db_indexes'])) {
             if ($_POST['options']['db_indexes'] == 'on' && wp_slimstat::$settings['db_indexes'] == 'no') {
@@ -795,6 +803,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 
             <form action="<?php echo wp_slimstat_admin::$config_url . $current_tab ?>" method="post" id="slimstat-options-<?php echo $current_tab ?>">
                 <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings'); ?>
+                <?php wp_nonce_field('slimstat_save_settings'); ?>
                 <table class="form-table widefat <?php echo $GLOBALS['wp_locale']->text_direction ?>">
                     <tbody><?php
                     $i = 0;
