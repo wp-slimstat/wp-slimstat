@@ -510,7 +510,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");
             const weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, slimstat_chart_vars.end_date_string.replace(/\//g, "-").replace(" ", "T") + "Z");
-            return long ? formatDate(date, { month: "long", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "long", day: "numeric" }) : formatDate(date, { month: "short", day: "numeric" }) + " - " + formatDate(weekEnd, { month: "short", day: "numeric" });
+            const weekStart = formatDate(date, { month: long ? "long" : "short", day: "numeric" });
+            const weekEndFormatted = formatDate(weekEnd, { month: long ? "long" : "short", day: "numeric" });
+
+            return weekEndFormatted === weekStart ? weekStart : weekStart + " - " + weekEndFormatted;
         } else if (unitTime === "daily") {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");

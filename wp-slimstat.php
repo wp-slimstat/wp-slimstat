@@ -36,14 +36,14 @@ class wp_slimstat
 {
     public static $settings = array();
 
-    public static $wpdb = null;
+    public static $wpdb       = null;
     public static $upload_dir = '';
 
     public static $update_checker = array();
     public static $raw_post_array = array();
 
-    protected static $data_js = array('id' => 0);
-    protected static $stat = array();
+    protected static $data_js           = array('id' => 0);
+    protected static $stat              = array();
     protected static $date_i18n_filters = array();
 
     /**
@@ -54,7 +54,7 @@ class wp_slimstat
         \SlimStat\Providers\RESTService::run();
 
         // Load all the settings
-        if (is_network_admin() && (empty($_GET['page']) || strpos($_GET['page'], 'slimview') === false)) {
+        if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
             self::$settings = get_site_option('slimstat_options', array());
         } else {
             self::$settings = get_option('slimstat_options', array());
@@ -94,24 +94,24 @@ class wp_slimstat
         self::$upload_dir = apply_filters('slimstat_maxmind_path', self::$upload_dir);
 
         // Allow add-ons to turn off the tracker based on other conditions
-        $is_tracking_filter    = apply_filters('slimstat_filter_pre_tracking', strpos(self::get_request_uri(), 'wp-admin/admin-ajax.php') === false);
+        $is_tracking_filter    = apply_filters('slimstat_filter_pre_tracking', false === strpos(self::get_request_uri(), 'wp-admin/admin-ajax.php'));
         $is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
 
         // Enable the tracker (both server- and client-side)
-        if ((!is_admin() || self::$settings['track_admin_pages'] == 'on') && self::$settings['is_tracking'] == 'on' && $is_tracking_filter) {
+        if ((!is_admin() || 'on' == self::$settings['track_admin_pages']) && 'on' == self::$settings['is_tracking'] && $is_tracking_filter) {
 
             // Is server-side tracking active?
-            if (self::$settings['javascript_mode'] != 'on') {
+            if ('on' != self::$settings['javascript_mode']) {
                 add_action(is_admin() ? 'admin_init' : 'wp', array(__CLASS__, 'slimtrack'), 5);
 
-                if (self::$settings['ignore_wp_users'] != 'on') {
+                if ('on' != self::$settings['ignore_wp_users']) {
                     add_action('login_init', array(__CLASS__, 'slimtrack'), 10);
                 }
             }
 
             // Slimstat tracks screen resolutions, outbound links and other client-side information using a client-side tracker
             add_action(is_admin() ? 'admin_enqueue_scripts' : 'wp_enqueue_scripts', array(__CLASS__, 'enqueue_tracker'), 15);
-            if (self::$settings['ignore_wp_users'] != 'on') {
+            if ('on' != self::$settings['ignore_wp_users']) {
                 add_action('login_enqueue_scripts', array(__CLASS__, 'enqueue_tracker'), 10);
             }
 
@@ -162,7 +162,7 @@ class wp_slimstat
     public static function slimtrack_ajax()
     {
         // If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
-        if (self::$settings['is_tracking'] != 'on') {
+        if ('on' != self::$settings['is_tracking']) {
             exit(self::_log_error(204));
         }
 
@@ -176,7 +176,7 @@ class wp_slimstat
             self::$stat['referer'] = self::_base64_url_decode(self::$data_js['ref']);
 
             $parsed_ref = parse_url(self::$stat['referer'], PHP_URL_HOST);
-            if ($parsed_ref === false) {
+            if (false === $parsed_ref) {
                 exit(self::_log_error(201));
             }
         }
@@ -187,7 +187,7 @@ class wp_slimstat
             // Make sure that the control code is valid
             self::$data_js['id'] = self::_get_value_without_checksum(self::$data_js['id']);
 
-            if (self::$data_js['id'] === false) {
+            if (false === self::$data_js['id']) {
                 exit(self::_log_error(101));
             }
 
@@ -221,7 +221,7 @@ class wp_slimstat
                 $event_info = array(
                     'position' => strip_tags(trim(self::$data_js['pos'])),
                     'id'       => self::$stat['id'],
-                    'dt'       => self::date_i18n('U')
+                    'dt'       => self::date_i18n('U'),
                 );
 
                 if (!empty(self::$data_js['no'])) {
@@ -246,7 +246,7 @@ class wp_slimstat
                     $resource        = self::_base64_url_decode(self::$data_js['res']);
                     $parsed_resource = parse_url($resource);
 
-                    if ($parsed_resource === false or empty($parsed_resource['host'])) {
+                    if (false === $parsed_resource or empty($parsed_resource['host'])) {
                         exit(self::_log_error(203));
                     }
 
@@ -261,7 +261,7 @@ class wp_slimstat
 
                         $id = self::slimtrack();
                     } // .. or outbound link? If so, update the pageview with the new info
-                    else if ($parsed_resource['host'] != $site_host) {
+                    elseif ($parsed_resource['host'] != $site_host) {
                         self::$stat['outbound_resource'] = $resource;
 
                         // Visitor is still on this page, record the timestamp in the corresponding field
@@ -282,7 +282,7 @@ class wp_slimstat
             if (!empty(self::$data_js['res'])) {
                 self::$stat['resource'] = self::_base64_url_decode(self::$data_js['res']);
 
-                if (parse_url(self::$stat['resource']) === false) {
+                if (false === parse_url(self::$stat['resource'])) {
                     exit(self::_log_error(203));
                 }
             }
@@ -293,7 +293,7 @@ class wp_slimstat
             if (!empty(self::$data_js['ci'])) {
                 self::$data_js['ci'] = self::_get_value_without_checksum(self::$data_js['ci']);
 
-                if (self::$data_js['ci'] === false) {
+                if (false === self::$data_js['ci']) {
                     exit(self::_log_error(102));
                 }
 
@@ -304,7 +304,7 @@ class wp_slimstat
                 }
 
                 foreach (array('content_type', 'category', 'content_id', 'author') as $a_key) {
-                    if (!empty($content_info[$a_key]) && $a_key !== 'content_id') {
+                    if (!empty($content_info[$a_key]) && 'content_id' !== $a_key) {
                         self::$stat[$a_key] = sanitize_text_field($content_info[$a_key]);
                     } elseif (!empty($content_info[$a_key])) {
                         self::$stat[$a_key] = absint($content_info[$a_key]);
@@ -335,7 +335,7 @@ class wp_slimstat
     }
     // end slimtrack_ajax
 
-     /**
+    /**
      * The main logging function
      *
      * @param string $message The message to be logged.
@@ -355,7 +355,6 @@ class wp_slimstat
             error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
         }
     }
-
 
     /**
      * Rewrite rule for static tracker
@@ -387,7 +386,7 @@ class wp_slimstat
             header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
 
             $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
-            $js_path = plugin_dir_path(__FILE__) . "/wp-slimstat{$jstracker_suffix}.js";
+            $js_path          = plugin_dir_path(__FILE__) . "/wp-slimstat{$jstracker_suffix}.js";
 
             if (file_exists($js_path)) {
                 readfile($js_path);
@@ -423,7 +422,7 @@ class wp_slimstat
         unset(self::$stat['id']);
 
         // Opt-out of tracking via cookie
-        if (self::$settings['display_opt_out'] == 'on') {
+        if ('on' == self::$settings['display_opt_out']) {
             $cookie_names = array('slimstat_optout_tracking' => 'true');
 
             if (!empty(self::$settings['opt_out_cookie_names'])) {
@@ -439,7 +438,7 @@ class wp_slimstat
             }
 
             foreach ($cookie_names as $a_name => $a_value) {
-                if (isset($_COOKIE[$a_name]) && strpos($_COOKIE[$a_name], $a_value) !== false) {
+                if (isset($_COOKIE[$a_name]) && false !== strpos($_COOKIE[$a_name], $a_value)) {
                     // remove slimstat cookie
                     unset($_COOKIE['slimstat_tracking_code']);
                     @setcookie(
@@ -468,7 +467,7 @@ class wp_slimstat
 
             $cookie_found = false;
             foreach ($cookie_names as $a_name => $a_value) {
-                if (isset($_COOKIE[$a_name]) && strpos($_COOKIE[$a_name], $a_value) !== false) {
+                if (isset($_COOKIE[$a_name]) && false !== strpos($_COOKIE[$a_name], $a_value)) {
                     $cookie_found = true;
                 }
             }
@@ -487,9 +486,9 @@ class wp_slimstat
         }
 
         // IP address
-        list (self::$stat['ip'], self::$stat['other_ip']) = self::_get_remote_ip();
+        list(self::$stat['ip'], self::$stat['other_ip']) = self::_get_remote_ip();
 
-        if (empty(self::$stat['ip']) || self::$stat['ip'] == '0.0.0.0') {
+        if (empty(self::$stat['ip']) || '0.0.0.0' == self::$stat['ip']) {
             $error = self::_log_error(202);
             return false;
         }
@@ -498,7 +497,7 @@ class wp_slimstat
         foreach (self::string_to_array(self::$settings['ignore_ip']) as $a_ip_range) {
             $ip_to_ignore = $a_ip_range;
 
-            if (strpos($ip_to_ignore, '/') !== false) {
+            if (false !== strpos($ip_to_ignore, '/')) {
                 list($ip_to_ignore, $cidr_mask) = explode('/', trim($ip_to_ignore));
             } else {
                 $cidr_mask = self::_get_mask_length($ip_to_ignore);
@@ -514,7 +513,7 @@ class wp_slimstat
         }
 
         // Do we need to anonymize this IP address?
-        if (self::$settings['anonymize_ip'] == 'on') {
+        if ('on' == self::$settings['anonymize_ip']) {
             self::$stat['ip'] = wp_privacy_anonymize_ip(self::$stat['ip']);
 
             if (!empty(self::$stat['other_ip'])) {
@@ -578,7 +577,7 @@ class wp_slimstat
 
             // Are we storing internal referrers in the database?
             $parsed_site_url = parse_url(get_site_url(), PHP_URL_HOST);
-            if (!empty($parsed_url['host']) && $parsed_url['host'] == $parsed_site_url && self::$settings['track_same_domain_referers'] != 'on') {
+            if (!empty($parsed_url['host']) && $parsed_url['host'] == $parsed_site_url && 'on' != self::$settings['track_same_domain_referers']) {
                 unset(self::$stat['referer']);
             }
         }
@@ -608,14 +607,14 @@ class wp_slimstat
         }
 
         // Do not track report pages in the admin
-        if ((!empty(self::$stat['resource']) && strpos(self::$stat['resource'], 'wp-admin/admin-ajax.php') !== false) || (!empty($_GET['page']) && strpos($_GET['page'], 'slimview') !== false)) {
+        if ((!empty(self::$stat['resource']) && false !== strpos(self::$stat['resource'], 'wp-admin/admin-ajax.php')) || (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview'))) {
             return false;
         }
 
         // Should we ignore this user?
         if (!empty($GLOBALS['current_user']->ID)) {
             // Don't track logged-in users, if the corresponding option is enabled
-            if (self::$settings['ignore_wp_users'] == 'on') {
+            if ('on' == self::$settings['ignore_wp_users']) {
                 return false;
             }
 
@@ -645,7 +644,7 @@ class wp_slimstat
                 LIMIT 0,1", self::$stat['ip']), ARRAY_A);
 
             if (!empty($spam_comment['comment_count'])) {
-                if (self::$settings['ignore_spammers'] == 'on') {
+                if ('on' == self::$settings['ignore_spammers']) {
                     return false;
                 } else {
                     self::$stat['notes'][]  = 'spam:yes';
@@ -666,7 +665,7 @@ class wp_slimstat
         self::$stat['language'] = self::_get_language();
 
         // Is this language blacklisted?
-        if (!empty(self::$stat['language']) && !empty(self::$settings['ignore_languages']) && stripos(self::$settings['ignore_languages'], self::$stat['language']) !== false) {
+        if (!empty(self::$stat['language']) && !empty(self::$settings['ignore_languages']) && false !== stripos(self::$settings['ignore_languages'], self::$stat['language'])) {
             return false;
         }
 
@@ -680,7 +679,7 @@ class wp_slimstat
                 return false;
             }
 
-            if (!empty($geolocation_data['country']['iso_code']) && $geolocation_data['country']['iso_code'] != 'xx') {
+            if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
                 self::$stat['country'] = strtolower($geolocation_data['country']['iso_code']);
 
                 if (!empty($geolocation_data['city']['names']['en'])) {
@@ -697,15 +696,14 @@ class wp_slimstat
             }
 
             // Is this country blacklisted?
-            if (!empty(self::$stat['country']) && !empty(self::$settings['ignore_countries']) && stripos(self::$settings['ignore_countries'], self::$stat['country']) !== false) {
+            if (!empty(self::$stat['country']) && !empty(self::$settings['ignore_countries']) && false !== stripos(self::$settings['ignore_countries'], self::$stat['country'])) {
                 return false;
             }
         }
 
         // Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
-        if ((isset($_SERVER['HTTP_X_MOZ']) && (strtolower($_SERVER['HTTP_X_MOZ']) == 'prefetch')) ||
-            (isset($_SERVER['HTTP_X_PURPOSE']) && (strtolower($_SERVER['HTTP_X_PURPOSE']) == 'preview'))) {
-            if (self::$settings['ignore_prefetch'] == 'on') {
+        if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' == strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' == strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
+            if ('on' == self::$settings['ignore_prefetch']) {
                 return false;
             } else {
                 self::$stat['notes'][] = 'pre:yes';
@@ -716,7 +714,7 @@ class wp_slimstat
         $browser = \SlimStat\Services\Browscap::get_browser();
 
         // Are we ignoring bots?
-        if (self::$settings['ignore_bots'] == 'on' && $browser['browser_type'] == 1) {
+        if ('on' == self::$settings['ignore_bots'] && 1 == $browser['browser_type']) {
             return false;
         }
 
@@ -772,7 +770,7 @@ class wp_slimstat
         }
 
         // Does this visitor have a visit_id cookie?
-        $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(self::$settings['set_tracker_cookie']) && self::$settings['set_tracker_cookie'] == 'on'));
+        $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(self::$settings['set_tracker_cookie']) && 'on' == self::$settings['set_tracker_cookie']));
         if ($set_cookie) {
             if (empty(self::$stat['visit_id']) && !empty(self::$stat['id'])) {
                 // Set a cookie to track this visit (Google and other non-human engines will just ignore it)
@@ -782,7 +780,7 @@ class wp_slimstat
                     time() + 2678400, // one month
                     COOKIEPATH
                 );
-            } elseif (!$cookie_has_been_set && self::$settings['extend_session'] == 'on' && self::$stat['visit_id'] > 0) {
+            } elseif (!$cookie_has_been_set && 'on' == self::$settings['extend_session'] && self::$stat['visit_id'] > 0) {
                 @setcookie(
                     'slimstat_tracking_code',
                     self::_get_value_with_checksum(self::$stat['visit_id']),
@@ -805,9 +803,9 @@ class wp_slimstat
 
         if (isset($_SERVER['REQUEST_URI'])) {
             return urldecode(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
-        } else if (isset($_SERVER['SCRIPT_NAME'])) {
+        } elseif (isset($_SERVER['SCRIPT_NAME'])) {
             $request_url = sanitize_text_field(wp_unslash($_SERVER['SCRIPT_NAME']));
-        } else if (isset($_SERVER['PHP_SELF'])) {
+        } elseif (isset($_SERVER['PHP_SELF'])) {
             $request_url = sanitize_text_field(wp_unslash($_SERVER['PHP_SELF']));
         }
 
@@ -822,7 +820,7 @@ class wp_slimstat
 
     public static function is_local_ip_address($ip_address = '')
     {
-        if (!filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        if (!filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE|FILTER_FLAG_NO_RES_RANGE)) {
             return true;
         }
 
@@ -838,7 +836,7 @@ class wp_slimstat
             'f' => '',    // recent, popular, count, widget
             'w' => '',    // column to use (for recent, popular and count) or widget to use
             's' => ' ',    // separator
-            'o' => 0    // offset for counters
+            'o' => 0,    // offset for counters
         ), $_attributes);
 
         $f = isset($_attributes['f']) ? $_attributes['f'] : '';
@@ -858,7 +856,7 @@ class wp_slimstat
         }
 
         // Validation the parameter w
-        if (in_array($w, array('count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link', 'ip', 'id', 'searchterms', 'username', 'resource', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p2_23')) == false) {
+        if (false == in_array($w, array('count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link', 'ip', 'id', 'searchterms', 'username', 'resource', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p2_23'))) {
             return '<!-- Slimstat Shortcode Error: invalid parameter for w -->';
         }
 
@@ -881,7 +879,7 @@ class wp_slimstat
         switch ($f) {
             case 'count':
             case 'count-all':
-                $output = wp_slimstat_db::count_records($w, $where, strpos($f, 'all') === false) + $o;
+                $output = wp_slimstat_db::count_records($w, $where, false === strpos($f, 'all')) + $o;
                 break;
 
             case 'widget':
@@ -908,7 +906,7 @@ class wp_slimstat
             case 'top-all':
                 $function = 'get_' . str_replace('-all', '', $f);
 
-                if ($w == '*') {
+                if ('*' == $w) {
                     $w = 'id';
                 }
 
@@ -935,7 +933,7 @@ class wp_slimstat
                 }
 
                 // Retrieve the data
-                $results = wp_slimstat_db::$function(implode(', ', $w_clean), $where, '', strpos($f, 'all') === false, $as_column);
+                $results = wp_slimstat_db::$function(implode(', ', $w_clean), $where, '', false === strpos($f, 'all'), $as_column);
 
                 // No data? No problem!
                 if (empty($results)) {
@@ -1067,13 +1065,13 @@ class wp_slimstat
             'function'  => htmlentities($_request['function'], ENT_QUOTES, 'UTF-8'),
             'dimension' => htmlentities($_request['dimension'], ENT_QUOTES, 'UTF-8'),
 
-            'data' => 0
+            'data'      => 0,
         );
 
         switch ($_request['function']) {
             case 'count':
             case 'count-all':
-                $response['data'] = wp_slimstat_db::count_records($_request['dimension'], '', strpos($_request['function'], '-all') === false);
+                $response['data'] = wp_slimstat_db::count_records($_request['dimension'], '', false === strpos($_request['function'], '-all'));
                 break;
 
             case 'recent':
@@ -1083,7 +1081,7 @@ class wp_slimstat
                 $function = 'get_' . str_replace('-all', '', $_request['function']);
 
                 // Retrieve the data
-                $response['data'] = array_values(wp_slimstat_db::$function($_request['dimension'], '', '', strpos($_request['function'], '-all') === false));
+                $response['data'] = array_values(wp_slimstat_db::$function($_request['dimension'], '', '', false === strpos($_request['function'], '-all')));
                 break;
 
             default:
@@ -1125,23 +1123,23 @@ class wp_slimstat
             'args'                => array(
                 'token'     => array(
                     'description' => __('You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control.', 'wp-slimstat'),
-                    'type'        => 'string'
+                    'type'        => 'string',
                 ),
                 'function'  => array(
                     'description' => __('This parameter specifies the type of QUERY you would like to perform. Accepted funciton values include: count, count-all, recent, recent-all, top and top-all.', 'wp-slimstat'),
                     'type'        => 'string',
-                    'enum'        => array('count', 'count-all', 'recent', 'recent-all', 'top', 'top-all')
+                    'enum'        => array('count', 'count-all', 'recent', 'recent-all', 'top', 'top-all'),
                 ),
                 'dimension' => array(
                     'description' => __('This parameter indicates what dimension to return: * (all data), ip, resource, browser, operating system, etc. You can only specify one dimension at a time.', 'wp-slimstat'),
                     'type'        => 'string',
-                    'enum'        => array('*', 'id', 'ip', 'username', 'email', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'tz_offset', 'outbound_resource')
+                    'enum'        => array('*', 'id', 'ip', 'username', 'email', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'tz_offset', 'outbound_resource'),
                 ),
                 'filters'   => array(
                     'description' => __('This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)', 'wp-slimstat'),
-                    'type'        => 'string'
-                )
-            )
+                    'type'        => 'string',
+                ),
+            ),
         ));
     }
     // end register_rest_route
@@ -1172,7 +1170,7 @@ class wp_slimstat
                     }
                 }
             }
-        } else if (!empty($GLOBALS['wp_filter']['date_i18n']['callbacks']) && is_array($GLOBALS['wp_filter']['date_i18n']['callbacks'])) {
+        } elseif (!empty($GLOBALS['wp_filter']['date_i18n']['callbacks']) && is_array($GLOBALS['wp_filter']['date_i18n']['callbacks'])) {
             self::$date_i18n_filters = $GLOBALS['wp_filter']['date_i18n']['callbacks'];
             remove_all_filters('date_i18n');
         }
@@ -1305,9 +1303,7 @@ class wp_slimstat
             'can_view'                               => '',
 
             // Access Control - Reports
-            'backend_transport_method'               => 'ajax',
-            'enable_fallback_detection'              => true,
-            'enable_adblock_bypass'                  => false,
+            'tracking_request_method'                => 'ajax',
 
             // Access Control - Customizer
             'capability_can_customize'               => 'manage_options',
@@ -1338,7 +1334,7 @@ class wp_slimstat
             'notice_translate'                       => 'on',
 
             // Network-wide Settings
-            'locked_options'                         => ''
+            'locked_options'                         => '',
         );
     }
     // end init_options
@@ -1365,26 +1361,26 @@ class wp_slimstat
         $method = isset(self::$settings['tracking_request_method']) ? self::$settings['tracking_request_method'] : 'rest';
 
         // Prepare URLs for all methods
-        $rest_url = rest_url('slimstat/v1/hit');
-        $ajax_url = admin_url('admin-ajax.php');
+        $rest_url          = rest_url('slimstat/v1/hit');
+        $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
-        $adblock_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
-        $adblock_url = home_url("request/$adblock_hash/");
+        $adblock_hash      = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
+        $adblock_url       = home_url("request/$adblock_hash/");
 
         // Always provide all possible endpoints for fallback logic
         $params = array(
-            'transport' => $method,
-            'ajaxurl_rest' => $rest_url,
-            'ajaxurl_ajax' => (self::$settings['ajax_relative_path'] == 'on') ? $ajax_url_relative : $ajax_url,
+            'transport'       => $method,
+            'ajaxurl_rest'    => $rest_url,
+            'ajaxurl_ajax'    => ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url,
             'ajaxurl_adblock' => $adblock_url,
         );
 
         // Set the primary ajaxurl based on the selected method
-        if ($method === 'rest') {
+        if ('rest' === $method) {
             $params['ajaxurl'] = $rest_url;
-        } elseif ($method === 'ajax') {
-            $params['ajaxurl'] = (self::$settings['ajax_relative_path'] == 'on') ? $ajax_url_relative : $ajax_url;
-        } elseif ($method === 'adblock_bypass') {
+        } elseif ('ajax' === $method) {
+            $params['ajaxurl'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
+        } elseif ('adblock_bypass' === $method) {
             $params['ajaxurl'] = $adblock_url;
             // Also set transport to 'adblock' for JS clarity
             $params['transport'] = 'adblock';
@@ -1392,14 +1388,14 @@ class wp_slimstat
             $params['ajaxurl'] = $rest_url;
         }
 
-        $baseurl = parse_url(get_home_url());
+        $baseurl           = parse_url(get_home_url());
         $params['baseurl'] = empty($baseurl['path']) ? '/' : $baseurl['path'];
 
         if (!empty(self::$settings['do_not_track_outbound_classes_rel_href'])) {
             $params['dnt'] = str_replace(' ', '', self::$settings['do_not_track_outbound_classes_rel_href']);
         }
 
-        if (self::$settings['display_opt_out'] == 'on') {
+        if ('on' == self::$settings['display_opt_out']) {
             $params['oc'] = array('slimstat_optout_tracking');
             if (!empty(self::$settings['opt_out_cookie_names'])) {
                 foreach (self::string_to_array(self::$settings['opt_out_cookie_names']) as $a_cookie_pair) {
@@ -1409,7 +1405,7 @@ class wp_slimstat
             $params['oc'] = implode(',', $params['oc']);
         }
 
-        if (self::$settings['javascript_mode'] != 'on') {
+        if ('on' != self::$settings['javascript_mode']) {
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
@@ -1423,10 +1419,10 @@ class wp_slimstat
         $params = apply_filters('slimstat_js_params', $params);
 
         // Register the correct script for adblock bypass, CDN, or default
-        if ($method === 'adblock_bypass') {
+        if ('adblock_bypass' === $method) {
             $hash = md5(site_url() . 'slimstat');
             wp_register_script('wp_slimstat', home_url("/$hash.js/"), array(), SLIMSTAT_ANALYTICS_VERSION, true);
-        } elseif (self::$settings['enable_cdn'] == 'on') {
+        } elseif ('on' == self::$settings['enable_cdn']) {
             wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', array(), null, true);
         } else {
             $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
@@ -1440,11 +1436,11 @@ class wp_slimstat
          *
          * Ensures compatibility with WordPress Interactivity API by registering the script module and its dependencies.
          */
-        if ( function_exists( 'wp_interactivity_register_script_module' ) ) {
-            wp_interactivity_register_script_module( 'wp_slimstat', array(
-                'name' => 'wp_slimstat',
+        if (function_exists('wp_interactivity_register_script_module')) {
+            wp_interactivity_register_script_module('wp_slimstat', array(
+                'name'         => 'wp_slimstat',
                 'dependencies' => array(),
-            ) );
+            ));
         }
 
         wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
@@ -1454,7 +1450,7 @@ class wp_slimstat
 
     public static function add_defer_to_script_tag($_tag, $_handle)
     {
-        if ($_handle === 'wp_slimstat' && false === stripos($_tag, 'defer')) {
+        if ('wp_slimstat' === $_handle && false === stripos($_tag, 'defer')) {
             $_tag = str_replace('<script ', '<script defer ', $_tag);
         }
 
@@ -1475,25 +1471,26 @@ class wp_slimstat
         $days_ago = strtotime(self::date_i18n('Y-m-d H:i:s') . " -$autopurge_interval days");
 
         // Copy entries to the archive table, if needed
-        if (self::$settings['auto_purge_delete'] != 'no') {
+        if ('no' != self::$settings['auto_purge_delete']) {
             $is_copy_done = self::$wpdb->query("
                 INSERT INTO {$GLOBALS['wpdb']->prefix}slim_stats_archive (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt)
                 SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt
                 FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
                 WHERE dt < $days_ago");
 
-            if ($is_copy_done !== false) {
+            if (false !== $is_copy_done) {
                 self::$wpdb->query("DELETE ts FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats ts WHERE ts.dt < $days_ago");
             }
 
-            $is_copy_done = self::$wpdb->query("
+            $is_copy_done = self::$wpdb->query(
+                "
                 INSERT INTO {$GLOBALS['wpdb']->prefix}slim_events_archive (type, event_description, notes, position, id, dt)
                 SELECT type, event_description, notes, position, id, dt
                 FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events
                 WHERE dt < $days_ago"
             );
 
-            if ($is_copy_done !== false) {
+            if (false !== $is_copy_done) {
                 self::$wpdb->query("DELETE te FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_events te WHERE te.dt < $days_ago");
             }
         } else {
@@ -1609,7 +1606,8 @@ class wp_slimstat
                 '.{}$4',
                 '$1{}.',
             ),
-            $_url);
+            $_url
+        );
     }
     // end get_lossy_url
 
@@ -1619,7 +1617,7 @@ class wp_slimstat
     public static function update_content_type($_status = 301, $_location = '')
     {
         if ($_status >= 300 && $_status < 400) {
-// SEE WHY THIS DOESN'T WORK?!
+            // SEE WHY THIS DOESN'T WORK?!
             self::$stat['content_type'] = 'redirect:' . intval($_status);
             self::_update_row(self::$stat);
         }
@@ -1645,7 +1643,7 @@ class wp_slimstat
 
         // Remove unwanted characters from data (SQL injections, anyone?)
         foreach ($_data as $key => $value) {
-            if ($key == 'resource') {
+            if ('resource' == $key) {
                 $_data[$key] = sanitize_url($value);
             } else {
                 $_data[$key] = sanitize_text_field($value);
@@ -1709,7 +1707,7 @@ class wp_slimstat
     {
         $ip_array = array('', '');
 
-        if (!empty($_SERVER['REMOTE_ADDR']) && filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP) !== false) {
+        if (!empty($_SERVER['REMOTE_ADDR']) && false !== filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
             $ip_array[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
 
@@ -1717,7 +1715,7 @@ class wp_slimstat
         foreach ($originating_ip_headers as $a_header) {
             if (!empty($_SERVER[$a_header])) {
                 foreach (explode(',', $_SERVER[$a_header]) as $a_ip) {
-                    if (filter_var($a_ip, FILTER_VALIDATE_IP) !== false && $a_ip != $ip_array[0]) {
+                    if (false !== filter_var($a_ip, FILTER_VALIDATE_IP) && $a_ip != $ip_array[0]) {
                         $ip_array[1] = $a_ip;
                         break;
                     }
@@ -1764,7 +1762,7 @@ class wp_slimstat
         // - charsets: list of charset used to encode the keywords
         //
         $search_engines = file_get_contents(plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json');
-        $search_engines = json_decode($search_engines, TRUE);
+        $search_engines = json_decode($search_engines, true);
 
         $parsed_url = @parse_url($_url);
 
@@ -1794,7 +1792,7 @@ class wp_slimstat
                     $charset = $search_engines['charsets'][0];
                     if (count($search_engines['charsets']) > 1 && function_exists('mb_detect_encoding')) {
                         $charset = mb_detect_encoding($searchterms, $search_engines['charsets']);
-                        if ($charset === false) {
+                        if (false === $charset) {
                             $charset = $search_engines['charsets'][0];
                         }
                     }
@@ -1805,7 +1803,7 @@ class wp_slimstat
                     }
                 }
             }
-        } else if (!empty($parsed_url['query'])) {
+        } elseif (!empty($parsed_url['query'])) {
             // We weren't lucky, but there's still hope
             foreach (array('ask', 'k', 'q', 'qs', 'qt', 'query', 's', 'string') as $a_param) {
                 $searchterms = self::_get_param_from_query_string($parsed_url['query'], $a_param);
@@ -1845,7 +1843,7 @@ class wp_slimstat
         if (is_404()) {
             $content_info['content_type'] = '404';
         } // Type
-        else if (is_single()) {
+        elseif (is_single()) {
             if (($post_type = get_post_type()) != 'post') {
                 $post_type = 'cpt:' . $post_type;
             }
@@ -1862,7 +1860,7 @@ class wp_slimstat
                 }
             }
             $content_info['content_id'] = $GLOBALS['post']->ID;
-        } else if (is_page()) {
+        } elseif (is_page()) {
             $content_info['content_type'] = 'page';
             $content_info['content_id']   = $GLOBALS['post']->ID;
         } elseif (is_attachment()) {
@@ -1891,21 +1889,21 @@ class wp_slimstat
                     $content_info['category'] = $cat_info->term_id;
                 }
             }
-        } else if (is_date()) {
+        } elseif (is_date()) {
             $content_info['content_type'] = 'date';
-        } else if (is_author()) {
+        } elseif (is_author()) {
             $content_info['content_type'] = 'author';
-        } else if (is_archive()) {
+        } elseif (is_archive()) {
             $content_info['content_type'] = 'archive';
-        } else if (is_search()) {
+        } elseif (is_search()) {
             $content_info['content_type'] = 'search';
-        } else if (is_feed()) {
+        } elseif (is_feed()) {
             $content_info['content_type'] = 'feed';
-        } else if (is_home() || is_front_page()) {
+        } elseif (is_home() || is_front_page()) {
             $content_info['content_type'] = 'home';
-        } else if (!empty($GLOBALS['pagenow']) && $GLOBALS['pagenow'] == 'wp-login.php') {
+        } elseif (!empty($GLOBALS['pagenow']) && 'wp-login.php' == $GLOBALS['pagenow']) {
             $content_info['content_type'] = 'login';
-        } else if (!empty($GLOBALS['pagenow']) && $GLOBALS['pagenow'] == 'wp-register.php') {
+        } elseif (!empty($GLOBALS['pagenow']) && 'wp-register.php' == $GLOBALS['pagenow']) {
             $content_info['content_type'] = 'registration';
         } // WordPress sets is_admin() to true for all ajax requests ( front-end or admin-side )
         elseif (is_admin() && (!defined('DOING_AJAX') || !DOING_AJAX)) {
@@ -1948,7 +1946,7 @@ class wp_slimstat
         if (!empty($_data_js['pp']) && $_data_js['pp'] > 0 && $_data_js['pp'] < 60000) {
             $_stat['page_performance'] = intval($_data_js['pp']);
         }
-        if (!empty($_data_js['fh']) && self::$settings['anonymize_ip'] != 'on') {
+        if (!empty($_data_js['fh']) && 'on' != self::$settings['anonymize_ip']) {
             $_stat['fingerprint'] = sanitize_text_field($_data_js['fh']);
         }
         if (!empty($_data_js['tz'])) {
@@ -1970,28 +1968,28 @@ class wp_slimstat
         if (isset($_COOKIE['slimstat_tracking_code'])) {
             // Make sure only authorized information is recorded
             $identifier = self::_get_value_without_checksum($_COOKIE['slimstat_tracking_code']);
-            if ($identifier === false) {
+            if (false === $identifier) {
                 return false;
             }
 
-            $is_new_session = (strpos($identifier, 'id') !== false);
+            $is_new_session = (false !== strpos($identifier, 'id'));
             $identifier     = intval($identifier);
         }
 
         // User doesn't have an active session
-        if ($is_new_session && ($_force_assign || self::$settings['javascript_mode'] == 'on')) {
+        if ($is_new_session && ($_force_assign || 'on' == self::$settings['javascript_mode'])) {
             if (empty(self::$settings['session_duration'])) {
                 self::$settings['session_duration'] = 1800;
             }
 
             self::$stat['visit_id'] = get_transient('slimstat_visit_id');
-            if (self::$stat['visit_id'] === false) {
+            if (false === self::$stat['visit_id']) {
                 self::$stat['visit_id'] = intval(self::$wpdb->get_var("SELECT MAX( visit_id ) FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats"));
             }
             self::$stat['visit_id']++;
             set_transient('slimstat_visit_id', self::$stat['visit_id']);
 
-            $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(self::$settings['set_tracker_cookie']) && self::$settings['set_tracker_cookie'] == 'on'));
+            $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(self::$settings['set_tracker_cookie']) && 'on' == self::$settings['set_tracker_cookie']));
             if ($set_cookie) {
                 @setcookie(
                     'slimstat_tracking_code',
@@ -2006,13 +2004,16 @@ class wp_slimstat
         }
 
         if ($is_new_session && $identifier > 0) {
-            self::$wpdb->query(self::$wpdb->prepare("
+            self::$wpdb->query(self::$wpdb->prepare(
+                "
                 UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats
                 SET visit_id = %d
-                WHERE id = %d AND visit_id = 0", self::$stat['visit_id'], $identifier
+                WHERE id = %d AND visit_id = 0",
+                self::$stat['visit_id'],
+                $identifier
             ));
         }
-        return ($is_new_session && ($_force_assign || self::$settings['javascript_mode'] == 'on'));
+        return ($is_new_session && ($_force_assign || 'on' == self::$settings['javascript_mode']));
     }
     // end _set_visit_id
 
@@ -2077,17 +2078,19 @@ class wp_slimstat
     protected static function _is_new_visitor($_fingerprint = '')
     {
         // If the privacy option is enabled, all visitors would be considered "new"...
-        if (self::$settings['anonymize_ip'] == 'on') {
+        if ('on' == self::$settings['anonymize_ip']) {
             return false;
         }
 
-        $count_fingerprint = self::$wpdb->get_var(self::$wpdb->prepare("
+        $count_fingerprint = self::$wpdb->get_var(self::$wpdb->prepare(
+            "
             SELECT COUNT( id )
             FROM {$GLOBALS[ 'wpdb' ]->prefix}slim_stats
-            WHERE fingerprint = %s", $_fingerprint
+            WHERE fingerprint = %s",
+            $_fingerprint
         ));
 
-        return $count_fingerprint == 0;
+        return 0 == $count_fingerprint;
     }
     // end _is_new_visitor
 
@@ -2098,7 +2101,7 @@ class wp_slimstat
     {
         if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $unpacked = unpack('A4', inet_pton($_ip));
-        } else if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
+        } elseif (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
             $unpacked = unpack('A16', inet_pton($_ip));
         }
 
@@ -2121,7 +2124,7 @@ class wp_slimstat
     {
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             return 32;
-        } else if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return 128;
         }
 
@@ -2215,7 +2218,7 @@ class slimstat_widget extends WP_Widget
         extract(shortcode_atts(array(
             'slimstat_widget_id'      => '',
             'slimstat_widget_title'   => '',
-            'slimstat_widget_filters' => ''
+            'slimstat_widget_filters' => '',
         ), $_instance));
 
         if (!empty($slimstat_widget_title)) {
@@ -2238,7 +2241,7 @@ class slimstat_widget extends WP_Widget
         extract(shortcode_atts(array(
             'slimstat_widget_id'      => '',
             'slimstat_widget_title'   => '',
-            'slimstat_widget_filters' => ''
+            'slimstat_widget_filters' => '',
         ), $_instance));
 
         // Let's build the dropdown
@@ -2295,12 +2298,12 @@ if (function_exists('add_action')) {
     if ((!empty($_SERVER['HTTP_CONTENT_TYPE']) || !empty($_SERVER['CONTENT_TYPE'])) && empty($_POST)) {
         $raw_post_string = file_get_contents('php://input');
         parse_str($raw_post_string, wp_slimstat::$raw_post_array);
-    } else if (!empty($_POST)) {
+    } elseif (!empty($_POST)) {
         wp_slimstat::$raw_post_array = $_POST;
     }
 
     // Init the Ajax listener
-    if (!empty(wp_slimstat::$raw_post_array['action']) && wp_slimstat::$raw_post_array['action'] == 'slimtrack') {
+    if (!empty(wp_slimstat::$raw_post_array['action']) && 'slimtrack' == wp_slimstat::$raw_post_array['action']) {
 
         // This is needed because admin-ajax.php is reading $_REQUEST to fire the corresponding action
         if (empty($_POST['action'])) {
