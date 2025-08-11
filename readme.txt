@@ -73,14 +73,13 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.3.0 - 2025-05-04 =
-- Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3) – SlimStat 5.3.0 Release Notes
-- **Enhancement**: Introduced new settings to improve tracking reliability, particularly in environments where ad blockers or firewalls may interfere:
-- Back-End Request Channel (backend_transport_method): Choose between the WP REST API or admin-ajax.php for sending tracking data.
-- Auto-Fallback to admin-ajax.php (enable_fallback_detection): Automatically switches to admin-ajax.php if REST API requests are blocked.
-- Ad Blocker Bypass (enable_adblock_bypass): Enqueues the tracking script with a randomized, hash-based URL and sends requests using a hashed path to bypass ad blockers and content filters.
-- **Enhancement**: Redesigned line charts for improved user experience
-- **Enhancement**: Added compatibility with WordPress's Interactivity API.
+= 5.3.0 - 2025-08-12 =
+- **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.  
+- **New**: Support for WordPress date format setting in charts.  
+- **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.  
+- **Enhancement**: Redesigned line charts for better readability.  
+- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.  
+[See full release notes →](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0)
 
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.
