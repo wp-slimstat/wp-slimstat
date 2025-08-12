@@ -12,6 +12,64 @@ var SlimStat = (function () {
     let lastPageviewPayload = "";
     let lastPageviewSentAt = 0;
     let inflightPageview = false;
+    // Queue to enforce sequential sending order for tracking requests
+    const requestQueue = [];
+    let queueInFlight = false;
+    const MAX_QUEUE_ATTEMPTS = 4;
+    const QUEUE_HIGH_WATERMARK = 80; // drop low-priority if exceeded
+    let lastInteractionPayload = "";
+    let lastInteractionTime = 0;
+    const PENDING_INTERACTIONS_LIMIT = 20;
+    const pendingInteractions = [];
+
+    function bufferInteraction(raw) {
+        if (pendingInteractions.length >= PENDING_INTERACTIONS_LIMIT) pendingInteractions.shift();
+        pendingInteractions.push(raw);
+    }
+
+    function flushPendingInteractions() {
+        if (!pendingInteractions.length) return;
+        const params = currentSlimStatParams();
+        if (!params.id || parseInt(params.id, 10) <= 0) return; // still can't flush
+        while (pendingInteractions.length) {
+            const raw = pendingInteractions.shift();
+            const payload = "action=slimtrack&id=" + params.id + raw;
+            sendToServer(payload, true, { priority: "normal" });
+        }
+    }
+
+    // Offline persistence helpers
+    const OFFLINE_KEY = "slimstat_offline_queue";
+    function loadOfflineQueue() {
+        try {
+            const raw = localStorage.getItem(OFFLINE_KEY);
+            if (!raw) return [];
+            const arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
+        }
+    }
+    function saveOfflineQueue(arr) {
+        try {
+            localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
+        } catch (e) {
+            /* ignore */
+        }
+    }
+    function storeOffline(payload) {
+        const arr = loadOfflineQueue();
+        arr.push({ p: payload, t: Date.now() });
+        saveOfflineQueue(arr);
+    }
+    function flushOfflineQueue() {
+        const arr = loadOfflineQueue();
+        if (!arr.length) return;
+        saveOfflineQueue([]); // clear first to avoid loops
+        arr.forEach((item) => {
+            sendToServer(item.p, true, { priority: "normal" });
+        });
+    }
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
@@ -148,13 +206,32 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Transport -------------------------- //
-    function sendToServer(payload, useBeacon) {
+    function sendToServer(payload, useBeacon, opts) {
         if (isEmpty(payload)) return false;
+        opts = opts || {};
         const params = currentSlimStatParams();
         const transports = ["rest", "ajax", "adblock"];
         const endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
         const selected = params.transport;
         const order = [selected].concat(transports.filter((t) => t !== selected));
+
+        // Enqueue logic (default: queued). Pass opts.immediate=true to bypass queue.
+        if (!opts.immediate) {
+            // Queue pressure control: drop oldest non-high if above high watermark
+            if (requestQueue.length > QUEUE_HIGH_WATERMARK) {
+                for (let i = requestQueue.length - 1; i >= 0 && requestQueue.length > QUEUE_HIGH_WATERMARK; i--) {
+                    if (requestQueue[i].opts.priority !== "high") requestQueue.splice(i, 1);
+                }
+            }
+            if (opts.priority === "high") {
+                // Avoid duplicates of same payload at head
+                if (!requestQueue.length || requestQueue[0].payload !== payload) requestQueue.unshift({ payload, useBeacon, opts });
+            } else {
+                requestQueue.push({ payload, useBeacon, opts });
+            }
+            processQueue();
+            return true;
+        }
 
         function sendXHR(url, onFail) {
             let xhr;
@@ -197,10 +274,91 @@ var SlimStat = (function () {
         return trySend(0);
     }
 
+    function processQueue() {
+        if (queueInFlight) return;
+        const item = requestQueue.shift();
+        if (!item) return;
+        queueInFlight = true;
+        // Force immediate send (not enqueuing again)
+        const done = function () {
+            queueInFlight = false;
+            // Process next after a micro delay to allow ID assignment, etc.
+            setTimeout(processQueue, 0);
+        };
+        // Wrap original send with callback hooking via XHR readyState (monkey patch)
+        const params = currentSlimStatParams();
+        const originalId = params.id;
+        // We can't directly get callback from sendToServer; instead we replicate logic here for queue items
+        (function queuedSend(payload, useBeacon, opts) {
+            opts = opts || {};
+            const transports = ["rest", "ajax", "adblock"];
+            const endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
+            const selected = params.transport;
+            const order = [selected].concat(transports.filter((t) => t !== selected));
+            function sendXHR(url, onFail) {
+                let xhr;
+                try {
+                    xhr = new XMLHttpRequest();
+                } catch (e) {
+                    if (onFail) onFail();
+                    return false;
+                }
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                if (params.wp_rest_nonce) xhr.setRequestHeader("X-WP-Nonce", params.wp_rest_nonce);
+                xhr.withCredentials = true;
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            const parsed = parseInt(xhr.responseText, 10);
+                            if (!isNaN(parsed) && parsed > 0) params.id = xhr.responseText; // store new id
+                        }
+                        done();
+                    }
+                };
+                try {
+                    xhr.send(payload);
+                } catch (e) {
+                    done();
+                }
+                return true;
+            }
+            function trySend(i) {
+                if (i >= order.length) {
+                    done();
+                    return false;
+                }
+                const method = order[i];
+                const url = endpoints[method];
+                if (!url) return trySend(i + 1);
+                if (useBeacon && navigator.sendBeacon && i === 0) {
+                    navigator.sendBeacon(url, payload);
+                    // Beacon is fire-and-forget; we mark done immediately
+                    done();
+                    return true;
+                }
+                return sendXHR(url, function () {
+                    trySend(i + 1);
+                });
+            }
+            trySend(0);
+        })(item.payload, item.useBeacon, item.opts);
+    }
+
     // -------------------------- Interaction Tracking -------------------------- //
     function trackInteraction(event, note, useBeacon) {
         const params = currentSlimStatParams();
-        if (isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0) return false;
+        if (isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0) {
+            // Buffer interaction until we have an id
+            try {
+                const minimal = buildInteractionRaw(event, note);
+                bufferInteraction(minimal);
+            } catch (e) {
+                /* ignore */
+            }
+            return false;
+        }
         if (!event || isEmpty(event.type) || event.type === "focus") return false;
 
         useBeacon = typeof useBeacon === "boolean" ? useBeacon : true;
@@ -265,8 +423,29 @@ var SlimStat = (function () {
         else if (!isEmpty(event.clientX)) position = event.clientX + (document.body.scrollLeft || 0) + (document.documentElement.scrollLeft || 0) + "," + (event.clientY + (document.body.scrollTop || 0) + (document.documentElement.scrollTop || 0));
 
         const fingerprintParam = resourceUrl ? "&fh=" + fingerprintHash : "";
-        const payload = "action=slimtrack&id=" + params.id + "&res=" + base64Encode(resourceUrl) + "&pos=" + position + "&no=" + base64Encode(JSON.stringify(noteObj)) + fingerprintParam;
+        const raw = "&res=" + base64Encode(resourceUrl) + "&pos=" + position + "&no=" + base64Encode(JSON.stringify(noteObj)) + fingerprintParam;
+        const payload = "action=slimtrack&id=" + params.id + raw;
+        const now = Date.now();
+        if (payload === lastInteractionPayload && now - lastInteractionTime < 1000) return false; // dedupe bursts
+        lastInteractionPayload = payload;
+        lastInteractionTime = now;
         return sendToServer(payload, useBeacon);
+    }
+
+    function buildInteractionRaw(event, note) {
+        // Reconstruct minimal raw (without id) for buffering.
+        const target = (event && (event.target || event.srcElement)) || {};
+        let resourceUrl = "";
+        try {
+            if (target.href) resourceUrl = target.href;
+        } catch (e) {
+            /* ignore */
+        }
+        const noteObj = { type: event ? event.type : "unknown" };
+        if (note) noteObj.note = note;
+        let position = "0,0";
+        if (event && !isEmpty(event.pageX) && !isEmpty(event.pageY)) position = event.pageX + "," + event.pageY;
+        return "&res=" + base64Encode(resourceUrl) + "&pos=" + position + "&no=" + base64Encode(JSON.stringify(noteObj));
     }
 
     // -------------------------- Pageview Logic -------------------------- //
@@ -298,7 +477,8 @@ var SlimStat = (function () {
         const run = function () {
             Fingerprint2.get(FP_EXCLUDES, function (components) {
                 initFingerprintHash(components);
-                sendToServer(payloadBase + buildSlimStatData(components), useBeacon);
+                // Initial pageview (no id yet) should be immediate for faster id assignment
+                sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
                 showOptoutMessage();
                 inflightPageview = false;
             });
@@ -354,8 +534,12 @@ var SlimStat = (function () {
     function setupNavigationHooks() {
         // WordPress Interactivity API Event
         addEvent(document, "wp-interactivity:navigate", function () {
-            // re-send pageview on internal navigation
-            currentSlimStatParams().id = null; // reset to request new id if needed
+            // Finalize current pageview (if any) before starting a new one
+            const params = currentSlimStatParams();
+            if (params.id && parseInt(params.id, 10) > 0) {
+                sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" });
+            }
+            params.id = null; // force new id on next pageview
             sendPageview();
         });
 
@@ -365,7 +549,7 @@ var SlimStat = (function () {
             const originalReplace = history.replaceState;
             history.pushState = function () {
                 const params = currentSlimStatParams();
-                if (params.id) sendToServer("action=slimtrack&id=" + params.id, true); // finalize existing
+                if (params.id) sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" }); // finalize existing
                 params.id = null; // force new id
                 const res = originalPush.apply(this, arguments);
                 sendPageview();
@@ -451,6 +635,20 @@ if (!window.requestIdleCallback) {
 
 // Main initialization (refactored)
 (function initSlimStatRuntime() {
+    // Track whether we've already finalized the current pageview (avoid duplicate beacons)
+    let finalized = false;
+
+    function finalizeCurrent(reason) {
+        if (finalized) return;
+        const p = window.SlimStatParams || {};
+        if (p.id && parseInt(p.id, 10) > 0) {
+            // Attach a tiny hint (reason) so backend could differentiate (ignored if unsupported)
+            const payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
+            SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
+            finalized = true;
+        }
+    }
+
     // Observe for parameter mutations (meta tag or script changes)
     let lastParams = JSON.stringify(window.SlimStatParams || {});
     const observer = new MutationObserver(function () {
@@ -465,14 +663,30 @@ if (!window.requestIdleCallback) {
     SlimStat.add_event(window, "load", function () {
         SlimStat._extract_params();
         SlimStat._send_pageview();
+        // Flush any offline stored payloads after initial pageview queued
+        setTimeout(function () {
+            try {
+                if (navigator.onLine !== false) typeof flushOfflineQueue === "function" && flushOfflineQueue();
+            } catch (e) {}
+        }, 500);
     });
 
     // Before unload finalize if we have an active id
+    // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
+    SlimStat.add_event(document, "visibilitychange", function () {
+        if (document.visibilityState === "hidden") finalizeCurrent("visibility");
+    });
+    SlimStat.add_event(window, "pagehide", function () {
+        finalizeCurrent("pagehide");
+    });
     SlimStat.add_event(window, "beforeunload", function () {
-        const p = window.SlimStatParams || {};
-        if (p.id && parseInt(p.id, 10) > 0 && document.activeElement && document.activeElement.nodeName && document.activeElement.nodeName.toLowerCase() === "body") {
-            SlimStat.send_to_server("action=slimtrack&id=" + p.id, true);
-        }
+        finalizeCurrent("beforeunload");
+    });
+
+    // Online event to resend offline queue
+    SlimStat.add_event(window, "online", function () {
+        flushOfflineQueue();
+        flushPendingInteractions();
     });
 
     // Setup interaction tracking
