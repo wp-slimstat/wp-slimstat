@@ -46,3 +46,8 @@ composer.lock
 
 # Testing
 .env.testing
+# Bun
+bun.lock
+
+# Package
+package-lock.json

@@ -1425,8 +1425,7 @@ class wp_slimstat
         } elseif ('on' == self::$settings['enable_cdn']) {
             wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', array(), null, true);
         } else {
-            $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
-            wp_register_script('wp_slimstat', plugins_url("/wp-slimstat{$jstracker_suffix}.js", __FILE__), array(), SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_register_script('wp_slimstat', plugins_url("/wp-slimstat.min.js", __FILE__), array(), SLIMSTAT_ANALYTICS_VERSION, true);
         }
 
         wp_enqueue_script('wp_slimstat');
