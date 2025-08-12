@@ -12,6 +12,8 @@ var SlimStat = (function () {
     let lastPageviewPayload = "";
     let lastPageviewSentAt = 0;
     let inflightPageview = false;
+    // Track virtual view signatures (when content changes but URL does not)
+    let lastViewSignature = "";
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
@@ -279,19 +281,44 @@ var SlimStat = (function () {
         return base;
     }
 
+    // Lightweight signature for current view (when URL stays constant)
+    function computeViewSignature() {
+        // Explicit override
+        const explicit = document.querySelector("[data-slimstat-view]");
+        if (explicit && explicit.getAttribute("data-slimstat-view")) return explicit.getAttribute("data-slimstat-view");
+        const root = document.querySelector("[data-wp-interactive]") || document.body;
+        if (!root) return "";
+        const text = (root.textContent || "").trim();
+        const sample = text.slice(0, 300);
+        const basis = location.pathname + "|" + root.childElementCount + "|" + sample.length + "|" + sample.slice(0, 60);
+        let h = 5381;
+        for (let i = 0; i < basis.length; i++) h = (h << 5) + h + basis.charCodeAt(i);
+        return "v-" + (h >>> 0).toString(36);
+    }
+
     function sendPageview(options = {}) {
         extractSlimStatParams();
         const params = currentSlimStatParams();
-        const payloadBase = buildPageviewBase(params);
+        const isVirtual = !!options.virtual; // virtual view = content changed without URL change
+        let viewSig = options.viewSignature;
+        if (isVirtual) {
+            viewSig = viewSig || computeViewSignature();
+            if (!viewSig) return;
+            if (!options.force && viewSig === lastViewSignature) return; // no change
+        }
+        let payloadBase;
+        if (isVirtual && params.id) {
+            payloadBase = "action=slimtrack&id=" + params.id + "&vv=" + base64Encode(viewSig);
+        } else {
+            payloadBase = buildPageviewBase(params);
+        }
         if (!payloadBase) return;
-        // De-duplicate rapid navigations (e.g., WP Interactivity quick transitions)
         const now = Date.now();
-        if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) return; // skip
+        if (!isVirtual && payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) return;
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
-        const waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
-        const useBeacon = !waitForId; // need sync response when creating id
-        // Avoid parallel initial pageview duplication
+        const waitForId = !isVirtual && (isEmpty(params.id) || parseInt(params.id, 10) <= 0);
+        const useBeacon = !waitForId;
         if (inflightPageview && waitForId) return;
         inflightPageview = waitForId;
 
@@ -299,12 +326,14 @@ var SlimStat = (function () {
             Fingerprint2.get(FP_EXCLUDES, function (components) {
                 initFingerprintHash(components);
                 sendToServer(payloadBase + buildSlimStatData(components), useBeacon);
+                if (isVirtual) lastViewSignature = viewSig;
+                else lastViewSignature = computeViewSignature();
                 showOptoutMessage();
                 inflightPageview = false;
             });
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
-        else setTimeout(run, 250);
+        else setTimeout(run, 180);
     }
 
     // -------------------------- Opt-out UI -------------------------- //
@@ -352,35 +381,61 @@ var SlimStat = (function () {
 
     // -------------------------- Navigation / Interactivity Integration -------------------------- //
     function setupNavigationHooks() {
-        // WordPress Interactivity API Event
+        // Interactivity navigate event: only send if URL actually changes
         addEvent(document, "wp-interactivity:navigate", function () {
-            // re-send pageview on internal navigation
-            currentSlimStatParams().id = null; // reset to request new id if needed
-            sendPageview();
+            const before = location.href;
+            currentSlimStatParams().id = null;
+            // Defer a bit to allow DOM updates by Interactivity API
+            setTimeout(function () {
+                if (before !== location.href) {
+                    sendPageview();
+                } else {
+                    // URL ثابت، ولی محتوا عوض شده => ثبت به عنوان virtual view
+                    sendPageview({ virtual: true });
+                }
+            }, 60);
         });
 
-        // History API overrides (fallback for SPAs / Interactivity polyfills)
-        if (window.history && history.pushState) {
-            const originalPush = history.pushState;
-            const originalReplace = history.replaceState;
-            history.pushState = function () {
-                const params = currentSlimStatParams();
-                if (params.id) sendToServer("action=slimtrack&id=" + params.id, true); // finalize existing
-                params.id = null; // force new id
-                const res = originalPush.apply(this, arguments);
-                sendPageview();
-                return res;
-            };
-            history.replaceState = function () {
-                const res = originalReplace.apply(this, arguments);
-                sendPageview();
-                return res;
-            };
-            addEvent(window, "popstate", function () {
-                currentSlimStatParams().id = null;
-                sendPageview();
-            });
+        const interactiveRoots = document.querySelectorAll("[data-wp-interactive]");
+        if (!(window.history && history.pushState) || interactiveRoots.length === 0) return;
+
+        const originalPush = history.pushState;
+        const originalReplace = history.replaceState;
+
+        function safeFinalizeCurrent() {
+            try {
+                const p = currentSlimStatParams();
+                if (p.id) sendToServer("action=slimtrack&id=" + p.id, true);
+            } catch (e) {
+                /* ignore */
+            }
         }
+        function maybeSend(afterUrl, previousUrl, forceNew) {
+            if (afterUrl === previousUrl) return;
+            if (forceNew) currentSlimStatParams().id = null;
+            sendPageview();
+        }
+        history.pushState = function () {
+            const prev = location.href;
+            safeFinalizeCurrent();
+            currentSlimStatParams().id = null;
+            const res = originalPush.apply(this, arguments);
+            const after = location.href;
+            maybeSend(after, prev, true);
+            return res;
+        };
+        history.replaceState = function () {
+            const prev = location.href;
+            const res = originalReplace.apply(this, arguments);
+            const after = location.href;
+            // Only consider path changes (ignore pure hash changes for pageview)
+            if (prev.split("#")[0] !== after.split("#")[0]) maybeSend(after, prev, false);
+            return res;
+        };
+        addEvent(window, "popstate", function () {
+            currentSlimStatParams().id = null;
+            sendPageview();
+        });
     }
 
     // -------------------------- Event Delegation for Clicks -------------------------- //
@@ -388,8 +443,11 @@ var SlimStat = (function () {
         addEvent(document.body, "click", function (e) {
             let target = e.target;
             while (target && target !== document.body) {
+                if (target.getAttribute && (target.getAttribute("data-slimstat-ignore") || (target.classList && target.classList.contains("no-slimstat")))) return;
                 if (target.matches && target.matches("a,button,input,area")) {
-                    trackInteraction(e, null, null);
+                    const href = target.getAttribute && target.getAttribute("href");
+                    const isToggle = (href === "#" || href === "" || href === null) && (target.getAttribute("aria-haspopup") === "true" || target.getAttribute("data-toggle") || target.getAttribute("data-bs-toggle"));
+                    if (!isToggle) trackInteraction(e, null, null);
                     break;
                 }
                 target = target.parentNode;
@@ -427,6 +485,7 @@ var SlimStat = (function () {
         // New internal helpers (not documented previously)
         _extract_params: extractSlimStatParams,
         _send_pageview: sendPageview,
+        _compute_view_signature: computeViewSignature,
         _setup_navigation_hooks: setupNavigationHooks,
         _setup_click_delegation: setupClickDelegation,
     };
