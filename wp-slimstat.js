@@ -425,8 +425,26 @@ if (!window.requestIdleCallback) {
     };
 }
 
-// Main initialization
+// Main initialization - enhanced navigation handling for Gutenberg Interactivity
 (function () {
+    var lastSignature = null,
+        lastURL = window.location.href,
+        lastCI = null,
+        inFlight = false,
+        debTimer = null,
+        interactivityTS = 0;
+    var STAB_INTERVAL = 60,
+        STAB_MAX = 20;
+
+    function debug(msg) {
+        if (window.SlimStatDebug) {
+            console.log("[SlimStat]", msg);
+        }
+    }
+    function signature(url, ci) {
+        return (url || "") + "|" + (ci || "");
+    }
+
     function extractSlimStatParams() {
         var meta = document.querySelector('meta[name="slimstat-params"]');
         if (meta) {
@@ -435,115 +453,167 @@ if (!window.requestIdleCallback) {
                 return;
             } catch (e) {}
         }
-
         var scripts = document.querySelectorAll("script");
         for (var i = scripts.length - 1; i >= 0; i--) {
-            var script = scripts[i];
-            var match = script.textContent.match(/var\s+SlimStatParams\s*=\s*({[\s\S]*?});/);
-            if (match) {
+            var m = scripts[i].textContent.match(/var\s+SlimStatParams\s*=\s*({[\s\S]*?});/);
+            if (m) {
                 try {
-                    window.SlimStatParams = new Function("return " + match[1])();
+                    window.SlimStatParams = new Function("return " + m[1])();
                     return;
                 } catch (e) {}
             }
         }
     }
-    document.addEventListener("wp-interactivity:navigate", extractSlimStatParams);
-    var lastParams = JSON.stringify(window.SlimStatParams || {});
-    var observer = new MutationObserver(function () {
+
+    function finalizePrevious() {
+        if (!SlimStat.empty(window.SlimStatParams) && !SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
+            SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id, true);
+        }
+        if (window.SlimStatParams) {
+            SlimStatParams.id = null;
+        }
+    }
+
+    function sendPageview(force) {
         extractSlimStatParams();
-        var newParams = JSON.stringify(window.SlimStatParams || {});
-        if (newParams !== lastParams) {
-            lastParams = newParams;
+        var data = "",
+            use_beacon = true;
+        if (!force && !SlimStat.empty(SlimStatParams) && !SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
+            data = "action=slimtrack&id=" + SlimStatParams.id; // update
+        } else {
+            data = "action=slimtrack&ref=" + SlimStat.base64_encode(document.referrer) + "&res=" + SlimStat.base64_encode(window.location.href);
+            if (!SlimStat.empty(SlimStatParams) && !SlimStat.empty(SlimStatParams.ci)) {
+                data += "&ci=" + SlimStatParams.ci;
+            }
+            use_beacon = false;
+        }
+        if (!data) {
+            return;
+        }
+        var opts = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, addBehavior: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
+        function proceed() {
+            Fingerprint2.get(opts, function (components) {
+                SlimStat.init_fingerprint_hash(components);
+                SlimStat.send_to_server(data + SlimStat.get_slimstat_data(components), use_beacon);
+                SlimStat.show_optout_message();
+            });
+        }
+        if (window.requestIdleCallback) {
+            requestIdleCallback(proceed);
+        } else {
+            setTimeout(proceed, 120);
+        }
+        // update internal state
+        lastURL = window.location.href;
+        lastCI = (SlimStatParams && SlimStatParams.ci) || null;
+        lastSignature = signature(lastURL, lastCI);
+    }
+
+    function stabilizeAndSend(reason) {
+        var attempts = 0;
+        (function loop() {
+            attempts++;
+            extractSlimStatParams();
+            var curURL = window.location.href;
+            var curCI = SlimStatParams ? SlimStatParams.ci : null;
+            var sig = signature(curURL, curCI);
+            var changed = sig !== lastSignature;
+            if (changed || attempts >= STAB_MAX) {
+                debug("nav finalized reason=" + reason + " attempts=" + attempts + " changed=" + changed + " sig=" + sig);
+                sendPageview(true);
+                inFlight = false;
+            } else {
+                setTimeout(loop, STAB_INTERVAL);
+            }
+        })();
+    }
+
+    function scheduleNavigation(reason) {
+        if (inFlight) {
+            return;
+        }
+        inFlight = true;
+        finalizePrevious();
+        if (window.requestAnimationFrame) {
+            requestAnimationFrame(function () {
+                stabilizeAndSend(reason);
+            });
+        } else {
+            setTimeout(function () {
+                stabilizeAndSend(reason);
+            }, 30);
+        }
+    }
+
+    function onVirtualNavigation(reason) {
+        if (debTimer) clearTimeout(debTimer);
+        debTimer = setTimeout(function () {
+            scheduleNavigation(reason || "virtual");
+        }, 40);
+    }
+
+    // Interactivity API event
+    document.addEventListener("wp-interactivity:navigate", function () {
+        interactivityTS = Date.now();
+        onVirtualNavigation("interactivity");
+    });
+
+    // Observe DOM (to catch parameter injection after navigation)
+    var lastParamsStr = JSON.stringify(window.SlimStatParams || {});
+    var mo = new MutationObserver(function () {
+        extractSlimStatParams();
+        var cur = JSON.stringify(window.SlimStatParams || {});
+        if (cur !== lastParamsStr) {
+            lastParamsStr = cur;
+            if (Date.now() - interactivityTS < 2000) {
+                onVirtualNavigation("mutation-followup");
+            }
         }
     });
-    observer.observe(document.head, { childList: true, subtree: true });
-    observer.observe(document.body, { childList: true, subtree: true });
+    mo.observe(document.head, { childList: true, subtree: true });
+    mo.observe(document.body, { childList: true, subtree: true });
 
-    // Helper function: send pageview data to the server
-    function sendPageview() {
-        extractSlimStatParams();
-        var slimstat_data = "";
-        var use_beacon = true;
-
-        // If a pageview has already been recorded (has an ID), update it
-        if (!SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
-            slimstat_data = "action=slimtrack&id=" + SlimStatParams.id;
-        }
-        // Otherwise, record a new pageview
-        else {
-            slimstat_data = "action=slimtrack&ref=" + SlimStat.base64_encode(document.referrer) + "&res=" + SlimStat.base64_encode(window.location.href);
-            if (!SlimStat.empty(SlimStatParams.ci)) {
-                slimstat_data += "&ci=" + SlimStatParams.ci;
-            }
-            use_beacon = false; // Wait for page ID to be received from the server
-        }
-
-        if (slimstat_data.length > 0) {
-            var options = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, addBehavior: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
-            // Wait for fingerprint calculation using requestIdleCallback or setTimeout
-
-            if (window.requestIdleCallback) {
-                requestIdleCallback(function () {
-                    Fingerprint2.get(options, function (components) {
-                        SlimStat.init_fingerprint_hash(components);
-                        SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
-                        SlimStat.show_optout_message(); // Show opt-out dialog if needed
-                    });
-                });
-            } else {
-                setTimeout(function () {
-                    Fingerprint2.get(options, function (components) {
-                        SlimStat.init_fingerprint_hash(components);
-                        SlimStat.send_to_server(slimstat_data + SlimStat.get_slimstat_data(components), use_beacon);
-                        SlimStat.show_optout_message();
-                    });
-                }, 250);
-            }
-        }
-    }
-
-    // Initial pageview registration on page load
-    SlimStat.add_event(window, "load", sendPageview);
-
+    // History API wrapping (if interactive roots exist)
     var interactiveRoots = document.querySelectorAll("[data-wp-interactive]");
-
-    // WP Interactivity API support: re-register pageview on navigation
     if (window.history && history.pushState && interactiveRoots.length > 0) {
-        (function (originalPush, originalReplace) {
+        (function (push, replace) {
             history.pushState = function () {
-                SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id, true);
-                SlimStatParams.id = null;
-                var result = originalPush.apply(this, arguments);
-                sendPageview();
-                return result;
+                var r = push.apply(this, arguments);
+                onVirtualNavigation("pushState");
+                return r;
             };
             history.replaceState = function () {
-                var result = originalReplace.apply(this, arguments);
-                sendPageview();
-                return result;
+                var r = replace.apply(this, arguments);
+                onVirtualNavigation("replaceState");
+                return r;
             };
         })(history.pushState, history.replaceState);
-
-        SlimStat.add_event(window, "popstate", sendPageview);
+        SlimStat.add_event(window, "popstate", function () {
+            onVirtualNavigation("popstate");
+        });
     }
 
-    // Handle page unload event
+    // Initial load
+    SlimStat.add_event(window, "load", function () {
+        scheduleNavigation("initial");
+    });
+
+    // Before unload finalize
     SlimStat.add_event(window, "beforeunload", function () {
-        if (!SlimStat.empty(document.activeElement) && !SlimStat.empty(document.activeElement.nodeName) && document.activeElement.nodeName.toLowerCase() == "body" && !SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
+        if (!SlimStat.empty(SlimStatParams) && !SlimStat.empty(SlimStatParams.id) && parseInt(SlimStatParams.id) > 0) {
             SlimStat.send_to_server("action=slimtrack&id=" + SlimStatParams.id, true);
         }
     });
 
-    // Attach an event handler to all the clickable elements on the page (event delegation)
+    // Delegated click (unchanged)
     SlimStat.add_event(document.body, "click", function (e) {
-        var target = e.target;
-        while (target && target !== document.body) {
-            if (target.matches && (target.matches("a") || target.matches("button") || target.matches("input") || target.matches("area"))) {
+        var t = e.target;
+        while (t && t !== document.body) {
+            if (t.matches && (t.matches("a") || t.matches("button") || t.matches("input") || t.matches("area"))) {
                 SlimStat.ss_track(e, null, null);
                 break;
             }
-            target = target.parentNode;
+            t = t.parentNode;
         }
     });
 })();
