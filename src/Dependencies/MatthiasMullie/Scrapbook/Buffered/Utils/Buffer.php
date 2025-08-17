@@ -31,7 +31,7 @@ class Buffer extends MemoryStore
      *
      * @var array
      */
-    public $items = array();
+    public $items = [];
 
     /**
      * Checks if a value exists in cache and is not yet expired.

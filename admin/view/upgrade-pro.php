@@ -1,5 +1,7 @@
 <?php
-if (!function_exists('add_action')) exit();
+if (!function_exists('add_action')) {
+    exit();
+}
 
 // Load header
 wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);

@@ -26,12 +26,7 @@ final class UriComparator
         if ($original->getScheme() !== $modified->getScheme()) {
             return true;
         }
-
-        if (self::computePort($original) !== self::computePort($modified)) {
-            return true;
-        }
-
-        return false;
+        return self::computePort($original) !== self::computePort($modified);
     }
 
     private static function computePort(UriInterface $uri): int

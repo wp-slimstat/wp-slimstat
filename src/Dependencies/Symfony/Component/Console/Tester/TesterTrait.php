@@ -25,10 +25,14 @@ trait TesterTrait
 {
     /** @var StreamOutput */
     private $output;
+    
     private $inputs = [];
+    
     private $captureStreamsIndependently = false;
+    
     /** @var InputInterface */
     private $input;
+    
     /** @var int */
     private $statusCode;
 
@@ -153,6 +157,7 @@ trait TesterTrait
             if (isset($options['decorated'])) {
                 $this->output->setDecorated($options['decorated']);
             }
+            
             if (isset($options['verbosity'])) {
                 $this->output->setVerbosity($options['verbosity']);
             }

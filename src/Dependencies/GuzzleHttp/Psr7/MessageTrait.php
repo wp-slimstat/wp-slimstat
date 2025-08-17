@@ -79,6 +79,7 @@ trait MessageTrait
         if (isset($new->headerNames[$normalized])) {
             unset($new->headers[$new->headerNames[$normalized]]);
         }
+        
         $new->headerNames[$normalized] = $header;
         $new->headers[$header] = $value;
 
@@ -145,7 +146,8 @@ trait MessageTrait
      */
     private function setHeaders(array $headers): void
     {
-        $this->headerNames = $this->headers = [];
+        $this->headerNames = [];
+        $this->headers = [];
         foreach ($headers as $header => $value) {
             // Numeric array keys are converted to int by PHP.
             $header = (string) $header;
@@ -174,7 +176,7 @@ trait MessageTrait
             return $this->trimAndValidateHeaderValues([$value]);
         }
 
-        if (count($value) === 0) {
+        if ($value === []) {
             throw new \InvalidArgumentException('Header value can not be an empty array.');
         }
 

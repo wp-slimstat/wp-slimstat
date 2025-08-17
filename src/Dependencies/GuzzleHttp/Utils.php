@@ -2,6 +2,8 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
+use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
+use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
 use SlimStat\Dependencies\GuzzleHttp\Exception\InvalidArgumentException;
 use SlimStat\Dependencies\GuzzleHttp\Handler\CurlHandler;
 use SlimStat\Dependencies\GuzzleHttp\Handler\CurlMultiHandler;
@@ -67,6 +69,7 @@ final class Utils
         if (\is_resource($value)) {
             return $value;
         }
+        
         if (\defined('STDOUT')) {
             return \STDOUT;
         }
@@ -79,7 +82,7 @@ final class Utils
      *
      * The returned handler is not wrapped by any default middlewares.
      *
-     * @return callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface Returns the best handler for the given system.
+     * @return callable(RequestInterface, array):PromiseInterface Returns the best handler for the given system.
      *
      * @throws \RuntimeException if no viable Handler is available.
      */
@@ -222,7 +225,7 @@ EOT
      */
     public static function isHostInNoProxy(string $host, array $noProxyArray): bool
     {
-        if (\strlen($host) === 0) {
+        if ($host === '') {
             throw new InvalidArgumentException('Empty host provided');
         }
 
@@ -244,6 +247,7 @@ EOT
                 // Exact matches.
                 return true;
             }
+            
             // Special match if the area when prefixed with ".". Remove any
             // existing leading "." and add a new leading ".".
             $area = '.'.\ltrim($area, '.');
@@ -298,7 +302,6 @@ EOT
             throw new InvalidArgumentException('json_encode error: '.\json_last_error_msg());
         }
 
-        /** @var string */
         return $json;
     }
 
@@ -312,7 +315,7 @@ EOT
      */
     public static function currentTime(): float
     {
-        return (float) \function_exists('hrtime') ? \hrtime(true) / 1e9 : \microtime(true);
+        return (float) \function_exists('hrtime') !== 0.0 ? \hrtime(true) / 1e9 : \microtime(true);
     }
 
     /**
@@ -322,29 +325,28 @@ EOT
      */
     public static function idnUriConvert(UriInterface $uri, int $options = 0): UriInterface
     {
-        if ($uri->getHost()) {
+        if ($uri->getHost() !== '' && $uri->getHost() !== '0') {
             $asciiHost = self::idnToAsci($uri->getHost(), $options, $info);
             if ($asciiHost === false) {
                 $errorBitSet = $info['errors'] ?? 0;
 
-                $errorConstants = array_filter(array_keys(get_defined_constants()), static function (string $name): bool {
-                    return substr($name, 0, 11) === 'IDNA_ERROR_';
-                });
+                $errorConstants = array_filter(array_keys(get_defined_constants()), static fn(string $name): bool => substr($name, 0, 11) === 'IDNA_ERROR_');
 
                 $errors = [];
                 foreach ($errorConstants as $errorConstant) {
-                    if ($errorBitSet & constant($errorConstant)) {
+                    if (($errorBitSet & constant($errorConstant)) !== 0) {
                         $errors[] = $errorConstant;
                     }
                 }
 
                 $errorMessage = 'IDN conversion failed';
-                if ($errors) {
+                if ($errors !== []) {
                     $errorMessage .= ' (errors: '.implode(', ', $errors).')';
                 }
 
                 throw new InvalidArgumentException($errorMessage);
             }
+            
             if ($uri->getHost() !== $asciiHost) {
                 // Replace URI only if the ASCII version is different
                 $uri = $uri->withHost($asciiHost);

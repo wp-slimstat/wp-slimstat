@@ -56,6 +56,7 @@ class XmlDescriptor extends Descriptor
         $commandXML->appendChild($usagesXML = $dom->createElement('usages'));
 
         $commandXML->appendChild($descriptionXML = $dom->createElement('description'));
+        
         $descriptionXML->appendChild($dom->createTextNode(str_replace("\n", "\n ", $command->getDescription())));
 
         if ($short) {
@@ -184,10 +185,12 @@ class XmlDescriptor extends Descriptor
         $dom = new \DOMDocument('1.0', 'UTF-8');
 
         $dom->appendChild($objectXML = $dom->createElement('argument'));
+        
         $objectXML->setAttribute('name', $argument->getName());
         $objectXML->setAttribute('is_required', $argument->isRequired() ? 1 : 0);
         $objectXML->setAttribute('is_array', $argument->isArray() ? 1 : 0);
         $objectXML->appendChild($descriptionXML = $dom->createElement('description'));
+        
         $descriptionXML->appendChild($dom->createTextNode($argument->getDescription()));
 
         $objectXML->appendChild($defaultsXML = $dom->createElement('defaults'));
@@ -205,6 +208,7 @@ class XmlDescriptor extends Descriptor
         $dom = new \DOMDocument('1.0', 'UTF-8');
 
         $dom->appendChild($objectXML = $dom->createElement('option'));
+        
         $objectXML->setAttribute('name', '--'.$option->getName());
         $pos = strpos($option->getShortcut() ?? '', '|');
         if (false !== $pos) {
@@ -213,21 +217,21 @@ class XmlDescriptor extends Descriptor
         } else {
             $objectXML->setAttribute('shortcut', $option->getShortcut() ? '-'.$option->getShortcut() : '');
         }
+        
         $objectXML->setAttribute('accept_value', $option->acceptValue() ? 1 : 0);
         $objectXML->setAttribute('is_value_required', $option->isValueRequired() ? 1 : 0);
         $objectXML->setAttribute('is_multiple', $option->isArray() ? 1 : 0);
         $objectXML->appendChild($descriptionXML = $dom->createElement('description'));
+        
         $descriptionXML->appendChild($dom->createTextNode($option->getDescription()));
 
         if ($option->acceptValue()) {
             $defaults = \is_array($option->getDefault()) ? $option->getDefault() : (\is_bool($option->getDefault()) ? [var_export($option->getDefault(), true)] : ($option->getDefault() ? [$option->getDefault()] : []));
             $objectXML->appendChild($defaultsXML = $dom->createElement('defaults'));
 
-            if (!empty($defaults)) {
-                foreach ($defaults as $default) {
-                    $defaultsXML->appendChild($defaultXML = $dom->createElement('default'));
-                    $defaultXML->appendChild($dom->createTextNode($default));
-                }
+            foreach ($defaults as $default) {
+                $defaultsXML->appendChild($defaultXML = $dom->createElement('default'));
+                $defaultXML->appendChild($dom->createTextNode($default));
             }
         }
 

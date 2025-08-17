@@ -18,9 +18,9 @@ class RESTService {
      * @since 5.2.14
      */
     public static function run() {
-        add_action('rest_api_init', array(__CLASS__, 'registerRoutes'));
-        add_action('init', array(__CLASS__, 'rewriteRuleRequest'));
-        add_action('template_redirect', array(__CLASS__, 'handleAdblockTracking'));
+        add_action('rest_api_init', [self::class, 'registerRoutes']);
+        add_action('init', [self::class, 'rewriteRuleRequest']);
+        add_action('template_redirect', [self::class, 'handleAdblockTracking']);
     }
 
     /**
@@ -31,11 +31,11 @@ class RESTService {
      * @since 5.2.14
      */
     public static function registerRoutes() {
-        register_rest_route('slimstat/v1', '/hit', array(
+        register_rest_route('slimstat/v1', '/hit', [
             'methods'             => 'POST',
-            'callback'            => array(__CLASS__, 'handleTracking'),
+            'callback'            => [self::class, 'handleTracking'],
             'permission_callback' => '__return_true',
-        ));
+        ]);
     }
 
     /**
@@ -47,7 +47,7 @@ class RESTService {
      * @return WP_REST_Response The response object.
      */
     public static function handleTracking(\WP_REST_Request $request) {
-        \wp_slimstat::slimtrack_ajax($request->get_json_params());
+        \wp_slimstat::slimtrack_ajax();
     }
 
     /**

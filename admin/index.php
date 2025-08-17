@@ -2,18 +2,18 @@
 
 class wp_slimstat_admin
 {
-    public static $screens_info = array();
+    public static $screens_info = [];
     public static $config_url = '';
     public static $current_screen = 'slimview1';
     public static $page_location = 'slimstat';
-    public static $meta_user_reports = array();
+    public static $meta_user_reports = [];
 
     protected static $admin_notice = '';
-    protected static $data_for_column = array(
-        'url'   => array(),
-        'sql'   => array(),
-        'count' => array()
-    );
+    protected static $data_for_column = [
+        'url'   => [],
+        'sql'   => [],
+        'count' => []
+    ];
 
     /**
      * Init -- Sets things up.
@@ -29,7 +29,7 @@ class wp_slimstat_admin
         });
 
         // Action for reset layout
-        add_action('admin_post_slimstat_reset_layout', array('wp_slimstat_admin', 'handle_reset_layout'));
+        add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
 
         // Load language files
         load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
@@ -37,82 +37,82 @@ class wp_slimstat_admin
         // Define the default screens
         $has_network_reports = get_user_option("meta-box-order_slimstat_page_slimlayout-network", 1);
 
-        self::$screens_info  = array(
-            'slimview1'  => array(
+        self::$screens_info  = [
+            'slimview1'  => [
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Real-time', 'wp-slimstat'),
                 'capability'      => 'can_view',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
-            ),
-            'slimview2'  => array(
+                'callback'        => [self::class, 'wp_slimstat_include_view']
+            ],
+            'slimview2'  => [
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Overview', 'wp-slimstat'),
                 'capability'      => 'can_view',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
-            ),
-            'slimview3'  => array(
+                'callback'        => [self::class, 'wp_slimstat_include_view']
+            ],
+            'slimview3'  => [
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Audience', 'wp-slimstat'),
                 'capability'      => 'can_view',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
-            ),
-            'slimview4'  => array(
+                'callback'        => [self::class, 'wp_slimstat_include_view']
+            ],
+            'slimview4'  => [
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Site Analysis', 'wp-slimstat'),
                 'capability'      => 'can_view',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
-            ),
-            'slimview5'  => array(
+                'callback'        => [self::class, 'wp_slimstat_include_view']
+            ],
+            'slimview5'  => [
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Traffic Sources', 'wp-slimstat'),
                 'capability'      => 'can_view',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_view')
-            ),
-            'slimlayout' => array(
+                'callback'        => [self::class, 'wp_slimstat_include_view']
+            ],
+            'slimlayout' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
                 'title'           => __('Customize', 'wp-slimstat'),
                 'capability'      => 'can_customize',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_layout')
-            ),
-            'slimconfig' => array(
+                'callback'        => [self::class, 'wp_slimstat_include_layout']
+            ],
+            'slimconfig' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
                 'title'           => __('Settings', 'wp-slimstat'),
                 'capability'      => 'can_admin',
-                'callback'        => array(__CLASS__, 'wp_slimstat_include_config')
-            ),
-            'slimpro'    => array(
+                'callback'        => [self::class, 'wp_slimstat_include_config']
+            ],
+            'slimpro'    => [
                 'is_report_group' => false,
                 'show_in_sidebar' => current_user_can('manage_options'),
                 'title'           => apply_filters('slimstat_upgrade_to_pro_title', __('Upgrade to Pro', 'wp-slimstat')),
                 'capability'      => 'can_admin',
-                'callback'        => array(__CLASS__, 'wp_slimstat_pro')
-            ),
-            'dashboard'  => array(
+                'callback'        => [self::class, 'wp_slimstat_pro']
+            ],
+            'dashboard'  => [
                 'is_report_group' => true,
                 'show_in_sidebar' => false,
                 'title'           => __('WordPress Dashboard', 'wp-slimstat'),
                 'capability'      => '',
                 'callback'        => '' // No callback and capabilities are needed if show_in_sidebar is false
-            ),
-            'inactive'   => array(
+            ],
+            'inactive'   => [
                 'is_report_group' => true,
                 'show_in_sidebar' => false,
                 'title'           => __('Inactive Reports'),
                 'capability'      => '',
                 'callback'        => '' // No callback and capabilities are needed if show_in_sidebar is false
-            )
-        );
+            ]
+        ];
         self::$screens_info  = apply_filters('slimstat_screens_info', self::$screens_info);
 
         // If the plugin was network activated, the tables might not have been created for this specific site
-        $table_list = wp_slimstat::$wpdb->get_results("SHOW TABLES LIKE '{$GLOBALS['wpdb']->prefix}slim_stats'");
+        $table_list = wp_slimstat::$wpdb->get_results(sprintf("SHOW TABLES LIKE '%sslim_stats'", $GLOBALS['wpdb']->prefix));
         if (empty($table_list)) {
             self::init_environment();
         }
@@ -151,57 +151,57 @@ class wp_slimstat_admin
         // WPMU - New blog created
         $active_sitewide_plugins = get_site_option('active_sitewide_plugins');
         if (!empty($active_sitewide_plugins['wp-slimstat/wp-slimstat.php'])) {
-            add_action('wpmu_new_blog', array(__CLASS__, 'new_blog'));
+            add_action('wpmu_new_blog', [self::class, 'new_blog']);
         }
 
         // WPMU - Blog Deleted
-        add_filter('wpmu_drop_tables', array(__CLASS__, 'drop_tables'), 10, 2);
+        add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);
 
         // Display a notice that hightlights this version's features
         if (!empty($_GET['page']) && strpos($_GET['page'], 'slimview') !== false) {
             if (!empty(self::$admin_notice) && wp_slimstat::$settings['notice_latest_news'] == 'on' && is_super_admin()) {
-                add_action('admin_notices', array(__CLASS__, 'show_latest_news'));
+                add_action('admin_notices', [self::class, 'show_latest_news']);
             }
 
             if (wp_slimstat::$settings['notice_translate'] == 'on' && is_super_admin()) {
-                add_filter('admin_notices', array(__CLASS__, 'show_translate_notice'));
+                add_filter('admin_notices', [self::class, 'show_translate_notice']);
             }
         }
 
         // Remove spammers from the database
         if (wp_slimstat::$settings['ignore_spammers'] == 'on') {
-            add_action('transition_comment_status', array(__CLASS__, 'remove_spam'), 15, 3);
+            add_action('transition_comment_status', [self::class, 'remove_spam'], 15, 3);
         }
 
         // Add a menu to the admin bar
         if (wp_slimstat::$settings['use_separate_menu'] != 'no' && is_admin_bar_showing()) {
-            add_action('admin_bar_menu', array(__CLASS__, 'add_menu_to_adminbar'), 100);
+            add_action('admin_bar_menu', [self::class, 'add_menu_to_adminbar'], 100);
         }
 
         if (function_exists('is_network_admin') && !is_network_admin()) {
             // Add the appropriate entries to the admin menu, if this user can view/admin  Slimstat
-            add_action('admin_menu', array(__CLASS__, 'add_menus'));
+            add_action('admin_menu', [self::class, 'add_menus']);
 
             // Display the column in the Edit Posts / Pages screen
             if (wp_slimstat::$settings['add_posts_column'] == 'on') {
-                $post_types = get_post_types(array('public' => true, 'show_ui' => true), 'names');
+                $post_types = get_post_types(['public' => true, 'show_ui' => true], 'names');
                 include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
                 include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php');
 
                 foreach ($post_types as $a_post_type) {
-                    add_filter("manage_{$a_post_type}_posts_columns", array(__CLASS__, 'add_column_header'));
-                    add_action("manage_{$a_post_type}_posts_custom_column", array(__CLASS__, 'add_post_column'), 10, 2);
+                    add_filter(sprintf('manage_%s_posts_columns', $a_post_type), [self::class, 'add_column_header']);
+                    add_action(sprintf('manage_%s_posts_custom_column', $a_post_type), [self::class, 'add_post_column'], 10, 2);
                 }
 
                 if (strpos($_SERVER['REQUEST_URI'], 'edit.php') !== false) {
-                    add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
-                    add_action('wp', array(__CLASS__, 'init_data_for_column'));
+                    add_action('admin_enqueue_scripts', [self::class, 'wp_slimstat_stylesheet']);
+                    add_action('wp', [self::class, 'init_data_for_column']);
                 }
             }
 
             // Update the table structure and options, if needed
             if (!empty(wp_slimstat::$settings['version']) && wp_slimstat::$settings['version'] != SLIMSTAT_ANALYTICS_VERSION) {
-                add_action('admin_init', array(__CLASS__, 'update_tables_and_options'));
+                add_action('admin_init', [self::class, 'update_tables_and_options']);
             }
         }
 
@@ -214,7 +214,7 @@ class wp_slimstat_admin
                 $report_id = sanitize_title($_POST['report_id'], 'slim_p0_00');
 
                 if (!empty(wp_slimstat_reports::$reports[$report_id])) {
-                    add_action('wp_ajax_slimstat_load_report', array('wp_slimstat_reports', 'callback_wrapper'), 10, 2);
+                    add_action('wp_ajax_slimstat_load_report', ['wp_slimstat_reports', 'callback_wrapper'], 10, 2);
                 }
             }
         }
@@ -226,11 +226,11 @@ class wp_slimstat_admin
             $temp           = $request_length - 10;
 
             if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== false || ($temp >= 0 && $temp <= $request_length && strpos($sanitized_uri, '/wp-admin/', $temp) !== false)) {
-                add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
-                add_action('admin_enqueue_scripts', array(__CLASS__, 'wp_slimstat_stylesheet'));
+                add_action('admin_enqueue_scripts', [self::class, 'wp_slimstat_enqueue_scripts']);
+                add_action('admin_enqueue_scripts', [self::class, 'wp_slimstat_stylesheet']);
             }
 
-            add_action('wp_dashboard_setup', array(__CLASS__, 'add_dashboard_widgets'));
+            add_action('wp_dashboard_setup', [self::class, 'add_dashboard_widgets']);
         }
 
         // AJAX Handlers
@@ -247,7 +247,7 @@ class wp_slimstat_admin
                 'slimstat_check_geoip_database' => 'check_geoip_database',
             ];
             foreach ($ajax_actions as $action => $handler) {
-                add_action('wp_ajax_' . $action, [__CLASS__, $handler]);
+                add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
         }
 
@@ -263,15 +263,13 @@ class wp_slimstat_admin
         }
 
         // Add style to the admin menu
-        add_action('admin_head', array(__CLASS__, 'styling_admin_menu'));
+        add_action('admin_head', [self::class, 'styling_admin_menu']);
 
         // Init feedback
         self::initFeedback();
 
         // Add lock export button in report header
-        add_filter('slimstat_report_header_buttons', function ($_header_buttons, $_report_id) {
-            return self::add_lock_export_button($_header_buttons, $_report_id);
-        }, 10, 2);
+        add_filter('slimstat_report_header_buttons', fn($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
         // Add header to settings and customize and settings page
         add_action('admin_notices', function () {
@@ -285,7 +283,7 @@ class wp_slimstat_admin
             ['option' => 'slimstat_dt_platform_indexed', 'key' => 'idx_dt_platform'],
         ];
         foreach ($index_checks as $idx) {
-            $exists = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
+            $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['key']));
             if (!empty($exists)) {
                 update_option($idx['option'], 'yes');
             }
@@ -331,11 +329,11 @@ class wp_slimstat_admin
             wp_die(__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
         }
 
-        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_admin_page_slimlayout%'");
-        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%mmetaboxhidden_admin_page_slimview%'");
-        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
-        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
-        $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS['wpdb']->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
+        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_admin_page_slimlayout%%'", $GLOBALS['wpdb']->prefix));
+        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%mmetaboxhidden_admin_page_slimview%%'", $GLOBALS['wpdb']->prefix));
+        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_slimstat%%'", $GLOBALS['wpdb']->prefix));
+        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS['wpdb']->prefix));
+        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS['wpdb']->prefix));
 
         // Redirect to layout page
         wp_safe_redirect(admin_url('admin.php?page=slimlayout'));
@@ -356,7 +354,7 @@ class wp_slimstat_admin
     /**
      * Support for WP MU site deletion
      */
-    public static function drop_tables($_tables = array(), $_blog_id = 1)
+    public static function drop_tables($_tables = [], $_blog_id = 1)
     {
         $_tables['slim_events'] = $GLOBALS['wpdb']->prefix . 'slim_events';
         $_tables['slim_stats']  = $GLOBALS['wpdb']->prefix . 'slim_stats';
@@ -381,30 +379,30 @@ class wp_slimstat_admin
         self::init_tables($my_wpdb);
 
         // Ensure country/dt index exists for performance
-        $has_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_country_dt'");
+        $has_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_country_dt'", $GLOBALS['wpdb']->prefix));
         if (!$has_index || count($has_index) === 0) {
-            $my_wpdb->query("CREATE INDEX idx_country_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (country, dt)");
+            $my_wpdb->query(sprintf('CREATE INDEX idx_country_dt ON %sslim_stats (country, dt)', $GLOBALS['wpdb']->prefix));
         }
         update_option('slimstat_country_dt_indexed', 'yes');
 
         // --- Add (dt, screen_width, screen_height) index for Top Screen Resolutions ---
-        $dt_screen_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_screen_width_screen_height'");
+        $dt_screen_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_screen_width_screen_height'", $GLOBALS['wpdb']->prefix));
         if (empty($dt_screen_index)) {
-            $my_wpdb->query("CREATE INDEX idx_dt_screen_width_screen_height ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, screen_width, screen_height)");
+            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_screen_width_screen_height ON %sslim_stats (dt, screen_width, screen_height)', $GLOBALS['wpdb']->prefix));
         }
         update_option('slimstat_dt_screen_indexed', 'yes');
 
         // --- Add (dt, browser, browser_version) index for Top Browsers ---
-        $dt_browser_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_browser_browser_version'");
+        $dt_browser_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_browser_browser_version'", $GLOBALS['wpdb']->prefix));
         if (empty($dt_browser_index)) {
-            $my_wpdb->query("CREATE INDEX idx_dt_browser_browser_version ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, browser, browser_version)");
+            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_browser_browser_version ON %sslim_stats (dt, browser, browser_version)', $GLOBALS['wpdb']->prefix));
         }
         update_option('slimstat_dt_browser_indexed', 'yes');
 
         // --- Add (dt, platform) index for Top Platforms ---
-        $dt_platform_index = $my_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = 'idx_dt_platform'");
+        $dt_platform_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_platform'", $GLOBALS['wpdb']->prefix));
         if (empty($dt_platform_index)) {
-            $my_wpdb->query("CREATE INDEX idx_dt_platform ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, platform)");
+            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix));
         }
         update_option('slimstat_dt_platform_indexed', 'yes');
 
@@ -471,7 +469,7 @@ class wp_slimstat_admin
 				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
-			) COLLATE utf8_general_ci $use_innodb";
+			) COLLATE utf8_general_ci {$use_innodb}";
 
         // This table will track outbound links (clicks on links to external sites)
         $events_table_sql = "
@@ -487,7 +485,7 @@ class wp_slimstat_admin
 				CONSTRAINT PRIMARY KEY (event_id),
 				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_idx (dt),
 				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
-			) COLLATE utf8_general_ci $use_innodb";
+			) COLLATE utf8_general_ci {$use_innodb}";
 
         $archive_table_sql = "
 			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
@@ -505,7 +503,7 @@ class wp_slimstat_admin
 
 				CONSTRAINT PRIMARY KEY (event_id),
 				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_archive_idx (dt)
-			) COLLATE utf8_general_ci $use_innodb";
+			) COLLATE utf8_general_ci {$use_innodb}";
 
         // Ok, let's create the table structure
         self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix . 'slim_stats', $_wpdb);
@@ -519,13 +517,13 @@ class wp_slimstat_admin
         }
 
         $index_defs = [
-            ['name' => 'idx_country_dt', 'sql' => "CREATE INDEX idx_country_dt ON {$GLOBALS['wpdb']->prefix}slim_stats (country, dt)", 'option' => 'slimstat_country_dt_indexed'],
-            ['name' => 'idx_dt_screen_width_screen_height', 'sql' => "CREATE INDEX idx_dt_screen_width_screen_height ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, screen_width, screen_height)", 'option' => 'slimstat_dt_screen_indexed'],
-            ['name' => 'idx_dt_browser_browser_version', 'sql' => "CREATE INDEX idx_dt_browser_browser_version ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, browser, browser_version)", 'option' => 'slimstat_dt_browser_indexed'],
-            ['name' => 'idx_dt_platform', 'sql' => "CREATE INDEX idx_dt_platform ON {$GLOBALS['wpdb']->prefix}slim_stats (dt, platform)", 'option' => 'slimstat_dt_platform_indexed'],
+            ['name' => 'idx_country_dt', 'sql' => sprintf('CREATE INDEX idx_country_dt ON %sslim_stats (country, dt)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_country_dt_indexed'],
+            ['name' => 'idx_dt_screen_width_screen_height', 'sql' => sprintf('CREATE INDEX idx_dt_screen_width_screen_height ON %sslim_stats (dt, screen_width, screen_height)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_screen_indexed'],
+            ['name' => 'idx_dt_browser_browser_version', 'sql' => sprintf('CREATE INDEX idx_dt_browser_browser_version ON %sslim_stats (dt, browser, browser_version)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_browser_indexed'],
+            ['name' => 'idx_dt_platform', 'sql' => sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_platform_indexed'],
         ];
         foreach ($index_defs as $idx) {
-            $exists = $_wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$idx['name']}'");
+            $exists = $_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['name']));
             if (empty($exists)) {
                 $_wpdb->query($idx['sql']);
             }
@@ -544,8 +542,8 @@ class wp_slimstat_admin
         // --- Updates for version 4.8.2 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.2', '<')) {
             // Add new email column to database
-            $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username");
-            $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username");
+            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
+            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
         }
         // --- END: Updates for version 4.8.2 ---
 
@@ -567,13 +565,13 @@ class wp_slimstat_admin
 
             // Add table indexes for improved performance (idempotent)
             $indexes = [
-                ['name' => $GLOBALS['wpdb']->prefix.'stats_resource_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) )"],
-                ['name' => $GLOBALS['wpdb']->prefix.'stats_browser_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) )"],
-                ['name' => $GLOBALS['wpdb']->prefix.'stats_searchterms_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) )"],
-                ['name' => $GLOBALS['wpdb']->prefix.'stats_fingerprint_idx', 'sql' => "ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )"],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_resource_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_browser_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_browser_idx( browser( 10 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_searchterms_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_searchterms_idx( searchterms( 15 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
+                ['name' => $GLOBALS['wpdb']->prefix.'stats_fingerprint_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
             ];
             foreach ($indexes as $index) {
-                $check_index = wp_slimstat::$wpdb->get_results("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = '{$index['name']}'");
+                $check_index = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $index['name']));
                 if (empty($check_index)) {
                     wp_slimstat::$wpdb->query($index['sql']);
                 }
@@ -585,13 +583,13 @@ class wp_slimstat_admin
         // --- Updates for version 4.8.4.1 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
             // Goodbye, browser plugins
-            wp_slimstat::$wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats DROP COLUMN plugins");
+            wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP COLUMN plugins', $GLOBALS['wpdb']->prefix));
 
             // Hello there, fingerprint and timezone offset
-            $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language");
-            $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN fingerprint VARCHAR(255) DEFAULT NULL AFTER language");
-            $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource");
-            $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats_archive ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource");
+            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language', $GLOBALS['wpdb']->prefix));
+            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN fingerprint VARCHAR(255) DEFAULT NULL AFTER language', $GLOBALS['wpdb']->prefix));
+            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
+            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
         }
         // --- END: Updates for version 4.8.4.1 ---
 
@@ -599,10 +597,10 @@ class wp_slimstat_admin
         if (version_compare(wp_slimstat::$settings['version'], '4.8.8', '<')) {
             // Adding new index on the 'fingerprint' column for improved performance
             if (wp_slimstat::$settings['db_indexes'] == 'on') {
-                $my_wpdb->query("ALTER TABLE {$GLOBALS['wpdb']->prefix}slim_stats ADD INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )");
+                $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
             }
 
-            $my_wpdb->query("UPDATE {$GLOBALS['wpdb']->prefix}slim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%'");
+            $my_wpdb->query(sprintf("UPDATE %sslim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%%'", $GLOBALS['wpdb']->prefix));
         }
 
         // Now we can update the version stored in the database
@@ -619,7 +617,7 @@ class wp_slimstat_admin
     {
         // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
-        if (strpos(wp_slimstat::$settings['can_view'], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
+        if (strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
         }
 
@@ -636,7 +634,7 @@ class wp_slimstat_admin
                 if (empty(wp_slimstat_reports::$reports[$a_report_id])) {
                     continue;
                 }
-                wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], array('wp_slimstat_reports', 'callback_wrapper'));
+                wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
             }
         }
     }
@@ -663,8 +661,8 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_stylesheet($_hook = '')
     {
-        wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', dirname(__FILE__)), false, SLIMSTAT_ANALYTICS_VERSION);
-        wp_enqueue_style('wp-slimstat', array(), array(), SLIMSTAT_ANALYTICS_VERSION, 'all');
+        wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', __DIR__), false, SLIMSTAT_ANALYTICS_VERSION);
+        wp_enqueue_style('wp-slimstat', [], [], SLIMSTAT_ANALYTICS_VERSION, 'all');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);
@@ -691,19 +689,19 @@ class wp_slimstat_admin
 
         // Enqueue the built-in code editor to use on the Settings
         if (self::$current_screen) {
-            wp_enqueue_code_editor(array('type' => 'text/html'));
+            wp_enqueue_code_editor(['type' => 'text/html']);
         }
 
-        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), SLIMSTAT_ANALYTICS_VERSION, false);
+        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, false);
 
         // Pass some information to Javascript
-        $params = array(
-            'async_load'       => !empty(wp_slimstat::$settings['async_load']) ? wp_slimstat::$settings['async_load'] : 'no',
-            'datepicker_image' => plugins_url('/admin/assets/images/datepicker.png', dirname(__FILE__)),
+        $params = [
+            'async_load'       => empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load'],
+            'datepicker_image' => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
             'refresh_interval' => intval(wp_slimstat::$settings['refresh_interval']),
             'page_location'    => self::$page_location,
             'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
-        );
+        ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }
     // END: wp_slimstat_enqueue_scripts
@@ -719,7 +717,7 @@ class wp_slimstat_admin
         $minimum_capability = 'read';
         if (is_network_admin()) {
             $minimum_capability = 'manage_network';
-        } else if (strpos(wp_slimstat::$settings['can_view'], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
+        } elseif (strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
         }
 
@@ -740,9 +738,9 @@ class wp_slimstat_admin
         }
 
         // Get the current menu position
-        $new_entry = array();
+        $new_entry = [];
         if (wp_slimstat::$settings['use_separate_menu'] == 'no' || is_network_admin()) {
-            $new_entry[] = add_menu_page(__('Slimstat', 'wp-slimstat'), __('Slimstat', 'wp-slimstat'), $minimum_capability, $parent, array(__CLASS__, 'wp_slimstat_include_view'), 'dashicons-chart-area');
+            $new_entry[] = add_menu_page(__('Slimstat', 'wp-slimstat'), __('Slimstat', 'wp-slimstat'), $minimum_capability, $parent, [self::class, 'wp_slimstat_include_view'], 'dashicons-chart-area');
         } else {
             $parent = 'admin.php';
         }
@@ -753,7 +751,7 @@ class wp_slimstat_admin
             }
 
             $minimum_capability = 'read';
-            if (!empty($a_screen_info['capability']) && strpos(wp_slimstat::$settings[$a_screen_info['capability']], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_' . $a_screen_info['capability']])) {
+            if (!empty($a_screen_info['capability']) && strpos(wp_slimstat::$settings[$a_screen_info['capability']], (string) $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_' . $a_screen_info['capability']])) {
                 $minimum_capability = wp_slimstat::$settings['capability_' . $a_screen_info['capability']];
             }
 
@@ -779,9 +777,9 @@ class wp_slimstat_admin
 
         // Load styles and Javascript needed to make the reports look nice and interactive
         foreach ($new_entry as $a_entry) {
-            add_action('load-' . $a_entry, array(__CLASS__, 'wp_slimstat_stylesheet'));
-            add_action('load-' . $a_entry, array(__CLASS__, 'wp_slimstat_enqueue_scripts'));
-            add_action('load-' . $a_entry, array(__CLASS__, 'contextual_help'));
+            add_action('load-' . $a_entry, [self::class, 'wp_slimstat_stylesheet']);
+            add_action('load-' . $a_entry, [self::class, 'wp_slimstat_enqueue_scripts']);
+            add_action('load-' . $a_entry, [self::class, 'contextual_help']);
         }
 
         return $_s;
@@ -797,7 +795,7 @@ class wp_slimstat_admin
         $minimum_capability = 'read';
         if (is_network_admin()) {
             $minimum_capability = 'manage_network';
-        } else if (strpos(wp_slimstat::$settings['can_view'], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
+        } elseif (strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
         }
 
@@ -820,11 +818,11 @@ class wp_slimstat_admin
         if (current_user_can($minimum_capability)) {
             $view_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=');
 
-            $GLOBALS['wp_admin_bar']->add_menu(array(
+            $GLOBALS['wp_admin_bar']->add_menu([
                 'id'    => 'slimstat-header',
                 'title' => '<span class="ab-icon dashicons dashicons-chart-area" style="font-size:1rem;margin-top:3px"></span>' . __('Slimstat', 'wp-slimstat'),
-                'href'  => "{$view_url}{$parent}"
-            ));
+                'href'  => $view_url . $parent
+            ]);
 
             foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
                 if (isset(self::$meta_user_reports[$a_screen_id]) && empty(self::$meta_user_reports[$a_screen_id])) {
@@ -832,17 +830,17 @@ class wp_slimstat_admin
                 }
 
                 $minimum_capability = 'read';
-                if (!empty($a_screen_info['capability']) && strpos(wp_slimstat::$settings[$a_screen_info['capability']], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_' . $a_screen_info['capability']])) {
+                if (!empty($a_screen_info['capability']) && strpos(wp_slimstat::$settings[$a_screen_info['capability']], (string) $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_' . $a_screen_info['capability']])) {
                     $minimum_capability = wp_slimstat::$settings['capability_' . $a_screen_info['capability']];
                 }
 
                 if ($a_screen_info['show_in_sidebar'] && current_user_can($minimum_capability)) {
-                    $GLOBALS['wp_admin_bar']->add_menu(array(
+                    $GLOBALS['wp_admin_bar']->add_menu([
                         'id'     => $a_screen_id,
-                        'href'   => "{$view_url}$a_screen_id",
+                        'href'   => $view_url . $a_screen_id,
                         'parent' => 'slimstat-header',
                         'title'  => $a_screen_info['title']
-                    ));
+                    ]);
                 }
             }
         }
@@ -854,7 +852,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_include_view()
     {
-        include(dirname(__FILE__) . '/view/index.php');
+        include(__DIR__ . '/view/index.php');
     }
     // END: wp_slimstat_include_view
 
@@ -863,7 +861,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_include_layout()
     {
-        include(dirname(__FILE__) . '/view/layout.php');
+        include(__DIR__ . '/view/layout.php');
     }
     // END: wp_slimstat_include_addons
 
@@ -872,7 +870,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_pro()
     {
-        include(dirname(__FILE__) . '/view/upgrade-pro.php');
+        include(__DIR__ . '/view/upgrade-pro.php');
     }
 
     // END: wp_slimstat_include_addons
@@ -882,7 +880,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_include_config()
     {
-        include(dirname(__FILE__) . '/config/index.php');
+        include(__DIR__ . '/config/index.php');
     }
     // END: wp_slimstat_include_config
 
@@ -897,7 +895,7 @@ class wp_slimstat_admin
 
         foreach ($GLOBALS['wp_query']->posts as $a_post) {
             self::$data_for_column['url'][$a_post->ID] = parse_url(get_permalink($a_post->ID));
-            self::$data_for_column['url'][$a_post->ID] = self::$data_for_column['url'][$a_post->ID]['path'] . (!empty(self::$data_for_column['url'][$a_post->ID]['query']) ? '?' . self::$data_for_column['url'][$a_post->ID]['query'] : '');
+            self::$data_for_column['url'][$a_post->ID] = self::$data_for_column['url'][$a_post->ID]['path'] . (empty(self::$data_for_column['url'][$a_post->ID]['query']) ? '' : '?' . self::$data_for_column['url'][$a_post->ID]['query']);
             self::$data_for_column['sql'][$a_post->ID] = self::$data_for_column['url'][$a_post->ID] . '%';
         }
 
@@ -914,7 +912,7 @@ class wp_slimstat_admin
         $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s')) . ')', '*', true);
 
         $sql = wp_slimstat::$wpdb->prepare("
-			SELECT resource, COUNT( DISTINCT $column ) as counthits
+			SELECT resource, COUNT( DISTINCT {$column} ) as counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE " . $where . "
 			GROUP BY resource
@@ -926,19 +924,20 @@ class wp_slimstat_admin
             self::$data_for_column['count'][$post_id] = 0;
 
             foreach ($results as $i => $a_row) {
-                if (strpos($a_row['resource'], $a_url) !== false) {
+                if (strpos($a_row['resource'], (string) $a_url) !== false) {
                     self::$data_for_column['count'][$post_id] += $a_row['counthits'];
                     unset($results[$i]);
                 }
             }
         }
+        return null;
     }
     // END: init_data_for_column
 
     /**
      * Adds a new column header to the Posts panel (to show the number of pageviews for each post)
      */
-    public static function add_column_header($_columns = array())
+    public static function add_column_header($_columns = [])
     {
         if (wp_slimstat::$settings['posts_column_day_interval'] == 0) {
             wp_slimstat::$settings['posts_column_day_interval'] = 30;
@@ -966,6 +965,7 @@ class wp_slimstat_admin
         $count = empty(self::$data_for_column['count'][$_post_id]) ? 0 : self::$data_for_column['count'][$_post_id];
 
         echo '<a href="' . wp_slimstat_reports::fs_url('resource starts_with ' . self::$data_for_column['url'][$_post_id] . '&&&interval equals -' . wp_slimstat::$settings['posts_column_day_interval']) . '">' . $count . '</a>';
+        return null;
     }
 
     // END: add_column
@@ -986,6 +986,7 @@ class wp_slimstat_admin
         } else {
             echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
         }
+        return null;
     }
     // END: show_message
 
@@ -1008,10 +1009,10 @@ class wp_slimstat_admin
         include_once(plugin_dir_path(__FILE__) . '../languages/i18n-wordpressorg-v3.php');
 
         $i18n_module = new Yoast_I18n_WordPressOrg_v3(
-            array(
+            [
                 'textdomain'  => 'wp-slimstat',
                 'plugin_name' => 'Slimstat Analytics'
-            ),
+            ],
             false
         );
 
@@ -1051,7 +1052,7 @@ class wp_slimstat_admin
         if (!$current_user_can_delete || !wp_verify_nonce($_POST['security'], 'meta-box-order')) {
             return;
         }
-        $my_wpdb->query("DELETE ts FROM {$GLOBALS['wpdb']->prefix}slim_stats ts WHERE ts.id = $pageview_id");
+        $my_wpdb->query(sprintf('DELETE ts FROM %sslim_stats ts WHERE ts.id = %d', $GLOBALS['wpdb']->prefix, $pageview_id));
         exit();
     }
     // END: delete_pageview
@@ -1070,7 +1071,7 @@ class wp_slimstat_admin
         }
 
         foreach (scandir($path) as $a_item) {
-            if ($a_item == '.' || $a_item == '..') {
+            if ($a_item === '.' || $a_item === '..') {
                 continue;
             }
 
@@ -1092,7 +1093,7 @@ class wp_slimstat_admin
 
         // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
-        if (strpos(wp_slimstat::$settings['can_view'], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
+        if (strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
         }
 
@@ -1103,7 +1104,7 @@ class wp_slimstat_admin
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();
 
-        $saved_filters = get_option('slimstat_filters', array());
+        $saved_filters = get_option('slimstat_filters', []);
 
         switch ($_POST['type']) {
             case 'save':
@@ -1113,7 +1114,7 @@ class wp_slimstat_admin
                 foreach ($saved_filters as $a_saved_filter) {
                     $filter_found = 0;
 
-                    if (count($a_saved_filter) != count($new_filter) || count(array_intersect_key($a_saved_filter, $new_filter)) != count($new_filter)) {
+                    if (count($a_saved_filter) !== count($new_filter) || count(array_intersect_key($a_saved_filter, $new_filter)) !== count($new_filter)) {
                         $filter_found = 1;
                         continue;
                     }
@@ -1145,11 +1146,12 @@ class wp_slimstat_admin
                 echo '<div id="slim_filters_overlay">';
                 foreach ($saved_filters as $a_filter_id => $a_filter_data) {
 
-                    $filter_html = $filter_strings = array();
+                    $filter_html = [];
+                    $filter_strings = [];
                     foreach ($a_filter_data as $a_filter_label => $a_filter_details) {
                         $filter_value_no_slashes = htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
                         $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . ' ' . $filter_value_no_slashes;
-                        $filter_strings[]        = "$a_filter_label {$a_filter_details[0]} $filter_value_no_slashes";
+                        $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_value_no_slashes);
                     }
                     echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . __('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url(implode('&&&', $filter_strings)) . '">' . implode(', ', $filter_html) . '</a></p>';
                 }
@@ -1175,9 +1177,9 @@ class wp_slimstat_admin
                 ->download();
 
             wp_send_json_success($result['notice']);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
 
-            wp_send_json_error($e->getMessage());
+            wp_send_json_error($exception->getMessage());
         }
     }
 
@@ -1191,8 +1193,8 @@ class wp_slimstat_admin
             $result = $geographicProvider->checkDatabase();
 
             wp_send_json_success($result['notice']);
-        } catch (\Exception $e) {
-            wp_send_json_error($e->getMessage());
+        } catch (\Exception $exception) {
+            wp_send_json_error($exception->getMessage());
         }
     }
 
@@ -1209,7 +1211,7 @@ class wp_slimstat_admin
         $screen = get_current_screen();
 
         $screen->add_help_tab(
-            array(
+            [
                 'id'      => 'wp-slimstat-definitions',
                 'title'   => __('Definitions', 'wp-slimstat'),
                 'content' => '<ul>
@@ -1225,28 +1227,28 @@ class wp_slimstat_admin
                     <li><b>' . __('User Agent', 'wp-slimstat') . '</b>: ' . __('Any program used for accessing a website; this includes browsers, robots, spiders and any other program that was used to retrieve information from the site', 'wp-slimstat') . '</li>
                     <li><b>' . __('Outbound Link', 'wp-slimstat') . '</b>: ' . __('A link from one domain to another is said to be outbound from its source anchor and inbound to its target. This report lists all the links to other websites followed by your visitors.', 'wp-slimstat') . '</li>
                 </ul>'
-            )
+            ]
         );
         $screen->add_help_tab(
-            array(
+            [
                 'id'      => 'wp-slimstat-basic-filters',
                 'title'   => __('Basic Filters', 'wp-slimstat'),
                 'content' => '<ul>
                     <li><b>' . __('Browser', 'wp-slimstat') . '</b>: ' . __('User agent (Firefox, Chrome, ...)', 'wp-slimstat') . '</li>
                     <li><b>' . __('Country Code', 'wp-slimstat') . '</b>: ' . __('2-letter code (us, ru, de, it, ...)', 'wp-slimstat') . '</li>
-                    <li><b>' . __('IP', 'wp-slimstat') . '</b>: ' . __('Visitor\'s public IP address', 'wp-slimstat') . '</li>
+                    <li><b>' . __('IP', 'wp-slimstat') . '</b>: ' . __("Visitor's public IP address", 'wp-slimstat') . '</li>
                     <li><b>' . __('Search Terms', 'wp-slimstat') . '</b>: ' . __('Keywords used by your visitors to find your website on a search engine', 'wp-slimstat') . '</li>
                     <li><b>' . __('Language Code', 'wp-slimstat') . '</b>: ' . __('Please refer to this <a target="_blank" href="https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx">language culture page</a> (first column) for more information', 'wp-slimstat') . '</li>
                     <li><b>' . __('Operating System', 'wp-slimstat') . '</b>: ' . __('Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="_blank" href="https://php.net/manual/en/function.get-browser.php">this manual page</a> for more information', 'wp-slimstat') . '</li>
                     <li><b>' . __('Permalink', 'wp-slimstat') . '</b>: ' . __('URL accessed on your site', 'wp-slimstat') . '</li>
                     <li><b>' . __('Referer', 'wp-slimstat') . '</b>: ' . __('Complete address of the referrer page', 'wp-slimstat') . '</li>
-                    <li><b>' . __('Visitor\'s Name', 'wp-slimstat') . '</b>: ' . __('Visitors\' names according to the cookie set by WordPress after they leave a comment', 'wp-slimstat') . '</li>
+                    <li><b>' . __("Visitor's Name", 'wp-slimstat') . '</b>: ' . __("Visitors' names according to the cookie set by WordPress after they leave a comment", 'wp-slimstat') . '</li>
                 </ul>'
-            )
+            ]
         );
 
         $screen->add_help_tab(
-            array(
+            [
                 'id'      => 'wp-slimstat-advanced-filters',
                 'title'   => __('Advanced Filters', 'wp-slimstat'),
                 'content' => '<ul>
@@ -1255,15 +1257,16 @@ class wp_slimstat_admin
                         <li><b>' . __('Pageview Attributes', 'wp-slimstat') . '</b>: ' . __('this field is set to <em>[pre]</em> if the resource has been accessed through <a target="_blank" href="https://developer.mozilla.org/en/Link_prefetching_FAQ">Link Prefetching</a> or similar techniques', 'wp-slimstat') . '</li>
                         <li><b>' . __('Post Author', 'wp-slimstat') . '</b>: ' . __('author associated to that post/page when the resource was accessed', 'wp-slimstat') . '</li>
                         <li><b>' . __('Post Category ID', 'wp-slimstat') . '</b>: ' . __('ID of the category/term associated to the resource, when available', 'wp-slimstat') . '</li>
-                        <li><b>' . __('Originating IP', 'wp-slimstat') . '</b>: ' . __('visitor\'s originating IP address, if available', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Originating IP', 'wp-slimstat') . '</b>: ' . __("visitor's originating IP address, if available", 'wp-slimstat') . '</li>
                         <li><b>' . __('Resource Content Type', 'wp-slimstat') . '</b>: ' . __('post, page, cpt:<em>custom-post-type</em>, attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the <a target="_blank" href="https://codex.wordpress.org/Conditional_Tags">Conditional Tags</a> manual page for more information', 'wp-slimstat') . '</li>
                         <li><b>' . __('Screen Resolution', 'wp-slimstat') . '</b>: ' . __('viewport width and height (1024x768, 800x600, ...)', 'wp-slimstat') . '</li>
                         <li><b>' . __('Visit ID', 'wp-slimstat') . "</b>: " . __('generally used in conjunction with <em>is not empty</em>, identifies human visitors', 'wp-slimstat') . '</li>
                         <li><b>' . __('Date Filters', 'wp-slimstat') . "</b>: " . __('you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)', 'wp-slimstat') . '</li>
                         <li><b>' . __('SERP Position', 'wp-slimstat') . "</b>: " . __('set the filter to Referer contains cd=N&, where N is the position you are looking for', 'wp-slimstat') . '</li>
                 </ul>'
-            )
+            ]
         );
+        return null;
     }
     // END: contextual_help
 
@@ -1275,7 +1278,7 @@ class wp_slimstat_admin
         $_wpdb->query($_sql);
 
         // Let's make sure this table was actually created
-        foreach ($_wpdb->get_col("SHOW TABLES LIKE '$_tablename'", 0) as $a_table) {
+        foreach ($_wpdb->get_col(sprintf("SHOW TABLES LIKE '%s'", $_tablename), 0) as $a_table) {
             if ($a_table == $_tablename) {
                 return true;
             }
@@ -1310,13 +1313,11 @@ class wp_slimstat_admin
                     ],
                     'meta'       => [
                         'php_version'    => PHP_VERSION,
-                        'active_plugins' => array_map(function ($plugin, $pluginPath) {
-                            return [
-                                'name'    => $plugin['Name'],
-                                'version' => $plugin['Version'],
-                                'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
-                            ];
-                        }, get_plugins(), array_keys(get_plugins())),
+                        'active_plugins' => array_map(fn($plugin, $pluginPath) => [
+                            'name'    => $plugin['Name'],
+                            'version' => $plugin['Version'],
+                            'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
+                        ], get_plugins(), array_keys(get_plugins())),
                     ]
                 ])));
 
@@ -1330,7 +1331,7 @@ class wp_slimstat_admin
         });
     }
 
-    public static function get_template($template, $args = array(), $return = false)
+    public static function get_template($template, $args = [], $return = false)
     {
         // Push Args
         if (is_array($args) && isset($args)) :
@@ -1344,7 +1345,7 @@ class wp_slimstat_admin
 
         // Load File
         foreach ($template as $file) {
-            $template_file = WP_PLUGIN_DIR . "/wp-slimstat/admin/view/partials/{$file}.php";
+            $template_file = WP_PLUGIN_DIR . sprintf('/wp-slimstat/admin/view/partials/%s.php', $file);
 
             if (!file_exists($template_file)) {
                 continue;
@@ -1360,6 +1361,7 @@ class wp_slimstat_admin
             // include File
             include $template_file;
         }
+        return null;
     }
 
     public static function add_lock_export_button($_header_buttons = '', $_report_id = '')
@@ -1374,7 +1376,7 @@ class wp_slimstat_admin
         if (empty(\wp_slimstat_reports::$reports[$_report_id]['callback_args']) || !array_key_exists('raw', \wp_slimstat_reports::$reports[$_report_id]['callback_args'])) {
             return $_header_buttons;
         }
-        $utm_medium = !empty($_report_id) ? $_report_id : 'report-unknown';
+        $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
         return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-download"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
     }
 
@@ -1383,18 +1385,19 @@ class wp_slimstat_admin
         if (isset($_GET['page']) && ($_GET['page'] === 'slimlayout' || $_GET['page'] === 'slimconfig')) {
             return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
         }
+        return null;
     }
 
     public static function ajax_add_country_dt_index() {
         check_ajax_referer('slimstat_add_country_dt_index');
         global $wpdb;
         $table = $wpdb->prefix . 'slim_stats';
-        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'idx_country_dt'");
+        $has_index = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = 'idx_country_dt'", $table));
         if ($has_index && count($has_index) > 0) {
             update_option('slimstat_country_dt_indexed', 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query("CREATE INDEX idx_country_dt ON $table (country, dt)");
+        $result = $wpdb->query(sprintf('CREATE INDEX idx_country_dt ON %s (country, dt)', $table));
         if ($result !== false) {
             update_option('slimstat_country_dt_indexed', 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
@@ -1404,7 +1407,7 @@ class wp_slimstat_admin
     }
 
     public static function register_country_dt_index_hooks() {
-        add_action('wp_ajax_slimstat_add_country_dt_index', [__CLASS__, 'ajax_add_country_dt_index']);
+        add_action('wp_ajax_slimstat_add_country_dt_index', [self::class, 'ajax_add_country_dt_index']);
     }
 
     public static function ajax_add_dt_screen_index() {
@@ -1412,12 +1415,12 @@ class wp_slimstat_admin
         global $wpdb;
         $table = $wpdb->prefix . 'slim_stats';
         $index_name = 'idx_dt_screen_width_screen_height';
-        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = '$index_name'");
+        $has_index = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
         if ($has_index && count($has_index) > 0) {
             update_option('slimstat_dt_screen_indexed', 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query("CREATE INDEX $index_name ON $table (dt, screen_width, screen_height)");
+        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, screen_width, screen_height)', $index_name, $table));
         if ($result !== false) {
             update_option('slimstat_dt_screen_indexed', 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
@@ -1427,7 +1430,7 @@ class wp_slimstat_admin
     }
 
     public static function register_dt_screen_index_hooks() {
-        add_action('wp_ajax_slimstat_add_dt_screen_index', [__CLASS__, 'ajax_add_dt_screen_index']);
+        add_action('wp_ajax_slimstat_add_dt_screen_index', [self::class, 'ajax_add_dt_screen_index']);
     }
 
     public static function ajax_add_dt_browser_index() {
@@ -1435,12 +1438,12 @@ class wp_slimstat_admin
         global $wpdb;
         $table = $wpdb->prefix . 'slim_stats';
         $index_name = 'idx_dt_browser_browser_version';
-        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = '$index_name'");
+        $has_index = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
         if ($has_index && count($has_index) > 0) {
             update_option('slimstat_dt_browser_indexed', 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query("CREATE INDEX $index_name ON $table (dt, browser, browser_version)");
+        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, browser, browser_version)', $index_name, $table));
         if ($result !== false) {
             update_option('slimstat_dt_browser_indexed', 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
@@ -1450,7 +1453,7 @@ class wp_slimstat_admin
     }
 
     public static function register_dt_browser_index_hooks() {
-        add_action('wp_ajax_slimstat_add_dt_browser_index', [__CLASS__, 'ajax_add_dt_browser_index']);
+        add_action('wp_ajax_slimstat_add_dt_browser_index', [self::class, 'ajax_add_dt_browser_index']);
     }
 
     public static function ajax_add_dt_platform_index() {
@@ -1458,12 +1461,12 @@ class wp_slimstat_admin
         global $wpdb;
         $table = $wpdb->prefix . 'slim_stats';
         $index_name = 'idx_dt_platform';
-        $has_index = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = '$index_name'");
+        $has_index = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
         if ($has_index && count($has_index) > 0) {
             update_option('slimstat_dt_platform_indexed', 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query("CREATE INDEX $index_name ON $table (dt, platform)");
+        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, platform)', $index_name, $table));
         if ($result !== false) {
             update_option('slimstat_dt_platform_indexed', 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
@@ -1473,12 +1476,14 @@ class wp_slimstat_admin
     }
 
     public static function register_dt_platform_index_hooks() {
-        add_action('wp_ajax_slimstat_add_dt_platform_index', [__CLASS__, 'ajax_add_dt_platform_index']);
+        add_action('wp_ajax_slimstat_add_dt_platform_index', [self::class, 'ajax_add_dt_platform_index']);
     }
 
     public static function show_indexes_notice() {
 
-        if (!current_user_can('manage_options')) return;
+        if (!current_user_can('manage_options')) {
+            return;
+        }
         $indexes = [
             [
                 'option' => 'slimstat_country_dt_indexed',
@@ -1520,14 +1525,16 @@ class wp_slimstat_admin
 
         $pending = array_filter($indexes, function($idx) {
             global $wpdb;
-            $exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}slim_stats WHERE Key_name = '{$idx['key']}'");
+            $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $wpdb->prefix, $idx['key']));
             return empty($exists);
         });
-        if (empty($pending)) return;
+        if ($pending === []) {
+            return;
+        }
         $ajax_url = admin_url('admin-ajax.php');
 
         // Generate nonces for each AJAX action
-        $nonces = array();
+        $nonces = [];
         foreach ($pending as $idx) {
             $nonces[$idx['ajax']] = wp_create_nonce($idx['ajax']);
         }

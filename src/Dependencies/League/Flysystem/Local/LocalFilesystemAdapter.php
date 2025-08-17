@@ -182,7 +182,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
             case 'dir':
                 return @rmdir((string) $file->getRealPath());
             case 'link':
-                return @unlink((string) $file->getPathname());
+                return @unlink($file->getPathname());
             default:
                 return @unlink((string) $file->getRealPath());
         }
@@ -201,9 +201,10 @@ class LocalFilesystemAdapter implements FilesystemAdapter
 
         foreach ($iterator as $fileInfo) {
             if ($fileInfo->isLink()) {
-                if ($this->linkHandling & self::SKIP_LINKS) {
+                if (($this->linkHandling & self::SKIP_LINKS) !== 0) {
                     continue;
                 }
+                
                 throw SymbolicLinkEncountered::atLocation($fileInfo->getPathname());
             }
 
@@ -291,7 +292,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         clearstatcache(true, $dirname);
 
         if ( ! is_dir($dirname)) {
-            $errorMessage = isset($mkdirError['message']) ? $mkdirError['message'] : '';
+            $errorMessage = $mkdirError['message'] ?? '';
 
             throw UnableToCreateDirectory::atLocation($dirname, $errorMessage);
         }

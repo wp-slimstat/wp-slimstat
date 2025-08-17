@@ -55,6 +55,7 @@ class FormatterHelper extends Helper
         for ($i = 0; isset($lines[$i]); ++$i) {
             $messages[] = $lines[$i].str_repeat(' ', $len - self::width($lines[$i]));
         }
+        
         if ($large) {
             $messages[] = str_repeat(' ', $len);
         }

@@ -16,13 +16,20 @@ use SlimStat\Utils\Query;
 class Chart
 {
     public const DAY            = 86400;
+    
     public const YEAR           = 365 * self::DAY;
-    private const GRANULARITIES = array('yearly', 'monthly', 'weekly', 'daily', 'hourly');
-    private array $args         = array();
-    private array $data         = array();
-    private array $prevData     = array();
-    private array $chartLabels  = array();
-    private array $translations = array();
+    
+    private const GRANULARITIES = ['yearly', 'monthly', 'weekly', 'daily', 'hourly'];
+    
+    private array $args         = [];
+    
+    private array $data         = [];
+    
+    private array $prevData     = [];
+    
+    private array $chartLabels  = [];
+    
+    private array $translations = [];
 
     public function showChart(array $args): void
     {
@@ -35,11 +42,11 @@ class Chart
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
 
-        $args        = isset($_POST['args']) ? json_decode(stripslashes($_POST['args']), true) : array();
+        $args        = isset($_POST['args']) ? json_decode(stripslashes($_POST['args']), true) : [];
         $granularity = isset($_POST['granularity']) ? sanitize_text_field($_POST['granularity']) : 'daily';
 
-        if (!in_array($granularity, array('yearly', 'monthly', 'weekly', 'daily', 'hourly'), true)) {
-            wp_send_json_error(array('message' => __('Invalid granularity', 'wp-slimstat')));
+        if (!in_array($granularity, ['yearly', 'monthly', 'weekly', 'daily', 'hourly'], true)) {
+            wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
         }
 
         if (!class_exists('\wp_slimstat_db')) {
@@ -55,26 +62,26 @@ class Chart
             $chart               = new self();
             $args['granularity'] = $granularity;
             $chart->init($args);
-            $totals = array(
-                'current'  => array(
+            $totals = [
+                'current'  => [
                     'v1' => (int) ($chart->data['totals'][0]->v1 ?? 0),
                     'v2' => (int) ($chart->data['totals'][0]->v2 ?? 0),
-                ),
-                'previous' => array(
+                ],
+                'previous' => [
                     'v1' => (int) ($chart->data['totals'][1]->v1 ?? 0),
                     'v2' => (int) ($chart->data['totals'][1]->v2 ?? 0),
-                ),
-            );
-            wp_send_json_success(array(
+                ],
+            ];
+            wp_send_json_success([
                 'args'         => $chart->args,
                 'data'         => $chart->data,
                 'totals'       => $totals,
                 'prev_data'    => $chart->prevData,
                 'chart_labels' => $chart->chartLabels,
                 'translations' => $chart->translations,
-            ));
-        } catch (Exception $e) {
-            wp_send_json_error(array('message' => $e->getMessage()));
+            ]);
+        } catch (Exception $exception) {
+            wp_send_json_error(['message' => $exception->getMessage()]);
         }
     }
 
@@ -89,7 +96,7 @@ class Chart
         $this->args         = $normalized;
         $this->data         = $this->fetchChartData($normalized);
         $this->prevData     = $this->extractPreviousData($this->data);
-        $this->translations = array(
+        $this->translations = [
             'previous_period'         => __('-- Previous Period', 'wp-slimstat'),
             'previous_period_tooltip' => __('Click Tap “Previous Period” to hide or show the previous period line.', 'wp-slimstat'),
             'today'                   => __('Today', 'wp-slimstat'),
@@ -97,16 +104,16 @@ class Chart
             'day_ago'                 => __('Day ago', 'wp-slimstat'),
             'year_ago'                => __('Year ago', 'wp-slimstat'),
             'now'                     => __('Now', 'wp-slimstat'),
-        );
-        $this->chartLabels = isset($this->args['chart_labels']) ? $this->args['chart_labels'] : array_keys($this->data['datasets']);
+        ];
+        $this->chartLabels = $this->args['chart_labels'] ?? array_keys($this->data['datasets']);
     }
 
     private function normalizeArgs(array $args): array
     {
-        $defaults = array(
+        $defaults = [
             'start' => \wp_slimstat_db::$filters_normalized['utime']['start'],
             'end'   => \wp_slimstat_db::$filters_normalized['utime']['end'],
-        );
+        ];
         $args = array_merge($defaults, $args);
 
         $args['granularity'] = $this->detectGranularity($args);
@@ -159,12 +166,13 @@ class Chart
         if ($rowsQuery instanceof Query) {
             $rowsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
         }
+        
         if ($totalsQuery instanceof Query) {
             $totalsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
         }
 
-        $results = $rowsQuery instanceof Query ? $rowsQuery->getAll() : array();
-        $totals  = $totalsQuery instanceof Query ? $totalsQuery->getAll() : array();
+        $results = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
+        $totals  = $totalsQuery instanceof Query ? $totalsQuery->getAll() : [];
 
         return $this->processResults(
             $results,
@@ -181,29 +189,28 @@ class Chart
     {
         $rangeSeconds = $args['end'] - $args['start'];
 
-        $tz      = \wp_timezone();
+        \wp_timezone();
         $dtStart = (new \DateTime())->setTimestamp($args['start']);
         $dtEnd   = (new \DateTime())->setTimestamp($args['end']);
 
-        $dtStart->modify("-{$rangeSeconds} seconds")->setTime(0, 0, 0);
-        $dtEnd->modify("-{$rangeSeconds} seconds");
+        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds))->setTime(0, 0, 0);
+        $dtEnd->modify(sprintf('-%s seconds', $rangeSeconds));
 
-        return array(
+        return [
             'start' => $dtStart->getTimestamp(),
             'end'   => $dtEnd->getTimestamp(),
-        );
+        ];
     }
 
     private function buildSql(array $args, array $prevArgs): array
     {
-        $where = $args['chart_data']['where'] ?? array();
         $range = $args['end'] - $args['start'];
 
-        $common = array(
+        $common = [
             'start' => $prevArgs['start'],
             'end'   => $prevArgs['end'],
             'range' => $range,
-        );
+        ];
 
         switch ($args['granularity']) {
             case 'hourly':
@@ -224,8 +231,6 @@ class Chart
     private function sqlFor(string $gran, array $args, array $prevArgs): array
     {
         global $wpdb;
-
-        $where = $args['where'] ?? array();
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
         $start = $args['start'];
@@ -242,61 +247,61 @@ class Chart
 
         switch ($gran) {
             case 'HOUR':
-                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d %H:00:00'))";
+                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), '%%Y-%%m-%%d %%H:00:00'))", $tzOffset);
                 break;
             case 'DAY':
-                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-%d'))";
+                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), '%%Y-%%m-%%d'))", $tzOffset);
                 break;
             case 'MONTH':
-                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '$tzOffset'), '%Y-%m-01'))";
+                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), '%%Y-%%m-01'))", $tzOffset);
                 break;
             case 'WEEK':
-                $dtExpr = "UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}')) - 1 - {$startOfWeek} + 7) % 7) DAY), '%Y-%m-%d'))";
+                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s')) - 1 - %d + 7) %% 7) DAY), '%%Y-%%m-%%d'))", $tzOffset, $tzOffset, $startOfWeek);
                 break;
             case 'YEAR':
-                $dtExpr = "UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}')), '-01-01'), '%Y-%m-%d'))";
+                $dtExpr = sprintf("UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s')), '-01-01'), '%%Y-%%m-%%d'))", $tzOffset);
                 break;
             default:
                 throw new \WP_Error('invalid_granularity');
         }
 
-        $periods = array(
-            'HOUR'  => array('label' => 'Y/m/d H:00:00'),
-            'DAY'   => array('label' => 'Y/m/d'),
-            'MONTH' => array('label' => 'F Y'),
-            'WEEK'  => array('label' => 'Y/m/d'),
-            'YEAR'  => array('label' => 'Y'),
-        );
+        $periods = [
+            'HOUR'  => ['label' => 'Y/m/d H:00:00'],
+            'DAY'   => ['label' => 'Y/m/d'],
+            'MONTH' => ['label' => 'F Y'],
+            'WEEK'  => ['label' => 'Y/m/d'],
+            'YEAR'  => ['label' => 'Y'],
+        ];
 
         // Build main grouped query via Query builder
-        $fields = implode(",\n                ", array(
-            "{$dtExpr} AS dt",
+        $fields = implode(",\n                ", [
+            $dtExpr . ' AS dt',
             "MIN(dt) AS sort_dt",
-            "{$data1} AS v1",
-            "{$data2} AS v2",
-            "CASE WHEN dt BETWEEN {$start} AND {$end} THEN 'current' ELSE 'previous' END AS period",
-        ));
+            $data1 . ' AS v1',
+            $data2 . ' AS v2',
+            sprintf("CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $start, $end),
+        ]);
 
         $rowsQuery = Query::select($fields)
-            ->from("{$wpdb->prefix}slim_stats")
-            ->whereRaw('(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)', array($prevArgs['start'], $prevArgs['end'], $start, $end))
-            ->groupBy("{$dtExpr}, period")
+            ->from($wpdb->prefix . 'slim_stats')
+            ->whereRaw('(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)', [$prevArgs['start'], $prevArgs['end'], $start, $end])
+            ->groupBy($dtExpr . ', period')
             ->orderBy('sort_dt ASC, period ASC');
 
         // Build totals query via Query builder (keeps original semantics)
-        $totalsFields = "{$data1} AS v1, {$data2} AS v2, CASE WHEN dt BETWEEN {$start} AND {$end} THEN 'current' ELSE 'previous' END AS period";
-        $totalsWhere  = "CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME(%d) AND FROM_UNIXTIME(%d) OR CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME(%d) AND FROM_UNIXTIME(%d)";
+        $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
+        $totalsWhere  = sprintf("CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s') BETWEEN FROM_UNIXTIME(%%d) AND FROM_UNIXTIME(%%d) OR CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s') BETWEEN FROM_UNIXTIME(%%d) AND FROM_UNIXTIME(%%d)", $tzOffset, $tzOffset);
         $totalsQuery  = Query::select($totalsFields)
-            ->from("{$wpdb->prefix}slim_stats")
-            ->whereRaw($totalsWhere, array($prevArgs['start'], $prevArgs['end'], $start, $end))
+            ->from($wpdb->prefix . 'slim_stats')
+            ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end])
             ->groupBy('period')
             ->orderBy('period ASC');
 
-        return array(
+        return [
             'query'       => $rowsQuery,
             'totalsQuery' => $totalsQuery,
-            'params'      => array('label' => $periods[$gran]['label'], 'gran' => $gran),
-        );
+            'params'      => ['label' => $periods[$gran]['label'], 'gran' => $gran],
+        ];
     }
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
@@ -306,6 +311,7 @@ class Chart
             if (is_object($t)) {
                 return $t;
             }
+            
             $o = new \stdClass();
             $o->v1     = isset($t['v1']) ? (int) $t['v1'] : 0;
             $o->v2     = isset($t['v2']) ? (int) $t['v2'] : 0;
@@ -315,10 +321,10 @@ class Chart
 
         $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totalsObjects);
         foreach ($rows as $row) {
-            $dt     = (int) (is_object($row) ? $row->dt : (isset($row['dt']) ? $row['dt'] : 0));
-            $v1     = (int) (is_object($row) ? $row->v1 : (isset($row['v1']) ? $row['v1'] : 0));
-            $v2     = (int) (is_object($row) ? $row->v2 : (isset($row['v2']) ? $row['v2'] : 0));
-            $period = (string) (is_object($row) ? $row->period : (isset($row['period']) ? $row['period'] : ''));
+            $dt     = (int) (is_object($row) ? $row->dt : ($row['dt'] ?? 0));
+            $v1     = (int) (is_object($row) ? $row->v1 : ($row['v1'] ?? 0));
+            $v2     = (int) (is_object($row) ? $row->v2 : ($row['v2'] ?? 0));
+            $period = (string) (is_object($row) ? $row->period : ($row['period'] ?? ''));
             $buckets->addRow($dt, $v1, $v2, $period);
         }
 
@@ -328,7 +334,7 @@ class Chart
     private function extractPreviousData(array $data): array
     {
         $prev             = $data;
-        $prev['datasets'] = $prev['datasets_prev'] ?? array();
+        $prev['datasets'] = $prev['datasets_prev'] ?? [];
         unset($prev['datasets_prev']);
 
         return $prev;
@@ -339,35 +345,35 @@ class Chart
         wp_enqueue_script(
             'slimstat_chartjs',
             plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
-            array(),
+            [],
             '4.2.1',
             false
         );
         wp_enqueue_script(
             'slimstat_chart',
             plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
-            array('slimstat_chartjs'),
+            ['slimstat_chartjs'],
             '1.0',
             false
         );
-        wp_localize_script('slimstat_chart', 'slimstat_chart_vars', array(
+        wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
             'ajax_url'        => admin_url('admin-ajax.php'),
             'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
-            'end_date'        => isset($this->args['end']) ? $this->args['end'] : null,
+            'end_date'        => $this->args['end'] ?? null,
             'end_date_string' => isset($this->args['end']) ? date('Y/m/d H:i:s', $this->args['end']) : null,
             'timezone'        => get_option('timezone_string') ?: 'UTC',
             'start_of_week'   => get_option('start_of_week', 1),
-        ));
+        ]);
     }
 
     private function renderChart(): void
     {
-        View::load('modules/chart-view', array(
+        View::load('modules/chart-view', [
             'args'         => $this->args,
             'data'         => $this->data,
             'prevData'     => $this->prevData,
             'chartLabels'  => $this->chartLabels,
             'translations' => $this->translations,
-        ));
+        ]);
     }
 }

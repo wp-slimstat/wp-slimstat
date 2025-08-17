@@ -25,6 +25,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 final class LazyCommand extends Command
 {
     private $command;
+    
     private $isEnabled;
 
     public function __construct(string $name, array $aliases, string $description, bool $isHidden, \Closure $commandFactory, ?bool $isEnabled = true)
@@ -45,18 +46,14 @@ final class LazyCommand extends Command
 
     public function setApplication(?Application $application = null): void
     {
-        if ($this->command instanceof parent) {
-            $this->command->setApplication($application);
-        }
+        $this->command->setApplication($application);
 
         parent::setApplication($application);
     }
 
     public function setHelperSet(HelperSet $helperSet): void
     {
-        if ($this->command instanceof parent) {
-            $this->command->setHelperSet($helperSet);
-        }
+        $this->command->setHelperSet($helperSet);
 
         parent::setHelperSet($helperSet);
     }
@@ -194,11 +191,9 @@ final class LazyCommand extends Command
 
     public function getCommand(): parent
     {
-        if (!$this->command instanceof \Closure) {
-            return $this->command;
-        }
+        $command = ($this->command)();
 
-        $command = $this->command = ($this->command)();
+        $this->command = $command;
         $command->setApplication($this->getApplication());
 
         if (null !== $this->getHelperSet()) {

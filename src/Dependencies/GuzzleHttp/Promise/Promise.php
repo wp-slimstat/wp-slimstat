@@ -14,10 +14,15 @@ namespace SlimStat\Dependencies\GuzzleHttp\Promise;
 class Promise implements PromiseInterface
 {
     private $state = self::PENDING;
+    
     private $result;
+    
     private $cancelFn;
+    
     private $waitFn;
+    
     private $waitList;
+    
     private $handlers = [];
 
     /**
@@ -71,13 +76,16 @@ class Promise implements PromiseInterface
         if ($this->result instanceof PromiseInterface) {
             return $this->result->wait($unwrap);
         }
+        
         if ($unwrap) {
             if ($this->state === self::FULFILLED) {
                 return $this->result;
             }
+            
             // It's rejected so "unwrap" and throw an exception.
             throw Create::exceptionFor($this->result);
         }
+        return null;
     }
 
     public function getState(): string
@@ -90,8 +98,8 @@ class Promise implements PromiseInterface
         if ($this->state !== self::PENDING) {
             return;
         }
-
-        $this->waitFn = $this->waitList = null;
+        $this->waitFn = null;
+        $this->waitList = null;
 
         if ($this->cancelFn) {
             $fn = $this->cancelFn;
@@ -127,9 +135,10 @@ class Promise implements PromiseInterface
             if ($state === $this->state && $value === $this->result) {
                 return;
             }
+            
             throw $this->state === $state
-                ? new \LogicException("The promise is already {$state}.")
-                : new \LogicException("Cannot change a {$this->state} promise to {$state}");
+                ? new \LogicException(sprintf('The promise is already %s.', $state))
+                : new \LogicException(sprintf('Cannot change a %s promise to %s', $this->state, $state));
         }
 
         if ($value === $this) {
@@ -141,7 +150,9 @@ class Promise implements PromiseInterface
         $this->result = $value;
         $handlers = $this->handlers;
         $this->handlers = null;
-        $this->waitList = $this->waitFn = null;
+
+        $this->waitList = null;
+        $this->waitFn = null;
         $this->cancelFn = null;
 
         if (!$handlers) {
@@ -214,8 +225,8 @@ class Promise implements PromiseInterface
                 // Forward rejections down the chain.
                 $promise->reject($value);
             }
-        } catch (\Throwable $reason) {
-            $promise->reject($reason);
+        } catch (\Throwable $throwable) {
+            $promise->reject($throwable);
         }
     }
 
@@ -249,15 +260,15 @@ class Promise implements PromiseInterface
             $wfn = $this->waitFn;
             $this->waitFn = null;
             $wfn(true);
-        } catch (\Throwable $reason) {
+        } catch (\Throwable $throwable) {
             if ($this->state === self::PENDING) {
                 // The promise has not been resolved yet, so reject the promise
                 // with the exception.
-                $this->reject($reason);
+                $this->reject($throwable);
             } else {
                 // The promise was already resolved, so there's a problem in
                 // the application.
-                throw $reason;
+                throw $throwable;
             }
         }
     }

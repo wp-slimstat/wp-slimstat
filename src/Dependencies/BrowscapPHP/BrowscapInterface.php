@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP;
 
+use SlimStat\Dependencies\BrowscapPHP\Formatter\FormatterInterface;
 use SlimStat\Dependencies\BrowscapPHP\Parser\ParserInterface;
 use stdClass;
 
@@ -19,7 +20,7 @@ interface BrowscapInterface
      *
      * @no-named-arguments
      */
-    public function setFormatter(Formatter\FormatterInterface $formatter): void;
+    public function setFormatter(FormatterInterface $formatter): void;
 
     /**
      * Sets the parser instance to use

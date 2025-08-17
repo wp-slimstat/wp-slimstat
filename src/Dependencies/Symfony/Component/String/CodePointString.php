@@ -60,6 +60,7 @@ class CodePointString extends AbstractUnicodeString
             $rx .= '.{65535}';
             $length -= 65535;
         }
+        
         $rx .= '.{'.$length.'})/us';
 
         $str = clone $this;
@@ -75,7 +76,7 @@ class CodePointString extends AbstractUnicodeString
 
     public function codePointsAt(int $offset): array
     {
-        $str = $offset ? $this->slice($offset, 1) : $this;
+        $str = $offset !== 0 ? $this->slice($offset, 1) : $this;
 
         return '' === $str->string ? [] : [mb_ord($str->string, 'UTF-8')];
     }
@@ -201,7 +202,7 @@ class CodePointString extends AbstractUnicodeString
         }
 
         $str = clone $this;
-        $start = $start ? \strlen(mb_substr($this->string, 0, $start, 'UTF-8')) : 0;
+        $start = $start !== 0 ? \strlen(mb_substr($this->string, 0, $start, 'UTF-8')) : 0;
         $length = $length ? \strlen(mb_substr($this->string, $start, $length, 'UTF-8')) : $length;
         $str->string = substr_replace($this->string, $replacement, $start, $length ?? \PHP_INT_MAX);
 

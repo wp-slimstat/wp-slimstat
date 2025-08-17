@@ -123,7 +123,7 @@ class GetPattern implements GetPatternInterface
                 continue;
             }
 
-            if (! is_array($file) || ! count($file)) {
+            if (! is_array($file) || $file === []) {
                 $this->logger->debug(
                     sprintf(
                         'cache key "browscap.patterns.%s" for useragent "%s" was empty',
@@ -146,7 +146,7 @@ class GetPattern implements GetPatternInterface
                     }
 
                     $found = true;
-                } elseif ($found === true) {
+                } elseif ($found) {
                     break;
                 }
             }

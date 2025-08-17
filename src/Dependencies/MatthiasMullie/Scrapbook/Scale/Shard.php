@@ -31,7 +31,7 @@ class Shard implements KeyValueStore
     /**
      * @var KeyValueStore[]
      */
-    protected $caches = array();
+    protected $caches = [];
 
     /**
      * Overloadable with multiple KeyValueStore objects.
@@ -62,14 +62,14 @@ class Shard implements KeyValueStore
     public function getMulti(array $keys, array &$tokens = null)
     {
         $shards = $this->getShards($keys);
-        $results = array();
-        $tokens = array();
+        $results = [];
+        $tokens = [];
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
             $keysOnShard = $shards[$shard];
             $results += $shard->getMulti($keysOnShard, $shardTokens);
-            $tokens += $shardTokens ?: array();
+            $tokens += $shardTokens ?: [];
         }
 
         return $results;
@@ -89,7 +89,7 @@ class Shard implements KeyValueStore
     public function setMulti(array $items, $expire = 0)
     {
         $shards = $this->getShards(array_keys($items));
-        $results = array();
+        $results = [];
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
@@ -115,7 +115,7 @@ class Shard implements KeyValueStore
     public function deleteMulti(array $keys)
     {
         $shards = $this->getShards($keys);
-        $results = array();
+        $results = [];
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
@@ -246,10 +246,10 @@ class Shard implements KeyValueStore
         foreach ($keys as $key) {
             $shard = $this->getShard($key);
             if (!isset($shards[$shard])) {
-                $shards[$shard] = array();
+                $shards[$shard] = [];
             }
 
-            $shards[$shard] = array_merge($shards[$shard], array($key));
+            $shards[$shard] = array_merge($shards[$shard], [$key]);
         }
 
         return $shards;

@@ -26,17 +26,13 @@ final class Query
         }
 
         if ($urlEncoding === true) {
-            $decoder = function ($value) {
-                return rawurldecode(str_replace('+', ' ', (string) $value));
-            };
+            $decoder = (fn($value) => rawurldecode(str_replace('+', ' ', (string) $value)));
         } elseif ($urlEncoding === PHP_QUERY_RFC3986) {
             $decoder = 'rawurldecode';
         } elseif ($urlEncoding === PHP_QUERY_RFC1738) {
             $decoder = 'urldecode';
         } else {
-            $decoder = function ($str) {
-                return $str;
-            };
+            $decoder = (fn($str) => $str);
         }
 
         foreach (explode('&', $str) as $kvp) {
@@ -49,6 +45,7 @@ final class Query
                 if (!is_array($result[$key])) {
                     $result[$key] = [$result[$key]];
                 }
+                
                 $result[$key][] = $value;
             }
         }
@@ -70,14 +67,12 @@ final class Query
      */
     public static function build(array $params, $encoding = PHP_QUERY_RFC3986): string
     {
-        if (!$params) {
+        if ($params === []) {
             return '';
         }
 
         if ($encoding === false) {
-            $encoder = function (string $str): string {
-                return $str;
-            };
+            $encoder = (fn(string $str): string => $str);
         } elseif ($encoding === PHP_QUERY_RFC3986) {
             $encoder = 'rawurlencode';
         } elseif ($encoding === PHP_QUERY_RFC1738) {
@@ -95,6 +90,7 @@ final class Query
                 if ($v !== null) {
                     $qs .= '='.$encoder((string) $v);
                 }
+                
                 $qs .= '&';
             } else {
                 foreach ($v as $vv) {
@@ -103,11 +99,12 @@ final class Query
                     if ($vv !== null) {
                         $qs .= '='.$encoder((string) $vv);
                     }
+                    
                     $qs .= '&';
                 }
             }
         }
 
-        return $qs ? (string) substr($qs, 0, -1) : '';
+        return $qs !== '' && $qs !== '0' ? substr($qs, 0, -1) : '';
     }
 }

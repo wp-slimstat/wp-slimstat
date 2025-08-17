@@ -35,7 +35,7 @@ class RejectedPromise implements PromiseInterface
         callable $onRejected = null
     ): PromiseInterface {
         // If there's no onRejected callback then just return self.
-        if (!$onRejected) {
+        if ($onRejected === null) {
             return $this;
         }
 

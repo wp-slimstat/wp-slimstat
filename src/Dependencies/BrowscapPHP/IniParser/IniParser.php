@@ -223,7 +223,7 @@ final class IniParser implements ParserInterface
         // (3-10 faster), followed by a detailed search for each single pattern.
         $contents = [];
         foreach ($data as $patternhash => $tmpEntries) {
-            if (empty($tmpEntries)) {
+            if ($tmpEntries === []) {
                 continue;
             }
 
@@ -234,7 +234,7 @@ final class IniParser implements ParserInterface
             }
 
             foreach ($tmpEntries as $tmpLength => $tmpPatterns) {
-                if (empty($tmpPatterns)) {
+                if ($tmpPatterns === []) {
                     continue;
                 }
 

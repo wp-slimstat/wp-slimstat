@@ -22,8 +22,11 @@ use SlimStat\Dependencies\Symfony\Component\Console\Terminal;
 class ConsoleSectionOutput extends StreamOutput
 {
     private $content = [];
+    
     private $lines = 0;
+    
     private $sections;
+    
     private $terminal;
 
     /**

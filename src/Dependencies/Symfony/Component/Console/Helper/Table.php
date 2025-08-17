@@ -30,13 +30,19 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 class Table
 {
     private const SEPARATOR_TOP = 0;
+    
     private const SEPARATOR_TOP_BOTTOM = 1;
+    
     private const SEPARATOR_MID = 2;
+    
     private const SEPARATOR_BOTTOM = 3;
+    
     private const BORDER_OUTSIDE = 0;
+    
     private const BORDER_INSIDE = 1;
 
     private $headerTitle;
+    
     private $footerTitle;
 
     /**
@@ -48,6 +54,7 @@ class Table
      * Table rows.
      */
     private $rows = [];
+    
     private $horizontal = false;
 
     /**
@@ -83,6 +90,7 @@ class Table
      * @var array
      */
     private $columnWidths = [];
+    
     private $columnMaxWidths = [];
 
     /**
@@ -235,7 +243,7 @@ class Table
     public function setHeaders(array $headers)
     {
         $headers = array_values($headers);
-        if (!empty($headers) && !\is_array($headers[0])) {
+        if ($headers !== [] && !\is_array($headers[0])) {
             $headers = [$headers];
         }
 
@@ -368,6 +376,7 @@ class Table
                     if ($row instanceof TableSeparator) {
                         continue;
                     }
+                    
                     if (isset($row[$i])) {
                         $rows[$i][] = $row[$i];
                     } elseif ($rows[$i][0] instanceof TableCell && $rows[$i][0]->getColspan() >= 2) {
@@ -438,6 +447,7 @@ class Table
                 }
             }
         }
+        
         $this->renderRowSeparator(self::SEPARATOR_BOTTOM, $this->footerTitle, $this->style->getFooterTitleFormat());
 
         $this->cleanup();
@@ -527,8 +537,10 @@ class Table
             } else {
                 $rowContent .= $this->renderCell($row, $column, $cellFormat);
             }
+            
             $rowContent .= $this->renderColumnSeparator($last === $i ? self::BORDER_OUTSIDE : self::BORDER_INSIDE);
         }
+        
         $this->output->writeln($rowContent);
     }
 
@@ -574,6 +586,7 @@ class Table
                     $content = str_replace('</>', '', $content);
                     $width -= 3;
                 }
+                
                 if (strstr($content, '<fg=default;bg=default>')) {
                     $content = str_replace('<fg=default;bg=default>', '', $content);
                     $width -= \strlen('<fg=default;bg=default>');
@@ -608,7 +621,8 @@ class Table
         /** @var WrappableOutputFormatterInterface $formatter */
         $formatter = $this->output->getFormatter();
         $unmergedRows = [];
-        for ($rowKey = 0; $rowKey < \count($rows); ++$rowKey) {
+        $counter = \count($rows);
+        for ($rowKey = 0; $rowKey < $counter; ++$rowKey) {
             $rows = $this->fillNextRows($rows, $rowKey);
 
             // Remove any new line breaks and replace it with a new line
@@ -618,9 +632,11 @@ class Table
                 if (isset($this->columnMaxWidths[$column]) && Helper::width(Helper::removeDecoration($formatter, $cell)) > $this->columnMaxWidths[$column]) {
                     $cell = $formatter->formatAndWrap($cell, $this->columnMaxWidths[$column] * $colspan);
                 }
+                
                 if (!strstr($cell ?? '', "\n")) {
                     continue;
                 }
+                
                 $eol = str_contains($cell ?? '', "\r\n") ? "\r\n" : "\n";
                 $escaped = implode($eol, array_map([OutputFormatter::class, 'escapeTrailingBackslash'], explode($eol, $cell)));
                 $cell = $cell instanceof TableCell ? new TableCell($escaped, ['colspan' => $cell->getColspan()]) : $escaped;
@@ -629,12 +645,14 @@ class Table
                     if ($colspan > 1) {
                         $line = new TableCell($line, ['colspan' => $colspan]);
                     }
+                    
                     if (0 === $lineKey) {
                         $rows[$rowKey][$column] = $line;
                     } else {
                         if (!\array_key_exists($rowKey, $unmergedRows) || !\array_key_exists($lineKey, $unmergedRows[$rowKey])) {
                             $unmergedRows[$rowKey][$lineKey] = $this->copyRow($rows, $rowKey);
                         }
+                        
                         $unmergedRows[$rowKey][$lineKey][$column] = $line;
                     }
                 }
@@ -650,6 +668,7 @@ class Table
                         $rowGroup[] = $row instanceof TableSeparator ? $row : $this->fillCells($row);
                     }
                 }
+                
                 yield $rowGroup;
             }
         });
@@ -682,6 +701,7 @@ class Table
             if (null !== $cell && !$cell instanceof TableCell && !\is_scalar($cell) && !(\is_object($cell) && method_exists($cell, '__toString'))) {
                 throw new InvalidArgumentException(sprintf('A cell must be a TableCell, a scalar or an object implementing "__toString()", "%s" given.', get_debug_type($cell)));
             }
+            
             if ($cell instanceof TableCell && $cell->getRowspan() > 1) {
                 $nbLines = $cell->getRowspan() - 1;
                 $lines = [$cell];
@@ -696,7 +716,7 @@ class Table
 
                 // create a two dimensional array (rowspan x colspan)
                 $unmergedRows = array_replace_recursive(array_fill($line + 1, $nbLines, []), $unmergedRows);
-                foreach ($unmergedRows as $unmergedRowKey => $unmergedRow) {
+                foreach (array_keys($unmergedRows) as $unmergedRowKey) {
                     $value = $lines[$unmergedRowKey - $line] ?? '';
                     $unmergedRows[$unmergedRowKey][$column] = new TableCell($value, ['colspan' => $cell->getColspan(), 'style' => $cell->getStyle()]);
                     if ($nbLines === $unmergedRowKey - $line) {
@@ -720,6 +740,7 @@ class Table
                         $row[$column] = $unmergedRow[$column];
                     }
                 }
+                
                 array_splice($rows, $unmergedRowKey, 0, [$row]);
             }
         }

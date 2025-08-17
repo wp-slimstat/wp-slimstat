@@ -13,6 +13,7 @@ class MaxMindUtil
         if ($numberOfBytes == 0) {
             return '';
         }
+        
         if (fseek($stream, $offset) == 0) {
             $value = fread($stream, $numberOfBytes);
 
@@ -23,6 +24,7 @@ class MaxMindUtil
                 return $value;
             }
         }
+        
         throw new InvalidDatabaseException(
             "The MaxMind DB file contains bad data"
         );

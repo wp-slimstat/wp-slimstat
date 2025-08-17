@@ -178,7 +178,7 @@ class ByteString extends AbstractString
             return null;
         }
 
-        $i = $this->ignoreCase ? stripos($this->string, $needle, $offset) : strpos($this->string, $needle, $offset);
+        $i = $this->ignoreCase ? stripos($this->string, (string) $needle, $offset) : strpos($this->string, (string) $needle, $offset);
 
         return false === $i ? null : $i;
     }
@@ -195,7 +195,7 @@ class ByteString extends AbstractString
             return null;
         }
 
-        $i = $this->ignoreCase ? strripos($this->string, $needle, $offset) : strrpos($this->string, $needle, $offset);
+        $i = $this->ignoreCase ? strripos($this->string, (string) $needle, $offset) : strrpos($this->string, (string) $needle, $offset);
 
         return false === $i ? null : $i;
     }
@@ -230,7 +230,7 @@ class ByteString extends AbstractString
 
     public function match(string $regexp, int $flags = 0, int $offset = 0): array
     {
-        $match = ((\PREG_PATTERN_ORDER | \PREG_SET_ORDER) & $flags) ? 'preg_match_all' : 'preg_match';
+        $match = (((\PREG_PATTERN_ORDER | \PREG_SET_ORDER) & $flags) !== 0) ? 'preg_match_all' : 'preg_match';
 
         if ($this->ignoreCase) {
             $regexp .= 'i';
@@ -335,7 +335,7 @@ class ByteString extends AbstractString
     public function slice(int $start = 0, ?int $length = null): static
     {
         $str = clone $this;
-        $str->string = (string) substr($this->string, $start, $length ?? \PHP_INT_MAX);
+        $str->string = substr($this->string, $start, $length ?? \PHP_INT_MAX);
 
         return $str;
     }

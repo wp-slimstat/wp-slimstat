@@ -21,6 +21,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 final class CompletionSuggestions
 {
     private $valueSuggestions = [];
+    
     private $optionSuggestions = [];
 
     /**
@@ -32,7 +33,7 @@ final class CompletionSuggestions
      */
     public function suggestValue($value): self
     {
-        $this->valueSuggestions[] = !$value instanceof Suggestion ? new Suggestion($value) : $value;
+        $this->valueSuggestions[] = $value instanceof Suggestion ? $value : new Suggestion($value);
 
         return $this;
     }

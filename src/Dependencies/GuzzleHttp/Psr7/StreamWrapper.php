@@ -65,7 +65,7 @@ final class StreamWrapper
     public static function register(): void
     {
         if (!in_array('guzzle', stream_get_wrappers())) {
-            stream_wrapper_register('guzzle', __CLASS__);
+            stream_wrapper_register('guzzle', self::class);
         }
     }
 
@@ -113,11 +113,10 @@ final class StreamWrapper
     /**
      * @return resource|false
      */
-    public function stream_cast(int $cast_as)
+    public function stream_cast()
     {
         $stream = clone $this->stream;
         $resource = $stream->detach();
-
         return $resource ?? false;
     }
 
@@ -182,7 +181,7 @@ final class StreamWrapper
      *   blocks: int
      * }
      */
-    public function url_stat(string $path, int $flags): array
+    public function url_stat(): array
     {
         return [
             'dev' => 0,

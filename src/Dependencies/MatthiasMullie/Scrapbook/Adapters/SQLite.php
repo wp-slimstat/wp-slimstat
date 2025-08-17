@@ -17,8 +17,8 @@ class SQLite extends MySQL
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if (empty($items)) {
-            return array();
+        if ($items === []) {
+            return [];
         }
 
         $expire = $this->expire($expire);
@@ -32,15 +32,15 @@ class SQLite extends MySQL
             VALUES (:key, :value, :expire)"
         );
 
-        $success = array();
+        $success = [];
         foreach ($items as $key => $value) {
             $value = $this->serialize($value);
 
-            $statement->execute(array(
+            $statement->execute([
                 ':key' => $key,
                 ':value' => $value,
                 ':expire' => $expire,
-            ));
+            ]);
 
             $success[$key] = (bool) $statement->rowCount();
         }
@@ -64,11 +64,11 @@ class SQLite extends MySQL
             VALUES (:key, :value, :expire)"
         );
 
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ));
+        ]);
 
         return 1 === $statement->rowCount();
     }
@@ -78,7 +78,7 @@ class SQLite extends MySQL
      */
     public function flush()
     {
-        return false !== $this->client->exec("DELETE FROM $this->table");
+        return false !== $this->client->exec('DELETE FROM ' . $this->table);
     }
 
     /**

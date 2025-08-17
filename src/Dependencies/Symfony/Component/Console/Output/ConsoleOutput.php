@@ -30,6 +30,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInt
 class ConsoleOutput extends StreamOutput implements ConsoleOutputInterface
 {
     private $stderr;
+    
     private $consoleSectionOutputs = [];
 
     /**
@@ -41,7 +42,7 @@ class ConsoleOutput extends StreamOutput implements ConsoleOutputInterface
     {
         parent::__construct($this->openOutputStream(), $verbosity, $decorated, $formatter);
 
-        if (null === $formatter) {
+        if (!$formatter instanceof OutputFormatterInterface) {
             // for BC reasons, stdErr has it own Formatter only when user don't inject a specific formatter.
             $this->stderr = new StreamOutput($this->openErrorStream(), $verbosity, $decorated);
 

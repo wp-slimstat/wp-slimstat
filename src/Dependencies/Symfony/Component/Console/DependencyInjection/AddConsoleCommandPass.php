@@ -30,14 +30,17 @@ use Symfony\Component\DependencyInjection\TypedReference;
 class AddConsoleCommandPass implements CompilerPassInterface
 {
     private $commandLoaderServiceId;
+    
     private $commandTag;
+    
     private $noPreloadTag;
+    
     private $privateTagName;
 
     public function __construct(string $commandLoaderServiceId = 'console.command_loader', string $commandTag = 'console.command', string $noPreloadTag = 'container.no_preload', string $privateTagName = 'container.private')
     {
         if (0 < \func_num_args()) {
-            trigger_deprecation('symfony/console', '5.3', 'Configuring "%s" is deprecated.', __CLASS__);
+            trigger_deprecation('symfony/console', '5.3', 'Configuring "%s" is deprecated.', self::class);
         }
 
         $this->commandLoaderServiceId = $commandLoaderServiceId;
@@ -64,9 +67,11 @@ class AddConsoleCommandPass implements CompilerPassInterface
                 if (!$r = $container->getReflectionClass($class)) {
                     throw new InvalidArgumentException(sprintf('Class "%s" used for service "%s" cannot be found.', $class, $id));
                 }
+                
                 if (!$r->isSubclassOf(Command::class)) {
                     throw new InvalidArgumentException(sprintf('The service "%s" tagged "%s" must be a subclass of "%s".', $id, $this->commandTag, Command::class));
                 }
+                
                 $aliases = str_replace('%', '%%', $class::getDefaultName() ?? '');
             }
 
@@ -83,6 +88,7 @@ class AddConsoleCommandPass implements CompilerPassInterface
                     $container->setAlias($commandId, $id)->setPublic(true);
                     $id = $commandId;
                 }
+                
                 $serviceIds[] = $id;
 
                 continue;
@@ -104,12 +110,12 @@ class AddConsoleCommandPass implements CompilerPassInterface
                     $lazyCommandMap[$tag['command']] = $id;
                 }
 
-                $description = $description ?? $tag['description'] ?? null;
+                $description ??= $tag['description'] ?? null;
             }
 
             $definition->addMethodCall('setName', [$commandName]);
 
-            if ($aliases) {
+            if ($aliases !== []) {
                 $definition->addMethodCall('setAliases', [$aliases]);
             }
 
@@ -121,9 +127,11 @@ class AddConsoleCommandPass implements CompilerPassInterface
                 if (!$r = $container->getReflectionClass($class)) {
                     throw new InvalidArgumentException(sprintf('Class "%s" used for service "%s" cannot be found.', $class, $id));
                 }
+                
                 if (!$r->isSubclassOf(Command::class)) {
                     throw new InvalidArgumentException(sprintf('The service "%s" tagged "%s" must be a subclass of "%s".', $id, $this->commandTag, Command::class));
                 }
+                
                 $description = str_replace('%', '%%', $class::getDefaultDescription() ?? '');
             }
 

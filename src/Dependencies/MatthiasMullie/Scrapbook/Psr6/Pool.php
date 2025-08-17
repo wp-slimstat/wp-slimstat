@@ -36,7 +36,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @var Item[]
      */
-    protected $deferred = array();
+    protected $deferred = [];
 
     public function __construct(KeyValueStore $store)
     {
@@ -86,9 +86,9 @@ class Pool implements CacheItemPoolInterface
      *
      * @return Item[]
      */
-    public function getItems(array $keys = array())
+    public function getItems(array $keys = [])
     {
-        $items = array();
+        $items = [];
         foreach ($keys as $key) {
             $this->assertValidKey($key);
 
@@ -115,7 +115,7 @@ class Pool implements CacheItemPoolInterface
      */
     public function clear()
     {
-        $this->deferred = array();
+        $this->deferred = [];
 
         return $this->store->flush();
     }
@@ -203,8 +203,8 @@ class Pool implements CacheItemPoolInterface
      */
     public function commit()
     {
-        $deferred = array();
-        foreach ($this->deferred as $key => $item) {
+        $deferred = [];
+        foreach ($this->deferred as $item) {
             if ($item->isExpired()) {
                 // already expired: don't even save it
                 continue;

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Command;
 
+use SlimStat\Dependencies\BrowscapPHP\Exception\FileNameMissingException;
+use SlimStat\Dependencies\BrowscapPHP\Exception\FileNotFoundException;
+use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorReadingFileException;
 use SlimStat\Dependencies\BrowscapPHP\BrowscapUpdater;
 use SlimStat\Dependencies\BrowscapPHP\Exception;
 use SlimStat\Dependencies\BrowscapPHP\Helper\LoggerHelper;
@@ -32,7 +35,9 @@ use function sprintf;
 class ConvertCommand extends Command
 {
     public const FILENAME_MISSING   = 6;
+    
     public const FILE_NOT_FOUND     = 7;
+    
     public const ERROR_READING_FILE = 8;
 
     private ?string $defaultIniFile = null;
@@ -98,7 +103,7 @@ class ConvertCommand extends Command
 
         $file = $input->getArgument('file');
         assert(is_string($file));
-        if (! $file) {
+        if ($file === '' || $file === '0') {
             $file = $this->defaultIniFile;
         }
 
@@ -110,15 +115,15 @@ class ConvertCommand extends Command
 
         try {
             $browscap->convertFile($file);
-        } catch (Exception\FileNameMissingException $e) {
+        } catch (FileNameMissingException $e) {
             $logger->debug($e);
 
             return self::FILENAME_MISSING;
-        } catch (Exception\FileNotFoundException $e) {
+        } catch (FileNotFoundException $e) {
             $logger->debug($e);
 
             return self::FILE_NOT_FOUND;
-        } catch (Exception\ErrorReadingFileException $e) {
+        } catch (ErrorReadingFileException $e) {
             $logger->debug($e);
 
             return self::ERROR_READING_FILE;

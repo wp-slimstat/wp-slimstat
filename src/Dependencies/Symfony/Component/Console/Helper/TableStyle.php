@@ -24,28 +24,51 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\LogicException;
 class TableStyle
 {
     private $paddingChar = ' ';
+    
     private $horizontalOutsideBorderChar = '-';
+    
     private $horizontalInsideBorderChar = '-';
+    
     private $verticalOutsideBorderChar = '|';
+    
     private $verticalInsideBorderChar = '|';
+    
     private $crossingChar = '+';
+    
     private $crossingTopRightChar = '+';
+    
     private $crossingTopMidChar = '+';
+    
     private $crossingTopLeftChar = '+';
+    
     private $crossingMidRightChar = '+';
+    
     private $crossingBottomRightChar = '+';
+    
     private $crossingBottomMidChar = '+';
+    
     private $crossingBottomLeftChar = '+';
+    
     private $crossingMidLeftChar = '+';
+    
     private $crossingTopLeftBottomChar = '+';
+    
     private $crossingTopMidBottomChar = '+';
+    
     private $crossingTopRightBottomChar = '+';
+    
     private $headerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
+    
     private $footerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
+    
     private $cellHeaderFormat = '<info>%s</info>';
+    
     private $cellRowFormat = '%s';
+    
     private $cellRowContentFormat = ' %s ';
+    
     private $borderFormat = '%s';
+    
     private $padType = \STR_PAD_RIGHT;
 
     /**
@@ -55,7 +78,7 @@ class TableStyle
      */
     public function setPaddingChar(string $paddingChar)
     {
-        if (!$paddingChar) {
+        if ($paddingChar === '' || $paddingChar === '0') {
             throw new LogicException('The padding char must not be empty.');
         }
 

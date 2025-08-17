@@ -17,7 +17,7 @@ $response      = get_transient('wp_slimstat_addon_list');
 $error_message = '';
 
 if (!empty($_GET['force_refresh']) || false === $response) {
-    $response = wp_remote_get('https://www.wp-slimstat.com/update-checker/', array('headers' => array('referer' => get_site_url())));
+    $response = wp_remote_get('https://www.wp-slimstat.com/update-checker/', ['headers' => ['referer' => get_site_url()]]);
     if (is_wp_error($response) || $response['response']['code'] != 200) {
         $error_message = is_wp_error($response) ? $response->get_error_message() : $response['response']['code'] . ' ' . $response['response']['message'];
         $error_message = sprintf(__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s', 'wp-slimstat'), $error_message);
@@ -91,7 +91,7 @@ if (!is_array($list_addons)) {
                         <div class="plugin-description"><p><?php echo wp_kses_post($a_addon['description']); ?></p></div>
                         <?php if ((is_plugin_active($a_addon['slug'] . '/index.php') || is_plugin_active($a_addon['slug'] . '/' . $a_addon['slug'] . '.php'))): ?>
                             <div class="active second">
-                                License Key <input type="text" name="licenses[<?php echo esc_attr($a_addon['slug']); ?>]" value="<?php echo !empty(wp_slimstat::$settings['addon_licenses'][$a_addon['slug']]) ? wp_slimstat::$settings['addon_licenses'][$a_addon['slug']] : '' ?>" size="50">
+                                License Key <input type="text" name="licenses[<?php echo esc_attr($a_addon['slug']); ?>]" value="<?php echo empty(wp_slimstat::$settings['addon_licenses'][$a_addon['slug']]) ? '' : wp_slimstat::$settings['addon_licenses'][$a_addon['slug']] ?>" size="50">
                             </div>
                         <?php endif; ?>
                     </td>

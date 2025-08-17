@@ -95,6 +95,7 @@ class MockHandler implements \Countable
             if (!\is_callable($options['on_headers'])) {
                 throw new \InvalidArgumentException('on_headers must be callable');
             }
+            
             try {
                 $options['on_headers']($response);
             } catch (\Exception $e) {
@@ -118,7 +119,7 @@ class MockHandler implements \Countable
                     ($this->onFulfilled)($value);
                 }
 
-                if ($value !== null && isset($options['sink'])) {
+                if ($value instanceof ResponseInterface && isset($options['sink'])) {
                     $contents = (string) $value->getBody();
                     $sink = $options['sink'];
 

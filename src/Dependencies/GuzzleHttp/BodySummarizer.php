@@ -2,6 +2,7 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Message;
 use SlimStat\Dependencies\Psr\Http\Message\MessageInterface;
 
 final class BodySummarizer implements BodySummarizerInterface
@@ -22,7 +23,7 @@ final class BodySummarizer implements BodySummarizerInterface
     public function summarize(MessageInterface $message): ?string
     {
         return $this->truncateAt === null
-            ? \SlimStat\Dependencies\GuzzleHttp\Psr7\Message::bodySummary($message)
-            : \SlimStat\Dependencies\GuzzleHttp\Psr7\Message::bodySummary($message, $this->truncateAt);
+            ? Message::bodySummary($message)
+            : Message::bodySummary($message, $this->truncateAt);
     }
 }

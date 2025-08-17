@@ -48,8 +48,6 @@ interface ServerRequestInterface extends RequestInterface
      * Retrieves data related to the incoming request environment,
      * typically derived from PHP's $_SERVER superglobal. The data IS NOT
      * REQUIRED to originate from $_SERVER.
-     *
-     * @return array
      */
     public function getServerParams(): array;
 
@@ -60,8 +58,6 @@ interface ServerRequestInterface extends RequestInterface
      *
      * The data MUST be compatible with the structure of the $_COOKIE
      * superglobal.
-     *
-     * @return array
      */
     public function getCookieParams(): array;
 
@@ -80,7 +76,6 @@ interface ServerRequestInterface extends RequestInterface
      * updated cookie values.
      *
      * @param array $cookies Array of key/value pairs representing cookies.
-     * @return static
      */
     public function withCookieParams(array $cookies): ServerRequestInterface;
 
@@ -93,8 +88,6 @@ interface ServerRequestInterface extends RequestInterface
      * params. If you need to ensure you are only getting the original
      * values, you may need to parse the query string from `getUri()->getQuery()`
      * or from the `QUERY_STRING` server param.
-     *
-     * @return array
      */
     public function getQueryParams(): array;
 
@@ -118,7 +111,6 @@ interface ServerRequestInterface extends RequestInterface
      *
      * @param array $query Array of query string arguments, typically from
      *     $_GET.
-     * @return static
      */
     public function withQueryParams(array $query): ServerRequestInterface;
 
@@ -144,7 +136,6 @@ interface ServerRequestInterface extends RequestInterface
      * updated body parameters.
      *
      * @param array $uploadedFiles An array tree of UploadedFileInterface instances.
-     * @return static
      * @throws \InvalidArgumentException if an invalid structure is provided.
      */
     public function withUploadedFiles(array $uploadedFiles): ServerRequestInterface;
@@ -190,7 +181,6 @@ interface ServerRequestInterface extends RequestInterface
      *
      * @param null|array|object $data The deserialized body data. This will
      *     typically be in an array or object.
-     * @return static
      * @throws \InvalidArgumentException if an unsupported argument type is
      *     provided.
      */
@@ -239,7 +229,6 @@ interface ServerRequestInterface extends RequestInterface
      * @see getAttributes()
      * @param string $name The attribute name.
      * @param mixed $value The value of the attribute.
-     * @return static
      */
     public function withAttribute(string $name, $value): ServerRequestInterface;
 
@@ -255,7 +244,6 @@ interface ServerRequestInterface extends RequestInterface
      *
      * @see getAttributes()
      * @param string $name The attribute name.
-     * @return static
      */
     public function withoutAttribute(string $name): ServerRequestInterface;
 }

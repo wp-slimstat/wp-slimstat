@@ -35,6 +35,7 @@ class CookieJar implements CookieJarInterface
             if (!($cookie instanceof SetCookie)) {
                 $cookie = new SetCookie($cookie);
             }
+            
             $this->setCookie($cookie);
         }
     }
@@ -69,13 +70,7 @@ class CookieJar implements CookieJarInterface
      */
     public static function shouldPersist(SetCookie $cookie, bool $allowSessionCookies = false): bool
     {
-        if ($cookie->getExpires() || $allowSessionCookies) {
-            if (!$cookie->getDiscard()) {
-                return true;
-            }
-        }
-
-        return false;
+        return ($cookie->getExpires() || $allowSessionCookies) && !$cookie->getDiscard();
     }
 
     /**
@@ -98,9 +93,7 @@ class CookieJar implements CookieJarInterface
 
     public function toArray(): array
     {
-        return \array_map(static function (SetCookie $cookie): array {
-            return $cookie->toArray();
-        }, $this->getIterator()->getArrayCopy());
+        return \array_map(static fn(SetCookie $cookie): array => $cookie->toArray(), $this->getIterator()->getArrayCopy());
     }
 
     public function clear(string $domain = null, string $path = null, string $name = null): void
@@ -112,26 +105,20 @@ class CookieJar implements CookieJarInterface
         } elseif (!$path) {
             $this->cookies = \array_filter(
                 $this->cookies,
-                static function (SetCookie $cookie) use ($domain): bool {
-                    return !$cookie->matchesDomain($domain);
-                }
+                static fn(SetCookie $cookie): bool => !$cookie->matchesDomain($domain)
             );
         } elseif (!$name) {
             $this->cookies = \array_filter(
                 $this->cookies,
-                static function (SetCookie $cookie) use ($path, $domain): bool {
-                    return !($cookie->matchesPath($path)
-                        && $cookie->matchesDomain($domain));
-                }
+                static fn(SetCookie $cookie): bool => !($cookie->matchesPath($path)
+                    && $cookie->matchesDomain($domain))
             );
         } else {
             $this->cookies = \array_filter(
                 $this->cookies,
-                static function (SetCookie $cookie) use ($path, $domain, $name) {
-                    return !($cookie->getName() == $name
-                        && $cookie->matchesPath($path)
-                        && $cookie->matchesDomain($domain));
-                }
+                static fn(SetCookie $cookie) => !($cookie->getName() == $name
+                    && $cookie->matchesPath($path)
+                    && $cookie->matchesDomain($domain))
             );
         }
     }
@@ -140,9 +127,7 @@ class CookieJar implements CookieJarInterface
     {
         $this->cookies = \array_filter(
             $this->cookies,
-            static function (SetCookie $cookie): bool {
-                return !$cookie->getDiscard() && $cookie->getExpires();
-            }
+            static fn(SetCookie $cookie): bool => !$cookie->getDiscard() && $cookie->getExpires()
         );
     }
 
@@ -161,6 +146,7 @@ class CookieJar implements CookieJarInterface
             if ($this->strictMode) {
                 throw new \RuntimeException('Invalid cookie: '.$result);
             }
+            
             $this->removeCookieIfEmpty($cookie);
 
             return false;
@@ -227,12 +213,15 @@ class CookieJar implements CookieJarInterface
                 if (!$sc->getDomain()) {
                     $sc->setDomain($request->getUri()->getHost());
                 }
+                
                 if (0 !== \strpos($sc->getPath(), '/')) {
                     $sc->setPath($this->getCookiePathFromRequest($request));
                 }
+                
                 if (!$sc->matchesDomain($request->getUri()->getHost())) {
                     continue;
                 }
+                
                 // Note: At this point `$sc->getDomain()` being a public suffix should
                 // be rejected, but we don't want to pull in the full PSL dependency.
                 $this->setCookie($sc);
@@ -251,12 +240,15 @@ class CookieJar implements CookieJarInterface
         if ('' === $uriPath) {
             return '/';
         }
+        
         if (0 !== \strpos($uriPath, '/')) {
             return '/';
         }
+        
         if ('/' === $uriPath) {
             return '/';
         }
+        
         $lastSlashPos = \strrpos($uriPath, '/');
         if (0 === $lastSlashPos || false === $lastSlashPos) {
             return '/';
@@ -284,7 +276,7 @@ class CookieJar implements CookieJarInterface
             }
         }
 
-        return $values
+        return $values !== []
             ? $request->withHeader('Cookie', \implode('; ', $values))
             : $request;
     }

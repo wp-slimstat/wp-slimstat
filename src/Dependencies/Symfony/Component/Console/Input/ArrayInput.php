@@ -133,6 +133,7 @@ class ArrayInput extends Input
             if ('--' === $key) {
                 return;
             }
+            
             if (str_starts_with($key, '--')) {
                 $this->addLongOption(substr($key, 2), $value);
             } elseif (str_starts_with($key, '-')) {

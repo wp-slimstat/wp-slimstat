@@ -31,14 +31,14 @@ class Repository
      *
      * @var mixed[] [unique => value]
      */
-    protected $resolved = array();
+    protected $resolved = [];
 
     /**
      * Array of unresolved items.
      *
      * @var string[] [unique => key]
      */
-    protected $unresolved = array();
+    protected $unresolved = [];
 
     public function __construct(KeyValueStore $store)
     {
@@ -120,6 +120,6 @@ class Repository
             $this->resolved[$unique] = $value;
         }
 
-        $this->unresolved = array();
+        $this->unresolved = [];
     }
 }

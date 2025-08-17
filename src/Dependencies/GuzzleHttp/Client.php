@@ -2,6 +2,9 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Request;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\UriResolver;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\MultipartStream;
 use SlimStat\Dependencies\GuzzleHttp\Cookie\CookieJar;
 use SlimStat\Dependencies\GuzzleHttp\Exception\GuzzleException;
 use SlimStat\Dependencies\GuzzleHttp\Exception\InvalidArgumentException;
@@ -162,7 +165,8 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         if (\is_array($body)) {
             throw $this->invalidBody();
         }
-        $request = new Psr7\Request($method, $uri, $headers, $body, $version);
+        
+        $request = new Request($method, $uri, $headers, $body, $version);
         // Remove the option so that they are not doubly-applied.
         unset($options['headers'], $options['body'], $options['version']);
 
@@ -212,7 +216,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
     private function buildUri(UriInterface $uri, array $config): UriInterface
     {
         if (isset($config['base_uri'])) {
-            $uri = Psr7\UriResolver::resolve(Psr7\Utils::uriFor($config['base_uri']), $uri);
+            $uri = UriResolver::resolve(Psr7\Utils::uriFor($config['base_uri']), $uri);
         }
 
         if (isset($config['idn_conversion']) && ($config['idn_conversion'] !== false)) {
@@ -271,6 +275,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
                     return;
                 }
             }
+            
             $this->config['headers']['User-Agent'] = Utils::defaultUserAgent();
         }
     }
@@ -331,8 +336,8 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
 
         try {
             return P\Create::promiseFor($handler($request, $options));
-        } catch (\Exception $e) {
-            return P\Create::rejectionFor($e);
+        } catch (\Exception $exception) {
+            return P\Create::rejectionFor($exception);
         }
     }
 
@@ -349,6 +354,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             if (array_keys($options['headers']) === range(0, count($options['headers']) - 1)) {
                 throw new InvalidArgumentException('The headers array must have header name as keys.');
             }
+            
             $modify['set_headers'] = $options['headers'];
             unset($options['headers']);
         }
@@ -361,6 +367,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
                     .'x-www-form-urlencoded requests, and the multipart '
                     .'option to send multipart/form-data requests.');
             }
+            
             $options['body'] = \http_build_query($options['form_params'], '', '&');
             unset($options['form_params']);
             // Ensure that we don't have the header in different case and set the new value.
@@ -369,7 +376,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         }
 
         if (isset($options['multipart'])) {
-            $options['body'] = new Psr7\MultipartStream($options['multipart']);
+            $options['body'] = new MultipartStream($options['multipart']);
             unset($options['multipart']);
         }
 
@@ -393,6 +400,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             if (\is_array($options['body'])) {
                 throw $this->invalidBody();
             }
+            
             $modify['body'] = Psr7\Utils::streamFor($options['body']);
             unset($options['body']);
         }
@@ -405,16 +413,16 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
                     // Ensure that we don't have the header in different case and set the new value.
                     $modify['set_headers'] = Psr7\Utils::caselessRemove(['Authorization'], $modify['set_headers']);
                     $modify['set_headers']['Authorization'] = 'Basic '
-                        .\base64_encode("$value[0]:$value[1]");
+                        .\base64_encode(sprintf('%s:%s', $value[0], $value[1]));
                     break;
                 case 'digest':
                     // @todo: Do not rely on curl
                     $options['curl'][\CURLOPT_HTTPAUTH] = \CURLAUTH_DIGEST;
-                    $options['curl'][\CURLOPT_USERPWD] = "$value[0]:$value[1]";
+                    $options['curl'][\CURLOPT_USERPWD] = sprintf('%s:%s', $value[0], $value[1]);
                     break;
                 case 'ntlm':
                     $options['curl'][\CURLOPT_HTTPAUTH] = \CURLAUTH_NTLM;
-                    $options['curl'][\CURLOPT_USERPWD] = "$value[0]:$value[1]";
+                    $options['curl'][\CURLOPT_USERPWD] = sprintf('%s:%s', $value[0], $value[1]);
                     break;
             }
         }
@@ -424,19 +432,19 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             if (\is_array($value)) {
                 $value = \http_build_query($value, '', '&', \PHP_QUERY_RFC3986);
             }
+            
             if (!\is_string($value)) {
                 throw new InvalidArgumentException('query must be a string or array');
             }
+            
             $modify['query'] = $value;
             unset($options['query']);
         }
 
         // Ensure that sink is not an invalid value.
-        if (isset($options['sink'])) {
-            // TODO: Add more sink validation?
-            if (\is_bool($options['sink'])) {
-                throw new InvalidArgumentException('sink must not be a boolean');
-            }
+        // TODO: Add more sink validation?
+        if (isset($options['sink']) && \is_bool($options['sink'])) {
+            throw new InvalidArgumentException('sink must not be a boolean');
         }
 
         if (isset($options['version'])) {
@@ -444,7 +452,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         }
 
         $request = Psr7\Utils::modifyRequest($request, $modify);
-        if ($request->getBody() instanceof Psr7\MultipartStream) {
+        if ($request->getBody() instanceof MultipartStream) {
             // Use a multipart/form-data POST if a Content-Type is not set.
             // Ensure that we don't have the header in different case and set the new value.
             $options['_conditional'] = Psr7\Utils::caselessRemove(['Content-Type'], $options['_conditional']);
@@ -461,6 +469,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
                     $modify['set_headers'][$k] = $v;
                 }
             }
+            
             $request = Psr7\Utils::modifyRequest($request, $modify);
             // Don't pass this internal value along to middleware/handlers.
             unset($options['_conditional']);

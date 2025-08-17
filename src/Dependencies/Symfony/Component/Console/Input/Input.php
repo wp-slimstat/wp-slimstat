@@ -28,14 +28,18 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\RuntimeException;
 abstract class Input implements InputInterface, StreamableInputInterface
 {
     protected $definition;
+    
     protected $stream;
+    
     protected $options = [];
+    
     protected $arguments = [];
+    
     protected $interactive = true;
 
     public function __construct(?InputDefinition $definition = null)
     {
-        if (null === $definition) {
+        if (!$definition instanceof InputDefinition) {
             $this->definition = new InputDefinition();
         } else {
             $this->bind($definition);
@@ -68,11 +72,9 @@ abstract class Input implements InputInterface, StreamableInputInterface
         $definition = $this->definition;
         $givenArguments = $this->arguments;
 
-        $missingArguments = array_filter(array_keys($definition->getArguments()), function ($argument) use ($definition, $givenArguments) {
-            return !\array_key_exists($argument, $givenArguments) && $definition->getArgument($argument)->isRequired();
-        });
+        $missingArguments = array_filter(array_keys($definition->getArguments()), fn($argument) => !\array_key_exists($argument, $givenArguments) && $definition->getArgument($argument)->isRequired());
 
-        if (\count($missingArguments) > 0) {
+        if ($missingArguments !== []) {
             throw new RuntimeException(sprintf('Not enough arguments (missing: "%s").', implode(', ', $missingArguments)));
         }
     }

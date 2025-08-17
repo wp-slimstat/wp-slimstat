@@ -62,10 +62,10 @@ abstract class SQL implements KeyValueStore
             FROM $this->table
             WHERE k = :key AND (e IS NULL OR e > :expire)"
         );
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':expire' => date('Y-m-d H:i:s'), // right now!
-        ));
+        ]);
 
         $result = $statement->fetch(\PDO::FETCH_ASSOC);
 
@@ -85,13 +85,13 @@ abstract class SQL implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $tokens = array();
-        if (empty($keys)) {
-            return array();
+        $tokens = [];
+        if ($keys === []) {
+            return [];
         }
 
         // escape input, can't bind multiple params for IN()
-        $quoted = array();
+        $quoted = [];
         foreach ($keys as $key) {
             $quoted[] = $this->client->quote($key);
         }
@@ -103,11 +103,12 @@ abstract class SQL implements KeyValueStore
                 k IN (".implode(',', $quoted).') AND
                 (e IS NULL OR e > :expire)'
         );
-        $statement->execute(array(':expire' => date('Y-m-d H:i:s')));
+        $statement->execute([':expire' => date('Y-m-d H:i:s')]);
+        
         $values = $statement->fetchAll(\PDO::FETCH_ASSOC);
 
-        $result = array();
-        $tokens = array();
+        $result = [];
+        $tokens = [];
         foreach ($values as $value) {
             $tokens[$value['k']] = $value['v'];
             $result[$value['k']] = $this->unserialize($value['v']);
@@ -127,13 +128,7 @@ abstract class SQL implements KeyValueStore
         if ($success) {
             return true;
         }
-
-        $success = $this->replace($key, $value, $expire);
-        if ($success) {
-            return true;
-        }
-
-        return false;
+        return $this->replace($key, $value, $expire);
     }
 
     /**
@@ -141,7 +136,7 @@ abstract class SQL implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        $success = array();
+        $success = [];
 
         // PostgreSQL's lack of a decent UPSERT is even worse for multiple
         // values - we can only do them one at a time...
@@ -162,7 +157,7 @@ abstract class SQL implements KeyValueStore
             WHERE k = :key"
         );
 
-        $statement->execute(array(':key' => $key));
+        $statement->execute([':key' => $key]);
 
         return 1 === $statement->rowCount();
     }
@@ -172,15 +167,15 @@ abstract class SQL implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        if (empty($keys)) {
-            return array();
+        if ($keys === []) {
+            return [];
         }
 
         // we'll need these to figure out which could not be deleted...
         $items = $this->getMulti($keys);
 
         // escape input, can't bind multiple params for IN()
-        $quoted = array();
+        $quoted = [];
         foreach ($keys as $key) {
             $quoted[] = $this->client->quote($key);
         }
@@ -221,11 +216,11 @@ abstract class SQL implements KeyValueStore
             VALUES (:key, :value, :expire)"
         );
 
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ));
+        ]);
 
         return 1 === $statement->rowCount();
     }
@@ -246,11 +241,11 @@ abstract class SQL implements KeyValueStore
             WHERE k = :key"
         );
 
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ));
+        ]);
 
         if (1 === $statement->rowCount()) {
             return true;
@@ -264,10 +259,10 @@ abstract class SQL implements KeyValueStore
             FROM $this->table
             WHERE k = :key AND v = :value"
         );
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
-        ));
+        ]);
 
         return $statement->fetchColumn(0) === $expire;
     }
@@ -288,12 +283,12 @@ abstract class SQL implements KeyValueStore
             WHERE k = :key AND v = :token"
         );
 
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
             ':token' => $token,
-        ));
+        ]);
 
         if (1 === $statement->rowCount()) {
             return true;
@@ -307,11 +302,11 @@ abstract class SQL implements KeyValueStore
             FROM $this->table
             WHERE k = :key AND v = :value AND v = :token"
         );
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
             ':token' => $token,
-        ));
+        ]);
 
         return $statement->fetchColumn(0) === $expire;
     }
@@ -355,10 +350,10 @@ abstract class SQL implements KeyValueStore
             WHERE k = :key"
         );
 
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':expire' => $expire,
-        ));
+        ]);
 
         return 1 === $statement->rowCount();
     }
@@ -369,7 +364,7 @@ abstract class SQL implements KeyValueStore
     public function flush()
     {
         // TRUNCATE doesn't work on SQLite - DELETE works for all
-        return false !== $this->client->exec("DELETE FROM $this->table");
+        return false !== $this->client->exec('DELETE FROM ' . $this->table);
     }
 
     /**
@@ -444,7 +439,7 @@ abstract class SQL implements KeyValueStore
             WHERE e < :expire"
         );
 
-        $statement->execute(array(':expire' => date('Y-m-d H:i:s')));
+        $statement->execute([':expire' => date('Y-m-d H:i:s')]);
     }
 
     /**
@@ -458,7 +453,7 @@ abstract class SQL implements KeyValueStore
     protected function expire($expire)
     {
         if (0 === $expire) {
-            return;
+            return null;
         }
 
         // relative time in seconds, <30 days

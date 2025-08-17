@@ -79,7 +79,7 @@ final class EasyHandle
                 $headers['x-encoded-content-length'] = $headers[$normalizedKeys['content-length']];
 
                 $bodyLength = (int) $this->sink->getSize();
-                if ($bodyLength) {
+                if ($bodyLength !== 0) {
                     $headers[$normalizedKeys['content-length']] = $bodyLength;
                 } else {
                     unset($headers[$normalizedKeys['content-length']]);

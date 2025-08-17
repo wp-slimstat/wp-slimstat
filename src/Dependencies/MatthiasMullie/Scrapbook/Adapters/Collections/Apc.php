@@ -36,6 +36,7 @@ class Apc extends PrefixKeys
          */
         $reflection = new \ReflectionMethod($this->cache, 'APCuIterator');
         $reflection->setAccessible(true);
+        
         $iterator = $reflection->invoke($this->cache, '/^'.preg_quote($this->prefix, '/').'/', \APC_ITER_KEY);
 
         $reflection = new \ReflectionMethod($this->cache, 'apcu_delete');

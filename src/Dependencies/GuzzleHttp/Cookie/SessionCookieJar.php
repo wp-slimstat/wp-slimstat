@@ -65,12 +65,13 @@ class SessionCookieJar extends CookieJar
         if (!isset($_SESSION[$this->sessionKey])) {
             return;
         }
+        
         $data = \json_decode($_SESSION[$this->sessionKey], true);
         if (\is_array($data)) {
             foreach ($data as $cookie) {
                 $this->setCookie(new SetCookie($cookie));
             }
-        } elseif (\strlen($data)) {
+        } elseif (\strlen($data) !== 0) {
             throw new \RuntimeException('Invalid cookie data');
         }
     }

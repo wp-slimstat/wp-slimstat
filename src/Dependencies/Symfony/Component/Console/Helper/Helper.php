@@ -21,7 +21,7 @@ use SlimStat\Dependencies\Symfony\Component\String\UnicodeString;
  */
 abstract class Helper implements HelperInterface
 {
-    protected $helperSet = null;
+    protected $helperSet;
 
     /**
      * {@inheritdoc}
@@ -122,18 +122,14 @@ abstract class Helper implements HelperInterface
         ];
 
         foreach ($timeFormats as $index => $format) {
-            if ($secs >= $format[0]) {
-                if ((isset($timeFormats[$index + 1]) && $secs < $timeFormats[$index + 1][0])
-                    || $index == \count($timeFormats) - 1
-                ) {
-                    if (2 == \count($format)) {
-                        return $format[1];
-                    }
-
-                    return floor($secs / $format[2]).' '.$format[1];
+            if ($secs >= $format[0] && (isset($timeFormats[$index + 1]) && $secs < $timeFormats[$index + 1][0] || $index == \count($timeFormats) - 1)) {
+                if (2 == \count($format)) {
+                    return $format[1];
                 }
+                return floor($secs / $format[2]).' '.$format[1];
             }
         }
+        return null;
     }
 
     public static function formatMemory(int $memory)
@@ -173,6 +169,7 @@ abstract class Helper implements HelperInterface
         $string = preg_replace("/\033\[[^m]*m/", '', $string ?? '');
         // remove terminal hyperlinks
         $string = preg_replace('/\\033]8;[^;]*;[^\\033]*\\033\\\\/', '', $string ?? '');
+        
         $formatter->setDecorated($isDecorated);
 
         return $string;

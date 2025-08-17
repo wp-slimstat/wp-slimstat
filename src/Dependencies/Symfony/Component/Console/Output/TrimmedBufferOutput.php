@@ -22,6 +22,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInt
 class TrimmedBufferOutput extends Output
 {
     private $maxLength;
+    
     private $buffer = '';
 
     public function __construct(int $maxLength, ?int $verbosity = self::VERBOSITY_NORMAL, bool $decorated = false, ?OutputFormatterInterface $formatter = null)

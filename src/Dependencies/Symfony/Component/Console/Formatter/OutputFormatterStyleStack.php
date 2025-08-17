@@ -57,11 +57,11 @@ class OutputFormatterStyleStack implements ResetInterface
      */
     public function pop(?OutputFormatterStyleInterface $style = null)
     {
-        if (empty($this->styles)) {
+        if ($this->styles === []) {
             return $this->emptyStyle;
         }
 
-        if (null === $style) {
+        if (!$style instanceof OutputFormatterStyleInterface) {
             return array_pop($this->styles);
         }
 
@@ -83,7 +83,7 @@ class OutputFormatterStyleStack implements ResetInterface
      */
     public function getCurrent()
     {
-        if (empty($this->styles)) {
+        if ($this->styles === []) {
             return $this->emptyStyle;
         }
 

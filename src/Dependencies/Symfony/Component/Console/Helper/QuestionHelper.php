@@ -40,6 +40,7 @@ class QuestionHelper extends Helper
     private $inputStream;
 
     private static $stty = true;
+    
     private static $stdinIsInteractive;
 
     /**
@@ -68,16 +69,14 @@ class QuestionHelper extends Helper
                 return $this->doAsk($output, $question);
             }
 
-            $interviewer = function () use ($output, $question) {
-                return $this->doAsk($output, $question);
-            };
+            $interviewer = (fn() => $this->doAsk($output, $question));
 
             return $this->validateAttempts($interviewer, $output, $question);
-        } catch (MissingInputException $exception) {
+        } catch (MissingInputException $missingInputException) {
             $input->setInteractive(false);
 
             if (null === $fallbackOutput = $this->getDefaultAnswer($question)) {
-                throw $exception;
+                throw $missingInputException;
             }
 
             return $fallbackOutput;
@@ -143,6 +142,7 @@ class QuestionHelper extends Helper
                 if (false === $ret) {
                     throw new MissingInputException('Aborted.');
                 }
+                
                 if ($question->isTrimmable()) {
                     $ret = trim($ret);
                 }
@@ -220,12 +220,12 @@ class QuestionHelper extends Helper
     {
         $messages = [];
 
-        $maxWidth = max(array_map([__CLASS__, 'width'], array_keys($choices = $question->getChoices())));
+        $maxWidth = max(array_map([self::class, 'width'], array_keys($choices = $question->getChoices())));
 
         foreach ($choices as $key => $value) {
             $padding = str_repeat(' ', $maxWidth - self::width($key));
 
-            $messages[] = sprintf("  [<$tag>%s$padding</$tag>] %s", $key, $value);
+            $messages[] = sprintf(sprintf('  [<%s>%%s%s</%s>] %%s', $tag, $padding, $tag), $key, $value);
         }
 
         return $messages;
@@ -279,6 +279,7 @@ class QuestionHelper extends Helper
                 // Give signal handlers a chance to run
                 $r = [$inputStream];
             }
+            
             $c = fread($inputStream, 1);
 
             // as opposed to fgets(), fread() returns an empty string when the stream content is empty, not false.
@@ -332,9 +333,7 @@ class QuestionHelper extends Helper
 
                         $matches = array_filter(
                             $autocomplete($ret),
-                            function ($match) use ($ret) {
-                                return '' === $ret || str_starts_with($match, $ret);
-                            }
+                            fn($match) => '' === $ret || str_starts_with($match, $ret)
                         );
                         $numMatches = \count($matches);
                         $ofs = -1;
@@ -455,9 +454,11 @@ class QuestionHelper extends Helper
         if (false === $value) {
             throw new MissingInputException('Aborted.');
         }
+        
         if ($trimmable) {
             $value = trim($value);
         }
+        
         $output->writeln('');
 
         return $value;
@@ -478,7 +479,7 @@ class QuestionHelper extends Helper
         $attempts = $question->getMaxAttempts();
 
         while (null === $attempts || $attempts--) {
-            if (null !== $error) {
+            if ($error instanceof \Exception) {
                 $this->writeError($output, $error);
             }
 
@@ -531,9 +532,10 @@ class QuestionHelper extends Helper
         $ret = '';
         $cp = $this->setIOCodepage();
         while (false !== ($char = fgetc($multiLineStreamReader))) {
-            if (\PHP_EOL === "{$ret}{$char}") {
+            if (\PHP_EOL === $ret . $char) {
                 break;
             }
+            
             $ret .= $char;
         }
 
@@ -600,7 +602,7 @@ class QuestionHelper extends Helper
 
         // For seekable and writable streams, add all the same data to the
         // cloned stream and then seek to the same offset.
-        if (true === $seekable && !\in_array($mode, ['r', 'rb', 'rt'])) {
+        if ($seekable && !\in_array($mode, ['r', 'rb', 'rt'])) {
             $offset = ftell($inputStream);
             rewind($inputStream);
             stream_copy_to_stream($inputStream, $cloneStream);

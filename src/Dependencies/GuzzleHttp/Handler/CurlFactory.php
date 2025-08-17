@@ -54,6 +54,7 @@ class CurlFactory implements CurlFactoryInterface
         $easy = new EasyHandle();
         $easy->request = $request;
         $easy->options = $options;
+        
         $conf = $this->getDefaultConf($easy);
         $this->applyMethod($easy, $conf);
         $this->applyHandlerOptions($easy, $conf);
@@ -290,13 +291,13 @@ class CurlFactory implements CurlFactoryInterface
                 $conf[\CURLOPT_INFILESIZE] = $size;
                 $this->removeHeader('Content-Length', $conf);
             }
+            
             $body = $request->getBody();
             if ($body->isSeekable()) {
                 $body->rewind();
             }
-            $conf[\CURLOPT_READFUNCTION] = static function ($ch, $fd, $length) use ($body) {
-                return $body->read($length);
-            };
+            
+            $conf[\CURLOPT_READFUNCTION] = (static fn($ch, $fd, $length) => $body->read($length));
         }
 
         // If the Expect header is not present, prevent curl from adding it
@@ -318,9 +319,9 @@ class CurlFactory implements CurlFactoryInterface
                 if ($value === '') {
                     // cURL requires a special format for empty headers.
                     // See https://github.com/guzzle/guzzle/issues/1882 for more details.
-                    $conf[\CURLOPT_HTTPHEADER][] = "$name;";
+                    $conf[\CURLOPT_HTTPHEADER][] = $name . ';';
                 } else {
-                    $conf[\CURLOPT_HTTPHEADER][] = "$name: $value";
+                    $conf[\CURLOPT_HTTPHEADER][] = sprintf('%s: %s', $name, $value);
                 }
             }
         }
@@ -340,7 +341,7 @@ class CurlFactory implements CurlFactoryInterface
     private function removeHeader(string $name, array &$options): void
     {
         foreach (\array_keys($options['_headers']) as $key) {
-            if (!\strcasecmp($key, $name)) {
+            if (\strcasecmp($key, $name) === 0) {
                 unset($options['_headers'][$key]);
 
                 return;
@@ -362,14 +363,15 @@ class CurlFactory implements CurlFactoryInterface
                 if (\is_string($options['verify'])) {
                     // Throw an error if the file/folder/link path is not valid or doesn't exist.
                     if (!\file_exists($options['verify'])) {
-                        throw new \InvalidArgumentException("SSL CA bundle not found: {$options['verify']}");
+                        throw new \InvalidArgumentException('SSL CA bundle not found: ' . $options['verify']);
                     }
+                    
                     // If it's a directory or a link to a directory use CURLOPT_CAPATH.
                     // If not, it's probably a file, or a link to a file, so use CURLOPT_CAINFO.
                     if (
                         \is_dir($options['verify'])
                         || (
-                            \is_link($options['verify']) === true
+                            \is_link($options['verify'])
                             && ($verifyLink = \readlink($options['verify'])) !== false
                             && \is_dir($verifyLink)
                         )
@@ -400,6 +402,7 @@ class CurlFactory implements CurlFactoryInterface
             // Use a default temp stream if no sink was set.
             $options['sink'] = \SlimStat\Dependencies\GuzzleHttp\Psr7\Utils::tryFopen('php://temp', 'w+');
         }
+        
         $sink = $options['sink'];
         if (!\is_string($sink)) {
             $sink = \SlimStat\Dependencies\GuzzleHttp\Psr7\Utils::streamFor($sink);
@@ -409,10 +412,9 @@ class CurlFactory implements CurlFactoryInterface
         } else {
             $sink = new LazyOpenStream($sink, 'w+');
         }
+        
         $easy->sink = $sink;
-        $conf[\CURLOPT_WRITEFUNCTION] = static function ($ch, $write) use ($sink): int {
-            return $sink->write($write);
-        };
+        $conf[\CURLOPT_WRITEFUNCTION] = (static fn($ch, $write): int => $sink->write($write));
 
         $timeoutRequiresNoSignal = false;
         if (isset($options['timeout'])) {
@@ -459,21 +461,25 @@ class CurlFactory implements CurlFactoryInterface
                 if (!defined('CURL_SSLVERSION_TLSv1_0')) {
                     throw new \InvalidArgumentException('Invalid crypto_method request option: TLS 1.0 not supported by your version of cURL');
                 }
+                
                 $conf[\CURLOPT_SSLVERSION] = \CURL_SSLVERSION_TLSv1_0;
             } elseif (\STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT === $options['crypto_method']) {
                 if (!defined('CURL_SSLVERSION_TLSv1_1')) {
                     throw new \InvalidArgumentException('Invalid crypto_method request option: TLS 1.1 not supported by your version of cURL');
                 }
+                
                 $conf[\CURLOPT_SSLVERSION] = \CURL_SSLVERSION_TLSv1_1;
             } elseif (\STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT === $options['crypto_method']) {
                 if (!defined('CURL_SSLVERSION_TLSv1_2')) {
                     throw new \InvalidArgumentException('Invalid crypto_method request option: TLS 1.2 not supported by your version of cURL');
                 }
+                
                 $conf[\CURLOPT_SSLVERSION] = \CURL_SSLVERSION_TLSv1_2;
             } elseif (defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT') && \STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT === $options['crypto_method']) {
                 if (!defined('CURL_SSLVERSION_TLSv1_3')) {
                     throw new \InvalidArgumentException('Invalid crypto_method request option: TLS 1.3 not supported by your version of cURL');
                 }
+                
                 $conf[\CURLOPT_SSLVERSION] = \CURL_SSLVERSION_TLSv1_3;
             } else {
                 throw new \InvalidArgumentException('Invalid crypto_method request option: unknown version provided');
@@ -486,15 +492,18 @@ class CurlFactory implements CurlFactoryInterface
                 $conf[\CURLOPT_SSLCERTPASSWD] = $cert[1];
                 $cert = $cert[0];
             }
+            
             if (!\file_exists($cert)) {
-                throw new \InvalidArgumentException("SSL certificate not found: {$cert}");
+                throw new \InvalidArgumentException('SSL certificate not found: ' . $cert);
             }
+            
             // OpenSSL (versions 0.9.3 and later) also support "P12" for PKCS#12-encoded files.
             // see https://curl.se/libcurl/c/CURLOPT_SSLCERTTYPE.html
             $ext = pathinfo($cert, \PATHINFO_EXTENSION);
             if (preg_match('#^(der|p12)$#i', $ext)) {
                 $conf[\CURLOPT_SSLCERTTYPE] = strtoupper($ext);
             }
+            
             $conf[\CURLOPT_SSLCERT] = $cert;
         }
 
@@ -507,11 +516,12 @@ class CurlFactory implements CurlFactoryInterface
                 }
             }
 
-            $sslKey = $sslKey ?? $options['ssl_key'];
+            $sslKey ??= $options['ssl_key'];
 
             if (!\file_exists($sslKey)) {
-                throw new \InvalidArgumentException("SSL private key not found: {$sslKey}");
+                throw new \InvalidArgumentException('SSL private key not found: ' . $sslKey);
             }
+            
             $conf[\CURLOPT_SSLKEY] = $sslKey;
         }
 
@@ -520,6 +530,7 @@ class CurlFactory implements CurlFactoryInterface
             if (!\is_callable($progress)) {
                 throw new \InvalidArgumentException('progress client option must be callable');
             }
+            
             $conf[\CURLOPT_NOPROGRESS] = false;
             $conf[\CURLOPT_PROGRESSFUNCTION] = static function ($resource, int $downloadSize, int $downloaded, int $uploadSize, int $uploaded) use ($progress) {
                 $progress($downloadSize, $downloaded, $uploadSize, $uploaded);
@@ -551,11 +562,11 @@ class CurlFactory implements CurlFactoryInterface
             if ($body->tell() > 0) {
                 $body->rewind();
             }
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException $runtimeException) {
             $ctx['error'] = 'The connection unexpectedly failed without '
                 .'providing an error. The request would have been retried, '
                 .'but attempting to rewind the request body failed. '
-                .'Exception: '.$e;
+                .'Exception: '.$runtimeException;
 
             return self::createRejection($easy, $ctx);
         }
@@ -606,6 +617,7 @@ class CurlFactory implements CurlFactoryInterface
 
                     return -1;
                 }
+                
                 if ($onHeaders !== null) {
                     try {
                         $onHeaders($easy->response);

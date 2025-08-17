@@ -24,7 +24,9 @@ use function SlimStat\Dependencies\Symfony\Component\String\b;
 class OutputFormatter implements WrappableOutputFormatterInterface
 {
     private $decorated;
+    
     private $styles = [];
+    
     private $styleStack;
 
     public function __clone()
@@ -151,7 +153,7 @@ class OutputFormatter implements WrappableOutputFormatterInterface
         $openTagRegex = '[a-z](?:[^\\\\<>]*+ | \\\\.)*';
         $closeTagRegex = '[a-z][^<>]*+';
         $currentLineLength = 0;
-        preg_match_all("#<(($openTagRegex) | /($closeTagRegex)?)>#ix", $message, $matches, \PREG_OFFSET_CAPTURE);
+        preg_match_all(sprintf('#<((%s) | /(%s)?)>#ix', $openTagRegex, $closeTagRegex), $message, $matches, \PREG_OFFSET_CAPTURE);
         foreach ($matches[0] as $i => $match) {
             $pos = $match[1];
             $text = $match[0];
@@ -165,16 +167,12 @@ class OutputFormatter implements WrappableOutputFormatterInterface
             $offset = $pos + \strlen($text);
 
             // opening tag?
-            if ($open = '/' != $text[1]) {
-                $tag = $matches[1][$i][0];
-            } else {
-                $tag = $matches[3][$i][0] ?? '';
-            }
+            $tag = $open = '/' != $text[1] ? $matches[1][$i][0] : $matches[3][$i][0] ?? '';
 
             if (!$open && !$tag) {
                 // </>
                 $this->styleStack->pop();
-            } elseif (null === $style = $this->createStyleFromString($tag)) {
+            } elseif (!($style = $this->createStyleFromString($tag)) instanceof OutputFormatterStyleInterface) {
                 $output .= $this->applyCurrentStyle($text, $output, $width, $currentLineLength);
             } elseif ($open) {
                 $this->styleStack->push($style);
@@ -244,7 +242,7 @@ class OutputFormatter implements WrappableOutputFormatterInterface
             return '';
         }
 
-        if (!$width) {
+        if ($width === 0) {
             return $this->isDecorated() ? $this->styleStack->getCurrent()->apply($text) : $text;
         }
 
@@ -252,7 +250,7 @@ class OutputFormatter implements WrappableOutputFormatterInterface
             $text = ltrim($text);
         }
 
-        if ($currentLineLength) {
+        if ($currentLineLength !== 0) {
             $prefix = substr($text, 0, $i = $width - $currentLineLength)."\n";
             $text = substr($text, $i);
         } else {

@@ -55,10 +55,10 @@ class Filesystem extends BaseFilesystem
 
         try {
             $this->rename($tmpFile, $filename, true);
-        } catch (IOException $e) {
+        } catch (IOException $ioException) {
             unlink($tmpFile);
 
-            throw $e;
+            throw $ioException;
         }
 
         if ($mode === null) {

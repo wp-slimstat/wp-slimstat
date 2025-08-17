@@ -2,6 +2,7 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Message;
 use SlimStat\Dependencies\Psr\Http\Message\MessageInterface;
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 use SlimStat\Dependencies\Psr\Http\Message\ResponseInterface;
@@ -45,7 +46,9 @@ class MessageFormatter implements MessageFormatterInterface
      * @var string
      */
     public const CLF = '{hostname} {req_header_User-Agent} - [{date_common_log}] "{method} {target} HTTP/{version}" {code} {res_header_Content-Length}';
+    
     public const DEBUG = ">>>>>>>>\n{request}\n<<<<<<<<\n{response}\n--------\n{error}";
+    
     public const SHORT = '[{ts}] "{method} {target} HTTP/{version}" {code}';
 
     /**
@@ -83,10 +86,10 @@ class MessageFormatter implements MessageFormatterInterface
                 $result = '';
                 switch ($matches[1]) {
                     case 'request':
-                        $result = Psr7\Message::toString($request);
+                        $result = Message::toString($request);
                         break;
                     case 'response':
-                        $result = $response ? Psr7\Message::toString($response) : '';
+                        $result = $response instanceof ResponseInterface ? Message::toString($response) : '';
                         break;
                     case 'req_headers':
                         $result = \trim($request->getMethod()
@@ -95,7 +98,7 @@ class MessageFormatter implements MessageFormatterInterface
                             .$this->headers($request);
                         break;
                     case 'res_headers':
-                        $result = $response ?
+                        $result = $response instanceof ResponseInterface ?
                             \sprintf(
                                 'HTTP/%s %d %s',
                                 $response->getProtocolVersion(),
@@ -133,6 +136,7 @@ class MessageFormatter implements MessageFormatterInterface
                         $result = $request->getMethod();
                         break;
                     case 'version':
+                    case 'req_version':
                         $result = $request->getProtocolVersion();
                         break;
                     case 'uri':
@@ -142,11 +146,8 @@ class MessageFormatter implements MessageFormatterInterface
                     case 'target':
                         $result = $request->getRequestTarget();
                         break;
-                    case 'req_version':
-                        $result = $request->getProtocolVersion();
-                        break;
                     case 'res_version':
-                        $result = $response
+                        $result = $response instanceof ResponseInterface
                             ? $response->getProtocolVersion()
                             : 'NULL';
                         break;
@@ -157,20 +158,20 @@ class MessageFormatter implements MessageFormatterInterface
                         $result = \gethostname();
                         break;
                     case 'code':
-                        $result = $response ? $response->getStatusCode() : 'NULL';
+                        $result = $response instanceof ResponseInterface ? $response->getStatusCode() : 'NULL';
                         break;
                     case 'phrase':
-                        $result = $response ? $response->getReasonPhrase() : 'NULL';
+                        $result = $response instanceof ResponseInterface ? $response->getReasonPhrase() : 'NULL';
                         break;
                     case 'error':
-                        $result = $error ? $error->getMessage() : 'NULL';
+                        $result = $error instanceof \Throwable ? $error->getMessage() : 'NULL';
                         break;
                     default:
                         // handle prefixed dynamic headers
                         if (\strpos($matches[1], 'req_header_') === 0) {
                             $result = $request->getHeaderLine(\substr($matches[1], 11));
                         } elseif (\strpos($matches[1], 'res_header_') === 0) {
-                            $result = $response
+                            $result = $response instanceof ResponseInterface
                                 ? $response->getHeaderLine(\substr($matches[1], 11))
                                 : 'NULL';
                         }

@@ -50,7 +50,7 @@ final class Utils
 
         if ($maxLen === -1) {
             while (!$source->eof()) {
-                if (!$dest->write($source->read($bufferSize))) {
+                if ($dest->write($source->read($bufferSize)) === 0) {
                     break;
                 }
             }
@@ -59,9 +59,10 @@ final class Utils
             while ($remaining > 0 && !$source->eof()) {
                 $buf = $source->read(min($bufferSize, $remaining));
                 $len = strlen($buf);
-                if (!$len) {
+                if ($len === 0) {
                     break;
                 }
+                
                 $remaining -= $len;
                 $dest->write($buf);
             }
@@ -88,6 +89,7 @@ final class Utils
                 if ($buf === '') {
                     break;
                 }
+                
                 $buffer .= $buf;
             }
 
@@ -100,6 +102,7 @@ final class Utils
             if ($buf === '') {
                 break;
             }
+            
             $buffer .= $buf;
             $len = strlen($buffer);
         }
@@ -158,7 +161,7 @@ final class Utils
      */
     public static function modifyRequest(RequestInterface $request, array $changes): RequestInterface
     {
-        if (!$changes) {
+        if ($changes === []) {
             return $request;
         }
 
@@ -179,6 +182,7 @@ final class Utils
                     }
                 }
             }
+            
             $uri = $changes['uri'];
         }
 
@@ -240,6 +244,7 @@ final class Utils
             if ('' === ($byte = $stream->read(1))) {
                 return $buffer;
             }
+            
             $buffer .= $byte;
             // Break when a new line is found or the max length - 1 is reached
             if ($byte === "\n" || ++$size === $maxLength - 1) {
@@ -321,6 +326,7 @@ final class Utils
                         if (!$resource->valid()) {
                             return false;
                         }
+                        
                         $result = $resource->current();
                         $resource->next();
 
@@ -329,6 +335,7 @@ final class Utils
                 } elseif (method_exists($resource, '__toString')) {
                     return self::streamFor((string) $resource, $options);
                 }
+                
                 break;
             case 'NULL':
                 return new Stream(self::tryFopen('php://temp', 'r+'), $options);
@@ -371,18 +378,18 @@ final class Utils
         try {
             /** @var resource $handle */
             $handle = fopen($filename, $mode);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             $ex = new \RuntimeException(sprintf(
                 'Unable to open "%s" using mode "%s": %s',
                 $filename,
                 $mode,
-                $e->getMessage()
-            ), 0, $e);
+                $throwable->getMessage()
+            ), 0, $throwable);
         }
 
         restore_error_handler();
 
-        if ($ex) {
+        if ($ex instanceof \RuntimeException) {
             /** @var $ex \RuntimeException */
             throw $ex;
         }
@@ -420,16 +427,16 @@ final class Utils
             if ($contents === false) {
                 $ex = new \RuntimeException('Unable to read stream contents');
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             $ex = new \RuntimeException(sprintf(
                 'Unable to read stream contents: %s',
-                $e->getMessage()
-            ), 0, $e);
+                $throwable->getMessage()
+            ), 0, $throwable);
         }
 
         restore_error_handler();
 
-        if ($ex) {
+        if ($ex instanceof \RuntimeException) {
             /** @var $ex \RuntimeException */
             throw $ex;
         }

@@ -4,7 +4,7 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
-$slimstat_options = get_option('slimstat_options', array());
+$slimstat_options = get_option('slimstat_options', []);
 
 if (isset($slimstat_options['delete_data_on_uninstall']) && $slimstat_options['delete_data_on_uninstall'] != 'on') {
     // Do not delete db data and settings
@@ -34,20 +34,20 @@ if (function_exists('is_multisite') && is_multisite()) {
     slimstat_uninstall($slimstat_wpdb, $slimstat_options);
 }
 
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}slim_browsers");
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}slim_screenres");
-$slimstat_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->base_prefix}slim_content_info");
+$slimstat_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_browsers', $GLOBALS[ 'wpdb' ]->base_prefix));
+$slimstat_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_screenres', $GLOBALS[ 'wpdb' ]->base_prefix));
+$slimstat_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_content_info', $GLOBALS[ 'wpdb' ]->base_prefix));
 
-function slimstat_uninstall($_wpdb = '', $_options = array())
+function slimstat_uninstall($_wpdb = '', $_options = [])
 {
     // Bye bye data...
-    $_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_outbound");
-    $_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_events");
-    $_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats");
-    $_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_events_archive");
-    $_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive");
-    $_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_3");
-    $_wpdb->query("DROP TABLE IF EXISTS {$GLOBALS[ 'wpdb' ]->prefix}slim_stats_archive_3");
+    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_outbound', $GLOBALS[ 'wpdb' ]->prefix));
+    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_events', $GLOBALS[ 'wpdb' ]->prefix));
+    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats', $GLOBALS[ 'wpdb' ]->prefix));
+    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_events_archive', $GLOBALS[ 'wpdb' ]->prefix));
+    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats_archive', $GLOBALS[ 'wpdb' ]->prefix));
+    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats_3', $GLOBALS[ 'wpdb' ]->prefix));
+    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats_archive_3', $GLOBALS[ 'wpdb' ]->prefix));
 
     // Bye bye options...
     delete_option('slimstat_options');
@@ -55,9 +55,9 @@ function slimstat_uninstall($_wpdb = '', $_options = array())
     delete_option('slimstat_filters');
     delete_option('slimstat_tracker_error');
 
-    $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%meta-box-order_slimstat%'");
-    $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%metaboxhidden_slimstat%'");
-    $GLOBALS['wpdb']->query("DELETE FROM {$GLOBALS[ 'wpdb' ]->prefix}usermeta WHERE meta_key LIKE '%closedpostboxes_slimstat%'");
+    $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
+    $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
+    $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
 
     // Remove scheduled autopurge events
     wp_clear_scheduled_hook('wp_slimstat_purge');
@@ -71,11 +71,10 @@ function slimstat_uninstall($_wpdb = '', $_options = array())
         $upload_dir = $upload_dir_info['basedir'];
 
         // Handle multisite environment
-        if (is_multisite()) {
-            if (!(is_main_network() && is_main_site() && defined('MULTISITE'))) {
-                $upload_dir = str_replace('/sites/' . get_current_blog_id(), '', $upload_dir);
-            }
+        if (is_multisite() && !(is_main_network() && is_main_site() && defined('MULTISITE'))) {
+            $upload_dir = str_replace('/sites/' . get_current_blog_id(), '', $upload_dir);
         }
+        
         $upload_dir .= '/wp-slimstat';
     }
 

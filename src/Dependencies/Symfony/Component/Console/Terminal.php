@@ -14,7 +14,9 @@ namespace SlimStat\Dependencies\Symfony\Component\Console;
 class Terminal
 {
     private static $width;
+    
     private static $height;
+    
     private static $stty;
 
     /**
@@ -30,7 +32,7 @@ class Terminal
         }
 
         if (null === self::$width) {
-            self::initDimensions();
+            $this->initDimensions();
         }
 
         return self::$width ?: 80;
@@ -49,7 +51,7 @@ class Terminal
         }
 
         if (null === self::$height) {
-            self::initDimensions();
+            $this->initDimensions();
         }
 
         return self::$height ?: 50;
@@ -72,7 +74,7 @@ class Terminal
         return self::$stty = (bool) shell_exec('stty 2> '.('\\' === \DIRECTORY_SEPARATOR ? 'NUL' : '/dev/null'));
     }
 
-    private static function initDimensions()
+    private function initDimensions()
     {
         if ('\\' === \DIRECTORY_SEPARATOR) {
             $ansicon = getenv('ANSICON');
@@ -81,24 +83,24 @@ class Terminal
                 // or [w, h] from "wxh"
                 self::$width = (int) $matches[1];
                 self::$height = isset($matches[4]) ? (int) $matches[4] : (int) $matches[2];
-            } elseif (!self::hasVt100Support() && self::hasSttyAvailable()) {
+            } elseif (!$this->hasVt100Support() && self::hasSttyAvailable()) {
                 // only use stty on Windows if the terminal does not support vt100 (e.g. Windows 7 + git-bash)
                 // testing for stty in a Windows 10 vt100-enabled console will implicitly disable vt100 support on STDOUT
-                self::initDimensionsUsingStty();
-            } elseif (null !== $dimensions = self::getConsoleMode()) {
+                $this->initDimensionsUsingStty();
+            } elseif (null !== $dimensions = $this->getConsoleMode()) {
                 // extract [w, h] from "wxh"
                 self::$width = (int) $dimensions[0];
                 self::$height = (int) $dimensions[1];
             }
         } else {
-            self::initDimensionsUsingStty();
+            $this->initDimensionsUsingStty();
         }
     }
 
     /**
      * Returns whether STDOUT has vt100 support (some Windows 10+ configurations).
      */
-    private static function hasVt100Support(): bool
+    private function hasVt100Support(): bool
     {
         return \function_exists('sapi_windows_vt100_support') && sapi_windows_vt100_support(fopen('php://stdout', 'w'));
     }
@@ -106,9 +108,9 @@ class Terminal
     /**
      * Initializes dimensions using the output of an stty columns line.
      */
-    private static function initDimensionsUsingStty()
+    private function initDimensionsUsingStty()
     {
-        if ($sttyString = self::getSttyColumns()) {
+        if ($sttyString = $this->getSttyColumns()) {
             if (preg_match('/rows.(\d+);.columns.(\d+);/i', $sttyString, $matches)) {
                 // extract [w, h] from "rows h; columns w;"
                 self::$width = (int) $matches[2];
@@ -126,9 +128,9 @@ class Terminal
      *
      * @return int[]|null An array composed of the width and the height or null if it could not be parsed
      */
-    private static function getConsoleMode(): ?array
+    private function getConsoleMode(): ?array
     {
-        $info = self::readFromProcess('mode CON');
+        $info = $this->readFromProcess('mode CON');
 
         if (null === $info || !preg_match('/--------+\r?\n.+?(\d+)\r?\n.+?(\d+)\r?\n/', $info, $matches)) {
             return null;
@@ -140,12 +142,12 @@ class Terminal
     /**
      * Runs and parses stty -a if it's available, suppressing any error output.
      */
-    private static function getSttyColumns(): ?string
+    private function getSttyColumns(): ?string
     {
-        return self::readFromProcess('stty -a | grep columns');
+        return $this->readFromProcess('stty -a | grep columns');
     }
 
-    private static function readFromProcess(string $command): ?string
+    private function readFromProcess(string $command): ?string
     {
         if (!\function_exists('proc_open')) {
             return null;
@@ -168,7 +170,7 @@ class Terminal
         fclose($pipes[2]);
         proc_close($process);
 
-        if ($cp) {
+        if ($cp !== 0) {
             sapi_windows_cp_set($cp);
         }
 

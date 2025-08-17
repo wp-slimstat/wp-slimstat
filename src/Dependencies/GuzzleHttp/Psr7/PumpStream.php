@@ -53,16 +53,7 @@ final class PumpStream implements StreamInterface
 
     public function __toString(): string
     {
-        try {
-            return Utils::copyToString($this);
-        } catch (\Throwable $e) {
-            if (\PHP_VERSION_ID >= 70400) {
-                throw $e;
-            }
-            trigger_error(sprintf('%s::__toString exception: %s', self::class, (string) $e), E_USER_ERROR);
-
-            return '';
-        }
+        return Utils::copyToString($this);
     }
 
     public function close(): void
@@ -130,7 +121,7 @@ final class PumpStream implements StreamInterface
         $this->tellPos += $readLen;
         $remaining = $length - $readLen;
 
-        if ($remaining) {
+        if ($remaining !== 0) {
             $this->pump($remaining);
             $data .= $this->buffer->read($remaining);
             $this->tellPos += strlen($data) - $readLen;
@@ -171,6 +162,7 @@ final class PumpStream implements StreamInterface
 
                     return;
                 }
+                
                 $this->buffer->write($data);
                 $length -= strlen($data);
             } while ($length > 0);

@@ -72,16 +72,14 @@ final class GetData implements GetDataInterface
         $addedSettings = $this->getIniPart($unquotedPattern);
 
         // set some additional data
-        if (count($settings) === 0) {
-            // The optimization with replaced digits get can now result in setting searches, for which we
-            // won't find a result - so only add the pattern information, is settings have been found.
-            //
-            // If not an empty array will be returned and the calling function can easily check if a pattern
-            // has been found.
-            if (0 < count($addedSettings)) {
-                $settings['browser_name_regex']   = '/^' . $pattern . '$/';
-                $settings['browser_name_pattern'] = $unquotedPattern;
-            }
+        // The optimization with replaced digits get can now result in setting searches, for which we
+        // won't find a result - so only add the pattern information, is settings have been found.
+        //
+        // If not an empty array will be returned and the calling function can easily check if a pattern
+        // has been found.
+        if (count($settings) === 0 && [] !== $addedSettings) {
+            $settings['browser_name_regex']   = '/^' . $pattern . '$/';
+            $settings['browser_name_pattern'] = $unquotedPattern;
         }
 
         // check if parent pattern set, only keep the first one
@@ -130,7 +128,7 @@ final class GetData implements GetDataInterface
 
                 return [];
             }
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $invalidArgumentException) {
             $this->logger->error(
                 new \InvalidArgumentException(
                     sprintf(
@@ -138,7 +136,7 @@ final class GetData implements GetDataInterface
                         $subkey
                     ),
                     0,
-                    $e
+                    $invalidArgumentException
                 )
             );
 
@@ -149,7 +147,7 @@ final class GetData implements GetDataInterface
 
         try {
             $file = $this->cache->getItem('browscap.iniparts.' . $subkey, true, $success);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $invalidArgumentException) {
             $this->logger->error(
                 new \InvalidArgumentException(
                     sprintf(
@@ -157,7 +155,7 @@ final class GetData implements GetDataInterface
                         $subkey
                     ),
                     0,
-                    $e
+                    $invalidArgumentException
                 )
             );
 
@@ -176,7 +174,7 @@ final class GetData implements GetDataInterface
             return [];
         }
 
-        if (! is_array($file) || ! count($file)) {
+        if (! is_array($file) || $file === []) {
             $this->logger->debug(
                 sprintf(
                     'cache key "browscap.iniparts.%s" for pattern "%s" was empty',

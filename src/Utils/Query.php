@@ -10,20 +10,35 @@ class Query
     use TransientCacheTrait;
 
     private $queries = [];
+    
     private $operation;
+    
     private $table;
+    
     private $fields = '*';
+    
     private $subQuery;
+    
     private $orderClause;
+    
     private $groupByClause;
+    
     private $limitClause;
+    
     private $whereRelation = 'AND';
+    
     private $setClauses = [];
+    
     private $joinClauses = [];
+    
     private $whereClauses = [];
+    
     private $rawWhereClause = [];
+    
     private $valuesToPrepare = [];
+    
     private $allowCaching = false;
+    
     private $cacheExpiration = 3600;
 
     protected $db;
@@ -144,19 +159,23 @@ class Query
      */
     public function set($values)
     {
-        if (empty($values)) return $this;
+        if (empty($values)) {
+            return $this;
+        }
+
         foreach ($values as $field => $value) {
             $column = '`' . str_replace('`', '``', $field) . '`';
             if (is_string($value)) {
-                $this->setClauses[] = "$column = %s";
+                $this->setClauses[] = sprintf('%s = %%s', $column);
                 $this->valuesToPrepare[] = $value;
             } elseif (is_numeric($value)) {
-                $this->setClauses[] = "$column = %d";
+                $this->setClauses[] = '%s = ' . $column;
                 $this->valuesToPrepare[] = $value;
             } elseif (is_null($value)) {
-                $this->setClauses[] = "$column = NULL";
+                $this->setClauses[] = $column . ' = NULL';
             }
         }
+        
         return $this;
     }
 
@@ -178,17 +197,24 @@ class Query
                 $this->whereClauses[] = $condition['condition'];
                 $this->valuesToPrepare = array_merge($this->valuesToPrepare, $condition['values']);
             }
+            
             return $this;
         }
+        
         if (is_array($value)) {
             $value = array_filter(array_values($value));
         }
-        if (!is_numeric($value) && empty($value)) return $this;
+
+        if (!is_numeric($value) && empty($value)) {
+            return $this;
+        }
+        
         $condition = $this->generateCondition($field, $operator, $value);
         if (!empty($condition)) {
             $this->whereClauses[] = $condition['condition'];
             $this->valuesToPrepare = array_merge($this->valuesToPrepare, $condition['values']);
         }
+        
         return $this;
     }
 
@@ -202,11 +228,8 @@ class Query
      */
     public function whereRaw($condition, $values = [])
     {
-        if (!empty($values)) {
-            $this->rawWhereClause[] = $this->prepareQuery($condition, $values);
-        } else {
-            $this->rawWhereClause[] = $condition;
-        }
+        $this->rawWhereClause[] = empty($values) ? $condition : $this->prepareQuery($condition, $values);
+
         return $this;
     }
 
@@ -222,9 +245,11 @@ class Query
         if (is_array($fields)) {
             $fields = implode(', ', $fields);
         }
+        
         if (!empty($fields)) {
-            $this->groupByClause = "GROUP BY {$fields}";
+            $this->groupByClause = 'GROUP BY ' . $fields;
         }
+        
         return $this;
     }
 
@@ -238,28 +263,36 @@ class Query
      */
     public function orderBy($fields, $order = 'DESC')
     {
-        if (empty($fields)) return $this;
+        if (empty($fields)) {
+            return $this;
+        }
+
         if (is_string($fields)) {
             if (preg_match('/\b(ASC|DESC)\b/i', $fields)) {
                 $this->orderClause = 'ORDER BY ' . $fields;
                 return $this;
             }
+            
             $fields = explode(',', $fields);
             $fields = array_map('trim', $fields);
         }
+        
         if (is_array($fields)) {
             $order = strtoupper($order);
             if (!in_array($order, ['ASC', 'DESC'])) {
                 $order = 'DESC';
             }
+            
             $orderParts = [];
             foreach ($fields as $field) {
-                $orderParts[] = "$field $order";
+                $orderParts[] = sprintf('%s %s', $field, $order);
             }
-            if (!empty($orderParts)) {
+            
+            if ($orderParts !== []) {
                 $this->orderClause = 'ORDER BY ' . implode(', ', $orderParts);
             }
         }
+        
         return $this;
     }
 
@@ -290,8 +323,9 @@ class Query
         $perPage = intval($perPage);
         if ($page > 0 && $perPage > 0) {
             $offset = ($page - 1) * $perPage;
-            $this->limitClause = "LIMIT {$perPage} OFFSET {$offset}";
+            $this->limitClause = sprintf('LIMIT %d OFFSET %d', $perPage, $offset);
         }
+        
         return $this;
     }
 
@@ -310,7 +344,7 @@ class Query
     public function join($table, $on, $conditions = [], $joinType = 'INNER')
     {
         if (is_array($on) && count($on) == 2) {
-            $joinClause = "$joinType JOIN $table ON {$on[0]} = {$on[1]}";
+            $joinClause = sprintf('%s JOIN %s ON %s = %s', $joinType, $table, $on[0], $on[1]);
             if (!empty($conditions)) {
                 foreach ($conditions as $condition) {
                     $field = $condition[0];
@@ -318,15 +352,17 @@ class Query
                     $value = $condition[2];
                     $cond = $this->generateCondition($field, $operator, $value);
                     if (!empty($cond)) {
-                        $joinClause .= " AND {$cond['condition']}";
+                        $joinClause .= ' AND ' . $cond['condition'];
                         $this->valuesToPrepare = array_merge($this->valuesToPrepare, $cond['values']);
                     }
                 }
             }
+            
             $this->joinClauses[] = $joinClause;
         } else {
             throw new InvalidArgumentException('Invalid join clause');
         }
+        
         return $this;
     }
 
@@ -397,16 +433,22 @@ class Query
     {
         $dtField = 'dt';
         $todayStart = $this->getTodayDate();
-        $now = time();
+        time();
         foreach ($this->whereClauses as $idx => $clause) {
             if (preg_match('/' . $dtField . ' BETWEEN %s AND %s/', $clause)) {
                 $from = null;
                 $to = null;
                 $dtIdx = 0;
                 foreach ($this->whereClauses as $i => $c) {
-                    if ($i == $idx) break;
-                    if (preg_match('/%s/', $c)) $dtIdx += substr_count($c, '%s');
+                    if ($i == $idx) {
+                        break;
+                    }
+
+                    if (preg_match('/%s/', $c)) {
+                        $dtIdx += substr_count($c, '%s');
+                    }
                 }
+                
                 $from = $this->valuesToPrepare[$dtIdx] ?? null;
                 $to = $this->valuesToPrepare[$dtIdx+1] ?? null;
                 $fromTs = is_numeric($from) ? intval($from) : strtotime($from);
@@ -416,6 +458,7 @@ class Query
                 }
             }
         }
+        
         return [false, null, null, null, null];
     }
 
@@ -443,7 +486,7 @@ class Query
             case '<=':
             case 'LIKE':
             case 'NOT LIKE':
-                $condition = "$field $operator %s";
+                $condition = sprintf('%s %s %%s', $field, $operator);
                 $values[] = $value;
                 break;
             case 'IN':
@@ -451,26 +494,34 @@ class Query
                 if (is_string($value)) {
                     $value = explode(',', $value);
                 }
+                
                 if (!empty($value) && is_array($value) && count($value) == 1) {
-                    $operator = ($operator == 'IN') ? '=' : '!=';
+                    $operator = ($operator === 'IN') ? '=' : '!=';
                     return $this->generateCondition($field, $operator, reset($value));
                 }
+                
                 if (!empty($value) && is_array($value)) {
                     $placeholders = implode(', ', array_fill(0, count($value), '%s'));
-                    $condition = "$field $operator ($placeholders)";
+                    $condition = sprintf('%s %s (%s)', $field, $operator, $placeholders);
                     $values = $value;
                 }
+                
                 break;
             case 'BETWEEN':
                 if (is_array($value) && count($value) === 2) {
-                    $condition = "$field BETWEEN %s AND %s";
+                    $condition = sprintf('%s BETWEEN %%s AND %%s', $field);
                     $values = $value;
                 }
+                
                 break;
             default:
-                throw new InvalidArgumentException("Unsupported operator: $operator");
+                throw new InvalidArgumentException('Unsupported operator: ' . $operator);
         }
-        if (empty($condition)) return;
+
+        if ($condition === '' || $condition === '0') {
+            return null;
+        }
+        
         return [
             'condition' => $condition,
             'values' => $values
@@ -492,13 +543,13 @@ class Query
     {
         switch ($this->operation) {
             case 'select':
-                $query = "SELECT $this->fields FROM $this->table";
+                $query = sprintf('SELECT %s FROM %s', $this->fields, $this->table);
                 break;
             case 'update':
-                $query = "UPDATE $this->table SET " . implode(', ', $this->setClauses);
+                $query = sprintf('UPDATE %s SET ', $this->table) . implode(', ', $this->setClauses);
                 break;
             case 'delete':
-                $query = "DELETE FROM $this->table";
+                $query = 'DELETE FROM ' . $this->table;
                 break;
             case 'insert':
                 $query = '';
@@ -509,12 +560,15 @@ class Query
             default:
                 throw new InvalidArgumentException('Unknown operation');
         }
+        
         if (!empty($this->joinClauses)) {
             $query .= ' ' . implode(' ', $this->joinClauses);
         }
+        
         if (!empty($this->whereClauses)) {
-            $query .= ' WHERE ' . implode(" $this->whereRelation ", $this->whereClauses);
+            $query .= ' WHERE ' . implode(sprintf(' %s ', $this->whereRelation), $this->whereClauses);
         }
+        
         if (!empty($this->rawWhereClause)) {
             if (!empty($this->whereClauses)) {
                 $query .= ' AND ' . implode(' ', $this->rawWhereClause);
@@ -522,15 +576,19 @@ class Query
                 $query .= ' WHERE ' . implode(' ', $this->rawWhereClause);
             }
         }
+        
         if (!empty($this->groupByClause)) {
             $query .= ' ' . $this->groupByClause;
         }
+        
         if (!empty($this->orderClause)) {
             $query .= ' ' . $this->orderClause;
         }
+        
         if (!empty($this->limitClause)) {
             $query .= ' ' . $this->limitClause;
         }
+        
         return $query;
     }
 
@@ -550,17 +608,14 @@ class Query
             $placeholder_count = preg_match_all('/%[i|s|f|d]/', $query, $matches);
             $args_count = is_array($args) ? count($args) : (empty($args) ? 0 : 1);
             if ($placeholder_count === 1) {
-                if (is_array($args)) {
-                    $query = $this->db->prepare($query, reset($args));
-                } else {
-                    $query = $this->db->prepare($query, $args);
-                }
+                $query = is_array($args) ? $this->db->prepare($query, reset($args)) : $this->db->prepare($query, $args);
             } elseif (is_array($args) && $args_count === $placeholder_count) {
                 $query = $this->db->prepare($query, $args);
             } else {
                 return $query;
             }
         }
+        
         return $query;
     }
 
@@ -598,26 +653,33 @@ class Query
     {
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
         $data = get_transient($cacheKey);
-        if ($data === false) return false;
+        if ($data === false) {
+            return false;
+        }
+        
         if (is_array($data) && isset($data['chunks']) && isset($data['size'])) {
             $chunks = [];
             for ($i = 0; $i < $data['chunks']; $i++) {
                 $chunk = get_transient($cacheKey . '_' . $i);
-                if ($chunk === false) return false;
+                if ($chunk === false) {
+                    return false;
+                }
+                
                 $chunks[] = $chunk;
             }
+            
             $data = implode('', $chunks);
         } elseif (is_array($data)) {
             $data = serialize($data);
         }
+        
         if (function_exists('gzuncompress') && is_string($data)) {
             $first2 = substr($data, 0, 2);
             if ($first2 === "\x1f\x8b" || $first2 === "\x78\x9c" || $first2 === "\x78\xda") {
                 $data = @gzuncompress($data);
             }
         }
-        $result = @unserialize($data);
-        return $result;
+        return @unserialize($data);
     }
 
     /**
@@ -642,6 +704,7 @@ class Query
                 delete_transient($cacheKey . '_' . $i);
             }
         }
+        
         if (strlen($data) > $max_chunk_size) {
             $chunks = str_split($data, $max_chunk_size);
             $meta = [
@@ -651,6 +714,7 @@ class Query
             if (strlen(serialize($meta)) > $max_chunk_size) {
                 return false;
             }
+            
             set_transient($cacheKey, $meta, $expiration);
             foreach ($chunks as $i => $chunk) {
                 set_transient($cacheKey . '_' . $i, $chunk, $expiration);
@@ -658,6 +722,7 @@ class Query
         } else {
             set_transient($cacheKey, $data, $expiration);
         }
+        
         return true;
     }
 
@@ -682,9 +747,15 @@ class Query
             if (preg_match('/' . $dtField . ' BETWEEN %s AND %s/', $clause)) {
                 $dtIdx = 0;
                 foreach ($this->whereClauses as $i => $c) {
-                    if ($i == $idx) break;
-                    if (preg_match('/%s/', $c)) $dtIdx += substr_count($c, '%s');
+                    if ($i == $idx) {
+                        break;
+                    }
+
+                    if (preg_match('/%s/', $c)) {
+                        $dtIdx += substr_count($c, '%s');
+                    }
                 }
+                
                 $from = $this->valuesToPrepare[$dtIdx] ?? null;
                 $to = $this->valuesToPrepare[$dtIdx+1] ?? null;
                 $fromTs = is_numeric($from) ? intval($from) : strtotime($from);
@@ -694,6 +765,7 @@ class Query
                 }
             }
         }
+        
         return [false, null, null, null, null, null, null];
     }
 
@@ -715,12 +787,16 @@ class Query
     {
         $historical = is_array($historical) ? $historical : [];
         $live = is_array($live) ? $live : [];
-        if (!$groupKey) return array_merge($historical, $live);
+        if (!$groupKey) {
+            return array_merge($historical, $live);
+        }
+        
         $result = [];
         foreach ($historical as $row) {
             $key = $row[$groupKey];
             $result[$key] = $row;
         }
+        
         foreach ($live as $row) {
             $key = $row[$groupKey];
             if (isset($result[$key])) {
@@ -733,6 +809,7 @@ class Query
                 $result[$key] = $row;
             }
         }
+        
         return array_values($result);
     }
 
@@ -756,10 +833,12 @@ class Query
                     'valueIdx' => $dtIdx
                 ];
             }
+            
             if (preg_match_all('/%s/', $clause, $m)) {
                 $dtIdx += count($m[0]);
             }
         }
+        
         return $ranges;
     }
 
@@ -799,6 +878,7 @@ class Query
         $histQuery->valuesToPrepare = $baseValuesToPrepare;
         $histQuery->whereDate('dt', ['from' => $fromTs, 'to' => $todayStart - 1]);
         $histQuery->allowCaching(true, $this->cacheExpiration);
+        
         $historical = $histQuery->getAll();
 
         $liveQuery = clone $this;
@@ -806,14 +886,17 @@ class Query
         $liveQuery->valuesToPrepare = $baseValuesToPrepare;
         $liveQuery->whereDate('dt', ['from' => $todayStart, 'to' => $toTs], true);
         $liveQuery->allowCaching(false, 0);
+        
         $live = $liveQuery->getAll();
 
         if ($toTs == $todayStart) {
             return $historical;
         }
+        
         if ($todayStart - 1 < $fromTs) {
             return $live;
         }
+        
         return array_merge($historical, $live);
     }
 
@@ -828,12 +911,12 @@ class Query
      */
     public function getAll()
     {
-        if (isset($this->_isLiveQuery) && $this->_isLiveQuery) {
+        if ($this->_isLiveQuery !== null && $this->_isLiveQuery) {
             $query = $this->buildQuery();
             $query = $this->prepareQuery($query, $this->valuesToPrepare);
-            $result = $this->db->get_results($query, ARRAY_A);
-            return $result;
+            return $this->db->get_results($query, ARRAY_A);
         }
+        
         $ranges = $this->extractDateRangesFromWhere();
         if (count($ranges) > 1) {
             $results = [];
@@ -841,6 +924,7 @@ class Query
                 if (empty($range['from']) || empty($range['to'])) {
                     continue;
                 }
+                
                 $baseWhereClauses = $this->whereClauses;
                 $baseValuesToPrepare = $this->valuesToPrepare;
                 array_splice($baseWhereClauses, $range['clauseIdx'], 1);
@@ -850,10 +934,11 @@ class Query
                     $results = array_merge($results, $data);
                 }
             }
+            
             return $results;
         }
 
-        list($split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx) = $this->getSplitDateRanges();
+        [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx] = $this->getSplitDateRanges();
         if ($split) {
             $baseWhereClauses = $this->whereClauses;
             $baseValuesToPrepare = $this->valuesToPrepare;
@@ -890,17 +975,18 @@ class Query
             }
 
             $groupKey = null;
-            if (!empty($this->groupByClause)) {
-                if (preg_match('/GROUP BY ([a-zA-Z0-9_]+)/', $this->groupByClause, $m)) {
-                    $groupKey = $m[1];
-                }
+            if (!empty($this->groupByClause) && preg_match('/GROUP BY (\w+)/', $this->groupByClause, $m)) {
+                $groupKey = $m[1];
             }
+            
             $merged = $this->mergeGroupResults($live, $historical, $groupKey);
             if (is_array($merged)) {
                 $dtList = array_map(fn($row) => $row['dt'] ?? null, $merged);
             }
+            
             return $merged;
         }
+        
         $query = $this->buildQuery();
         $query = $this->prepareQuery($query, $this->valuesToPrepare);
         if ($this->allowCaching) {
@@ -909,22 +995,26 @@ class Query
             } catch (Exception $e) {
                 $cachedResult = false;
             }
+            
             if ($cachedResult !== false) {
                 return $cachedResult;
             }
         }
+        
         try {
             $result = $this->db->get_results($query, ARRAY_A);
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $result = [];
         }
+        
         if ($this->allowCaching) {
             try {
                 $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
-            } catch (Exception $e) {
+            } catch (Exception $exception) {
                 // ignore
             }
         }
+        
         return $result;
     }
 
@@ -945,10 +1035,12 @@ class Query
                 return $cachedResult;
             }
         }
+        
         $result = $this->db->get_var($query);
         if ($this->allowCaching) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
+        
         return $result;
     }
 
@@ -969,10 +1061,12 @@ class Query
                 return $cachedResult;
             }
         }
+        
         $result = $this->db->get_row($query);
         if ($this->allowCaching) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
+        
         return $result;
     }
 
@@ -993,10 +1087,12 @@ class Query
                 return $cachedResult;
             }
         }
+        
         $result = $this->db->get_col($query);
         if ($this->allowCaching) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
+        
         return $result;
     }
 
@@ -1010,15 +1106,14 @@ class Query
     {
         foreach ($this->whereClauses as $clause) {
             if ($operator) {
-                if (stripos($clause, "$field $operator") !== false) {
+                if (stripos($clause, sprintf('%s %s', $field, $operator)) !== false) {
                     return true;
                 }
-            } else {
-                if (stripos($clause, $field) !== false) {
-                    return true;
-                }
+            } elseif (stripos($clause, $field) !== false) {
+                return true;
             }
         }
+        
         return false;
     }
 
@@ -1030,11 +1125,13 @@ class Query
      */
     public function whereDate($field, $date, $isLiveQuery = false)
     {
-        if (empty($date)) return $this;
+        if (empty($date)) {
+            return $this;
+        }
 
         if (is_array($date)) {
-            $from = isset($date['from']) ? $date['from'] : '';
-            $to   = isset($date['to']) ? $date['to'] : '';
+            $from = $date['from'] ?? '';
+            $to   = $date['to'] ?? '';
         } elseif (is_string($date)) {
             $from = $date;
             $to = $date;
@@ -1047,7 +1144,7 @@ class Query
                 $fromTs = is_numeric($from) ? intval($from) : strtotime($from);
                 $toTs   = is_numeric($to) ? intval($to) : strtotime($to);
 
-                $this->whereClauses[] = "$field BETWEEN %s AND %s";
+                $this->whereClauses[] = sprintf('%s BETWEEN %%s AND %%s', $field);
                 $this->valuesToPrepare[] = $fromTs;
                 $this->valuesToPrepare[] = $toTs;
                 $this->canUseCacheForDateRange($toTs);
@@ -1055,19 +1152,24 @@ class Query
                     $this->_isLiveQuery = true;
                 }
             }
-        } else {
-            if (!empty($from) && !empty($to)) {
-                if (strlen($from) === 10) $from .= ' 00:00:00';
-                if (strlen($to) === 10) $to .= ' 23:59:59';
-                $this->whereClauses[] = "$field BETWEEN %s AND %s";
-                $this->valuesToPrepare[] = $from;
-                $this->valuesToPrepare[] = $to;
-                $this->canUseCacheForDateRange($to);
-                if ($isLiveQuery) {
-                    $this->_isLiveQuery = true;
-                }
+        } elseif (!empty($from) && !empty($to)) {
+            if (strlen($from) === 10) {
+                $from .= ' 00:00:00';
+            }
+
+            if (strlen($to) === 10) {
+                $to .= ' 23:59:59';
+            }
+
+            $this->whereClauses[] = sprintf('%s BETWEEN %%s AND %%s', $field);
+            $this->valuesToPrepare[] = $from;
+            $this->valuesToPrepare[] = $to;
+            $this->canUseCacheForDateRange($to);
+            if ($isLiveQuery) {
+                $this->_isLiveQuery = true;
             }
         }
+        
         return $this;
     }
 }

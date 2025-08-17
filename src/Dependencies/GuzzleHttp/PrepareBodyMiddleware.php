@@ -2,6 +2,8 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
+use SlimStat\Dependencies\GuzzleHttp\Psr7\MimeType;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Utils;
 use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 
@@ -38,11 +40,9 @@ class PrepareBodyMiddleware
         $modify = [];
 
         // Add a default content-type if possible.
-        if (!$request->hasHeader('Content-Type')) {
-            if ($uri = $request->getBody()->getMetadata('uri')) {
-                if (is_string($uri) && $type = Psr7\MimeType::fromFilename($uri)) {
-                    $modify['set_headers']['Content-Type'] = $type;
-                }
+        if (!$request->hasHeader('Content-Type') && $uri = $request->getBody()->getMetadata('uri')) {
+            if (is_string($uri) && $type = MimeType::fromFilename($uri)) {
+                $modify['set_headers']['Content-Type'] = $type;
             }
         }
 
@@ -61,7 +61,7 @@ class PrepareBodyMiddleware
         // Add the expect header if needed.
         $this->addExpectHeader($request, $options, $modify);
 
-        return $fn(Psr7\Utils::modifyRequest($request, $modify), $options);
+        return $fn(Utils::modifyRequest($request, $modify), $options);
     }
 
     /**

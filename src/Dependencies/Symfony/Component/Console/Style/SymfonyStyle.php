@@ -39,10 +39,15 @@ class SymfonyStyle extends OutputStyle
     public const MAX_LINE_LENGTH = 120;
 
     private $input;
+    
     private $output;
+    
     private $questionHelper;
+    
     private $progressBar;
+    
     private $lineLength;
+    
     private $bufferedOutput;
 
     public function __construct(InputInterface $input, OutputInterface $output)
@@ -102,9 +107,7 @@ class SymfonyStyle extends OutputStyle
     public function listing(array $elements)
     {
         $this->autoPrependText();
-        $elements = array_map(function ($element) {
-            return sprintf(' * %s', $element);
-        }, $elements);
+        $elements = array_map(fn($element) => sprintf(' * %s', $element), $elements);
 
         $this->writeln($elements);
         $this->newLine();
@@ -232,14 +235,17 @@ class SymfonyStyle extends OutputStyle
                 $row[] = $value;
                 continue;
             }
+            
             if (\is_string($value)) {
                 $headers[] = new TableCell($value, ['colspan' => 2]);
                 $row[] = null;
                 continue;
             }
+            
             if (!\is_array($value)) {
                 throw new InvalidArgumentException('Value should be an array, string, or an instance of TableSeparator.');
             }
+            
             $headers[] = key($value);
             $row[] = current($value);
         }
@@ -444,6 +450,7 @@ class SymfonyStyle extends OutputStyle
 
             return;
         }
+        
         // Prepend new line for each non LF chars (This means no blank line was output before)
         $this->newLine(2 - substr_count($chars, "\n"));
     }

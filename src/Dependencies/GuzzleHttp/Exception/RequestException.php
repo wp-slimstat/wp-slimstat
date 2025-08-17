@@ -37,7 +37,7 @@ class RequestException extends TransferException implements RequestExceptionInte
         array $handlerContext = []
     ) {
         // Set the code of the exception if the response is set and not future.
-        $code = $response ? $response->getStatusCode() : 0;
+        $code = $response instanceof ResponseInterface ? $response->getStatusCode() : 0;
         parent::__construct($message, $code, $previous);
         $this->request = $request;
         $this->response = $response;
@@ -68,7 +68,7 @@ class RequestException extends TransferException implements RequestExceptionInte
         array $handlerContext = [],
         BodySummarizerInterface $bodySummarizer = null
     ): self {
-        if (!$response) {
+        if (!$response instanceof ResponseInterface) {
             return new self(
                 'Error completing request',
                 $request,
@@ -87,7 +87,7 @@ class RequestException extends TransferException implements RequestExceptionInte
             $className = ServerException::class;
         } else {
             $label = 'Unsuccessful request';
-            $className = __CLASS__;
+            $className = self::class;
         }
 
         $uri = $request->getUri();

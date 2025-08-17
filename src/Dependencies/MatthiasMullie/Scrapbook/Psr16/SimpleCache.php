@@ -41,9 +41,9 @@ class SimpleCache implements CacheInterface
 
         // KeyValueStore::get returns false for cache misses (which could also
         // be confused for a `false` value), so we'll check existence with getMulti
-        $multi = $this->store->getMulti(array($key));
+        $multi = $this->store->getMulti([$key]);
 
-        return isset($multi[$key]) ? $multi[$key] : $default;
+        return $multi[$key] ?? $default;
     }
 
     /**
@@ -91,16 +91,16 @@ class SimpleCache implements CacheInterface
         if (!is_array($keys)) {
             throw new InvalidArgumentException('Invalid keys: '.var_export($keys, true).'. Keys should be an array or Traversable of strings.');
         }
-        array_map(array($this, 'assertValidKey'), $keys);
+        
+        array_map([$this, 'assertValidKey'], $keys);
 
         $results = $this->store->getMulti($keys);
 
         // KeyValueStore omits values that are not in cache, while PSR-16 will
         // have them with a default value
         $nulls = array_fill_keys($keys, $default);
-        $results = array_merge($nulls, $results);
 
-        return $results;
+        return array_merge($nulls, $results);
     }
 
     /**
@@ -112,13 +112,15 @@ class SimpleCache implements CacheInterface
             // we also need the keys, and an array is stricter about what it can
             // have as keys than a Traversable is, so we can't use
             // iterator_to_array...
-            $array = array();
+            $array = [];
             foreach ($values as $key => $value) {
                 if (!is_string($key) && !is_int($key)) {
                     throw new InvalidArgumentException('Invalid values: '.var_export($values, true).'. Only strings are allowed as keys.');
                 }
+                
                 $array[$key] = $value;
             }
+            
             $values = $array;
         }
 
@@ -126,7 +128,7 @@ class SimpleCache implements CacheInterface
             throw new InvalidArgumentException('Invalid values: '.var_export($values, true).'. Values should be an array or Traversable with strings as keys.');
         }
 
-        foreach ($values as $key => $value) {
+        foreach (array_keys($values) as $key) {
             // $key is also allowed to be an integer, since ['0' => ...] will
             // automatically convert to [0 => ...]
             $key = is_int($key) ? (string) $key : $key;
@@ -151,7 +153,8 @@ class SimpleCache implements CacheInterface
         if (!is_array($keys)) {
             throw new InvalidArgumentException('Invalid keys: '.var_export($keys, true).'. Keys should be an array or Traversable of strings.');
         }
-        array_map(array($this, 'assertValidKey'), $keys);
+        
+        array_map([$this, 'assertValidKey'], $keys);
 
         $this->store->deleteMulti($keys);
 
@@ -169,7 +172,7 @@ class SimpleCache implements CacheInterface
 
         // KeyValueStore::get returns false for cache misses (which could also
         // be confused for a `false` value), so we'll check existence with getMulti
-        $multi = $this->store->getMulti(array($key));
+        $multi = $this->store->getMulti([$key]);
 
         return isset($multi[$key]);
     }
@@ -250,6 +253,7 @@ class SimpleCache implements CacheInterface
         if (class_exists('\TypeError')) {
             throw new \TypeError($error);
         }
+        
         trigger_error($error, E_USER_ERROR);
 
         return 0;

@@ -25,25 +25,24 @@ final class Middleware
      */
     public static function cookies(): callable
     {
-        return static function (callable $handler): callable {
-            return static function ($request, array $options) use ($handler) {
-                if (empty($options['cookies'])) {
-                    return $handler($request, $options);
-                } elseif (!($options['cookies'] instanceof CookieJarInterface)) {
-                    throw new \InvalidArgumentException('cookies must be an instance of SlimStat\Dependencies\GuzzleHttp\Cookie\CookieJarInterface');
-                }
-                $cookieJar = $options['cookies'];
-                $request = $cookieJar->withCookieHeader($request);
+        return static fn(callable $handler): callable => static function ($request, array $options) use ($handler) {
+            if (empty($options['cookies'])) {
+                return $handler($request, $options);
+            } elseif (!($options['cookies'] instanceof CookieJarInterface)) {
+                throw new \InvalidArgumentException('cookies must be an instance of SlimStat\Dependencies\GuzzleHttp\Cookie\CookieJarInterface');
+            }
+            
+            $cookieJar = $options['cookies'];
+            $request = $cookieJar->withCookieHeader($request);
 
-                return $handler($request, $options)
-                    ->then(
-                        static function (ResponseInterface $response) use ($cookieJar, $request): ResponseInterface {
-                            $cookieJar->extractCookies($request, $response);
+            return $handler($request, $options)
+                ->then(
+                    static function (ResponseInterface $response) use ($cookieJar, $request): ResponseInterface {
+                        $cookieJar->extractCookies($request, $response);
 
-                            return $response;
-                        }
-                    );
-            };
+                        return $response;
+                    }
+                );
         };
     }
 
@@ -57,22 +56,21 @@ final class Middleware
      */
     public static function httpErrors(BodySummarizerInterface $bodySummarizer = null): callable
     {
-        return static function (callable $handler) use ($bodySummarizer): callable {
-            return static function ($request, array $options) use ($handler, $bodySummarizer) {
-                if (empty($options['http_errors'])) {
-                    return $handler($request, $options);
-                }
+        return static fn(callable $handler): callable => static function ($request, array $options) use ($handler, $bodySummarizer) {
+            if (empty($options['http_errors'])) {
+                return $handler($request, $options);
+            }
 
-                return $handler($request, $options)->then(
-                    static function (ResponseInterface $response) use ($request, $bodySummarizer) {
-                        $code = $response->getStatusCode();
-                        if ($code < 400) {
-                            return $response;
-                        }
-                        throw RequestException::create($request, $response, null, [], $bodySummarizer);
+            return $handler($request, $options)->then(
+                static function (ResponseInterface $response) use ($request, $bodySummarizer) {
+                    $code = $response->getStatusCode();
+                    if ($code < 400) {
+                        return $response;
                     }
-                );
-            };
+                    
+                    throw RequestException::create($request, $response, null, [], $bodySummarizer);
+                }
+            );
         };
     }
 
@@ -134,18 +132,17 @@ final class Middleware
      */
     public static function tap(callable $before = null, callable $after = null): callable
     {
-        return static function (callable $handler) use ($before, $after): callable {
-            return static function (RequestInterface $request, array $options) use ($handler, $before, $after) {
-                if ($before) {
-                    $before($request, $options);
-                }
-                $response = $handler($request, $options);
-                if ($after) {
-                    $after($request, $options, $response);
-                }
+        return static fn(callable $handler): callable => static function (RequestInterface $request, array $options) use ($handler, $before, $after) {
+            if ($before !== null) {
+                $before($request, $options);
+            }
+            
+            $response = $handler($request, $options);
+            if ($after !== null) {
+                $after($request, $options, $response);
+            }
 
-                return $response;
-            };
+            return $response;
         };
     }
 
@@ -156,9 +153,7 @@ final class Middleware
      */
     public static function redirect(): callable
     {
-        return static function (callable $handler): RedirectMiddleware {
-            return new RedirectMiddleware($handler);
-        };
+        return static fn(callable $handler): RedirectMiddleware => new RedirectMiddleware($handler);
     }
 
     /**
@@ -178,9 +173,7 @@ final class Middleware
      */
     public static function retry(callable $decider, callable $delay = null): callable
     {
-        return static function (callable $handler) use ($decider, $delay): RetryMiddleware {
-            return new RetryMiddleware($decider, $handler, $delay);
-        };
+        return static fn(callable $handler): RetryMiddleware => new RetryMiddleware($decider, $handler, $delay);
     }
 
     /**
@@ -202,25 +195,21 @@ final class Middleware
             throw new \LogicException(sprintf('Argument 2 to %s::log() must be of type %s', self::class, MessageFormatterInterface::class));
         }
 
-        return static function (callable $handler) use ($logger, $formatter, $logLevel): callable {
-            return static function (RequestInterface $request, array $options = []) use ($handler, $logger, $formatter, $logLevel) {
-                return $handler($request, $options)->then(
-                    static function ($response) use ($logger, $request, $formatter, $logLevel): ResponseInterface {
-                        $message = $formatter->format($request, $response);
-                        $logger->log($logLevel, $message);
+        return static fn(callable $handler): callable => static fn(RequestInterface $request, array $options = []) => $handler($request, $options)->then(
+            static function ($response) use ($logger, $request, $formatter, $logLevel): ResponseInterface {
+                $message = $formatter->format($request, $response);
+                $logger->log($logLevel, $message);
 
-                        return $response;
-                    },
-                    static function ($reason) use ($logger, $request, $formatter): PromiseInterface {
-                        $response = $reason instanceof RequestException ? $reason->getResponse() : null;
-                        $message = $formatter->format($request, $response, P\Create::exceptionFor($reason));
-                        $logger->error($message);
+                return $response;
+            },
+            static function ($reason) use ($logger, $request, $formatter): PromiseInterface {
+                $response = $reason instanceof RequestException ? $reason->getResponse() : null;
+                $message = $formatter->format($request, $response, P\Create::exceptionFor($reason));
+                $logger->error($message);
 
-                        return P\Create::rejectionFor($reason);
-                    }
-                );
-            };
-        };
+                return P\Create::rejectionFor($reason);
+            }
+        );
     }
 
     /**
@@ -229,9 +218,7 @@ final class Middleware
      */
     public static function prepareBody(): callable
     {
-        return static function (callable $handler): PrepareBodyMiddleware {
-            return new PrepareBodyMiddleware($handler);
-        };
+        return static fn(callable $handler): PrepareBodyMiddleware => new PrepareBodyMiddleware($handler);
     }
 
     /**
@@ -243,11 +230,7 @@ final class Middleware
      */
     public static function mapRequest(callable $fn): callable
     {
-        return static function (callable $handler) use ($fn): callable {
-            return static function (RequestInterface $request, array $options) use ($handler, $fn) {
-                return $handler($fn($request), $options);
-            };
-        };
+        return static fn(callable $handler): callable => static fn(RequestInterface $request, array $options) => $handler($fn($request), $options);
     }
 
     /**
@@ -259,10 +242,6 @@ final class Middleware
      */
     public static function mapResponse(callable $fn): callable
     {
-        return static function (callable $handler) use ($fn): callable {
-            return static function (RequestInterface $request, array $options) use ($handler, $fn) {
-                return $handler($request, $options)->then($fn);
-            };
-        };
+        return static fn(callable $handler): callable => static fn(RequestInterface $request, array $options) => $handler($request, $options)->then($fn);
     }
 }

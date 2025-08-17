@@ -22,14 +22,23 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\LogicException;
 class Question
 {
     private $question;
+    
     private $attempts;
+    
     private $hidden = false;
+    
     private $hiddenFallback = true;
+    
     private $autocompleterCallback;
+    
     private $validator;
+    
     private $default;
+    
     private $normalizer;
+    
     private $trimmable = true;
+    
     private $multiline = false;
 
     /**
@@ -156,9 +165,7 @@ class Question
         if (\is_array($values)) {
             $values = $this->isAssoc($values) ? array_merge(array_keys($values), array_values($values)) : array_values($values);
 
-            $callback = static function () use ($values) {
-                return $values;
-            };
+            $callback = (static fn() => $values);
         } elseif ($values instanceof \Traversable) {
             $valueCache = null;
             $callback = static function () use ($values, &$valueCache) {

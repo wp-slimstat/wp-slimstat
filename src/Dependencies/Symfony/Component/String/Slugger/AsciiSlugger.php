@@ -56,9 +56,11 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
     ];
 
     private ?string $defaultLocale;
+    
     private \Closure|array $symbolsMap = [
         'en' => ['@' => 'at', '&' => 'and'],
     ];
+    
     private bool|string $emoji = false;
 
     /**
@@ -116,7 +118,7 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
             $transliterator = (array) $this->createTransliterator($locale);
         }
 
-        if ($emojiTransliterator = $this->createEmojiTransliterator($locale)) {
+        if (($emojiTransliterator = $this->createEmojiTransliterator($locale)) instanceof EmojiTransliterator) {
             $transliterator[] = $emojiTransliterator;
         }
 
@@ -134,11 +136,12 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
             if (isset($this->symbolsMap[$locale])) {
                 $map = $this->symbolsMap[$locale];
             } else {
-                $parent = self::getParentLocale($locale);
+                $parent = $this->getParentLocale($locale);
                 if ($parent && isset($this->symbolsMap[$parent])) {
                     $map = $this->symbolsMap[$parent];
                 }
             }
+            
             if ($map) {
                 foreach ($map as $char => $replace) {
                     $unicodeString = $unicodeString->replace($char, ' '.$replace.' ');
@@ -164,7 +167,7 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
         }
 
         // Locale not supported and no parent, fallback to any-latin
-        if (!$parent = self::getParentLocale($locale)) {
+        if (!$parent = $this->getParentLocale($locale)) {
             return $this->transliterators[$locale] = null;
         }
 
@@ -186,20 +189,21 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
 
         while (null !== $locale) {
             try {
-                return EmojiTransliterator::create("emoji-$locale");
+                return EmojiTransliterator::create('emoji-' . $locale);
             } catch (\IntlException) {
-                $locale = self::getParentLocale($locale);
+                $locale = $this->getParentLocale($locale);
             }
         }
 
         return null;
     }
 
-    private static function getParentLocale(?string $locale): ?string
+    private function getParentLocale(?string $locale): ?string
     {
         if (!$locale) {
             return null;
         }
+        
         if (false === $str = strrchr($locale, '_')) {
             // no parent locale
             return null;

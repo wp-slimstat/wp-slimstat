@@ -38,10 +38,12 @@ class CommandCompletionTester
         if ('' === end($input)) {
             array_pop($input);
         }
+        
         array_unshift($input, $this->command->getName());
 
         $completionInput = CompletionInput::fromTokens($input, $currentIndex);
         $completionInput->bind($this->command->getDefinition());
+        
         $suggestions = new CompletionSuggestions();
 
         $this->command->complete($completionInput, $suggestions);

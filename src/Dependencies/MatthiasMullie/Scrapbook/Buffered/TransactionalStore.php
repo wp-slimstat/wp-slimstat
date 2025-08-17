@@ -34,7 +34,7 @@ class TransactionalStore implements KeyValueStore
      *
      * @var KeyValueStore[]
      */
-    protected $transactions = array();
+    protected $transactions = [];
 
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for

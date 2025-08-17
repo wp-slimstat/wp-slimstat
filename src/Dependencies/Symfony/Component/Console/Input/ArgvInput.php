@@ -41,11 +41,12 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\RuntimeException;
 class ArgvInput extends Input
 {
     private $tokens;
+    
     private $parsed;
 
     public function __construct(?array $argv = null, ?InputDefinition $definition = null)
     {
-        $argv = $argv ?? $_SERVER['argv'] ?? [];
+        $argv ??= $_SERVER['argv'] ?? [];
 
         // strip the application name
         array_shift($argv);
@@ -74,9 +75,9 @@ class ArgvInput extends Input
 
     protected function parseToken(string $token, bool $parseOptions): bool
     {
-        if ($parseOptions && '' == $token) {
+        if ($parseOptions && '' === $token) {
             $this->parseArgument($token);
-        } elseif ($parseOptions && '--' == $token) {
+        } elseif ($parseOptions && '--' === $token) {
             return false;
         } elseif ($parseOptions && str_starts_with($token, '--')) {
             $this->parseLongOption($token);
@@ -144,6 +145,7 @@ class ArgvInput extends Input
             if ('' === $value = substr($name, $pos + 1)) {
                 array_unshift($this->parsed, $value);
             }
+            
             $this->addLongOption(substr($name, 0, $pos), $value);
         } else {
             $this->addLongOption($name, null);
@@ -178,7 +180,7 @@ class ArgvInput extends Input
                 unset($all[$key]);
             }
 
-            if (\count($all)) {
+            if (\count($all) > 0) {
                 if ($symfonyCommandName) {
                     $message = sprintf('Too many arguments to "%s" command, expected arguments "%s".', $symfonyCommandName, implode('" "', array_keys($all)));
                 } else {
@@ -224,6 +226,7 @@ class ArgvInput extends Input
             if (null !== $value) {
                 throw new RuntimeException(sprintf('The "--%s" option does not accept a value.', $name));
             }
+            
             $this->options[$optionName] = false;
 
             return;
@@ -309,6 +312,7 @@ class ArgvInput extends Input
             if ($onlyParams && '--' === $token) {
                 return false;
             }
+            
             foreach ($values as $value) {
                 // Options with values:
                 //   For long options, test for '--option=' at beginning
@@ -341,6 +345,7 @@ class ArgvInput extends Input
                 if ($token === $value) {
                     return array_shift($tokens);
                 }
+                
                 // Options with values:
                 //   For long options, test for '--option=' at beginning
                 //   For short options, test for '-o' at beginning

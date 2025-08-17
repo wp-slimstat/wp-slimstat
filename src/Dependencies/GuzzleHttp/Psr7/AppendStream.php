@@ -38,18 +38,8 @@ final class AppendStream implements StreamInterface
 
     public function __toString(): string
     {
-        try {
-            $this->rewind();
-
-            return $this->getContents();
-        } catch (\Throwable $e) {
-            if (\PHP_VERSION_ID >= 70400) {
-                throw $e;
-            }
-            trigger_error(sprintf('%s::__toString exception: %s', self::class, (string) $e), E_USER_ERROR);
-
-            return '';
-        }
+        $this->rewind();
+        return $this->getContents();
     }
 
     /**
@@ -83,7 +73,8 @@ final class AppendStream implements StreamInterface
      */
     public function close(): void
     {
-        $this->pos = $this->current = 0;
+        $this->pos = 0;
+        $this->current = 0;
         $this->seekable = true;
 
         foreach ($this->streams as $stream) {
@@ -100,7 +91,8 @@ final class AppendStream implements StreamInterface
      */
     public function detach()
     {
-        $this->pos = $this->current = 0;
+        $this->pos = 0;
+        $this->current = 0;
         $this->seekable = true;
 
         foreach ($this->streams as $stream) {
@@ -132,6 +124,7 @@ final class AppendStream implements StreamInterface
             if ($s === null) {
                 return null;
             }
+            
             $size += $s;
         }
 
@@ -160,8 +153,8 @@ final class AppendStream implements StreamInterface
         } elseif ($whence !== SEEK_SET) {
             throw new \RuntimeException('The AppendStream can only seek with SEEK_SET');
         }
-
-        $this->pos = $this->current = 0;
+        $this->pos = 0;
+        $this->current = 0;
 
         // Rewind each stream
         foreach ($this->streams as $i => $stream) {
@@ -199,6 +192,7 @@ final class AppendStream implements StreamInterface
                 if ($this->current === $total) {
                     break;
                 }
+                
                 ++$this->current;
             }
 

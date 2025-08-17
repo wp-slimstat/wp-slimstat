@@ -117,7 +117,7 @@ class CurlMultiHandler
 
     public function __destruct()
     {
-        if (isset($this->_mh)) {
+        if ($this->_mh !== null) {
             \curl_multi_close($this->_mh);
             unset($this->_mh);
         }
@@ -130,9 +130,7 @@ class CurlMultiHandler
 
         $promise = new Promise(
             [$this, 'execute'],
-            function () use ($id) {
-                return $this->cancel($id);
-            }
+            fn() => $this->cancel($id)
         );
 
         $this->addRequest(['easy' => $easy, 'deferred' => $promise]);
@@ -186,6 +184,7 @@ class CurlMultiHandler
             if (!$this->active && $this->delays) {
                 \usleep($this->timeToNext());
             }
+            
             $this->tick();
         }
     }
@@ -212,7 +211,7 @@ class CurlMultiHandler
     private function cancel($id): bool
     {
         if (!is_int($id)) {
-            trigger_deprecation('guzzlehttp/guzzle', '7.4', 'Not passing an integer to %s::%s() is deprecated and will cause an error in 8.0.', __CLASS__, __FUNCTION__);
+            trigger_deprecation('guzzlehttp/guzzle', '7.4', 'Not passing an integer to %s::%s() is deprecated and will cause an error in 8.0.', self::class, __FUNCTION__);
         }
 
         // Cannot cancel if it has been processed.
@@ -235,6 +234,7 @@ class CurlMultiHandler
                 // if it's not done, then it would be premature to remove the handle. ref https://github.com/guzzle/guzzle/pull/2892#issuecomment-945150216
                 continue;
             }
+            
             $id = (int) $done['handle'];
             \curl_multi_remove_handle($this->_mh, $done['handle']);
 
