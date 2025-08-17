@@ -1355,8 +1355,8 @@ class wp_slimstat
      */
     public static function enqueue_tracker()
     {
-        // Pass some information to the tracker
-        $params = array('ajaxurl' => admin_url('admin-ajax.php'));
+        // Use the new unified tracking method setting
+        $method = isset(self::$settings['tracking_request_method']) ? self::$settings['tracking_request_method'] : 'rest';
 
         // Prepare URLs for all methods
         $rest_url          = rest_url('slimstat/v1/hit');
@@ -1400,7 +1400,6 @@ class wp_slimstat
                     $params['oc'][] = substr($a_cookie_pair, 0, strpos($a_cookie_pair, '='));
                 }
             }
-
             $params['oc'] = implode(',', $params['oc']);
         }
 
@@ -1408,7 +1407,6 @@ class wp_slimstat
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
-
             $params['id'] = self::_get_value_with_checksum(intval(self::$stat['id']));
         } else {
             $params['ci'] = self::_get_value_with_checksum(self::_base64_url_encode(serialize(self::_get_content_info())));

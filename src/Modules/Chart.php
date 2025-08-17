@@ -11,6 +11,7 @@ if (! defined('ABSPATH')) {
 
 use SlimStat\Components\View;
 use SlimStat\Helpers\DataBuckets;
+use SlimStat\Utils\Query;
 
 class Chart
 {
@@ -147,8 +148,23 @@ class Chart
 
         $prevArgs = $this->calculatePreviousArgs($args);
         $sqlInfo  = $this->buildSql($args, $prevArgs);
-        $results  = $wpdb->get_results($sqlInfo['sql']);
-        $totals   = $wpdb->get_results($sqlInfo['totalsSql']);
+
+        // Allow caching only if both current and previous ranges end before today
+        $todayStart     = strtotime(date('Y-m-d 00:00:00'));
+        $canCacheRanges = ($args['end'] < $todayStart && $prevArgs['end'] < $todayStart);
+
+        $rowsQuery   = $sqlInfo['query'];
+        $totalsQuery = $sqlInfo['totalsQuery'];
+
+        if ($rowsQuery instanceof Query) {
+            $rowsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
+        }
+        if ($totalsQuery instanceof Query) {
+            $totalsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
+        }
+
+        $results = $rowsQuery instanceof Query ? $rowsQuery->getAll() : array();
+        $totals  = $totalsQuery instanceof Query ? $totalsQuery->getAll() : array();
 
         return $this->processResults(
             $results,
@@ -252,58 +268,58 @@ class Chart
             'YEAR'  => array('label' => 'Y'),
         );
 
-        $sql = "
-            SELECT
-                grouped_date AS dt,
-                v1,
-                v2,
-                period
-            FROM (
-                SELECT
-                    MIN(dt) AS dt,
-                    {$data1} AS v1,
-                    {$data2} AS v2,
-                    CASE
-                        WHEN dt BETWEEN {$start} AND {$end} THEN 'current'
-                        ELSE 'previous'
-                    END AS period,
-                    {$dtExpr} AS grouped_date
-                FROM {$wpdb->prefix}slim_stats
-                WHERE dt BETWEEN {$prevArgs['start']} AND {$prevArgs['end']}
-                OR dt BETWEEN {$start} AND {$end}
-                GROUP BY grouped_date, period
-            ) AS grouped_data
-            ORDER BY dt, period
-        ";
+        // Build main grouped query via Query builder
+        $fields = implode(",\n                ", array(
+            "{$dtExpr} AS dt",
+            "MIN(dt) AS sort_dt",
+            "{$data1} AS v1",
+            "{$data2} AS v2",
+            "CASE WHEN dt BETWEEN {$start} AND {$end} THEN 'current' ELSE 'previous' END AS period",
+        ));
 
-        // Total V1 and V2
-        $totalsSql = "
-            SELECT
-                {$data1} AS v1,
-                {$data2} AS v2,
-                CASE
-                    WHEN dt BETWEEN {$start} AND {$end} THEN 'current'
-                    ELSE 'previous'
-                END AS period
-            FROM {$wpdb->prefix}slim_stats
-            WHERE CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME({$prevArgs['start']}) AND FROM_UNIXTIME({$prevArgs['end']})
-            OR CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME({$start}) AND FROM_UNIXTIME({$end})
-            GROUP BY period
-            ORDER BY period
-        ";
+        $rowsQuery = Query::select($fields)
+            ->from("{$wpdb->prefix}slim_stats")
+            ->whereRaw('(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)', array($prevArgs['start'], $prevArgs['end'], $start, $end))
+            ->groupBy("{$dtExpr}, period")
+            ->orderBy('sort_dt ASC, period ASC');
+
+        // Build totals query via Query builder (keeps original semantics)
+        $totalsFields = "{$data1} AS v1, {$data2} AS v2, CASE WHEN dt BETWEEN {$start} AND {$end} THEN 'current' ELSE 'previous' END AS period";
+        $totalsWhere  = "CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME(%d) AND FROM_UNIXTIME(%d) OR CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '{$tzOffset}') BETWEEN FROM_UNIXTIME(%d) AND FROM_UNIXTIME(%d)";
+        $totalsQuery  = Query::select($totalsFields)
+            ->from("{$wpdb->prefix}slim_stats")
+            ->whereRaw($totalsWhere, array($prevArgs['start'], $prevArgs['end'], $start, $end))
+            ->groupBy('period')
+            ->orderBy('period ASC');
 
         return array(
-            'sql'       => $sql,
-            'totalsSql' => $totalsSql,
-            'params'    => array('label' => $periods[$gran]['label'], 'gran' => $gran),
+            'query'       => $rowsQuery,
+            'totalsQuery' => $totalsQuery,
+            'params'      => array('label' => $periods[$gran]['label'], 'gran' => $gran),
         );
     }
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
     {
-        $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totals);
+        // Normalize totals to array of stdClass for backward compatibility
+        $totalsObjects = array_map(function ($t) {
+            if (is_object($t)) {
+                return $t;
+            }
+            $o = new \stdClass();
+            $o->v1     = isset($t['v1']) ? (int) $t['v1'] : 0;
+            $o->v2     = isset($t['v2']) ? (int) $t['v2'] : 0;
+            $o->period = isset($t['period']) ? (string) $t['period'] : '';
+            return $o;
+        }, $totals);
+
+        $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totalsObjects);
         foreach ($rows as $row) {
-            $buckets->addRow((int) $row->dt, (int) $row->v1, (int) $row->v2, (string) $row->period);
+            $dt     = (int) (is_object($row) ? $row->dt : (isset($row['dt']) ? $row['dt'] : 0));
+            $v1     = (int) (is_object($row) ? $row->v1 : (isset($row['v1']) ? $row['v1'] : 0));
+            $v2     = (int) (is_object($row) ? $row->v2 : (isset($row['v2']) ? $row['v2'] : 0));
+            $period = (string) (is_object($row) ? $row->period : (isset($row['period']) ? $row['period'] : ''));
+            $buckets->addRow($dt, $v1, $v2, $period);
         }
 
         return $buckets->toArray();

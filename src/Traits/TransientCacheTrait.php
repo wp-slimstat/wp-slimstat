@@ -1,6 +1,6 @@
 <?php
 
-namespace SlimStat\Utils;
+namespace SlimStat\Traits;
 
 trait TransientCacheTrait
 {

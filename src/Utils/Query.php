@@ -2,7 +2,7 @@
 
 namespace SlimStat\Utils;
 
-use SlimStat\Utils\TransientCacheTrait;
+use SlimStat\Traits\TransientCacheTrait;
 use InvalidArgumentException;
 
 class Query
