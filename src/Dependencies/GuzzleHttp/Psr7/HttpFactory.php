@@ -32,7 +32,7 @@ final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInter
         string $clientFilename = null,
         string $clientMediaType = null
     ): UploadedFileInterface {
-        if ($size === null) {
+        if (null === $size) {
             $size = $stream->getSize();
         }
 
@@ -66,7 +66,7 @@ final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInter
 
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
     {
-        if ($method === '' || $method === '0') {
+        if ('' === $method || '0' === $method) {
             if (!empty($serverParams['REQUEST_METHOD'])) {
                 $method = $serverParams['REQUEST_METHOD'];
             } else {

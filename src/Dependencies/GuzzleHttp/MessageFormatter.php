@@ -46,9 +46,9 @@ class MessageFormatter implements MessageFormatterInterface
      * @var string
      */
     public const CLF = '{hostname} {req_header_User-Agent} - [{date_common_log}] "{method} {target} HTTP/{version}" {code} {res_header_Content-Length}';
-    
+
     public const DEBUG = ">>>>>>>>\n{request}\n<<<<<<<<\n{response}\n--------\n{error}";
-    
+
     public const SHORT = '[{ts}] "{method} {target} HTTP/{version}" {code}';
 
     /**
@@ -93,9 +93,9 @@ class MessageFormatter implements MessageFormatterInterface
                         break;
                     case 'req_headers':
                         $result = \trim($request->getMethod()
-                                .' '.$request->getRequestTarget())
-                            .' HTTP/'.$request->getProtocolVersion()."\r\n"
-                            .$this->headers($request);
+                                . ' ' . $request->getRequestTarget())
+                            . ' HTTP/' . $request->getProtocolVersion() . "\r\n"
+                            . $this->headers($request);
                         break;
                     case 'res_headers':
                         $result = $response instanceof ResponseInterface ?
@@ -104,7 +104,7 @@ class MessageFormatter implements MessageFormatterInterface
                                 $response->getProtocolVersion(),
                                 $response->getStatusCode(),
                                 $response->getReasonPhrase()
-                            )."\r\n".$this->headers($response)
+                            ) . "\r\n" . $this->headers($response)
                             : 'NULL';
                         break;
                     case 'req_body':
@@ -168,9 +168,9 @@ class MessageFormatter implements MessageFormatterInterface
                         break;
                     default:
                         // handle prefixed dynamic headers
-                        if (\strpos($matches[1], 'req_header_') === 0) {
+                        if (0 === \strpos($matches[1], 'req_header_')) {
                             $result = $request->getHeaderLine(\substr($matches[1], 11));
-                        } elseif (\strpos($matches[1], 'res_header_') === 0) {
+                        } elseif (0 === \strpos($matches[1], 'res_header_')) {
                             $result = $response instanceof ResponseInterface
                                 ? $response->getHeaderLine(\substr($matches[1], 11))
                                 : 'NULL';
@@ -192,7 +192,7 @@ class MessageFormatter implements MessageFormatterInterface
     {
         $result = '';
         foreach ($message->getHeaders() as $name => $values) {
-            $result .= $name.': '.\implode(', ', $values)."\r\n";
+            $result .= $name . ': ' . \implode(', ', $values) . "\r\n";
         }
 
         return \trim($result);

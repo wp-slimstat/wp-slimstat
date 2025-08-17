@@ -18,7 +18,6 @@ class NullLogger extends AbstractLogger
      * @param mixed  $level
      * @param string $message
      *
-     * @return void
      * @throws InvalidArgumentException
      */
     public function log($level, $message, array $context = [])

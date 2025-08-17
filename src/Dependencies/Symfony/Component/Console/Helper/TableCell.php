@@ -19,11 +19,11 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\InvalidArgumentExc
 class TableCell
 {
     private $value;
-    
+
     private $options = [
         'rowspan' => 1,
         'colspan' => 1,
-        'style' => null,
+        'style'   => null,
     ];
 
     public function __construct(string $value = '', array $options = [])

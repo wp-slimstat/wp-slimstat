@@ -42,9 +42,9 @@ class RetryMiddleware
      */
     public function __construct(callable $decider, callable $nextHandler, callable $delay = null)
     {
-        $this->decider = $decider;
+        $this->decider     = $decider;
         $this->nextHandler = $nextHandler;
-        $this->delay = $delay ?: self::class.'::exponentialDelay';
+        $this->delay       = $delay ?: self::class . '::exponentialDelay';
     }
 
     /**

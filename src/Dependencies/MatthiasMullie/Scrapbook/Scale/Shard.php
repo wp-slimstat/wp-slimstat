@@ -38,8 +38,8 @@ class Shard implements KeyValueStore
      */
     public function __construct(KeyValueStore $cache1, KeyValueStore $cache2 = null /* , [KeyValueStore $cache3, [...]] */)
     {
-        $caches = func_get_args();
-        $caches = array_filter($caches);
+        $caches       = func_get_args();
+        $caches       = array_filter($caches);
         $this->caches = $caches;
     }
 
@@ -61,9 +61,9 @@ class Shard implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $shards = $this->getShards($keys);
+        $shards  = $this->getShards($keys);
         $results = [];
-        $tokens = [];
+        $tokens  = [];
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
@@ -88,12 +88,12 @@ class Shard implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        $shards = $this->getShards(array_keys($items));
+        $shards  = $this->getShards(array_keys($items));
         $results = [];
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
-            $keysOnShard = $shards[$shard];
+            $keysOnShard  = $shards[$shard];
             $itemsOnShard = array_intersect_key($items, array_flip($keysOnShard));
             $results += $shard->setMulti($itemsOnShard, $expire);
         }
@@ -114,7 +114,7 @@ class Shard implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        $shards = $this->getShards($keys);
+        $shards  = $this->getShards($keys);
         $results = [];
 
         /** @var KeyValueStore $shard */

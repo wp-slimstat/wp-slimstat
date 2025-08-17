@@ -22,11 +22,11 @@ use Symfony\Component\VarDumper\Dumper\CliDumper;
 final class Dumper
 {
     private $output;
-    
+
     private $dumper;
-    
+
     private $cloner;
-    
+
     private $handler;
 
     public function __construct(OutputInterface $output, ?CliDumper $dumper = null, ?ClonerInterface $cloner = null)
@@ -37,7 +37,7 @@ final class Dumper
 
         if (class_exists(CliDumper::class)) {
             $this->handler = function ($var): string {
-                $dumper = $this->dumper ?? $this->dumper = new CliDumper(null, null, CliDumper::DUMP_LIGHT_ARRAY | CliDumper::DUMP_COMMA_SEPARATOR);
+                $dumper = $this->dumper ?? $this->dumper = new CliDumper(null, null, CliDumper::DUMP_LIGHT_ARRAY|CliDumper::DUMP_COMMA_SEPARATOR);
                 $dumper->setColors($this->output->isDecorated());
 
                 return rtrim($dumper->dump(($this->cloner ?? $this->cloner = new VarCloner())->cloneVar($var)->withRefHandles(false), true));
@@ -54,7 +54,7 @@ final class Dumper
                     return 'false';
                 }
                 if (\is_string($var)) {
-                    return '"'.$var.'"';
+                    return '"' . $var . '"';
                 }
                 return rtrim(print_r($var, true));
             };

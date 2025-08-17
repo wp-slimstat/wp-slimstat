@@ -51,12 +51,12 @@ class Filesystem
         if ($doCopy) {
             // https://bugs.php.net/64634
             if (!$source = self::box('fopen', $originFile, 'r')) {
-                throw new IOException(sprintf('Failed to copy "%s" to "%s" because source file could not be opened for reading: ', $originFile, $targetFile).self::$lastError, 0, null, $originFile);
+                throw new IOException(sprintf('Failed to copy "%s" to "%s" because source file could not be opened for reading: ', $originFile, $targetFile) . self::$lastError, 0, null, $originFile);
             }
 
             // Stream context created to allow files overwrite when using FTP stream wrapper - disabled by default
             if (!$target = self::box('fopen', $targetFile, 'w', false, stream_context_create(['ftp' => ['overwrite' => true]]))) {
-                throw new IOException(sprintf('Failed to copy "%s" to "%s" because target file could not be opened for writing: ', $originFile, $targetFile).self::$lastError, 0, null, $originFile);
+                throw new IOException(sprintf('Failed to copy "%s" to "%s" because target file could not be opened for writing: ', $originFile, $targetFile) . self::$lastError, 0, null, $originFile);
             }
 
             $bytesCopied = stream_copy_to_stream($source, $target);
@@ -70,7 +70,7 @@ class Filesystem
 
             if ($originIsLocal) {
                 // Like `cp`, preserve executable permission bits
-                self::box('chmod', $targetFile, fileperms($targetFile) | (fileperms($originFile) & 0111));
+                self::box('chmod', $targetFile, fileperms($targetFile)|(fileperms($originFile) & 0111));
 
                 // Like `cp`, preserve the file modification time
                 self::box('touch', $targetFile, filemtime($originFile));
@@ -97,7 +97,7 @@ class Filesystem
             }
 
             if (!self::box('mkdir', $dir, $mode, true) && !is_dir($dir)) {
-                throw new IOException(sprintf('Failed to create "%s": ', $dir).self::$lastError, 0, null, $dir);
+                throw new IOException(sprintf('Failed to create "%s": ', $dir) . self::$lastError, 0, null, $dir);
             }
         }
     }
@@ -139,7 +139,7 @@ class Filesystem
     {
         foreach ($this->toIterable($files) as $file) {
             if (!($time ? self::box('touch', $file, $time, $atime) : self::box('touch', $file))) {
-                throw new IOException(sprintf('Failed to touch "%s": ', $file).self::$lastError, 0, null, $file);
+                throw new IOException(sprintf('Failed to touch "%s": ', $file) . self::$lastError, 0, null, $file);
             }
         }
     }
@@ -169,11 +169,11 @@ class Filesystem
             if (is_link($file)) {
                 // See https://bugs.php.net/52176
                 if (!(self::box('unlink', $file) || '\\' !== \DIRECTORY_SEPARATOR || self::box('rmdir', $file)) && file_exists($file)) {
-                    throw new IOException(sprintf('Failed to remove symlink "%s": ', $file).self::$lastError);
+                    throw new IOException(sprintf('Failed to remove symlink "%s": ', $file) . self::$lastError);
                 }
             } elseif (is_dir($file)) {
                 if (!$isRecursive) {
-                    $tmpName = \dirname(realpath($file)).'/.'.strrev(strtr(base64_encode(random_bytes(2)), '/=', '-_'));
+                    $tmpName = \dirname(realpath($file)) . '/.' . strrev(strtr(base64_encode(random_bytes(2)), '/=', '-_'));
 
                     if (file_exists($tmpName)) {
                         try {
@@ -184,13 +184,13 @@ class Filesystem
 
                     if (!file_exists($tmpName) && self::box('rename', $file, $tmpName)) {
                         $origFile = $file;
-                        $file = $tmpName;
+                        $file     = $tmpName;
                     } else {
                         $origFile = null;
                     }
                 }
 
-                $files = new \FilesystemIterator($file, \FilesystemIterator::CURRENT_AS_PATHNAME | \FilesystemIterator::SKIP_DOTS);
+                $files = new \FilesystemIterator($file, \FilesystemIterator::CURRENT_AS_PATHNAME|\FilesystemIterator::SKIP_DOTS);
                 self::doRemove(iterator_to_array($files, true), true);
 
                 if (!self::box('rmdir', $file) && file_exists($file) && !$isRecursive) {
@@ -200,10 +200,10 @@ class Filesystem
                         $file = $origFile;
                     }
 
-                    throw new IOException(sprintf('Failed to remove directory "%s": ', $file).$lastError);
+                    throw new IOException(sprintf('Failed to remove directory "%s": ', $file) . $lastError);
                 }
             } elseif (!self::box('unlink', $file) && ((self::$lastError && str_contains(self::$lastError, 'Permission denied')) || file_exists($file))) {
-                throw new IOException(sprintf('Failed to remove file "%s": ', $file).self::$lastError);
+                throw new IOException(sprintf('Failed to remove file "%s": ', $file) . self::$lastError);
             }
         }
     }
@@ -222,9 +222,9 @@ class Filesystem
     {
         foreach ($this->toIterable($files) as $file) {
             if (!self::box('chmod', $file, $mode & ~$umask)) {
-                throw new IOException(sprintf('Failed to chmod file "%s": ', $file).self::$lastError, 0, null, $file);
+                throw new IOException(sprintf('Failed to chmod file "%s": ', $file) . self::$lastError, 0, null, $file);
             }
-            
+
             if ($recursive && is_dir($file) && !is_link($file)) {
                 $this->chmod(new \FilesystemIterator($file), $mode, $umask, true);
             }
@@ -246,13 +246,13 @@ class Filesystem
             if ($recursive && is_dir($file) && !is_link($file)) {
                 $this->chown(new \FilesystemIterator($file), $user, true);
             }
-            
+
             if (is_link($file) && \function_exists('lchown')) {
                 if (!self::box('lchown', $file, $user)) {
-                    throw new IOException(sprintf('Failed to chown file "%s": ', $file).self::$lastError, 0, null, $file);
+                    throw new IOException(sprintf('Failed to chown file "%s": ', $file) . self::$lastError, 0, null, $file);
                 }
             } elseif (!self::box('chown', $file, $user)) {
-                throw new IOException(sprintf('Failed to chown file "%s": ', $file).self::$lastError, 0, null, $file);
+                throw new IOException(sprintf('Failed to chown file "%s": ', $file) . self::$lastError, 0, null, $file);
             }
         }
     }
@@ -272,13 +272,13 @@ class Filesystem
             if ($recursive && is_dir($file) && !is_link($file)) {
                 $this->chgrp(new \FilesystemIterator($file), $group, true);
             }
-            
+
             if (is_link($file) && \function_exists('lchgrp')) {
                 if (!self::box('lchgrp', $file, $group)) {
-                    throw new IOException(sprintf('Failed to chgrp file "%s": ', $file).self::$lastError, 0, null, $file);
+                    throw new IOException(sprintf('Failed to chgrp file "%s": ', $file) . self::$lastError, 0, null, $file);
                 }
             } elseif (!self::box('chgrp', $file, $group)) {
-                throw new IOException(sprintf('Failed to chgrp file "%s": ', $file).self::$lastError, 0, null, $file);
+                throw new IOException(sprintf('Failed to chgrp file "%s": ', $file) . self::$lastError, 0, null, $file);
             }
         }
     }
@@ -304,8 +304,8 @@ class Filesystem
 
                 return;
             }
-            
-            throw new IOException(sprintf('Cannot rename "%s" to "%s": ', $origin, $target).self::$lastError, 0, null, $target);
+
+            throw new IOException(sprintf('Cannot rename "%s" to "%s": ', $origin, $target) . self::$lastError, 0, null, $target);
         }
     }
 
@@ -351,7 +351,7 @@ class Filesystem
             if (readlink($targetDir) === $originDir) {
                 return;
             }
-            
+
             $this->remove($targetDir);
         }
 
@@ -385,7 +385,7 @@ class Filesystem
                 if (fileinode($originFile) === fileinode($targetFile)) {
                     continue;
                 }
-                
+
                 $this->remove($targetFile);
             }
 
@@ -403,8 +403,8 @@ class Filesystem
         if (self::$lastError && ('\\' === \DIRECTORY_SEPARATOR && str_contains(self::$lastError, 'error code(1314)'))) {
             throw new IOException(sprintf('Unable to create "%s" link due to error code 1314: \'A required privilege is not held by the client\'. Do you have the required Administrator-rights?', $linkType), 0, null, $target);
         }
-        
-        throw new IOException(sprintf('Failed to create "%s" link from "%s" to "%s": ', $linkType, $origin, $target).self::$lastError, 0, null, $target);
+
+        throw new IOException(sprintf('Failed to create "%s" link from "%s" to "%s": ', $linkType, $origin, $target) . self::$lastError, 0, null, $target);
     }
 
     /**
@@ -462,11 +462,11 @@ class Filesystem
 
         // Normalize separators on Windows
         if ('\\' === \DIRECTORY_SEPARATOR) {
-            $endPath = str_replace('\\', '/', $endPath);
+            $endPath   = str_replace('\\', '/', $endPath);
             $startPath = str_replace('\\', '/', $startPath);
         }
 
-        $splitDriveLetter = (fn($path) => (\strlen($path) > 2 && ':' === $path[1] && '/' === $path[2] && ctype_alpha($path[0]))
+        $splitDriveLetter = (fn ($path) => (\strlen($path) > 2 && ':' === $path[1] && '/' === $path[2] && ctype_alpha($path[0]))
             ? [substr($path, 2), strtoupper($path[0])]
             : [$path, null]);
 
@@ -484,15 +484,15 @@ class Filesystem
             return $result;
         };
 
-        [$endPath, $endDriveLetter] = $splitDriveLetter($endPath);
+        [$endPath, $endDriveLetter]     = $splitDriveLetter($endPath);
         [$startPath, $startDriveLetter] = $splitDriveLetter($startPath);
 
         $startPathArr = $splitPath($startPath);
-        $endPathArr = $splitPath($endPath);
+        $endPathArr   = $splitPath($endPath);
 
         if ($endDriveLetter && $startDriveLetter && $endDriveLetter !== $startDriveLetter) {
             // End path is on another drive, so no relative path exists
-            return $endDriveLetter.':/'.($endPathArr !== [] ? implode('/', $endPathArr).'/' : '');
+            return $endDriveLetter . ':/' . ([] !== $endPathArr ? implode('/', $endPathArr) . '/' : '');
         }
 
         // Find for which directory the common path stops
@@ -510,7 +510,7 @@ class Filesystem
         $endPathRemainder = implode('/', \array_slice($endPathArr, $index));
 
         // Construct $endPath from traversing to the common path, then to the remaining $endPath
-        $relativePath = $traverser.('' !== $endPathRemainder ? $endPathRemainder.'/' : '');
+        $relativePath = $traverser . ('' !== $endPathRemainder ? $endPathRemainder . '/' : '');
 
         return '' === $relativePath ? './' : $relativePath;
     }
@@ -534,8 +534,8 @@ class Filesystem
      */
     public function mirror(string $originDir, string $targetDir, ?\Traversable $iterator = null, array $options = [])
     {
-        $targetDir = rtrim($targetDir, '/\\');
-        $originDir = rtrim($originDir, '/\\');
+        $targetDir    = rtrim($targetDir, '/\\');
+        $originDir    = rtrim($originDir, '/\\');
         $originDirLen = \strlen($originDir);
 
         if (!$this->exists($originDir)) {
@@ -546,13 +546,13 @@ class Filesystem
         if ($this->exists($targetDir) && isset($options['delete']) && $options['delete']) {
             $deleteIterator = $iterator;
             if (!$deleteIterator instanceof \Traversable) {
-                $flags = \FilesystemIterator::SKIP_DOTS;
+                $flags          = \FilesystemIterator::SKIP_DOTS;
                 $deleteIterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($targetDir, $flags), \RecursiveIteratorIterator::CHILD_FIRST);
             }
-            
+
             $targetDirLen = \strlen($targetDir);
             foreach ($deleteIterator as $file) {
-                $origin = $originDir.substr($file->getPathname(), $targetDirLen);
+                $origin = $originDir . substr($file->getPathname(), $targetDirLen);
                 if (!$this->exists($origin)) {
                     $this->remove($file);
                 }
@@ -562,7 +562,7 @@ class Filesystem
         $copyOnWindows = $options['copy_on_windows'] ?? false;
 
         if (!$iterator instanceof \Traversable) {
-            $flags = $copyOnWindows ? \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS : \FilesystemIterator::SKIP_DOTS;
+            $flags    = $copyOnWindows ? \FilesystemIterator::SKIP_DOTS|\FilesystemIterator::FOLLOW_SYMLINKS : \FilesystemIterator::SKIP_DOTS;
             $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($originDir, $flags), \RecursiveIteratorIterator::SELF_FIRST);
         }
 
@@ -574,7 +574,7 @@ class Filesystem
                 continue;
             }
 
-            $target = $targetDir.substr($file->getPathname(), $originDirLen);
+            $target                              = $targetDir . substr($file->getPathname(), $originDirLen);
             $filesCreatedWhileMirroring[$target] = true;
 
             if (!$copyOnWindows && is_link($file)) {
@@ -596,10 +596,12 @@ class Filesystem
      */
     public function isAbsolutePath(string $file)
     {
-        return '' !== $file && (strspn($file, '/\\', 0, 1)
-            || (\strlen($file) > 3 && ctype_alpha($file[0])
-                && ':' === $file[1]
-                && strspn($file, '/\\', 2, 1)
+        return '' !== $file && (
+            strspn($file, '/\\', 0, 1)
+            || (
+                \strlen($file) > 3 && ctype_alpha($file[0])
+                                   && ':' === $file[1]
+                                   && strspn($file, '/\\', 2, 1)
             )
             || null !== parse_url($file, \PHP_URL_SCHEME)
         );
@@ -616,7 +618,7 @@ class Filesystem
      */
     public function tempnam(string $dir, string $prefix/* , string $suffix = '' */)
     {
-        $suffix = \func_num_args() > 2 ? func_get_arg(2) : '';
+        $suffix               = \func_num_args() > 2 ? func_get_arg(2) : '';
         [$scheme, $hierarchy] = $this->getSchemeAndHierarchy($dir);
 
         // If no scheme or scheme is "file" or "gs" (Google Cloud) create temp file in local filesystem
@@ -624,19 +626,19 @@ class Filesystem
             // If tempnam failed or no scheme return the filename otherwise prepend the scheme
             if ($tmpFile = self::box('tempnam', $hierarchy, $prefix)) {
                 if (null !== $scheme && 'gs' !== $scheme) {
-                    return $scheme.'://'.$tmpFile;
+                    return $scheme . '://' . $tmpFile;
                 }
 
                 return $tmpFile;
             }
 
-            throw new IOException('A temporary file could not be created: '.self::$lastError);
+            throw new IOException('A temporary file could not be created: ' . self::$lastError);
         }
 
         // Loop until we create a valid temp file or have reached 10 attempts
         for ($i = 0; $i < 10; ++$i) {
             // Create a unique filename
-            $tmpFile = $dir.'/'.$prefix.uniqid(mt_rand(), true).$suffix;
+            $tmpFile = $dir . '/' . $prefix . uniqid(mt_rand(), true) . $suffix;
 
             // Use fopen instead of file_exists as some streams do not support stat
             // Use mode 'x+' to atomically check existence and create to avoid a TOCTOU vulnerability
@@ -650,7 +652,7 @@ class Filesystem
             return $tmpFile;
         }
 
-        throw new IOException('A temporary file could not be created: '.self::$lastError);
+        throw new IOException('A temporary file could not be created: ' . self::$lastError);
     }
 
     /**
@@ -684,7 +686,7 @@ class Filesystem
 
         try {
             if (false === self::box('file_put_contents', $tmpFile, $content)) {
-                throw new IOException(sprintf('Failed to write file "%s": ', $filename).self::$lastError, 0, null, $filename);
+                throw new IOException(sprintf('Failed to write file "%s": ', $filename) . self::$lastError, 0, null, $filename);
             }
 
             self::box('chmod', $tmpFile, self::box('fileperms', $filename) ?: 0666 & ~umask());
@@ -719,8 +721,8 @@ class Filesystem
 
         $lock = \func_num_args() > 2 && func_get_arg(2);
 
-        if (false === self::box('file_put_contents', $filename, $content, \FILE_APPEND | ($lock ? \LOCK_EX : 0))) {
-            throw new IOException(sprintf('Failed to write file "%s": ', $filename).self::$lastError, 0, null, $filename);
+        if (false === self::box('file_put_contents', $filename, $content, \FILE_APPEND|($lock ? \LOCK_EX : 0))) {
+            throw new IOException(sprintf('Failed to write file "%s": ', $filename) . self::$lastError, 0, null, $filename);
         }
     }
 
@@ -756,7 +758,7 @@ class Filesystem
         self::assertFunctionExists($func);
 
         self::$lastError = null;
-        set_error_handler(self::class.'::handleError');
+        set_error_handler(self::class . '::handleError');
         try {
             return $func(...$args);
         } finally {

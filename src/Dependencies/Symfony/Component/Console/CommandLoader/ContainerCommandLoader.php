@@ -22,7 +22,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\CommandNotFoundExc
 class ContainerCommandLoader implements CommandLoaderInterface
 {
     private $container;
-    
+
     private $commandMap;
 
     /**
@@ -30,7 +30,7 @@ class ContainerCommandLoader implements CommandLoaderInterface
      */
     public function __construct(ContainerInterface $container, array $commandMap)
     {
-        $this->container = $container;
+        $this->container  = $container;
         $this->commandMap = $commandMap;
     }
 

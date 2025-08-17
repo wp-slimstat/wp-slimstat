@@ -4,12 +4,34 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\League\Flysystem\Local;
 
-use function file_put_contents;
+use function chmod;
+use function clearstatcache;
+
 use const DIRECTORY_SEPARATOR;
-use const LOCK_EX;
+
 use DirectoryIterator;
+
+use function dirname;
+use function error_clear_last;
+use function error_get_last;
+use function file_exists;
+use function file_put_contents;
+
 use FilesystemIterator;
 use Generator;
+
+use function is_dir;
+use function is_file;
+
+use const LOCK_EX;
+
+use function mkdir;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
+use function rename;
+
 use SlimStat\Dependencies\League\Flysystem\Config;
 use SlimStat\Dependencies\League\Flysystem\DirectoryAttributes;
 use SlimStat\Dependencies\League\Flysystem\FileAttributes;
@@ -29,20 +51,7 @@ use SlimStat\Dependencies\League\Flysystem\UnixVisibility\PortableVisibilityConv
 use SlimStat\Dependencies\League\Flysystem\UnixVisibility\VisibilityConverter;
 use SlimStat\Dependencies\League\MimeTypeDetection\FinfoMimeTypeDetector;
 use SlimStat\Dependencies\League\MimeTypeDetection\MimeTypeDetector;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use SplFileInfo;
-use function chmod;
-use function clearstatcache;
-use function dirname;
-use function error_clear_last;
-use function error_get_last;
-use function file_exists;
-use function is_dir;
-use function is_file;
-use function mkdir;
-use function rename;
-use function stream_copy_to_stream;
 
 class LocalFilesystemAdapter implements FilesystemAdapter
 {
@@ -88,10 +97,10 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         int $linkHandling = self::DISALLOW_LINKS,
         MimeTypeDetector $mimeTypeDetector = null
     ) {
-        $this->prefixer = new PathPrefixer($location, DIRECTORY_SEPARATOR);
-        $this->writeFlags = $writeFlags;
+        $this->prefixer     = new PathPrefixer($location, DIRECTORY_SEPARATOR);
+        $this->writeFlags   = $writeFlags;
         $this->linkHandling = $linkHandling;
-        $this->visibility = $visibility ?: new PortableVisibilityConverter();
+        $this->visibility   = $visibility ?: new PortableVisibilityConverter();
         $this->ensureDirectoryExists($location, $this->visibility->defaultForDirectories());
         $this->mimeTypeDetector = $mimeTypeDetector ?: new FinfoMimeTypeDetector();
     }
@@ -118,7 +127,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         );
         error_clear_last();
 
-        if (@file_put_contents($prefixedLocation, $contents, $this->writeFlags) === false) {
+        if (false === @file_put_contents($prefixedLocation, $contents, $this->writeFlags)) {
             throw UnableToWriteFile::atLocation($path, error_get_last()['message'] ?? '');
         }
 
@@ -131,13 +140,13 @@ class LocalFilesystemAdapter implements FilesystemAdapter
     {
         $location = $this->prefixer->prefixPath($path);
 
-        if ( ! file_exists($location)) {
+        if (! file_exists($location)) {
             return;
         }
 
         error_clear_last();
 
-        if ( ! @unlink($location)) {
+        if (! @unlink($location)) {
             throw UnableToDeleteFile::atLocation($location, error_get_last()['message'] ?? '');
         }
     }
@@ -146,7 +155,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
     {
         $location = $this->prefixer->prefixPath($prefix);
 
-        if ( ! is_dir($location)) {
+        if (! is_dir($location)) {
             return;
         }
 
@@ -154,14 +163,14 @@ class LocalFilesystemAdapter implements FilesystemAdapter
 
         /** @var SplFileInfo $file */
         foreach ($contents as $file) {
-            if ( ! $this->deleteFileInfoObject($file)) {
-                throw UnableToDeleteDirectory::atLocation($prefix, "Unable to delete file at " . $file->getPathname());
+            if (! $this->deleteFileInfoObject($file)) {
+                throw UnableToDeleteDirectory::atLocation($prefix, 'Unable to delete file at ' . $file->getPathname());
             }
         }
 
         unset($contents);
 
-        if ( ! @rmdir($location)) {
+        if (! @rmdir($location)) {
             throw UnableToDeleteDirectory::atLocation($prefix, error_get_last()['message'] ?? '');
         }
     }
@@ -192,7 +201,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
     {
         $location = $this->prefixer->prefixPath($path);
 
-        if ( ! is_dir($location)) {
+        if (! is_dir($location)) {
             return;
         }
 
@@ -204,15 +213,15 @@ class LocalFilesystemAdapter implements FilesystemAdapter
                 if (($this->linkHandling & self::SKIP_LINKS) !== 0) {
                     continue;
                 }
-                
+
                 throw SymbolicLinkEncountered::atLocation($fileInfo->getPathname());
             }
 
-            $path = $this->prefixer->stripPrefix($fileInfo->getPathname());
+            $path         = $this->prefixer->stripPrefix($fileInfo->getPathname());
             $lastModified = $fileInfo->getMTime();
-            $isDirectory = $fileInfo->isDir();
-            $permissions = octdec(substr(sprintf('%o', $fileInfo->getPerms()), -4));
-            $visibility = $isDirectory ? $this->visibility->inverseForDirectory($permissions) : $this->visibility->inverseForFile($permissions);
+            $isDirectory  = $fileInfo->isDir();
+            $permissions  = octdec(substr(sprintf('%o', $fileInfo->getPerms()), -4));
+            $visibility   = $isDirectory ? $this->visibility->inverseForDirectory($permissions) : $this->visibility->inverseForFile($permissions);
 
             yield $isDirectory ? new DirectoryAttributes($path, $visibility, $lastModified) : new FileAttributes(
                 str_replace('\\', '/', $path),
@@ -225,28 +234,28 @@ class LocalFilesystemAdapter implements FilesystemAdapter
 
     public function move(string $source, string $destination, Config $config): void
     {
-        $sourcePath = $this->prefixer->prefixPath($source);
+        $sourcePath      = $this->prefixer->prefixPath($source);
         $destinationPath = $this->prefixer->prefixPath($destination);
         $this->ensureDirectoryExists(
             dirname($destinationPath),
             $this->resolveDirectoryVisibility($config->get(Config::OPTION_DIRECTORY_VISIBILITY))
         );
 
-        if ( ! @rename($sourcePath, $destinationPath)) {
+        if (! @rename($sourcePath, $destinationPath)) {
             throw UnableToMoveFile::fromLocationTo($sourcePath, $destinationPath);
         }
     }
 
     public function copy(string $source, string $destination, Config $config): void
     {
-        $sourcePath = $this->prefixer->prefixPath($source);
+        $sourcePath      = $this->prefixer->prefixPath($source);
         $destinationPath = $this->prefixer->prefixPath($destination);
         $this->ensureDirectoryExists(
             dirname($destinationPath),
             $this->resolveDirectoryVisibility($config->get(Config::OPTION_DIRECTORY_VISIBILITY))
         );
 
-        if ( ! @copy($sourcePath, $destinationPath)) {
+        if (! @copy($sourcePath, $destinationPath)) {
             throw UnableToCopyFile::fromLocationTo($sourcePath, $destinationPath);
         }
     }
@@ -257,7 +266,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         error_clear_last();
         $contents = @file_get_contents($location);
 
-        if ($contents === false) {
+        if (false === $contents) {
             throw UnableToReadFile::fromLocation($path, error_get_last()['message'] ?? '');
         }
 
@@ -270,7 +279,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         error_clear_last();
         $contents = @fopen($location, 'rb');
 
-        if ($contents === false) {
+        if (false === $contents) {
             throw UnableToReadFile::fromLocation($path, error_get_last()['message'] ?? '');
         }
 
@@ -285,13 +294,13 @@ class LocalFilesystemAdapter implements FilesystemAdapter
 
         error_clear_last();
 
-        if ( ! @mkdir($dirname, $visibility, true)) {
+        if (! @mkdir($dirname, $visibility, true)) {
             $mkdirError = error_get_last();
         }
 
         clearstatcache(true, $dirname);
 
-        if ( ! is_dir($dirname)) {
+        if (! is_dir($dirname)) {
             $errorMessage = $mkdirError['message'] ?? '';
 
             throw UnableToCreateDirectory::atLocation($dirname, $errorMessage);
@@ -307,8 +316,8 @@ class LocalFilesystemAdapter implements FilesystemAdapter
 
     public function createDirectory(string $path, Config $config): void
     {
-        $location = $this->prefixer->prefixPath($path);
-        $visibility = $config->get(Config::OPTION_VISIBILITY, $config->get(Config::OPTION_DIRECTORY_VISIBILITY));
+        $location    = $this->prefixer->prefixPath($path);
+        $visibility  = $config->get(Config::OPTION_VISIBILITY, $config->get(Config::OPTION_DIRECTORY_VISIBILITY));
         $permissions = $this->resolveDirectoryVisibility($visibility);
 
         if (is_dir($location)) {
@@ -319,14 +328,14 @@ class LocalFilesystemAdapter implements FilesystemAdapter
 
         error_clear_last();
 
-        if ( ! @mkdir($location, $permissions, true)) {
+        if (! @mkdir($location, $permissions, true)) {
             throw UnableToCreateDirectory::atLocation($path, error_get_last()['message'] ?? '');
         }
     }
 
     public function setVisibility(string $path, string $visibility): void
     {
-        $path = $this->prefixer->prefixPath($path);
+        $path       = $this->prefixer->prefixPath($path);
         $visibility = is_dir($path) ? $this->visibility->forDirectory($visibility) : $this->visibility->forFile(
             $visibility
         );
@@ -341,19 +350,19 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         error_clear_last();
         $fileperms = @fileperms($location);
 
-        if ($fileperms === false) {
+        if (false === $fileperms) {
             throw UnableToRetrieveMetadata::visibility($path, error_get_last()['message'] ?? '');
         }
 
         $permissions = $fileperms & 0777;
-        $visibility = $this->visibility->inverseForFile($permissions);
+        $visibility  = $this->visibility->inverseForFile($permissions);
 
         return new FileAttributes($path, null, $visibility);
     }
 
     private function resolveDirectoryVisibility(?string $visibility): int
     {
-        return $visibility === null ? $this->visibility->defaultForDirectories() : $this->visibility->forDirectory(
+        return null === $visibility ? $this->visibility->defaultForDirectories() : $this->visibility->forDirectory(
             $visibility
         );
     }
@@ -364,7 +373,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         error_clear_last();
         $mimeType = $this->mimeTypeDetector->detectMimeTypeFromFile($location);
 
-        if ($mimeType === null) {
+        if (null === $mimeType) {
             throw UnableToRetrieveMetadata::mimeType($path, error_get_last()['message'] ?? '');
         }
 
@@ -377,7 +386,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
         error_clear_last();
         $lastModified = @filemtime($location);
 
-        if ($lastModified === false) {
+        if (false === $lastModified) {
             throw UnableToRetrieveMetadata::lastModified($path, error_get_last()['message'] ?? '');
         }
 
@@ -412,7 +421,7 @@ class LocalFilesystemAdapter implements FilesystemAdapter
     private function setPermissions(string $location, int $visibility): void
     {
         error_clear_last();
-        if ( ! @chmod($location, $visibility)) {
+        if (! @chmod($location, $visibility)) {
             $extraMessage = error_get_last()['message'] ?? '';
             throw UnableToSetVisibility::atLocation($this->prefixer->stripPrefix($location), $extraMessage);
         }

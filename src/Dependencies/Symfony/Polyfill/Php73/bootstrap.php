@@ -9,5 +9,4 @@
  * file that was distributed with this source code.
  */
 
-use SlimStat\Dependencies\Symfony\Polyfill\Php73 as p;
 return;

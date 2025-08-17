@@ -2,15 +2,15 @@
 
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters;
 
+use Couchbase\BaseException;
 use Couchbase\Bucket;
 use Couchbase\BucketManager;
-use Couchbase\GetOptions;
-use Couchbase\BaseException;
-use Couchbase\UpsertOptions;
-use Couchbase\RemoveOptions;
-use Couchbase\InsertOptions;
-use Couchbase\ReplaceOptions;
 use Couchbase\GetAndTouchOptions;
+use Couchbase\GetOptions;
+use Couchbase\InsertOptions;
+use Couchbase\RemoveOptions;
+use Couchbase\ReplaceOptions;
+use Couchbase\UpsertOptions;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\Couchbase as Collection;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Exception\Exception;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Exception\InvalidKey;
@@ -33,21 +33,21 @@ class Couchbase implements KeyValueStore
 {
     /**
      * @var \CouchbaseBucket|Bucket|\Couchbase\Collection *                                                               \CouchbaseBucket for Couchbase SDK <=2.2,
-     *                                                               \Couchbase\Bucket for SDK >=2.3 & <3.0,
-     *                                                               \Couchbase\Collection for SDK >=3.0
+     *                                                    \Couchbase\Bucket for SDK >=2.3 & <3.0,
+     *                                                    \Couchbase\Collection for SDK >=3.0
      */
     protected $collection;
 
     /**
      * @var \CouchbaseBucketManager|BucketManager|\Couchbase\Management\BucketManager *                                                                                           \CouchbaseBucketManager for Couchbase SDK <=2.2,
-     *                                                                                           \Couchbase\BucketManager for SDK >=2.3 & <4.0,
-     *                                                                                           \Couchbase\Management\BucketManager for SDK >=4.0
+     *                                                                                \Couchbase\BucketManager for SDK >=2.3 & <4.0,
+     *                                                                                \Couchbase\Management\BucketManager for SDK >=4.0
      */
     protected $bucketManager;
 
     /**
      * @var \CouchbaseBucket|Bucket *                                         \CouchbaseBucket for Couchbase SDK <=2.2,
-     *                                         \Couchbase\Bucket for SDK >=2.3
+     *                              \Couchbase\Bucket for SDK >=2.3
      */
     protected $bucket;
 
@@ -57,20 +57,20 @@ class Couchbase implements KeyValueStore
     protected $timeout;
 
     /**
-     * @param \CouchbaseBucket|Bucket|\Couchbase\Collection $client
-     *                                                                                                                  \CouchbaseBucket for Couchbase SDK <=2.2,
-     *                                                                                                                  \Couchbase\Bucket for SDK >=2.3 & <3.0,
-     *                                                                                                                  \Couchbase\Collection for SDK >=3.0
+     * @param \CouchbaseBucket|Bucket|\Couchbase\Collection                                   $client
+     *                                                                                                       \CouchbaseBucket for Couchbase SDK <=2.2,
+     *                                                                                                       \Couchbase\Bucket for SDK >=2.3 & <3.0,
+     *                                                                                                       \Couchbase\Collection for SDK >=3.0
      * @param \CouchbaseBucketManager|BucketManager|\Couchbase\Management\BucketManager|false $bucketManager
-     *                                                                                                                  \CouchbaseBucketManager for Couchbase SDK <=2.2,
-     *                                                                                                                  \Couchbase\BucketManager for SDK >=2.3 & <4.0,
-     *                                                                                                                  \Couchbase\Management\BucketManager for SDK >=4.0,
-     *                                                                                                                  false for compatibility with when this 2nd argument was $assertServerHealthy
-     * @param \CouchbaseBucket|Bucket $bucketManager
-     *                                                                                                                  \CouchbaseBucket for Couchbase SDK <=2.2,
-     *                                                                                                                  \Couchbase\Bucket for SDK >=2.3,
-     *                                                                                                                  null for compatibility with when this argument didn't yet exist
-     * @param int                                                                                        $timeout       K/V timeout in ms
+     *                                                                                                       \CouchbaseBucketManager for Couchbase SDK <=2.2,
+     *                                                                                                       \Couchbase\BucketManager for SDK >=2.3 & <4.0,
+     *                                                                                                       \Couchbase\Management\BucketManager for SDK >=4.0,
+     *                                                                                                       false for compatibility with when this 2nd argument was $assertServerHealthy
+     * @param \CouchbaseBucket|Bucket                                                         $bucketManager
+     *                                                                                                       \CouchbaseBucket for Couchbase SDK <=2.2,
+     *                                                                                                       \Couchbase\Bucket for SDK >=2.3,
+     *                                                                                                       null for compatibility with when this argument didn't yet exist
+     * @param int                                                                             $timeout       K/V timeout in ms
      *
      * @throws ServerUnhealthy
      */
@@ -86,12 +86,12 @@ class Couchbase implements KeyValueStore
     ) {
         // BC: $assertServerHealthy used to be 2nd argument
         $assertServerHealthy = is_bool($bucketManager) ? $bucketManager : false;
-        $this->timeout = $timeout;
+        $this->timeout       = $timeout;
 
         if ($client instanceof \CouchbaseBucket) {
             // SDK <=2.2
             $this->collection = $client;
-            $this->bucket = $bucket instanceof \CouchbaseBucket ? $bucket : $client;
+            $this->bucket     = $bucket instanceof \CouchbaseBucket ? $bucket : $client;
 
             $this->bucketManager = $bucketManager instanceof \CouchbaseBucketManager ? $bucketManager : $client->manager();
 
@@ -106,7 +106,7 @@ class Couchbase implements KeyValueStore
         } elseif ($client instanceof Bucket && !method_exists($client, 'defaultCollection')) {
             // SDK <3.0
             $this->collection = $client;
-            $this->bucket = $bucket instanceof Bucket ? $bucket : $client;
+            $this->bucket     = $bucket instanceof Bucket ? $bucket : $client;
 
             if ($bucketManager instanceof BucketManager) {
                 $this->bucketManager = $bucketManager;
@@ -123,22 +123,19 @@ class Couchbase implements KeyValueStore
                 }
             }
         } elseif (
-            $client instanceof \Couchbase\Collection && $bucket instanceof Bucket &&
-            (
+            $client instanceof \Couchbase\Collection && $bucket instanceof Bucket && (
                 // SDK >= 3.0 & < 4.0
-                $bucketManager instanceof BucketManager ||
-                // SDK >= 4.0
+                $bucketManager instanceof BucketManager || // SDK >= 4.0
                 $bucketManager instanceof \Couchbase\Management\BucketManager
             )
         ) {
-            $this->collection = $client;
+            $this->collection    = $client;
             $this->bucketManager = $bucketManager;
-            $this->bucket = $bucket;
+            $this->bucket        = $bucket;
         } elseif (
             // received bucket for client, but since we didn't go down the SDK <3.0
             // path, we're on a more recent SDK & should've received a collection
-            $client instanceof Bucket ||
-            // received collection, but other params are invalid
+            $client instanceof Bucket || // received collection, but other params are invalid
             $client instanceof \Couchbase\Collection
         ) {
             throw new Exception('Invalid Couchbase adapter constructor arguments. \Couchbase\Collection, \Couchbase\BucketManager & \Couchbase\Bucket arguments are required for Couchbase SDK >= 3.x or 4.x');
@@ -159,8 +156,8 @@ class Couchbase implements KeyValueStore
             try {
                 $options = new GetOptions();
                 $options = null === $this->timeout ? $options : $options->timeout($this->timeout);
-                $result = $this->collection->get($key, $options);
-                $token = $result->cas();
+                $result  = $this->collection->get($key, $options);
+                $token   = $result->cas();
 
                 return $this->unserialize($result->content());
             } catch (\Couchbase\Exception\CouchbaseException $e) {
@@ -198,14 +195,14 @@ class Couchbase implements KeyValueStore
         if ($this->collection instanceof \Couchbase\Collection) {
             // SDK >=3.0 no longer provides *multi operations
             $results = [];
-            $tokens = [];
+            $tokens  = [];
             foreach ($keys as $key) {
                 $token = null;
                 $value = $this->get($key, $token);
 
                 if (null !== $token) {
                     $results[$key] = $value;
-                    $tokens[$key] = $token;
+                    $tokens[$key]  = $token;
                 }
             }
 
@@ -216,7 +213,7 @@ class Couchbase implements KeyValueStore
         array_map([$this, 'assertValidKey'], $keys);
 
         $tokens = [];
-        if ($keys === []) {
+        if ([] === $keys) {
             return [];
         }
 
@@ -275,7 +272,7 @@ class Couchbase implements KeyValueStore
         // SDK <3.0
         try {
             $options = ['expiry' => $expire];
-            $result = $this->collection->upsert($key, $value, $options);
+            $result  = $this->collection->upsert($key, $value, $options);
         } catch (\CouchbaseException $couchbaseException) {
             return false;
         }
@@ -301,7 +298,7 @@ class Couchbase implements KeyValueStore
         // SDK <3.0
         array_map([$this, 'assertValidKey'], array_keys($items));
 
-        if ($items === []) {
+        if ([] === $items) {
             return [];
         }
 
@@ -314,8 +311,8 @@ class Couchbase implements KeyValueStore
         // cast to int, if it's an array key) fails with a segfault, so we'll
         // have to do those piecemeal
         $integers = array_filter(array_keys($items), 'is_int');
-        if ($integers !== []) {
-            $success = [];
+        if ([] !== $integers) {
+            $success  = [];
             $integers = array_intersect_key($items, array_fill_keys($integers, null));
             foreach ($integers as $k => $v) {
                 $success[$k] = $this->set((string) $k, $v, $expire);
@@ -328,7 +325,7 @@ class Couchbase implements KeyValueStore
 
         foreach ($items as $key => $value) {
             $items[$key] = [
-                'value' => $this->serialize($value),
+                'value'  => $this->serialize($value),
                 'expiry' => $expire,
             ];
         }
@@ -399,7 +396,7 @@ class Couchbase implements KeyValueStore
         // SDK <3.0
         array_map([$this, 'assertValidKey'], $keys);
 
-        if ($keys === []) {
+        if ([] === $keys) {
             return [];
         }
 
@@ -449,7 +446,7 @@ class Couchbase implements KeyValueStore
         // SDK <3.0
         try {
             $options = ['expiry' => $expire];
-            $result = $this->collection->insert($key, $value, $options);
+            $result  = $this->collection->insert($key, $value, $options);
         } catch (\CouchbaseException $couchbaseException) {
             return false;
         }
@@ -497,7 +494,7 @@ class Couchbase implements KeyValueStore
         // SDK <3.0
         try {
             $options = ['expiry' => $expire];
-            $result = $this->collection->replace($key, $value, $options);
+            $result  = $this->collection->replace($key, $value, $options);
         } catch (\CouchbaseException $couchbaseException) {
             return false;
         }
@@ -527,7 +524,7 @@ class Couchbase implements KeyValueStore
             if (null === $token) {
                 return false;
             }
-            
+
             try {
                 $options = new ReplaceOptions();
                 $options = null === $this->timeout ? $options : $options->timeout($this->timeout);
@@ -550,7 +547,7 @@ class Couchbase implements KeyValueStore
         // SDK <3.0
         try {
             $options = ['expiry' => $expire, 'cas' => $token];
-            $result = $this->collection->replace($key, $value, $options);
+            $result  = $this->collection->replace($key, $value, $options);
         } catch (\CouchbaseException $couchbaseException) {
             return false;
         }
@@ -736,7 +733,7 @@ class Couchbase implements KeyValueStore
 
         $value += $offset;
         // value can never be lower than 0
-        $value = max(0, $value);
+        $value   = max(0, $value);
         $success = $this->cas($token, $key, $value, $expire);
 
         return $success ? $value : false;

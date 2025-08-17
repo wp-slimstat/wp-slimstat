@@ -36,7 +36,7 @@ final class CachingStream implements StreamInterface
         StreamInterface $target = null
     ) {
         $this->remoteStream = $stream;
-        $this->stream = $target ?: new Stream(Utils::tryFopen('php://temp', 'r+'));
+        $this->stream       = $target ?: new Stream(Utils::tryFopen('php://temp', 'r+'));
     }
 
     public function getSize(): ?int
@@ -57,16 +57,16 @@ final class CachingStream implements StreamInterface
 
     public function seek($offset, $whence = SEEK_SET): void
     {
-        if ($whence === SEEK_SET) {
+        if (SEEK_SET === $whence) {
             $byte = $offset;
-        } elseif ($whence === SEEK_CUR) {
+        } elseif (SEEK_CUR === $whence) {
             $byte = $offset + $this->tell();
-        } elseif ($whence === SEEK_END) {
+        } elseif (SEEK_END === $whence) {
             $size = $this->remoteStream->getSize();
-            if ($size === null) {
+            if (null === $size) {
                 $size = $this->cacheEntireStream();
             }
-            
+
             $byte = $size + $offset;
         } else {
             throw new \InvalidArgumentException('Invalid whence');
@@ -90,11 +90,11 @@ final class CachingStream implements StreamInterface
     public function read($length): string
     {
         // Perform a regular read on any previously read data from the buffer
-        $data = $this->stream->read($length);
+        $data      = $this->stream->read($length);
         $remaining = $length - strlen($data);
 
         // More data was requested so read from the remote stream
-        if ($remaining !== 0) {
+        if (0 !== $remaining) {
             // If data was written to the buffer in a position that would have
             // been filled from the remote stream, then we must skip bytes on
             // the remote stream to emulate overwriting bytes from that
@@ -104,8 +104,8 @@ final class CachingStream implements StreamInterface
             );
 
             if ($this->skipReadBytes) {
-                $len = strlen($remoteData);
-                $remoteData = substr($remoteData, $this->skipReadBytes);
+                $len                 = strlen($remoteData);
+                $remoteData          = substr($remoteData, $this->skipReadBytes);
                 $this->skipReadBytes = max(0, $this->skipReadBytes - $len);
             }
 

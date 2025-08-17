@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP;
 
+use function assert;
+use function error_get_last;
+use function file_get_contents;
+use function is_array;
+use function is_int;
+use function is_readable;
+use function preg_replace;
+
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCache;
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
 use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorCachedVersionException;
@@ -27,17 +35,11 @@ use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\CacheInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
 use SlimStat\Dependencies\Symfony\Component\Filesystem\Exception\IOException;
-use Throwable;
 
-use function assert;
-use function error_get_last;
-use function file_get_contents;
-use function is_array;
-use function is_int;
-use function is_readable;
-use function preg_replace;
 use function sprintf;
 use function str_replace;
+
+use Throwable;
 
 /**
  * Browscap.ini parsing class with caching and update capabilities
@@ -89,7 +91,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
      */
     public function convertFile(string $iniFile): void
     {
-        if ($iniFile === '' || $iniFile === '0') {
+        if ('' === $iniFile || '0' === $iniFile) {
             throw new FileNameMissingException('the file name can not be empty');
         }
 
@@ -101,7 +103,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
         $iniString = file_get_contents($iniFile);
 
-        if ($iniString === false) {
+        if (false === $iniString) {
             throw new ErrorReadingFileException('an error occured while converting the local file into the cache');
         }
 
@@ -123,7 +125,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             return;
         }
 
-        assert($cachedVersion === null || is_int($cachedVersion));
+        assert(null === $cachedVersion || is_int($cachedVersion));
 
         $converter = new Converter($this->logger, $this->cache);
 
@@ -171,7 +173,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             );
         }
 
-        if ($response->getStatusCode() !== 200) {
+        if (200 !== $response->getStatusCode()) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s: StatusCode was %d',
@@ -187,7 +189,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             throw new FetcherException('an error occured while fetching remote data', 0, $throwable);
         }
 
-        if ($content === '' || $content === '0') {
+        if ('' === $content || '0' === $content) {
             $error = error_get_last();
 
             if (is_array($error)) {
@@ -263,7 +265,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             );
         }
 
-        if ($response->getStatusCode() !== 200) {
+        if (200 !== $response->getStatusCode()) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s: StatusCode was %d',
@@ -279,7 +281,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             throw new FetcherException('an error occured while fetching remote data', 0, $throwable);
         }
 
-        if ($content === '' || $content === '0') {
+        if ('' === $content || '0' === $content) {
             $error = error_get_last();
 
             throw FetcherException::httpError($uri, $error['message'] ?? '');
@@ -314,7 +316,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             throw new ErrorCachedVersionException('an error occured while reading the data version from the cache', 0, $invalidArgumentException);
         }
 
-        assert($cachedVersion === null || is_int($cachedVersion));
+        assert(null === $cachedVersion || is_int($cachedVersion));
 
         if (! $cachedVersion) {
             // could not load version from cache
@@ -337,7 +339,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             );
         }
 
-        if ($response->getStatusCode() !== 200) {
+        if (200 !== $response->getStatusCode()) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching version data from URI %s: StatusCode was %d',
@@ -361,7 +363,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
             );
         }
 
-        if ($remoteVersion === '' || $remoteVersion === '0') {
+        if ('' === $remoteVersion || '0' === $remoteVersion) {
             // could not load remote version
             throw new FetcherException(
                 'could not load version from remote location'

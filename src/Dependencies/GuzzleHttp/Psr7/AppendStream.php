@@ -73,8 +73,8 @@ final class AppendStream implements StreamInterface
      */
     public function close(): void
     {
-        $this->pos = 0;
-        $this->current = 0;
+        $this->pos      = 0;
+        $this->current  = 0;
         $this->seekable = true;
 
         foreach ($this->streams as $stream) {
@@ -91,8 +91,8 @@ final class AppendStream implements StreamInterface
      */
     public function detach()
     {
-        $this->pos = 0;
-        $this->current = 0;
+        $this->pos      = 0;
+        $this->current  = 0;
         $this->seekable = true;
 
         foreach ($this->streams as $stream) {
@@ -121,10 +121,10 @@ final class AppendStream implements StreamInterface
 
         foreach ($this->streams as $stream) {
             $s = $stream->getSize();
-            if ($s === null) {
+            if (null === $s) {
                 return null;
             }
-            
+
             $size += $s;
         }
 
@@ -150,10 +150,10 @@ final class AppendStream implements StreamInterface
     {
         if (!$this->seekable) {
             throw new \RuntimeException('This AppendStream is not seekable');
-        } elseif ($whence !== SEEK_SET) {
+        } elseif (SEEK_SET !== $whence) {
             throw new \RuntimeException('The AppendStream can only seek with SEEK_SET');
         }
-        $this->pos = 0;
+        $this->pos     = 0;
         $this->current = 0;
 
         // Rewind each stream
@@ -162,14 +162,14 @@ final class AppendStream implements StreamInterface
                 $stream->rewind();
             } catch (\Exception $e) {
                 throw new \RuntimeException('Unable to seek stream '
-                    .$i.' of the AppendStream', 0, $e);
+                    . $i . ' of the AppendStream', 0, $e);
             }
         }
 
         // Seek to the actual position by reading from each stream
         while ($this->pos < $offset && !$this->eof()) {
             $result = $this->read(min(8096, $offset - $this->pos));
-            if ($result === '') {
+            if ('' === $result) {
                 break;
             }
         }
@@ -180,9 +180,9 @@ final class AppendStream implements StreamInterface
      */
     public function read($length): string
     {
-        $buffer = '';
-        $total = count($this->streams) - 1;
-        $remaining = $length;
+        $buffer         = '';
+        $total          = count($this->streams) - 1;
+        $remaining      = $length;
         $progressToNext = false;
 
         while ($remaining > 0) {
@@ -192,13 +192,13 @@ final class AppendStream implements StreamInterface
                 if ($this->current === $total) {
                     break;
                 }
-                
+
                 ++$this->current;
             }
 
             $result = $this->streams[$this->current]->read($remaining);
 
-            if ($result === '') {
+            if ('' === $result) {
                 $progressToNext = true;
                 continue;
             }

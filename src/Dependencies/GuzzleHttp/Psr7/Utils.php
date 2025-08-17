@@ -48,9 +48,9 @@ final class Utils
     {
         $bufferSize = 8192;
 
-        if ($maxLen === -1) {
+        if (-1 === $maxLen) {
             while (!$source->eof()) {
-                if ($dest->write($source->read($bufferSize)) === 0) {
+                if (0 === $dest->write($source->read($bufferSize))) {
                     break;
                 }
             }
@@ -59,10 +59,10 @@ final class Utils
             while ($remaining > 0 && !$source->eof()) {
                 $buf = $source->read(min($bufferSize, $remaining));
                 $len = strlen($buf);
-                if ($len === 0) {
+                if (0 === $len) {
                     break;
                 }
-                
+
                 $remaining -= $len;
                 $dest->write($buf);
             }
@@ -83,13 +83,13 @@ final class Utils
     {
         $buffer = '';
 
-        if ($maxLen === -1) {
+        if (-1 === $maxLen) {
             while (!$stream->eof()) {
                 $buf = $stream->read(1048576);
-                if ($buf === '') {
+                if ('' === $buf) {
                     break;
                 }
-                
+
                 $buffer .= $buf;
             }
 
@@ -99,10 +99,10 @@ final class Utils
         $len = 0;
         while (!$stream->eof() && $len < $maxLen) {
             $buf = $stream->read($maxLen - $len);
-            if ($buf === '') {
+            if ('' === $buf) {
                 break;
             }
-            
+
             $buffer .= $buf;
             $len = strlen($buffer);
         }
@@ -161,7 +161,7 @@ final class Utils
      */
     public static function modifyRequest(RequestInterface $request, array $changes): RequestInterface
     {
-        if ($changes === []) {
+        if ([] === $changes) {
             return $request;
         }
 
@@ -176,13 +176,13 @@ final class Utils
 
                 if ($port = $changes['uri']->getPort()) {
                     $standardPorts = ['http' => 80, 'https' => 443];
-                    $scheme = $changes['uri']->getScheme();
+                    $scheme        = $changes['uri']->getScheme();
                     if (isset($standardPorts[$scheme]) && $port != $standardPorts[$scheme]) {
-                        $changes['set_headers']['Host'] .= ':'.$port;
+                        $changes['set_headers']['Host'] .= ':' . $port;
                     }
                 }
             }
-            
+
             $uri = $changes['uri'];
         }
 
@@ -238,16 +238,16 @@ final class Utils
     public static function readLine(StreamInterface $stream, int $maxLength = null): string
     {
         $buffer = '';
-        $size = 0;
+        $size   = 0;
 
         while (!$stream->eof()) {
             if ('' === ($byte = $stream->read(1))) {
                 return $buffer;
             }
-            
+
             $buffer .= $byte;
             // Break when a new line is found or the max length - 1 is reached
-            if ($byte === "\n" || ++$size === $maxLength - 1) {
+            if ("\n" === $byte || ++$size === $maxLength - 1) {
                 break;
             }
         }
@@ -293,7 +293,7 @@ final class Utils
     {
         if (is_scalar($resource)) {
             $stream = self::tryFopen('php://temp', 'r+');
-            if ($resource !== '') {
+            if ('' !== $resource) {
                 fwrite($stream, (string) $resource);
                 fseek($stream, 0);
             }
@@ -326,7 +326,7 @@ final class Utils
                         if (!$resource->valid()) {
                             return false;
                         }
-                        
+
                         $result = $resource->current();
                         $resource->next();
 
@@ -335,7 +335,7 @@ final class Utils
                 } elseif (method_exists($resource, '__toString')) {
                     return self::streamFor((string) $resource, $options);
                 }
-                
+
                 break;
             case 'NULL':
                 return new Stream(self::tryFopen('php://temp', 'r+'), $options);
@@ -345,7 +345,7 @@ final class Utils
             return new PumpStream($resource, $options);
         }
 
-        throw new \InvalidArgumentException('Invalid resource type: '.gettype($resource));
+        throw new \InvalidArgumentException('Invalid resource type: ' . gettype($resource));
     }
 
     /**
@@ -424,7 +424,7 @@ final class Utils
             /** @var string|false $contents */
             $contents = stream_get_contents($stream);
 
-            if ($contents === false) {
+            if (false === $contents) {
                 $ex = new \RuntimeException('Unable to read stream contents');
             }
         } catch (\Throwable $throwable) {

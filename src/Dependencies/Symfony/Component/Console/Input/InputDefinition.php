@@ -29,17 +29,17 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\LogicException;
 class InputDefinition
 {
     private $arguments;
-    
+
     private $requiredCount;
-    
+
     private $lastArrayArgument;
-    
+
     private $lastOptionalArgument;
-    
+
     private $options;
-    
+
     private $negations;
-    
+
     private $shortcuts;
 
     /**
@@ -56,7 +56,7 @@ class InputDefinition
     public function setDefinition(array $definition)
     {
         $arguments = [];
-        $options = [];
+        $options   = [];
         foreach ($definition as $item) {
             if ($item instanceof InputOption) {
                 $options[] = $item;
@@ -76,10 +76,10 @@ class InputDefinition
      */
     public function setArguments(array $arguments = [])
     {
-        $this->arguments = [];
-        $this->requiredCount = 0;
+        $this->arguments            = [];
+        $this->requiredCount        = 0;
         $this->lastOptionalArgument = null;
-        $this->lastArrayArgument = null;
+        $this->lastArrayArgument    = null;
         $this->addArguments($arguments);
     }
 
@@ -211,7 +211,7 @@ class InputDefinition
      */
     public function setOptions(array $options = [])
     {
-        $this->options = [];
+        $this->options   = [];
         $this->shortcuts = [];
         $this->negations = [];
         $this->addOptions($options);
@@ -237,7 +237,7 @@ class InputDefinition
         if (isset($this->options[$option->getName()]) && !$option->equals($this->options[$option->getName()])) {
             throw new LogicException(sprintf('An option named "%s" already exists.', $option->getName()));
         }
-        
+
         if (isset($this->negations[$option->getName()])) {
             throw new LogicException(sprintf('An option named "%s" already exists.', $option->getName()));
         }
@@ -258,11 +258,11 @@ class InputDefinition
         }
 
         if ($option->isNegatable()) {
-            $negatedName = 'no-'.$option->getName();
+            $negatedName = 'no-' . $option->getName();
             if (isset($this->options[$negatedName])) {
                 throw new LogicException(sprintf('An option named "%s" already exists.', $negatedName));
             }
-            
+
             $this->negations[$negatedName] = $option->getName();
         }
     }
@@ -402,8 +402,8 @@ class InputDefinition
                     );
                 }
 
-                $shortcut = $option->getShortcut() ? sprintf('-%s|', $option->getShortcut()) : '';
-                $negation = $option->isNegatable() ? sprintf('|--no-%s', $option->getName()) : '';
+                $shortcut   = $option->getShortcut() ? sprintf('-%s|', $option->getShortcut()) : '';
+                $negation   = $option->isNegatable() ? sprintf('|--no-%s', $option->getName()) : '';
                 $elements[] = sprintf('[%s--%s%s%s]', $shortcut, $option->getName(), $value, $negation);
             }
         }
@@ -414,19 +414,19 @@ class InputDefinition
 
         $tail = '';
         foreach ($this->getArguments() as $argument) {
-            $element = '<'.$argument->getName().'>';
+            $element = '<' . $argument->getName() . '>';
             if ($argument->isArray()) {
                 $element .= '...';
             }
 
             if (!$argument->isRequired()) {
-                $element = '['.$element;
+                $element = '[' . $element;
                 $tail .= ']';
             }
 
             $elements[] = $element;
         }
 
-        return implode(' ', $elements).$tail;
+        return implode(' ', $elements) . $tail;
     }
 }

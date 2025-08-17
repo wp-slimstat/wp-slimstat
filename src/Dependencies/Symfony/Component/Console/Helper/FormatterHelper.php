@@ -43,19 +43,19 @@ class FormatterHelper extends Helper
             $messages = [$messages];
         }
 
-        $len = 0;
+        $len   = 0;
         $lines = [];
         foreach ($messages as $message) {
             $message = OutputFormatter::escape($message);
             $lines[] = sprintf($large ? '  %s  ' : ' %s ', $message);
-            $len = max(self::width($message) + ($large ? 4 : 2), $len);
+            $len     = max(self::width($message) + ($large ? 4 : 2), $len);
         }
 
         $messages = $large ? [str_repeat(' ', $len)] : [];
         for ($i = 0; isset($lines[$i]); ++$i) {
-            $messages[] = $lines[$i].str_repeat(' ', $len - self::width($lines[$i]));
+            $messages[] = $lines[$i] . str_repeat(' ', $len - self::width($lines[$i]));
         }
-        
+
         if ($large) {
             $messages[] = str_repeat(' ', $len);
         }
@@ -80,7 +80,7 @@ class FormatterHelper extends Helper
             return $message;
         }
 
-        return self::substr($message, 0, $length).$suffix;
+        return self::substr($message, 0, $length) . $suffix;
     }
 
     /**

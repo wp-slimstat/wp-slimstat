@@ -47,8 +47,8 @@ class UnicodeString extends AbstractUnicodeString
 
     public function append(string ...$suffix): static
     {
-        $str = clone $this;
-        $str->string = $this->string.(1 >= \count($suffix) ? ($suffix[0] ?? '') : implode('', $suffix));
+        $str         = clone $this;
+        $str->string = $this->string . (1 >= \count($suffix) ? ($suffix[0] ?? '') : implode('', $suffix));
 
         if (normalizer_is_normalized($str->string)) {
             return $str;
@@ -78,15 +78,15 @@ class UnicodeString extends AbstractUnicodeString
             $rx .= '\X{65535}';
             $length -= 65535;
         }
-        
-        $rx .= '\X{'.$length.'})/u';
 
-        $str = clone $this;
+        $rx .= '\X{' . $length . '})/u';
+
+        $str    = clone $this;
         $chunks = [];
 
-        foreach (preg_split($rx, $this->string, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY) as $chunk) {
+        foreach (preg_split($rx, $this->string, -1, \PREG_SPLIT_DELIM_CAPTURE|\PREG_SPLIT_NO_EMPTY) as $chunk) {
             $str->string = $chunk;
-            $chunks[] = clone $str;
+            $chunks[]    = clone $str;
         }
 
         return $chunks;
@@ -100,7 +100,7 @@ class UnicodeString extends AbstractUnicodeString
             return parent::endsWith($suffix);
         }
 
-        $form = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
+        $form                                               = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
         normalizer_is_normalized($suffix, $form) ?: $suffix = normalizer_normalize($suffix, $form);
 
         if ('' === $suffix || false === $suffix) {
@@ -122,7 +122,7 @@ class UnicodeString extends AbstractUnicodeString
             return parent::equalsTo($string);
         }
 
-        $form = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
+        $form                                               = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
         normalizer_is_normalized($string, $form) ?: $string = normalizer_normalize($string, $form);
 
         if ('' !== $string && false !== $string && $this->ignoreCase) {
@@ -140,7 +140,7 @@ class UnicodeString extends AbstractUnicodeString
             return parent::indexOf($needle, $offset);
         }
 
-        $form = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
+        $form                                               = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
         normalizer_is_normalized($needle, $form) ?: $needle = normalizer_normalize($needle, $form);
 
         if ('' === $needle || false === $needle) {
@@ -164,7 +164,7 @@ class UnicodeString extends AbstractUnicodeString
             return parent::indexOfLast($needle, $offset);
         }
 
-        $form = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
+        $form                                               = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
         normalizer_is_normalized($needle, $form) ?: $needle = normalizer_normalize($needle, $form);
 
         if ('' === $needle || false === $needle) {
@@ -178,7 +178,7 @@ class UnicodeString extends AbstractUnicodeString
             if (0 > $offset += grapheme_strlen($needle)) {
                 $string = grapheme_substr($string, 0, $offset);
             }
-            
+
             $offset = 0;
         }
 
@@ -189,7 +189,7 @@ class UnicodeString extends AbstractUnicodeString
 
     public function join(array $strings, ?string $lastGlue = null): static
     {
-        $str = parent::join($strings, $lastGlue);
+        $str                                                   = parent::join($strings, $lastGlue);
         normalizer_is_normalized($str->string) ?: $str->string = normalizer_normalize($str->string);
 
         return $str;
@@ -209,7 +209,7 @@ class UnicodeString extends AbstractUnicodeString
         } elseif (!\in_array($form, [self::NFD, self::NFKD], true)) {
             throw new InvalidArgumentException('Unsupported normalization form.');
         } elseif (!normalizer_is_normalized($str->string, $form)) {
-            $str->string = normalizer_normalize($str->string, $form);
+            $str->string     = normalizer_normalize($str->string, $form);
             $str->ignoreCase = null;
         }
 
@@ -218,8 +218,8 @@ class UnicodeString extends AbstractUnicodeString
 
     public function prepend(string ...$prefix): static
     {
-        $str = clone $this;
-        $str->string = (1 >= \count($prefix) ? ($prefix[0] ?? '') : implode('', $prefix)).$this->string;
+        $str         = clone $this;
+        $str->string = (1 >= \count($prefix) ? ($prefix[0] ?? '') : implode('', $prefix)) . $this->string;
 
         if (normalizer_is_normalized($str->string)) {
             return $str;
@@ -236,21 +236,21 @@ class UnicodeString extends AbstractUnicodeString
 
     public function replace(string $from, string $to): static
     {
-        $str = clone $this;
+        $str                                     = clone $this;
         normalizer_is_normalized($from) ?: $from = normalizer_normalize($from);
 
         if ('' !== $from && false !== $from) {
-            $tail = $str->string;
-            $result = '';
+            $tail    = $str->string;
+            $result  = '';
             $indexOf = $this->ignoreCase ? 'grapheme_stripos' : 'grapheme_strpos';
 
             while ('' !== $tail && false !== $i = $indexOf($tail, $from)) {
                 $slice = grapheme_substr($tail, 0, $i);
-                $result .= $slice.$to;
+                $result .= $slice . $to;
                 $tail = substr($tail, \strlen($slice) + \strlen($from));
             }
 
-            $str->string = $result.$tail;
+            $str->string = $result . $tail;
 
             if (normalizer_is_normalized($str->string)) {
                 return $str;
@@ -268,7 +268,7 @@ class UnicodeString extends AbstractUnicodeString
 
     public function replaceMatches(string $fromRegexp, string|callable $to): static
     {
-        $str = parent::replaceMatches($fromRegexp, $to);
+        $str                                                   = parent::replaceMatches($fromRegexp, $to);
         normalizer_is_normalized($str->string) ?: $str->string = normalizer_normalize($str->string);
 
         return $str;
@@ -287,8 +287,8 @@ class UnicodeString extends AbstractUnicodeString
     {
         $str = clone $this;
 
-        $start = $start !== 0 ? \strlen(grapheme_substr($this->string, 0, $start)) : 0;
-        $length = $length ? \strlen(grapheme_substr($this->string, $start, $length ?? 2147483647)) : $length;
+        $start       = 0 !== $start ? \strlen(grapheme_substr($this->string, 0, $start)) : 0;
+        $length      = $length ? \strlen(grapheme_substr($this->string, $start, $length ?? 2147483647)) : $length;
         $str->string = substr_replace($this->string, $replacement, $start, $length ?? 2147483647);
 
         if (normalizer_is_normalized($str->string)) {
@@ -315,7 +315,7 @@ class UnicodeString extends AbstractUnicodeString
         }
 
         if (null !== $flags) {
-            return parent::split($delimiter.'u', $limit, $flags);
+            return parent::split($delimiter . 'u', $limit, $flags);
         }
 
         normalizer_is_normalized($delimiter) ?: $delimiter = normalizer_normalize($delimiter);
@@ -324,20 +324,20 @@ class UnicodeString extends AbstractUnicodeString
             throw new InvalidArgumentException('Split delimiter is not a valid UTF-8 string.');
         }
 
-        $str = clone $this;
-        $tail = $this->string;
-        $chunks = [];
+        $str     = clone $this;
+        $tail    = $this->string;
+        $chunks  = [];
         $indexOf = $this->ignoreCase ? 'grapheme_stripos' : 'grapheme_strpos';
 
         while (1 < $limit && false !== $i = $indexOf($tail, $delimiter)) {
             $str->string = grapheme_substr($tail, 0, $i);
-            $chunks[] = clone $str;
-            $tail = substr($tail, \strlen($str->string) + \strlen($delimiter));
+            $chunks[]    = clone $str;
+            $tail        = substr($tail, \strlen($str->string) + \strlen($delimiter));
             --$limit;
         }
 
         $str->string = $tail;
-        $chunks[] = clone $str;
+        $chunks[]    = clone $str;
 
         return $chunks;
     }
@@ -350,7 +350,7 @@ class UnicodeString extends AbstractUnicodeString
             return parent::startsWith($prefix);
         }
 
-        $form = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
+        $form                                               = null === $this->ignoreCase ? \SlimStat_Normalizer::NFD : \SlimStat_Normalizer::NFC;
         normalizer_is_normalized($prefix, $form) ?: $prefix = normalizer_normalize($prefix, $form);
 
         if ('' === $prefix || false === $prefix) {
@@ -365,12 +365,11 @@ class UnicodeString extends AbstractUnicodeString
     }
 
     /**
-     * @return void
      */
     public function __wakeup()
     {
         if (!\is_string($this->string)) {
-            throw new \BadMethodCallException('Cannot unserialize '.self::class);
+            throw new \BadMethodCallException('Cannot unserialize ' . self::class);
         }
 
         normalizer_is_normalized($this->string) ?: $this->string = normalizer_normalize($this->string);

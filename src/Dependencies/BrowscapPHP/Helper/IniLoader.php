@@ -34,7 +34,7 @@ final class IniLoader implements IniLoaderInterface
      */
     public function setRemoteFilename(string $name): void
     {
-        if ($name === '' || $name === '0') {
+        if ('' === $name || '0' === $name) {
             throw new Exception(
                 'the filename can not be empty',
                 Exception::INI_FILE_MISSING

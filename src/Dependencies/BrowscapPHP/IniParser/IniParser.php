@@ -4,44 +4,54 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\IniParser;
 
+use function array_chunk;
+use function array_flip;
+use function array_key_exists;
+use function array_keys;
+
+use Generator;
+
+use function implode;
+use function in_array;
+
+use const INI_SCANNER_RAW;
+
+use function is_array;
+use function json_encode;
+
+use const JSON_HEX_AMP;
+use const JSON_HEX_APOS;
+use const JSON_HEX_QUOT;
+use const JSON_HEX_TAG;
+use const JSON_THROW_ON_ERROR;
+
+use function krsort;
+use function ksort;
+
+use OutOfRangeException;
+
+use function parse_ini_string;
+use function preg_match_all;
+use function preg_replace;
+use function preg_split;
+
 use SlimStat\Dependencies\BrowscapPHP\Data\PropertyFormatter;
 use SlimStat\Dependencies\BrowscapPHP\Data\PropertyHolder;
 use SlimStat\Dependencies\BrowscapPHP\Helper\Quoter;
 use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\Pattern;
 use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\SubKey;
-use Generator;
 use SlimStat_JsonException;
-use OutOfRangeException;
-use UnexpectedValueException;
 
-use function array_chunk;
-use function array_flip;
-use function array_key_exists;
-use function array_keys;
-use function implode;
-use function in_array;
-use function is_array;
-use function json_encode;
-use function krsort;
-use function ksort;
-use function parse_ini_string;
-use function preg_match_all;
-use function preg_replace;
-use function preg_split;
 use function sprintf;
 use function str_repeat;
 use function str_replace;
 use function strlen;
 use function strpbrk;
 use function strtolower;
-use function usort;
 
-use const INI_SCANNER_RAW;
-use const JSON_HEX_AMP;
-use const JSON_HEX_APOS;
-use const JSON_HEX_QUOT;
-use const JSON_HEX_TAG;
-use const JSON_THROW_ON_ERROR;
+use UnexpectedValueException;
+
+use function usort;
 
 /**
  * Ini parser class (compatible with PHP 5.3+)
@@ -73,7 +83,7 @@ final class IniParser implements ParserInterface
         // split the ini file into sections and save the data in one line with a hash of the beloging
         // pattern (filtered in the previous step)
         $iniParts = preg_split('/\[[^\r\n]+\]/', $content);
-        if ($iniParts === false) {
+        if (false === $iniParts) {
             throw new UnexpectedValueException('an error occured while splitting content into parts');
         }
 
@@ -96,7 +106,7 @@ final class IniParser implements ParserInterface
 
             $browserProperties = parse_ini_string($iniParts[$position + 1], false, INI_SCANNER_RAW);
 
-            if ($browserProperties === false) {
+            if (false === $browserProperties) {
                 throw new UnexpectedValueException(sprintf('could ini parse position %d inside iniparts', $position + 1));
             }
 
@@ -112,7 +122,7 @@ final class IniParser implements ParserInterface
                 // is also returned as a part
                 $contents[$subkey][] = $patternhash . "\t" . json_encode(
                     $browserProperties,
-                    JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_THROW_ON_ERROR
+                    JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_THROW_ON_ERROR
                 );
             } catch (SlimStat_JsonException $e) {
                 throw new UnexpectedValueException('json encoding content failed', 0, $e);
@@ -166,7 +176,7 @@ final class IniParser implements ParserInterface
         $data = [];
 
         foreach ($matches as $pattern) {
-            if ($pattern === 'GJK_Browscap_Version') {
+            if ('GJK_Browscap_Version' === $pattern) {
                 continue;
             }
 
@@ -175,7 +185,7 @@ final class IniParser implements ParserInterface
             $tmpLength   = Pattern::getPatternLength($pattern);
 
             // special handling of default entry
-            if ($tmpLength === 0) {
+            if (0 === $tmpLength) {
                 $patternhash = str_repeat('z', 32);
             }
 
@@ -192,7 +202,7 @@ final class IniParser implements ParserInterface
             // Check if the pattern contains digits - in this case we replace them with a digit regular expression,
             // so that very similar patterns (e.g. only with different browser version numbers) can be compressed.
             // This helps to speed up the first (and most expensive) part of the pattern search a lot.
-            if (strpbrk($pattern, '0123456789') !== false) {
+            if (false !== strpbrk($pattern, '0123456789')) {
                 $compressedPattern = preg_replace('/\d/', '[\d]', $pattern);
 
                 if (! in_array($compressedPattern, $data[$patternhash][$tmpLength])) {
@@ -223,7 +233,7 @@ final class IniParser implements ParserInterface
         // (3-10 faster), followed by a detailed search for each single pattern.
         $contents = [];
         foreach ($data as $patternhash => $tmpEntries) {
-            if ($tmpEntries === []) {
+            if ([] === $tmpEntries) {
                 continue;
             }
 
@@ -234,7 +244,7 @@ final class IniParser implements ParserInterface
             }
 
             foreach ($tmpEntries as $tmpLength => $tmpPatterns) {
-                if ($tmpPatterns === []) {
+                if ([] === $tmpPatterns) {
                     continue;
                 }
 

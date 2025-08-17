@@ -17,7 +17,7 @@ class MySQL extends SQL
      */
     public function set($key, $value, $expire = 0)
     {
-        $value = $this->serialize($value);
+        $value  = $this->serialize($value);
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -28,8 +28,8 @@ class MySQL extends SQL
         );
 
         $statement->execute([
-            ':key' => $key,
-            ':value' => $value,
+            ':key'    => $key,
+            ':value'  => $value,
             ':expire' => $expire,
         ]);
 
@@ -42,12 +42,12 @@ class MySQL extends SQL
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if ($items === []) {
+        if ([] === $items) {
             return [];
         }
 
-        $i = 1;
-        $query = [];
+        $i      = 1;
+        $query  = [];
         $params = [];
         $expire = $this->expire($expire);
 
@@ -58,8 +58,8 @@ class MySQL extends SQL
 
             $query[] = sprintf('(:key%d, :value%d, :expire%d)', $i, $i, $i);
             $params += [
-                ':key' . $i => $key,
-                ':value' . $i => $value,
+                ':key' . $i    => $key,
+                ':value' . $i  => $value,
                 ':expire' . $i => $expire,
             ];
 
@@ -68,7 +68,7 @@ class MySQL extends SQL
 
         $statement = $this->client->prepare(
             "REPLACE INTO $this->table (k, v, e)
-            VALUES ".implode(',', $query)
+            VALUES " . implode(',', $query)
         );
 
         $statement->execute($params);
@@ -91,7 +91,7 @@ class MySQL extends SQL
      */
     public function add($key, $value, $expire = 0)
     {
-        $value = $this->serialize($value);
+        $value  = $this->serialize($value);
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -103,8 +103,8 @@ class MySQL extends SQL
         );
 
         $statement->execute([
-            ':key' => $key,
-            ':value' => $value,
+            ':key'    => $key,
+            ':value'  => $value,
             ':expire' => $expire,
         ]);
 

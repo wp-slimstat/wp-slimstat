@@ -23,7 +23,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 final class ConsoleErrorEvent extends ConsoleEvent
 {
     private $error;
-    
+
     private $exitCode;
 
     public function __construct(InputInterface $input, OutputInterface $output, \Throwable $error, ?Command $command = null)

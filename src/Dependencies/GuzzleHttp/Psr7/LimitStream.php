@@ -47,7 +47,7 @@ final class LimitStream implements StreamInterface
         }
 
         // No limit and the underlying stream is not at EOF
-        if ($this->limit === -1) {
+        if (-1 === $this->limit) {
             return false;
         }
 
@@ -61,7 +61,7 @@ final class LimitStream implements StreamInterface
     {
         if (null === ($length = $this->stream->getSize())) {
             return null;
-        } elseif ($this->limit === -1) {
+        } elseif (-1 === $this->limit) {
             return $length - $this->offset;
         } else {
             return min($this->limit, $length - $this->offset);
@@ -73,7 +73,7 @@ final class LimitStream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET): void
     {
-        if ($whence !== SEEK_SET || $offset < 0) {
+        if (SEEK_SET !== $whence || $offset < 0) {
             throw new \RuntimeException(sprintf(
                 'Cannot seek to offset %s with whence %s',
                 $offset,
@@ -83,7 +83,7 @@ final class LimitStream implements StreamInterface
 
         $offset += $this->offset;
 
-        if ($this->limit !== -1 && $offset > $this->offset + $this->limit) {
+        if (-1 !== $this->limit && $offset > $this->offset + $this->limit) {
             $offset = $this->offset + $this->limit;
         }
 
@@ -137,7 +137,7 @@ final class LimitStream implements StreamInterface
 
     public function read($length): string
     {
-        if ($this->limit === -1) {
+        if (-1 === $this->limit) {
             return $this->stream->read($length);
         }
 

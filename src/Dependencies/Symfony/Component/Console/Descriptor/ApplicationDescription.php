@@ -25,9 +25,9 @@ class ApplicationDescription
     public const GLOBAL_NAMESPACE = '_global';
 
     private $application;
-    
+
     private $namespace;
-    
+
     private $showHidden;
 
     /**
@@ -48,8 +48,8 @@ class ApplicationDescription
     public function __construct(Application $application, ?string $namespace = null, bool $showHidden = false)
     {
         $this->application = $application;
-        $this->namespace = $namespace;
-        $this->showHidden = $showHidden;
+        $this->namespace   = $namespace;
+        $this->showHidden  = $showHidden;
     }
 
     public function getNamespaces(): array
@@ -87,7 +87,7 @@ class ApplicationDescription
 
     private function inspectApplication()
     {
-        $this->commands = [];
+        $this->commands   = [];
         $this->namespaces = [];
 
         $all = $this->application->all($this->namespace ? $this->application->findNamespace($this->namespace) : null);
@@ -116,8 +116,8 @@ class ApplicationDescription
     private function sortCommands(array $commands): array
     {
         $namespacedCommands = [];
-        $globalCommands = [];
-        $sortedCommands = [];
+        $globalCommands     = [];
+        $sortedCommands     = [];
         foreach ($commands as $name => $command) {
             $key = $this->application->extractNamespace($name, 1);
             if (\in_array($key, ['', self::GLOBAL_NAMESPACE], true)) {
@@ -127,12 +127,12 @@ class ApplicationDescription
             }
         }
 
-        if ($globalCommands !== []) {
+        if ([] !== $globalCommands) {
             ksort($globalCommands);
             $sortedCommands[self::GLOBAL_NAMESPACE] = $globalCommands;
         }
 
-        if ($namespacedCommands !== []) {
+        if ([] !== $namespacedCommands) {
             ksort($namespacedCommands, \SORT_STRING);
             foreach ($namespacedCommands as $key => $commandsSet) {
                 ksort($commandsSet);

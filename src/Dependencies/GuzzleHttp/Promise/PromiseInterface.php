@@ -16,9 +16,9 @@ namespace SlimStat\Dependencies\GuzzleHttp\Promise;
 interface PromiseInterface
 {
     public const PENDING = 'pending';
-    
+
     public const FULFILLED = 'fulfilled';
-    
+
     public const REJECTED = 'rejected';
 
     /**

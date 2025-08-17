@@ -56,7 +56,7 @@ class XmlDescriptor extends Descriptor
         $commandXML->appendChild($usagesXML = $dom->createElement('usages'));
 
         $commandXML->appendChild($descriptionXML = $dom->createElement('description'));
-        
+
         $descriptionXML->appendChild($dom->createTextNode(str_replace("\n", "\n ", $command->getDescription())));
 
         if ($short) {
@@ -185,12 +185,12 @@ class XmlDescriptor extends Descriptor
         $dom = new \DOMDocument('1.0', 'UTF-8');
 
         $dom->appendChild($objectXML = $dom->createElement('argument'));
-        
+
         $objectXML->setAttribute('name', $argument->getName());
         $objectXML->setAttribute('is_required', $argument->isRequired() ? 1 : 0);
         $objectXML->setAttribute('is_array', $argument->isArray() ? 1 : 0);
         $objectXML->appendChild($descriptionXML = $dom->createElement('description'));
-        
+
         $descriptionXML->appendChild($dom->createTextNode($argument->getDescription()));
 
         $objectXML->appendChild($defaultsXML = $dom->createElement('defaults'));
@@ -208,21 +208,21 @@ class XmlDescriptor extends Descriptor
         $dom = new \DOMDocument('1.0', 'UTF-8');
 
         $dom->appendChild($objectXML = $dom->createElement('option'));
-        
-        $objectXML->setAttribute('name', '--'.$option->getName());
+
+        $objectXML->setAttribute('name', '--' . $option->getName());
         $pos = strpos($option->getShortcut() ?? '', '|');
         if (false !== $pos) {
-            $objectXML->setAttribute('shortcut', '-'.substr($option->getShortcut(), 0, $pos));
-            $objectXML->setAttribute('shortcuts', '-'.str_replace('|', '|-', $option->getShortcut()));
+            $objectXML->setAttribute('shortcut', '-' . substr($option->getShortcut(), 0, $pos));
+            $objectXML->setAttribute('shortcuts', '-' . str_replace('|', '|-', $option->getShortcut()));
         } else {
-            $objectXML->setAttribute('shortcut', $option->getShortcut() ? '-'.$option->getShortcut() : '');
+            $objectXML->setAttribute('shortcut', $option->getShortcut() ? '-' . $option->getShortcut() : '');
         }
-        
+
         $objectXML->setAttribute('accept_value', $option->acceptValue() ? 1 : 0);
         $objectXML->setAttribute('is_value_required', $option->isValueRequired() ? 1 : 0);
         $objectXML->setAttribute('is_multiple', $option->isArray() ? 1 : 0);
         $objectXML->appendChild($descriptionXML = $dom->createElement('description'));
-        
+
         $descriptionXML->appendChild($dom->createTextNode($option->getDescription()));
 
         if ($option->acceptValue()) {
@@ -237,13 +237,13 @@ class XmlDescriptor extends Descriptor
 
         if ($option->isNegatable()) {
             $dom->appendChild($objectXML = $dom->createElement('option'));
-            $objectXML->setAttribute('name', '--no-'.$option->getName());
+            $objectXML->setAttribute('name', '--no-' . $option->getName());
             $objectXML->setAttribute('shortcut', '');
             $objectXML->setAttribute('accept_value', 0);
             $objectXML->setAttribute('is_value_required', 0);
             $objectXML->setAttribute('is_multiple', 0);
             $objectXML->appendChild($descriptionXML = $dom->createElement('description'));
-            $descriptionXML->appendChild($dom->createTextNode('Negate the "--'.$option->getName().'" option'));
+            $descriptionXML->appendChild($dom->createTextNode('Negate the "--' . $option->getName() . '" option'));
         }
 
         return $dom;

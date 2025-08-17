@@ -4,20 +4,24 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Helper;
 
+use function file_get_contents;
+use function is_string;
+
+use OutOfRangeException;
+
+use function preg_match;
+
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
 use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorReadingFileException;
 use SlimStat\Dependencies\BrowscapPHP\Exception\FileNotFoundException;
 use SlimStat\Dependencies\BrowscapPHP\IniParser\IniParser;
-use SlimStat_JsonException;
-use OutOfRangeException;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
-use UnexpectedValueException;
+use SlimStat_JsonException;
 
-use function file_get_contents;
-use function is_string;
-use function preg_match;
 use function sprintf;
+
+use UnexpectedValueException;
 
 /**
  * patternHelper to convert the ini data, parses the data and stores them into the cache
@@ -103,7 +107,7 @@ final class Converter implements ConverterInterface
         $this->logger->info('start creating patterns from the ini data');
 
         foreach ($iniParser->createPatterns($iniString) as $subkey => $content) {
-            if ($subkey === '') {
+            if ('' === $subkey) {
                 continue;
             }
 
@@ -122,7 +126,7 @@ final class Converter implements ConverterInterface
 
         try {
             foreach ($iniParser->createIniParts($iniString) as $subkey => $content) {
-                if ($subkey === '') {
+                if ('' === $subkey) {
                     continue;
                 }
 

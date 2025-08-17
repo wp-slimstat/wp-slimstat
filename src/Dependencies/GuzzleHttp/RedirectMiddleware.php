@@ -2,13 +2,13 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
-use SlimStat\Dependencies\GuzzleHttp\Psr7\UriComparator;
-use SlimStat\Dependencies\GuzzleHttp\Psr7\Message;
-use SlimStat\Dependencies\GuzzleHttp\Psr7\UriResolver;
-use SlimStat\Dependencies\GuzzleHttp\Psr7\Uri;
 use SlimStat\Dependencies\GuzzleHttp\Exception\BadResponseException;
 use SlimStat\Dependencies\GuzzleHttp\Exception\TooManyRedirectsException;
 use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Message;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Uri;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\UriComparator;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\UriResolver;
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 use SlimStat\Dependencies\Psr\Http\Message\ResponseInterface;
 use SlimStat\Dependencies\Psr\Http\Message\UriInterface;
@@ -31,10 +31,10 @@ class RedirectMiddleware
      * @var array
      */
     public static $defaultSettings = [
-        'max' => 5,
-        'protocols' => ['http', 'https'],
-        'strict' => false,
-        'referer' => false,
+        'max'             => 5,
+        'protocols'       => ['http', 'https'],
+        'strict'          => false,
+        'referer'         => false,
         'track_redirects' => false,
     ];
 
@@ -59,7 +59,7 @@ class RedirectMiddleware
             return $fn($request, $options);
         }
 
-        if ($options['allow_redirects'] === true) {
+        if (true === $options['allow_redirects']) {
             $options['allow_redirects'] = self::$defaultSettings;
         } elseif (!\is_array($options['allow_redirects'])) {
             throw new \InvalidArgumentException('allow_redirects must be true, false, or array');
@@ -73,7 +73,7 @@ class RedirectMiddleware
         }
 
         return $fn($request, $options)
-            ->then(fn(ResponseInterface $response) => $this->checkRedirect($request, $options, $response));
+            ->then(fn (ResponseInterface $response) => $this->checkRedirect($request, $options, $response));
     }
 
     /**
@@ -81,7 +81,7 @@ class RedirectMiddleware
      */
     public function checkRedirect(RequestInterface $request, array $options, ResponseInterface $response)
     {
-        if (\strpos((string) $response->getStatusCode(), '3') !== 0
+        if (0 !== \strpos((string) $response->getStatusCode(), '3')
             || !$response->hasHeader('Location')
         ) {
             return $response;
@@ -131,7 +131,7 @@ class RedirectMiddleware
                 // would be an earlier response than what is currently present
                 // in the history header.
                 $historyHeader = $response->getHeader(self::HISTORY_HEADER);
-                $statusHeader = $response->getHeader(self::STATUS_HISTORY_HEADER);
+                $statusHeader  = $response->getHeader(self::STATUS_HISTORY_HEADER);
                 \array_unshift($historyHeader, $uri);
                 \array_unshift($statusHeader, (string) $statusCode);
 
@@ -151,7 +151,7 @@ class RedirectMiddleware
         $current = $options['__redirect_count']
             ?? 0;
         $options['__redirect_count'] = $current + 1;
-        $max = $options['allow_redirects']['max'];
+        $max                         = $options['allow_redirects']['max'];
 
         if ($options['__redirect_count'] > $max) {
             throw new TooManyRedirectsException(sprintf('Will not follow more than %s redirects', $max), $request, $response);
@@ -161,27 +161,27 @@ class RedirectMiddleware
     public function modifyRequest(RequestInterface $request, array $options, ResponseInterface $response): RequestInterface
     {
         // Request modifications to apply.
-        $modify = [];
+        $modify    = [];
         $protocols = $options['allow_redirects']['protocols'];
 
         // Use a GET request if this is an entity enclosing request and we are
         // not forcing RFC compliance, but rather emulating what all browsers
         // would do.
         $statusCode = $response->getStatusCode();
-        if ($statusCode == 303
+        if (303 == $statusCode
             || ($statusCode <= 302 && !$options['allow_redirects']['strict'])
         ) {
-            $safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+            $safeMethods   = ['GET', 'HEAD', 'OPTIONS'];
             $requestMethod = $request->getMethod();
 
             $modify['method'] = in_array($requestMethod, $safeMethods) ? $requestMethod : 'GET';
-            $modify['body'] = '';
+            $modify['body']   = '';
         }
 
         $uri = $this->redirectUri($request, $response, $protocols);
-        if (isset($options['idn_conversion']) && ($options['idn_conversion'] !== false)) {
-            $idnOptions = ($options['idn_conversion'] === true) ? \IDNA_DEFAULT : $options['idn_conversion'];
-            $uri = Utils::idnUriConvert($uri, $idnOptions);
+        if (isset($options['idn_conversion']) && (false !== $options['idn_conversion'])) {
+            $idnOptions = (true === $options['idn_conversion']) ? \IDNA_DEFAULT : $options['idn_conversion'];
+            $uri        = Utils::idnUriConvert($uri, $idnOptions);
         }
 
         $modify['uri'] = $uri;
@@ -192,7 +192,7 @@ class RedirectMiddleware
         if ($options['allow_redirects']['referer']
             && $modify['uri']->getScheme() === $request->getUri()->getScheme()
         ) {
-            $uri = $request->getUri()->withUserInfo('');
+            $uri                              = $request->getUri()->withUserInfo('');
             $modify['set_headers']['Referer'] = (string) $uri;
         } else {
             $modify['remove_headers'][] = 'Referer';

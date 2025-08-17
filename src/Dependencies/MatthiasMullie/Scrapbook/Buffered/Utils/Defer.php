@@ -80,7 +80,7 @@ class Defer
      */
     public function __destruct()
     {
-        if ($this->keys !== []) {
+        if ([] !== $this->keys) {
             throw new UncommittedTransaction('Transaction is about to be destroyed without having been committed or rolled back.');
         }
     }
@@ -93,8 +93,8 @@ class Defer
     public function set($key, $value, $expire)
     {
         $args = [
-            'key' => $key,
-            'value' => $value,
+            'key'    => $key,
+            'value'  => $value,
             'expire' => $expire,
         ];
         $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
@@ -116,7 +116,7 @@ class Defer
      */
     public function delete($key)
     {
-        $args = ['key' => $key];
+        $args             = ['key' => $key];
         $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
     }
 
@@ -138,8 +138,8 @@ class Defer
     public function add($key, $value, $expire)
     {
         $args = [
-            'key' => $key,
-            'value' => $value,
+            'key'    => $key,
+            'value'  => $value,
             'expire' => $expire,
         ];
         $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
@@ -153,8 +153,8 @@ class Defer
     public function replace($key, $value, $expire)
     {
         $args = [
-            'key' => $key,
-            'value' => $value,
+            'key'    => $key,
+            'value'  => $value,
             'expire' => $expire,
         ];
         $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
@@ -177,7 +177,7 @@ class Defer
          * the value we set initially.
          */
         if (isset($this->keys[$key]) && in_array($this->keys[$key][0], ['set', 'add', 'replace', 'cas'])) {
-            $this->keys[$key][2]['value'] = $value;
+            $this->keys[$key][2]['value']  = $value;
             $this->keys[$key][2]['expire'] = $expire;
 
             return;
@@ -190,7 +190,7 @@ class Defer
          * @param int $expire
          * @return bool
          */
-        $cache = $this->cache;
+        $cache    = $this->cache;
         $callback = function ($originalValue, $key, $value, $expire) use ($cache) {
             // check if given (local) CAS token was known
             if (null === $originalValue) {
@@ -212,9 +212,9 @@ class Defer
 
         $args = [
             'originalValue' => $originalValue,
-            'key' => $key,
-            'value' => $value,
-            'expire' => $expire,
+            'key'           => $key,
+            'value'         => $value,
+            'expire'        => $expire,
         ];
         $this->keys[$key] = [__FUNCTION__, $callback, $args];
     }
@@ -263,10 +263,10 @@ class Defer
 
                 // we may be combining an increment with a decrement
                 // we must carefully figure out how these 2 apply against each other
-                $symbol = 'increment' === $this->keys[$key][0] ? 1 : -1;
+                $symbol   = 'increment' === $this->keys[$key][0] ? 1 : -1;
                 $previous = $symbol * $this->keys[$key][2]['offset'];
 
-                $symbol = 'increment' === $operation ? 1 : -1;
+                $symbol  = 'increment' === $operation ? 1 : -1;
                 $current = $symbol * $offset;
 
                 $offset = $previous + $current;
@@ -278,7 +278,7 @@ class Defer
 
                 // adjust operation - it might just have switched from increment to
                 // decrement or vice versa
-                $operation = $offset >= 0 ? 'increment' : 'decrement';
+                $operation           = $offset >= 0 ? 'increment' : 'decrement';
                 $this->keys[$key][0] = $operation;
                 $this->keys[$key][1] = [$this->cache, $operation];
             } else {
@@ -289,10 +289,10 @@ class Defer
 
         if (!isset($this->keys[$key])) {
             $args = [
-                'key' => $key,
-                'offset' => $offset,
+                'key'     => $key,
+                'offset'  => $offset,
                 'initial' => $initial,
-                'expire' => $expire,
+                'expire'  => $expire,
             ];
             $this->keys[$key] = [$operation, [$this->cache, $operation], $args];
         }
@@ -311,7 +311,7 @@ class Defer
             $this->keys[$key][2]['expire'] = $expire;
         } else {
             $args = [
-                'key' => $key,
+                'key'    => $key,
                 'expire' => $expire,
             ];
             $this->keys[$key] = [__FUNCTION__, [$this->cache, __FUNCTION__], $args];
@@ -321,7 +321,7 @@ class Defer
     public function flush()
     {
         // clear all scheduled updates, they'll be wiped out after this anyway
-        $this->keys = [];
+        $this->keys  = [];
         $this->flush = true;
     }
 
@@ -330,7 +330,7 @@ class Defer
      */
     public function clear()
     {
-        $this->keys = [];
+        $this->keys  = [];
         $this->flush = false;
     }
 
@@ -346,8 +346,8 @@ class Defer
     public function commit()
     {
         [$old, $new] = $this->generateRollback();
-        $updates = $this->generateUpdates();
-        $updates = $this->combineUpdates($updates);
+        $updates     = $this->generateUpdates();
+        $updates     = $this->combineUpdates($updates);
         usort($updates, [$this, 'sortUpdates']);
 
         foreach ($updates as $update) {
@@ -408,7 +408,7 @@ class Defer
     protected function generateRollback()
     {
         $keys = [];
-        $new = [];
+        $new  = [];
 
         foreach ($this->keys as $key => $data) {
             $operation = $data[0];
@@ -416,12 +416,12 @@ class Defer
             // we only need values for cas & replace - recovering from an 'add'
             // is just deleting the value...
             if (in_array($operation, ['cas', 'replace'])) {
-                $keys[] = $key;
+                $keys[]    = $key;
                 $new[$key] = $data[2]['value'];
             }
         }
 
-        if ($keys === []) {
+        if ([] === $keys) {
             return [[], []];
         }
 
@@ -463,12 +463,12 @@ class Defer
      */
     protected function combineUpdates($updates)
     {
-        $setMulti = [];
+        $setMulti    = [];
         $deleteMulti = [];
 
         foreach ($updates as $i => $update) {
             $operation = $update[0];
-            $args = $update[2];
+            $args      = $update[2];
 
             switch ($operation) {
                 // all set & delete operations can be grouped into setMulti & deleteMulti
@@ -488,7 +488,7 @@ class Defer
             }
         }
 
-        if ($setMulti !== []) {
+        if ([] !== $setMulti) {
             $cache = $this->cache;
 
             /*
@@ -511,7 +511,7 @@ class Defer
             }
         }
 
-        if ($deleteMulti !== []) {
+        if ([] !== $deleteMulti) {
             $cache = $this->cache;
 
             /*

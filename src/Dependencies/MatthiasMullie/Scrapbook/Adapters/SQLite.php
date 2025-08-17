@@ -17,7 +17,7 @@ class SQLite extends MySQL
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if ($items === []) {
+        if ([] === $items) {
             return [];
         }
 
@@ -37,8 +37,8 @@ class SQLite extends MySQL
             $value = $this->serialize($value);
 
             $statement->execute([
-                ':key' => $key,
-                ':value' => $value,
+                ':key'    => $key,
+                ':value'  => $value,
                 ':expire' => $expire,
             ]);
 
@@ -53,7 +53,7 @@ class SQLite extends MySQL
      */
     public function add($key, $value, $expire = 0)
     {
-        $value = $this->serialize($value);
+        $value  = $this->serialize($value);
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -65,8 +65,8 @@ class SQLite extends MySQL
         );
 
         $statement->execute([
-            ':key' => $key,
-            ':value' => $value,
+            ':key'    => $key,
+            ':value'  => $value,
             ':expire' => $expire,
         ]);
 

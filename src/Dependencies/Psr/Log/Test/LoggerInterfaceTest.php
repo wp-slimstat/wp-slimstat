@@ -2,9 +2,9 @@
 
 namespace SlimStat\Dependencies\Psr\Log\Test;
 
+use PHPUnit\Framework\TestCase;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\Log\LogLevel;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Provides a base test class for ensuring compliance with the LoggerInterface.
@@ -45,8 +45,8 @@ abstract class LoggerInterfaceTest extends TestCase
         $logger->log($level, $message, ['user' => 'Bob']);
 
         $expected = [
-            $level.' message of level '.$level.' with context: Bob',
-            $level.' message of level '.$level.' with context: Bob',
+            $level . ' message of level ' . $level . ' with context: Bob',
+            $level . ' message of level ' . $level . ' with context: Bob',
         ];
         $this->assertEquals($expected, $this->getLogs());
     }
@@ -55,13 +55,13 @@ abstract class LoggerInterfaceTest extends TestCase
     {
         return [
             LogLevel::EMERGENCY => [LogLevel::EMERGENCY, 'message of level emergency with context: {user}'],
-            LogLevel::ALERT => [LogLevel::ALERT, 'message of level alert with context: {user}'],
-            LogLevel::CRITICAL => [LogLevel::CRITICAL, 'message of level critical with context: {user}'],
-            LogLevel::ERROR => [LogLevel::ERROR, 'message of level error with context: {user}'],
-            LogLevel::WARNING => [LogLevel::WARNING, 'message of level warning with context: {user}'],
-            LogLevel::NOTICE => [LogLevel::NOTICE, 'message of level notice with context: {user}'],
-            LogLevel::INFO => [LogLevel::INFO, 'message of level info with context: {user}'],
-            LogLevel::DEBUG => [LogLevel::DEBUG, 'message of level debug with context: {user}'],
+            LogLevel::ALERT     => [LogLevel::ALERT, 'message of level alert with context: {user}'],
+            LogLevel::CRITICAL  => [LogLevel::CRITICAL, 'message of level critical with context: {user}'],
+            LogLevel::ERROR     => [LogLevel::ERROR, 'message of level error with context: {user}'],
+            LogLevel::WARNING   => [LogLevel::WARNING, 'message of level warning with context: {user}'],
+            LogLevel::NOTICE    => [LogLevel::NOTICE, 'message of level notice with context: {user}'],
+            LogLevel::INFO      => [LogLevel::INFO, 'message of level info with context: {user}'],
+            LogLevel::DEBUG     => [LogLevel::DEBUG, 'message of level debug with context: {user}'],
         ];
     }
 
@@ -90,7 +90,7 @@ abstract class LoggerInterfaceTest extends TestCase
         } else {
             $dummy = $this->getMock(DummyTest::class, ['__toString']);
         }
-        
+
         $dummy->expects($this->once())
             ->method('__toString')
             ->will($this->returnValue('DUMMY'));
@@ -107,15 +107,15 @@ abstract class LoggerInterfaceTest extends TestCase
         fclose($closed);
 
         $context = [
-            'bool' => true,
-            'null' => null,
-            'string' => 'Foo',
-            'int' => 0,
-            'float' => 0.5,
-            'nested' => ['with object' => new DummyTest],
-            'object' => new \DateTime,
+            'bool'     => true,
+            'null'     => null,
+            'string'   => 'Foo',
+            'int'      => 0,
+            'float'    => 0.5,
+            'nested'   => ['with object' => new DummyTest()],
+            'object'   => new \DateTime(),
             'resource' => fopen('php://memory', 'r'),
-            'closed' => $closed,
+            'closed'   => $closed,
         ];
 
         $this->getLogger()->warning('Crazy context data', $context);
@@ -132,7 +132,7 @@ abstract class LoggerInterfaceTest extends TestCase
 
         $expected = [
             'warning Random message',
-            'critical Uncaught Exception!'
+            'critical Uncaught Exception!',
         ];
         $this->assertEquals($expected, $this->getLogs());
     }

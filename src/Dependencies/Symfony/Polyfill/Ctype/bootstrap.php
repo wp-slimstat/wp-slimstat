@@ -9,5 +9,4 @@
  * file that was distributed with this source code.
  */
 
-use SlimStat\Dependencies\Symfony\Polyfill\Ctype as p;
-return require __DIR__.'/bootstrap80.php';
+return require __DIR__ . '/bootstrap80.php';

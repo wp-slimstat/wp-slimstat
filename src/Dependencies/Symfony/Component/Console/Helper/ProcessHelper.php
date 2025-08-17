@@ -54,7 +54,7 @@ class ProcessHelper extends Helper
 
         if (\is_string($cmd[0] ?? null)) {
             $process = new Process($cmd);
-            $cmd = [];
+            $cmd     = [];
         } elseif (($cmd[0] ?? null) instanceof Process) {
             $process = $cmd[0];
             unset($cmd[0]);

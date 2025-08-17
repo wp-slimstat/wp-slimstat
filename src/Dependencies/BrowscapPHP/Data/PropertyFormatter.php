@@ -27,8 +27,8 @@ final class PropertyFormatter
      */
     public function formatPropertyValue($value, string $property)
     {
-        if ($this->propertyHolder->getPropertyType($property) === PropertyHolder::TYPE_BOOLEAN) {
-            return $value === true || $value === 'true' || $value === '1';
+        if (PropertyHolder::TYPE_BOOLEAN === $this->propertyHolder->getPropertyType($property)) {
+            return true === $value || 'true' === $value || '1' === $value;
         }
 
         return $value;

@@ -42,7 +42,7 @@ final class Utils
      */
     public static function task(callable $task): PromiseInterface
     {
-        $queue = self::queue();
+        $queue   = self::queue();
         $promise = new Promise([$queue, 'run']);
         $queue->add(function () use ($task, $promise): void {
             try {
@@ -183,7 +183,7 @@ final class Utils
      */
     public static function some(int $count, $promises): PromiseInterface
     {
-        $results = [];
+        $results    = [];
         $rejections = [];
 
         return Each::of(
@@ -192,7 +192,7 @@ final class Utils
                 if (Is::settled($p)) {
                     return;
                 }
-                
+
                 $results[$idx] = $value;
                 if (count($results) >= $count) {
                     $p->resolve(null);
@@ -209,7 +209,7 @@ final class Utils
                         $rejections
                     );
                 }
-                
+
                 ksort($results);
 
                 return array_values($results);
@@ -225,7 +225,7 @@ final class Utils
      */
     public static function any($promises): PromiseInterface
     {
-        return self::some(1, $promises)->then(fn($values) => $values[0]);
+        return self::some(1, $promises)->then(fn ($values) => $values[0]);
     }
 
     /**

@@ -73,7 +73,7 @@ class Item implements CacheItemInterface
          * up this value in the repository when it's no longer needed.
          */
         $this->repository = $repository;
-        $this->hash = spl_object_hash($this);
+        $this->hash       = spl_object_hash($this);
         $this->repository->add($this->hash, $this->key);
     }
 
@@ -117,7 +117,7 @@ class Item implements CacheItemInterface
      */
     public function set($value)
     {
-        $this->value = $value;
+        $this->value   = $value;
         $this->changed = true;
 
         return $this;
@@ -143,21 +143,21 @@ class Item implements CacheItemInterface
         // DateTimeInterface only exists since PHP>=5.5, also accept DateTime
         if ($expiration instanceof \DateTimeInterface || $expiration instanceof \DateTime) {
             // convert datetime to unix timestamp
-            $this->expire = (int) $expiration->format('U');
+            $this->expire  = (int) $expiration->format('U');
             $this->changed = true;
         } elseif (null === $expiration) {
-            $this->expire = 0;
+            $this->expire  = 0;
             $this->changed = true;
         } else {
             $class = get_class($this);
-            $type = gettype($expiration);
-            $error = sprintf('Argument 1 passed to %s::expiresAt()  must be an ', $class).
+            $type  = gettype($expiration);
+            $error = sprintf('Argument 1 passed to %s::expiresAt()  must be an ', $class) .
                 sprintf('instance of DateTime or DateTimeImmutable, %s given', $type);
 
             if (class_exists('\TypeError')) {
                 throw new \TypeError($error);
             }
-            
+
             trigger_error($error, E_USER_ERROR);
         }
 
@@ -180,9 +180,9 @@ class Item implements CacheItemInterface
             // this is allowed, but just defaults to infinite
             $this->expire = 0;
         } else {
-            throw new InvalidArgumentException('Invalid time: '.serialize($time).'. Must be integer or instance of DateInterval.');
+            throw new InvalidArgumentException('Invalid time: ' . serialize($time) . '. Must be integer or instance of DateInterval.');
         }
-        
+
         $this->changed = true;
 
         return $this;

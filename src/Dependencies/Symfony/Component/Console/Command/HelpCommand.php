@@ -44,7 +44,8 @@ class HelpCommand extends Command
                 new InputOption('raw', null, InputOption::VALUE_NONE, 'To output raw command help'),
             ])
             ->setDescription('Display help for a command')
-            ->setHelp(<<<'EOF'
+            ->setHelp(
+                <<<'EOF'
 The <info>%command.name%</info> command displays help for a given command:
 
   <info>%command.full_name% list</info>
@@ -75,7 +76,7 @@ EOF
 
         $helper = new DescriptorHelper();
         $helper->describe($output, $this->command, [
-            'format' => $input->getOption('format'),
+            'format'   => $input->getOption('format'),
             'raw_text' => $input->getOption('raw'),
         ]);
 

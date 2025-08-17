@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Command;
 
+use function assert;
+use function is_string;
+
 use SlimStat\Dependencies\BrowscapPHP\BrowscapUpdater;
 use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorCachedVersionException;
 use SlimStat\Dependencies\BrowscapPHP\Exception\FetcherException;
@@ -20,11 +23,10 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputArgument;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 
-use function assert;
-use function is_string;
 use function sprintf;
+
+use Throwable;
 
 /**
  * Command to fetch a browscap ini file from the remote host and store the content in a local file
@@ -102,11 +104,11 @@ class FetchCommand extends Command
 
         $file = $input->getArgument('file');
         assert(is_string($file));
-        if ($file === '' || $file === '0') {
+        if ('' === $file || '0' === $file) {
             $file = $this->defaultIniFile;
         }
 
-        if ($file === null) {
+        if (null === $file) {
             return ConvertCommand::FILENAME_MISSING;
         }
 

@@ -41,10 +41,10 @@ class PortableVisibilityConverter implements VisibilityConverter
         int $directoryPrivate = 0700,
         string $defaultForDirectories = Visibility::PRIVATE
     ) {
-        $this->filePublic = $filePublic;
-        $this->filePrivate = $filePrivate;
-        $this->directoryPublic = $directoryPublic;
-        $this->directoryPrivate = $directoryPrivate;
+        $this->filePublic            = $filePublic;
+        $this->filePrivate           = $filePrivate;
+        $this->directoryPublic       = $directoryPublic;
+        $this->directoryPrivate      = $directoryPrivate;
         $this->defaultForDirectories = $defaultForDirectories;
     }
 
@@ -52,7 +52,7 @@ class PortableVisibilityConverter implements VisibilityConverter
     {
         PortableVisibilityGuard::guardAgainstInvalidInput($visibility);
 
-        return $visibility === Visibility::PUBLIC
+        return Visibility::PUBLIC === $visibility
             ? $this->filePublic
             : $this->filePrivate;
     }
@@ -61,7 +61,7 @@ class PortableVisibilityConverter implements VisibilityConverter
     {
         PortableVisibilityGuard::guardAgainstInvalidInput($visibility);
 
-        return $visibility === Visibility::PUBLIC
+        return Visibility::PUBLIC === $visibility
             ? $this->directoryPublic
             : $this->directoryPrivate;
     }
@@ -90,11 +90,11 @@ class PortableVisibilityConverter implements VisibilityConverter
 
     public function defaultForDirectories(): int
     {
-        return $this->defaultForDirectories === Visibility::PUBLIC ? $this->directoryPublic : $this->directoryPrivate;
+        return Visibility::PUBLIC === $this->defaultForDirectories ? $this->directoryPublic : $this->directoryPrivate;
     }
 
     /**
-     * @param array<mixed>  $permissionMap
+     * @param array<mixed> $permissionMap
      */
     public static function fromArray(array $permissionMap, string $defaultForDirectories = Visibility::PRIVATE): PortableVisibilityConverter
     {

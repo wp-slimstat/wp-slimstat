@@ -44,18 +44,18 @@ class Browscap
             'browser_version' => '',
             'browser_type'    => 0,
             'platform'        => 'unknown',
-            'user_agent'      => self::_get_user_agent()
+            'user_agent'      => self::_get_user_agent(),
         ];
 
         if (empty($browser['user_agent'])) {
             return $browser;
         }
 
-        if (wp_slimstat::$settings['enable_browscap'] == 'on' && PHP_VERSION_ID >= 70400) {
+        if ('on' == wp_slimstat::$settings['enable_browscap'] && PHP_VERSION_ID >= 70400) {
             $browser = self::get_browser_from_browscap($browser, wp_slimstat::$upload_dir . '/browscap-cache-master/');
         }
 
-        if ($browser['browser'] == 'Default Browser') {
+        if ('Default Browser' == $browser['browser']) {
             $browser = UADetector::get_browser($browser['user_agent']);
         } elseif (empty($browser['browser_version'])) {
             $browser_version            = UADetector::get_browser($browser['user_agent']);
@@ -73,9 +73,9 @@ class Browscap
     public static function get_browser_from_browscap($_browser = [], $_cache_path = '')
     {
         try {
-            $file_cache    = new LocalFilesystemAdapter($_cache_path);
-            $filesystem    = new Filesystem($file_cache);
-            $cache         = new SimpleCache(
+            $file_cache = new LocalFilesystemAdapter($_cache_path);
+            $filesystem = new Filesystem($file_cache);
+            $cache      = new SimpleCache(
                 new Flysystem($filesystem)
             );
             $logger        = new NullLogger();
@@ -85,7 +85,7 @@ class Browscap
             $search_object = '';
         }
 
-        if (is_object($search_object) && $search_object->browser != 'Default Browser' && $search_object->browser != 'unknown') {
+        if (is_object($search_object) && 'Default Browser' != $search_object->browser && 'unknown' != $search_object->browser) {
             $_browser['browser']         = $search_object->browser;
             $_browser['browser_version'] = floatval($search_object->version);
             $_browser['platform']        = strtolower($search_object->platform);
@@ -99,7 +99,7 @@ class Browscap
                 $_browser['browser_type'] = 1;
             } elseif ($search_object->ismobiledevice || $search_object->istablet) {
                 $_browser['browser_type'] = 2;
-            } elseif (stripos($search_object->device_pointing_method, 'touch') !== false) {
+            } elseif (false !== stripos($search_object->device_pointing_method, 'touch')) {
                 $_browser['browser_type'] = 3;
             }
         }
@@ -206,7 +206,7 @@ class Browscap
             $real_user_agent = trim($_SERVER['HTTP_X_OPERAMINI_PHONE_UA']);
         }
 
-        if ($real_user_agent !== '' && $real_user_agent !== '0' && (strlen($real_user_agent) >= 5 || ($user_agent === '' || $user_agent === '0'))) {
+        if ('' !== $real_user_agent && '0' !== $real_user_agent && (strlen($real_user_agent) >= 5 || ('' === $user_agent || '0' === $user_agent))) {
             return $real_user_agent;
         }
 

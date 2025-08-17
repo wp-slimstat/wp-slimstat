@@ -24,9 +24,9 @@ use function SlimStat\Dependencies\Symfony\Component\String\b;
 class OutputFormatter implements WrappableOutputFormatterInterface
 {
     private $decorated;
-    
+
     private $styles = [];
-    
+
     private $styleStack;
 
     public function __clone()
@@ -57,7 +57,7 @@ class OutputFormatter implements WrappableOutputFormatterInterface
     public static function escapeTrailingBackslash(string $text): string
     {
         if (str_ends_with($text, '\\')) {
-            $len = \strlen($text);
+            $len  = \strlen($text);
             $text = rtrim($text, '\\');
             $text = str_replace("\0", '', $text);
             $text .= str_repeat("\0", $len - \strlen($text));
@@ -148,14 +148,14 @@ class OutputFormatter implements WrappableOutputFormatterInterface
             return '';
         }
 
-        $offset = 0;
-        $output = '';
-        $openTagRegex = '[a-z](?:[^\\\\<>]*+ | \\\\.)*';
-        $closeTagRegex = '[a-z][^<>]*+';
+        $offset            = 0;
+        $output            = '';
+        $openTagRegex      = '[a-z](?:[^\\\\<>]*+ | \\\\.)*';
+        $closeTagRegex     = '[a-z][^<>]*+';
         $currentLineLength = 0;
         preg_match_all(sprintf('#<((%s) | /(%s)?)>#ix', $openTagRegex, $closeTagRegex), $message, $matches, \PREG_OFFSET_CAPTURE);
         foreach ($matches[0] as $i => $match) {
-            $pos = $match[1];
+            $pos  = $match[1];
             $text = $match[0];
 
             if (0 != $pos && '\\' == $message[$pos - 1]) {
@@ -242,7 +242,7 @@ class OutputFormatter implements WrappableOutputFormatterInterface
             return '';
         }
 
-        if ($width === 0) {
+        if (0 === $width) {
             return $this->isDecorated() ? $this->styleStack->getCurrent()->apply($text) : $text;
         }
 
@@ -250,19 +250,19 @@ class OutputFormatter implements WrappableOutputFormatterInterface
             $text = ltrim($text);
         }
 
-        if ($currentLineLength !== 0) {
-            $prefix = substr($text, 0, $i = $width - $currentLineLength)."\n";
-            $text = substr($text, $i);
+        if (0 !== $currentLineLength) {
+            $prefix = substr($text, 0, $i = $width - $currentLineLength) . "\n";
+            $text   = substr($text, $i);
         } else {
             $prefix = '';
         }
 
         preg_match('~(\\n)$~', $text, $matches);
-        $text = $prefix.$this->addLineBreaks($text, $width);
-        $text = rtrim($text, "\n").($matches[1] ?? '');
+        $text = $prefix . $this->addLineBreaks($text, $width);
+        $text = rtrim($text, "\n") . ($matches[1] ?? '');
 
         if (!$currentLineLength && '' !== $current && "\n" !== substr($current, -1)) {
-            $text = "\n".$text;
+            $text = "\n" . $text;
         }
 
         $lines = explode("\n", $text);

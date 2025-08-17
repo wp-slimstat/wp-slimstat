@@ -21,7 +21,7 @@ class PrefixReset extends PrefixKeys
      */
     public function __construct(KeyValueStore $cache, $name)
     {
-        $this->cache = $cache;
+        $this->cache      = $cache;
         $this->collection = $name;
         parent::__construct($cache, $this->getPrefix());
     }
@@ -32,7 +32,7 @@ class PrefixReset extends PrefixKeys
     public function flush()
     {
         $index = $this->cache->increment($this->collection);
-        $this->setPrefix($this->collection.':'.$index.':');
+        $this->setPrefix($this->collection . ':' . $index . ':');
 
         return false !== $index;
     }
@@ -54,6 +54,6 @@ class PrefixReset extends PrefixKeys
             $index = $this->cache->set($this->collection, 1);
         }
 
-        return $this->collection.':'.$index.':';
+        return $this->collection . ':' . $index . ':';
     }
 }

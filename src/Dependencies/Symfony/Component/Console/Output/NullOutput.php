@@ -42,7 +42,7 @@ class NullOutput implements OutputInterface
         if ($this->formatter) {
             return $this->formatter;
         }
-        
+
         // to comply with the interface we must return a OutputFormatterInterface
         return $this->formatter = new NullOutputFormatter();
     }

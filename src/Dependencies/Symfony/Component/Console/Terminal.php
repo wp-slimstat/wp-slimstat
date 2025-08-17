@@ -14,9 +14,9 @@ namespace SlimStat\Dependencies\Symfony\Component\Console;
 class Terminal
 {
     private static $width;
-    
+
     private static $height;
-    
+
     private static $stty;
 
     /**
@@ -71,7 +71,7 @@ class Terminal
             return false;
         }
 
-        return self::$stty = (bool) shell_exec('stty 2> '.('\\' === \DIRECTORY_SEPARATOR ? 'NUL' : '/dev/null'));
+        return self::$stty = (bool) shell_exec('stty 2> ' . ('\\' === \DIRECTORY_SEPARATOR ? 'NUL' : '/dev/null'));
     }
 
     private function initDimensions()
@@ -81,7 +81,7 @@ class Terminal
             if (false !== $ansicon && preg_match('/^(\d+)x(\d+)(?: \((\d+)x(\d+)\))?$/', trim($ansicon), $matches)) {
                 // extract [w, H] from "wxh (WxH)"
                 // or [w, h] from "wxh"
-                self::$width = (int) $matches[1];
+                self::$width  = (int) $matches[1];
                 self::$height = isset($matches[4]) ? (int) $matches[4] : (int) $matches[2];
             } elseif (!$this->hasVt100Support() && self::hasSttyAvailable()) {
                 // only use stty on Windows if the terminal does not support vt100 (e.g. Windows 7 + git-bash)
@@ -89,7 +89,7 @@ class Terminal
                 $this->initDimensionsUsingStty();
             } elseif (null !== $dimensions = $this->getConsoleMode()) {
                 // extract [w, h] from "wxh"
-                self::$width = (int) $dimensions[0];
+                self::$width  = (int) $dimensions[0];
                 self::$height = (int) $dimensions[1];
             }
         } else {
@@ -113,11 +113,11 @@ class Terminal
         if ($sttyString = $this->getSttyColumns()) {
             if (preg_match('/rows.(\d+);.columns.(\d+);/i', $sttyString, $matches)) {
                 // extract [w, h] from "rows h; columns w;"
-                self::$width = (int) $matches[2];
+                self::$width  = (int) $matches[2];
                 self::$height = (int) $matches[1];
             } elseif (preg_match('/;.(\d+).rows;.(\d+).columns/i', $sttyString, $matches)) {
                 // extract [w, h] from "; h rows; w columns"
-                self::$width = (int) $matches[2];
+                self::$width  = (int) $matches[2];
                 self::$height = (int) $matches[1];
             }
         }
@@ -170,7 +170,7 @@ class Terminal
         fclose($pipes[2]);
         proc_close($process);
 
-        if ($cp !== 0) {
+        if (0 !== $cp) {
             sapi_windows_cp_set($cp);
         }
 

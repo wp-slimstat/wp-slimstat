@@ -29,7 +29,7 @@ class ConnectException extends TransferException implements NetworkExceptionInte
         array $handlerContext = []
     ) {
         parent::__construct($message, 0, $previous);
-        $this->request = $request;
+        $this->request        = $request;
         $this->handlerContext = $handlerContext;
     }
 

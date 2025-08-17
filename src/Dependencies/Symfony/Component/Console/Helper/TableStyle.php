@@ -24,51 +24,51 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\LogicException;
 class TableStyle
 {
     private $paddingChar = ' ';
-    
+
     private $horizontalOutsideBorderChar = '-';
-    
+
     private $horizontalInsideBorderChar = '-';
-    
+
     private $verticalOutsideBorderChar = '|';
-    
+
     private $verticalInsideBorderChar = '|';
-    
+
     private $crossingChar = '+';
-    
+
     private $crossingTopRightChar = '+';
-    
+
     private $crossingTopMidChar = '+';
-    
+
     private $crossingTopLeftChar = '+';
-    
+
     private $crossingMidRightChar = '+';
-    
+
     private $crossingBottomRightChar = '+';
-    
+
     private $crossingBottomMidChar = '+';
-    
+
     private $crossingBottomLeftChar = '+';
-    
+
     private $crossingMidLeftChar = '+';
-    
+
     private $crossingTopLeftBottomChar = '+';
-    
+
     private $crossingTopMidBottomChar = '+';
-    
+
     private $crossingTopRightBottomChar = '+';
-    
+
     private $headerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
-    
+
     private $footerTitleFormat = '<fg=black;bg=white;options=bold> %s </>';
-    
+
     private $cellHeaderFormat = '<info>%s</info>';
-    
+
     private $cellRowFormat = '%s';
-    
+
     private $cellRowContentFormat = ' %s ';
-    
+
     private $borderFormat = '%s';
-    
+
     private $padType = \STR_PAD_RIGHT;
 
     /**
@@ -78,7 +78,7 @@ class TableStyle
      */
     public function setPaddingChar(string $paddingChar)
     {
-        if ($paddingChar === '' || $paddingChar === '0') {
+        if ('' === $paddingChar || '0' === $paddingChar) {
             throw new LogicException('The padding char must not be empty.');
         }
 
@@ -116,7 +116,7 @@ class TableStyle
     public function setHorizontalBorderChars(string $outside, ?string $inside = null): self
     {
         $this->horizontalOutsideBorderChar = $outside;
-        $this->horizontalInsideBorderChar = $inside ?? $outside;
+        $this->horizontalInsideBorderChar  = $inside ?? $outside;
 
         return $this;
     }
@@ -141,7 +141,7 @@ class TableStyle
     public function setVerticalBorderChars(string $outside, ?string $inside = null): self
     {
         $this->verticalOutsideBorderChar = $outside;
-        $this->verticalInsideBorderChar = $inside ?? $outside;
+        $this->verticalInsideBorderChar  = $inside ?? $outside;
 
         return $this;
     }
@@ -194,17 +194,17 @@ class TableStyle
      */
     public function setCrossingChars(string $cross, string $topLeft, string $topMid, string $topRight, string $midRight, string $bottomRight, string $bottomMid, string $bottomLeft, string $midLeft, ?string $topLeftBottom = null, ?string $topMidBottom = null, ?string $topRightBottom = null): self
     {
-        $this->crossingChar = $cross;
-        $this->crossingTopLeftChar = $topLeft;
-        $this->crossingTopMidChar = $topMid;
-        $this->crossingTopRightChar = $topRight;
-        $this->crossingMidRightChar = $midRight;
-        $this->crossingBottomRightChar = $bottomRight;
-        $this->crossingBottomMidChar = $bottomMid;
-        $this->crossingBottomLeftChar = $bottomLeft;
-        $this->crossingMidLeftChar = $midLeft;
-        $this->crossingTopLeftBottomChar = $topLeftBottom ?? $midLeft;
-        $this->crossingTopMidBottomChar = $topMidBottom ?? $cross;
+        $this->crossingChar               = $cross;
+        $this->crossingTopLeftChar        = $topLeft;
+        $this->crossingTopMidChar         = $topMid;
+        $this->crossingTopRightChar       = $topRight;
+        $this->crossingMidRightChar       = $midRight;
+        $this->crossingBottomRightChar    = $bottomRight;
+        $this->crossingBottomMidChar      = $bottomMid;
+        $this->crossingBottomLeftChar     = $bottomLeft;
+        $this->crossingMidLeftChar        = $midLeft;
+        $this->crossingTopLeftBottomChar  = $topLeftBottom ?? $midLeft;
+        $this->crossingTopMidBottomChar   = $topMidBottom ?? $cross;
         $this->crossingTopRightBottomChar = $topRightBottom ?? $midRight;
 
         return $this;

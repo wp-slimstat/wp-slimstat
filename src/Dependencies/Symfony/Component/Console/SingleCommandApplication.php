@@ -21,9 +21,9 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 class SingleCommandApplication extends Command
 {
     private $version = 'UNKNOWN';
-    
+
     private $autoExit = true;
-    
+
     private $running = false;
 
     /**

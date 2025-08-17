@@ -31,7 +31,7 @@ class FileCookieJar extends CookieJar
     public function __construct(string $cookieFile, bool $storeSessionCookies = false)
     {
         parent::__construct();
-        $this->filename = $cookieFile;
+        $this->filename            = $cookieFile;
         $this->storeSessionCookies = $storeSessionCookies;
 
         if (\file_exists($cookieFile)) {
@@ -85,8 +85,8 @@ class FileCookieJar extends CookieJar
         if (false === $json) {
             throw new \RuntimeException('Unable to load file ' . $filename);
         }
-        
-        if ($json === '') {
+
+        if ('' === $json) {
             return;
         }
 

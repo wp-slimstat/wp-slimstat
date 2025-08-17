@@ -64,9 +64,9 @@ final class ConsoleEvents
      * These aliases can be consumed by RegisterListenersPass.
      */
     public const ALIASES = [
-        ConsoleCommandEvent::class => self::COMMAND,
-        ConsoleErrorEvent::class => self::ERROR,
-        ConsoleSignalEvent::class => self::SIGNAL,
+        ConsoleCommandEvent::class   => self::COMMAND,
+        ConsoleErrorEvent::class     => self::ERROR,
+        ConsoleSignalEvent::class    => self::SIGNAL,
         ConsoleTerminateEvent::class => self::TERMINATE,
     ];
 }

@@ -6,8 +6,9 @@ namespace SlimStat\Dependencies\League\MimeTypeDetection;
 
 use const FILEINFO_MIME_TYPE;
 
-use const PATHINFO_EXTENSION;
 use finfo;
+
+use const PATHINFO_EXTENSION;
 
 class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
 {
@@ -45,9 +46,9 @@ class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
         ?int $bufferSampleSize = null,
         array $inconclusiveMimetypes = self::INCONCLUSIVE_MIME_TYPES
     ) {
-        $this->finfo = new finfo(FILEINFO_MIME_TYPE, $magicFile);
-        $this->extensionMap = $extensionMap ?: new GeneratedExtensionToMimeTypeMap();
-        $this->bufferSampleSize = $bufferSampleSize;
+        $this->finfo                 = new finfo(FILEINFO_MIME_TYPE, $magicFile);
+        $this->extensionMap          = $extensionMap ?: new GeneratedExtensionToMimeTypeMap();
+        $this->bufferSampleSize      = $bufferSampleSize;
         $this->inconclusiveMimetypes = $inconclusiveMimetypes;
     }
 
@@ -57,7 +58,7 @@ class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
             ? (@$this->finfo->buffer($this->takeSample($contents)) ?: null)
             : null;
 
-        if ($mimeType !== null && ! in_array($mimeType, $this->inconclusiveMimetypes)) {
+        if (null !== $mimeType && ! in_array($mimeType, $this->inconclusiveMimetypes)) {
             return $mimeType;
         }
 
@@ -83,7 +84,7 @@ class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
 
     private function takeSample(string $contents): string
     {
-        if ($this->bufferSampleSize === null) {
+        if (null === $this->bufferSampleSize) {
             return $contents;
         }
 

@@ -2,8 +2,8 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
-use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
+use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 
 /**
  * Debug function used to describe the provided value type and class.

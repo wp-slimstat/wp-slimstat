@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Formatter;
 
-use stdClass;
-
 use function array_key_exists;
 use function array_merge;
+
+use stdClass;
+
 use function strtolower;
 
 /**
@@ -19,6 +20,7 @@ final class LegacyFormatter implements FormatterInterface
      * Options for the formatter
      *
      * @var bool[]
+     *
      * @phpstan-var array{lowercase?: bool}
      */
     private array $options = [];
@@ -27,6 +29,7 @@ final class LegacyFormatter implements FormatterInterface
      * Default formatter options
      *
      * @var bool[]
+     *
      * @phpstanvar array{lowercase: bool}
      */
     private array $defaultOptions = ['lowercase' => false];
@@ -40,6 +43,7 @@ final class LegacyFormatter implements FormatterInterface
 
     /**
      * @param bool[] $options Formatter options
+     *
      * @phpstan-param array{lowercase?: bool} $options
      *
      * @throws void

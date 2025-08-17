@@ -62,9 +62,9 @@ final class Grapheme
         } else {
             $s = substr($s, $start);
         }
-        
-        $size = (int) $size;
-        $type = (int) $type;
+
+        $size  = (int) $size;
+        $type  = (int) $type;
         $start = (int) $start;
 
         if (\GRAPHEME_EXTR_COUNT !== $type && \GRAPHEME_EXTR_MAXBYTES !== $type && \GRAPHEME_EXTR_MAXCHARS !== $type) {
@@ -74,20 +74,20 @@ final class Grapheme
         if (!isset($s[0]) || 0 > $size || 0 > $start) {
             return false;
         }
-        
+
         if (0 === $size) {
             return '';
         }
 
         $next = $start;
 
-        $s = preg_split('/('.SYMFONY_GRAPHEME_CLUSTER_RX.')/u', "\r\n".$s, $size + 1, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
+        $s = preg_split('/(' . SYMFONY_GRAPHEME_CLUSTER_RX . ')/u', "\r\n" . $s, $size + 1, \PREG_SPLIT_NO_EMPTY|\PREG_SPLIT_DELIM_CAPTURE);
 
         if (!isset($s[1])) {
             return false;
         }
 
-        $i = 1;
+        $i   = 1;
         $ret = '';
 
         do {
@@ -111,7 +111,7 @@ final class Grapheme
 
     public static function grapheme_strlen($s)
     {
-        preg_replace('/'.SYMFONY_GRAPHEME_CLUSTER_RX.'/u', '', $s, -1, $len);
+        preg_replace('/' . SYMFONY_GRAPHEME_CLUSTER_RX . '/u', '', $s, -1, $len);
 
         return 0 === $len && '' !== $s ? null : $len;
     }
@@ -122,19 +122,19 @@ final class Grapheme
             $len = 2147483647;
         }
 
-        preg_match_all('/'.SYMFONY_GRAPHEME_CLUSTER_RX.'/u', $s, $s);
+        preg_match_all('/' . SYMFONY_GRAPHEME_CLUSTER_RX . '/u', $s, $s);
 
-        $slen = \count($s[0]);
+        $slen  = \count($s[0]);
         $start = (int) $start;
 
         if (0 > $start) {
             $start += $slen;
         }
-        
+
         if (0 > $start) {
             $start = 0;
         }
-        
+
         if ($start >= $slen) {
             return \PHP_VERSION_ID >= 80000 ? '' : false;
         }
@@ -144,15 +144,15 @@ final class Grapheme
         if (0 > $len) {
             $len += $rem;
         }
-        
+
         if (0 === $len) {
             return '';
         }
-        
+
         if (0 > $len) {
             return \PHP_VERSION_ID >= 80000 ? '' : false;
         }
-        
+
         if ($len > $rem) {
             $len = $rem;
         }
@@ -196,12 +196,12 @@ final class Grapheme
         if (80000 > \PHP_VERSION_ID && !preg_match('/./us', $needle)) {
             return false;
         }
-        
+
         $s = (string) $s;
         if (!preg_match('/./us', $s)) {
             return false;
         }
-        
+
         if ($offset > 0) {
             $s = self::grapheme_substr($s, $offset);
         } elseif ($offset < 0) {
@@ -212,7 +212,7 @@ final class Grapheme
                     $offset = 0;
                 }
             } elseif (0 > $offset += self::grapheme_strlen($needle)) {
-                $s = self::grapheme_substr($s, 0, $offset);
+                $s      = self::grapheme_substr($s, 0, $offset);
                 $offset = 0;
             } else {
                 $offset = 0;
@@ -223,22 +223,22 @@ final class Grapheme
         // we can use normal binary string functions here. For case-insensitive searches,
         // case fold the strings first.
         $caseInsensitive = $mode & 1;
-        $reverse = $mode & 2;
-        if ($caseInsensitive !== 0) {
+        $reverse         = $mode & 2;
+        if (0 !== $caseInsensitive) {
             // Use the same case folding mode as mbstring does for mb_stripos().
             // Stick to SIMPLE case folding to avoid changing the length of the string, which
             // might result in offsets being shifted.
-            $mode = \defined('MB_CASE_FOLD_SIMPLE') ? \MB_CASE_FOLD_SIMPLE : \MB_CASE_LOWER;
-            $s = mb_convert_case($s, $mode, 'UTF-8');
+            $mode   = \defined('MB_CASE_FOLD_SIMPLE') ? \MB_CASE_FOLD_SIMPLE : \MB_CASE_LOWER;
+            $s      = mb_convert_case($s, $mode, 'UTF-8');
             $needle = mb_convert_case($needle, $mode, 'UTF-8');
 
             if (!\defined('MB_CASE_FOLD_SIMPLE')) {
-                $s = str_replace(self::CASE_FOLD[0], self::CASE_FOLD[1], $s);
+                $s      = str_replace(self::CASE_FOLD[0], self::CASE_FOLD[1], $s);
                 $needle = str_replace(self::CASE_FOLD[0], self::CASE_FOLD[1], $needle);
             }
         }
 
-        $needlePos = $reverse !== 0 ? strrpos($s, $needle) : strpos($s, $needle);
+        $needlePos = 0 !== $reverse ? strrpos($s, $needle) : strpos($s, $needle);
 
         return false !== $needlePos ? self::grapheme_strlen(substr($s, 0, $needlePos)) + $offset : false;
     }

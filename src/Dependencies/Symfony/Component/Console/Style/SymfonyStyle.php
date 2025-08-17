@@ -39,23 +39,23 @@ class SymfonyStyle extends OutputStyle
     public const MAX_LINE_LENGTH = 120;
 
     private $input;
-    
+
     private $output;
-    
+
     private $questionHelper;
-    
+
     private $progressBar;
-    
+
     private $lineLength;
-    
+
     private $bufferedOutput;
 
     public function __construct(InputInterface $input, OutputInterface $output)
     {
-        $this->input = $input;
+        $this->input          = $input;
         $this->bufferedOutput = new TrimmedBufferOutput(\DIRECTORY_SEPARATOR === '\\' ? 4 : 2, $output->getVerbosity(), false, clone $output->getFormatter());
         // Windows cmd wraps lines as soon as the terminal width is reached, whether there are following chars or not.
-        $width = (new Terminal())->getWidth() ?: self::MAX_LINE_LENGTH;
+        $width            = (new Terminal())->getWidth() ?: self::MAX_LINE_LENGTH;
         $this->lineLength = min($width - (int) (\DIRECTORY_SEPARATOR === '\\'), self::MAX_LINE_LENGTH);
 
         parent::__construct($this->output = $output);
@@ -107,7 +107,7 @@ class SymfonyStyle extends OutputStyle
     public function listing(array $elements)
     {
         $this->autoPrependText();
-        $elements = array_map(fn($element) => sprintf(' * %s', $element), $elements);
+        $elements = array_map(fn ($element) => sprintf(' * %s', $element), $elements);
 
         $this->writeln($elements);
         $this->newLine();
@@ -228,26 +228,26 @@ class SymfonyStyle extends OutputStyle
     public function definitionList(...$list)
     {
         $headers = [];
-        $row = [];
+        $row     = [];
         foreach ($list as $value) {
             if ($value instanceof TableSeparator) {
                 $headers[] = $value;
-                $row[] = $value;
+                $row[]     = $value;
                 continue;
             }
-            
+
             if (\is_string($value)) {
                 $headers[] = new TableCell($value, ['colspan' => 2]);
-                $row[] = null;
+                $row[]     = null;
                 continue;
             }
-            
+
             if (!\is_array($value)) {
                 throw new InvalidArgumentException('Value should be an array, string, or an instance of TableSeparator.');
             }
-            
+
             $headers[] = key($value);
-            $row[] = current($value);
+            $row[]     = current($value);
         }
 
         $this->horizontalTable($headers, [$row]);
@@ -291,7 +291,7 @@ class SymfonyStyle extends OutputStyle
     public function choice(string $question, array $choices, $default = null)
     {
         if (null !== $default) {
-            $values = array_flip($choices);
+            $values  = array_flip($choices);
             $default = $values[$default] ?? $default;
         }
 
@@ -426,7 +426,7 @@ class SymfonyStyle extends OutputStyle
     public function createTable(): Table
     {
         $output = $this->output instanceof ConsoleOutputInterface ? $this->output->section() : $this->output;
-        $style = clone Table::getStyleDefinition('symfony-style-guide');
+        $style  = clone Table::getStyleDefinition('symfony-style-guide');
         $style->setCellHeaderFormat('<info>%s</info>');
 
         return (new Table($output))->setStyle($style);
@@ -450,7 +450,7 @@ class SymfonyStyle extends OutputStyle
 
             return;
         }
-        
+
         // Prepend new line for each non LF chars (This means no blank line was output before)
         $this->newLine(2 - substr_count($chars, "\n"));
     }
@@ -474,11 +474,11 @@ class SymfonyStyle extends OutputStyle
     {
         $indentLength = 0;
         $prefixLength = Helper::width(Helper::removeDecoration($this->getFormatter(), $prefix));
-        $lines = [];
+        $lines        = [];
 
         if (null !== $type) {
-            $type = sprintf('[%s] ', $type);
-            $indentLength = \strlen($type);
+            $type            = sprintf('[%s] ', $type);
+            $indentLength    = \strlen($type);
             $lineIndentation = str_repeat(' ', $indentLength);
         }
 
@@ -488,9 +488,9 @@ class SymfonyStyle extends OutputStyle
                 $message = OutputFormatter::escape($message);
             }
 
-            $decorationLength = Helper::width($message) - Helper::width(Helper::removeDecoration($this->getFormatter(), $message));
+            $decorationLength  = Helper::width($message) - Helper::width(Helper::removeDecoration($this->getFormatter(), $message));
             $messageLineLength = min($this->lineLength - $prefixLength - $indentLength + $decorationLength, $this->lineLength);
-            $messageLines = explode(\PHP_EOL, wordwrap($message, $messageLineLength, \PHP_EOL, true));
+            $messageLines      = explode(\PHP_EOL, wordwrap($message, $messageLineLength, \PHP_EOL, true));
             foreach ($messageLines as $messageLine) {
                 $lines[] = $messageLine;
             }
@@ -509,10 +509,10 @@ class SymfonyStyle extends OutputStyle
 
         foreach ($lines as $i => &$line) {
             if (null !== $type) {
-                $line = $firstLineIndex === $i ? $type.$line : $lineIndentation.$line;
+                $line = $firstLineIndex === $i ? $type . $line : $lineIndentation . $line;
             }
 
-            $line = $prefix.$line;
+            $line = $prefix . $line;
             $line .= str_repeat(' ', max($this->lineLength - Helper::width(Helper::removeDecoration($this->getFormatter(), $line)), 0));
 
             if ($style) {

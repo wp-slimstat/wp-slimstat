@@ -102,12 +102,12 @@ class Response implements ResponseInterface
 
         $this->statusCode = $status;
 
-        if ($body !== '' && $body !== null) {
+        if ('' !== $body && null !== $body) {
             $this->stream = Utils::streamFor($body);
         }
 
         $this->setHeaders($headers);
-        if ($reason == '' && isset(self::PHRASES[$this->statusCode])) {
+        if ('' == $reason && isset(self::PHRASES[$this->statusCode])) {
             $this->reasonPhrase = self::PHRASES[$this->statusCode];
         } else {
             $this->reasonPhrase = (string) $reason;
@@ -132,12 +132,12 @@ class Response implements ResponseInterface
         $code = (int) $code;
         $this->assertStatusCodeRange($code);
 
-        $new = clone $this;
+        $new             = clone $this;
         $new->statusCode = $code;
-        if ($reasonPhrase == '' && isset(self::PHRASES[$new->statusCode])) {
+        if ('' == $reasonPhrase && isset(self::PHRASES[$new->statusCode])) {
             $reasonPhrase = self::PHRASES[$new->statusCode];
         }
-        
+
         $new->reasonPhrase = (string) $reasonPhrase;
 
         return $new;
@@ -148,7 +148,7 @@ class Response implements ResponseInterface
      */
     private function assertStatusCodeIsInteger($statusCode): void
     {
-        if (filter_var($statusCode, FILTER_VALIDATE_INT) === false) {
+        if (false === filter_var($statusCode, FILTER_VALIDATE_INT)) {
             throw new \InvalidArgumentException('Status code must be an integer value.');
         }
     }

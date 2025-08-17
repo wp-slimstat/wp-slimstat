@@ -7,11 +7,11 @@ use SlimStat\Utils\MaxMindReader;
 class GeoService
 {
     private $update = false;
-    
+
     private $pack = '';
-    
+
     private $enableMaxmind = '';
-    
+
     private $maxmindLicense = '';
 
     public function __construct()
@@ -61,22 +61,22 @@ class GeoService
 
     public function isGeoIPEnabled()
     {
-        return $this->enableMaxmind != 'disable';
+        return 'disable' != $this->enableMaxmind;
     }
 
     public function isMaxMindEnabled()
     {
-        return $this->enableMaxmind == 'on';
+        return 'on' == $this->enableMaxmind;
     }
 
     public function isJsDelivrEnabled()
     {
-        return $this->enableMaxmind == 'no';
+        return 'no' == $this->enableMaxmind;
     }
 
     public function getUserIP()
     {
-        if (!empty($_SERVER['REMOTE_ADDR']) && filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP) !== false) {
+        if (!empty($_SERVER['REMOTE_ADDR']) && false !== filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
             return sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
 
@@ -84,7 +84,7 @@ class GeoService
         foreach ($originating_ip_headers as $a_header) {
             if (!empty($_SERVER[$a_header])) {
                 foreach (explode(',', $_SERVER[$a_header]) as $ip) {
-                    if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+                    if (false !== filter_var($ip, FILTER_VALIDATE_IP)) {
                         return $ip;
                     }
                 }
@@ -100,7 +100,7 @@ class GeoService
             if ($this->isGeoIPEnabled()) {
 
                 $args = [
-                    'update' => $this->update
+                    'update' => $this->update,
                 ];
 
                 if ($this->isMaxMindEnabled() && !empty($this->getMaxMindLicenseKey())) {
@@ -149,7 +149,7 @@ class GeoService
 
             $response = [
                 'status' => false,
-                'notice' => __('GeoIP database file is corrupt. Please click on the "Update Database" button to download a fresh copy.', 'wp-slimstat')
+                'notice' => __('GeoIP database file is corrupt. Please click on the "Update Database" button to download a fresh copy.', 'wp-slimstat'),
             ];
         }
 
@@ -178,7 +178,7 @@ class GeoService
     {
         update_option('slimstat_geoip_error', [
             'time'  => time(),
-            'error' => $error
+            'error' => $error,
         ]);
     }
 }

@@ -68,7 +68,7 @@ class MountManager implements FilesystemOperator
             $filesystem
                 ->listContents($path, $deep)
                 ->map(
-                    fn(StorageAttributes $attributes) => $attributes->withPath(sprintf('%s://%s', $mountIdentifier, $attributes->path()))
+                    fn (StorageAttributes $attributes) => $attributes->withPath(sprintf('%s://%s', $mountIdentifier, $attributes->path()))
                 );
     }
 
@@ -186,7 +186,7 @@ class MountManager implements FilesystemOperator
     {
         /** @var FilesystemOperator $sourceFilesystem */
         /* @var FilesystemOperator $destinationFilesystem */
-        [$sourceFilesystem, $sourcePath] = $this->determineFilesystemAndPath($source);
+        [$sourceFilesystem, $sourcePath]           = $this->determineFilesystemAndPath($source);
         [$destinationFilesystem, $destinationPath] = $this->determineFilesystemAndPath($destination);
 
         $sourceFilesystem === $destinationFilesystem ? $this->moveInTheSameFilesystem(
@@ -202,7 +202,7 @@ class MountManager implements FilesystemOperator
     {
         /** @var FilesystemOperator $sourceFilesystem */
         /* @var FilesystemOperator $destinationFilesystem */
-        [$sourceFilesystem, $sourcePath] = $this->determineFilesystemAndPath($source);
+        [$sourceFilesystem, $sourcePath]           = $this->determineFilesystemAndPath($source);
         [$destinationFilesystem, $destinationPath] = $this->determineFilesystemAndPath($destination);
 
         $sourceFilesystem === $destinationFilesystem ? $this->copyInSameFilesystem(
@@ -238,11 +238,11 @@ class MountManager implements FilesystemOperator
      */
     private function guardAgainstInvalidMount($key, $filesystem): void
     {
-        if ( ! is_string($key)) {
+        if (! is_string($key)) {
             throw UnableToMountFilesystem::becauseTheKeyIsNotValid($key);
         }
 
-        if ( ! $filesystem instanceof FilesystemOperator) {
+        if (! $filesystem instanceof FilesystemOperator) {
             throw UnableToMountFilesystem::becauseTheFilesystemWasNotValid($filesystem);
         }
     }
@@ -265,7 +265,7 @@ class MountManager implements FilesystemOperator
         /** @var string $mountPath */
         [$mountIdentifier, $mountPath] = explode('://', $path, 2);
 
-        if ( ! array_key_exists($mountIdentifier, $this->filesystems)) {
+        if (! array_key_exists($mountIdentifier, $this->filesystems)) {
             throw UnableToResolveFilesystemMount::becauseTheMountWasNotRegistered($mountIdentifier);
         }
 

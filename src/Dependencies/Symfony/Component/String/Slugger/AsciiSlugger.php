@@ -11,9 +11,9 @@
 
 namespace SlimStat\Dependencies\Symfony\Component\String\Slugger;
 
-use Symfony\Component\Intl\Transliterator\EmojiTransliterator;
 use SlimStat\Dependencies\Symfony\Component\String\AbstractUnicodeString;
 use SlimStat\Dependencies\Symfony\Component\String\UnicodeString;
+use Symfony\Component\Intl\Transliterator\EmojiTransliterator;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
 
 if (!interface_exists(LocaleAwareInterface::class)) {
@@ -26,41 +26,41 @@ if (!interface_exists(LocaleAwareInterface::class)) {
 class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
 {
     private const LOCALE_TO_TRANSLITERATOR_ID = [
-        'am' => 'Amharic-Latin',
-        'ar' => 'Arabic-Latin',
-        'az' => 'Azerbaijani-Latin',
-        'be' => 'Belarusian-Latin',
-        'bg' => 'Bulgarian-Latin',
-        'bn' => 'Bengali-Latin',
-        'de' => 'de-ASCII',
-        'el' => 'Greek-Latin',
-        'fa' => 'Persian-Latin',
-        'he' => 'Hebrew-Latin',
-        'hy' => 'Armenian-Latin',
-        'ka' => 'Georgian-Latin',
-        'kk' => 'Kazakh-Latin',
-        'ky' => 'Kirghiz-Latin',
-        'ko' => 'Korean-Latin',
-        'mk' => 'Macedonian-Latin',
-        'mn' => 'Mongolian-Latin',
-        'or' => 'Oriya-Latin',
-        'ps' => 'Pashto-Latin',
-        'ru' => 'Russian-Latin',
-        'sr' => 'Serbian-Latin',
+        'am'      => 'Amharic-Latin',
+        'ar'      => 'Arabic-Latin',
+        'az'      => 'Azerbaijani-Latin',
+        'be'      => 'Belarusian-Latin',
+        'bg'      => 'Bulgarian-Latin',
+        'bn'      => 'Bengali-Latin',
+        'de'      => 'de-ASCII',
+        'el'      => 'Greek-Latin',
+        'fa'      => 'Persian-Latin',
+        'he'      => 'Hebrew-Latin',
+        'hy'      => 'Armenian-Latin',
+        'ka'      => 'Georgian-Latin',
+        'kk'      => 'Kazakh-Latin',
+        'ky'      => 'Kirghiz-Latin',
+        'ko'      => 'Korean-Latin',
+        'mk'      => 'Macedonian-Latin',
+        'mn'      => 'Mongolian-Latin',
+        'or'      => 'Oriya-Latin',
+        'ps'      => 'Pashto-Latin',
+        'ru'      => 'Russian-Latin',
+        'sr'      => 'Serbian-Latin',
         'sr_Cyrl' => 'Serbian-Latin',
-        'th' => 'Thai-Latin',
-        'tk' => 'Turkmen-Latin',
-        'uk' => 'Ukrainian-Latin',
-        'uz' => 'Uzbek-Latin',
-        'zh' => 'Han-Latin',
+        'th'      => 'Thai-Latin',
+        'tk'      => 'Turkmen-Latin',
+        'uk'      => 'Ukrainian-Latin',
+        'uz'      => 'Uzbek-Latin',
+        'zh'      => 'Han-Latin',
     ];
 
     private ?string $defaultLocale;
-    
+
     private \Closure|array $symbolsMap = [
         'en' => ['@' => 'at', '&' => 'and'],
     ];
-    
+
     private bool|string $emoji = false;
 
     /**
@@ -73,11 +73,10 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
     public function __construct(?string $defaultLocale = null, array|\Closure|null $symbolsMap = null)
     {
         $this->defaultLocale = $defaultLocale;
-        $this->symbolsMap = $symbolsMap ?? $this->symbolsMap;
+        $this->symbolsMap    = $symbolsMap ?? $this->symbolsMap;
     }
 
     /**
-     * @return void
      */
     public function setLocale(string $locale)
     {
@@ -100,7 +99,7 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
             throw new \LogicException(sprintf('You cannot use the "%s()" method as the "symfony/intl" package is not installed. Try running "composer require symfony/intl".', __METHOD__));
         }
 
-        $new = clone $this;
+        $new        = clone $this;
         $new->emoji = $emoji;
 
         return $new;
@@ -141,10 +140,10 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
                     $map = $this->symbolsMap[$parent];
                 }
             }
-            
+
             if ($map) {
                 foreach ($map as $char => $replace) {
-                    $unicodeString = $unicodeString->replace($char, ' '.$replace.' ');
+                    $unicodeString = $unicodeString->replace($char, ' ' . $replace . ' ');
                 }
             }
         }
@@ -163,7 +162,7 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
 
         // Exact locale supported, cache and return
         if ($id = self::LOCALE_TO_TRANSLITERATOR_ID[$locale] ?? null) {
-            return $this->transliterators[$locale] = \Transliterator::create($id.'/BGN') ?? \Transliterator::create($id);
+            return $this->transliterators[$locale] = \Transliterator::create($id . '/BGN') ?? \Transliterator::create($id);
         }
 
         // Locale not supported and no parent, fallback to any-latin
@@ -173,7 +172,7 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
 
         // Try to use the parent locale (ie. try "de" for "de_AT") and cache both locales
         if ($id = self::LOCALE_TO_TRANSLITERATOR_ID[$parent] ?? null) {
-            $transliterator = \Transliterator::create($id.'/BGN') ?? \Transliterator::create($id);
+            $transliterator = \Transliterator::create($id . '/BGN') ?? \Transliterator::create($id);
         }
 
         return $this->transliterators[$locale] = $this->transliterators[$parent] = $transliterator ?? null;
@@ -203,7 +202,7 @@ class AsciiSlugger implements SluggerInterface, LocaleAwareInterface
         if (!$locale) {
             return null;
         }
-        
+
         if (false === $str = strrchr($locale, '_')) {
             // no parent locale
             return null;
