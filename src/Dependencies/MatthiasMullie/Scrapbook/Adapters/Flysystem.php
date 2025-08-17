@@ -67,8 +67,8 @@ class Flysystem implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $results = array();
-        $tokens = array();
+        $results = [];
+        $tokens = [];
         foreach ($keys as $key) {
             $token = null;
             $value = $this->get($key, $token);
@@ -130,7 +130,7 @@ class Flysystem implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        $success = array();
+        $success = [];
         foreach ($items as $key => $value) {
             $success[$key] = $this->set($key, $value, $expire);
         }
@@ -175,7 +175,7 @@ class Flysystem implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        $success = array();
+        $success = [];
         foreach ($keys as $key) {
             $success[$key] = $this->delete($key);
         }

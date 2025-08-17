@@ -27,7 +27,9 @@ class_exists(NotFoundExceptionInterface::class);
 trait ServiceLocatorTrait
 {
     private array $factories;
+    
     private array $loading = [];
+    
     private array $providedTypes;
 
     /**
@@ -51,7 +53,7 @@ trait ServiceLocatorTrait
 
         if (isset($this->loading[$id])) {
             $ids = array_values($this->loading);
-            $ids = \array_slice($this->loading, array_search($id, $ids));
+            $ids = \array_slice($this->loading, array_search($id, $ids, true));
             $ids[] = $id;
 
             throw $this->createCircularReferenceException($id, $ids);
@@ -90,7 +92,7 @@ trait ServiceLocatorTrait
             $message = 'is empty...';
         } else {
             $last = array_pop($alternatives);
-            if ($alternatives) {
+            if ($alternatives !== []) {
                 $message = sprintf('only knows about the "%s" and "%s" services.', implode('", "', $alternatives), $last);
             } else {
                 $message = sprintf('only knows about the "%s" service.', $last);

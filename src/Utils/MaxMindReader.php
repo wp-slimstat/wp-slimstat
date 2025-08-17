@@ -9,14 +9,21 @@ namespace SlimStat\Utils;
 class MaxMindReader
 {
     private static $DATA_SECTION_SEPARATOR_SIZE = 16;
+    
     private static $METADATA_START_MARKER = "\xAB\xCD\xEFMaxMind.com";
+    
     private static $METADATA_START_MARKER_LENGTH = 14;
+    
     private static $METADATA_MAX_SIZE = 131072; // 128 * 1024 = 128KB
 
     private $decoder;
+    
     private $fileHandle;
+    
     private $fileSize;
+    
     private $ipV4Start;
+    
     private $metadata;
 
     /**
@@ -37,25 +44,27 @@ class MaxMindReader
 
         if (!is_readable($database)) {
             throw new \InvalidArgumentException(
-                "The file \"$database\" does not exist or is not readable."
+                sprintf('The file "%s" does not exist or is not readable.', $database)
             );
         }
+        
         $this->fileHandle = @fopen($database, 'rb');
         if ($this->fileHandle === false) {
             throw new \InvalidArgumentException(
-                "Error opening \"$database\"."
+                sprintf('Error opening "%s".', $database)
             );
         }
+        
         $this->fileSize = @filesize($database);
         if ($this->fileSize === false) {
             throw new \UnexpectedValueException(
-                "Error determining the size of \"$database\"."
+                sprintf('Error determining the size of "%s".', $database)
             );
         }
 
         $start = $this->findMetadataStart($database);
         $metadataDecoder = new MaxMindDecoder($this->fileHandle, $start);
-        list($metadataArray) = $metadataDecoder->decode($start);
+        [$metadataArray] = $metadataDecoder->decode($start);
         $this->metadata = new MaxMindMetadata($metadataArray);
         $this->decoder = new MaxMindDecoder(
             $this->fileHandle,
@@ -91,20 +100,22 @@ class MaxMindReader
 
         if (!filter_var($ipAddress, FILTER_VALIDATE_IP)) {
             throw new \InvalidArgumentException(
-                "The value \"$ipAddress\" is not a valid IP address."
+                sprintf('The value "%s" is not a valid IP address.', $ipAddress)
             );
         }
 
         if ($this->metadata->ipVersion == 4 && strrpos($ipAddress, ':')) {
             throw new \InvalidArgumentException(
-                "Error looking up $ipAddress. You attempted to look up an"
+                sprintf('Error looking up %s. You attempted to look up an', $ipAddress)
                     . " IPv6 address in an IPv4-only database."
             );
         }
+        
         $pointer = $this->findAddressInTree($ipAddress);
         if ($pointer == 0) {
             return null;
         }
+        
         return $this->resolveDataPointer($pointer);
     }
 
@@ -123,11 +134,13 @@ class MaxMindReader
             if ($node >= $this->metadata->nodeCount) {
                 break;
             }
+            
             $tempBit = 0xFF & $rawAddress[$i >> 3];
             $bit = 1 & ($tempBit >> 7 - ($i % 8));
 
             $node = $this->readNode($node, $bit);
         }
+        
         if ($node == $this->metadata->nodeCount) {
             // Record is empty
             return 0;
@@ -135,6 +148,7 @@ class MaxMindReader
             // Record is a data pointer
             return $node;
         }
+        
         throw new InvalidDatabaseException("Something bad happened");
     }
 
@@ -146,6 +160,7 @@ class MaxMindReader
         if ($this->metadata->ipVersion == 6 && $length == 32) {
             return $this->ipV4StartNode();
         }
+        
         // The first node of the tree is always node 0, at the beginning of the
         // value
         return 0;
@@ -162,11 +177,13 @@ class MaxMindReader
         if ($this->ipV4Start != 0) {
             return $this->ipV4Start;
         }
+        
         $node = 0;
 
         for ($i = 0; $i < 96 && $node < $this->metadata->nodeCount; $i++) {
             $node = $this->readNode($node, 0);
         }
+        
         $this->ipV4Start = $node;
         return $node;
     }
@@ -179,22 +196,19 @@ class MaxMindReader
         switch ($this->metadata->recordSize) {
             case 24:
                 $bytes = MaxMindUtil::read($this->fileHandle, $baseOffset + $index * 3, 3);
-                list(, $node) = unpack('N', "\x00" . $bytes);
+                [, $node] = unpack('N', "\x00" . $bytes);
                 return $node;
             case 28:
                 $middleByte = MaxMindUtil::read($this->fileHandle, $baseOffset + 3, 1);
-                list(, $middle) = unpack('C', $middleByte);
-                if ($index == 0) {
-                    $middle = (0xF0 & $middle) >> 4;
-                } else {
-                    $middle = 0x0F & $middle;
-                }
+                [, $middle] = unpack('C', $middleByte);
+                $middle = $index == 0 ? (0xF0 & $middle) >> 4 : 0x0F & $middle;
+                
                 $bytes = MaxMindUtil::read($this->fileHandle, $baseOffset + $index * 4, 3);
-                list(, $node) = unpack('N', chr($middle) . $bytes);
+                [, $node] = unpack('N', chr($middle) . $bytes);
                 return $node;
             case 32:
                 $bytes = MaxMindUtil::read($this->fileHandle, $baseOffset + $index * 4, 4);
-                list(, $node) = unpack('N', $bytes);
+                [, $node] = unpack('N', $bytes);
                 return $node;
             default:
                 throw new InvalidDatabaseException(
@@ -214,7 +228,7 @@ class MaxMindReader
             );
         }
 
-        list($data) = $this->decoder->decode($resolved);
+        [$data] = $this->decoder->decode($resolved);
         return $data;
     }
 
@@ -241,10 +255,12 @@ class MaxMindReader
                     continue 2;
                 }
             }
+            
             return $fileSize - $i;
         }
+        
         throw new InvalidDatabaseException(
-            "Error opening database file ($filename). " .
+            sprintf('Error opening database file (%s). ', $filename) .
                 'Is this a valid MaxMind DB file?'
         );
     }
@@ -256,7 +272,7 @@ class MaxMindReader
      */
     public function metadata()
     {
-        if (func_num_args()) {
+        if (func_num_args() !== 0) {
             throw new \InvalidArgumentException(
                 'Method takes no arguments.'
             );
@@ -286,6 +302,7 @@ class MaxMindReader
                 'Attempt to close a closed MaxMind DB.'
             );
         }
+        
         fclose($this->fileHandle);
     }
 }

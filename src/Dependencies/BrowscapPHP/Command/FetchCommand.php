@@ -102,7 +102,7 @@ class FetchCommand extends Command
 
         $file = $input->getArgument('file');
         assert(is_string($file));
-        if (! $file) {
+        if ($file === '' || $file === '0') {
             $file = $this->defaultIniFile;
         }
 

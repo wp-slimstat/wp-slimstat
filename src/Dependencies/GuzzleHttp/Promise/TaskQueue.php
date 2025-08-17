@@ -18,6 +18,7 @@ namespace SlimStat\Dependencies\GuzzleHttp\Promise;
 class TaskQueue implements TaskQueueInterface
 {
     private $enableShutdown = true;
+    
     private $queue = [];
 
     public function __construct(bool $withShutdown = true)

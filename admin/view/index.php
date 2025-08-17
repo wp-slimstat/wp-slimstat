@@ -1,5 +1,7 @@
 <?php
-if (!function_exists('add_action')) exit();
+if (!function_exists('add_action')) {
+    exit();
+}
 
 // Load header
 wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
@@ -15,13 +17,13 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
             <fieldset id="slimstat-filters"><?php
                 $filter_name_html = '<div class="form-field"><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __('Dimension', 'wp-slimstat') . '</option>';
                 foreach (wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info) {
-                    $filter_name_html .= "<option value='$a_filter_label'>{$a_filter_info[0]}</option>";
+                    $filter_name_html .= sprintf("<option value='%s'>%s</option>", $a_filter_label, $a_filter_info[0]);
                 }
                 $filter_name_html .= '</select></div>';
 
                 $filter_operator_html = '<div class="form-field"><select name="o" id="slimstat-filter-operator">';
                 foreach (wp_slimstat_db::$operator_names as $a_operator_label => $a_operator_name) {
-                    $filter_operator_html .= "<option value='$a_operator_label'>$a_operator_name</option>";
+                    $filter_operator_html .= sprintf("<option value='%s'>%s</option>", $a_operator_label, $a_operator_name);
                 }
                 $filter_operator_html .= '</select></div>';
 
@@ -35,7 +37,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
 
                 echo '<input type="submit" value="' . __('Apply', 'wp-slimstat') . '" class="button-secondary">';
 
-                $saved_filters = get_option('slimstat_filters', array());
+                $saved_filters = get_option('slimstat_filters', []);
                 if (!empty($saved_filters)) {
                     echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="Saved Filters">' . __('Load', 'wp-slimstat') . '</a>';
                 }
@@ -46,13 +48,13 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
                     if (!empty(wp_slimstat_db::$filters_normalized['date']['hour']) || !empty(wp_slimstat_db::$filters_normalized['date']['interval_hours'])) {
                         echo gmdate(get_option('date_format') . ' ' . get_option('time_format'), wp_slimstat_db::$filters_normalized['utime']['start']) . ' - ';
 
-                        $end_format = (date('Ymd', wp_slimstat_db::$filters_normalized['utime']['start']) != date('Ymd', wp_slimstat_db::$filters_normalized['utime']['end'])) ? get_option('date_format') . ' ' . get_option('time_format') : get_option('time_format');
+                        $end_format = (date('Ymd', wp_slimstat_db::$filters_normalized['utime']['start']) !== date('Ymd', wp_slimstat_db::$filters_normalized['utime']['end'])) ? get_option('date_format') . ' ' . get_option('time_format') : get_option('time_format');
                         echo gmdate($end_format, wp_slimstat_db::$filters_normalized['utime']['end']);
                     } else {
                         $start_date = gmdate(get_option('date_format'), wp_slimstat_db::$filters_normalized['utime']['start']);
                         $end_date   = gmdate(get_option('date_format'), wp_slimstat_db::$filters_normalized['utime']['end']);
 
-                        if ($start_date == $end_date) {
+                        if ($start_date === $end_date) {
                             echo ucwords($start_date);
                         } else {
                             echo ucwords($start_date) . ' &ndash; ' . ucwords($end_date);
@@ -84,7 +86,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
                     <select name="month" id="slimstat-filter-month">
                         <option value=""><?php _e('Month', 'wp-slimstat') ?></option><?php
                         for ($i = 1; $i <= 12; $i++) {
-                            echo "<option value='$i'>" . $GLOBALS['wp_locale']->get_month($i) . "</option>";
+                            echo sprintf("<option value='%d'>", $i) . $GLOBALS['wp_locale']->get_month($i) . "</option>";
                         }
                         ?>
                     </select>
@@ -135,22 +137,22 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
         </form>
 
         <?php
-        if ((wp_slimstat::$settings['enable_maxmind'] == 'disable' or !\SlimStat\Services\GeoIP::database_exists()) && wp_slimstat::$settings['notice_geolite'] == 'on') {
+        if ((wp_slimstat::$settings['enable_maxmind'] == 'disable' || !\SlimStat\Services\GeoIP::database_exists()) && wp_slimstat::$settings['notice_geolite'] == 'on') {
             wp_slimstat_admin::show_message(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
         }
 
-        if (version_compare(PHP_VERSION, '7.1', '>=') && !file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt') && wp_slimstat::$settings['notice_browscap'] == 'on') {
+        if (PHP_VERSION_ID >= 70100 && !file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt') && wp_slimstat::$settings['notice_browscap'] == 'on') {
             wp_slimstat_admin::show_message(sprintf(__("Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'browscap');
         }
 
         // Path to wp-content folder, used to detect caching plugins via advanced-cache.php
-        if (file_exists(dirname(dirname(dirname(dirname(plugin_dir_path(__FILE__))))) . '/advanced-cache.php') && wp_slimstat::$settings['notice_caching'] == 'on' && (empty(wp_slimstat::$settings['javascript_mode']) || wp_slimstat::$settings['javascript_mode'] != 'on')) {
+        if (file_exists(dirname(plugin_dir_path(__FILE__), 4) . '/advanced-cache.php') && wp_slimstat::$settings['notice_caching'] == 'on' && (empty(wp_slimstat::$settings['javascript_mode']) || wp_slimstat::$settings['javascript_mode'] != 'on')) {
             wp_slimstat_admin::show_message(sprintf(__("A caching plugin might be enabled on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat'), 'https://wp-slimstat.com/resources/i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra'), 'warning', 'caching');
         }
 
         $filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']);
         if (!empty($filters_html)) {
-            echo "<div id='slimstat-current-filters'>$filters_html</div>";
+            echo sprintf("<div id='slimstat-current-filters'>%s</div>", $filters_html);
         }
         ?>
 
@@ -164,7 +166,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
                 }
 
                 wp_slimstat_reports::report_header($a_report_id);
-                wp_slimstat_reports::callback_wrapper(array('id' => $a_report_id));
+                wp_slimstat_reports::callback_wrapper(['id' => $a_report_id]);
                 wp_slimstat_reports::report_footer();
             }
             ?>

@@ -45,9 +45,9 @@ class PrefixKeys implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $keys = array_map(array($this, 'prefix'), $keys);
+        $keys = array_map([$this, 'prefix'], $keys);
         $results = $this->cache->getMulti($keys, $tokens);
-        $keys = array_map(array($this, 'unfix'), array_keys($results));
+        $keys = array_map([$this, 'unfix'], array_keys($results));
         $tokens = array_combine($keys, $tokens);
 
         return array_combine($keys, $results);
@@ -72,10 +72,10 @@ class PrefixKeys implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        $keys = array_map(array($this, 'prefix'), array_keys($items));
+        $keys = array_map([$this, 'prefix'], array_keys($items));
         $items = array_combine($keys, $items);
         $results = $this->cache->setMulti($items, $expire);
-        $keys = array_map(array($this, 'unfix'), array_keys($results));
+        $keys = array_map([$this, 'unfix'], array_keys($results));
 
         return array_combine($keys, $results);
     }
@@ -95,9 +95,9 @@ class PrefixKeys implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        $keys = array_map(array($this, 'prefix'), $keys);
+        $keys = array_map([$this, 'prefix'], $keys);
         $results = $this->cache->deleteMulti($keys);
-        $keys = array_map(array($this, 'unfix'), array_keys($results));
+        $keys = array_map([$this, 'unfix'], array_keys($results));
 
         return array_combine($keys, $results);
     }

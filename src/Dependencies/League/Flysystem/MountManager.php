@@ -30,8 +30,8 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->fileExists($path);
-        } catch (UnableToCheckFileExistence $exception) {
-            throw UnableToCheckFileExistence::forLocation($location, $exception);
+        } catch (UnableToCheckFileExistence $unableToCheckFileExistence) {
+            throw UnableToCheckFileExistence::forLocation($location, $unableToCheckFileExistence);
         }
     }
 
@@ -42,8 +42,8 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->read($path);
-        } catch (UnableToReadFile $exception) {
-            throw UnableToReadFile::fromLocation($location, $exception->reason(), $exception);
+        } catch (UnableToReadFile $unableToReadFile) {
+            throw UnableToReadFile::fromLocation($location, $unableToReadFile->reason(), $unableToReadFile);
         }
     }
 
@@ -54,8 +54,8 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->readStream($path);
-        } catch (UnableToReadFile $exception) {
-            throw UnableToReadFile::fromLocation($location, $exception->reason(), $exception);
+        } catch (UnableToReadFile $unableToReadFile) {
+            throw UnableToReadFile::fromLocation($location, $unableToReadFile->reason(), $unableToReadFile);
         }
     }
 
@@ -68,9 +68,7 @@ class MountManager implements FilesystemOperator
             $filesystem
                 ->listContents($path, $deep)
                 ->map(
-                    function (StorageAttributes $attributes) use ($mountIdentifier) {
-                        return $attributes->withPath(sprintf('%s://%s', $mountIdentifier, $attributes->path()));
-                    }
+                    fn(StorageAttributes $attributes) => $attributes->withPath(sprintf('%s://%s', $mountIdentifier, $attributes->path()))
                 );
     }
 
@@ -81,8 +79,8 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->lastModified($path);
-        } catch (UnableToRetrieveMetadata $exception) {
-            throw UnableToRetrieveMetadata::lastModified($location, $exception->reason(), $exception);
+        } catch (UnableToRetrieveMetadata $unableToRetrieveMetadata) {
+            throw UnableToRetrieveMetadata::lastModified($location, $unableToRetrieveMetadata->reason(), $unableToRetrieveMetadata);
         }
     }
 
@@ -93,8 +91,8 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->fileSize($path);
-        } catch (UnableToRetrieveMetadata $exception) {
-            throw UnableToRetrieveMetadata::fileSize($location, $exception->reason(), $exception);
+        } catch (UnableToRetrieveMetadata $unableToRetrieveMetadata) {
+            throw UnableToRetrieveMetadata::fileSize($location, $unableToRetrieveMetadata->reason(), $unableToRetrieveMetadata);
         }
     }
 
@@ -105,8 +103,8 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->mimeType($path);
-        } catch (UnableToRetrieveMetadata $exception) {
-            throw UnableToRetrieveMetadata::mimeType($location, $exception->reason(), $exception);
+        } catch (UnableToRetrieveMetadata $unableToRetrieveMetadata) {
+            throw UnableToRetrieveMetadata::mimeType($location, $unableToRetrieveMetadata->reason(), $unableToRetrieveMetadata);
         }
     }
 
@@ -117,8 +115,8 @@ class MountManager implements FilesystemOperator
 
         try {
             return $filesystem->visibility($path);
-        } catch (UnableToRetrieveMetadata $exception) {
-            throw UnableToRetrieveMetadata::visibility($location, $exception->reason(), $exception);
+        } catch (UnableToRetrieveMetadata $unableToRetrieveMetadata) {
+            throw UnableToRetrieveMetadata::visibility($location, $unableToRetrieveMetadata->reason(), $unableToRetrieveMetadata);
         }
     }
 
@@ -129,8 +127,8 @@ class MountManager implements FilesystemOperator
 
         try {
             $filesystem->write($path, $contents, $config);
-        } catch (UnableToWriteFile $exception) {
-            throw UnableToWriteFile::atLocation($location, $exception->reason(), $exception);
+        } catch (UnableToWriteFile $unableToWriteFile) {
+            throw UnableToWriteFile::atLocation($location, $unableToWriteFile->reason(), $unableToWriteFile);
         }
     }
 
@@ -155,8 +153,8 @@ class MountManager implements FilesystemOperator
 
         try {
             $filesystem->delete($path);
-        } catch (UnableToDeleteFile $exception) {
-            throw UnableToDeleteFile::atLocation($location, '', $exception);
+        } catch (UnableToDeleteFile $unableToDeleteFile) {
+            throw UnableToDeleteFile::atLocation($location, '', $unableToDeleteFile);
         }
     }
 
@@ -167,8 +165,8 @@ class MountManager implements FilesystemOperator
 
         try {
             $filesystem->deleteDirectory($path);
-        } catch (UnableToDeleteDirectory $exception) {
-            throw UnableToDeleteDirectory::atLocation($location, '', $exception);
+        } catch (UnableToDeleteDirectory $unableToDeleteDirectory) {
+            throw UnableToDeleteDirectory::atLocation($location, '', $unableToDeleteDirectory);
         }
     }
 
@@ -179,8 +177,8 @@ class MountManager implements FilesystemOperator
 
         try {
             $filesystem->createDirectory($path, $config);
-        } catch (UnableToCreateDirectory $exception) {
-            throw UnableToCreateDirectory::dueToFailure($location, $exception);
+        } catch (UnableToCreateDirectory $unableToCreateDirectory) {
+            throw UnableToCreateDirectory::dueToFailure($location, $unableToCreateDirectory);
         }
     }
 
@@ -255,8 +253,6 @@ class MountManager implements FilesystemOperator
     }
 
     /**
-     * @param string $path
-     *
      * @return array{0:FilesystemOperator, 1:string}
      */
     private function determineFilesystemAndPath(string $path): array
@@ -285,8 +281,8 @@ class MountManager implements FilesystemOperator
     ): void {
         try {
             $sourceFilesystem->copy($sourcePath, $destinationPath);
-        } catch (UnableToCopyFile $exception) {
-            throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
+        } catch (UnableToCopyFile $unableToCopyFile) {
+            throw UnableToCopyFile::fromLocationTo($source, $destination, $unableToCopyFile);
         }
     }
 
@@ -300,9 +296,9 @@ class MountManager implements FilesystemOperator
         string $destination
     ): void {
         try {
-            $visibility = $visibility ?? $sourceFilesystem->visibility($sourcePath);
+            $visibility ??= $sourceFilesystem->visibility($sourcePath);
             $stream = $sourceFilesystem->readStream($sourcePath);
-            $destinationFilesystem->writeStream($destinationPath, $stream, compact('visibility'));
+            $destinationFilesystem->writeStream($destinationPath, $stream, ['visibility' => $visibility]);
         } catch (UnableToRetrieveMetadata | UnableToReadFile | UnableToWriteFile $exception) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
         }
@@ -317,8 +313,8 @@ class MountManager implements FilesystemOperator
     ): void {
         try {
             $sourceFilesystem->move($sourcePath, $destinationPath);
-        } catch (UnableToMoveFile $exception) {
-            throw UnableToMoveFile::fromLocationTo($source, $destination, $exception);
+        } catch (UnableToMoveFile $unableToMoveFile) {
+            throw UnableToMoveFile::fromLocationTo($source, $destination, $unableToMoveFile);
         }
     }
 

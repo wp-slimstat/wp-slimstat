@@ -75,7 +75,7 @@ final class BrowscapCache implements BrowscapCacheInterface
             assert($cachedVersion === null || is_int($cachedVersion));
 
             if ($cachedVersion !== null && $success) {
-                $this->version = (int) $cachedVersion;
+                $this->version = $cachedVersion;
             }
         }
 

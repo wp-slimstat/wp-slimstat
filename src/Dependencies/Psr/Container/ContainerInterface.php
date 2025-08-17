@@ -29,8 +29,6 @@ interface ContainerInterface
      * It does however mean that `get($id)` will not throw a `NotFoundExceptionInterface`.
      *
      * @param string $id Identifier of the entry to look for.
-     *
-     * @return bool
      */
     public function has(string $id): bool;
 }

@@ -94,6 +94,7 @@ class SlimStat_SlimStat_PhpToken implements \SlimStat_SlimStat_Stringable
             } else {
                 [$id, $text, $line] = $token;
             }
+            
             $tokens[$index] = new static($id, $text, $line, $position);
             $position += \strlen($text);
         }

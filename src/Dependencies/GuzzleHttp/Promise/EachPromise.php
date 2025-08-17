@@ -84,8 +84,8 @@ class EachPromise implements PromisorInterface
             /** @psalm-assert Promise $this->aggregate */
             $this->iterable->rewind();
             $this->refillPending();
-        } catch (\Throwable $e) {
-            $this->aggregate->reject($e);
+        } catch (\Throwable $throwable) {
+            $this->aggregate->reject($throwable);
         }
 
         /**
@@ -101,6 +101,7 @@ class EachPromise implements PromisorInterface
             if ($this->checkIfFinished()) {
                 return;
             }
+            
             reset($this->pending);
             // Consume a potentially fluctuating list of promises while
             // ensuring that indexes are maintained (precluding array_shift).
@@ -115,8 +116,11 @@ class EachPromise implements PromisorInterface
 
         // Clear the references when the promise is resolved.
         $clearFn = function (): void {
-            $this->iterable = $this->concurrency = $this->pending = null;
-            $this->onFulfilled = $this->onRejected = null;
+            $this->iterable = null;
+            $this->concurrency = null;
+            $this->pending = null;
+            $this->onFulfilled = null;
+            $this->onRejected = null;
             $this->nextPendingIndex = 0;
         };
 
@@ -142,6 +146,7 @@ class EachPromise implements PromisorInterface
         if (!$concurrency) {
             return;
         }
+        
         // Add the first pending promise.
         $this->addPending();
         // Note this is special handling for concurrency=1 so that we do
@@ -176,6 +181,7 @@ class EachPromise implements PromisorInterface
                         $this->aggregate
                     );
                 }
+                
                 $this->step($idx);
             },
             function ($reason) use ($idx, $key): void {
@@ -186,6 +192,7 @@ class EachPromise implements PromisorInterface
                         $this->aggregate
                     );
                 }
+                
                 $this->step($idx);
             }
         );
@@ -208,8 +215,8 @@ class EachPromise implements PromisorInterface
             $this->mutex = false;
 
             return true;
-        } catch (\Throwable $e) {
-            $this->aggregate->reject($e);
+        } catch (\Throwable $throwable) {
+            $this->aggregate->reject($throwable);
             $this->mutex = false;
 
             return false;

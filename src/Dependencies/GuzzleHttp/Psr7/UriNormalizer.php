@@ -123,11 +123,11 @@ final class UriNormalizer
      */
     public static function normalize(UriInterface $uri, int $flags = self::PRESERVING_NORMALIZATIONS): UriInterface
     {
-        if ($flags & self::CAPITALIZE_PERCENT_ENCODING) {
+        if (($flags & self::CAPITALIZE_PERCENT_ENCODING) !== 0) {
             $uri = self::capitalizePercentEncoding($uri);
         }
 
-        if ($flags & self::DECODE_UNRESERVED_CHARACTERS) {
+        if (($flags & self::DECODE_UNRESERVED_CHARACTERS) !== 0) {
             $uri = self::decodeUnreservedCharacters($uri);
         }
 
@@ -149,7 +149,7 @@ final class UriNormalizer
             $uri = $uri->withPath(UriResolver::removeDotSegments($uri->getPath()));
         }
 
-        if ($flags & self::REMOVE_DUPLICATE_SLASHES) {
+        if (($flags & self::REMOVE_DUPLICATE_SLASHES) !== 0) {
             $uri = $uri->withPath(preg_replace('#//++#', '/', $uri->getPath()));
         }
 
@@ -185,9 +185,7 @@ final class UriNormalizer
     {
         $regex = '/(?:%[A-Fa-f0-9]{2})++/';
 
-        $callback = function (array $match): string {
-            return strtoupper($match[0]);
-        };
+        $callback = (fn(array $match): string => strtoupper($match[0]));
 
         return
             $uri->withPath(
@@ -201,9 +199,7 @@ final class UriNormalizer
     {
         $regex = '/%(?:2D|2E|5F|7E|3[0-9]|[46][1-9A-F]|[57][0-9A])/i';
 
-        $callback = function (array $match): string {
-            return rawurldecode($match[0]);
-        };
+        $callback = (fn(array $match): string => rawurldecode($match[0]));
 
         return
             $uri->withPath(

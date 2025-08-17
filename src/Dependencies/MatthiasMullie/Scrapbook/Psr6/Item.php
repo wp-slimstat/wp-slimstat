@@ -43,7 +43,7 @@ class Item implements CacheItemInterface
     /**
      * @var bool
      */
-    protected $isHit = null;
+    protected $isHit;
 
     /**
      * @var bool
@@ -106,7 +106,7 @@ class Item implements CacheItemInterface
 
         // sanity check
         if (!$this->isHit()) {
-            return;
+            return null;
         }
 
         return $this->repository->get($this->hash);
@@ -151,12 +151,13 @@ class Item implements CacheItemInterface
         } else {
             $class = get_class($this);
             $type = gettype($expiration);
-            $error = "Argument 1 passed to $class::expiresAt()  must be an ".
-                "instance of DateTime or DateTimeImmutable, $type given";
+            $error = sprintf('Argument 1 passed to %s::expiresAt()  must be an ', $class).
+                sprintf('instance of DateTime or DateTimeImmutable, %s given', $type);
 
             if (class_exists('\TypeError')) {
                 throw new \TypeError($error);
             }
+            
             trigger_error($error, E_USER_ERROR);
         }
 
@@ -181,6 +182,7 @@ class Item implements CacheItemInterface
         } else {
             throw new InvalidArgumentException('Invalid time: '.serialize($time).'. Must be integer or instance of DateInterval.');
         }
+        
         $this->changed = true;
 
         return $this;

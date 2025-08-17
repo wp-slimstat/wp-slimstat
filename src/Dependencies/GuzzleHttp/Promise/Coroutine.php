@@ -64,7 +64,7 @@ final class Coroutine implements PromiseInterface
     {
         $this->generator = $generatorFn();
         $this->result = new Promise(function (): void {
-            while (isset($this->currentPromise)) {
+            while ($this->currentPromise !== null) {
                 $this->currentPromise->wait();
             }
         });

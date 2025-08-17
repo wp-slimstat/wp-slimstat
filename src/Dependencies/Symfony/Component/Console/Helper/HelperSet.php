@@ -25,6 +25,7 @@ class HelperSet implements \IteratorAggregate
 {
     /** @var array<string, Helper> */
     private $helpers = [];
+    
     private $command;
 
     /**

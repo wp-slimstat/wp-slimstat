@@ -12,7 +12,7 @@ final class PortableVisibilityGuard
             $className = Visibility::class;
             throw InvalidVisibilityProvided::withVisibility(
                 $visibility,
-                "either {$className}::PUBLIC or {$className}::PRIVATE"
+                sprintf('either %s::PUBLIC or %s::PRIVATE', $className, $className)
             );
         }
     }

@@ -113,9 +113,9 @@ class UploadedFile implements UploadedFileInterface
         $this->error = $error;
     }
 
-    private static function isStringNotEmpty($param): bool
+    private function isStringNotEmpty($param): bool
     {
-        return is_string($param) && false === empty($param);
+        return is_string($param) && false === ($param === '' || $param === '0');
     }
 
     /**
@@ -163,7 +163,7 @@ class UploadedFile implements UploadedFileInterface
     {
         $this->validateActive();
 
-        if (false === self::isStringNotEmpty($targetPath)) {
+        if (false === $this->isStringNotEmpty($targetPath)) {
             throw new InvalidArgumentException(
                 'Invalid path provided for move operation; must be a non-empty string'
             );

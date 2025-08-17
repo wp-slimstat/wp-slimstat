@@ -121,9 +121,11 @@ class TextDescriptor extends Descriptor
                     $laterOptions[] = $option;
                     continue;
                 }
+                
                 $this->writeText("\n");
                 $this->describeInputOption($option, array_merge($options, ['total_width' => $totalWidth]));
             }
+            
             foreach ($laterOptions as $option) {
                 $this->writeText("\n");
                 $this->describeInputOption($option, array_merge($options, ['total_width' => $totalWidth]));
@@ -150,6 +152,7 @@ class TextDescriptor extends Descriptor
             $this->writeText("\n");
             $this->writeText('  '.OutputFormatter::escape($usage), $options);
         }
+        
         $this->writeText("\n");
 
         $definition = $command->getDefinition();
@@ -181,12 +184,14 @@ class TextDescriptor extends Descriptor
             $width = $this->getColumnWidth($description->getCommands());
 
             foreach ($description->getCommands() as $command) {
-                $this->writeText(sprintf("%-{$width}s %s", $command->getName(), $command->getDescription()), $options);
+                $this->writeText(sprintf('%-%ds ' . $width, $command->getName(), $command->getDescription()), $options);
                 $this->writeText("\n");
             }
         } else {
             if ('' != $help = $application->getHelp()) {
-                $this->writeText("$help\n\n", $options);
+                $this->writeText($help . '
+
+', $options);
             }
 
             $this->writeText("<comment>Usage:</comment>\n", $options);
@@ -208,9 +213,7 @@ class TextDescriptor extends Descriptor
             }
 
             // calculate max. width based on available commands per namespace
-            $width = $this->getColumnWidth(array_merge(...array_values(array_map(function ($namespace) use ($commands) {
-                return array_intersect($namespace['commands'], array_keys($commands));
-            }, array_values($namespaces)))));
+            $width = $this->getColumnWidth(array_merge(...array_values(array_map(fn($namespace) => array_intersect($namespace['commands'], array_keys($commands)), array_values($namespaces)))));
 
             if ($describedNamespace) {
                 $this->writeText(sprintf('<comment>Available commands for the "%s" namespace:</comment>', $describedNamespace), $options);
@@ -219,9 +222,7 @@ class TextDescriptor extends Descriptor
             }
 
             foreach ($namespaces as $namespace) {
-                $namespace['commands'] = array_filter($namespace['commands'], function ($name) use ($commands) {
-                    return isset($commands[$name]);
-                });
+                $namespace['commands'] = array_filter($namespace['commands'], fn($name) => isset($commands[$name]));
 
                 if (!$namespace['commands']) {
                     continue;
@@ -313,7 +314,7 @@ class TextDescriptor extends Descriptor
             }
         }
 
-        return $widths ? max($widths) + 2 : 0;
+        return $widths !== [] ? max($widths) + 2 : 0;
     }
 
     /**
@@ -333,6 +334,7 @@ class TextDescriptor extends Descriptor
 
                 $nameLength += $valueLength;
             }
+            
             $totalWidth = max($totalWidth, $nameLength);
         }
 

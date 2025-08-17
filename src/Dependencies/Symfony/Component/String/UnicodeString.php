@@ -78,6 +78,7 @@ class UnicodeString extends AbstractUnicodeString
             $rx .= '\X{65535}';
             $length -= 65535;
         }
+        
         $rx .= '\X{'.$length.'})/u';
 
         $str = clone $this;
@@ -177,6 +178,7 @@ class UnicodeString extends AbstractUnicodeString
             if (0 > $offset += grapheme_strlen($needle)) {
                 $string = grapheme_substr($string, 0, $offset);
             }
+            
             $offset = 0;
         }
 
@@ -285,7 +287,7 @@ class UnicodeString extends AbstractUnicodeString
     {
         $str = clone $this;
 
-        $start = $start ? \strlen(grapheme_substr($this->string, 0, $start)) : 0;
+        $start = $start !== 0 ? \strlen(grapheme_substr($this->string, 0, $start)) : 0;
         $length = $length ? \strlen(grapheme_substr($this->string, $start, $length ?? 2147483647)) : $length;
         $str->string = substr_replace($this->string, $replacement, $start, $length ?? 2147483647);
 
@@ -368,7 +370,7 @@ class UnicodeString extends AbstractUnicodeString
     public function __wakeup()
     {
         if (!\is_string($this->string)) {
-            throw new \BadMethodCallException('Cannot unserialize '.__CLASS__);
+            throw new \BadMethodCallException('Cannot unserialize '.self::class);
         }
 
         normalizer_is_normalized($this->string) ?: $this->string = normalizer_normalize($this->string);

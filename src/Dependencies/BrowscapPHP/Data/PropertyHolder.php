@@ -9,8 +9,11 @@ use function array_key_exists;
 final class PropertyHolder
 {
     public const TYPE_STRING  = 'string';
+    
     public const TYPE_GENERIC = 'generic';
+    
     public const TYPE_NUMBER  = 'number';
+    
     public const TYPE_BOOLEAN = 'boolean';
 
     /**

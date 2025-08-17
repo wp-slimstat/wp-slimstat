@@ -34,9 +34,13 @@ use function is_string;
 class CheckUpdateCommand extends Command
 {
     public const NO_CACHED_VERSION         = 1;
+    
     public const NO_NEWER_VERSION          = 2;
+    
     public const ERROR_READING_CACHE       = 3;
+    
     public const ERROR_READING_REMOTE_FILE = 4;
+    
     public const GENERIC_ERROR             = 5;
 
     private ?string $defaultCacheFolder = null;

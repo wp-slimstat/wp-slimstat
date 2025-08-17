@@ -51,6 +51,7 @@ class Uri implements UriInterface, \JsonSerializable
      * @see https://datatracker.ietf.org/doc/html/rfc3986#section-2.2
      */
     private const CHAR_SUB_DELIMS = '!\$&\'\(\)\*\+,;=';
+    
     private const QUERY_SEPARATORS_REPLACEMENT = ['=' => '%3D', '&' => '%26'];
 
     /** @var string Uri scheme. */
@@ -80,10 +81,11 @@ class Uri implements UriInterface, \JsonSerializable
     public function __construct(string $uri = '')
     {
         if ($uri !== '') {
-            $parts = self::parse($uri);
+            $parts = $this->parse($uri);
             if ($parts === false) {
-                throw new MalformedUriException("Unable to parse URI: $uri");
+                throw new MalformedUriException('Unable to parse URI: ' . $uri);
             }
+            
             $this->applyParts($parts);
         }
     }
@@ -103,7 +105,7 @@ class Uri implements UriInterface, \JsonSerializable
      *
      * @return array|false
      */
-    private static function parse(string $url)
+    private function parse(string $url)
     {
         // If IPv6
         $prefix = '';
@@ -116,9 +118,7 @@ class Uri implements UriInterface, \JsonSerializable
         /** @var string */
         $encodedUrl = preg_replace_callback(
             '%[^:/@?&=#]+%usD',
-            static function ($matches) {
-                return urlencode($matches[0]);
-            },
+            static fn($matches) => urlencode($matches[0]),
             $url
         );
 
@@ -177,7 +177,7 @@ class Uri implements UriInterface, \JsonSerializable
             $uri .= '//'.$authority;
         }
 
-        if ($authority != '' && $path != '' && $path[0] != '/') {
+        if ($authority != '' && $path !== '' && $path[0] != '/') {
             $path = '/'.$path;
         }
 
@@ -281,7 +281,7 @@ class Uri implements UriInterface, \JsonSerializable
      */
     public static function isSameDocumentReference(UriInterface $uri, UriInterface $base = null): bool
     {
-        if ($base !== null) {
+        if ($base instanceof UriInterface) {
             $uri = UriResolver::resolve($base, $uri);
 
             return ($uri->getScheme() === $base->getScheme())
@@ -650,13 +650,9 @@ class Uri implements UriInterface, \JsonSerializable
             return [];
         }
 
-        $decodedKeys = array_map(function ($k): string {
-            return rawurldecode((string) $k);
-        }, $keys);
+        $decodedKeys = array_map(fn($k): string => rawurldecode((string) $k), $keys);
 
-        return array_filter(explode('&', $current), function ($part) use ($decodedKeys) {
-            return !in_array(rawurldecode(explode('=', $part)[0]), $decodedKeys, true);
-        });
+        return array_filter(explode('&', $current), fn($part) => !in_array(rawurldecode(explode('=', $part)[0]), $decodedKeys, true));
     }
 
     private static function generateQueryString(string $key, ?string $value): string
@@ -735,6 +731,7 @@ class Uri implements UriInterface, \JsonSerializable
             if (0 === strpos($this->path, '//')) {
                 throw new MalformedUriException('The path of a URI without an authority must not start with two slashes "//"');
             }
+            
             if ($this->scheme === '' && false !== strpos(explode('/', $this->path, 2)[0], ':')) {
                 throw new MalformedUriException('A relative URI must not have a path beginning with a segment containing a colon');
             }

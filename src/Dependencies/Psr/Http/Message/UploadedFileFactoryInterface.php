@@ -20,7 +20,6 @@ interface UploadedFileFactoryInterface
      * @param string|null $clientFilename Filename as provided by the client, if any.
      * @param string|null $clientMediaType Media type as provided by the client, if any.
      *
-     * @return UploadedFileInterface
      *
      * @throws \InvalidArgumentException If the file resource is not readable.
      */

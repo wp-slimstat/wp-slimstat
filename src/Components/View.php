@@ -24,19 +24,19 @@ class View
      *
      * @throws Exception if the view file cannot be found.
      */
-    public static function load($view, $args = array(), $return = false, $baseDir = null)
+    public static function load($view, $args = [], $return = false, $baseDir = null)
     {
         // Default to SLIMSTAT_DIR
         $baseDir = empty($baseDir) ? SLIMSTAT_DIR : $baseDir;
 
         try {
-            $viewList = is_array($view) ? $view : array($view);
+            $viewList = is_array($view) ? $view : [$view];
 
             foreach ($viewList as $view) {
-                $viewPath = "$baseDir/views/$view.php";
+                $viewPath = sprintf('%s/views/%s.php', $baseDir, $view);
 
                 if (!file_exists($viewPath)) {
-                    throw new SystemErrorException(esc_html__("View file not found: {$viewPath}", 'wp-statistics'));
+                    throw new SystemErrorException(esc_html__('View file not found: ' . $viewPath, 'wp-statistics'));
                 }
 
                 if (!empty($args)) {
@@ -52,8 +52,9 @@ class View
 
                 include $viewPath;
             }
-        } catch (\Exception $e) {
-            \SlimStat::log($e->getMessage(), 'error');
+        } catch (\Exception $exception) {
+            \SlimStat::log($exception->getMessage(), 'error');
         }
+        return null;
     }
 }

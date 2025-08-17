@@ -88,29 +88,28 @@ class TestLogger extends AbstractLogger
         if (is_string($record)) {
             $record = ['message' => $record];
         }
+        
         return $this->hasRecordThatPasses(function ($rec) use ($record) {
             if ($rec['message'] !== $record['message']) {
                 return false;
             }
+            
             if (isset($record['context']) && $rec['context'] !== $record['context']) {
                 return false;
             }
+            
             return true;
         }, $level);
     }
 
     public function hasRecordThatContains($message, $level)
     {
-        return $this->hasRecordThatPasses(function ($rec) use ($message) {
-            return strpos($rec['message'], $message) !== false;
-        }, $level);
+        return $this->hasRecordThatPasses(fn($rec) => strpos($rec['message'], (string) $message) !== false, $level);
     }
 
     public function hasRecordThatMatches($regex, $level)
     {
-        return $this->hasRecordThatPasses(function ($rec) use ($regex) {
-            return preg_match($regex, $rec['message']) > 0;
-        }, $level);
+        return $this->hasRecordThatPasses(fn($rec) => preg_match($regex, $rec['message']) > 0, $level);
     }
 
     public function hasRecordThatPasses(callable $predicate, $level)
@@ -118,11 +117,13 @@ class TestLogger extends AbstractLogger
         if (!isset($this->recordsByLevel[$level])) {
             return false;
         }
+        
         foreach ($this->recordsByLevel[$level] as $i => $rec) {
             if (call_user_func($predicate, $rec, $i)) {
                 return true;
             }
         }
+        
         return false;
     }
 
@@ -136,6 +137,7 @@ class TestLogger extends AbstractLogger
                 return call_user_func_array([$this, $genericMethod], $args);
             }
         }
+        
         throw new \BadMethodCallException('Call to undefined method ' . get_class($this) . '::' . $method . '()');
     }
 

@@ -27,9 +27,11 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 class ConsoleLogger extends AbstractLogger
 {
     public const INFO = 'info';
+    
     public const ERROR = 'error';
 
     private $output;
+    
     private $verbosityLevelMap = [
         LogLevel::EMERGENCY => OutputInterface::VERBOSITY_NORMAL,
         LogLevel::ALERT => OutputInterface::VERBOSITY_NORMAL,
@@ -40,6 +42,7 @@ class ConsoleLogger extends AbstractLogger
         LogLevel::INFO => OutputInterface::VERBOSITY_VERY_VERBOSE,
         LogLevel::DEBUG => OutputInterface::VERBOSITY_DEBUG,
     ];
+    
     private $formatLevelMap = [
         LogLevel::EMERGENCY => self::ERROR,
         LogLevel::ALERT => self::ERROR,
@@ -50,6 +53,7 @@ class ConsoleLogger extends AbstractLogger
         LogLevel::INFO => self::INFO,
         LogLevel::DEBUG => self::INFO,
     ];
+    
     private $errored = false;
 
     public function __construct(OutputInterface $output, array $verbosityLevelMap = [], array $formatLevelMap = [])
@@ -77,6 +81,7 @@ class ConsoleLogger extends AbstractLogger
             if ($this->output instanceof ConsoleOutputInterface) {
                 $output = $output->getErrorOutput();
             }
+            
             $this->errored = true;
         }
 
@@ -111,13 +116,13 @@ class ConsoleLogger extends AbstractLogger
         $replacements = [];
         foreach ($context as $key => $val) {
             if (null === $val || \is_scalar($val) || (\is_object($val) && method_exists($val, '__toString'))) {
-                $replacements["{{$key}}"] = $val;
+                $replacements[sprintf('{%s}', $key)] = $val;
             } elseif ($val instanceof \DateTimeInterface) {
-                $replacements["{{$key}}"] = $val->format(\DateTime::RFC3339);
+                $replacements[sprintf('{%s}', $key)] = $val->format(\DateTime::RFC3339);
             } elseif (\is_object($val)) {
-                $replacements["{{$key}}"] = '[object '.\get_class($val).']';
+                $replacements[sprintf('{%s}', $key)] = '[object '.\get_class($val).']';
             } else {
-                $replacements["{{$key}}"] = '['.\gettype($val).']';
+                $replacements[sprintf('{%s}', $key)] = '['.\gettype($val).']';
             }
         }
 

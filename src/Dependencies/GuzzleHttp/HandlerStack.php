@@ -92,14 +92,14 @@ class HandlerStack
         $result = '';
         foreach (\array_reverse($this->stack) as $tuple) {
             ++$depth;
-            $str = "{$depth}) Name: '{$tuple[1]}', ";
+            $str = sprintf("%d) Name: '%s', ", $depth, $tuple[1]);
             $str .= 'Function: '.$this->debugCallable($tuple[0]);
-            $result = "> {$str}\n{$result}";
+            $result = sprintf('> %s%s%s', $str, PHP_EOL, $result);
             $stack[] = $str;
         }
 
         foreach (\array_keys($stack) as $k) {
-            $result .= "< {$stack[$k]}\n";
+            $result .= sprintf('< %s%s', $stack[$k], PHP_EOL);
         }
 
         return $result;
@@ -181,16 +181,14 @@ class HandlerStack
     public function remove($remove): void
     {
         if (!is_string($remove) && !is_callable($remove)) {
-            trigger_deprecation('guzzlehttp/guzzle', '7.4', 'Not passing a callable or string to %s::%s() is deprecated and will cause an error in 8.0.', __CLASS__, __FUNCTION__);
+            trigger_deprecation('guzzlehttp/guzzle', '7.4', 'Not passing a callable or string to %s::%s() is deprecated and will cause an error in 8.0.', self::class, __FUNCTION__);
         }
 
         $this->cached = null;
         $idx = \is_callable($remove) ? 0 : 1;
         $this->stack = \array_values(\array_filter(
             $this->stack,
-            static function ($tuple) use ($idx, $remove) {
-                return $tuple[$idx] !== $remove;
-            }
+            static fn($tuple) => $tuple[$idx] !== $remove
         ));
     }
 
@@ -225,7 +223,7 @@ class HandlerStack
             }
         }
 
-        throw new \InvalidArgumentException("Middleware not found: $name");
+        throw new \InvalidArgumentException('Middleware not found: ' . $name);
     }
 
     /**
@@ -260,13 +258,13 @@ class HandlerStack
     private function debugCallable($fn): string
     {
         if (\is_string($fn)) {
-            return "callable({$fn})";
+            return sprintf('callable(%s)', $fn);
         }
 
         if (\is_array($fn)) {
             return \is_string($fn[0])
-                ? "callable({$fn[0]}::{$fn[1]})"
-                : "callable(['".\get_class($fn[0])."', '{$fn[1]}'])";
+                ? sprintf('callable(%s::%s)', $fn[0], $fn[1])
+                : "callable(['".\get_class($fn[0]).sprintf("', '%s'])", $fn[1]);
         }
 
         /** @var object $fn */

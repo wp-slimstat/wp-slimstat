@@ -1,6 +1,6 @@
 <?php
 // Keep track of multiple occurrences of the same report, to allow users to delete duplicates
-$already_seen = array();
+$already_seen = [];
 ?>
 
 <div class="backdrop-container ">
@@ -49,9 +49,9 @@ $already_seen = array();
                         }
 
                         echo "
-			<div class='postbox$placeholder_classes' id='" . esc_attr($a_report_id) . "'>
+			<div class='postbox{$placeholder_classes}' id='" . esc_attr($a_report_id) . "'>
 				<div class='slimstat-header-buttons'>
-					<a class='slimstat-font-$icon' href='#' title='" . esc_attr($title) . "'></a>
+					<a class='slimstat-font-{$icon}' href='#' title='" . esc_attr($title) . "'></a>
 					" . (($a_location_id != 'inactive') ? ' <a class="slimstat-font-minus-circled" href="#" title="' . __('Move to Inactive', 'wp-slimstat') . '"></a>' : '') . "
 				</div>
 				<h3 class='hndle'>" . wp_slimstat_reports::$reports[$a_report_id]['title'] . "</h3>

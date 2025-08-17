@@ -42,7 +42,9 @@ final class Message
             }
         }
 
-        return "{$msg}\r\n\r\n".$message->getBody();
+        return $msg . '
+
+'.$message->getBody();
     }
 
     /**
@@ -98,7 +100,7 @@ final class Message
     {
         $body = $message->getBody();
 
-        if ($body->tell()) {
+        if ($body->tell() !== 0) {
             $body->rewind();
         }
     }
@@ -114,7 +116,7 @@ final class Message
      */
     public static function parseMessage(string $message): array
     {
-        if (!$message) {
+        if ($message === '' || $message === '0') {
             throw new \InvalidArgumentException('Invalid message');
         }
 
@@ -183,7 +185,7 @@ final class Message
         });
 
         // If no host is found, then a full URI cannot be constructed.
-        if (!$hostKey) {
+        if ($hostKey === []) {
             return $path;
         }
 
@@ -205,6 +207,7 @@ final class Message
         if (!preg_match('/^[\S]+\s+([a-zA-Z]+:\/\/|\/).*/', $data['start-line'], $matches)) {
             throw new \InvalidArgumentException('Invalid request string');
         }
+        
         $parts = explode(' ', $data['start-line'], 3);
         $version = isset($parts[2]) ? explode('/', $parts[2])[1] : '1.1';
 
@@ -230,9 +233,10 @@ final class Message
         // According to https://datatracker.ietf.org/doc/html/rfc7230#section-3.1.2
         // the space between status-code and reason-phrase is required. But
         // browsers accept responses without space and reason as well.
-        if (!preg_match('/^HTTP\/.* [0-9]{3}( .*|$)/', $data['start-line'])) {
+        if (!preg_match('/^HTTP\/.* \d{3}( .*|$)/', $data['start-line'])) {
             throw new \InvalidArgumentException('Invalid response string: '.$data['start-line']);
         }
+        
         $parts = explode(' ', $data['start-line'], 3);
 
         return new Response(

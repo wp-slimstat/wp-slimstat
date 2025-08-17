@@ -46,8 +46,8 @@ class SQL extends PrefixKeys
             WHERE k LIKE :key"
         );
 
-        return $statement->execute(array(
+        return $statement->execute([
             ':key' => $this->prefix.'%',
-        ));
+        ]);
     }
 }

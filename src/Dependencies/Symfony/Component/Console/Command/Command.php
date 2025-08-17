@@ -34,7 +34,9 @@ class Command
 {
     // see https://tldp.org/LDP/abs/html/exitcodes.html
     public const SUCCESS = 0;
+    
     public const FAILURE = 1;
+    
     public const INVALID = 2;
 
     /**
@@ -48,18 +50,31 @@ class Command
     protected static $defaultDescription;
 
     private $application;
+    
     private $name;
+    
     private $processTitle;
+    
     private $aliases = [];
+    
     private $definition;
+    
     private $hidden = false;
+    
     private $help = '';
+    
     private $description = '';
+    
     private $fullDefinition;
+    
     private $ignoreValidationErrors = false;
+    
     private $code;
+    
     private $synopsis = [];
+    
     private $usages = [];
+    
     private $helperSet;
 
     /**
@@ -135,7 +150,7 @@ class Command
     public function setApplication(?Application $application = null)
     {
         $this->application = $application;
-        if ($application) {
+        if ($application instanceof Application) {
             $this->setHelperSet($application->getHelperSet());
         } else {
             $this->helperSet = null;
@@ -255,9 +270,9 @@ class Command
         // bind the input against the command specific arguments/options
         try {
             $input->bind($this->getDefinition());
-        } catch (ExceptionInterface $e) {
+        } catch (ExceptionInterface $exception) {
             if (!$this->ignoreValidationErrors) {
-                throw $e;
+                throw $exception;
             }
         }
 
@@ -333,7 +348,7 @@ class Command
             if (null === $r->getClosureThis()) {
                 set_error_handler(static function () {});
                 try {
-                    if ($c = \Closure::bind($code, $this)) {
+                    if (($c = \Closure::bind($code, $this)) instanceof \Closure) {
                         $code = $c;
                     }
                 } finally {

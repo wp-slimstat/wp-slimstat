@@ -2,17 +2,17 @@
 
 class wp_slimstat_reports
 {
-    public static $reports = array(); // Structures to store all the information about what screens and reports are available
-    public static $user_reports = array(
-        'slimview1' => array(),
-        'slimview2' => array(),
-        'slimview3' => array(),
-        'slimview4' => array(),
-        'slimview5' => array(),
-        'dashboard' => array(),
-        'inactive'  => array()
-    );
-    public static $resource_titles = array();
+    public static $reports = []; // Structures to store all the information about what screens and reports are available
+    public static $user_reports = [
+        'slimview1' => [],
+        'slimview2' => [],
+        'slimview3' => [],
+        'slimview4' => [],
+        'slimview5' => [],
+        'dashboard' => [],
+        'inactive'  => []
+    ];
+    public static $resource_titles = [];
 
     /**
      * Initalize class properties
@@ -25,11 +25,11 @@ class wp_slimstat_reports
         }
 
         // Include and initialize the API to interact with the database
-        include_once('wp-slimstat-db.php');
+        include_once(__DIR__ . '/wp-slimstat-db.php');
         wp_slimstat_db::init();
 
         // Include the localization library
-        include_once(plugin_dir_path(dirname(dirname(__FILE__))) . 'languages/index.php');
+        include_once(plugin_dir_path(dirname(__FILE__, 2)) . 'languages/index.php');
 
         // Define all the reports
         //
@@ -97,805 +97,805 @@ class wp_slimstat_reports
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
-        self::$reports = array(
-            'slim_p7_02' => array(
+        self::$reports = [
+            'slim_p7_02' => [
                 'title'         => __('Access Log', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_access_log'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_access_log'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => '*',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('full-width', 'tall'),
-                'locations'     => array('slimview1', 'dashboard'),
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['full-width', 'tall'],
+                'locations'     => ['slimview1', 'dashboard'],
                 'tooltip'       => __('Color Codes', 'wp-slimstat') . '</strong><p><span class="little-color-box is-search-engine"></span> ' . __('From search result page', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-visitor"></span> ' . __('Has Left Comments', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-user"></span> ' . __('WP User', 'wp-slimstat') . '</p><p><span class="little-color-box is-direct"></span> ' . __('Other Human', 'wp-slimstat') . '</p><p><span class="little-color-box"></span> ' . __('Bot or Crawler', 'wp-slimstat') . '</p>'
-            ),
+            ],
 
-            'slim_p1_01'    => array(
+            'slim_p1_01'    => [
                 'title'         => __('Pageviews', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_chart'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_chart'],
+                'callback_args' => [
                     'id'           => 'slim_p1_01',
-                    'chart_data'   => array(
+                    'chart_data'   => [
                         'data1' => 'COUNT( ip )',
                         'data2' => 'COUNT( DISTINCT ip )'
-                    ),
-                    'chart_labels' => array(
+                    ],
+                    'chart_labels' => [
                         __('Pageviews', 'wp-slimstat'),
                         __('Unique IPs', 'wp-slimstat')
-                    )
-                ),
-                'classes'       => array('extralarge', 'chart'),
-                'locations'     => array('slimview2', 'dashboard'),
+                    ]
+                ],
+                'classes'       => ['extralarge', 'chart'],
+                'locations'     => ['slimview2', 'dashboard'],
                 'tooltip'       => $pageviews_chart_tooltip
-            ),
-            'slim_p1_03'    => array(
+            ],
+            'slim_p1_03'    => [
                 'title'         => __('At a Glance', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
-                    'raw' => array('wp_slimstat_db', 'get_overview_summary')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'dashboard')
-            ),
-            'slim_p1_04'    => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'raw' => ['wp_slimstat_db', 'get_overview_summary']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'dashboard']
+            ],
+            'slim_p1_04'    => [
                 'title'         => __('Currently Online', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'             => 'recent',
                     'columns'          => 'ip',
                     'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ' OR dt > ' . (date_i18n('U') - 300) . ')',
                     'use_date_filters' => false,
-                    'raw'              => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'dashboard')
-            ),
-            'slim_p1_06'    => array(
+                    'raw'              => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'dashboard']
+            ],
+            'slim_p1_06'    => [
                 'title'         => __('Recent Search Terms', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'         => 'recent',
                     'columns'      => 'searchterms',
                     'where'        => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
                     'more_columns' => 'referer, resource',
-                    'raw'          => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'slimview5'),
+                    'raw'          => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'slimview5'],
                 'tooltip'       => __('Keywords used by your visitors to find your website on a search engine.', 'wp-slimstat')
-            ),
-            'slim_p1_08'    => array(
+            ],
+            'slim_p1_08'    => [
                 'title'         => __('Top Web Pages', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'resource',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'dashboard'),
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'dashboard'],
                 'tooltip'       => __('Here a "page" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and any other custom post type. For example, you can set the corresponding filter where Resource Content Type equals cpt:you_cpt_slug_here to get top web pages for a specific custom post type you have.', 'wp-slimstat')
-            ),
-            'slim_p1_10'    => array(
+            ],
+            'slim_p1_10'    => [
                 'title'         => __('Top Referring Domains', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'      => 'top',
                     'columns'   => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
                     'as_column' => 'referer',
                     'filter_op' => 'contains',
                     'where'     => 'referer NOT LIKE "%' . str_replace('www.', '', parse_url(home_url(), PHP_URL_HOST)) . '%"',
-                    'raw'       => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'slimview5', 'dashboard')
-            ),
-            'slim_p1_11'    => array(
+                    'raw'       => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'slimview5', 'dashboard']
+            ],
+            'slim_p1_11'    => [
                 'title'         => __('Top Known Visitors', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'username',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'dashboard')
-            ),
-            'slim_p1_12'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'dashboard']
+            ],
+            'slim_p1_12'    => [
                 'title'         => __('Top Search Terms', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'searchterms',
                     'where'   => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'slimview4', 'slimview5', 'dashboard')
-            ),
-            'slim_p1_13'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'slimview4', 'slimview5', 'dashboard']
+            ],
+            'slim_p1_13'    => [
                 'title'         => __('Top Countries', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'country',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
                 // 'color'         => '#fff7ed',
-                'locations'     => array('slimview2', 'slimview3', 'slimview5', 'dashboard'),
+                'locations'     => ['slimview2', 'slimview3', 'slimview5', 'dashboard'],
                 'tooltip'       => __('You can configure Slimstat to not track specific Countries by setting the corresponding filter in Slimstat > Settings > Exclusions.', 'wp-slimstat')
-            ),
-            'slim_p1_15'    => array(
+            ],
+            'slim_p1_15'    => [
                 'title'         => __('Rankings', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_rankings'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_rankings'],
+                'callback_args' => [
                     'id' => 'slim_p1_15'
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive'),
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive'],
                 'tooltip'       => __("Slimstat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data.", 'wp-slimstat')
-            ),
-            'slim_p1_17'    => array(
+            ],
+            'slim_p1_17'    => [
                 'title'         => __('Top Language Families', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'      => 'top',
                     'columns'   => 'SUBSTRING( language, 1, 2 )',
                     'as_column' => 'language',
                     'filter_op' => 'contains',
-                    'raw'       => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p1_18'    => array(
+                    'raw'       => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p1_18'    => [
                 'title'         => __('Users Currently Online', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'             => 'recent',
                     'columns'          => 'username',
                     'where'            => 'dt_out > ' . (date_i18n('U') - 300) . ' OR dt > ' . (date_i18n('U') - 300),
                     'use_date_filters' => false,
-                    'raw'              => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview2', 'dashboard'),
+                    'raw'              => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview2', 'dashboard'],
                 'tooltip'       => __('When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat')
-            ),
-            'slim_p1_19_01' => array(
+            ],
+            'slim_p1_19_01' => [
                 'title'         => __('Search Terms', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_chart'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_chart'],
+                'callback_args' => [
                     'id'           => 'slim_p1_19_01',
-                    'chart_data'   => array(
+                    'chart_data'   => [
                         'data1' => 'COUNT( searchterms )',
                         'data2' => 'COUNT( DISTINCT searchterms )',
                         'where' => 'searchterms <> "_" AND searchterms IS NOT NULL AND searchterms <> ""'
-                    ),
-                    'chart_labels' => array(
+                    ],
+                    'chart_labels' => [
                         __('Search Terms', 'wp-slimstat'),
                         __('Unique Terms', 'wp-slimstat')
-                    )
-                ),
-                'classes'       => array('extralarge', 'chart'),
-                'locations'     => array('slimview2'),
+                    ]
+                ],
+                'classes'       => ['extralarge', 'chart'],
+                'locations'     => ['slimview2'],
                 'tooltip'       => $search_terms_chart_tooltip
-            ),
+            ],
 
-            'slim_p2_01'    => array(
+            'slim_p2_01'    => [
                 'title'         => __('Human Visits', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_chart'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_chart'],
+                'callback_args' => [
                     'id'           => 'slim_p2_01',
-                    'chart_data'   => array(
+                    'chart_data'   => [
                         'data1' => 'COUNT( DISTINCT visit_id )',
                         'data2' => 'COUNT( DISTINCT ip )',
                         'where' => '(visit_id > 0 AND browser_type <> 1)'
-                    ),
-                    'chart_labels' => array(
+                    ],
+                    'chart_labels' => [
                         __('Visits', 'wp-slimstat'),
                         __('Unique IPs', 'wp-slimstat')
-                    )
-                ),
-                'classes'       => array('extralarge', 'chart'),
-                'locations'     => array('slimview3'),
+                    ]
+                ],
+                'classes'       => ['extralarge', 'chart'],
+                'locations'     => ['slimview3'],
                 'tooltip'       => $human_visits_chart_tooltip
-            ),
-            'slim_p2_02'    => array(
+            ],
+            'slim_p2_02'    => [
                 'title'         => __('Audience Overview', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
-                    'raw' => array('wp_slimstat_db', 'get_visitors_summary')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3', 'dashboard'),
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'raw' => ['wp_slimstat_db', 'get_visitors_summary']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3', 'dashboard'],
                 'tooltip'       => __('Where not otherwise specified, the metrics in this report are referred to human visitors.', 'wp-slimstat')
-            ),
-            'slim_p2_03'    => array(
+            ],
+            'slim_p2_03'    => [
                 'title'         => __('Top Languages', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'language',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3')
-            ),
-            'slim_p2_04'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3']
+            ],
+            'slim_p2_04'    => [
                 'title'         => __('Top User Agents', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'browser, browser_version',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3', 'dashboard'),
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3', 'dashboard'],
                 'tooltip'       => __('This report includes all types of clients, both bots and humans.', 'wp-slimstat')
-            ),
-            'slim_p2_05'    => array(
+            ],
+            'slim_p2_05'    => [
                 'title'         => __('Top Service Providers', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'ip',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('extralarge'),
-                'locations'     => array('inactive'),
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['extralarge'],
+                'locations'     => ['inactive'],
                 'tooltip'       => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat')
-            ),
-            'slim_p2_06'    => array(
+            ],
+            'slim_p2_06'    => [
                 'title'         => __('Top Operating Systems', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'platform',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive'),
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive'],
                 'tooltip'       => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat')
-            ),
-            'slim_p2_07'    => array(
+            ],
+            'slim_p2_07'    => [
                 'title'         => __('Top Screen Resolutions', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'screen_width, screen_height',
                     'where'   => 'screen_width <> 0 AND screen_height <> 0',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3', 'dashboard')
-            ),
-            'slim_p2_08'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3', 'dashboard']
+            ],
+            'slim_p2_08'    => [
                 'title'         => __('Top Viewport Sizes', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'resolution',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal',),
-                'locations'     => array('inactive')
-            ),
-            'slim_p2_12'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal',],
+                'locations'     => ['inactive']
+            ],
+            'slim_p2_12'    => [
                 'title'         => __('Visit Duration', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
-                    'raw' => array('wp_slimstat_db', 'get_visits_duration')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3'),
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'raw' => ['wp_slimstat_db', 'get_visits_duration']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3'],
                 'tooltip'       => __('All values represent the percentages of pageviews within the corresponding time range.', 'wp-slimstat')
-            ),
-            'slim_p2_13'    => array(
+            ],
+            'slim_p2_13'    => [
                 'title'         => __('Recent Countries', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'country',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p2_14'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p2_14'    => [
                 'title'         => __('Recent Viewport Sizes', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'resolution',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p2_15'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p2_15'    => [
                 'title'         => __('Recent Operating Systems', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'platform',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p2_16'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p2_16'    => [
                 'title'         => __('Recent Browsers', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'browser, browser_version',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p2_17'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p2_17'    => [
                 'title'         => __('Recent Languages', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'language',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p2_18'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p2_18'    => [
                 'title'         => __('Top Browser Families', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'browser',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive'),
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive'],
                 'tooltip'       => __('This report shows you what user agent families (no version considered) are popular among your visitors.', 'wp-slimstat')
-            ),
-            'slim_p2_19'    => array(
+            ],
+            'slim_p2_19'    => [
                 'title'         => __('Top OS Families', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'      => 'top',
                     'columns'   => 'CONCAT( "p-", SUBSTRING( platform, 1, 3 ) )',
                     'as_column' => 'platform',
                     'filter_op' => 'contains',
-                    'raw'       => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3'),
+                    'raw'       => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3'],
                 'tooltip'       => __('This report shows you what operating system families (no version considered) are popular among your visitors.', 'wp-slimstat')
-            ),
-            'slim_p2_20'    => array(
+            ],
+            'slim_p2_20'    => [
                 'title'         => __('Recent Users', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'username',
                     'where'   => 'notes LIKE "%user:%"',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3')
-            ),
-            'slim_p2_21'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3']
+            ],
+            'slim_p2_21'    => [
                 'title'         => __('Top Users', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'username',
                     'where'   => 'notes LIKE "%user:%"',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3', 'dashboard')
-            ),
-            'slim_p2_22_01' => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3', 'dashboard']
+            ],
+            'slim_p2_22_01' => [
                 'title'         => __('Users', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_chart'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_chart'],
+                'callback_args' => [
                     'id'           => 'slim_p2_22_01',
-                    'chart_data'   => array(
+                    'chart_data'   => [
                         'data1' => 'COUNT( username )',
                         'data2' => 'COUNT( DISTINCT username )'
-                    ),
-                    'chart_labels' => array(
+                    ],
+                    'chart_labels' => [
                         __('Users', 'wp-slimstat'),
                         __('Unique Users', 'wp-slimstat')
-                    )
-                ),
-                'classes'       => array('extralarge', 'chart'),
-                'locations'     => array('slimview3'),
+                    ]
+                ],
+                'classes'       => ['extralarge', 'chart'],
+                'locations'     => ['slimview3'],
                 'tooltip'       => $users_chart_tooltip
-            ),
-            'slim_p2_24'    => array(
+            ],
+            'slim_p2_24'    => [
                 'title'         => __('Top Bots', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'browser, browser_version',
                     'where'   => 'browser_type = 1',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3')
-            ),
-            'slim_p2_25'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3']
+            ],
+            'slim_p2_25'    => [
                 'title'         => __('Top Human Browsers', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'browser, browser_version',
                     'where'   => 'browser_type != 1',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3')
-            ),
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3']
+            ],
 
-            'slim_p3_01' => array(
+            'slim_p3_01' => [
                 'title'         => __('Traffic Sources', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_chart'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_chart'],
+                'callback_args' => [
                     'id'           => 'slim_p3_01',
-                    'chart_data'   => array(
+                    'chart_data'   => [
                         'data1' => 'COUNT( DISTINCT referer )',
                         'data2' => 'COUNT( DISTINCT ip )',
                         'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")'
-                    ),
-                    'chart_labels' => array(
+                    ],
+                    'chart_labels' => [
                         __('Domains', 'wp-slimstat'),
                         __('Unique IPs', 'wp-slimstat')
-                    )
-                ),
-                'classes'       => array('extralarge', 'chart'),
-                'locations'     => array('slimview5'),
+                    ]
+                ],
+                'classes'       => ['extralarge', 'chart'],
+                'locations'     => ['slimview5'],
                 'tooltip'       => $traffic_sources_chart_tooltip
-            ),
-            'slim_p3_02' => array(
+            ],
+            'slim_p3_02' => [
                 'title'         => __('Traffic Summary', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
-                    'raw' => array('wp_slimstat_db', 'get_traffic_sources_summary')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview5')
-            ),
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'raw' => ['wp_slimstat_db', 'get_traffic_sources_summary']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview5']
+            ],
 
-            'slim_p4_01'    => array(
+            'slim_p4_01'    => [
                 'title'         => __('Recent Outbound Links', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'outbound_resource',
-                    'raw'     => array('wp_slimstat_db', 'get_recent_outbound')
-                ),
-                'classes'       => array('large'),
-                'locations'     => array('slimview4'),
+                    'raw'     => ['wp_slimstat_db', 'get_recent_outbound']
+                ],
+                'classes'       => ['large'],
+                'locations'     => ['slimview4'],
                 'tooltip'       => ''
-            ),
-            'slim_p4_02'    => array(
+            ],
+            'slim_p4_02'    => [
                 'title'         => __('Recent Posts', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'      => 'recent',
                     'columns'   => 'TRIM( TRAILING "/" FROM resource )',
                     'as_column' => 'resource',
                     'where'     => 'content_type = "post"',
-                    'raw'       => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p4_04'    => array(
+                    'raw'       => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p4_04'    => [
                 'title'         => __('Recent Feeds', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'resource',
                     'where'   => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p4_05'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p4_05'    => [
                 'title'         => __('Recent Pages Not Found', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'resource',
                     'where'   => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p4_06'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p4_06'    => [
                 'title'         => __('Recent Internal Searches', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'searchterms',
                     'where'   => 'content_type LIKE "%%search%%" AND searchterms <> "" AND searchterms IS NOT NULL',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4'),
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4'],
                 'tooltip'       => __("Searches performed using WordPress' built-in search functionality.", 'wp-slimstat')
-            ),
-            'slim_p4_07'    => array(
+            ],
+            'slim_p4_07'    => [
                 'title'         => __('Top Categories', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'category',
                     'where'   => 'content_type LIKE "%category%"',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4', 'dashboard')
-            ),
-            'slim_p4_09'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4', 'dashboard']
+            ],
+            'slim_p4_09'    => [
                 'title'         => __('Top Downloads', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'     => 'top',
                     'columns'  => 'resource',
                     'where'    => 'content_type = "download"',
-                    'raw'      => array('wp_slimstat_db', 'get_top'),
+                    'raw'      => ['wp_slimstat_db', 'get_top'],
                     'criteria' => 'swap'
-                ),
-                'classes'       => array('large'),
-                'locations'     => array('slimview4'),
+                ],
+                'classes'       => ['large'],
+                'locations'     => ['slimview4'],
                 'tooltip'       => __('You can configure Slimstat to track specific file extensions as downloads.', 'wp-slimstat')
-            ),
-            'slim_p4_10'    => array(
+            ],
+            'slim_p4_10'    => [
                 'title'         => __('Recent Custom Events', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_events'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_events'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'notes',
-                    'raw'     => array('wp_slimstat_db', 'get_recent_events')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive'),
+                    'raw'     => ['wp_slimstat_db', 'get_recent_events']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive'],
                 'tooltip'       => __('This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to use this functionality.', 'wp-slimstat')
-            ),
-            'slim_p4_11'    => array(
+            ],
+            'slim_p4_11'    => [
                 'title'         => __('Top Posts', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'resource',
                     'where'   => 'content_type = "post"',
-                    'raw'     => array('wp_slimstat_db', 'get_top'),
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p4_12'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top'],
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p4_12'    => [
                 'title'         => __('Top Custom Events', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_events'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_events'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'notes',
-                    'raw'     => array('wp_slimstat_db', 'get_top_events')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4'),
+                    'raw'     => ['wp_slimstat_db', 'get_top_events']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4'],
                 'tooltip'       => __('This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to use this functionality.', 'wp-slimstat')
-            ),
-            'slim_p4_13'    => array(
+            ],
+            'slim_p4_13'    => [
                 'title'         => __('Top Internal Searches', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'searchterms',
                     'where'   => 'content_type LIKE "%%search%%" AND searchterms <> "" AND searchterms IS NOT NULL',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p4_15'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p4_15'    => [
                 'title'         => __('Recent Categories', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'      => 'recent',
                     'columns'   => 'TRIM( TRAILING "/" FROM resource )',
                     'as_column' => 'resource',
                     'where'     => '(content_type = "category")',
-                    'raw'       => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p4_152'    => array(
+                    'raw'       => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p4_152'    => [
                 'title'         => __('Recent Tags', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'      => 'recent',
                     'columns'   => 'TRIM( TRAILING "/" FROM resource )',
                     'as_column' => 'resource',
                     'where'     => '(content_type = "tag")',
-                    'raw'       => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p4_16'    => array(
+                    'raw'       => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p4_16'    => [
                 'title'         => __('Top Pages Not Found', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'resource',
                     'where'   => 'content_type LIKE "%404%"',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p4_18'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p4_18'    => [
                 'title'         => __('Top Authors', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'author',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4', 'dashboard')
-            ),
-            'slim_p4_19'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4', 'dashboard']
+            ],
+            'slim_p4_19'    => [
                 'title'         => __('Top Tags', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'category',
                     'where'   => '(content_type LIKE "%tag%")',
-                    'raw'     => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p4_20'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p4_20'    => [
                 'title'         => __('Recent Downloads', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'recent',
                     'columns' => 'resource',
                     'where'   => 'content_type = "download"',
-                    'raw'     => array('wp_slimstat_db', 'get_recent')
-                ),
-                'classes'       => array('large'),
-                'locations'     => array('inactive')
-            ),
-            'slim_p4_21'    => array(
+                    'raw'     => ['wp_slimstat_db', 'get_recent']
+                ],
+                'classes'       => ['large'],
+                'locations'     => ['inactive']
+            ],
+            'slim_p4_21'    => [
                 'title'         => __('Top Outbound Links', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'     => 'top',
                     'columns'  => 'outbound_resource',
-                    'raw'      => array('wp_slimstat_db', 'get_top_outbound'),
+                    'raw'      => ['wp_slimstat_db', 'get_top_outbound'],
                     'criteria' => 'swap'
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4', 'dashboard'),
-            ),
-            'slim_p4_22'    => array(
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4', 'dashboard'],
+            ],
+            'slim_p4_22'    => [
                 'title'         => __('Your Website', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
-                    'raw' => array('wp_slimstat_db', 'get_your_blog')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('inactive'),
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'raw' => ['wp_slimstat_db', 'get_your_blog']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['inactive'],
                 'tooltip'       => __('Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set here above.', 'wp-slimstat')
-            ),
-            'slim_p4_23'    => array(
+            ],
+            'slim_p4_23'    => [
                 'title'         => __('Top Bounce Pages', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'      => 'top',
                     'columns'   => 'TRIM( TRAILING "/" FROM resource )',
                     'as_column' => 'resource',
                     'where'     => 'content_type <> "404"',
                     'having'    => 'HAVING COUNT(visit_id) = 1',
-                    'raw'       => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p4_24'    => array(
+                    'raw'       => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p4_24'    => [
                 'title'         => __('Top Exit Pages', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'                => 'top',
                     'columns'             => 'visit_id',
                     'outer_select_column' => 'resource',
                     'aggr_function'       => 'MAX',
-                    'raw'                 => array('wp_slimstat_db', 'get_top_aggr')
-                ),
-                'classes'       => array('large'),
-                'locations'     => array('slimview4', 'dashboard')
-            ),
-            'slim_p4_25'    => array(
+                    'raw'                 => ['wp_slimstat_db', 'get_top_aggr']
+                ],
+                'classes'       => ['large'],
+                'locations'     => ['slimview4', 'dashboard']
+            ],
+            'slim_p4_25'    => [
                 'title'         => __('Top Entry Pages', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'                => 'top',
                     'columns'             => 'visit_id',
                     'outer_select_column' => 'resource',
                     'aggr_function'       => 'MIN',
-                    'raw'                 => array('wp_slimstat_db', 'get_top_aggr')
-                ),
+                    'raw'                 => ['wp_slimstat_db', 'get_top_aggr']
+                ],
                 // 'color'         => '#EFF6FF',
-                'classes'       => array('large'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p4_26_01' => array(
+                'classes'       => ['large'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p4_26_01' => [
                 'title'         => __('Pages with Outbound Links', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_chart'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_chart'],
+                'callback_args' => [
                     'id'           => 'slim_p4_26_01',
-                    'chart_data'   => array(
+                    'chart_data'   => [
                         'data1' => 'COUNT( outbound_resource )',
                         'data2' => 'COUNT( DISTINCT outbound_resource )'
-                    ),
-                    'chart_labels' => array(
+                    ],
+                    'chart_labels' => [
                         __('Outbound Links', 'wp-slimstat'),
                         __('Unique Outbound', 'wp-slimstat')
-                    )
-                ),
-                'classes'       => array('extralarge', 'chart'),
-                'locations'     => array('slimview4'),
+                    ]
+                ],
+                'classes'       => ['extralarge', 'chart'],
+                'locations'     => ['slimview4'],
                 'tooltip'       => $pages_with_outbound_links_chart_tooltip
-            ),
-            'slim_p4_27'    => array(
+            ],
+            'slim_p4_27'    => [
                 'title'         => __('Users by Page', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_group_by'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_group_by'],
+                'callback_args' => [
                     'column_group' => 'username',
                     'group_by'     => 'resource',
-                    'raw'          => array('wp_slimstat_db', 'get_group_by')
-                ),
-                'classes'       => array('large'),
-                'locations'     => array('slimview4')
-            ),
-            'slim_p6_01'    => array(
+                    'raw'          => ['wp_slimstat_db', 'get_group_by']
+                ],
+                'classes'       => ['large'],
+                'locations'     => ['slimview4']
+            ],
+            'slim_p6_01'    => [
                 'title'         => __('Audience Location', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'show_world_map'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'show_world_map'],
+                'callback_args' => [
                     'id' => 'slim_p6_01'
-                ),
-                'classes'       => array('extralarge', 'map-wrap'),
-                'locations'     => array('slimview1'),
+                ],
+                'classes'       => ['extralarge', 'map-wrap'],
+                'locations'     => ['slimview1'],
                 'tooltip'       => __('Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat')
-            )
-        );
+            ]
+        ];
 
         if (wp_slimstat::$settings['geolocation_country'] != 'on') {
-            self::$reports['slim_p2_23'] = array(
+            self::$reports['slim_p2_23'] = [
                 'title'         => __('Top Cities', 'wp-slimstat'),
-                'callback'      => array(__CLASS__, 'raw_results_to_html'),
-                'callback_args' => array(
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'city',
 
-                    'raw' => array('wp_slimstat_db', 'get_top')
-                ),
-                'classes'       => array('normal'),
-                'locations'     => array('slimview3')
-            );
+                    'raw' => ['wp_slimstat_db', 'get_top']
+                ],
+                'classes'       => ['normal'],
+                'locations'     => ['slimview3']
+            ];
         }
 
         // Allow third party tools to manipulate this list here above: please use unique report IDs that don't interfere with built-in ones, if you add your own custom report
@@ -927,12 +927,13 @@ class wp_slimstat_reports
         }
 
         // We store page titles in a transient for improved performance
-        if (empty($_REQUEST['page']) || !in_array($_REQUEST['page'], array('slimlayout', 'slimadddons'))) {
+        if (empty($_REQUEST['page']) || !in_array($_REQUEST['page'], ['slimlayout', 'slimadddons'])) {
             self::$resource_titles = get_transient('slimstat_resource_titles');
             if (self::$resource_titles === false) {
-                self::$resource_titles = array();
+                self::$resource_titles = [];
             }
         }
+        return null;
     }
 
     // end init
@@ -943,8 +944,8 @@ class wp_slimstat_reports
             return false;
         }
 
-        $header_classes = !empty(self::$reports[$_report_id]['classes']) ? implode(' ', self::$reports[$_report_id]['classes']) : '';
-        $fixed_title    = str_replace(array('-', '_', '"', "'", ')', '('), '', strtolower(self::$reports[$_report_id]['title']));
+        $header_classes = empty(self::$reports[$_report_id]['classes']) ? '' : implode(' ', self::$reports[$_report_id]['classes']);
+        $fixed_title    = str_replace(['-', '_', '"', "'", ')', '('], '', strtolower(self::$reports[$_report_id]['title']));
         $header_classes .= ' report-' . implode('-', explode(' ', esc_attr($fixed_title)));
         $header_buttons = '';
         $header_tooltip = '';
@@ -959,7 +960,7 @@ class wp_slimstat_reports
 
             $tooltip_base   = '<span class="header-tooltip slimstat-tooltip-trigger corner"><svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M8.6665 13.3125C8.97716 13.3125 9.229 13.0607 9.229 12.75V8.25C9.229 7.93934 8.97716 7.6875 8.6665 7.6875C8.35584 7.6875 8.104 7.93934 8.104 8.25V12.75C8.104 13.0607 8.35584 13.3125 8.6665 13.3125Z" fill="#9BA1A6"/> <path d="M8.6665 5.25C9.08072 5.25 9.4165 5.58579 9.4165 6C9.4165 6.41421 9.08072 6.75 8.6665 6.75C8.25229 6.75 7.9165 6.41421 7.9165 6C7.9165 5.58579 8.25229 5.25 8.6665 5.25Z" fill="#9BA1A6"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M0.604004 9C0.604004 4.5472 4.21371 0.9375 8.6665 0.9375C13.1193 0.9375 16.729 4.5472 16.729 9C16.729 13.4528 13.1193 17.0625 8.6665 17.0625C4.21371 17.0625 0.604004 13.4528 0.604004 9ZM8.6665 2.0625C4.83503 2.0625 1.729 5.16852 1.729 9C1.729 12.8315 4.83503 15.9375 8.6665 15.9375C12.498 15.9375 15.604 12.8315 15.604 9C15.604 5.16852 12.498 2.0625 8.6665 2.0625Z" fill="#9BA1A6"/></svg><span class="slimstat-tooltip-content">';
             // $tooltip_base   = '<span class="header-tooltip dashicons dashicons-editor-help slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">';
-            $header_tooltip = $tooltip_base . (!empty(self::$reports[$_report_id]['tooltip']) ? self::$reports[$_report_id]['tooltip'] . '<br /><br />' . esc_html($_report_id) : esc_html($_report_id)) . '</span></span>';
+            $header_tooltip = $tooltip_base . (empty(self::$reports[$_report_id]['tooltip']) ? esc_html($_report_id) : self::$reports[$_report_id]['tooltip'] . '<br /><br />' . esc_html($_report_id)) . '</span></span>';
 
             // Allow third-party code to add more buttons
             $header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_report_id);
@@ -968,9 +969,10 @@ class wp_slimstat_reports
             $widget_title = "<h3>" . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . "</h3>";
         }
 
-        $bar_color = (!empty(self::$reports[$_report_id]['color'])) ? self::$reports[$_report_id]['color'] : '#EFF6FF';
+        $bar_color = (empty(self::$reports[$_report_id]['color'])) ? '#EFF6FF' : self::$reports[$_report_id]['color'];
 
-        echo "<div class='postbox " . esc_attr($header_classes) . "' style='--box-bar-color: " . esc_attr($bar_color) . ";' id='" . esc_attr($_report_id) . "'>{$header_buttons} $widget_title <div class='inside'>";
+        echo "<div class='postbox " . esc_attr($header_classes) . "' style='--box-bar-color: " . esc_attr($bar_color) . ";' id='" . esc_attr($_report_id) . sprintf("'>%s %s <div class='inside'>", $header_buttons, $widget_title);
+        return null;
     }
 
     public static function report_footer()
@@ -1015,16 +1017,15 @@ class wp_slimstat_reports
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
             $pagination .= ' [' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]';
         }
-        $pagination .= $pagination_buttons . '</p>';
 
-        return $pagination;
+        return $pagination . ($pagination_buttons . '</p>');
     }
 
     public static function callback_wrapper()
     {
         // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
-        if (strpos(wp_slimstat::$settings['can_view'], $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
+        if (strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) === false && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
         }
 
@@ -1038,7 +1039,7 @@ class wp_slimstat_reports
         }
     }
 
-    public static function raw_results_to_html($_args = array())
+    public static function raw_results_to_html($_args = [])
     {
         if (wp_slimstat::$settings['async_load'] == 'on' && (!defined('DOING_AJAX') || !DOING_AJAX) && empty($_args['is_widget'])) {
             return '';
@@ -1050,7 +1051,7 @@ class wp_slimstat_reports
 
         // Backward compatibility
         if (!is_array($all_results)) {
-            $all_results = array();
+            $all_results = [];
         }
 
         echo wp_kses_post(wp_slimstat_db::$debug_message);
@@ -1060,14 +1061,14 @@ class wp_slimstat_reports
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
-                echo "{$a_result[ 'metric' ]} <span>{$a_result[ 'value' ]}</span>";
+                echo sprintf('%s <span>%s</span>', $a_result[ 'metric' ], $a_result[ 'value' ]);
 
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);
                 }
 
                 if (!empty($a_result['details'])) {
-                    echo "<b class='slimstat-tooltip-content'>{$a_result[ 'details' ]}</b>";
+                    echo sprintf("<b class='slimstat-tooltip-content'>%s</b>", $a_result[ 'details' ]);
                 }
 
                 echo '</p>';
@@ -1089,14 +1090,14 @@ class wp_slimstat_reports
                 if (defined('DOING_AJAX') && DOING_AJAX) {
                     die();
                 } else {
-                    return array();
+                    return [];
                 }
             }
 
             // Some reports use aliases for column names
             if (!empty($_args['as_column'])) {
                 $_args['columns'] = $_args['as_column'];
-            } else if (!empty($_args['outer_select_column'])) {
+            } elseif (!empty($_args['outer_select_column'])) {
                 $_args['columns'] = $_args['outer_select_column'];
             }
 
@@ -1109,7 +1110,8 @@ class wp_slimstat_reports
             $permalinks_enabled = get_option('permalink_structure');
 
             for ($i = 0; $i < $count_page_results; $i++) {
-                $row_details       = $percentage = '';
+                $row_details = '';
+                $percentage = '';
                 $element_pre_value = '';
                 $element_value     = $results[$i][$_args['columns']];
 
@@ -1169,7 +1171,7 @@ class wp_slimstat_reports
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i]['country'] . '" />';
                         }
 
-                        $row_details   .= __('Code', 'wp-slimstat') . ": {$results[ $i ][ 'country' ]}";
+                        $row_details   .= __('Code', 'wp-slimstat') . (': ' . $results[ $i ][ 'country' ]);
                         $element_value .= wp_slimstat_i18n::get_string('c-' . $results[$i]['country']);
                         break;
 
@@ -1194,14 +1196,14 @@ class wp_slimstat_reports
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i][$_args['columns']] . '" />';
                         }
 
-                        $row_details   = __('Code', 'wp-slimstat') . ": {$results[$i][$_args[ 'columns' ]]}";
+                        $row_details   = __('Code', 'wp-slimstat') . (': ' . $results[$i][$_args[ 'columns' ]]);
                         $element_value .= wp_slimstat_i18n::get_string('l-' . $results[$i][$_args['columns']]);
                         break;
 
                     case 'platform':
 
-                        $row_details                    = __('Code', 'wp-slimstat') . ": {$results[$i][$_args[ 'columns' ]]}";
-                        $icons = array(
+                        $row_details                    = __('Code', 'wp-slimstat') . (': ' . $results[$i][$_args[ 'columns' ]]);
+                        $icons = [
                             'android'  => 'and',
                             'chromeos' => 'chr',
                             'ios'      => 'ios',
@@ -1214,14 +1216,14 @@ class wp_slimstat_reports
                             'win11'    => 'win',
                             'macos'    => 'mac',
                             'macosx'   => 'mac',
-                        );
+                        ];
 
                         $platform_parts = explode('-', $results[$i][$_args['columns']]);
                         $last_platform_part = strtolower(end($platform_parts));
 
-                        if( realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $last_platform_part . '.webp') ) ) {
+                        if (realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $last_platform_part . '.webp') )) {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $last_platform_part . '.webp');
-                        } else if( isset($icons[$last_platform_part]) && realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $icons[$last_platform_part] . '.webp') ) ) {
+                        } elseif (isset($icons[$last_platform_part]) && realpath( SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $icons[$last_platform_part] . '.webp') )) {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $icons[$last_platform_part] . '.webp');
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1233,7 +1235,7 @@ class wp_slimstat_reports
                         break;
 
                     case 'referer':
-                        $element_value = str_replace(array('<', '>'), array('&lt;', '&gt;'), urldecode($results[$i][$_args['columns']]));
+                        $element_value = str_replace(['<', '>'], ['&lt;', '&gt;'], urldecode($results[$i][$_args['columns']]));
                         break;
 
                     case 'resource':
@@ -1243,7 +1245,7 @@ class wp_slimstat_reports
                         }
                         if (!empty($_args['where']) && strpos($_args['where'], 'download') !== false) {
                             $clean_extension = pathinfo(strtolower(parse_url($results[$i][$_args['columns']], PHP_URL_PATH)), PATHINFO_EXTENSION);
-                            if (in_array($clean_extension, array('jpg', 'gif', 'png', 'jpeg', 'bmp'))) {
+                            if (in_array($clean_extension, ['jpg', 'gif', 'png', 'jpeg', 'bmp'])) {
                                 $row_details = '<br><img src="' . $results[$i][$_args['columns']] . '" style="width:100px">';
                             }
                         }
@@ -1251,7 +1253,7 @@ class wp_slimstat_reports
                         break;
 
                     case 'screen_width':
-                        $element_value = "{$results[ $i ][ $_args[ 'columns' ] ]} x {$results[ $i ][ 'screen_height' ]}";
+                        $element_value = sprintf('%s x %s', $results[ $i ][ $_args[ 'columns' ] ], $results[ $i ][ 'screen_height' ]);
                         break;
 
                     case 'searchterms':
@@ -1262,8 +1264,8 @@ class wp_slimstat_reports
                                 $domain = __('No referrer', 'wp-slimstat');
                             }
 
-                            $row_details   = __('Referrer', 'wp-slimstat') . ": $domain";
-                            $element_value = self::get_search_terms_info($results[$i]['searchterms'], isset($results[$i]['referer']) ? $results[$i]['referer'] : '', true);
+                            $row_details   = __('Referrer', 'wp-slimstat') . (': ' . $domain);
+                            $element_value = self::get_search_terms_info($results[$i]['searchterms'], $results[$i]['referer'] ?? '', true);
                         } else {
                             $element_value = htmlentities($results[$i]['searchterms'], ENT_QUOTES, 'UTF-8');
                         }
@@ -1279,7 +1281,7 @@ class wp_slimstat_reports
                                 $element_value .= "</a>";
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['username']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url .sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", $results[$i]['username']). __('Unknown', 'wp-slimstat') .")</a>";
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1305,7 +1307,7 @@ class wp_slimstat_reports
                                 $element_value .= "</a>";
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url ."' class=\"avatar avatar-16 photo\" alt='Unknown'>{$results[$i]['author']} (". __('Unknown', 'wp-slimstat') .")</a>";
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='". $image_url .sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", $results[$i]['author']). __('Unknown', 'wp-slimstat') .")</a>";
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1323,11 +1325,11 @@ class wp_slimstat_reports
                 }
 
                 if (is_admin()) {
-                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . htmlentities(strval($results[$i][$_args['columns']]), ENT_QUOTES, 'UTF-8')) . "'>$element_value</a>";
+                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . htmlentities(strval($results[$i][$_args['columns']]), ENT_QUOTES, 'UTF-8')) . sprintf("'>%s</a>", $element_value);
                 }
 
                 if (!empty($_args['type']) && $_args['type'] == 'recent') {
-                    $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . (!empty($row_details) ? '<br>' : '') . $row_details;
+                    $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . ($row_details === '' || $row_details === '0' ? '' : '<br>') . $row_details;
                 }
 
                 if (!empty($_args['type']) && $_args['type'] == 'top') {
@@ -1337,10 +1339,10 @@ class wp_slimstat_reports
 
                     if ((!empty($_args['criteria']) && $_args['criteria'] == 'swap') || wp_slimstat::$settings['show_hits'] == 'on') {
                         $percentage  = ' <span>' . $counthits . '</span>';
-                        $row_details = __('Hits', 'wp-slimstat') . ': ' . (($_args['columns'] != 'outbound_resource') ? $percentage_value . '%' . (!empty($row_details) ? '<br>' : '') . $row_details : '');
+                        $row_details = __('Hits', 'wp-slimstat') . ': ' . (($_args['columns'] != 'outbound_resource') ? $percentage_value . '%' . ($row_details === '' || $row_details === '0' ? '' : '<br>') . $row_details : '');
                     } else {
                         $percentage  = ' <span>' . $percentage_value . '%</span>';
-                        $row_details = __('Hits', 'wp-slimstat') . ': ' . $counthits . (!empty($row_details) ? '<br>' : '') . $row_details;
+                        $row_details = __('Hits', 'wp-slimstat') . ': ' . $counthits . ($row_details === '' || $row_details === '0' ? '' : '<br>') . $row_details;
                     }
                 }
 
@@ -1363,10 +1365,10 @@ class wp_slimstat_reports
                 }
 
                 if (is_admin() && !empty($results[$i]['ip']) && $_args['columns'] != 'ip' && wp_slimstat::$settings['convert_ip_addresses'] != 'on') {
-                    $row_details .= '<br> IP: <a class="slimstat-filter-link" href="' . self::fs_url('ip equals ' . $results[$i]['ip']) . '">' . $results[$i]['ip'] . '</a>' . (!empty($results[$i]['other_ip']) ? ' / ' . $results[$i]['other_ip'] : '') . '<a title="WHOIS: ' . $results[$i]['ip'] . '" class="slimstat-font-location-1 whois" href="' . wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip'] . '"></a>';
+                    $row_details .= '<br> IP: <a class="slimstat-filter-link" href="' . self::fs_url('ip equals ' . $results[$i]['ip']) . '">' . $results[$i]['ip'] . '</a>' . (empty($results[$i]['other_ip']) ? '' : ' / ' . $results[$i]['other_ip']) . '<a title="WHOIS: ' . $results[$i]['ip'] . '" class="slimstat-font-location-1 whois" href="' . wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip'] . '"></a>';
                 }
-                if (!empty($row_details)) {
-                    $row_details = "<b class='slimstat-tooltip-content'>$row_details</b>";
+                if ($row_details !== '' && $row_details !== '0') {
+                    $row_details = sprintf("<b class='slimstat-tooltip-content'>%s</b>", $row_details);
                 }
 
                 $bar = "";
@@ -1377,7 +1379,7 @@ class wp_slimstat_reports
                 if( !empty($strip_percentage) ) {
                     $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . $strip_percentage . '%"></span></span>';
                 }
-                $row_output = "<p class='slimstat-tooltip-trigger'>$bar$element_pre_value$element_value$percentage $row_details</p>";
+                $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
 
                 // Strip all the filter links, if this information is shown on the frontend
                 if (!is_admin()) {
@@ -1399,12 +1401,13 @@ class wp_slimstat_reports
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
+        return null;
     }
 
-    public static function show_access_log($_args = array())
+    public static function show_access_log($_args = [])
     {
         // This function is too long, so it was moved to a separate file
-        include(dirname(__FILE__) . '/right-now.php');
+        include(__DIR__ . '/right-now.php');
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
@@ -1419,7 +1422,7 @@ class wp_slimstat_reports
         }
     }
 
-    public static function show_events($_args = array())
+    public static function show_events($_args = [])
     {
         $all_results = call_user_func($_args['raw'], $_args);
 
@@ -1438,7 +1441,7 @@ class wp_slimstat_reports
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
             } else {
-                return array();
+                return [];
             }
         }
 
@@ -1448,32 +1451,37 @@ class wp_slimstat_reports
         }
 
         foreach ($results as $a_result) {
-            echo "<p class='slimstat-tooltip-trigger'>{$a_result[ 'notes' ]}";
+            echo '<p class=\'slimstat-tooltip-trigger\'>' . $a_result[ 'notes' ];
 
             if (!empty($a_result['counthits'])) {
-                echo "<span>{$a_result[ 'counthits' ]}</span>";
+                echo sprintf('<span>%s</span>', $a_result[ 'counthits' ]);
             }
 
             if (!empty($a_result['dt'])) {
                 $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_result['dt'], true);
-                echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ": " . $a_result['ip'] . "<br/>" . __('Page', 'wp-slimstat') . ": <a href='{$blog_url}{$a_result[ 'resource' ]}'>{$blog_url}{$a_result[ 'resource' ]}</a><br>" . __('Coordinates', 'wp-slimstat') . ": {$a_result[ 'position' ]}<br>" . __('Date', 'wp-slimstat') . ": $date_time";
+                echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ": " . $a_result['ip'] . "<br/>" . __('Page', 'wp-slimstat') . sprintf(": <a href='%s%s'>%s%s</a><br>", $blog_url, $a_result[ 'resource' ], $blog_url, $a_result[ 'resource' ]) . __('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', $a_result[ 'position' ]) . __('Date', 'wp-slimstat') . (': ' . $date_time);
             }
 
             echo "</b></p>";
         }
-        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '</div>';
+        if (! defined('DOING_AJAX') || ! DOING_AJAX) {
+            echo '</div>';
+        }
         echo self::report_pagination($count_page_results, count($all_results));
-        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '<div>';
+        if (! defined('DOING_AJAX') || ! DOING_AJAX) {
+            echo '<div>';
+        }
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
+        return null;
     }
 
-    public static function show_group_by($_args = array())
+    public static function show_group_by($_args = [])
     {
         $all_results = call_user_func($_args['raw'], $_args);
 
-        $results = array();
+        $results = [];
         if (is_array($all_results) && count($all_results)) {
             $results = array_slice(
                 $all_results,
@@ -1504,10 +1512,10 @@ class wp_slimstat_reports
 
             $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this URL in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . "' href='" . htmlentities($a_result['resource'], ENT_QUOTES, 'UTF-8') . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . htmlentities($a_result['resource'], ENT_QUOTES, 'UTF-8')) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
 
-            $group_markup = array();
+            $group_markup = [];
             if (!empty($a_result['column_group'])) {
                 $exploded_group = explode(';;;', $a_result['column_group']);
-                $group_markup   = array();
+                $group_markup   = [];
                 foreach ($exploded_group as $a_item) {
                     $user = get_user_by('login', $a_item);
                     if ($user) {
@@ -1518,21 +1526,26 @@ class wp_slimstat_reports
                 }
             }
 
-            echo "<p>{$a_result[ 'resource' ]} <span>{$a_result[ 'counthits' ]}</span><br/>" . implode(', ', $group_markup) . "</p>";
+            echo sprintf('<p>%s <span>%s</span><br/>', $a_result[ 'resource' ], $a_result[ 'counthits' ]) . implode(', ', $group_markup) . "</p>";
         }
 
-        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '</div>';
+        if (! defined('DOING_AJAX') || ! DOING_AJAX) {
+            echo '</div>';
+        }
         echo self::report_pagination($count_page_results, count($all_results));
-        if ( ! defined('DOING_AJAX') || ! DOING_AJAX) echo '<div>';
+        if (! defined('DOING_AJAX') || ! DOING_AJAX) {
+            echo '<div>';
+        }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
+        return null;
     }
 
     public static function show_rankings()
     {
-        $options  = array('timeout' => 30, 'headers' => array('Accept' => 'application/json'));
+        $options  = ['timeout' => 30, 'headers' => ['Accept' => 'application/json']];
         $site_url = parse_url(home_url(), PHP_URL_HOST);
         if (!empty(wp_slimstat_db::$filters_normalized['resource']) && wp_slimstat_db::$filters_normalized['resource'][0] == 'equals') {
             $site_url .= wp_slimstat_db::$filters_normalized['resource'][1];
@@ -1541,38 +1554,38 @@ class wp_slimstat_reports
 
         // Check if we have a valied transient
         if (false === ($rankings = get_transient('slimstat_ranking_values'))) {
-            $rankings = array(
-                'seomoz_domain_authority' => array(
+            $rankings = [
+                'seomoz_domain_authority' => [
                     0,
                     __('Moz Domain Authority', 'wp-slimstat'),
                     __('A normalized 100-point score representing the likelihood of a domain to rank well in search engine results.', 'wp-slimstat')
-                ),
-                'seomoz_equity_backlinks' => array(
+                ],
+                'seomoz_equity_backlinks' => [
                     0,
                     __('Moz Backlinks', 'wp-slimstat'),
                     __('Number of external equity links to your website.', 'wp-slimstat')
-                ),
-                'seomoz_links'            => array(
+                ],
+                'seomoz_links'            => [
                     0,
                     __('Moz Links', 'wp-slimstat'),
                     __('The number of links (external, equity or nonequity or not) to your homepage.', 'wp-slimstat')
-                ),
-                'alexa_world_rank'        => array(
+                ],
+                'alexa_world_rank'        => [
                     0,
                     __('Alexa World Rank', 'wp-slimstat'),
                     __('Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data.', 'wp-slimstat')
-                ),
-                'alexa_country_rank'      => array(
+                ],
+                'alexa_country_rank'      => [
                     0,
                     __('Alexa Country Rank', 'wp-slimstat'),
                     ''
-                ),
-                'alexa_popularity'        => array(
+                ],
+                'alexa_popularity'        => [
                     0,
                     __('Alexa Popularity', 'wp-slimstat'),
                     ''
-                )
-            );
+                ]
+            ];
 
             if (!empty(wp_slimstat::$settings['mozcom_access_id']) && !empty(wp_slimstat::$settings['mozcom_secret_key'])) {
                 $expiration_token = time() + 300;
@@ -1624,7 +1637,7 @@ class wp_slimstat_reports
                         if (!empty($country)) {
                             $rankings['alexa_country_rank'][0] = number_format_i18n(floatval($country['RANK']));
                         }
-                    } else if ($response->SD[1]->RANK && $response->SD[1]->RANK->attributes()) {
+                    } elseif ($response->SD[1]->RANK && $response->SD[1]->RANK->attributes()) {
                         $rank = $response->SD[1]->RANK->attributes();
                         if (!empty($rank)) {
                             $rankings['alexa_country_rank'][0] = number_format_i18n(floatval($rank['DELTA']));
@@ -1646,7 +1659,7 @@ class wp_slimstat_reports
 
     public static function show_world_map()
     {
-        $countries = wp_slimstat_db::get_top('country') ?: array();
+        $countries = wp_slimstat_db::get_top('country') ?: [];
         $recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
         $data_points = [];
 
@@ -1654,10 +1667,10 @@ class wp_slimstat_reports
             $recent_visits = array_slice($recent_visits, 0, wp_slimstat::$settings['max_dots_on_map']);
             foreach ($recent_visits as $a_recent_visit) {
                 if (!empty($a_recent_visit['city']) && !empty($a_recent_visit['location'])) {
-                    list($latitude, $longitude) = explode(',', $a_recent_visit['location']);
+                    [$latitude, $longitude] = explode(',', $a_recent_visit['location']);
                     $clean_city_name = htmlentities($a_recent_visit['city'], ENT_QUOTES, 'UTF-8');
                     $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_recent_visit['dt'], true);
-                    $data_points[] = "{zoomLevel:7,type:'circle',title:'{$clean_city_name}<br>{$date_time}',latitude:$latitude,longitude:$longitude}";
+                    $data_points[] = sprintf("{zoomLevel:7,type:'circle',title:'%s<br>%s',latitude:%s,longitude:%s}", $clean_city_name, $date_time, $latitude, $longitude);
                 }
             }
         }
@@ -1685,21 +1698,19 @@ class wp_slimstat_reports
             }
         }
 
-        usort($country_stats, function ($a, $b) {
-            return $b['visits'] <=> $a['visits'];
-        });
+        usort($country_stats, fn($a, $b) => $b['visits'] <=> $a['visits']);
         $top_countries = array_slice($country_stats, 0, 5);
 
-        $path_slimstat = dirname(dirname(__FILE__));
-        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
-        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), array('jquery'), '1.5.1', false);
+        $path_slimstat = dirname(__FILE__, 2);
+        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), ['jquery'], '1.5.1', false);
+        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), ['jquery'], '1.5.1', false);
         ?>
 
         <div class="map-container">
             <div id="map_slim_p6_01"></div>
             <div class="top-countries-wrap">
                 <div class="top-countries">
-                    <?php if ($top_countries): ?>
+                    <?php if ($top_countries !== []): ?>
                         <h4><?php esc_html_e('Top Countries', 'wp-slimstat'); ?></h4>
                     <?php endif; ?>
                     <?php
@@ -1709,7 +1720,7 @@ class wp_slimstat_reports
                     } else {
                         $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
                     }
-                    if ((wp_slimstat::$settings['enable_maxmind'] == 'disable' or !\SlimStat\Services\GeoIP::database_exists())) {
+                    if ((wp_slimstat::$settings['enable_maxmind'] == 'disable' || !\SlimStat\Services\GeoIP::database_exists())) {
                         echo sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries');
                         echo "<br>";
                     }
@@ -1782,16 +1793,16 @@ class wp_slimstat_reports
 
         parse_str($_referer, $query_parse_str);
 
-        if (!empty($query_parse_str['source']) && !$_serp_only) {
-            $query_details = __('src', 'wp-slimstat') . ": {$query_parse_str[ 'source' ]}";
+        if (isset($query_parse_str['source']) && ($query_parse_str['source'] !== [] && ($query_parse_str['source'] !== '' && $query_parse_str['source'] !== '0')) && !$_serp_only) {
+            $query_details = __('src', 'wp-slimstat') . (': ' . $query_parse_str[ 'source' ]);
         }
 
-        if (!empty($query_parse_str['cd'])) {
-            $query_details = __('serp', 'wp-slimstat') . ": {$query_parse_str[ 'cd' ]}";
+        if (isset($query_parse_str['cd']) && ($query_parse_str['cd'] !== '' && $query_parse_str['cd'] !== '0' && $query_parse_str['cd'] !== [])) {
+            $query_details = __('serp', 'wp-slimstat') . (': ' . $query_parse_str[ 'cd' ]);
         }
 
-        if (!empty($query_details)) {
-            $query_details = "($query_details)";
+        if ($query_details !== '' && $query_details !== '0') {
+            $query_details = sprintf('(%s)', $query_details);
         }
 
         if (!empty($_searchterms) && $_searchterms != '_') {
@@ -1803,7 +1814,7 @@ class wp_slimstat_reports
     /**
      * Generate the HTML that lists all the filters currently used
      */
-    public static function get_filters_html($_filters_array = array())
+    public static function get_filters_html($_filters_array = [])
     {
         $filters_html = '';
 
@@ -1814,15 +1825,15 @@ class wp_slimstat_reports
                 }
 
                 $a_filter_value_no_slashes = ($a_filter_details[0] == 'is_empty' || $a_filter_details[0] == 'is_not_empty') ? '' : htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-                $filters_html              .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . " $a_filter_value_no_slashes <a class='slimstat-filter-link slimstat-font-cancel' title='" . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url("$a_filter_label equals ") . "'></a></li>";
+                $filters_html              .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }
 
-        if (!empty($filters_html)) {
-            $filters_html = "<ul class='slimstat-filter-list'>$filters_html</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='" . htmlentities(json_encode($_filters_array), ENT_QUOTES, 'UTF-8') . "'>" . __('Save', 'wp-slimstat') . '</a>';
+        if ($filters_html !== '' && $filters_html !== '0') {
+            $filters_html = sprintf("<ul class='slimstat-filter-list'>%s</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='", $filters_html) . htmlentities(json_encode($_filters_array), ENT_QUOTES, 'UTF-8') . "'>" . __('Save', 'wp-slimstat') . '</a>';
         }
 
-        if (!empty($filters_html)) {
+        if ($filters_html !== '' && $filters_html !== '0') {
             $filters_html .= '<a href="' . self::fs_url() . '" id="slimstat-remove-all-filters" class="button-secondary slimstat-filter-action-button noslimstat">' . __('Reset All', 'wp-slimstat') . '</a>';
         }
 
@@ -1842,7 +1853,7 @@ class wp_slimstat_reports
         // Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
         if (!empty($_SERVER['HTTP_REFERER'])) {
             $parsed_referer = parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])));
-            if (!$parsed_referer || (!empty($parsed_referer['scheme']) && !in_array(strtolower($parsed_referer['scheme']), array('http', 'https')))) {
+            if (!$parsed_referer || (isset($parsed_referer['scheme']) && ($parsed_referer['scheme'] !== '' && $parsed_referer['scheme'] !== '0') && !in_array(strtolower($parsed_referer['scheme']), ['http', 'https']))) {
                 return '';
             }
         }
@@ -1852,7 +1863,7 @@ class wp_slimstat_reports
         // Columns
         if (!empty($fn['columns'])) {
             foreach ($fn['columns'] as $a_key => $a_filter) {
-                $request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode($a_filter[0] . ' ' . str_replace('=', '%3D', $a_filter[1]));
+                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . str_replace('=', '%3D', $a_filter[1]));
             }
         }
 
@@ -1860,7 +1871,7 @@ class wp_slimstat_reports
         if (!empty($fn['date'])) {
             foreach ($fn['date'] as $a_key => $a_filter) {
                 if (isset($a_filter)) {
-                    $request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode('equals ' . $a_filter);
+                    $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode('equals ' . $a_filter);
                 }
             }
         }
@@ -1868,7 +1879,7 @@ class wp_slimstat_reports
         // Misc filters
         if (!empty($fn['misc'])) {
             foreach ($fn['misc'] as $a_key => $a_filter) {
-                $request_uri .= "&amp;fs%5B$a_key%5D=" . urlencode('equals ' . $a_filter);
+                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode('equals ' . $a_filter);
             }
         }
 
@@ -1896,7 +1907,7 @@ class wp_slimstat_reports
         $post_id = url_to_postid($_resource);
 
         if ($post_id > 0) {
-            self::$resource_titles[$cache_index] = the_title_attribute(array('post' => $post_id, 'echo' => false));
+            self::$resource_titles[$cache_index] = the_title_attribute(['post' => $post_id, 'echo' => false]);
 
             // Encode URLs to avoid XSS attacks
             if (self::$resource_titles[$cache_index] == $_resource) {
@@ -1904,7 +1915,7 @@ class wp_slimstat_reports
             }
         } // Is this a category or tag permalink?
         else {
-            $term_names    = array();
+            $term_names    = [];
             $home_url      = get_home_url();
             $relative_home = parse_url($home_url, PHP_URL_PATH);
 
@@ -1929,7 +1940,7 @@ class wp_slimstat_reports
                 }
             }
 
-            if (!empty($term_names)) {
+            if ($term_names !== []) {
                 self::$resource_titles[$cache_index] = implode(',', $term_names);
             } else {
                 self::$resource_titles[$cache_index] = htmlspecialchars(self::$resource_titles[$cache_index], ENT_QUOTES, 'UTF-8');
@@ -1945,58 +1956,54 @@ class wp_slimstat_reports
     public static function inline_help($_text = '', $_echo = true)
     {
         if (is_admin() && !empty($_text)) {
-            $wrapped_text = "<span class='dashicons dashicons-editor-help slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>$_text</span></span>";
+            $wrapped_text = sprintf("<span class='dashicons dashicons-editor-help slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>%s</span></span>", $_text);
         } else {
             $wrapped_text = '';
         }
-
-        if ($_echo)
+        if ($_echo) {
             echo $wrapped_text;
-        else
+        } else {
             return $wrapped_text;
+        }
+        return null;
     }
 
-    protected static function _check_args($_args = array())
+    protected static function _check_args($_args = [])
     {
 
         // When called from the WP Dashboard, the action passes 2 arguments: post_id (empty) and array of arguments
-        if (!empty($_args[1])) {
-            $_args = $_args[1];
-        } // When called from within Slimstat, the first argument is the array of arguments for the callback
-        else {
-            $_args = $_args[0];
-        }
+        $_args = empty($_args[1]) ? $_args[0] : $_args[1];
 
         if (!is_array($_args)) {
-            $_args = array();
+            $_args = [];
         }
 
         $report_id = 0;
 
         // Is this an Ajax request?
         if (!empty($_POST['report_id'])) {
-            check_ajax_referer('meta-box-order', 'security'); // Let's make sure the request is coming from an authorized source
+            check_ajax_referer('meta-box-order', 'security');
+            // Let's make sure the request is coming from an authorized source
             $report_id = $_POST['report_id'];
-        } // When on the WP Dashboard, the action sets the 'id' key of the $_args array
-        else if (!empty($_args['id'])) {
+        } elseif (!empty($_args['id'])) {
             $report_id = $_args['id'];
         }
 
         if (!empty(self::$reports[$report_id]) && is_array(self::$reports[$report_id])) {
             // Default values
-            $_args = array_merge(array(
+            $_args = array_merge([
                 'title'         => '',
                 'callback'      => '',
-                'callback_args' => array(),
-                'classes'       => array(),
-                'locations'     => array(),
+                'callback_args' => [],
+                'classes'       => [],
+                'locations'     => [],
                 'tooltip'       => ''
-            ), self::$reports[$report_id]);
+            ], self::$reports[$report_id]);
         }
 
         // Default callback args
         if (!empty($_args['callback_args'])) {
-            $_args['callback_args'] = array_merge(array(
+            $_args['callback_args'] = array_merge([
                 'type'                => '',
                 'columns'             => '',
                 'where'               => '',
@@ -2008,7 +2015,7 @@ class wp_slimstat_reports
                 'use_date_filters'    => true,
                 'results_per_page'    => wp_slimstat::$settings['rows_to_show'],
                 'criteria'            => ''
-            ), $_args['callback_args']);
+            ], $_args['callback_args']);
         }
 
         return $_args;

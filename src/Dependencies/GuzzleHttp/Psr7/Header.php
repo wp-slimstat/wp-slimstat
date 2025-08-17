@@ -17,7 +17,8 @@ final class Header
     public static function parse($header): array
     {
         static $trimmed = "\"'  \n\t\r";
-        $params = $matches = [];
+        $params = [];
+        $matches = [];
 
         foreach ((array) $header as $value) {
             foreach (self::splitList($value) as $val) {
@@ -32,7 +33,8 @@ final class Header
                         }
                     }
                 }
-                if ($part) {
+                
+                if ($part !== []) {
                     $params[] = $part;
                 }
             }
@@ -113,6 +115,7 @@ final class Header
 
                     continue;
                 }
+                
                 if ($value[$i] === '"') {
                     $isQuoted = !$isQuoted;
                     $v .= $value[$i];

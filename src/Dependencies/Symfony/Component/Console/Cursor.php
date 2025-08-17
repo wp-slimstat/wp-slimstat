@@ -19,6 +19,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 final class Cursor
 {
     private $output;
+    
     private $input;
 
     /**

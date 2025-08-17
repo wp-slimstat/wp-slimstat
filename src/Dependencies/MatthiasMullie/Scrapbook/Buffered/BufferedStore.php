@@ -41,7 +41,7 @@ class BufferedStore implements KeyValueStore
     /**
      * @var BufferedStore[]
      */
-    protected $collections = array();
+    protected $collections = [];
 
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for
@@ -82,7 +82,7 @@ class BufferedStore implements KeyValueStore
         $values = $this->transaction->getMulti($keys, $tokens);
 
         $missing = array_diff_key($values, $this->local->getMulti($keys));
-        if (!empty($missing)) {
+        if ($missing !== []) {
             $this->local->setMulti($missing);
         }
 

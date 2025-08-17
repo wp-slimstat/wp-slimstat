@@ -95,16 +95,16 @@ class ParserCommand extends Command
 
         try {
             $result = $browscap->getBrowser($uaArgument);
-        } catch (Exception $e) {
-            $logger->debug($e);
+        } catch (Exception $exception) {
+            $logger->debug($exception);
 
             return self::PARSER_ERROR;
         }
 
         try {
             $output->writeln(json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
-        } catch (SlimStat_JsonException $e) {
-            $logger->error($e);
+        } catch (SlimStat_JsonException $slimStatJsonException) {
+            $logger->error($slimStatJsonException);
 
             return self::PARSER_ERROR;
         }

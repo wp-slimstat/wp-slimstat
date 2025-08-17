@@ -2,6 +2,10 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
+use SlimStat\Dependencies\GuzzleHttp\Psr7\UriComparator;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Message;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\UriResolver;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Uri;
 use SlimStat\Dependencies\GuzzleHttp\Exception\BadResponseException;
 use SlimStat\Dependencies\GuzzleHttp\Exception\TooManyRedirectsException;
 use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
@@ -69,9 +73,7 @@ class RedirectMiddleware
         }
 
         return $fn($request, $options)
-            ->then(function (ResponseInterface $response) use ($request, $options) {
-                return $this->checkRedirect($request, $options, $response);
-            });
+            ->then(fn(ResponseInterface $response) => $this->checkRedirect($request, $options, $response));
     }
 
     /**
@@ -89,7 +91,7 @@ class RedirectMiddleware
         $nextRequest = $this->modifyRequest($request, $options, $response);
 
         // If authorization is handled by curl, unset it if URI is cross-origin.
-        if (Psr7\UriComparator::isCrossOrigin($request->getUri(), $nextRequest->getUri()) && defined('\CURLOPT_HTTPAUTH')) {
+        if (UriComparator::isCrossOrigin($request->getUri(), $nextRequest->getUri()) && defined('\CURLOPT_HTTPAUTH')) {
             unset(
                 $options['curl'][\CURLOPT_HTTPAUTH],
                 $options['curl'][\CURLOPT_USERPWD]
@@ -152,7 +154,7 @@ class RedirectMiddleware
         $max = $options['allow_redirects']['max'];
 
         if ($options['__redirect_count'] > $max) {
-            throw new TooManyRedirectsException("Will not follow more than {$max} redirects", $request, $response);
+            throw new TooManyRedirectsException(sprintf('Will not follow more than %s redirects', $max), $request, $response);
         }
     }
 
@@ -176,14 +178,14 @@ class RedirectMiddleware
             $modify['body'] = '';
         }
 
-        $uri = self::redirectUri($request, $response, $protocols);
+        $uri = $this->redirectUri($request, $response, $protocols);
         if (isset($options['idn_conversion']) && ($options['idn_conversion'] !== false)) {
             $idnOptions = ($options['idn_conversion'] === true) ? \IDNA_DEFAULT : $options['idn_conversion'];
             $uri = Utils::idnUriConvert($uri, $idnOptions);
         }
 
         $modify['uri'] = $uri;
-        Psr7\Message::rewindBody($request);
+        Message::rewindBody($request);
 
         // Add the Referer header if it is told to do so and only
         // add the header if we are not redirecting from https to http.
@@ -197,7 +199,7 @@ class RedirectMiddleware
         }
 
         // Remove Authorization and Cookie headers if URI is cross-origin.
-        if (Psr7\UriComparator::isCrossOrigin($request->getUri(), $modify['uri'])) {
+        if (UriComparator::isCrossOrigin($request->getUri(), $modify['uri'])) {
             $modify['remove_headers'][] = 'Authorization';
             $modify['remove_headers'][] = 'Cookie';
         }
@@ -208,14 +210,14 @@ class RedirectMiddleware
     /**
      * Set the appropriate URL on the request based on the location header.
      */
-    private static function redirectUri(
+    private function redirectUri(
         RequestInterface $request,
         ResponseInterface $response,
         array $protocols
     ): UriInterface {
-        $location = Psr7\UriResolver::resolve(
+        $location = UriResolver::resolve(
             $request->getUri(),
-            new Psr7\Uri($response->getHeaderLine('Location'))
+            new Uri($response->getHeaderLine('Location'))
         );
 
         // Ensure that the redirect URI is allowed based on the protocols.

@@ -25,7 +25,7 @@ final class Utils
     {
         static $queue;
 
-        if ($assign) {
+        if ($assign instanceof TaskQueueInterface) {
             $queue = $assign;
         } elseif (!$queue) {
             $queue = new TaskQueue();
@@ -49,8 +49,8 @@ final class Utils
                 if (Is::pending($promise)) {
                     $promise->resolve($task());
                 }
-            } catch (\Throwable $e) {
-                $promise->reject($e);
+            } catch (\Throwable $throwable) {
+                $promise->reject($throwable);
             }
         });
 
@@ -152,7 +152,7 @@ final class Utils
             return $results;
         });
 
-        if (true === $recursive) {
+        if ($recursive) {
             $promise = $promise->then(function ($results) use ($recursive, &$promises) {
                 foreach ($promises as $promise) {
                     if (Is::pending($promise)) {
@@ -192,6 +192,7 @@ final class Utils
                 if (Is::settled($p)) {
                     return;
                 }
+                
                 $results[$idx] = $value;
                 if (count($results) >= $count) {
                     $p->resolve(null);
@@ -208,6 +209,7 @@ final class Utils
                         $rejections
                     );
                 }
+                
                 ksort($results);
 
                 return array_values($results);
@@ -223,9 +225,7 @@ final class Utils
      */
     public static function any($promises): PromiseInterface
     {
-        return self::some(1, $promises)->then(function ($values) {
-            return $values[0];
-        });
+        return self::some(1, $promises)->then(fn($values) => $values[0]);
     }
 
     /**

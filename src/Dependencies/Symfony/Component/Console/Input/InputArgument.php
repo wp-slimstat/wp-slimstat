@@ -22,12 +22,17 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\LogicException;
 class InputArgument
 {
     public const REQUIRED = 1;
+    
     public const OPTIONAL = 2;
+    
     public const IS_ARRAY = 4;
 
     private $name;
+    
     private $mode;
+    
     private $default;
+    
     private $description;
 
     /**

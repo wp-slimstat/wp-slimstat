@@ -77,14 +77,14 @@ class ErrorListener implements EventSubscriberInterface
         ];
     }
 
-    private static function getInputString(ConsoleEvent $event): ?string
+    private function getInputString(ConsoleEvent $event): ?string
     {
         $commandName = $event->getCommand() ? $event->getCommand()->getName() : null;
         $input = $event->getInput();
 
         if (method_exists($input, '__toString')) {
             if ($commandName) {
-                return str_replace(["'$commandName'", "\"$commandName\""], $commandName, (string) $input);
+                return str_replace([sprintf("'%s'", $commandName), sprintf('"%s"', $commandName)], $commandName, (string) $input);
             }
 
             return (string) $input;

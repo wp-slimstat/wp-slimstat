@@ -48,7 +48,7 @@ class StampedeProtector implements KeyValueStore
     /**
      * @var KeyValueStore
      */
-    protected $cache = array();
+    protected $cache = [];
 
     /**
      * Amount of time, in milliseconds, this class guarantees protection.
@@ -79,10 +79,10 @@ class StampedeProtector implements KeyValueStore
      */
     public function get($key, &$token = null)
     {
-        $values = $this->getMulti(array($key), $tokens);
-        $token = isset($tokens[$key]) ? $tokens[$key] : null;
+        $values = $this->getMulti([$key], $tokens);
+        $token = $tokens[$key] ?? null;
 
-        return isset($values[$key]) ? $values[$key] : false;
+        return $values[$key] ?? false;
     }
 
     /**
@@ -91,7 +91,7 @@ class StampedeProtector implements KeyValueStore
     public function getMulti(array $keys, array &$tokens = null)
     {
         // fetch both requested keys + stampede protection indicators at once
-        $stampedeKeys = array_combine($keys, array_map(array($this, 'stampedeKey'), $keys));
+        $stampedeKeys = array_combine($keys, array_map([$this, 'stampedeKey'], $keys));
         $values = $this->cache->getMulti(array_merge($keys, $stampedeKeys), $tokens);
 
         // figure out which of the requested keys are protected, and which need
@@ -120,7 +120,7 @@ class StampedeProtector implements KeyValueStore
         // which case we'll retry a couple of times, hoping the other process
         // stores the new value in the meantime
         $attempts = $this->attempts;
-        while (--$attempts > 0 && !empty($protected) && $this->sleep()) {
+        while (--$attempts > 0 && $protected !== [] && $this->sleep()) {
             $values = $this->cache->getMulti($protected, $tokens2);
 
             $results += array_intersect_key($values, array_flip($keys));
@@ -241,11 +241,11 @@ class StampedeProtector implements KeyValueStore
      */
     protected function protect(array $keys)
     {
-        if (empty($keys)) {
-            return array();
+        if ($keys === []) {
+            return [];
         }
 
-        $success = array();
+        $success = [];
         foreach ($keys as $key) {
             /*
              * Key is add()ed because there may be multiple concurrent processes
@@ -294,7 +294,7 @@ class StampedeProtector implements KeyValueStore
         $suffix = '.stampede';
 
         if (substr($key, -strlen($suffix)) === $suffix) {
-            throw new InvalidKey("Invalid key: $key. Keys with suffix '$suffix' are reserved.");
+            throw new InvalidKey(sprintf("Invalid key: %s. Keys with suffix '%s' are reserved.", $key, $suffix));
         }
 
         return $key.$suffix;

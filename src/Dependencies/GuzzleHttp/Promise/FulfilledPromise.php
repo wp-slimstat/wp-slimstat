@@ -35,7 +35,7 @@ class FulfilledPromise implements PromiseInterface
         callable $onRejected = null
     ): PromiseInterface {
         // Return itself if there is no onFulfilled function.
-        if (!$onFulfilled) {
+        if ($onFulfilled === null) {
             return $this;
         }
 

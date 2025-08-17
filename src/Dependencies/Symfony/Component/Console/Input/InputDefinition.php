@@ -29,11 +29,17 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\LogicException;
 class InputDefinition
 {
     private $arguments;
+    
     private $requiredCount;
+    
     private $lastArrayArgument;
+    
     private $lastOptionalArgument;
+    
     private $options;
+    
     private $negations;
+    
     private $shortcuts;
 
     /**
@@ -231,6 +237,7 @@ class InputDefinition
         if (isset($this->options[$option->getName()]) && !$option->equals($this->options[$option->getName()])) {
             throw new LogicException(sprintf('An option named "%s" already exists.', $option->getName()));
         }
+        
         if (isset($this->negations[$option->getName()])) {
             throw new LogicException(sprintf('An option named "%s" already exists.', $option->getName()));
         }
@@ -255,6 +262,7 @@ class InputDefinition
             if (isset($this->options[$negatedName])) {
                 throw new LogicException(sprintf('An option named "%s" already exists.', $negatedName));
             }
+            
             $this->negations[$negatedName] = $option->getName();
         }
     }

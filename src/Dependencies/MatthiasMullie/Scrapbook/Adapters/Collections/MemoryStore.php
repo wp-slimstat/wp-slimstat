@@ -41,6 +41,7 @@ class MemoryStore extends PrefixKeys
         $object = new \ReflectionObject($this->cache);
         $property = $object->getProperty('items');
         $property->setAccessible(true);
+        
         $items = $property->getValue($this->cache);
 
         foreach ($items as $key => $value) {

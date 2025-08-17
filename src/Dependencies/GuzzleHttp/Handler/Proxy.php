@@ -17,16 +17,14 @@ class Proxy
      * Sends synchronous requests to a specific handler while sending all other
      * requests to another handler.
      *
-     * @param callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface $default Handler used for normal responses
-     * @param callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface $sync    Handler used for synchronous responses.
+     * @param callable(RequestInterface, array):PromiseInterface $default Handler used for normal responses
+     * @param callable(RequestInterface, array):PromiseInterface $sync Handler used for synchronous responses.
      *
-     * @return callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface Returns the composed handler.
+     * @return callable(RequestInterface, array):PromiseInterface Returns the composed handler.
      */
     public static function wrapSync(callable $default, callable $sync): callable
     {
-        return static function (RequestInterface $request, array $options) use ($default, $sync): PromiseInterface {
-            return empty($options[RequestOptions::SYNCHRONOUS]) ? $default($request, $options) : $sync($request, $options);
-        };
+        return static fn(RequestInterface $request, array $options): PromiseInterface => empty($options[RequestOptions::SYNCHRONOUS]) ? $default($request, $options) : $sync($request, $options);
     }
 
     /**
@@ -37,15 +35,13 @@ class Proxy
      * performance benefits of curl while still supporting true streaming
      * through the StreamHandler.
      *
-     * @param callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface $default   Handler used for non-streaming responses
-     * @param callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface $streaming Handler used for streaming responses
+     * @param callable(RequestInterface, array):PromiseInterface $default Handler used for non-streaming responses
+     * @param callable(RequestInterface, array):PromiseInterface $streaming Handler used for streaming responses
      *
-     * @return callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface Returns the composed handler.
+     * @return callable(RequestInterface, array):PromiseInterface Returns the composed handler.
      */
     public static function wrapStreaming(callable $default, callable $streaming): callable
     {
-        return static function (RequestInterface $request, array $options) use ($default, $streaming): PromiseInterface {
-            return empty($options['stream']) ? $default($request, $options) : $streaming($request, $options);
-        };
+        return static fn(RequestInterface $request, array $options): PromiseInterface => empty($options['stream']) ? $default($request, $options) : $streaming($request, $options);
     }
 }

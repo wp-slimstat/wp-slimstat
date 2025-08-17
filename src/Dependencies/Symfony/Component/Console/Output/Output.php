@@ -30,6 +30,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInt
 abstract class Output implements OutputInterface
 {
     private $verbosity;
+    
     private $formatter;
 
     /**

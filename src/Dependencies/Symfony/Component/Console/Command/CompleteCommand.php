@@ -29,6 +29,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 final class CompleteCommand extends Command
 {
     protected static $defaultName = '|_complete';
+    
     protected static $defaultDescription = 'Internal command to provide shell completion suggestions';
 
     private $completionOutputs;
@@ -91,14 +92,14 @@ final class CompleteCommand extends Command
                 '',
                 '<comment>'.date('Y-m-d H:i:s').'</>',
                 '<info>Input:</> <comment>("|" indicates the cursor position)</>',
-                '  '.(string) $completionInput,
+                '  '.$completionInput,
                 '<info>Command:</>',
-                '  '.(string) implode(' ', $_SERVER['argv']),
+                '  '.implode(' ', $_SERVER['argv']),
                 '<info>Messages:</>',
             ]);
 
-            $command = $this->findCommand($completionInput, $output);
-            if (null === $command) {
+            $command = $this->findCommand($completionInput);
+            if (!$command instanceof Command) {
                 $this->log('  No command found, completing using the Application class.');
 
                 $this->getApplication()->complete($completionInput, $suggestions);
@@ -137,7 +138,7 @@ final class CompleteCommand extends Command
 
             $this->log('<info>Suggestions:</>');
             if ($options = $suggestions->getOptionSuggestions()) {
-                $this->log('  --'.implode(' --', array_map(function ($o) { return $o->getName(); }, $options)));
+                $this->log('  --'.implode(' --', array_map(fn($o) => $o->getName(), $options)));
             } elseif ($values = $suggestions->getValueSuggestions()) {
                 $this->log('  '.implode(' ', $values));
             } else {
@@ -145,14 +146,14 @@ final class CompleteCommand extends Command
             }
 
             $completionOutput->write($suggestions, $output);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             $this->log([
                 '<error>Error!</error>',
-                (string) $e,
+                (string) $throwable,
             ]);
 
             if ($output->isDebug()) {
-                throw $e;
+                throw $throwable;
             }
 
             return 2;
@@ -172,13 +173,13 @@ final class CompleteCommand extends Command
 
         try {
             $completionInput->bind($this->getApplication()->getDefinition());
-        } catch (ExceptionInterface $e) {
+        } catch (ExceptionInterface $exception) {
         }
 
         return $completionInput;
     }
 
-    private function findCommand(CompletionInput $completionInput, OutputInterface $output): ?Command
+    private function findCommand(CompletionInput $completionInput): ?Command
     {
         try {
             $inputName = $completionInput->getFirstArgument();
@@ -187,7 +188,7 @@ final class CompleteCommand extends Command
             }
 
             return $this->getApplication()->find($inputName);
-        } catch (CommandNotFoundException $e) {
+        } catch (CommandNotFoundException $commandNotFoundException) {
         }
 
         return null;

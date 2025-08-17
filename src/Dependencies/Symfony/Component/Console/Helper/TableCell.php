@@ -19,6 +19,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\InvalidArgumentExc
 class TableCell
 {
     private $value;
+    
     private $options = [
         'rowspan' => 1,
         'colspan' => 1,
@@ -31,7 +32,7 @@ class TableCell
 
         // check option names
         if ($diff = array_diff(array_keys($options), array_keys($this->options))) {
-            throw new InvalidArgumentException(sprintf('The TableCell does not support the following options: \'%s\'.', implode('\', \'', $diff)));
+            throw new InvalidArgumentException(sprintf("The TableCell does not support the following options: '%s'.", implode("', '", $diff)));
         }
 
         if (isset($options['style']) && !$options['style'] instanceof TableCellStyle) {

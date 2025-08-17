@@ -74,6 +74,7 @@ final class MultipartStream implements StreamInterface
             if (!is_array($element)) {
                 throw new \UnexpectedValueException('An array is expected');
             }
+            
             $this->addElement($stream, $element);
         }
 
@@ -87,7 +88,7 @@ final class MultipartStream implements StreamInterface
     {
         foreach (['contents', 'name'] as $key) {
             if (!array_key_exists($key, $element)) {
-                throw new \InvalidArgumentException("A '{$key}' key is required");
+                throw new \InvalidArgumentException(sprintf("A '%s' key is required", $key));
             }
         }
 
@@ -120,7 +121,7 @@ final class MultipartStream implements StreamInterface
     private function createElement(string $name, StreamInterface $stream, ?string $filename, array $headers): array
     {
         // Set a default content-disposition header if one was no provided
-        $disposition = self::getHeader($headers, 'content-disposition');
+        $disposition = $this->getHeader($headers, 'content-disposition');
         if (!$disposition) {
             $headers['Content-Disposition'] = ($filename === '0' || $filename)
                 ? sprintf(
@@ -128,19 +129,17 @@ final class MultipartStream implements StreamInterface
                     $name,
                     basename($filename)
                 )
-                : "form-data; name=\"{$name}\"";
+                : sprintf('form-data; name="%s"', $name);
         }
 
         // Set a default content-length header if one was no provided
-        $length = self::getHeader($headers, 'content-length');
-        if (!$length) {
-            if ($length = $stream->getSize()) {
-                $headers['Content-Length'] = (string) $length;
-            }
+        $length = $this->getHeader($headers, 'content-length');
+        if (!$length && $length = $stream->getSize()) {
+            $headers['Content-Length'] = (string) $length;
         }
 
         // Set a default Content-Type if one was not supplied
-        $type = self::getHeader($headers, 'content-type');
+        $type = $this->getHeader($headers, 'content-type');
         if (!$type && ($filename === '0' || $filename)) {
             $headers['Content-Type'] = MimeType::fromFilename($filename) ?? 'application/octet-stream';
         }
@@ -151,7 +150,7 @@ final class MultipartStream implements StreamInterface
     /**
      * @param string[] $headers
      */
-    private static function getHeader(array $headers, string $key): ?string
+    private function getHeader(array $headers, string $key): ?string
     {
         $lowercaseHeader = strtolower($key);
         foreach ($headers as $k => $v) {

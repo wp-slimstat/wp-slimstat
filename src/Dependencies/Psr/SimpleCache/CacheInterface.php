@@ -12,7 +12,7 @@ interface CacheInterface
      *
      * @return mixed The value of the item from the cache, or $default in case of cache miss.
      *
-     * @throws \SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException
+     * @throws InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
     public function get($key, $default = null);
@@ -28,7 +28,7 @@ interface CacheInterface
      *
      * @return bool True on success and false on failure.
      *
-     * @throws \SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException
+     * @throws InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
     public function set($key, $value, $ttl = null);
@@ -40,7 +40,7 @@ interface CacheInterface
      *
      * @return bool True if the item was successfully removed. False if there was an error.
      *
-     * @throws \SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException
+     * @throws InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
     public function delete($key);
@@ -60,7 +60,7 @@ interface CacheInterface
      *
      * @return iterable A list of key => value pairs. Cache keys that do not exist or are stale will have $default as value.
      *
-     * @throws \SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException
+     * @throws InvalidArgumentException
      *   MUST be thrown if $keys is neither an array nor a Traversable,
      *   or if any of the $keys are not a legal value.
      */
@@ -76,7 +76,7 @@ interface CacheInterface
      *
      * @return bool True on success and false on failure.
      *
-     * @throws \SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException
+     * @throws InvalidArgumentException
      *   MUST be thrown if $values is neither an array nor a Traversable,
      *   or if any of the $values are not a legal value.
      */
@@ -89,7 +89,7 @@ interface CacheInterface
      *
      * @return bool True if the items were successfully removed. False if there was an error.
      *
-     * @throws \SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException
+     * @throws InvalidArgumentException
      *   MUST be thrown if $keys is neither an array nor a Traversable,
      *   or if any of the $keys are not a legal value.
      */
@@ -107,7 +107,7 @@ interface CacheInterface
      *
      * @return bool
      *
-     * @throws \SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException
+     * @throws InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
     public function has($key);

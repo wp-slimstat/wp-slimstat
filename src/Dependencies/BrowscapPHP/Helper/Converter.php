@@ -140,14 +140,14 @@ final class Converter implements ConverterInterface
 
         try {
             $this->cache->setItem('browscap.releaseDate', $this->getIniReleaseDate($iniString), false);
-        } catch (InvalidArgumentException $e) {
-            $this->logger->error(new \InvalidArgumentException('an error occured while writing data release date into the cache', 0, $e));
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            $this->logger->error(new \InvalidArgumentException('an error occured while writing data release date into the cache', 0, $invalidArgumentException));
         }
 
         try {
             $this->cache->setItem('browscap.type', $this->getIniType($iniString), false);
-        } catch (InvalidArgumentException $e) {
-            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data type into the cache', 0, $e));
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data type into the cache', 0, $invalidArgumentException));
         }
 
         $this->logger->info('finished creating data from the ini data');
@@ -165,10 +165,8 @@ final class Converter implements ConverterInterface
         $quoterHelper = new Quoter();
         $key          = $quoterHelper->pregQuote(self::BROWSCAP_VERSION_KEY);
 
-        if (preg_match('/\.*\[' . $key . '\][^\[]*Version=(\d+)\D.*/', $iniString, $matches)) {
-            if (isset($matches[1])) {
-                $this->iniVersion = (int) $matches[1];
-            }
+        if (preg_match('/\.*\[' . $key . '\][^\[]*Version=(\d+)\D.*/', $iniString, $matches) && isset($matches[1])) {
+            $this->iniVersion = (int) $matches[1];
         }
 
         return $this->iniVersion;
@@ -193,8 +191,8 @@ final class Converter implements ConverterInterface
     {
         try {
             $this->cache->setItem('browscap.version', $this->iniVersion, false);
-        } catch (InvalidArgumentException $e) {
-            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data version into the cache', 0, $e));
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data version into the cache', 0, $invalidArgumentException));
         }
     }
 
@@ -207,10 +205,8 @@ final class Converter implements ConverterInterface
      */
     private function getIniReleaseDate(string $iniString): ?string
     {
-        if (preg_match('/Released=(.*)/', $iniString, $matches)) {
-            if (isset($matches[1])) {
-                return $matches[1];
-            }
+        if (preg_match('/Released=(.*)/', $iniString, $matches) && isset($matches[1])) {
+            return $matches[1];
         }
 
         return null;
@@ -225,10 +221,8 @@ final class Converter implements ConverterInterface
      */
     private function getIniType(string $iniString): ?string
     {
-        if (preg_match('/Type=(.*)/', $iniString, $matches)) {
-            if (isset($matches[1])) {
-                return $matches[1];
-            }
+        if (preg_match('/Type=(.*)/', $iniString, $matches) && isset($matches[1])) {
+            return $matches[1];
         }
 
         return null;

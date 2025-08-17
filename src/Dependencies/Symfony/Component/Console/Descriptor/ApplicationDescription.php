@@ -25,7 +25,9 @@ class ApplicationDescription
     public const GLOBAL_NAMESPACE = '_global';
 
     private $application;
+    
     private $namespace;
+    
     private $showHidden;
 
     /**
@@ -125,12 +127,12 @@ class ApplicationDescription
             }
         }
 
-        if ($globalCommands) {
+        if ($globalCommands !== []) {
             ksort($globalCommands);
             $sortedCommands[self::GLOBAL_NAMESPACE] = $globalCommands;
         }
 
-        if ($namespacedCommands) {
+        if ($namespacedCommands !== []) {
             ksort($namespacedCommands, \SORT_STRING);
             foreach ($namespacedCommands as $key => $commandsSet) {
                 ksort($commandsSet);

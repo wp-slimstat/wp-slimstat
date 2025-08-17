@@ -23,9 +23,9 @@ use function substr_replace;
  */
 final class Ini implements ParserInterface
 {
-    private Helper\GetPatternInterface $patternHelper;
+    private GetPatternInterface $patternHelper;
 
-    private Helper\GetDataInterface $dataHelper;
+    private GetDataInterface $dataHelper;
 
     /**
      * Formatter to use
@@ -86,7 +86,7 @@ final class Ini implements ParserInterface
                     // search for the next pattern.
                     $settings = $this->dataHelper->getSettings($pattern);
 
-                    if (0 < count($settings)) {
+                    if ([] !== $settings) {
                         $formatter = $this->formatter;
                         $formatter->setData($settings);
 

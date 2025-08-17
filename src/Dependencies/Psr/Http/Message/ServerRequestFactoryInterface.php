@@ -17,8 +17,6 @@ interface ServerRequestFactoryInterface
      *     instance based on it.
      * @param array $serverParams Array of SAPI parameters with which to seed
      *     the generated request instance.
-     *
-     * @return ServerRequestInterface
      */
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface;
 }

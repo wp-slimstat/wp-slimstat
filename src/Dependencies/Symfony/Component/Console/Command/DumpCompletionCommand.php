@@ -28,6 +28,7 @@ use Symfony\Component\Process\Process;
 final class DumpCompletionCommand extends Command
 {
     protected static $defaultName = 'completion';
+    
     protected static $defaultDescription = 'Dump the shell completion script';
 
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
@@ -88,7 +89,7 @@ EOH
             return 0;
         }
 
-        $shell = $input->getArgument('shell') ?? self::guessShell();
+        $shell = $input->getArgument('shell') ?? $this->guessShell();
         $completionFile = __DIR__.'/../Resources/completion.'.$shell;
         if (!file_exists($completionFile)) {
             $supportedShells = $this->getSupportedShells();
@@ -96,6 +97,7 @@ EOH
             if ($output instanceof ConsoleOutputInterface) {
                 $output = $output->getErrorOutput();
             }
+            
             if ($shell) {
                 $output->writeln(sprintf('<error>Detected shell "%s", which is not supported by Symfony shell completion (supported shells: "%s").</>', $shell, implode('", "', $supportedShells)));
             } else {
@@ -110,7 +112,7 @@ EOH
         return 0;
     }
 
-    private static function guessShell(): string
+    private function guessShell(): string
     {
         return basename($_SERVER['SHELL'] ?? '');
     }
@@ -121,6 +123,7 @@ EOH
         if (!file_exists($debugFile)) {
             touch($debugFile);
         }
+        
         $process = new Process(['tail', '-f', $debugFile], null, null, null, 0);
         $process->run(function (string $type, string $line) use ($output): void {
             $output->write($line);

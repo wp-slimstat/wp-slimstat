@@ -8,13 +8,13 @@ if (! defined('ABSPATH')) {
 
 $translations = array_merge(
     $translations,
-    array(
+    [
         'yearly'  => __('Yearly', 'wp-slimstat'),
         'monthly' => __('Monthly', 'wp-slimstat'),
         'weekly'  => __('Weekly', 'wp-slimstat'),
         'daily'   => __('Daily', 'wp-slimstat'),
         'hourly'  => __('Hourly', 'wp-slimstat'),
-    )
+    ]
 );
 
 $availableRange = $args['end'] - $args['start'];
@@ -23,16 +23,16 @@ $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
 $disableWeekly  = $availableRange < (7 * 86400); // Less than 1 week of data
 $disableDaily   = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
 $disableHourly  = $availableRange > (7 * 86400); // More than 7 days of data
-$totals         = array(
-    'current'  => array(
+$totals         = [
+    'current'  => [
         'v1' => (int) ($data['totals'][0]->v1 ?? 0),
         'v2' => (int) ($data['totals'][0]->v2 ?? 0),
-    ),
-    'previous' => array(
+    ],
+    'previous' => [
         'v1' => (int) ($data['totals'][1]->v1 ?? 0),
         'v2' => (int) ($data['totals'][1]->v2 ?? 0),
-    ),
-);
+    ],
+];
 ?>
 <div class="slimstat-chart-wrap">
     <div class="slimstat-chart-controls">
@@ -64,7 +64,7 @@ $totals         = array(
         data-granularity="<?php echo esc_attr($args['granularity']); ?>"
         data-chart-labels="<?php echo esc_attr(json_encode($chartLabels)); ?>"
         data-translations="<?php echo esc_attr(json_encode($translations)); ?>"
-        data-totals="<?php echo esc_attr(json_encode($totals ?? array())); ?>">
+        data-totals="<?php echo esc_attr(json_encode($totals ?? [])); ?>">
     </div>
     <div id="slimstat-postbox-custom-legend_<?php echo esc_attr($args['id']); ?>"
         class="slimstat-postbox-chart--items"></div>

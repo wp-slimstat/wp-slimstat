@@ -62,21 +62,19 @@ final class Grapheme
         } else {
             $s = substr($s, $start);
         }
+        
         $size = (int) $size;
         $type = (int) $type;
         $start = (int) $start;
 
         if (\GRAPHEME_EXTR_COUNT !== $type && \GRAPHEME_EXTR_MAXBYTES !== $type && \GRAPHEME_EXTR_MAXCHARS !== $type) {
-            if (80000 > \PHP_VERSION_ID) {
-                return false;
-            }
-
             throw new \SlimStat_SlimStat_ValueError('grapheme_extract(): Argument #3 ($type) must be one of GRAPHEME_EXTR_COUNT, GRAPHEME_EXTR_MAXBYTES, or GRAPHEME_EXTR_MAXCHARS');
         }
 
         if (!isset($s[0]) || 0 > $size || 0 > $start) {
             return false;
         }
+        
         if (0 === $size) {
             return '';
         }
@@ -132,13 +130,11 @@ final class Grapheme
         if (0 > $start) {
             $start += $slen;
         }
+        
         if (0 > $start) {
-            if (\PHP_VERSION_ID < 80000) {
-                return false;
-            }
-
             $start = 0;
         }
+        
         if ($start >= $slen) {
             return \PHP_VERSION_ID >= 80000 ? '' : false;
         }
@@ -148,12 +144,15 @@ final class Grapheme
         if (0 > $len) {
             $len += $rem;
         }
+        
         if (0 === $len) {
             return '';
         }
+        
         if (0 > $len) {
             return \PHP_VERSION_ID >= 80000 ? '' : false;
         }
+        
         if ($len > $rem) {
             $len = $rem;
         }
@@ -197,10 +196,12 @@ final class Grapheme
         if (80000 > \PHP_VERSION_ID && !preg_match('/./us', $needle)) {
             return false;
         }
+        
         $s = (string) $s;
         if (!preg_match('/./us', $s)) {
             return false;
         }
+        
         if ($offset > 0) {
             $s = self::grapheme_substr($s, $offset);
         } elseif ($offset < 0) {
@@ -223,7 +224,7 @@ final class Grapheme
         // case fold the strings first.
         $caseInsensitive = $mode & 1;
         $reverse = $mode & 2;
-        if ($caseInsensitive) {
+        if ($caseInsensitive !== 0) {
             // Use the same case folding mode as mbstring does for mb_stripos().
             // Stick to SIMPLE case folding to avoid changing the length of the string, which
             // might result in offsets being shifted.
@@ -236,11 +237,8 @@ final class Grapheme
                 $needle = str_replace(self::CASE_FOLD[0], self::CASE_FOLD[1], $needle);
             }
         }
-        if ($reverse) {
-            $needlePos = strrpos($s, $needle);
-        } else {
-            $needlePos = strpos($s, $needle);
-        }
+
+        $needlePos = $reverse !== 0 ? strrpos($s, $needle) : strpos($s, $needle);
 
         return false !== $needlePos ? self::grapheme_strlen(substr($s, 0, $needlePos)) + $offset : false;
     }

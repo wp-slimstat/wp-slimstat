@@ -66,6 +66,7 @@ final class CachingStream implements StreamInterface
             if ($size === null) {
                 $size = $this->cacheEntireStream();
             }
+            
             $byte = $size + $offset;
         } else {
             throw new \InvalidArgumentException('Invalid whence');
@@ -93,7 +94,7 @@ final class CachingStream implements StreamInterface
         $remaining = $length - strlen($data);
 
         // More data was requested so read from the remote stream
-        if ($remaining) {
+        if ($remaining !== 0) {
             // If data was written to the buffer in a position that would have
             // been filled from the remote stream, then we must skip bytes on
             // the remote stream to emulate overwriting bytes from that

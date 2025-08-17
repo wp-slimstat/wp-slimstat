@@ -30,16 +30,23 @@ use SlimStat\Dependencies\Symfony\Component\String\Exception\RuntimeException;
 abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
 {
     public const PREG_PATTERN_ORDER = \PREG_PATTERN_ORDER;
+    
     public const PREG_SET_ORDER = \PREG_SET_ORDER;
+    
     public const PREG_OFFSET_CAPTURE = \PREG_OFFSET_CAPTURE;
+    
     public const PREG_UNMATCHED_AS_NULL = \PREG_UNMATCHED_AS_NULL;
 
     public const PREG_SPLIT = 0;
+    
     public const PREG_SPLIT_NO_EMPTY = \PREG_SPLIT_NO_EMPTY;
+    
     public const PREG_SPLIT_DELIM_CAPTURE = \PREG_SPLIT_DELIM_CAPTURE;
+    
     public const PREG_SPLIT_OFFSET_CAPTURE = \PREG_SPLIT_OFFSET_CAPTURE;
 
     protected $string = '';
+    
     protected $ignoreCase = false;
 
     abstract public function __construct(string $string = '');
@@ -140,7 +147,8 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
             $j = $this->indexOfLast($n, $offset);
 
             if (null !== $j && $j >= $i) {
-                $i = $offset = $j;
+                $i = $j;
+                $offset = $j;
                 $str->string = $n;
             }
         }
@@ -208,7 +216,8 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
             $j = $this->indexOfLast($n, $offset);
 
             if (null !== $j && $j >= $i) {
-                $i = $offset = $j;
+                $i = $j;
+                $offset = $j;
                 $str->string = $n;
             }
         }
@@ -296,7 +305,8 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
         }
 
         $str = clone $this;
-        $i = $prefixLen = $prefix->length();
+        $i = $prefix->length();
+        $prefixLen = $i;
 
         while ($this->indexOf($prefix, $i) === $i) {
             $str = $str->slice($prefixLen);
@@ -371,7 +381,8 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
             $j = $this->indexOfLast((string) $n, $offset);
 
             if (null !== $j && $j >= $i) {
-                $i = $offset = $j;
+                $i = $j;
+                $offset = $j;
             }
         }
 
@@ -460,7 +471,7 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
 
         $str = clone $this;
 
-        if (self::PREG_SPLIT_OFFSET_CAPTURE & $flags) {
+        if ((self::PREG_SPLIT_OFFSET_CAPTURE & $flags) !== 0) {
             foreach ($chunks as &$chunk) {
                 $str->string = $chunk[0];
                 $chunk[0] = clone $str;
@@ -509,9 +520,9 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
 
         try {
             $b->string = mb_convert_encoding($this->string, $toEncoding, 'UTF-8');
-        } catch (\SlimStat_SlimStat_ValueError $e) {
+        } catch (\SlimStat_SlimStat_ValueError $slimStatSlimStatValueError) {
             if (!\function_exists('iconv')) {
-                throw new InvalidArgumentException($e->getMessage(), $e->getCode(), $e);
+                throw new InvalidArgumentException($slimStatSlimStatValueError->getMessage(), $slimStatSlimStatValueError->getCode(), $slimStatSlimStatValueError);
             }
 
             $b->string = iconv('UTF-8', $toEncoding, $this->string);
@@ -544,7 +555,7 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
      */
     public function trimPrefix($prefix): static
     {
-        if (\is_array($prefix) || $prefix instanceof \Traversable) { // don't use is_iterable(), it's slow
+        if (is_iterable($prefix)) { // don't use is_iterable(), it's slow
             foreach ($prefix as $s) {
                 $t = $this->trimPrefix($s);
 
@@ -558,11 +569,7 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
 
         $str = clone $this;
 
-        if ($prefix instanceof self) {
-            $prefix = $prefix->string;
-        } else {
-            $prefix = (string) $prefix;
-        }
+        $prefix = $prefix instanceof self ? $prefix->string : (string) $prefix;
 
         if ('' !== $prefix && \strlen($this->string) >= \strlen($prefix) && 0 === substr_compare($this->string, $prefix, 0, \strlen($prefix), $this->ignoreCase)) {
             $str->string = substr($this->string, \strlen($prefix));
@@ -578,7 +585,7 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
      */
     public function trimSuffix($suffix): static
     {
-        if (\is_array($suffix) || $suffix instanceof \Traversable) { // don't use is_iterable(), it's slow
+        if (is_iterable($suffix)) { // don't use is_iterable(), it's slow
             foreach ($suffix as $s) {
                 $t = $this->trimSuffix($s);
 
@@ -592,11 +599,7 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
 
         $str = clone $this;
 
-        if ($suffix instanceof self) {
-            $suffix = $suffix->string;
-        } else {
-            $suffix = (string) $suffix;
-        }
+        $suffix = $suffix instanceof self ? $suffix->string : (string) $suffix;
 
         if ('' !== $suffix && \strlen($this->string) >= \strlen($suffix) && 0 === substr_compare($this->string, $suffix, -\strlen($suffix), null, $this->ignoreCase)) {
             $str->string = substr($this->string, 0, -\strlen($suffix));
@@ -629,7 +632,7 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
 
         $str = $this->slice(0, $length - $ellipsisLength);
 
-        return $ellipsisLength ? $str->trimEnd()->append($ellipsis) : $str;
+        return $ellipsisLength !== 0 ? $str->trimEnd()->append($ellipsis) : $str;
     }
 
     abstract public function upper(): static;
@@ -663,7 +666,8 @@ abstract class AbstractString implements \SlimStat_SlimStat_Stringable, \JsonSer
 
         $string = '';
         $j = 0;
-        $b = $i = -1;
+        $b = -1;
+        $i = -1;
         $mask = wordwrap($mask, $width, '#', $cut);
 
         while (false !== $b = strpos($mask, '#', $b + 1)) {

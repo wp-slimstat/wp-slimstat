@@ -27,11 +27,11 @@ class MySQL extends SQL
             VALUES (:key, :value, :expire)"
         );
 
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ));
+        ]);
 
         // 1 = insert; 2 = update
         return 1 === $statement->rowCount() || 2 === $statement->rowCount();
@@ -42,13 +42,13 @@ class MySQL extends SQL
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if (empty($items)) {
-            return array();
+        if ($items === []) {
+            return [];
         }
 
         $i = 1;
-        $query = array();
-        $params = array();
+        $query = [];
+        $params = [];
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -56,12 +56,12 @@ class MySQL extends SQL
         foreach ($items as $key => $value) {
             $value = $this->serialize($value);
 
-            $query[] = "(:key$i, :value$i, :expire$i)";
-            $params += array(
-                ":key$i" => $key,
-                ":value$i" => $value,
-                ":expire$i" => $expire,
-            );
+            $query[] = sprintf('(:key%d, :value%d, :expire%d)', $i, $i, $i);
+            $params += [
+                ':key' . $i => $key,
+                ':value' . $i => $value,
+                ':expire' . $i => $expire,
+            ];
 
             ++$i;
         }
@@ -102,11 +102,11 @@ class MySQL extends SQL
             VALUES (:key, :value, :expire)"
         );
 
-        $statement->execute(array(
+        $statement->execute([
             ':key' => $key,
             ':value' => $value,
             ':expire' => $expire,
-        ));
+        ]);
 
         return 1 === $statement->rowCount();
     }
@@ -116,7 +116,7 @@ class MySQL extends SQL
      */
     public function flush()
     {
-        return false !== $this->client->exec("TRUNCATE TABLE $this->table");
+        return false !== $this->client->exec('TRUNCATE TABLE ' . $this->table);
     }
 
     /**

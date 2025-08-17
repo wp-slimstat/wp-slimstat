@@ -50,7 +50,9 @@ final class Color
     ];
 
     private $foreground;
+    
     private $background;
+    
     private $options = [];
 
     public function __construct(string $foreground = '', string $background = '', array $options = [])
@@ -78,13 +80,16 @@ final class Color
         if ('' !== $this->foreground) {
             $setCodes[] = $this->foreground;
         }
+        
         if ('' !== $this->background) {
             $setCodes[] = $this->background;
         }
+        
         foreach ($this->options as $option) {
             $setCodes[] = $option['set'];
         }
-        if (0 === \count($setCodes)) {
+        
+        if ([] === $setCodes) {
             return '';
         }
 
@@ -97,13 +102,16 @@ final class Color
         if ('' !== $this->foreground) {
             $unsetCodes[] = 39;
         }
+        
         if ('' !== $this->background) {
             $unsetCodes[] = 49;
         }
+        
         foreach ($this->options as $option) {
             $unsetCodes[] = $option['unset'];
         }
-        if (0 === \count($unsetCodes)) {
+        
+        if ([] === $unsetCodes) {
             return '';
         }
 
@@ -166,9 +174,9 @@ final class Color
 
     private function getSaturation(int $r, int $g, int $b): int
     {
-        $r = $r / 255;
-        $g = $g / 255;
-        $b = $b / 255;
+        $r /= 255;
+        $g /= 255;
+        $b /= 255;
         $v = max($r, $g, $b);
 
         if (0 === $diff = $v - min($r, $g, $b)) {

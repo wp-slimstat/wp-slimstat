@@ -87,7 +87,7 @@ class FinfoMimeTypeDetector implements MimeTypeDetector, ExtensionLookup
             return $contents;
         }
 
-        return (string) substr($contents, 0, $this->bufferSampleSize);
+        return substr($contents, 0, $this->bufferSampleSize);
     }
 
     public function lookupExtension(string $mimetype): ?string

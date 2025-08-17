@@ -55,7 +55,7 @@ class Response implements ResponseInterface
         415 => 'Unsupported Media Type',
         416 => 'Requested range not satisfiable',
         417 => 'Expectation Failed',
-        418 => 'I\'m a teapot',
+        418 => "I'm a teapot",
         422 => 'Unprocessable Entity',
         423 => 'Locked',
         424 => 'Failed Dependency',
@@ -137,6 +137,7 @@ class Response implements ResponseInterface
         if ($reasonPhrase == '' && isset(self::PHRASES[$new->statusCode])) {
             $reasonPhrase = self::PHRASES[$new->statusCode];
         }
+        
         $new->reasonPhrase = (string) $reasonPhrase;
 
         return $new;

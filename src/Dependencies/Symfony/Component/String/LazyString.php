@@ -25,7 +25,7 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
      */
     public static function fromCallable(callable|array $callback, mixed ...$arguments): static
     {
-        if (\is_array($callback) && !\is_callable($callback) && !(($callback[0] ?? null) instanceof \Closure || 2 < \count($callback))) {
+        if (\is_array($callback) && !\is_callable($callback) && (!($callback[0] ?? null) instanceof \Closure && 2 >= \count($callback))) {
             throw new \TypeError(sprintf('Argument 1 passed to "%s()" must be a callable or a [Closure, method] lazy-callable, "%s" given.', __METHOD__, '['.implode(', ', array_map('get_debug_type', $callback)).']'));
         }
 
@@ -38,6 +38,7 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
                     $callback[0] = $callback[0]();
                     $callback[1] ??= '__invoke';
                 }
+                
                 $value = $callback(...$arguments);
                 $callback = !\is_scalar($value) && !$value instanceof \SlimStat_SlimStat_Stringable ? self::getPrettyName($callback) : 'callable';
                 $arguments = null;
@@ -87,17 +88,17 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
 
         try {
             return $this->value = ($this->value)();
-        } catch (\Throwable $e) {
-            if (\TypeError::class === $e::class && __FILE__ === $e->getFile()) {
-                $type = explode(', ', $e->getMessage());
+        } catch (\Throwable $throwable) {
+            if (\TypeError::class === $throwable::class && __FILE__ === $throwable->getFile()) {
+                $type = explode(', ', $throwable->getMessage());
                 $type = substr(array_pop($type), 0, -\strlen(' returned'));
                 $r = new \ReflectionFunction($this->value);
                 $callback = $r->getStaticVariables()['callback'];
 
-                $e = new \TypeError(sprintf('Return value of %s() passed to %s::fromCallable() must be of the type string, %s returned.', $callback, static::class, $type));
+                $throwable = new \TypeError(sprintf('Return value of %s() passed to %s::fromCallable() must be of the type string, %s returned.', $callback, static::class, $type));
             }
 
-            throw $e;
+            throw $throwable;
         }
     }
 

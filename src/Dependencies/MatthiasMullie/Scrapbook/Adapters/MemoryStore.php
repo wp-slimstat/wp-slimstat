@@ -22,7 +22,7 @@ class MemoryStore implements KeyValueStore
     /**
      * @var array
      */
-    protected $items = array();
+    protected $items = [];
 
     /**
      * @var int
@@ -41,11 +41,7 @@ class MemoryStore implements KeyValueStore
     {
         if (null === $limit) {
             $phpLimit = ini_get('memory_limit');
-            if ($phpLimit <= 0) {
-                $this->limit = PHP_INT_MAX;
-            } else {
-                $this->limit = (int) ($this->shorthandToBytes($phpLimit) / 10);
-            }
+            $this->limit = $phpLimit <= 0 ? PHP_INT_MAX : (int) ($this->shorthandToBytes($phpLimit) / 10);
         } else {
             $this->limit = $this->shorthandToBytes($limit);
         }
@@ -75,8 +71,8 @@ class MemoryStore implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $items = array();
-        $tokens = array();
+        $items = [];
+        $tokens = [];
 
         foreach ($keys as $key) {
             if (!$this->exists($key)) {
@@ -100,7 +96,7 @@ class MemoryStore implements KeyValueStore
 
         $value = serialize($value);
         $expire = $this->normalizeTime($expire);
-        $this->items[$key] = array($value, $expire);
+        $this->items[$key] = [$value, $expire];
 
         $this->size += strlen($value);
         $this->lru($key);
@@ -114,7 +110,7 @@ class MemoryStore implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        $success = array();
+        $success = [];
         foreach ($items as $key => $value) {
             $success[$key] = $this->set($key, $value, $expire);
         }
@@ -142,7 +138,7 @@ class MemoryStore implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        $success = array();
+        $success = [];
 
         foreach ($keys as $key) {
             $success[$key] = $this->delete($key);
@@ -234,7 +230,7 @@ class MemoryStore implements KeyValueStore
      */
     public function flush()
     {
-        $this->items = array();
+        $this->items = [];
         $this->size = 0;
 
         return true;
@@ -379,10 +375,8 @@ class MemoryStore implements KeyValueStore
             return $shorthand;
         }
 
-        $units = array('B' => 1024, 'M' => pow(1024, 2), 'G' => pow(1024, 3));
+        $units = ['B' => 1024, 'M' => 1024 ** 2, 'G' => 1024 ** 3];
 
-        return (int) preg_replace_callback('/^([0-9]+)('.implode('|', array_keys($units)).')$/', function ($match) use ($units) {
-            return $match[1] * $units[$match[2]];
-        }, $shorthand);
+        return (int) preg_replace_callback('/^([0-9]+)('.implode('|', array_keys($units)).')$/', fn($match) => $match[1] * $units[$match[2]], $shorthand);
     }
 }

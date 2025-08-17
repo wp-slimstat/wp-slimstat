@@ -73,9 +73,9 @@ class Redis implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $tokens = array();
-        if (empty($keys)) {
-            return array();
+        $tokens = [];
+        if ($keys === []) {
+            return [];
         }
 
         $this->client->multi();
@@ -88,7 +88,7 @@ class Redis implements KeyValueStore
         /** @var array $return */
         $return = $this->client->exec();
         if (false === $return) {
-            return array();
+            return [];
         }
 
         $values = array_shift($return);
@@ -97,10 +97,11 @@ class Redis implements KeyValueStore
         if (false === $values) {
             $values = array_fill_keys($keys, false);
         }
+        
         $values = array_combine($keys, $values);
         $exists = array_combine($keys, $exists);
 
-        $tokens = array();
+        $tokens = [];
         foreach ($values as $key => $value) {
             // filter out non-existing values
             if (!$exists[$key]) {
@@ -155,8 +156,8 @@ class Redis implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if (empty($items)) {
-            return array();
+        if ($items === []) {
+            return [];
         }
 
         $ttl = $this->ttl($expire);
@@ -189,7 +190,7 @@ class Redis implements KeyValueStore
         /* @var bool[] $return */
         $result = (array) $this->client->exec();
 
-        $return = array();
+        $return = [];
         $keys = array_keys($items);
         $success = array_shift($result);
         foreach ($result as $i => $value) {
@@ -213,8 +214,8 @@ class Redis implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        if (empty($keys)) {
-            return array();
+        if ($keys === []) {
+            return [];
         }
 
         /*
@@ -226,7 +227,7 @@ class Redis implements KeyValueStore
 
         $this->client->del($keys);
 
-        $return = array();
+        $return = [];
         foreach ($keys as $key) {
             $return[$key] = array_key_exists($key, $items);
         }
@@ -299,7 +300,7 @@ class Redis implements KeyValueStore
          * (because the options are unknown) & a version check.
          */
         if (null === $this->version || $this->supportsOptionsArray()) {
-            $options = array('xx');
+            $options = ['xx'];
             if ($ttl > 0) {
                 /*
                  * Not adding 0 TTL to options:
@@ -556,7 +557,7 @@ class Redis implements KeyValueStore
             /** @var bool[] $return */
             $return = (array) $this->client->exec();
 
-            return !in_array(false, $return) ? $initial : false;
+            return in_array(false, $return) ? false : $initial;
         }
 
         // can't increment if a non-numeric value is set
@@ -595,7 +596,7 @@ class Redis implements KeyValueStore
         /** @var bool[] $return */
         $return = (array) $this->client->exec();
 
-        return !in_array(false, $return) ? $value : false;
+        return in_array(false, $return) ? false : $value;
     }
 
     /**
