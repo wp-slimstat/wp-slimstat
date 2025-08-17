@@ -1212,38 +1212,36 @@ class wp_slimstat_admin
             array(
                 'id'      => 'wp-slimstat-definitions',
                 'title'   => __('Definitions', 'wp-slimstat'),
-                'content' => '
-<ul>
-<li><b>' . __('Pageview', 'wp-slimstat') . '</b>: ' . __('A request to load a single HTML file ("page"). This should be contrasted with a "hit", which refers to a request for any file from a web server. Slimstat logs a pageview each time the tracking code is executed', 'wp-slimstat') . '</li>
-<li><b>' . __('(Human) Visit', 'wp-slimstat') . '</b>: ' . __("A period of interaction between a visitor's browser and your website, ending when the browser is closed or when the user has been inactive on that site for 30 minutes", 'wp-slimstat') . '</li>
-<li><b>' . __('Known Visitor', 'wp-slimstat') . '</b>: ' . __('Any user who has left a comment on your blog, and is thus identified by WordPress as a returning visitor', 'wp-slimstat') . '</li>
-<li><b>' . __('Unique IP', 'wp-slimstat') . '</b>: ' . __('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses; since this measurement looks only at the internet address a pageview came from, it is useful, but not perfect', 'wp-slimstat') . '</li>
-<li><b>' . __('Originating IP', 'wp-slimstat') . '</b>: ' . __('the originating IP address of a client connecting to a web server through an HTTP proxy or load balancer', 'wp-slimstat') . '</li>
-<li><b>' . __('Direct Traffic', 'wp-slimstat') . '</b>: ' . __('All those people showing up to your Web site by typing in the URL of your Web site coming or from a bookmark; some people also call this "default traffic" or "ambient traffic"', 'wp-slimstat') . '</li>
-<li><b>' . __('Search Engine', 'wp-slimstat') . '</b>: ' . __('Google, Yahoo, MSN, Ask, others; this bucket will include both your organic as well as your paid (PPC/SEM) traffic, so be aware of that', 'wp-slimstat') . '</li>
-<li><b>' . __('Search Terms', 'wp-slimstat') . '</b>: ' . __('Keywords used by your visitors to find your website on a search engine', 'wp-slimstat') . '</li>
-<li><b>' . __('SERP', 'wp-slimstat') . '</b>: ' . __('Short for search engine results page, the Web page that a search engine returns with the results of its search. The value shown represents your rank (or position) within that list of results', 'wp-slimstat') . '</li>
-<li><b>' . __('User Agent', 'wp-slimstat') . '</b>: ' . __('Any program used for accessing a website; this includes browsers, robots, spiders and any other program that was used to retrieve information from the site', 'wp-slimstat') . '</li>
-<li><b>' . __('Outbound Link', 'wp-slimstat') . '</b>: ' . __('A link from one domain to another is said to be outbound from its source anchor and inbound to its target. This report lists all the links to other websites followed by your visitors.', 'wp-slimstat') . '</li>
-</ul>'
+                'content' => '<ul>
+                    <li><b>' . __('Pageview', 'wp-slimstat') . '</b>: ' . __('A request to load a single HTML file ("page"). This should be contrasted with a "hit", which refers to a request for any file from a web server. Slimstat logs a pageview each time the tracking code is executed', 'wp-slimstat') . '</li>
+                    <li><b>' . __('(Human) Visit', 'wp-slimstat') . '</b>: ' . __("A period of interaction between a visitor's browser and your website, ending when the browser is closed or when the user has been inactive on that site for 30 minutes", 'wp-slimstat') . '</li>
+                    <li><b>' . __('Known Visitor', 'wp-slimstat') . '</b>: ' . __('Any user who has left a comment on your blog, and is thus identified by WordPress as a returning visitor', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Unique IP', 'wp-slimstat') . '</b>: ' . __('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses; since this measurement looks only at the internet address a pageview came from, it is useful, but not perfect', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Originating IP', 'wp-slimstat') . '</b>: ' . __('the originating IP address of a client connecting to a web server through an HTTP proxy or load balancer', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Direct Traffic', 'wp-slimstat') . '</b>: ' . __('All those people showing up to your Web site by typing in the URL of your Web site coming or from a bookmark; some people also call this "default traffic" or "ambient traffic"', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Search Engine', 'wp-slimstat') . '</b>: ' . __('Google, Yahoo, MSN, Ask, others; this bucket will include both your organic as well as your paid (PPC/SEM) traffic, so be aware of that', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Search Terms', 'wp-slimstat') . '</b>: ' . __('Keywords used by your visitors to find your website on a search engine', 'wp-slimstat') . '</li>
+                    <li><b>' . __('SERP', 'wp-slimstat') . '</b>: ' . __('Short for search engine results page, the Web page that a search engine returns with the results of its search. The value shown represents your rank (or position) within that list of results', 'wp-slimstat') . '</li>
+                    <li><b>' . __('User Agent', 'wp-slimstat') . '</b>: ' . __('Any program used for accessing a website; this includes browsers, robots, spiders and any other program that was used to retrieve information from the site', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Outbound Link', 'wp-slimstat') . '</b>: ' . __('A link from one domain to another is said to be outbound from its source anchor and inbound to its target. This report lists all the links to other websites followed by your visitors.', 'wp-slimstat') . '</li>
+                </ul>'
             )
         );
         $screen->add_help_tab(
             array(
                 'id'      => 'wp-slimstat-basic-filters',
                 'title'   => __('Basic Filters', 'wp-slimstat'),
-                'content' => '
-<ul>
-<li><b>' . __('Browser', 'wp-slimstat') . '</b>: ' . __('User agent (Firefox, Chrome, ...)', 'wp-slimstat') . '</li>
-<li><b>' . __('Country Code', 'wp-slimstat') . '</b>: ' . __('2-letter code (us, ru, de, it, ...)', 'wp-slimstat') . '</li>
-<li><b>' . __('IP', 'wp-slimstat') . '</b>: ' . __('Visitor\'s public IP address', 'wp-slimstat') . '</li>
-<li><b>' . __('Search Terms', 'wp-slimstat') . '</b>: ' . __('Keywords used by your visitors to find your website on a search engine', 'wp-slimstat') . '</li>
-<li><b>' . __('Language Code', 'wp-slimstat') . '</b>: ' . __('Please refer to this <a target="_blank" href="https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx">language culture page</a> (first column) for more information', 'wp-slimstat') . '</li>
-<li><b>' . __('Operating System', 'wp-slimstat') . '</b>: ' . __('Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="_blank" href="https://php.net/manual/en/function.get-browser.php">this manual page</a> for more information', 'wp-slimstat') . '</li>
-<li><b>' . __('Permalink', 'wp-slimstat') . '</b>: ' . __('URL accessed on your site', 'wp-slimstat') . '</li>
-<li><b>' . __('Referer', 'wp-slimstat') . '</b>: ' . __('Complete address of the referrer page', 'wp-slimstat') . '</li>
-<li><b>' . __('Visitor\'s Name', 'wp-slimstat') . '</b>: ' . __('Visitors\' names according to the cookie set by WordPress after they leave a comment', 'wp-slimstat') . '</li>
-</ul>'
+                'content' => '<ul>
+                    <li><b>' . __('Browser', 'wp-slimstat') . '</b>: ' . __('User agent (Firefox, Chrome, ...)', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Country Code', 'wp-slimstat') . '</b>: ' . __('2-letter code (us, ru, de, it, ...)', 'wp-slimstat') . '</li>
+                    <li><b>' . __('IP', 'wp-slimstat') . '</b>: ' . __('Visitor\'s public IP address', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Search Terms', 'wp-slimstat') . '</b>: ' . __('Keywords used by your visitors to find your website on a search engine', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Language Code', 'wp-slimstat') . '</b>: ' . __('Please refer to this <a target="_blank" href="https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx">language culture page</a> (first column) for more information', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Operating System', 'wp-slimstat') . '</b>: ' . __('Accepts identifiers like win7, win98, macosx, ...; please refer to <a target="_blank" href="https://php.net/manual/en/function.get-browser.php">this manual page</a> for more information', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Permalink', 'wp-slimstat') . '</b>: ' . __('URL accessed on your site', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Referer', 'wp-slimstat') . '</b>: ' . __('Complete address of the referrer page', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Visitor\'s Name', 'wp-slimstat') . '</b>: ' . __('Visitors\' names according to the cookie set by WordPress after they leave a comment', 'wp-slimstat') . '</li>
+                </ul>'
             )
         );
 
@@ -1251,20 +1249,19 @@ class wp_slimstat_admin
             array(
                 'id'      => 'wp-slimstat-advanced-filters',
                 'title'   => __('Advanced Filters', 'wp-slimstat'),
-                'content' => '
-<ul>
-<li><b>' . __('Browser Version', 'wp-slimstat') . '</b>: ' . __('user agent version (9.0, 11, ...)', 'wp-slimstat') . '</li>
-<li><b>' . __('Browser Type', 'wp-slimstat') . '</b>: ' . __('1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others', 'wp-slimstat') . '</li>
-<li><b>' . __('Pageview Attributes', 'wp-slimstat') . '</b>: ' . __('this field is set to <em>[pre]</em> if the resource has been accessed through <a target="_blank" href="https://developer.mozilla.org/en/Link_prefetching_FAQ">Link Prefetching</a> or similar techniques', 'wp-slimstat') . '</li>
-<li><b>' . __('Post Author', 'wp-slimstat') . '</b>: ' . __('author associated to that post/page when the resource was accessed', 'wp-slimstat') . '</li>
-<li><b>' . __('Post Category ID', 'wp-slimstat') . '</b>: ' . __('ID of the category/term associated to the resource, when available', 'wp-slimstat') . '</li>
-<li><b>' . __('Originating IP', 'wp-slimstat') . '</b>: ' . __('visitor\'s originating IP address, if available', 'wp-slimstat') . '</li>
-<li><b>' . __('Resource Content Type', 'wp-slimstat') . '</b>: ' . __('post, page, cpt:<em>custom-post-type</em>, attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the <a target="_blank" href="https://codex.wordpress.org/Conditional_Tags">Conditional Tags</a> manual page for more information', 'wp-slimstat') . '</li>
-<li><b>' . __('Screen Resolution', 'wp-slimstat') . '</b>: ' . __('viewport width and height (1024x768, 800x600, ...)', 'wp-slimstat') . '</li>
-<li><b>' . __('Visit ID', 'wp-slimstat') . "</b>: " . __('generally used in conjunction with <em>is not empty</em>, identifies human visitors', 'wp-slimstat') . '</li>
-<li><b>' . __('Date Filters', 'wp-slimstat') . "</b>: " . __('you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)', 'wp-slimstat') . '</li>
-<li><b>' . __('SERP Position', 'wp-slimstat') . "</b>: " . __('set the filter to Referer contains cd=N&, where N is the position you are looking for', 'wp-slimstat') . '</li>
-</ul>'
+                'content' => '<ul>
+                        <li><b>' . __('Browser Version', 'wp-slimstat') . '</b>: ' . __('user agent version (9.0, 11, ...)', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Browser Type', 'wp-slimstat') . '</b>: ' . __('1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Pageview Attributes', 'wp-slimstat') . '</b>: ' . __('this field is set to <em>[pre]</em> if the resource has been accessed through <a target="_blank" href="https://developer.mozilla.org/en/Link_prefetching_FAQ">Link Prefetching</a> or similar techniques', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Post Author', 'wp-slimstat') . '</b>: ' . __('author associated to that post/page when the resource was accessed', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Post Category ID', 'wp-slimstat') . '</b>: ' . __('ID of the category/term associated to the resource, when available', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Originating IP', 'wp-slimstat') . '</b>: ' . __('visitor\'s originating IP address, if available', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Resource Content Type', 'wp-slimstat') . '</b>: ' . __('post, page, cpt:<em>custom-post-type</em>, attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the <a target="_blank" href="https://codex.wordpress.org/Conditional_Tags">Conditional Tags</a> manual page for more information', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Screen Resolution', 'wp-slimstat') . '</b>: ' . __('viewport width and height (1024x768, 800x600, ...)', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Visit ID', 'wp-slimstat') . "</b>: " . __('generally used in conjunction with <em>is not empty</em>, identifies human visitors', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Date Filters', 'wp-slimstat') . "</b>: " . __('you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)', 'wp-slimstat') . '</li>
+                        <li><b>' . __('SERP Position', 'wp-slimstat') . "</b>: " . __('set the filter to Referer contains cd=N&, where N is the position you are looking for', 'wp-slimstat') . '</li>
+                </ul>'
             )
         );
     }

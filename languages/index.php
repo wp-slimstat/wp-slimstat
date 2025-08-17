@@ -590,7 +590,7 @@ class wp_slimstat_i18n {
 		$country_codes = array();
 		foreach ( array_keys( self::$dynamic_strings ) as $a_code ) {
 			if ( strpos( $a_code, 'c-', 0 ) !== false && strlen( $a_code ) > 2 && $a_code != 'c-xx' && $a_code != 'c-xy' ) {
-				$country_codes[ strtolower( str_replace( 'c-', '', $a_code ) ) ] = self::$dynamic_strings[ $a_code ];
+				$country_codes[ strtolower( str_replace( 'c-', '', $a_code ) ) ] = self::$dynamic_strings[ strtolower( $a_code ) ];
 			}
 		}
 
@@ -602,10 +602,10 @@ class wp_slimstat_i18n {
 			self::init_dynamic_strings();
 		}
 
-		if ( !isset( self::$dynamic_strings[ $_code ] ) ) {
+		if ( !isset( self::$dynamic_strings[ strtolower( $_code ) ] ) ) {
 			return $_code;
 		}
 
-		return self::$dynamic_strings[ $_code ];
+		return self::$dynamic_strings[ strtolower( $_code ) ];
 	}
 }

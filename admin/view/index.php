@@ -64,9 +64,12 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -1') ?>"><?php _e('Today', 'wp-slimstat') ?></a>
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals yesterday&&&interval equals -1') ?>"><?php _e('Yesterday', 'wp-slimstat') ?></a>
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -7') ?>"><?php _e('Last 7 Days', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -14') ?>"><?php _e('Last 2 weeks', 'wp-slimstat') ?></a>
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -28') ?>"><?php _e('Last 4 weeks', 'wp-slimstat') ?></a>
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -84') ?>"><?php _e('Last 12 weeks', 'wp-slimstat') ?></a>
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -364') ?>"><?php _e('Last 12 months', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -' . date('j')) ?>"><?php _e('This Month', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals last day of -1 month 00:00:00 + 1 day &&&interval equals -'. date('d', strtotime('last day of -1 month 23:59:59'))) ?>"><?php _e('Previous Month', 'wp-slimstat') ?></a>
                     </div>
 
                     <strong><?php _e('Date Range', 'wp-slimstat') ?></strong>

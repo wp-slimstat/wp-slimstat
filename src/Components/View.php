@@ -1,0 +1,59 @@
+<?php
+
+namespace SlimStat\Components;
+
+// don't load directly.
+if (! defined('ABSPATH')) {
+    header('Status: 403 Forbidden');
+    header('HTTP/1.1 403 Forbidden');
+    exit;
+}
+
+use SlimStat\Exception\SystemErrorException;
+use wp_slimstat as SlimStat;
+
+class View
+{
+    /**
+     * Load a view file and pass data to it.
+     *
+     * @param string|array $view The view path inside views directory
+     * @param array $args An associative array of data to pass to the view.
+     * @param bool $return Return the template if requested
+     * @param string $baseDir The base directory to load the view, defaults to SLIMSTAT_DIR
+     *
+     * @throws Exception if the view file cannot be found.
+     */
+    public static function load($view, $args = array(), $return = false, $baseDir = null)
+    {
+        // Default to SLIMSTAT_DIR
+        $baseDir = empty($baseDir) ? SLIMSTAT_DIR : $baseDir;
+
+        try {
+            $viewList = is_array($view) ? $view : array($view);
+
+            foreach ($viewList as $view) {
+                $viewPath = "$baseDir/views/$view.php";
+
+                if (!file_exists($viewPath)) {
+                    throw new SystemErrorException(esc_html__("View file not found: {$viewPath}", 'wp-statistics'));
+                }
+
+                if (!empty($args)) {
+                    extract($args);
+                }
+
+                // Return the template if requested
+                if ($return) {
+                    ob_start();
+                    include $viewPath;
+                    return ob_get_clean();
+                }
+
+                include $viewPath;
+            }
+        } catch (\Exception $e) {
+            \SlimStat::log($e->getMessage(), 'error');
+        }
+    }
+}

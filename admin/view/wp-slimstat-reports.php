@@ -43,6 +43,60 @@ class wp_slimstat_reports
 
         $chart_tooltip = '<strong>' . __('Chart Controls', 'wp-slimstat') . '</strong><ul><li>' . __('Use your mouse wheel to zoom in and out', 'wp-slimstat') . '</li><li>' . __('While zooming in, drag the chart to move to a different area', 'wp-slimstat') . '</li></ul>';
 
+        $pageviews_chart_tooltip = '<strong>' . __('Pageviews', 'wp-slimstat') . '</strong><br>'
+            . __('Shows how many times your site’s pages have been viewed.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Pageviews” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
+        $human_visits_chart_tooltip = '<strong>' . __('Human Visits', 'wp-slimstat') . '</strong><br>'
+            . __('Track the number of real human visitors.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Visits” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
+        $pages_with_outbound_links_chart_tooltip = '<strong>' . __('Pages with Outbound Links', 'wp-slimstat') . '</strong><br>'
+            . __('Track how often visitors click outbound links on your site.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Outbound Links” or “Unique Outbound” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
+        $search_terms_chart_tooltip = '<strong>' . __('Search Terms', 'wp-slimstat') . '</strong><br>'
+            . __('See how many times users find your site via search engines.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Search Terms” or “Unique Terms” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
+        $traffic_sources_chart_tooltip = '<strong>' . __('Traffic Sources', 'wp-slimstat') . '</strong><br>'
+            . __('See how many visits come from each traffic source.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Domains” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
+        $users_chart_tooltip = '<strong>' . __('Users', 'wp-slimstat') . '</strong><br>'
+            . __('See how many users come to your site.', 'wp-slimstat')
+            . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
+            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Users” or “Unique Users” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
+            . '</ul>';
+
         self::$reports = array(
             'slim_p7_02' => array(
                 'title'         => __('Access Log', 'wp-slimstat'),
@@ -73,7 +127,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview2', 'dashboard'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $pageviews_chart_tooltip
             ),
             'slim_p1_03'    => array(
                 'title'         => __('At a Glance', 'wp-slimstat'),
@@ -228,7 +282,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview2'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $search_terms_chart_tooltip
             ),
 
             'slim_p2_01'    => array(
@@ -248,7 +302,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview3'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $human_visits_chart_tooltip
             ),
             'slim_p2_02'    => array(
                 'title'         => __('Audience Overview', 'wp-slimstat'),
@@ -461,7 +515,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview3'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $users_chart_tooltip
             ),
             'slim_p2_24'    => array(
                 'title'         => __('Top Bots', 'wp-slimstat'),
@@ -505,7 +559,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview5'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $traffic_sources_chart_tooltip
             ),
             'slim_p3_02' => array(
                 'title'         => __('Traffic Summary', 'wp-slimstat'),
@@ -662,7 +716,20 @@ class wp_slimstat_reports
                     'type'      => 'recent',
                     'columns'   => 'TRIM( TRAILING "/" FROM resource )',
                     'as_column' => 'resource',
-                    'where'     => '(content_type = "category" OR content_type = "tag")',
+                    'where'     => '(content_type = "category")',
+                    'raw'       => array('wp_slimstat_db', 'get_recent')
+                ),
+                'classes'       => array('normal'),
+                'locations'     => array('inactive')
+            ),
+            'slim_p4_152'    => array(
+                'title'         => __('Recent Tags', 'wp-slimstat'),
+                'callback'      => array(__CLASS__, 'raw_results_to_html'),
+                'callback_args' => array(
+                    'type'      => 'recent',
+                    'columns'   => 'TRIM( TRAILING "/" FROM resource )',
+                    'as_column' => 'resource',
+                    'where'     => '(content_type = "tag")',
                     'raw'       => array('wp_slimstat_db', 'get_recent')
                 ),
                 'classes'       => array('normal'),
@@ -794,7 +861,7 @@ class wp_slimstat_reports
                 ),
                 'classes'       => array('extralarge', 'chart'),
                 'locations'     => array('slimview4'),
-                'tooltip'       => $chart_tooltip
+                'tooltip'       => $pages_with_outbound_links_chart_tooltip
             ),
             'slim_p4_27'    => array(
                 'title'         => __('Users by Page', 'wp-slimstat'),
@@ -1093,8 +1160,31 @@ class wp_slimstat_reports
                         break;
 
                     case 'category':
-                        $row_details   = __('Category ID', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ]]}";
-                        $element_value = get_cat_name($results[$i][$_args['columns']]);
+                        // Only show tag name for Top Tags, and only category name for Recent Categories
+                        $term_id = $results[$i][$_args['columns']];
+                        $show_tag = false;
+                        if (!empty($_args['where']) && strpos($_args['where'], 'tag') !== false) {
+                            $show_tag = true;
+                        }
+                        if ($show_tag) {
+                            $term_obj = get_term($term_id, 'post_tag');
+                            if ($term_obj && !is_wp_error($term_obj)) {
+                                $element_value = $term_obj->name;
+                                $row_details = __('Tag', 'wp-slimstat') . ': ' . $term_obj->name;
+                            } else {
+                                $element_value = esc_html($term_id);
+                                $row_details = __('ID', 'wp-slimstat') . ': ' . esc_html($term_id);
+                            }
+                        } else {
+                            $term_obj = get_term($term_id, 'category');
+                            if ($term_obj && !is_wp_error($term_obj)) {
+                                $element_value = $term_obj->name;
+                                $row_details = __('Category', 'wp-slimstat') . ': ' . $term_obj->name;
+                            } else {
+                                $element_value = esc_html($term_id);
+                                $row_details = __('ID', 'wp-slimstat') . ': ' . esc_html($term_id);
+                            }
+                        }
                         break;
 
                     case 'country':
@@ -1132,13 +1222,12 @@ class wp_slimstat_reports
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i][$_args['columns']] . '" />';
                         }
 
-                        $row_details   = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ] ]}";
+                        $row_details   = __('Code', 'wp-slimstat') . ": {$results[$i][$_args[ 'columns' ]]}";
                         $element_value .= wp_slimstat_i18n::get_string('l-' . $results[$i][$_args['columns']]);
                         break;
 
                     case 'platform':
-                        $row_details = __('Code', 'wp-slimstat') . ": {$results[ $i ][ $_args[ 'columns' ]]}";
-
+                        $row_details = __('Code', 'wp-slimstat') . ": {$results[$i][$_args[ 'columns' ]]}";
                         $icons = array(
                             'android'  => 'and',
                             'chromeos' => 'chr',
@@ -1358,113 +1447,9 @@ class wp_slimstat_reports
         }
     }
 
-    public static function show_chart($_args = array())
-    {
-        $data = wp_slimstat_db::get_data_for_chart($_args['chart_data']);
-
-        if (empty($data['keys'])) {
-            echo '<p class="nodata">' . __('No data to display', 'wp-slimstat') . '</p>';
-
-            if (defined('DOING_AJAX') && DOING_AJAX) {
-                die();
-            } else {
-                return 0;
-            }
-        }
-
-        // Enqueue all the Javascript and styles
-        $path_slimstat = dirname(dirname(__FILE__));
-        wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', $path_slimstat), array(), '4.2.1', false);
-
-        // todo remove it.
-        $chart_colors = !empty(wp_slimstat::$settings['chart_colors']) ? wp_slimstat::string_to_array(wp_slimstat::$settings['chart_colors']) : array('#bbcc44', '#21759b', '#ccc', '#999');
-
-        ?>
-        <canvas class="chart-placeholder" id="chart_<?php echo esc_attr($_args['id']); ?>"></canvas>
-
-        <script type="text/javascript">
-            <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
-            jQuery(function () {
-                <?php endif; ?>
-                // Build ChartJs
-                const ctx = document.getElementById('chart_<?php echo esc_attr($_args['id']); ?>');
-                const comparison_chart = <?php echo wp_slimstat::$settings['comparison_chart'] == 'on' ? 'true' : 'false'; ?>;
-                let datasets = [
-                    {
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v1']); ?>],
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                    },
-                    {
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v2']); ?>],
-                        backgroundColor: 'rgba(0, 149, 255, 0.2)',
-                        borderColor: 'rgba(0, 149, 255, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                    }
-                ];
-                if (comparison_chart) {
-                    datasets.push({
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][0], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v3']); ?>],
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                        borderDash: [4, 2]
-                    });
-                    datasets.push({
-                        label: '<?php echo htmlspecialchars($_args['chart_labels'][1], ENT_QUOTES, 'UTF-8') . ' ' . __('(previous)', 'wp-slimstat'); ?>',
-                        data: [<?php echo implode(',', $data['datasets']['v4']); ?>],
-                        backgroundColor: 'rgba(0, 149, 255, 0.2)',
-                        borderColor: 'rgba(0, 149, 255, 1)',
-                        borderWidth: 1,
-                        fill: true,
-                        tension: 0.4,
-                        borderDash: [4, 2]
-                    });
-                }
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: [<?php echo implode(',', $data['labels']); ?>],
-                        datasets: datasets,
-                    },
-                    options: {
-                        layout: {
-                            padding: 20
-                        },
-                        maintainAspectRatio: false,
-                        responsive: true,
-                        legend: {
-                            position: 'bottom',
-                        },
-                        animation: {
-                            duration: 1500,
-                        },
-                        tooltips: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        interaction: {
-                            intersect: false,
-                            mode: 'index',
-                        }
-                    }
-                });
-
-                <?php if ( !defined('DOING_AJAX') || !DOING_AJAX ): ?>
-            });
-            <?php endif; ?>
-        </script>
-        <?php
+    public static function show_chart($args) {
+        $chart = new \SlimStat\Modules\Chart();
+        $chart->showChart($args);
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
@@ -1726,11 +1711,11 @@ class wp_slimstat_reports
                                 }
                                 ?>
                             </div>
-                            <strong><?= esc_html($country['name']) ?></strong>
+                            <strong><?php echo esc_html($country['name']) ?></strong>
                             <div class="bar-container">
-                                <div class="bar-fill" style="width: <?= $country['percent'] ?>%;"></div>
+                                <div class="bar-fill" style="width: <?php echo $country['percent'] ?>%;"></div>
                             </div>
-                            <span><?= $country['percent'] ?>%</span>
+                            <span><?php echo $country['percent']; ?>%</span>
                         </div>
                     <?php endforeach; ?>
                 </div>

@@ -535,7 +535,7 @@ var SlimStatAdmin = {
         return function () {
             var inner_content = "#" + id + " .inside";
             var defer = jQuery.Deferred();
-
+            var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
             jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
 
             // Clear the autorefresh timer, if set
@@ -548,6 +548,7 @@ var SlimStatAdmin = {
                 security: jQuery("#meta-box-order-nonce").val(),
                 page: SlimStatAdmin.get_current_tab(),
                 report_id: id,
+                granularity: granularity,
             };
 
             // Append the data from the hidden form
