@@ -14,34 +14,47 @@ $last_tracker_error = get_option('slimstat_tracker_error', array());
 // Retrieve any geoip errors for display
 $last_geoip_error = get_option('slimstat_geoip_error', array());
 
+// Build General → Tracker rows, conditionally adding Tracking Request Method under Tracking Mode
+$general_rows = array(
+    // General - Tracker
+    'general_tracking_header'    => array(
+        'title' => __('Tracker', 'wp-slimstat'),
+        'type'  => 'section_header'
+    ),
+    'is_tracking'                => array(
+        'title'       => __('Enable Tracking', 'wp-slimstat'),
+        'type'        => 'toggle',
+        'description' => __('Turn the tracker on or off, while keeping the reports accessible.', 'wp-slimstat')
+    ),
+    'track_admin_pages'          => array(
+        'title'       => __('Track Backend', 'wp-slimstat'),
+        'type'        => 'toggle',
+        'description' => __("Enable this option to track your users' activity within the WordPress admin.", 'wp-slimstat')
+    ),
+    'javascript_mode'            => array(
+        'title'            => __('Tracking Mode', 'wp-slimstat'),
+        'type'             => 'toggle',
+        'custom_label_on'  => __('Client', 'wp-slimstat'),
+        'custom_label_off' => __('Server', 'wp-slimstat'),
+        'description'      => __("Select <strong>Client</strong> if you are using a caching plugin (W3 Total Cache, WP SuperCache, HyperCache, etc). Slimstat will behave pretty much like Google Analytics, and visitors whose browser doesn't support Javascript will be ignored. Select <strong>Server</strong> if you are not using a caching tool on your website, and would like to track <em>every single visit</em> to your site.", 'wp-slimstat')
+    ),
+    'tracking_request_method' => array(
+        'title'       => __('Tracking Request Method', 'wp-slimstat'),
+        'type'        => 'select',
+        'description' => __('Choose how Slimstat sends tracking requests to the server. Fallback logic is always enabled: if the selected method fails, Slimstat will automatically try the next available method.<br /><strong>Note:</strong> that some ad blockers may block tracking requests sent via the REST API or admin-ajax.php. If you are using one of these methods and notice that some visits are not being tracked, consider using the Ad-Blocker Bypass method.', 'wp-slimstat'),
+        'select_values'     => array(
+            'rest' => __('REST API – Fast, falls back to Admin-AJAX if the request fails', 'wp-slimstat'),
+            'ajax' => __('Admin-AJAX – Compatible, but may be blocked by ad blockers too (recommended)', 'wp-slimstat'),
+            'adblock_bypass' => __('Ad-Blocker Bypass – Most reliable, avoids ad blockers', 'wp-slimstat')
+        )
+    ),
+);
+
 // Define all the options
 $settings = array(
     1 => array(
         'title' => __('General', 'wp-slimstat'),
-        'rows'  => array(
-            // General - Tracker
-            'general_tracking_header'    => array(
-                'title' => __('Tracker', 'wp-slimstat'),
-                'type'  => 'section_header'
-            ),
-            'is_tracking'                => array(
-                'title'       => __('Enable Tracking', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('Turn the tracker on or off, while keeping the reports accessible.', 'wp-slimstat')
-            ),
-            'track_admin_pages'          => array(
-                'title'       => __('Track Backend', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __("Enable this option to track your users' activity within the WordPress admin.", 'wp-slimstat')
-            ),
-            'javascript_mode'            => array(
-                'title'            => __('Tracking Mode', 'wp-slimstat'),
-                'type'             => 'toggle',
-                'custom_label_on'  => __('Client', 'wp-slimstat'),
-                'custom_label_off' => __('Server', 'wp-slimstat'),
-                'description'      => __("Select <strong>Client</strong> if you are using a caching plugin (W3 Total Cache, WP SuperCache, HyperCache, etc). Slimstat will behave pretty much like Google Analytics, and visitors whose browser doesn't support Javascript will be ignored. Select <strong>Server</strong> if you are not using a caching tool on your website, and would like to track <em>every single visit</em> to your site.", 'wp-slimstat')
-            ),
-
+        'rows'  => $general_rows + array(
             // General - WordPress Integration
             'general_integration_header' => array(
                 'title' => __('WordPress Integration', 'wp-slimstat'),
@@ -480,22 +493,7 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'description' => __("Enter a list of usernames who should have access to the statistics. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat')
             ),
 
-            // Access Control - Ad-Blocker & REST API
-            'backend_transport_header' => array(
-                'title' => __('Tracking Request Method', 'wp-slimstat'),
-                'type'  => 'section_header'
-            ),
-            'tracking_request_method' => array(
-                'title'       => __('Tracking Request Method', 'wp-slimstat'),
-                'type'        => 'select',
-                'description' => __('Choose how Slimstat sends tracking requests to the server. Fallback logic is always enabled: if the selected method fails, Slimstat will automatically try the next available method.','wp-slimstat') . '<br />' .
-                                 __('<strong>Note</strong> that some ad blockers may block tracking requests sent via the REST API or admin-ajax.php. If you are using one of these methods and notice that some visits are not being tracked, consider using the Ad-Blocker Bypass method.', 'wp-slimstat'),
-                'select_values'     => array(
-                    'rest' => __('REST API: Use the WordPress REST API for tracking requests (may be blocked by ad blockers).', 'wp-slimstat'),
-                    'ajax' => __('Admin-AJAX: Use admin-ajax.php for tracking requests (recommended fallback for compatibility).', 'wp-slimstat'),
-                    'adblock_bypass' => __('Ad-Blocker Bypass: Use an alternate method to bypass common ad blockers and ensure tracking.', 'wp-slimstat')
-                )
-            ),
+            // Access Control - Ad-Blocker & REST API (moved to General → Tracker)
 
             // Access Control - Customizer
             'permissions_customize_header' => array(
