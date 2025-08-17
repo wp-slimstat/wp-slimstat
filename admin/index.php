@@ -1,5 +1,7 @@
 <?php
 
+use SlimStat\Services\GeoService;
+
 class wp_slimstat_admin
 {
     public static $screens_info      = [];
@@ -297,6 +299,7 @@ class wp_slimstat_admin
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
     }
+
     // END: init
 
     /**
@@ -348,6 +351,7 @@ class wp_slimstat_admin
         self::init_environment();
         restore_current_blog();
     }
+
     // END: new_blog
 
     /**
@@ -363,6 +367,7 @@ class wp_slimstat_admin
 
         return $_tables;
     }
+
     // END: drop_tables
 
     /**
@@ -407,6 +412,7 @@ class wp_slimstat_admin
 
         return true;
     }
+
     // END: init_environment
 
     /**
@@ -529,6 +535,7 @@ class wp_slimstat_admin
             update_option($idx['option'], 'yes');
         }
     }
+
     // END: init_tables
 
     /**
@@ -544,6 +551,7 @@ class wp_slimstat_admin
             $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
             $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
         }
+
         // --- END: Updates for version 4.8.2 ---
 
         // --- Updates for version 4.8.4 ---
@@ -577,6 +585,7 @@ class wp_slimstat_admin
             }
             wp_slimstat::$settings['db_indexes'] = 'on';
         }
+
         // --- END: Updates for version 4.8.4 ---
 
         // --- Updates for version 4.8.4.1 ---
@@ -590,6 +599,7 @@ class wp_slimstat_admin
             $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
             $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
         }
+
         // --- END: Updates for version 4.8.4.1 ---
 
         // --- Updates for version 4.8.8 ---
@@ -637,6 +647,7 @@ class wp_slimstat_admin
             }
         }
     }
+
     // END: add_dashboard_widgets
 
     /**
@@ -653,6 +664,7 @@ class wp_slimstat_admin
 				WHERE username = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
         }
     }
+
     // END: remove_spam
 
     /**
@@ -667,6 +679,7 @@ class wp_slimstat_admin
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);
         }
     }
+
     // END: wp_slimstat_stylesheet
 
     /**
@@ -676,6 +689,7 @@ class wp_slimstat_admin
     {
         echo '<style type="text/css" media="screen">' . wp_slimstat::$settings['custom_css'] . '</style>';
     }
+
     // END: wp_slimstat_userdefined_stylesheet
 
     /**
@@ -703,6 +717,7 @@ class wp_slimstat_admin
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }
+
     // END: wp_slimstat_enqueue_scripts
 
     /**
@@ -783,6 +798,7 @@ class wp_slimstat_admin
 
         return $_s;
     }
+
     // END: add_menus
 
     /**
@@ -844,6 +860,7 @@ class wp_slimstat_admin
             }
         }
     }
+
     // END: add_menu_to_adminbar
 
     /**
@@ -853,6 +870,7 @@ class wp_slimstat_admin
     {
         include(__DIR__ . '/view/index.php');
     }
+
     // END: wp_slimstat_include_view
 
     /**
@@ -862,6 +880,7 @@ class wp_slimstat_admin
     {
         include(__DIR__ . '/view/layout.php');
     }
+
     // END: wp_slimstat_include_addons
 
     /**
@@ -881,6 +900,7 @@ class wp_slimstat_admin
     {
         include(__DIR__ . '/config/index.php');
     }
+
     // END: wp_slimstat_include_config
 
     /**
@@ -931,6 +951,7 @@ class wp_slimstat_admin
         }
         return null;
     }
+
     // END: init_data_for_column
 
     /**
@@ -950,6 +971,7 @@ class wp_slimstat_admin
 
         return $_columns;
     }
+
     // END: add_comment_column_header
 
     /**
@@ -987,6 +1009,7 @@ class wp_slimstat_admin
         }
         return null;
     }
+
     // END: show_message
 
     /**
@@ -996,6 +1019,7 @@ class wp_slimstat_admin
     {
         self::show_message(self::$admin_notice, 'info', 'latest-news');
     }
+
     // END: show_latest_news
 
     /**
@@ -1017,6 +1041,7 @@ class wp_slimstat_admin
 
         self::show_message($i18n_module->get_promo_message(), 'warning', 'translate');
     }
+
     // END: show_translate_notice
 
     /**
@@ -1036,6 +1061,7 @@ class wp_slimstat_admin
 
         exit();
     }
+
     // END: notices_handler
 
     /**
@@ -1054,6 +1080,7 @@ class wp_slimstat_admin
         $my_wpdb->query(sprintf('DELETE ts FROM %sslim_stats ts WHERE ts.id = %d', $GLOBALS['wpdb']->prefix, $pageview_id));
         exit();
     }
+
     // END: delete_pageview
 
     /**
@@ -1081,6 +1108,7 @@ class wp_slimstat_admin
 
         return rmdir($path);
     }
+
     // END: delete_pageview
 
     /**
@@ -1133,6 +1161,7 @@ class wp_slimstat_admin
                     update_option('slimstat_filters', $saved_filters);
                     echo __('Saved', 'wp-slimstat');
                 }
+
                 break;
 
             case 'delete':
@@ -1152,11 +1181,14 @@ class wp_slimstat_admin
                         $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . ' ' . $filter_value_no_slashes;
                         $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_value_no_slashes);
                     }
+
                     echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . __('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url(implode('&&&', $filter_strings)) . '">' . implode(', ', $filter_html) . '</a></p>';
                 }
+
                 echo '</div>';
                 break;
         }
+
         exit();
     }
 
@@ -1167,7 +1199,7 @@ class wp_slimstat_admin
         check_ajax_referer('wp_rest', 'security');
 
         try {
-            $geographicProvider = new \SlimStat\Services\GeoService();
+            $geographicProvider = new GeoService();
 
             $result = $geographicProvider
                 ->setUpdate(true)
@@ -1187,7 +1219,7 @@ class wp_slimstat_admin
         check_ajax_referer('wp_rest', 'security');
 
         try {
-            $geographicProvider = new \SlimStat\Services\GeoService();
+            $geographicProvider = new GeoService();
 
             $result = $geographicProvider->checkDatabase();
 
@@ -1267,6 +1299,7 @@ class wp_slimstat_admin
         );
         return null;
     }
+
     // END: contextual_help
 
     /**
@@ -1285,6 +1318,7 @@ class wp_slimstat_admin
 
         return false;
     }
+
     // END: _create_table
 
     /**
@@ -1322,6 +1356,7 @@ class wp_slimstat_admin
                     if ('feedbackbird-widget' === $handle) {
                         return preg_replace('/^<script /i', '<script type="module" crossorigin="crossorigin" ', $tag);
                     }
+
                     return $tag;
                 }, 10, 3);
             }

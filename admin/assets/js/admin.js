@@ -47,6 +47,22 @@ jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
 // -----------------------------------------------------------------------------------
 
 jQuery(function () {
+    // Show Tracking Request Method only when Tracking Mode = Client
+    function toggleTrackingRequestMethod() {
+        var selector = "input.slimstat-checkbox-toggle#javascript_mode[type=checkbox]";
+        var clientMode = jQuery(selector).prop("checked");
+        var $row = jQuery("#tracking_request_method").closest("tr");
+        if (clientMode) {
+            $row.fadeIn(250);
+        } else {
+            $row.fadeOut(0);
+        }
+    }
+    toggleTrackingRequestMethod();
+    const toggleSelector = "input.slimstat-checkbox-toggle#javascript_mode[type=checkbox]";
+    jQuery(document).on("change", toggleSelector, toggleTrackingRequestMethod);
+    jQuery(document).on("switchChange.bootstrapSwitch", toggleSelector, toggleTrackingRequestMethod);
+
     var licenseType = jQuery("#enable_maxmind");
     if (licenseType.val() !== "on") {
         jQuery("#maxmind_license_key").closest("tr").css("display", "none");
