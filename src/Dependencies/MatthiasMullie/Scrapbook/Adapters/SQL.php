@@ -39,7 +39,7 @@ abstract class SQL implements KeyValueStore
     public function __construct(\PDO $client, $table = 'cache')
     {
         $this->client = $client;
-        $this->table = $table;
+        $this->table  = $table;
 
         // don't throw exceptions - it's ok to fail, as long as the return value
         // reflects that!
@@ -63,7 +63,7 @@ abstract class SQL implements KeyValueStore
             WHERE k = :key AND (e IS NULL OR e > :expire)"
         );
         $statement->execute([
-            ':key' => $key,
+            ':key'    => $key,
             ':expire' => date('Y-m-d H:i:s'), // right now!
         ]);
 
@@ -86,7 +86,7 @@ abstract class SQL implements KeyValueStore
     public function getMulti(array $keys, array &$tokens = null)
     {
         $tokens = [];
-        if ($keys === []) {
+        if ([] === $keys) {
             return [];
         }
 
@@ -100,11 +100,11 @@ abstract class SQL implements KeyValueStore
             "SELECT k, v
             FROM $this->table
             WHERE
-                k IN (".implode(',', $quoted).') AND
+                k IN (" . implode(',', $quoted) . ') AND
                 (e IS NULL OR e > :expire)'
         );
         $statement->execute([':expire' => date('Y-m-d H:i:s')]);
-        
+
         $values = $statement->fetchAll(\PDO::FETCH_ASSOC);
 
         $result = [];
@@ -167,7 +167,7 @@ abstract class SQL implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        if ($keys === []) {
+        if ([] === $keys) {
             return [];
         }
 
@@ -182,7 +182,7 @@ abstract class SQL implements KeyValueStore
 
         $statement = $this->client->query(
             "DELETE FROM $this->table
-            WHERE k IN (".implode(',', $quoted).')'
+            WHERE k IN (" . implode(',', $quoted) . ')'
         );
 
         /*
@@ -206,7 +206,7 @@ abstract class SQL implements KeyValueStore
      */
     public function add($key, $value, $expire = 0)
     {
-        $value = $this->serialize($value);
+        $value  = $this->serialize($value);
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -217,8 +217,8 @@ abstract class SQL implements KeyValueStore
         );
 
         $statement->execute([
-            ':key' => $key,
-            ':value' => $value,
+            ':key'    => $key,
+            ':value'  => $value,
             ':expire' => $expire,
         ]);
 
@@ -230,7 +230,7 @@ abstract class SQL implements KeyValueStore
      */
     public function replace($key, $value, $expire = 0)
     {
-        $value = $this->serialize($value);
+        $value  = $this->serialize($value);
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -242,8 +242,8 @@ abstract class SQL implements KeyValueStore
         );
 
         $statement->execute([
-            ':key' => $key,
-            ':value' => $value,
+            ':key'    => $key,
+            ':value'  => $value,
             ':expire' => $expire,
         ]);
 
@@ -260,7 +260,7 @@ abstract class SQL implements KeyValueStore
             WHERE k = :key AND v = :value"
         );
         $statement->execute([
-            ':key' => $key,
+            ':key'   => $key,
             ':value' => $value,
         ]);
 
@@ -272,7 +272,7 @@ abstract class SQL implements KeyValueStore
      */
     public function cas($token, $key, $value, $expire = 0)
     {
-        $value = $this->serialize($value);
+        $value  = $this->serialize($value);
         $expire = $this->expire($expire);
 
         $this->clearExpired();
@@ -284,10 +284,10 @@ abstract class SQL implements KeyValueStore
         );
 
         $statement->execute([
-            ':key' => $key,
-            ':value' => $value,
+            ':key'    => $key,
+            ':value'  => $value,
             ':expire' => $expire,
-            ':token' => $token,
+            ':token'  => $token,
         ]);
 
         if (1 === $statement->rowCount()) {
@@ -303,7 +303,7 @@ abstract class SQL implements KeyValueStore
             WHERE k = :key AND v = :value AND v = :token"
         );
         $statement->execute([
-            ':key' => $key,
+            ':key'   => $key,
             ':value' => $value,
             ':token' => $token,
         ]);
@@ -351,7 +351,7 @@ abstract class SQL implements KeyValueStore
         );
 
         $statement->execute([
-            ':key' => $key,
+            ':key'    => $key,
             ':expire' => $expire,
         ]);
 
@@ -410,7 +410,7 @@ abstract class SQL implements KeyValueStore
         } elseif (is_numeric($value)) {
             $value += $offset;
             // < 0 is never possible
-            $value = max(0, $value);
+            $value  = max(0, $value);
             $return = $this->replace($key, $value, $expire);
 
             if ($return) {

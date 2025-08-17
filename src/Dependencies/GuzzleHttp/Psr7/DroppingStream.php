@@ -26,7 +26,7 @@ final class DroppingStream implements StreamInterface
      */
     public function __construct(StreamInterface $stream, int $maxLength)
     {
-        $this->stream = $stream;
+        $this->stream    = $stream;
         $this->maxLength = $maxLength;
     }
 

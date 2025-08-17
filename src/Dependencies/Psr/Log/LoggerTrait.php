@@ -16,8 +16,6 @@ trait LoggerTrait
      * System is unusable.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function emergency($message, array $context = [])
     {
@@ -31,8 +29,6 @@ trait LoggerTrait
      * trigger the SMS alerts and wake you up.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function alert($message, array $context = [])
     {
@@ -45,8 +41,6 @@ trait LoggerTrait
      * Example: Application component unavailable, unexpected exception.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function critical($message, array $context = [])
     {
@@ -58,8 +52,6 @@ trait LoggerTrait
      * be logged and monitored.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function error($message, array $context = [])
     {
@@ -73,8 +65,6 @@ trait LoggerTrait
      * that are not necessarily wrong.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function warning($message, array $context = [])
     {
@@ -85,8 +75,6 @@ trait LoggerTrait
      * Normal but significant events.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function notice($message, array $context = [])
     {
@@ -99,8 +87,6 @@ trait LoggerTrait
      * Example: User logs in, SQL logs.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function info($message, array $context = [])
     {
@@ -111,8 +97,6 @@ trait LoggerTrait
      * Detailed debug information.
      *
      * @param string $message
-     *
-     * @return void
      */
     public function debug($message, array $context = [])
     {
@@ -125,7 +109,6 @@ trait LoggerTrait
      * @param mixed  $level
      * @param string $message
      *
-     * @return void
      * @throws InvalidArgumentException
      */
     abstract public function log($level, $message, array $context = []);

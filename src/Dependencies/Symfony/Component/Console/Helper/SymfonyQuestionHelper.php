@@ -30,7 +30,7 @@ class SymfonyQuestionHelper extends QuestionHelper
      */
     protected function writePrompt(OutputInterface $output, Question $question)
     {
-        $text = OutputFormatter::escapeTrailingBackslash($question->getQuestion());
+        $text    = OutputFormatter::escapeTrailingBackslash($question->getQuestion());
         $default = $question->getDefault();
 
         if ($question->isMultiline()) {
@@ -62,7 +62,7 @@ class SymfonyQuestionHelper extends QuestionHelper
 
             case $question instanceof ChoiceQuestion:
                 $choices = $question->getChoices();
-                $text = sprintf(' <info>%s</info> [<comment>%s</comment>]:', $text, OutputFormatter::escape($choices[$default] ?? $default));
+                $text    = sprintf(' <info>%s</info> [<comment>%s</comment>]:', $text, OutputFormatter::escape($choices[$default] ?? $default));
 
                 break;
 

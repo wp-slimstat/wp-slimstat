@@ -14,20 +14,20 @@ use SlimStat\Helpers\DataBuckets;
 
 class Chart
 {
-    public const DAY            = 86400;
-    
-    public const YEAR           = 365 * self::DAY;
-    
+    public const DAY = 86400;
+
+    public const YEAR = 365 * self::DAY;
+
     private const GRANULARITIES = ['yearly', 'monthly', 'weekly', 'daily', 'hourly'];
-    
-    private array $args         = [];
-    
-    private array $data         = [];
-    
-    private array $prevData     = [];
-    
-    private array $chartLabels  = [];
-    
+
+    private array $args = [];
+
+    private array $data = [];
+
+    private array $prevData = [];
+
+    private array $chartLabels = [];
+
     private array $translations = [];
 
     public function showChart(array $args): void
@@ -49,7 +49,7 @@ class Chart
         }
 
         if (!class_exists('\wp_slimstat_db')) {
-            include_once SLIMSTAT_DIR.'/admin/view/wp-slimstat-db.php';
+            include_once SLIMSTAT_DIR . '/admin/view/wp-slimstat-db.php';
             \wp_slimstat_db::init();
         }
 
@@ -62,7 +62,7 @@ class Chart
             $args['granularity'] = $granularity;
             $chart->init($args);
             $totals = [
-                'current'  => [
+                'current' => [
                     'v1' => (int) ($chart->data['totals'][0]->v1 ?? 0),
                     'v2' => (int) ($chart->data['totals'][0]->v2 ?? 0),
                 ],
@@ -219,7 +219,7 @@ class Chart
         $start = $args['start'];
         $end   = $args['end'];
 
-        $totalOffsetSeconds = (int) $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
+        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);

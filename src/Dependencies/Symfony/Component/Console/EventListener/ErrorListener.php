@@ -72,7 +72,7 @@ class ErrorListener implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-            ConsoleEvents::ERROR => ['onConsoleError', -128],
+            ConsoleEvents::ERROR     => ['onConsoleError', -128],
             ConsoleEvents::TERMINATE => ['onConsoleTerminate', -128],
         ];
     }
@@ -80,7 +80,7 @@ class ErrorListener implements EventSubscriberInterface
     private function getInputString(ConsoleEvent $event): ?string
     {
         $commandName = $event->getCommand() ? $event->getCommand()->getName() : null;
-        $input = $event->getInput();
+        $input       = $event->getInput();
 
         if (method_exists($input, '__toString')) {
             if ($commandName) {

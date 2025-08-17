@@ -27,67 +27,67 @@ use SlimStat\Dependencies\Symfony\Component\Console\Terminal;
 final class ProgressBar
 {
     public const FORMAT_VERBOSE = 'verbose';
-    
+
     public const FORMAT_VERY_VERBOSE = 'very_verbose';
-    
+
     public const FORMAT_DEBUG = 'debug';
-    
+
     public const FORMAT_NORMAL = 'normal';
 
     private const FORMAT_VERBOSE_NOMAX = 'verbose_nomax';
-    
+
     private const FORMAT_VERY_VERBOSE_NOMAX = 'very_verbose_nomax';
-    
+
     private const FORMAT_DEBUG_NOMAX = 'debug_nomax';
-    
+
     private const FORMAT_NORMAL_NOMAX = 'normal_nomax';
 
     private $barWidth = 28;
-    
+
     private $barChar;
-    
+
     private $emptyBarChar = '-';
-    
+
     private $progressChar = '>';
-    
+
     private $format;
-    
+
     private $internalFormat;
-    
+
     private $redrawFreq = 1;
-    
+
     private $writeCount;
-    
+
     private $lastWriteTime;
-    
+
     private $minSecondsBetweenRedraws = 0;
-    
+
     private $maxSecondsBetweenRedraws = 1;
-    
+
     private $output;
-    
+
     private $step = 0;
-    
+
     private $max;
-    
+
     private $startTime;
-    
+
     private $stepWidth;
-    
+
     private $percent = 0.0;
-    
+
     private $messages = [];
-    
+
     private $overwrite = true;
-    
+
     private $terminal;
-    
+
     private $previousMessage;
-    
+
     private $cursor;
 
     private static $formatters;
-    
+
     private static $formats;
 
     /**
@@ -104,7 +104,7 @@ final class ProgressBar
         $this->terminal = new Terminal();
 
         if (0 < $minSecondsBetweenRedraws) {
-            $this->redrawFreq = null;
+            $this->redrawFreq               = null;
             $this->minSecondsBetweenRedraws = $minSecondsBetweenRedraws;
         }
 
@@ -117,7 +117,7 @@ final class ProgressBar
         }
 
         $this->startTime = time();
-        $this->cursor = new Cursor($output);
+        $this->cursor    = new Cursor($output);
     }
 
     /**
@@ -295,7 +295,7 @@ final class ProgressBar
 
     public function setFormat(string $format)
     {
-        $this->format = null;
+        $this->format         = null;
         $this->internalFormat = $format;
     }
 
@@ -345,8 +345,8 @@ final class ProgressBar
     public function start(?int $max = null)
     {
         $this->startTime = time();
-        $this->step = 0;
-        $this->percent = 0.0;
+        $this->step      = 0;
+        $this->percent   = 0.0;
 
         if (null !== $max) {
             $this->setMaxSteps($max);
@@ -381,12 +381,12 @@ final class ProgressBar
             $step = 0;
         }
 
-        $redrawFreq = $this->redrawFreq ?? (($this->max ?: 10) / 10);
-        $prevPeriod = (int) ($this->step / $redrawFreq);
-        $currPeriod = (int) ($step / $redrawFreq);
-        $this->step = $step;
+        $redrawFreq    = $this->redrawFreq ?? (($this->max ?: 10) / 10);
+        $prevPeriod    = (int) ($this->step / $redrawFreq);
+        $currPeriod    = (int) ($step / $redrawFreq);
+        $this->step    = $step;
         $this->percent = $this->max ? (float) $this->step / $this->max : 0;
-        $timeInterval = microtime(true) - $this->lastWriteTime;
+        $timeInterval  = microtime(true) - $this->lastWriteTime;
 
         // Draw regardless of other limits
         if ($this->max === $step) {
@@ -408,8 +408,8 @@ final class ProgressBar
 
     public function setMaxSteps(int $max)
     {
-        $this->format = null;
-        $this->max = max(0, $max);
+        $this->format    = null;
+        $this->max       = max(0, $max);
         $this->stepWidth = $this->max ? Helper::width((string) $this->max) : 4;
     }
 
@@ -469,8 +469,8 @@ final class ProgressBar
     private function setRealFormat(string $format)
     {
         // try to use the _nomax variant if available
-        if (!$this->max && null !== self::getFormatDefinition($format.'_nomax')) {
-            $this->format = self::getFormatDefinition($format.'_nomax');
+        if (!$this->max && null !== self::getFormatDefinition($format . '_nomax')) {
+            $this->format = self::getFormatDefinition($format . '_nomax');
         } elseif (null !== self::getFormatDefinition($format)) {
             $this->format = self::getFormatDefinition($format);
         } else {
@@ -493,14 +493,14 @@ final class ProgressBar
             if (null !== $this->previousMessage) {
                 if ($this->output instanceof ConsoleSectionOutput) {
                     $messageLines = explode("\n", $this->previousMessage);
-                    $lineCount = \count($messageLines);
+                    $lineCount    = \count($messageLines);
                     foreach ($messageLines as $messageLine) {
                         $messageLineLength = Helper::width(Helper::removeDecoration($this->output->getFormatter(), $messageLine));
                         if ($messageLineLength > $this->terminal->getWidth()) {
                             $lineCount += floor($messageLineLength / $this->terminal->getWidth());
                         }
                     }
-                    
+
                     $this->output->clear($lineCount);
                 } else {
                     $lineCount = substr_count($this->previousMessage, "\n");
@@ -515,11 +515,11 @@ final class ProgressBar
                 }
             }
         } elseif ($this->step > 0) {
-            $message = \PHP_EOL.$message;
+            $message = \PHP_EOL . $message;
         }
 
         $this->previousMessage = $originalMessage;
-        $this->lastWriteTime = microtime(true);
+        $this->lastWriteTime   = microtime(true);
 
         $this->output->write($message);
         ++$this->writeCount;
@@ -545,56 +545,56 @@ final class ProgressBar
         return [
             'bar' => function (self $bar, OutputInterface $output) {
                 $completeBars = $bar->getBarOffset();
-                $display = str_repeat($bar->getBarCharacter(), $completeBars);
+                $display      = str_repeat($bar->getBarCharacter(), $completeBars);
                 if ($completeBars < $bar->getBarWidth()) {
                     $emptyBars = $bar->getBarWidth() - $completeBars - Helper::length(Helper::removeDecoration($output->getFormatter(), $bar->getProgressCharacter()));
-                    $display .= $bar->getProgressCharacter().str_repeat($bar->getEmptyBarCharacter(), $emptyBars);
+                    $display .= $bar->getProgressCharacter() . str_repeat($bar->getEmptyBarCharacter(), $emptyBars);
                 }
 
                 return $display;
             },
-            'elapsed' => fn(self $bar) => Helper::formatTime(time() - $bar->getStartTime()),
+            'elapsed'   => fn (self $bar) => Helper::formatTime(time() - $bar->getStartTime()),
             'remaining' => function (self $bar) {
-                if ($bar->getMaxSteps() === 0) {
+                if (0 === $bar->getMaxSteps()) {
                     throw new LogicException('Unable to display the remaining time if the maximum number of steps is not set.');
                 }
 
                 return Helper::formatTime($bar->getRemaining());
             },
             'estimated' => function (self $bar) {
-                if ($bar->getMaxSteps() === 0) {
+                if (0 === $bar->getMaxSteps()) {
                     throw new LogicException('Unable to display the estimated time if the maximum number of steps is not set.');
                 }
 
                 return Helper::formatTime($bar->getEstimated());
             },
-            'memory' => fn(self $bar) => Helper::formatMemory(memory_get_usage(true)),
-            'current' => fn(self $bar) => str_pad($bar->getProgress(), $bar->getStepWidth(), ' ', \STR_PAD_LEFT),
-            'max' => fn(self $bar) => $bar->getMaxSteps(),
-            'percent' => fn(self $bar) => floor($bar->getProgressPercent() * 100),
+            'memory'  => fn (self $bar) => Helper::formatMemory(memory_get_usage(true)),
+            'current' => fn (self $bar) => str_pad($bar->getProgress(), $bar->getStepWidth(), ' ', \STR_PAD_LEFT),
+            'max'     => fn (self $bar) => $bar->getMaxSteps(),
+            'percent' => fn (self $bar) => floor($bar->getProgressPercent() * 100),
         ];
     }
 
     private static function initFormats(): array
     {
         return [
-            self::FORMAT_NORMAL => ' %current%/%max% [%bar%] %percent:3s%%',
+            self::FORMAT_NORMAL       => ' %current%/%max% [%bar%] %percent:3s%%',
             self::FORMAT_NORMAL_NOMAX => ' %current% [%bar%]',
 
-            self::FORMAT_VERBOSE => ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%',
+            self::FORMAT_VERBOSE       => ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%',
             self::FORMAT_VERBOSE_NOMAX => ' %current% [%bar%] %elapsed:6s%',
 
-            self::FORMAT_VERY_VERBOSE => ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%',
+            self::FORMAT_VERY_VERBOSE       => ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%',
             self::FORMAT_VERY_VERBOSE_NOMAX => ' %current% [%bar%] %elapsed:6s%',
 
-            self::FORMAT_DEBUG => ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s%',
+            self::FORMAT_DEBUG       => ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s%',
             self::FORMAT_DEBUG_NOMAX => ' %current% [%bar%] %elapsed:6s% %memory:6s%',
         ];
     }
 
     private function buildLine(): string
     {
-        $regex = "{%([a-z\-_]+)(?:\:([^%]+))?%}i";
+        $regex    = "{%([a-z\-_]+)(?:\:([^%]+))?%}i";
         $callback = function ($matches) {
             if (($formatter = $this::getPlaceholderFormatterDefinition($matches[1])) !== null) {
                 $text = $formatter($this, $this->output);
@@ -605,7 +605,7 @@ final class ProgressBar
             }
 
             if (isset($matches[2])) {
-                $text = sprintf('%'.$matches[2], $text);
+                $text = sprintf('%' . $matches[2], $text);
             }
 
             return $text;
@@ -613,7 +613,7 @@ final class ProgressBar
         $line = preg_replace_callback($regex, $callback, $this->format);
 
         // gets string length for each sub line with multiline format
-        $linesLength = array_map(fn($subLine) => Helper::width(Helper::removeDecoration($this->output->getFormatter(), rtrim($subLine, "\r"))), explode("\n", $line));
+        $linesLength = array_map(fn ($subLine) => Helper::width(Helper::removeDecoration($this->output->getFormatter(), rtrim($subLine, "\r"))), explode("\n", $line));
 
         $linesWidth = max($linesLength);
 

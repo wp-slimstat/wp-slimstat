@@ -21,32 +21,32 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 class ProgressIndicator
 {
     private const FORMATS = [
-        'normal' => ' %indicator% %message%',
+        'normal'         => ' %indicator% %message%',
         'normal_no_ansi' => ' %message%',
 
-        'verbose' => ' %indicator% %message% (%elapsed:6s%)',
+        'verbose'         => ' %indicator% %message% (%elapsed:6s%)',
         'verbose_no_ansi' => ' %message% (%elapsed:6s%)',
 
-        'very_verbose' => ' %indicator% %message% (%elapsed:6s%, %memory:6s%)',
+        'very_verbose'         => ' %indicator% %message% (%elapsed:6s%, %memory:6s%)',
         'very_verbose_no_ansi' => ' %message% (%elapsed:6s%, %memory:6s%)',
     ];
 
     private $output;
-    
+
     private $startTime;
-    
+
     private $format;
-    
+
     private $message;
-    
+
     private $indicatorValues;
-    
+
     private $indicatorCurrent;
-    
+
     private $indicatorChangeInterval;
-    
+
     private $indicatorUpdateTime;
-    
+
     private $started = false;
 
     /**
@@ -76,10 +76,10 @@ class ProgressIndicator
             throw new InvalidArgumentException('Must have at least 2 indicator value characters.');
         }
 
-        $this->format = self::getFormatDefinition($format);
+        $this->format                  = self::getFormatDefinition($format);
         $this->indicatorChangeInterval = $indicatorChangeInterval;
-        $this->indicatorValues = $indicatorValues;
-        $this->startTime = time();
+        $this->indicatorValues         = $indicatorValues;
+        $this->startTime               = time();
     }
 
     /**
@@ -101,11 +101,11 @@ class ProgressIndicator
             throw new LogicException('Progress indicator already started.');
         }
 
-        $this->message = $message;
-        $this->started = true;
-        $this->startTime = time();
+        $this->message             = $message;
+        $this->started             = true;
+        $this->startTime           = time();
         $this->indicatorUpdateTime = $this->getCurrentTimeInMilliseconds() + $this->indicatorChangeInterval;
-        $this->indicatorCurrent = 0;
+        $this->indicatorCurrent    = 0;
 
         $this->display();
     }
@@ -238,10 +238,10 @@ class ProgressIndicator
     private static function initPlaceholderFormatters(): array
     {
         return [
-            'indicator' => fn(self $indicator) => $indicator->indicatorValues[$indicator->indicatorCurrent % \count($indicator->indicatorValues)],
-            'message' => fn(self $indicator) => $indicator->message,
-            'elapsed' => fn(self $indicator) => Helper::formatTime(time() - $indicator->startTime),
-            'memory' => fn() => Helper::formatMemory(memory_get_usage(true)),
+            'indicator' => fn (self $indicator) => $indicator->indicatorValues[$indicator->indicatorCurrent % \count($indicator->indicatorValues)],
+            'message'   => fn (self $indicator) => $indicator->message,
+            'elapsed'   => fn (self $indicator) => Helper::formatTime(time() - $indicator->startTime),
+            'memory'    => fn () => Helper::formatMemory(memory_get_usage(true)),
         ];
     }
 }

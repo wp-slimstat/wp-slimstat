@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP;
 
-use SlimStat\Dependencies\BrowscapPHP\Formatter\PhpGetBrowser;
-use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetPattern;
-use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetData;
-use SlimStat\Dependencies\BrowscapPHP\Parser\Ini;
-use SlimStat\Dependencies\BrowscapPHP\Helper\Support;
+use function is_string;
+
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCache;
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
 use SlimStat\Dependencies\BrowscapPHP\Formatter\FormatterInterface;
+use SlimStat\Dependencies\BrowscapPHP\Formatter\PhpGetBrowser;
 use SlimStat\Dependencies\BrowscapPHP\Helper\Quoter;
+use SlimStat\Dependencies\BrowscapPHP\Helper\Support;
+use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetData;
+use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetPattern;
+use SlimStat\Dependencies\BrowscapPHP\Parser\Ini;
 use SlimStat\Dependencies\BrowscapPHP\Parser\ParserInterface;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\CacheInterface;
+
+use function sprintf;
+
 use stdClass;
 use UnexpectedValueException;
-
-use function is_string;
-use function sprintf;
 
 /**
  * Browscap.ini parsing class with caching and update capabilities
@@ -105,7 +107,7 @@ final class Browscap implements BrowscapInterface
      */
     public function getBrowser(?string $userAgent = null): stdClass
     {
-        if ($this->cache->getVersion() === null) {
+        if (null === $this->cache->getVersion()) {
             // there is no active/warm cache available
             throw new Exception('there is no active cache available, please use the BrowscapUpdater and run the update command');
         }

@@ -40,10 +40,10 @@ class SlimStat_SlimStat_PhpToken implements \SlimStat_SlimStat_Stringable
 
     public function __construct(int $id, string $text, int $line = -1, int $position = -1)
     {
-        $this->id = $id;
+        $this->id   = $id;
         $this->text = $text;
         $this->line = $line;
-        $this->pos = $position;
+        $this->pos  = $position;
     }
 
     public function getTokenName(): ?string
@@ -84,17 +84,17 @@ class SlimStat_SlimStat_PhpToken implements \SlimStat_SlimStat_Stringable
      */
     public static function tokenize(string $code, int $flags = 0): array
     {
-        $line = 1;
+        $line     = 1;
         $position = 0;
-        $tokens = token_get_all($code, $flags);
+        $tokens   = token_get_all($code, $flags);
         foreach ($tokens as $index => $token) {
             if (\is_string($token)) {
-                $id = \ord($token);
+                $id   = \ord($token);
                 $text = $token;
             } else {
                 [$id, $text, $line] = $token;
             }
-            
+
             $tokens[$index] = new static($id, $text, $line, $position);
             $position += \strlen($text);
         }

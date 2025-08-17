@@ -2,9 +2,9 @@
 
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections;
 
+use ReflectionObject;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixKeys;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\MemoryStore as Adapter;
-use ReflectionObject;
 
 /**
  * MemoryStore adapter for a subset of data.
@@ -20,7 +20,7 @@ class MemoryStore extends PrefixKeys
      */
     public function __construct(Adapter $cache, $name)
     {
-        parent::__construct($cache, $name.':');
+        parent::__construct($cache, $name . ':');
     }
 
     /**
@@ -38,10 +38,10 @@ class MemoryStore extends PrefixKeys
          * - Reflection is not the most optimized thing, but that doesn't matter
          *   too much for MemoryStore, which is not a *real* cache
          */
-        $object = new \ReflectionObject($this->cache);
+        $object   = new \ReflectionObject($this->cache);
         $property = $object->getProperty('items');
         $property->setAccessible(true);
-        
+
         $items = $property->getValue($this->cache);
 
         foreach ($items as $key => $value) {

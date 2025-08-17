@@ -30,7 +30,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInt
 class ConsoleOutput extends StreamOutput implements ConsoleOutputInterface
 {
     private $stderr;
-    
+
     private $consoleSectionOutputs = [];
 
     /**
@@ -50,7 +50,7 @@ class ConsoleOutput extends StreamOutput implements ConsoleOutputInterface
         }
 
         $actualDecorated = $this->isDecorated();
-        $this->stderr = new StreamOutput($this->openErrorStream(), $verbosity, $decorated, $this->getFormatter());
+        $this->stderr    = new StreamOutput($this->openErrorStream(), $verbosity, $decorated, $this->getFormatter());
 
         if (null === $decorated) {
             $this->setDecorated($actualDecorated && $this->stderr->isDecorated());

@@ -85,16 +85,16 @@ class HandlerStack
         $depth = 0;
         $stack = [];
 
-        if ($this->handler !== null) {
-            $stack[] = '0) Handler: '.$this->debugCallable($this->handler);
+        if (null !== $this->handler) {
+            $stack[] = '0) Handler: ' . $this->debugCallable($this->handler);
         }
 
         $result = '';
         foreach (\array_reverse($this->stack) as $tuple) {
             ++$depth;
             $str = sprintf("%d) Name: '%s', ", $depth, $tuple[1]);
-            $str .= 'Function: '.$this->debugCallable($tuple[0]);
-            $result = sprintf('> %s%s%s', $str, PHP_EOL, $result);
+            $str .= 'Function: ' . $this->debugCallable($tuple[0]);
+            $result  = sprintf('> %s%s%s', $str, PHP_EOL, $result);
             $stack[] = $str;
         }
 
@@ -114,7 +114,7 @@ class HandlerStack
     public function setHandler(callable $handler): void
     {
         $this->handler = $handler;
-        $this->cached = null;
+        $this->cached  = null;
     }
 
     /**
@@ -122,7 +122,7 @@ class HandlerStack
      */
     public function hasHandler(): bool
     {
-        return $this->handler !== null;
+        return null !== $this->handler;
     }
 
     /**
@@ -146,7 +146,7 @@ class HandlerStack
     public function push(callable $middleware, string $name = ''): void
     {
         $this->stack[] = [$middleware, $name];
-        $this->cached = null;
+        $this->cached  = null;
     }
 
     /**
@@ -185,10 +185,10 @@ class HandlerStack
         }
 
         $this->cached = null;
-        $idx = \is_callable($remove) ? 0 : 1;
-        $this->stack = \array_values(\array_filter(
+        $idx          = \is_callable($remove) ? 0 : 1;
+        $this->stack  = \array_values(\array_filter(
             $this->stack,
-            static fn($tuple) => $tuple[$idx] !== $remove
+            static fn ($tuple) => $tuple[$idx] !== $remove
         ));
     }
 
@@ -199,7 +199,7 @@ class HandlerStack
      */
     public function resolve(): callable
     {
-        if ($this->cached === null) {
+        if (null === $this->cached) {
             if (($prev = $this->handler) === null) {
                 throw new \LogicException('No handler has been specified');
             }
@@ -232,11 +232,11 @@ class HandlerStack
     private function splice(string $findName, string $withName, callable $middleware, bool $before): void
     {
         $this->cached = null;
-        $idx = $this->findByName($findName);
-        $tuple = [$middleware, $withName];
+        $idx          = $this->findByName($findName);
+        $tuple        = [$middleware, $withName];
 
         if ($before) {
-            if ($idx === 0) {
+            if (0 === $idx) {
                 \array_unshift($this->stack, $tuple);
             } else {
                 $replacement = [$tuple, $this->stack[$idx]];
@@ -264,10 +264,10 @@ class HandlerStack
         if (\is_array($fn)) {
             return \is_string($fn[0])
                 ? sprintf('callable(%s::%s)', $fn[0], $fn[1])
-                : "callable(['".\get_class($fn[0]).sprintf("', '%s'])", $fn[1]);
+                : "callable(['" . \get_class($fn[0]) . sprintf("', '%s'])", $fn[1]);
         }
 
         /** @var object $fn */
-        return 'callable('.\spl_object_hash($fn).')';
+        return 'callable(' . \spl_object_hash($fn) . ')';
     }
 }

@@ -35,12 +35,12 @@ class FulfilledPromise implements PromiseInterface
         callable $onRejected = null
     ): PromiseInterface {
         // Return itself if there is no onFulfilled function.
-        if ($onFulfilled === null) {
+        if (null === $onFulfilled) {
             return $this;
         }
 
         $queue = Utils::queue();
-        $p = new Promise([$queue, 'run']);
+        $p     = new Promise([$queue, 'run']);
         $value = $this->value;
         $queue->add(static function () use ($p, $value, $onFulfilled): void {
             if (Is::pending($p)) {

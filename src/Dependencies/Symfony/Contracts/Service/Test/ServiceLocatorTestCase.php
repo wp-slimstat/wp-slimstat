@@ -21,7 +21,7 @@ abstract class ServiceLocatorTestCase extends TestCase
 {
     protected function getServiceLocator(array $factories): ContainerInterface
     {
-        return new class($factories) implements ContainerInterface {
+        return new class ($factories) implements ContainerInterface {
             use ServiceLocatorTrait;
         };
     }
@@ -52,7 +52,7 @@ abstract class ServiceLocatorTestCase extends TestCase
 
     public function testGetDoesNotMemoize()
     {
-        $i = 0;
+        $i       = 0;
         $locator = $this->getServiceLocator([
             'foo' => function () use (&$i) {
                 ++$i;

@@ -39,8 +39,8 @@ class RequestException extends TransferException implements RequestExceptionInte
         // Set the code of the exception if the response is set and not future.
         $code = $response instanceof ResponseInterface ? $response->getStatusCode() : 0;
         parent::__construct($message, $code, $previous);
-        $this->request = $request;
-        $this->response = $response;
+        $this->request        = $request;
+        $this->response       = $response;
         $this->handlerContext = $handlerContext;
     }
 
@@ -79,14 +79,14 @@ class RequestException extends TransferException implements RequestExceptionInte
         }
 
         $level = (int) \floor($response->getStatusCode() / 100);
-        if ($level === 4) {
-            $label = 'Client error';
+        if (4 === $level) {
+            $label     = 'Client error';
             $className = ClientException::class;
-        } elseif ($level === 5) {
-            $label = 'Server error';
+        } elseif (5 === $level) {
+            $label     = 'Server error';
             $className = ServerException::class;
         } else {
-            $label = 'Unsuccessful request';
+            $label     = 'Unsuccessful request';
             $className = self::class;
         }
 
@@ -106,7 +106,7 @@ class RequestException extends TransferException implements RequestExceptionInte
 
         $summary = ($bodySummarizer ?? new BodySummarizer())->summarize($response);
 
-        if ($summary !== null) {
+        if (null !== $summary) {
             $message .= ":\n{$summary}\n";
         }
 
@@ -148,7 +148,7 @@ class RequestException extends TransferException implements RequestExceptionInte
      */
     public function hasResponse(): bool
     {
-        return $this->response !== null;
+        return null !== $this->response;
     }
 
     /**

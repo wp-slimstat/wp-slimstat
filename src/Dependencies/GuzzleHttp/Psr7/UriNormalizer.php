@@ -18,12 +18,11 @@ final class UriNormalizer
     /**
      * Default normalizations which only include the ones that preserve semantics.
      */
-    public const PRESERVING_NORMALIZATIONS =
-        self::CAPITALIZE_PERCENT_ENCODING |
-        self::DECODE_UNRESERVED_CHARACTERS |
-        self::CONVERT_EMPTY_PATH |
-        self::REMOVE_DEFAULT_HOST |
-        self::REMOVE_DEFAULT_PORT |
+    public const PRESERVING_NORMALIZATIONS = self::CAPITALIZE_PERCENT_ENCODING|
+        self::DECODE_UNRESERVED_CHARACTERS|
+        self::CONVERT_EMPTY_PATH|
+        self::REMOVE_DEFAULT_HOST|
+        self::REMOVE_DEFAULT_PORT|
         self::REMOVE_DOT_SEGMENTS;
 
     /**
@@ -131,17 +130,17 @@ final class UriNormalizer
             $uri = self::decodeUnreservedCharacters($uri);
         }
 
-        if ($flags & self::CONVERT_EMPTY_PATH && $uri->getPath() === ''
-            && ($uri->getScheme() === 'http' || $uri->getScheme() === 'https')
+        if ($flags & self::CONVERT_EMPTY_PATH && '' === $uri->getPath()
+                                              && ('http' === $uri->getScheme() || 'https' === $uri->getScheme())
         ) {
             $uri = $uri->withPath('/');
         }
 
-        if ($flags & self::REMOVE_DEFAULT_HOST && $uri->getScheme() === 'file' && $uri->getHost() === 'localhost') {
+        if ($flags & self::REMOVE_DEFAULT_HOST && 'file' === $uri->getScheme() && 'localhost' === $uri->getHost()) {
             $uri = $uri->withHost('');
         }
 
-        if ($flags & self::REMOVE_DEFAULT_PORT && $uri->getPort() !== null && Uri::isDefaultPort($uri)) {
+        if ($flags & self::REMOVE_DEFAULT_PORT && null !== $uri->getPort() && Uri::isDefaultPort($uri)) {
             $uri = $uri->withPort(null);
         }
 
@@ -153,7 +152,7 @@ final class UriNormalizer
             $uri = $uri->withPath(preg_replace('#//++#', '/', $uri->getPath()));
         }
 
-        if ($flags & self::SORT_QUERY_PARAMETERS && $uri->getQuery() !== '') {
+        if ($flags & self::SORT_QUERY_PARAMETERS && '' !== $uri->getQuery()) {
             $queryKeyValues = explode('&', $uri->getQuery());
             sort($queryKeyValues);
             $uri = $uri->withQuery(implode('&', $queryKeyValues));
@@ -185,7 +184,7 @@ final class UriNormalizer
     {
         $regex = '/(?:%[A-Fa-f0-9]{2})++/';
 
-        $callback = (fn(array $match): string => strtoupper($match[0]));
+        $callback = (fn (array $match): string => strtoupper($match[0]));
 
         return
             $uri->withPath(
@@ -199,7 +198,7 @@ final class UriNormalizer
     {
         $regex = '/%(?:2D|2E|5F|7E|3[0-9]|[46][1-9A-F]|[57][0-9A])/i';
 
-        $callback = (fn(array $match): string => rawurldecode($match[0]));
+        $callback = (fn (array $match): string => rawurldecode($match[0]));
 
         return
             $uri->withPath(

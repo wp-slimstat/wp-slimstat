@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Psr7;
 
 use InvalidArgumentException;
+use RuntimeException;
 use SlimStat\Dependencies\Psr\Http\Message\StreamInterface;
 use SlimStat\Dependencies\Psr\Http\Message\UploadedFileInterface;
-use RuntimeException;
 
 class UploadedFile implements UploadedFileInterface
 {
@@ -68,8 +68,8 @@ class UploadedFile implements UploadedFileInterface
         string $clientMediaType = null
     ) {
         $this->setError($errorStatus);
-        $this->size = $size;
-        $this->clientFilename = $clientFilename;
+        $this->size            = $size;
+        $this->clientFilename  = $clientFilename;
         $this->clientMediaType = $clientMediaType;
 
         if ($this->isOk()) {
@@ -115,7 +115,7 @@ class UploadedFile implements UploadedFileInterface
 
     private function isStringNotEmpty($param): bool
     {
-        return is_string($param) && false === ($param === '' || $param === '0');
+        return is_string($param) && false === ('' === $param || '0' === $param);
     }
 
     /**
@@ -123,7 +123,7 @@ class UploadedFile implements UploadedFileInterface
      */
     private function isOk(): bool
     {
-        return $this->error === UPLOAD_ERR_OK;
+        return UPLOAD_ERR_OK === $this->error;
     }
 
     public function isMoved(): bool

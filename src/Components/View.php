@@ -10,17 +10,16 @@ if (! defined('ABSPATH')) {
 }
 
 use SlimStat\Exception\SystemErrorException;
-use wp_slimstat as SlimStat;
 
 class View
 {
     /**
      * Load a view file and pass data to it.
      *
-     * @param string|array $view The view path inside views directory
-     * @param array $args An associative array of data to pass to the view.
-     * @param bool $return Return the template if requested
-     * @param string $baseDir The base directory to load the view, defaults to SLIMSTAT_DIR
+     * @param string|array $view    The view path inside views directory
+     * @param array        $args    An associative array of data to pass to the view.
+     * @param bool         $return  Return the template if requested
+     * @param string       $baseDir The base directory to load the view, defaults to SLIMSTAT_DIR
      *
      * @throws Exception if the view file cannot be found.
      */

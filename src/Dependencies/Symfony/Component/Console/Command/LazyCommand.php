@@ -25,7 +25,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 final class LazyCommand extends Command
 {
     private $command;
-    
+
     private $isEnabled;
 
     public function __construct(string $name, array $aliases, string $description, bool $isHidden, \Closure $commandFactory, ?bool $isEnabled = true)
@@ -35,7 +35,7 @@ final class LazyCommand extends Command
             ->setHidden($isHidden)
             ->setDescription($description);
 
-        $this->command = $commandFactory;
+        $this->command   = $commandFactory;
         $this->isEnabled = $isEnabled;
     }
 

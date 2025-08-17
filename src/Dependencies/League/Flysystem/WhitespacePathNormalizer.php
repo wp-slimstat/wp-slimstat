@@ -32,10 +32,10 @@ class WhitespacePathNormalizer implements PathNormalizer
                     break;
 
                 case '..':
-                    if ($parts === []) {
+                    if ([] === $parts) {
                         throw PathTraversalDetected::forPath($path);
                     }
-                    
+
                     array_pop($parts);
                     break;
 

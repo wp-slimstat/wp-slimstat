@@ -21,9 +21,9 @@ namespace SlimStat\Dependencies\Symfony\Component\Console\Helper;
 class DebugFormatterHelper extends Helper
 {
     private const COLORS = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'default'];
-    
+
     private $started = [];
-    
+
     private $count = -1;
 
     /**
@@ -52,7 +52,7 @@ class DebugFormatterHelper extends Helper
                 $message .= "\n";
                 unset($this->started[$id]['out']);
             }
-            
+
             if (!isset($this->started[$id]['err'])) {
                 $message .= sprintf('%s<bg=red;fg=white> %s </> ', $this->getBorder($id), $errorPrefix);
                 $this->started[$id]['err'] = true;
@@ -64,7 +64,7 @@ class DebugFormatterHelper extends Helper
                 $message .= "\n";
                 unset($this->started[$id]['err']);
             }
-            
+
             if (!isset($this->started[$id]['out'])) {
                 $message .= sprintf('%s<bg=green;fg=white> %s </> ', $this->getBorder($id), $prefix);
                 $this->started[$id]['out'] = true;

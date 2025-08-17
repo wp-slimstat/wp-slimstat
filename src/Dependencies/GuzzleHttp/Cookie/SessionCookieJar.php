@@ -28,7 +28,7 @@ class SessionCookieJar extends CookieJar
     public function __construct(string $sessionKey, bool $storeSessionCookies = false)
     {
         parent::__construct();
-        $this->sessionKey = $sessionKey;
+        $this->sessionKey          = $sessionKey;
         $this->storeSessionCookies = $storeSessionCookies;
         $this->load();
     }
@@ -65,13 +65,13 @@ class SessionCookieJar extends CookieJar
         if (!isset($_SESSION[$this->sessionKey])) {
             return;
         }
-        
+
         $data = \json_decode($_SESSION[$this->sessionKey], true);
         if (\is_array($data)) {
             foreach ($data as $cookie) {
                 $this->setCookie(new SetCookie($cookie));
             }
-        } elseif (\strlen($data) !== 0) {
+        } elseif (0 !== \strlen($data)) {
             throw new \RuntimeException('Invalid cookie data');
         }
     }

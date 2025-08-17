@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Helper;
 
-use SlimStat\Dependencies\Symfony\Component\Filesystem\Exception\IOException;
-use SlimStat\Dependencies\Symfony\Component\Filesystem\Filesystem as BaseFilesystem;
-
 use function basename;
 use function dirname;
 use function file_put_contents;
 use function is_dir;
 use function is_writable;
 use function md5;
+
+use SlimStat\Dependencies\Symfony\Component\Filesystem\Exception\IOException;
+use SlimStat\Dependencies\Symfony\Component\Filesystem\Filesystem as BaseFilesystem;
+
 use function sprintf;
 use function time;
 use function unlink;
@@ -27,10 +28,10 @@ class Filesystem extends BaseFilesystem
     /**
      * Atomically dumps content into a file.
      *
-     * @param  string   $filename The file to be written to.
-     * @param  string   $content  The data to write into the file.
-     * @param  int|null $mode     The file mode (octal). If null, file permissions are not modified
-     *                            Deprecated since version 2.3.12, to be removed in 3.0.
+     * @param string   $filename The file to be written to.
+     * @param string   $content  The data to write into the file.
+     * @param int|null $mode     The file mode (octal). If null, file permissions are not modified
+     *                           Deprecated since version 2.3.12, to be removed in 3.0.
      *
      * @throws IOException If the file cannot be written to.
      *
@@ -49,7 +50,7 @@ class Filesystem extends BaseFilesystem
         // "tempnam" did not work with VFSStream for tests
         $tmpFile = dirname($filename) . '/temp_' . md5(time() . basename($filename));
 
-        if (@file_put_contents($tmpFile, $content) === false) {
+        if (false === @file_put_contents($tmpFile, $content)) {
             throw new IOException(sprintf('Failed to write file "%s".', $filename), 0, null, $filename);
         }
 
@@ -61,7 +62,7 @@ class Filesystem extends BaseFilesystem
             throw $ioException;
         }
 
-        if ($mode === null) {
+        if (null === $mode) {
             return;
         }
 

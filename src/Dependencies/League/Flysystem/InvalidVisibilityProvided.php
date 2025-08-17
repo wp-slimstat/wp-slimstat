@@ -13,7 +13,7 @@ class InvalidVisibilityProvided extends InvalidArgumentException implements File
     public static function withVisibility(string $visibility, string $expectedMessage): InvalidVisibilityProvided
     {
         $provided = var_export($visibility, true);
-        $message = sprintf('Invalid visibility provided. Expected %s, received %s', $expectedMessage, $provided);
+        $message  = sprintf('Invalid visibility provided. Expected %s, received %s', $expectedMessage, $provided);
 
         throw new InvalidVisibilityProvided($message);
     }

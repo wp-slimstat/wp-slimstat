@@ -30,7 +30,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInt
 abstract class Output implements OutputInterface
 {
     private $verbosity;
-    
+
     private $formatter;
 
     /**
@@ -142,11 +142,11 @@ abstract class Output implements OutputInterface
             $messages = [$messages];
         }
 
-        $types = self::OUTPUT_NORMAL | self::OUTPUT_RAW | self::OUTPUT_PLAIN;
-        $type = $types & $options ?: self::OUTPUT_NORMAL;
+        $types = self::OUTPUT_NORMAL|self::OUTPUT_RAW|self::OUTPUT_PLAIN;
+        $type  = $types & $options ?: self::OUTPUT_NORMAL;
 
-        $verbosities = self::VERBOSITY_QUIET | self::VERBOSITY_NORMAL | self::VERBOSITY_VERBOSE | self::VERBOSITY_VERY_VERBOSE | self::VERBOSITY_DEBUG;
-        $verbosity = $verbosities & $options ?: self::VERBOSITY_NORMAL;
+        $verbosities = self::VERBOSITY_QUIET|self::VERBOSITY_NORMAL|self::VERBOSITY_VERBOSE|self::VERBOSITY_VERY_VERBOSE|self::VERBOSITY_DEBUG;
+        $verbosity   = $verbosities & $options ?: self::VERBOSITY_NORMAL;
 
         if ($verbosity > $this->getVerbosity()) {
             return;

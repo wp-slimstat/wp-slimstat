@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Parser\Helper;
 
-use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
+use function explode;
+
 use Generator;
+
+use function is_array;
+
+use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
 
-use function count;
-use function explode;
-use function is_array;
 use function sprintf;
 use function str_repeat;
 use function strlen;
@@ -123,7 +125,7 @@ class GetPattern implements GetPatternInterface
                 continue;
             }
 
-            if (! is_array($file) || $file === []) {
+            if (! is_array($file) || [] === $file) {
                 $this->logger->debug(
                     sprintf(
                         'cache key "browscap.patterns.%s" for useragent "%s" was empty',

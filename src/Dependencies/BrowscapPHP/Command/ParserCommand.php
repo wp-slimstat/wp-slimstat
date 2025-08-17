@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Command;
 
+use function assert;
+use function is_string;
+use function json_encode;
+
+use const JSON_PRETTY_PRINT;
+use const JSON_THROW_ON_ERROR;
+
 use SlimStat\Dependencies\BrowscapPHP\Browscap;
 use SlimStat\Dependencies\BrowscapPHP\Exception;
 use SlimStat\Dependencies\BrowscapPHP\Helper\LoggerHelper;
-use SlimStat_JsonException;
 use SlimStat\Dependencies\League\Flysystem\Filesystem;
 use SlimStat\Dependencies\League\Flysystem\Local\LocalFilesystemAdapter;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Flysystem;
@@ -19,13 +25,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputArgument;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-
-use function assert;
-use function is_string;
-use function json_encode;
-
-use const JSON_PRETTY_PRINT;
-use const JSON_THROW_ON_ERROR;
+use SlimStat_JsonException;
 
 /**
  * commands to parse a given useragent
@@ -102,7 +102,7 @@ class ParserCommand extends Command
         }
 
         try {
-            $output->writeln(json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+            $output->writeln(json_encode($result, JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR));
         } catch (SlimStat_JsonException $slimStatJsonException) {
             $logger->error($slimStatJsonException);
 

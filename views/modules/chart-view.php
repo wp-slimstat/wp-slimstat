@@ -24,7 +24,7 @@ $disableWeekly  = $availableRange < (7 * 86400); // Less than 1 week of data
 $disableDaily   = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
 $disableHourly  = $availableRange > (7 * 86400); // More than 7 days of data
 $totals         = [
-    'current'  => [
+    'current' => [
         'v1' => (int) ($data['totals'][0]->v1 ?? 0),
         'v2' => (int) ($data['totals'][0]->v2 ?? 0),
     ],

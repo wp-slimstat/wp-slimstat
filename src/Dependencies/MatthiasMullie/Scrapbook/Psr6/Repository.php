@@ -98,7 +98,7 @@ class Repository
      */
     protected function resolve()
     {
-        $keys = array_unique(array_values($this->unresolved));
+        $keys   = array_unique(array_values($this->unresolved));
         $values = $this->store->getMulti($keys);
 
         foreach ($this->unresolved as $unique => $key) {

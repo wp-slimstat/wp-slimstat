@@ -51,11 +51,11 @@ class FileAttributes implements StorageAttributes
         ?string $mimeType = null,
         array $extraMetadata = []
     ) {
-        $this->path = $path;
-        $this->fileSize = $fileSize;
-        $this->visibility = $visibility;
-        $this->lastModified = $lastModified;
-        $this->mimeType = $mimeType;
+        $this->path          = $path;
+        $this->fileSize      = $fileSize;
+        $this->visibility    = $visibility;
+        $this->lastModified  = $lastModified;
+        $this->mimeType      = $mimeType;
         $this->extraMetadata = $extraMetadata;
     }
 
@@ -106,7 +106,7 @@ class FileAttributes implements StorageAttributes
 
     public function withPath(string $path): StorageAttributes
     {
-        $clone = clone $this;
+        $clone       = clone $this;
         $clone->path = $path;
 
         return $clone;
@@ -127,12 +127,12 @@ class FileAttributes implements StorageAttributes
     public function jsonSerialize(): array
     {
         return [
-            StorageAttributes::ATTRIBUTE_TYPE => self::TYPE_FILE,
-            StorageAttributes::ATTRIBUTE_PATH => $this->path,
-            StorageAttributes::ATTRIBUTE_FILE_SIZE => $this->fileSize,
-            StorageAttributes::ATTRIBUTE_VISIBILITY => $this->visibility,
-            StorageAttributes::ATTRIBUTE_LAST_MODIFIED => $this->lastModified,
-            StorageAttributes::ATTRIBUTE_MIME_TYPE => $this->mimeType,
+            StorageAttributes::ATTRIBUTE_TYPE           => self::TYPE_FILE,
+            StorageAttributes::ATTRIBUTE_PATH           => $this->path,
+            StorageAttributes::ATTRIBUTE_FILE_SIZE      => $this->fileSize,
+            StorageAttributes::ATTRIBUTE_VISIBILITY     => $this->visibility,
+            StorageAttributes::ATTRIBUTE_LAST_MODIFIED  => $this->lastModified,
+            StorageAttributes::ATTRIBUTE_MIME_TYPE      => $this->mimeType,
             StorageAttributes::ATTRIBUTE_EXTRA_METADATA => $this->extraMetadata,
         ];
     }

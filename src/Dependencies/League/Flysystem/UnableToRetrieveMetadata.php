@@ -46,9 +46,9 @@ final class UnableToRetrieveMetadata extends RuntimeException implements Filesys
 
     public static function create(string $location, string $type, string $reason = '', Throwable $previous = null): self
     {
-        $e = new self(sprintf('Unable to retrieve the %s for file at location: %s. %s', $type, $location, $reason), 0, $previous);
-        $e->reason = $reason;
-        $e->location = $location;
+        $e               = new self(sprintf('Unable to retrieve the %s for file at location: %s. %s', $type, $location, $reason), 0, $previous);
+        $e->reason       = $reason;
+        $e->location     = $location;
         $e->metadataType = $type;
 
         return $e;

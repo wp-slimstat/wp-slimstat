@@ -20,7 +20,7 @@ final class UnreadableFileEncountered extends RuntimeException implements Filesy
 
     public static function atLocation(string $location): UnreadableFileEncountered
     {
-        $e = new self(sprintf('Unreadable file encountered at location %s.', $location));
+        $e           = new self(sprintf('Unreadable file encountered at location %s.', $location));
         $e->location = $location;
 
         return $e;

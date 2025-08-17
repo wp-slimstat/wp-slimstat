@@ -24,31 +24,31 @@ namespace SlimStat\Dependencies\Symfony\Polyfill\Intl\SlimStat_Normalizer;
 class SlimStat_Normalizer
 {
     public const FORM_D = \SlimStat_Normalizer::FORM_D;
-    
+
     public const FORM_KD = \SlimStat_Normalizer::FORM_KD;
-    
+
     public const FORM_C = \SlimStat_Normalizer::FORM_C;
-    
+
     public const FORM_KC = \SlimStat_Normalizer::FORM_KC;
-    
+
     public const NFD = \SlimStat_Normalizer::NFD;
-    
+
     public const NFKD = \SlimStat_Normalizer::NFKD;
-    
+
     public const NFC = \SlimStat_Normalizer::NFC;
-    
+
     public const NFKC = \SlimStat_Normalizer::NFKC;
 
     private static $C;
-    
+
     private static $D;
-    
+
     private static $KD;
-    
+
     private static $cC;
-    
+
     private static $ulenMask = ["\xC0" => 2, "\xD0" => 2, "\xE0" => 3, "\xF0" => 4];
-    
+
     private static $ASCII = "\x20\x65\x69\x61\x73\x6E\x74\x72\x6F\x6C\x75\x64\x5D\x5B\x63\x6D\x70\x27\x0A\x67\x7C\x68\x76\x2E\x66\x62\x2C\x3A\x3D\x2D\x71\x31\x30\x43\x32\x2A\x79\x78\x29\x28\x4C\x39\x41\x53\x2F\x50\x22\x45\x6A\x4D\x49\x6B\x33\x3E\x35\x54\x3C\x44\x34\x7D\x42\x7B\x38\x46\x77\x52\x36\x37\x55\x47\x4E\x3B\x4A\x7A\x56\x23\x48\x4F\x57\x5F\x26\x21\x4B\x3F\x58\x51\x25\x59\x5C\x09\x5A\x2B\x7E\x5E\x24\x40\x60\x7F\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F";
 
     public static function isNormalized(string $s, int $form = self::FORM_C)
@@ -56,11 +56,11 @@ class SlimStat_Normalizer
         if (!\in_array($form, [self::NFD, self::NFKD, self::NFC, self::NFKC])) {
             return false;
         }
-        
+
         if (!isset($s[strspn($s, self::$ASCII)])) {
             return true;
         }
-        
+
         if (self::NFC == $form && preg_match('//u', $s) && !preg_match('/[^\x00-\x{2FF}]/u', $s)) {
             return true;
         }
@@ -75,10 +75,18 @@ class SlimStat_Normalizer
         }
 
         switch ($form) {
-            case self::NFC: $C = true; $K = false; break;
-            case self::NFD: $C = false; $K = false; break;
-            case self::NFKC: $C = true; $K = true; break;
-            case self::NFKD: $C = false; $K = true; break;
+            case self::NFC: $C = true;
+                $K             = false;
+                break;
+            case self::NFD: $C = false;
+                $K             = false;
+                break;
+            case self::NFKC: $C = true;
+                $K              = true;
+                break;
+            case self::NFKD: $C = false;
+                $K              = true;
+                break;
             default:
                 if (\defined('SlimStat_Normalizer::NONE') && \SlimStat_Normalizer::NONE == $form) {
                     return $s;
@@ -96,7 +104,7 @@ class SlimStat_Normalizer
         }
 
         if (null === self::$D) {
-            self::$D = self::getData('canonicalDecomposition');
+            self::$D  = self::getData('canonicalDecomposition');
             self::$cC = self::getData('combiningClass');
         }
 
@@ -113,7 +121,7 @@ class SlimStat_Normalizer
 
             $r = self::recompose($r);
         }
-        
+
         if (null !== $mbEncoding) {
             mb_internal_encoding($mbEncoding);
         }
@@ -123,14 +131,14 @@ class SlimStat_Normalizer
 
     private static function recompose($s)
     {
-        $ASCII = self::$ASCII;
-        $compMap = self::$C;
+        $ASCII     = self::$ASCII;
+        $compMap   = self::$C;
         $combClass = self::$cC;
-        $ulenMask = self::$ulenMask;
-        $result = '';
-        $tail = '';
+        $ulenMask  = self::$ulenMask;
+        $result    = '';
+        $tail      = '';
 
-        $i = $s[0] < "\x80" ? 1 : $ulenMask[$s[0] & "\xF0"];
+        $i   = $s[0] < "\x80" ? 1 : $ulenMask[$s[0] & "\xF0"];
         $len = \strlen($s);
 
         $lastUchr = substr($s, 0, $i);
@@ -140,7 +148,7 @@ class SlimStat_Normalizer
             if ($s[$i] < "\x80") {
                 // ASCII chars
 
-                if ($tail !== '' && $tail !== '0') {
+                if ('' !== $tail && '0' !== $tail) {
                     $lastUchr .= $tail;
                     $tail = '';
                 }
@@ -161,18 +169,18 @@ class SlimStat_Normalizer
             $uchr = substr($s, $i, $ulen);
 
             if ($lastUchr < "\xE1\x84\x80" || "\xE1\x84\x92" < $lastUchr
-                || $uchr < "\xE1\x85\xA1" || "\xE1\x85\xB5" < $uchr
-                || $lastUcls) {
+                                           || $uchr < "\xE1\x85\xA1" || "\xE1\x85\xB5" < $uchr
+                                           || $lastUcls) {
                 // Table lookup and combining chars composition
 
                 $ucls = $combClass[$uchr] ?? 0;
 
-                if (isset($compMap[$lastUchr.$uchr]) && (!$lastUcls || $lastUcls < $ucls)) {
-                    $lastUchr = $compMap[$lastUchr.$uchr];
+                if (isset($compMap[$lastUchr . $uchr]) && (!$lastUcls || $lastUcls < $ucls)) {
+                    $lastUchr = $compMap[$lastUchr . $uchr];
                 } elseif ($lastUcls = $ucls) {
                     $tail .= $uchr;
                 } else {
-                    if ($tail !== '' && $tail !== '0') {
+                    if ('' !== $tail && '0' !== $tail) {
                         $lastUchr .= $tail;
                         $tail = '';
                     }
@@ -197,37 +205,37 @@ class SlimStat_Normalizer
                     $ulen += 3;
                 }
 
-                $L = 0xAC00 + ($L * 21 + $V) * 28 + $T;
-                $lastUchr = \chr(0xE0 | $L >> 12).\chr(0x80 | $L >> 6 & 0x3F).\chr(0x80 | $L & 0x3F);
+                $L        = 0xAC00 + ($L * 21 + $V) * 28 + $T;
+                $lastUchr = \chr(0xE0|$L >> 12) . \chr(0x80|$L >> 6 & 0x3F) . \chr(0x80|$L & 0x3F);
             }
 
             $i += $ulen;
         }
 
-        return $result.$lastUchr.$tail;
+        return $result . $lastUchr . $tail;
     }
 
     private static function decompose($s, $c)
     {
         $result = '';
 
-        $ASCII = self::$ASCII;
+        $ASCII     = self::$ASCII;
         $decompMap = self::$D;
         $combClass = self::$cC;
-        $ulenMask = self::$ulenMask;
+        $ulenMask  = self::$ulenMask;
         if ($c) {
             $compatMap = self::$KD;
         }
 
-        $c = [];
-        $i = 0;
+        $c   = [];
+        $i   = 0;
         $len = \strlen($s);
 
         while ($i < $len) {
             if ($s[$i] < "\x80") {
                 // ASCII chars
 
-                if ($c !== []) {
+                if ([] !== $c) {
                     ksort($c);
                     $result .= implode('', $c);
                     $c = [];
@@ -249,7 +257,7 @@ class SlimStat_Normalizer
                 if ($uchr !== $j = $compatMap[$uchr] ?? ($decompMap[$uchr] ?? $uchr)) {
                     $uchr = $j;
 
-                    $j = \strlen($uchr);
+                    $j    = \strlen($uchr);
                     $ulen = $uchr[0] < "\x80" ? 1 : $ulenMask[$uchr[0] & "\xF0"];
 
                     if ($ulen != $j) {
@@ -259,7 +267,7 @@ class SlimStat_Normalizer
                         $i -= $j;
 
                         if (0 > $i) {
-                            $s = str_repeat(' ', -$i).$s;
+                            $s = str_repeat(' ', -$i) . $s;
                             $len -= $i;
                             $i = 0;
                         }
@@ -271,14 +279,14 @@ class SlimStat_Normalizer
                         $uchr = substr($uchr, 0, $ulen);
                     }
                 }
-                
+
                 if (isset($combClass[$uchr])) {
                     // Combining chars, for sorting
 
                     if (!isset($c[$combClass[$uchr]])) {
                         $c[$combClass[$uchr]] = '';
                     }
-                    
+
                     $c[$combClass[$uchr]] .= $uchr;
                     continue;
                 }
@@ -286,19 +294,19 @@ class SlimStat_Normalizer
                 // Hangul chars
 
                 $uchr = unpack('C*', $uchr);
-                $j = (($uchr[1] - 224) << 12) + (($uchr[2] - 128) << 6) + $uchr[3] - 0xAC80;
+                $j    = (($uchr[1] - 224) << 12) + (($uchr[2] - 128) << 6) + $uchr[3] - 0xAC80;
 
-                $uchr = "\xE1\x84".\chr(0x80 + (int) ($j / 588))
-                       ."\xE1\x85".\chr(0xA1 + (int) (($j % 588) / 28));
+                $uchr = "\xE1\x84" . \chr(0x80 + (int) ($j / 588))
+                       . "\xE1\x85" . \chr(0xA1 + (int) (($j % 588) / 28));
 
                 if ($j %= 28 !== 0) {
                     $uchr .= $j < 25
-                        ? ("\xE1\x86".\chr(0xA7 + $j))
-                        : ("\xE1\x87".\chr(0x67 + $j));
+                        ? ("\xE1\x86" . \chr(0xA7 + $j))
+                        : ("\xE1\x87" . \chr(0x67 + $j));
                 }
             }
-            
-            if ($c !== []) {
+
+            if ([] !== $c) {
                 ksort($c);
                 $result .= implode('', $c);
                 $c = [];
@@ -307,7 +315,7 @@ class SlimStat_Normalizer
             $result .= $uchr;
         }
 
-        if ($c !== []) {
+        if ([] !== $c) {
             ksort($c);
             $result .= implode('', $c);
         }
@@ -317,7 +325,7 @@ class SlimStat_Normalizer
 
     private static function getData($file)
     {
-        if (file_exists($file = __DIR__.'/Resources/unidata/'.$file.'.php')) {
+        if (file_exists($file = __DIR__ . '/Resources/unidata/' . $file . '.php')) {
             return require $file;
         }
 

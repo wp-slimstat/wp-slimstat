@@ -51,11 +51,11 @@ final class TransferStats
         $handlerErrorData = null,
         array $handlerStats = []
     ) {
-        $this->request = $request;
-        $this->response = $response;
-        $this->transferTime = $transferTime;
+        $this->request          = $request;
+        $this->response         = $response;
+        $this->transferTime     = $transferTime;
         $this->handlerErrorData = $handlerErrorData;
-        $this->handlerStats = $handlerStats;
+        $this->handlerStats     = $handlerStats;
     }
 
     public function getRequest(): RequestInterface
@@ -76,7 +76,7 @@ final class TransferStats
      */
     public function hasResponse(): bool
     {
-        return $this->response !== null;
+        return null !== $this->response;
     }
 
     /**

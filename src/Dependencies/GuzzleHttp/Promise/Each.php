@@ -28,7 +28,7 @@ final class Each
     ): PromiseInterface {
         return (new EachPromise($iterable, [
             'fulfilled' => $onFulfilled,
-            'rejected' => $onRejected,
+            'rejected'  => $onRejected,
         ]))->promise();
     }
 
@@ -50,8 +50,8 @@ final class Each
         callable $onRejected = null
     ): PromiseInterface {
         return (new EachPromise($iterable, [
-            'fulfilled' => $onFulfilled,
-            'rejected' => $onRejected,
+            'fulfilled'   => $onFulfilled,
+            'rejected'    => $onRejected,
             'concurrency' => $concurrency,
         ]))->promise();
     }

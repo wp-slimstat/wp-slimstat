@@ -5,12 +5,12 @@ namespace SlimStat\Utils;
 class MaxMindDecoder
 {
     private $fileStream;
-    
+
     private $pointerBase;
-    
+
     // This is only used for unit testing
     private $pointerTestHack;
-    
+
     private $switchByteOrder;
 
     private $types = [
@@ -41,7 +41,6 @@ class MaxMindDecoder
         $this->switchByteOrder = $this->isPlatformLittleEndian();
     }
 
-
     /**
      * @throws InvalidDatabaseException
      */
@@ -58,7 +57,7 @@ class MaxMindDecoder
         // Pointers are a special case, we don't read the next $size bytes, we
         // use the size to determine the length of the pointer and then follow
         // it.
-        if ($type == 'pointer') {
+        if ('pointer' == $type) {
             [$pointer, $offset] = $this->decodePointer($ctrlByte, $offset);
 
             // for unit testing
@@ -71,7 +70,7 @@ class MaxMindDecoder
             return [$result, $offset];
         }
 
-        if ($type == 'extended') {
+        if ('extended' == $type) {
             [, $nextByte] = unpack(
                 'C',
                 MaxMindUtil::read($this->fileStream, $offset, 1)
@@ -81,10 +80,10 @@ class MaxMindDecoder
 
             if ($typeNum < 8) {
                 throw new InvalidDatabaseException(
-                    "Something went horribly wrong in the decoder. An extended type "
-                    . "resolved to a type number < 8 ("
+                    'Something went horribly wrong in the decoder. An extended type '
+                    . 'resolved to a type number < 8 ('
                     . $this->types[$typeNum]
-                    . ")"
+                    . ')'
                 );
             }
 
@@ -134,7 +133,7 @@ class MaxMindDecoder
                 return [$this->decodeBigUint($bytes, $size), $newOffset];
             default:
                 throw new InvalidDatabaseException(
-                    "Unknown or unexpected type: " . $type
+                    'Unknown or unexpected type: ' . $type
                 );
         }
     }
@@ -160,7 +159,7 @@ class MaxMindDecoder
 
         for ($i = 0; $i < $size; $i++) {
             [$value, $offset] = $this->decode($offset);
-            $array[] = $value;
+            $array[]          = $value;
         }
 
         return [$array, $offset];
@@ -168,7 +167,7 @@ class MaxMindDecoder
 
     private function decodeBoolean($size): bool
     {
-        return $size != 0;
+        return 0 != $size;
     }
 
     private function decodeDouble($bits)
@@ -187,7 +186,7 @@ class MaxMindDecoder
 
     private function decodeInt32($bytes)
     {
-        $bytes = $this->zeroPadLeft($bytes, 4);
+        $bytes   = $this->zeroPadLeft($bytes, 4);
         [, $int] = unpack('l', $this->maybeSwitchByteOrder($bytes));
         return $int;
     }
@@ -198,9 +197,9 @@ class MaxMindDecoder
         $map = [];
 
         for ($i = 0; $i < $size; $i++) {
-            [$key, $offset] = $this->decode($offset);
+            [$key, $offset]   = $this->decode($offset);
             [$value, $offset] = $this->decode($offset);
-            $map[$key] = $value;
+            $map[$key]        = $value;
         }
 
         return [$map, $offset];
@@ -223,7 +222,7 @@ class MaxMindDecoder
         $buffer = MaxMindUtil::read($this->fileStream, $offset, $pointerSize);
         $offset += $pointerSize;
 
-        $packed = $pointerSize == 4
+        $packed = 4 == $pointerSize
             ? $buffer
             : (pack('C', $ctrlByte & 0x7)) . $buffer;
 
@@ -244,7 +243,7 @@ class MaxMindDecoder
     {
         $maxUintBytes = log(PHP_INT_MAX, 2) / 8;
 
-        if ($byteLength == 0) {
+        if (0 == $byteLength) {
             return 0;
         }
 
@@ -272,7 +271,7 @@ class MaxMindDecoder
                 );
             }
         }
-        
+
         return $integer;
     }
 
@@ -290,9 +289,9 @@ class MaxMindDecoder
         $bytes       = MaxMindUtil::read($this->fileStream, $offset, $bytesToRead);
         $decoded     = $this->decodeUint($bytes);
 
-        if ($size == 29) {
+        if (29 == $size) {
             $size = 29 + $decoded;
-        } elseif ($size == 30) {
+        } elseif (30 == $size) {
             $size = 285 + $decoded;
         } elseif ($size > 30) {
             $size = ($decoded & (0x0FFFFFFF >> (32 - (8 * $bytesToRead))))

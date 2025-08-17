@@ -35,7 +35,7 @@ final class MultipartStream implements StreamInterface
     public function __construct(array $elements = [], string $boundary = null)
     {
         $this->boundary = $boundary ?: bin2hex(random_bytes(20));
-        $this->stream = $this->createStream($elements);
+        $this->stream   = $this->createStream($elements);
     }
 
     public function getBoundary(): string
@@ -60,7 +60,7 @@ final class MultipartStream implements StreamInterface
             $str .= "{$key}: {$value}\r\n";
         }
 
-        return "--{$this->boundary}\r\n".trim($str)."\r\n\r\n";
+        return "--{$this->boundary}\r\n" . trim($str) . "\r\n\r\n";
     }
 
     /**
@@ -74,7 +74,7 @@ final class MultipartStream implements StreamInterface
             if (!is_array($element)) {
                 throw new \UnexpectedValueException('An array is expected');
             }
-            
+
             $this->addElement($stream, $element);
         }
 
@@ -96,7 +96,7 @@ final class MultipartStream implements StreamInterface
 
         if (empty($element['filename'])) {
             $uri = $element['contents']->getMetadata('uri');
-            if ($uri && \is_string($uri) && \substr($uri, 0, 6) !== 'php://' && \substr($uri, 0, 7) !== 'data://') {
+            if ($uri && \is_string($uri) && 'php://' !== \substr($uri, 0, 6) && 'data://' !== \substr($uri, 0, 7)) {
                 $element['filename'] = $uri;
             }
         }
@@ -123,7 +123,7 @@ final class MultipartStream implements StreamInterface
         // Set a default content-disposition header if one was no provided
         $disposition = $this->getHeader($headers, 'content-disposition');
         if (!$disposition) {
-            $headers['Content-Disposition'] = ($filename === '0' || $filename)
+            $headers['Content-Disposition'] = ('0' === $filename || $filename)
                 ? sprintf(
                     'form-data; name="%s"; filename="%s"',
                     $name,
@@ -140,7 +140,7 @@ final class MultipartStream implements StreamInterface
 
         // Set a default Content-Type if one was not supplied
         $type = $this->getHeader($headers, 'content-type');
-        if (!$type && ($filename === '0' || $filename)) {
+        if (!$type && ('0' === $filename || $filename)) {
             $headers['Content-Type'] = MimeType::fromFilename($filename) ?? 'application/octet-stream';
         }
 

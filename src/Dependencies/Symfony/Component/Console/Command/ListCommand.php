@@ -41,7 +41,8 @@ class ListCommand extends Command
                 new InputOption('short', null, InputOption::VALUE_NONE, "To skip describing commands' arguments"),
             ])
             ->setDescription('List commands')
-            ->setHelp(<<<'EOF'
+            ->setHelp(
+                <<<'EOF'
 The <info>%command.name%</info> command lists all commands:
 
   <info>%command.full_name%</info>
@@ -69,10 +70,10 @@ EOF
     {
         $helper = new DescriptorHelper();
         $helper->describe($output, $this->getApplication(), [
-            'format' => $input->getOption('format'),
-            'raw_text' => $input->getOption('raw'),
+            'format'    => $input->getOption('format'),
+            'raw_text'  => $input->getOption('raw'),
             'namespace' => $input->getArgument('namespace'),
-            'short' => $input->getOption('short'),
+            'short'     => $input->getOption('short'),
         ]);
 
         return 0;

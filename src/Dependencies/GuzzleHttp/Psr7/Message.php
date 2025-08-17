@@ -18,33 +18,33 @@ final class Message
     public static function toString(MessageInterface $message): string
     {
         if ($message instanceof RequestInterface) {
-            $msg = trim($message->getMethod().' '
-                    .$message->getRequestTarget())
-                .' HTTP/'.$message->getProtocolVersion();
+            $msg = trim($message->getMethod() . ' '
+                    . $message->getRequestTarget())
+                . ' HTTP/' . $message->getProtocolVersion();
             if (!$message->hasHeader('host')) {
-                $msg .= "\r\nHost: ".$message->getUri()->getHost();
+                $msg .= "\r\nHost: " . $message->getUri()->getHost();
             }
         } elseif ($message instanceof ResponseInterface) {
-            $msg = 'HTTP/'.$message->getProtocolVersion().' '
-                .$message->getStatusCode().' '
-                .$message->getReasonPhrase();
+            $msg = 'HTTP/' . $message->getProtocolVersion() . ' '
+                . $message->getStatusCode() . ' '
+                . $message->getReasonPhrase();
         } else {
             throw new \InvalidArgumentException('Unknown message type');
         }
 
         foreach ($message->getHeaders() as $name => $values) {
-            if (is_string($name) && strtolower($name) === 'set-cookie') {
+            if (is_string($name) && 'set-cookie' === strtolower($name)) {
                 foreach ($values as $value) {
-                    $msg .= "\r\n{$name}: ".$value;
+                    $msg .= "\r\n{$name}: " . $value;
                 }
             } else {
-                $msg .= "\r\n{$name}: ".implode(', ', $values);
+                $msg .= "\r\n{$name}: " . implode(', ', $values);
             }
         }
 
         return $msg . '
 
-'.$message->getBody();
+' . $message->getBody();
     }
 
     /**
@@ -65,7 +65,7 @@ final class Message
 
         $size = $body->getSize();
 
-        if ($size === 0) {
+        if (0 === $size) {
             return null;
         }
 
@@ -79,7 +79,7 @@ final class Message
 
         // Matches any printable character, including unicode characters:
         // letters, marks, numbers, punctuation, spacing, and separators.
-        if (preg_match('/[^\pL\pM\pN\pP\pS\pZ\n\r\t]/u', $summary) !== 0) {
+        if (0 !== preg_match('/[^\pL\pM\pN\pP\pS\pZ\n\r\t]/u', $summary)) {
             return null;
         }
 
@@ -100,7 +100,7 @@ final class Message
     {
         $body = $message->getBody();
 
-        if ($body->tell() !== 0) {
+        if (0 !== $body->tell()) {
             $body->rewind();
         }
     }
@@ -116,7 +116,7 @@ final class Message
      */
     public static function parseMessage(string $message): array
     {
-        if ($message === '' || $message === '0') {
+        if ('' === $message || '0' === $message) {
             throw new \InvalidArgumentException('Invalid message');
         }
 
@@ -124,7 +124,7 @@ final class Message
 
         $messageParts = preg_split("/\r?\n\r?\n/", $message, 2);
 
-        if ($messageParts === false || count($messageParts) !== 2) {
+        if (false === $messageParts || 2 !== count($messageParts)) {
             throw new \InvalidArgumentException('Invalid message: Missing header delimiter');
         }
 
@@ -132,13 +132,13 @@ final class Message
         $rawHeaders .= "\r\n"; // Put back the delimiter we split previously
         $headerParts = preg_split("/\r?\n/", $rawHeaders, 2);
 
-        if ($headerParts === false || count($headerParts) !== 2) {
+        if (false === $headerParts || 2 !== count($headerParts)) {
             throw new \InvalidArgumentException('Invalid message: Missing status line');
         }
 
         [$startLine, $rawHeaders] = $headerParts;
 
-        if (preg_match("/(?:^HTTP\/|^[A-Z]+ \S+ HTTP\/)(\d+(?:\.\d+)?)/i", $startLine, $matches) && $matches[1] === '1.0') {
+        if (preg_match("/(?:^HTTP\/|^[A-Z]+ \S+ HTTP\/)(\d+(?:\.\d+)?)/i", $startLine, $matches) && '1.0' === $matches[1]) {
             // Header folding is deprecated for HTTP/1.1, but allowed in HTTP/1.0
             $rawHeaders = preg_replace(Rfc7230::HEADER_FOLD_REGEX, ' ', $rawHeaders);
         }
@@ -164,8 +164,8 @@ final class Message
 
         return [
             'start-line' => $startLine,
-            'headers' => $headers,
-            'body' => $body,
+            'headers'    => $headers,
+            'body'       => $body,
         ];
     }
 
@@ -181,18 +181,18 @@ final class Message
             // Numeric array keys are converted to int by PHP.
             $k = (string) $k;
 
-            return strtolower($k) === 'host';
+            return 'host' === strtolower($k);
         });
 
         // If no host is found, then a full URI cannot be constructed.
-        if ($hostKey === []) {
+        if ([] === $hostKey) {
             return $path;
         }
 
-        $host = $headers[reset($hostKey)][0];
-        $scheme = substr($host, -4) === ':443' ? 'https' : 'http';
+        $host   = $headers[reset($hostKey)][0];
+        $scheme = ':443' === substr($host, -4) ? 'https' : 'http';
 
-        return $scheme.'://'.$host.'/'.ltrim($path, '/');
+        return $scheme . '://' . $host . '/' . ltrim($path, '/');
     }
 
     /**
@@ -202,24 +202,24 @@ final class Message
      */
     public static function parseRequest(string $message): RequestInterface
     {
-        $data = self::parseMessage($message);
+        $data    = self::parseMessage($message);
         $matches = [];
         if (!preg_match('/^[\S]+\s+([a-zA-Z]+:\/\/|\/).*/', $data['start-line'], $matches)) {
             throw new \InvalidArgumentException('Invalid request string');
         }
-        
-        $parts = explode(' ', $data['start-line'], 3);
+
+        $parts   = explode(' ', $data['start-line'], 3);
         $version = isset($parts[2]) ? explode('/', $parts[2])[1] : '1.1';
 
         $request = new Request(
             $parts[0],
-            $matches[1] === '/' ? self::parseRequestUri($parts[1], $data['headers']) : $parts[1],
+            '/' === $matches[1] ? self::parseRequestUri($parts[1], $data['headers']) : $parts[1],
             $data['headers'],
             $data['body'],
             $version
         );
 
-        return $matches[1] === '/' ? $request : $request->withRequestTarget($parts[1]);
+        return '/' === $matches[1] ? $request : $request->withRequestTarget($parts[1]);
     }
 
     /**
@@ -234,9 +234,9 @@ final class Message
         // the space between status-code and reason-phrase is required. But
         // browsers accept responses without space and reason as well.
         if (!preg_match('/^HTTP\/.* \d{3}( .*|$)/', $data['start-line'])) {
-            throw new \InvalidArgumentException('Invalid response string: '.$data['start-line']);
+            throw new \InvalidArgumentException('Invalid response string: ' . $data['start-line']);
         }
-        
+
         $parts = explode(' ', $data['start-line'], 3);
 
         return new Response(

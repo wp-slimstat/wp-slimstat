@@ -115,7 +115,7 @@ class Pool implements PromisorInterface
                 $results[$k] = $v;
             };
         } else {
-            $currentFn = $options[$name];
+            $currentFn      = $options[$name];
             $options[$name] = static function ($v, $k) use (&$results, $currentFn) {
                 $currentFn($v, $k);
                 $results[$k] = $v;

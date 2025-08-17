@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\League\Flysystem;
 
-use RuntimeException;
-
-use Throwable;
-
 use function rtrim;
+
+use RuntimeException;
+use Throwable;
 
 final class UnableToSetVisibility extends RuntimeException implements FilesystemOperationFailed
 {
@@ -29,9 +28,9 @@ final class UnableToSetVisibility extends RuntimeException implements Filesystem
 
     public static function atLocation(string $filename, string $extraMessage = '', Throwable $previous = null): self
     {
-        $message = sprintf('Unable to set visibility for file %s. %s', $filename, $extraMessage);
-        $e = new self(rtrim($message), 0, $previous);
-        $e->reason = $extraMessage;
+        $message     = sprintf('Unable to set visibility for file %s. %s', $filename, $extraMessage);
+        $e           = new self(rtrim($message), 0, $previous);
+        $e->reason   = $extraMessage;
         $e->location = $filename;
 
         return $e;

@@ -30,11 +30,11 @@ use Symfony\Component\DependencyInjection\TypedReference;
 class AddConsoleCommandPass implements CompilerPassInterface
 {
     private $commandLoaderServiceId;
-    
+
     private $commandTag;
-    
+
     private $noPreloadTag;
-    
+
     private $privateTagName;
 
     public function __construct(string $commandLoaderServiceId = 'console.command_loader', string $commandTag = 'console.command', string $noPreloadTag = 'container.no_preload', string $privateTagName = 'container.private')
@@ -44,17 +44,17 @@ class AddConsoleCommandPass implements CompilerPassInterface
         }
 
         $this->commandLoaderServiceId = $commandLoaderServiceId;
-        $this->commandTag = $commandTag;
-        $this->noPreloadTag = $noPreloadTag;
-        $this->privateTagName = $privateTagName;
+        $this->commandTag             = $commandTag;
+        $this->noPreloadTag           = $noPreloadTag;
+        $this->privateTagName         = $privateTagName;
     }
 
     public function process(ContainerBuilder $container)
     {
         $commandServices = $container->findTaggedServiceIds($this->commandTag, true);
-        $lazyCommandMap = [];
+        $lazyCommandMap  = [];
         $lazyCommandRefs = [];
-        $serviceIds = [];
+        $serviceIds      = [];
 
         foreach ($commandServices as $id => $tags) {
             $definition = $container->getDefinition($id);
@@ -67,15 +67,15 @@ class AddConsoleCommandPass implements CompilerPassInterface
                 if (!$r = $container->getReflectionClass($class)) {
                     throw new InvalidArgumentException(sprintf('Class "%s" used for service "%s" cannot be found.', $class, $id));
                 }
-                
+
                 if (!$r->isSubclassOf(Command::class)) {
                     throw new InvalidArgumentException(sprintf('The service "%s" tagged "%s" must be a subclass of "%s".', $id, $this->commandTag, Command::class));
                 }
-                
+
                 $aliases = str_replace('%', '%%', $class::getDefaultName() ?? '');
             }
 
-            $aliases = explode('|', $aliases ?? '');
+            $aliases     = explode('|', $aliases ?? '');
             $commandName = array_shift($aliases);
 
             if ($isHidden = '' === $commandName) {
@@ -84,11 +84,11 @@ class AddConsoleCommandPass implements CompilerPassInterface
 
             if (null === $commandName) {
                 if (!$definition->isPublic() || $definition->isPrivate() || $definition->hasTag($this->privateTagName)) {
-                    $commandId = 'console.command.public_alias.'.$id;
+                    $commandId = 'console.command.public_alias.' . $id;
                     $container->setAlias($commandId, $id)->setPublic(true);
                     $id = $commandId;
                 }
-                
+
                 $serviceIds[] = $id;
 
                 continue;
@@ -98,7 +98,7 @@ class AddConsoleCommandPass implements CompilerPassInterface
 
             unset($tags[0]);
             $lazyCommandMap[$commandName] = $id;
-            $lazyCommandRefs[$id] = new TypedReference($id, $class);
+            $lazyCommandRefs[$id]         = new TypedReference($id, $class);
 
             foreach ($aliases as $alias) {
                 $lazyCommandMap[$alias] = $id;
@@ -106,7 +106,7 @@ class AddConsoleCommandPass implements CompilerPassInterface
 
             foreach ($tags as $tag) {
                 if (isset($tag['command'])) {
-                    $aliases[] = $tag['command'];
+                    $aliases[]                       = $tag['command'];
                     $lazyCommandMap[$tag['command']] = $id;
                 }
 
@@ -115,7 +115,7 @@ class AddConsoleCommandPass implements CompilerPassInterface
 
             $definition->addMethodCall('setName', [$commandName]);
 
-            if ($aliases !== []) {
+            if ([] !== $aliases) {
                 $definition->addMethodCall('setAliases', [$aliases]);
             }
 
@@ -127,21 +127,21 @@ class AddConsoleCommandPass implements CompilerPassInterface
                 if (!$r = $container->getReflectionClass($class)) {
                     throw new InvalidArgumentException(sprintf('Class "%s" used for service "%s" cannot be found.', $class, $id));
                 }
-                
+
                 if (!$r->isSubclassOf(Command::class)) {
                     throw new InvalidArgumentException(sprintf('The service "%s" tagged "%s" must be a subclass of "%s".', $id, $this->commandTag, Command::class));
                 }
-                
+
                 $description = str_replace('%', '%%', $class::getDefaultDescription() ?? '');
             }
 
             if ($description) {
                 $definition->addMethodCall('setDescription', [$description]);
 
-                $container->register('.'.$id.'.lazy', LazyCommand::class)
+                $container->register('.' . $id . '.lazy', LazyCommand::class)
                     ->setArguments([$commandName, $aliases, $description, $isHidden, new ServiceClosureArgument($lazyCommandRefs[$id])]);
 
-                $lazyCommandRefs[$id] = new Reference('.'.$id.'.lazy');
+                $lazyCommandRefs[$id] = new Reference('.' . $id . '.lazy');
             }
         }
 

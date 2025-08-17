@@ -48,7 +48,7 @@ class BufferedStore implements KeyValueStore
      */
     public function __construct(KeyValueStore $cache)
     {
-        $this->local = new Buffer();
+        $this->local       = new Buffer();
         $this->transaction = new Transaction($this->local, $cache);
     }
 
@@ -82,7 +82,7 @@ class BufferedStore implements KeyValueStore
         $values = $this->transaction->getMulti($keys, $tokens);
 
         $missing = array_diff_key($values, $this->local->getMulti($keys));
-        if ($missing !== []) {
+        if ([] !== $missing) {
             $this->local->setMulti($missing);
         }
 
@@ -220,7 +220,7 @@ class BufferedStore implements KeyValueStore
     public function getCollection($name)
     {
         if (!isset($this->collections[$name])) {
-            $collection = $this->transaction->getCollection($name);
+            $collection               = $this->transaction->getCollection($name);
             $this->collections[$name] = new static($collection);
         }
 

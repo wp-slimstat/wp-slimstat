@@ -2,14 +2,14 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
-use SlimStat\Dependencies\GuzzleHttp\Psr7\Request;
-use SlimStat\Dependencies\GuzzleHttp\Psr7\UriResolver;
-use SlimStat\Dependencies\GuzzleHttp\Psr7\MultipartStream;
 use SlimStat\Dependencies\GuzzleHttp\Cookie\CookieJar;
 use SlimStat\Dependencies\GuzzleHttp\Exception\GuzzleException;
 use SlimStat\Dependencies\GuzzleHttp\Exception\InvalidArgumentException;
 use SlimStat\Dependencies\GuzzleHttp\Promise as P;
 use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\MultipartStream;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\Request;
+use SlimStat\Dependencies\GuzzleHttp\Psr7\UriResolver;
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 use SlimStat\Dependencies\Psr\Http\Message\ResponseInterface;
 use SlimStat\Dependencies\Psr\Http\Message\UriInterface;
@@ -87,10 +87,10 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             throw new InvalidArgumentException('Magic request methods require a URI and optional options array');
         }
 
-        $uri = $args[0];
+        $uri  = $args[0];
         $opts = $args[1] ?? [];
 
-        return \substr($method, -5) === 'Async'
+        return 'Async' === \substr($method, -5)
             ? $this->requestAsync(\substr($method, 0, -5), $uri, $opts)
             : $this->request($method, $uri, $opts);
     }
@@ -134,9 +134,9 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
      */
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
-        $options[RequestOptions::SYNCHRONOUS] = true;
+        $options[RequestOptions::SYNCHRONOUS]     = true;
         $options[RequestOptions::ALLOW_REDIRECTS] = false;
-        $options[RequestOptions::HTTP_ERRORS] = false;
+        $options[RequestOptions::HTTP_ERRORS]     = false;
 
         return $this->sendAsync($request, $options)->wait();
     }
@@ -158,14 +158,14 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         $options = $this->prepareDefaults($options);
         // Remove request modifying parameter because it can be done up-front.
         $headers = $options['headers'] ?? [];
-        $body = $options['body'] ?? null;
+        $body    = $options['body'] ?? null;
         $version = $options['version'] ?? '1.1';
         // Merge the URI into the base URI.
         $uri = $this->buildUri(Psr7\Utils::uriFor($uri), $options);
         if (\is_array($body)) {
             throw $this->invalidBody();
         }
-        
+
         $request = new Request($method, $uri, $headers, $body, $version);
         // Remove the option so that they are not doubly-applied.
         unset($options['headers'], $options['body'], $options['version']);
@@ -208,7 +208,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
      */
     public function getConfig(string $option = null)
     {
-        return $option === null
+        return null === $option
             ? $this->config
             : ($this->config[$option] ?? null);
     }
@@ -219,12 +219,12 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             $uri = UriResolver::resolve(Psr7\Utils::uriFor($config['base_uri']), $uri);
         }
 
-        if (isset($config['idn_conversion']) && ($config['idn_conversion'] !== false)) {
-            $idnOptions = ($config['idn_conversion'] === true) ? \IDNA_DEFAULT : $config['idn_conversion'];
-            $uri = Utils::idnUriConvert($uri, $idnOptions);
+        if (isset($config['idn_conversion']) && (false !== $config['idn_conversion'])) {
+            $idnOptions = (true === $config['idn_conversion']) ? \IDNA_DEFAULT : $config['idn_conversion'];
+            $uri        = Utils::idnUriConvert($uri, $idnOptions);
         }
 
-        return $uri->getScheme() === '' && $uri->getHost() !== '' ? $uri->withScheme('http') : $uri;
+        return '' === $uri->getScheme() && '' !== $uri->getHost() ? $uri->withScheme('http') : $uri;
     }
 
     /**
@@ -234,11 +234,11 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
     {
         $defaults = [
             'allow_redirects' => RedirectMiddleware::$defaultSettings,
-            'http_errors' => true,
-            'decode_content' => true,
-            'verify' => true,
-            'cookies' => false,
-            'idn_conversion' => false,
+            'http_errors'     => true,
+            'decode_content'  => true,
+            'verify'          => true,
+            'cookies'         => false,
+            'idn_conversion'  => false,
         ];
 
         // Use the standard Linux HTTP_PROXY and HTTPS_PROXY if set.
@@ -255,13 +255,13 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         }
 
         if ($noProxy = Utils::getenv('NO_PROXY')) {
-            $cleanedNoProxy = \str_replace(' ', '', $noProxy);
+            $cleanedNoProxy          = \str_replace(' ', '', $noProxy);
             $defaults['proxy']['no'] = \explode(',', $cleanedNoProxy);
         }
 
         $this->config = $config + $defaults;
 
-        if (!empty($config['cookies']) && $config['cookies'] === true) {
+        if (!empty($config['cookies']) && true === $config['cookies']) {
             $this->config['cookies'] = new CookieJar();
         }
 
@@ -271,11 +271,11 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         } else {
             // Add the User-Agent header if one was not already set.
             foreach (\array_keys($this->config['headers']) as $name) {
-                if (\strtolower($name) === 'user-agent') {
+                if ('user-agent' === \strtolower($name)) {
                     return;
                 }
             }
-            
+
             $this->config['headers']['User-Agent'] = Utils::defaultUserAgent();
         }
     }
@@ -299,7 +299,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         // conditional headers and as headers passed to a request ctor.
         if (\array_key_exists('headers', $options)) {
             // Allows default headers to be unset.
-            if ($options['headers'] === null) {
+            if (null === $options['headers']) {
                 $defaults['_conditional'] = [];
                 unset($options['headers']);
             } elseif (!\is_array($options['headers'])) {
@@ -312,7 +312,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
 
         // Remove null values.
         foreach ($result as $k => $v) {
-            if ($v === null) {
+            if (null === $v) {
                 unset($result[$k]);
             }
         }
@@ -354,7 +354,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             if (array_keys($options['headers']) === range(0, count($options['headers']) - 1)) {
                 throw new InvalidArgumentException('The headers array must have header name as keys.');
             }
-            
+
             $modify['set_headers'] = $options['headers'];
             unset($options['headers']);
         }
@@ -362,16 +362,16 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         if (isset($options['form_params'])) {
             if (isset($options['multipart'])) {
                 throw new InvalidArgumentException('You cannot use '
-                    .'form_params and multipart at the same time. Use the '
-                    .'form_params option if you want to send application/'
-                    .'x-www-form-urlencoded requests, and the multipart '
-                    .'option to send multipart/form-data requests.');
+                    . 'form_params and multipart at the same time. Use the '
+                    . 'form_params option if you want to send application/'
+                    . 'x-www-form-urlencoded requests, and the multipart '
+                    . 'option to send multipart/form-data requests.');
             }
-            
+
             $options['body'] = \http_build_query($options['form_params'], '', '&');
             unset($options['form_params']);
             // Ensure that we don't have the header in different case and set the new value.
-            $options['_conditional'] = Psr7\Utils::caselessRemove(['Content-Type'], $options['_conditional']);
+            $options['_conditional']                 = Psr7\Utils::caselessRemove(['Content-Type'], $options['_conditional']);
             $options['_conditional']['Content-Type'] = 'application/x-www-form-urlencoded';
         }
 
@@ -384,15 +384,15 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             $options['body'] = Utils::jsonEncode($options['json']);
             unset($options['json']);
             // Ensure that we don't have the header in different case and set the new value.
-            $options['_conditional'] = Psr7\Utils::caselessRemove(['Content-Type'], $options['_conditional']);
+            $options['_conditional']                 = Psr7\Utils::caselessRemove(['Content-Type'], $options['_conditional']);
             $options['_conditional']['Content-Type'] = 'application/json';
         }
 
         if (!empty($options['decode_content'])
-            && $options['decode_content'] !== true
+            && true !== $options['decode_content']
         ) {
             // Ensure that we don't have the header in different case and set the new value.
-            $options['_conditional'] = Psr7\Utils::caselessRemove(['Accept-Encoding'], $options['_conditional']);
+            $options['_conditional']                  = Psr7\Utils::caselessRemove(['Accept-Encoding'], $options['_conditional']);
             $modify['set_headers']['Accept-Encoding'] = $options['decode_content'];
         }
 
@@ -400,29 +400,29 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             if (\is_array($options['body'])) {
                 throw $this->invalidBody();
             }
-            
+
             $modify['body'] = Psr7\Utils::streamFor($options['body']);
             unset($options['body']);
         }
 
         if (!empty($options['auth']) && \is_array($options['auth'])) {
             $value = $options['auth'];
-            $type = isset($value[2]) ? \strtolower($value[2]) : 'basic';
+            $type  = isset($value[2]) ? \strtolower($value[2]) : 'basic';
             switch ($type) {
                 case 'basic':
                     // Ensure that we don't have the header in different case and set the new value.
-                    $modify['set_headers'] = Psr7\Utils::caselessRemove(['Authorization'], $modify['set_headers']);
+                    $modify['set_headers']                  = Psr7\Utils::caselessRemove(['Authorization'], $modify['set_headers']);
                     $modify['set_headers']['Authorization'] = 'Basic '
-                        .\base64_encode(sprintf('%s:%s', $value[0], $value[1]));
+                        . \base64_encode(sprintf('%s:%s', $value[0], $value[1]));
                     break;
                 case 'digest':
                     // @todo: Do not rely on curl
                     $options['curl'][\CURLOPT_HTTPAUTH] = \CURLAUTH_DIGEST;
-                    $options['curl'][\CURLOPT_USERPWD] = sprintf('%s:%s', $value[0], $value[1]);
+                    $options['curl'][\CURLOPT_USERPWD]  = sprintf('%s:%s', $value[0], $value[1]);
                     break;
                 case 'ntlm':
                     $options['curl'][\CURLOPT_HTTPAUTH] = \CURLAUTH_NTLM;
-                    $options['curl'][\CURLOPT_USERPWD] = sprintf('%s:%s', $value[0], $value[1]);
+                    $options['curl'][\CURLOPT_USERPWD]  = sprintf('%s:%s', $value[0], $value[1]);
                     break;
             }
         }
@@ -432,11 +432,11 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
             if (\is_array($value)) {
                 $value = \http_build_query($value, '', '&', \PHP_QUERY_RFC3986);
             }
-            
+
             if (!\is_string($value)) {
                 throw new InvalidArgumentException('query must be a string or array');
             }
-            
+
             $modify['query'] = $value;
             unset($options['query']);
         }
@@ -455,9 +455,9 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
         if ($request->getBody() instanceof MultipartStream) {
             // Use a multipart/form-data POST if a Content-Type is not set.
             // Ensure that we don't have the header in different case and set the new value.
-            $options['_conditional'] = Psr7\Utils::caselessRemove(['Content-Type'], $options['_conditional']);
+            $options['_conditional']                 = Psr7\Utils::caselessRemove(['Content-Type'], $options['_conditional']);
             $options['_conditional']['Content-Type'] = 'multipart/form-data; boundary='
-                .$request->getBody()->getBoundary();
+                . $request->getBody()->getBoundary();
         }
 
         // Merge in conditional headers if they are not present.
@@ -469,7 +469,7 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
                     $modify['set_headers'][$k] = $v;
                 }
             }
-            
+
             $request = Psr7\Utils::modifyRequest($request, $modify);
             // Don't pass this internal value along to middleware/handlers.
             unset($options['_conditional']);
@@ -484,9 +484,9 @@ class Client implements ClientInterface, \SlimStat\Dependencies\Psr\Http\Client\
     private function invalidBody(): InvalidArgumentException
     {
         return new InvalidArgumentException('Passing in the "body" request '
-            .'option as an array to send a request is not supported. '
-            .'Please use the "form_params" request option to send a '
-            .'application/x-www-form-urlencoded request, or the "multipart" '
-            .'request option to send a multipart/form-data request.');
+            . 'option as an array to send a request is not supported. '
+            . 'Please use the "form_params" request option to send a '
+            . 'application/x-www-form-urlencoded request, or the "multipart" '
+            . 'request option to send a multipart/form-data request.');
     }
 }

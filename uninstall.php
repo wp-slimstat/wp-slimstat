@@ -1,4 +1,5 @@
 <?php
+
 // Avoid direct access to this piece of code
 if (!defined('WP_UNINSTALL_PLUGIN')) {
     exit;
@@ -6,7 +7,7 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 
 $slimstat_options = get_option('slimstat_options', []);
 
-if (isset($slimstat_options['delete_data_on_uninstall']) && $slimstat_options['delete_data_on_uninstall'] != 'on') {
+if (isset($slimstat_options['delete_data_on_uninstall']) && 'on' != $slimstat_options['delete_data_on_uninstall']) {
     // Do not delete db data and settings
     return;
 }
@@ -68,13 +69,13 @@ function slimstat_uninstall($_wpdb = '', $_options = [])
         $upload_dir = ABSPATH . UPLOADS . '/wp-slimstat';
     } else {
         $upload_dir_info = wp_upload_dir();
-        $upload_dir = $upload_dir_info['basedir'];
+        $upload_dir      = $upload_dir_info['basedir'];
 
         // Handle multisite environment
         if (is_multisite() && !(is_main_network() && is_main_site() && defined('MULTISITE'))) {
             $upload_dir = str_replace('/sites/' . get_current_blog_id(), '', $upload_dir);
         }
-        
+
         $upload_dir .= '/wp-slimstat';
     }
 

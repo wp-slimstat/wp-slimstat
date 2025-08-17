@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Command;
 
+use function assert;
+use function is_string;
+
+use SlimStat\Dependencies\BrowscapPHP\BrowscapUpdater;
+use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorReadingFileException;
 use SlimStat\Dependencies\BrowscapPHP\Exception\FileNameMissingException;
 use SlimStat\Dependencies\BrowscapPHP\Exception\FileNotFoundException;
-use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorReadingFileException;
-use SlimStat\Dependencies\BrowscapPHP\BrowscapUpdater;
-use SlimStat\Dependencies\BrowscapPHP\Exception;
 use SlimStat\Dependencies\BrowscapPHP\Helper\LoggerHelper;
 use SlimStat\Dependencies\League\Flysystem\Filesystem;
 use SlimStat\Dependencies\League\Flysystem\Local\LocalFilesystemAdapter;
@@ -21,11 +23,10 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputArgument;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 
-use function assert;
-use function is_string;
 use function sprintf;
+
+use Throwable;
 
 /**
  * Command to convert a downloaded Browscap ini file and write it to the cache
@@ -34,10 +35,10 @@ use function sprintf;
  */
 class ConvertCommand extends Command
 {
-    public const FILENAME_MISSING   = 6;
-    
-    public const FILE_NOT_FOUND     = 7;
-    
+    public const FILENAME_MISSING = 6;
+
+    public const FILE_NOT_FOUND = 7;
+
     public const ERROR_READING_FILE = 8;
 
     private ?string $defaultIniFile = null;
@@ -103,11 +104,11 @@ class ConvertCommand extends Command
 
         $file = $input->getArgument('file');
         assert(is_string($file));
-        if ($file === '' || $file === '0') {
+        if ('' === $file || '0' === $file) {
             $file = $this->defaultIniFile;
         }
 
-        if ($file === null) {
+        if (null === $file) {
             return self::FILENAME_MISSING;
         }
 

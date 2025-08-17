@@ -25,14 +25,14 @@ trait TesterTrait
 {
     /** @var StreamOutput */
     private $output;
-    
+
     private $inputs = [];
-    
+
     private $captureStreamsIndependently = false;
-    
+
     /** @var InputInterface */
     private $input;
-    
+
     /** @var int */
     private $statusCode;
 
@@ -157,7 +157,7 @@ trait TesterTrait
             if (isset($options['decorated'])) {
                 $this->output->setDecorated($options['decorated']);
             }
-            
+
             if (isset($options['verbosity'])) {
                 $this->output->setVerbosity($options['verbosity']);
             }
@@ -173,12 +173,12 @@ trait TesterTrait
             $errorOutput->setDecorated($this->output->isDecorated());
 
             $reflectedOutput = new \ReflectionObject($this->output);
-            $strErrProperty = $reflectedOutput->getProperty('stderr');
+            $strErrProperty  = $reflectedOutput->getProperty('stderr');
             $strErrProperty->setAccessible(true);
             $strErrProperty->setValue($this->output, $errorOutput);
 
             $reflectedParent = $reflectedOutput->getParentClass();
-            $streamProperty = $reflectedParent->getProperty('stream');
+            $streamProperty  = $reflectedParent->getProperty('stream');
             $streamProperty->setAccessible(true);
             $streamProperty->setValue($this->output, fopen('php://memory', 'w', false));
         }
@@ -192,7 +192,7 @@ trait TesterTrait
         $stream = fopen('php://memory', 'r+', false);
 
         foreach ($inputs as $input) {
-            fwrite($stream, $input.\PHP_EOL);
+            fwrite($stream, $input . \PHP_EOL);
         }
 
         rewind($stream);

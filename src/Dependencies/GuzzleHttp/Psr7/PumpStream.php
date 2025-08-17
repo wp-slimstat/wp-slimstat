@@ -45,10 +45,10 @@ final class PumpStream implements StreamInterface
      */
     public function __construct(callable $source, array $options = [])
     {
-        $this->source = $source;
-        $this->size = $options['size'] ?? null;
+        $this->source   = $source;
+        $this->size     = $options['size'] ?? null;
         $this->metadata = $options['metadata'] ?? [];
-        $this->buffer = new BufferStream();
+        $this->buffer   = new BufferStream();
     }
 
     public function __toString(): string
@@ -64,7 +64,7 @@ final class PumpStream implements StreamInterface
     public function detach()
     {
         $this->tellPos = 0;
-        $this->source = null;
+        $this->source  = null;
 
         return null;
     }
@@ -81,7 +81,7 @@ final class PumpStream implements StreamInterface
 
     public function eof(): bool
     {
-        return $this->source === null;
+        return null === $this->source;
     }
 
     public function isSeekable(): bool
@@ -116,12 +116,12 @@ final class PumpStream implements StreamInterface
 
     public function read($length): string
     {
-        $data = $this->buffer->read($length);
+        $data    = $this->buffer->read($length);
         $readLen = strlen($data);
         $this->tellPos += $readLen;
         $remaining = $length - $readLen;
 
-        if ($remaining !== 0) {
+        if (0 !== $remaining) {
             $this->pump($remaining);
             $data .= $this->buffer->read($remaining);
             $this->tellPos += strlen($data) - $readLen;
@@ -154,15 +154,15 @@ final class PumpStream implements StreamInterface
 
     private function pump(int $length): void
     {
-        if ($this->source !== null) {
+        if (null !== $this->source) {
             do {
                 $data = ($this->source)($length);
-                if ($data === false || $data === null) {
+                if (false === $data || null === $data) {
                     $this->source = null;
 
                     return;
                 }
-                
+
                 $this->buffer->write($data);
                 $length -= strlen($data);
             } while ($length > 0);

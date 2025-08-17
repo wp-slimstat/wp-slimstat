@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Helper;
 
+use function assert;
+use function is_callable;
+
 use Monolog\ErrorHandler;
 use Monolog\Handler\PsrHandler;
 use Monolog\Logger;
@@ -12,9 +15,6 @@ use Monolog\Processor\MemoryUsageProcessor;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Logger\ConsoleLogger;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-
-use function assert;
-use function is_callable;
 
 final class LoggerHelper
 {

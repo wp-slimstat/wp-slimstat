@@ -21,15 +21,15 @@ use SlimStat\Dependencies\Symfony\Component\Console\Color;
 class OutputFormatterStyle implements OutputFormatterStyleInterface
 {
     private $color;
-    
+
     private $foreground;
-    
+
     private $background;
-    
+
     private $options;
-    
+
     private $href;
-    
+
     private $handlesHrefGracefully;
 
     /**
@@ -70,7 +70,7 @@ class OutputFormatterStyle implements OutputFormatterStyleInterface
     public function setOption(string $option)
     {
         $this->options[] = $option;
-        $this->color = new Color($this->foreground, $this->background, $this->options);
+        $this->color     = new Color($this->foreground, $this->background, $this->options);
     }
 
     /**

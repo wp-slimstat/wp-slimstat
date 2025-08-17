@@ -20,7 +20,7 @@ class SimpleCache implements CacheInterface
      *
      * @var string
      */
-    /* public */ const KEY_INVALID_CHARACTERS = '{}()/\@:';
+    /* public */ public const KEY_INVALID_CHARACTERS = '{}()/\@:';
 
     /**
      * @var KeyValueStore
@@ -89,9 +89,9 @@ class SimpleCache implements CacheInterface
         }
 
         if (!is_array($keys)) {
-            throw new InvalidArgumentException('Invalid keys: '.var_export($keys, true).'. Keys should be an array or Traversable of strings.');
+            throw new InvalidArgumentException('Invalid keys: ' . var_export($keys, true) . '. Keys should be an array or Traversable of strings.');
         }
-        
+
         array_map([$this, 'assertValidKey'], $keys);
 
         $results = $this->store->getMulti($keys);
@@ -115,17 +115,17 @@ class SimpleCache implements CacheInterface
             $array = [];
             foreach ($values as $key => $value) {
                 if (!is_string($key) && !is_int($key)) {
-                    throw new InvalidArgumentException('Invalid values: '.var_export($values, true).'. Only strings are allowed as keys.');
+                    throw new InvalidArgumentException('Invalid values: ' . var_export($values, true) . '. Only strings are allowed as keys.');
                 }
-                
+
                 $array[$key] = $value;
             }
-            
+
             $values = $array;
         }
 
         if (!is_array($values)) {
-            throw new InvalidArgumentException('Invalid values: '.var_export($values, true).'. Values should be an array or Traversable with strings as keys.');
+            throw new InvalidArgumentException('Invalid values: ' . var_export($values, true) . '. Values should be an array or Traversable with strings as keys.');
         }
 
         foreach (array_keys($values) as $key) {
@@ -135,7 +135,7 @@ class SimpleCache implements CacheInterface
             $this->assertValidKey($key);
         }
 
-        $ttl = $this->ttl($ttl);
+        $ttl     = $this->ttl($ttl);
         $success = $this->store->setMulti($values, $ttl);
 
         return !in_array(false, $success);
@@ -151,9 +151,9 @@ class SimpleCache implements CacheInterface
         }
 
         if (!is_array($keys)) {
-            throw new InvalidArgumentException('Invalid keys: '.var_export($keys, true).'. Keys should be an array or Traversable of strings.');
+            throw new InvalidArgumentException('Invalid keys: ' . var_export($keys, true) . '. Keys should be an array or Traversable of strings.');
         }
-        
+
         array_map([$this, 'assertValidKey'], $keys);
 
         $this->store->deleteMulti($keys);
@@ -187,7 +187,7 @@ class SimpleCache implements CacheInterface
     protected function assertValidKey($key)
     {
         if (!is_string($key)) {
-            throw new InvalidArgumentException('Invalid key: '.var_export($key, true).'. Key should be a string.');
+            throw new InvalidArgumentException('Invalid key: ' . var_export($key, true) . '. Key should be a string.');
         }
 
         if ('' === $key) {
@@ -196,8 +196,8 @@ class SimpleCache implements CacheInterface
 
         // valid key according to PSR-16 rules
         $invalid = preg_quote(static::KEY_INVALID_CHARACTERS, '/');
-        if (preg_match('/['.$invalid.']/', $key)) {
-            throw new InvalidArgumentException('Invalid key: '.$key.'. Contains (a) character(s) reserved for future extension: '.static::KEY_INVALID_CHARACTERS);
+        if (preg_match('/[' . $invalid . ']/', $key)) {
+            throw new InvalidArgumentException('Invalid key: ' . $key . '. Contains (a) character(s) reserved for future extension: ' . static::KEY_INVALID_CHARACTERS);
         }
     }
 
@@ -247,13 +247,13 @@ class SimpleCache implements CacheInterface
             return time() + (int) $datetime->format('U');
         }
 
-        $error = 'Invalid time: '.serialize($ttl).'. Must be integer or '.
+        $error = 'Invalid time: ' . serialize($ttl) . '. Must be integer or ' .
             'instance of DateInterval.';
 
         if (class_exists('\TypeError')) {
             throw new \TypeError($error);
         }
-        
+
         trigger_error($error, E_USER_ERROR);
 
         return 0;

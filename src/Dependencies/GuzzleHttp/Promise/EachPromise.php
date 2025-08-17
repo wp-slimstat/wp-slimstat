@@ -96,12 +96,12 @@ class EachPromise implements PromisorInterface
 
     private function createPromise(): void
     {
-        $this->mutex = false;
+        $this->mutex     = false;
         $this->aggregate = new Promise(function (): void {
             if ($this->checkIfFinished()) {
                 return;
             }
-            
+
             reset($this->pending);
             // Consume a potentially fluctuating list of promises while
             // ensuring that indexes are maintained (precluding array_shift).
@@ -116,11 +116,11 @@ class EachPromise implements PromisorInterface
 
         // Clear the references when the promise is resolved.
         $clearFn = function (): void {
-            $this->iterable = null;
-            $this->concurrency = null;
-            $this->pending = null;
-            $this->onFulfilled = null;
-            $this->onRejected = null;
+            $this->iterable         = null;
+            $this->concurrency      = null;
+            $this->pending          = null;
+            $this->onFulfilled      = null;
+            $this->onRejected       = null;
             $this->nextPendingIndex = 0;
         };
 
@@ -146,7 +146,7 @@ class EachPromise implements PromisorInterface
         if (!$concurrency) {
             return;
         }
-        
+
         // Add the first pending promise.
         $this->addPending();
         // Note this is special handling for concurrency=1 so that we do
@@ -166,7 +166,7 @@ class EachPromise implements PromisorInterface
         }
 
         $promise = Create::promiseFor($this->iterable->current());
-        $key = $this->iterable->key();
+        $key     = $this->iterable->key();
 
         // Iterable keys may not be unique, so we use a counter to
         // guarantee uniqueness
@@ -181,7 +181,7 @@ class EachPromise implements PromisorInterface
                         $this->aggregate
                     );
                 }
-                
+
                 $this->step($idx);
             },
             function ($reason) use ($idx, $key): void {
@@ -192,7 +192,7 @@ class EachPromise implements PromisorInterface
                         $this->aggregate
                     );
                 }
-                
+
                 $this->step($idx);
             }
         );

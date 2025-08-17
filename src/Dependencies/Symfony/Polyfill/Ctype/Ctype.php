@@ -219,7 +219,7 @@ final class Ctype
             return (string) $int;
         }
 
-        @trigger_error($function.'(): Argument of type int will be interpreted as string in the future', \E_USER_DEPRECATED);
+        @trigger_error($function . '(): Argument of type int will be interpreted as string in the future', \E_USER_DEPRECATED);
 
         if ($int < 0) {
             $int += 256;

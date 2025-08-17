@@ -27,16 +27,16 @@ class TableCellStyle
     ];
 
     private const ALIGN_MAP = [
-        'left' => \STR_PAD_RIGHT,
+        'left'   => \STR_PAD_RIGHT,
         'center' => \STR_PAD_BOTH,
-        'right' => \STR_PAD_LEFT,
+        'right'  => \STR_PAD_LEFT,
     ];
 
     private $options = [
-        'fg' => 'default',
-        'bg' => 'default',
-        'options' => null,
-        'align' => self::DEFAULT_ALIGN,
+        'fg'         => 'default',
+        'bg'         => 'default',
+        'options'    => null,
+        'align'      => self::DEFAULT_ALIGN,
         'cellFormat' => null,
     ];
 
@@ -67,7 +67,7 @@ class TableCellStyle
     {
         return array_filter(
             $this->getOptions(),
-            fn($key) => \in_array($key, self::TAG_OPTIONS) && isset($this->options[$key]),
+            fn ($key) => \in_array($key, self::TAG_OPTIONS) && isset($this->options[$key]),
             \ARRAY_FILTER_USE_KEY
         );
     }

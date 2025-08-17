@@ -29,7 +29,7 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 final class CompleteCommand extends Command
 {
     protected static $defaultName = '|_complete';
-    
+
     protected static $defaultDescription = 'Internal command to provide shell completion suggestions';
 
     private $completionOutputs;
@@ -50,8 +50,8 @@ final class CompleteCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('shell', 's', InputOption::VALUE_REQUIRED, 'The shell type ("'.implode('", "', array_keys($this->completionOutputs)).'")')
-            ->addOption('input', 'i', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'An array of input tokens (e.g. COMP_WORDS or argv)')
+            ->addOption('shell', 's', InputOption::VALUE_REQUIRED, 'The shell type ("' . implode('", "', array_keys($this->completionOutputs)) . '")')
+            ->addOption('input', 'i', InputOption::VALUE_REQUIRED|InputOption::VALUE_IS_ARRAY, 'An array of input tokens (e.g. COMP_WORDS or argv)')
             ->addOption('current', 'c', InputOption::VALUE_REQUIRED, 'The index of the "input" array that the cursor is in (e.g. COMP_CWORD)')
             ->addOption('symfony', 'S', InputOption::VALUE_REQUIRED, 'The version of the completion script')
         ;
@@ -86,15 +86,15 @@ final class CompleteCommand extends Command
             }
 
             $completionInput = $this->createCompletionInput($input);
-            $suggestions = new CompletionSuggestions();
+            $suggestions     = new CompletionSuggestions();
 
             $this->log([
                 '',
-                '<comment>'.date('Y-m-d H:i:s').'</>',
+                '<comment>' . date('Y-m-d H:i:s') . '</>',
                 '<info>Input:</> <comment>("|" indicates the cursor position)</>',
-                '  '.$completionInput,
+                '  ' . $completionInput,
                 '<info>Command:</>',
-                '  '.implode(' ', $_SERVER['argv']),
+                '  ' . implode(' ', $_SERVER['argv']),
                 '<info>Messages:</>',
             ]);
 
@@ -117,16 +117,16 @@ final class CompleteCommand extends Command
                 $completionInput->bind($command->getDefinition());
 
                 if (CompletionInput::TYPE_OPTION_NAME === $completionInput->getCompletionType()) {
-                    $this->log('  Completing option names for the <comment>'.\get_class($command instanceof LazyCommand ? $command->getCommand() : $command).'</> command.');
+                    $this->log('  Completing option names for the <comment>' . \get_class($command instanceof LazyCommand ? $command->getCommand() : $command) . '</> command.');
 
                     $suggestions->suggestOptions($command->getDefinition()->getOptions());
                 } else {
                     $this->log([
-                        '  Completing using the <comment>'.\get_class($command instanceof LazyCommand ? $command->getCommand() : $command).'</> class.',
-                        '  Completing <comment>'.$completionInput->getCompletionType().'</> for <comment>'.$completionInput->getCompletionName().'</>',
+                        '  Completing using the <comment>' . \get_class($command instanceof LazyCommand ? $command->getCommand() : $command) . '</> class.',
+                        '  Completing <comment>' . $completionInput->getCompletionType() . '</> for <comment>' . $completionInput->getCompletionName() . '</>',
                     ]);
                     if (null !== $compval = $completionInput->getCompletionValue()) {
-                        $this->log('  Current value: <comment>'.$compval.'</>');
+                        $this->log('  Current value: <comment>' . $compval . '</>');
                     }
 
                     $command->complete($completionInput, $suggestions);
@@ -138,9 +138,9 @@ final class CompleteCommand extends Command
 
             $this->log('<info>Suggestions:</>');
             if ($options = $suggestions->getOptionSuggestions()) {
-                $this->log('  --'.implode(' --', array_map(fn($o) => $o->getName(), $options)));
+                $this->log('  --' . implode(' --', array_map(fn ($o) => $o->getName(), $options)));
             } elseif ($values = $suggestions->getValueSuggestions()) {
-                $this->log('  '.implode(' ', $values));
+                $this->log('  ' . implode(' ', $values));
             } else {
                 $this->log('  <comment>No suggestions were provided</>');
             }
@@ -201,6 +201,6 @@ final class CompleteCommand extends Command
         }
 
         $commandName = basename($_SERVER['argv'][0]);
-        file_put_contents(sys_get_temp_dir().'/sf_'.$commandName.'.log', implode(\PHP_EOL, (array) $messages).\PHP_EOL, \FILE_APPEND);
+        file_put_contents(sys_get_temp_dir() . '/sf_' . $commandName . '.log', implode(\PHP_EOL, (array) $messages) . \PHP_EOL, \FILE_APPEND);
     }
 }

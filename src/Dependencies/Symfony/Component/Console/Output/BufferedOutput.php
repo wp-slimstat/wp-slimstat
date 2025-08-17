@@ -25,7 +25,7 @@ class BufferedOutput extends Output
      */
     public function fetch()
     {
-        $content = $this->buffer;
+        $content      = $this->buffer;
         $this->buffer = '';
 
         return $content;

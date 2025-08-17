@@ -29,7 +29,7 @@ trait StreamDecoratorTrait
      */
     public function __get(string $name)
     {
-        if ($name === 'stream') {
+        if ('stream' === $name) {
             $this->stream = $this->createStream();
 
             return $this->stream;
@@ -60,7 +60,7 @@ trait StreamDecoratorTrait
     {
         /** @var callable $callable */
         $callable = [$this->stream, $method];
-        $result = ($callable)(...$args);
+        $result   = ($callable)(...$args);
 
         // Always return the wrapped object if the result is a return $this
         return $result === $this->stream ? $this : $result;

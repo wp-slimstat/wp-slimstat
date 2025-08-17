@@ -11,30 +11,30 @@ if (! defined('ABSPATH')) {
 
 class DataBuckets
 {
-    private array $labels       = [];
-    
-    private array $prev_labels  = [];
-    
-    private array $datasets     = ['v1' => [], 'v2' => []];
-    
+    private array $labels = [];
+
+    private array $prev_labels = [];
+
+    private array $datasets = ['v1' => [], 'v2' => []];
+
     private array $datasetsPrev = ['v1' => [], 'v2' => []];
-    
+
     private array $totals;
-    
+
     private string $labelFormat;
-    
+
     private string $gran;
-    
+
     private string $tzOffset;
-    
+
     private int $start;
-    
+
     private int $end;
-    
+
     private int $prevStart;
-    
+
     private int $prevEnd;
-    
+
     private int $points;
 
     public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = [])
@@ -49,7 +49,7 @@ class DataBuckets
         $this->prevEnd     = $prevEnd;
         $this->totals      = $totals;
 
-        $offset_seconds = $wpdb->get_var("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())");
+        $offset_seconds = $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
         $sign           = ($offset_seconds < 0) ? '-' : '+';
         $abs            = abs($offset_seconds);
         $h              = floor($abs / 3600);
@@ -93,7 +93,7 @@ class DataBuckets
                 $this->datasets[$k][]     = 0;
                 $this->datasetsPrev[$k][] = 0;
             }
-            
+
             $time += $interval;
         }
 
@@ -128,7 +128,7 @@ class DataBuckets
                 $this->datasets[$k][]     = 0;
                 $this->datasetsPrev[$k][] = 0;
             }
-            
+
             $start->modify('+1 week');
         }
 
@@ -146,7 +146,7 @@ class DataBuckets
                 $this->datasets[$k][]     = 0;
                 $this->datasetsPrev[$k][] = 0;
             }
-            
+
             $date->modify('+1 month');
         }
 
@@ -164,17 +164,17 @@ class DataBuckets
                 $this->datasetsPrev[$k][] = 0;
             }
         }
-        
+
         $this->points = count($this->labels);
     }
 
     public function addRow(int $dt, int $v1, int $v2, string $period): void
     {
-        $base    = 'current' === $period ? $this->start : $this->prevStart;
-        $base    = strtotime(date('Y-m-d H:i:s', $base));
-        
-        $dt      = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
-        $start   = $this->start;
+        $base = 'current' === $period ? $this->start : $this->prevStart;
+        $base = strtotime(date('Y-m-d H:i:s', $base));
+
+        $dt    = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
+        $start = $this->start;
         if ('HOUR' === $this->gran) {
             $dt     = strtotime(date('Y-m-d H:00:00', $dt));
             $offset = floor(($dt - $base) / 3600);
@@ -212,14 +212,14 @@ class DataBuckets
             if (!isset($this->{$target}['v2'][$offset])) {
                 $this->{$target}['v2'][$offset] = 0;
             }
-            
+
             $this->{$target}['v2'][$offset] += $v2;
         }
     }
 
     public function mapPrevLabels(array $labels, array $params): void
     {
-        $this->prev_labels = array_map(fn($label, $index) => date($params['data_points_label'], strtotime(sprintf('+%s %s', $index, $params['granularity']), $params['previous_start'])), $labels, array_keys($labels));
+        $this->prev_labels = array_map(fn ($label, $index) => date($params['data_points_label'], strtotime(sprintf('+%s %s', $index, $params['granularity']), $params['previous_start'])), $labels, array_keys($labels));
     }
 
     private function shiftDatasets(): void

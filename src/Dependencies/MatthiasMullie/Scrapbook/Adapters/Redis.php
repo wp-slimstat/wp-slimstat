@@ -52,7 +52,7 @@ class Redis implements KeyValueStore
             return false;
         }
 
-        $value = $return[0];
+        $value  = $return[0];
         $exists = $return[1];
 
         // no value = quit early, don't generate a useless token
@@ -74,7 +74,7 @@ class Redis implements KeyValueStore
     public function getMulti(array $keys, array &$tokens = null)
     {
         $tokens = [];
-        if ($keys === []) {
+        if ([] === $keys) {
             return [];
         }
 
@@ -97,7 +97,7 @@ class Redis implements KeyValueStore
         if (false === $values) {
             $values = array_fill_keys($keys, false);
         }
-        
+
         $values = array_combine($keys, $values);
         $exists = array_combine($keys, $exists);
 
@@ -156,7 +156,7 @@ class Redis implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if ($items === []) {
+        if ([] === $items) {
             return [];
         }
 
@@ -190,11 +190,11 @@ class Redis implements KeyValueStore
         /* @var bool[] $return */
         $result = (array) $this->client->exec();
 
-        $return = [];
-        $keys = array_keys($items);
+        $return  = [];
+        $keys    = array_keys($items);
         $success = array_shift($result);
         foreach ($result as $i => $value) {
-            $key = $keys[$i];
+            $key          = $keys[$i];
             $return[$key] = $success && $value;
         }
 
@@ -214,7 +214,7 @@ class Redis implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        if ($keys === []) {
+        if ([] === $keys) {
             return [];
         }
 
@@ -465,7 +465,7 @@ class Redis implements KeyValueStore
     public function getCollection($name)
     {
         if (!is_numeric($name)) {
-            throw new InvalidCollection('Redis database names must be numeric. '.serialize($name).' given.');
+            throw new InvalidCollection('Redis database names must be numeric. ' . serialize($name) . ' given.');
         }
 
         // we can't reuse $this->client in a different object, because it'll
@@ -607,7 +607,7 @@ class Redis implements KeyValueStore
     protected function getVersion()
     {
         if (null === $this->version) {
-            $info = $this->client->info();
+            $info          = $this->client->info();
             $this->version = $info['redis_version'];
         }
 

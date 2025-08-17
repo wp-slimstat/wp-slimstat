@@ -22,7 +22,7 @@ final class BodySummarizer implements BodySummarizerInterface
      */
     public function summarize(MessageInterface $message): ?string
     {
-        return $this->truncateAt === null
+        return null === $this->truncateAt
             ? Message::bodySummary($message)
             : Message::bodySummary($message, $this->truncateAt);
     }
