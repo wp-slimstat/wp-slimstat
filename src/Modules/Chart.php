@@ -236,8 +236,8 @@ class Chart
         $start = $args['start'];
         $end   = $args['end'];
 
-    // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
-    $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
+        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
+        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);

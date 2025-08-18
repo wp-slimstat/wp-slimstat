@@ -294,8 +294,8 @@ class wp_slimstat_admin
         self::register_country_dt_index_hooks();
         self::register_dt_screen_index_hooks();
         self::register_dt_browser_index_hooks();
-    self::register_dt_platform_index_hooks();
-    self::register_dt_out_index_hooks();
+        self::register_dt_platform_index_hooks();
+        self::register_dt_out_index_hooks();
 
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);

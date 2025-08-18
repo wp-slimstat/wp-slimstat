@@ -686,6 +686,7 @@ class Query
                 $data = @gzuncompress($data);
             }
         }
+
         return @unserialize($data);
     }
 
