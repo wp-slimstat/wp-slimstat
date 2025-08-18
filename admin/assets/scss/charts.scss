@@ -147,13 +147,13 @@ body.index-php {
     display: block;
     float: none;
     cursor: help;
-    width: 100% !important;
+    width: 120px !important;
+    max-width: 120px !important;
     position: relative;
     left: unset;
     right: unset;
     text-align: left;
-
-    min-width: 100%;
+    min-width: 200px !important;
     margin: 5px 20px;
     margin-bottom: 10px;
   }
@@ -206,13 +206,12 @@ body.index-php {
     margin-bottom: 2px;
   }
   .slimstat-chart-controls {
-    left: 2px;
-    position: relative;
+    right: 10px;
+    position: absolute;
     display: inline-block;
-    margin-top: 5px;
-    width: 100%;
+    width: 80px;
     text-align: left;
-    margin: 5px 20px;
+    left: unset;
     & select {
       width: 90px;
       font-size: 12px;
