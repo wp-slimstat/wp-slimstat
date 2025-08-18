@@ -195,7 +195,8 @@ class Browscap
 
     protected static function _get_user_agent()
     {
-        $user_agent = (empty($_SERVER['HTTP_USER_AGENT']) ? '' : trim($_SERVER['HTTP_USER_AGENT']));
+        $user_agent      = (empty($_SERVER['HTTP_USER_AGENT']) ? '' : trim($_SERVER['HTTP_USER_AGENT']));
+        $real_user_agent = '';
 
         if (!empty($_SERVER['HTTP_X_DEVICE_USER_AGENT'])) {
             $real_user_agent = trim($_SERVER['HTTP_X_DEVICE_USER_AGENT']);

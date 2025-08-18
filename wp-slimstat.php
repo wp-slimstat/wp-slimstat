@@ -664,35 +664,31 @@ class wp_slimstat
         }
 
         // Geolocation
-        $geographicProvider = new \SlimStat\Services\GeoService();
-        if ($geographicProvider->isGeoIPEnabled()) {
-            try {
-                $geolocation_data = \SlimStat\Services\GeoIP::loader(self::$stat['ip']);
-            } catch (Exception $e) {
-                self::_log_error(205);
-                return false;
+        // New Geolocation logic using provider-based system
+        $geoService = new \SlimStat\Services\Geolocation\GeolocationService(
+            self::$settings['geolocation_provider'] ?? 'dbip',
+            [
+                'dbPath'    => self::$upload_dir,
+                'license'   => self::$settings['maxmind_license_key'] ?? '',
+                'precision' => (self::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city',
+            ]
+        );
+        $geoResult = $geoService->locate(self::$stat['ip']);
+        if (!empty($geoResult['country_code']) && 'xx' !== strtolower($geoResult['country_code'])) {
+            self::$stat['country'] = strtolower($geoResult['country_code']);
+            if (!empty($geoResult['city'])) {
+                self::$stat['city'] = $geoResult['city'];
             }
-
-            if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
-                self::$stat['country'] = strtolower($geolocation_data['country']['iso_code']);
-
-                if (!empty($geolocation_data['city']['names']['en'])) {
-                    self::$stat['city'] = $geolocation_data['city']['names']['en'];
-                }
-
-                if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty(self::$stat['city'])) {
-                    self::$stat['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
-                }
-
-                if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
-                    self::$stat['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
-                }
+            if (!empty($geoResult['subdivision']) && !empty(self::$stat['city'])) {
+                self::$stat['city'] .= ' (' . $geoResult['subdivision'] . ')';
             }
-
-            // Is this country blacklisted?
-            if (!empty(self::$stat['country']) && !empty(self::$settings['ignore_countries']) && false !== stripos(self::$settings['ignore_countries'], (string) self::$stat['country'])) {
-                return false;
+            if (!empty($geoResult['latitude']) && !empty($geoResult['longitude'])) {
+                self::$stat['location'] = $geoResult['latitude'] . ',' . $geoResult['longitude'];
             }
+        }
+        // Is this country blacklisted?
+        if (!empty(self::$stat['country']) && !empty(self::$settings['ignore_countries']) && false !== stripos(self::$settings['ignore_countries'], (string) self::$stat['country'])) {
+            return false;
         }
 
         // Mark or ignore Firefox/Safari prefetching requests (X-Moz: Prefetch and X-purpose: Preview)
@@ -1220,10 +1216,12 @@ class wp_slimstat
 
             // Tracker - Advanced Options
             'geolocation_country' => 'on',
-            'session_duration'    => 1800,
-            'extend_session'      => 'no',
-            'enable_cdn'          => 'no',
-            'ajax_relative_path'  => 'no',
+            // WP-Statistics compatible provider choices: maxmind (default), dbip, cloudflare
+            'geolocation_provider' => 'maxmind',
+            'session_duration'     => 1800,
+            'extend_session'       => 'no',
+            'enable_cdn'           => 'no',
+            'ajax_relative_path'   => 'no',
 
             // Tracker - External Pages
             'external_domains' => '',
@@ -1486,24 +1484,29 @@ class wp_slimstat
 
     public static function wp_slimstat_update_geoip_database()
     {
+        $provider = self::$settings['geolocation_provider'] ?? 'dbip';
+        if ('cloudflare' === $provider) {
+            return; // no DB needed
+        }
         $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
         $last_update = get_option('slimstat_last_geoip_dl', 0);
         if ($last_update < $this_update) {
-
-            $geographicProvider = new \SlimStat\Services\GeoService();
-
             try {
-                $geographicProvider
-                    ->setEnableMaxmind(wp_slimstat::$settings['enable_maxmind'])
-                    ->setUpdate(true)
-                    ->setMaxmindLicense(wp_slimstat::$settings['maxmind_license_key'])
-                    ->download();
-
-                // Set the last update time
-                $geographicProvider->updateLastUpdateTime(time());
-
+                $options = [
+                    'dbPath'    => self::$upload_dir,
+                    'license'   => self::$settings['maxmind_license_key'] ?? '',
+                    'precision' => (self::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city',
+                ];
+                $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, $options);
+                if ($service->updateDatabase()) {
+                    update_option('slimstat_last_geoip_dl', time());
+                }
             } catch (\Exception $e) {
-                $geographicProvider->logError($e->getMessage());
+                // Store error for admin display
+                wp_slimstat::update_option('slimstat_geoip_error', [
+                    'time'  => time(),
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
     }

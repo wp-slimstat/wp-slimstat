@@ -8,24 +8,56 @@ use SlimStat\Utils\MaxMindReader;
 class GeoIP
 {
     /**
+     * Supported providers aligned with WP-Statistics:
+     * - maxmind (default)
+     * - dbip (DB-IP City Lite)
+     * - cloudflare (header-based; no database)
+     */
+    public const PROVIDER_MAXMIND    = 'maxmind';
+
+    public const PROVIDER_DBIP       = 'dbip';
+
+    public const PROVIDER_CLOUDFLARE = 'cloudflare';
+
+    /**
      * List Geo ip Library
      *
      * @var array
      */
     public static $library = [
-        'country' => [
-            'source'     => 'https://cdn.jsdelivr.net/npm/geolite2-country/GeoLite2-Country.mmdb.gz',
-            'userSource' => 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=&suffix=tar.gz',
-            'file'       => 'GeoLite2-Country',
-            'opt'        => 'geoip',
-            'cache'      => 31536000, //1 Year
+        // MaxMind sources (default)
+        'maxmind' => [
+            'country' => [
+                'source'     => 'https://cdn.jsdelivr.net/npm/geolite2-country/GeoLite2-Country.mmdb.gz',
+                'userSource' => 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=&suffix=tar.gz',
+                'file'       => 'GeoLite2-Country',
+                'opt'        => 'geoip',
+                'cache'      => 31536000, // 1 Year
+            ],
+            'city' => [
+                'source'     => 'https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz',
+                'userSource' => 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=&suffix=tar.gz',
+                'file'       => 'GeoLite2-City',
+                'opt'        => 'geoip_city',
+                'cache'      => 6998000, // ~3 Months
+            ],
         ],
-        'city' => [
-            'source'     => 'https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz',
-            'userSource' => 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=&suffix=tar.gz',
-            'file'       => 'GeoLite2-City',
-            'opt'        => 'geoip_city',
-            'cache'      => 6998000, //3 Month
+
+        // DB-IP City Lite via WP-Statistics CDN mirror on jsDelivr
+        // We always use the City database (it also contains country-level info)
+        'dbip' => [
+            'country' => [
+                'source' => 'https://cdn.jsdelivr.net/gh/wp-statistics/DbIP-City-lite/dbip-city-lite.mmdb.gz',
+                'file'   => 'DbIP-City-Lite',
+                'opt'    => 'geoip_city',
+                'cache'  => 6998000,
+            ],
+            'city' => [
+                'source' => 'https://cdn.jsdelivr.net/gh/wp-statistics/DbIP-City-lite/dbip-city-lite.mmdb.gz',
+                'file'   => 'DbIP-City-Lite',
+                'opt'    => 'geoip_city',
+                'cache'  => 6998000,
+            ],
         ],
     ];
 
@@ -37,13 +69,36 @@ class GeoIP
     public static $file_extension = 'mmdb';
 
     /**
+     * Get current provider from settings.
+     */
+    public static function get_provider()
+    {
+        // Enforce WP-Statistics-like default: DB-IP City Lite only
+        return self::PROVIDER_DBIP;
+    }
+
+    /**
      * @param $pack
      *
      * @return string
      */
     public static function get_geo_ip_path($pack)
     {
-        return wp_normalize_path(path_join(\wp_slimstat::$upload_dir, self::$library[strtolower($pack)]['file'] . '.' . self::$file_extension));
+        $pack     = strtolower($pack);
+        $provider = self::get_provider();
+
+        // Default to MaxMind file naming if provider not recognized
+        $meta = self::$library[self::PROVIDER_MAXMIND][$pack] ?? null;
+        if (isset(self::$library[$provider][$pack])) {
+            $meta = self::$library[$provider][$pack];
+        }
+
+        // Fallback guard
+        if (!$meta) {
+            $meta = self::$library[self::PROVIDER_MAXMIND]['country'];
+        }
+
+        return wp_normalize_path(path_join(\wp_slimstat::$upload_dir, $meta['file'] . '.' . self::$file_extension));
     }
 
     /**
@@ -105,10 +160,35 @@ class GeoIP
      */
     public static function loader($ip)
     {
+        // Cloudflare provider doesn't require a database
+        if (self::PROVIDER_CLOUDFLARE === self::get_provider()) {
+            $country = null;
+            // Cloudflare and CloudFront headers
+            if (!empty($_SERVER['HTTP_CF_IPCOUNTRY'])) {
+                $country = strtoupper(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_IPCOUNTRY'])));
+            } elseif (!empty($_SERVER['HTTP_CLOUDFRONT_VIEWER_COUNTRY'])) {
+                $country = strtoupper(sanitize_text_field(wp_unslash($_SERVER['HTTP_CLOUDFRONT_VIEWER_COUNTRY'])));
+            }
+
+            if ($country && 'XX' !== $country) {
+                return [
+                    'country' => [
+                        'iso_code' => $country,
+                    ],
+                ];
+            }
+
+            // No header? Fallback to DB if present
+            if (!self::database_exists()) {
+                return false;
+            }
+        }
+
         if (self::database_exists()) {
             try {
-                $reader = new MaxMindReader(self::get_database_file());
-                return $reader->get(sanitize_text_field($ip));
+                $reader     = new MaxMindReader(self::get_database_file());
+                $record     = $reader->get(sanitize_text_field($ip));
+                return self::normalizeRecord($record);
             } catch (\Exception $e) {
                 error_log('Slimstat Error - ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
                 return false;
@@ -116,6 +196,32 @@ class GeoIP
         }
 
         return false;
+    }
+
+    /**
+     * Normalize different MMDB vendor formats to a common structure
+     */
+    protected static function normalizeRecord($record)
+    {
+        if (!is_array($record)) {
+            return $record;
+        }
+
+        // Normalize city as names.en if city is a string
+        if (!empty($record['city']) && is_string($record['city']) && empty($record['city']['names']['en'])) {
+            $record['city'] = [
+                'names' => [
+                    'en' => $record['city'],
+                ],
+            ];
+        }
+
+        // Ensure country.iso_code is uppercase 2-letter
+        if (!empty($record['country']['iso_code'])) {
+            $record['country']['iso_code'] = strtoupper($record['country']['iso_code']);
+        }
+
+        return $record;
     }
 
     /**
@@ -132,6 +238,14 @@ class GeoIP
         ]);
 
         try {
+            // Cloudflare provider doesn't need DB files
+            if (self::PROVIDER_CLOUDFLARE === self::get_provider()) {
+                return [
+                    'status' => true,
+                    'notice' => __('Cloudflare geolocation enabled. No database download is required.', 'wp-slimstat'),
+                ];
+            }
+
             if (!function_exists('WP_Filesystem')) {
                 include_once ABSPATH . 'wp-admin/includes/file.php';
             }
@@ -145,7 +259,7 @@ class GeoIP
             // Sanitize Pack name
             $pack = strtolower($pack);
 
-            // Create a variable with the name of the database file to download.
+            // Create a variable with the name of the database file to download (by provider)
             $DBFile = self::get_geo_ip_path($pack);
 
             if (!$args['update'] && file_exists($DBFile)) {
@@ -163,14 +277,19 @@ class GeoIP
 
             $isMaxmind = false;
 
-            // This is the location of the file to download.
-            if ('on' == $args['enable_maxmind'] && $args['maxmind_license_key']) {
+            // Determine the download source based on provider and settings
+            $provider = self::get_provider();
+            $pack     = strtolower($pack);
+            $library  = self::$library[$provider][$pack] ?? self::$library[self::PROVIDER_MAXMIND][$pack];
+
+            // MaxMind: optionally use licensed tarball
+            if (self::PROVIDER_MAXMIND === $provider && 'on' == $args['enable_maxmind'] && $args['maxmind_license_key']) {
                 $download_url = add_query_arg([
                     'license_key' => $args['maxmind_license_key'],
-                ], self::$library[$pack]['userSource']);
+                ], $library['userSource']);
                 $isMaxmind = true;
             } else {
-                $download_url = self::$library[$pack]['source'];
+                $download_url = $library['source'];
             }
 
             // Check to see if the subdirectory we're going to upload to exists, if not create it.
@@ -197,7 +316,7 @@ class GeoIP
                 // Check if the file is a MaxMind file
                 if ($isMaxmind) {
                     $phar          = new \PharData($TempFile);
-                    $database      = self::$library[$pack]['file'] . '.' . self::$file_extension;
+                    $database      = $library['file'] . '.' . self::$file_extension;
                     $fileInArchive = trailingslashit($phar->current()->getFileName()) . $database;
                     $phar->extractTo(\wp_slimstat::$upload_dir, $fileInArchive, true);
 
@@ -221,10 +340,6 @@ class GeoIP
                     if (!$ZipHandle) {
                         wp_delete_file($TempFile);
                         return array_merge($result, ['notice' => sprintf(__('Error Opening Downloaded GeoIP Database for Reading: %s', 'wp-slimstat'), $TempFile)]);
-                    } elseif (!$DBfh) {
-                        // If we failed to open the new file, throw and error and remove the temporary file. Otherwise, actually do to unzip.
-                        wp_delete_file($TempFile);
-                        return array_merge($result, ['notice' => sprintf(__('Error Opening Destination GeoIP Database for Writing: %s', 'wp-slimstat'), $DBFile)]);
                     } else {
                         while (($data = gzread($ZipHandle, 4096)) != false) {
                             fwrite($DBfh, $data); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite

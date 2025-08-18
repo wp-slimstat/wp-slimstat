@@ -1,7 +1,5 @@
 <?php
 
-use SlimStat\Services\GeoService;
-
 class wp_slimstat_admin
 {
     public static $screens_info      = [];
@@ -262,6 +260,51 @@ class wp_slimstat_admin
         if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
             $nextRunInterval = wp_slimstat::get_schedule_interval('weekly');
             wp_schedule_event(time() + $nextRunInterval, 'weekly', 'wp_slimstat_update_geoip_database');
+        }
+
+        // Fallback: if WP-Cron is disabled or scheduling failed, trigger a non-blocking direct update
+        // This ensures environments with DISABLE_WP_CRON still receive GeoIP database updates
+        $cron_disabled = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) || !wp_next_scheduled('wp_slimstat_update_geoip_database');
+        if ($cron_disabled) {
+            // Update if DB is missing or last update is older than this month's scheduled window
+            $last_update = (int) get_option('slimstat_last_geoip_dl', 0);
+            $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
+
+            $db_missing = false;
+            try {
+                if (class_exists(\SlimStat\Services\GeoIP::class)) {
+                    $db_missing = !\SlimStat\Services\GeoIP::database_exists();
+                }
+            } catch (\Throwable $e) {
+                // If any error occurs while checking, consider DB missing to be safe
+                $db_missing = true;
+            }
+
+            if ($db_missing || $last_update < $this_update) {
+                // Fire admin-ajax in a non-blocking way to run the existing update handler
+                $ajax_url = admin_url('admin-ajax.php');
+                // Forward current cookies to keep the request authenticated
+                $cookie_header = '';
+                if (!headers_sent() && $_COOKIE !== [] && is_array($_COOKIE)) {
+                    $pairs = [];
+                    foreach ($_COOKIE as $k => $v) {
+                        // Basic sanitization for header context
+                        $pairs[] = rawurlencode($k) . '=' . rawurlencode($v);
+                    }
+                    $cookie_header = implode('; ', $pairs);
+                }
+                $args = [
+                    'timeout'  => 0.01,
+                    'blocking' => false,
+                    'body'     => [
+                        'action'   => 'slimstat_update_geoip_database',
+                        'security' => wp_create_nonce('wp_rest'),
+                    ],
+                    'headers' => $cookie_header !== '' && $cookie_header !== '0' ? ['Cookie' => $cookie_header] : [],
+                ];
+                // Best-effort call; ignore response
+                wp_safe_remote_post($ajax_url, $args);
+            }
         }
 
         // Add style to the admin menu
@@ -1204,13 +1247,18 @@ class wp_slimstat_admin
         check_ajax_referer('wp_rest', 'security');
 
         try {
-            $geographicProvider = new GeoService();
-
-            $result = $geographicProvider
-                ->setUpdate(true)
-                ->setEnableMaxmind(\wp_slimstat::$settings['enable_maxmind'])
-                ->setMaxmindLicense(\wp_slimstat::$settings['maxmind_license_key'])
-                ->download();
+            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+            if ('cloudflare' === $provider) {
+                wp_send_json_success(__('Cloudflare geolocation does not require a database.', 'wp-slimstat'));
+            }
+            $options = [
+                'dbPath'    => \wp_slimstat::$upload_dir,
+                'license'   => \wp_slimstat::$settings['maxmind_license_key'] ?? '',
+                'precision' => (\wp_slimstat::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city',
+            ];
+            $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, $options);
+            $ok      = $service->updateDatabase();
+            $result  = [ 'notice' => $ok ? __('GeoIP Database Successfully Updated!', 'wp-slimstat') : __('Failed to update GeoIP Database.', 'wp-slimstat') ];
 
             wp_send_json_success($result['notice']);
         } catch (\Exception $exception) {
@@ -1224,9 +1272,18 @@ class wp_slimstat_admin
         check_ajax_referer('wp_rest', 'security');
 
         try {
-            $geographicProvider = new GeoService();
-
-            $result = $geographicProvider->checkDatabase();
+            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+            if ('cloudflare' === $provider) {
+                wp_send_json_success(__('Cloudflare geolocation is active. No database to check.', 'wp-slimstat'));
+            }
+            $options = [
+                'dbPath'    => \wp_slimstat::$upload_dir,
+                'license'   => \wp_slimstat::$settings['maxmind_license_key'] ?? '',
+                'precision' => (\wp_slimstat::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city',
+            ];
+            $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, $options);
+            $exists  = file_exists($service->getProvider()->getDbPath());
+            $result  = [ 'notice' => $exists ? __('GeoIP Database is present and ready.', 'wp-slimstat') : __('GeoIP Database not found.', 'wp-slimstat') ];
 
             wp_send_json_success($result['notice']);
         } catch (\Exception $exception) {

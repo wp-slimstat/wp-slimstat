@@ -165,21 +165,29 @@ $settings = [
                 'title' => __('Third-party Libraries', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
-            'enable_maxmind' => [
-                'title'             => __('GeoIP Database Source', 'wp-slimstat'),
-                'after_input_field' => ((!empty($_POST['options']['enable_maxmind']) && 'disable' != sanitize_text_field($_POST['options']['enable_maxmind'])) || (empty($_POST['options']['enable_maxmind']) && 'disable' != wp_slimstat::$settings['enable_maxmind'])) ? '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>' : '',
-                'type'              => 'select',
-                'select_values'     => [
-                    'disable' => __('Disable', 'wp-slimstat'),
-                    'no'      => __('Use the JsDelivr', 'wp-slimstat'),
-                    'on'      => __('Use the MaxMind server with your own license key', 'wp-slimstat'),
+            'geolocation_provider' => [
+                'title'         => __('Geolocation Provider', 'wp-slimstat'),
+                'type'          => 'select',
+                'select_values' => [
+                    'dbip'       => __('DB-IP City Lite (recommended, free)', 'wp-slimstat'),
+                    'maxmind'    => __('MaxMind GeoLite2', 'wp-slimstat'),
+                    'cloudflare' => __('Cloudflare Header', 'wp-slimstat'),
                 ],
-                'description' => __('Choose a service to update the GeoIP database to ensure your geographic information is accurate and up-to-date.', 'wp-slimstat') . '<br />' . __('<b>Note: </b>If the database file is missing, it will be downloaded when you save the settings.', 'wp-slimstat'),
+                'description' => __('<strong>Choose how Slimstat resolves visitor locations:</strong><br />
+<strong>DB-IP City Lite</strong> – Free, no license required. Slimstat downloads a local database and updates it automatically in the background after you save settings. You can also run the update manually using the button below. Works for arbitrary IPs in reports.<br />
+<strong>MaxMind GeoLite2</strong> – Requires a free MaxMind license key. City vs Country precision affects database size and download time. Updates run in the background after saving; you can also update manually. If PHP Phar is disabled on your server, please upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.<br />
+<strong>Cloudflare Header</strong> – No database needed. Slimstat reads the HTTP_CF_IPCOUNTRY header set by Cloudflare for the current request only. It won’t resolve arbitrary test IPs (like 8.8.8.8). Make sure “IP Geolocation” is enabled in your Cloudflare dashboard and your site is actually proxied through Cloudflare.', 'wp-slimstat'),
             ],
             'maxmind_license_key' => [
                 'title'       => __('MaxMind License Key', 'wp-slimstat'),
                 'type'        => 'text',
-                'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat'),
+                'description' => __('Enter your MaxMind license key to enable automatic downloads of the GeoLite2 database. Required only if you select MaxMind as the provider. Note: If the PHP Phar extension is not available on your server, automatic extraction may fail-upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'),
+            ],
+            'geolocation_db_actions' => [
+                'title'             => __('Geolocation Database', 'wp-slimstat'),
+                'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>',
+                'type'              => 'plain-text',
+                'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: “Update Database” runs it now; after saving settings, Slimstat also schedules a background update to avoid timeouts. “Check Database” verifies that the file exists and is readable. <strong>Cloudflare</strong>: No database is required—the header is used at request time.', 'wp-slimstat'),
             ],
             'enable_browscap' => [
                 'title'       => __('Browscap Library', 'wp-slimstat'),
@@ -197,7 +205,7 @@ $settings = [
                 'type'             => 'toggle',
                 'custom_label_on'  => __('Country', 'wp-slimstat'),
                 'custom_label_off' => __('City', 'wp-slimstat'),
-                'description'      => __("Slimstat determines your visitors' Country of origin through third-party libraries. This information is available in two precision levels: country and city. By default, Slimstat will install the country precision level. Use this option to switch to the more granular level, if you don't mind its 60 Mb average size.", 'wp-slimstat'),
+                'description'      => __('Choose between Country and City precision. City uses a larger database and may take longer to download (and more disk space). Country is smaller and faster. Applies to DB‑IP and MaxMind; Cloudflare always provides country only.', 'wp-slimstat'),
             ],
             'session_duration' => [
                 'title'             => __('Visit Duration', 'wp-slimstat'),
@@ -666,40 +674,39 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
         }
 
-        // MaxMind Library
-        if (!empty($_POST['options']['enable_maxmind']) || !empty($_POST['options']['geolocation_country'])) {
-            $pack          = ('on' == $_POST['options']['geolocation_country']) ? 'country' : 'city';
-            $enableMaxmind = sanitize_text_field($_POST['options']['enable_maxmind']);
-            $licenseKey    = empty($_POST['options']['maxmind_license_key']) ? '' : sanitize_text_field($_POST['options']['maxmind_license_key']);
+        // Geolocation settings save (provider-based)
+        if (isset($_POST['options']['geolocation_country']) || isset($_POST['options']['geolocation_provider']) || isset($_POST['options']['maxmind_license_key'])) {
+            $prevProvider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+            $provider     = sanitize_text_field($_POST['options']['geolocation_provider'] ?? $prevProvider);
+            $precision    = ('on' === ($_POST['options']['geolocation_country'] ?? (wp_slimstat::$settings['geolocation_country'] ?? 'on'))) ? 'country' : 'city';
+            $license      = sanitize_text_field($_POST['options']['maxmind_license_key'] ?? (wp_slimstat::$settings['maxmind_license_key'] ?? ''));
 
-            try {
-                $geographicProvider = new \SlimStat\Services\GeoService();
-                $geographicProvider->setEnableMaxmind($enableMaxmind);
-                if ($geographicProvider->isGeoIPEnabled()) {
-                    $result = $geographicProvider
-                        ->setPack($pack)
-                        ->setMaxmindLicense($licenseKey)
-                        ->download();
+            // Save settings
+            wp_slimstat::$settings['geolocation_provider'] = $provider;
+            wp_slimstat::$settings['geolocation_country']  = 'country' === $precision ? 'on' : 'no';
+            wp_slimstat::$settings['maxmind_license_key']  = $license;
 
-                    if (false === $result['status']) {
-                        $save_messages[] = $result['notice'];
-                    } else {
-                        $save_messages[] = __('The geolocation database has been installed on your server.', 'wp-slimstat');
+            // If provider needs a DB, schedule a background update to avoid timeouts during save
+            if ('cloudflare' !== $provider) {
+                try {
+                    $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, [
+                        'dbPath'    => \wp_slimstat::$upload_dir,
+                        'license'   => $license,
+                        'precision' => $precision,
+                    ]);
+                    $dbExists = file_exists($service->getProvider()->getDbPath());
 
-                        // Save Settings
-                        wp_slimstat::$settings['enable_maxmind']      = $enableMaxmind;
-                        wp_slimstat::$settings['maxmind_license_key'] = $licenseKey;
+                    if (!$dbExists || $provider !== $prevProvider) {
+                        // Schedule a single-run background job shortly after save
+                        if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
+                            wp_schedule_single_event(time() + 10, 'wp_slimstat_update_geoip_database');
+                        }
+                        $save_messages[] = __('The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now.', 'wp-slimstat');
                     }
-                } else {
-                    // Disable geographic database
-                    wp_slimstat::$settings['enable_maxmind'] = 'disable';
+                } catch (\Exception $e) {
+                    $save_messages[] = $e->getMessage();
                 }
-            } catch (\Exception $e) {
-                $save_messages[] = $e->getMessage();
             }
-
-            // Save Settings
-            wp_slimstat::$settings['geolocation_country'] = sanitize_text_field($_POST['options']['geolocation_country']);
         }
 
         // Browscap Library
