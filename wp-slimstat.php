@@ -386,8 +386,7 @@ class wp_slimstat
             header('Cache-Control: public, max-age=31536000');
             header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
 
-            $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
-            $js_path          = plugin_dir_path(__FILE__) . sprintf('/wp-slimstat%s.js', $jstracker_suffix);
+            $js_path          = plugin_dir_path(__FILE__) . '/wp-slimstat.min.js';
 
             if (file_exists($js_path)) {
                 readfile($js_path);
