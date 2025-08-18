@@ -234,10 +234,12 @@ body.index-php {
         margin-bottom: 2px;
     }
     .slimstat-chart-controls {
-        left: 2px;
-        position: relative;
+        right: 10px;
+        position: absolute;
         display: inline-block;
-        margin-top: 5px;
+        width: 80px;
+        text-align: left;
+        left: unset;
         & select {
             width: 70px;
             font-size: 12px;

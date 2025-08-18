@@ -357,7 +357,8 @@ class Chart
             false
         );
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
-            'ajax_url'        => admin_url('admin-ajax.php'),
+            // Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
+            'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
             'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
             'end_date'        => $this->args['end'] ?? null,
             'end_date_string' => isset($this->args['end']) ? date('Y/m/d H:i:s', $this->args['end']) : null,

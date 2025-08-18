@@ -236,7 +236,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
     // Search Terms, with link to original SERP, and Outbound Resource
     if (!empty($search_terms_info)) {
-        $results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='" . __('Search Terms', 'wp-slimstat') . ('\'></i> ' . $search_terms_info);
+        $results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='" . __('Search Terms', 'wp-slimstat') . ("'></i> " . $search_terms_info);
     } else {
         $results[$i]['searchterms'] = '';
     }
@@ -281,7 +281,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
             if ('#' !== substr($results[$i]['outbound_resource'], 0, 1)) {
                 $results[$i]['outbound_resource'] = "<a class='inline-icon spaced slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this outbound link in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", $results[ $i ][ 'outbound_resource' ], $results[ $i ][ 'outbound_resource' ]);
             } else {
-                $results[$i]['outbound_resource'] = '<i class=\'inline-icon spaced slimstat-font-logout\'></i> ' . $results[ $i ][ 'outbound_resource' ];
+                $results[$i]['outbound_resource'] = "<i class='inline-icon spaced slimstat-font-logout'></i> " . $results[ $i ][ 'outbound_resource' ];
             }
         } else {
             $results[$i]['outbound_resource'] = '';
@@ -327,6 +327,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
     echo $row_output;
 }
+
 if (! defined('DOING_AJAX') || ! DOING_AJAX) {
     echo '</div>';
 }
