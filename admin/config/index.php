@@ -493,8 +493,6 @@ var SlimStatParams = { ajaxurl: "' . admin_url('admin-ajax.php') . '" };
                 'description' => __("Enter a list of usernames who should have access to the statistics. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat'),
             ],
 
-            // Access Control - Ad-Blocker & REST API (moved to General → Tracker)
-
             // Access Control - Customizer
             'permissions_customize_header' => [
                 'title' => __('Customizer', 'wp-slimstat'),

@@ -236,6 +236,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 maxTicks += 1;
             }
 
+            if (jQuery("body").hasClass("index-php")) {
+                maxTicks = 5;
+            }
+
             if (labels.length > maxTicks) {
                 var tickIndexes = [0];
                 var step = (labels.length - 1) / (maxTicks - 1);

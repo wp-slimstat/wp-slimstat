@@ -144,12 +144,18 @@ span.slimstat-toggle-prev-datasets {
 
 body.index-php {
   #dashboard-widgets-wrap .postbox .slimstat-tooltip-trigger.corner {
-    display: inline-block;
+    display: block;
     float: none;
-    margin-right: 3px;
     cursor: help;
-    left: 90px;
-    top: 5px;
+    width: 100% !important;
+    position: relative;
+    left: unset;
+    right: unset;
+    text-align: left;
+
+    min-width: 100%;
+    margin: 5px 20px;
+    margin-bottom: 10px;
   }
 
   // WP Dashboard specific styles
@@ -157,20 +163,13 @@ body.index-php {
     max-width: 100% !important;
     width: 100%;
     aspect-ratio: 16/7;
-    min-height: 160px;
     height: auto;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
   .inside:has(.slimstat-postbox-chart--canvas) {
     height: auto !important;
     min-height: 180px;
     max-height: none;
     margin-bottom: 20px !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
   .slimstat-postbox-chart--canvas {
     width: 100% !important;
@@ -197,6 +196,8 @@ body.index-php {
     font-size: 13px;
     width: 100%;
     box-sizing: border-box;
+    justify-content: start;
+    margin: 5px 20px;
   }
   .slimstat-postbox-chart--item {
     padding: 3px 7px;
@@ -209,8 +210,11 @@ body.index-php {
     position: relative;
     display: inline-block;
     margin-top: 5px;
+    width: 100%;
+    text-align: left;
+    margin: 5px 20px;
     & select {
-      width: 70px;
+      width: 90px;
       font-size: 12px;
       padding: 1px 4px;
       border-radius: 5px;
