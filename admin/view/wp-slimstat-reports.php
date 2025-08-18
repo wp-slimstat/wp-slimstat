@@ -144,7 +144,8 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'type'             => 'recent',
                     'columns'          => 'ip',
-                    'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ' OR dt > ' . (date_i18n('U') - 300) . ')',
+                    // Group OR conditions explicitly to help MySQL use indexes effectively
+                    'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')',
                     'use_date_filters' => false,
                     'raw'              => ['wp_slimstat_db', 'get_recent'],
                 ],
@@ -257,7 +258,8 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'type'             => 'recent',
                     'columns'          => 'username',
-                    'where'            => 'dt_out > ' . (date_i18n('U') - 300) . ' OR dt > ' . (date_i18n('U') - 300),
+                    // Group OR conditions explicitly to help MySQL use indexes effectively
+                    'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')',
                     'use_date_filters' => false,
                     'raw'              => ['wp_slimstat_db', 'get_recent'],
                 ],

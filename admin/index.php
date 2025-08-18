@@ -294,7 +294,8 @@ class wp_slimstat_admin
         self::register_country_dt_index_hooks();
         self::register_dt_screen_index_hooks();
         self::register_dt_browser_index_hooks();
-        self::register_dt_platform_index_hooks();
+    self::register_dt_platform_index_hooks();
+    self::register_dt_out_index_hooks();
 
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
@@ -526,6 +527,8 @@ class wp_slimstat_admin
             ['name' => 'idx_dt_screen_width_screen_height', 'sql' => sprintf('CREATE INDEX idx_dt_screen_width_screen_height ON %sslim_stats (dt, screen_width, screen_height)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_screen_indexed'],
             ['name' => 'idx_dt_browser_browser_version', 'sql' => sprintf('CREATE INDEX idx_dt_browser_browser_version ON %sslim_stats (dt, browser, browser_version)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_browser_indexed'],
             ['name' => 'idx_dt_platform', 'sql' => sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_platform_indexed'],
+            // Speeds up "Currently Online" queries using dt_out > NOW()-300
+            ['name' => 'idx_dt_out', 'sql' => sprintf('CREATE INDEX idx_dt_out ON %sslim_stats (dt_out)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_out_indexed'],
         ];
         foreach ($index_defs as $idx) {
             $exists = $_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['name']));
@@ -949,7 +952,7 @@ class wp_slimstat_admin
                 }
             }
         }
-        
+
         return null;
     }
 
@@ -1008,7 +1011,7 @@ class wp_slimstat_admin
         } else {
             echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
         }
-        
+
         return null;
     }
 
@@ -1395,7 +1398,7 @@ class wp_slimstat_admin
             // include File
             include $template_file;
         }
-        
+
         return null;
     }
 
@@ -1420,7 +1423,7 @@ class wp_slimstat_admin
         if (isset($_GET['page']) && ('slimlayout' === $_GET['page'] || 'slimconfig' === $_GET['page'])) {
             return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
         }
-        
+
         return null;
     }
 
@@ -1523,6 +1526,32 @@ class wp_slimstat_admin
         add_action('wp_ajax_slimstat_add_dt_platform_index', [self::class, 'ajax_add_dt_platform_index']);
     }
 
+    public static function ajax_add_dt_out_index()
+    {
+        global $wpdb;
+        check_ajax_referer('slimstat_add_dt_out_index');
+
+        $table      = $wpdb->prefix . 'slim_stats';
+        $index_name = 'idx_dt_out';
+        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
+        if ($has_index && count($has_index) > 0) {
+            update_option('slimstat_dt_out_indexed', 'yes');
+            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
+        }
+
+        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt_out)', $index_name, $table));
+        if ($result) {
+            update_option('slimstat_dt_out_indexed', 'yes');
+            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
+        }
+        wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+    }
+
+    public static function register_dt_out_index_hooks()
+    {
+        add_action('wp_ajax_slimstat_add_dt_out_index', [self::class, 'ajax_add_dt_out_index']);
+    }
+
     public static function show_indexes_notice()
     {
 
@@ -1530,6 +1559,15 @@ class wp_slimstat_admin
             return;
         }
         $indexes = [
+            [
+                'option' => 'slimstat_dt_out_indexed',
+                'id'     => 'dt-out',
+                'label'  => __('Currently Online Reports', 'wp-slimstat'),
+                'desc'   => __('Index on <code>dt_out</code>', 'wp-slimstat'),
+                'key'    => 'idx_dt_out',
+                'ajax'   => 'slimstat_add_dt_out_index',
+                'btn'    => __('Apply', 'wp-slimstat'),
+            ],
             [
                 'option' => 'slimstat_country_dt_indexed',
                 'id'     => 'country-dt',

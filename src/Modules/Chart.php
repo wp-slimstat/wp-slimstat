@@ -236,7 +236,8 @@ class Chart
         $start = $args['start'];
         $end   = $args['end'];
 
-        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
+    // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
+    $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);
@@ -288,12 +289,18 @@ class Chart
             ->groupBy($dtExpr . ', period')
             ->orderBy('sort_dt ASC, period ASC');
 
-        // Build totals query via Query builder (keeps original semantics)
+        // Build totals query via Query builder using index-friendly ranges (no CONVERT_TZ on column)
+        // Adjust local-time windows to UTC timestamps so MySQL can use the dt index: dt BETWEEN (start - offset) AND (end - offset)
+        $prevStartAdj = $prevArgs['start'] - $totalOffsetSeconds;
+        $prevEndAdj   = $prevArgs['end'] - $totalOffsetSeconds;
+        $startAdj     = $start - $totalOffsetSeconds;
+        $endAdj       = $end - $totalOffsetSeconds;
+
         $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
-        $totalsWhere  = sprintf("CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s') BETWEEN FROM_UNIXTIME(%%d) AND FROM_UNIXTIME(%%d) OR CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s') BETWEEN FROM_UNIXTIME(%%d) AND FROM_UNIXTIME(%%d)", $tzOffset, $tzOffset);
+        $totalsWhere  = '(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)';
         $totalsQuery  = Query::select($totalsFields)
             ->from($wpdb->prefix . 'slim_stats')
-            ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end])
+            ->whereRaw($totalsWhere, [$prevStartAdj, $prevEndAdj, $startAdj, $endAdj])
             ->groupBy('period')
             ->orderBy('period ASC');
 
