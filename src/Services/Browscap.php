@@ -28,6 +28,7 @@ class Browscap
                 self::$browscap_local_version = trim(self::$browscap_local_version);
             }
         }
+
         self::update_browscap_database(false);
         // require_once( plugin_dir_path( __FILE__ ) . 'browscap-php/composer/autoload_real.php' );
 

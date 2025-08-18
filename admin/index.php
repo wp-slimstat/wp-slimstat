@@ -882,6 +882,7 @@ class wp_slimstat_admin
                 }
             }
         }
+        
         return null;
     }
 
@@ -940,6 +941,7 @@ class wp_slimstat_admin
         } else {
             echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
         }
+        
         return null;
     }
 
@@ -1327,6 +1329,7 @@ class wp_slimstat_admin
             // include File
             include $template_file;
         }
+        
         return null;
     }
 
@@ -1352,6 +1355,7 @@ class wp_slimstat_admin
         if (isset($_GET['page']) && ('slimlayout' === $_GET['page'] || 'slimconfig' === $_GET['page'])) {
             return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
         }
+        
         return null;
     }
 }

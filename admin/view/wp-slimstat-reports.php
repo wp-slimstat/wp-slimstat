@@ -1451,7 +1451,7 @@ class wp_slimstat_reports
         }
 
         foreach ($results as $a_result) {
-            echo '<p class=\'slimstat-tooltip-trigger\'>' . $a_result[ 'notes' ];
+            echo "<p class='slimstat-tooltip-trigger'>" . $a_result[ 'notes' ];
 
             if (!empty($a_result['counthits'])) {
                 echo sprintf('<span>%s</span>', $a_result[ 'counthits' ]);

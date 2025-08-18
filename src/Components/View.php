@@ -54,6 +54,7 @@ class View
         } catch (\Exception $exception) {
             \SlimStat::log($exception->getMessage(), 'error');
         }
+
         return null;
     }
 }
