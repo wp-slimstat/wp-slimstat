@@ -73,8 +73,13 @@ class GeoIP
      */
     public static function get_provider()
     {
-        // Enforce WP-Statistics-like default: DB-IP City Lite only
-        return self::PROVIDER_DBIP;
+        // Read provider from settings; default to DB-IP to match runtime defaults
+        $provider = \wp_slimstat::$settings['geolocation_provider'] ?? self::PROVIDER_DBIP;
+        $provider = strtolower((string) $provider);
+        if (!in_array($provider, [self::PROVIDER_MAXMIND, self::PROVIDER_DBIP, self::PROVIDER_CLOUDFLARE], true)) {
+            $provider = self::PROVIDER_DBIP;
+        }
+        return $provider;
     }
 
     /**

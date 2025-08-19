@@ -135,7 +135,10 @@ if (
         </form>
 
         <?php
-        if (('disable' == wp_slimstat::$settings['enable_maxmind'] || !\SlimStat\Services\GeoIP::database_exists()) && 'on' == wp_slimstat::$settings['notice_geolite']) {
+        // Provider-aware GeoIP notice: show only if a DB-based provider is selected and the database file is missing
+        $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+        $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
+        if ($uses_db && !\SlimStat\Services\GeoIP::database_exists() && 'on' == wp_slimstat::$settings['notice_geolite']) {
             wp_slimstat_admin::show_message(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
         }
 

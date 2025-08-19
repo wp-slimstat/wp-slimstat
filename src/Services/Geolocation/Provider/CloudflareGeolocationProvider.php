@@ -6,9 +6,6 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 {
     public function locate($ip)
     {
-        // Read Cloudflare geolocation headers for the CURRENT request only.
-        // Cloudflare doesn't resolve arbitrary IPs; these headers are set by CF edge when proxying.
-
         // Build a lowercased map of server headers for case-insensitive access
         $server = [];
         foreach (($_SERVER ?? []) as $k => $v) {

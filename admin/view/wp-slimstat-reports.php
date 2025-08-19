@@ -1697,11 +1697,14 @@ class wp_slimstat_reports
                     } else {
                         $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
                     }
-        if (('disable' == wp_slimstat::$settings['enable_maxmind'] || !\SlimStat\Services\GeoIP::database_exists())) {
-            echo sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries');
-            echo '<br>';
-        }
-        ?>
+                    // Provider-aware GeoIP notice (world map): only for DB providers when DB file is missing
+                    $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+                    $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
+                    if ($uses_db && !\SlimStat\Services\GeoIP::database_exists()) {
+                        echo sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries');
+                        echo '<br>';
+                    }
+                    ?>
                     <?php foreach ($top_countries as $country): ?>
                         <div class="country-bar">
                             <div class="country-flag-container">
