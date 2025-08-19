@@ -28,7 +28,7 @@ class Apc implements KeyValueStore
      *
      * @var array
      */
-    protected $expires = [];
+    protected $expires = array();
 
     public function __construct()
     {
@@ -65,9 +65,9 @@ class Apc implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $tokens = [];
-        if ([] === $keys) {
-            return [];
+        $tokens = array();
+        if (empty($keys)) {
+            return array();
         }
 
         // check for values that were just stored in this request but have
@@ -80,10 +80,10 @@ class Apc implements KeyValueStore
 
         $values = $this->apcu_fetch($keys);
         if (false === $values) {
-            return [];
+            return array();
         }
 
-        $tokens = [];
+        $tokens = array();
         foreach ($values as $key => $value) {
             $tokens[$key] = serialize($value);
         }
@@ -122,8 +122,8 @@ class Apc implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if ([] === $items) {
-            return [];
+        if (empty($items)) {
+            return array();
         }
 
         $ttl = $this->ttl($expire);
@@ -138,19 +138,18 @@ class Apc implements KeyValueStore
         // attempt to get locks for all items
         $locked = $this->lock(array_keys($items));
         $locked = array_fill_keys($locked, null);
-
         $failed = array_diff_key($items, $locked);
-        $items  = array_intersect_key($items, $locked);
+        $items = array_intersect_key($items, $locked);
 
-        if ([] !== $items) {
+        if ($items) {
             // only write to those where lock was acquired
             $this->apcu_store($items, null, $ttl);
             $this->expire(array_keys($items), $ttl);
             $this->unlock(array_keys($items));
         }
 
-        $return = [];
-        foreach (array_keys($items) as $key) {
+        $return = array();
+        foreach ($items as $key => $value) {
             $return[$key] = !array_key_exists($key, $failed);
         }
 
@@ -179,17 +178,17 @@ class Apc implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        if ([] === $keys) {
-            return [];
+        if (empty($keys)) {
+            return array();
         }
 
         // attempt to get locks for all items
         $locked = $this->lock($keys);
         $failed = array_diff($keys, $locked);
-        $keys   = array_intersect($keys, $locked);
+        $keys = array_intersect($keys, $locked);
 
         // only delete those where lock was acquired
-        if ([] !== $keys) {
+        if ($keys) {
             /**
              * Contrary to the docs, apc_delete also accepts an array of
              * multiple keys to be deleted. Docs for apcu_delete are ok in this
@@ -206,7 +205,7 @@ class Apc implements KeyValueStore
             $this->unlock($keys);
         }
 
-        $return = [];
+        $return = array();
         foreach ($keys as $key) {
             $return[$key] = !in_array($key, $failed);
             unset($this->expires[$key]);
@@ -357,17 +356,15 @@ class Apc implements KeyValueStore
         }
 
         // get existing TTL & quit early if it's that one already
-        $iterator = $this->APCUIterator('/^' . preg_quote($key, '/') . '$/', \APC_ITER_VALUE|\APC_ITER_TTL, 1, \APC_LIST_ACTIVE);
+        $iterator = $this->APCUIterator('/^'.preg_quote($key, '/').'$/', \APC_ITER_VALUE | \APC_ITER_TTL, 1, \APC_LIST_ACTIVE);
         if (!$iterator->valid()) {
             return false;
         }
-
         $current = $iterator->current();
         if (!$current) {
             // doesn't exist
             return false;
         }
-
         if ($current['ttl'] === $ttl) {
             // that's the TTL already, no need to reset it
             return true;
@@ -385,7 +382,7 @@ class Apc implements KeyValueStore
      */
     public function flush()
     {
-        $this->expires = [];
+        $this->expires = array();
 
         return $this->apcu_clear_cache();
     }
@@ -499,12 +496,12 @@ class Apc implements KeyValueStore
         // both string (single key) and array (multiple) are accepted
         $keys = (array) $keys;
 
-        $locked = [];
+        $locked = array();
         for ($i = 0; $i < 10; ++$i) {
             $locked += $this->acquire($keys);
             $keys = array_diff($keys, $locked);
 
-            if ([] === $keys) {
+            if (empty($keys)) {
                 break;
             }
 
@@ -525,9 +522,9 @@ class Apc implements KeyValueStore
     {
         $keys = (array) $keys;
 
-        $values = [];
+        $values = array();
         foreach ($keys as $key) {
-            $values['scrapbook.lock.' . $key] = null;
+            $values["scrapbook.lock.$key"] = null;
         }
 
         // there's no point in locking longer than max allowed execution time
@@ -537,8 +534,8 @@ class Apc implements KeyValueStore
         // lock these keys, then compile a list of successfully locked keys
         // (using the returned failure array)
         $result = (array) $this->apcu_add($values, null, $ttl);
-        $failed = [];
-        foreach (array_keys($result) as $key) {
+        $failed = array();
+        foreach ($result as $key => $err) {
             $failed[] = substr($key, strlen('scrapbook.lock.'));
         }
 
@@ -556,7 +553,7 @@ class Apc implements KeyValueStore
     {
         $keys = (array) $keys;
         foreach ($keys as $i => $key) {
-            $keys[$i] = 'scrapbook.lock.' . $key;
+            $keys[$i] = "scrapbook.lock.$key";
         }
 
         $this->apcu_delete($keys);
@@ -573,7 +570,7 @@ class Apc implements KeyValueStore
      * @param array|string $key
      * @param int          $ttl
      */
-    protected function expire($key = [], $ttl = 0)
+    protected function expire($key = array(), $ttl = 0)
     {
         if (0 === $ttl) {
             // when storing indefinitely, there's no point in keeping it around,
@@ -606,14 +603,14 @@ class Apc implements KeyValueStore
          */
         if (is_array($key)) {
             $nums = array_filter($key, 'is_numeric');
-            if ([] !== $nums) {
-                $values = [];
+            if ($nums) {
+                $values = array();
                 foreach ($nums as $k) {
                     $values[$k] = $this->apcu_fetch((string) $k, $success);
                 }
 
                 $remaining = array_diff($key, $nums);
-                if ([] !== $remaining) {
+                if ($remaining) {
                     $values += $this->apcu_fetch($remaining, $success2);
                     $success &= $success2;
                 }
@@ -645,15 +642,15 @@ class Apc implements KeyValueStore
          */
         if (is_array($key)) {
             $nums = array_filter(array_keys($key), 'is_numeric');
-            if ([] !== $nums) {
-                $success = [];
-                $nums    = array_intersect_key($key, array_fill_keys($nums, null));
+            if ($nums) {
+                $success = array();
+                $nums = array_intersect_key($key, array_fill_keys($nums, null));
                 foreach ($nums as $k => $v) {
                     $success[$k] = $this->apcu_store((string) $k, $v, $ttl);
                 }
 
                 $remaining = array_diff_key($key, $nums);
-                if ([] !== $remaining) {
+                if ($remaining) {
                     $success += $this->apcu_store($remaining, $var, $ttl);
                 }
 

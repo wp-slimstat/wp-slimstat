@@ -48,7 +48,7 @@ class StampedeProtector implements KeyValueStore
     /**
      * @var KeyValueStore
      */
-    protected $cache = [];
+    protected $cache = array();
 
     /**
      * Amount of time, in milliseconds, this class guarantees protection.
@@ -71,7 +71,7 @@ class StampedeProtector implements KeyValueStore
     public function __construct(KeyValueStore $cache, $sla = 1000)
     {
         $this->cache = $cache;
-        $this->sla   = $sla;
+        $this->sla = $sla;
     }
 
     /**
@@ -79,10 +79,10 @@ class StampedeProtector implements KeyValueStore
      */
     public function get($key, &$token = null)
     {
-        $values = $this->getMulti([$key], $tokens);
-        $token  = $tokens[$key] ?? null;
+        $values = $this->getMulti(array($key), $tokens);
+        $token = isset($tokens[$key]) ? $tokens[$key] : null;
 
-        return $values[$key] ?? false;
+        return isset($values[$key]) ? $values[$key] : false;
     }
 
     /**
@@ -91,13 +91,13 @@ class StampedeProtector implements KeyValueStore
     public function getMulti(array $keys, array &$tokens = null)
     {
         // fetch both requested keys + stampede protection indicators at once
-        $stampedeKeys = array_combine($keys, array_map([$this, 'stampedeKey'], $keys));
-        $values       = $this->cache->getMulti(array_merge($keys, $stampedeKeys), $tokens);
+        $stampedeKeys = array_combine($keys, array_map(array($this, 'stampedeKey'), $keys));
+        $values = $this->cache->getMulti(array_merge($keys, $stampedeKeys), $tokens);
 
         // figure out which of the requested keys are protected, and which need
         // protection (=currently empty & not yet protected)
         $protected = array_keys(array_intersect($stampedeKeys, array_keys($values)));
-        $protect   = array_diff($keys, array_keys($values), $protected);
+        $protect = array_diff($keys, array_keys($values), $protected);
 
         // protect keys that we couldn't find, and remove them from the list of
         // keys we want results from, because we'll keep fetching empty keys
@@ -113,14 +113,14 @@ class StampedeProtector implements KeyValueStore
         // we over-fetched (to include stampede indicators), now limit the
         // results to only the keys we requested
         $results = array_intersect_key($values, array_flip($keys));
-        $tokens  = array_intersect_key($tokens, $results);
+        $tokens = array_intersect_key($tokens, $results);
 
         // we may not have been able to retrieve all keys yet: some may have
         // been "protected" (and are being regenerated in another process) in
         // which case we'll retry a couple of times, hoping the other process
         // stores the new value in the meantime
         $attempts = $this->attempts;
-        while (--$attempts > 0 && [] !== $protected && $this->sleep()) {
+        while (--$attempts > 0 && !empty($protected) && $this->sleep()) {
             $values = $this->cache->getMulti($protected, $tokens2);
 
             $results += array_intersect_key($values, array_flip($keys));
@@ -241,11 +241,11 @@ class StampedeProtector implements KeyValueStore
      */
     protected function protect(array $keys)
     {
-        if ([] === $keys) {
-            return [];
+        if (empty($keys)) {
+            return array();
         }
 
-        $success = [];
+        $success = array();
         foreach ($keys as $key) {
             /*
              * Key is add()ed because there may be multiple concurrent processes
@@ -294,9 +294,9 @@ class StampedeProtector implements KeyValueStore
         $suffix = '.stampede';
 
         if (substr($key, -strlen($suffix)) === $suffix) {
-            throw new InvalidKey(sprintf("Invalid key: %s. Keys with suffix '%s' are reserved.", $key, $suffix));
+            throw new InvalidKey("Invalid key: $key. Keys with suffix '$suffix' are reserved.");
         }
 
-        return $key . $suffix;
+        return $key.$suffix;
     }
 }

@@ -4,30 +4,28 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Parser;
 
-use function array_shift;
-use function count;
-use function preg_match;
-
 use SlimStat\Dependencies\BrowscapPHP\Formatter\FormatterInterface;
 use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetDataInterface;
 use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetPatternInterface;
+use UnexpectedValueException;
 
+use function array_shift;
+use function count;
+use function preg_match;
 use function str_replace;
 use function strpos;
 use function strtok;
 use function strtolower;
 use function substr_replace;
 
-use UnexpectedValueException;
-
 /**
  * Ini parser class (compatible with PHP 5.3+)
  */
 final class Ini implements ParserInterface
 {
-    private GetPatternInterface $patternHelper;
+    private Helper\GetPatternInterface $patternHelper;
 
-    private GetDataInterface $dataHelper;
+    private Helper\GetDataInterface $dataHelper;
 
     /**
      * Formatter to use
@@ -68,7 +66,7 @@ final class Ini implements ParserInterface
             // strtok() requires less memory than explode()
             $pattern = strtok($patterns, "\t");
 
-            while (false !== $pattern) {
+            while ($pattern !== false) {
                 $pattern       = str_replace('[\d]', '(\d)', $pattern);
                 $quotedPattern = '/^' . $pattern . '$/i';
                 $matches       = [];
@@ -88,7 +86,7 @@ final class Ini implements ParserInterface
                     // search for the next pattern.
                     $settings = $this->dataHelper->getSettings($pattern);
 
-                    if ([] !== $settings) {
+                    if (0 < count($settings)) {
                         $formatter = $this->formatter;
                         $formatter->setData($settings);
 

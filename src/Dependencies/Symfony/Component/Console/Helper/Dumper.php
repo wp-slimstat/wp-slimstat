@@ -22,11 +22,8 @@ use Symfony\Component\VarDumper\Dumper\CliDumper;
 final class Dumper
 {
     private $output;
-
     private $dumper;
-
     private $cloner;
-
     private $handler;
 
     public function __construct(OutputInterface $output, ?CliDumper $dumper = null, ?ClonerInterface $cloner = null)
@@ -37,26 +34,25 @@ final class Dumper
 
         if (class_exists(CliDumper::class)) {
             $this->handler = function ($var): string {
-                $dumper = $this->dumper ?? $this->dumper = new CliDumper(null, null, CliDumper::DUMP_LIGHT_ARRAY|CliDumper::DUMP_COMMA_SEPARATOR);
+                $dumper = $this->dumper ?? $this->dumper = new CliDumper(null, null, CliDumper::DUMP_LIGHT_ARRAY | CliDumper::DUMP_COMMA_SEPARATOR);
                 $dumper->setColors($this->output->isDecorated());
 
                 return rtrim($dumper->dump(($this->cloner ?? $this->cloner = new VarCloner())->cloneVar($var)->withRefHandles(false), true));
             };
         } else {
             $this->handler = function ($var): string {
-                if (null === $var) {
-                    return 'null';
+                switch (true) {
+                    case null === $var:
+                        return 'null';
+                    case true === $var:
+                        return 'true';
+                    case false === $var:
+                        return 'false';
+                    case \is_string($var):
+                        return '"'.$var.'"';
+                    default:
+                        return rtrim(print_r($var, true));
                 }
-                if (true === $var) {
-                    return 'true';
-                }
-                if (false === $var) {
-                    return 'false';
-                }
-                if (\is_string($var)) {
-                    return '"' . $var . '"';
-                }
-                return rtrim(print_r($var, true));
             };
         }
     }

@@ -11,6 +11,9 @@ use function sprintf;
  */
 final class FetcherException extends DomainException
 {
+    /**
+     * @return FetcherException
+     */
     public static function httpError(string $resource, string $error): self
     {
         return new self(

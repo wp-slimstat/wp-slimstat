@@ -79,7 +79,7 @@ final class EasyHandle
                 $headers['x-encoded-content-length'] = $headers[$normalizedKeys['content-length']];
 
                 $bodyLength = (int) $this->sink->getSize();
-                if (0 !== $bodyLength) {
+                if ($bodyLength) {
                     $headers[$normalizedKeys['content-length']] = $bodyLength;
                 } else {
                     unset($headers[$normalizedKeys['content-length']]);
@@ -100,11 +100,13 @@ final class EasyHandle
     /**
      * @param string $name
      *
+     * @return void
+     *
      * @throws \BadMethodCallException
      */
     public function __get($name)
     {
-        $msg = 'handle' === $name ? 'The EasyHandle has been released' : 'Invalid property: ' . $name;
+        $msg = $name === 'handle' ? 'The EasyHandle has been released' : 'Invalid property: '.$name;
         throw new \BadMethodCallException($msg);
     }
 }

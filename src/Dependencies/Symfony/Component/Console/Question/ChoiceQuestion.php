@@ -21,11 +21,8 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\InvalidArgumentExc
 class ChoiceQuestion extends Question
 {
     private $choices;
-
     private $multiselect = false;
-
     private $prompt = ' > ';
-
     private $errorMessage = 'Value "%s" is invalid';
 
     /**
@@ -35,7 +32,7 @@ class ChoiceQuestion extends Question
      */
     public function __construct(string $question, array $choices, $default = null)
     {
-        if ([] === $choices) {
+        if (!$choices) {
             throw new \LogicException('Choice question must have at least 1 choice available.');
         }
 
@@ -120,10 +117,10 @@ class ChoiceQuestion extends Question
 
     private function getDefaultValidator(): callable
     {
-        $choices      = $this->choices;
+        $choices = $this->choices;
         $errorMessage = $this->errorMessage;
-        $multiselect  = $this->multiselect;
-        $isAssoc      = $this->isAssoc($choices);
+        $multiselect = $this->multiselect;
+        $isAssoc = $this->isAssoc($choices);
 
         return function ($selected) use ($choices, $errorMessage, $multiselect, $isAssoc) {
             if ($multiselect) {
@@ -156,7 +153,7 @@ class ChoiceQuestion extends Question
                     throw new InvalidArgumentException(sprintf('The provided answer is ambiguous. Value should be one of "%s".', implode('" or "', $results)));
                 }
 
-                $result = array_search($value, $choices, true);
+                $result = array_search($value, $choices);
 
                 if (!$isAssoc) {
                     if (false !== $result) {

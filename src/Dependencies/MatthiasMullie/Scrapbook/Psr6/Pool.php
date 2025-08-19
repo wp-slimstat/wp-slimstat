@@ -21,7 +21,7 @@ class Pool implements CacheItemPoolInterface
      *
      * @var string
      */
-    /* public */ public const KEY_INVALID_CHARACTERS = '{}()/\@:';
+    /* public */ const KEY_INVALID_CHARACTERS = '{}()/\@:';
 
     /**
      * @var KeyValueStore
@@ -36,11 +36,11 @@ class Pool implements CacheItemPoolInterface
     /**
      * @var Item[]
      */
-    protected $deferred = [];
+    protected $deferred = array();
 
     public function __construct(KeyValueStore $store)
     {
-        $this->store      = $store;
+        $this->store = $store;
         $this->repository = new Repository($store);
     }
 
@@ -65,7 +65,7 @@ class Pool implements CacheItemPoolInterface
              * be passed by-ref without the cloning)
              */
             $value = $this->deferred[$key];
-            $item  = is_object($value) ? clone $value : $value;
+            $item = is_object($value) ? clone $value : $value;
 
             /*
              * Deferred items should identify as being hit, unless if expired:
@@ -86,9 +86,9 @@ class Pool implements CacheItemPoolInterface
      *
      * @return Item[]
      */
-    public function getItems(array $keys = [])
+    public function getItems(array $keys = array())
     {
-        $items = [];
+        $items = array();
         foreach ($keys as $key) {
             $this->assertValidKey($key);
 
@@ -115,7 +115,7 @@ class Pool implements CacheItemPoolInterface
      */
     public function clear()
     {
-        $this->deferred = [];
+        $this->deferred = array();
 
         return $this->store->flush();
     }
@@ -203,8 +203,8 @@ class Pool implements CacheItemPoolInterface
      */
     public function commit()
     {
-        $deferred = [];
-        foreach ($this->deferred as $item) {
+        $deferred = array();
+        foreach ($this->deferred as $key => $item) {
             if ($item->isExpired()) {
                 // already expired: don't even save it
                 continue;
@@ -212,7 +212,7 @@ class Pool implements CacheItemPoolInterface
 
             // setMulti doesn't allow to set expiration times on a per-item basis,
             // so we'll have to group our requests per expiration date
-            $expire                             = $item->getExpiration();
+            $expire = $item->getExpiration();
             $deferred[$expire][$item->getKey()] = $item->get();
         }
 
@@ -238,13 +238,13 @@ class Pool implements CacheItemPoolInterface
     protected function assertValidKey($key)
     {
         if (!is_string($key)) {
-            throw new InvalidArgumentException('Invalid key: ' . var_export($key, true) . '. Key should be a string.');
+            throw new InvalidArgumentException('Invalid key: '.var_export($key, true).'. Key should be a string.');
         }
 
         // valid key according to PSR-6 rules
         $invalid = preg_quote(static::KEY_INVALID_CHARACTERS, '/');
-        if (preg_match('/[' . $invalid . ']/', $key)) {
-            throw new InvalidArgumentException('Invalid key: ' . $key . '. Contains (a) character(s) reserved for future extension: ' . static::KEY_INVALID_CHARACTERS);
+        if (preg_match('/['.$invalid.']/', $key)) {
+            throw new InvalidArgumentException('Invalid key: '.$key.'. Contains (a) character(s) reserved for future extension: '.static::KEY_INVALID_CHARACTERS);
         }
     }
 }

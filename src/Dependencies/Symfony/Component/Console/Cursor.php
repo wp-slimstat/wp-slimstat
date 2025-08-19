@@ -19,7 +19,6 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 final class Cursor
 {
     private $output;
-
     private $input;
 
     /**
@@ -28,7 +27,7 @@ final class Cursor
     public function __construct(OutputInterface $output, $input = null)
     {
         $this->output = $output;
-        $this->input  = $input ?? (\defined('STDIN') ? \STDIN : fopen('php://input', 'r+'));
+        $this->input = $input ?? (\defined('STDIN') ? \STDIN : fopen('php://input', 'r+'));
     }
 
     /**

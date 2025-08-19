@@ -15,7 +15,7 @@ interface GetDataInterface
      * Gets the settings for a given pattern (method calls itself to
      * get the data from the parent patterns)
      *
-     * @param string[] $settings
+     * @param  string[] $settings
      *
      * @return string[]
      *

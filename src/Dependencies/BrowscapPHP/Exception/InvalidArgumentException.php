@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Exception;
 
-use function implode;
-
 use InvalidArgumentException as BaseInvalidArgumentException;
 
+use function implode;
 use function sprintf;
 
 /**

@@ -4,14 +4,6 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP;
 
-use function assert;
-use function error_get_last;
-use function file_get_contents;
-use function is_array;
-use function is_int;
-use function is_readable;
-use function preg_replace;
-
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCache;
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
 use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorCachedVersionException;
@@ -35,11 +27,17 @@ use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\CacheInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
 use SlimStat\Dependencies\Symfony\Component\Filesystem\Exception\IOException;
+use Throwable;
 
+use function assert;
+use function error_get_last;
+use function file_get_contents;
+use function is_array;
+use function is_int;
+use function is_readable;
+use function preg_replace;
 use function sprintf;
 use function str_replace;
-
-use Throwable;
 
 /**
  * Browscap.ini parsing class with caching and update capabilities
@@ -74,7 +72,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
         $this->cache  = new BrowscapCache($cache, $logger);
         $this->logger = $logger;
 
-        if (!$client instanceof ClientInterface) {
+        if ($client === null) {
             $client = new Client();
         }
 
@@ -91,7 +89,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
      */
     public function convertFile(string $iniFile): void
     {
-        if ('' === $iniFile || '0' === $iniFile) {
+        if (empty($iniFile)) {
             throw new FileNameMissingException('the file name can not be empty');
         }
 
@@ -103,7 +101,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
         $iniString = file_get_contents($iniFile);
 
-        if (false === $iniString) {
+        if ($iniString === false) {
             throw new ErrorReadingFileException('an error occured while converting the local file into the cache');
         }
 
@@ -119,13 +117,13 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
     {
         try {
             $cachedVersion = $this->cache->getItem('browscap.version', false, $success);
-        } catch (InvalidArgumentException $invalidArgumentException) {
-            $this->logger->error(new \InvalidArgumentException('an error occured while reading the data version from the cache', 0, $invalidArgumentException));
+        } catch (InvalidArgumentException $e) {
+            $this->logger->error(new \InvalidArgumentException('an error occured while reading the data version from the cache', 0, $e));
 
             return;
         }
 
-        assert(null === $cachedVersion || is_int($cachedVersion));
+        assert($cachedVersion === null || is_int($cachedVersion));
 
         $converter = new Converter($this->logger, $this->cache);
 
@@ -162,18 +160,18 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
         try {
             $response = $this->client->request('get', $uri, ['connect_timeout' => $this->connectTimeout]);
             assert($response instanceof ResponseInterface);
-        } catch (GuzzleException $guzzleException) {
+        } catch (GuzzleException $e) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s',
                     $uri
                 ),
                 0,
-                $guzzleException
+                $e
             );
         }
 
-        if (200 !== $response->getStatusCode()) {
+        if ($response->getStatusCode() !== 200) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s: StatusCode was %d',
@@ -185,11 +183,11 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
         try {
             $content = $response->getBody()->getContents();
-        } catch (Throwable $throwable) {
-            throw new FetcherException('an error occured while fetching remote data', 0, $throwable);
+        } catch (Throwable $e) {
+            throw new FetcherException('an error occured while fetching remote data', 0, $e);
         }
 
-        if ('' === $content || '0' === $content) {
+        if (empty($content)) {
             $error = error_get_last();
 
             if (is_array($error)) {
@@ -254,18 +252,18 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
         try {
             $response = $this->client->request('get', $uri, ['connect_timeout' => $this->connectTimeout]);
             assert($response instanceof ResponseInterface);
-        } catch (GuzzleException $guzzleException) {
+        } catch (GuzzleException $e) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s',
                     $uri
                 ),
                 0,
-                $guzzleException
+                $e
             );
         }
 
-        if (200 !== $response->getStatusCode()) {
+        if ($response->getStatusCode() !== 200) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching remote data from URI %s: StatusCode was %d',
@@ -277,11 +275,11 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
         try {
             $content = $response->getBody()->getContents();
-        } catch (Throwable $throwable) {
-            throw new FetcherException('an error occured while fetching remote data', 0, $throwable);
+        } catch (Throwable $e) {
+            throw new FetcherException('an error occured while fetching remote data', 0, $e);
         }
 
-        if ('' === $content || '0' === $content) {
+        if (empty($content)) {
             $error = error_get_last();
 
             throw FetcherException::httpError($uri, $error['message'] ?? '');
@@ -312,11 +310,11 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
         try {
             $cachedVersion = $this->cache->getItem('browscap.version', false, $success);
-        } catch (InvalidArgumentException $invalidArgumentException) {
-            throw new ErrorCachedVersionException('an error occured while reading the data version from the cache', 0, $invalidArgumentException);
+        } catch (InvalidArgumentException $e) {
+            throw new ErrorCachedVersionException('an error occured while reading the data version from the cache', 0, $e);
         }
 
-        assert(null === $cachedVersion || is_int($cachedVersion));
+        assert($cachedVersion === null || is_int($cachedVersion));
 
         if (! $cachedVersion) {
             // could not load version from cache
@@ -328,18 +326,18 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
         try {
             $response = $this->client->request('get', $uri, ['connect_timeout' => $this->connectTimeout]);
             assert($response instanceof ResponseInterface);
-        } catch (GuzzleException $guzzleException) {
+        } catch (GuzzleException $e) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching version data from URI %s',
                     $uri
                 ),
                 0,
-                $guzzleException
+                $e
             );
         }
 
-        if (200 !== $response->getStatusCode()) {
+        if ($response->getStatusCode() !== 200) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching version data from URI %s: StatusCode was %d',
@@ -351,7 +349,7 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
 
         try {
             $remoteVersion = $response->getBody()->getContents();
-        } catch (Throwable $throwable) {
+        } catch (Throwable $e) {
             throw new FetcherException(
                 sprintf(
                     'an error occured while fetching version data from URI %s: StatusCode was %d',
@@ -359,11 +357,11 @@ final class BrowscapUpdater implements BrowscapUpdaterInterface
                     $response->getStatusCode()
                 ),
                 0,
-                $throwable
+                $e
             );
         }
 
-        if ('' === $remoteVersion || '0' === $remoteVersion) {
+        if (! $remoteVersion) {
             // could not load remote version
             throw new FetcherException(
                 'could not load version from remote location'

@@ -37,10 +37,10 @@ class RequestException extends TransferException implements RequestExceptionInte
         array $handlerContext = []
     ) {
         // Set the code of the exception if the response is set and not future.
-        $code = $response instanceof ResponseInterface ? $response->getStatusCode() : 0;
+        $code = $response ? $response->getStatusCode() : 0;
         parent::__construct($message, $code, $previous);
-        $this->request        = $request;
-        $this->response       = $response;
+        $this->request = $request;
+        $this->response = $response;
         $this->handlerContext = $handlerContext;
     }
 
@@ -68,7 +68,7 @@ class RequestException extends TransferException implements RequestExceptionInte
         array $handlerContext = [],
         BodySummarizerInterface $bodySummarizer = null
     ): self {
-        if (!$response instanceof ResponseInterface) {
+        if (!$response) {
             return new self(
                 'Error completing request',
                 $request,
@@ -79,15 +79,15 @@ class RequestException extends TransferException implements RequestExceptionInte
         }
 
         $level = (int) \floor($response->getStatusCode() / 100);
-        if (4 === $level) {
-            $label     = 'Client error';
+        if ($level === 4) {
+            $label = 'Client error';
             $className = ClientException::class;
-        } elseif (5 === $level) {
-            $label     = 'Server error';
+        } elseif ($level === 5) {
+            $label = 'Server error';
             $className = ServerException::class;
         } else {
-            $label     = 'Unsuccessful request';
-            $className = self::class;
+            $label = 'Unsuccessful request';
+            $className = __CLASS__;
         }
 
         $uri = $request->getUri();
@@ -106,7 +106,7 @@ class RequestException extends TransferException implements RequestExceptionInte
 
         $summary = ($bodySummarizer ?? new BodySummarizer())->summarize($response);
 
-        if (null !== $summary) {
+        if ($summary !== null) {
             $message .= ":\n{$summary}\n";
         }
 
@@ -148,7 +148,7 @@ class RequestException extends TransferException implements RequestExceptionInte
      */
     public function hasResponse(): bool
     {
-        return null !== $this->response;
+        return $this->response !== null;
     }
 
     /**

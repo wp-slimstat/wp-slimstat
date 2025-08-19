@@ -55,7 +55,7 @@ class Response implements ResponseInterface
         415 => 'Unsupported Media Type',
         416 => 'Requested range not satisfiable',
         417 => 'Expectation Failed',
-        418 => "I'm a teapot",
+        418 => 'I\'m a teapot',
         422 => 'Unprocessable Entity',
         423 => 'Locked',
         424 => 'Failed Dependency',
@@ -102,12 +102,12 @@ class Response implements ResponseInterface
 
         $this->statusCode = $status;
 
-        if ('' !== $body && null !== $body) {
+        if ($body !== '' && $body !== null) {
             $this->stream = Utils::streamFor($body);
         }
 
         $this->setHeaders($headers);
-        if ('' == $reason && isset(self::PHRASES[$this->statusCode])) {
+        if ($reason == '' && isset(self::PHRASES[$this->statusCode])) {
             $this->reasonPhrase = self::PHRASES[$this->statusCode];
         } else {
             $this->reasonPhrase = (string) $reason;
@@ -132,12 +132,11 @@ class Response implements ResponseInterface
         $code = (int) $code;
         $this->assertStatusCodeRange($code);
 
-        $new             = clone $this;
+        $new = clone $this;
         $new->statusCode = $code;
-        if ('' == $reasonPhrase && isset(self::PHRASES[$new->statusCode])) {
+        if ($reasonPhrase == '' && isset(self::PHRASES[$new->statusCode])) {
             $reasonPhrase = self::PHRASES[$new->statusCode];
         }
-
         $new->reasonPhrase = (string) $reasonPhrase;
 
         return $new;
@@ -148,7 +147,7 @@ class Response implements ResponseInterface
      */
     private function assertStatusCodeIsInteger($statusCode): void
     {
-        if (false === filter_var($statusCode, FILTER_VALIDATE_INT)) {
+        if (filter_var($statusCode, FILTER_VALIDATE_INT) === false) {
             throw new \InvalidArgumentException('Status code must be an integer value.');
         }
     }

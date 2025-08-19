@@ -19,40 +19,38 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\InvalidArgumentExc
 final class Color
 {
     private const COLORS = [
-        'black'   => 0,
-        'red'     => 1,
-        'green'   => 2,
-        'yellow'  => 3,
-        'blue'    => 4,
+        'black' => 0,
+        'red' => 1,
+        'green' => 2,
+        'yellow' => 3,
+        'blue' => 4,
         'magenta' => 5,
-        'cyan'    => 6,
-        'white'   => 7,
+        'cyan' => 6,
+        'white' => 7,
         'default' => 9,
     ];
 
     private const BRIGHT_COLORS = [
-        'gray'           => 0,
-        'bright-red'     => 1,
-        'bright-green'   => 2,
-        'bright-yellow'  => 3,
-        'bright-blue'    => 4,
+        'gray' => 0,
+        'bright-red' => 1,
+        'bright-green' => 2,
+        'bright-yellow' => 3,
+        'bright-blue' => 4,
         'bright-magenta' => 5,
-        'bright-cyan'    => 6,
-        'bright-white'   => 7,
+        'bright-cyan' => 6,
+        'bright-white' => 7,
     ];
 
     private const AVAILABLE_OPTIONS = [
-        'bold'       => ['set' => 1, 'unset' => 22],
+        'bold' => ['set' => 1, 'unset' => 22],
         'underscore' => ['set' => 4, 'unset' => 24],
-        'blink'      => ['set' => 5, 'unset' => 25],
-        'reverse'    => ['set' => 7, 'unset' => 27],
-        'conceal'    => ['set' => 8, 'unset' => 28],
+        'blink' => ['set' => 5, 'unset' => 25],
+        'reverse' => ['set' => 7, 'unset' => 27],
+        'conceal' => ['set' => 8, 'unset' => 28],
     ];
 
     private $foreground;
-
     private $background;
-
     private $options = [];
 
     public function __construct(string $foreground = '', string $background = '', array $options = [])
@@ -71,7 +69,7 @@ final class Color
 
     public function apply(string $text): string
     {
-        return $this->set() . $text . $this->unset();
+        return $this->set().$text.$this->unset();
     }
 
     public function set(): string
@@ -80,16 +78,13 @@ final class Color
         if ('' !== $this->foreground) {
             $setCodes[] = $this->foreground;
         }
-
         if ('' !== $this->background) {
             $setCodes[] = $this->background;
         }
-
         foreach ($this->options as $option) {
             $setCodes[] = $option['set'];
         }
-
-        if ([] === $setCodes) {
+        if (0 === \count($setCodes)) {
             return '';
         }
 
@@ -102,16 +97,13 @@ final class Color
         if ('' !== $this->foreground) {
             $unsetCodes[] = 39;
         }
-
         if ('' !== $this->background) {
             $unsetCodes[] = 49;
         }
-
         foreach ($this->options as $option) {
             $unsetCodes[] = $option['unset'];
         }
-
-        if ([] === $unsetCodes) {
+        if (0 === \count($unsetCodes)) {
             return '';
         }
 
@@ -128,22 +120,22 @@ final class Color
             $color = substr($color, 1);
 
             if (3 === \strlen($color)) {
-                $color = $color[0] . $color[0] . $color[1] . $color[1] . $color[2] . $color[2];
+                $color = $color[0].$color[0].$color[1].$color[1].$color[2].$color[2];
             }
 
             if (6 !== \strlen($color)) {
                 throw new InvalidArgumentException(sprintf('Invalid "%s" color.', $color));
             }
 
-            return ($background ? '4' : '3') . $this->convertHexColorToAnsi(hexdec($color));
+            return ($background ? '4' : '3').$this->convertHexColorToAnsi(hexdec($color));
         }
 
         if (isset(self::COLORS[$color])) {
-            return ($background ? '4' : '3') . self::COLORS[$color];
+            return ($background ? '4' : '3').self::COLORS[$color];
         }
 
         if (isset(self::BRIGHT_COLORS[$color])) {
-            return ($background ? '10' : '9') . self::BRIGHT_COLORS[$color];
+            return ($background ? '10' : '9').self::BRIGHT_COLORS[$color];
         }
 
         throw new InvalidArgumentException(sprintf('Invalid "%s" color; expected one of (%s).', $color, implode(', ', array_merge(array_keys(self::COLORS), array_keys(self::BRIGHT_COLORS)))));
@@ -169,14 +161,14 @@ final class Color
             return 0;
         }
 
-        return (round($b / 255) << 2)|(round($g / 255) << 1)|round($r / 255);
+        return (round($b / 255) << 2) | (round($g / 255) << 1) | round($r / 255);
     }
 
     private function getSaturation(int $r, int $g, int $b): int
     {
-        $r /= 255;
-        $g /= 255;
-        $b /= 255;
+        $r = $r / 255;
+        $g = $g / 255;
+        $b = $b / 255;
         $v = max($r, $g, $b);
 
         if (0 === $diff = $v - min($r, $g, $b)) {

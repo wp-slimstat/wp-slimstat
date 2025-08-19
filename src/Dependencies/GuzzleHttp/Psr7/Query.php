@@ -21,23 +21,27 @@ final class Query
     {
         $result = [];
 
-        if ('' === $str) {
+        if ($str === '') {
             return $result;
         }
 
-        if (true === $urlEncoding) {
-            $decoder = (fn ($value) => rawurldecode(str_replace('+', ' ', (string) $value)));
-        } elseif (PHP_QUERY_RFC3986 === $urlEncoding) {
+        if ($urlEncoding === true) {
+            $decoder = function ($value) {
+                return rawurldecode(str_replace('+', ' ', (string) $value));
+            };
+        } elseif ($urlEncoding === PHP_QUERY_RFC3986) {
             $decoder = 'rawurldecode';
-        } elseif (PHP_QUERY_RFC1738 === $urlEncoding) {
+        } elseif ($urlEncoding === PHP_QUERY_RFC1738) {
             $decoder = 'urldecode';
         } else {
-            $decoder = (fn ($str) => $str);
+            $decoder = function ($str) {
+                return $str;
+            };
         }
 
         foreach (explode('&', $str) as $kvp) {
             $parts = explode('=', $kvp, 2);
-            $key   = $decoder($parts[0]);
+            $key = $decoder($parts[0]);
             $value = isset($parts[1]) ? $decoder($parts[1]) : null;
             if (!array_key_exists($key, $result)) {
                 $result[$key] = $value;
@@ -45,7 +49,6 @@ final class Query
                 if (!is_array($result[$key])) {
                     $result[$key] = [$result[$key]];
                 }
-
                 $result[$key][] = $value;
             }
         }
@@ -67,15 +70,17 @@ final class Query
      */
     public static function build(array $params, $encoding = PHP_QUERY_RFC3986): string
     {
-        if ([] === $params) {
+        if (!$params) {
             return '';
         }
 
-        if (false === $encoding) {
-            $encoder = (fn (string $str): string => $str);
-        } elseif (PHP_QUERY_RFC3986 === $encoding) {
+        if ($encoding === false) {
+            $encoder = function (string $str): string {
+                return $str;
+            };
+        } elseif ($encoding === PHP_QUERY_RFC3986) {
             $encoder = 'rawurlencode';
-        } elseif (PHP_QUERY_RFC1738 === $encoding) {
+        } elseif ($encoding === PHP_QUERY_RFC1738) {
             $encoder = 'urlencode';
         } else {
             throw new \InvalidArgumentException('Invalid type');
@@ -87,24 +92,22 @@ final class Query
             if (!is_array($v)) {
                 $qs .= $k;
                 $v = is_bool($v) ? (int) $v : $v;
-                if (null !== $v) {
-                    $qs .= '=' . $encoder((string) $v);
+                if ($v !== null) {
+                    $qs .= '='.$encoder((string) $v);
                 }
-
                 $qs .= '&';
             } else {
                 foreach ($v as $vv) {
                     $qs .= $k;
                     $vv = is_bool($vv) ? (int) $vv : $vv;
-                    if (null !== $vv) {
-                        $qs .= '=' . $encoder((string) $vv);
+                    if ($vv !== null) {
+                        $qs .= '='.$encoder((string) $vv);
                     }
-
                     $qs .= '&';
                 }
             }
         }
 
-        return '' !== $qs && '0' !== $qs ? substr($qs, 0, -1) : '';
+        return $qs ? (string) substr($qs, 0, -1) : '';
     }
 }

@@ -38,8 +38,18 @@ final class AppendStream implements StreamInterface
 
     public function __toString(): string
     {
-        $this->rewind();
-        return $this->getContents();
+        try {
+            $this->rewind();
+
+            return $this->getContents();
+        } catch (\Throwable $e) {
+            if (\PHP_VERSION_ID >= 70400) {
+                throw $e;
+            }
+            trigger_error(sprintf('%s::__toString exception: %s', self::class, (string) $e), E_USER_ERROR);
+
+            return '';
+        }
     }
 
     /**
@@ -73,8 +83,7 @@ final class AppendStream implements StreamInterface
      */
     public function close(): void
     {
-        $this->pos      = 0;
-        $this->current  = 0;
+        $this->pos = $this->current = 0;
         $this->seekable = true;
 
         foreach ($this->streams as $stream) {
@@ -91,8 +100,7 @@ final class AppendStream implements StreamInterface
      */
     public function detach()
     {
-        $this->pos      = 0;
-        $this->current  = 0;
+        $this->pos = $this->current = 0;
         $this->seekable = true;
 
         foreach ($this->streams as $stream) {
@@ -121,10 +129,9 @@ final class AppendStream implements StreamInterface
 
         foreach ($this->streams as $stream) {
             $s = $stream->getSize();
-            if (null === $s) {
+            if ($s === null) {
                 return null;
             }
-
             $size += $s;
         }
 
@@ -150,11 +157,11 @@ final class AppendStream implements StreamInterface
     {
         if (!$this->seekable) {
             throw new \RuntimeException('This AppendStream is not seekable');
-        } elseif (SEEK_SET !== $whence) {
+        } elseif ($whence !== SEEK_SET) {
             throw new \RuntimeException('The AppendStream can only seek with SEEK_SET');
         }
-        $this->pos     = 0;
-        $this->current = 0;
+
+        $this->pos = $this->current = 0;
 
         // Rewind each stream
         foreach ($this->streams as $i => $stream) {
@@ -162,14 +169,14 @@ final class AppendStream implements StreamInterface
                 $stream->rewind();
             } catch (\Exception $e) {
                 throw new \RuntimeException('Unable to seek stream '
-                    . $i . ' of the AppendStream', 0, $e);
+                    .$i.' of the AppendStream', 0, $e);
             }
         }
 
         // Seek to the actual position by reading from each stream
         while ($this->pos < $offset && !$this->eof()) {
             $result = $this->read(min(8096, $offset - $this->pos));
-            if ('' === $result) {
+            if ($result === '') {
                 break;
             }
         }
@@ -180,9 +187,9 @@ final class AppendStream implements StreamInterface
      */
     public function read($length): string
     {
-        $buffer         = '';
-        $total          = count($this->streams) - 1;
-        $remaining      = $length;
+        $buffer = '';
+        $total = count($this->streams) - 1;
+        $remaining = $length;
         $progressToNext = false;
 
         while ($remaining > 0) {
@@ -192,13 +199,12 @@ final class AppendStream implements StreamInterface
                 if ($this->current === $total) {
                     break;
                 }
-
                 ++$this->current;
             }
 
             $result = $this->streams[$this->current]->read($remaining);
 
-            if ('' === $result) {
+            if ($result === '') {
                 $progressToNext = true;
                 continue;
             }

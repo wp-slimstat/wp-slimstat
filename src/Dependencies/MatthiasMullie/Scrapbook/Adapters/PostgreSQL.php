@@ -22,7 +22,7 @@ class PostgreSQL extends SQL
      */
     public function flush()
     {
-        return false !== $this->client->exec('TRUNCATE TABLE ' . $this->table);
+        return false !== $this->client->exec("TRUNCATE TABLE $this->table");
     }
 
     /**
@@ -105,7 +105,7 @@ class PostgreSQL extends SQL
                 e TIMESTAMP NULL DEFAULT NULL
             )"
         );
-        $this->client->exec(sprintf('CREATE INDEX IF NOT EXISTS e_index ON %s (e)', $this->table));
+        $this->client->exec("CREATE INDEX IF NOT EXISTS e_index ON $this->table (e)");
     }
 
     /**

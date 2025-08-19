@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Psr7;
 
 use InvalidArgumentException;
-use RuntimeException;
 use SlimStat\Dependencies\Psr\Http\Message\StreamInterface;
 use SlimStat\Dependencies\Psr\Http\Message\UploadedFileInterface;
+use RuntimeException;
 
 class UploadedFile implements UploadedFileInterface
 {
@@ -68,8 +68,8 @@ class UploadedFile implements UploadedFileInterface
         string $clientMediaType = null
     ) {
         $this->setError($errorStatus);
-        $this->size            = $size;
-        $this->clientFilename  = $clientFilename;
+        $this->size = $size;
+        $this->clientFilename = $clientFilename;
         $this->clientMediaType = $clientMediaType;
 
         if ($this->isOk()) {
@@ -113,9 +113,9 @@ class UploadedFile implements UploadedFileInterface
         $this->error = $error;
     }
 
-    private function isStringNotEmpty($param): bool
+    private static function isStringNotEmpty($param): bool
     {
-        return is_string($param) && false === ('' === $param || '0' === $param);
+        return is_string($param) && false === empty($param);
     }
 
     /**
@@ -123,7 +123,7 @@ class UploadedFile implements UploadedFileInterface
      */
     private function isOk(): bool
     {
-        return UPLOAD_ERR_OK === $this->error;
+        return $this->error === UPLOAD_ERR_OK;
     }
 
     public function isMoved(): bool
@@ -163,7 +163,7 @@ class UploadedFile implements UploadedFileInterface
     {
         $this->validateActive();
 
-        if (false === $this->isStringNotEmpty($targetPath)) {
+        if (false === self::isStringNotEmpty($targetPath)) {
             throw new InvalidArgumentException(
                 'Invalid path provided for move operation; must be a non-empty string'
             );

@@ -6,8 +6,8 @@ namespace SlimStat\Dependencies\BrowscapPHP\IniParser;
 
 use Generator;
 use InvalidArgumentException;
-use OutOfRangeException;
 use SlimStat_JsonException;
+use OutOfRangeException;
 use UnexpectedValueException;
 
 /**

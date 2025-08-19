@@ -47,7 +47,7 @@ final class LimitStream implements StreamInterface
         }
 
         // No limit and the underlying stream is not at EOF
-        if (-1 === $this->limit) {
+        if ($this->limit === -1) {
             return false;
         }
 
@@ -61,7 +61,7 @@ final class LimitStream implements StreamInterface
     {
         if (null === ($length = $this->stream->getSize())) {
             return null;
-        } elseif (-1 === $this->limit) {
+        } elseif ($this->limit === -1) {
             return $length - $this->offset;
         } else {
             return min($this->limit, $length - $this->offset);
@@ -73,7 +73,7 @@ final class LimitStream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET): void
     {
-        if (SEEK_SET !== $whence || $offset < 0) {
+        if ($whence !== SEEK_SET || $offset < 0) {
             throw new \RuntimeException(sprintf(
                 'Cannot seek to offset %s with whence %s',
                 $offset,
@@ -83,8 +83,10 @@ final class LimitStream implements StreamInterface
 
         $offset += $this->offset;
 
-        if (-1 !== $this->limit && $offset > $this->offset + $this->limit) {
-            $offset = $this->offset + $this->limit;
+        if ($this->limit !== -1) {
+            if ($offset > $this->offset + $this->limit) {
+                $offset = $this->offset + $this->limit;
+            }
         }
 
         $this->stream->seek($offset);
@@ -114,7 +116,7 @@ final class LimitStream implements StreamInterface
             if ($this->stream->isSeekable()) {
                 $this->stream->seek($offset);
             } elseif ($current > $offset) {
-                throw new \RuntimeException('Could not seek to stream offset ' . $offset);
+                throw new \RuntimeException("Could not seek to stream offset $offset");
             } else {
                 $this->stream->read($offset - $current);
             }
@@ -137,7 +139,7 @@ final class LimitStream implements StreamInterface
 
     public function read($length): string
     {
-        if (-1 === $this->limit) {
+        if ($this->limit === -1) {
             return $this->stream->read($length);
         }
 

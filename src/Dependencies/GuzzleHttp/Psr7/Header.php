@@ -17,8 +17,7 @@ final class Header
     public static function parse($header): array
     {
         static $trimmed = "\"'  \n\t\r";
-        $params         = [];
-        $matches        = [];
+        $params = $matches = [];
 
         foreach ((array) $header as $value) {
             foreach (self::splitList($value) as $val) {
@@ -33,8 +32,7 @@ final class Header
                         }
                     }
                 }
-
-                if ([] !== $part) {
+                if ($part) {
                     $params[] = $part;
                 }
             }
@@ -88,8 +86,8 @@ final class Header
                 throw new \TypeError('$header must either be a string or an array containing strings.');
             }
 
-            $v         = '';
-            $isQuoted  = false;
+            $v = '';
+            $isQuoted = false;
             $isEscaped = false;
             for ($i = 0, $max = \strlen($value); $i < $max; ++$i) {
                 if ($isEscaped) {
@@ -99,9 +97,9 @@ final class Header
                     continue;
                 }
 
-                if (!$isQuoted && ',' === $value[$i]) {
+                if (!$isQuoted && $value[$i] === ',') {
                     $v = \trim($v);
-                    if ('' !== $v) {
+                    if ($v !== '') {
                         $result[] = $v;
                     }
 
@@ -109,14 +107,13 @@ final class Header
                     continue;
                 }
 
-                if ($isQuoted && '\\' === $value[$i]) {
+                if ($isQuoted && $value[$i] === '\\') {
                     $isEscaped = true;
                     $v .= $value[$i];
 
                     continue;
                 }
-
-                if ('"' === $value[$i]) {
+                if ($value[$i] === '"') {
                     $isQuoted = !$isQuoted;
                     $v .= $value[$i];
 
@@ -127,7 +124,7 @@ final class Header
             }
 
             $v = \trim($v);
-            if ('' !== $v) {
+            if ($v !== '') {
                 $result[] = $v;
             }
         }

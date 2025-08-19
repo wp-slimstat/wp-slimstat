@@ -4,24 +4,20 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Helper;
 
-use function file_get_contents;
-use function is_string;
-
-use OutOfRangeException;
-
-use function preg_match;
-
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
 use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorReadingFileException;
 use SlimStat\Dependencies\BrowscapPHP\Exception\FileNotFoundException;
 use SlimStat\Dependencies\BrowscapPHP\IniParser\IniParser;
+use SlimStat_JsonException;
+use OutOfRangeException;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
-use SlimStat_JsonException;
-
-use function sprintf;
-
 use UnexpectedValueException;
+
+use function file_get_contents;
+use function is_string;
+use function preg_match;
+use function sprintf;
 
 /**
  * patternHelper to convert the ini data, parses the data and stores them into the cache
@@ -107,7 +103,7 @@ final class Converter implements ConverterInterface
         $this->logger->info('start creating patterns from the ini data');
 
         foreach ($iniParser->createPatterns($iniString) as $subkey => $content) {
-            if ('' === $subkey) {
+            if ($subkey === '') {
                 continue;
             }
 
@@ -126,7 +122,7 @@ final class Converter implements ConverterInterface
 
         try {
             foreach ($iniParser->createIniParts($iniString) as $subkey => $content) {
-                if ('' === $subkey) {
+                if ($subkey === '') {
                     continue;
                 }
 
@@ -144,14 +140,14 @@ final class Converter implements ConverterInterface
 
         try {
             $this->cache->setItem('browscap.releaseDate', $this->getIniReleaseDate($iniString), false);
-        } catch (InvalidArgumentException $invalidArgumentException) {
-            $this->logger->error(new \InvalidArgumentException('an error occured while writing data release date into the cache', 0, $invalidArgumentException));
+        } catch (InvalidArgumentException $e) {
+            $this->logger->error(new \InvalidArgumentException('an error occured while writing data release date into the cache', 0, $e));
         }
 
         try {
             $this->cache->setItem('browscap.type', $this->getIniType($iniString), false);
-        } catch (InvalidArgumentException $invalidArgumentException) {
-            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data type into the cache', 0, $invalidArgumentException));
+        } catch (InvalidArgumentException $e) {
+            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data type into the cache', 0, $e));
         }
 
         $this->logger->info('finished creating data from the ini data');
@@ -169,8 +165,10 @@ final class Converter implements ConverterInterface
         $quoterHelper = new Quoter();
         $key          = $quoterHelper->pregQuote(self::BROWSCAP_VERSION_KEY);
 
-        if (preg_match('/\.*\[' . $key . '\][^\[]*Version=(\d+)\D.*/', $iniString, $matches) && isset($matches[1])) {
-            $this->iniVersion = (int) $matches[1];
+        if (preg_match('/\.*\[' . $key . '\][^\[]*Version=(\d+)\D.*/', $iniString, $matches)) {
+            if (isset($matches[1])) {
+                $this->iniVersion = (int) $matches[1];
+            }
         }
 
         return $this->iniVersion;
@@ -195,8 +193,8 @@ final class Converter implements ConverterInterface
     {
         try {
             $this->cache->setItem('browscap.version', $this->iniVersion, false);
-        } catch (InvalidArgumentException $invalidArgumentException) {
-            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data version into the cache', 0, $invalidArgumentException));
+        } catch (InvalidArgumentException $e) {
+            $this->logger->error(new \InvalidArgumentException('an error occured while writing the data version into the cache', 0, $e));
         }
     }
 
@@ -209,8 +207,10 @@ final class Converter implements ConverterInterface
      */
     private function getIniReleaseDate(string $iniString): ?string
     {
-        if (preg_match('/Released=(.*)/', $iniString, $matches) && isset($matches[1])) {
-            return $matches[1];
+        if (preg_match('/Released=(.*)/', $iniString, $matches)) {
+            if (isset($matches[1])) {
+                return $matches[1];
+            }
         }
 
         return null;
@@ -225,8 +225,10 @@ final class Converter implements ConverterInterface
      */
     private function getIniType(string $iniString): ?string
     {
-        if (preg_match('/Type=(.*)/', $iniString, $matches) && isset($matches[1])) {
-            return $matches[1];
+        if (preg_match('/Type=(.*)/', $iniString, $matches)) {
+            if (isset($matches[1])) {
+                return $matches[1];
+            }
         }
 
         return null;

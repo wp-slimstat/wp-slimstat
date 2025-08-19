@@ -4,25 +4,18 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP;
 
-use function is_string;
-
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCache;
 use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
 use SlimStat\Dependencies\BrowscapPHP\Formatter\FormatterInterface;
-use SlimStat\Dependencies\BrowscapPHP\Formatter\PhpGetBrowser;
 use SlimStat\Dependencies\BrowscapPHP\Helper\Quoter;
-use SlimStat\Dependencies\BrowscapPHP\Helper\Support;
-use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetData;
-use SlimStat\Dependencies\BrowscapPHP\Parser\Helper\GetPattern;
-use SlimStat\Dependencies\BrowscapPHP\Parser\Ini;
 use SlimStat\Dependencies\BrowscapPHP\Parser\ParserInterface;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\SimpleCache\CacheInterface;
-
-use function sprintf;
-
 use stdClass;
 use UnexpectedValueException;
+
+use function is_string;
+use function sprintf;
 
 /**
  * Browscap.ini parsing class with caching and update capabilities
@@ -54,7 +47,7 @@ final class Browscap implements BrowscapInterface
         $this->cache  = new BrowscapCache($cache, $logger);
         $this->logger = $logger;
 
-        $this->formatter = new PhpGetBrowser();
+        $this->formatter = new Formatter\PhpGetBrowser();
     }
 
     /**
@@ -62,7 +55,7 @@ final class Browscap implements BrowscapInterface
      *
      * @throws void
      */
-    public function setFormatter(FormatterInterface $formatter): void
+    public function setFormatter(Formatter\FormatterInterface $formatter): void
     {
         $this->formatter = $formatter;
     }
@@ -84,11 +77,11 @@ final class Browscap implements BrowscapInterface
      */
     public function getParser(): ParserInterface
     {
-        if (!$this->parser instanceof ParserInterface) {
-            $patternHelper = new GetPattern($this->cache, $this->logger);
-            $dataHelper    = new GetData($this->cache, $this->logger, new Quoter());
+        if ($this->parser === null) {
+            $patternHelper = new Parser\Helper\GetPattern($this->cache, $this->logger);
+            $dataHelper    = new Parser\Helper\GetData($this->cache, $this->logger, new Quoter());
 
-            $this->parser = new Ini($patternHelper, $dataHelper, $this->formatter);
+            $this->parser = new Parser\Ini($patternHelper, $dataHelper, $this->formatter);
         }
 
         return $this->parser;
@@ -107,28 +100,28 @@ final class Browscap implements BrowscapInterface
      */
     public function getBrowser(?string $userAgent = null): stdClass
     {
-        if (null === $this->cache->getVersion()) {
+        if ($this->cache->getVersion() === null) {
             // there is no active/warm cache available
             throw new Exception('there is no active cache available, please use the BrowscapUpdater and run the update command');
         }
 
         // Automatically detect the useragent
         if (! is_string($userAgent)) {
-            $support   = new Support($_SERVER);
+            $support   = new Helper\Support($_SERVER);
             $userAgent = $support->getUserAgent();
         }
 
         try {
             // try to get browser data
             $formatter = $this->getParser()->getBrowser($userAgent);
-        } catch (UnexpectedValueException $unexpectedValueException) {
+        } catch (UnexpectedValueException $e) {
             $this->logger->error(sprintf('could not parse useragent "%s"', $userAgent));
             $formatter = null;
         }
 
         // if return is still NULL, updates are disabled... in this
         // case we return an empty formatter instance
-        if (!$formatter instanceof FormatterInterface) {
+        if ($formatter === null) {
             $formatter = $this->formatter;
         }
 

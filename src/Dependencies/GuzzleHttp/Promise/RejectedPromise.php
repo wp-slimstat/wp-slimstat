@@ -35,13 +35,13 @@ class RejectedPromise implements PromiseInterface
         callable $onRejected = null
     ): PromiseInterface {
         // If there's no onRejected callback then just return self.
-        if (null === $onRejected) {
+        if (!$onRejected) {
             return $this;
         }
 
-        $queue  = Utils::queue();
+        $queue = Utils::queue();
         $reason = $this->reason;
-        $p      = new Promise([$queue, 'run']);
+        $p = new Promise([$queue, 'run']);
         $queue->add(static function () use ($p, $reason, $onRejected): void {
             if (Is::pending($p)) {
                 try {

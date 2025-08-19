@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Command;
 
-use function assert;
-use function is_string;
-
 use SlimStat\Dependencies\BrowscapPHP\BrowscapUpdater;
 use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorCachedVersionException;
 use SlimStat\Dependencies\BrowscapPHP\Exception\FetcherException;
@@ -25,6 +22,9 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
+use function assert;
+use function is_string;
+
 /**
  * Command to fetch a browscap ini file from the remote host, convert it into an array and store the content in a local
  * file
@@ -33,15 +33,11 @@ use Throwable;
  */
 class CheckUpdateCommand extends Command
 {
-    public const NO_CACHED_VERSION = 1;
-
-    public const NO_NEWER_VERSION = 2;
-
-    public const ERROR_READING_CACHE = 3;
-
+    public const NO_CACHED_VERSION         = 1;
+    public const NO_NEWER_VERSION          = 2;
+    public const ERROR_READING_CACHE       = 3;
     public const ERROR_READING_REMOTE_FILE = 4;
-
-    public const GENERIC_ERROR = 5;
+    public const GENERIC_ERROR             = 5;
 
     private ?string $defaultCacheFolder = null;
 
