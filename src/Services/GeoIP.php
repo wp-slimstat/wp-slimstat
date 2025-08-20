@@ -12,22 +12,22 @@ class GeoIP
      *
      * @var array
      */
-    public static $library = array(
-        'country' => array(
+    public static $library = [
+        'country' => [
             'source'     => 'https://cdn.jsdelivr.net/npm/geolite2-country/GeoLite2-Country.mmdb.gz',
             'userSource' => 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=&suffix=tar.gz',
             'file'       => 'GeoLite2-Country',
             'opt'        => 'geoip',
-            'cache'      => 31536000 //1 Year
-        ),
-        'city'    => array(
+            'cache'      => 31536000, //1 Year
+        ],
+        'city' => [
             'source'     => 'https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz',
             'userSource' => 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=&suffix=tar.gz',
             'file'       => 'GeoLite2-City',
             'opt'        => 'geoip_city',
-            'cache'      => 6998000 //3 Month
-        ),
-    );
+            'cache'      => 6998000, //3 Month
+        ],
+    ];
 
     /**
      * Geo IP file Extension
@@ -38,6 +38,7 @@ class GeoIP
 
     /**
      * @param $pack
+     *
      * @return string
      */
     public static function get_geo_ip_path($pack)
@@ -50,7 +51,7 @@ class GeoIP
      */
     public static function get_pack()
     {
-        return \wp_slimstat::$settings['geolocation_country'] == 'on' ? 'country' : 'city';
+        return 'on' == \wp_slimstat::$settings['geolocation_country'] ? 'country' : 'city';
     }
 
     /**
@@ -62,7 +63,7 @@ class GeoIP
             return self::get_maxmind_database_file();
         }
 
-        $geo_pack = ($pack ? $pack : self::get_pack());
+        $geo_pack = ($pack ?: self::get_pack());
         return self::get_geo_ip_path($geo_pack);
     }
 
@@ -76,15 +77,12 @@ class GeoIP
         }
 
         $filePath = self::get_database_file($pack);
-        if (file_exists($filePath)) {
-            return true;
-        }
-
-        return false;
+        return file_exists($filePath);
     }
 
     /**
      * Get MaxMind Database File Path
+     *
      * @return string
      */
     public static function get_maxmind_database_file()
@@ -94,6 +92,7 @@ class GeoIP
 
     /**
      * Check if MaxMind Database Exists
+     *
      * @return bool
      */
     public static function maxmind_database_exists()
@@ -121,6 +120,7 @@ class GeoIP
 
     /**
      * @param $pack
+     *
      * @return array
      */
     public static function download($pack, $args = [])
@@ -135,12 +135,12 @@ class GeoIP
             if (!function_exists('WP_Filesystem')) {
                 include_once ABSPATH . 'wp-admin/includes/file.php';
             }
-            
+
             WP_Filesystem();
             global $wp_filesystem;
 
             // Create Empty Return Function
-            $result["status"] = false;
+            $result['status'] = false;
 
             // Sanitize Pack name
             $pack = strtolower($pack);
@@ -149,8 +149,8 @@ class GeoIP
             $DBFile = self::get_geo_ip_path($pack);
 
             if (!$args['update'] && file_exists($DBFile)) {
-                $result["status"] = true;
-                return array_merge($result, array("notice" => __('GeoIP Database Already Exists!', 'wp-slimstat')));
+                $result['status'] = true;
+                return array_merge($result, ['notice' => __('GeoIP Database Already Exists!', 'wp-slimstat')]);
             }
 
             // Get the upload directory from WordPress.
@@ -158,30 +158,28 @@ class GeoIP
 
             // We need the gzopen() function
             if (false === function_exists('gzopen')) {
-                return array_merge($result, array("notice" => __('Error: <code>gzopen()</code> Function Not Found!', 'wp-slimstat')));
+                return array_merge($result, ['notice' => __('Error: <code>gzopen()</code> Function Not Found!', 'wp-slimstat')]);
             }
 
             $isMaxmind = false;
 
             // This is the location of the file to download.
-            if ($args['enable_maxmind'] == 'on' && $args['maxmind_license_key']) {
-                $download_url = add_query_arg(array(
-                    'license_key' => $args['maxmind_license_key']
-                ), self::$library[$pack]['userSource']);
-                $isMaxmind    = true;
+            if ('on' == $args['enable_maxmind'] && $args['maxmind_license_key']) {
+                $download_url = add_query_arg([
+                    'license_key' => $args['maxmind_license_key'],
+                ], self::$library[$pack]['userSource']);
+                $isMaxmind = true;
             } else {
                 $download_url = self::$library[$pack]['source'];
             }
 
             // Check to see if the subdirectory we're going to upload to exists, if not create it.
-            if (!file_exists(\wp_slimstat::$upload_dir)) {
-                if (!$wp_filesystem->mkdir(\wp_slimstat::$upload_dir, 0755)) {
-                    return array_merge($result, array("notice" => sprintf(__('Error Creating GeoIP Database Directory. Ensure Web Server Has Directory Creation Permissions in: %s', 'wp-slimstat'), $upload_dir['basedir'])));
-                }
+            if (!file_exists(\wp_slimstat::$upload_dir) && !$wp_filesystem->mkdir(\wp_slimstat::$upload_dir, 0755)) {
+                return array_merge($result, ['notice' => sprintf(__('Error Creating GeoIP Database Directory. Ensure Web Server Has Directory Creation Permissions in: %s', 'wp-slimstat'), $upload_dir['basedir'])]);
             }
 
             if (!$wp_filesystem->is_writable(\wp_slimstat::$upload_dir)) {
-                return array_merge($result, array("notice" => sprintf(__('Error Setting Permissions for GeoIP Database Directory. Check Write Permissions for Directories in: %s', 'wp-slimstat'), $upload_dir['basedir'])));
+                return array_merge($result, ['notice' => sprintf(__('Error Setting Permissions for GeoIP Database Directory. Check Write Permissions for Directories in: %s', 'wp-slimstat'), $upload_dir['basedir'])]);
             }
 
             // Download the file from MaxMind, this places it in a temporary location.
@@ -189,7 +187,7 @@ class GeoIP
 
             // If we failed, through a message, otherwise proceed.
             if (is_wp_error($TempFile)) {
-                return array_merge($result, array("notice" => sprintf(__('Error Downloading GeoIP Database from: %1$s - %2$s', 'wp-slimstat'), $download_url, $TempFile->get_error_message())));
+                return array_merge($result, ['notice' => sprintf(__('Error Downloading GeoIP Database from: %1$s - %2$s', 'wp-slimstat'), $download_url, $TempFile->get_error_message())]);
             } else {
                 // Delete Old Database
                 if (self::database_exists()) {
@@ -210,7 +208,7 @@ class GeoIP
                         // Something went wrong, maybe a folder was created instead of a regular file
                         @rmdir($DBFile);
                         wp_delete_file($TempFile);
-                        return array_merge($result, array("notice" => __('There was an error creating the GeoIP database file.', 'wp-slimstat')));
+                        return array_merge($result, ['notice' => __('There was an error creating the GeoIP database file.', 'wp-slimstat')]);
                     }
                 } else {
                     // Open the downloaded file to unzip it.
@@ -222,21 +220,19 @@ class GeoIP
                     // If we failed to open the downloaded file, through an error and remove the temporary file. Otherwise, do the actual unzip.
                     if (!$ZipHandle) {
                         wp_delete_file($TempFile);
-                        return array_merge($result, array("notice" => sprintf(__('Error Opening Downloaded GeoIP Database for Reading: %s', 'wp-slimstat'), $TempFile)));
-                    } else {
+                        return array_merge($result, ['notice' => sprintf(__('Error Opening Downloaded GeoIP Database for Reading: %s', 'wp-slimstat'), $TempFile)]);
+                    } elseif (!$DBfh) {
                         // If we failed to open the new file, throw and error and remove the temporary file. Otherwise, actually do to unzip.
-                        if (!$DBfh) {
-                            wp_delete_file($TempFile);
-                            return array_merge($result, array("notice" => sprintf(__('Error Opening Destination GeoIP Database for Writing: %s', 'wp-slimstat'), $DBFile)));
-                        } else {
-                            while (($data = gzread($ZipHandle, 4096)) != false) {
-                                fwrite($DBfh, $data); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
-                            }
-
-                            // Close the files.
-                            gzclose($ZipHandle);
-                            fclose($DBfh); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+                        wp_delete_file($TempFile);
+                        return array_merge($result, ['notice' => sprintf(__('Error Opening Destination GeoIP Database for Writing: %s', 'wp-slimstat'), $DBFile)]);
+                    } else {
+                        while (($data = gzread($ZipHandle, 4096)) != false) {
+                            fwrite($DBfh, $data); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
                         }
+
+                        // Close the files.
+                        gzclose($ZipHandle);
+                        fclose($DBfh); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
                     }
                 }
 
@@ -244,12 +240,12 @@ class GeoIP
                 wp_delete_file($TempFile);
 
                 // Display the success message.
-                $result["status"] = true;
-                $result["notice"] = __('GeoIP Database Successfully Updated!', 'wp-slimstat');
+                $result['status'] = true;
+                $result['notice'] = __('GeoIP Database Successfully Updated!', 'wp-slimstat');
             }
 
-        } catch (\Exception $e) {
-            $result['notice'] = sprintf(__('Error: %1$s', 'wp-slimstat'), $e->getMessage());
+        } catch (\Exception $exception) {
+            $result['notice'] = sprintf(__('Error: %1$s', 'wp-slimstat'), $exception->getMessage());
         }
 
         return $result;
@@ -261,6 +257,7 @@ class GeoIP
         if (!function_exists('download_url')) {
             include(ABSPATH . 'wp-admin/includes/file.php');
         }
+
         if (!function_exists('wp_generate_password')) {
             include(ABSPATH . 'wp-includes/pluggable.php');
         }
@@ -278,12 +275,12 @@ class GeoIP
 
         ini_set('max_execution_time', '300');
 
-        $response = wp_safe_remote_get($url, array(
+        $response = wp_safe_remote_get($url, [
             'timeout'    => 300,
             'stream'     => true,
             'filename'   => $tmpfname,
-            'user-agent' => 'Slimstat Analytics/' . SLIMSTAT_ANALYTICS_VERSION . '; ' . home_url()
-        ));
+            'user-agent' => 'Slimstat Analytics/' . SLIMSTAT_ANALYTICS_VERSION . '; ' . home_url(),
+        ]);
 
         if (is_wp_error($response)) {
             unlink($tmpfname);
@@ -312,10 +309,8 @@ class GeoIP
 
         $country = false;
 
-        if ($reader) {
-            if (!empty($reader['country']['iso_code']) && $reader['country']['iso_code'] != 'xx') {
-                $country = $reader['country']['iso_code'];
-            }
+        if ($reader && (!empty($reader['country']['iso_code']) && 'xx' != $reader['country']['iso_code'])) {
+            $country = $reader['country']['iso_code'];
         }
 
         return $country;
@@ -352,10 +347,8 @@ class GeoIP
 
         $location = false;
 
-        if ($reader) {
-            if (!empty($reader['location']['latitude']) && !empty($reader['location']['longitude'])) {
-                $location = $reader['location']['latitude'] . ',' . $reader['location']['longitude'];
-            }
+        if ($reader && (!empty($reader['location']['latitude']) && !empty($reader['location']['longitude']))) {
+            $location = $reader['location']['latitude'] . ',' . $reader['location']['longitude'];
         }
 
         return $location;
