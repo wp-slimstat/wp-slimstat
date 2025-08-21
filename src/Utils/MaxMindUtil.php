@@ -2,7 +2,6 @@
 
 namespace SlimStat\Utils;
 
-
 class MaxMindUtil
 {
     /**
@@ -10,10 +9,11 @@ class MaxMindUtil
      */
     public static function read($stream, $offset, $numberOfBytes)
     {
-        if ($numberOfBytes == 0) {
+        if (0 == $numberOfBytes) {
             return '';
         }
-        if (fseek($stream, $offset) == 0) {
+
+        if (0 == fseek($stream, $offset)) {
             $value = fread($stream, $numberOfBytes);
 
             // We check that the number of bytes read is equal to the number
@@ -23,8 +23,9 @@ class MaxMindUtil
                 return $value;
             }
         }
+
         throw new InvalidDatabaseException(
-            "The MaxMind DB file contains bad data"
+            'The MaxMind DB file contains bad data'
         );
     }
 }

@@ -12,6 +12,8 @@ $lightBrand: #fccfd4;
 $veryLightBrand: #fff4f5;
 $error: #ff3636;
 
+@import "./charts.scss";
+
 :root {
   --box-bar-color: #eff6ff;
 }
@@ -28,6 +30,11 @@ body {
     background: #f5f6fa !important;
   }
 }
+
+#slimstat-load-saved-filters {
+  margin: 0 5px !important;
+}
+
 body.index-php {
   .slimstat-tooltip-bar-wrap {
     margin: 0 5px !important;
@@ -220,6 +227,17 @@ body.index-php {
   .top-countries {
     margin-left: 0;
     margin-top: 20px;
+  }
+}
+
+[id^="slim_"] .inside:has(.slimstat-postbox-chart--canvas) {
+  margin-bottom: 20px !important;
+  height: 265px !important;
+  .slimstat-postbox-chart--canvas {
+    height: 240px !important;
+    width: 100% !important;
+    min-height: 240px !important;
+    max-height: 240px !important;
   }
 }
 
@@ -707,7 +725,6 @@ body {
   line-height: 1.5em;
   margin: 0;
   min-height: 20px;
-  overflow: auto;
   padding: 10px 10px;
   position: relative;
   word-wrap: break-word;
@@ -876,14 +893,6 @@ body {
   z-index: 100 !important;
 }
 
-.ui-dialog.slimstat {
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  width: 90% !important;
-  z-index: 100500 !important;
-}
-
 .ui-dialog.slimstat .ui-dialog-titlebar {
   background: #4b8df8;
   border: 0;
@@ -896,6 +905,16 @@ body {
   line-height: 1.3em;
   margin: 0;
   padding: 5px 10px;
+}
+
+.tooltip-item-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+.tooltip-item-content {
+  font-size: 13px;
+  font-weight: normal;
+  font-style: italic;
 }
 
 .ui-dialog.slimstat .ui-dialog-titlebar-close {
@@ -2755,6 +2774,7 @@ x:-o-prefocus {
   span.slimstat-tooltip-bar {
     display: block;
     height: 100%;
+    max-width: 100% !important;
     position: absolute !important;
     top: 0;
     left: 0;

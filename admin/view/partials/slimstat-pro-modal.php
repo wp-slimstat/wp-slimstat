@@ -71,7 +71,7 @@
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
                         <strong><?php esc_html_e('MaxMind Integration', 'wp-slimstat'); ?></strong><br>
-                        <?php esc_html_e('Connect to MaxMind\'s Geolocation API to retrieve detailed information about your visitors.', 'wp-slimstat'); ?>
+                        <?php esc_html_e("Connect to MaxMind's Geolocation API to retrieve detailed information about your visitors.", 'wp-slimstat'); ?>
                     </span>
                 </div>
             </div>

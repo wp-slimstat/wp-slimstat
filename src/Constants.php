@@ -12,8 +12,8 @@ if (!function_exists('get_plugin_data')) {
 }
 
 // Set Plugin path and url defines.
-define('SLIMSTAT_ANALYTICS_URL', plugin_dir_url(dirname(__FILE__)));
-define('SLIMSTAT_ANALYTICS_DIR', plugin_dir_path(dirname(__FILE__)));
+define('SLIMSTAT_ANALYTICS_URL', plugin_dir_url(__DIR__));
+define('SLIMSTAT_ANALYTICS_DIR', plugin_dir_path(__DIR__));
 
 // Set another useful Plugin defines.
 define('SLIMSTAT_ANALYTICS_ADMIN_URL', get_admin_url());
