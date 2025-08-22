@@ -8,11 +8,11 @@ final class PortableVisibilityGuard
 {
     public static function guardAgainstInvalidInput(string $visibility): void
     {
-        if (Visibility::PUBLIC !== $visibility && Visibility::PRIVATE !== $visibility) {
+        if ($visibility !== Visibility::PUBLIC && $visibility !== Visibility::PRIVATE) {
             $className = Visibility::class;
             throw InvalidVisibilityProvided::withVisibility(
                 $visibility,
-                sprintf('either %s::PUBLIC or %s::PRIVATE', $className, $className)
+                "either {$className}::PUBLIC or {$className}::PRIVATE"
             );
         }
     }

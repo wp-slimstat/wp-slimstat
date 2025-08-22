@@ -30,9 +30,9 @@ class SQL extends PrefixKeys
      */
     public function __construct(Adapter $cache, \PDO $client, $table, $name)
     {
-        parent::__construct($cache, 'collection:' . $name . ':');
+        parent::__construct($cache, 'collection:'.$name.':');
         $this->client = $client;
-        $this->table  = $table;
+        $this->table = $table;
     }
 
     /**
@@ -46,8 +46,8 @@ class SQL extends PrefixKeys
             WHERE k LIKE :key"
         );
 
-        return $statement->execute([
-            ':key' => $this->prefix . '%',
-        ]);
+        return $statement->execute(array(
+            ':key' => $this->prefix.'%',
+        ));
     }
 }

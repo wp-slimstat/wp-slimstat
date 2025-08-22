@@ -47,13 +47,9 @@ class InputOption
     public const VALUE_NEGATABLE = 16;
 
     private $name;
-
     private $shortcut;
-
     private $mode;
-
     private $default;
-
     private $description;
 
     /**
@@ -69,7 +65,7 @@ class InputOption
             $name = substr($name, 2);
         }
 
-        if ('' === $name || '0' === $name) {
+        if (empty($name)) {
             throw new InvalidArgumentException('An option name cannot be empty.');
         }
 
@@ -81,10 +77,9 @@ class InputOption
             if (\is_array($shortcut)) {
                 $shortcut = implode('|', $shortcut);
             }
-
             $shortcuts = preg_split('{(\|)-?}', ltrim($shortcut, '-'));
             $shortcuts = array_filter($shortcuts, 'strlen');
-            $shortcut  = implode('|', $shortcuts);
+            $shortcut = implode('|', $shortcuts);
 
             if ('' === $shortcut) {
                 throw new InvalidArgumentException('An option shortcut cannot be empty.');
@@ -97,15 +92,14 @@ class InputOption
             throw new InvalidArgumentException(sprintf('Option mode "%s" is not valid.', $mode));
         }
 
-        $this->name        = $name;
-        $this->shortcut    = $shortcut;
-        $this->mode        = $mode;
+        $this->name = $name;
+        $this->shortcut = $shortcut;
+        $this->mode = $mode;
         $this->description = $description;
 
         if ($this->isArray() && !$this->acceptValue()) {
             throw new InvalidArgumentException('Impossible to have an option mode VALUE_IS_ARRAY if the option does not accept a value.');
         }
-
         if ($this->isNegatable() && $this->acceptValue()) {
             throw new InvalidArgumentException('Impossible to have an option mode VALUE_NEGATABLE if the option also accepts a value.');
         }
@@ -225,11 +219,11 @@ class InputOption
      */
     public function equals(self $option)
     {
-        return $option->getName()         === $this->getName()
-            && $option->getShortcut()     === $this->getShortcut()
-            && $option->getDefault()      === $this->getDefault()
-            && $option->isNegatable()     === $this->isNegatable()
-            && $option->isArray()         === $this->isArray()
+        return $option->getName() === $this->getName()
+            && $option->getShortcut() === $this->getShortcut()
+            && $option->getDefault() === $this->getDefault()
+            && $option->isNegatable() === $this->isNegatable()
+            && $option->isArray() === $this->isArray()
             && $option->isValueRequired() === $this->isValueRequired()
             && $option->isValueOptional() === $this->isValueOptional()
         ;

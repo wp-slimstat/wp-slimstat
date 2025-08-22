@@ -12,15 +12,8 @@
 use SlimStat\Dependencies\Symfony\Polyfill\Intl\SlimStat_Normalizer as p;
 
 if (!function_exists('normalizer_is_normalized')) {
-    function normalizer_is_normalized(?string $string, ?int $form = p\SlimStat_Normalizer::FORM_C): bool
-    {
-        return p\SlimStat_Normalizer::isNormalized((string) $string, (int) $form);
-    }
+    function normalizer_is_normalized(?string $string, ?int $form = p\SlimStat_Normalizer::FORM_C): bool { return p\SlimStat_Normalizer::isNormalized((string) $string, (int) $form); }
 }
-
 if (!function_exists('normalizer_normalize')) {
-    function normalizer_normalize(?string $string, ?int $form = p\SlimStat_Normalizer::FORM_C): string|false
-    {
-        return p\SlimStat_Normalizer::normalize((string) $string, (int) $form);
-    }
+    function normalizer_normalize(?string $string, ?int $form = p\SlimStat_Normalizer::FORM_C): string|false { return p\SlimStat_Normalizer::normalize((string) $string, (int) $form); }
 }

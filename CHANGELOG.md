@@ -1,4 +1,4 @@
-= 5.3.0 - 2025-08-12 =
+= 5.3.0 - 2025-08-22 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.
 - **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.

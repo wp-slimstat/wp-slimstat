@@ -69,7 +69,7 @@ class MockHandler implements \Countable
     public function __construct(array $queue = null, callable $onFulfilled = null, callable $onRejected = null)
     {
         $this->onFulfilled = $onFulfilled;
-        $this->onRejected  = $onRejected;
+        $this->onRejected = $onRejected;
 
         if ($queue) {
             // array_values included for BC
@@ -89,17 +89,16 @@ class MockHandler implements \Countable
 
         $this->lastRequest = $request;
         $this->lastOptions = $options;
-        $response          = \array_shift($this->queue);
+        $response = \array_shift($this->queue);
 
         if (isset($options['on_headers'])) {
             if (!\is_callable($options['on_headers'])) {
                 throw new \InvalidArgumentException('on_headers must be callable');
             }
-
             try {
                 $options['on_headers']($response);
             } catch (\Exception $e) {
-                $msg      = 'An error was encountered during the on_headers event';
+                $msg = 'An error was encountered during the on_headers event';
                 $response = new RequestException($msg, $request, $response, $e);
             }
         }
@@ -119,9 +118,9 @@ class MockHandler implements \Countable
                     ($this->onFulfilled)($value);
                 }
 
-                if ($value instanceof ResponseInterface && isset($options['sink'])) {
+                if ($value !== null && isset($options['sink'])) {
                     $contents = (string) $value->getBody();
-                    $sink     = $options['sink'];
+                    $sink = $options['sink'];
 
                     if (\is_resource($sink)) {
                         \fwrite($sink, $contents);
@@ -161,7 +160,7 @@ class MockHandler implements \Countable
             ) {
                 $this->queue[] = $value;
             } else {
-                throw new \TypeError('Expected a Response, Promise, Throwable or callable. Found ' . Utils::describeType($value));
+                throw new \TypeError('Expected a Response, Promise, Throwable or callable. Found '.Utils::describeType($value));
             }
         }
     }
@@ -206,7 +205,7 @@ class MockHandler implements \Countable
     ): void {
         if (isset($options['on_stats'])) {
             $transferTime = $options['transfer_time'] ?? 0;
-            $stats        = new TransferStats($request, $response, $transferTime, $reason);
+            $stats = new TransferStats($request, $response, $transferTime, $reason);
             ($options['on_stats'])($stats);
         }
     }

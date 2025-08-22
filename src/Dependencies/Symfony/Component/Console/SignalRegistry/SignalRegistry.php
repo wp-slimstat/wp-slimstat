@@ -42,7 +42,12 @@ final class SignalRegistry
         if (!\function_exists('pcntl_signal')) {
             return false;
         }
-        return !\in_array('pcntl_signal', explode(',', \ini_get('disable_functions')));
+
+        if (\in_array('pcntl_signal', explode(',', \ini_get('disable_functions')))) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

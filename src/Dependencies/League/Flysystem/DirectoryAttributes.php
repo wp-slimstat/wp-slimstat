@@ -35,9 +35,9 @@ class DirectoryAttributes implements StorageAttributes
 
     public function __construct(string $path, ?string $visibility = null, ?int $lastModified = null, array $extraMetadata = [])
     {
-        $this->path          = $path;
-        $this->visibility    = $visibility;
-        $this->lastModified  = $lastModified;
+        $this->path = $path;
+        $this->visibility = $visibility;
+        $this->lastModified = $lastModified;
         $this->extraMetadata = $extraMetadata;
     }
 
@@ -78,7 +78,7 @@ class DirectoryAttributes implements StorageAttributes
 
     public function withPath(string $path): StorageAttributes
     {
-        $clone       = clone $this;
+        $clone = clone $this;
         $clone->path = $path;
 
         return $clone;
@@ -100,10 +100,10 @@ class DirectoryAttributes implements StorageAttributes
     public function jsonSerialize(): array
     {
         return [
-            StorageAttributes::ATTRIBUTE_TYPE           => $this->type,
-            StorageAttributes::ATTRIBUTE_PATH           => $this->path,
-            StorageAttributes::ATTRIBUTE_VISIBILITY     => $this->visibility,
-            StorageAttributes::ATTRIBUTE_LAST_MODIFIED  => $this->lastModified,
+            StorageAttributes::ATTRIBUTE_TYPE => $this->type,
+            StorageAttributes::ATTRIBUTE_PATH => $this->path,
+            StorageAttributes::ATTRIBUTE_VISIBILITY => $this->visibility,
+            StorageAttributes::ATTRIBUTE_LAST_MODIFIED => $this->lastModified,
             StorageAttributes::ATTRIBUTE_EXTRA_METADATA => $this->extraMetadata,
         ];
     }

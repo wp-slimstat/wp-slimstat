@@ -25,11 +25,11 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
      */
     public static function fromCallable(callable|array $callback, mixed ...$arguments): static
     {
-        if (\is_array($callback) && !\is_callable($callback) && (!($callback[0] ?? null) instanceof \Closure && 2 >= \count($callback))) {
-            throw new \TypeError(sprintf('Argument 1 passed to "%s()" must be a callable or a [Closure, method] lazy-callable, "%s" given.', __METHOD__, '[' . implode(', ', array_map('get_debug_type', $callback)) . ']'));
+        if (\is_array($callback) && !\is_callable($callback) && !(($callback[0] ?? null) instanceof \Closure || 2 < \count($callback))) {
+            throw new \TypeError(sprintf('Argument 1 passed to "%s()" must be a callable or a [Closure, method] lazy-callable, "%s" given.', __METHOD__, '['.implode(', ', array_map('get_debug_type', $callback)).']'));
         }
 
-        $lazyString        = new static();
+        $lazyString = new static();
         $lazyString->value = static function () use (&$callback, &$arguments): string {
             static $value;
 
@@ -38,9 +38,8 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
                     $callback[0] = $callback[0]();
                     $callback[1] ??= '__invoke';
                 }
-
-                $value     = $callback(...$arguments);
-                $callback  = !\is_scalar($value) && !$value instanceof \SlimStat_SlimStat_Stringable ? self::getPrettyName($callback) : 'callable';
+                $value = $callback(...$arguments);
+                $callback = !\is_scalar($value) && !$value instanceof \SlimStat_SlimStat_Stringable ? self::getPrettyName($callback) : 'callable';
                 $arguments = null;
             }
 
@@ -56,7 +55,7 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
             return static::fromCallable($value->__toString(...));
         }
 
-        $lazyString        = new static();
+        $lazyString = new static();
         $lazyString->value = (string) $value;
 
         return $lazyString;
@@ -88,17 +87,17 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
 
         try {
             return $this->value = ($this->value)();
-        } catch (\Throwable $throwable) {
-            if (\TypeError::class === $throwable::class && __FILE__ === $throwable->getFile()) {
-                $type     = explode(', ', $throwable->getMessage());
-                $type     = substr(array_pop($type), 0, -\strlen(' returned'));
-                $r        = new \ReflectionFunction($this->value);
+        } catch (\Throwable $e) {
+            if (\TypeError::class === $e::class && __FILE__ === $e->getFile()) {
+                $type = explode(', ', $e->getMessage());
+                $type = substr(array_pop($type), 0, -\strlen(' returned'));
+                $r = new \ReflectionFunction($this->value);
                 $callback = $r->getStaticVariables()['callback'];
 
-                $throwable = new \TypeError(sprintf('Return value of %s() passed to %s::fromCallable() must be of the type string, %s returned.', $callback, static::class, $type));
+                $e = new \TypeError(sprintf('Return value of %s() passed to %s::fromCallable() must be of the type string, %s returned.', $callback, static::class, $type));
             }
 
-            throw $throwable;
+            throw $e;
         }
     }
 
@@ -125,7 +124,7 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
         }
 
         if (\is_array($callback)) {
-            $class  = \is_object($callback[0]) ? get_debug_type($callback[0]) : $callback[0];
+            $class = \is_object($callback[0]) ? get_debug_type($callback[0]) : $callback[0];
             $method = $callback[1];
         } elseif ($callback instanceof \Closure) {
             $r = new \ReflectionFunction($callback);
@@ -134,13 +133,13 @@ class LazyString implements \SlimStat_SlimStat_Stringable, \JsonSerializable
                 return $r->name;
             }
 
-            $class  = $class->name;
+            $class = $class->name;
             $method = $r->name;
         } else {
-            $class  = get_debug_type($callback);
+            $class = get_debug_type($callback);
             $method = '__invoke';
         }
 
-        return $class . '::' . $method;
+        return $class.'::'.$method;
     }
 }

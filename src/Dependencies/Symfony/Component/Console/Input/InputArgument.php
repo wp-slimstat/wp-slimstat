@@ -22,17 +22,12 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\LogicException;
 class InputArgument
 {
     public const REQUIRED = 1;
-
     public const OPTIONAL = 2;
-
     public const IS_ARRAY = 4;
 
     private $name;
-
     private $mode;
-
     private $default;
-
     private $description;
 
     /**
@@ -51,8 +46,8 @@ class InputArgument
             throw new InvalidArgumentException(sprintf('Argument mode "%s" is not valid.', $mode));
         }
 
-        $this->name        = $name;
-        $this->mode        = $mode;
+        $this->name = $name;
+        $this->mode = $mode;
         $this->description = $description;
 
         $this->setDefault($default);

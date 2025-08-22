@@ -47,5 +47,6 @@ return static function (RectorConfig $rectorConfig): void {
         __DIR__ . '/languages',
         __DIR__ . '/rector.php',
         __DIR__ . '/src/Dependencies',
+        __DIR__ . '/src/symfony',
     ]);
 };

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Formatter;
 
-use function array_key_exists;
-use function array_keys;
-
 use stdClass;
 
+use function array_key_exists;
+use function array_keys;
 use function strtolower;
 
 /**
@@ -29,56 +28,56 @@ final class PhpGetBrowser implements FormatterInterface
      * @var string[]|bool[]|null[]
      */
     private array $defaultProperties = [
-        'browser_name_regex'          => null,
-        'browser_name_pattern'        => null,
-        'Parent'                      => null,
-        'Comment'                     => 'Default Browser',
-        'Browser'                     => 'Default Browser',
-        'Browser_Type'                => 'unknown',
-        'Browser_Bits'                => '0',
-        'Browser_Maker'               => 'unknown',
-        'Browser_Modus'               => 'unknown',
-        'Version'                     => '0.0',
-        'MajorVer'                    => '0',
-        'MinorVer'                    => '0',
-        'Platform'                    => 'unknown',
-        'Platform_Version'            => 'unknown',
-        'Platform_Description'        => 'unknown',
-        'Platform_Bits'               => '0',
-        'Platform_Maker'              => 'unknown',
-        'Alpha'                       => false,
-        'Beta'                        => false,
-        'Win16'                       => false,
-        'Win32'                       => false,
-        'Win64'                       => false,
-        'Frames'                      => false,
-        'IFrames'                     => false,
-        'Tables'                      => false,
-        'Cookies'                     => false,
-        'BackgroundSounds'            => false,
-        'JavaScript'                  => false,
-        'VBScript'                    => false,
-        'JavaApplets'                 => false,
-        'ActiveXControls'             => false,
-        'isMobileDevice'              => false,
-        'isTablet'                    => false,
-        'isSyndicationReader'         => false,
-        'Crawler'                     => false,
-        'isFake'                      => false,
-        'isAnonymized'                => false,
-        'isModified'                  => false,
-        'CssVersion'                  => '0',
-        'AolVersion'                  => '0',
-        'Device_Name'                 => 'unknown',
-        'Device_Maker'                => 'unknown',
-        'Device_Type'                 => 'unknown',
-        'Device_Pointing_Method'      => 'unknown',
-        'Device_Code_Name'            => 'unknown',
-        'Device_Brand_Name'           => 'unknown',
-        'RenderingEngine_Name'        => 'unknown',
-        'RenderingEngine_Version'     => 'unknown',
+        'browser_name_regex' => null,
+        'browser_name_pattern' => null,
+        'Parent' => null,
+        'Comment' => 'Default Browser',
+        'Browser' => 'Default Browser',
+        'Browser_Type' => 'unknown',
+        'Browser_Bits' => '0',
+        'Browser_Maker' => 'unknown',
+        'Browser_Modus' => 'unknown',
+        'Version' => '0.0',
+        'MajorVer' => '0',
+        'MinorVer' => '0',
+        'Platform' => 'unknown',
+        'Platform_Version' => 'unknown',
+        'Platform_Description' => 'unknown',
+        'Platform_Bits' => '0',
+        'Platform_Maker' => 'unknown',
+        'Alpha' => false,
+        'Beta' => false,
+        'Win16' => false,
+        'Win32' => false,
+        'Win64' => false,
+        'Frames' => false,
+        'IFrames' => false,
+        'Tables' => false,
+        'Cookies' => false,
+        'BackgroundSounds' => false,
+        'JavaScript' => false,
+        'VBScript' => false,
+        'JavaApplets' => false,
+        'ActiveXControls' => false,
+        'isMobileDevice' => false,
+        'isTablet' => false,
+        'isSyndicationReader' => false,
+        'Crawler' => false,
+        'isFake' => false,
+        'isAnonymized' => false,
+        'isModified' => false,
+        'CssVersion' => '0',
+        'AolVersion' => '0',
+        'Device_Name' => 'unknown',
+        'Device_Maker' => 'unknown',
+        'Device_Type' => 'unknown',
+        'Device_Pointing_Method' => 'unknown',
+        'Device_Code_Name' => 'unknown',
+        'Device_Brand_Name' => 'unknown',
+        'RenderingEngine_Name' => 'unknown',
+        'RenderingEngine_Version' => 'unknown',
         'RenderingEngine_Description' => 'unknown',
-        'RenderingEngine_Maker'       => 'unknown',
+        'RenderingEngine_Maker' => 'unknown',
     ];
 
     /**
@@ -110,7 +109,7 @@ final class PhpGetBrowser implements FormatterInterface
 
             if (array_key_exists($key, $this->data)) {
                 $output->{$key} = $this->data[$key];
-            } elseif ('parent' !== $key) {
+            } elseif ($key !== 'parent') {
                 $output->{$key} = $this->defaultProperties[$property];
             }
         }

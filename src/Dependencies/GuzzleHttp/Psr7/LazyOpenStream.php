@@ -32,7 +32,7 @@ final class LazyOpenStream implements StreamInterface
     public function __construct(string $filename, string $mode)
     {
         $this->filename = $filename;
-        $this->mode     = $mode;
+        $this->mode = $mode;
 
         // unsetting the property forces the first access to go through
         // __get().

@@ -33,7 +33,7 @@ final class FnStream implements StreamInterface
 
         // Create the functions on the class
         foreach ($methods as $name => $fn) {
-            $this->{'_fn_' . $name} = $fn;
+            $this->{'_fn_'.$name} = $fn;
         }
     }
 
@@ -45,7 +45,7 @@ final class FnStream implements StreamInterface
     public function __get(string $name): void
     {
         throw new \BadMethodCallException(str_replace('_fn_', '', $name)
-            . '() is not implemented in the FnStream');
+            .'() is not implemented in the FnStream');
     }
 
     /**
@@ -53,7 +53,7 @@ final class FnStream implements StreamInterface
      */
     public function __destruct()
     {
-        if (property_exists($this, '_fn_close') && null !== $this->_fn_close) {
+        if (isset($this->_fn_close)) {
             ($this->_fn_close)();
         }
     }
@@ -83,7 +83,7 @@ final class FnStream implements StreamInterface
         // proxy to the decorated stream.
         foreach (array_diff(self::SLOTS, array_keys($methods)) as $diff) {
             /** @var callable $callable */
-            $callable       = [$stream, $diff];
+            $callable = [$stream, $diff];
             $methods[$diff] = $callable;
         }
 
@@ -92,8 +92,17 @@ final class FnStream implements StreamInterface
 
     public function __toString(): string
     {
-        /** @var string */
-        return ($this->_fn___toString)();
+        try {
+            /** @var string */
+            return ($this->_fn___toString)();
+        } catch (\Throwable $e) {
+            if (\PHP_VERSION_ID >= 70400) {
+                throw $e;
+            }
+            trigger_error(sprintf('%s::__toString exception: %s', self::class, (string) $e), E_USER_ERROR);
+
+            return '';
+        }
     }
 
     public function close(): void

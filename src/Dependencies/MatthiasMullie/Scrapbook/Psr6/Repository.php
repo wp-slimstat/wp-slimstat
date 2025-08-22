@@ -31,14 +31,14 @@ class Repository
      *
      * @var mixed[] [unique => value]
      */
-    protected $resolved = [];
+    protected $resolved = array();
 
     /**
      * Array of unresolved items.
      *
      * @var string[] [unique => key]
      */
-    protected $unresolved = [];
+    protected $unresolved = array();
 
     public function __construct(KeyValueStore $store)
     {
@@ -98,7 +98,7 @@ class Repository
      */
     protected function resolve()
     {
-        $keys   = array_unique(array_values($this->unresolved));
+        $keys = array_unique(array_values($this->unresolved));
         $values = $this->store->getMulti($keys);
 
         foreach ($this->unresolved as $unique => $key) {
@@ -120,6 +120,6 @@ class Repository
             $this->resolved[$unique] = $value;
         }
 
-        $this->unresolved = [];
+        $this->unresolved = array();
     }
 }

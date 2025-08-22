@@ -19,14 +19,19 @@ final class UriComparator
      */
     public static function isCrossOrigin(UriInterface $original, UriInterface $modified): bool
     {
-        if (0 !== \strcasecmp($original->getHost(), $modified->getHost())) {
+        if (\strcasecmp($original->getHost(), $modified->getHost()) !== 0) {
             return true;
         }
 
         if ($original->getScheme() !== $modified->getScheme()) {
             return true;
         }
-        return self::computePort($original) !== self::computePort($modified);
+
+        if (self::computePort($original) !== self::computePort($modified)) {
+            return true;
+        }
+
+        return false;
     }
 
     private static function computePort(UriInterface $uri): int

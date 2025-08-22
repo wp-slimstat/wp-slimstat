@@ -35,7 +35,7 @@ trait MessageTrait
             return $this;
         }
 
-        $new           = clone $this;
+        $new = clone $this;
         $new->protocol = $version;
 
         return $new;
@@ -72,16 +72,15 @@ trait MessageTrait
     public function withHeader($header, $value): MessageInterface
     {
         $this->assertHeader($header);
-        $value      = $this->normalizeHeaderValue($value);
+        $value = $this->normalizeHeaderValue($value);
         $normalized = strtolower($header);
 
         $new = clone $this;
         if (isset($new->headerNames[$normalized])) {
             unset($new->headers[$new->headerNames[$normalized]]);
         }
-
         $new->headerNames[$normalized] = $header;
-        $new->headers[$header]         = $value;
+        $new->headers[$header] = $value;
 
         return $new;
     }
@@ -89,16 +88,16 @@ trait MessageTrait
     public function withAddedHeader($header, $value): MessageInterface
     {
         $this->assertHeader($header);
-        $value      = $this->normalizeHeaderValue($value);
+        $value = $this->normalizeHeaderValue($value);
         $normalized = strtolower($header);
 
         $new = clone $this;
         if (isset($new->headerNames[$normalized])) {
-            $header                = $this->headerNames[$normalized];
+            $header = $this->headerNames[$normalized];
             $new->headers[$header] = array_merge($this->headers[$header], $value);
         } else {
             $new->headerNames[$normalized] = $header;
-            $new->headers[$header]         = $value;
+            $new->headers[$header] = $value;
         }
 
         return $new;
@@ -135,7 +134,7 @@ trait MessageTrait
             return $this;
         }
 
-        $new         = clone $this;
+        $new = clone $this;
         $new->stream = $body;
 
         return $new;
@@ -146,21 +145,20 @@ trait MessageTrait
      */
     private function setHeaders(array $headers): void
     {
-        $this->headerNames = [];
-        $this->headers     = [];
+        $this->headerNames = $this->headers = [];
         foreach ($headers as $header => $value) {
             // Numeric array keys are converted to int by PHP.
             $header = (string) $header;
 
             $this->assertHeader($header);
-            $value      = $this->normalizeHeaderValue($value);
+            $value = $this->normalizeHeaderValue($value);
             $normalized = strtolower($header);
             if (isset($this->headerNames[$normalized])) {
-                $header                 = $this->headerNames[$normalized];
+                $header = $this->headerNames[$normalized];
                 $this->headers[$header] = array_merge($this->headers[$header], $value);
             } else {
                 $this->headerNames[$normalized] = $header;
-                $this->headers[$header]         = $value;
+                $this->headers[$header] = $value;
             }
         }
     }
@@ -176,7 +174,7 @@ trait MessageTrait
             return $this->trimAndValidateHeaderValues([$value]);
         }
 
-        if ([] === $value) {
+        if (count($value) === 0) {
             throw new \InvalidArgumentException('Header value can not be an empty array.');
         }
 
