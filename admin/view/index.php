@@ -74,7 +74,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
 
                     <strong><?php _e('Date Range', 'wp-slimstat') ?></strong>
                     
-                    <input type="text" id="slimstat-range-input" class="text" placeholder="<?php _e('Select range...', 'wp-slimstat') ?>" readonly>
+                    <input type="text" id="slimstat-range-input" class="text" placeholder="<?php esc_attr_e('Select range...', 'wp-slimstat') ?>" readonly aria-label="<?php esc_attr_e('Select date range for analytics', 'wp-slimstat') ?>">
                     
                     <!-- Hidden fields for form submission -->
                     <input type="hidden" name="hour" id="slimstat-filter-hour" value="">

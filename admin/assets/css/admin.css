@@ -8,6 +8,44 @@
     border-radius: 50px;
     font-size: 14px;
     cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+#slimstat-range-input:focus {
+    outline: none;
+    border-color: #e8294c;
+    box-shadow: 0 0 0 3px rgba(232, 41, 76, 0.1);
+}
+
+#slimstat-range-input:hover {
+    border-color: #d1d5db;
+}
+
+/* Enhanced accessibility for screen readers */
+#slimstat-range-input[aria-label] {
+    position: relative;
+}
+
+/* Loading state indicator */
+#slimstat-range-input.loading {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="%23e8294c" d="M10 3.5c.276 0 .5-.224.5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5zm0 13c-.276 0-.5.224-.5.5s.224.5.5.5.5-.224.5-.5-.224-.5-.5-.5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 40px;
+}
+
+/* Error state styling */
+#slimstat-range-input.error {
+    border-color: #dc2626;
+    background-color: #fef2f2;
+}
+
+/* Success state styling */
+#slimstat-range-input.success {
+    border-color: #059669;
+    background-color: #f0fdf4;
 }
 
 /* Flatpickr Calendar Styling */

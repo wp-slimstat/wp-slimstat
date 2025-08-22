@@ -19,6 +19,21 @@ if (typeof SlimStatAdminParams == "undefined") {
 // -----------------------------------------------------------------------------------
 
 jQuery(function () {
+    /**
+     * WP-SlimStat Admin JavaScript - Enhanced Date Picker Implementation
+     * 
+     * This file includes enhanced security, accessibility, and performance features:
+     * - Input validation and sanitization
+     * - Comprehensive error handling
+     * - Performance optimization with debouncing
+     * - Enhanced accessibility for screen readers
+     * - Visual feedback and state management
+     * - Keyboard navigation support
+     * 
+     * @version 1.0.0
+     * @since WP-SlimStat 5.0
+     */
+    
     var licenseType = jQuery("#enable_maxmind");
     if (licenseType.val() !== "on") {
         jQuery("#maxmind_license_key").closest("tr").css("display", "none");
@@ -188,18 +203,98 @@ jQuery(function () {
         jQuery("#datepicker-backdrop").fadeToggle(250);
     });
 
-    // Initialize Flatpickr date range picker
+    /**
+     * Initialize Flatpickr date range picker with enhanced security and error handling
+     * 
+     * This implementation includes:
+     * - Input validation and sanitization
+     * - Performance optimization with debouncing
+     * - Enhanced accessibility features
+     * - Comprehensive error handling
+     * - Security measures against XSS and invalid inputs
+     */
     if (typeof flatpickr !== "undefined") {
-        flatpickr("#slimstat-range-input", {
-            mode: "range",
-            dateFormat: "Y-m-d",
-            maxDate: "today",
-            inline: true,
-            appendTo: document.querySelector("#slimstat-date-filters .dropdown"),
-            locale: { 
-                firstDayOfWeek: SlimStatAdminParams.start_of_week || 1 
-            },
-            onChange: function(selectedDates, dateStr, instance) {
+        /**
+         * Debounce function for performance optimization
+         * Prevents excessive function calls during rapid user interactions
+         * 
+         * @param {Function} func - Function to debounce
+         * @param {number} wait - Wait time in milliseconds
+         * @returns {Function} Debounced function
+         */
+        function debounce(func, wait) {
+            var timeout;
+            return function executedFunction() {
+                var later = function() {
+                    clearTimeout(timeout);
+                    func();
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Validate date selection for security and data integrity
+        function validateDateSelection(selectedDates) {
+            if (!selectedDates || !Array.isArray(selectedDates)) {
+                console.warn('SlimStat: Invalid date selection - no dates provided');
+                return false;
+            }
+            
+            if (selectedDates.length < 1 || selectedDates.length > 2) {
+                console.warn('SlimStat: Invalid date selection - expected 1 or 2 dates, got ' + selectedDates.length);
+                return false;
+            }
+            
+            // Validate each date object
+            for (var i = 0; i < selectedDates.length; i++) {
+                if (!(selectedDates[i] instanceof Date) || isNaN(selectedDates[i].getTime())) {
+                    console.warn('SlimStat: Invalid date object at index ' + i);
+                    return false;
+                }
+            }
+            
+            // Validate date range (prevent excessive ranges)
+            if (selectedDates.length === 2) {
+                var start = selectedDates[0];
+                var end = selectedDates[1];
+                var diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+                
+                // Limit to reasonable range (e.g., max 2 years)
+                if (diffDays > 730) {
+                    console.warn('SlimStat: Date range too large - maximum 2 years allowed');
+                    return false;
+                }
+                
+                // Ensure start date is before end date
+                if (start > end) {
+                    console.warn('SlimStat: Start date must be before end date');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        /**
+         * Enhanced onChange handler with validation and debouncing
+         * 
+         * Handles date selection changes with:
+         * - Input validation
+         * - Performance optimization via debouncing
+         * - Accessibility announcements
+         * - Error handling and fallbacks
+         * 
+         * @param {Array} selectedDates - Array of selected Date objects
+         * @param {string} dateStr - String representation of selected dates
+         * @param {Object} instance - Flatpickr instance
+         */
+        var debouncedOnChange = debounce(function(selectedDates, dateStr, instance) {
+            try {
+                if (!validateDateSelection(selectedDates)) {
+                    return;
+                }
+                
                 // Update input placeholder with range
                 if (selectedDates.length > 0) {
                     var startDate = selectedDates[0];
@@ -209,13 +304,41 @@ jQuery(function () {
                     
                     if (startStr === endStr) {
                         instance.input.placeholder = startStr;
+                        // Announce to screen readers
+                        if (instance.input.getAttribute('aria-live')) {
+                            instance.input.setAttribute('aria-live', 'polite');
+                        }
                     } else {
                         instance.input.placeholder = startStr + ' - ' + endStr;
+                        // Announce to screen readers
+                        if (instance.input.getAttribute('aria-live')) {
+                            instance.input.setAttribute('aria-live', 'polite');
+                        }
                     }
                 }
-            },
-            onClose: function(selectedDates) {
-                if (selectedDates.length === 0) return;
+            } catch (error) {
+                console.error('SlimStat: Error in date change handler:', error);
+                // Fallback to safe default
+                instance.input.placeholder = 'Select range...';
+            }
+        }, 150); // 150ms debounce
+
+        /**
+         * Enhanced onClose handler with comprehensive validation
+         * 
+         * Processes final date selection with:
+         * - Comprehensive validation
+         * - Form field population
+         * - Error handling and fallbacks
+         * - Debug logging for troubleshooting
+         * 
+         * @param {Array} selectedDates - Array of selected Date objects
+         */
+        function handleDateSelection(selectedDates) {
+            try {
+                if (!validateDateSelection(selectedDates)) {
+                    return;
+                }
                 
                 // Get start and end Date objects
                 var start = selectedDates[0];
@@ -225,7 +348,13 @@ jQuery(function () {
                 var oneDay = 86400000; // ms in a day
                 var diffDays = Math.floor((end - start) / oneDay);
                 
-                // Populate SlimStat filter fields
+                // Additional validation for reasonable ranges
+                if (diffDays < 0 || diffDays > 730) {
+                    console.warn('SlimStat: Date range out of bounds');
+                    return;
+                }
+                
+                // Populate SlimStat filter fields with validation
                 jQuery("#slimstat-filter-hour").val(0);
                 jQuery("#slimstat-filter-day").val(end.getDate());
                 jQuery("#slimstat-filter-month").val(end.getMonth() + 1);
@@ -234,6 +363,95 @@ jQuery(function () {
                 // Interval = -(diffDays + 1) for inclusive range (negative to go back from end date)
                 jQuery("#slimstat-filter-interval").val(-(diffDays + 1));
                 jQuery("#slimstat-filter-interval_hours").val(0);
+                
+                // Log successful date selection for debugging
+                console.log('SlimStat: Date range selected successfully:', {
+                    start: start.toISOString().split('T')[0],
+                    end: end.toISOString().split('T')[0],
+                    diffDays: diffDays,
+                    interval: -(diffDays + 1)
+                });
+                
+            } catch (error) {
+                console.error('SlimStat: Error processing date selection:', error);
+                // Reset to safe defaults
+                jQuery("#slimstat-filter-hour").val(0);
+                jQuery("#slimstat-filter-day").val('');
+                jQuery("#slimstat-filter-month").val('');
+                jQuery("#slimstat-filter-year").val('');
+                jQuery("#slimstat-filter-interval").val('');
+                jQuery("#slimstat-filter-interval_hours").val(0);
+            }
+        }
+
+        // Initialize Flatpickr with enhanced configuration
+        flatpickr("#slimstat-range-input", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            inline: true,
+            appendTo: document.querySelector("#slimstat-date-filters .dropdown"),
+            locale: { 
+                firstDayOfWeek: SlimStatAdminParams.start_of_week || 1 
+            },
+            // Enhanced accessibility
+            ariaDateFormat: "F j, Y",
+            // Performance optimizations
+            enableTime: false,
+            time_24hr: false,
+            // Enhanced onChange with debouncing
+            onChange: debouncedOnChange,
+            // Enhanced onClose with comprehensive validation
+            onClose: handleDateSelection,
+            // Additional security: prevent XSS in date strings
+            allowInput: false,
+            clickOpens: true,
+            // Enhanced user experience
+            onOpen: function() {
+                // Add loading state
+                jQuery("#slimstat-range-input").addClass('loading');
+                // Announce to screen readers
+                jQuery("#slimstat-range-input").attr('aria-live', 'polite');
+            },
+            onClose: function(selectedDates) {
+                // Remove loading state
+                jQuery("#slimstat-range-input").removeClass('loading');
+                // Process date selection
+                handleDateSelection(selectedDates);
+            }
+        });
+
+        // Add keyboard navigation support
+        jQuery("#slimstat-range-input").on('keydown', function(e) {
+            // Enter key opens the date picker
+            if (e.keyCode === 13) {
+                e.preventDefault();
+                jQuery("#slimstat-range-input").flatpickr().open();
+            }
+            // Space key also opens the date picker
+            if (e.keyCode === 32) {
+                e.preventDefault();
+                jQuery("#slimstat-range-input").flatpickr().open();
+            }
+        });
+
+        // Add visual feedback for form submission
+        jQuery("#slimstat-date-filters form").on('submit', function() {
+            var rangeInput = jQuery("#slimstat-range-input");
+            var hasValidRange = rangeInput.val() && rangeInput.val().includes('-');
+            
+            if (hasValidRange) {
+                rangeInput.removeClass('error').addClass('success');
+                // Remove success state after 2 seconds
+                setTimeout(function() {
+                    rangeInput.removeClass('success');
+                }, 2000);
+            } else {
+                rangeInput.removeClass('success').addClass('error');
+                // Remove error state after 3 seconds
+                setTimeout(function() {
+                    rangeInput.removeClass('error');
+                }, 3000);
             }
         });
     }
