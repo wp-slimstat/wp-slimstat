@@ -63,40 +63,27 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
                     <div id="slimstat-quick-filters">
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -1') ?>"><?php _e('Today', 'wp-slimstat') ?></a>
                         <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals yesterday&&&interval equals -1') ?>"><?php _e('Yesterday', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -7') ?>"><?php _e('Last 7 Days', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -28') ?>"><?php _e('Last 4 weeks', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -84') ?>"><?php _e('Last 12 weeks', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -364') ?>"><?php _e('Last 12 months', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals ' . date('Y-m-d', strtotime('monday this week')) . '&&&interval equals -' . (date('j') - date('j', strtotime('monday this week')) + 1)) ?>"><?php _e('This Week', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals ' . date('Y-m-d', strtotime('monday last week')) . '&&&interval equals -7') ?>"><?php _e('Last Week', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -30') ?>"><?php _e('Last 30 Days', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -90') ?>"><?php _e('Last 90 Days', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -' . date('j')) ?>"><?php _e('This Month', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals last day of -1 month 00:00:00 + 1 day &&&interval equals -' . date('d', strtotime('last day of -1 month 23:59:59'))) ?>"><?php _e('Last Month', 'wp-slimstat') ?></a>
+                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals ' . date('Y-01-01') . '&&&interval equals -' . (date('z') + 1)) ?>"><?php _e('This Year', 'wp-slimstat') ?></a>
                     </div>
 
                     <strong><?php _e('Date Range', 'wp-slimstat') ?></strong>
-
-                    <label for="slimstat-filter-hour"><?php _e('Hour', 'wp-slimstat') ?></label>
-                    <input type="text" name="hour" id="slimstat-filter-hour" placeholder="<?php _e('Hour', 'wp-slimstat') ?>" class="short" value="">
-
-                    <label for="slimstat-filter-day"><?php _e('Day', 'wp-slimstat') ?></label>
-                    <input type="text" name="day" id="slimstat-filter-day" placeholder="<?php _e('Day', 'wp-slimstat') ?>" class="short" value="">
-
-                    <label for="slimstat-filter-month"><?php _e('Month', 'wp-slimstat') ?></label>
-                    <select name="month" id="slimstat-filter-month">
-                        <option value=""><?php _e('Month', 'wp-slimstat') ?></option><?php
-                        for ($i = 1; $i <= 12; $i++) {
-                            echo "<option value='$i'>" . $GLOBALS['wp_locale']->get_month($i) . "</option>";
-                        }
-                        ?>
-                    </select>
-
-                    <label for="slimstat-filter-year">Year</label>
-                    <input type="text" name="year" id="slimstat-filter-year" placeholder="<?php _e('Year', 'wp-slimstat') ?>" class="short" value="">
-
+                    
+                    <input type="text" id="slimstat-range-input" class="text" placeholder="<?php _e('Select range...', 'wp-slimstat') ?>" readonly>
+                    
+                    <!-- Hidden fields for form submission -->
+                    <input type="hidden" name="hour" id="slimstat-filter-hour" value="">
+                    <input type="hidden" name="day" id="slimstat-filter-day" value="">
+                    <input type="hidden" name="month" id="slimstat-filter-month" value="">
+                    <input type="hidden" name="year" id="slimstat-filter-year" value="">
+                    <input type="hidden" name="interval" id="slimstat-filter-interval" value="">
+                    <input type="hidden" name="interval_hours" id="slimstat-filter-interval_hours" value="0">
                     <input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
-                    <br/>
-
-                    <label for="slimstat-filter-interval"><?php _e('Days in interval', 'wp-slimstat') ?></label>
-                    <input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('&plusmn; days', 'wp-slimstat') ?>" class="short" value="" title="<?php _e('To define an interval, enter the number of days (negative to go back in time).', 'wp-slimstat') ?>">
-
-                    <label for="slimstat-filter-interval_hours"><?php _e('Hours in interval', 'wp-slimstat') ?></label>
-                    <input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('&plusmn; hours', 'wp-slimstat') ?>" class="short" value="">
 
                     <input type="submit" value="<?php _e('Apply', 'wp-slimstat') ?>" class="button button-primary noslimstat right">
 

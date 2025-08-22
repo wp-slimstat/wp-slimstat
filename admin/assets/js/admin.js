@@ -188,29 +188,53 @@ jQuery(function () {
         jQuery("#datepicker-backdrop").fadeToggle(250);
     });
 
-    // Initialize the datepicker library and button (built-in)
-    if (typeof jQuery(".slimstat-filter-date").datepicker == "function") {
-        jQuery(".slimstat-filter-date").datepicker({
-            buttonImage: SlimStatAdminParams.datepicker_image,
-            buttonImageOnly: true,
-            changeMonth: true,
-            changeYear: true,
-            dateFormat: "yy-m-d",
-            maxDate: new Date(),
-            showOn: "both",
-            buttonText: "< >",
-            prevText: "<",
-            nextText: ">",
-
-            onClose: function (dateText, inst) {
-                if (dateText.length) {
-                    jQuery("#slimstat-filter-hour").val(0);
-                    jQuery("#slimstat-filter-day").val(dateText.split("-")[2]);
-                    jQuery("#slimstat-filter-month").val(dateText.split("-")[1]);
-                    jQuery("#slimstat-filter-year").val(dateText.split("-")[0]);
-                    jQuery("#slimstat-filter-interval").val(-1);
+    // Initialize Flatpickr date range picker
+    if (typeof flatpickr !== "undefined") {
+        flatpickr("#slimstat-range-input", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            inline: true,
+            appendTo: document.querySelector("#slimstat-date-filters .dropdown"),
+            locale: { 
+                firstDayOfWeek: SlimStatAdminParams.start_of_week || 1 
+            },
+            onChange: function(selectedDates, dateStr, instance) {
+                // Update input placeholder with range
+                if (selectedDates.length > 0) {
+                    var startDate = selectedDates[0];
+                    var endDate = selectedDates[selectedDates.length - 1];
+                    var startStr = startDate.toISOString().split('T')[0];
+                    var endStr = endDate.toISOString().split('T')[0];
+                    
+                    if (startStr === endStr) {
+                        instance.input.placeholder = startStr;
+                    } else {
+                        instance.input.placeholder = startStr + ' - ' + endStr;
+                    }
                 }
             },
+            onClose: function(selectedDates) {
+                if (selectedDates.length === 0) return;
+                
+                // Get start and end Date objects
+                var start = selectedDates[0];
+                var end = selectedDates[selectedDates.length - 1];
+                
+                // Compute difference in days (inclusive)
+                var oneDay = 86400000; // ms in a day
+                var diffDays = Math.floor((end - start) / oneDay);
+                
+                // Populate SlimStat filter fields
+                jQuery("#slimstat-filter-hour").val(0);
+                jQuery("#slimstat-filter-day").val(end.getDate());
+                jQuery("#slimstat-filter-month").val(end.getMonth() + 1);
+                jQuery("#slimstat-filter-year").val(end.getFullYear());
+                
+                // Interval = -(diffDays + 1) for inclusive range (negative to go back from end date)
+                jQuery("#slimstat-filter-interval").val(-(diffDays + 1));
+                jQuery("#slimstat-filter-interval_hours").val(0);
+            }
         });
     }
 

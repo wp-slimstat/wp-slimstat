@@ -615,7 +615,6 @@ class wp_slimstat_admin
     public static function wp_slimstat_enqueue_scripts($_hook = '')
     {
         wp_enqueue_script('dashboard');
-        wp_enqueue_script('jquery-ui-datepicker');
 
         // Enqueue the built-in code editor to use on the Settings
         if (self::$current_screen) {
@@ -624,13 +623,19 @@ class wp_slimstat_admin
 
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', dirname(__FILE__)), array('jquery-ui-dialog'), SLIMSTAT_ANALYTICS_VERSION, false);
 
+        // Enqueue Flatpickr for date range picker
+        wp_enqueue_style('flatpickr', plugins_url('/admin/assets/css/flatpickr.min.css', __DIR__), [], '4.6.13');
+        wp_enqueue_script('flatpickr', plugins_url('/admin/assets/js/flatpickr.min.js', __DIR__), [], '4.6.13', true);
+
         // Pass some information to Javascript
-        $params = array(
-            'async_load'       => !empty(wp_slimstat::$settings['async_load']) ? wp_slimstat::$settings['async_load'] : 'no',
-            'datepicker_image' => plugins_url('/admin/assets/images/datepicker.png', dirname(__FILE__)),
+        $params = [
+            'async_load'       => empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load'],
             'refresh_interval' => intval(wp_slimstat::$settings['refresh_interval']),
-            'page_location'    => self::$page_location
-        );
+            'page_location'    => self::$page_location,
+            'start_of_week'    => get_option('start_of_week'),
+            'is_rtl'           => is_rtl(),
+            'locale'           => get_locale(),
+        ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }
     // END: wp_slimstat_enqueue_scripts
