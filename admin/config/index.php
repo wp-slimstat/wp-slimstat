@@ -111,9 +111,14 @@ $settings = [
                 'type'  => 'section_header',
             ],
             'anonymize_ip' => [
-                'title'       => __('Privacy Mode', 'wp-slimstat'),
+                'title'       => __('Anonymize IP addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __("Mask your visitors' IP addresses (by converting the last number into a zero) and do not track their browser fingerprint, to comply with European privacy laws.", 'wp-slimstat'),
+                'description' => __("Mask visitors' IP addresses (IPv4 last octet / IPv6 last 80 bits) before storage to reduce identifiability.", 'wp-slimstat'),
+            ],
+            'hash_ip' => [
+                'title'       => __('Hash IP addresses', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Generate a daily visitor ID (HMAC-SHA256 of masked IP + User Agent + date) to count unique visitors without storing full IP or using cookies.', 'wp-slimstat'),
             ],
             'set_tracker_cookie' => [
                 'title'       => __('Set Cookie', 'wp-slimstat'),

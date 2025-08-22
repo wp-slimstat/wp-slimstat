@@ -122,7 +122,7 @@ class wp_slimstat_reports
                     ],
                     'chart_labels' => [
                         __('Pageviews', 'wp-slimstat'),
-                        __('Unique IPs', 'wp-slimstat'),
+                        (('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) ? __('Unique Visitors', 'wp-slimstat') : __('Unique IPs', 'wp-slimstat')),
                     ],
                 ],
                 'classes'   => ['extralarge', 'chart'],
@@ -1479,7 +1479,7 @@ class wp_slimstat_reports
         }
 
         foreach ($results as $a_result) {
-            echo '<p class=\'slimstat-tooltip-trigger\'>' . $a_result[ 'notes' ];
+            echo "<p class='slimstat-tooltip-trigger'>" . $a_result[ 'notes' ];
 
             if (!empty($a_result['counthits'])) {
                 echo sprintf('<span>%s</span>', $a_result[ 'counthits' ]);

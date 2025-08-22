@@ -156,9 +156,17 @@ for ($i = 0; $i < $count_page_results; $i++) {
             }
 
             $ip_address .= sprintf(' %s</a>', $display_user_name);
+            $display_ip_value = $results[$i]['ip'];
+            if ('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+                $display_ip_value = substr($results[$i]['ip'], 0, 12) . '…';
+            } elseif ('on' == wp_slimstat::$settings['anonymize_ip']) {
+                // already masked in storage; still truncate for UI clarity
+                $display_ip_value = $results[$i]['ip'];
+            }
+
             $ip_address .= " <a class='slimstat-filter-link' href='"
                . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])
-               . sprintf("'>(%s)</a>", $host_by_ip);
+               . sprintf("'>(%s)</a>", esc_html($display_ip_value));
             $highlight_row = (false !== strpos($results[$i]['notes'], 'user:')) ? ' is-known-user' : ' is-known-visitor';
         }
 
@@ -236,7 +244,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
     // Search Terms, with link to original SERP, and Outbound Resource
     if (!empty($search_terms_info)) {
-        $results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='" . __('Search Terms', 'wp-slimstat') . ('\'></i> ' . $search_terms_info);
+        $results[$i]['searchterms'] = "<i class='spaced slimstat-font-search' title='" . __('Search Terms', 'wp-slimstat') . ("'></i> " . $search_terms_info);
     } else {
         $results[$i]['searchterms'] = '';
     }
@@ -281,7 +289,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
             if ('#' !== substr($results[$i]['outbound_resource'], 0, 1)) {
                 $results[$i]['outbound_resource'] = "<a class='inline-icon spaced slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this outbound link in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", $results[ $i ][ 'outbound_resource' ], $results[ $i ][ 'outbound_resource' ]);
             } else {
-                $results[$i]['outbound_resource'] = '<i class=\'inline-icon spaced slimstat-font-logout\'></i> ' . $results[ $i ][ 'outbound_resource' ];
+                $results[$i]['outbound_resource'] = "<i class='inline-icon spaced slimstat-font-logout'></i> " . $results[ $i ][ 'outbound_resource' ];
             }
         } else {
             $results[$i]['outbound_resource'] = '';
@@ -327,6 +335,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
     echo $row_output;
 }
+
 if (! defined('DOING_AJAX') || ! DOING_AJAX) {
     echo '</div>';
 }

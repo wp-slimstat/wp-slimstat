@@ -426,10 +426,10 @@ class wp_slimstat_admin
 
         // Table that stores the actual data about visits
         $stats_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
-				id INT UNSIGNED NOT NULL auto_increment,
-				ip VARCHAR(39) DEFAULT NULL,
-				other_ip VARCHAR(39) DEFAULT NULL,
+            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
+                id INT UNSIGNED NOT NULL auto_increment,
+                ip VARCHAR(39) DEFAULT NULL,
+                other_ip VARCHAR(39) DEFAULT NULL,
 				username VARCHAR(256) DEFAULT NULL,
 				email VARCHAR(256) DEFAULT NULL,
 
@@ -469,7 +469,7 @@ class wp_slimstat_admin
 				dt INT(10) UNSIGNED DEFAULT 0,
 
 				CONSTRAINT PRIMARY KEY (id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
+                INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
@@ -534,6 +534,7 @@ class wp_slimstat_admin
             }
             update_option($idx['option'], 'yes');
         }
+
     }
 
     // END: init_tables
