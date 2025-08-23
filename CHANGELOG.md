@@ -1,3 +1,8 @@
+= 5.3.0 =
+- **Enhancement**: Replaced jQuery UI Datepicker with modern Flatpickr Date Range Picker for improved user experience and performance.
+- **Enhancement**: Extended quick filters with new presets: This Week, Last Week, Last 30/90 Days, This/Last Month, This Year.
+- **Enhancement**: Improved date filtering interface with single range picker replacing individual Hour/Day/Month/Year inputs.
+
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.
 
