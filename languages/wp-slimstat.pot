@@ -189,7 +189,7 @@ msgid "Opt-out Cookies"
 msgstr ""
 
 #: admin/config/index.php:118
-msgid "If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"statistics\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"statistics\":false</code>. Separate multiple pairs with commas."
+msgid "If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"slimstat\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"slimstat\":false</code>. Separate multiple pairs with commas."
 msgstr ""
 
 #: admin/config/index.php:121
@@ -536,7 +536,7 @@ msgid "SQL Limit"
 msgstr ""
 
 #: admin/config/index.php:351
-msgid "You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the statistics."
+msgid "You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the slimstat."
 msgstr ""
 
 #: admin/config/index.php:354
@@ -696,7 +696,7 @@ msgid "Restrict Authors"
 msgstr ""
 
 #: admin/config/index.php:469
-msgid "Enable this option if you want your authors to only see statistics related to their own content."
+msgid "Enable this option if you want your authors to only see slimstat related to their own content."
 msgstr ""
 
 #: admin/config/index.php:472
@@ -710,7 +710,7 @@ msgid "Specify the minimum <a href='https://wordpress.org/support/article/roles-
 msgstr ""
 
 #: admin/config/index.php:480
-msgid "Enter a list of usernames who should have access to the statistics. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed."
+msgid "Enter a list of usernames who should have access to the slimstat. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed."
 msgstr ""
 
 #: admin/config/index.php:485
@@ -841,7 +841,7 @@ msgid "Delete Data on Uninstall"
 msgstr ""
 
 #: admin/config/index.php:581
-msgid "Delete all settings and statistics on plugin uninstall. Warning! If you enable this feature, all statistics and plugin settings will be permanently deleted from the database."
+msgid "Delete all settings and slimstat on plugin uninstall. Warning! If you enable this feature, all slimstat and plugin settings will be permanently deleted from the database."
 msgstr ""
 
 #: admin/config/index.php:587

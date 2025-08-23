@@ -1,0 +1,55 @@
+{
+    "preset": "psr12",
+    "exclude": [
+        "phpstan-cache",
+        "src/Dependencies",
+        "src/symfony",
+        "node_modules"
+    ],
+    "rules": {
+        "@PSR12": true,
+        "binary_operator_spaces": {
+            "default": "single_space",
+            "operators": {
+                "=>": "align_single_space_minimal",
+                "=": "align_single_space_minimal",
+                "|" : "no_space",
+                "===" : "align_single_space_minimal",
+                "==" : "align_single_space_minimal",
+                "xor" : null,
+                "&&" : "align_single_space_minimal",
+                "||" : "align_single_space_minimal"
+            }
+        },
+        "array_syntax": {
+            "syntax": "short"
+        },
+        "yoda_style": true,
+        "no_unused_imports": true,
+        "no_multiple_statements_per_line": true,
+        "no_trailing_comma_in_singleline_array": true,
+        "align_multiline_comment": true,
+        "array_indentation": true,
+        "ordered_imports": {
+            "sort_algorithm": "alpha"
+        },
+        "blank_line_after_namespace": true,
+        "blank_line_after_opening_tag": true,
+        "single_quote": true,
+        "concat_space": {
+            "spacing": "one"
+        },
+        "phpdoc_align": {
+            "align": "vertical"
+        },
+        "phpdoc_separation": true,
+        "phpdoc_trim": true,
+        "phpdoc_no_empty_return": true,
+        "trailing_comma_in_multiline": {
+            "elements": ["arrays"]
+        },
+        "no_extra_blank_lines": {
+            "tokens": ["extra", "throw", "use", "return", "parenthesis_brace_block"]
+        }
+    }
+}
