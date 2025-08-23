@@ -389,7 +389,7 @@ jQuery(function () {
             mode: "range",
             dateFormat: "Y-m-d",
             maxDate: "today",
-            inline: true,
+            inline: false,
             appendTo: document.querySelector("#slimstat-date-filters .dropdown"),
             locale: { 
                 firstDayOfWeek: SlimStatAdminParams.start_of_week || 1 

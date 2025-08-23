@@ -3210,3 +3210,43 @@ x:-o-prefocus {
     }
   }
 }
+
+
+/* Flatpickr Calendar Customization */
+.flatpickr-calendar {
+  position: absolute !important;
+  left: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
+  border: none !important;
+  /* Ensure calendar appears inside the date picker container */
+  top: 100% !important;
+  width: 100% !important;
+  max-width: none !important;
+  
+  &.open {
+    z-index: 999999 !important;
+  }
+  
+  /* Calendar header styling */
+  .flatpickr-current-month {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: $grayOne !important;
+    
+    .cur-month {
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      color: $grayTwo !important;
+      margin-right: 8px !important;
+    }
+    
+    .cur-year {
+      font-size: 16px !important;
+      font-weight: 600 !important;
+      color: $grayOne !important;
+    }
+  }
+}

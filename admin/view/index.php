@@ -85,20 +85,10 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
                     <input type="hidden" name="interval_hours" id="slimstat-filter-interval_hours" value="0">
                     <input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
 
-                    <input type="submit" value="<?php _e('Apply', 'wp-slimstat') ?>" class="button button-primary noslimstat right">
-
-                    <?php
-                    wp_slimstat::toggle_date_i18n_filters(false);
-
-                    if (
-                        wp_slimstat_db::$filters_normalized['date']['day'] != intval(date_i18n('j')) ||
-                        wp_slimstat_db::$filters_normalized['date']['month'] != intval(date_i18n('n')) ||
-                        wp_slimstat_db::$filters_normalized['date']['year'] != intval(date_i18n('Y')) ||
-                        (wp_slimstat_db::$filters_normalized['date']['interval'] != -abs(wp_slimstat::$settings['posts_column_day_interval']) && wp_slimstat_db::$filters_normalized['date']['interval'] != -intval(date_i18n('j')) + 1)
-                    ) {
-                        echo '<a class="slimstat-filter-link button button-secondary noslimstat" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url() . '">' . __('Reset Filters', 'wp-slimstat') . '</a>';
-                    }
-                    ?>
+                    <div class="slimstat-button-group">
+                        <a class="button button-secondary noslimstat" data-reset-filters="true" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -30') ?>"><?php _e('Reset', 'wp-slimstat') ?></a>
+                        <input type="submit" value="<?php _e('Apply', 'wp-slimstat') ?>" class="button button-primary noslimstat">
+                    </div>
                 </div>
                 <div id="datepicker-backdrop"></div>
             </fieldset><!-- .slimstat-date-filters -->
