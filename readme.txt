@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.8
-Stable tag: 5.2.13
+Stable tag: 5.3.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,6 +17,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 = Main Features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
+* **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
 * **GDPR**: fully compliant with the GDPR European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
@@ -36,7 +37,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 * **Extended Overview**: Add custom columns to the User Overview widget and export file.
 
 = Requirements =
-* WordPress 5.0+
+* WordPress 5.6+
 * PHP 7.4+
 * MySQL 5.0.3+
 * At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
@@ -62,14 +63,25 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Screenshots ==
 1. **Real-Time** - A real-time view of your visitors' whereabouts
-2. **Overview** - Your website traffic at a glance
-3. **Audience** - See your visitors' full information
-4. **Site Analysis** - Provides insights into how visitors are using your website
-5. **Traffic Sources** - See where your visitors are coming from, such as search engines, social media, or referral websites
-6. **Customize widgets** - Allows you to customize the analytics widgets that are displayed in your Slimstat dashboard
-7. **Settings** - Plenty of options to customize the plugin's behavior
+2. **Word Map** - Identify them by country, browser, and operating system in a snap.
+3. **Overview** - Your website traffic at a glance. Enjoy a simple, all-in-one dashboard to check your website stats quickly.
+4. **Audience** - See your visitors' full information
+5. **Site Analysis** - See top pages, categories, download and outbound links in an easy, simple view.
+6. **Traffic Sources** - See where your visitors are coming from, such as search engines, social media, or referral websites
+7. **Customize widgets** - Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
+8. **WordPress Dashboard** - Add and display custom reports like Traffic Sources directly on your WordPress dashboard!
+9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.3.0 - 2025-08-25 =
+- **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
+- **New**: Support for WordPress date format setting in charts.
+- **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.
+- **Enhancement**: Redesigned line charts for better readability.
+- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
+- **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
+[See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0)
+
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.
 

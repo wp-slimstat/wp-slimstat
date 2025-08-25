@@ -1,3 +1,11 @@
+= 5.3.0 - 2025-08-25 =
+- **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
+- **New**: Support for WordPress date format setting in charts.
+- **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.
+- **Enhancement**: Redesigned line charts for better readability.
+- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
+- **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
+
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.
 
