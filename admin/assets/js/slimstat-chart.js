@@ -502,14 +502,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (unitTime === "monthly") {
             const labelToParse = justTranslation || label;
-            const date = new Date(`${labelToParse} 1`);
-            const { month, year } = getMonthYear(date);
-            const isThisMonth = now.getMonth() === date.getMonth() && now.getFullYear() === year;
-            const baseLabel = `${month}, ${year}`;
-            const extra = isThisMonth ? ` (${translations.now})` : "";
-            const formattedLabel = `${label} <span class="slimstat-postbox-chart--item--prev">${baseLabel}</span>`;
+            const monthYearRegex = /^([A-Za-z]+)\s+(\d{4})$/;
+            const match = (labelToParse || "").match(monthYearRegex);
+            if (match) {
+                const monthName = match[1];
+                const year = parseInt(match[2], 10);
+                const monthIndex = new Date(`${monthName} 1, 2000`).getMonth();
+                const date = new Date(year, monthIndex, 1);
+                const { month, year: parsedYear } = getMonthYear(date);
+                const isThisMonth = now.getMonth() === date.getMonth() && now.getFullYear() === parsedYear;
+                const baseLabel = `${month}, ${parsedYear}`;
+                const extra = isThisMonth ? ` (${translations.now})` : "";
+                const formattedLabel = `${label} <span class="slimstat-postbox-chart--item--prev">${baseLabel}</span>`;
 
-            return justTranslation ? formattedLabel : long && isThisMonth ? baseLabel + extra : baseLabel;
+                return justTranslation ? formattedLabel : long && isThisMonth ? baseLabel + extra : baseLabel;
+            }
+            return label;
         } else if (unitTime === "weekly") {
             const rawDate = (justTranslation || label).replace(/\//g, "-");
             const date = new Date(rawDate + "T00:00:00Z");
@@ -550,12 +558,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
             return justTranslation ? formattedLabel : labelStr;
         } else if (unitTime === "yearly") {
-            const date = new Date(justTranslation || label);
-            const year = date.getFullYear();
-            const isThisYear = now.getFullYear() === year;
-            const formattedLabel = `${label} <span class="slimstat-postbox-chart--item--prev">${year}</span>`;
+            const labelToParse = justTranslation || label;
+            const yearMatch = (labelToParse || "").match(/^(\d{4})$/);
+            if (yearMatch) {
+                const year = parseInt(yearMatch[1], 10);
+                const date = new Date(year, 0, 1);
+                const isThisYear = now.getFullYear() === date.getFullYear();
+                const formattedLabel = `${label} <span class="slimstat-postbox-chart--item--prev">${date.getFullYear()}</span>`;
 
-            return justTranslation ? formattedLabel : isThisYear && long ? `${year} (${translations.this_year || "This Year"})` : `${year}`;
+                return justTranslation ? formattedLabel : isThisYear && long ? `${date.getFullYear()} (${translations.this_year || "This Year"})` : `${date.getFullYear()}`;
+            }
+            return label;
         }
 
         return label;
