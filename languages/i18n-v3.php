@@ -385,7 +385,16 @@ class Yoast_I18n_v3
     {
         $api_url = $this->get_api_url();
 
-        $resp = wp_remote_get($api_url);
+        $cache_key = 'slimstat_i18n_remote_' . md5($api_url);
+        $cached    = get_transient($cache_key);
+        if (false !== $cached) {
+            return $cached;
+        }
+
+        $resp = wp_remote_get($api_url, [
+            'timeout' => 5,
+            'headers' => ['Accept' => 'application/json'],
+        ]);
         if (is_wp_error($resp) || 200 !== wp_remote_retrieve_response_code($resp)) {
             return null;
         }
@@ -404,10 +413,12 @@ class Yoast_I18n_v3
 
                 // For informal and formal locales, we have to complete the locale code by concatenating the slug ('formal' or 'informal') to the xx_XX part.
                 if ('default' !== $set->slug && strtolower($this->locale) === strtolower($set->wp_locale . '_' . $set->slug)) {
+                    set_transient($cache_key, $set, 6 * HOUR_IN_SECONDS);
                     return $set;
                 }
 
                 if ($this->locale === $set->wp_locale) {
+                    set_transient($cache_key, $set, 6 * HOUR_IN_SECONDS);
                     return $set;
                 }
             }

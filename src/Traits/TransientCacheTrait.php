@@ -27,7 +27,7 @@ trait TransientCacheTrait
     public function setCachedResult($input, $result, $expiration = DAY_IN_SECONDS)
     {
         $cacheKey = $this->getCacheKey($input);
-        return set_transient($cacheKey, $result, $expiration * 24);
+        return set_transient($cacheKey, $result, $expiration);
     }
 
     public function clearCache($query)

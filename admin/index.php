@@ -700,15 +700,17 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_enqueue_scripts($_hook = '')
     {
-        wp_enqueue_script('dashboard');
-        wp_enqueue_script('jquery-ui-datepicker');
+        if (self::$current_screen && str_contains(self::$current_screen->id ?? '', 'slim')) {
+            wp_enqueue_script('dashboard');
+            wp_enqueue_script('jquery-ui-datepicker');
+        }
 
         // Enqueue the built-in code editor to use on the Settings
         if (self::$current_screen) {
             wp_enqueue_code_editor(['type' => 'text/html']);
         }
 
-        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, false);
+        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
 
         // Pass some information to Javascript
         $params = [
@@ -1337,7 +1339,14 @@ class wp_slimstat_admin
             $screen = get_current_screen();
 
             if (stristr($screen->id, 'slimview')) {
-                wp_enqueue_script('feedbackbird-widget', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS');
+                wp_register_script('feedbackbird-widget', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS', [], null, true);
+                add_filter('script_loader_tag', function ($tag, $handle) {
+                    if ('feedbackbird-widget' === $handle) {
+                        $tag = str_replace('<script ', '<script defer ', $tag);
+                    }
+                    return $tag;
+                }, 10, 2);
+                wp_enqueue_script('feedbackbird-widget');
                 wp_add_inline_script('feedbackbird-widget', sprintf('var feedbackBirdObject = %s;', json_encode([
                     'user_email' => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
                     'platform'   => 'wordpress-admin',

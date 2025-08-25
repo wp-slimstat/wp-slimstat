@@ -1187,13 +1187,14 @@ class wp_slimstat_reports
 
                     case 'country':
                         $country = $results[$i]['country'] ?? '';
-                        if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($country) . '.svg'))) {
-                            $svg_path      = realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($country) . '.svg'));
-                            $svg_content   = file_get_contents($svg_path);
-                            $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
+                        $flag_rel  = '/admin/assets/images/flags/' . strtolower($country) . '.svg';
+                        $flag_path = SLIMSTAT_ANALYTICS_DIR . $flag_rel;
+                        if (is_readable($flag_path)) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
+                            $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $country . '" />';
+                            $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
                         }
                         $row_details .= __('Code', 'wp-slimstat') . (': ' . $country);
                         $element_value .= wp_slimstat_i18n::get_string('c-' . $country);
@@ -1212,9 +1213,12 @@ class wp_slimstat_reports
                         $language_parts     = explode('-', $results[$i][$_args['columns']]);
                         $last_language_part = end($language_parts);
                         if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . $last_language_part . '.svg'))) {
-                            $svg_path      = realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . $last_language_part . '.svg'));
-                            $svg_content   = file_get_contents($svg_path);
-                            $element_value = '<span class="slimstat-flag-container">' . $svg_content . '</span>';
+                            $flag_rel      = '/admin/assets/images/flags/' . $last_language_part . '.svg';
+                            $flag_path     = SLIMSTAT_ANALYTICS_DIR . $flag_rel;
+                            if (is_readable($flag_path)) {
+                                $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
+                                $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($last_language_part) . '" />';
+                            }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                             $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i][$_args['columns']] . '" />';
@@ -1679,8 +1683,8 @@ class wp_slimstat_reports
         $top_countries = array_slice($country_stats, 0, 5);
 
         $path_slimstat = dirname(__FILE__, 2);
-        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), ['jquery'], '1.5.1', false);
-        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), ['jquery'], '1.5.1', false);
+        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), ['jquery'], '1.5.1', true);
+        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), ['jquery'], '1.5.1', true);
         ?>
 
         <div class="map-container">
