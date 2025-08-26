@@ -573,6 +573,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function getMonthYear(date) {
             return {
                 month: date.toLocaleString("default", { month: "long" }),
+                shortMonth: date.toLocaleString("default", { month: "short" }),
                 year: date.getFullYear(),
             };
         }
@@ -615,10 +616,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     var my = getMonthYear(d);
                     var isThisMonth = now.getMonth() === d.getMonth() && now.getFullYear() === my.year;
                     var baseLabel = my.month + ", " + my.year;
+                    var shortBaseLabel = my.shortMonth + ", " + my.year;
                     var extra = isThisMonth ? " (" + translations.now + ")" : "";
                     var formattedLabel = label + ' <span class="slimstat-postbox-chart--item--prev">' + baseLabel + "</span>";
 
-                    return justTranslation ? formattedLabel : long && isThisMonth ? baseLabel + extra : baseLabel;
+                    if (long) {
+                        return justTranslation ? formattedLabel : baseLabel + extra;
+                    } else {
+                        return justTranslation ? formattedLabel : shortBaseLabel;
+                    }
                 } catch (e) {
                     console.warn("SlimStat: Error processing monthly label:", label, e);
                     return label; // Return original label if processing fails
