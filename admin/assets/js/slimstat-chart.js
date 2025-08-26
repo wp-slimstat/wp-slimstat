@@ -335,7 +335,12 @@ document.addEventListener("DOMContentLoaded", function () {
         function customTickCallback(value, index, values) {
             if (labels.length <= maxTicks || uniqueTickIndexes.indexOf(index) !== -1) {
                 var label = this.getLabelForValue(value).replace(/'/g, "");
-                return slimstatGetLabel(label, false, unitTime, translations);
+                try {
+                    return slimstatGetLabel(label, false, unitTime, translations);
+                } catch (e) {
+                    console.warn("SlimStat: Error processing label:", label, e);
+                    return label; // Return original label if processing fails
+                }
             }
             return "";
         }
@@ -602,18 +607,28 @@ document.addEventListener("DOMContentLoaded", function () {
             var monthYearRegex = /^([A-Za-z]+)\s+(\d{4})$/;
             var match = (labelToParse || "").match(monthYearRegex);
             if (match) {
-                var monthName = match[1];
-                var year = parseInt(match[2], 10);
-                var monthIndex = new Date(monthName + " 1, 2000").getMonth();
-                var d = new Date(year, monthIndex, 1);
-                var my = getMonthYear(d);
-                var isThisMonth = now.getMonth() === d.getMonth() && now.getFullYear() === my.year;
-                var baseLabel = my.month + ", " + my.year;
-                var extra = isThisMonth ? " (" + translations.now + ")" : "";
-                var formattedLabel = label + ' <span class="slimstat-postbox-chart--item--prev">' + baseLabel + "</span>";
+                try {
+                    var monthName = match[1];
+                    var year = parseInt(match[2], 10);
+                    var monthIndex = new Date(monthName + " 1, 2000").getMonth();
+                    var d = new Date(year, monthIndex, 1);
+                    var my = getMonthYear(d);
+                    var isThisMonth = now.getMonth() === d.getMonth() && now.getFullYear() === my.year;
+                    var baseLabel = my.month + ", " + my.year;
+                    var extra = isThisMonth ? " (" + translations.now + ")" : "";
+                    var formattedLabel = label + ' <span class="slimstat-postbox-chart--item--prev">' + baseLabel + "</span>";
 
-                return justTranslation ? formattedLabel : long && isThisMonth ? baseLabel + extra : baseLabel;
+                    return justTranslation ? formattedLabel : long && isThisMonth ? baseLabel + extra : baseLabel;
+                } catch (e) {
+                    console.warn("SlimStat: Error processing monthly label:", label, e);
+                    return label; // Return original label if processing fails
+                }
             }
+            // Debug: Log labels that don't match the expected format
+            if (console && console.debug) {
+                console.debug("SlimStat: Monthly label does not match expected format:", label);
+            }
+            // If the label doesn't match the expected format, return it as-is to prevent "Invalid Date, NaN"
             return label;
         } else if (unitTime === "weekly") {
             var rawDate = (justTranslation || label).replace(/\//g, "-");
