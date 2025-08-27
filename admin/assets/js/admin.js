@@ -59,7 +59,7 @@ jQuery(function () {
         }
     }
     toggleTrackingRequestMethod();
-    const toggleSelector = "input.slimstat-checkbox-toggle#javascript_mode[type=checkbox]";
+    var toggleSelector = "input.slimstat-checkbox-toggle#javascript_mode[type=checkbox]";
     jQuery(document).on("change", toggleSelector, toggleTrackingRequestMethod);
     jQuery(document).on("switchChange.bootstrapSwitch", toggleSelector, toggleTrackingRequestMethod);
 

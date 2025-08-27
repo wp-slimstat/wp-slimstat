@@ -12,6 +12,7 @@
 namespace SlimStat\Dependencies\Symfony\Component\Console\Command;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Application;
+use SlimStat\Dependencies\Symfony\Component\Console\SlimStat_SlimStat_Attribute\AsCommand;
 use SlimStat\Dependencies\Symfony\Component\Console\Completion\CompletionInput;
 use SlimStat\Dependencies\Symfony\Component\Console\Completion\CompletionSuggestions;
 use SlimStat\Dependencies\Symfony\Component\Console\Exception\ExceptionInterface;
@@ -23,7 +24,6 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputDefinition;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-use SlimStat\Dependencies\Symfony\Component\Console\SlimStat_SlimStat_Attribute\AsCommand;
 
 /**
  * Base class for all commands.
@@ -34,9 +34,7 @@ class Command
 {
     // see https://tldp.org/LDP/abs/html/exitcodes.html
     public const SUCCESS = 0;
-
     public const FAILURE = 1;
-
     public const INVALID = 2;
 
     /**
@@ -50,31 +48,18 @@ class Command
     protected static $defaultDescription;
 
     private $application;
-
     private $name;
-
     private $processTitle;
-
     private $aliases = [];
-
     private $definition;
-
     private $hidden = false;
-
     private $help = '';
-
     private $description = '';
-
     private $fullDefinition;
-
     private $ignoreValidationErrors = false;
-
     private $code;
-
     private $synopsis = [];
-
     private $usages = [];
-
     private $helperSet;
 
     /**
@@ -150,7 +135,7 @@ class Command
     public function setApplication(?Application $application = null)
     {
         $this->application = $application;
-        if ($application instanceof Application) {
+        if ($application) {
             $this->setHelperSet($application->getHelperSet());
         } else {
             $this->helperSet = null;
@@ -270,9 +255,9 @@ class Command
         // bind the input against the command specific arguments/options
         try {
             $input->bind($this->getDefinition());
-        } catch (ExceptionInterface $exception) {
+        } catch (ExceptionInterface $e) {
             if (!$this->ignoreValidationErrors) {
-                throw $exception;
+                throw $e;
             }
         }
 
@@ -348,7 +333,7 @@ class Command
             if (null === $r->getClosureThis()) {
                 set_error_handler(static function () {});
                 try {
-                    if (($c = \Closure::bind($code, $this)) instanceof \Closure) {
+                    if ($c = \Closure::bind($code, $this)) {
                         $code = $c;
                     }
                 } finally {
@@ -600,7 +585,7 @@ class Command
      */
     public function getProcessedHelp()
     {
-        $name            = $this->name;
+        $name = $this->name;
         $isSingleCommand = $this->application && $this->application->isSingleCommand();
 
         $placeholders = [
@@ -609,7 +594,7 @@ class Command
         ];
         $replacements = [
             $name,
-            $isSingleCommand ? $_SERVER['PHP_SELF'] : $_SERVER['PHP_SELF'] . ' ' . $name,
+            $isSingleCommand ? $_SERVER['PHP_SELF'] : $_SERVER['PHP_SELF'].' '.$name,
         ];
 
         return str_replace($placeholders, $replacements, $this->getHelp() ?: $this->getDescription());

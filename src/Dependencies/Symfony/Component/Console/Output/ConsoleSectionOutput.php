@@ -22,11 +22,8 @@ use SlimStat\Dependencies\Symfony\Component\Console\Terminal;
 class ConsoleSectionOutput extends StreamOutput
 {
     private $content = [];
-
     private $lines = 0;
-
     private $sections;
-
     private $terminal;
 
     /**
@@ -55,7 +52,7 @@ class ConsoleSectionOutput extends StreamOutput
         if ($lines) {
             array_splice($this->content, -($lines * 2)); // Multiply lines by 2 to cater for each new line added between content
         } else {
-            $lines         = $this->lines;
+            $lines = $this->lines;
             $this->content = [];
         }
 
@@ -118,7 +115,7 @@ class ConsoleSectionOutput extends StreamOutput
     private function popStreamContentUntilCurrentSection(int $numberOfLinesToClearFromCurrentSection = 0): string
     {
         $numberOfLinesToClear = $numberOfLinesToClearFromCurrentSection;
-        $erasedContent        = [];
+        $erasedContent = [];
 
         foreach ($this->sections as $section) {
             if ($section === $this) {

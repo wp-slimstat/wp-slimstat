@@ -32,7 +32,7 @@ final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInter
         string $clientFilename = null,
         string $clientMediaType = null
     ): UploadedFileInterface {
-        if (null === $size) {
+        if ($size === null) {
             $size = $stream->getSize();
         }
 
@@ -48,12 +48,12 @@ final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInter
     {
         try {
             $resource = Utils::tryFopen($file, $mode);
-        } catch (\RuntimeException $runtimeException) {
+        } catch (\RuntimeException $e) {
             if ('' === $mode || false === \in_array($mode[0], ['r', 'w', 'a', 'x', 'c'], true)) {
-                throw new \InvalidArgumentException(sprintf('Invalid file opening mode "%s"', $mode), 0, $runtimeException);
+                throw new \InvalidArgumentException(sprintf('Invalid file opening mode "%s"', $mode), 0, $e);
             }
 
-            throw $runtimeException;
+            throw $e;
         }
 
         return Utils::streamFor($resource);
@@ -66,7 +66,7 @@ final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInter
 
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
     {
-        if ('' === $method || '0' === $method) {
+        if (empty($method)) {
             if (!empty($serverParams['REQUEST_METHOD'])) {
                 $method = $serverParams['REQUEST_METHOD'];
             } else {

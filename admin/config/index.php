@@ -128,7 +128,7 @@ $settings = [
             'opt_out_cookie_names' => [
                 'title'       => __('Opt-out Cookies', 'wp-slimstat'),
                 'type'        => 'textarea',
-                'description' => __("If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"statistics\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"statistics\":false</code>. Separate multiple pairs with commas.", 'wp-slimstat'),
+                'description' => __("If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"slimstat\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"slimstat\":false</code>. Separate multiple pairs with commas.", 'wp-slimstat'),
             ],
             'opt_in_cookie_names' => [
                 'title'       => __('Opt-in Cookies', 'wp-slimstat'),
@@ -356,7 +356,7 @@ $settings = [
                 'title'             => __('SQL Limit', 'wp-slimstat'),
                 'type'              => 'integer',
                 'after_input_field' => __('rows', 'wp-slimstat'),
-                'description'       => __("You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the statistics.", 'wp-slimstat'),
+                'description'       => __("You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the slimstat.", 'wp-slimstat'),
             ],
             'enable_sov' => [
                 'title'       => __('Enable SOV', 'wp-slimstat'),
@@ -474,7 +474,7 @@ $settings = [
             'restrict_authors_view' => [
                 'title'       => __('Restrict Authors', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Enable this option if you want your authors to only see statistics related to their own content.', 'wp-slimstat'),
+                'description' => __('Enable this option if you want your authors to only see slimstat related to their own content.', 'wp-slimstat'),
             ],
             'capability_can_view' => [
                 'title'         => __('Minimum Capability', 'wp-slimstat'),
@@ -485,7 +485,7 @@ $settings = [
             'can_view' => [
                 'title'       => __('Usernames', 'wp-slimstat'),
                 'type'        => 'textarea',
-                'description' => __("Enter a list of usernames who should have access to the statistics. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat'),
+                'description' => __("Enter a list of usernames who should have access to the slimstat. Administrators are implicitly allowed, so you don't need to list them here below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat'),
             ],
 
             // Access Control - Customizer
@@ -586,7 +586,7 @@ $settings = [
             'delete_data_on_uninstall' => [
                 'title'       => __('Delete Data on Uninstall', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Delete all settings and statistics on plugin uninstall. Warning! If you enable this feature, all statistics and plugin settings will be permanently deleted from the database.', 'wp-slimstat'),
+                'description' => __('Delete all settings and slimstat on plugin uninstall. Warning! If you enable this feature, all slimstat and plugin settings will be permanently deleted from the database.', 'wp-slimstat'),
             ],
         ],
     ],

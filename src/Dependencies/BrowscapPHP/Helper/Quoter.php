@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Helper;
 
+use UnexpectedValueException;
+
 use function preg_match;
 use function preg_quote;
 use function preg_replace;
 use function sprintf;
 use function str_replace;
-
-use UnexpectedValueException;
 
 /**
  * class to help quoting strings for using a regex
@@ -52,7 +52,7 @@ final class Quoter implements QuoterInterface
             $pattern
         );
 
-        if (null === $pattern) {
+        if ($pattern === null) {
             throw new UnexpectedValueException(
                 sprintf('an error occured while handling pattern %s', $origPattern)
             );

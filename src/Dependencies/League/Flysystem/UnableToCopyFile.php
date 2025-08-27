@@ -34,8 +34,8 @@ final class UnableToCopyFile extends RuntimeException implements FilesystemOpera
         string $destinationPath,
         Throwable $previous = null
     ): UnableToCopyFile {
-        $e              = new self(sprintf('Unable to copy file from %s to %s', $sourcePath, $destinationPath), 0, $previous);
-        $e->source      = $sourcePath;
+        $e = new static("Unable to copy file from $sourcePath to $destinationPath", 0 , $previous);
+        $e->source = $sourcePath;
         $e->destination = $destinationPath;
 
         return $e;

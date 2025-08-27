@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Command;
 
-use function assert;
-use function is_string;
-
 use SlimStat\Dependencies\BrowscapPHP\BrowscapUpdater;
-use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorReadingFileException;
-use SlimStat\Dependencies\BrowscapPHP\Exception\FileNameMissingException;
-use SlimStat\Dependencies\BrowscapPHP\Exception\FileNotFoundException;
+use SlimStat\Dependencies\BrowscapPHP\Exception;
 use SlimStat\Dependencies\BrowscapPHP\Helper\LoggerHelper;
 use SlimStat\Dependencies\League\Flysystem\Filesystem;
 use SlimStat\Dependencies\League\Flysystem\Local\LocalFilesystemAdapter;
@@ -23,10 +18,11 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputArgument;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-
-use function sprintf;
-
 use Throwable;
+
+use function assert;
+use function is_string;
+use function sprintf;
 
 /**
  * Command to convert a downloaded Browscap ini file and write it to the cache
@@ -35,10 +31,8 @@ use Throwable;
  */
 class ConvertCommand extends Command
 {
-    public const FILENAME_MISSING = 6;
-
-    public const FILE_NOT_FOUND = 7;
-
+    public const FILENAME_MISSING   = 6;
+    public const FILE_NOT_FOUND     = 7;
     public const ERROR_READING_FILE = 8;
 
     private ?string $defaultIniFile = null;
@@ -104,11 +98,11 @@ class ConvertCommand extends Command
 
         $file = $input->getArgument('file');
         assert(is_string($file));
-        if ('' === $file || '0' === $file) {
+        if (! $file) {
             $file = $this->defaultIniFile;
         }
 
-        if (null === $file) {
+        if ($file === null) {
             return self::FILENAME_MISSING;
         }
 
@@ -116,15 +110,15 @@ class ConvertCommand extends Command
 
         try {
             $browscap->convertFile($file);
-        } catch (FileNameMissingException $e) {
+        } catch (Exception\FileNameMissingException $e) {
             $logger->debug($e);
 
             return self::FILENAME_MISSING;
-        } catch (FileNotFoundException $e) {
+        } catch (Exception\FileNotFoundException $e) {
             $logger->debug($e);
 
             return self::FILE_NOT_FOUND;
-        } catch (ErrorReadingFileException $e) {
+        } catch (Exception\ErrorReadingFileException $e) {
             $logger->debug($e);
 
             return self::ERROR_READING_FILE;

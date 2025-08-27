@@ -31,15 +31,15 @@ class Shard implements KeyValueStore
     /**
      * @var KeyValueStore[]
      */
-    protected $caches = [];
+    protected $caches = array();
 
     /**
      * Overloadable with multiple KeyValueStore objects.
      */
     public function __construct(KeyValueStore $cache1, KeyValueStore $cache2 = null /* , [KeyValueStore $cache3, [...]] */)
     {
-        $caches       = func_get_args();
-        $caches       = array_filter($caches);
+        $caches = func_get_args();
+        $caches = array_filter($caches);
         $this->caches = $caches;
     }
 
@@ -61,15 +61,15 @@ class Shard implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $shards  = $this->getShards($keys);
-        $results = [];
-        $tokens  = [];
+        $shards = $this->getShards($keys);
+        $results = array();
+        $tokens = array();
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
             $keysOnShard = $shards[$shard];
             $results += $shard->getMulti($keysOnShard, $shardTokens);
-            $tokens += $shardTokens ?: [];
+            $tokens += $shardTokens ?: array();
         }
 
         return $results;
@@ -88,12 +88,12 @@ class Shard implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        $shards  = $this->getShards(array_keys($items));
-        $results = [];
+        $shards = $this->getShards(array_keys($items));
+        $results = array();
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
-            $keysOnShard  = $shards[$shard];
+            $keysOnShard = $shards[$shard];
             $itemsOnShard = array_intersect_key($items, array_flip($keysOnShard));
             $results += $shard->setMulti($itemsOnShard, $expire);
         }
@@ -114,8 +114,8 @@ class Shard implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        $shards  = $this->getShards($keys);
-        $results = [];
+        $shards = $this->getShards($keys);
+        $results = array();
 
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
@@ -246,10 +246,10 @@ class Shard implements KeyValueStore
         foreach ($keys as $key) {
             $shard = $this->getShard($key);
             if (!isset($shards[$shard])) {
-                $shards[$shard] = [];
+                $shards[$shard] = array();
             }
 
-            $shards[$shard] = array_merge($shards[$shard], [$key]);
+            $shards[$shard] = array_merge($shards[$shard], array($key));
         }
 
         return $shards;

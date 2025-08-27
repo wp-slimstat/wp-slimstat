@@ -51,3 +51,6 @@ bun.lock
 
 # Package
 package-lock.json
+
+# PHP CS Fixer configuration file
+.php-cs-fixer.dist.php

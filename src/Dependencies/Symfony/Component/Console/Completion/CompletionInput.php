@@ -27,21 +27,14 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 final class CompletionInput extends ArgvInput
 {
     public const TYPE_ARGUMENT_VALUE = 'argument_value';
-
     public const TYPE_OPTION_VALUE = 'option_value';
-
     public const TYPE_OPTION_NAME = 'option_name';
-
     public const TYPE_NONE = 'none';
 
     private $tokens;
-
     private $currentIndex;
-
     private $completionType;
-
-    private $completionName;
-
+    private $completionName = null;
     private $completionValue = '';
 
     /**
@@ -64,8 +57,8 @@ final class CompletionInput extends ArgvInput
      */
     public static function fromTokens(array $tokens, int $currentIndex): self
     {
-        $input               = new self($tokens);
-        $input->tokens       = $tokens;
+        $input = new self($tokens);
+        $input->tokens = $tokens;
         $input->currentIndex = $currentIndex;
 
         return $input;
@@ -84,17 +77,17 @@ final class CompletionInput extends ArgvInput
             [$optionToken, $optionValue] = explode('=', $relevantToken, 2) + ['', ''];
 
             $option = $this->getOptionFromToken($optionToken);
-            if (!$option instanceof InputOption && !$this->isCursorFree()) {
-                $this->completionType  = self::TYPE_OPTION_NAME;
+            if (null === $option && !$this->isCursorFree()) {
+                $this->completionType = self::TYPE_OPTION_NAME;
                 $this->completionValue = $relevantToken;
 
                 return;
             }
 
-            if ($option instanceof InputOption && $option->acceptValue()) {
-                $this->completionType  = self::TYPE_OPTION_VALUE;
-                $this->completionName  = $option->getName();
-                $this->completionValue = $optionValue ?: (str_starts_with($optionToken, '--') ? '' : substr($optionToken, 2));
+            if (null !== $option && $option->acceptValue()) {
+                $this->completionType = self::TYPE_OPTION_VALUE;
+                $this->completionName = $option->getName();
+                $this->completionValue = $optionValue ?: (!str_starts_with($optionToken, '--') ? substr($optionToken, 2) : '');
 
                 return;
             }
@@ -104,9 +97,9 @@ final class CompletionInput extends ArgvInput
         if ('-' === $previousToken[0] && '' !== trim($previousToken, '-')) {
             // check if previous option accepted a value
             $previousOption = $this->getOptionFromToken($previousToken);
-            if ($previousOption instanceof InputOption && $previousOption->acceptValue()) {
-                $this->completionType  = self::TYPE_OPTION_VALUE;
-                $this->completionName  = $previousOption->getName();
+            if (null !== $previousOption && $previousOption->acceptValue()) {
+                $this->completionType = self::TYPE_OPTION_VALUE;
+                $this->completionName = $previousOption->getName();
                 $this->completionValue = $relevantToken;
 
                 return;
@@ -121,10 +114,10 @@ final class CompletionInput extends ArgvInput
                 break;
             }
 
-            $argumentValue        = $this->arguments[$argumentName];
+            $argumentValue = $this->arguments[$argumentName];
             $this->completionName = $argumentName;
             if (\is_array($argumentValue)) {
-                $this->completionValue = [] !== $argumentValue ? $argumentValue[array_key_last($argumentValue)] : null;
+                $this->completionValue = $argumentValue ? $argumentValue[array_key_last($argumentValue)] : null;
             } else {
                 $this->completionValue = $argumentValue;
             }
@@ -132,12 +125,12 @@ final class CompletionInput extends ArgvInput
 
         if ($this->currentIndex >= \count($this->tokens)) {
             if (!isset($this->arguments[$argumentName]) || $this->definition->getArgument($argumentName)->isArray()) {
-                $this->completionName  = $argumentName;
+                $this->completionName = $argumentName;
                 $this->completionValue = '';
             } else {
                 // we've reached the end
-                $this->completionType  = self::TYPE_NONE;
-                $this->completionName  = null;
+                $this->completionType = self::TYPE_NONE;
+                $this->completionName = null;
                 $this->completionValue = '';
             }
         }
@@ -190,7 +183,7 @@ final class CompletionInput extends ArgvInput
     {
         try {
             return parent::parseToken($token, $parseOptions);
-        } catch (RuntimeException $runtimeException) {
+        } catch (RuntimeException $e) {
             // suppress errors, completed input is almost never valid
         }
 
@@ -200,7 +193,7 @@ final class CompletionInput extends ArgvInput
     private function getOptionFromToken(string $optionToken): ?InputOption
     {
         $optionName = ltrim($optionToken, '-');
-        if ('' === $optionName || '0' === $optionName) {
+        if (!$optionName) {
             return null;
         }
 

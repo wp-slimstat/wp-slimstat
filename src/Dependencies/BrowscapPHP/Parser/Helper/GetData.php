@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Parser\Helper;
 
+use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
+use SlimStat\Dependencies\BrowscapPHP\Data\PropertyFormatter;
+use SlimStat\Dependencies\BrowscapPHP\Data\PropertyHolder;
+use SlimStat\Dependencies\BrowscapPHP\Helper\QuoterInterface;
+use SlimStat_JsonException;
+use SlimStat\Dependencies\Psr\Log\LoggerInterface;
+use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
+use UnexpectedValueException;
+
 use function array_keys;
 use function assert;
 use function count;
@@ -11,21 +20,10 @@ use function explode;
 use function is_array;
 use function is_string;
 use function json_decode;
-
-use const JSON_THROW_ON_ERROR;
-
-use SlimStat\Dependencies\BrowscapPHP\Cache\BrowscapCacheInterface;
-use SlimStat\Dependencies\BrowscapPHP\Data\PropertyFormatter;
-use SlimStat\Dependencies\BrowscapPHP\Data\PropertyHolder;
-use SlimStat\Dependencies\BrowscapPHP\Helper\QuoterInterface;
-use SlimStat\Dependencies\Psr\Log\LoggerInterface;
-use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
-use SlimStat_JsonException;
-
 use function sprintf;
 use function strtolower;
 
-use UnexpectedValueException;
+use const JSON_THROW_ON_ERROR;
 
 /**
  * extracts the data and the data for theses pattern from the ini content, optimized for PHP 5.5+
@@ -58,7 +56,7 @@ final class GetData implements GetDataInterface
      * Gets the settings for a given pattern (method calls itself to
      * get the data from the parent patterns)
      *
-     * @param string[] $settings
+     * @param  string[] $settings
      *
      * @return string[]
      *
@@ -74,14 +72,16 @@ final class GetData implements GetDataInterface
         $addedSettings = $this->getIniPart($unquotedPattern);
 
         // set some additional data
-        // The optimization with replaced digits get can now result in setting searches, for which we
-        // won't find a result - so only add the pattern information, is settings have been found.
-        //
-        // If not an empty array will be returned and the calling function can easily check if a pattern
-        // has been found.
-        if (0 === count($settings) && [] !== $addedSettings) {
-            $settings['browser_name_regex']   = '/^' . $pattern . '$/';
-            $settings['browser_name_pattern'] = $unquotedPattern;
+        if (count($settings) === 0) {
+            // The optimization with replaced digits get can now result in setting searches, for which we
+            // won't find a result - so only add the pattern information, is settings have been found.
+            //
+            // If not an empty array will be returned and the calling function can easily check if a pattern
+            // has been found.
+            if (0 < count($addedSettings)) {
+                $settings['browser_name_regex']   = '/^' . $pattern . '$/';
+                $settings['browser_name_pattern'] = $unquotedPattern;
+            }
         }
 
         // check if parent pattern set, only keep the first one
@@ -130,7 +130,7 @@ final class GetData implements GetDataInterface
 
                 return [];
             }
-        } catch (InvalidArgumentException $invalidArgumentException) {
+        } catch (InvalidArgumentException $e) {
             $this->logger->error(
                 new \InvalidArgumentException(
                     sprintf(
@@ -138,7 +138,7 @@ final class GetData implements GetDataInterface
                         $subkey
                     ),
                     0,
-                    $invalidArgumentException
+                    $e
                 )
             );
 
@@ -149,7 +149,7 @@ final class GetData implements GetDataInterface
 
         try {
             $file = $this->cache->getItem('browscap.iniparts.' . $subkey, true, $success);
-        } catch (InvalidArgumentException $invalidArgumentException) {
+        } catch (InvalidArgumentException $e) {
             $this->logger->error(
                 new \InvalidArgumentException(
                     sprintf(
@@ -157,7 +157,7 @@ final class GetData implements GetDataInterface
                         $subkey
                     ),
                     0,
-                    $invalidArgumentException
+                    $e
                 )
             );
 
@@ -176,7 +176,7 @@ final class GetData implements GetDataInterface
             return [];
         }
 
-        if (! is_array($file) || [] === $file) {
+        if (! is_array($file) || ! count($file)) {
             $this->logger->debug(
                 sprintf(
                     'cache key "browscap.iniparts.%s" for pattern "%s" was empty',

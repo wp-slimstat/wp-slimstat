@@ -31,7 +31,7 @@ class FileCookieJar extends CookieJar
     public function __construct(string $cookieFile, bool $storeSessionCookies = false)
     {
         parent::__construct();
-        $this->filename            = $cookieFile;
+        $this->filename = $cookieFile;
         $this->storeSessionCookies = $storeSessionCookies;
 
         if (\file_exists($cookieFile)) {
@@ -66,7 +66,7 @@ class FileCookieJar extends CookieJar
 
         $jsonStr = Utils::jsonEncode($json);
         if (false === \file_put_contents($filename, $jsonStr, \LOCK_EX)) {
-            throw new \RuntimeException('Unable to save file ' . $filename);
+            throw new \RuntimeException("Unable to save file {$filename}");
         }
     }
 
@@ -83,10 +83,9 @@ class FileCookieJar extends CookieJar
     {
         $json = \file_get_contents($filename);
         if (false === $json) {
-            throw new \RuntimeException('Unable to load file ' . $filename);
+            throw new \RuntimeException("Unable to load file {$filename}");
         }
-
-        if ('' === $json) {
+        if ($json === '') {
             return;
         }
 
@@ -96,7 +95,7 @@ class FileCookieJar extends CookieJar
                 $this->setCookie(new SetCookie($cookie));
             }
         } elseif (\is_scalar($data) && !empty($data)) {
-            throw new \RuntimeException('Invalid cookie file: ' . $filename);
+            throw new \RuntimeException("Invalid cookie file: {$filename}");
         }
     }
 }

@@ -28,7 +28,6 @@ use Symfony\Component\Process\Process;
 final class DumpCompletionCommand extends Command
 {
     protected static $defaultName = 'completion';
-
     protected static $defaultDescription = 'Dump the shell completion script';
 
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
@@ -45,8 +44,7 @@ final class DumpCompletionCommand extends Command
         $fullCommand = @realpath($fullCommand) ?: $fullCommand;
 
         $this
-            ->setHelp(
-                <<<EOH
+            ->setHelp(<<<EOH
 The <info>%command.name%</> command dumps the shell completion script required
 to use shell autocompletion (currently only bash completion is supported).
 
@@ -90,15 +88,14 @@ EOH
             return 0;
         }
 
-        $shell          = $input->getArgument('shell') ?? $this->guessShell();
-        $completionFile = __DIR__ . '/../Resources/completion.' . $shell;
+        $shell = $input->getArgument('shell') ?? self::guessShell();
+        $completionFile = __DIR__.'/../Resources/completion.'.$shell;
         if (!file_exists($completionFile)) {
             $supportedShells = $this->getSupportedShells();
 
             if ($output instanceof ConsoleOutputInterface) {
                 $output = $output->getErrorOutput();
             }
-
             if ($shell) {
                 $output->writeln(sprintf('<error>Detected shell "%s", which is not supported by Symfony shell completion (supported shells: "%s").</>', $shell, implode('", "', $supportedShells)));
             } else {
@@ -113,18 +110,17 @@ EOH
         return 0;
     }
 
-    private function guessShell(): string
+    private static function guessShell(): string
     {
         return basename($_SERVER['SHELL'] ?? '');
     }
 
     private function tailDebugLog(string $commandName, OutputInterface $output): void
     {
-        $debugFile = sys_get_temp_dir() . '/sf_' . $commandName . '.log';
+        $debugFile = sys_get_temp_dir().'/sf_'.$commandName.'.log';
         if (!file_exists($debugFile)) {
             touch($debugFile);
         }
-
         $process = new Process(['tail', '-f', $debugFile], null, null, null, 0);
         $process->run(function (string $type, string $line) use ($output): void {
             $output->write($line);
@@ -138,7 +134,7 @@ EOH
     {
         $shells = [];
 
-        foreach (new \DirectoryIterator(__DIR__ . '/../Resources/') as $file) {
+        foreach (new \DirectoryIterator(__DIR__.'/../Resources/') as $file) {
             if (str_starts_with($file->getBasename(), 'completion.') && $file->isFile()) {
                 $shells[] = $file->getExtension();
             }

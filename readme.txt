@@ -37,7 +37,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 * **Extended Overview**: Add custom columns to the User Overview widget and export file.
 
 = Requirements =
-* WordPress 5.0+
+* WordPress 5.6+
 * PHP 7.4+
 * MySQL 5.0.3+
 * At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
@@ -73,13 +73,14 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.3.0 - 2025-08-12 =
-- **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.  
-- **New**: Support for WordPress date format setting in charts.  
-- **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.  
-- **Enhancement**: Redesigned line charts for better readability.  
-- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.  
-[See full release notes →](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0)
+= 5.3.0 - 2025-08-25 =
+- **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
+- **New**: Support for WordPress date format setting in charts.
+- **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.
+- **Enhancement**: Redesigned line charts for better readability.
+- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
+- **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
+[See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0)
 
 = 5.2.13 - 2025-04-29 =
 - **Fix**: Resolved issues with pagination in reports.

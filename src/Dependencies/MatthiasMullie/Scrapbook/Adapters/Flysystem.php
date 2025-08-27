@@ -2,6 +2,7 @@
 
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters;
 
+use SlimStat\Dependencies\League\Flysystem\FileExistsException;
 use SlimStat\Dependencies\League\Flysystem\FileNotFoundException;
 use SlimStat\Dependencies\League\Flysystem\Filesystem;
 use SlimStat\Dependencies\League\Flysystem\UnableToDeleteFile;
@@ -35,7 +36,7 @@ class Flysystem implements KeyValueStore
     public function __construct(Filesystem $filesystem)
     {
         $this->filesystem = $filesystem;
-        $this->version    = class_exists('League\Flysystem\Local\LocalFilesystemAdapter') ? 2 : 1;
+        $this->version = class_exists('League\Flysystem\Local\LocalFilesystemAdapter') ? 2 : 1;
     }
 
     /**
@@ -66,15 +67,15 @@ class Flysystem implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $results = [];
-        $tokens  = [];
+        $results = array();
+        $tokens = array();
         foreach ($keys as $key) {
             $token = null;
             $value = $this->get($key, $token);
 
             if (null !== $token) {
                 $results[$key] = $value;
-                $tokens[$key]  = $token;
+                $tokens[$key] = $token;
             }
         }
 
@@ -129,7 +130,7 @@ class Flysystem implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        $success = [];
+        $success = array();
         foreach ($items as $key => $value) {
             $success[$key] = $this->set($key, $value, $expire);
         }
@@ -174,7 +175,7 @@ class Flysystem implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        $success = [];
+        $success = array();
         foreach ($keys as $key) {
             $success[$key] = $this->delete($key);
         }
@@ -485,7 +486,7 @@ class Flysystem implements KeyValueStore
      */
     protected function lock($key)
     {
-        $path = md5($key) . '.lock';
+        $path = md5($key).'.lock';
 
         for ($i = 0; $i < 25; ++$i) {
             try {
@@ -513,7 +514,7 @@ class Flysystem implements KeyValueStore
      */
     protected function unlock($key)
     {
-        $path = md5($key) . '.lock';
+        $path = md5($key).'.lock';
         try {
             $this->filesystem->delete($path);
         } catch (FileNotFoundException $e) {
@@ -567,7 +568,7 @@ class Flysystem implements KeyValueStore
     {
         $expire = $this->normalizeTime($expire);
 
-        return $expire . "\n" . serialize($value);
+        return $expire."\n".serialize($value);
     }
 
     /**
@@ -601,7 +602,7 @@ class Flysystem implements KeyValueStore
             return false;
         }
 
-        $data    = explode("\n", $data, 2);
+        $data = explode("\n", $data, 2);
         $data[0] = (int) $data[0];
 
         return $data;
@@ -614,6 +615,6 @@ class Flysystem implements KeyValueStore
      */
     protected function path($key)
     {
-        return md5($key) . '.cache';
+        return md5($key).'.cache';
     }
 }

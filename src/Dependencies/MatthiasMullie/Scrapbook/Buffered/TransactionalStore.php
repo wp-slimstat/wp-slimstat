@@ -34,7 +34,7 @@ class TransactionalStore implements KeyValueStore
      *
      * @var KeyValueStore[]
      */
-    protected $transactions = [];
+    protected $transactions = array();
 
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for
@@ -69,7 +69,7 @@ class TransactionalStore implements KeyValueStore
         // transactions can be nested: the previous transaction will serve as
         // cache backend for the new cache (so when committing a nested
         // transaction, it will commit to the parent transaction)
-        $cache                = end($this->transactions);
+        $cache = end($this->transactions);
         $this->transactions[] = new Transaction($buffer, $cache);
     }
 

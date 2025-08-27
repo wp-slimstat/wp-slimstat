@@ -141,7 +141,7 @@ final class EnglishInflector implements InflectorInterface
         // shoes (shoe)
         ['se', 2, true, true, ['', 'e']],
 
-        // status (status)
+         // status (status)
         ['sutats', 6, true, true, 'status'],
 
         // tags (tag)
@@ -403,9 +403,9 @@ final class EnglishInflector implements InflectorInterface
 
     public function singularize(string $plural): array
     {
-        $pluralRev      = strrev($plural);
+        $pluralRev = strrev($plural);
         $lowerPluralRev = strtolower($pluralRev);
-        $pluralLength   = \strlen($lowerPluralRev);
+        $pluralLength = \strlen($lowerPluralRev);
 
         // Check if the word is one which is not inflected, return early if so
         if (\in_array($lowerPluralRev, self::UNINFLECTED, true)) {
@@ -417,9 +417,9 @@ final class EnglishInflector implements InflectorInterface
         // in the plural table to compare them with the characters of the actual
         // given plural suffix
         foreach (self::PLURAL_MAP as $map) {
-            $suffix       = $map[0];
+            $suffix = $map[0];
             $suffixLength = $map[1];
-            $j            = 0;
+            $j = 0;
 
             // Compare characters in the plural table and of the suffix of the
             // given plural one by one
@@ -445,7 +445,7 @@ final class EnglishInflector implements InflectorInterface
                         }
                     }
 
-                    $newBase   = substr($plural, 0, $pluralLength - $suffixLength);
+                    $newBase = substr($plural, 0, $pluralLength - $suffixLength);
                     $newSuffix = $map[4];
 
                     // Check whether the first character in the plural suffix
@@ -457,13 +457,13 @@ final class EnglishInflector implements InflectorInterface
                         $singulars = [];
 
                         foreach ($newSuffix as $newSuffixEntry) {
-                            $singulars[] = $newBase . ($firstUpper ? ucfirst($newSuffixEntry) : $newSuffixEntry);
+                            $singulars[] = $newBase.($firstUpper ? ucfirst($newSuffixEntry) : $newSuffixEntry);
                         }
 
                         return $singulars;
                     }
 
-                    return [$newBase . ($firstUpper ? ucfirst($newSuffix) : $newSuffix)];
+                    return [$newBase.($firstUpper ? ucfirst($newSuffix) : $newSuffix)];
                 }
 
                 // Suffix is longer than word
@@ -479,9 +479,9 @@ final class EnglishInflector implements InflectorInterface
 
     public function pluralize(string $singular): array
     {
-        $singularRev      = strrev($singular);
+        $singularRev = strrev($singular);
         $lowerSingularRev = strtolower($singularRev);
-        $singularLength   = \strlen($lowerSingularRev);
+        $singularLength = \strlen($lowerSingularRev);
 
         // Check if the word is one which is not inflected, return early if so
         if (\in_array($lowerSingularRev, self::UNINFLECTED, true)) {
@@ -493,9 +493,9 @@ final class EnglishInflector implements InflectorInterface
         // in the singular table to compare them with the characters of the actual
         // given singular suffix
         foreach (self::SINGULAR_MAP as $map) {
-            $suffix       = $map[0];
+            $suffix = $map[0];
             $suffixLength = $map[1];
-            $j            = 0;
+            $j = 0;
 
             // Compare characters in the singular table and of the suffix of the
             // given plural one by one
@@ -522,7 +522,7 @@ final class EnglishInflector implements InflectorInterface
                         }
                     }
 
-                    $newBase   = substr($singular, 0, $singularLength - $suffixLength);
+                    $newBase = substr($singular, 0, $singularLength - $suffixLength);
                     $newSuffix = $map[4];
 
                     // Check whether the first character in the singular suffix
@@ -534,13 +534,13 @@ final class EnglishInflector implements InflectorInterface
                         $plurals = [];
 
                         foreach ($newSuffix as $newSuffixEntry) {
-                            $plurals[] = $newBase . ($firstUpper ? ucfirst($newSuffixEntry) : $newSuffixEntry);
+                            $plurals[] = $newBase.($firstUpper ? ucfirst($newSuffixEntry) : $newSuffixEntry);
                         }
 
                         return $plurals;
                     }
 
-                    return [$newBase . ($firstUpper ? ucfirst($newSuffix) : $newSuffix)];
+                    return [$newBase.($firstUpper ? ucfirst($newSuffix) : $newSuffix)];
                 }
 
                 // Suffix is longer than word
@@ -551,6 +551,6 @@ final class EnglishInflector implements InflectorInterface
         }
 
         // Assume that plural is singular with a trailing `s`
-        return [$singular . 's'];
+        return [$singular.'s'];
     }
 }

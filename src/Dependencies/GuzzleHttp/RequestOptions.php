@@ -177,11 +177,11 @@ final class RequestOptions
     public const ON_HEADERS = 'on_headers';
 
     /**
-     * on_stats: (callable) allows you to get access to transfer statistics of
+     * on_stats: (callable) allows you to get access to transfer slimstat of
      * a request and access the lower level transfer details of the handler
      * associated with your client. ``on_stats`` is a callable that is invoked
      * when a handler has finished sending a request. The callback is invoked
-     * with transfer statistics about the request, the response received, or
+     * with transfer slimstat about the request, the response received, or
      * the error encountered. Included in the data is the total amount of time
      * taken to send the request.
      */

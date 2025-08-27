@@ -35,7 +35,7 @@ class View
                 $viewPath = sprintf('%s/views/%s.php', $baseDir, $view);
 
                 if (!file_exists($viewPath)) {
-                    throw new SystemErrorException(esc_html__('View file not found: ' . $viewPath, 'wp-statistics'));
+                    throw new SystemErrorException(esc_html__('View file not found: ' . $viewPath, 'wp-slimstat'));
                 }
 
                 if (!empty($args)) {

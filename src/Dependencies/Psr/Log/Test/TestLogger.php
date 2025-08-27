@@ -17,6 +17,7 @@ use SlimStat\Dependencies\Psr\Log\AbstractLogger;
  * @method bool hasNotice($record)
  * @method bool hasInfo($record)
  * @method bool hasDebug($record)
+ *
  * @method bool hasEmergencyRecords()
  * @method bool hasAlertRecords()
  * @method bool hasCriticalRecords()
@@ -25,6 +26,7 @@ use SlimStat\Dependencies\Psr\Log\AbstractLogger;
  * @method bool hasNoticeRecords()
  * @method bool hasInfoRecords()
  * @method bool hasDebugRecords()
+ *
  * @method bool hasEmergencyThatContains($message)
  * @method bool hasAlertThatContains($message)
  * @method bool hasCriticalThatContains($message)
@@ -33,6 +35,7 @@ use SlimStat\Dependencies\Psr\Log\AbstractLogger;
  * @method bool hasNoticeThatContains($message)
  * @method bool hasInfoThatContains($message)
  * @method bool hasDebugThatContains($message)
+ *
  * @method bool hasEmergencyThatMatches($message)
  * @method bool hasAlertThatMatches($message)
  * @method bool hasCriticalThatMatches($message)
@@ -41,6 +44,7 @@ use SlimStat\Dependencies\Psr\Log\AbstractLogger;
  * @method bool hasNoticeThatMatches($message)
  * @method bool hasInfoThatMatches($message)
  * @method bool hasDebugThatMatches($message)
+ *
  * @method bool hasEmergencyThatPasses($message)
  * @method bool hasAlertThatPasses($message)
  * @method bool hasCriticalThatPasses($message)
@@ -65,13 +69,13 @@ class TestLogger extends AbstractLogger
     public function log($level, $message, array $context = [])
     {
         $record = [
-            'level'   => $level,
+            'level' => $level,
             'message' => $message,
             'context' => $context,
         ];
 
         $this->recordsByLevel[$record['level']][] = $record;
-        $this->records[]                          = $record;
+        $this->records[] = $record;
     }
 
     public function hasRecords($level)
@@ -84,28 +88,29 @@ class TestLogger extends AbstractLogger
         if (is_string($record)) {
             $record = ['message' => $record];
         }
-
         return $this->hasRecordThatPasses(function ($rec) use ($record) {
             if ($rec['message'] !== $record['message']) {
                 return false;
             }
-
             if (isset($record['context']) && $rec['context'] !== $record['context']) {
                 return false;
             }
-
             return true;
         }, $level);
     }
 
     public function hasRecordThatContains($message, $level)
     {
-        return $this->hasRecordThatPasses(fn ($rec) => false !== strpos($rec['message'], (string) $message), $level);
+        return $this->hasRecordThatPasses(function ($rec) use ($message) {
+            return strpos($rec['message'], $message) !== false;
+        }, $level);
     }
 
     public function hasRecordThatMatches($regex, $level)
     {
-        return $this->hasRecordThatPasses(fn ($rec) => preg_match($regex, $rec['message']) > 0, $level);
+        return $this->hasRecordThatPasses(function ($rec) use ($regex) {
+            return preg_match($regex, $rec['message']) > 0;
+        }, $level);
     }
 
     public function hasRecordThatPasses(callable $predicate, $level)
@@ -113,13 +118,11 @@ class TestLogger extends AbstractLogger
         if (!isset($this->recordsByLevel[$level])) {
             return false;
         }
-
         foreach ($this->recordsByLevel[$level] as $i => $rec) {
             if (call_user_func($predicate, $rec, $i)) {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -127,19 +130,18 @@ class TestLogger extends AbstractLogger
     {
         if (preg_match('/(.*)(Debug|Info|Notice|Warning|Error|Critical|Alert|Emergency)(.*)/', $method, $matches) > 0) {
             $genericMethod = $matches[1] . ('Records' !== $matches[3] ? 'Record' : '') . $matches[3];
-            $level         = strtolower($matches[2]);
+            $level = strtolower($matches[2]);
             if (method_exists($this, $genericMethod)) {
                 $args[] = $level;
                 return call_user_func_array([$this, $genericMethod], $args);
             }
         }
-
         throw new \BadMethodCallException('Call to undefined method ' . get_class($this) . '::' . $method . '()');
     }
 
     public function reset()
     {
-        $this->records        = [];
+        $this->records = [];
         $this->recordsByLevel = [];
     }
 }

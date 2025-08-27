@@ -51,14 +51,14 @@ trait ServiceMethodsSubscriberTrait
 
             /* @var SubscribedService $attribute */
             $attribute = $attribute->newInstance();
-            $attribute->key ??= self::class . '::' . $method->name;
+            $attribute->key ??= self::class.'::'.$method->name;
             $attribute->type ??= $returnType instanceof \ReflectionNamedType ? $returnType->getName() : (string) $returnType;
             $attribute->nullable = $returnType->allowsNull();
 
             if ($attribute->attributes) {
                 $services[] = $attribute;
             } else {
-                $services[$attribute->key] = ($attribute->nullable ? '?' : '') . $attribute->type;
+                $services[$attribute->key] = ($attribute->nullable ? '?' : '').$attribute->type;
             }
         }
 

@@ -42,7 +42,7 @@ class Memcached implements KeyValueStore
          *
          * @see https://github.com/php-memcached-dev/php-memcached/issues/21
          */
-        $values = $this->getMulti([$key], $tokens);
+        $values = $this->getMulti(array($key), $tokens);
 
         if (!isset($values[$key])) {
             $token = null;
@@ -60,14 +60,14 @@ class Memcached implements KeyValueStore
      */
     public function getMulti(array $keys, array &$tokens = null)
     {
-        $tokens = [];
-        if ([] === $keys) {
-            return [];
+        $tokens = array();
+        if (empty($keys)) {
+            return array();
         }
 
-        $keys = array_map([$this, 'encode'], $keys);
+        $keys = array_map(array($this, 'encode'), $keys);
 
-        if (defined(\Memcached::class . '::GET_EXTENDED')) {
+        if (defined('\Memcached::GET_EXTENDED')) {
             $return = $this->client->getMulti($keys, \Memcached::GET_EXTENDED);
             $this->throwExceptionOnClientCallFailure($return);
             foreach ($return as $key => $value) {
@@ -80,15 +80,15 @@ class Memcached implements KeyValueStore
             $this->throwExceptionOnClientCallFailure($return);
         }
 
-        $keys   = array_map([$this, 'decode'], array_keys($return));
+        $keys = array_map(array($this, 'decode'), array_keys($return));
         $return = array_combine($keys, $return);
 
         // HHVMs getMulti() returns null instead of empty array for no results,
         // so normalize that
-        $tokens = $tokens ?: [];
+        $tokens = $tokens ?: array();
         $tokens = array_combine($keys, $tokens);
 
-        return $return ?: [];
+        return $return ?: array();
     }
 
     /**
@@ -110,8 +110,8 @@ class Memcached implements KeyValueStore
      */
     public function setMulti(array $items, $expire = 0)
     {
-        if ([] === $items) {
-            return [];
+        if (empty($items)) {
+            return array();
         }
 
         $keys = array_keys($items);
@@ -121,15 +121,15 @@ class Memcached implements KeyValueStore
 
         if (defined('HHVM_VERSION')) {
             $nums = array_filter(array_keys($items), 'is_numeric');
-            if ([] !== $nums) {
+            if (!empty($nums)) {
                 return $this->setMultiNumericItemsForHHVM($items, $nums, $expire);
             }
         }
 
-        $keys    = array_map([$this, 'encode'], array_keys($items));
-        $items   = array_combine($keys, $items);
+        $keys = array_map(array($this, 'encode'), array_keys($items));
+        $items = array_combine($keys, $items);
         $success = $this->client->setMulti($items, $expire);
-        $keys    = array_map([$this, 'decode'], array_keys($items));
+        $keys = array_map(array($this, 'decode'), array_keys($items));
 
         return array_fill_keys($keys, $success);
     }
@@ -149,8 +149,8 @@ class Memcached implements KeyValueStore
      */
     public function deleteMulti(array $keys)
     {
-        if ([] === $keys) {
-            return [];
+        if (empty($keys)) {
+            return array();
         }
 
         if (!method_exists($this->client, 'deleteMulti')) {
@@ -164,21 +164,21 @@ class Memcached implements KeyValueStore
              */
             $values = $this->getMulti($keys);
 
-            $keys = array_map([$this, 'encode'], array_keys($values));
+            $keys = array_map(array($this, 'encode'), array_keys($values));
             $this->client->setMulti(array_fill_keys($keys, ''), time() - 1);
 
-            $return = [];
+            $return = array();
             foreach ($keys as $key) {
-                $key          = $this->decode($key);
+                $key = $this->decode($key);
                 $return[$key] = array_key_exists($key, $values);
             }
 
             return $return;
         }
 
-        $keys   = array_map([$this, 'encode'], $keys);
-        $result = $this->client->deleteMulti($keys);
-        $keys   = array_map([$this, 'decode'], array_keys($result));
+        $keys = array_map(array($this, 'encode'), $keys);
+        $result = (array) $this->client->deleteMulti($keys);
+        $keys = array_map(array($this, 'decode'), array_keys($result));
         $result = array_combine($keys, $result);
 
         /*
@@ -346,8 +346,8 @@ class Memcached implements KeyValueStore
 
         $value += $offset;
         // value can never be lower than 0
-        $value   = max(0, $value);
-        $key     = $this->encode($key);
+        $value = max(0, $value);
+        $key = $this->encode($key);
         $success = $this->client->cas($token, $key, $value, $expire);
 
         return $success ? $value : false;
@@ -373,10 +373,12 @@ class Memcached implements KeyValueStore
     protected function encode($key)
     {
         $regex = '/[^\x21\x22\x24\x26-\x39\x3b-\x7e]+/';
-        $key   = preg_replace_callback($regex, fn ($match) => rawurlencode($match[0]), $key);
+        $key = preg_replace_callback($regex, function ($match) {
+            return rawurlencode($match[0]);
+        }, $key);
 
         if (strlen($key) > 255) {
-            throw new InvalidKey(sprintf('Invalid key: %s. Encoded Memcached keys can not exceed 255 chars.', $key));
+            throw new InvalidKey("Invalid key: $key. Encoded Memcached keys can not exceed 255 chars.");
         }
 
         return $key;
@@ -395,7 +397,9 @@ class Memcached implements KeyValueStore
         // (=the encoded versions for those encoded in encode)
         $regex = '/%(?!2[1246789]|3[0-9]|3[B-F]|[4-6][0-9A-F]|5[0-9A-E])[0-9A-Z]{2}/i';
 
-        return preg_replace_callback($regex, fn ($match) => rawurldecode($match[0]), $key);
+        return preg_replace_callback($regex, function ($match) {
+            return rawurldecode($match[0]);
+        }, $key);
     }
 
     /**
@@ -431,14 +435,14 @@ class Memcached implements KeyValueStore
      */
     protected function setMultiNumericItemsForHHVM(array $items, array $nums, $expire = 0)
     {
-        $success = [];
-        $nums    = array_intersect_key($items, array_fill_keys($nums, null));
+        $success = array();
+        $nums = array_intersect_key($items, array_fill_keys($nums, null));
         foreach ($nums as $k => $v) {
             $success[$k] = $this->set((string) $k, $v, $expire);
         }
 
         $remaining = array_diff_key($items, $nums);
-        if ([] !== $remaining) {
+        if ($remaining) {
             $success += $this->setMulti($remaining, $expire);
         }
 

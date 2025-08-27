@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace SlimStat\Dependencies\BrowscapPHP\Cache;
 
+use SlimStat\Dependencies\Psr\Log\LoggerInterface;
+use SlimStat\Dependencies\Psr\SimpleCache\CacheInterface;
+use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
+
 use function array_key_exists;
 use function assert;
 use function is_array;
 use function is_int;
 use function is_string;
 use function serialize;
-
-use SlimStat\Dependencies\Psr\Log\LoggerInterface;
-use SlimStat\Dependencies\Psr\SimpleCache\CacheInterface;
-use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
-
 use function unserialize;
 
 /**
@@ -63,7 +62,7 @@ final class BrowscapCache implements BrowscapCacheInterface
      */
     public function getVersion(): ?int
     {
-        if (null === $this->version) {
+        if ($this->version === null) {
             $success = null;
 
             try {
@@ -73,10 +72,10 @@ final class BrowscapCache implements BrowscapCacheInterface
                 $cachedVersion = null;
             }
 
-            assert(null === $cachedVersion || is_int($cachedVersion));
+            assert($cachedVersion === null || is_int($cachedVersion));
 
-            if (null !== $cachedVersion && $success) {
-                $this->version = $cachedVersion;
+            if ($cachedVersion !== null && $success) {
+                $this->version = (int) $cachedVersion;
             }
         }
 
@@ -90,7 +89,7 @@ final class BrowscapCache implements BrowscapCacheInterface
      */
     public function getReleaseDate(): ?string
     {
-        if (null === $this->releaseDate) {
+        if ($this->releaseDate === null) {
             $success = null;
 
             try {
@@ -100,9 +99,9 @@ final class BrowscapCache implements BrowscapCacheInterface
                 $releaseDate = null;
             }
 
-            assert(null === $releaseDate || is_string($releaseDate));
+            assert($releaseDate === null || is_string($releaseDate));
 
-            if (null !== $releaseDate && $success) {
+            if ($releaseDate !== null && $success) {
                 $this->releaseDate = $releaseDate;
             }
         }
@@ -117,7 +116,7 @@ final class BrowscapCache implements BrowscapCacheInterface
      */
     public function getType(): ?string
     {
-        if (null === $this->type) {
+        if ($this->type === null) {
             $success = null;
 
             try {
@@ -127,9 +126,9 @@ final class BrowscapCache implements BrowscapCacheInterface
                 $type = null;
             }
 
-            assert(null === $type || is_string($type));
+            assert($type === null || is_string($type));
 
-            if (null !== $type && $success) {
+            if ($type !== null && $success) {
                 $this->type = $type;
             }
         }

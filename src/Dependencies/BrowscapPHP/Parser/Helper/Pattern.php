@@ -61,7 +61,7 @@ final class Pattern
 
         $string = $matches[1];
 
-        if ($variants) {
+        if ($variants === true) {
             $patternStarts = [];
 
             for ($i = strlen($string); 1 <= $i; --$i) {
