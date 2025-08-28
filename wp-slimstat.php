@@ -28,6 +28,13 @@ define('SLIMSTAT_URL', plugins_url('', __FILE__));
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Explicitly require trait files to ensure they are loaded
+require_once __DIR__ . '/src/Tracker/TrackerTrait.php';
+require_once __DIR__ . '/src/Tracker/TrackerAjaxTrait.php';
+require_once __DIR__ . '/src/Tracker/TrackerTrackTrait.php';
+require_once __DIR__ . '/src/Tracker/TrackerDBTrait.php';
+require_once __DIR__ . '/src/Tracker/TrackerHelpersTrait.php';
+
 class wp_slimstat
 {
     // Tracker methods have been moved to src/Tracker/TrackerTrait.php
@@ -526,6 +533,32 @@ class wp_slimstat
         }
     }
     // end string_to_array
+
+    /**
+     * Returns Matomo search engine mapping JSON, cached.
+     */
+    public static function get_search_engines()
+    {
+        static $cached_search_engines = null;
+        if (null !== $cached_search_engines) {
+            return $cached_search_engines;
+        }
+
+        $data = get_transient('slimstat_matomo_searchengine');
+        if (false === $data) {
+            $json_path = plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json';
+            $json      = @file_get_contents($json_path);
+            $data      = json_decode($json, true);
+            if (!is_array($data)) {
+                $data = [];
+            }
+            set_transient('slimstat_matomo_searchengine', $data, WEEK_IN_SECONDS);
+        }
+
+        $cached_search_engines = $data;
+        return $cached_search_engines;
+    }
+    // end get_search_engines
 
     /**
      * Toggles WordPress filters on date_i18n function

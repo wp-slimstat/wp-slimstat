@@ -44,7 +44,7 @@ class Transaction implements KeyValueStore
      *
      * @var mixed[]
      */
-    protected $tokens = [];
+    protected $tokens = array();
 
     /**
      * Deferred updates to be committed to real cache.
@@ -65,7 +65,7 @@ class Transaction implements KeyValueStore
     /**
      * @var Transaction[]
      */
-    protected $collections = [];
+    protected $collections = array();
 
     /**
      * @param Buffer|BufferCollection $local
@@ -74,11 +74,10 @@ class Transaction implements KeyValueStore
     {
         // can't do double typehint, so let's manually check the type
         if (!$local instanceof Buffer && !$local instanceof BufferCollection) {
-            $error = 'Invalid class for $local: ' . get_class($local);
+            $error = 'Invalid class for $local: '.get_class($local);
             if (class_exists('\TypeError')) {
                 throw new \TypeError($error);
             }
-
             trigger_error($error, E_USER_ERROR);
         }
 
@@ -133,7 +132,7 @@ class Transaction implements KeyValueStore
          * servers, just has to be unique every time it's called in this
          * one particular request - which it is.
          */
-        $token                = uniqid();
+        $token = uniqid();
         $this->tokens[$token] = serialize($value);
 
         return $value;
@@ -146,7 +145,7 @@ class Transaction implements KeyValueStore
     {
         // retrieve all that we can from local cache
         $values = $this->local->getMulti($keys);
-        $tokens = [];
+        $tokens = array();
 
         // short-circuit reading from real cache if we have an uncommitted flush
         if (!$this->suspend) {
@@ -160,7 +159,7 @@ class Transaction implements KeyValueStore
             }
 
             // fetch missing values from real cache
-            if ([] !== $keys) {
+            if ($keys) {
                 $missing = $this->cache->getMulti($keys);
                 $values += $missing;
             }
@@ -169,8 +168,8 @@ class Transaction implements KeyValueStore
         // any tokens we get will be unreliable, so generate some replacements
         // (more elaborate explanation in get())
         foreach ($values as $key => $value) {
-            $token                = uniqid();
-            $tokens[$key]         = $token;
+            $token = uniqid();
+            $tokens[$key] = $token;
             $this->tokens[$token] = serialize($value);
         }
 
@@ -205,7 +204,7 @@ class Transaction implements KeyValueStore
 
         // only attempt to store those that we've set successfully to local
         $successful = array_intersect_key($items, $success);
-        if ([] !== $successful) {
+        if (!empty($successful)) {
             $this->defer->setMulti($successful, $expire);
         }
 
@@ -245,16 +244,16 @@ class Transaction implements KeyValueStore
     {
         // check the current values to see if they currently exists, so we can
         // properly return true/false as would be expected from KeyValueStore
-        $items   = $this->getMulti($keys);
-        $success = [];
+        $items = $this->getMulti($keys);
+        $success = array();
         foreach ($keys as $key) {
             $success[$key] = array_key_exists($key, $items);
         }
 
         // only attempt to store those that we've deleted successfully to local
         $values = array_intersect_key($success, array_flip($keys));
-        if ([] === $values) {
-            return [];
+        if (empty($values)) {
+            return array();
         }
 
         // mark all as expired in local cache (see comment in delete())
@@ -337,7 +336,7 @@ class Transaction implements KeyValueStore
      */
     public function cas($token, $key, $value, $expire = 0)
     {
-        $originalValue = $this->tokens[$token] ?? null;
+        $originalValue = isset($this->tokens[$token]) ? $this->tokens[$token] : null;
 
         // value is no longer the same as what we used for token
         if (serialize($this->get($key)) !== $originalValue) {
@@ -380,7 +379,7 @@ class Transaction implements KeyValueStore
 
         // store the value in memory, so that when we ask for it again later
         // in this same request, we get the value we just set
-        $value   = max(0, $value + $offset);
+        $value = max(0, $value + $offset);
         $success = $this->local->set($key, $value, $expire);
         if (false === $success) {
             return false;
@@ -414,7 +413,7 @@ class Transaction implements KeyValueStore
 
         // store the value in memory, so that when we ask for it again later
         // in this same request, we get the value we just set
-        $value   = max(0, $value - $offset);
+        $value = max(0, $value - $offset);
         $success = $this->local->set($key, $value, $expire);
         if (false === $success) {
             return false;
@@ -518,7 +517,7 @@ class Transaction implements KeyValueStore
      */
     protected function clear()
     {
-        $this->tokens  = [];
+        $this->tokens = array();
         $this->suspend = false;
     }
 }

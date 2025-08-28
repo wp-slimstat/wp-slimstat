@@ -2,9 +2,6 @@
 
 namespace SlimStat\Dependencies\GuzzleHttp;
 
-use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
-use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
-
 /**
  * Debug function used to describe the provided value type and class.
  *
@@ -53,7 +50,7 @@ function debug_resource($value = null)
  *
  * The returned handler is not wrapped by any default middlewares.
  *
- * @return callable(RequestInterface, array):PromiseInterface Returns the best handler for the given system.
+ * @return callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface Returns the best handler for the given system.
  *
  * @throws \RuntimeException if no viable Handler is available.
  *

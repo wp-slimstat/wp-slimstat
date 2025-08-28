@@ -41,7 +41,7 @@ final class BufferStream implements StreamInterface
 
     public function getContents(): string
     {
-        $buffer       = $this->buffer;
+        $buffer = $this->buffer;
         $this->buffer = '';
 
         return $buffer;
@@ -91,7 +91,7 @@ final class BufferStream implements StreamInterface
 
     public function eof(): bool
     {
-        return '' === (string) $this->buffer;
+        return strlen($this->buffer) === 0;
     }
 
     public function tell(): int
@@ -108,11 +108,11 @@ final class BufferStream implements StreamInterface
 
         if ($length >= $currentLength) {
             // No need to slice the buffer because we don't have enough data.
-            $result       = $this->buffer;
+            $result = $this->buffer;
             $this->buffer = '';
         } else {
             // Slice up the result to provide a subset of the buffer.
-            $result       = substr($this->buffer, 0, $length);
+            $result = substr($this->buffer, 0, $length);
             $this->buffer = substr($this->buffer, $length);
         }
 
@@ -138,7 +138,7 @@ final class BufferStream implements StreamInterface
      */
     public function getMetadata($key = null)
     {
-        if ('hwm' === $key) {
+        if ($key === 'hwm') {
             return $this->hwm;
         }
 

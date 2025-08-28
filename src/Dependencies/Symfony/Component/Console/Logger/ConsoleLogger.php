@@ -27,44 +27,42 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 class ConsoleLogger extends AbstractLogger
 {
     public const INFO = 'info';
-
     public const ERROR = 'error';
 
     private $output;
-
     private $verbosityLevelMap = [
         LogLevel::EMERGENCY => OutputInterface::VERBOSITY_NORMAL,
-        LogLevel::ALERT     => OutputInterface::VERBOSITY_NORMAL,
-        LogLevel::CRITICAL  => OutputInterface::VERBOSITY_NORMAL,
-        LogLevel::ERROR     => OutputInterface::VERBOSITY_NORMAL,
-        LogLevel::WARNING   => OutputInterface::VERBOSITY_NORMAL,
-        LogLevel::NOTICE    => OutputInterface::VERBOSITY_VERBOSE,
-        LogLevel::INFO      => OutputInterface::VERBOSITY_VERY_VERBOSE,
-        LogLevel::DEBUG     => OutputInterface::VERBOSITY_DEBUG,
+        LogLevel::ALERT => OutputInterface::VERBOSITY_NORMAL,
+        LogLevel::CRITICAL => OutputInterface::VERBOSITY_NORMAL,
+        LogLevel::ERROR => OutputInterface::VERBOSITY_NORMAL,
+        LogLevel::WARNING => OutputInterface::VERBOSITY_NORMAL,
+        LogLevel::NOTICE => OutputInterface::VERBOSITY_VERBOSE,
+        LogLevel::INFO => OutputInterface::VERBOSITY_VERY_VERBOSE,
+        LogLevel::DEBUG => OutputInterface::VERBOSITY_DEBUG,
     ];
-
     private $formatLevelMap = [
         LogLevel::EMERGENCY => self::ERROR,
-        LogLevel::ALERT     => self::ERROR,
-        LogLevel::CRITICAL  => self::ERROR,
-        LogLevel::ERROR     => self::ERROR,
-        LogLevel::WARNING   => self::INFO,
-        LogLevel::NOTICE    => self::INFO,
-        LogLevel::INFO      => self::INFO,
-        LogLevel::DEBUG     => self::INFO,
+        LogLevel::ALERT => self::ERROR,
+        LogLevel::CRITICAL => self::ERROR,
+        LogLevel::ERROR => self::ERROR,
+        LogLevel::WARNING => self::INFO,
+        LogLevel::NOTICE => self::INFO,
+        LogLevel::INFO => self::INFO,
+        LogLevel::DEBUG => self::INFO,
     ];
-
     private $errored = false;
 
     public function __construct(OutputInterface $output, array $verbosityLevelMap = [], array $formatLevelMap = [])
     {
-        $this->output            = $output;
+        $this->output = $output;
         $this->verbosityLevelMap = $verbosityLevelMap + $this->verbosityLevelMap;
-        $this->formatLevelMap    = $formatLevelMap + $this->formatLevelMap;
+        $this->formatLevelMap = $formatLevelMap + $this->formatLevelMap;
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return void
      */
     public function log($level, $message, array $context = [])
     {
@@ -79,7 +77,6 @@ class ConsoleLogger extends AbstractLogger
             if ($this->output instanceof ConsoleOutputInterface) {
                 $output = $output->getErrorOutput();
             }
-
             $this->errored = true;
         }
 
@@ -114,13 +111,13 @@ class ConsoleLogger extends AbstractLogger
         $replacements = [];
         foreach ($context as $key => $val) {
             if (null === $val || \is_scalar($val) || (\is_object($val) && method_exists($val, '__toString'))) {
-                $replacements[sprintf('{%s}', $key)] = $val;
+                $replacements["{{$key}}"] = $val;
             } elseif ($val instanceof \DateTimeInterface) {
-                $replacements[sprintf('{%s}', $key)] = $val->format(\DateTime::RFC3339);
+                $replacements["{{$key}}"] = $val->format(\DateTime::RFC3339);
             } elseif (\is_object($val)) {
-                $replacements[sprintf('{%s}', $key)] = '[object ' . \get_class($val) . ']';
+                $replacements["{{$key}}"] = '[object '.\get_class($val).']';
             } else {
-                $replacements[sprintf('{%s}', $key)] = '[' . \gettype($val) . ']';
+                $replacements["{{$key}}"] = '['.\gettype($val).']';
             }
         }
 

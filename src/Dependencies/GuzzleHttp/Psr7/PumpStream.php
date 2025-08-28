@@ -45,15 +45,24 @@ final class PumpStream implements StreamInterface
      */
     public function __construct(callable $source, array $options = [])
     {
-        $this->source   = $source;
-        $this->size     = $options['size'] ?? null;
+        $this->source = $source;
+        $this->size = $options['size'] ?? null;
         $this->metadata = $options['metadata'] ?? [];
-        $this->buffer   = new BufferStream();
+        $this->buffer = new BufferStream();
     }
 
     public function __toString(): string
     {
-        return Utils::copyToString($this);
+        try {
+            return Utils::copyToString($this);
+        } catch (\Throwable $e) {
+            if (\PHP_VERSION_ID >= 70400) {
+                throw $e;
+            }
+            trigger_error(sprintf('%s::__toString exception: %s', self::class, (string) $e), E_USER_ERROR);
+
+            return '';
+        }
     }
 
     public function close(): void
@@ -64,7 +73,7 @@ final class PumpStream implements StreamInterface
     public function detach()
     {
         $this->tellPos = 0;
-        $this->source  = null;
+        $this->source = null;
 
         return null;
     }
@@ -81,7 +90,7 @@ final class PumpStream implements StreamInterface
 
     public function eof(): bool
     {
-        return null === $this->source;
+        return $this->source === null;
     }
 
     public function isSeekable(): bool
@@ -116,12 +125,12 @@ final class PumpStream implements StreamInterface
 
     public function read($length): string
     {
-        $data    = $this->buffer->read($length);
+        $data = $this->buffer->read($length);
         $readLen = strlen($data);
         $this->tellPos += $readLen;
         $remaining = $length - $readLen;
 
-        if (0 !== $remaining) {
+        if ($remaining) {
             $this->pump($remaining);
             $data .= $this->buffer->read($remaining);
             $this->tellPos += strlen($data) - $readLen;
@@ -154,15 +163,14 @@ final class PumpStream implements StreamInterface
 
     private function pump(int $length): void
     {
-        if (null !== $this->source) {
+        if ($this->source !== null) {
             do {
                 $data = ($this->source)($length);
-                if (false === $data || null === $data) {
+                if ($data === false || $data === null) {
                     $this->source = null;
 
                     return;
                 }
-
                 $this->buffer->write($data);
                 $length -= strlen($data);
             } while ($length > 0);

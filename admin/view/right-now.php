@@ -13,8 +13,10 @@ $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];
 // - backlink: format of the URL point to the search engine result page
 // - charsets: list of charset used to encode the keywords
 //
-$search_engines = file_get_contents(plugin_dir_path(dirname(__FILE__, 2)) . 'admin/assets/data/matomo-searchengine.json');
-$search_engines = json_decode($search_engines, true);
+if (!class_exists('wp_slimstat')) {
+    include_once dirname(__FILE__, 3) . '/wp-slimstat.php';
+}
+$search_engines = \wp_slimstat::get_search_engines();
 // COMPLETE THIS FEATURE!!
 
 // Available icons

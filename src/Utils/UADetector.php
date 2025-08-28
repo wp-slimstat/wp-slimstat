@@ -96,6 +96,7 @@ class UADetector
             if (isset($match[3]) && ('' !== $match[3] && '0' !== $match[3])) {
                 $version = $match[3];
             }
+
             if (isset($match[1]) && ('' !== $match[1] && '0' !== $match[1]) && false === stristr($match[1], 'Version')) {
                 $webkit_info                = explode('/', $match[1]);
                 $browser['browser']         = $webkit_info[0];
@@ -128,10 +129,12 @@ class UADetector
                 $browser['browser']         = $webkit_info['browser'];
                 $browser['browser_version'] = $webkit_info['browser_version'];
             }
+
             $os = $match[1];
             if (isset($match[2]) && ('' !== $match[2] && '0' !== $match[2])) {
                 $os = $match[2];
             }
+
             if ('Windows' == $match[1]) {
                 [$browser['platform'], $browser['browser_type']] = self::_get_win_os_version($os);
             } else {
@@ -144,6 +147,7 @@ class UADetector
             if (isset($match[2]) && ('' !== $match[2] && '0' !== $match[2])) {
                 $os = $match[2];
             }
+
             if ('Windows' == $match[1]) {
                 [$browser['platform'], $browser['browser_type']] = self::_get_win_os_version($os);
             } else {
@@ -166,6 +170,7 @@ class UADetector
                 $browser['browser']         = $webkit_info['browser'];
                 $browser['browser_version'] = $webkit_info['browser_version'];
             }
+
             $browser['platform']     = 'android';
             $browser['browser_type'] = 2;
         } elseif (preg_match('#IEMobile\s(\d+)(\.\d+)*\)#i', $_user_agent, $match) > 0) {
@@ -470,9 +475,11 @@ class UADetector
             if ('Version' != $match[1] && 'Mobile' != $match[1]) {
                 $browser = $match[1];
             }
+
             if (isset($match[2]) && ('' !== $match[2] && '0' !== $match[2])) {
                 $version = $match[2];
             }
+
             if (isset($match[3]) && ('' !== $match[3] && '0' !== $match[3])) {
                 $version .= $match[3];
             }

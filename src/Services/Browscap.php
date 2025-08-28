@@ -28,6 +28,7 @@ class Browscap
                 self::$browscap_local_version = trim(self::$browscap_local_version);
             }
         }
+
         self::update_browscap_database(false);
         // require_once( plugin_dir_path( __FILE__ ) . 'browscap-php/composer/autoload_real.php' );
 
@@ -195,7 +196,7 @@ class Browscap
     protected static function _get_user_agent()
     {
         $user_agent = (empty($_SERVER['HTTP_USER_AGENT']) ? '' : trim($_SERVER['HTTP_USER_AGENT']));
-
+        $real_user_agent = '';
         if (!empty($_SERVER['HTTP_X_DEVICE_USER_AGENT'])) {
             $real_user_agent = trim($_SERVER['HTTP_X_DEVICE_USER_AGENT']);
         } elseif (!empty($_SERVER['HTTP_X_ORIGINAL_USER_AGENT'])) {

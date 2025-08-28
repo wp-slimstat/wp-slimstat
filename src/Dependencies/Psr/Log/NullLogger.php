@@ -17,10 +17,13 @@ class NullLogger extends AbstractLogger
      *
      * @param mixed  $level
      * @param string $message
+     * @param array  $context
      *
-     * @throws InvalidArgumentException
+     * @return void
+     *
+     * @throws \SlimStat\Dependencies\Psr\Log\InvalidArgumentException
      */
-    public function log($level, $message, array $context = [])
+    public function log($level, $message, array $context = array())
     {
         // noop
     }

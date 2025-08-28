@@ -29,21 +29,31 @@ trait StreamDecoratorTrait
      */
     public function __get(string $name)
     {
-        if ('stream' === $name) {
+        if ($name === 'stream') {
             $this->stream = $this->createStream();
 
             return $this->stream;
         }
 
-        throw new \UnexpectedValueException($name . ' not found on class');
+        throw new \UnexpectedValueException("$name not found on class");
     }
 
     public function __toString(): string
     {
-        if ($this->isSeekable()) {
-            $this->seek(0);
+        try {
+            if ($this->isSeekable()) {
+                $this->seek(0);
+            }
+
+            return $this->getContents();
+        } catch (\Throwable $e) {
+            if (\PHP_VERSION_ID >= 70400) {
+                throw $e;
+            }
+            trigger_error(sprintf('%s::__toString exception: %s', self::class, (string) $e), E_USER_ERROR);
+
+            return '';
         }
-        return $this->getContents();
     }
 
     public function getContents(): string
@@ -60,7 +70,7 @@ trait StreamDecoratorTrait
     {
         /** @var callable $callable */
         $callable = [$this->stream, $method];
-        $result   = ($callable)(...$args);
+        $result = ($callable)(...$args);
 
         // Always return the wrapped object if the result is a return $this
         return $result === $this->stream ? $this : $result;

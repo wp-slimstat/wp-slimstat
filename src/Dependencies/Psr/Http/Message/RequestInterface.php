@@ -36,6 +36,8 @@ interface RequestInterface extends MessageInterface
      *
      * If no URI is available, and no request-target has been specifically
      * provided, this method MUST return the string "/".
+     *
+     * @return string
      */
     public function getRequestTarget(): string;
 
@@ -53,8 +55,11 @@ interface RequestInterface extends MessageInterface
      *
      * @link http://tools.ietf.org/html/rfc7230#section-5.3 (for the various
      *     request-target forms allowed in request messages)
+     * @param string $requestTarget
+     * @return static
      */
     public function withRequestTarget(string $requestTarget): RequestInterface;
+
 
     /**
      * Retrieves the HTTP method of the request.
@@ -75,7 +80,7 @@ interface RequestInterface extends MessageInterface
      * changed request method.
      *
      * @param string $method Case-sensitive method.
-     *
+     * @return static
      * @throws \InvalidArgumentException for invalid HTTP methods.
      */
     public function withMethod(string $method): RequestInterface;
@@ -86,9 +91,8 @@ interface RequestInterface extends MessageInterface
      * This method MUST return a UriInterface instance.
      *
      * @link http://tools.ietf.org/html/rfc3986#section-4.3
-     *
      * @return UriInterface Returns a UriInterface instance
-     *                      representing the URI of the request.
+     *     representing the URI of the request.
      */
     public function getUri(): UriInterface;
 
@@ -118,9 +122,9 @@ interface RequestInterface extends MessageInterface
      * new UriInterface instance.
      *
      * @link http://tools.ietf.org/html/rfc3986#section-4.3
-     *
-     * @param UriInterface $uri          New request URI to use.
-     * @param bool         $preserveHost Preserve the original state of the Host header.
+     * @param UriInterface $uri New request URI to use.
+     * @param bool $preserveHost Preserve the original state of the Host header.
+     * @return static
      */
     public function withUri(UriInterface $uri, bool $preserveHost = false): RequestInterface;
 }

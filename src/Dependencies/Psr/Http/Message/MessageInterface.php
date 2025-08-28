@@ -36,6 +36,7 @@ interface MessageInterface
      * new protocol version.
      *
      * @param string $version HTTP protocol version
+     * @return static
      */
     public function withProtocolVersion(string $version): MessageInterface;
 
@@ -61,8 +62,8 @@ interface MessageInterface
      * exact case in which headers were originally specified.
      *
      * @return string[][] Returns an associative array of the message's headers. Each
-     *                    key MUST be a header name, and each value MUST be an array of strings
-     *                    for that header.
+     *     key MUST be a header name, and each value MUST be an array of strings
+     *     for that header.
      */
     public function getHeaders(): array;
 
@@ -70,10 +71,9 @@ interface MessageInterface
      * Checks if a header exists by the given case-insensitive name.
      *
      * @param string $name Case-insensitive header field name.
-     *
      * @return bool Returns true if any header names match the given header
-     *              name using a case-insensitive string comparison. Returns false if
-     *              no matching header name is found in the message.
+     *     name using a case-insensitive string comparison. Returns false if
+     *     no matching header name is found in the message.
      */
     public function hasHeader(string $name): bool;
 
@@ -87,10 +87,9 @@ interface MessageInterface
      * empty array.
      *
      * @param string $name Case-insensitive header field name.
-     *
      * @return string[] An array of string values as provided for the given
-     *                  header. If the header does not appear in the message, this method MUST
-     *                  return an empty array.
+     *    header. If the header does not appear in the message, this method MUST
+     *    return an empty array.
      */
     public function getHeader(string $name): array;
 
@@ -109,10 +108,9 @@ interface MessageInterface
      * an empty string.
      *
      * @param string $name Case-insensitive header field name.
-     *
      * @return string A string of values as provided for the given header
-     *                concatenated together using a comma. If the header does not appear in
-     *                the message, this method MUST return an empty string.
+     *    concatenated together using a comma. If the header does not appear in
+     *    the message, this method MUST return an empty string.
      */
     public function getHeaderLine(string $name): string;
 
@@ -126,9 +124,9 @@ interface MessageInterface
      * immutability of the message, and MUST return an instance that has the
      * new and/or updated header and value.
      *
-     * @param string          $name  Case-insensitive header field name.
+     * @param string $name Case-insensitive header field name.
      * @param string|string[] $value Header value(s).
-     *
+     * @return static
      * @throws \InvalidArgumentException for invalid header names or values.
      */
     public function withHeader(string $name, $value): MessageInterface;
@@ -144,9 +142,9 @@ interface MessageInterface
      * immutability of the message, and MUST return an instance that has the
      * new header and/or value.
      *
-     * @param string          $name  Case-insensitive header field name to add.
+     * @param string $name Case-insensitive header field name to add.
      * @param string|string[] $value Header value(s).
-     *
+     * @return static
      * @throws \InvalidArgumentException for invalid header names or values.
      */
     public function withAddedHeader(string $name, $value): MessageInterface;
@@ -161,6 +159,7 @@ interface MessageInterface
      * the named header.
      *
      * @param string $name Case-insensitive header field name to remove.
+     * @return static
      */
     public function withoutHeader(string $name): MessageInterface;
 
@@ -181,7 +180,7 @@ interface MessageInterface
      * new body stream.
      *
      * @param StreamInterface $body Body.
-     *
+     * @return static
      * @throws \InvalidArgumentException When the body is not valid.
      */
     public function withBody(StreamInterface $body): MessageInterface;

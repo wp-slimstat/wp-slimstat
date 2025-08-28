@@ -25,7 +25,7 @@ final class Utils
     {
         static $queue;
 
-        if ($assign instanceof TaskQueueInterface) {
+        if ($assign) {
             $queue = $assign;
         } elseif (!$queue) {
             $queue = new TaskQueue();
@@ -42,15 +42,15 @@ final class Utils
      */
     public static function task(callable $task): PromiseInterface
     {
-        $queue   = self::queue();
+        $queue = self::queue();
         $promise = new Promise([$queue, 'run']);
         $queue->add(function () use ($task, $promise): void {
             try {
                 if (Is::pending($promise)) {
                     $promise->resolve($task());
                 }
-            } catch (\Throwable $throwable) {
-                $promise->reject($throwable);
+            } catch (\Throwable $e) {
+                $promise->reject($e);
             }
         });
 
@@ -152,7 +152,7 @@ final class Utils
             return $results;
         });
 
-        if ($recursive) {
+        if (true === $recursive) {
             $promise = $promise->then(function ($results) use ($recursive, &$promises) {
                 foreach ($promises as $promise) {
                     if (Is::pending($promise)) {
@@ -183,7 +183,7 @@ final class Utils
      */
     public static function some(int $count, $promises): PromiseInterface
     {
-        $results    = [];
+        $results = [];
         $rejections = [];
 
         return Each::of(
@@ -192,7 +192,6 @@ final class Utils
                 if (Is::settled($p)) {
                     return;
                 }
-
                 $results[$idx] = $value;
                 if (count($results) >= $count) {
                     $p->resolve(null);
@@ -209,7 +208,6 @@ final class Utils
                         $rejections
                     );
                 }
-
                 ksort($results);
 
                 return array_values($results);
@@ -225,7 +223,9 @@ final class Utils
      */
     public static function any($promises): PromiseInterface
     {
-        return self::some(1, $promises)->then(fn ($values) => $values[0]);
+        return self::some(1, $promises)->then(function ($values) {
+            return $values[0];
+        });
     }
 
     /**

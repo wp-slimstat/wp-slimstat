@@ -26,8 +26,8 @@ class Filesystem implements FilesystemOperator
         array $config = [],
         PathNormalizer $pathNormalizer = null
     ) {
-        $this->adapter        = $adapter;
-        $this->config         = new Config($config);
+        $this->adapter = $adapter;
+        $this->config = new Config($config);
         $this->pathNormalizer = $pathNormalizer ?: new WhitespacePathNormalizer();
     }
 
@@ -140,13 +140,13 @@ class Filesystem implements FilesystemOperator
      */
     private function assertIsResource($contents): void
     {
-        if (false === is_resource($contents)) {
+        if (is_resource($contents) === false) {
             throw new InvalidStreamProvided(
-                'Invalid stream provided, expected stream resource, received ' . gettype($contents)
+                "Invalid stream provided, expected stream resource, received " . gettype($contents)
             );
-        } elseif ($type = 'stream' !== get_resource_type($contents)) {
+        } elseif ($type = get_resource_type($contents) !== 'stream') {
             throw new InvalidStreamProvided(
-                'Invalid stream provided, expected stream resource, received resource of type ' . $type
+                "Invalid stream provided, expected stream resource, received resource of type " . $type
             );
         }
     }
@@ -156,7 +156,7 @@ class Filesystem implements FilesystemOperator
      */
     private function rewindStream($resource): void
     {
-        if (0 !== ftell($resource) && stream_get_meta_data($resource)['seekable']) {
+        if (ftell($resource) !== 0 && stream_get_meta_data($resource)['seekable']) {
             rewind($resource);
         }
     }

@@ -9,7 +9,6 @@ use function array_merge;
 class Config
 {
     public const OPTION_VISIBILITY = 'visibility';
-
     public const OPTION_DIRECTORY_VISIBILITY = 'directory_visibility';
 
     /**

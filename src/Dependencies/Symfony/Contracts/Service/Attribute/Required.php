@@ -19,7 +19,7 @@ namespace SlimStat\Dependencies\Symfony\Contracts\Service\SlimStat_SlimStat_Attr
  *
  * @author Alexander M. Turek <me@derrabus.de>
  */
-#[\SlimStat_SlimStat_Attribute(\SlimStat_SlimStat_Attribute::TARGET_METHOD|\SlimStat_SlimStat_Attribute::TARGET_PROPERTY)]
+#[\SlimStat_SlimStat_Attribute(\SlimStat_SlimStat_Attribute::TARGET_METHOD | \SlimStat_SlimStat_Attribute::TARGET_PROPERTY)]
 final class Required
 {
 }

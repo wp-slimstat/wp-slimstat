@@ -26,7 +26,7 @@ class GithubActionReporter
      * @see https://github.com/actions/toolkit/blob/5e5e1b7aacba68a53836a34db4a288c3c1c1585b/packages/core/src/command.ts#L80-L85
      */
     private const ESCAPED_DATA = [
-        '%'  => '%25',
+        '%' => '%25',
         "\r" => '%0D',
         "\n" => '%0A',
     ];
@@ -35,11 +35,11 @@ class GithubActionReporter
      * @see https://github.com/actions/toolkit/blob/5e5e1b7aacba68a53836a34db4a288c3c1c1585b/packages/core/src/command.ts#L87-L94
      */
     private const ESCAPED_PROPERTIES = [
-        '%'  => '%25',
+        '%' => '%25',
         "\r" => '%0D',
         "\n" => '%0A',
-        ':'  => '%3A',
-        ','  => '%2C',
+        ':' => '%3A',
+        ',' => '%2C',
     ];
 
     public function __construct(OutputInterface $output)

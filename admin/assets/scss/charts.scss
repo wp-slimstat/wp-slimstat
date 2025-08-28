@@ -10,7 +10,6 @@
   transition: 0.3s all ease-in-out;
   pointer-events: none !important;
   background: white;
-  // box-shadow: 0 8px 32px 0 rgba(60, 60, 90, 0.18), 0 1.5px 6px 0 rgba(60, 60, 90, 0.1);
   z-index: 9999;
   font: 13px "Open Sans", sans-serif;
   border: solid 1px #e0e0e0;
@@ -143,13 +142,19 @@ span.slimstat-toggle-prev-datasets {
 }
 
 body.index-php {
-  #dashboard-widgets-wrap .postbox .slimstat-tooltip-trigger.corner {
-    display: inline-block;
+  #dashboard-widgets-wrap .postbox .slimstat-tooltip-trigger.corner.slimstat-toggle-prev-datasets {
+    display: block;
     float: none;
-    margin-right: 3px;
     cursor: help;
-    left: 90px;
-    top: 5px;
+    width: 120px !important;
+    max-width: 120px !important;
+    position: relative;
+    left: unset;
+    right: unset;
+    text-align: left;
+    min-width: 200px !important;
+    margin: 5px 20px;
+    margin-bottom: 10px;
   }
 
   // WP Dashboard specific styles
@@ -157,20 +162,13 @@ body.index-php {
     max-width: 100% !important;
     width: 100%;
     aspect-ratio: 16/7;
-    min-height: 160px;
     height: auto;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
   .inside:has(.slimstat-postbox-chart--canvas) {
     height: auto !important;
     min-height: 180px;
     max-height: none;
     margin-bottom: 20px !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
   .slimstat-postbox-chart--canvas {
     width: 100% !important;
@@ -197,6 +195,8 @@ body.index-php {
     font-size: 13px;
     width: 100%;
     box-sizing: border-box;
+    justify-content: start;
+    margin: 5px 20px;
   }
   .slimstat-postbox-chart--item {
     padding: 3px 7px;
@@ -205,12 +205,14 @@ body.index-php {
     margin-bottom: 2px;
   }
   .slimstat-chart-controls {
-    left: 2px;
-    position: relative;
+    right: 10px;
+    position: absolute;
     display: inline-block;
-    margin-top: 5px;
+    width: 80px;
+    text-align: left;
+    left: unset;
     & select {
-      width: 70px;
+      width: 90px;
       font-size: 12px;
       padding: 1px 4px;
       border-radius: 5px;
@@ -303,6 +305,24 @@ body.index-php {
   direction: rtl;
   text-align: right;
   font-family: "Open Sans", sans-serif !important;
+}
+
+/* Additional chart rules moved from admin.scss to centralize chart styles */
+[id^="slim_"] .inside:has(.slimstat-postbox-chart--canvas) {
+  margin-bottom: 20px !important;
+  height: 265px !important;
+  .slimstat-postbox-chart--canvas {
+    height: 240px !important;
+    width: 100% !important;
+    min-height: 240px !important;
+    max-height: 240px !important;
+  }
+}
+
+/* Single Report: Chart placeholder moved here from admin.scss */
+.chart-placeholder {
+  height: 280px;
+  overflow: hidden;
 }
 
 [dir="rtl"] #chartjs-tooltip table,

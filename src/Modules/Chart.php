@@ -236,7 +236,8 @@ class Chart
         $start = $args['start'];
         $end   = $args['end'];
 
-        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
+        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
+        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);
@@ -288,12 +289,18 @@ class Chart
             ->groupBy($dtExpr . ', period')
             ->orderBy('sort_dt ASC, period ASC');
 
-        // Build totals query via Query builder (keeps original semantics)
+        // Build totals query via Query builder using index-friendly ranges (no CONVERT_TZ on column)
+        // Adjust local-time windows to UTC timestamps so MySQL can use the dt index: dt BETWEEN (start - offset) AND (end - offset)
+        $prevStartAdj = $prevArgs['start'] - $totalOffsetSeconds;
+        $prevEndAdj   = $prevArgs['end'] - $totalOffsetSeconds;
+        $startAdj     = $start - $totalOffsetSeconds;
+        $endAdj       = $end - $totalOffsetSeconds;
+
         $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
-        $totalsWhere  = sprintf("CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s') BETWEEN FROM_UNIXTIME(%%d) AND FROM_UNIXTIME(%%d) OR CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s') BETWEEN FROM_UNIXTIME(%%d) AND FROM_UNIXTIME(%%d)", $tzOffset, $tzOffset);
+        $totalsWhere  = '(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)';
         $totalsQuery  = Query::select($totalsFields)
             ->from($wpdb->prefix . 'slim_stats')
-            ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end])
+            ->whereRaw($totalsWhere, [$prevStartAdj, $prevEndAdj, $startAdj, $endAdj])
             ->groupBy('period')
             ->orderBy('period ASC');
 
@@ -347,17 +354,18 @@ class Chart
             plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
             [],
             '4.2.1',
-            false
+            true
         );
         wp_enqueue_script(
             'slimstat_chart',
             plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
             ['slimstat_chartjs'],
             '1.0',
-            false
+            true
         );
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
-            'ajax_url'        => admin_url('admin-ajax.php'),
+            // Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
+            'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
             'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
             'end_date'        => $this->args['end'] ?? null,
             'end_date_string' => isset($this->args['end']) ? date('Y/m/d H:i:s', $this->args['end']) : null,

@@ -2,9 +2,9 @@
 
 namespace SlimStat\Dependencies\Psr\Log\Test;
 
-use PHPUnit\Framework\TestCase;
 use SlimStat\Dependencies\Psr\Log\LoggerInterface;
 use SlimStat\Dependencies\Psr\Log\LogLevel;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Provides a base test class for ensuring compliance with the LoggerInterface.
@@ -32,7 +32,7 @@ abstract class LoggerInterfaceTest extends TestCase
 
     public function testImplements()
     {
-        $this->assertInstanceOf(LoggerInterface::class, $this->getLogger());
+        $this->assertInstanceOf('SlimStat\Dependencies\Psr\Log\LoggerInterface', $this->getLogger());
     }
 
     /**
@@ -41,28 +41,28 @@ abstract class LoggerInterfaceTest extends TestCase
     public function testLogsAtAllLevels($level, $message)
     {
         $logger = $this->getLogger();
-        $logger->{$level}($message, ['user' => 'Bob']);
-        $logger->log($level, $message, ['user' => 'Bob']);
+        $logger->{$level}($message, array('user' => 'Bob'));
+        $logger->log($level, $message, array('user' => 'Bob'));
 
-        $expected = [
-            $level . ' message of level ' . $level . ' with context: Bob',
-            $level . ' message of level ' . $level . ' with context: Bob',
-        ];
+        $expected = array(
+            $level.' message of level '.$level.' with context: Bob',
+            $level.' message of level '.$level.' with context: Bob',
+        );
         $this->assertEquals($expected, $this->getLogs());
     }
 
     public function provideLevelsAndMessages()
     {
-        return [
-            LogLevel::EMERGENCY => [LogLevel::EMERGENCY, 'message of level emergency with context: {user}'],
-            LogLevel::ALERT     => [LogLevel::ALERT, 'message of level alert with context: {user}'],
-            LogLevel::CRITICAL  => [LogLevel::CRITICAL, 'message of level critical with context: {user}'],
-            LogLevel::ERROR     => [LogLevel::ERROR, 'message of level error with context: {user}'],
-            LogLevel::WARNING   => [LogLevel::WARNING, 'message of level warning with context: {user}'],
-            LogLevel::NOTICE    => [LogLevel::NOTICE, 'message of level notice with context: {user}'],
-            LogLevel::INFO      => [LogLevel::INFO, 'message of level info with context: {user}'],
-            LogLevel::DEBUG     => [LogLevel::DEBUG, 'message of level debug with context: {user}'],
-        ];
+        return array(
+            LogLevel::EMERGENCY => array(LogLevel::EMERGENCY, 'message of level emergency with context: {user}'),
+            LogLevel::ALERT => array(LogLevel::ALERT, 'message of level alert with context: {user}'),
+            LogLevel::CRITICAL => array(LogLevel::CRITICAL, 'message of level critical with context: {user}'),
+            LogLevel::ERROR => array(LogLevel::ERROR, 'message of level error with context: {user}'),
+            LogLevel::WARNING => array(LogLevel::WARNING, 'message of level warning with context: {user}'),
+            LogLevel::NOTICE => array(LogLevel::NOTICE, 'message of level notice with context: {user}'),
+            LogLevel::INFO => array(LogLevel::INFO, 'message of level info with context: {user}'),
+            LogLevel::DEBUG => array(LogLevel::DEBUG, 'message of level debug with context: {user}'),
+        );
     }
 
     /**
@@ -77,27 +77,26 @@ abstract class LoggerInterfaceTest extends TestCase
     public function testContextReplacement()
     {
         $logger = $this->getLogger();
-        $logger->info('{Message {nothing} {user} {foo.bar} a}', ['user' => 'Bob', 'foo.bar' => 'Bar']);
+        $logger->info('{Message {nothing} {user} {foo.bar} a}', array('user' => 'Bob', 'foo.bar' => 'Bar'));
 
-        $expected = ['info {Message {nothing} Bob Bar a}'];
+        $expected = array('info {Message {nothing} Bob Bar a}');
         $this->assertEquals($expected, $this->getLogs());
     }
 
     public function testObjectCastToString()
     {
         if (method_exists($this, 'createPartialMock')) {
-            $dummy = $this->createPartialMock(DummyTest::class, ['__toString']);
+            $dummy = $this->createPartialMock('SlimStat\Dependencies\Psr\Log\Test\DummyTest', array('__toString'));
         } else {
-            $dummy = $this->getMock(DummyTest::class, ['__toString']);
+            $dummy = $this->getMock('SlimStat\Dependencies\Psr\Log\Test\DummyTest', array('__toString'));
         }
-
         $dummy->expects($this->once())
             ->method('__toString')
             ->will($this->returnValue('DUMMY'));
 
         $this->getLogger()->warning($dummy);
 
-        $expected = ['warning DUMMY'];
+        $expected = array('warning DUMMY');
         $this->assertEquals($expected, $this->getLogs());
     }
 
@@ -106,34 +105,34 @@ abstract class LoggerInterfaceTest extends TestCase
         $closed = fopen('php://memory', 'r');
         fclose($closed);
 
-        $context = [
-            'bool'     => true,
-            'null'     => null,
-            'string'   => 'Foo',
-            'int'      => 0,
-            'float'    => 0.5,
-            'nested'   => ['with object' => new DummyTest()],
-            'object'   => new \DateTime(),
+        $context = array(
+            'bool' => true,
+            'null' => null,
+            'string' => 'Foo',
+            'int' => 0,
+            'float' => 0.5,
+            'nested' => array('with object' => new DummyTest),
+            'object' => new \DateTime,
             'resource' => fopen('php://memory', 'r'),
-            'closed'   => $closed,
-        ];
+            'closed' => $closed,
+        );
 
         $this->getLogger()->warning('Crazy context data', $context);
 
-        $expected = ['warning Crazy context data'];
+        $expected = array('warning Crazy context data');
         $this->assertEquals($expected, $this->getLogs());
     }
 
     public function testContextExceptionKeyCanBeExceptionOrOtherValues()
     {
         $logger = $this->getLogger();
-        $logger->warning('Random message', ['exception' => 'oops']);
-        $logger->critical('Uncaught Exception!', ['exception' => new \LogicException('Fail')]);
+        $logger->warning('Random message', array('exception' => 'oops'));
+        $logger->critical('Uncaught Exception!', array('exception' => new \LogicException('Fail')));
 
-        $expected = [
+        $expected = array(
             'warning Random message',
-            'critical Uncaught Exception!',
-        ];
+            'critical Uncaught Exception!'
+        );
         $this->assertEquals($expected, $this->getLogs());
     }
 }

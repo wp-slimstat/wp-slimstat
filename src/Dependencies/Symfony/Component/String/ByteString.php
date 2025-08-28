@@ -50,7 +50,7 @@ class ByteString extends AbstractString
 
         $alphabet ??= self::ALPHABET_ALPHANUMERIC;
         $alphabetSize = \strlen($alphabet);
-        $bits         = (int) ceil(log($alphabetSize, 2.0));
+        $bits = (int) ceil(log($alphabetSize, 2.0));
         if ($bits <= 0 || $bits > 56) {
             throw new InvalidArgumentException('The length of the alphabet must in the [2^1, 2^56] range.');
         }
@@ -58,12 +58,12 @@ class ByteString extends AbstractString
         $ret = '';
         while ($length > 0) {
             $urandomLength = (int) ceil(2 * $length * $bits / 8.0);
-            $data          = random_bytes($urandomLength);
-            $unpackedData  = 0;
-            $unpackedBits  = 0;
+            $data = random_bytes($urandomLength);
+            $unpackedData = 0;
+            $unpackedBits = 0;
             for ($i = 0; $i < $urandomLength && $length > 0; ++$i) {
                 // Unpack 8 bits
-                $unpackedData = ($unpackedData << 8)|\ord($data[$i]);
+                $unpackedData = ($unpackedData << 8) | \ord($data[$i]);
                 $unpackedBits += 8;
 
                 // While we have enough bits to select a character from the alphabet, keep
@@ -104,8 +104,8 @@ class ByteString extends AbstractString
     {
         $str = clone $this;
 
-        $parts       = explode(' ', trim(ucwords(preg_replace('/[^a-zA-Z0-9\x7f-\xff]++/', ' ', $this->string))));
-        $parts[0]    = 1 !== \strlen($parts[0]) && ctype_upper($parts[0]) ? $parts[0] : lcfirst($parts[0]);
+        $parts = explode(' ', trim(ucwords(preg_replace('/[^a-zA-Z0-9\x7f-\xff]++/', ' ', $this->string))));
+        $parts[0] = 1 !== \strlen($parts[0]) && ctype_upper($parts[0]) ? $parts[0] : lcfirst($parts[0]);
         $str->string = implode('', $parts);
 
         return $str;
@@ -121,12 +121,12 @@ class ByteString extends AbstractString
             return [];
         }
 
-        $str    = clone $this;
+        $str = clone $this;
         $chunks = [];
 
         foreach (str_split($this->string, $length) as $chunk) {
             $str->string = $chunk;
-            $chunks[]    = clone $str;
+            $chunks[] = clone $str;
         }
 
         return $chunks;
@@ -160,7 +160,7 @@ class ByteString extends AbstractString
 
     public function folded(): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = strtolower($str->string);
 
         return $str;
@@ -178,7 +178,7 @@ class ByteString extends AbstractString
             return null;
         }
 
-        $i = $this->ignoreCase ? stripos($this->string, (string) $needle, $offset) : strpos($this->string, (string) $needle, $offset);
+        $i = $this->ignoreCase ? stripos($this->string, $needle, $offset) : strpos($this->string, $needle, $offset);
 
         return false === $i ? null : $i;
     }
@@ -195,7 +195,7 @@ class ByteString extends AbstractString
             return null;
         }
 
-        $i = $this->ignoreCase ? strripos($this->string, (string) $needle, $offset) : strrpos($this->string, (string) $needle, $offset);
+        $i = $this->ignoreCase ? strripos($this->string, $needle, $offset) : strrpos($this->string, $needle, $offset);
 
         return false === $i ? null : $i;
     }
@@ -209,8 +209,8 @@ class ByteString extends AbstractString
     {
         $str = clone $this;
 
-        $tail        = null !== $lastGlue && 1 < \count($strings) ? $lastGlue . array_pop($strings) : '';
-        $str->string = implode($this->string, $strings) . $tail;
+        $tail = null !== $lastGlue && 1 < \count($strings) ? $lastGlue.array_pop($strings) : '';
+        $str->string = implode($this->string, $strings).$tail;
 
         return $str;
     }
@@ -222,7 +222,7 @@ class ByteString extends AbstractString
 
     public function lower(): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = strtolower($str->string);
 
         return $str;
@@ -230,7 +230,7 @@ class ByteString extends AbstractString
 
     public function match(string $regexp, int $flags = 0, int $offset = 0): array
     {
-        $match = (((\PREG_PATTERN_ORDER|\PREG_SET_ORDER) & $flags) !== 0) ? 'preg_match_all' : 'preg_match';
+        $match = ((\PREG_PATTERN_ORDER | \PREG_SET_ORDER) & $flags) ? 'preg_match_all' : 'preg_match';
 
         if ($this->ignoreCase) {
             $regexp .= 'i';
@@ -239,8 +239,8 @@ class ByteString extends AbstractString
         set_error_handler(static fn ($t, $m) => throw new InvalidArgumentException($m));
 
         try {
-            if (false === $match($regexp, $this->string, $matches, $flags|\PREG_UNMATCHED_AS_NULL, $offset)) {
-                throw new RuntimeException('Matching failed with error: ' . preg_last_error_msg());
+            if (false === $match($regexp, $this->string, $matches, $flags | \PREG_UNMATCHED_AS_NULL, $offset)) {
+                throw new RuntimeException('Matching failed with error: '.preg_last_error_msg());
             }
         } finally {
             restore_error_handler();
@@ -251,7 +251,7 @@ class ByteString extends AbstractString
 
     public function padBoth(int $length, string $padStr = ' '): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = str_pad($this->string, $length, $padStr, \STR_PAD_BOTH);
 
         return $str;
@@ -259,7 +259,7 @@ class ByteString extends AbstractString
 
     public function padEnd(int $length, string $padStr = ' '): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = str_pad($this->string, $length, $padStr, \STR_PAD_RIGHT);
 
         return $str;
@@ -267,7 +267,7 @@ class ByteString extends AbstractString
 
     public function padStart(int $length, string $padStr = ' '): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = str_pad($this->string, $length, $padStr, \STR_PAD_LEFT);
 
         return $str;
@@ -275,8 +275,8 @@ class ByteString extends AbstractString
 
     public function prepend(string ...$prefix): static
     {
-        $str         = clone $this;
-        $str->string = (1 >= \count($prefix) ? ($prefix[0] ?? '') : implode('', $prefix)) . $str->string;
+        $str = clone $this;
+        $str->string = (1 >= \count($prefix) ? ($prefix[0] ?? '') : implode('', $prefix)).$str->string;
 
         return $str;
     }
@@ -308,7 +308,7 @@ class ByteString extends AbstractString
 
                 foreach (get_defined_constants(true)['pcre'] as $k => $v) {
                     if ($lastError === $v && str_ends_with($k, '_ERROR')) {
-                        throw new RuntimeException('Matching failed with ' . $k . '.');
+                        throw new RuntimeException('Matching failed with '.$k.'.');
                     }
                 }
 
@@ -318,7 +318,7 @@ class ByteString extends AbstractString
             restore_error_handler();
         }
 
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = $string;
 
         return $str;
@@ -326,7 +326,7 @@ class ByteString extends AbstractString
 
     public function reverse(): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = strrev($str->string);
 
         return $str;
@@ -334,15 +334,15 @@ class ByteString extends AbstractString
 
     public function slice(int $start = 0, ?int $length = null): static
     {
-        $str         = clone $this;
-        $str->string = substr($this->string, $start, $length ?? \PHP_INT_MAX);
+        $str = clone $this;
+        $str->string = (string) substr($this->string, $start, $length ?? \PHP_INT_MAX);
 
         return $str;
     }
 
     public function snake(): static
     {
-        $str         = $this->camel();
+        $str = $this->camel();
         $str->string = strtolower(preg_replace(['/([A-Z]+)([A-Z][a-z])/', '/([a-z\d])([A-Z])/'], '\1_\2', $str->string));
 
         return $str;
@@ -350,7 +350,7 @@ class ByteString extends AbstractString
 
     public function splice(string $replacement, int $start = 0, ?int $length = null): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = substr_replace($this->string, $replacement, $start, $length ?? \PHP_INT_MAX);
 
         return $str;
@@ -370,14 +370,14 @@ class ByteString extends AbstractString
             return parent::split($delimiter, $limit, $flags);
         }
 
-        $str    = clone $this;
+        $str = clone $this;
         $chunks = $this->ignoreCase
-            ? preg_split('{' . preg_quote($delimiter) . '}iD', $this->string, $limit)
+            ? preg_split('{'.preg_quote($delimiter).'}iD', $this->string, $limit)
             : explode($delimiter, $this->string, $limit);
 
         foreach ($chunks as &$chunk) {
             $str->string = $chunk;
-            $chunk       = clone $str;
+            $chunk = clone $str;
         }
 
         return $chunks;
@@ -396,7 +396,7 @@ class ByteString extends AbstractString
 
     public function title(bool $allWords = false): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = $allWords ? ucwords($str->string) : ucfirst($str->string);
 
         return $str;
@@ -446,7 +446,7 @@ class ByteString extends AbstractString
 
     public function trim(string $chars = " \t\n\r\0\x0B\x0C"): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = trim($str->string, $chars);
 
         return $str;
@@ -454,7 +454,7 @@ class ByteString extends AbstractString
 
     public function trimEnd(string $chars = " \t\n\r\0\x0B\x0C"): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = rtrim($str->string, $chars);
 
         return $str;
@@ -462,7 +462,7 @@ class ByteString extends AbstractString
 
     public function trimStart(string $chars = " \t\n\r\0\x0B\x0C"): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = ltrim($str->string, $chars);
 
         return $str;
@@ -470,7 +470,7 @@ class ByteString extends AbstractString
 
     public function upper(): static
     {
-        $str         = clone $this;
+        $str = clone $this;
         $str->string = strtoupper($str->string);
 
         return $str;

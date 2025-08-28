@@ -144,10 +144,10 @@ class ServerRequest extends Request implements ServerRequestInterface
         foreach (array_keys($files['tmp_name']) as $key) {
             $spec = [
                 'tmp_name' => $files['tmp_name'][$key],
-                'size'     => $files['size'][$key] ?? null,
-                'error'    => $files['error'][$key] ?? null,
-                'name'     => $files['name'][$key] ?? null,
-                'type'     => $files['type'][$key] ?? null,
+                'size' => $files['size'][$key] ?? null,
+                'error' => $files['error'][$key] ?? null,
+                'name' => $files['name'][$key] ?? null,
+                'type' => $files['type'][$key] ?? null,
             ];
             $normalizedFiles[$key] = self::createUploadedFileFromSpec($spec);
         }
@@ -165,10 +165,10 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public static function fromGlobals(): ServerRequestInterface
     {
-        $method   = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $headers  = getallheaders();
-        $uri      = self::getUriFromGlobals();
-        $body     = new CachingStream(new LazyOpenStream('php://input', 'r+'));
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $headers = getallheaders();
+        $uri = self::getUriFromGlobals();
+        $body = new CachingStream(new LazyOpenStream('php://input', 'r+'));
         $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL']) : '1.1';
 
         $serverRequest = new ServerRequest($method, $uri, $headers, $body, $protocol, $_SERVER);
@@ -182,7 +182,7 @@ class ServerRequest extends Request implements ServerRequestInterface
 
     private static function extractHostAndPortFromAuthority(string $authority): array
     {
-        $uri   = 'http://' . $authority;
+        $uri = 'http://'.$authority;
         $parts = parse_url($uri);
         if (false === $parts) {
             return [null, null];
@@ -201,18 +201,18 @@ class ServerRequest extends Request implements ServerRequestInterface
     {
         $uri = new Uri('');
 
-        $uri = $uri->withScheme(!empty($_SERVER['HTTPS']) && 'off' !== $_SERVER['HTTPS'] ? 'https' : 'http');
+        $uri = $uri->withScheme(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http');
 
         $hasPort = false;
         if (isset($_SERVER['HTTP_HOST'])) {
             [$host, $port] = self::extractHostAndPortFromAuthority($_SERVER['HTTP_HOST']);
-            if (null !== $host) {
+            if ($host !== null) {
                 $uri = $uri->withHost($host);
             }
 
-            if (null !== $port) {
+            if ($port !== null) {
                 $hasPort = true;
-                $uri     = $uri->withPort($port);
+                $uri = $uri->withPort($port);
             }
         } elseif (isset($_SERVER['SERVER_NAME'])) {
             $uri = $uri->withHost($_SERVER['SERVER_NAME']);
@@ -227,10 +227,10 @@ class ServerRequest extends Request implements ServerRequestInterface
         $hasQuery = false;
         if (isset($_SERVER['REQUEST_URI'])) {
             $requestUriParts = explode('?', $_SERVER['REQUEST_URI'], 2);
-            $uri             = $uri->withPath($requestUriParts[0]);
+            $uri = $uri->withPath($requestUriParts[0]);
             if (isset($requestUriParts[1])) {
                 $hasQuery = true;
-                $uri      = $uri->withQuery($requestUriParts[1]);
+                $uri = $uri->withQuery($requestUriParts[1]);
             }
         }
 
@@ -253,7 +253,7 @@ class ServerRequest extends Request implements ServerRequestInterface
 
     public function withUploadedFiles(array $uploadedFiles): ServerRequestInterface
     {
-        $new                = clone $this;
+        $new = clone $this;
         $new->uploadedFiles = $uploadedFiles;
 
         return $new;
@@ -266,7 +266,7 @@ class ServerRequest extends Request implements ServerRequestInterface
 
     public function withCookieParams(array $cookies): ServerRequestInterface
     {
-        $new               = clone $this;
+        $new = clone $this;
         $new->cookieParams = $cookies;
 
         return $new;
@@ -279,7 +279,7 @@ class ServerRequest extends Request implements ServerRequestInterface
 
     public function withQueryParams(array $query): ServerRequestInterface
     {
-        $new              = clone $this;
+        $new = clone $this;
         $new->queryParams = $query;
 
         return $new;
@@ -295,7 +295,7 @@ class ServerRequest extends Request implements ServerRequestInterface
 
     public function withParsedBody($data): ServerRequestInterface
     {
-        $new             = clone $this;
+        $new = clone $this;
         $new->parsedBody = $data;
 
         return $new;
@@ -320,7 +320,7 @@ class ServerRequest extends Request implements ServerRequestInterface
 
     public function withAttribute($attribute, $value): ServerRequestInterface
     {
-        $new                         = clone $this;
+        $new = clone $this;
         $new->attributes[$attribute] = $value;
 
         return $new;
