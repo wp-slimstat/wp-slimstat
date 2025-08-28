@@ -978,7 +978,9 @@ class wp_slimstat_db
         foreach ($mixed_outbound_resources as $a_mixed_resource) {
             $exploded_resources = explode(';;;', $a_mixed_resource['outbound_resource'] ?? '');
             foreach ($exploded_resources as $a_exploded_resource) {
-                $clean_outbound_resources[] = $a_exploded_resource;
+                $clean_outbound_resources[] = [
+                    'outbound_resource' => $a_exploded_resource,
+                ];
             }
         }
 
