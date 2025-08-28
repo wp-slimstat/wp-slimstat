@@ -12,6 +12,18 @@ trait TrackerAjaxTrait
      */
     public static function slimtrack_ajax()
     {
+        // Simple IP-based rate limiter (transient)
+        $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!empty($remote_ip)) {
+            $key        = 'slimstat_rl_' . md5($remote_ip);
+            $hits_in_5s = (int) get_transient($key);
+            if ($hits_in_5s >= 10) {
+                exit(self::_log_error(429));
+            }
+            set_transient($key, $hits_in_5s + 1, 5);
+        }
+
+        // If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
         if ('on' != self::$settings['is_tracking']) {
             exit(self::_log_error(204));
         }
@@ -158,9 +170,10 @@ trait TrackerAjaxTrait
      */
     public static function rewrite_rule_tracker()
     {
+        // Always register the tracker rewrite rule for adblock bypass and fallback
         add_rewrite_tag('%slimstat_tracker%', '([a-f0-9]{32})');
         add_rewrite_rule(
-            '^([a-f0-9]{32})\.js$',
+            '^([a-f0-9]{32})\\.js$',
             'index.php?slimstat_tracker=$matches[1]',
             'top'
         );
@@ -171,14 +184,17 @@ trait TrackerAjaxTrait
      */
     public static function adblocker_javascript()
     {
+        // Always handle the tracker JS endpoint for fallback
         $tracker_hash = get_query_var('slimstat_tracker');
         if ($tracker_hash && $tracker_hash === md5(site_url() . 'slimstat')) {
+            // Set the content type to JavaScript
             header('Content-Type: application/javascript');
+
+            // Set caching headers for one year
             header('Cache-Control: public, max-age=31536000');
             header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
 
-            $jstracker_suffix = (defined('SCRIPT_DEBUG') && is_bool(SCRIPT_DEBUG) && SCRIPT_DEBUG) ? '' : '.min';
-            $js_path          = plugin_dir_path(__FILE__) . sprintf('/wp-slimstat%s.js', $jstracker_suffix);
+            $js_path = plugin_dir_path(__FILE__) . '/wp-slimstat.min.js';
 
             if (file_exists($js_path)) {
                 readfile($js_path);
