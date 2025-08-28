@@ -43,7 +43,6 @@ class GeoIP
             ],
         ],
 
-        // DB-IP City Lite via WP-Slimstat CDN mirror on jsDelivr
         // We always use the City database (it also contains country-level info)
         'dbip' => [
             'country' => [
