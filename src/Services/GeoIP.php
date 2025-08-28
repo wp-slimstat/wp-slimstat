@@ -8,7 +8,7 @@ use SlimStat\Utils\MaxMindReader;
 class GeoIP
 {
     /**
-     * Supported providers aligned with WP-Statistics:
+     * Supported providers aligned with WP-Slimstat:
      * - maxmind (default)
      * - dbip (DB-IP City Lite)
      * - cloudflare (header-based; no database)
@@ -43,17 +43,17 @@ class GeoIP
             ],
         ],
 
-        // DB-IP City Lite via WP-Statistics CDN mirror on jsDelivr
+        // DB-IP City Lite via WP-Slimstat CDN mirror on jsDelivr
         // We always use the City database (it also contains country-level info)
         'dbip' => [
             'country' => [
-                'source' => 'https://cdn.jsdelivr.net/gh/wp-statistics/DbIP-City-lite/dbip-city-lite.mmdb.gz',
+                'source' => 'https://cdn.jsdelivr.net/npm/dbip-city-lite/dbip-city-lite.mmdb.gz',
                 'file'   => 'DbIP-City-Lite',
                 'opt'    => 'geoip_city',
                 'cache'  => 6998000,
             ],
             'city' => [
-                'source' => 'https://cdn.jsdelivr.net/gh/wp-statistics/DbIP-City-lite/dbip-city-lite.mmdb.gz',
+                'source' => 'https://cdn.jsdelivr.net/npm/dbip-city-lite/dbip-city-lite.mmdb.gz',
                 'file'   => 'DbIP-City-Lite',
                 'opt'    => 'geoip_city',
                 'cache'  => 6998000,

@@ -1253,8 +1253,8 @@ class wp_slimstat
 
             // Tracker - Advanced Options
             'geolocation_country' => 'on',
-            // WP-Statistics compatible provider choices: maxmind (default), dbip, cloudflare
-            'geolocation_provider' => 'maxmind',
+            // WP-Slimstat compatible provider choices: dbip (recommended), maxmind, cloudflare
+            'geolocation_provider' => 'dbip',
             'session_duration'     => 1800,
             'extend_session'       => 'no',
             'enable_cdn'           => 'no',
