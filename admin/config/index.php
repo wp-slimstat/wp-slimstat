@@ -149,6 +149,40 @@ $settings = [
                 'description'     => __('Customize the message displayed to your visitors here below. Match your website styles and layout by adding the appropriate HTML markup to your message.', 'wp-slimstat'),
             ],
 
+            // GDPR Consent Banner
+            'gdpr_consent_header' => [
+                'title' => __('GDPR Consent Banner', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'enable_gdpr_consent' => [
+                'title'       => __('Enable GDPR Consent Banner', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Enable a GDPR-compliant consent banner that appears before any tracking occurs. Users must explicitly consent to data collection.', 'wp-slimstat'),
+            ],
+            'gdpr_consent_message' => [
+                'title'           => __('Consent Banner Message', 'wp-slimstat'),
+                'type'            => 'textarea',
+                'rows'            => 4,
+                'use_tag_list'    => false,
+                'use_code_editor' => 'htmlmixed',
+                'description'     => __('Message displayed in the consent banner. Use {{accept_button}} and {{deny_button}} placeholders for the action buttons.', 'wp-slimstat'),
+            ],
+            'gdpr_consent_accept_text' => [
+                'title'       => __('Accept Button Text', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('Text for the accept/consent button.', 'wp-slimstat'),
+            ],
+            'gdpr_consent_deny_text' => [
+                'title'       => __('Deny Button Text', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('Text for the deny/reject button.', 'wp-slimstat'),
+            ],
+            'gdpr_consent_cookie_duration' => [
+                'title'       => __('Consent Cookie Duration (days)', 'wp-slimstat'),
+                'type'        => 'integer',
+                'description' => __('How long to remember the user\'s consent choice (in days).', 'wp-slimstat'),
+            ],
+
             // Tracker - Link Tracking
             'filters_outbound_header' => [
                 'title' => __('Link Tracking', 'wp-slimstat'),

@@ -461,6 +461,13 @@ var SlimStat = (function () {
     function sendPageview(options = {}) {
         extractSlimStatParams();
         const params = currentSlimStatParams();
+
+        // Check GDPR consent before tracking
+        if (params.gdpr_enabled === "1" && getCookie("slimstat_gdpr_consent") !== "accepted") {
+            showGdprConsentBanner();
+            return;
+        }
+
         const payloadBase = buildPageviewBase(params);
         if (!payloadBase) return;
         // De-duplicate rapid navigations (e.g., WP Interactivity quick transitions)
@@ -487,7 +494,131 @@ var SlimStat = (function () {
         else setTimeout(run, 250);
     }
 
-    // -------------------------- Opt-out UI -------------------------- //
+    // -------------------------- GDPR Consent & Opt-out UI -------------------------- //
+    function showGdprConsentBanner() {
+        const params = currentSlimStatParams();
+        if (params.gdpr_enabled !== "1") {
+            return false;
+        }
+
+        // Check if consent cookie already exists
+        const consentCookie = getCookie("slimstat_gdpr_consent");
+        if (consentCookie) {
+            return false;
+        }
+
+        let xhr;
+        try {
+            xhr = new XMLHttpRequest();
+        } catch (e) {
+            return false;
+        }
+        xhr.open("POST", params.ajaxurl, true);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        xhr.withCredentials = true;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success && response.data && response.data.html) {
+                        const div = document.createElement("div");
+                        div.innerHTML = response.data.html;
+                        document.body.appendChild(div);
+
+                        // Add event listeners to the buttons
+                        setTimeout(function () {
+                            const acceptBtn = document.querySelector(".slimstat-gdpr-accept");
+                            const denyBtn = document.querySelector(".slimstat-gdpr-deny");
+
+                            if (acceptBtn) {
+                                acceptBtn.addEventListener("click", function () {
+                                    handleGdprConsent("accepted");
+                                });
+                            }
+
+                            if (denyBtn) {
+                                denyBtn.addEventListener("click", function () {
+                                    handleGdprConsent("denied");
+                                });
+                            }
+                        }, 100);
+                    }
+                } catch (e) {
+                    // Handle non-JSON response or error
+                    console.error("GDPR banner error:", e);
+                }
+            }
+        };
+        xhr.send("action=slimstat_gdpr_banner");
+        return true;
+    }
+
+    function handleGdprConsent(consent) {
+        const params = currentSlimStatParams();
+        const banner = document.getElementById("slimstat-gdpr-banner");
+
+        if (banner) {
+            banner.style.display = "none";
+        }
+
+        let xhr;
+        try {
+            xhr = new XMLHttpRequest();
+        } catch (e) {
+            return false;
+        }
+        xhr.open("POST", params.ajaxurl, true);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        xhr.withCredentials = true;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success && response.data.consent === "accepted") {
+                        // User accepted consent, start tracking
+                        sendPageview();
+                    }
+                } catch (e) {
+                    // Handle non-JSON response
+                }
+            }
+        };
+        xhr.send("action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent));
+        return true;
+    }
+
+    function updateGdprConsent(consent) {
+        const params = currentSlimStatParams();
+
+        let xhr;
+        try {
+            xhr = new XMLHttpRequest();
+        } catch (e) {
+            return false;
+        }
+        xhr.open("POST", params.ajaxurl, true);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        xhr.withCredentials = true;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // Reload page to apply new consent settings
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    // Handle non-JSON response
+                }
+            }
+        };
+        xhr.send("action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent));
+        return true;
+    }
+
     function showOptoutMessage() {
         const params = currentSlimStatParams();
         const optCookies = params.oc ? params.oc.split(",") : [];
@@ -579,6 +710,14 @@ var SlimStat = (function () {
                 target = target.parentNode;
             }
         });
+
+        // Add event delegation for GDPR consent update buttons
+        addEvent(document.body, "click", function (e) {
+            if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-consent-update")) {
+                const consent = e.target.getAttribute("data-consent-update");
+                updateGdprConsent(consent);
+            }
+        });
     }
 
     // -------------------------- Public API (legacy names preserved) -------------------------- //
@@ -599,6 +738,9 @@ var SlimStat = (function () {
         get_server_latency: getServerLatency,
         optout: optOut,
         show_optout_message: showOptoutMessage,
+        handle_gdpr_consent: handleGdprConsent,
+        show_gdpr_consent_banner: showGdprConsentBanner,
+        update_gdpr_consent: updateGdprConsent,
         add_event: addEvent,
         in_array: anySubstring,
         empty: isEmpty,

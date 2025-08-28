@@ -1,3 +1,12 @@
+= 5.4.0 - 2025-09-01 =
+- **New**: GDPR Consent Management System with customizable consent banner and cookie management.
+- **New**: GDPR-compliant tracking with consent-based analytics collection.
+- **New**: Consent management shortcode `[slimstat_consent]` for user consent control.
+- **New**: Configurable consent banner with customizable messages and button text.
+- **New**: Cookie duration settings for GDPR consent management.
+- **Enhancement**: Improved tracking compliance with privacy regulations.
+- **Enhancement**: Better user privacy control with explicit consent options.
+
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.
